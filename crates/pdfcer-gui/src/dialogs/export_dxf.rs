@@ -4,13 +4,14 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/export_dxf.md`.
 
 use egui::Ui;
-use pdfcer_core::dimension::Unit;
+use pdfcer_core::dimension::{DimensionModel, GroupId, Unit};
 use pdfcer_core::export::dxf::{
     DxfOptions, DxfScaleSuggestion, DxfText, DxfUnits, DxfVersion, suggest_scale_for_groups,
 };
 use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
+use crate::app::actions::imageexport::{PageScope, resolve_pages};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_dxf as t;
 
@@ -44,6 +45,19 @@ pub const REGION_ARCS: &str = "export-dxf.arcs"; // ui-text-exempt: trace region
 pub const REGION_TEXT: &str = "export-dxf.text"; // ui-text-exempt: trace region name, never displayed
 /// The region the Export button publishes.
 pub const REGION_EXPORT: &str = "export-dxf.export"; // ui-text-exempt: trace region name, never displayed
+/// The region the typed page range publishes.
+pub const REGION_RANGE: &str = "export-dxf.pages.range"; // ui-text-exempt: trace region name, never displayed
+/// The region ONE page-scope radio publishes.
+#[must_use]
+pub const fn region_for_scope(scope: PageScope) -> &'static str {
+    match scope {
+        // ui-text-exempt: trace region names, matched by tools/ui-verify and
+        // never displayed.
+        PageScope::CurrentPage => "export-dxf.pages.current",
+        PageScope::AllPages => "export-dxf.pages.all",
+        PageScope::Typed => "export-dxf.pages.typed",
+    }
+}
 
 /// Which of the three answers `suggest_scale_for_groups` gave, as a stable
 /// lowercase token.
@@ -65,12 +79,23 @@ pub fn suggestion_key(suggestion: &DxfScaleSuggestion) -> &'static str {
 
 /// The Export-DXF window's live state.
 pub struct ExportDxfDialog {
-    /// The page being exported, frozen at open.
-    ///
-    /// Frozen for the reason every page-scoped dialog here freezes it: an
-    /// operator who opens this on page 7 and pages away must not export page 9.
-    /// The window says which page, so the choice is checkable.
+    /// The page on screen when the window opened, frozen: an operator who
+    /// opens this on page 7 and pages away must not export page 9. It is the
+    /// page *This page only* names.
     page_index: usize,
+    /// The document's page count, for *Every page* and the typed range.
+    page_count: usize,
+    /// Which pages the radios offer.
+    scope: PageScope,
+    /// The typed range, kept across scope changes.
+    range_text: String,
+    /// The pages the current suggestion was computed over.
+    suggested_for: Vec<usize>,
+    /// Each page's own ce dimension groups, read once at open, so a change of
+    /// pages re-asks the scale question without the session.
+    page_groups: Vec<Vec<GroupId>>,
+    /// The dimension model the suggestions are computed from.
+    model: DimensionModel,
     /// What pdfcer inferred, kept so the disclosure can be redrawn without
     /// re-querying the model every frame.
     ///
@@ -103,10 +128,19 @@ impl ExportDxfDialog {
     #[must_use]
     pub fn open(doc: &OpenDoc, remembered: &crate::app::prefs::ExportDxfPrefs) -> Self {
         let page_index = doc.view.page_index;
+        let page_count = doc.pages.len();
         let model = doc.session.dimension_model();
-        // The page's OWN groups. See the module header for what the
-        // document-wide query costs here.
-        let groups = doc.session.dimension_groups_on_page(page_index);
+        // Each page's OWN groups; see the module header for what the
+        // document-wide query costs a page-scoped export. A document with no
+        // ce dimensions skips the per-page walk.
+        let page_groups: Vec<Vec<GroupId>> = if model.dimensions().is_empty() {
+            vec![Vec::new(); page_count]
+        } else {
+            (0..page_count)
+                .map(|page| doc.session.dimension_groups_on_page(page))
+                .collect()
+        };
+        let groups = groups_on(&page_groups, &[page_index]);
         let suggestion = suggest_scale_for_groups(&model, &groups);
         let options = seeded_options(remembered, &suggestion);
         let calibrated = calibrated_groups(&model);
@@ -114,6 +148,12 @@ impl ExportDxfDialog {
 
         let dialog = Self {
             page_index,
+            page_count,
+            scope: PageScope::CurrentPage,
+            range_text: String::new(),
+            suggested_for: vec![page_index],
+            page_groups,
+            model,
             suggestion,
             options,
             groups: calibrated,
@@ -180,11 +220,14 @@ impl ExportDxfDialog {
             // [`crate::dialogs::export_remembered`], stated once for all three
             // export windows.
             crate::dialogs::export_remembered::remember_dxf(self.habits(), prefs);
+            let pages = self.pages().unwrap_or_default();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-dxf-requested page={} scale={} units={} arcs={} text={} version={}",
+                    "export-dxf-requested page={} pages={} scale={} units={} arcs={} text={} \
+                     version={}",
                     self.page_index,
+                    crate::app::actions::export::page_list(&pages),
                     self.options.scale,
                     // Tokens, never `{:?}`: the same reduction the preferences
                     // file performs, so a check reading this line and a check
@@ -197,7 +240,7 @@ impl ExportDxfDialog {
             });
             actions.push(Action::Write(
                 crate::app::actions::write::WriteAction::Dxf {
-                    page: self.page_index,
+                    pages,
                     options: self.options,
                 },
             ));
@@ -210,7 +253,10 @@ impl ExportDxfDialog {
     fn body(&mut self, ui: &mut Ui) {
         ui.label(t::intro());
         ui.add_space(8.0);
-        ui.label(t::page_line(self.page_index.saturating_add(1)));
+        let pages = self.pages_group(ui);
+        if let Some(pages) = &pages {
+            self.resuggest(pages);
+        }
         ui.add_space(8.0);
 
         // --- scale --------------------------------------------------------
@@ -290,7 +336,11 @@ impl ExportDxfDialog {
         // --- commit --------------------------------------------------------
         ui.separator();
         ui.horizontal(|ui| {
-            let response = ui.button(t::export_button());
+            let response = ui
+                .add_enabled(pages.is_some(), egui::Button::new(t::export_button()))
+                .on_disabled_hover_text(crate::text::export_image::pages_range_invalid(
+                    self.page_count,
+                ));
             crate::diag::ui_rect(REGION_EXPORT, response.rect);
             if response.clicked() {
                 self.export_requested = true;
@@ -298,6 +348,80 @@ impl ExportDxfDialog {
             if ui.button(t::cancel_button()).clicked() {
                 self.close_requested = true;
             }
+        });
+    }
+
+    /// The pages the radios name, or `None` when the typed range names none.
+    fn pages(&self) -> Option<Vec<usize>> {
+        resolve_pages(
+            self.scope,
+            &self.range_text,
+            self.page_count,
+            self.page_index,
+        )
+    }
+
+    /// Which pages: this one, every one, or a typed range. The words are the
+    /// image export's, so the two windows ask the question the same way.
+    fn pages_group(&mut self, ui: &mut Ui) -> Option<Vec<usize>> {
+        use crate::text::export_image as words;
+        ui.label(words::pages_heading());
+        let response = ui.radio_value(
+            &mut self.scope,
+            PageScope::CurrentPage,
+            words::pages_current(self.page_index.saturating_add(1)),
+        );
+        crate::diag::ui_rect(region_for_scope(PageScope::CurrentPage), response.rect);
+        let response = ui.radio_value(
+            &mut self.scope,
+            PageScope::AllPages,
+            words::pages_all(self.page_count),
+        );
+        crate::diag::ui_rect(region_for_scope(PageScope::AllPages), response.rect);
+        ui.horizontal(|ui| {
+            let response = ui.radio_value(&mut self.scope, PageScope::Typed, words::pages_range());
+            crate::diag::ui_rect(region_for_scope(PageScope::Typed), response.rect);
+            // Typing selects the radio, so a typed range is never ignored.
+            let typed = ui.text_edit_singleline(&mut self.range_text);
+            crate::diag::ui_rect(REGION_RANGE, typed.rect);
+            if typed.changed() {
+                self.scope = PageScope::Typed;
+            }
+        });
+        ui.weak(words::pages_range_hint());
+        let pages = self.pages();
+        match &pages {
+            None if self.scope == PageScope::Typed => {
+                ui.label(words::pages_range_invalid(self.page_count));
+            }
+            Some(several) if several.len() > 1 => {
+                ui.weak(t::one_file_per_page(several.len()));
+            }
+            _ => {}
+        }
+        pages
+    }
+
+    /// Re-ask the scale question when the pages change, seeding exactly as
+    /// the window does at open: the selected pages' groups, each once.
+    fn resuggest(&mut self, pages: &[usize]) {
+        if pages == self.suggested_for.as_slice() {
+            return;
+        }
+        let groups = groups_on(&self.page_groups, pages);
+        self.suggestion = suggest_scale_for_groups(&self.model, &groups);
+        self.options = seeded_options(&self.habits(), &self.suggestion);
+        self.ratio = Ratio::of_scale(self.options.scale, self.options.units, None);
+        self.suggested_for = pages.to_vec();
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "export-dxf-pages pages={} groups={} suggestion={} scale={}",
+                crate::app::actions::export::page_list(pages),
+                groups.len(),
+                suggestion_key(&self.suggestion),
+                self.options.scale
+            )
         });
     }
 
@@ -491,6 +615,22 @@ fn calibrated_groups(model: &pdfcer_core::dimension::DimensionModel) -> Vec<Grou
             _ => None,
         })
         .collect()
+}
+
+/// The groups on `pages`, each once: a group on two pages must not vote
+/// twice, or it reads as corroboration of itself.
+fn groups_on(page_groups: &[Vec<GroupId>], pages: &[usize]) -> Vec<GroupId> {
+    let mut groups = Vec::new();
+    for id in pages
+        .iter()
+        .filter_map(|page| page_groups.get(*page))
+        .flatten()
+    {
+        if !groups.contains(id) {
+            groups.push(*id);
+        }
+    }
+    groups
 }
 
 /// The ratio row's four fields: `paper basis = real real_unit`.

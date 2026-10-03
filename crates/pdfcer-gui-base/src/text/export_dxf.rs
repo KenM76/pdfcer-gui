@@ -28,10 +28,13 @@ pub const fn intro() -> &'static str {
      says how much of each was on the page."
 }
 
-/// The page-number line.
+/// Under the page choice when it names several pages.
 #[must_use]
-pub fn page_line(page_number: usize) -> String {
-    format!("Page {page_number}, the one on screen")
+pub fn one_file_per_page(count: usize) -> String {
+    format!(
+        "{count} pages: one DXF each, named after the file you choose with _p \
+         and the page number added."
+    )
 }
 
 /// The heading over the scale controls.
@@ -219,11 +222,10 @@ pub const fn save_dialog_title() -> &'static str {
     "Save the DXF"
 }
 
-/// A page whose decomposition is not available.
+/// A page whose geometry could not be read.
 #[must_use]
-pub const fn no_geometry() -> &'static str {
-    "pdfcer has not read this page's geometry yet, or could not. Nothing was \
-     exported."
+pub fn no_geometry(page_number: usize) -> String {
+    format!("pdfcer could not read the geometry of page {page_number}. Nothing was exported.")
 }
 
 // ---------------------------------------------------------------------------
@@ -249,14 +251,75 @@ pub fn exported(path: &str, outcome: &DxfOutcome, units: DxfUnits) -> Vec<String
         "Exported to {path} — {polylines} lines, {circles} circles, {arcs} \
          arcs, {splines} splines."
     )];
+    out.extend(caveats(
+        skipped_images,
+        skipped_text,
+        splines_flattened,
+        units_undeclared,
+        unreadable_text,
+        units,
+        "on this page",
+    ));
+    out
+}
+
+/// **What a several-page export produced**, its counts summed over the files.
+#[must_use]
+pub fn exported_pages(
+    count: usize,
+    first: &str,
+    last: &str,
+    outcome: &DxfOutcome,
+    units: DxfUnits,
+) -> Vec<String> {
+    let DxfOutcome {
+        polylines,
+        circles,
+        arcs,
+        splines,
+        skipped_text,
+        skipped_images,
+        unreadable_text,
+        splines_flattened,
+        units_undeclared,
+        ..
+    } = *outcome;
+    let mut out = vec![format!(
+        "Exported {count} pages, {first} to {last} — {polylines} lines, {circles} \
+         circles, {arcs} arcs, {splines} splines in all."
+    )];
+    out.extend(caveats(
+        skipped_images,
+        skipped_text,
+        splines_flattened,
+        units_undeclared,
+        unreadable_text,
+        units,
+        "on these pages",
+    ));
+    out
+}
+
+/// The sentences about what the DXF could not carry; `on` names where.
+fn caveats(
+    skipped_images: usize,
+    skipped_text: usize,
+    splines_flattened: usize,
+    units_undeclared: bool,
+    unreadable_text: usize,
+    units: DxfUnits,
+    on: &str,
+) -> Vec<String> {
+    let mut out = Vec::new();
     if skipped_images > 0 {
         out.push(match skipped_images {
-            1 => "1 picture on this page is not in the DXF — the format has no \
-                  way to carry a raster."
-                .to_owned(),
+            1 => format!(
+                "1 picture {on} is not in the DXF — the format has no way to \
+                 carry a raster."
+            ),
             n => format!(
-                "{n} pictures on this page are not in the DXF — the format has \
-                 no way to carry a raster."
+                "{n} pictures {on} are not in the DXF — the format has no way \
+                 to carry a raster."
             ),
         });
     }
@@ -293,6 +356,16 @@ pub fn exported(path: &str, outcome: &DxfOutcome, units: DxfUnits) -> Vec<String
     out
 }
 
+/// A several-page export stopped at page `page_number`, after `written` of
+/// `asked` files. `detail` is the operating system's sentence.
+#[must_use]
+pub fn stopped_part_way(page_number: usize, written: usize, asked: usize, detail: &str) -> String {
+    format!(
+        "Page {page_number} could not be written, so the export stopped: {written} of the \
+         {asked} files were written. {detail}"
+    )
+}
+
 /// The write failed.
 #[must_use]
 pub fn export_failed(detail: &str) -> String {
@@ -302,6 +375,28 @@ pub fn export_failed(detail: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The several-page sentence names the run and says its caveats of "these pages".
+    #[test]
+    fn a_several_page_export_names_its_range_and_its_caveats() {
+        let outcome = DxfOutcome {
+            polylines: 7,
+            skipped_images: 2,
+            ..DxfOutcome::default()
+        };
+        let lines = exported_pages(3, "a_p1.dxf", "a_p3.dxf", &outcome, DxfUnits::Millimetres);
+        assert!(
+            lines[0].contains("3 pages, a_p1.dxf to a_p3.dxf"),
+            "{lines:?}"
+        );
+        assert!(lines[0].contains("7 lines"), "{lines:?}");
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("2 pictures on these pages")),
+            "{lines:?}"
+        );
+    }
 
     /// **An uncalibrated page is told that 1:1 is a CHOICE.**
     #[test]

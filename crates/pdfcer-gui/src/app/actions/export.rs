@@ -5,98 +5,186 @@
 
 use crate::app::state::OpenDoc;
 
-/// Write one page's vector geometry as an ASCII DXF.
-pub(super) fn dxf(doc: &mut OpenDoc, page: usize, options: &pdfcer_core::export::dxf::DxfOptions) {
-    // The decomposition, from the cache the canvas and the Objects panel share.
-    // `None` is reachable — a page still being read, or one whose content
-    // streams could not be resolved — and is a decline rather than a failure:
-    // nothing was written and the sentence says which.
-    let Some(dxf) = doc
-        .page_objects()
-        .map(|provider| pdfcer_core::export::dxf::write_dxf(provider.page_objects(), options))
-    else {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            format!("export-dxf-declined page={page} reason=no-decomposition")
-        });
-        super::record_note(
-            doc.edit_epoch,
-            crate::text::export_dxf::no_geometry().to_owned(),
-        );
+/// Write each page's vector geometry as an ASCII DXF: one page to the chosen
+/// file, several to `<stem>_p<n>.dxf` beside it.
+pub(super) fn dxf(
+    doc: &mut OpenDoc,
+    pages: &[usize],
+    options: &pdfcer_core::export::dxf::DxfOptions,
+) {
+    use crate::text::export_dxf as t;
+    // Every page is decomposed before the picker and before any write: a page
+    // that cannot be read declines the whole run, so the operator is never
+    // asked where to put files that will not all arrive.
+    let Some(models) = decompose_all(doc, pages) else {
         return;
     };
-    let (text, outcome) = dxf;
-
-    // The picker AFTER the write, not before.
-    //
-    // The write is pure and cannot fail — `write_dxf` returns no `Result`, and
-    // its doc says why: *"the writer cannot fail on well-formed input, and
-    // malformed input is skipped and counted rather than refused."* So doing it
-    // first costs nothing and buys the property that matters: the operator is
-    // never asked where to put a file that turns out to be empty. If a future
-    // slice gives the writer a refusal, this ordering is what lets the refusal
-    // be reported before a save dialog has been opened.
     let suggested = suggested_path(doc);
-    let crate::app::files::Picked::Path(target) =
-        crate::app::files::pick_save_path(&suggested, crate::text::export_dxf::save_dialog_title())
+    let crate::app::files::Picked::Path(chosen) =
+        crate::app::files::pick_save_path(&suggested, t::save_dialog_title())
     else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
-            format!("export-dxf-cancelled page={page}")
+            format!("export-dxf-cancelled pages={}", page_list(pages))
         });
         return;
     };
-
-    match std::fs::write(&target, text.as_bytes()) {
-        Ok(()) => {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!(
-                    "export-dxf page={page} bytes={} polylines={} circles={} arcs={} \
-                     splines={} skipped_text={} skipped_images={} unreadable_text={} \
-                     version={} splines_flattened={} units_undeclared={}",
-                    text.len(),
-                    outcome.polylines,
-                    outcome.circles,
-                    outcome.arcs,
-                    outcome.splines,
-                    outcome.skipped_text,
-                    outcome.skipped_images,
-                    outcome.unreadable_text,
-                    options.version.acadver(),
-                    outcome.splines_flattened,
-                    u8::from(outcome.units_undeclared)
-                )
-            });
-            // Recorded through `record_note` rather than returned from a
-            // `vector_edit` closure, because there is no edit to ride in on —
-            // the same case `canvas::interact` records for a caret that cannot
-            // be placed. Stamped with the CURRENT epoch, so the sentences stand
-            // until the next real edit moves past them.
-            //
-            // The list is joined rather than recorded one at a time: the slot
-            // holds one disclosure, and the last writer would win.
-            let notes = crate::text::export_dxf::exported(
-                &target.display().to_string(),
-                &outcome,
-                options.units,
-            );
-            super::record_edit_disclosure(Some(super::EditDisclosure {
-                epoch: doc.edit_epoch,
-                notes,
-            }));
-        }
-        Err(error) => {
+    let width = pages
+        .iter()
+        .map(|page| page.saturating_add(1).to_string().len())
+        .max()
+        .unwrap_or(1);
+    let mut total = pdfcer_core::export::dxf::DxfOutcome::default();
+    let mut written: Vec<std::path::PathBuf> = Vec::new();
+    for (&page, model) in pages.iter().zip(&models) {
+        let target = if pages.len() > 1 {
+            dxf_page_path(&chosen, page, width)
+        } else {
+            chosen.clone()
+        };
+        let (text, outcome) = pdfcer_core::export::dxf::write_dxf(model, options);
+        if let Err(error) = std::fs::write(&target, text.as_bytes()) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!("export-dxf-failed page={page} detail={error}")
             });
+            let said = if written.is_empty() {
+                t::export_failed(&error.to_string())
+            } else {
+                t::stopped_part_way(
+                    page.saturating_add(1),
+                    written.len(),
+                    pages.len(),
+                    &error.to_string(),
+                )
+            };
+            super::record_note(doc.edit_epoch, said);
+            return;
+        }
+        trace_dxf_written(page, text.len(), &outcome, options, &target);
+        add_outcome(&mut total, &outcome);
+        written.push(target);
+    }
+    let notes = match written.as_slice() {
+        [one] => t::exported(&one.display().to_string(), &total, options.units),
+        [first, .., last] => t::exported_pages(
+            written.len(),
+            &first.display().to_string(),
+            &last.display().to_string(),
+            &total,
+            options.units,
+        ),
+        [] => return,
+    };
+    // Through `record_edit_disclosure` because there is no edit to ride in on;
+    // the list is joined because the slot holds one disclosure.
+    super::record_edit_disclosure(Some(super::EditDisclosure {
+        epoch: doc.edit_epoch,
+        notes,
+    }));
+}
+
+/// Every page in `pages` decomposed from the session's view (unsaved edits
+/// included), or `None` with the refusal recorded.
+fn decompose_all(doc: &OpenDoc, pages: &[usize]) -> Option<Vec<pdfcer_core::vector::PageObjects>> {
+    if pages.is_empty() {
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| "export-dxf-declined reason=no-pages".to_owned());
+        super::record_note(
+            doc.edit_epoch,
+            crate::text::export_image::no_pages().to_owned(),
+        );
+        return None;
+    }
+    let view = doc.session.view();
+    let mut models = Vec::with_capacity(pages.len());
+    for &page in pages {
+        let decomposed = doc.pages.get(page).and_then(|target| {
+            pdfcer_core::vector::decompose_page(
+                &view,
+                target,
+                pdfcer_core::vector::Matrix::IDENTITY,
+            )
+            .ok()
+        });
+        let Some(model) = decomposed else {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("export-dxf-declined page={page} reason=no-decomposition")
+            });
             super::record_note(
                 doc.edit_epoch,
-                crate::text::export_dxf::export_failed(&error.to_string()),
+                crate::text::export_dxf::no_geometry(page.saturating_add(1)),
             );
-        }
+            return None;
+        };
+        models.push(model);
     }
+    Some(models)
+}
+
+/// `<stem>_p<n>.dxf` beside `chosen`, `n` 1-based and zero-padded to `width`,
+/// the widest page number in the run: the engine CLI's naming.
+fn dxf_page_path(chosen: &std::path::Path, page: usize, width: usize) -> std::path::PathBuf {
+    let stem = chosen
+        .file_stem()
+        .map_or_else(|| "export".to_owned(), |s| s.to_string_lossy().into_owned()); // ui-text-exempt: a fallback file name
+    chosen.with_file_name(format!("{stem}_p{:0width$}.dxf", page.saturating_add(1))) // ui-text-exempt: a file name
+}
+
+/// `0,1,4`: 0-based pages as one trace field.
+pub(crate) fn page_list(pages: &[usize]) -> String {
+    pages
+        .iter()
+        .map(usize::to_string)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+/// One page's success line.
+fn trace_dxf_written(
+    page: usize,
+    bytes: usize,
+    outcome: &pdfcer_core::export::dxf::DxfOutcome,
+    options: &pdfcer_core::export::dxf::DxfOptions,
+    target: &std::path::Path,
+) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "export-dxf page={page} bytes={bytes} polylines={} circles={} arcs={} \
+             splines={} skipped_text={} skipped_images={} unreadable_text={} \
+             version={} splines_flattened={} units_undeclared={} path={}",
+            outcome.polylines,
+            outcome.circles,
+            outcome.arcs,
+            outcome.splines,
+            outcome.skipped_text,
+            outcome.skipped_images,
+            outcome.unreadable_text,
+            options.version.acadver(),
+            outcome.splines_flattened,
+            u8::from(outcome.units_undeclared),
+            target.display()
+        )
+    });
+}
+
+/// Fold one page's counts into the run's.
+fn add_outcome(
+    total: &mut pdfcer_core::export::dxf::DxfOutcome,
+    one: &pdfcer_core::export::dxf::DxfOutcome,
+) {
+    total.polylines += one.polylines;
+    total.circles += one.circles;
+    total.arcs += one.arcs;
+    total.splines += one.splines;
+    total.skipped_text += one.skipped_text;
+    total.skipped_images += one.skipped_images;
+    total.text_entities += one.text_entities;
+    total.unreadable_text += one.unreadable_text;
+    total.splines_flattened += one.splines_flattened;
+    total.units_undeclared |= one.units_undeclared;
 }
 
 /// **Write the form's values out as FDF, XFDF or CSV.**
@@ -1019,5 +1107,20 @@ mod tests {
             PathBuf::from("C:/d/drawing.dxf")
         );
         assert_eq!(named("C:/d/plan", "dxf"), PathBuf::from("C:/d/plan.dxf"));
+    }
+
+    /// Several pages are named `<stem>_p<n>.dxf`, 1-based, padded to the run's widest number.
+    #[test]
+    fn a_page_file_is_named_after_the_chosen_stem_and_its_page() {
+        let chosen = Path::new("C:/d/plan.rev2.dxf");
+        assert_eq!(
+            super::dxf_page_path(chosen, 0, 1),
+            PathBuf::from("C:/d/plan.rev2_p1.dxf")
+        );
+        assert_eq!(
+            super::dxf_page_path(chosen, 8, 2),
+            PathBuf::from("C:/d/plan.rev2_p09.dxf"),
+            "padded so the files sort in page order"
+        );
     }
 }

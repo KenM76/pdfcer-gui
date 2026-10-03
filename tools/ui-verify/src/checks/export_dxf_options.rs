@@ -97,7 +97,7 @@ impl Check for ExportDxfWritesTheVersionAndScaleChosen {
 }
 
 /// The value on the line after `name`'s group code, in a DXF header.
-fn header_value<'a>(dxf: &'a str, name: &str) -> Option<&'a str> {
+pub(super) fn header_value<'a>(dxf: &'a str, name: &str) -> Option<&'a str> {
     let mut lines = dxf.lines().map(str::trim);
     lines.find(|l| *l == name)?;
     lines.next()?;
@@ -335,7 +335,7 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
 
 /// Click a region the application declared, in whichever viewport it was
 /// declared in. Returns that viewport, for keys sent afterwards.
-fn click_region(
+pub(super) fn click_region(
     session: &Session,
     pointer: &ScriptedPointer,
     ui_rect: &str,

@@ -197,17 +197,25 @@ this feature is worth having over any generic converter:
   the other is a fact about the source PDF. Rolling them together would let
   the second hide inside the first.
 
-## Why the geometry is fetched here and not carried in the action
+## Why the geometry is decomposed here and not carried in the action
 
-`PageObjects` is a decomposition of a whole page — every path, every text
-run, every image placement — and the shell already holds one, cached, keyed
-on `(page, epoch)`. Carrying it through the action queue would clone it for
-a value the apply phase can borrow, and a **stale** clone at that: the queue
-drains after the frame, and an edit raised earlier in the same frame would
-leave the export describing the page as it was.
+`decompose_all` decomposes every requested page from `session.view()` when
+the queue drains, so an edit raised earlier in the same frame is in the
+export, and each page is the page asked for rather than whichever page the
+canvas's cache holds. All pages are decomposed before the save dialog: one
+unreadable page declines the whole run (`export-dxf-declined page=
+reason=no-decomposition`), so the operator never chooses a name for files
+that will not all arrive. This is the engine CLI's all-or-nothing order.
 
-Fetching it here means the export sees the document as it stands when the
-export runs, which is the only reading that can be defended.
+## Several pages
+
+One page writes the chosen file. Several write `<stem>_p<n>.dxf` beside it
+(`dxf_page_path`), `n` 1-based and zero-padded to the widest page number in
+the run, the engine CLI's `export-dxf --pages --output-dir` naming; the bare
+chosen name is not written. Each file traces its own `export-dxf page= ...
+path=` line. The status sentence sums the counts over the files
+(`text::export_dxf::exported_pages`). A write failure stops the run and says
+how many of the files were written (`stopped_part_way`).
 
 ### `fn form_data`
 

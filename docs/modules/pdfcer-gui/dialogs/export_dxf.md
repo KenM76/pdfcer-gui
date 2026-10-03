@@ -51,6 +51,21 @@ calibration of its own — **silently export it at page 3's scale**."*
 That is the same defect the feature exists to prevent, arriving through the
 front door.
 
+## Several pages
+
+The **Pages** group is the image export's: *This page only* (the page on
+screen at open, frozen), *Every page*, or a typed range parsed by
+`resolve_pages`. Typing in the range selects its radio; a range naming no
+page greys Export and says why on hover. When the pages change, `resuggest`
+re-asks `suggest_scale_for_groups` over the selected pages' groups, each
+group once (`groups_on`; a group on two pages must not vote twice), and
+reseeds the options exactly as opening the window does, so the scale on
+screen is always the answer for the pages that will be written. Each page's
+groups are read once at open into `page_groups`; a document with no ce
+dimensions skips the walk. Traced as `export-dxf-pages pages= groups=
+suggestion= scale=`; `export-dxf-requested` carries `pages=`. The page choice
+is not remembered between exports: it is a statement about this document.
+
 ## The group picker and the ratio row
 
 The seed stays page-scoped, for the reason above. The **Take the scale from**

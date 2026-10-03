@@ -362,6 +362,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_form_data::ExportingFormDataWritesAFile),
         Box::new(export_dxf::ExportDxfWritesThePagesGeometry),
         Box::new(export_dxf_options::ExportDxfWritesTheVersionAndScaleChosen),
+        Box::new(export_dxf_pages::ExportDxfWritesOneFilePerPage),
         Box::new(tabs_look::TabsReadAsTabs),
         Box::new(system_theme::SystemThemeFollowsTheHost),
         Box::new(small_first_page::ASmallFirstPageIsTheCurrentPage),

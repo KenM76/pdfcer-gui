@@ -123,9 +123,8 @@ to a centre in.
 
 ### `fn no_geometry`
 
-Reachable while the page is still being read, and on a page whose content
-streams could not be resolved. Says which, because *"not yet"* and *"not at
-all"* are different situations and only the first is worth waiting for.
+A page whose content streams could not be decomposed. Names the page, because
+in a several-page export it is the one that declined the run.
 
 ### `fn exported`
 
@@ -152,6 +151,26 @@ sentence would say the file is ambiguous without saying how to resolve it.
 
 Rolling them together would let the second hide inside the first, which is
 the failure mode the engine wrote a paragraph to prevent.
+
+### `fn exported_pages`
+
+The several-page form of `exported`: the counts summed over every file, the
+first and last file named, and the same caveats said of "these pages".
+
+### `fn caveats`
+
+The sentences shared by `exported` and `exported_pages`; `on` is the phrase
+naming where the dropped content was, so one page and several read correctly.
+
+### `fn one_file_per_page`
+
+Under the Pages choice when it names more than one page, so the operator
+knows before choosing a name that the name is a stem, not the file.
+
+### `fn stopped_part_way`
+
+A write failure in a several-page run: which page, and how many of the files
+already exist, because those files are on disk and are not removed.
 # Why it takes the ENGINE's outcome rather than eight counts
 
 It was written as eight `usize` parameters, on this catalog's usual rule

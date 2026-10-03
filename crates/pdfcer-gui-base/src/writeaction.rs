@@ -24,14 +24,13 @@ pub enum WriteAction {
     ///
     /// # Why the geometry is not carried
     ///
-    /// `PageObjects` is a whole page decomposed, and the shell already holds
-    /// one cached on `(page, epoch)`. Carrying it would clone it for a value
-    /// the apply phase can borrow — and a **stale** clone: the queue drains
-    /// after the frame, so an edit raised earlier in the same frame would leave
-    /// the export describing the page as it was. See `export::dxf`.
+    /// The apply phase decomposes each page from the session's view when the
+    /// queue drains, so an edit raised earlier in the same frame is in the
+    /// export. See `export::dxf`.
     Dxf {
-        /// The 0-based page, frozen when the dialog opened.
-        page: usize,
+        /// The 0-based pages, in order, resolved by the window when Export was
+        /// pressed. More than one writes one file per page.
+        pages: Vec<usize>,
         /// The engine's own options struct, edited in place by the dialog.
         ///
         /// Carried whole rather than decomposed into scale, units and two

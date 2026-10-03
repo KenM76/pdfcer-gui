@@ -1091,8 +1091,8 @@ impl PdfcerApp {
             }
             Action::Write(write) => match write {
                 // (the enum is `super::write::WriteAction`)
-                super::write::WriteAction::Dxf { page, options } => {
-                    super::export::dxf(doc, page, &options)
+                super::write::WriteAction::Dxf { pages, options } => {
+                    super::export::dxf(doc, &pages, &options)
                 }
                 // O120. The refusal of an impossible combination, the picker
                 // and the whole disclosure live in `super::export::image`.
