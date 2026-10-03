@@ -265,6 +265,8 @@ pub mod previewfallback;
 pub mod reface;
 /// The notice naming every key a run's font refused.
 pub mod refusedkeys;
+/// Every string the Find bar's Replace row shows or causes.
+pub mod replace;
 /// Every sentence the text-editing tool shows: the refusals a caret can meet,
 /// and the disclosure the engine does not write for a pinned tail.
 pub mod textedit;

@@ -276,6 +276,8 @@ fn no_two_declines_share_a_sentence() {
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
+        Declined::Replace(crate::text::replace::ReplaceRefusal::Wildcards),
+        Declined::Replace(crate::text::replace::ReplaceRefusal::NothingRewritable { found: 2 }),
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unreadable(
             "x".to_owned(),
         )),
@@ -674,6 +676,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::Rotate(_)
         | Declined::Unshare(_)
         | Declined::RunMerge(_)
+        | Declined::Replace(_)
         | Declined::SettingsNotSaved
         | Declined::FieldNameTaken
         | Declined::FieldPathCrossesTerminal(_)

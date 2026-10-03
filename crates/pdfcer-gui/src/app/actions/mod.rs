@@ -132,6 +132,8 @@ pub mod redactimg;
 /// first that does not go through text. Its header carries why the search box
 /// could not reach a vector title block, a stamp or a logo.
 mod redactsel;
+/// The Find bar's Replace and Replace all.
+mod replace;
 /// **Record a comment's review status** — `/State` and `/StateModel`,
 /// §12.5.6.3. Its own file rather than a place in [`annots`], because that
 /// module is *"what happens to a thing that already exists"* and this one adds

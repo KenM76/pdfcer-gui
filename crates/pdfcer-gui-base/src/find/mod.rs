@@ -15,6 +15,9 @@ pub mod bar;
 /// operator's eye* there.
 pub mod reveal;
 
+/// The Replace row's state and the request a press makes.
+pub mod replace;
+
 /// Preparing a typed query for the engine: the trim decision, the
 /// predicate the bar's disclosure is built on, and the argument for why
 /// interior whitespace is left alone. Its own file because that decision,
@@ -126,6 +129,9 @@ pub struct Hit {
     /// drawn — the hit is still counted and still navigable, because "we
     /// cannot draw a box on this page" is not "this hit does not exist".
     pub canvas: Option<Rect>,
+    /// The hit's box in unrotated PDF user space, as the engine reported it;
+    /// what Replace hands back to locate the text to rewrite.
+    pub quad: pdfcer_core::annot_author::Quad,
     /// What was actually matched.
     ///
     /// Kept because a case-insensitive search for `total` matches `TOTAL`,
@@ -284,6 +290,11 @@ pub struct FindState {
     /// The **persisted** half is [`crate::prefs::Prefs::find_trim_query`],
     /// mirrored in once at startup, exactly as [`Self::zoom_on_jump`] is.
     trim_query: bool,
+    /// Whether the Replace row is showing.
+    replace_open: bool,
+    /// The Replace row's text, kept across searches and documents as the
+    /// query is.
+    replacement: String,
 }
 
 /// Hand-written rather than derived, for exactly one field.
@@ -297,6 +308,8 @@ impl Default for FindState {
             focus_wanted: false,
             zoom_on_jump: true,
             trim_query: true,
+            replace_open: false,
+            replacement: String::new(),
         }
     }
 }
@@ -500,6 +513,15 @@ pub use crate::findrequest::Step;
 
 pub use crate::findrequest::FindRequest;
 
+/// A 10-point square at the origin, for test hits whose box nobody reads.
+#[cfg(any(test, feature = "test-fixtures"))]
+pub const TEST_QUAD: pdfcer_core::annot_author::Quad = pdfcer_core::annot_author::Quad {
+    ul: (0.0, 10.0),
+    ur: (10.0, 10.0),
+    ll: (0.0, 0.0),
+    lr: (10.0, 0.0),
+};
+
 /// Compiled for this crate's tests and, through the `test-fixtures` feature,
 /// for `pdfcer-gui`'s; never in the shipped program.
 #[cfg(any(test, feature = "test-fixtures"))]
@@ -522,6 +544,7 @@ impl FindState {
                         egui::Pos2::ZERO,
                         egui::Vec2::splat(10.0),
                     )),
+                    quad: TEST_QUAD,
                     text: query.to_owned(),
                 })
                 .collect(),
@@ -537,6 +560,12 @@ pub fn apply(state: &mut FindState, doc: &mut OpenDoc, request: FindRequest) {
     match request {
         FindRequest::Search => search(state, doc),
         FindRequest::Step(step) => step_to(state, doc, step),
+        // The app carries out a Replace before this is reached; one that gets
+        // here was pressed where content may not be edited.
+        FindRequest::Replace { all } => crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("find-replace-declined all={all} reason=not-editable")
+        }),
     }
 }
 
@@ -598,6 +627,7 @@ fn search(state: &mut FindState, doc: &mut OpenDoc) {
                 .pages
                 .get(m.page_index)
                 .and_then(|page| reveal::quad_to_canvas(&m.quad, page)),
+            quad: m.quad,
             text: m.text,
         })
         .collect();

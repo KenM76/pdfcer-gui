@@ -16,4 +16,10 @@ pub enum FindRequest {
     Search,
     /// Move to the adjacent hit.
     Step(Step),
+    /// Rewrite the current hit, or every hit when `all`, with the Replace
+    /// row's text; carried out by the app, which owns document edits.
+    Replace {
+        /// Every hit rather than the current one.
+        all: bool,
+    },
 }

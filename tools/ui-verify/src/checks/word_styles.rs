@@ -94,14 +94,16 @@ fn finish(
 }
 
 /// The launched program, its pointer, and the page mapping.
-struct Driven {
-    session: Session,
-    pointer: ScriptedPointer,
+pub(crate) struct Driven {
+    pub(crate) session: Session,
+    pub(crate) pointer: ScriptedPointer,
     mapping: CanvasMapping,
     ui_rect: &'static str,
 }
 
-fn launch(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -> Result<Driven> {
+/// Launch on a copy of `paragraph.pdf` with the Text tool armed in Edit, off
+/// the desktop, with a scripted pointer.
+pub(crate) fn launch(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -> Result<Driven> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -171,8 +173,8 @@ impl Driven {
         Ok(Ok(()))
     }
 
-    /// Click a declared ribbon region.
-    fn click(&self, region: &str) -> Result<()> {
+    /// Click a declared region.
+    pub(crate) fn click(&self, region: &str) -> Result<()> {
         let trace = self.session.trace()?;
         let (rect, viewport) = declared_in(&trace, self.ui_rect, region).ok_or_else(|| {
             let prefix = region.rsplit_once('.').map_or(region, |(head, _)| head);
@@ -190,7 +192,7 @@ impl Driven {
         Ok(())
     }
 
-    fn path(&self) -> String {
+    pub(crate) fn path(&self) -> String {
         self.session.trace_path().display().to_string()
     }
 }

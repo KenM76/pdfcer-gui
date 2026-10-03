@@ -84,7 +84,10 @@ one-page PDF (`blank::picture_page`) until G095 `add_image_stamp` lands.
 File ▸ New from clipboard and Pages ▸ Insert from clipboard are
 `app::dispatch::ospaste::pages`. Measure ▸ Area (O280) sits beside Perimeter
 and a closed perimeter ce dimension switches between perimeter and area
-(`ui-verify --check an_area_measures_the_region_it_encloses`). Next: WORDLIKE step 8.
+(`ui-verify --check an_area_measures_the_region_it_encloses`). WORDLIKE step 8,
+find and replace, is the Find bar's Replace row in Edit (`app::actions::replace`;
+`ui-verify --check replace_all_is_one_undo` on `fixtures/paragraph.pdf`).
+Next: WORDLIKE step 9 (IME).
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -104,7 +107,7 @@ the bar's all-signed line. The hand-signed state is session-only until
 G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
 first click on a cold launch and passed on re-run; unexplained.
 
-**O270, Word-like text editing: plan steps 1 to 6 built and driven, step 7
+**O270, Word-like text editing: plan steps 1 to 6 and 8 built and driven, step 7
 half**, unpublished. The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its
 order. Step 7's O271 (alignment in both places) and O273 (Ctrl+B/I/U, pressed
 toggles) live in `app::dispatch::textformat` and `app::conditions::textformat`;

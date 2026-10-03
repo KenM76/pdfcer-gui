@@ -105,6 +105,11 @@ pub(crate) fn record_run_merge(why: crate::text::runmerge::RunMergeRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::RunMerge(why)));
 }
 
+/// Record why a Find bar Replace rewrote nothing.
+pub(crate) fn record_replace(why: crate::text::replace::ReplaceRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::Replace(why)));
+}
+
 /// Record that `file.save_copy` was given a destination and produced no file.
 pub(crate) fn record_save_failure() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::SaveFailed));

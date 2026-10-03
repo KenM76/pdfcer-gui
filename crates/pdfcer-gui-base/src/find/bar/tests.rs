@@ -305,7 +305,7 @@ pub(super) fn searched(query: &str, hits: usize) -> FindState {
 /// Run one frame of the row and return the actions it raised.
 fn frame(ctx: &Context, state: &mut FindState, epoch: u64, input: RawInput) -> Vec<Action> {
     let mut actions = Vec::new();
-    let _ = ctx.run_ui(input, |ui| body(ui, state, epoch, &mut actions));
+    let _ = ctx.run_ui(input, |ui| body(ui, state, (epoch, false), &mut actions));
     actions
 }
 
@@ -318,7 +318,7 @@ fn the_box_is_the_same_size_whatever_the_readout_says() {
         let _ = ctx.run_ui(RawInput::default(), |ui| {
             let mut actions = Vec::new();
             got = ui
-                .scope(|ui| body(ui, state, epoch, &mut actions))
+                .scope(|ui| body(ui, state, (epoch, false), &mut actions))
                 .response
                 .rect
                 .size();

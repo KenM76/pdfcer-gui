@@ -72,12 +72,14 @@ const FIELD_ID: &str = "pdfcer-find-field"; // ui-text-exempt: widget id, never 
 
 /// Draw the Find overlay, if it is open and there is a document to search.
 ///
-/// `host` is the canvas viewport the overlay pins itself inside.
+/// `host` is the canvas viewport the overlay pins itself inside;
+/// `replace_offered` is whether the mode may edit content, and so whether the
+/// Replace toggle and row are drawn at all.
 pub fn show(
     ui: &mut egui::Ui,
     state: &mut FindState,
     status: &Status,
-    host: Rect,
+    (host, replace_offered): (Rect, bool),
     actions: &mut Vec<Action>,
 ) {
     if !state.is_open() {
@@ -171,7 +173,10 @@ pub fn show(
             // module, which is exactly what `check-theme-colors.sh` exists to
             // prevent.
             egui::Frame::popup(ui.style()).show(ui, |ui| {
-                body(ui, state, epoch, actions);
+                body(ui, state, (epoch, replace_offered), actions);
+                if replace_offered && state.replace_open() {
+                    replace::row(ui, state, epoch, actions);
+                }
                 // FIRST of the second-row notes, and above the
                 // unsearchable one deliberately: this is a statement about
                 // what the OPERATOR typed, and the other two are statements
@@ -214,7 +219,12 @@ fn anchor_right_top(host: Rect) -> Pos2 {
 
 /// Everything on the row.
 ///
-fn body(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<Action>) {
+fn body(
+    ui: &mut egui::Ui,
+    state: &mut FindState,
+    (epoch, replace_offered): (u64, bool),
+    actions: &mut Vec<Action>,
+) {
     let row = Vec2::new(BAR_WIDTH_PTS, ROW_HEIGHT_PTS);
     ui.allocate_ui_with_layout(row, Layout::left_to_right(Align::Center), |ui| {
         // Claim the whole row even if the content uses less of it.
@@ -247,6 +257,9 @@ fn body(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<
                 });
             }
             options(ui, state, actions);
+            if replace_offered {
+                replace::toggle(ui, state);
+            }
         });
     });
 
@@ -602,6 +615,9 @@ fn word_rule_tooltip(rule: WordBoundary) -> &'static str {
 
 #[cfg(test)]
 mod tests;
+
+/// The Replace toggle and row.
+mod replace;
 
 /// **Say that part of this document could never have matched.**
 fn unsearchable_note(ui: &mut egui::Ui, fonts: u64) {

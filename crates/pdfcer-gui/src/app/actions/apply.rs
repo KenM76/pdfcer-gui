@@ -196,8 +196,12 @@ impl PdfcerApp {
                 return;
             }
             Action::Find(request) => {
-                match &mut self.status {
-                    Status::Open(doc) => crate::find::apply(&mut self.find, doc, request),
+                let editable = self.capabilities().edit_content;
+                match (&mut self.status, request) {
+                    (Status::Open(doc), crate::find::FindRequest::Replace { all }) if editable => {
+                        super::replace::apply(&mut self.find, doc, all);
+                    }
+                    (Status::Open(doc), _) => crate::find::apply(&mut self.find, doc, request),
                     _ => crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed in the UI
                         format!("find-declined request={request:?} reason=no-document")

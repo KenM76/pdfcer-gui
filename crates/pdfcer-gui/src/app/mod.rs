@@ -52,6 +52,8 @@ pub use pdfcer_gui_base::fontlibrary as fonts;
 /// group greys.
 pub mod markupband;
 
+/// Drawing the Find overlay, with Replace where content may be edited.
+mod findbar;
 /// The per-frame update — `eframe`'s entry point, and the one order the
 /// frame's eleven steps may happen in.
 ///

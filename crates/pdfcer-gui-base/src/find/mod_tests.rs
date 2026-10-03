@@ -37,6 +37,7 @@ fn searched(query: &str, page: usize, hits: usize) -> FindState {
                 egui::pos2(10.0, 10.0 * i as f32),
                 egui::vec2(40.0, 8.0),
             )),
+            quad: super::TEST_QUAD,
             text: query.to_owned(),
         })
         .collect();
@@ -319,6 +320,7 @@ fn the_overlay_is_given_this_pages_hits_with_one_marked_current() {
             egui::pos2(0.0, 0.0),
             egui::vec2(1.0, 1.0),
         )),
+        quad: super::TEST_QUAD,
         text: "total".to_owned(),
     });
 

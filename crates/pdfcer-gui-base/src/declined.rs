@@ -196,6 +196,8 @@ pub enum Declined {
     /// or by the engine. Nothing changes on the page, so the sentence is the
     /// only report. Retired by the operator's next act.
     RunMerge(crate::text::runmerge::RunMergeRefusal),
+    /// **A Find bar Replace rewrote nothing.** Retired by the next act.
+    Replace(crate::text::replace::ReplaceRefusal),
     /// **The Settings window's Save wrote nothing.**
     ///
     /// # Why this is not [`Self::SaveFailed`], although both are failed writes

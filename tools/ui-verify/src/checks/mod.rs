@@ -989,6 +989,8 @@ pub mod preview_fallback;
 pub mod reface_commit;
 /// Every refused key is named, with one click to a face that has them.
 pub mod refused_keys;
+/// The Find bar's Replace and Replace all, and Replace all as one undo.
+pub mod replace_all;
 /// Double, triple and Shift+arrow selection, a drag over text, rotated carets.
 pub mod selection_gestures;
 /// A letter an embedded subset outlines but never showed can be typed.
