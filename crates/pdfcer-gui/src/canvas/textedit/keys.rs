@@ -148,7 +148,7 @@ pub const fn enter_means(anchor: &Anchor, command: bool) -> EnterMeans {
     }
     match anchor {
         Anchor::Run { .. } => EnterMeans::CannotSplit,
-        Anchor::Origin { .. } | Anchor::Box { .. } => EnterMeans::NewLine,
+        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::Block { .. } => EnterMeans::NewLine,
     }
 }
 
@@ -821,11 +821,20 @@ mod tests {
                 urx: 100.0,
                 ury: 50.0,
             },
+            Anchor::Block {
+                block: 0,
+                run: 3,
+                llx: 0.0,
+                lly: 0.0,
+                urx: 100.0,
+                ury: 50.0,
+                original: "a paragraph".to_owned(), // ui-text-exempt: test fixture text
+            },
         ] {
             assert_eq!(
                 enter_means(&anchor, false),
                 EnterMeans::NewLine,
-                "{anchor:?} is text being CREATED, so Enter must break the line"
+                "{anchor:?} can hold a line break, so Enter must break the line"
             );
         }
     }

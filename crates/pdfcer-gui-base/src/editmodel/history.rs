@@ -78,6 +78,19 @@ impl DraftHistory {
     pub fn can_redo(&self) -> bool {
         !self.redo.is_empty()
     }
+
+    /// Re-base every recorded state into a longer text: `before` and `after`
+    /// wrap each one, and its caret and mark move past `before`. Called when a
+    /// line's draft becomes its paragraph's, so an undo restores the paragraph
+    /// with the line as it was.
+    pub fn embed(&mut self, before: &str, after: &str) {
+        let shift = before.chars().count();
+        for s in self.undo.iter_mut().chain(self.redo.iter_mut()) {
+            s.text = format!("{before}{}{after}", s.text);
+            s.caret += shift;
+            s.mark = s.mark.map(|m| m + shift);
+        }
+    }
 }
 
 /// How many spaces take a caret at `x_pt` to the next tab stop: stops every
@@ -144,6 +157,16 @@ mod tests {
         h.undo(snap("x"));
         h.record(snap(""), EditKind::Typing);
         assert!(!h.can_redo());
+    }
+
+    #[test]
+    fn an_embedded_history_restores_the_line_inside_its_paragraph() {
+        let mut h = DraftHistory::default();
+        h.record(snap("ab"), EditKind::Typing);
+        h.embed("x ", " y");
+        let back = h.undo(snap("x abc y")).unwrap();
+        assert_eq!(back.text, "x ab y");
+        assert_eq!(back.caret, 4);
     }
 
     #[test]

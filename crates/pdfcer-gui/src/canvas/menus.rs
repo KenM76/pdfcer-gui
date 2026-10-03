@@ -615,7 +615,10 @@ fn annot_menu(
 fn caret_in_existing_text(ctx: &egui::Context) -> bool {
     matches!(
         crate::canvas::textedit::read(ctx).map(|draft| draft.anchor),
-        Some(crate::canvas::textedit::Anchor::Run { .. })
+        Some(
+            crate::canvas::textedit::Anchor::Run { .. }
+                | crate::canvas::textedit::Anchor::Block { .. }
+        )
     )
 }
 

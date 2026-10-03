@@ -132,7 +132,7 @@ pub(crate) use floor::before_the_verb;
 /// indistinguishable, from the operator's chair, from no sentence at all.
 mod textedit;
 /// Re-exported so the four call sites still say `decline::record_reflow(..)`
-/// and `decline::record_enter_cannot_split()`. `floor`'s rule: the split is
+/// and `decline::record_enter_cannot_split(..)`. `floor`'s rule: the split is
 /// about where the code lives, and a call site should not have to learn that a
 /// submodule exists.
 pub(crate) use textedit::{

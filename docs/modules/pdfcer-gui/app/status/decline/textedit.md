@@ -195,8 +195,8 @@ as a button that quietly does nothing — this project's founding one.
 It arrives by `Action`, not by a direct call. `canvas::textedit::keys` is
 outside `crate::app`, and [`super`] is `pub(super)` there on purpose — *"a
 decline is written by the one dispatcher and read by the one bar"*. So the
-keystroke raises `TextAction::EnterCannotSplit` and the apply arm calls
-this. Widening the module's visibility so a keystroke handler could reach
+keystroke raises `TextAction::EnterCannotSplit`, carrying the
+`EnterRefusal` that says why, and the apply arm calls this. Widening the module's visibility so a keystroke handler could reach
 the store would have traded a real invariant for two saved lines.
 
 The draft is left **alive** afterwards, which matters to the wording as

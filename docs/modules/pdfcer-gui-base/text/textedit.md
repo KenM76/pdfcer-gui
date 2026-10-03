@@ -226,28 +226,17 @@ The first four forward to the free functions that already existed and
 are already tested, so no sentence is written twice. What changed for
 them is the **channel**, not the words.
 
-### `fn enter_cannot_split_existing_text`
+### `enum EnterRefusal`
 
-The operator: *"can the enter key create new lines when we are editing or
-creating text?"*
-
-**Creating: yes, everywhere, as of this change.** A dragged box and a
-clicked point both take a line break on Enter and commit on Ctrl+Enter.
-
-**Editing text already on the page: no, and it is the FILE that says so.**
-`EditSession::edit_text` replaces the string inside one show operator, and a
-show operator cannot contain a line break — `\n` has no code in any of the
-standard encodings, so the engine refuses it by name (`Refusal`,
-`TargetAbsent`, character `'\n'`) rather than dropping it. A PDF has no
-paragraph: each visible line is its own operator at its own absolute
-position, so splitting a line in two is not an edit, it is authoring a
-second line somewhere.
-
-So this is a **decline with a route**, not an apology. It says what
-cannot happen, why, and the two things that can: finish the edit, or place
-new text in a box that wraps. Silence here — which is what the shell did
-before, by quietly committing instead — is the founding defect class of this
-project: the key was pressed, something else happened, and nothing said so.
+Why Enter in a line of existing text did not open its paragraph, worded by
+`line`. Enter there re-anchors the draft on the paragraph
+(`canvas::textedit::promote`), which `EditSession::edit_block_text` rewrites
+and re-wraps; it declines when there is no paragraph to open (`NoParagraph`),
+when the paragraph mixes looks the rewrite would flatten to the first run's
+(`MixedLooks`), or when the engine's preview refuses the rewrite
+(`Unrewritable`, carrying its sentence). Every sentence names Ctrl+Enter,
+which still finishes the line edit; `NoParagraph` also names a dragged box,
+where Enter always breaks the line.
 
 ### `fn point_text_became_a_block`
 

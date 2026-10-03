@@ -40,6 +40,13 @@ pub fn record(ctx: &egui::Context, draft: &Draft, kind: EditKind) {
     save(ctx, h);
 }
 
+/// Re-base the draft's history into its paragraph; see `DraftHistory::embed`.
+pub fn embed(ctx: &egui::Context, before: &str, after: &str) {
+    let mut h = load(ctx);
+    h.embed(before, after);
+    save(ctx, h);
+}
+
 /// End the current typing run; the next edit is its own undo entry.
 pub fn break_run(ctx: &egui::Context) {
     let mut h = load(ctx);

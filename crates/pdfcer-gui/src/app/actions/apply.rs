@@ -1067,9 +1067,15 @@ impl PdfcerApp {
             // sentence from a keystroke handler across the `crate::app`
             // boundary to the bar — see the variant's own docs for why a
             // keypress needs an `Action` to speak at all.
-            Action::Text(super::text::TextAction::EnterCannotSplit) => {
-                crate::app::status::decline::record_enter_cannot_split();
+            Action::Text(super::text::TextAction::EnterCannotSplit(why)) => {
+                crate::app::status::decline::record_enter_cannot_split(why);
             }
+            Action::Text(super::text::TextAction::CommitBlock {
+                page,
+                run,
+                block,
+                text,
+            }) => super::blocktext::commit(doc, page, run, block, &text),
             // The second arm here that changes no document, and for the same
             // reason: a keystroke handler in `canvas::` cannot reach the
             // decline store, which is `pub(super)` of `crate::app` on purpose.

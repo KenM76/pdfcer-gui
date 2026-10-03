@@ -106,7 +106,7 @@ impl Declined {
             Self::Reflow(why) => (*why).line(),
             // Same catalog and same subject as the reflow family above: the
             // text caret and what the page under it will accept.
-            Self::EnterCannotSplit => crate::text::textedit::enter_cannot_split_existing_text(),
+            Self::EnterCannotSplit(why) => return why.line(),
             // Reaches across to `crate::text::tool` rather than adding an
             // entry to `crate::text::status`, on the precedent the two field
             // -group sentences below already set: a string lives with the

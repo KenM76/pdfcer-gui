@@ -102,6 +102,8 @@ pub mod installed;
 /// one producer of `(pinned_span, EditTarget)` in this shell, shared by the
 /// caret's `edit_text` and the restyle verbs' `format_text`.
 pub mod pin;
+/// Enter in a line of existing text opens its paragraph.
+pub mod promote;
 mod reface;
 /// The keys a run's font refused, named beside the edit with a face that has them.
 pub mod refused;
@@ -214,6 +216,26 @@ pub enum Anchor {
         urx: f64,
         /// Upper-right y.
         ury: f64,
+    },
+    /// **A paragraph already on the page**, opened from one of its lines by
+    /// Enter (`promote`). Its box is the paragraph's, PDF user space;
+    /// `original` is its text as `EditSession::block_at_point` spells it, lines
+    /// joined by single spaces.
+    Block {
+        /// The paragraph, numbered in `reflow_recognition_options()`.
+        block: usize,
+        /// The line it was opened from; the paragraph shares its look.
+        run: usize,
+        /// Lower-left x, PDF user space.
+        llx: f64,
+        /// Lower-left y.
+        lly: f64,
+        /// Upper-right x.
+        urx: f64,
+        /// Upper-right y.
+        ury: f64,
+        /// The paragraph's text when it was opened.
+        original: String,
     },
 }
 
@@ -395,6 +417,21 @@ pub(super) fn commit_into(
                 pen: pen::read(ctx),
                 wrap: Some((*llx, *lly, *urx, *ury)),
             });
+        }
+        Anchor::Block {
+            block,
+            run,
+            original,
+            ..
+        } if draft.text != *original => {
+            actions.push(Action::Text(
+                crate::app::actions::text::TextAction::CommitBlock {
+                    page: draft.page,
+                    run: *run,
+                    block: *block,
+                    text: draft.text.clone(),
+                },
+            ));
         }
         _ => {}
     }

@@ -175,7 +175,9 @@ impl Keys<'_> {
                 let s = super::repertoire::sieve(self.ctx, self.doc, draft.page, *run, t);
                 (s.kept, s.refused)
             }
-            Anchor::Origin { .. } | Anchor::Box { .. } => (t.to_owned(), None),
+            Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::Block { .. } => {
+                (t.to_owned(), None)
+            }
         };
         if let (Anchor::Run { run, .. }, Some((missing, base_font))) = (&draft.anchor, &refused) {
             if let Some(face) = super::reface::plan(self.ctx, self.doc, draft, missing, base_font) {
@@ -405,23 +407,25 @@ impl Keys<'_> {
                 abandon(self.ctx);
                 return Flow::Done;
             }
-            EnterMeans::CannotSplit => {
-                self.actions.push(Action::Text(
-                    crate::app::actions::text::TextAction::EnterCannotSplit,
-                ));
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    "text-edit-enter-declined reason=run-cannot-hold-a-newline".to_owned()
-                });
-            }
-            EnterMeans::NewLine => {
-                self.record(EditKind::Other);
-                self.draft.caret = take_selection(self.draft);
-                self.draft.caret = caret::newline(&mut self.draft.text, self.draft.caret);
-                self.changed = true;
-            }
+            // A line cannot hold a break; its paragraph can. Open the
+            // paragraph, then break it like any other multi-line draft.
+            EnterMeans::CannotSplit => match super::promote::open(self.ctx, self.doc, self.draft) {
+                Ok(()) => self.new_line(),
+                Err(why) => self.actions.push(Action::Text(
+                    crate::app::actions::text::TextAction::EnterCannotSplit(why),
+                )),
+            },
+            EnterMeans::NewLine => self.new_line(),
         }
         Flow::Continue
+    }
+
+    /// Replace the selection with a line break.
+    fn new_line(&mut self) {
+        self.record(EditKind::Other);
+        self.draft.caret = take_selection(self.draft);
+        self.draft.caret = caret::newline(&mut self.draft.text, self.draft.caret);
+        self.changed = true;
     }
 }
 

@@ -153,7 +153,7 @@ pub fn click(
         return Err(Refusal::NoUsableEncoding);
     }
     let text = match &anchor {
-        Anchor::Run { original, .. } => original.clone(),
+        Anchor::Run { original, .. } | Anchor::Block { original, .. } => original.clone(),
         // Both authoring anchors start empty. A box is not pre-filled with
         // anything: an operator who drags a rectangle has asked for somewhere to
         // type, not for a suggestion.
@@ -171,6 +171,7 @@ pub fn click(
             caret_index_at(click, *run).unwrap_or_else(|| text.chars().count())
         }
         Anchor::Origin { .. } | Anchor::Box { .. } => 0,
+        Anchor::Block { .. } => text.chars().count(),
     };
     store(
         ctx,
@@ -202,6 +203,7 @@ pub fn click(
                     Anchor::Box {
                         llx, lly, urx, ury, ..
                     } => format!("box={llx:.1},{lly:.1},{urx:.1},{ury:.1}"),
+                    Anchor::Block { block, .. } => format!("block={block}"),
                 },
                 d.text.chars().count(),
             )

@@ -1145,6 +1145,7 @@ pub(super) fn interact(
                     crate::canvas::textedit::Anchor::Run { .. } => "run",
                     crate::canvas::textedit::Anchor::Origin { .. } => "origin",
                     crate::canvas::textedit::Anchor::Box { .. } => "box",
+                    crate::canvas::textedit::Anchor::Block { .. } => "block",
                 }),
                 draft.is_some(),
                 draft.map_or(0, |d| d.text.chars().count()),

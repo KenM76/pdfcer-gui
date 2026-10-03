@@ -722,7 +722,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::NothingToRedo
         | Declined::EditRefused
         | Declined::Reflow(_)
-        | Declined::EnterCannotSplit
+        | Declined::EnterCannotSplit(_)
         | Declined::ClipboardMode(_)
         | Declined::EditText(_)
         // These two are STRUCT variants, and they are why a compiler check

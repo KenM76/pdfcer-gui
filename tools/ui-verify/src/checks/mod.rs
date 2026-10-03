@@ -982,6 +982,8 @@ pub mod wheel_flips_pages;
 pub mod augment_subset;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
+/// Enter in a paragraph on the page breaks it.
+pub mod enter_paragraph;
 pub mod ime;
 /// A key typed mid-line is previewed where the commit puts it.
 pub mod mid_line_preview;

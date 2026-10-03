@@ -412,6 +412,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // A line a word processor wrote in pieces: preview and commit, no OS input.
         Box::new(word_line_edit::ALineWrittenInPiecesEdits),
         Box::new(draft_keys::TheDraftKeysDoWhatAWordProcessorDoes),
+        Box::new(enter_paragraph::EnterBreaksAParagraphOnThePage),
         Box::new(text_click_routes::ATextToolClickReachesWhatIsUnderIt),
         Box::new(subset_glyph::AGlyphTheSubsetOutlinesTypes),
         Box::new(preview_fallback::AStandInPreviewIsTheTextsSize),

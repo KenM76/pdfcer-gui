@@ -124,7 +124,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     // through the same path in both cases. Two layout calls would be the two
     // derivations this module deleted `caret_x` to be rid of.
     let box_width = match &draft.anchor {
-        Anchor::Box { llx, urx, .. } => {
+        Anchor::Box { llx, urx, .. } | Anchor::Block { llx, urx, .. } => {
             #[allow(clippy::cast_possible_truncation)]
             let (lo, hi) = (*llx as f32, *urx as f32);
             let a = crate::viewer::pdf_space_to_canvas(Pos2::new(lo, 0.0), page);
@@ -317,7 +317,7 @@ fn sizes(
     page: &pdfcer_core::page_tree::Page,
     screen: egui::Rect,
 ) -> (f32, f32) {
-    if let Anchor::Run { run, .. } = &draft.anchor
+    if let Anchor::Run { run, .. } | Anchor::Block { run, .. } = &draft.anchor
         && let Some(size) = run_size(p.doc, *run)
         && let Some(scale) = screen_per_point(p, page)
     {
@@ -432,6 +432,19 @@ fn caret_box(
             let (x, y) = (*llx as f32, *ury as f32);
             let lo = crate::viewer::pdf_space_to_canvas(Pos2::new(x, y - 14.0), page)?;
             let hi = crate::viewer::pdf_space_to_canvas(Pos2::new(x + 6.0, y), page)?;
+            Some(egui::Rect::from_two_pos(lo, hi))
+        }
+        // The whole paragraph, so the editor box covers every line it replaces.
+        Anchor::Block {
+            llx, lly, urx, ury, ..
+        } => {
+            #[allow(clippy::cast_possible_truncation)]
+            let (lo, hi) = (
+                Pos2::new(*llx as f32, *lly as f32),
+                Pos2::new(*urx as f32, *ury as f32),
+            );
+            let lo = crate::viewer::pdf_space_to_canvas(lo, page)?;
+            let hi = crate::viewer::pdf_space_to_canvas(hi, page)?;
             Some(egui::Rect::from_two_pos(lo, hi))
         }
     }

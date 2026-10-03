@@ -15,8 +15,8 @@ pub(crate) fn record_reflow(why: crate::text::textedit::ReflowRefusal) {
 
 /// **Record that Enter could not make a line break here** —
 /// `OPERATOR_REQUESTS.md` **O127**, defect 2.
-pub(crate) fn record_enter_cannot_split() {
-    LAST.with_borrow_mut(|slot| *slot = Some(Declined::EnterCannotSplit));
+pub(crate) fn record_enter_cannot_split(why: crate::text::textedit::EnterRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::EnterCannotSplit(why)));
 }
 
 /// **Record that a key was declined before it reached the draft** —

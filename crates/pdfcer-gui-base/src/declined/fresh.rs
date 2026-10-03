@@ -226,7 +226,7 @@ impl Declined {
             // these causes are live predicates the operator changes in a click,
             // so `EditRefused`'s reasoning applies rather than its neighbours'.
             // The sentence reports the press; `retire` owns stale.
-            Self::Reflow(_) | Self::EnterCannotSplit => true,
+            Self::Reflow(_) | Self::EnterCannotSplit(_) => true,
             // On the TENSE argument too, and here it is the ONLY argument
             // available: the condition this reports is the one the sentence
             // asks the operator to change. A live predicate would retire the

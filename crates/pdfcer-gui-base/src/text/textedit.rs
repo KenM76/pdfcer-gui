@@ -416,12 +416,39 @@ impl ReflowRefusal {
 }
 
 /// **Why Enter did not make a new line in text that is already on the
-/// page** — `OPERATOR_REQUESTS.md` **O127**, defect 2.
-#[must_use]
-pub const fn enter_cannot_split_existing_text() -> &'static str {
-    "Text already on the page is drawn one line at a time, so a line cannot be split in two \
-     here. Press Ctrl+Enter to finish this edit, or use Add text and drag a box for text that \
-     wraps."
+/// page**: Enter opens the line's paragraph for re-writing, and these are the
+/// cases where that cannot be done.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EnterRefusal {
+    /// The line is not part of a paragraph pdfcer recognises.
+    NoParagraph,
+    /// The paragraph mixes fonts, sizes or colours, which a re-write would
+    /// flatten into its first line's look.
+    MixedLooks,
+    /// The engine will not re-write the paragraph; `detail` is its reason.
+    Unrewritable { detail: String },
+}
+
+impl EnterRefusal {
+    /// The status-line sentence.
+    #[must_use]
+    pub fn line(&self) -> std::borrow::Cow<'static, str> {
+        match self {
+            Self::NoParagraph => "pdfcer does not recognise a paragraph around this line, so it \
+                                  cannot start a new line in it. Press Ctrl+Enter to finish this \
+                                  edit, or use Add text and drag a box for text that wraps."
+                .into(),
+            Self::MixedLooks => "This paragraph mixes fonts, sizes or colours, and starting a new \
+                                 line would set all of it in its first line's look, so it was \
+                                 left as it is. Press Ctrl+Enter to finish this edit."
+                .into(),
+            Self::Unrewritable { detail } => format!(
+                "pdfcer cannot re-write this paragraph, so it cannot start a new line in it: \
+                 {detail}. Press Ctrl+Enter to finish this edit."
+            )
+            .into(),
+        }
+    }
 }
 
 /// The disclosure owed when a **clicked** text draft turns out to be
@@ -525,20 +552,21 @@ mod tests {
         }
     }
 
-    /// **Enter's refusal names the remedy, and names BOTH halves of it.**
+    /// **Every Enter refusal names the keyboard route to finish the edit**, and
+    /// the no-paragraph one names the gesture that does wrap.
     #[test]
     fn the_enter_refusal_offers_a_keyboard_route_and_a_gesture_route() {
-        let s = enter_cannot_split_existing_text();
-        assert!(
-            s.contains("Ctrl+Enter"),
-            "commit must be reachable from the keyboard, and the sentence is where the \
-             operator learns the chord: {s:?}"
-        );
-        assert!(
-            s.contains("drag a box"),
-            "and the way to get a line break at all is a box, which is the FILE's rule \
-             rather than a preference: {s:?}"
-        );
+        for why in [
+            EnterRefusal::NoParagraph,
+            EnterRefusal::MixedLooks,
+            EnterRefusal::Unrewritable {
+                detail: "x".to_owned(),
+            },
+        ] {
+            let s = why.line();
+            assert!(s.contains("Ctrl+Enter"), "{why:?}: {s:?}");
+        }
+        assert!(EnterRefusal::NoParagraph.line().contains("drag a box"));
     }
 
     /// **The point-text disclosure says where the width came from.**

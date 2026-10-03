@@ -104,7 +104,7 @@ a_snapshot_copy_is_cropped_at_the_set_dpi`; S6–S7, the cut page on the
 clipboard as `application/pdf` and pasted back as a stamp, is
 `clippaste::drawing` and `dispatch::ospaste::drawing`: `ui-verify --check
 a_snapshot_pastes_back_as_a_drawing`). In Edit the paste is still a stamp,
-waiting on G100. G078 is wired at the keystroke, preview and commit; next: G076.
+waiting on G100. G078 is wired at the keystroke, preview and commit; G076 is wired for Enter.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -181,7 +181,10 @@ A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
-at pin `dd5747d1`. Next: G076.
+at pin `dd5747d1`. Enter in a line of a one-look paragraph opens the paragraph and breaks it, committed as one
+`edit_block_text` (`canvas::textedit::promote`, `app::actions::blocktext`); measure with
+`ui-verify --check enter_breaks_a_paragraph_on_the_page`. A mixed-look paragraph declines (G101).
+Next: the open paragraph drawn from `edit_block_text_preview`, then Backspace/Delete joins and multi-line paste.
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;

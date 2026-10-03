@@ -24,7 +24,8 @@ A click on the first line, then `End`.
    `note=lines-joined`; the status bar publishes `status-group:draft-note`.
 4. **Arrows and Enter.** Two Shift+Left trace `text-select ... n=2`; Left
    traces `text-select none`; Enter on the line declines
-   (`text-edit-enter-declined`) and the length stays.
+   (`text-edit-enter-declined reason=mixed-looks`: the paragraph sets one
+   apostrophe in Times-Roman) and the length stays.
 5. **Select and save.** `Ctrl+A` traces `text-select from=0 to=<len>`.
    `Ctrl+S` traces `text-edit-save in_place=1`, the edit commits
    (`edit-text-left-edge committed=yes`) and the file saves

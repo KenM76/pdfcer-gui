@@ -545,7 +545,7 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
 }
 
 /// **Which sentence the engine's reflow refusal earns.**
-fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRefusal {
+pub(super) fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -> ReflowRefusal {
     use pdfcer_core::text_edit::ReflowApplyError as E;
     use pdfcer_core::text_edit::ReflowDecline as D;
     match error {

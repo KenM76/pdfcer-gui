@@ -53,6 +53,8 @@ mod markupdest;
 pub(crate) mod models;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
 use pdfcer_gui_base::displaypiece as chrome;
+/// Committing a paragraph's whole text, from a draft Enter opened on it.
+mod blocktext;
 /// **Placing one of the operator's OWN stamps** — O172's second half.
 mod customstamp;
 /// Extracting pages into a new file — the one page verb that writes a file

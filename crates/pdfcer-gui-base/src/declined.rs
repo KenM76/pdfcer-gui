@@ -844,7 +844,7 @@ pub enum Declined {
     /// used to **commit**, silently — the operator asked *"can the enter key
     /// create new lines?"* and was answered by an edit finishing under him.
     /// See `decline/textedit.rs`.
-    EnterCannotSplit,
+    EnterCannotSplit(crate::text::textedit::EnterRefusal),
     /// **A cut or a paste the active MODE does not do** — 2026-09-05, and
     /// it is the second half of the defect the driven sweep found as A1.
     ///

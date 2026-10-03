@@ -29,7 +29,7 @@ Fix classes: **GUI** (this repo only) or **ENGINE** (needs a request; the number
 | A1 | Any character I type appears | refuses | Capital Q, R and W were refused in a Word ArialMT run, giving `text-edit-key-refused` (driven). The subset font lacks the glyph, and nothing falls back. | ENGINE G075(b) + G078; GUI interim, step 3 |
 | A2 | Paste puts in what I pasted | partial | The `Event::Paste` arm bypasses the sieve, so a refused character only fails at commit (code). | GUI |
 | A3 | Pasting several lines gives several lines | missing | Newlines are stripped, and a test pins "one\ntwo" → "onetwo" (code). | GUI interim (newline → space); then G076 |
-| A4 | Enter starts a new line or paragraph | refuses | Enter in existing text is declined with `run-cannot-hold-a-newline` (driven). | ENGINE G076 |
+| A4 | Enter starts a new line or paragraph | fixed (step 10, Enter) | Enter in a line of a one-look paragraph opens the paragraph and breaks it; `edit_block_text` commits it (driven: `enter_breaks_a_paragraph_on_the_page`). A mixed-look paragraph still declines. | G076 consumed; G101 |
 | A5 | Ctrl+Z undoes my last keystrokes while typing | missing | Ctrl+Z is dead inside a draft (driven). | GUI |
 | A6 | Escape cancels what I typed | by decision | Escape commits the draft: O223 decided it, so Ctrl+Z after Escape is the way back. | none |
 | A7 | Ctrl+S while typing saves including my typing | missing | Ctrl+S is dead while composing (code). | GUI |

@@ -28,12 +28,13 @@ pub enum TextAction {
         /// Which paragraph on it.
         block: usize,
     },
-    /// **Enter was pressed where a line break cannot go** —
+    /// **Enter was pressed where a line break cannot go**, and why —
     /// `OPERATOR_REQUESTS.md` **O127**, defect 2.
     ///
-    /// Raised by `canvas::textedit::keys` when the caret is in an existing show
-    /// operator, and by nothing else. It changes **no document**: it exists
-    /// solely to carry a sentence from a keystroke handler to the status bar.
+    /// Raised by `canvas::textedit::edits` when the caret's line could not be
+    /// opened into its paragraph, and by nothing else. It changes **no
+    /// document**: it exists solely to carry a sentence from a keystroke
+    /// handler to the status bar.
     ///
     /// # Why a keystroke needs an `Action` to say something
     ///
@@ -49,10 +50,22 @@ pub enum TextAction {
     /// for *"something in the canvas happened and `pdfcer_gui::app` must react"* —
     /// the same one every commit, every markup and every move travels on.
     ///
-    /// It carries no fields, and that is the honest shape: there is exactly
-    /// one thing to say, the sentence is in the catalog, and an anchor or a run
-    /// index here would be data nobody reads.
-    EnterCannotSplit,
+    /// It carries the cause only; the sentence is in the catalog.
+    EnterCannotSplit(crate::text::textedit::EnterRefusal),
+    /// **Replace a paragraph's whole text**: the commit of a draft Enter
+    /// opened on a line's paragraph (`EditSession::edit_block_text`). `block`
+    /// is numbered in `reflow_recognition_options()`, as for [`Self::Reflow`];
+    /// `run` is the line the draft was opened from, which names the refusal.
+    CommitBlock {
+        /// The 0-based page.
+        page: usize,
+        /// The run the draft was opened from.
+        run: usize,
+        /// Which paragraph.
+        block: usize,
+        /// Its new text; `\n` is a paragraph break.
+        text: String,
+    },
     /// **A key was pressed that the caret's run cannot spell** — the
     /// pre-commit half of `OPERATOR_REQUESTS.md` **O140/O141**, 2026-09-09.
     ///
@@ -69,8 +82,8 @@ pub enum TextAction {
     /// Because there are two surfaces to feed, not one. The status bar gets a
     /// sentence that names the character; `panels::properties::refusedchar`
     /// gets the character *and* the face it was refused against, and offers the
-    /// faces that could type it. `EnterCannotSplit` has one thing to say and no
-    /// remedy to offer, so it carries nothing.
+    /// faces that could type it. `EnterCannotSplit` has a sentence to say and no
+    /// panel to feed, so it carries only its cause.
     ///
     /// `base_font` is the run's `/BaseFont` — the font's own name, `SUBSET+…`
     /// tag and all — because that is what the chooser is replacing and what its
