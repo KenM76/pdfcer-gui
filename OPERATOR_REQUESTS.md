@@ -425,7 +425,7 @@ His words: *"can we add a marquee selector that stays on with the creeping catap
 
 A box drawn over the page that stays, with its moving dashed outline, until dismissed, and can be resized after it is placed. Copy takes everything visible inside it, review marks included, cropped to the box, and pastes into other programs either as a vector drawing or as a picture at a resolution set in settings.
 
-**Where it stands.** Not built. The design is being drafted.
+**Where it stands.** In progress. Built so far: the resolution a picture is copied at, in Settings ▸ Images — 300 dpi unless changed, kept after a restart (driven: `the_snapshot_resolution_persists`). The box itself, resizing it, the moving outline, copy and paste are still to come, in that order.
 
 ## O273 — **BUILT AND DRIVEN, with three limits — awaiting your verdict** — bold, italic, underline and strikethrough on the selected characters, with Ctrl+B, Ctrl+I and Ctrl+U
 

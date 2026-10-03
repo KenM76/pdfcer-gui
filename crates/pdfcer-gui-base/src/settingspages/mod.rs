@@ -18,6 +18,7 @@ pub mod preset;
 pub mod redaction;
 pub mod remote;
 pub mod saving;
+pub mod snapshot;
 pub mod text;
 pub mod widgets;
 

@@ -34,6 +34,7 @@ pub use crate::openingfit as opening;
 /// The DXF scale is the interesting omission; see its header.
 pub mod exporting;
 
+mod families;
 /// **Whether the canvas grows to show what sits off the sheet — one answer
 /// per ribbon mode.** Its own file because *why the answer is per mode at all*
 /// is the whole of the operator's request, and because it carries this group's
@@ -41,6 +42,7 @@ pub mod exporting;
 /// its header.
 pub mod offpage;
 pub mod shortcuts;
+pub mod snapshot;
 
 /// Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
@@ -79,6 +81,7 @@ pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
 pub use shortcuts::ShortcutPrefs;
+pub use snapshot::SnapshotPrefs;
 // `pub(crate)`, not `pub`: `PrintPrefs` carries `dialogs::print::spooler`'s own
 // `pub(crate)` types, so it can be no more visible than they are. `Prefs` stays
 // `pub` and holds it on a `pub(crate)` field, which is legal and is what keeps
@@ -362,6 +365,8 @@ pub struct Prefs {
     pub off_page: OffPagePrefs,
     /// The operator's own keyboard shortcuts. See [`shortcuts`].
     pub shortcuts: ShortcutPrefs,
+    /// The resolution View ▸ Snapshot copies at. See [`snapshot`].
+    pub snapshot: SnapshotPrefs,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -801,6 +806,7 @@ impl Default for Prefs {
             // *unanswered* is stored as absence rather than as `false`.
             off_page: OffPagePrefs::default(),
             shortcuts: ShortcutPrefs::default(),
+            snapshot: SnapshotPrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

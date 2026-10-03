@@ -78,7 +78,7 @@ mod tests {
     //
     // The coloured-icons switch (O232) is a shell preference beside the UI
     // scale in the Appearance group.
-    const SETTINGS_COUNT: usize = 43;
+    const SETTINGS_COUNT: usize = 44;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -275,6 +275,8 @@ mod tests {
             (reach_title(), reach_silence(), reach_radius()),
             // Settings ▸ Keyboard shortcuts: one setting, every command's keys.
             (keys::title(), keys::silence(), keys::radius()),
+            // Settings ▸ Images: the resolution View ▸ Snapshot copies at.
+            (snapshot::title(), snapshot::silence(), snapshot::radius()),
         ]
     }
 
@@ -347,6 +349,10 @@ mod tests {
         (
             "keys",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/keys.rs"),
+        ),
+        (
+            "snapshot",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/snapshot.rs"),
         ),
         (
             "text",

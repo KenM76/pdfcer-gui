@@ -102,7 +102,7 @@ pub fn text_value<T: Clone + PartialEq>(
     note: Option<&str>,
     format: impl Fn(&T) -> String,
     parse: impl Fn(&str) -> Option<T>,
-) {
+) -> egui::Response {
     ui.label(name(ui, label));
     // The buffer lives in `egui::Memory` keyed on this control's id, not in the
     // draft: the draft holds a parsed VALUE and this holds the operator's
@@ -156,6 +156,7 @@ pub fn text_value<T: Clone + PartialEq>(
     {
         ui.label(RichText::new(note).small().weak());
     }
+    response
 }
 
 /// A sentence the operator must see but that belongs to the **setting**, not to

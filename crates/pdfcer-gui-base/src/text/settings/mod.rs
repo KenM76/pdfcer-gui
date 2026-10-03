@@ -26,6 +26,7 @@ pub mod redaction;
 pub mod remote;
 /// The settings that change pdfcer's own window.
 pub mod shell;
+pub mod snapshot;
 
 pub use bytes::*;
 pub use extract::*;

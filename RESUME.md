@@ -92,7 +92,10 @@ an_ime_composition_types_once_committed`). O274, Settings ▸ Keyboard
 shortcuts, is `settingspages::keys` over `shell::manifest::keys::apply`, which
 rebuilds the keymap from the loaded snapshot every time; a text draft reads its
 own chords from `canvas::textedit::draftkeys` (`ui-verify --check
-a_changed_shortcut_takes_effect_and_persists`). Next: O272, the snapshot box.
+a_changed_shortcut_takes_effect_and_persists`). O272, the snapshot box, is
+being built in eight steps (`docs/modules/pdfcer-gui-base/prefs/snapshot.md`
+has S1, the resolution setting: `ui-verify --check
+the_snapshot_resolution_persists`). Next: S2, the box on the canvas.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

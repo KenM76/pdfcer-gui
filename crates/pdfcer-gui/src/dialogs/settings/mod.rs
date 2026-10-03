@@ -261,6 +261,8 @@ fn page_body(
             images::mask_resample(ui, draft);
             ui.add_space(10.0);
             images::minify(ui, draft);
+            ui.add_space(10.0);
+            pdfcer_gui_base::settingspages::snapshot::dpi(ui, &mut draft.working_prefs);
         }
         "text" => {
             text::word_gap(ui, draft);
@@ -414,6 +416,10 @@ mod tests {
         (
             "keys",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/keys.rs"),
+        ),
+        (
+            "snapshot",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/snapshot.rs"),
         ),
         (
             "keyscatalog",

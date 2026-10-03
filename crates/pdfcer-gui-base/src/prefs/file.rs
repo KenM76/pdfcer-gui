@@ -472,22 +472,7 @@ impl Prefs {
                 // added whose keys could collide, give it a prefix, not a
                 // position.
                 _ => {
-                    let outcome = match offpage::parse_key(&mut prefs.off_page, key, value) {
-                        printing::KeyOutcome::NotMine => {
-                            match printing::parse_key(&mut prefs.print, key, value) {
-                                printing::KeyOutcome::NotMine => {
-                                    match exporting::parse_key(&mut prefs.export, key, value) {
-                                        printing::KeyOutcome::NotMine => {
-                                            shortcuts::parse_key(&mut prefs.shortcuts, key, value)
-                                        }
-                                        mine => mine,
-                                    }
-                                }
-                                mine => mine,
-                            }
-                        }
-                        mine => mine,
-                    };
+                    let outcome = families::parse_key(&mut prefs, key, value);
                     match outcome {
                         printing::KeyOutcome::Accepted => {}
                         printing::KeyOutcome::BadValue => notes.push(PrefNote::BadValue {
@@ -944,6 +929,7 @@ impl Prefs {
         // and what may be written there.
         exporting::write_block(&self.export, &mut out);
         shortcuts::write_block(&self.shortcuts, &mut out);
+        snapshot::write_block(&self.snapshot, &mut out);
 
         out
     }
