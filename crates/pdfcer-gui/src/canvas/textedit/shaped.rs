@@ -10,7 +10,8 @@
 //! font has no outlines (Type 3, unsupported machinery), the run is invisible
 //! (render mode 3 or 7), or glyphs and characters do not pair one to one, so no
 //! caret could be placed. Each case is held as a `PreviewFallback` reason
-//! ([`fallback`]) for the status bar to word.
+//! ([`fallback`]) for the status bar to word. Keys planned in another face
+//! are laid out with that face as the engine's fallback, so they preview in it.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/shaped.md`.
 
@@ -18,6 +19,7 @@ use std::sync::Arc;
 
 use egui::{Color32, Pos2, Vec2};
 use pdfcer_core::text_edit::{PreviewColour, TextEditPreview};
+use pdfcer_gui_base::editmodel::fallbackface;
 use pdfcer_gui_base::text::previewfallback::PreviewFallback;
 use pdfcer_render::tiny_skia::{self, Path};
 
@@ -134,8 +136,11 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     // The commit plans again, so this plan's traces and its record of what the
     // commit will write are both kept out of the record.
     let kept = super::last_commit();
-    let plan =
+    let mut plan =
         crate::diag::muted(|| super::plan::plan(doc, key.page, key.run, &key.original, &key.text));
+    if let Some(face) = super::reface::face(ctx, key.page, key.run) {
+        plan.options = plan.options.with_fallback(fallbackface::named(&face));
+    }
     super::restore_last_commit(kept);
     let (laid, tier) = plan.attempt("preview", |request| {
         doc.session.edit_text_preview(request, &plan.options)

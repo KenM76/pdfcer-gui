@@ -18,7 +18,12 @@ only those glyphs); off-desktop window, `ScriptedPointer` only,
 ## Judgement
 
 - No `text-edit-key-refused` line.
-- `text-edit-reface-planned` names `characters=U+0071,U+007A`.
+- `text-edit-reface-planned` names `characters=U+0071,U+007A` and
+  `route=engine`: the keystroke confirmed the face with the engine's
+  fallback, not by the placeholder requirement.
+- The last `text-edit-shaped` for the five-character draft has `shaped=1`:
+  the draft was laid out in the run's place with the keys in the fallback
+  face, not in the stand-in editor box.
 - `text-edit-fallback` names `characters=U+0071,U+007A` (the engine's
   fallback took the single-operator run).
 - `text-edit-reface-readback reads=1` and the reopened run is `len=5`.
@@ -26,6 +31,8 @@ only those glyphs); off-desktop window, `ScriptedPointer` only,
 
 ## Falsification
 
-Dropping `with_fallback` from `try_commit` fails on the missing fallback line
+Making `engine_takes` answer `false` fails on `route=placeholders`.
+Dropping `with_fallback` from the preview (`shaped::refresh`) fails on
+`shaped=0`. Dropping it from `try_commit` fails on the missing fallback line
 (the placeholder route commits instead). Skipping
 `coalesce_last` fails the one-Undo judgement.

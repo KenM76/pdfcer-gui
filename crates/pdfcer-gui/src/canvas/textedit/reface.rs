@@ -6,8 +6,11 @@
 //! to take since (a whole-line face change). A key no face takes is left to
 //! [`super::refused`].
 
-use pdfcer_gui_base::editmodel::nearface;
 use pdfcer_gui_base::editmodel::reface::Reface;
+use std::collections::BTreeSet;
+
+use pdfcer_core::text_edit::format::RunRepertoire;
+use pdfcer_gui_base::editmodel::{disposition, fallbackface, nearface};
 
 use super::{Anchor, Draft};
 use crate::app::state::OpenDoc;
@@ -48,6 +51,12 @@ pub(super) fn is_planned(ctx: &egui::Context, page: usize, run: usize) -> bool {
     read(ctx, page, run).is_some()
 }
 
+/// The selector of the face planned for `run` on `page`, which the preview
+/// hands the engine as its fallback face.
+pub(super) fn face(ctx: &egui::Context, page: usize, run: usize) -> Option<String> {
+    read(ctx, page, run).map(|p| p.face.selector)
+}
+
 /// Plan `missing` for the draft's run. Answers the face's name when a face
 /// takes every key planned so far; the caller then inserts them.
 pub(super) fn plan(
@@ -80,8 +89,8 @@ pub(super) fn plan(
         }
     }
     placeholders.truncate(PLACEHOLDERS);
-    let face = nearest(doc, draft.page, *run, &chars, &placeholders, base_font)?;
-    let line = trace_line(draft.page, *run, &chars, &face);
+    let (face, route) = nearest(doc, draft.page, *run, &chars, &placeholders, base_font)?;
+    let line = trace_line(draft.page, *run, &chars, &face, route);
     crate::diag::trace(|| line);
     let label = face.label.clone();
     let planned = Planned {
@@ -117,9 +126,27 @@ pub(super) fn take(ctx: &egui::Context, draft: &Draft) -> Option<Reface> {
     })
 }
 
-/// The face nearest `base_font` among those taking `chars` and every
-/// placeholder (the first segment's neighbours are in the run's font, but a
-/// placeholder token is moved to the face before it is overwritten).
+/// How a planned face was confirmed.
+#[derive(Clone, Copy)]
+enum Route {
+    /// The engine, given the face as its fallback, accepts every key.
+    Engine,
+    /// The face also takes the placeholders the multi-operator route needs.
+    Placeholders,
+}
+
+impl Route {
+    const fn token(self) -> &'static str {
+        match self {
+            Self::Engine => "engine",
+            Self::Placeholders => "placeholders",
+        }
+    }
+}
+
+/// The face nearest `base_font` for `chars`: one the engine's fallback takes
+/// them in, else one that also takes every placeholder (a placeholder token
+/// is moved to the face before it is overwritten).
 fn nearest(
     doc: &OpenDoc,
     page: usize,
@@ -127,11 +154,45 @@ fn nearest(
     chars: &[char],
     placeholders: &[char],
     base_font: &str,
-) -> Option<FaceChoice> {
+) -> Option<(FaceChoice, Route)> {
+    if let Some(face) = pick(doc, page, run, chars, base_font)
+        && engine_takes(doc, page, run, &face, chars)
+    {
+        return Some((face, Route::Engine));
+    }
     if placeholders.is_empty() {
         return None;
     }
-    let candidate: String = chars.iter().chain(placeholders).collect();
+    let both: Vec<char> = chars.iter().chain(placeholders).copied().collect();
+    pick(doc, page, run, &both, base_font).map(|face| (face, Route::Placeholders))
+}
+
+/// Whether the engine, given `face` as the fallback, sets every one of
+/// `chars` in it for the run (`EditSession::run_repertoire_with`).
+fn engine_takes(doc: &OpenDoc, page: usize, run: usize, face: &FaceChoice, chars: &[char]) -> bool {
+    let Some(pin) = super::pin::resolve(doc, page, run) else {
+        return false;
+    };
+    let options = super::installed::augmented(doc, disposition::typing())
+        .with_fallback(fallbackface::named(&face.selector));
+    doc.session
+        .run_repertoire_with(page, "", Some(pin.span), &options)
+        .is_ok_and(|rep: RunRepertoire| {
+            let in_face: &BTreeSet<char> = &rep.via_fallback;
+            chars.iter().all(|c| in_face.contains(c))
+        })
+}
+
+/// The face nearest `base_font` among those the font preflight says take
+/// every one of `chars`.
+fn pick(
+    doc: &OpenDoc,
+    page: usize,
+    run: usize,
+    chars: &[char],
+    base_font: &str,
+) -> Option<FaceChoice> {
+    let candidate: String = chars.iter().collect();
     let read = super::pin::inspect(doc, page, run)?;
     let preflight = super::pin::font_preflight(doc, page, &read, Some(&candidate))?;
     let faces = crate::panels::properties::face::choices(Some(&preflight));
@@ -147,14 +208,15 @@ fn nearest(
         .cloned()
 }
 
-fn trace_line(page: usize, run: usize, chars: &[char], face: &FaceChoice) -> String {
+fn trace_line(page: usize, run: usize, chars: &[char], face: &FaceChoice, route: Route) -> String {
     let named: Vec<String> = chars
         .iter()
         .map(|c| format!("U+{:04X}", u32::from(*c)))
         .collect();
     format!(
-        "text-edit-reface-planned page={page} run={run} characters={} face={}", // ui-text-exempt: diagnostic trace
+        "text-edit-reface-planned page={page} run={run} characters={} face={} route={}", // ui-text-exempt: diagnostic trace
         named.join(","),
-        face.selector
+        face.selector,
+        route.token()
     )
 }

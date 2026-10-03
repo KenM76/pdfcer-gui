@@ -29,6 +29,7 @@ const KEY_REFUSED: &str = "text-edit-key-refused"; // ui-text-exempt: a trace ev
 const PLANNED: &str = "text-edit-reface-planned"; // ui-text-exempt: a trace event name, never displayed
 const FALLBACK: &str = "text-edit-fallback"; // ui-text-exempt: a trace event name, never displayed
 const READBACK: &str = "text-edit-reface-readback"; // ui-text-exempt: a trace event name, never displayed
+const SHAPED: &str = "text-edit-shaped"; // ui-text-exempt: a trace event name, never displayed
 const CARET: &str = "text-edit-caret"; // ui-text-exempt: a trace event name, never displayed
 const UNDONE: &str = "undo-applied"; // ui-text-exempt: a trace event name, never displayed
 
@@ -112,6 +113,29 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     outcome
 }
 
+/// Whether the draft `ABCqz` was laid out in the run's place, the two keys
+/// in the fallback face, rather than in the stand-in editor box. Read before
+/// the commit: the reopened run is two show operators, which the preview
+/// cannot lay out.
+fn preview_verdict(trace: &Trace, path: &str) -> Option<String> {
+    let want = (RUN_TEXT.len() + TYPED.len()).to_string();
+    let commit = trace.first(FALLBACK).map_or(usize::MAX, |l| l.lineno);
+    let line = trace
+        .events(SHAPED)
+        .filter(|l| l.lineno < commit && l.get("chars") == Some(want.as_str()))
+        .last()
+        .map(|l| l.raw.clone());
+    match line {
+        Some(l) if l.contains("shaped=1") => None,
+        Some(l) => Some(format!(
+            "★★ the draft `{RUN_TEXT}{TYPED}` was not laid out in place: `{l}`. Trace: {path}."
+        )),
+        None => Some(format!(
+            "★★ no `{SHAPED}` line for the {want}-character draft. Trace: {path}."
+        )),
+    }
+}
+
 /// Click the run and read the length of the draft the caret opened, then
 /// close it unchanged.
 fn caret_len(session: &Session, pointer: &ScriptedPointer, at: WindowPoint) -> Result<usize> {
@@ -147,11 +171,15 @@ fn judge(
     let planned = trace.events(PLANNED).last().map(|l| l.raw.clone());
     if !planned
         .as_deref()
-        .is_some_and(|l| l.contains("characters=U+0071,U+007A"))
+        .is_some_and(|l| l.contains("characters=U+0071,U+007A") && l.contains("route=engine"))
     {
         return Ok(Some(format!(
-            "★ no `{PLANNED}` line names both keys: `{planned:?}`. Trace: {path}."
+            "★ no `{PLANNED}` line names both keys confirmed by the engine (`route=engine`): \
+             `{planned:?}`. Trace: {path}."
         )));
+    }
+    if let Some(failure) = preview_verdict(trace, &path) {
+        return Ok(Some(failure));
     }
     let Some(done) = trace.events(FALLBACK).last().map(|l| l.raw.clone()) else {
         return Ok(Some(format!(

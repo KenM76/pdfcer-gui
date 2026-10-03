@@ -104,7 +104,7 @@ a_snapshot_copy_is_cropped_at_the_set_dpi`; S6–S7, the cut page on the
 clipboard as `application/pdf` and pasted back as a stamp, is
 `clippaste::drawing` and `dispatch::ospaste::drawing`: `ui-verify --check
 a_snapshot_pastes_back_as_a_drawing`). In Edit the paste is still a stamp,
-waiting on G100. Next: G078, then G076.
+waiting on G100. G078 is wired at the keystroke, preview and commit; next: G076.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -161,7 +161,7 @@ A preview that cannot use the run's font is sized from the run's size times
 the zoom and says why in the status bar (`canvas::textedit::fallback`);
 measure with `ui-verify --check a_stand_in_preview_is_the_texts_size_and_says_why`.
 A key a run's font lacks goes into the draft when a nearby face has it
-(`canvas::textedit::reface::plan`) and commits set in that face, the rest of
+(`canvas::textedit::reface::plan`, confirmed with the engine's fallback, `route=engine`), previews in that face in the line's place, and commits set in that face, the rest of
 the line untouched, as one undo entry (`app::actions::reface`: the engine's G078 fallback when
 the match lies in one show operator, else placeholder tokens; a refused step rolls back to a checkpoint, so Redo is untouched,
 G083). Before that, a key the subset never carried is added to it from the
@@ -181,7 +181,7 @@ A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
-at pin `dd5747d1`. Next: G078, then G076.
+at pin `dd5747d1`. Next: G076.
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;
