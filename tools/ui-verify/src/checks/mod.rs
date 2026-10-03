@@ -982,6 +982,7 @@ pub mod wheel_flips_pages;
 pub mod augment_subset;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
+pub mod ime;
 /// A key typed mid-line is previewed where the commit puts it.
 pub mod mid_line_preview;
 /// A stand-in preview is the text's size, and the status bar says why.

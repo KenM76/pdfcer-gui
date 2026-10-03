@@ -79,6 +79,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
         return;
     };
     let screen = egui::Rect::from_two_pos(p.map.to_screen(rect.min), p.map.to_screen(rect.max));
+    super::ime::show(ui, ctx, screen);
     // An existing run is drawn in its own font, where it is, when the engine
     // can lay it out (`shaped`). Otherwise, and for new text, an opaque
     // editor box in the shell's font: it covers the original glyphs, which

@@ -86,8 +86,11 @@ File ▸ New from clipboard and Pages ▸ Insert from clipboard are
 and a closed perimeter ce dimension switches between perimeter and area
 (`ui-verify --check an_area_measures_the_region_it_encloses`). WORDLIKE step 8,
 find and replace, is the Find bar's Replace row in Edit (`app::actions::replace`;
-`ui-verify --check replace_all_is_one_undo` on `fixtures/paragraph.pdf`).
-Next: WORDLIKE step 9 (IME).
+`ui-verify --check replace_all_is_one_undo` on `fixtures/paragraph.pdf`). Step 9,
+input methods, is `canvas::textedit::ime` (`ui-verify --check
+an_ime_composition_types_once_committed`). Next: O274, the Keyboard Shortcuts
+page (design notes: the keymap is `shell::manifest::built_in`, overridden live
+as `shell::manifest::apply_paste_chords` does).
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -107,7 +110,7 @@ the bar's all-signed line. The hand-signed state is session-only until
 G073. Trap: the drawn check failed once with no `hand-sign-opened` after its
 first click on a cold launch and passed on re-run; unexplained.
 
-**O270, Word-like text editing: plan steps 1 to 6 and 8 built and driven, step 7
+**O270, Word-like text editing: plan steps 1 to 6, 8 and 9 built and driven, step 7
 half**, unpublished. The plan is `docs/plans/WORDLIKE_PLAN.md`; work it in its
 order. Step 7's O271 (alignment in both places) and O273 (Ctrl+B/I/U, pressed
 toggles) live in `app::dispatch::textformat` and `app::conditions::textformat`;
@@ -165,7 +168,7 @@ The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
 at pin `dd5747d1`. Queued after the WORDLIKE steps: O274 (a Keyboard Shortcuts page in
-Settings) comes after step 9 and before the snapshot box (O272).
+Settings), then the snapshot box (O272, engine request G099).
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;

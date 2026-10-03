@@ -210,6 +210,16 @@ impl ScriptedPointer {
         }
     }
 
+    /// Deliver an input method's composition in progress in the root viewport.
+    pub fn ime_preedit(&self, session: &Session, text: &str) -> Result<TraceLine> {
+        self.send(session, &format!("preedit {text}"))
+    }
+
+    /// Deliver an input method's committed text in the root viewport.
+    pub fn ime_commit(&self, session: &Session, text: &str) -> Result<TraceLine> {
+        self.send(session, &format!("commit {text}"))
+    }
+
     /// Deliver the platform's Copy command in `viewport` (root when `None`),
     /// as Ctrl+C reaches the app through the windowing layer.
     pub fn copy(&self, session: &Session, viewport: Option<&str>) -> Result<TraceLine> {

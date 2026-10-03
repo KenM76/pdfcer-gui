@@ -25,7 +25,7 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const INVOKE: &str = "mode.edit,edit.text";
 const FIXTURE: &str = "paragraph.pdf";
 /// Inside `drawing`, the second word of the first line.
-const IN_WORD: (f64, f64) = (112.0, 703.0);
+pub(crate) const IN_WORD: (f64, f64) = (112.0, 703.0);
 /// Inside the third line.
 const IN_PARAGRAPH: (f64, f64) = (120.0, 671.0);
 const CARET: &str = "text-edit-caret"; // ui-text-exempt: a trace event name, never displayed
@@ -154,7 +154,7 @@ pub(crate) fn launch(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -
 
 impl Driven {
     /// Click at a page point and require a caret.
-    fn caret_at(&self, at: (f64, f64)) -> Result<std::result::Result<(), String>> {
+    pub(crate) fn caret_at(&self, at: (f64, f64)) -> Result<std::result::Result<(), String>> {
         let before = self.session.trace()?.events(CARET).count();
         self.pointer.click(
             &self.session,

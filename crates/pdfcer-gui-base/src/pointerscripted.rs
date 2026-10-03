@@ -18,6 +18,7 @@
 //! <seq> key NAME [mods=…] [vp=V]
 //! <seq> type [vp=V] TEXT
 //! <seq> paste [vp=V] TEXT
+//! <seq> preedit [vp=V] TEXT                <seq> commit [vp=V] TEXT
 //! <seq> copy [vp=V]                      <seq> cut [vp=V]
 //! <seq> drop X Y [mods=…] [vp=V] PATH[|PATH…]
 //! ```
@@ -28,6 +29,8 @@
 //! (and an optional `vp=`), spaces included, as one text event to whatever
 //! holds keyboard focus: click the field first. `copy` and `cut` deliver the
 //! platform's Copy and Cut commands, as Ctrl+C and Ctrl+X reach the app.
+//! `preedit` and `commit` deliver an input method's composition in progress
+//! and its result, as egui-winit posts them.
 //! `drop` moves to X Y, then lands the paths (spaces kept, `|` between them)
 //! as a file drop with `mods` held; while a script drives the window, a drop's
 //! position is the pointer's ([`scripted`]).
@@ -133,8 +136,8 @@ fn parse(line: &str) -> Result<Step, ()> {
     let mut words = line.split_whitespace();
     let seq: u64 = words.next().ok_or(())?.parse().map_err(|_| ())?;
     let verb = words.next().ok_or(())?.to_owned();
-    if verb == "type" || verb == "paste" {
-        return typed(seq, line, verb == "paste");
+    if matches!(verb.as_str(), "type" | "paste" | "preedit" | "commit") {
+        return typed(seq, line, &verb);
     }
     if verb == "drop" {
         return dropped(seq, line);
@@ -216,10 +219,10 @@ fn unescape(text: &str) -> String {
     out
 }
 
-/// A `type` or `paste` step: the text is the rest of the line after the verb
+/// A `type`, `paste`, `preedit` or `commit` step: the text is the rest of the line after the verb
 /// and an optional leading `vp=`, separated by single spaces. A paste unescapes
 /// `\n`, `\t` and `\\`, so a line break fits on the step's one line.
-fn typed(seq: u64, line: &str, paste: bool) -> Result<Step, ()> {
+fn typed(seq: u64, line: &str, verb: &str) -> Result<Step, ()> {
     let rest = line.trim().splitn(3, ' ').nth(2).ok_or(())?;
     let (target, text) = match rest.split_once(' ') {
         Some((v, text)) if v.starts_with("vp=") => {
@@ -238,10 +241,14 @@ fn typed(seq: u64, line: &str, paste: bool) -> Result<Step, ()> {
     if text.is_empty() {
         return Err(());
     }
-    let (verb, event) = if paste {
-        ("paste", Event::Paste(unescape(text)))
-    } else {
-        ("type", Event::Text(text.to_owned()))
+    let event = match verb {
+        "paste" => Event::Paste(unescape(text)),
+        "preedit" => Event::Ime(egui::ImeEvent::Preedit {
+            text: text.to_owned(),
+            active_range_chars: None,
+        }),
+        "commit" => Event::Ime(egui::ImeEvent::Commit(text.to_owned())),
+        _ => Event::Text(text.to_owned()),
     };
     Ok(Step {
         seq,
@@ -746,6 +753,18 @@ mod tests {
         let step = parse("6 paste a\\nb\\\\c").unwrap();
         assert_eq!(step.verb, "paste");
         assert!(matches!(&step.frames[0][..], [Event::Paste(t)] if t == "a\nb\\c"));
+    }
+
+    #[test]
+    fn preedit_and_commit_are_input_method_events() {
+        let step = parse("10 preedit zq").unwrap();
+        assert_eq!(step.verb, "preedit");
+        assert!(
+            matches!(&step.frames[0][..], [Event::Ime(egui::ImeEvent::Preedit { text, .. })] if text == "zq")
+        );
+        let step = parse("11 commit vp=abc é").unwrap();
+        assert!(matches!(&step.frames[0][..], [Event::Ime(egui::ImeEvent::Commit(t))] if t == "é"));
+        assert!(parse("12 commit").is_err());
     }
 
     #[test]

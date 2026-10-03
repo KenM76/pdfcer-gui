@@ -60,6 +60,8 @@ pub use pdfcer_gui_base::editmodel::kind::TextEditKind;
 pub use pdfcer_gui_base::editmodel::{caret, disposition, lines, pen};
 /// One keystroke's effect on the open draft.
 mod edits;
+/// Composed input: the input-method request and the composition in progress.
+pub mod ime;
 pub use edits::claim_tab;
 /// The open draft's undo stack.
 pub mod history;

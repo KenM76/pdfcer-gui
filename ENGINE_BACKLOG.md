@@ -531,6 +531,12 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G096** — GIF is recognised and refused, never decoded. A dropped `.gif` is refused with the engine's sentence; a GIF copied in a browser pastes through the PNG the browser also puts on the clipboard.
 - **G097** — a push button's icon cannot be set from an image. No icon row is offered.
 
+## Snapshot box
+
+The request O272's vector copy waits on.
+
+- **G099** — a page region cannot be exported with the viewer's state applied. Cropping a cloned `Page` hides the geometry outside the box but leaves it in the SVG, EMF or PDF. Meanwhile the snapshot box copies pictures in full, copies vector formats from the cropped clone with a status note that outside geometry is hidden, not removed, and copies the picture only on a document with redactions.
+
 ## Measuring area
 
 The request O280 is built on, answered and consumed.

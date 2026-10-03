@@ -93,6 +93,16 @@ impl Keys<'_> {
                 }
             }
             Event::Paste(p) if !p.is_empty() => self.paste(&p),
+            Event::Ime(egui::ImeEvent::Preedit { text, .. }) => {
+                super::ime::set_preedit(self.ctx, &text)
+            }
+            // A commit ends the composition and is typed as a keystroke is.
+            Event::Ime(egui::ImeEvent::Commit(t)) => {
+                super::ime::set_preedit(self.ctx, "");
+                if !t.is_empty() {
+                    self.type_text(&t, EditKind::Typing);
+                }
+            }
             Event::Key {
                 key,
                 pressed: true,
