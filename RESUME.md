@@ -52,6 +52,8 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
+**Current queue (coordinator's order).** O284 items 1 to 5 are committed, each driven and falsified. Next is item 6: Extract pages keep or drop page labels. The engine is `pageops::extract_with_labels(view, pages, SeparationPolicy::default(), ExtractedPageLabels::{Keep,Drop})`, with Keep as the default, and the report's `page_labels_dropped` / `page_label_ranges` say what happened. Extract has no window today, only a save picker in `app::actions::extract`. Then item 7, driving Copy page as vector. Then O284's FEATURES-only rows (text JSON/spans, tables JSON, tags/layout JSON, QDF). Then O285 in its listed order, with split per the operator ruling recorded in O285 and ENGINE_BACKLOG. The engine replies G100, G101, G102 and G106 are FIXED on engine main and need a pin move, which is pre-approved as its own commit.
+
 **Start here on `continue`.** The release tree `0a56b608` (engine v0.72.0,
 `35769c3b`) was published to OneDrive and GitHub as `v0.5.0-dev.20261002.1`,
 packaged with `--no-update` to hold the engine at its release tag, and

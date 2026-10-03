@@ -393,10 +393,15 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
     // rather than of the one underneath it. Neither is a control this window
     // offers, deliberately: both are already offered on the ribbon, against a
     // canvas that shows the answer immediately.
-    let mut options = doc
-        .settings
+    //
+    // A rendering standard is applied over a COPY, the engine CLI's own
+    // `--standard` rule: the export is drawn as the standard says and the
+    // operator's settings are never written.
+    let standard = plan.standard.map(|s| standard_settings(&doc.settings, s));
+    let settings = standard.as_ref().map_or(&doc.settings, |(copy, _)| copy);
+    let mut options = settings
         .render_options()
-        .with_backdrop(if plan.transparent {
+        .with_backdrop(if plan.renders_transparent() {
             pdfcer_render::PageBackdrop::Transparent
         } else {
             pdfcer_render::PageBackdrop::White
@@ -487,7 +492,8 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-image page={page_index} format={} bytes={} dpi={} transparent={}",
+                "export-image page={page_index} format={} bytes={} dpi={} transparent={} \
+                 background={} standard={}",
                 // The TOKEN, not `{:?}`, and for the reason the window
                 // states beside its own trace: this line and
                 // `export-image-requested` describe ONE format, forty lines
@@ -502,7 +508,10 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
                 crate::app::prefs::exporting::image_format_key(plan.format),
                 produced.bytes.len(),
                 plan.dpi,
-                u8::from(plan.transparent)
+                u8::from(plan.transparent),
+                plan.flatten_colour()
+                    .map_or_else(|| "none".to_owned(), |c| c.to_hex()),
+                plan.standard.map_or("none", |s| s.as_str()),
             )
         });
 
@@ -560,7 +569,45 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         first_line.unwrap_or_else(|| t::no_pages().to_owned())
     };
     notes.insert(0, lead);
+    if let (Some(s), Some((_, changed))) = (plan.standard, &standard) {
+        notes.push(t::drawn_as(s.title(), changed.len()));
+    }
     super::record_notes(doc.edit_epoch, notes);
+}
+
+/// `settings` with `standard`'s rendering preset applied, and the keys it
+/// changed. The copy is the export's; the operator's settings are untouched.
+fn standard_settings(
+    settings: &pdfcer_core::settings::Settings,
+    standard: pdfcer_core::settings::presets::RenderStandard,
+) -> (
+    pdfcer_core::settings::Settings,
+    Vec<pdfcer_core::settings::presets::PresetKey>,
+) {
+    let mut copy = settings.clone();
+    let changed =
+        pdfcer_core::settings::presets::RenderPreset::for_standard(standard).apply(&mut copy);
+    crate::diag::trace(|| {
+        let keys: Vec<&str> = changed.iter().map(|k| k.as_str()).collect();
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "export-image-standard standard={} changed={}",
+            standard.as_str(),
+            keys.join(",")
+        )
+    });
+    (copy, changed)
+}
+
+/// The receipt's background sentence: kept clear, or the colour flattened onto.
+fn background_note(plan: &crate::app::actions::imageexport::ImagePlan) -> String {
+    match plan.flatten_colour() {
+        None => crate::text::export_image::transparency_kept().to_owned(),
+        Some(pdfcer_render::export::Rgb::WHITE) => {
+            crate::text::export_image::flattened_to_white().to_owned()
+        }
+        Some(colour) => crate::text::export_image::flattened_to(&colour.to_hex()),
+    }
 }
 
 /// What one page's writer produced: the bytes, the shape of its receipt line,
@@ -611,7 +658,15 @@ fn raster_bytes(
 
     let rendered = pdfcer_render::render_page_with_view(view, page, scale, options)
         .map_err(|error| Failed::Render(error.to_string()))?;
-    let pixmap = &rendered.pixmap;
+    // A PNG asked for a colour other than white was rendered clear and is
+    // composited here; a JPEG composites through `JpegOptions::background`.
+    let pixmap = match (plan.format, plan.flatten_colour()) {
+        (ImageFormat::Png, Some(colour)) => {
+            pdfcer_render::export::flatten_over(&rendered.pixmap, colour)
+        }
+        _ => std::borrow::Cow::Borrowed(&rendered.pixmap),
+    };
+    let pixmap = pixmap.as_ref();
     let (width, height) = (pixmap.width(), pixmap.height());
 
     // `Some(dpi)`, never `None`. The engine's note is unambiguous about
@@ -630,12 +685,12 @@ fn raster_bytes(
             let mut jpeg = pdfcer_render::export::JpegOptions::default();
             jpeg.quality = plan.quality;
             jpeg.dpi = Some(plan.dpi);
-            // Reachable only when the operator did NOT ask for transparency: a
-            // transparent JPEG was refused before the picker opened, so the
-            // render above already came back opaque over white and this
-            // composites nothing. Set anyway, because a default that happens to
-            // agree is not the same as a decision.
-            jpeg.background = pdfcer_render::export::Rgb::WHITE;
+            // A transparent JPEG was refused before the picker opened, so the
+            // plan carries a flatten colour here; a non-white one was rendered
+            // clear and is composited by the encoder.
+            jpeg.background = plan
+                .flatten_colour()
+                .unwrap_or(pdfcer_render::export::Rgb::WHITE);
             pdfcer_render::export::encode_jpeg(pixmap, &jpeg)
         }
         // Unreachable — the caller matches on the format and sends these two
@@ -655,11 +710,7 @@ fn raster_bytes(
     }
     .map_err(|error| Failed::Encode(error.to_string()))?;
 
-    let notes = vec![if plan.transparent {
-        crate::text::export_image::transparency_kept().to_owned()
-    } else {
-        crate::text::export_image::flattened_to_white().to_owned()
-    }];
+    let notes = vec![background_note(plan)];
     Ok(Output {
         bytes,
         kind: Produced::Raster { width, height },
@@ -682,11 +733,7 @@ fn svg_bytes(
     // comment is why the apparent duplication is not one.
     let svg_options = pdfcer_render::svg::SvgOptions::default()
         .with_raster_dpi(plan.dpi)
-        .with_background(if plan.transparent {
-            None
-        } else {
-            Some(pdfcer_render::export::Rgb::WHITE)
-        })
+        .with_background(plan.flatten_colour())
         .with_text(if plan.keep_text {
             pdfcer_render::svg::SvgText::KeepText
         } else {
@@ -695,11 +742,7 @@ fn svg_bytes(
     let export = pdfcer_render::svg::export_svg_view(view, page, options, &svg_options)
         .map_err(|error| Failed::Render(error.to_string()))?;
 
-    let mut notes = vec![if plan.transparent {
-        crate::text::export_image::transparency_kept().to_owned()
-    } else {
-        crate::text::export_image::flattened_to_white().to_owned()
-    }];
+    let mut notes = vec![background_note(plan)];
     // Rule 4's content. The text sentences lead — outlines, or what keep-text
     // kept and why the rest fell back — then every counter the recording had
     // to raise. See `crate::text::export_image` and `export_keeptext`.
@@ -732,11 +775,7 @@ fn emf_bytes(
 ) -> Result<Output, Failed> {
     let emf_options = pdfcer_render::emf::EmfOptions::default()
         .with_raster_dpi(plan.dpi)
-        .with_background(if plan.transparent {
-            None
-        } else {
-            Some(pdfcer_render::export::Rgb::WHITE)
-        })
+        .with_background(plan.flatten_colour())
         .with_text(if plan.keep_text {
             pdfcer_render::emf::EmfText::KeepText
         } else {
@@ -745,11 +784,7 @@ fn emf_bytes(
     let export = pdfcer_render::emf::export_emf_view(view, page, options, &emf_options)
         .map_err(|error| Failed::Render(error.to_string()))?;
 
-    let mut notes = vec![if plan.transparent {
-        crate::text::export_image::transparency_kept().to_owned()
-    } else {
-        crate::text::export_image::flattened_to_white().to_owned()
-    }];
+    let mut notes = vec![background_note(plan)];
     // Rule 4's content, through the shell's own `EmfCounts` rather than
     // the engine's `EmfOutcome`. The reason is testability and it is argued in
     // full on `EmfCounts` itself: `EmfOutcome` is `#[non_exhaustive]` with no

@@ -288,3 +288,8 @@ they could write there.
 Written **unconditionally**, even on a fresh profile where every value is
 the default. `offpage`'s own note is the reason: *"a preference nobody can
 discover is a preference nobody has."*
+
+### `export_image_background`
+
+`#rrggbb`, parsed by `Rgb::parse_hex`; anything else is a bad value and the
+default (white) stands.

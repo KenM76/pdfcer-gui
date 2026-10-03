@@ -198,3 +198,21 @@ press and not at the close.
 The `doc.pages` guard is the command's too, and it is real rather than
 ceremonial: every control in the window is a statement about a page, and the
 largest-page measurement has nothing to fold over on an empty document.
+
+### `fn colour_row` and `fn standard_group`
+
+The background colour is a hex field and a swatch picker editing one value,
+drawn whenever the page will be flattened (transparency off, or a format that
+cannot keep it). While the field is not six hex digits a sentence says so and
+Export is disabled; nothing is guessed. The colour is remembered as
+`export_image_background`.
+
+*Draw it as* offers the operator's own settings or any `RenderStandard`, by
+the engine's `title()`. A chosen standard shows its evidence weight and the
+engine's disclosures verbatim through
+`settingspages::preset::standard_detail`, the Settings page's own detail. The
+standard is not remembered: it belongs to one deliverable. Items publish
+`export-image.standard.<as_str>` (`none` for the operator's settings).
+
+The body scrolls above a pinned button row (`FOOTER_PTS`), so a standard's
+disclosures cannot push Export out of the fixed-size window.

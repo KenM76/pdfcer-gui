@@ -94,6 +94,7 @@ pub mod embed_fonts;
 pub mod export_dxf;
 pub mod export_dxf_options;
 pub mod export_dxf_pages;
+pub mod export_image_standard;
 pub mod small_first_page;
 pub mod system_theme;
 pub mod tabs_look;

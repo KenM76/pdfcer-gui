@@ -239,6 +239,12 @@ pub fn row(ui: &mut egui::Ui, draft: &mut Draft) {
     crate::diag::ui_rect_visible(REGION, rect, ui.clip_rect());
 }
 
+/// What `standard` says about itself: its evidence weight and the engine's
+/// disclosures, verbatim. Shared with the export windows that offer a standard.
+pub fn standard_detail(ui: &mut egui::Ui, standard: RenderStandard) {
+    detail(ui, Choice::Standard(standard));
+}
+
 /// What a selected choice says about itself.
 fn detail(ui: &mut egui::Ui, choice: Choice) {
     let Choice::Standard(standard) = choice else {

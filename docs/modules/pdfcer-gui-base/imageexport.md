@@ -391,3 +391,11 @@ makes the operator navigate back to their own project every time."*
 
 Assembled the same way [`output_path`] is, and for that function's stated
 reason: `set_extension` on a `plan.rev2` stem eats the revision.
+
+### `ImagePlan::background`, `standard`, `flatten_colour`, `renders_transparent`
+
+`background` is ignored when `transparent`; `flatten_colour` is that rule in
+one place. `renders_transparent` is true for kept transparency or a non-white
+background, because the renderer's backdrop is only ever white and any other
+colour is composited after the render. `standard` is applied over a copy of
+the settings for this export only.

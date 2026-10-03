@@ -310,6 +310,55 @@ pub const fn flattened_to_white() -> &'static str {
     "The page is on solid white, as you asked."
 }
 
+/// The page was written onto the colour the operator typed, `hex` as `#rrggbb`.
+#[must_use]
+pub fn flattened_to(hex: &str) -> String {
+    format!("The page is on solid {hex}, as you asked.")
+}
+
+/// The background-colour field's label.
+#[must_use]
+pub const fn background_colour_label() -> &'static str {
+    "Colour:"
+}
+
+/// Under the field when what is typed is not a colour; Export waits for one.
+#[must_use]
+pub const fn background_colour_refused() -> &'static str {
+    "That is not a colour. Type six hex digits, like #ffffff for white, or \
+     pick one with the swatch."
+}
+
+/// The rendering-standard row's heading.
+#[must_use]
+pub const fn standard_heading() -> &'static str {
+    "Draw it as"
+}
+
+/// The rendering-standard choice that leaves the operator's settings alone.
+#[must_use]
+pub const fn standard_own_settings() -> &'static str {
+    "Your settings"
+}
+
+/// Under the rendering-standard choice: what choosing one does and does not do.
+#[must_use]
+pub const fn standard_hint() -> &'static str {
+    "A standard changes how colours and pictures are drawn for this export \
+     only. Your settings are not changed."
+}
+
+/// The receipt's sentence for an export drawn under `title`, which set
+/// `changed` of the operator's settings for this export only.
+#[must_use]
+pub fn drawn_as(title: &str, changed: usize) -> String {
+    match changed {
+        0 => format!("Drawn as {title}, which matched your settings already."),
+        1 => format!("Drawn as {title}, which changed 1 of your settings for this export only."),
+        n => format!("Drawn as {title}, which changed {n} of your settings for this export only."),
+    }
+}
+
 /// **A transparent JPEG was requested and NOTHING was written.**
 #[must_use]
 pub const fn transparent_jpeg_refused() -> &'static str {

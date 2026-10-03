@@ -57,6 +57,8 @@ use crate::app::actions::imageexport::{ImageFormat, ImagePlan, PageScope, resolv
 use crate::app::prefs::{MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_image as t;
+use pdfcer_core::settings::presets::RenderStandard;
+use pdfcer_render::export::Rgb;
 
 /// A resolution: arithmetic, and `dpi` typed after it is the box's own unit.
 const DPI: entry::Kind = entry::Kind::Number(&["dpi"]);
@@ -104,6 +106,17 @@ pub const REGION_QUALITY: &str = "export-image.quality"; // ui-text-exempt: trac
 pub const REGION_KEEP_TEXT: &str = "export-image.keep-text"; // ui-text-exempt: trace region name, never displayed
 /// The region the Export button publishes.
 pub const REGION_EXPORT: &str = "export-image.export"; // ui-text-exempt: trace region name, never displayed
+/// The region the background-colour field publishes.
+pub const REGION_BACKGROUND: &str = "export-image.background"; // ui-text-exempt: trace region name, never displayed
+/// The region the rendering-standard drop-down publishes.
+pub const REGION_STANDARD: &str = "export-image.standard"; // ui-text-exempt: trace region name, never displayed
+/// Each rendering-standard item publishes this followed by
+/// `RenderStandard::as_str`, or `none` for the operator's own settings.
+pub const STANDARD_ITEM_PREFIX: &str = "export-image.standard."; // ui-text-exempt: trace region name prefix, never displayed
+/// Height kept below the scrolling body for the separator and button row.
+const FOOTER_PTS: f32 = 44.0;
+/// The body's least height: a negative `max_height` draws nothing at all.
+const BODY_FLOOR_PTS: f32 = 80.0;
 
 /// The Export-image window's live state.
 pub struct ExportImageDialog {
@@ -146,6 +159,11 @@ pub struct ExportImageDialog {
     /// SVG/EMF: keep text as text rather than outlines. Carried whatever the
     /// format, like `quality`.
     keep_text: bool,
+    /// The background colour as typed; Export waits while it is not a colour.
+    background_text: String,
+    /// The rendering standard for this export only; never remembered, because
+    /// a standard is a property of one deliverable, not of the operator.
+    standard: Option<RenderStandard>,
     /// Set by Export, consumed after the window's closure returns.
     export_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
@@ -181,6 +199,8 @@ impl ExportImageDialog {
             transparent: remembered.transparent,
             quality: remembered.quality,
             keep_text: remembered.keep_text,
+            background_text: remembered.background.to_hex(),
+            standard: None,
             export_requested: false,
             close_requested: false,
         };
@@ -196,7 +216,7 @@ impl ExportImageDialog {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
                 "export-image-open page={} pages={} format={} scope={} \
-                 dpi={} transparent={} quality={} keep_text={}",
+                 dpi={} transparent={} quality={} keep_text={} background={}",
                 dialog.page_index,
                 dialog.page_count,
                 // Stable lowercase tokens, never `{:?}`. This project's
@@ -212,6 +232,7 @@ impl ExportImageDialog {
                 u8::from(dialog.transparent),
                 dialog.quality,
                 u8::from(dialog.keep_text),
+                dialog.background_text,
             )
         });
         dialog
@@ -233,7 +254,13 @@ impl ExportImageDialog {
             transparent: self.transparent,
             quality: self.quality,
             keep_text: self.keep_text,
+            background: self.background().unwrap_or(Rgb::WHITE),
         }
+    }
+
+    /// The typed background colour, or `None` while it is not one.
+    fn background(&self) -> Option<Rgb> {
+        Rgb::parse_hex(&self.background_text).ok()
     }
 
     /// Draw it. Returns `false` when it should close.
@@ -246,12 +273,19 @@ impl ExportImageDialog {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "export-image", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
-            egui::vec2(460.0, 640.0),
+            egui::vec2(460.0, 780.0),
             egui::vec2(360.0, 340.0),
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-            self.body(ui);
+            // The body scrolls above the button row, so Export stays on screen
+            // when a standard's disclosures make the body taller than the window.
+            let ready = egui::ScrollArea::vertical()
+                .auto_shrink([false, true])
+                .max_height((ui.available_height() - FOOTER_PTS).max(BODY_FLOOR_PTS))
+                .show(ui, |ui| self.body(ui))
+                .inner;
+            self.footer(ui, ready);
         });
         let open = !frame.closed;
 
@@ -269,7 +303,7 @@ impl ExportImageDialog {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-image-requested format={} pages={} dpi={} \
-                     transparent={} quality={} keep_text={}",
+                     transparent={} quality={} keep_text={} background={} standard={}",
                     // A token, never `{:?}`: the same reduction the
                     // preferences file performs, so a check reading this line
                     // and a check reading the file cannot disagree.
@@ -278,7 +312,9 @@ impl ExportImageDialog {
                     plan.dpi,
                     u8::from(plan.transparent),
                     plan.quality,
-                    u8::from(plan.keep_text)
+                    u8::from(plan.keep_text),
+                    plan.background.to_hex(),
+                    plan.standard.map_or("none", |s| s.as_str()),
                 )
             });
             actions.push(Action::Write(
@@ -309,11 +345,15 @@ impl ExportImageDialog {
             transparent: self.transparent,
             quality: self.quality,
             keep_text: self.keep_text,
+            // A refused colour never reaches here: Export is disabled while
+            // the field is not a colour (`Self::footer`).
+            background: self.background()?,
+            standard: self.standard,
         })
     }
 
-    /// The whole window body.
-    fn body(&mut self, ui: &mut Ui) {
+    /// The whole window body; returns whether Export can run.
+    fn body(&mut self, ui: &mut Ui) -> bool {
         ui.label(t::intro());
         ui.add_space(8.0);
 
@@ -324,6 +364,8 @@ impl ExportImageDialog {
         self.resolution_group(ui);
         ui.add_space(8.0);
         self.background_group(ui);
+        ui.add_space(8.0);
+        self.standard_group(ui);
         if self.format.is_vector() {
             ui.add_space(8.0);
             self.text_group(ui);
@@ -352,14 +394,18 @@ impl ExportImageDialog {
             ));
             ui.add_space(8.0);
         }
+        pages.is_some() && self.background().is_some()
+    }
 
+    /// The separator and the button row, pinned below the scrolling body.
+    fn footer(&mut self, ui: &mut Ui, ready: bool) {
         ui.separator();
         ui.horizontal(|ui| {
             // Disabled rather than absent when there is nothing to export.
             // P3's rule: a greyed control the operator can see, beside the
             // sentence saying why, teaches what to change; a control that
             // vanishes teaches that the window is unpredictable.
-            let response = ui.add_enabled(pages.is_some(), egui::Button::new(t::export_button()));
+            let response = ui.add_enabled(ready, egui::Button::new(t::export_button()));
             crate::diag::ui_rect(REGION_EXPORT, response.rect);
             if response.clicked() {
                 self.export_requested = true;
@@ -529,6 +575,67 @@ impl ExportImageDialog {
             // reason under it says which of the other formats to choose
             // instead, which is what they actually need to know.
             ui.label(t::jpeg_has_no_alpha());
+        }
+        if !(can && self.transparent) {
+            self.colour_row(ui);
+        }
+    }
+
+    /// The colour the page is flattened onto: a hex field and a swatch picker,
+    /// which edit the same value.
+    fn colour_row(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.label(t::background_colour_label());
+            // escape-disposition: dialog-cancels
+            let response =
+                ui.add(egui::TextEdit::singleline(&mut self.background_text).desired_width(80.0));
+            crate::diag::ui_rect(REGION_BACKGROUND, response.rect);
+            let mut picked = self.background().unwrap_or(Rgb::WHITE);
+            let mut srgb = [picked.r, picked.g, picked.b];
+            if egui::widgets::color_picker::color_edit_button_srgb(ui, &mut srgb).changed() {
+                picked = Rgb {
+                    r: srgb[0],
+                    g: srgb[1],
+                    b: srgb[2],
+                };
+                self.background_text = picked.to_hex();
+            }
+        });
+        if self.background().is_none() {
+            ui.label(t::background_colour_refused());
+        }
+    }
+
+    /// The rendering standard this export is drawn under, with the chosen
+    /// standard's evidence and disclosures beneath it.
+    fn standard_group(&mut self, ui: &mut Ui) {
+        ui.label(t::standard_heading());
+        let before = self.standard;
+        let selected = self
+            .standard
+            .map_or(t::standard_own_settings(), RenderStandard::title);
+        let combo = egui::ComboBox::from_id_salt(REGION_STANDARD)
+            .selected_text(selected)
+            .width(360.0)
+            .show_ui(ui, |ui| {
+                let own = ui.selectable_value(&mut self.standard, None, t::standard_own_settings());
+                crate::diag::ui_rect(&format!("{STANDARD_ITEM_PREFIX}none"), own.rect); // ui-text-exempt: a trace region name
+                for s in RenderStandard::all() {
+                    let item = ui.selectable_value(&mut self.standard, Some(*s), s.title());
+                    crate::diag::ui_rect(
+                        &format!("{STANDARD_ITEM_PREFIX}{}", s.as_str()),
+                        item.rect,
+                    );
+                }
+            });
+        crate::diag::ui_rect(REGION_STANDARD, combo.response.rect);
+        if self.standard != before {
+            let token = self.standard.map_or("none", |s| s.as_str());
+            crate::diag::trace(|| format!("export-image-standard-chosen standard={token}")); // ui-text-exempt: diagnostic trace
+        }
+        ui.weak(t::standard_hint());
+        if let Some(s) = self.standard {
+            pdfcer_gui_base::settingspages::preset::standard_detail(ui, s);
         }
     }
 

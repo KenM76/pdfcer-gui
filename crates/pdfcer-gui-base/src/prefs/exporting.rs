@@ -13,6 +13,7 @@ use pdfcer_core::export::dxf::{DxfText, DxfUnits, DxfVersion};
 use crate::exporttext::{LineEndings, PageSeparator, TextOrder};
 use crate::imageexport::{ImageFormat, PageScope};
 use crate::tableexport::{NumberReading, SheetGrouping, TableFormat};
+use pdfcer_render::export::Rgb;
 
 use super::printing::KeyOutcome;
 
@@ -67,6 +68,8 @@ pub struct ExportImagePrefs {
     /// SVG and EMF: keep text as text instead of outlines. Off by default,
     /// because outlines look the same in every program.
     pub keep_text: bool,
+    /// The colour a page that is not kept transparent is flattened onto.
+    pub background: Rgb,
 }
 
 impl Default for ExportImagePrefs {
@@ -96,6 +99,7 @@ impl Default for ExportImagePrefs {
             // options struct.
             quality: 90,
             keep_text: false,
+            background: Rgb::WHITE,
         }
     }
 }
@@ -461,6 +465,9 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
         "export_image_keep_text" => {
             store!(super::opening::bool_from_key(value), prefs.image.keep_text)
         }
+        "export_image_background" => {
+            store!(Rgb::parse_hex(value).ok(), prefs.image.background)
+        }
 
         // --- Export text ----------------------------------------------------
         "export_text_pages" => store!(page_scope_from_key(value), prefs.text.scope),
@@ -579,6 +586,17 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
     // ui-text-exempt: a file KEY, as above.
     out.push_str("export_image_keep_text = ");
     out.push_str(super::opening::bool_key(prefs.image.keep_text));
+    out.push('\n');
+
+    out.push_str(
+        "\n\
+         # export_image_background: #rrggbb\n\
+         # The colour a page is written onto when transparency is not kept.\n\
+         # #ffffff is white.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_image_background = ");
+    out.push_str(&prefs.image.background.to_hex());
     out.push('\n');
 
     // --- Export text --------------------------------------------------------

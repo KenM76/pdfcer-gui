@@ -435,3 +435,19 @@ something they could **act** on:
 * **characters that fell through the decoding ladder**, as a fraction, so
   40-in-200 and 40-in-400,000 do not read as the same event;
 * **what pdfcer itself added**, when page markers were asked for.
+
+### `fn standard_settings`
+
+A rendering standard is applied with `RenderPreset::apply` to a clone of the
+document's settings and the clone goes through the settings funnel; the
+operator's settings are never written, as the engine CLI's `--standard`. The
+keys it changed are traced (`export-image-standard`) and counted in the
+receipt (`drawn_as`).
+
+### `fn background_note`
+
+The background a page was flattened onto, named in the receipt: kept clear,
+white, or the `#rrggbb` chosen. A PNG on a non-white colour is rendered clear
+and composited by `pdfcer_render::export::flatten_over`; a JPEG through
+`JpegOptions::background`; SVG and EMF through `with_background`. All three
+read `ImagePlan::flatten_colour`, so they cannot disagree.

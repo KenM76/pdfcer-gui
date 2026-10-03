@@ -246,6 +246,11 @@ fn every_preference_round_trips_through_the_file() {
                             transparent: false,
                             quality: 55,
                             keep_text: true,
+                            background: pdfcer_render::export::Rgb {
+                                r: 0x12,
+                                g: 0xab,
+                                b: 0xef,
+                            },
                         },
                         text: ExportTextPrefs {
                             scope: PageScope::CurrentPage,
@@ -753,6 +758,8 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 // the two numeric keys.
                 quality: MIN_JPEG_QUALITY,
                 keep_text: true,
+                // Black, the end of the range a writer padding with spaces would miss.
+                background: pdfcer_render::export::Rgb { r: 0, g: 0, b: 0 },
             },
             text: ExportTextPrefs {
                 scope: PageScope::AllPages,

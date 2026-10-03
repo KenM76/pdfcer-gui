@@ -5,6 +5,9 @@
 
 use std::path::{Path, PathBuf};
 
+use pdfcer_core::settings::presets::RenderStandard;
+use pdfcer_render::export::Rgb;
+
 /// Which of the four writers an export goes through.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
@@ -141,6 +144,11 @@ pub struct ImagePlan {
     /// SVG and EMF: write text as text (`SvgText::KeepText` /
     /// `EmfText::KeepText`) rather than outlines. Ignored by the raster formats.
     pub keep_text: bool,
+    /// The colour the page is flattened onto. Ignored when `transparent`.
+    pub background: Rgb,
+    /// The rendering standard applied over a copy of the operator's settings
+    /// for this export only, or `None` for the settings as they stand.
+    pub standard: Option<RenderStandard>,
 }
 
 impl ImagePlan {
@@ -159,6 +167,22 @@ impl ImagePlan {
     #[must_use]
     pub fn is_multi_file(&self) -> bool {
         self.pages.len() > 1
+    }
+
+    /// The colour the page is flattened onto, or `None` when its
+    /// transparency is kept.
+    #[must_use]
+    pub fn flatten_colour(&self) -> Option<Rgb> {
+        (!self.transparent).then_some(self.background)
+    }
+
+    /// Whether a raster is rendered with a clear backdrop: kept transparency,
+    /// or a background other than white, which is composited after the render
+    /// (`pdfcer_render::export::flatten_over`) because the renderer's own
+    /// backdrop is only ever white.
+    #[must_use]
+    pub fn renders_transparent(&self) -> bool {
+        self.transparent || self.background != Rgb::WHITE
     }
 }
 
@@ -334,7 +358,33 @@ mod tests {
             transparent,
             quality: 90,
             keep_text: false,
+            background: Rgb::WHITE,
+            standard: None,
         }
+    }
+
+    /// A raster renders clear for kept transparency or a non-white background,
+    /// and only then; the flatten colour is absent exactly when transparency is kept.
+    #[test]
+    fn a_coloured_background_renders_clear_and_flattens_onto_that_colour() {
+        let white = plan(ImageFormat::Png, false);
+        assert!(!white.renders_transparent());
+        assert_eq!(white.flatten_colour(), Some(Rgb::WHITE));
+
+        let blue = ImagePlan {
+            background: Rgb {
+                r: 0x33,
+                g: 0x66,
+                b: 0xcc,
+            },
+            ..plan(ImageFormat::Png, false)
+        };
+        assert!(blue.renders_transparent());
+        assert_eq!(blue.flatten_colour(), Some(blue.background));
+
+        let clear = plan(ImageFormat::Png, true);
+        assert!(clear.renders_transparent());
+        assert_eq!(clear.flatten_colour(), None);
     }
 
     /// **A transparent JPEG is refused, and it is refused BY NAME.**
