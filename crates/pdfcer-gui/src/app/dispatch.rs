@@ -434,8 +434,7 @@ impl PdfcerApp {
             // is the sheet order and not the order he happened to click.
             "file.ocr" => {
                 let picked: Vec<usize> = self.panels.selected_pages().iter().copied().collect();
-                self.dialogs
-                    .open_ocr(&self.status, picked, self.prefs.ocr_engine);
+                self.dialogs.open_ocr(&self.status, picked, &self.prefs);
             }
             "file.remove_ocr" => actions.push(Action::RemoveOcrLayers),
             // **Apply redactions.** A dialog, in `file.ocr`'s shape one arm

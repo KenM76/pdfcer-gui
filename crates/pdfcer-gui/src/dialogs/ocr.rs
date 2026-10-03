@@ -40,9 +40,6 @@ const REGION_SCOPE: &str = "ocr-scope"; // ui-text-exempt: trace region name, ne
 /// The skip-existing-text toggle.
 const REGION_SKIP: &str = "ocr-skip"; // ui-text-exempt: trace region name, never displayed
 
-/// The recogniser choice, present only when the build offers two or more.
-const REGION_ENGINE: &str = "ocr-engine"; // ui-text-exempt: trace region name, never displayed
-
 /// The control that starts recognition.
 const REGION_RUN: &str = "ocr-run"; // ui-text-exempt: trace region name, never displayed
 /// The live progress line, drawn once a page has finished.
@@ -157,13 +154,13 @@ pub struct OcrDialog {
     /// recognised page **adds a second invisible layer**, doubling every search
     /// hit and every copy.
     skip_pages_with_text: bool,
-    /// The recogniser to run: one [`ocr::available`] reports. Chosen only
-    /// while the dialog is [`Phase::Ready`], so it names the engine of any
-    /// run this dialog has started.
+    /// The models on offer and the one chosen.
+    models: super::ocr_model::ModelPicker,
+    /// The recogniser of the run this dialog started, for its report.
     engine: EngineId,
-    /// Set when a run starts; [`Self::show`] then stores [`Self::engine`] as
-    /// the preference, because only `show` holds the preferences.
-    remember_engine: bool,
+    /// The model a run just started with; [`Self::show`] stores it and its
+    /// engine as the preferences, because only `show` holds them.
+    remember: Option<String>,
     /// The page list the last `ocr-scope` line reported.
     ///
     /// Kept so the trace fires on a change rather than on a frame. See
@@ -281,7 +278,16 @@ impl Scope {
 impl OcrDialog {
     /// Build the dialog for the page `doc` is showing.
     #[must_use]
-    pub(super) fn open(doc: &OpenDoc, picked: Vec<usize>, preferred: Option<EngineId>) -> Self {
+    pub(super) fn open(
+        doc: &OpenDoc,
+        picked: Vec<usize>,
+        prefs: &crate::app::prefs::Prefs,
+    ) -> Self {
+        let models = super::ocr_model::ModelPicker::open(prefs);
+        let engine = models
+            .chosen()
+            .and_then(|c| c.engine)
+            .unwrap_or(EngineId::Ocrs);
         Self {
             page_index: doc.view.page_index,
             // The rail's selection, captured once — see `Self::picked` for
@@ -295,8 +301,9 @@ impl OcrDialog {
             scope: Scope::All,
             range: String::new(),
             skip_pages_with_text: true,
-            engine: initial_engine(preferred),
-            remember_engine: false,
+            models,
+            engine,
+            remember: None,
             traced_scope: Vec::new(),
             traced_progress: usize::MAX,
             phase: Phase::Ready,
@@ -338,13 +345,17 @@ impl OcrDialog {
             self.body(ui, doc);
         });
         let open = !frame.closed;
-        if std::mem::take(&mut self.remember_engine) && prefs.ocr_engine != Some(self.engine) {
+        if let Some(model) = self.remember.take()
+            && (prefs.ocr_engine != Some(self.engine)
+                || prefs.ocr_models.model.as_deref() != Some(model.as_str()))
+        {
             prefs.ocr_engine = Some(self.engine);
+            prefs.ocr_models.model = Some(model.clone());
             let saved = prefs.save().is_ok();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "ocr-engine-remembered engine={} saved={saved}",
+                    "ocr-engine-remembered engine={} model={model} saved={saved}",
                     self.engine.key()
                 )
             });
@@ -658,14 +669,12 @@ impl OcrDialog {
     /// The pre-run state: one button, and the refusals that can be answered
     /// without running anything.
     fn ready(&mut self, ui: &mut egui::Ui, doc: &OpenDoc) {
-        if let Some(refusal) = Self::preflight(doc, self.engine) {
+        if let Some(refusal) = self.preflight() {
             ui.label(sentence(&refusal));
-            // The choice stays reachable: another recogniser may have its
-            // models where this one has none.
-            self.engine_group(ui);
+            self.models.show(ui);
             return;
         }
-        self.engine_group(ui);
+        self.models.show(ui);
         let count = doc.pages.len();
         self.scope_group(ui, count);
         ui.add_space(10.0);
@@ -678,10 +687,15 @@ impl OcrDialog {
         let pages = self
             .scope
             .pages(self.page_index, count, &self.range, &self.picked);
+        let chosen = self.models.chosen().is_some();
         let run = ui
-            .add_enabled(pages.is_some(), egui::Button::new(t::run()))
+            .add_enabled(pages.is_some() && chosen, egui::Button::new(t::run()))
             .on_hover_text(t::run_tooltip())
-            .on_disabled_hover_text(t::scope_range_unresolved());
+            .on_disabled_hover_text(if chosen {
+                t::scope_range_unresolved()
+            } else {
+                crate::text::ocrmodels::choose_first()
+            });
         crate::diag::ui_rect(REGION_RUN, run.rect);
         if run.clicked() {
             self.start(doc);
@@ -775,53 +789,39 @@ impl OcrDialog {
     }
 
     /// Everything that can be refused before a thread is spawned.
-    fn preflight(_doc: &OpenDoc, engine: EngineId) -> Option<Refusal> {
-        if !engine.compiled_in() {
+    ///
+    /// There is no unsaved-edits guard: `EditSession::add_ocr_layer` plans
+    /// against the session graph, so a recognised copy carries unsaved edits.
+    fn preflight(&self) -> Option<Refusal> {
+        if ocr::available().is_empty() {
             return Some(Refusal::EngineAbsent);
         }
-        // **There is no unsaved-edits guard, and its absence is the design.**
-        //
-        // `EditSession::add_ocr_layer` plans against the **session graph**, so a
-        // recognised copy taken over unsaved edits carries those edits. The
-        // divergence a guard would police does not exist, and a guard spelled
-        // against `edit_epoch` could not have policed it anyway: that counter
-        // never comes back down, not even after a successful save, so it asks
-        // *has anything ever been edited* and would kill OCR for the rest of a
-        // session on the first edit.
-        //
-        // What is left is the pair that is still real — a build with no
-        // recogniser, and a build that cannot find its models.
-        match ocr::resolve_models(
-            engine,
-            ocr::exe_dir().as_deref(),
-            user_data_dir().as_deref(),
-        ) {
-            Ok(_) => None,
-            Err(e) => Some(Refusal::ModelsMissing(e.searched)),
-        }
+        (!self.models.any_runnable()).then(|| Refusal::ModelsMissing(self.models.roots().to_vec()))
     }
 
-    /// Spawn the worker.
+    /// Spawn the worker on the chosen model.
     fn start(&mut self, doc: &OpenDoc) {
-        let Ok(source) = ocr::resolve_models(
-            self.engine,
-            ocr::exe_dir().as_deref(),
-            user_data_dir().as_deref(),
-        ) else {
-            // Unreachable behind `preflight`, and answered rather than
-            // ignored: a button that did nothing would be indistinguishable
-            // from a recognition that produced no words.
-            self.phase = Phase::Refused(Refusal::ModelsMissing(Vec::new()));
+        let Some((name, engine, folder)) = self
+            .models
+            .chosen()
+            .and_then(|c| Some((c.name.clone(), c.engine?, c.folder.clone())))
+        else {
             return;
+        };
+        self.engine = engine;
+        let bundled = ocr::exe_dir().map(|d| d.join(ocr::catalog::BUNDLED_DIR));
+        let source = if bundled.is_some_and(|b| folder.starts_with(b)) {
+            "bundled" // ui-text-exempt: trace token
+        } else {
+            "extra-folder" // ui-text-exempt: trace token
         };
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "ocr-started engine={} page={} models={} source={}",
-                self.engine.key(),
+                "ocr-started engine={} page={} models={} source={source} model={name}",
+                engine.key(),
                 self.page_index,
-                source.path().display(),
-                source.token()
+                folder.display(),
             )
         });
         self.phase = Phase::Working(Job::spawn(Request {
@@ -836,37 +836,10 @@ impl OcrDialog {
                 use crate::app::settings::SettingsExt as _;
                 doc.settings.extract_options()
             },
-            engine: self.engine,
-            model_dir: source.path().to_path_buf(),
+            engine,
+            model_dir: folder,
         }));
-        self.remember_engine = true;
-    }
-
-    /// Which recogniser. Drawn only when this build offers more than one
-    /// (R9: a choice of one is not a choice).
-    fn engine_group(&mut self, ui: &mut egui::Ui) {
-        let offered = ocr::available();
-        if offered.len() < 2 {
-            return;
-        }
-        let before = self.engine;
-        let group = ui
-            .horizontal(|ui| {
-                ui.label(t::engine_heading());
-                for e in offered {
-                    ui.radio_value(&mut self.engine, e, t::engine_label(e))
-                        .on_hover_text(t::engine_tooltip(e));
-                }
-            })
-            .response;
-        crate::diag::ui_rect(REGION_ENGINE, group.rect);
-        if self.engine != before {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                format!("ocr-engine engine={}", self.engine.key())
-            });
-        }
-        ui.add_space(8.0);
+        self.remember = Some(name);
     }
 
     /// The disclosure block: the confidence statement, then the engine's own
@@ -956,20 +929,6 @@ pub fn suggested_path(source: &Path) -> PathBuf {
         .map_or_else(|| PathBuf::from(&name), |dir| dir.join(&name))
 }
 
-/// Where a durable per-user model directory would live.
-fn user_data_dir() -> Option<PathBuf> {
-    None
-}
-
-/// The engine a new dialog starts on: the remembered one when this build has
-/// it, else the build's default.
-fn initial_engine(preferred: Option<EngineId>) -> EngineId {
-    preferred
-        .filter(|e| e.compiled_in())
-        .or_else(|| ocr::available().first().copied())
-        .unwrap_or(EngineId::Ocrs)
-}
-
 /// The sentence saying what the engine's scores are, or that it has none.
 fn confidence_sentence(engine: EngineId) -> &'static str {
     if engine.reports_confidence() {
@@ -983,49 +942,16 @@ fn confidence_sentence(engine: EngineId) -> &'static str {
 pub(super) fn open_for(
     status: &Status,
     picked: Vec<usize>,
-    engine: Option<EngineId>,
+    prefs: &crate::app::prefs::Prefs,
 ) -> Option<OcrDialog> {
     let Status::Open(doc) = status else {
         return None;
     };
-    Some(OcrDialog::open(doc, picked, engine))
+    Some(OcrDialog::open(doc, picked, prefs))
 }
 
 #[cfg(test)]
 mod tests {
-    /// **An edited, unsaved document may be recognised**, and the
-    /// absence of a guard against it is the thing pinned here.
-    #[test]
-    fn an_unsaved_edit_no_longer_refuses_recognition() {
-        let mut doc = crate::app::state::open_fixture(crate::app::state::FOUR_PAGES);
-        // Whatever the verdict is on this machine — the models may genuinely be
-        // absent — it must not depend on the epochs. That is the whole property:
-        // recognition is an edit now, and an edit does not care what else is
-        // unsaved.
-        let untouched = OcrDialog::preflight(&doc, EngineId::Ocrs);
-
-        doc.edit_epoch = 7;
-        assert_eq!(
-            OcrDialog::preflight(&doc, EngineId::Ocrs),
-            untouched,
-            "an unsaved edit must not change the answer"
-        );
-
-        doc.saved_epoch = 7;
-        assert_eq!(
-            OcrDialog::preflight(&doc, EngineId::Ocrs),
-            untouched,
-            "nor must a save"
-        );
-
-        doc.edit_epoch = 8;
-        assert_eq!(
-            OcrDialog::preflight(&doc, EngineId::Ocrs),
-            untouched,
-            "nor an edit after a save — the state the operator was stuck in"
-        );
-    }
-
     use super::*;
 
     /// **The suggested name is never the file that was opened.**
@@ -1098,7 +1024,14 @@ mod tests {
     /// A dialog opened with nothing loaded is not built at all.
     #[test]
     fn no_document_means_no_dialog() {
-        assert!(open_for(&Status::Empty, Vec::new(), None).is_none());
+        assert!(
+            open_for(
+                &Status::Empty,
+                Vec::new(),
+                &crate::app::prefs::Prefs::default()
+            )
+            .is_none()
+        );
     }
 }
 

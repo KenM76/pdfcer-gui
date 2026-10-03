@@ -14,7 +14,9 @@ use crate::report::CheckReport;
 use crate::trace::Trace;
 
 /// Off the desktop, so the check runs while the operator uses the machine.
-const OFFSCREEN: &str = "-4200,-4200,1400,900";
+/// 1,000 high: the window is 82 % of that, and the whole page list must fit
+/// it, as it does on a 1080-line display.
+const OFFSCREEN: &str = "-4200,-4200,1400,1000";
 const OPEN_SETTINGS: &str = "file.settings";
 const OPEN_FONT_FOLDERS: &str = "tools.font_folders";
 const DIALOG: &str = "dialog:settings";
@@ -23,7 +25,7 @@ const HEADING: &str = "settings.heading.";
 /// The trace event naming the page on show.
 const PAGE_EVENT: &str = "settings-page"; // ui-text-exempt: a trace event name, never displayed
 /// Every page, in the order the list must show them.
-const PAGES: [&str; 18] = [
+const PAGES: [&str; 19] = [
     "general",
     "presets",
     "appearance",
@@ -35,6 +37,7 @@ const PAGES: [&str; 18] = [
     "fonts",
     "images",
     "text",
+    "ocr",
     "pages",
     "signatures",
     "measuring",

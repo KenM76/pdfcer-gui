@@ -16,6 +16,8 @@ pub mod nav;
 /// file because it is the copy for a *feature*, where this module's neighbours
 /// are copy for answers to a silent standard.
 pub mod ocrlayer;
+/// The extra OCR model folders.
+pub mod ocrmodels;
 pub mod overprint;
 /// The two print-ready colour controls and the field wash. Its header says
 /// which of the three is there for a weak reason and should move out first if

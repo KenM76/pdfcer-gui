@@ -35,6 +35,7 @@ pub use crate::openingfit as opening;
 pub mod exporting;
 
 mod families;
+pub mod ocrmodels;
 /// **Whether the canvas grows to show what sits off the sheet — one answer
 /// per ribbon mode.** Its own file because *why the answer is per mode at all*
 /// is the whole of the operator's request, and because it carries this group's
@@ -77,6 +78,7 @@ pub use exporting::{
     ExportDxfPrefs, ExportImagePrefs, ExportPrefs, ExportTablePrefs, ExportTextPrefs,
     MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
 };
+pub use ocrmodels::OcrModelPrefs;
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
@@ -367,6 +369,8 @@ pub struct Prefs {
     pub shortcuts: ShortcutPrefs,
     /// The resolution View ▸ Snapshot copies at. See [`snapshot`].
     pub snapshot: SnapshotPrefs,
+    /// Extra OCR model folders and the model last run. See [`ocrmodels`].
+    pub ocr_models: OcrModelPrefs,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -807,6 +811,7 @@ impl Default for Prefs {
             off_page: OffPagePrefs::default(),
             shortcuts: ShortcutPrefs::default(),
             snapshot: SnapshotPrefs::default(),
+            ocr_models: OcrModelPrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

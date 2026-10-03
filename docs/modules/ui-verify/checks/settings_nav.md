@@ -6,7 +6,7 @@ Tools ▸ Font folders opens on the Fonts page. Operator request O259.
 
 # What it drives
 
-No `--pdf`. Two launches, each off the desktop (`-4200,-4200,1400,900`) with
+No `--pdf`. Two launches, each off the desktop (`-4200,-4200,1400,1000`: the window is 82 % of the viewport, and all 19 pages must fit it) with
 the scripted pointer, so it runs under `--no-input`. The Settings window is its
 own viewport, also placed off the desktop; clicks go to the viewport each
 region was declared in, and keys to the one holding `settings.search`.

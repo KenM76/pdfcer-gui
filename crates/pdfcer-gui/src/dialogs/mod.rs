@@ -73,6 +73,8 @@ pub mod insert_image;
 pub mod insert_pages;
 pub mod new_document;
 pub mod ocr;
+/// Recognise text's model list.
+mod ocr_model;
 /// How a window offers to step aside so the operator can point at the page —
 /// `OPERATOR_REQUESTS.md` O66. The dialog half of `canvas::placing`.
 /// The box that lets an encrypted document be opened. Its header records the

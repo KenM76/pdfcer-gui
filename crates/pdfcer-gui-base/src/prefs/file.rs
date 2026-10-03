@@ -930,6 +930,7 @@ impl Prefs {
         exporting::write_block(&self.export, &mut out);
         shortcuts::write_block(&self.shortcuts, &mut out);
         snapshot::write_block(&self.snapshot, &mut out);
+        ocrmodels::write_block(&self.ocr_models, &mut out);
 
         out
     }

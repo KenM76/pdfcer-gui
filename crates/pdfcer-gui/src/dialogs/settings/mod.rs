@@ -30,6 +30,8 @@ pub mod display;
 /// one. See its header for why the list lives here rather than on the batch
 /// pane its blocker named.
 mod fonts;
+/// The extra OCR model folders.
+mod ocr;
 /// The order Tab visits a page in. Its header carries the filing rule:
 /// both settings answer *"I pressed Tab and it went to the wrong field"*,
 /// and neither is discoverable from anywhere else in the program.
@@ -273,6 +275,7 @@ fn page_body(
             ui.add_space(10.0);
             text::find_trim(ui, &mut draft.working_prefs);
         }
+        "ocr" => ocr::folders(ui, &mut draft.working_prefs),
         "measuring" => measuring::parallel(ui, draft),
         "comments" => comments::author_name(ui, &mut draft.working_prefs),
         "forms" => {
@@ -384,6 +387,7 @@ mod tests {
             include_str!("../../../../pdfcer-gui-base/src/settingspages/measuring.rs"),
         ),
         ("nav", include_str!("nav.rs")),
+        ("ocr", include_str!("ocr.rs")),
         (
             "pages",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/pages.rs"),

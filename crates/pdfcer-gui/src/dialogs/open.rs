@@ -33,12 +33,12 @@ impl DialogsState {
         &mut self,
         status: &Status,
         picked: Vec<usize>,
-        engine: Option<crate::ocr::EngineId>,
+        prefs: &crate::app::prefs::Prefs,
     ) {
         if self.ocr.is_some() {
             return;
         }
-        self.ocr = ocr::open_for(status, picked, engine);
+        self.ocr = ocr::open_for(status, picked, prefs);
     }
 
     /// Open the Apply-redactions dialog for the document in `status`.

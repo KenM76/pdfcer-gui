@@ -36,6 +36,9 @@ pub const DIAG_TEXT_IMPORT_PATH: &str = "PDFCER_DIAG_TEXT_IMPORT_PATH"; // ui-te
 /// The harness seam for [`pick_font_folder`].
 pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The harness seam for [`pick_ocr_folder`].
+pub const DIAG_OCR_FOLDER_PATH: &str = "PDFCER_DIAG_OCR_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The harness seam for [`pick_acrobat`] — `OPERATOR_REQUESTS.md` O122.
 pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -391,6 +394,30 @@ pub fn pick_font_folder() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("font-folder-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// Ask for a folder Recognise text may find OCR models in.
+#[must_use]
+pub fn pick_ocr_folder() -> Picked {
+    let (answer, source) = match from_env(std::env::var_os(DIAG_OCR_FOLDER_PATH)) {
+        Some(answer) => (answer, "env"), // ui-text-exempt: trace token
+        None => (
+            rfd::FileDialog::new()
+                .set_title(crate::text::settings::ocrmodels::dialog_title())
+                .pick_folder()
+                .map_or(Picked::Cancelled, Picked::Path),
+            "native", // ui-text-exempt: trace token
+        ),
+    };
+    crate::diag::trace(|| {
+        let path = match &answer {
+            Picked::Path(p) => p.display().to_string(),
+            _ => String::from("none"), // ui-text-exempt: trace token
+        };
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("ocr-folder-picked source={source} path={path}")
     });
     answer
 }

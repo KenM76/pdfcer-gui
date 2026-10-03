@@ -32,6 +32,10 @@ pub mod progress;
 
 pub use job::{Job, Tally};
 
+/// The models discovery finds under the bundled and extra folders, and which
+/// of them this build can run.
+pub mod catalog;
+
 /// Which recognisers this build carries, their model directories, and the
 /// loaded model a run holds.
 mod engines;

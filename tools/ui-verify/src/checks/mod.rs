@@ -390,6 +390,9 @@ pub mod new_document_size;
 
 pub mod ocr;
 
+/// A Settings OCR folder reaching the model drop-down.
+pub mod ocr_extra_folder;
+
 /// The three checks about a recognition run **while it is still running** —
 /// the tally advancing, Stop keeping the work, Cancel discarding it. Separate
 /// from [`ocr`] because all three need a multi-page run and that module's

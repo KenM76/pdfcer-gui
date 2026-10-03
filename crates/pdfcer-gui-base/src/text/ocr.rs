@@ -185,13 +185,6 @@ pub fn scored_confidence() -> &'static str {
     "Every word carries the recogniser's own confidence score. That score is its estimate of its own reading, not a check — read the text before you rely on it."
 }
 
-/// The heading over the recogniser choice. Drawn only when a build offers
-/// more than one.
-#[must_use]
-pub fn engine_heading() -> &'static str {
-    "Recogniser"
-}
-
 /// A recogniser's name as the choice shows it.
 #[must_use]
 pub const fn engine_label(engine: crate::ocr::EngineId) -> &'static str {
@@ -199,22 +192,6 @@ pub const fn engine_label(engine: crate::ocr::EngineId) -> &'static str {
         crate::ocr::EngineId::Ocrs => "ocrs",
         crate::ocr::EngineId::Ocrcer => "OCRcer",
         crate::ocr::EngineId::Paddle => "PaddleOCR",
-    }
-}
-
-/// What choosing a recogniser changes, on hover.
-#[must_use]
-pub const fn engine_tooltip(engine: crate::ocr::EngineId) -> &'static str {
-    match engine {
-        crate::ocr::EngineId::Ocrs => {
-            "The ocrs recogniser: two neural networks. It gives no confidence score."
-        }
-        crate::ocr::EngineId::Ocrcer => {
-            "The OCRcer recogniser: matches each character against its model and gives every word a confidence score."
-        }
-        crate::ocr::EngineId::Paddle => {
-            "The PaddleOCR recogniser: PP-OCRv5 neural networks that read English and French. It gives every word a confidence score."
-        }
     }
 }
 
@@ -443,9 +420,6 @@ mod tests {
             what_was_inferred().to_owned(),
             no_confidence().to_owned(),
             scored_confidence().to_owned(),
-            engine_heading().to_owned(),
-            engine_tooltip(crate::ocr::EngineId::Ocrs).to_owned(),
-            engine_tooltip(crate::ocr::EngineId::Ocrcer).to_owned(),
             applied_to_document().to_owned(),
             scope_heading().to_owned(),
             scope_all().to_owned(),
