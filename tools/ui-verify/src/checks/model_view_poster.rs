@@ -86,7 +86,12 @@ fn shot(
 }
 
 /// Click the region `name`, wherever it is declared; `false` when it is not.
-fn click(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, name: &str) -> Result<bool> {
+pub(crate) fn click(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+) -> Result<bool> {
     let trace = session.trace()?;
     let Some((rect, vp)) = declared_in(&trace, ui_rect, name) else {
         return Ok(false);

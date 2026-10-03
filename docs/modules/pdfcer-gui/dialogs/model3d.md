@@ -36,17 +36,21 @@ Below the picture: the census, the colour note (naming how many parts are
 grey), the placement note when the assembly tree could not be read, and the
 skipped-part count.
 
-## Use this view on the page
+## Use this view on the page; Save picture…
 
-Below the picture, beside *Close*, on a model that is a `/3D` annotation of
-its own (`panels::attachments::models::has_own_poster`; a RichMedia asset has
+Below the picture, beside *Close*. *Save picture…* is on every model and
+queues `AttachmentAction::SaveModelPicture`, which
+`app::actions::models::save_picture` writes to a PNG file the operator picks;
+the document is not changed. *Use this view on the page* is on a model that
+is a `/3D` annotation of its own (`panels::attachments::models::has_own_poster`; a RichMedia asset has
 no page picture to replace). The press renders the current orbit through
 `render_coloured` at the last rendered picture's shape, 1200 pixels on the
 long side, on the engine's default white (the background the engine's own
 poster uses, not the theme's), encodes it as PNG and queues
 `AttachmentAction::SetModelPoster`, which `app::actions::models::set_poster`
 applies as one undo entry. A render failure replaces the picture with its
-sentence and queues nothing.
+sentence and queues nothing. Both buttons draw the same picture
+(`poster_png`); `PictureFor` says where it goes.
 
 ## Lifetime
 
@@ -65,8 +69,9 @@ and changing documents closes it.
 - `model-view-render-failed error=`
 - `model-view-poster w= h= yaw= pitch= bytes=` — a picture made for the page.
 - Regions: `model3d.image`, `model3d.view.0`…`4`, `model3d.fit`,
-  `model3d.close`, `model3d.use_on_page`.
+  `model3d.close`, `model3d.use_on_page`, `model3d.save_picture`.
 
 Driven by `ui-verify` checks `a_3d_model_turns_under_the_pointer` (an
 uncoloured model is grey), `a_coloured_3d_model_draws_in_its_own_colours`
-and `the_3d_viewers_view_becomes_the_page_picture`.
+, `the_3d_viewers_view_becomes_the_page_picture` and
+`the_3d_viewer_saves_its_view_as_a_picture`.

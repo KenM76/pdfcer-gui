@@ -35,15 +35,7 @@ pub(super) fn save(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
 
     let format = extracted.sniffed.as_ref().or(artwork.declared.as_ref());
     let extension = format.map_or("bin", ThreeDFormat::extension);
-    let stem = doc
-        .path
-        .file_stem()
-        .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
-    let mut suggested = doc.path.clone();
-    suggested.set_file_name(format!(
-        "{}.{extension}",
-        t::suggested_stem(&stem, artwork.page_index)
-    ));
+    let suggested = suggested(doc, artwork, extension);
 
     let crate::app::files::Picked::Path(target) =
         crate::app::files::pick_attachment_target(&suggested)
@@ -204,15 +196,7 @@ pub(super) fn save_mesh(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
     } else {
         Err(t::gone().to_owned())
     };
-    let mut suggested = doc.path.clone();
-    let stem = doc
-        .path
-        .file_stem()
-        .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
-    suggested.set_file_name(format!(
-        "{}.stl",
-        t::suggested_stem(&stem, artwork.page_index)
-    ));
+    let suggested = suggested(doc, artwork, "stl");
     let data = match data {
         Ok(data) => data,
         Err(said) => {
@@ -295,6 +279,52 @@ pub(super) fn save_mesh(_doc: &mut OpenDoc, _artwork: &ThreeDArtwork) {
         // ui-text-exempt: diagnostic trace, never displayed
         "mesh-save-declined reason=built-without-3d".to_owned()
     });
+}
+
+/// `<document> - page N model.<extension>`, beside the document.
+fn suggested(doc: &OpenDoc, artwork: &ThreeDArtwork, extension: &str) -> std::path::PathBuf {
+    let stem = doc
+        .path
+        .file_stem()
+        .map_or_else(String::new, |s| s.to_string_lossy().into_owned());
+    let mut suggested = doc.path.clone();
+    suggested.set_file_name(format!(
+        "{}.{extension}",
+        t::suggested_stem(&stem, artwork.page_index)
+    ));
+    suggested
+}
+
+/// Write `png`, a picture the 3D viewer drew of `artwork`, to a file the
+/// operator picks. The document is not changed.
+pub(super) fn save_picture(doc: &mut OpenDoc, artwork: &ThreeDArtwork, png: &[u8]) {
+    let epoch = doc.edit_epoch;
+    let suggested = suggested(doc, artwork, "png");
+    let crate::app::files::Picked::Path(target) =
+        crate::app::files::pick_picture_target(&suggested)
+    else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "model-picture-cancelled".to_owned()
+        });
+        return;
+    };
+    match std::fs::write(&target, png) {
+        Ok(()) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("model-picture-saved bytes={}", png.len())
+            });
+            super::record_note(epoch, t::picture_saved(&target.display().to_string()));
+        }
+        Err(error) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("model-picture-failed kind={:?}", error.kind())
+            });
+            super::record_note(epoch, t::save_failed(&error.to_string()));
+        }
+    }
 }
 
 /// Pick a picture file and make it the page picture of `artwork`.

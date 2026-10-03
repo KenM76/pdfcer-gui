@@ -33,6 +33,17 @@ pub const REGION_FIT: &str = "model3d.fit"; // ui-text-exempt: trace region name
 pub const REGION_CLOSE: &str = "model3d.close"; // ui-text-exempt: trace region name, never displayed
 /// The *Use this view on the page* button.
 pub const REGION_USE_ON_PAGE: &str = "model3d.use_on_page"; // ui-text-exempt: trace region name, never displayed
+/// The *Save picture…* button.
+pub const REGION_SAVE_PICTURE: &str = "model3d.save_picture"; // ui-text-exempt: trace region name, never displayed
+
+/// What a picture drawn from the current view is for.
+#[derive(Clone, Copy)]
+enum PictureFor {
+    /// The model's picture on the page.
+    Page,
+    /// A PNG file the operator picks.
+    File,
+}
 /// The Minimize button.
 pub const REGION_MINIMIZE: &str = "model3d.minimize"; // ui-text-exempt: trace region name, never displayed
 /// The full-screen button.
@@ -210,8 +221,8 @@ pub(crate) struct ModelView {
     escape_left_full_screen: bool,
     /// The host drew a real OS window, the only kind that can fill the screen.
     native: bool,
-    /// A picture for the page, as PNG, waiting for the action queue.
-    poster: Option<Vec<u8>>,
+    /// A picture of this view, as PNG, waiting for the action queue.
+    picture: Option<(PictureFor, Vec<u8>)>,
 }
 
 impl ModelView {
@@ -247,7 +258,7 @@ impl ModelView {
             minimized: None,
             escape_left_full_screen: false,
             native: false,
-            poster: None,
+            picture: None,
         }
     }
 
@@ -264,10 +275,11 @@ impl ModelView {
         .minimizable()
         .show(ctx, |ui| self.body(ui));
         self.native = frame.class == egui::ViewportClass::Immediate;
-        if let Some(png) = self.poster.take() {
-            actions.push(Action::Attachment(AttachmentAction::SetModelPoster {
-                artwork: self.artwork.clone(),
-                png,
+        if let Some((purpose, png)) = self.picture.take() {
+            let artwork = self.artwork.clone();
+            actions.push(Action::Attachment(match purpose {
+                PictureFor::Page => AttachmentAction::SetModelPoster { artwork, png },
+                PictureFor::File => AttachmentAction::SaveModelPicture { artwork, png },
             }));
         }
         let closed = frame.closed && !std::mem::take(&mut self.escape_left_full_screen);
@@ -443,22 +455,34 @@ impl ModelView {
                 self.close_requested = true;
             }
             if crate::panels::attachments::models::has_own_poster(&self.artwork) {
-                self.use_on_page_control(ui);
+                self.picture_control(ui, PictureFor::Page);
             }
+            self.picture_control(ui, PictureFor::File);
         });
     }
 
-    /// *Use this view on the page*: draw this view for the page and queue it.
-    fn use_on_page_control(&mut self, ui: &mut Ui) {
-        let button = ui
-            .button(t::view_use_on_page())
-            .on_hover_text(t::view_use_on_page_tooltip());
-        crate::diag::ui_rect_visible(REGION_USE_ON_PAGE, button.rect, ui.clip_rect());
+    /// *Use this view on the page* or *Save picture…*: draw this view and
+    /// queue it for `purpose`.
+    fn picture_control(&mut self, ui: &mut Ui, purpose: PictureFor) {
+        let (label, tip, region) = match purpose {
+            PictureFor::Page => (
+                t::view_use_on_page(),
+                t::view_use_on_page_tooltip(),
+                REGION_USE_ON_PAGE,
+            ),
+            PictureFor::File => (
+                t::view_save_picture(),
+                t::view_save_picture_tooltip(),
+                REGION_SAVE_PICTURE,
+            ),
+        };
+        let button = ui.button(label).on_hover_text(tip);
+        crate::diag::ui_rect_visible(region, button.rect, ui.clip_rect());
         if !button.clicked() {
             return;
         }
         match self.poster_png() {
-            Ok(png) => self.poster = Some(png),
+            Ok(png) => self.picture = Some((purpose, png)),
             Err(said) => self.failed = Some(t::poster_not_drawn(&said)),
         }
     }

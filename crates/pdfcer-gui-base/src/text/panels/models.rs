@@ -472,7 +472,37 @@ pub fn poster_tooltip() -> &'static str {
 /// The view could not be drawn for the page.
 #[must_use]
 pub fn poster_not_drawn(detail: &str) -> String {
-    format!("pdfcer could not draw this view for the page: {detail}")
+    format!("pdfcer could not draw this view: {detail}")
+}
+
+/// The viewer's button that saves this view as a picture file.
+#[must_use]
+pub fn view_save_picture() -> &'static str {
+    "Save picture…"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_save_picture_tooltip() -> &'static str {
+    "Save the model as you see it here to a PNG picture. The document is not changed."
+}
+
+/// The picture save dialog's title.
+#[must_use]
+pub fn picture_dialog_title() -> &'static str {
+    "Save a picture of the 3D model"
+}
+
+/// The PNG filter name.
+#[must_use]
+pub fn picture_filter_png() -> &'static str {
+    "PNG picture"
+}
+
+/// Where the picture went.
+#[must_use]
+pub fn picture_saved(path: &str) -> String {
+    format!("Saved a picture of the 3D model to {path}.")
 }
 
 /// Only PRC is decoded.

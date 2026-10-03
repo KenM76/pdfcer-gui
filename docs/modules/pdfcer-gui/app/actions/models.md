@@ -90,3 +90,15 @@ way to build an `ImportedImage` from raw pixels (our `G106`).
 
 Driven by `ui-verify` checks `the_3d_viewers_view_becomes_the_page_picture`
 and `a_picture_file_becomes_a_3d_models_page_picture`.
+
+## `save_picture(doc, artwork, png)` — the viewer's Save picture…
+
+Asks `files::pick_picture_target` (PNG filter; `PDFCER_DIAG_PICTURE_SAVE_PATH`
+answers it in driven runs) with `<document> - page N model.png` suggested,
+and writes the bytes the viewer drew. Traces `model-picture-saved bytes=`,
+`model-picture-cancelled`, `model-picture-failed kind=`; the note says where
+it went. The document is not changed and no undo entry is made.
+
+The three saves share `suggested(doc, artwork, extension)`.
+
+Driven by `ui-verify` check `the_3d_viewer_saves_its_view_as_a_picture`.

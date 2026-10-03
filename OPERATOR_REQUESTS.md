@@ -495,11 +495,13 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 He is right. An audit of the engine against the program found these the engine can do and the program does not offer, to be wired in this order: Export Word's options (a page range, no page breaks, no tables, how the structure is read); Export to Excel and ODS choosing one sheet per table, per page or one sheet, how numbers are read (automatic, US, European, off), and a page range; Save as PDF from the snapshot box; DXF for several pages at once; Export image with a background colour of your choice and the rendering standard, and that export driven end to end; Extract pages keeping or dropping the page labels; and Copy page as vector driven end to end. Text as JSON, tables as JSON, the tag and layout reports, QDF export and import, and a 3D model to a picture file are listed as not yet offered. PDF/A is not the program's to add: the engine has no PDF/A support yet.
 
-## O283 — **IN PROGRESS** — 3D models in their own colours, and the rest of the engine's 3D
+## O283 — **BUILT AND DRIVEN — awaiting your verdict** — 3D models in their own colours, and the rest of the engine's 3D
 
 > **Ken:** *"I also think the engine has a way to show 3d model previews and colour mapping."*
 
 He is right: the engine assembles a model with each part's own colour and can draw it that way, translucent parts included, and can draw a default view for the page picture. The 3D viewer and the picture on the page are to show the model in its own colours, with uncoloured parts in grey, replacing the one flat colour they use now. Placing a model uses the engine's default view as its page picture wherever the engine can draw it. The rest of the engine's 3D abilities (saved views, U3D and others) are to be audited against the program: the cheap ones wired, the rest listed.
+
+Built: the 3D viewer and the picture on the page draw each part in its own colour, uncoloured parts in grey, translucent parts blended. Placing a model uses the engine's own picture of it. In the viewer, *Use this view on the page* makes the view on screen the page's picture, and *Save picture…* writes it to a PNG file; *Picture…* on the model's Attachments row uses a picture file instead. Each is one undo step. Driven: `the_3d_viewers_view_becomes_the_page_picture`, `a_picture_file_becomes_a_3d_models_page_picture`, `the_3d_viewer_saves_its_view_as_a_picture` and `an_inserted_3d_model_shows_its_picture_on_the_page`. Not yet driven: the colours themselves, because no PRC file with coloured parts exists on this machine to test with (engine request G103 asks for one). Not built, listed in FEATURES: opening on the file's saved views (G105), U3D models (the engine reads only PRC so far), colour in a saved mesh, textures and lights.
 
 ## O282 — **BUILT AND DRIVEN — awaiting your verdict** — extra OCR model folders in Settings, and a drop-down to choose the model
 

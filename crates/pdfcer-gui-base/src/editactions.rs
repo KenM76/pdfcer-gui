@@ -1184,4 +1184,12 @@ pub enum AttachmentAction {
         /// The row as listed when the button was pressed.
         artwork: pdfcer_core::threed::ThreeDArtwork,
     },
+    /// **Write a picture the 3D viewer drew to a file the operator picks.**
+    /// The picker runs in the apply arm.
+    SaveModelPicture {
+        /// The row the viewer was opened on, which names the suggested file.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+        /// The picture, as PNG file bytes.
+        png: Vec<u8>,
+    },
 }
