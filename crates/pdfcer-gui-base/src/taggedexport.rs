@@ -6,6 +6,9 @@
 //! the receipt says which source was followed and what the tree could not
 //! express (R8b).
 //!
+//! [`StructureSource`] is the operator's override of that judgement: the
+//! tree whenever there is one, or never.
+//!
 //! The table export, which may cover a few sheets of a long drawing set,
 //! asks `has_structure_tree` (catalog only) first and reads only its own
 //! pages. `StructureUse::Auto` then judges coverage over those pages alone.
@@ -15,12 +18,51 @@ use pdfcer_core::page_tree::Page;
 use pdfcer_core::structure_tree;
 use pdfcer_core::table_detect::{self, Table};
 use pdfcer_core::tagged_layout::{
-    self, FallbackReason, LayoutSourceUsed, TaggedLayoutOptions, TaggedLayoutReport,
+    self, FallbackReason, LayoutSourceUsed, StructureUse, TaggedLayoutOptions, TaggedLayoutReport,
 };
 use pdfcer_core::text_extract::ExtractOptions;
 use pdfcer_core::view::DocumentView;
 
 use crate::text::export_tagged as t;
+
+/// Where an export takes its headings, paragraphs and tables from.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum StructureSource {
+    /// The tags when they hold at least half the text of the chosen pages,
+    /// else inferred from the page.
+    #[default]
+    Auto,
+    /// The tags whenever the file has any, however little they hold.
+    Tags,
+    /// Always inferred from the page; the tags are ignored.
+    Layout,
+}
+
+impl StructureSource {
+    /// Every choice, in the order a window offers them.
+    pub const ALL: [Self; 3] = [Self::Auto, Self::Tags, Self::Layout];
+
+    /// The engine's setting for this choice.
+    #[must_use]
+    pub const fn engine(self) -> StructureUse {
+        match self {
+            Self::Auto => StructureUse::Auto,
+            Self::Tags => StructureUse::Always,
+            Self::Layout => StructureUse::Never,
+        }
+    }
+
+    /// The trace key, the command line's `--structure` word.
+    #[must_use]
+    pub const fn key(self) -> &'static str {
+        match self {
+            // ui-text-exempt: trace keys, never displayed.
+            Self::Auto => "auto",
+            Self::Tags => "tree",
+            Self::Layout => "layout",
+        }
+    }
+}
 
 /// The document laid out, from its tree where the tree qualified.
 pub struct Structured {
@@ -42,12 +84,14 @@ impl Structured {
 }
 
 /// Lays the document out: every page, or with `keep` only those page indices,
-/// in that order. `keep` must name each page once.
+/// in that order, taking the structure from where `structure` says. `keep`
+/// must name each page once.
 pub fn lay_out(
     view: &DocumentView<'_>,
     pages: &[Page],
     options: &ExtractOptions,
     keep: Option<&[usize]>,
+    structure: StructureSource,
 ) -> Result<Structured, String> {
     let tree = match keep {
         Some(keep) => structure_tree::read_structure_tree_in_pages(view, keep, options),
@@ -72,7 +116,7 @@ pub fn lay_out(
         &tree,
         &geometry,
         &LayoutOptions::default(),
-        &TaggedLayoutOptions::default(),
+        &TaggedLayoutOptions::default().with_use_structure(structure.engine()),
     );
     let tables = table_detect::tables_from_structure(&tagged.tables, &tagged.layout.text);
     Ok(Structured {
@@ -152,6 +196,20 @@ fn percent(coverage: f32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn each_choice_maps_to_its_own_engine_setting() {
+        let settings: Vec<StructureUse> = StructureSource::ALL.iter().map(|s| s.engine()).collect();
+        assert_eq!(
+            settings,
+            [
+                StructureUse::Auto,
+                StructureUse::Always,
+                StructureUse::Never
+            ]
+        );
+        assert_eq!(StructureSource::default(), StructureSource::Auto);
+    }
 
     #[test]
     fn an_untagged_document_adds_no_sentence() {

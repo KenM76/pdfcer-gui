@@ -3,8 +3,10 @@
 //! found by its rules because the file is untagged.
 //! `export_word_follows_the_tags` — the same export of
 //! `fixtures/tagged-report.pdf`, whose one table has no rules, takes its
-//! heading and table from the file's tags. Both run on a window placed off the
-//! desktop and driven through the scripted pointer.
+//! heading and table from the file's tags.
+//! `export_word_honours_its_choices` — the window's page range, page-break,
+//! tables and structure choices each reach the writer. All run on a window
+//! placed off the desktop and driven through the scripted pointer.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/export_word_scripted.md`.
 
@@ -27,6 +29,19 @@ const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an envir
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// The main part's name, stored uncompressed in the zip's directory.
 const MAIN_PART: &[u8] = b"word/document.xml";
+/// The window's Export button.
+const EXPORT: &str = "export-word.export"; // ui-text-exempt: a trace region name, never displayed
+
+/// One gesture in the Export-to-Word window before Export is pressed.
+#[derive(Clone, Copy)]
+enum Choice<'a> {
+    Click(&'a str),
+    /// Click the field `into`, then type `text` there.
+    Type {
+        into: &'a str,
+        text: &'a str,
+    },
+}
 
 pub struct ExportWordWithoutTheMouse;
 
@@ -47,7 +62,14 @@ impl Check for ExportWordWithoutTheMouse {
             ("structure", "layout"),
             ("structure_fallback", "no-tree"),
         ];
-        match drive(ctx, &mut report, "ruled-table.pdf", "export-word", &expect) {
+        match drive(
+            ctx,
+            &mut report,
+            "ruled-table.pdf",
+            "export-word",
+            &[],
+            &expect,
+        ) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -80,6 +102,7 @@ impl Check for ExportWordFollowsTheTags {
             &mut report,
             "tagged-report.pdf",
             "export-word-tagged",
+            &[],
             &expect,
         ) {
             Ok(Some(failure)) => report.fail(failure),
@@ -89,13 +112,82 @@ impl Check for ExportWordFollowsTheTags {
     }
 }
 
-/// Exports `fixture` to Word and requires each `expect` field on the
-/// `export-word` line. `stem` names this run's artifacts.
+pub struct ExportWordHonoursItsChoices;
+
+impl Check for ExportWordHonoursItsChoices {
+    fn name(&self) -> &'static str {
+        "export_word_honours_its_choices"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Export to Word writes every page whatever range is typed, or breaks pages \
+         when told not to, or writes tables when told to write them as text, or \
+         follows the tags when told to judge the page layout"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        // Each run's expectation differs from that file's default export:
+        // four pages and breaks, one ruled table, the tags followed.
+        let runs: [Run; 3] = [
+            (
+                "four-pages.pdf",
+                "export-word-range",
+                &[
+                    Choice::Type {
+                        into: "export-word.pages.range",
+                        text: "2-3",
+                    },
+                    Choice::Click("export-word.page_breaks"),
+                ],
+                &[("pages", "2"), ("page_breaks", "0")],
+            ),
+            (
+                "ruled-table.pdf",
+                "export-word-no-tables",
+                &[Choice::Click("export-word.tables")],
+                &[("tables", "0"), ("table_option", "0")],
+            ),
+            (
+                "tagged-report.pdf",
+                "export-word-layout",
+                &[Choice::Click("export-word.structure.layout")],
+                &[("structure", "layout"), ("structure_fallback", "disabled")],
+            ),
+        ];
+        let mut failures = Vec::new();
+        for (fixture, stem, choices, expect) in runs {
+            match drive(ctx, &mut report, fixture, stem, choices, expect) {
+                Ok(Some(failure)) => failures.push(failure),
+                Ok(None) => {}
+                Err(why) => failures.push(why.to_string()),
+            }
+        }
+        if failures.is_empty() {
+            report.pass()
+        } else {
+            report.fail(failures.join(" | "))
+        }
+    }
+}
+
+/// One run: the fixture, the artifact stem, the choices made, the fields required.
+type Run = (
+    &'static str,
+    &'static str,
+    &'static [Choice<'static>],
+    &'static [(&'static str, &'static str)],
+);
+
+/// Exports `fixture` to Word after making `choices` in the window, and
+/// requires each `expect` field on the `export-word` line. `stem` names this
+/// run's artifacts.
 fn drive(
     ctx: &CheckContext,
     report: &mut CheckReport,
     fixture: &str,
     stem: &str,
+    choices: &[Choice],
     expect: &[(&str, &str)],
 ) -> Result<Option<String>> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
@@ -175,6 +267,26 @@ fn drive(
         click(COLLAPSED)?;
     }
     click(ITEM)?;
+    session.settle(20);
+    if fresh(EXPORT)?.is_none() {
+        return Ok(Some(format!(
+            "Word document… opened no window with an Export button. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    for choice in choices {
+        match *choice {
+            Choice::Click(region) => click(region)?,
+            Choice::Type { into, text } => {
+                click(into)?;
+                let trace = session.trace()?;
+                let viewport = declared_in(&trace, ui_rect, into).and_then(|(_, vp)| vp);
+                pointer.type_text(&session, viewport.as_deref(), text)?;
+                session.settle(10);
+            }
+        }
+    }
+    click(EXPORT)?;
     session.settle(20);
     pointer.gone(&session)?;
 

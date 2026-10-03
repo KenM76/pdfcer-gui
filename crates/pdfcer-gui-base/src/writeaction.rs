@@ -129,12 +129,15 @@ pub enum WriteAction {
     /// Nothing about the document is being ordered, and nothing about it
     /// changes.
     FormData,
-    /// **Write the whole document as a Word file.** Carries nothing, for
-    /// [`Self::FormData`]'s reason: there is no dialog, and the picker must
-    /// open in the apply phase, not inside a layout pass.
-    Word,
+    /// **Write pages as a Word file.** Raised by
+    /// `pdfcer_gui::dialogs::export_word`; carries its plan for
+    /// [`Self::Tables`]'s reason.
+    Word {
+        /// The pages and the engine's choices, frozen when Export was pressed.
+        plan: crate::wordexport::WordExportPlan,
+    },
     /// **Write a copy holding no stored password-field value.** Carries
-    /// nothing, for [`Self::Word`]'s reason.
+    /// nothing, for [`Self::FormData`]'s reason.
     PurgePasswords,
     /// **Write the already-serialised compacted copy to a file the operator
     /// picks.**

@@ -53,6 +53,7 @@ pub mod export_tables;
 /// which is what that engine request was argued from. [`import_text`] is the
 /// other half.
 pub mod export_text;
+pub mod export_word;
 pub mod formfield;
 /// The *Sign here* window: a signature drawn by hand, placed in a box.
 pub mod handsign;
@@ -443,6 +444,7 @@ pub struct DialogsState {
 
     /// The Export-tables window, when one is open. Document-scoped.
     export_tables: Option<export_tables::ExportTablesDialog>,
+    export_word: Option<export_word::ExportWordDialog>,
 
     /// The unsaved-edits confirmation, when one is open.
     ///
@@ -804,6 +806,9 @@ impl DialogsState {
         {
             self.export_tables = None;
         }
+        if self.export_word.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.export_word = None;
+        }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.embed = None;
         }
@@ -1154,6 +1159,7 @@ impl DialogsState {
         self.export_image = None;
         self.export_text = None;
         self.export_tables = None;
+        self.export_word = None;
         self.embed = None;
         self.unembed = None;
         // On this list for `stamp_collection`'s reason in its strongest form:

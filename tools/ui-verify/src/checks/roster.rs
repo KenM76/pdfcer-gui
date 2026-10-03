@@ -431,6 +431,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_tables_scripted::ExportTablesFollowsTheTags),
         Box::new(export_word_scripted::ExportWordWithoutTheMouse),
         Box::new(export_word_scripted::ExportWordFollowsTheTags),
+        Box::new(export_word_scripted::ExportWordHonoursItsChoices),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
         Box::new(evidence_scripted::ValidationEvidenceAddedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),

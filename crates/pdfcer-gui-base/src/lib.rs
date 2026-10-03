@@ -379,6 +379,8 @@ pub mod panelid;
 
 /// Exporting detected tables as spreadsheet cells.
 pub mod tableexport;
+/// What File ▸ Export ▸ Word document… was asked to write.
+pub mod wordexport;
 
 /// Attaching the context menus to the command registry.
 pub mod menus_wiring;

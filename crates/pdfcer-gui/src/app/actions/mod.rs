@@ -246,6 +246,7 @@ pub use pdfcer_gui_base::exporttext;
 /// **What a TABLE export is** — the plan, the cell grid, number recognition
 /// and CSV encoding.
 pub use pdfcer_gui_base::tableexport;
+pub use pdfcer_gui_base::wordexport;
 /// File ▸ Export ▸ Tables…: detect, filter to the plan, write.
 mod export_tables;
 /// File ▸ Export ▸ Word document…: lay out, find tables, write `.docx`.

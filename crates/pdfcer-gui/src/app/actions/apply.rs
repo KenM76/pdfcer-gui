@@ -1107,7 +1107,7 @@ impl PdfcerApp {
                     super::export_tables::export(doc, &plan)
                 }
                 super::write::WriteAction::FormData => super::export::form_data(doc),
-                super::write::WriteAction::Word => super::export_word::export(doc),
+                super::write::WriteAction::Word { plan } => super::export_word::export(doc, &plan),
                 super::write::WriteAction::PurgePasswords => {
                     super::purge_passwords::purge(doc);
                 }

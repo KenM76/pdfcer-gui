@@ -7,6 +7,87 @@ pub const fn save_dialog_title() -> &'static str {
     "Export to Word"
 }
 
+/// The window's title.
+#[must_use]
+pub const fn window_title() -> &'static str {
+    "Export to Word"
+}
+
+/// The sentence at the top of the window.
+#[must_use]
+pub const fn intro() -> &'static str {
+    "Writes the text of the chosen pages as a Word document, with headings, \
+     paragraphs, lists and tables. What was guessed is reported afterwards."
+}
+
+/// The page-break box.
+#[must_use]
+pub const fn page_breaks_label() -> &'static str {
+    "Start each PDF page on a new page"
+}
+
+/// The tables box.
+#[must_use]
+pub const fn tables_label() -> &'static str {
+    "Write tables as Word tables"
+}
+
+/// The tables box's hover text.
+#[must_use]
+pub const fn tables_tooltip() -> &'static str {
+    "When this is off, a table's text is written as ordinary paragraphs."
+}
+
+/// The heading over the structure choice.
+#[must_use]
+pub const fn structure_heading() -> &'static str {
+    "Take headings and tables from"
+}
+
+/// One structure choice.
+#[must_use]
+pub const fn structure_name(source: crate::taggedexport::StructureSource) -> &'static str {
+    use crate::taggedexport::StructureSource;
+    match source {
+        StructureSource::Auto => "The file's tags, when they cover most of the text",
+        StructureSource::Tags => "The file's tags, however little they cover",
+        StructureSource::Layout => "The page layout only",
+    }
+}
+
+/// The line under the structure choice, for the one chosen.
+#[must_use]
+pub const fn structure_hint(source: crate::taggedexport::StructureSource) -> &'static str {
+    use crate::taggedexport::StructureSource;
+    match source {
+        StructureSource::Auto => {
+            "A tagged PDF states its own headings and tables. Pages without \
+             enough tags are judged from their layout instead."
+        }
+        StructureSource::Tags => {
+            "Follows the tags even where they hold little of the text, which \
+             can leave text out of headings and tables."
+        }
+        StructureSource::Layout => {
+            "Ignores the tags and judges headings and tables from where the \
+             text sits on the page."
+        }
+    }
+}
+
+/// The Export button; the save picker follows.
+#[must_use]
+pub const fn export_button() -> &'static str {
+    "Export…"
+}
+
+/// Said when tags were asked for and the file has none.
+#[must_use]
+pub const fn no_tags_to_follow() -> &'static str {
+    "This file has no tags, so its headings and tables were judged from the \
+     page layout."
+}
+
 /// The refusal when no page carries text, raised before the picker.
 #[must_use]
 pub fn no_text(pages: usize) -> String {
