@@ -955,7 +955,7 @@ impl PdfcerApp {
             // `PasteChords::from_environment` for why a seam exists here rather
             // than a check writing the operator's own preferences file.
             let order = prefs::PasteChords::from_environment().unwrap_or(prefs.paste_chords);
-            crate::shell::manifest::apply_paste_chords(shell, order);
+            crate::shell::manifest::keys::apply(shell, order, &prefs.shortcuts);
         }
 
         Self {

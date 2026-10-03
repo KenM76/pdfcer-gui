@@ -115,23 +115,13 @@ impl Keys<'_> {
     }
 
     fn key(&mut self, key: Key, m: Modifiers) -> Flow {
+        // The global chords yield while a draft is open, so the draft routes
+        // the commands it shares with the ribbon itself, on the live keys.
+        if let Some(id) = super::draftkeys::bound(self.ctx, key, m) {
+            return self.command(id);
+        }
         match key {
             Key::Backspace | Key::Delete => self.remove(key == Key::Delete, m.command),
-            Key::A if m.command => {
-                self.draft.mark = Some(0);
-                self.draft.caret = self.draft.text.chars().count();
-                self.moved();
-            }
-            Key::Z if m.command && m.shift => return self.step(Step::Redo),
-            Key::Z if m.command => return self.step(Step::Undo),
-            Key::Y if m.command => return self.step(Step::Redo),
-            Key::S if m.command => return self.save(),
-            // The global chords yield while a draft is open, so the draft
-            // routes the three it shares with the ribbon itself.
-            Key::B | Key::I | Key::U if m.command && !m.alt && !m.shift => {
-                self.actions
-                    .push(Action::Command(style_command(key).into()));
-            }
             Key::Tab if !m.command && !m.alt => self.tab(),
             Key::ArrowLeft | Key::ArrowRight => self.horizontal(key == Key::ArrowRight, m),
             Key::ArrowUp | Key::ArrowDown => return self.vertical(key == Key::ArrowUp, m),
@@ -140,6 +130,26 @@ impl Keys<'_> {
             _ => {}
         }
         Flow::Continue
+    }
+
+    /// Run one of `draftkeys::TYPING`.
+    fn command(&mut self, id: &'static str) -> Flow {
+        // ui-text-exempt: registered command ids, never displayed.
+        match id {
+            "edit.select_all" => {
+                self.draft.mark = Some(0);
+                self.draft.caret = self.draft.text.chars().count();
+                self.moved();
+                Flow::Continue
+            }
+            "edit.undo" => self.step(Step::Undo),
+            "edit.redo" => self.step(Step::Redo),
+            "file.save" => self.save(),
+            _ => {
+                self.actions.push(Action::Command(id.into()));
+                Flow::Continue
+            }
+        }
     }
 
     fn record(&self, kind: EditKind) {
@@ -438,15 +448,6 @@ fn space_px(l: &super::hit::Layout, text: &str) -> f32 {
 }
 
 /// The ribbon command Ctrl plus `key` stands for inside a draft.
-fn style_command(key: Key) -> &'static str {
-    // ui-text-exempt: registered command ids, never displayed.
-    match key {
-        Key::B => "format.bold",
-        Key::I => "format.italic",
-        _ => "format.underline",
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::insert_lines;

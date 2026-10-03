@@ -242,6 +242,7 @@ pub fn commands(ctx: &Context, keymap: Option<&Keymap>) -> Vec<String> {
     let Some(keymap) = keymap else {
         return Vec::new();
     };
+    crate::canvas::textedit::draftkeys::publish(ctx, keymap);
 
     // **Typing beats every chord, and that is not the D1 predicate alone.**
     //

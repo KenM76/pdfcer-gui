@@ -78,7 +78,7 @@ mod tests {
     //
     // The coloured-icons switch (O232) is a shell preference beside the UI
     // scale in the Appearance group.
-    const SETTINGS_COUNT: usize = 42;
+    const SETTINGS_COUNT: usize = 43;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -273,6 +273,8 @@ mod tests {
             // The Redacting group's one setting — a shell preference, here for
             // the reason every other shell preference in this list is here.
             (reach_title(), reach_silence(), reach_radius()),
+            // Settings ▸ Keyboard shortcuts: one setting, every command's keys.
+            (keys::title(), keys::silence(), keys::radius()),
         ]
     }
 
@@ -343,6 +345,10 @@ mod tests {
             include_str!("../../dialogs/settings/signatures.rs"),
         ),
         (
+            "keys",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/keys.rs"),
+        ),
+        (
             "text",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/text.rs"),
         ),
@@ -410,7 +416,7 @@ mod tests {
         // `the_window_draws_exactly_the_settings_this_catalog_describes` look
         // for catalog entries that must not exist.
         // `nav` draws the page list and search, and no setting.
-        const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp", "nav"];
+        const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp", "nav", "keyscatalog"];
         // The pages without document state are declared in base's `settingspages`.
         let sources = [
             include_str!("../../dialogs/settings/mod.rs"),

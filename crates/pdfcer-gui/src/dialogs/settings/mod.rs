@@ -322,6 +322,7 @@ fn page_body(
             saving::quad_point_order(ui, draft);
         }
         "redaction" => redaction::residual_reach(ui, &mut draft.working_prefs),
+        "shortcuts" => pdfcer_gui_base::settingspages::keys::page(ui, draft),
         "remote" => remote::remote_control(ui, &mut draft.working_prefs),
         _ => {}
     }
@@ -410,6 +411,14 @@ mod tests {
         // reason a module is listed in the edit that creates it rather than
         // afterwards.
         ("signatures", include_str!("signatures.rs")),
+        (
+            "keys",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/keys.rs"),
+        ),
+        (
+            "keyscatalog",
+            include_str!("../../../../pdfcer-gui-base/src/settingspages/keyscatalog.rs"),
+        ),
         (
             "text",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/text.rs"),

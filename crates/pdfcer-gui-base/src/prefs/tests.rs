@@ -31,6 +31,12 @@ fn every_preference_round_trips_through_the_file() {
         for fit in OpeningFit::ALL {
             for reach in RedactionReach::ALL {
                 let original = Prefs {
+                    shortcuts: {
+                        let mut s = crate::prefs::ShortcutPrefs::default();
+                        s.set("edit.find", &["Ctrl+K".to_owned()]);
+                        s.set("format.bold", &[]);
+                        s
+                    },
                     // Non-default, like every field here. O70: `false`, because
                     // the shipped default is `true` and a writer that emitted a
                     // constant would otherwise pass.
@@ -562,6 +568,12 @@ fn the_writer_emits_no_key_the_parser_rejects() {
     // A non-default in every field, so no emitted value can coincide with
     // what a failed parse would have left behind.
     let prefs = Prefs {
+        shortcuts: {
+            let mut s = crate::prefs::ShortcutPrefs::default();
+            s.set("edit.find", &["Ctrl+K".to_owned()]);
+            s.set("format.bold", &[]);
+            s
+        },
         // Non-default, for this test's stated reason. O70.
         text_chunks: false,
         smart_select: false,

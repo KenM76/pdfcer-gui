@@ -23,11 +23,12 @@ const HEADING: &str = "settings.heading.";
 /// The trace event naming the page on show.
 const PAGE_EVENT: &str = "settings-page"; // ui-text-exempt: a trace event name, never displayed
 /// Every page, in the order the list must show them.
-const PAGES: [&str; 17] = [
+const PAGES: [&str; 18] = [
     "general",
     "presets",
     "appearance",
     "display",
+    "shortcuts",
     "acrobat",
     "remote",
     "colour",

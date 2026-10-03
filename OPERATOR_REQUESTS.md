@@ -441,13 +441,13 @@ Inside a text edit, Ctrl+B, Ctrl+I and Ctrl+U act on the selected characters, or
 - A word that also appears earlier in the same piece of text is declined rather than risk restyling the earlier one (G084).
 - Underline and strikethrough are lines of their own: they stay put if the text is later moved or rewrapped, and Underline shows pressed only for what you are about to type, not for text already underlined (G085). This is short of "lines that move with the text" above.
 
-## O274 — **OPEN, queued** — a Keyboard Shortcuts page in Settings
+## O274 — **BUILT AND DRIVEN — awaiting your verdict** — a Keyboard Shortcuts page in Settings
 
 His words: *"Also shortcut keys should have a section in settings for customization or individual disabling."*
 
 A page in Settings listing every command with its key, grouped by ribbon tab, with the keys that work while typing text in their own group. Each can be changed by pressing the new key, cleared to switch it off, or reset. A key already in use is shown as a clash before anything is saved. The changes go into his own settings file, the one the program already reads, not a second one.
 
-**Where it stands.** Not built. It comes after the Word-like text steps and before the snapshot box (O272).
+**Where it stands.** Built. Settings ▸ Keyboard shortcuts lists every command this build has, under the ribbon tab that shows it, with the keys that work while typing text (bold, undo, save and the rest) in a group of their own and a box to find a command by name. **Change** waits for the new key; a key another command already holds is shown as a clash, with **Reassign** to move it, and a key the viewer or the canvas keeps for itself (arrows, Escape, Delete, Tab) is refused with the reason. **Off** leaves a command with no key, **Reset** puts pdfcer's own key back, and **Reset all** does that for every command. Nothing changes until Save, and Save writes the changes into the same preferences file the program already reads. Driven: `a_changed_shortcut_takes_effect_and_persists` gives Find the key Ctrl+K, saves, and checks that Ctrl+K opens Find, Ctrl+F no longer does, and both still hold after a restart. The page itself is not photographed: the Settings window is one the harness cannot screenshot, so its layout has been checked only by the trace, not by eye.
 
 ## O275 — **BUILT AND DRIVEN — awaiting your verdict** — every form field's Border choice offers No border
 

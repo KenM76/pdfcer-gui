@@ -249,8 +249,9 @@ impl ScriptedPointer {
         self.screenshot_in(session, None, png)
     }
 
-    /// [`Self::screenshot`] of `viewport` (root when `None`), such as a
-    /// dialog's own window.
+    /// [`Self::screenshot`] of `viewport` (root when `None`). Only a deferred
+    /// viewport answers: eframe never screenshots an immediate one, so a
+    /// `show_viewport_immediate` dialog times out as SKIP.
     pub fn screenshot_in(
         &self,
         session: &Session,

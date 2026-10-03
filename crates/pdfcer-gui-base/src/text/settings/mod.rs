@@ -8,6 +8,7 @@
 
 pub mod bytes;
 pub mod extract;
+pub mod keys;
 pub mod look;
 /// The page list and search box.
 pub mod nav;

@@ -476,7 +476,12 @@ impl Prefs {
                         printing::KeyOutcome::NotMine => {
                             match printing::parse_key(&mut prefs.print, key, value) {
                                 printing::KeyOutcome::NotMine => {
-                                    exporting::parse_key(&mut prefs.export, key, value)
+                                    match exporting::parse_key(&mut prefs.export, key, value) {
+                                        printing::KeyOutcome::NotMine => {
+                                            shortcuts::parse_key(&mut prefs.shortcuts, key, value)
+                                        }
+                                        mine => mine,
+                                    }
                                 }
                                 mine => mine,
                             }
@@ -938,6 +943,7 @@ impl Prefs {
         // blocks are how an operator learns that `export_image_format` exists
         // and what may be written there.
         exporting::write_block(&self.export, &mut out);
+        shortcuts::write_block(&self.shortcuts, &mut out);
 
         out
     }

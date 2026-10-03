@@ -394,9 +394,7 @@ impl PdfcerApp {
             // vanishing on the same frame.
             "file.about" => self.dialogs.open_about(),
             id if text::handles(id) => text::dispatch(self, ctx, id, actions),
-            id if settings::handles(id) => {
-                settings::dispatch(id, &mut self.settings_draft, &self.settings, &self.prefs)
-            }
+            id if settings::handles(id) => settings::dispatch(self, id),
             // Recognise text. A dialog rather than an immediate action, and
             // rather than the `file.copy_document_text` shape one arm below.
             //

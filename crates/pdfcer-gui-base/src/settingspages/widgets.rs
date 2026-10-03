@@ -52,6 +52,11 @@ fn name(ui: &Ui, name: &str) -> RichText {
     }
 }
 
+/// A searchable name on a line of its own.
+pub fn label(ui: &mut Ui, text: &str) {
+    ui.label(name(ui, text));
+}
+
 /// One setting's three lines: what it is, what is open, and what it costs.
 pub fn header(ui: &mut Ui, title: &str, silence: &str, radius: &str) {
     ui.label(name(ui, title));

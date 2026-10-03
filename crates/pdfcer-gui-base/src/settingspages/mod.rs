@@ -10,6 +10,8 @@ pub mod colour;
 pub mod comments;
 pub mod forms;
 pub mod images;
+pub mod keys;
+pub mod keyscatalog;
 pub mod measuring;
 pub mod pages;
 pub mod preset;
@@ -98,6 +100,9 @@ pub struct Draft {
     pub working_prefs: crate::prefs::Prefs,
     /// What the preferences were when the window opened.
     pub original_prefs: crate::prefs::Prefs,
+    /// What the Keyboard shortcuts page lists, built by the app when the
+    /// window opens; empty when the program has no keymap.
+    pub shortcuts: std::sync::Arc<keyscatalog::Catalog>,
 }
 
 impl Draft {
@@ -137,6 +142,7 @@ impl Draft {
             chosen_preset: preset::resolve_id(prefs.chosen_standard.as_deref()),
             working_prefs: prefs.clone(),
             original_prefs: prefs.clone(),
+            shortcuts: std::sync::Arc::default(),
         }
     }
 

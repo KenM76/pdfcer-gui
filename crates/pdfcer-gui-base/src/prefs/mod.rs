@@ -40,6 +40,7 @@ pub mod exporting;
 /// file format — parser and writer together, on [`printing`]'s precedent. See
 /// its header.
 pub mod offpage;
+pub mod shortcuts;
 
 /// Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
@@ -77,6 +78,7 @@ pub use exporting::{
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
+pub use shortcuts::ShortcutPrefs;
 // `pub(crate)`, not `pub`: `PrintPrefs` carries `dialogs::print::spooler`'s own
 // `pub(crate)` types, so it can be no more visible than they are. `Prefs` stays
 // `pub` and holds it on a `pub(crate)` field, which is legal and is what keeps
@@ -358,6 +360,8 @@ pub struct Prefs {
     /// that reads [`crate::viewer::ViewState::off_page`], which is where a
     /// per-document answer legitimately diverges from the remembered one.
     pub off_page: OffPagePrefs,
+    /// The operator's own keyboard shortcuts. See [`shortcuts`].
+    pub shortcuts: ShortcutPrefs,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -796,6 +800,7 @@ impl Default for Prefs {
             // `OffPagePrefs::default_for_mode`. See that function on why
             // *unanswered* is stored as absence rather than as `false`.
             off_page: OffPagePrefs::default(),
+            shortcuts: ShortcutPrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

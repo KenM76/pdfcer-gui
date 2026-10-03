@@ -98,7 +98,8 @@ impl PdfcerApp {
         // operations and removes the need for a before/after snapshot that could
         // itself go stale.
         if let Some(shell) = self.shell.as_mut() {
-            crate::shell::manifest::apply_paste_chords(shell, self.prefs.paste_chords);
+            let prefs = &self.prefs;
+            crate::shell::manifest::keys::apply(shell, prefs.paste_chords, &prefs.shortcuts);
         }
         let _ = crate::canvas::textedit::installed::warm(&self.prefs);
 

@@ -22,3 +22,69 @@ pub fn parse_chord(chord: &str) -> Option<(Modifiers, Key)> {
     }
     Some((modifiers, key?))
 }
+
+/// Spell `key` under `modifiers` the way the manifest does: `Ctrl+`, `Shift+`,
+/// `Alt+`, then the key's symbol when [`parse_chord`] reads it back, else its
+/// name. The result always parses to the same chord.
+#[must_use]
+pub fn format_chord(modifiers: Modifiers, key: Key) -> String {
+    let mut out = String::new();
+    // ui-text-exempt: manifest chord spelling, parsed back by parse_chord.
+    for (on, word) in [
+        (modifiers.command || modifiers.ctrl, "Ctrl+"),
+        (modifiers.shift, "Shift+"),
+        (modifiers.alt, "Alt+"),
+    ] {
+        if on {
+            out.push_str(word);
+        }
+    }
+    let symbol = key.symbol_or_name();
+    let readable = symbol.len() == 1
+        && symbol != "+"
+        && symbol.chars().all(|c| c.is_ascii_punctuation())
+        && Key::from_name(symbol) == Some(key);
+    out.push_str(if readable { symbol } else { key.name() });
+    out
+}
+
+/// `chord` respelled by [`format_chord`], or `None` when it does not parse.
+#[must_use]
+pub fn canonical(chord: &str) -> Option<String> {
+    let (modifiers, key) = parse_chord(chord)?;
+    Some(format_chord(modifiers, key))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_key_round_trips_under_four_modifier_sets() {
+        let sets = [
+            Modifiers::NONE,
+            Modifiers::COMMAND,
+            Modifiers::COMMAND | Modifiers::SHIFT,
+            Modifiers::ALT | Modifiers::SHIFT,
+        ];
+        for key in Key::ALL {
+            for m in sets {
+                let spelled = format_chord(m, *key);
+                assert_eq!(
+                    parse_chord(&spelled),
+                    Some((m, *key)),
+                    "`{spelled}` does not read back as {key:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_manifest_spelling_is_kept_where_it_is_already_canonical() {
+        assert_eq!(canonical("Ctrl+[").as_deref(), Some("Ctrl+["));
+        assert_eq!(canonical("Ctrl+OpenBracket").as_deref(), Some("Ctrl+["));
+        assert_eq!(canonical("Ctrl+Minus").as_deref(), Some("Ctrl+Minus"));
+        assert_eq!(canonical("Shift+Ctrl+Z").as_deref(), Some("Ctrl+Shift+Z"));
+        assert_eq!(canonical("Ctrl+Nope"), None);
+    }
+}

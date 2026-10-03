@@ -11,6 +11,7 @@ use pdfcer_gui_base::ribbonladder as ladder;
 #[cfg(test)]
 mod ladder_tests;
 pub use pdfcer_gui_base::railmanifest as rail;
+pub mod keys;
 #[cfg(test)]
 mod rail_tests;
 mod view;
@@ -22,7 +23,7 @@ use pdfcer_gui_base::ribbontabs::{
 use crate::text::ribbon;
 use egui_shell::manifest::{Item, Mode, Shell};
 
-/// **The complete pdfcer shell.**
+/// Bind Ctrl+V and Ctrl+Shift+V to paste and duplicate in the operator's `order`.
 pub fn apply_paste_chords(shell: &mut Shell, order: crate::app::prefs::PasteChords) {
     let Some(keymap) = shell.keymap.as_mut() else {
         return;
@@ -48,7 +49,7 @@ pub fn apply_paste_chords(shell: &mut Shell, order: crate::app::prefs::PasteChor
     });
 }
 
-/// them and why.
+/// **The complete pdfcer shell.**
 #[must_use]
 pub fn built_in() -> Shell {
     let mut shell = Shell::new()

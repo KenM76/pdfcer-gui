@@ -49,7 +49,10 @@
 //! for a window placed off the desktop, where an OS capture sees whatever is
 //! on screen there — and writes it beside the step file as a binary PPM,
 //! `<step file>.shot-<seq>.ppm`. Its acknowledgement waits for the file and
-//! adds `path= w= h=`. A step whose viewport closes before its last frame
+//! adds `path= w= h=`. eframe never screenshots an immediate viewport (its
+//! `render_immediate_viewport` passes no screenshot commands), so a `shot`
+//! aimed at a dialog shown with `show_viewport_immediate` is never answered.
+//! A step whose viewport closes before its last frame
 //! (Enter that closes its own dialog) is acknowledged with `closed=1`.
 //!
 //! An unreadable line answers `diag-pointer-refused seq=… line=…`. The

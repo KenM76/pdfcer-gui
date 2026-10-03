@@ -88,9 +88,11 @@ and a closed perimeter ce dimension switches between perimeter and area
 find and replace, is the Find bar's Replace row in Edit (`app::actions::replace`;
 `ui-verify --check replace_all_is_one_undo` on `fixtures/paragraph.pdf`). Step 9,
 input methods, is `canvas::textedit::ime` (`ui-verify --check
-an_ime_composition_types_once_committed`). Next: O274, the Keyboard Shortcuts
-page (design notes: the keymap is `shell::manifest::built_in`, overridden live
-as `shell::manifest::apply_paste_chords` does).
+an_ime_composition_types_once_committed`). O274, Settings ▸ Keyboard
+shortcuts, is `settingspages::keys` over `shell::manifest::keys::apply`, which
+rebuilds the keymap from the loaded snapshot every time; a text draft reads its
+own chords from `canvas::textedit::draftkeys` (`ui-verify --check
+a_changed_shortcut_takes_effect_and_persists`). Next: O272, the snapshot box.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting
@@ -167,8 +169,7 @@ A Text-tool click on text arms the caret tool (`canvas::clicking`), because
 The engine pin carries
 G074, G077 and G081 (`UnsupportedCause` is data); steps 12 and 13 consume them.
 Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
-at pin `dd5747d1`. Queued after the WORDLIKE steps: O274 (a Keyboard Shortcuts page in
-Settings), then the snapshot box (O272, engine request G099).
+at pin `dd5747d1`. Next: the snapshot box (O272).
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;

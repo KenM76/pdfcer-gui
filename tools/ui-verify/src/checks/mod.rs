@@ -1098,6 +1098,8 @@ pub mod bookmark_dest;
 pub mod bookmark_edit;
 
 pub mod settings_nav;
+/// A shortcut changed in Settings reaches the keys and survives a restart.
+pub mod shortcut_change;
 
 /// **The Bookmarks panel could not REORGANISE** — `Pass 161.0` shipped
 /// `move_outline_item` and `set_outline_open`, and this drives both through the

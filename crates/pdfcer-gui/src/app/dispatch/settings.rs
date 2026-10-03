@@ -7,9 +7,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/settings.md`.
 
-use crate::app::prefs::Prefs;
+use std::sync::Arc;
+
 use crate::dialogs::settings::Draft;
-use pdfcer_core::settings::Settings;
 
 /// Whether this file owns `id`.
 #[must_use]
@@ -28,11 +28,19 @@ fn focus(id: &str) -> Option<&'static str> {
     }
 }
 
-/// Open the Settings window, at the group the id names.
-pub(crate) fn dispatch(id: &str, draft: &mut Option<Draft>, settings: &Settings, prefs: &Prefs) {
-    if draft.is_none() {
-        *draft = Some(Draft::focused_on(settings, prefs, focus(id)));
+/// Open the Settings window, at the group the id names, with the keyboard
+/// shortcuts this build registers.
+pub(crate) fn dispatch(app: &mut crate::app::PdfcerApp, id: &str) {
+    if app.settings_draft.is_some() {
+        return;
     }
+    let mut draft = Draft::focused_on(&app.settings, &app.prefs, focus(id));
+    if let Some(shell) = app.shell.as_ref() {
+        let catalog =
+            crate::shell::manifest::keys::catalog(shell, &app.commands, app.prefs.paste_chords);
+        draft.shortcuts = Arc::new(catalog);
+    }
+    app.settings_draft = Some(draft);
 }
 
 #[cfg(test)]
