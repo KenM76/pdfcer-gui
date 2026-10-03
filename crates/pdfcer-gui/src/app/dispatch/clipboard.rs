@@ -80,6 +80,11 @@ fn duplicate(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
 
 /// `Ctrl+C` and `Ctrl+X`, through the three-rung fork.
 fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut Vec<Action>) {
+    // RUNG 0 — a laid snapshot box is what Copy is about. Cut falls through.
+    if id == "edit.copy" && super::snapshotclip::owns_copy(app) {
+        super::snapshotclip::copy(app);
+        return;
+    }
     let Status::Open(doc) = &app.status else {
         return;
     };

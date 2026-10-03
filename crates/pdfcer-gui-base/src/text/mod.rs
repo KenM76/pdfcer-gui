@@ -217,6 +217,8 @@ pub mod unembed;
 /// what each leaves open, and what each costs.
 pub mod security;
 pub mod shortcuts;
+/// What the snapshot box says on the status row.
+pub mod snapshot;
 
 /// File ▸ Security ▸ Add archive time-stamp….
 #[cfg(feature = "signing")]

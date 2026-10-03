@@ -66,7 +66,7 @@ pub fn copy_out(doc: &crate::opendoc::OpenDoc) -> Result<Placed, Refusal> {
 }
 
 /// **The render options both routes use.**
-fn render_options(doc: &crate::opendoc::OpenDoc) -> pdfcer_render::RenderOptions {
+pub(super) fn render_options(doc: &crate::opendoc::OpenDoc) -> pdfcer_render::RenderOptions {
     use crate::settings::SettingsExt;
     let mut options = doc
         .settings
@@ -75,6 +75,24 @@ fn render_options(doc: &crate::opendoc::OpenDoc) -> pdfcer_render::RenderOptions
     options.annotations = doc.annotations_visible();
     options.layers = doc.layer_visibility();
     options
+}
+
+/// The SVG writer's clipboard options at `dpi`: outlines, because Word's
+/// importer ignores embedded fonts, and no background.
+pub(super) fn svg_options(dpi: f32) -> pdfcer_render::svg::SvgOptions {
+    pdfcer_render::svg::SvgOptions::default()
+        .with_raster_dpi(dpi)
+        .with_background(None)
+        .with_text(pdfcer_render::svg::SvgText::Outlines)
+}
+
+/// The EMF writer's clipboard options at `dpi`: outlines, because an EMF
+/// cannot carry the font, and no background.
+pub(super) fn emf_options(dpi: f32) -> pdfcer_render::emf::EmfOptions {
+    pdfcer_render::emf::EmfOptions::default()
+        .with_raster_dpi(dpi)
+        .with_background(None)
+        .with_text(pdfcer_render::emf::EmfText::Outlines)
 }
 
 /// The whole current page, in every format [`ORDER`] names.
@@ -92,28 +110,10 @@ fn page_payload(
     // surface showing the file as it was on disk.
     let view = doc.session.view();
 
-    let svg = pdfcer_render::svg::export_svg_view(
-        &view,
-        page,
-        options,
-        // Outlines on the clipboard: Word's importer ignores embedded fonts.
-        &pdfcer_render::svg::SvgOptions::default()
-            .with_raster_dpi(COPY_DPI)
-            .with_background(None)
-            .with_text(pdfcer_render::svg::SvgText::Outlines),
-    )
-    .map_err(|error| Refusal::Render(error.to_string()))?;
-    let emf = pdfcer_render::emf::export_emf_view(
-        &view,
-        page,
-        options,
-        // Outlines on the clipboard: an EMF cannot carry the font.
-        &pdfcer_render::emf::EmfOptions::default()
-            .with_raster_dpi(COPY_DPI)
-            .with_background(None)
-            .with_text(pdfcer_render::emf::EmfText::Outlines),
-    )
-    .map_err(|error| Refusal::Render(error.to_string()))?;
+    let svg = pdfcer_render::svg::export_svg_view(&view, page, options, &svg_options(COPY_DPI))
+        .map_err(|error| Refusal::Render(error.to_string()))?;
+    let emf = pdfcer_render::emf::export_emf_view(&view, page, options, &emf_options(COPY_DPI))
+        .map_err(|error| Refusal::Render(error.to_string()))?;
     let rendered = pdfcer_render::render_page_with_view(
         &view,
         page,
@@ -171,28 +171,10 @@ fn selection_bytes(
     // The SAME options the page route uses — see [`render_options`] for why
     // the clip is not exempt from the settings funnel even though it carries no
     // annotations and no layers for two of those fields to describe.
-    let svg = pdfcer_render::svg::export_svg(
-        &clipped,
-        page,
-        options,
-        // Outlines on the clipboard: Word's importer ignores embedded fonts.
-        &pdfcer_render::svg::SvgOptions::default()
-            .with_raster_dpi(COPY_DPI)
-            .with_background(None)
-            .with_text(pdfcer_render::svg::SvgText::Outlines),
-    )
-    .map_err(|error| Refusal::Render(error.to_string()))?;
-    let emf = pdfcer_render::emf::export_emf(
-        &clipped,
-        page,
-        options,
-        // Outlines on the clipboard: an EMF cannot carry the font.
-        &pdfcer_render::emf::EmfOptions::default()
-            .with_raster_dpi(COPY_DPI)
-            .with_background(None)
-            .with_text(pdfcer_render::emf::EmfText::Outlines),
-    )
-    .map_err(|error| Refusal::Render(error.to_string()))?;
+    let svg = pdfcer_render::svg::export_svg(&clipped, page, options, &svg_options(COPY_DPI))
+        .map_err(|error| Refusal::Render(error.to_string()))?;
+    let emf = pdfcer_render::emf::export_emf(&clipped, page, options, &emf_options(COPY_DPI))
+        .map_err(|error| Refusal::Render(error.to_string()))?;
     // `render_page_with`, the four-argument form, NOT the three-argument
     // `render_page` that `canvas::clipimage` uses on the same clip. That one
     // makes a thumbnail for an internal paste, where the operator's colour
@@ -210,20 +192,31 @@ fn selection_bytes(
     raster_into(svg.svg, emf.emf, rendered.pixmap)
 }
 
-/// Assemble the three products into a [`CopyPayload`], encoding the PNG.
+/// Assemble the three products into a [`CopyPayload`] at [`COPY_DPI`].
 fn raster_into(
     svg: String,
     emf: Vec<u8>,
     pixmap: pdfcer_render::tiny_skia::Pixmap,
 ) -> Result<CopyPayload, Refusal> {
-    let png = pdfcer_render::export::encode_png(&pixmap, Some(COPY_DPI))
+    raster_at(svg, emf, pixmap, COPY_DPI)
+}
+
+/// Assemble the three products into a [`CopyPayload`], encoding the PNG and
+/// stamping both rasters with `dpi`.
+pub(super) fn raster_at(
+    svg: String,
+    emf: Vec<u8>,
+    pixmap: pdfcer_render::tiny_skia::Pixmap,
+    dpi: f32,
+) -> Result<CopyPayload, Refusal> {
+    let png = pdfcer_render::export::encode_png(&pixmap, Some(dpi))
         .map_err(|error| Refusal::Render(error.to_string()))?;
     Ok(CopyPayload {
         svg: Some(svg),
         emf: Some(emf),
         png: Some(png),
         pixmap: Some(pixmap),
-        pixels_per_metre: pixels_per_metre(COPY_DPI),
+        pixels_per_metre: pixels_per_metre(dpi),
     })
 }
 
@@ -249,7 +242,11 @@ fn staged(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
     if payload.is_empty() {
         return Err(Refusal::NoPage);
     }
+    Ok(frame(payload))
+}
 
+/// Frame every format the payload has, in [`ORDER`].
+fn frame(payload: &CopyPayload) -> Vec<Staged> {
     // Driven by `ORDER`, never by the struct's field order. `CopyPayload`'s
     // own `formats()` makes the same choice and states the reason: a second
     // list is a second answer, and the one that goes stale is whichever is not
@@ -269,12 +266,26 @@ fn staged(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
             out.push(Staged { format, bytes });
         }
     }
-    Ok(out)
+    out
 }
 
 /// Place a payload, returning the format names that landed.
-fn place(payload: &CopyPayload) -> Result<Vec<&'static str>, Refusal> {
-    let staged = staged(payload)?;
+pub(super) fn place(payload: &CopyPayload) -> Result<Vec<&'static str>, Refusal> {
+    put(&staged(payload)?)
+}
+
+/// Place a payload the caller has deliberately reduced to its picture, with
+/// the reason disclosed by the caller: [`staged`]'s would-degrade gate is
+/// for a copy that lost its vectors by accident.
+pub(super) fn place_withheld(payload: &CopyPayload) -> Result<Vec<&'static str>, Refusal> {
+    if payload.is_empty() {
+        return Err(Refusal::NoPage);
+    }
+    put(&frame(payload))
+}
+
+/// Hand framed entries to the operating system's clipboard.
+fn put(staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
     let entries: Vec<native_clipboard::Entry<'_>> = staged
         .iter()
         .map(|item| native_clipboard::Entry {

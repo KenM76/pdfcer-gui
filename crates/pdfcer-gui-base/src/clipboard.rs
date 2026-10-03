@@ -8,6 +8,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/clipboard.md`.
 
 pub mod place;
+pub mod snapshot;
 
 use pdfcer_render::tiny_skia::Pixmap;
 

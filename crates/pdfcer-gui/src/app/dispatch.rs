@@ -32,6 +32,8 @@ pub(crate) mod ospaste;
 /// it would take the clipboard from the canvas for ever.
 pub(crate) mod pageclip;
 pub(crate) mod pages;
+/// Copy while a snapshot box is laid: the box.
+pub(crate) mod snapshotclip;
 /// **The two text-copy verbs** — the page's words and the whole document's,
 /// onto the clipboard.
 pub(crate) mod textcopy;

@@ -54,6 +54,9 @@ pub const CANVAS_MARKUP: &str = "canvas.markup";
 /// apply to it.
 pub const CANVAS_DIMENSION: &str = "canvas.dimension";
 
+/// Right-click on the page **inside the snapshot box**.
+pub const CANVAS_SNAPSHOT: &str = "canvas.snapshot";
+
 /// **The right-click landed on a segment of a shape that can take a new
 /// point** — the `visible_when` of `markup.add_node`.
 pub const NODE_INSERT_OFFERED: &str = "markup.node_insert_offered";
@@ -142,6 +145,7 @@ pub const CONTEXTS: &[&str] = &[
     CANVAS_FIELD,
     CANVAS_MARKUP,
     CANVAS_DIMENSION,
+    CANVAS_SNAPSHOT,
     DOCK_TAB,
     DOCUMENT_TAB,
     OBJECTS_ROW,
@@ -401,6 +405,9 @@ pub fn built_in() -> Menus {
             Item::command("edit.copy"),
             Item::command("view.zoom_selection"),
         ]))
+        // -------------------------------------------------------------------
+        // canvas.snapshot — inside the snapshot box: copy it (O272).
+        .with(Menu::new(CANVAS_SNAPSHOT).with_items([Item::command("edit.copy")]))
         // -------------------------------------------------------------------
         // canvas.empty — the view menu.
         //

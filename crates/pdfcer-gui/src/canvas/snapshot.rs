@@ -230,6 +230,12 @@ fn canvas_rect(doc: &OpenDoc, page_index: usize) -> Option<Rect> {
     ))
 }
 
+/// Whether `at` is inside the box drawn on `page_index`.
+#[must_use]
+pub fn under(doc: &OpenDoc, page_index: usize, map: &PageMapping, at: Option<Pos2>) -> bool {
+    at.is_some_and(|p| screen_rect(doc, page_index, map).is_some_and(|r| r.contains(p)))
+}
+
 /// The box's screen rect on `page_index` through `map`; `None` when the box is
 /// on another page or the page cannot be mapped.
 #[must_use]

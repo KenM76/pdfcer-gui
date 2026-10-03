@@ -104,6 +104,9 @@ pub enum CanvasMenu {
     /// The pointer was over a **selected ce dimension**, by the same outline
     /// rule as [`CanvasMenu::Markup`].
     Dimension,
+    /// **The pointer is inside the snapshot box**: copy it. Asked first,
+    /// because while the box is laid it is the operand.
+    Snapshot,
     /// The pointer was over blank page: act on the view.
     ///
     /// The default, so a frame before any right-click has happened attaches
@@ -125,6 +128,7 @@ impl CanvasMenu {
             Self::ReadObject => menus::CANVAS_READ_OBJECT,
             Self::Markup => menus::CANVAS_MARKUP,
             Self::Dimension => menus::CANVAS_DIMENSION,
+            Self::Snapshot => menus::CANVAS_SNAPSHOT,
             Self::Empty => menus::CANVAS_EMPTY,
         }
     }
@@ -286,7 +290,9 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         // selection is not disturbed on the way past: `select_under_right_click`
         // would replace the object selection with whatever happens to sit under
         // a paragraph, which the operator did not ask for and cannot see.
-        let chosen = if caret_in_existing_text(&ctx) {
+        let chosen = if crate::canvas::snapshot::under(doc, page, map, screen_pos) {
+            CanvasMenu::Snapshot
+        } else if caret_in_existing_text(&ctx) {
             CanvasMenu::Text
         } else if field_selected {
             // Asked BEFORE the hit test, and the ordering is the same
@@ -816,6 +822,7 @@ mod tests {
             CanvasMenu::Object,
             CanvasMenu::Markup,
             CanvasMenu::Dimension,
+            CanvasMenu::Snapshot,
             CanvasMenu::Empty,
         ] {
             assert!(

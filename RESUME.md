@@ -98,8 +98,9 @@ has S1, the resolution setting: `ui-verify --check
 the_snapshot_resolution_persists`; S2–S3, the box laid, moved, resized and
 cleared, is `canvas::snapshot`: `ui-verify --check
 a_snapshot_box_moves_resizes_and_clears`; S4, the marching outline:
-`ui-verify --check a_snapshot_box_outline_marches`). Next: S5, Copy, on
-`pageops::extract_region` (G099), which is in the pin.
+`ui-verify --check a_snapshot_box_outline_marches`; S5, Copy, is
+`clipboard::snapshot` on `pageops::extract_region`: `ui-verify --check
+a_snapshot_copy_is_cropped_at_the_set_dpi`). Next: S7, paste back.
 
 **O263, Align and Distribute: all four stages built and driven** (Align,
 Distribute, Rearrange, Grid, Circular, node mode, on-canvas handles), awaiting

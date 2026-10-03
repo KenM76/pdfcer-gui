@@ -1104,6 +1104,8 @@ pub mod shortcut_change;
 pub mod snapshot_ants;
 /// A snapshot box stays on its page area through a zoom.
 pub mod snapshot_box;
+/// Copy with a snapshot box laid puts the box on the clipboard, cut to it.
+pub mod snapshot_copy;
 /// The snapshot resolution typed in Settings survives a restart.
 pub mod snapshot_dpi;
 /// A snapshot box moves, resizes and clears with its tool.

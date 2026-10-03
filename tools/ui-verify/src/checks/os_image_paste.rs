@@ -91,7 +91,7 @@ impl ClipGuard {
     }
 
     /// Count the app's own write as ours.
-    fn adopt(&mut self) {
+    pub(super) fn adopt(&mut self) {
         self.last_ours = sys::clipboard_sequence();
     }
 

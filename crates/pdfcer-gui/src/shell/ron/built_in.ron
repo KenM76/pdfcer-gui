@@ -692,6 +692,12 @@
             ],
         ),
         (
+            context: "canvas.snapshot",
+            items: [
+                Command(id: "edit.copy"),
+            ],
+        ),
+        (
             context: "canvas.empty",
             items: [
                 Command(id: "view.zoom_fit_page"),
