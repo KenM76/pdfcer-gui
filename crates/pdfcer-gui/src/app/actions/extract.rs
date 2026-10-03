@@ -29,8 +29,11 @@
 
 use std::path::{Path, PathBuf};
 
+use pdfcer_core::pageops::{AssembleReport, ExtractedPageLabels, SeparationPolicy};
+
 use crate::app::files::{self, Picked};
 use crate::app::state::OpenDoc;
+use crate::text::extract_pages as t;
 
 /// **Write the operand pages out as a new standalone document.**
 ///
@@ -64,14 +67,26 @@ use crate::app::state::OpenDoc;
 /// `tools/ui-verify`'s page-ops check can answer a native modal no synthetic
 /// input can reach.
 ///
+/// The labels and separations choices reach `pageops::extract_with_labels`:
+/// `labels` comes from the window, `separations` is the operator's Settings ▸
+/// Pages policy, the same one a delete obeys.
+///
+/// Returns whether the file was written, which is what licenses the window's
+/// *delete afterwards*.
+///
 /// [`Action::ExtractPages`]: super::Action::ExtractPages
-pub(super) fn extract(doc: &OpenDoc, pages: &[usize]) {
+pub(super) fn extract(
+    doc: &OpenDoc,
+    pages: &[usize],
+    labels: ExtractedPageLabels,
+    separations: SeparationPolicy,
+) -> bool {
     if pages.is_empty() {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "extract-declined reason=no-pages".to_owned()
         });
-        return;
+        return false;
     }
     let suggested = suggested_path(doc);
     let target =
@@ -79,61 +94,99 @@ pub(super) fn extract(doc: &OpenDoc, pages: &[usize]) {
             Picked::Path(path) => path,
             // A cancelled extraction is a complete, correct, uninteresting
             // outcome — `save_copy`'s wording, and its reasoning.
-            Picked::Cancelled => return,
+            Picked::Cancelled => return false,
             Picked::Unavailable => {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     "extract-unavailable reason=no-picker-in-this-build".to_owned()
                 });
-                return;
+                return false;
             }
         };
-    write_extract(doc, pages, &target);
+    let written = write_extract(doc, pages, &target, labels, separations);
+    let note = match &written {
+        Ok(report) => receipt(doc, report, &target),
+        Err(detail) => t::failed(detail),
+    };
+    super::record_note(doc.edit_epoch, note);
+    written.is_ok()
+}
+
+/// The status-line receipt for a written extraction. The labels sentence is
+/// there only when the source has labels, since otherwise there was no choice.
+fn receipt(doc: &OpenDoc, report: &AssembleReport, target: &Path) -> String {
+    let file = target.file_name().map_or_else(
+        || target.display().to_string(),
+        |n| n.to_string_lossy().into_owned(),
+    );
+    let mut note = t::wrote(report.pages, &file);
+    if report.page_labels_dropped {
+        note.push(' ');
+        note.push_str(t::labels_dropped());
+    } else if report.page_label_ranges > 0 && doc.page_labels().is_some() {
+        note.push(' ');
+        note.push_str(t::labels_kept());
+    }
+    note
 }
 
 /// Assemble the new document and put it on disk, reporting on the trace.
-///
-fn write_extract(doc: &OpenDoc, pages: &[usize], target: &Path) {
-    let assembled = pdfcer_core::pageops::extract(&doc.session.view(), pages);
-    let (bytes, report) = match assembled {
-        Ok(pair) => pair,
-        Err(error) => {
-            crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "extract-failed path={target:?} n={} detail={error}",
-                    pages.len()
-                )
-            });
-            return;
-        }
-    };
-    match std::fs::write(target, &bytes) {
-        Ok(()) => crate::diag::trace(|| {
+/// `Err` carries the engine's or the file system's sentence.
+fn write_extract(
+    doc: &OpenDoc,
+    pages: &[usize],
+    target: &Path,
+    labels: ExtractedPageLabels,
+    separations: SeparationPolicy,
+) -> Result<AssembleReport, String> {
+    let assembled =
+        pdfcer_core::pageops::extract_with_labels(&doc.session.view(), pages, separations, labels);
+    let (bytes, report) = assembled.map_err(|error| {
+        crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                //
-                // `pages=` is what was written and `asked=` is what was
-                // requested, and both are here so the line can disagree with
-                // itself. A build that extracted the wrong count — the whole
-                // document, say, or one page where three were picked — writes
-                // a perfectly good PDF; the only evidence is that these two
-                // fields no longer match. `path` is Debug-quoted exactly as
-                // `save-copy`'s is, so a Windows path with a space in it
-                // cannot make every field after it unreadable.
-                "extract path={target:?} pages={} bytes={} asked={}",
-                report.pages,
-                bytes.len(),
-                pages.len(),
+                "extract-failed path={target:?} n={} detail={error}",
+                pages.len()
             )
-        }),
-        Err(error) => crate::diag::trace(|| {
+        });
+        error.to_string()
+    })?;
+    if let Err(error) = std::fs::write(target, &bytes) {
+        crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 "extract-failed path={target:?} bytes={} detail={error}",
                 bytes.len()
             )
-        }),
+        });
+        return Err(error.to_string());
+    }
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            //
+            // `pages=` is what was written and `asked=` what was requested, so
+            // a wrong count shows as the line disagreeing with itself. `path`
+            // is Debug-quoted so a space in it cannot split the fields.
+            "extract path={target:?} pages={} bytes={} asked={} labels={} labels_dropped={} label_ranges={}",
+            report.pages,
+            bytes.len(),
+            pages.len(),
+            labels_token(labels),
+            u8::from(report.page_labels_dropped),
+            report.page_label_ranges,
+        )
+    });
+    Ok(report)
+}
+
+/// The trace token for a labels choice, owned here rather than `{:?}`.
+fn labels_token(labels: ExtractedPageLabels) -> &'static str {
+    match labels {
+        ExtractedPageLabels::Keep => "keep",
+        ExtractedPageLabels::Drop => "drop",
+        // ui-text-exempt: a trace token, never displayed
+        _ => "other",
     }
 }
 
@@ -188,7 +241,14 @@ mod tests {
         let target = scratch("extracted.pdf");
         let _ = std::fs::remove_file(&target);
 
-        write_extract(&doc, &[1, 2], &target);
+        write_extract(
+            &doc,
+            &[1, 2],
+            &target,
+            ExtractedPageLabels::Keep,
+            SeparationPolicy::default(),
+        )
+        .expect("the extraction must be written");
 
         let written = std::fs::read(&target).expect("the extraction must land on disk");
         assert!(
@@ -227,7 +287,14 @@ mod tests {
 
         let target = scratch("extracted-rotated.pdf");
         let _ = std::fs::remove_file(&target);
-        write_extract(&doc, &[0], &target);
+        write_extract(
+            &doc,
+            &[0],
+            &target,
+            ExtractedPageLabels::Keep,
+            SeparationPolicy::default(),
+        )
+        .expect("the extraction must be written");
 
         let reopened = Document::load(&target).expect("the extraction must open");
         let pages = pdfcer_core::page_tree::pages(&reopened).expect("its page tree must walk");
@@ -239,6 +306,34 @@ mod tests {
              session, so the operator's rotation is not in it"
         );
         let _ = std::fs::remove_file(&target);
+    }
+
+    /// **Keep carries the pages' labels; Drop writes none.** Pages 1-2 of
+    /// `i ii 1 2` show `i ii` in the new file under Keep and `1 2` under Drop.
+    #[test]
+    fn the_labels_choice_reaches_the_new_file() {
+        use pdfcer_core::document::Document;
+        use pdfcer_core::page_labels::{label_ranges, page_labels};
+
+        let doc = crate::app::state::open_local_fixture("labelled-pages.pdf");
+        for (labels, want, ranges) in [
+            (ExtractedPageLabels::Keep, ["i", "ii"], 1),
+            (ExtractedPageLabels::Drop, ["1", "2"], 0),
+        ] {
+            let target = scratch(&format!("labelled-{}.pdf", labels_token(labels)));
+            let _ = std::fs::remove_file(&target);
+            let report = write_extract(&doc, &[0, 1], &target, labels, SeparationPolicy::default())
+                .expect("the extraction must be written");
+            assert_eq!(report.page_labels_dropped, ranges == 0);
+            let reopened = Document::load(&target).expect("the extraction must open");
+            assert_eq!(
+                page_labels(&reopened).expect("a page tree"),
+                want,
+                "{labels:?}"
+            );
+            assert_eq!(label_ranges(&reopened).len(), ranges, "{labels:?}");
+            let _ = std::fs::remove_file(&target);
+        }
     }
 
     /// **The suggested name is never the file that was opened.**

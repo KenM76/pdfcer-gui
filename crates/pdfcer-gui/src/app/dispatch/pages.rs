@@ -193,10 +193,16 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 actions.push(Action::Page(PageAction::DeletePages { pages }));
             }
         }
+        // A window: which pages, their labels, and whether they leave this
+        // document are questions. The operands are its starting range.
         "pages.extract" => {
-            if let Some(pages) = app.page_operands() {
-                actions.push(Action::Page(PageAction::ExtractPages { pages }));
-            }
+            let Some(pages) = app.page_operands() else {
+                return;
+            };
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            app.dialogs.open_extract_pages(doc, &pages);
         }
         // **The two move verbs, and the one arm in this family that can
         // decline.**

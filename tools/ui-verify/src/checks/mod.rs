@@ -71,6 +71,7 @@ pub mod evidence_scripted;
 pub mod export_tables_choices;
 pub mod export_tables_scripted;
 pub mod export_word_scripted;
+pub mod extract_pages_labels;
 pub mod labels_scripted;
 pub mod measure_area_scripted;
 pub mod measure_place_scripted;

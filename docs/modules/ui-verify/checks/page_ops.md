@@ -45,7 +45,6 @@ two assertions no other check in the suite makes are:
 | Phase | Does | Expected |
 |---|---|---|
 | A | Review, Pages tab | `open ok pages=N` read as the baseline |
-| A2 | **Extract** | `extract … pages=1`, and a file beginning `%PDF-` at the named path |
 | B | **Rotate right** | `rotate-pages … epoch=` and `pages-resync … renumbered=0` |
 | C | **Move down** | `reorder-pages … epoch=` and `pages-resync … renumbered=1` |
 | D | **Delete** | `delete-pages … epoch=` and `pages-resync was=N now=N-1 renumbered=1` |
@@ -151,15 +150,9 @@ evidence rather than an absence of evidence.
   aim at. The six verbs it offers are the six driven here through the ribbon,
   and both routes reach `PdfcerApp::dispatch_command` — which is the whole
   point of one choke point.
-* **What is inside the extracted file.** `pages.extract` and
-  `file.save_copy` reach the same picker through the same
-  `PDFCER_DIAG_SAVE_PATH` seam — one variable, one path — so phase E
-  overwrites phase A2's file and it cannot be re-opened at the end. Phase A2
-  therefore proves the **join** (a ribbon click reaches the picker, the
-  picker's answer reaches a write, and what lands is a freestanding PDF) and
-  `app::actions::pages`' unit tests prove the **content** by writing a file
-  and loading it back — including that an unsaved rotation travels with it.
-  Neither half is missing; they are in two places and this is which.
+* **Extract.** It opens its own window, which this OS-input check does not
+  drive; `extract_pages_keeps_or_drops_the_labels` drives it with the
+  scripted pointer, from the ribbon click to the written file.
 * **Which page was rotated.** Phase H proves *a* page in the file carries
   `/Rotate 90`; it does not prove it is the one that was on screen. Reading
   that from the bytes needs a page-tree walk this crate has no parser for.
@@ -184,14 +177,6 @@ operator's reason for that: *"Reviewing a set means rotating a sheet to read
 it and extracting the pages you were asked about … page operations do not
 alter content."* Driving the weaker of the two modes that offer these verbs
 is the stronger claim — what works in Review works in Edit.
-
-### `const EXTRACT`
-
-Driven first and its file thrown away, because `pages.extract` and
-`file.save_copy` reach the *same* `crate::app::files::pick_save_path` through
-the *same* `PDFCER_DIAG_SAVE_PATH` seam — one variable, one path — so the
-later of the two overwrites the earlier. See the phase for what that
-division does and does not buy.
 
 ### `const RESYNC_EVENT`
 

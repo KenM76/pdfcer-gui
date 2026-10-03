@@ -160,3 +160,42 @@ pub fn parse_page_range(spec: &str, count: usize) -> Option<Vec<usize>> {
     }
     (!out.is_empty()).then_some(out)
 }
+
+/// The inverse of [`parse_page_range`]: zero-based indices as the 1-based
+/// text an operator types, runs joined with `-` (`[0,1,2,4]` → `1-3, 5`).
+/// The input is taken in the order given; a run is consecutive ascending
+/// indices.
+#[must_use]
+pub fn format_page_range(pages: &[usize]) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    let mut i = 0;
+    while let Some(&start) = pages.get(i) {
+        let mut end = start;
+        while pages.get(i + 1) == Some(&end.saturating_add(1)) {
+            end += 1;
+            i += 1;
+        }
+        parts.push(if end == start {
+            (start + 1).to_string()
+        } else {
+            format!("{}-{}", start + 1, end + 1)
+        });
+        i += 1;
+    }
+    parts.join(", ") // ui-text-exempt: page-range syntax `parse_page_range` reads back
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{format_page_range, parse_page_range};
+
+    #[test]
+    fn a_formatted_range_parses_back_to_the_same_pages() {
+        let pages = vec![0, 1, 2, 4, 6, 7];
+        let text = format_page_range(&pages);
+        assert_eq!(text, "1-3, 5, 7-8");
+        assert_eq!(parse_page_range(&text, 8), Some(pages));
+        assert_eq!(format_page_range(&[3]), "4");
+        assert_eq!(format_page_range(&[]), "");
+    }
+}

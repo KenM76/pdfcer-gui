@@ -54,6 +54,8 @@ pub mod export_tables;
 /// other half.
 pub mod export_text;
 pub mod export_word;
+/// Pages ▸ Extract…: which pages, their labels, and whether they leave.
+pub mod extract_pages;
 pub mod formfield;
 /// The *Sign here* window: a signature drawn by hand, placed in a box.
 pub mod handsign;
@@ -445,6 +447,7 @@ pub struct DialogsState {
     /// The Export-tables window, when one is open. Document-scoped.
     export_tables: Option<export_tables::ExportTablesDialog>,
     export_word: Option<export_word::ExportWordDialog>,
+    extract_pages: Option<extract_pages::ExtractPagesDialog>,
 
     /// The unsaved-edits confirmation, when one is open.
     ///
@@ -809,6 +812,9 @@ impl DialogsState {
         if self.export_word.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.export_word = None;
         }
+        if self.extract_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.extract_pages = None;
+        }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.embed = None;
         }
@@ -1160,6 +1166,7 @@ impl DialogsState {
         self.export_text = None;
         self.export_tables = None;
         self.export_word = None;
+        self.extract_pages = None;
         self.embed = None;
         self.unembed = None;
         // On this list for `stamp_collection`'s reason in its strongest form:

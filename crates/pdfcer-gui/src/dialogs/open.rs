@@ -5,9 +5,9 @@
 
 use super::{
     DialogsState, about, bates, compact, diagnostics, embed, export_dxf, export_image,
-    export_tables, export_text, export_word, formfield, import_text, insert_image, insert_pages,
-    labels, new_document, ocr, offpage, page_crop, page_size, print, protect, redact, scale,
-    shortcuts, stamp_collection, textannot, unembed,
+    export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_image,
+    insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print, protect, redact,
+    scale, shortcuts, stamp_collection, textannot, unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -362,6 +362,14 @@ impl DialogsState {
             return;
         }
         self.export_word = export_word::open_for(status);
+    }
+
+    /// The dispatch target for `pages.extract`, starting from `pages`.
+    pub fn open_extract_pages(&mut self, doc: &crate::app::state::OpenDoc, pages: &[usize]) {
+        if self.extract_pages.is_some() {
+            return;
+        }
+        self.extract_pages = Some(extract_pages::ExtractPagesDialog::open(doc, pages));
     }
 
     /// Open the Export-image window for the open document.

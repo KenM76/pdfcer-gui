@@ -37,12 +37,6 @@ const MOVE_DOWN: (&str, &str) = ("ribbon.item.pages.move_down", "pages.move_down
 /// **Phase D's control**, and the destructive one.
 const DELETE: (&str, &str) = ("ribbon.item.pages.delete", "pages.delete");
 
-/// **Phase A2's control.**
-const EXTRACT: (&str, &str) = ("ribbon.item.pages.extract", "pages.extract");
-
-/// `extract path=… pages=… bytes=… asked=…` — the extraction reached a write.
-const EXTRACT_APPLIED: &str = "extract";
-
 /// The command that puts the whole run on disk.
 const SAVE: (&str, &str) = ("ribbon.item.file.save_copy", "file.save_copy");
 
@@ -424,72 +418,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(16);
         click_tab(&session, &driver, ui_rect, PAGES_TAB)?;
 
-        // --- PHASE A2: extract the current page to a new document --------
-        //
-        // First, and its result is deliberately thrown away: phase E's save
-        // writes to the **same** path, because `pick_save_path` has one
-        // diagnostic seam and both verbs go through it. What this phase can
-        // therefore prove is the link nothing else in the workspace covers —
-        // **that a ribbon click reaches the picker and the picker's answer
-        // reaches a write** — and it proves it against the file rather than
-        // against the trace, by reading the bytes while the process is still
-        // running.
-        //
-        // What it deliberately does NOT prove is which pages are in that file.
-        // Counting them needs a page-tree walk this crate has no parser for,
-        // and re-opening it in a second process would cost a third launch to
-        // assert something `app::actions::pages`' unit tests already assert by
-        // writing a file and loading it back. The division is stated rather
-        // than implied: the JOIN is here, the CONTENT is there.
-        let _ = std::fs::remove_file(&target);
-        click_command(&session, &driver, ui_rect, EXTRACT, 30)?;
-        let trace = session.trace()?;
-        let Some(extracted) = trace.last(EXTRACT_APPLIED) else {
-            return Ok(Some(no_effect(&session, EXTRACT, EXTRACT_APPLIED)?));
-        };
-        if extracted.get_usize("pages") != Some(1) {
-            return Ok(Some(format!(
-                "THE EXTRACTION TOOK THE WRONG NUMBER OF PAGES: `{}`. Nothing is picked in the \
-                 Pages panel and one page is on screen, so `panels::pages::ops::operands`' \
-                 documented rule — act on the current page — should have named exactly one. A \
-                 build that fell back to the whole document would report `pages={pages_before}`.",
-                extracted.raw
-            )));
-        }
-        match std::fs::read(&target) {
-            Ok(bytes) if bytes.starts_with(b"%PDF-") => {
-                report.note(format!(
-                    "★ extract: a ribbon click reached the picker and the picker's answer \
-                     reached a write — {} bytes of freestanding PDF at {}, `{}`",
-                    bytes.len(),
-                    target.display(),
-                    extracted.raw
-                ));
-            }
-            Ok(bytes) => {
-                return Ok(Some(format!(
-                    "THE EXTRACTION WROTE SOMETHING THAT IS NOT A PDF: {} bytes at {} beginning \
-                     {:?}. `pageops::extract` returns the complete bytes of a freestanding PDF — \
-                     own header, own cross-reference table, own trailer — so a file that does \
-                     not start `%PDF-` means the wrong buffer was written.",
-                    bytes.len(),
-                    target.display(),
-                    String::from_utf8_lossy(&bytes[..bytes.len().min(8)])
-                )));
-            }
-            Err(e) => {
-                return Ok(Some(format!(
-                    "★ THE EXTRACTION WROTE NO FILE. The application traced `{}` — so the arm \
-                     ran, the picker answered and `pageops::extract` produced bytes — and \
-                     nothing is readable at {}: {e}.\n\n\
-                     {SAVE_PATH_ENV} named that path, so the picker's answer and the write's \
-                     destination have come apart.",
-                    extracted.raw,
-                    target.display()
-                )));
-            }
-        }
-
         // --- PHASE B: rotate the current page ----------------------------
         let seen = resyncs(&session)?;
         click_command(&session, &driver, ui_rect, ROTATE, 24)?;
@@ -752,11 +680,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          both routes reach `PdfcerApp::dispatch_command`, which is what one choke point is for",
     );
     report.note(
-        "NOT covered here: what is INSIDE the extracted file. `pages.extract` and \
-         `file.save_copy` share one PDFCER_DIAG_SAVE_PATH seam, so phase E overwrote phase A2's \
-         file. The join — click to picker to write, landing a freestanding PDF — is phase A2's; \
-         the content is covered by `app::actions::pages`' unit tests, which write an extraction \
-         and load it back, including one carrying an unsaved rotation",
+        "NOT covered here: Extract, which opens its own window;          `extract_pages_keeps_or_drops_the_labels` drives it",
     );
 
     let _ = std::fs::remove_file(ctx.out("page-ops-unused.pdf"));
@@ -771,7 +695,7 @@ mod tests {
     /// ids are the ones the application registers.
     #[test]
     fn the_selectors_match_the_shells_own_spelling() {
-        for (region, id) in [ROTATE, MOVE_DOWN, DELETE, EXTRACT, SAVE] {
+        for (region, id) in [ROTATE, MOVE_DOWN, DELETE, SAVE] {
             assert_eq!(region, format!("ribbon.item.{id}"));
             assert!(region.starts_with(ITEM_PREFIX), "{region}");
         }
@@ -782,7 +706,7 @@ mod tests {
         // tab the second `click_tab` would be a no-op the shell does not report
         // and phase E would SKIP for a confusing reason.
         assert_ne!(PAGES_TAB.1, FILE_TAB.1);
-        for (_, id) in [ROTATE, MOVE_DOWN, DELETE, EXTRACT] {
+        for (_, id) in [ROTATE, MOVE_DOWN, DELETE] {
             assert!(
                 id.starts_with(PAGES_TAB.1),
                 "a command id names its owning tab, so `{id}` must share `{}`'s prefix",

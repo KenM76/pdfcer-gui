@@ -605,6 +605,11 @@ pub enum PageAction {
         /// the engine, so this is simultaneously "extract these pages" and
         /// "extract them in this order"; the panel produces them ascending.
         pages: Vec<usize>,
+        /// Whether the new file's pages show the labels they showed here.
+        labels: pdfcer_core::pageops::ExtractedPageLabels,
+        /// Delete the pages from this document once the file is written.
+        /// Never applied when the write did not happen.
+        delete_after: bool,
     },
 }
 /// **What is selected**, as an action a panel can raise.

@@ -93,6 +93,8 @@ pub mod export_tagged;
 pub mod export_text;
 /// Every word File ▸ Export ▸ Word document… shows, and its receipt.
 pub mod export_word;
+/// Every word Pages ▸ Extract… shows, and its receipt.
+pub mod extract_pages;
 /// The copy the open/close/recent surface owns — the file dialog's title and
 /// filter names, and every string the Recent control draws. Consumed by
 /// `pdfcer_gui::app::files` and `pdfcer_gui::app::recent`.

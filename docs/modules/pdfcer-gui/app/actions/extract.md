@@ -1,6 +1,26 @@
 # `pdfcer-gui/app/actions/extract`
 
+## Contract
+
+`extract(doc, pages, labels, separations)` asks for a path, writes the pages
+through `pageops::extract_with_labels` and records the receipt (or the
+failure) as the document's note. It returns whether a file was written, and
+`PageAction::ExtractPages`' *delete afterwards* runs only on `true`, so a
+cancelled picker or a failed write never costs the operator pages.
+`separations` is the Settings ▸ Pages policy, the same one a delete obeys.
+
+The `extract` trace line carries `pages=` (written), `asked=` (requested),
+`labels=keep|drop` (the choice), and the engine's `labels_dropped=0|1` and
+`label_ranges=N` from `AssembleReport`, so a choice that did not reach the
+engine shows as the line disagreeing with itself.
+
 ## Item notes
+
+### `fn the_labels_choice_reaches_the_new_file`
+
+Pages 1-2 of `fixtures/labelled-pages.pdf` (labels i ii 1 2): kept, they
+read i, ii in the new file; dropped, they read 1, 2 and no range is stored.
+Pages 3-4 would read 1, 2 either way, so they cannot tell the two apart.
 
 ### `fn suggested_path`
 

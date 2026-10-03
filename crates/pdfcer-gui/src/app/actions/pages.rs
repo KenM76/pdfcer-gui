@@ -664,18 +664,7 @@ pub(super) fn apply(
                 pdfcer_core::pageops::InsertPosition::After(after),
             );
         }
-        PageAction::DeletePages { pages } => {
-            if !pages.is_empty() {
-                let first = pages.first().copied().unwrap_or(0);
-                let before = doc.edit_epoch;
-                super::apply::vector_edit(doc, "delete-pages", first, pages.len(), |session| {
-                    delete(session, &pages, separations)
-                });
-                if doc.edit_epoch != before {
-                    panels.pages_mut().selection.clear();
-                }
-            }
-        }
+        PageAction::DeletePages { pages } => delete_arm(doc, panels, &pages, separations),
         // **The middle case**: every page survives, and every index
         // means a different sheet.
         //
@@ -712,7 +701,36 @@ pub(super) fn apply(
             pages,
             position,
         } => insert_from_file(doc, &path, &pages, position),
-        PageAction::ExtractPages { pages } => super::extract::extract(doc, &pages),
+        PageAction::ExtractPages {
+            pages,
+            labels,
+            delete_after,
+        } => {
+            let written = super::extract::extract(doc, &pages, labels, separations);
+            if written && delete_after {
+                delete_arm(doc, panels, &pages, separations);
+            }
+        }
+    }
+}
+
+/// Delete `pages` as one undo step and clear the panel's picks when it lands.
+fn delete_arm(
+    doc: &mut OpenDoc,
+    panels: &mut crate::panels::PanelsState,
+    pages: &[usize],
+    separations: pdfcer_core::pageops::SeparationPolicy,
+) {
+    if pages.is_empty() {
+        return;
+    }
+    let first = pages.first().copied().unwrap_or(0);
+    let before = doc.edit_epoch;
+    super::apply::vector_edit(doc, "delete-pages", first, pages.len(), |session| {
+        delete(session, pages, separations)
+    });
+    if doc.edit_epoch != before {
+        panels.pages_mut().selection.clear();
     }
 }
 
