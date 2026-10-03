@@ -429,6 +429,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // File ▸ Export ▸ Tables… in all three formats, with no OS input.
         Box::new(export_tables_scripted::ExportTablesWithoutTheMouse),
         Box::new(export_tables_scripted::ExportTablesFollowsTheTags),
+        Box::new(export_tables_choices::ExportTablesHonoursItsChoices),
         Box::new(export_word_scripted::ExportWordWithoutTheMouse),
         Box::new(export_word_scripted::ExportWordFollowsTheTags),
         Box::new(export_word_scripted::ExportWordHonoursItsChoices),

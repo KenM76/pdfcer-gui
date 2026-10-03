@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **78 of 301** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `wanted` — a real gap — **78 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -178,7 +178,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **3 of 301** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `blocked` — waiting on something named — **5 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -195,9 +195,17 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 |---|---|
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
+
+### Text editing
+
+| Row (`FEATURES.md`, blocked) | Why |
+|---|---|
+| Restyle the N-th occurrence of repeated text within one operator — `FormatRequest::occurrence` … | **blocked on the engine pin.** The setter is on engine main and not in the pinned tag this shell builds against, so nothing here can call it yet. When the pin moves, a restyle of selected words inside an operator whose text repeats them should send the selection's occurrence, so the second `M10` in `M10 x M10` is the one restyled. `FormatError::NoMatch` past the last match wants its own sentence. |
+| Underline and strikethrough tied to the text, not independent page content — `FormatRequest::decoration` … | **blocked on the engine pin.** `FormatRequest::decoration` is on engine main and not in the pinned tag. Format ▸ Font's Underline and Strikethrough today author a text-markup annotation over the characters' quads (`textstyle::span::decorate`), which stays where it was drawn when the text later moves, reflows or is deleted. When the pin moves they should send `DecorationSet::UNDERLINE` / `STRIKETHROUGH` through the restyle path instead, so the rule follows the text inside the same undo entry; the engine's refusals of invisible text and form-XObject targets want sentences, and its x-height fallback for strikethrough is a disclosure owed off-canvas. |
+
 ---
 
-## `unknown` — no opinion formed yet — **0 of 301** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -208,7 +216,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 301** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `declined` — deliberately no surface — **17 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -251,7 +259,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **203 of 301** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **203 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

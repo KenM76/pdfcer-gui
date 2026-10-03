@@ -42,9 +42,61 @@ pub const fn format_hint(format: crate::tableexport::TableFormat) -> &'static st
              correctly. A merged cell's text is in its top-left cell."
         }
         TableFormat::Xlsx | TableFormat::Ods => {
-            "One file, a sheet per table. Merged cells stay merged, header rows are \
-             bold, and plain numbers are written as numbers."
+            "One file holding every table. Merged cells stay merged and header rows \
+             are bold."
         }
+    }
+}
+
+/// The heading over the sheet grouping.
+#[must_use]
+pub const fn sheets_heading() -> &'static str {
+    "Sheets"
+}
+
+/// One sheet grouping.
+#[must_use]
+pub const fn sheets_name(sheets: crate::tableexport::SheetGrouping) -> &'static str {
+    use crate::tableexport::SheetGrouping;
+    match sheets {
+        SheetGrouping::PerTable => "A sheet for each table",
+        SheetGrouping::PerPage => "A sheet for each page, its tables one under another",
+        SheetGrouping::Single => "Every table on one sheet, one under another",
+    }
+}
+
+/// The heading over the number reading.
+#[must_use]
+pub const fn numbers_heading() -> &'static str {
+    "Write numbers as numbers"
+}
+
+/// One number reading.
+#[must_use]
+pub const fn numbers_name(numbers: crate::tableexport::NumberReading) -> &'static str {
+    use crate::tableexport::NumberReading;
+    match numbers {
+        NumberReading::Auto => "Only where every country reads them the same",
+        NumberReading::Us => "Reading 1,234.5 — comma for thousands, point for decimals",
+        NumberReading::European => "Reading 1.234,5 — point for thousands, comma for decimals",
+        NumberReading::Off => "Never — keep every cell as text",
+    }
+}
+
+/// The line under the number reading, for the one chosen.
+#[must_use]
+pub const fn numbers_hint(numbers: crate::tableexport::NumberReading) -> &'static str {
+    use crate::tableexport::NumberReading;
+    match numbers {
+        NumberReading::Auto => {
+            "1.234 stays text, because it is a thousand and more in Germany and just \
+             over one in Canada. Choose a convention to convert such cells."
+        }
+        NumberReading::Us | NumberReading::European => {
+            "Cells are read with this convention. A cell it cannot read stays text, \
+             and so does anything with a leading zero, like 007."
+        }
+        NumberReading::Off => "Every cell is written as text, exactly as it reads on the page.",
     }
 }
 
@@ -80,13 +132,17 @@ pub fn wrote_csv(first: &str, files: usize) -> String {
     }
 }
 
-/// The receipt for a workbook: every table is a sheet of one file.
+/// The receipt for a workbook: `tables` tables on `sheets` sheets of one file.
 #[must_use]
-pub fn wrote_workbook(path: &str, sheets: usize) -> String {
-    if sheets == 1 {
+pub fn wrote_workbook(path: &str, tables: usize, sheets: usize) -> String {
+    if tables == 1 {
         format!("1 table written to {path}.")
+    } else if sheets == tables {
+        format!("{tables} tables written to {path}, one sheet each.")
+    } else if sheets == 1 {
+        format!("{tables} tables written to {path}, all on one sheet.")
     } else {
-        format!("{sheets} tables written to {path}, one sheet each.")
+        format!("{tables} tables written to {path}, on {sheets} sheets.")
     }
 }
 
@@ -111,7 +167,8 @@ pub fn ambiguous_numbers(count: usize) -> String {
     format!(
         "{count} {cell_word} as a different number in different countries — 1.234 is \
          one thousand two hundred and thirty-four in Germany and just over one in \
-         Canada — so they were kept as text."
+         Canada — so they were kept as text. To convert them, export again and choose \
+         how numbers are read."
     )
 }
 

@@ -2,10 +2,11 @@
 //!
 //! Takes the tables a tagged PDF states when its tree is followed
 //! (`super::tagged`), else runs `pdfcer_core::table_detect::detect_tables_in_pages`
-//! on the plan's pages, and writes one CSV per table or one workbook with a sheet per table,
-//! through the engine's Excel and OpenDocument writers. Every inference — an aligned table, a guessed header, a merged
-//! cell, a cell written as a number — is counted in the receipt, off-canvas
-//! (R8b).
+//! on the plan's pages, and writes one CSV per table or one workbook through
+//! the engine's Excel and OpenDocument writers, with the plan's sheet grouping
+//! and number reading. Every inference — an aligned table, a guessed header, a
+//! merged cell, a cell written as a number — is counted in the receipt,
+//! off-canvas (R8b).
 
 use std::path::{Path, PathBuf};
 
@@ -26,6 +27,17 @@ struct Named {
     /// 1-based position among the tables on its page.
     nth: usize,
     grid: Grid,
+}
+
+/// What a workbook writer reported; all zero for CSV.
+#[derive(Default)]
+struct Book {
+    /// Sheets written.
+    sheets: usize,
+    /// Cells written as numbers.
+    numbers: usize,
+    /// Cells kept as text because their value depends on the convention.
+    ambiguous: usize,
 }
 
 /// The counts the receipt reports, over the exported tables only.
@@ -124,16 +136,23 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
         return;
     };
 
-    // Cells written as numbers, and the format's own disclosures.
-    let mut numbers = 0;
+    // What a workbook wrote, and the format's own disclosures.
+    let mut book = Book::default();
     let mut format_notes = Vec::new();
     let written = match plan.format {
         TableFormat::Csv => write_csv(&target, &tables),
         TableFormat::Xlsx => write_workbook(&target, || {
-            xlsx::write_xlsx(&found_tables, &XlsxOptions::default())
+            let options = XlsxOptions::default()
+                .with_sheets(plan.sheets.engine())
+                .with_numbers(plan.numbers.engine());
+            xlsx::write_xlsx(&found_tables, &options)
         })
         .map(|report| {
-            numbers = report.numbers;
+            book = Book {
+                sheets: report.sheets,
+                numbers: report.numbers,
+                ambiguous: report.ambiguous_numbers,
+            };
             format_notes = workbook_notes(
                 report.ambiguous_numbers,
                 report.characters_dropped,
@@ -143,10 +162,17 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
             target.clone()
         }),
         TableFormat::Ods => write_workbook(&target, || {
-            ods::write_ods(&found_tables, &OdsOptions::default())
+            let options = OdsOptions::default()
+                .with_sheets(plan.sheets.engine())
+                .with_numbers(plan.numbers.engine());
+            ods::write_ods(&found_tables, &options)
         })
         .map(|report| {
-            numbers = report.numbers;
+            book = Book {
+                sheets: report.sheets,
+                numbers: report.numbers,
+                ambiguous: report.ambiguous_numbers,
+            };
             format_notes = workbook_notes(
                 report.ambiguous_numbers,
                 report.characters_dropped,
@@ -162,12 +188,18 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-tables format={} tables={} aligned={} headers={} merged={} \
-                     numbers={numbers} dense={dense} unreadable={unreadable} {tree_trace} first={}",
+                     numbers={} ambiguous={} sheets={} sheet_option={} number_option={} \
+                     dense={dense} unreadable={unreadable} {tree_trace} first={}",
                     plan.format.extension(),
                     tables.len(),
                     counts.aligned,
                     counts.headers,
                     counts.merged,
+                    book.numbers,
+                    book.ambiguous,
+                    book.sheets,
+                    plan.sheets.key(),
+                    plan.numbers.key(),
                     first.display(),
                 )
             });
@@ -175,10 +207,10 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &TableExportPlan) {
             let mut notes = vec![if plan.format == TableFormat::Csv {
                 t::wrote_csv(&shown, tables.len())
             } else {
-                t::wrote_workbook(&shown, tables.len())
+                t::wrote_workbook(&shown, tables.len(), book.sheets)
             }];
-            if numbers > 0 {
-                notes.push(t::numbers_written(numbers));
+            if book.numbers > 0 {
+                notes.push(t::numbers_written(book.numbers));
             }
             notes.append(&mut format_notes);
             if counts.aligned > 0 {

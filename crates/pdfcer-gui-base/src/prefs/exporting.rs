@@ -12,7 +12,7 @@ use pdfcer_core::export::dxf::{DxfText, DxfUnits, DxfVersion};
 
 use crate::exporttext::{LineEndings, PageSeparator, TextOrder};
 use crate::imageexport::{ImageFormat, PageScope};
-use crate::tableexport::TableFormat;
+use crate::tableexport::{NumberReading, SheetGrouping, TableFormat};
 
 use super::printing::KeyOutcome;
 
@@ -107,6 +107,10 @@ pub struct ExportTablePrefs {
     pub scope: PageScope,
     /// CSV, Excel or OpenDocument.
     pub format: TableFormat,
+    /// Which tables share a workbook sheet.
+    pub sheets: SheetGrouping,
+    /// How a workbook reads a cell as a number.
+    pub numbers: NumberReading,
 }
 
 impl Default for ExportTablePrefs {
@@ -114,6 +118,8 @@ impl Default for ExportTablePrefs {
         Self {
             scope: PageScope::AllPages,
             format: TableFormat::Csv,
+            sheets: SheetGrouping::default(),
+            numbers: NumberReading::default(),
         }
     }
 }
@@ -477,6 +483,8 @@ pub(super) fn parse_key(prefs: &mut ExportPrefs, key: &str, value: &str) -> KeyO
         // --- Export tables --------------------------------------------------
         "export_tables_pages" => store!(page_scope_from_key(value), prefs.tables.scope),
         "export_tables_format" => store!(table_format_from_key(value), prefs.tables.format),
+        "export_tables_sheets" => store!(SheetGrouping::from_key(value), prefs.tables.sheets),
+        "export_tables_numbers" => store!(NumberReading::from_key(value), prefs.tables.numbers),
 
         _ => KeyOutcome::NotMine,
     }
@@ -708,6 +716,27 @@ pub(super) fn write_block(prefs: &ExportPrefs, out: &mut String) {
     // ui-text-exempt: a file KEY, as above.
     out.push_str("export_tables_format = ");
     out.push_str(table_format_key(prefs.tables.format));
+    out.push('\n');
+    out.push_str(
+        "\n\
+         # export_tables_sheets: table | page | single\n\
+         # In a workbook: a sheet for each table, a sheet for each page, or every\n\
+         # table on one sheet.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_tables_sheets = ");
+    out.push_str(prefs.tables.sheets.key());
+    out.push('\n');
+    out.push_str(
+        "\n\
+         # export_tables_numbers: auto | us | european | off\n\
+         # How a workbook reads a cell as a number. auto keeps 1.234 as text,\n\
+         # since it is a different number in the US and in Europe; us reads\n\
+         # 1,234.5, european reads 1.234,5, and off keeps every cell as text.\n",
+    );
+    // ui-text-exempt: a file KEY, as above.
+    out.push_str("export_tables_numbers = ");
+    out.push_str(prefs.tables.numbers.key());
     out.push('\n');
 
     if let Some(token) = dxf_version_key(prefs.dxf.version) {

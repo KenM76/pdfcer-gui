@@ -3,7 +3,7 @@
 //! Pure: the plan, the cell grid, and the CSV encoding. Both workbook
 //! formats are the engine's (`pdfcer_core::export::{xlsx, ods}`), called from
 //! the export action. CSV is one file per table; a workbook holds every table,
-//! one sheet each.
+//! grouped onto sheets as [`SheetGrouping`] says.
 //! `pdfcer_core::table_detect` finds the tables;
 //! `pdfcer_gui::app::actions::export_tables` writes them.
 
@@ -37,6 +37,103 @@ impl TableFormat {
     }
 }
 
+/// Which tables share a workbook sheet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SheetGrouping {
+    /// A sheet for each table.
+    #[default]
+    PerTable,
+    /// A sheet for each page with a table, its tables stacked.
+    PerPage,
+    /// Every table stacked on one sheet.
+    Single,
+}
+
+impl SheetGrouping {
+    /// Every choice, in the order the window offers them.
+    pub const ALL: [Self; 3] = [Self::PerTable, Self::PerPage, Self::Single];
+
+    /// The engine's setting for this choice.
+    #[must_use]
+    pub const fn engine(self) -> pdfcer_core::export::xlsx::SheetLayout {
+        use pdfcer_core::export::xlsx::SheetLayout;
+        match self {
+            Self::PerTable => SheetLayout::PerTable,
+            Self::PerPage => SheetLayout::PerPage,
+            Self::Single => SheetLayout::Single,
+        }
+    }
+
+    /// The token in the trace and the preferences file.
+    #[must_use]
+    pub const fn key(self) -> &'static str {
+        match self {
+            // ui-text-exempt: file and trace tokens, never displayed.
+            Self::PerTable => "table",
+            Self::PerPage => "page",
+            Self::Single => "single",
+        }
+    }
+
+    /// The choice `token` names, or `None` if it names none.
+    #[must_use]
+    pub fn from_key(token: &str) -> Option<Self> {
+        let token = token.trim();
+        Self::ALL.into_iter().find(|s| s.key() == token)
+    }
+}
+
+/// How a workbook reads a cell's digits and separators as a number.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum NumberReading {
+    /// A number only where every convention reads the same value.
+    #[default]
+    Auto,
+    /// `,` groups thousands and `.` is the decimal point.
+    Us,
+    /// `.` groups thousands and `,` is the decimal point.
+    European,
+    /// Every cell is text.
+    Off,
+}
+
+impl NumberReading {
+    /// Every choice, in the order the window offers them.
+    pub const ALL: [Self; 4] = [Self::Auto, Self::Us, Self::European, Self::Off];
+
+    /// The engine's setting for this choice.
+    #[must_use]
+    pub const fn engine(self) -> pdfcer_core::export::xlsx::NumberLocale {
+        use pdfcer_core::export::xlsx::NumberLocale;
+        match self {
+            Self::Auto => NumberLocale::Auto,
+            Self::Us => NumberLocale::Us,
+            Self::European => NumberLocale::European,
+            Self::Off => NumberLocale::Off,
+        }
+    }
+
+    /// The token in the trace and the preferences file; the command line's
+    /// `--numbers` word.
+    #[must_use]
+    pub const fn key(self) -> &'static str {
+        match self {
+            // ui-text-exempt: file and trace tokens, never displayed.
+            Self::Auto => "auto",
+            Self::Us => "us",
+            Self::European => "european",
+            Self::Off => "off",
+        }
+    }
+
+    /// The choice `token` names, or `None` if it names none.
+    #[must_use]
+    pub fn from_key(token: &str) -> Option<Self> {
+        let token = token.trim();
+        Self::ALL.into_iter().find(|n| n.key() == token)
+    }
+}
+
 /// Everything the table-export window decided.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TableExportPlan {
@@ -44,6 +141,26 @@ pub struct TableExportPlan {
     pub pages: Vec<usize>,
     /// What to write.
     pub format: TableFormat,
+    /// Which tables share a sheet; workbooks only.
+    pub sheets: SheetGrouping,
+    /// How cells are read as numbers; workbooks only.
+    pub numbers: NumberReading,
+}
+
+impl TableExportPlan {
+    /// A plan writing `pages`, sorted and deduplicated, as `format`, with the
+    /// engine's sheet and number defaults.
+    #[must_use]
+    pub fn new(mut pages: Vec<usize>, format: TableFormat) -> Self {
+        pages.sort_unstable();
+        pages.dedup();
+        Self {
+            pages,
+            format,
+            sheets: SheetGrouping::default(),
+            numbers: NumberReading::default(),
+        }
+    }
 }
 
 /// A merged block, by its top-left cell and its extent.
@@ -225,6 +342,43 @@ mod tests {
             }]
         );
         assert_eq!(g.header_rows, 1);
+    }
+
+    #[test]
+    fn each_choice_has_its_own_engine_setting_and_token() {
+        use pdfcer_core::export::xlsx::{NumberLocale, SheetLayout, XlsxOptions};
+        assert_eq!(
+            SheetGrouping::ALL.map(SheetGrouping::engine),
+            [
+                SheetLayout::PerTable,
+                SheetLayout::PerPage,
+                SheetLayout::Single
+            ]
+        );
+        assert_eq!(
+            NumberReading::ALL.map(NumberReading::engine),
+            [
+                NumberLocale::Auto,
+                NumberLocale::Us,
+                NumberLocale::European,
+                NumberLocale::Off
+            ]
+        );
+        for s in SheetGrouping::ALL {
+            assert_eq!(SheetGrouping::from_key(s.key()), Some(s));
+        }
+        for n in NumberReading::ALL {
+            assert_eq!(NumberReading::from_key(n.key()), Some(n));
+        }
+        let engine = XlsxOptions::default();
+        assert_eq!(SheetGrouping::default().engine(), engine.sheets);
+        assert_eq!(NumberReading::default().engine(), engine.numbers);
+    }
+
+    #[test]
+    fn a_plans_pages_are_in_document_order_once_each() {
+        let plan = TableExportPlan::new(vec![3, 1, 1], TableFormat::Xlsx);
+        assert_eq!(plan.pages, vec![1, 3]);
     }
 
     #[test]

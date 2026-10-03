@@ -257,6 +257,8 @@ fn every_preference_round_trips_through_the_file() {
                         tables: ExportTablePrefs {
                             scope: PageScope::CurrentPage,
                             format: crate::tableexport::TableFormat::Xlsx,
+                            sheets: crate::tableexport::SheetGrouping::PerPage,
+                            numbers: crate::tableexport::NumberReading::Us,
                         },
                         dxf: ExportDxfPrefs {
                             units: DxfUnits::Millimetres,
@@ -762,6 +764,8 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             tables: ExportTablePrefs {
                 scope: PageScope::AllPages,
                 format: crate::tableexport::TableFormat::Ods,
+                sheets: crate::tableexport::SheetGrouping::Single,
+                numbers: crate::tableexport::NumberReading::Off,
             },
             dxf: ExportDxfPrefs {
                 units: DxfUnits::Inches,
