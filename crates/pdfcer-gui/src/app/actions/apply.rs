@@ -1146,7 +1146,7 @@ impl PdfcerApp {
             #[cfg(feature = "3d")]
             Action::Attachment(super::attachments::AttachmentAction::ViewModel { artwork }) => {
                 match super::models::load_view(doc, &artwork) {
-                    Ok(model) => self.dialogs.open_model_view(artwork.page_index, model),
+                    Ok(model) => self.dialogs.open_model_view(artwork, model),
                     Err(said) => {
                         crate::diag::trace(|| {
                             // ui-text-exempt: diagnostic trace, never displayed

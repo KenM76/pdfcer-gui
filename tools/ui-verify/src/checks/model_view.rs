@@ -7,7 +7,9 @@
 //! Attachments row.
 //!
 //! Oracles are the viewer's `model-view-rendered` lines: the first must cover
-//! pixels (`covered>0`, the model is in frame); a primary drag must change
+//! pixels (`covered>0`, the model is in frame) and, the model giving its parts
+//! no colour, be grey (`chromatic=0`, with `model-view-opened` counting every
+//! part `uncoloured`); a primary drag must change
 //! `yaw` and the picture's `hash`; a wheel must change `zoom`; the Top button
 //! must set `pitch` near a right angle.
 
@@ -43,8 +45,8 @@ impl Check for AModelTurnsUnderThePointer {
     }
 
     fn defect(&self) -> &'static str {
-        "View… on a PRC model opens no viewer, or the viewer draws nothing, or dragging does not \
-         turn the model, or scrolling does not zoom, or the Top view does not look down"
+        "View… on a PRC model opens no viewer, or the viewer draws nothing, or draws a model that \
+         colours no part in colour, or dragging does not turn the model, or scrolling does not zoom, or the Top view does not look down"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -63,6 +65,25 @@ fn rendered(session: &Session, key: &str) -> Result<(usize, Option<String>)> {
     let lines: Vec<_> = trace.events("model-view-rendered").collect();
     let last = lines.last().and_then(|l| l.get(key).map(str::to_owned));
     Ok((lines.len(), last))
+}
+
+/// `assembly.prc` gives no part a colour: the viewer must say so of every
+/// part, and draw no coloured pixel.
+fn uncoloured_is_grey(trace: &crate::trace::Trace, chromatic: Option<&str>) -> Option<String> {
+    let opened = trace.events("model-view-opened").last()?;
+    let (parts, uncoloured) = (opened.get("parts"), opened.get("uncoloured"));
+    if uncoloured.is_none() || parts != uncoloured {
+        return Some(format!(
+            "the viewer counts {uncoloured:?} of {parts:?} parts uncoloured; this model colours \
+             none of them."
+        ));
+    }
+    (chromatic != Some("0")).then(|| {
+        format!(
+            "an uncoloured model drew {chromatic:?} coloured pixels; uncoloured parts are drawn \
+             grey."
+        )
+    })
 }
 
 fn number(value: Option<&String>) -> Option<f64> {
@@ -154,8 +175,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .last()
         .map(|l| l.raw.clone());
     let (first_count, covered) = rendered(&session, "covered")?;
+    let (_, chromatic) = rendered(&session, "chromatic")?;
     report.note(format!(
-        "opened: {opened:?}; renders={first_count}; covered={covered:?}"
+        "opened: {opened:?}; renders={first_count}; covered={covered:?}; chromatic={chromatic:?}"
     ));
     if opened.is_none() {
         pointer.gone(&session)?;
@@ -169,6 +191,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "the viewer's picture covers no pixel ({covered:?}): the model is out of frame or \
              nothing was drawn (look for `model-view-render-failed`)."
         )));
+    }
+    if let Some(failure) = uncoloured_is_grey(&trace, chromatic.as_deref()) {
+        pointer.gone(&session)?;
+        return Ok(Some(failure));
     }
     let Some((image, ivp)) = declared_in(&trace, ui_rect, IMAGE_REGION) else {
         pointer.gone(&session)?;

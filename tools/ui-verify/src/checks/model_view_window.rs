@@ -32,8 +32,8 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const INVOKE: &str = "mode.edit,edit.attachments";
 const RIBBON_TAB: &str = "ribbon.tab.edit";
 const RIBBON_ITEM: &str = "ribbon.item.edit.insert_3d";
-const VIEW_REGION: &str = "models.view";
-const IMAGE_REGION: &str = "model3d.image";
+pub(crate) const VIEW_REGION: &str = "models.view";
+pub(crate) const IMAGE_REGION: &str = "model3d.image";
 const FULL_SCREEN_REGION: &str = "model3d.full_screen";
 const FIT_REGION: &str = "model3d.fit";
 const CLOSE_REGION: &str = "model3d.close";
@@ -44,7 +44,7 @@ const WINDOW: &str = "model-view-window";
 const CAMERA: [&str; 4] = ["yaw", "pitch", "zoom", "pan"];
 const MODEL_ENV: &str = "PDFCER_DIAG_MODEL_PATH";
 const DOC: &str = "D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf";
-const MODEL: &str = "D:/Dev/pdfcer/fixtures/synthetic/prc/assembly.prc";
+pub(crate) const MODEL: &str = "D:/Dev/pdfcer/fixtures/synthetic/prc/assembly.prc";
 const RENDERED: &str = "model-view-rendered";
 
 /// See the module documentation.
@@ -74,11 +74,33 @@ impl Check for TheModelViewerZoomsAtThePointerAndFillsTheScreen {
 }
 
 /// Launch on a copy of the four-page document with `assembly.prc` as the
-/// model picker's answer, and place it from the ribbon.
+/// model picker's answer.
 pub(crate) fn launch_with_model(
     ctx: &CheckContext,
     report: &mut CheckReport,
     stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
+    launch_with_model_file(ctx, report, stem, MODEL)
+}
+
+/// Launch on a copy of the four-page document with a copy of `source` as the
+/// model picker's answer.
+pub(crate) fn launch_with_model_file(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+    source: &str,
+) -> Result<(Session, ScriptedPointer)> {
+    launch_with_model_env(ctx, report, stem, source, &[])
+}
+
+/// [`launch_with_model_file`], with `extra` added to the environment.
+pub(crate) fn launch_with_model_env(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+    source: &str,
+    extra: &[(&str, String)],
 ) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -89,7 +111,7 @@ pub(crate) fn launch_with_model(
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    for needed in [DOC, MODEL] {
+    for needed in [DOC, source] {
         if !std::path::Path::new(needed).is_file() {
             return Err(Error::new(format!(
                 "the engine corpus's fixture is missing at {needed}."
@@ -100,7 +122,7 @@ pub(crate) fn launch_with_model(
     let doc = ctx.out(&format!("{stem}-source.pdf"));
     std::fs::copy(DOC, &doc).map_err(|e| Error::new(format!("copying {DOC}: {e}")))?;
     let model = ctx.out(&format!("{stem}-input.prc"));
-    std::fs::copy(MODEL, &model).map_err(|e| Error::new(format!("copying {MODEL}: {e}")))?;
+    std::fs::copy(source, &model).map_err(|e| Error::new(format!("copying {source}: {e}")))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
@@ -113,6 +135,8 @@ pub(crate) fn launch_with_model(
     }
     spec.env
         .push((MODEL_ENV.to_owned(), model.to_string_lossy().into_owned()));
+    spec.env
+        .extend(extra.iter().map(|(k, v)| ((*k).to_owned(), v.clone())));
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
@@ -147,7 +171,7 @@ pub(crate) fn press_insert(
     Ok(true)
 }
 
-fn ui_rect(ctx: &CheckContext) -> Result<&'static str> {
+pub(crate) fn ui_rect(ctx: &CheckContext) -> Result<&'static str> {
     ctx.profile
         .vocab
         .ui_rect_event

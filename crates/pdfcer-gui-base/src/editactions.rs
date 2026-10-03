@@ -1169,4 +1169,19 @@ pub enum AttachmentAction {
         /// The row as listed when the button was pressed.
         artwork: pdfcer_core::threed::ThreeDArtwork,
     },
+    /// **Make a picture the viewer drew the page's picture of a 3D model**
+    /// (its `/AP /N` poster), one undo entry; the model is not changed.
+    SetModelPoster {
+        /// The row the viewer was opened on.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+        /// The picture, as PNG file bytes.
+        png: Vec<u8>,
+    },
+    /// **Pick a picture file and make it the page picture of a 3D model**,
+    /// one undo entry. The picker runs in the apply arm, as it does for
+    /// [`Self::Attach`].
+    PickModelPoster {
+        /// The row as listed when the button was pressed.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+    },
 }

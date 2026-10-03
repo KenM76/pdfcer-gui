@@ -3,7 +3,8 @@
 **The 3D model viewer.** Opened by *View…* on a PRC row of the Attachments
 panel's 3D models section (feature `3d`). Holds the placed meshes
 (`app::actions::models::Assembled`) and a camera, and shows the engine's
-software rendering (`pdfcer_3d::render`) as a texture.
+software rendering (`pdfcer_3d::render_coloured`, each mesh in its own
+colour, grey where the file gives none) as a texture.
 
 ## Camera
 
@@ -31,8 +32,21 @@ The picture is rendered at the image area's pixel size, capped at 1600 a side
 `extreme_bg_color`. It is re-rendered only when the orbit, the size or the
 background changes. A render error replaces the picture with its sentence.
 
-Below the picture: the census, the flat-colour note, the placement note when
-the assembly tree could not be read, and the skipped-part count.
+Below the picture: the census, the colour note (naming how many parts are
+grey), the placement note when the assembly tree could not be read, and the
+skipped-part count.
+
+## Use this view on the page
+
+Below the picture, beside *Close*, on a model that is a `/3D` annotation of
+its own (`panels::attachments::models::has_own_poster`; a RichMedia asset has
+no page picture to replace). The press renders the current orbit through
+`render_coloured` at the last rendered picture's shape, 1200 pixels on the
+long side, on the engine's default white (the background the engine's own
+poster uses, not the theme's), encodes it as PNG and queues
+`AttachmentAction::SetModelPoster`, which `app::actions::models::set_poster`
+applies as one undo entry. A render failure replaces the picture with its
+sentence and queues nothing.
 
 ## Lifetime
 
@@ -41,10 +55,18 @@ and changing documents closes it.
 
 ## Trace
 
-- `model-view-opened page= parts= triangles= skipped= placed=`
-- `model-view-rendered w= h= yaw= pitch= zoom= perspective= covered= hash=`
+- `model-view-opened page= parts= uncoloured= triangles= skipped= placed=`
+- `model-view-rendered w= h= yaw= pitch= zoom= perspective= covered= chromatic= hues= hash=`
   — `covered` counts non-background pixels, `hash` is FNV-1a of the RGBA.
+  `chromatic` counts pixels whose channel spread is at least 48 (a colour,
+  not a grey); `hues` counts the twelve 30-degree hue sectors holding at
+  least 1% of them. The viewer is an immediate viewport no screenshot
+  reaches, so these are a driven check's only view of its colours.
 - `model-view-render-failed error=`
-- Regions: `model3d.image`, `model3d.view.0`…`4`, `model3d.fit`.
+- `model-view-poster w= h= yaw= pitch= bytes=` — a picture made for the page.
+- Regions: `model3d.image`, `model3d.view.0`…`4`, `model3d.fit`,
+  `model3d.close`, `model3d.use_on_page`.
 
-Driven by `ui-verify` check `a_3d_model_turns_under_the_pointer`.
+Driven by `ui-verify` checks `a_3d_model_turns_under_the_pointer` (an
+uncoloured model is grey), `a_coloured_3d_model_draws_in_its_own_colours`
+and `the_3d_viewers_view_becomes_the_page_picture`.

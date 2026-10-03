@@ -495,7 +495,7 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 He is right. An audit of the engine against the program found these the engine can do and the program does not offer, to be wired in this order: Export Word's options (a page range, no page breaks, no tables, how the structure is read); Export to Excel and ODS choosing one sheet per table, per page or one sheet, how numbers are read (automatic, US, European, off), and a page range; Save as PDF from the snapshot box; DXF for several pages at once; Export image with a background colour of your choice and the rendering standard, and that export driven end to end; Extract pages keeping or dropping the page labels; and Copy page as vector driven end to end. Text as JSON, tables as JSON, the tag and layout reports, QDF export and import, and a 3D model to a picture file are listed as not yet offered. PDF/A is not the program's to add: the engine has no PDF/A support yet.
 
-## O283 — **QUEUED — after O282** — 3D models in their own colours, and the rest of the engine's 3D
+## O283 — **IN PROGRESS** — 3D models in their own colours, and the rest of the engine's 3D
 
 > **Ken:** *"I also think the engine has a way to show 3d model previews and colour mapping."*
 

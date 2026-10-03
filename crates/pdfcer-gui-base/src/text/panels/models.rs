@@ -183,13 +183,31 @@ pub fn inserted(format: &ThreeDFormat, page_index: usize) -> String {
     )
 }
 
-/// The page's picture of a placed model is pdfcer's own drawing of it.
+/// The page's picture of a placed model is pdfcer's own drawing of it;
+/// `uncoloured` of its `parts` have no colour in the model file.
 #[must_use]
-pub fn poster_rendered(parts_missing: bool) -> &'static str {
+pub fn poster_rendered(parts_missing: bool, uncoloured: usize, parts: usize) -> String {
+    let mut said = "The picture on the page is pdfcer's drawing of the model, in its own colours, from above its front-right corner, not one of the model's own saved views.".to_owned();
     if parts_missing {
-        "The picture on the page is pdfcer's drawing of the model from above its front-right corner, not one of the model's own saved views. Some parts could not be drawn and are missing from it."
+        said.push_str(" Some parts could not be drawn and are missing from it.");
+    }
+    if uncoloured > 0 {
+        said.push(' ');
+        said.push_str(&grey_parts(uncoloured, parts));
+    }
+    said
+}
+
+/// `uncoloured` of `parts` drawn grey, as one sentence.
+fn grey_parts(uncoloured: usize, parts: usize) -> String {
+    if uncoloured >= parts {
+        "The model file gives its parts no colour, so they are drawn grey.".to_owned()
+    } else if uncoloured == 1 {
+        format!("1 of its {parts} parts has no colour in the model file and is drawn grey.")
     } else {
-        "The picture on the page is pdfcer's drawing of the model from above its front-right corner, not one of the model's own saved views."
+        format!(
+            "{uncoloured} of its {parts} parts have no colour in the model file and are drawn grey."
+        )
     }
 }
 
@@ -339,10 +357,16 @@ pub fn view_full_screen_leave_tooltip() -> &'static str {
     "Put this window back to its size (Esc or F11)."
 }
 
-/// What the picture leaves out.
+/// How the picture is coloured and what it leaves out; `uncoloured` of its
+/// `parts` have no colour in the model file.
 #[must_use]
-pub fn view_flat_note() -> &'static str {
-    "Drawn in one colour, lit from where you look. The model's own colours, textures, lights and saved views are not shown."
+pub fn view_colour_note(uncoloured: usize, parts: usize) -> String {
+    let mut said = "Drawn in the model's own colours, lit from where you look. Its textures, lights and saved views are not shown.".to_owned();
+    if uncoloured > 0 {
+        said.push(' ');
+        said.push_str(&grey_parts(uncoloured, parts));
+    }
+    said
 }
 
 /// The size of what is shown.
@@ -396,6 +420,59 @@ pub fn view_render_failed(detail: &str) -> String {
 #[must_use]
 pub fn view_close() -> &'static str {
     "Close"
+}
+
+/// The button that makes this view the page's picture of the model.
+#[must_use]
+pub fn view_use_on_page() -> &'static str {
+    "Use this view on the page"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_use_on_page_tooltip() -> &'static str {
+    "Show the model on the page, and in print, as you see it here. The model itself is not changed; Undo puts the old picture back."
+}
+
+/// The page now shows the viewer's picture.
+#[must_use]
+pub fn poster_set(page_index: usize) -> String {
+    format!(
+        "The 3D model on page {} now shows the picture you chose.",
+        page_index + 1
+    )
+}
+
+/// The picture could not be put on the page.
+#[must_use]
+pub fn poster_not_set() -> &'static str {
+    "The page's picture of this model was not changed: the model has moved or been removed since the viewer opened."
+}
+
+/// The picture file could not be read.
+#[must_use]
+pub fn poster_unreadable(detail: &str) -> String {
+    format!(
+        "The page's picture of this model was not changed: pdfcer could not read that picture ({detail})."
+    )
+}
+
+/// The Attachments row's button that picks a picture for the page.
+#[must_use]
+pub fn poster_button() -> &'static str {
+    "Picture…"
+}
+
+/// Its tip.
+#[must_use]
+pub fn poster_tooltip() -> &'static str {
+    "Choose a picture file to show for this model on the page and in print. The model itself is not changed; Undo puts the old picture back."
+}
+
+/// The view could not be drawn for the page.
+#[must_use]
+pub fn poster_not_drawn(detail: &str) -> String {
+    format!("pdfcer could not draw this view for the page: {detail}")
 }
 
 /// Only PRC is decoded.

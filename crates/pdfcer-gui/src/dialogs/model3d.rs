@@ -15,10 +15,13 @@ use std::f64::consts::FRAC_PI_2;
 use egui::{Sense, TextureHandle, TextureOptions, Ui};
 // The 3D renderer's options, not the page renderer's that settings own.
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::{Bounds, Camera, Projection, render};
+use pdfcer_3d::{Bounds, Camera, Projection, render_coloured};
 
+use crate::app::actions::Action;
+use crate::app::actions::attachments::AttachmentAction;
 use crate::app::actions::models::Assembled;
 use crate::text::panels::models as t;
+use pdfcer_core::threed::ThreeDArtwork;
 
 /// The picture's published region, for `ui-verify`.
 pub const REGION_IMAGE: &str = "model3d.image"; // ui-text-exempt: trace region name, never displayed
@@ -28,6 +31,8 @@ pub const REGION_VIEW_PREFIX: &str = "model3d.view."; // ui-text-exempt: trace r
 pub const REGION_FIT: &str = "model3d.fit"; // ui-text-exempt: trace region name, never displayed
 /// The Close button.
 pub const REGION_CLOSE: &str = "model3d.close"; // ui-text-exempt: trace region name, never displayed
+/// The *Use this view on the page* button.
+pub const REGION_USE_ON_PAGE: &str = "model3d.use_on_page"; // ui-text-exempt: trace region name, never displayed
 /// The Minimize button.
 pub const REGION_MINIMIZE: &str = "model3d.minimize"; // ui-text-exempt: trace region name, never displayed
 /// The full-screen button.
@@ -53,6 +58,8 @@ const PITCH_LIMIT: f64 = FRAC_PI_2 - 0.01;
 /// The largest picture rendered, in pixels a side; the CPU renderer's cost
 /// grows with the area.
 const MAX_SIDE: f32 = 1600.0;
+/// The long side, in pixels, of a picture made for the page.
+const POSTER_SIDE: f64 = 1200.0;
 /// The zoom range, as a multiple of the fitted view.
 const ZOOM_RANGE: (f64, f64) = (0.05, 50.0);
 
@@ -188,6 +195,8 @@ struct Rendered {
 /// The 3D viewer's state.
 pub(crate) struct ModelView {
     title: String,
+    /// The listing row it was opened on, which a picture for the page names.
+    artwork: ThreeDArtwork,
     model: Assembled,
     bounds: Bounds,
     orbit: Orbit,
@@ -201,12 +210,15 @@ pub(crate) struct ModelView {
     escape_left_full_screen: bool,
     /// The host drew a real OS window, the only kind that can fill the screen.
     native: bool,
+    /// A picture for the page, as PNG, waiting for the action queue.
+    poster: Option<Vec<u8>>,
 }
 
 impl ModelView {
-    /// Open on `model`, from page `page_index`, at the isometric view.
+    /// Open on `model`, decoded from `artwork`, at the isometric view.
     #[must_use]
-    pub(crate) fn open(page_index: usize, model: Assembled) -> Self {
+    pub(crate) fn open(artwork: ThreeDArtwork, model: Assembled) -> Self {
+        let page_index = artwork.page_index;
         let bounds = Bounds::of(&model.meshes).unwrap_or(Bounds {
             min: [0.0; 3],
             max: [0.0; 3],
@@ -214,8 +226,9 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-view-opened page={page_index} parts={} triangles={} skipped={} placed={}",
+                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} placed={}",
                 model.meshes.len(),
+                model.uncoloured(),
                 model.triangles,
                 model.skipped,
                 model.placed
@@ -223,6 +236,7 @@ impl ModelView {
         });
         Self {
             title: t::view_title(page_index),
+            artwork,
             model,
             bounds,
             orbit: Orbit::named(0, true),
@@ -233,11 +247,13 @@ impl ModelView {
             minimized: None,
             escape_left_full_screen: false,
             native: false,
+            poster: None,
         }
     }
 
-    /// Draw it. Returns `false` when it should close.
-    pub fn show(&mut self, ctx: &egui::Context) -> bool {
+    /// Draw it, queueing a picture for the page when one was asked for.
+    /// Returns `false` when it should close.
+    pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         let (frame, ()) = crate::dialogs::host::Host::new(
             VIEWPORT_KEY,
             &self.title,
@@ -248,6 +264,12 @@ impl ModelView {
         .minimizable()
         .show(ctx, |ui| self.body(ui));
         self.native = frame.class == egui::ViewportClass::Immediate;
+        if let Some(png) = self.poster.take() {
+            actions.push(Action::Attachment(AttachmentAction::SetModelPoster {
+                artwork: self.artwork.clone(),
+                png,
+            }));
+        }
         let closed = frame.closed && !std::mem::take(&mut self.escape_left_full_screen);
         let button = std::mem::take(&mut self.close_requested);
         if closed || button {
@@ -404,18 +426,89 @@ impl ModelView {
             self.model.meshes.len(),
             self.model.triangles,
         ));
-        ui.small(t::view_flat_note());
+        ui.small(t::view_colour_note(
+            self.model.uncoloured(),
+            self.model.meshes.len(),
+        ));
         if !self.model.placed {
             ui.small(t::mesh_placement_note());
         }
         if self.model.skipped > 0 {
             ui.small(t::mesh_skipped(self.model.skipped));
         }
-        let close = ui.button(t::view_close());
-        crate::diag::ui_rect_visible(REGION_CLOSE, close.rect, ui.clip_rect());
-        if close.clicked() {
-            self.close_requested = true;
+        ui.horizontal(|ui| {
+            let close = ui.button(t::view_close());
+            crate::diag::ui_rect_visible(REGION_CLOSE, close.rect, ui.clip_rect());
+            if close.clicked() {
+                self.close_requested = true;
+            }
+            if crate::panels::attachments::models::has_own_poster(&self.artwork) {
+                self.use_on_page_control(ui);
+            }
+        });
+    }
+
+    /// *Use this view on the page*: draw this view for the page and queue it.
+    fn use_on_page_control(&mut self, ui: &mut Ui) {
+        let button = ui
+            .button(t::view_use_on_page())
+            .on_hover_text(t::view_use_on_page_tooltip());
+        crate::diag::ui_rect_visible(REGION_USE_ON_PAGE, button.rect, ui.clip_rect());
+        if !button.clicked() {
+            return;
         }
+        match self.poster_png() {
+            Ok(png) => self.poster = Some(png),
+            Err(said) => self.failed = Some(t::poster_not_drawn(&said)),
+        }
+    }
+
+    /// This view, at the picture's shape, on the white the engine's own
+    /// poster uses, as PNG bytes.
+    fn poster_png(&self) -> Result<Vec<u8>, String> {
+        use pdfcer_render::tiny_skia::{ColorU8, IntSize, Pixmap};
+        let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
+        let aspect = f64::from(w.max(1)) / f64::from(h.max(1));
+        let (width, height) = if aspect >= 1.0 {
+            (POSTER_SIDE, POSTER_SIDE / aspect)
+        } else {
+            (POSTER_SIDE * aspect, POSTER_SIDE)
+        };
+        let options = ModelRenderOptions {
+            width: (width.round() as u32).max(1),
+            height: (height.round() as u32).max(1),
+            ..ModelRenderOptions::default()
+        };
+        let image = self
+            .orbit
+            .camera(&self.bounds, aspect)
+            .and_then(|camera| {
+                render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
+            })
+            .map_err(|e| e.to_string())?;
+        let premultiplied = image
+            .rgba
+            .chunks_exact(4)
+            .flat_map(|p| {
+                let c = ColorU8::from_rgba(p[0], p[1], p[2], p[3]).premultiply();
+                [c.red(), c.green(), c.blue(), c.alpha()]
+            })
+            .collect();
+        let size = IntSize::from_wh(image.width, image.height).ok_or_else(String::new)?;
+        let pixmap = Pixmap::from_vec(premultiplied, size).ok_or_else(String::new)?;
+        let png = pdfcer_render::export::encode_png(&pixmap, None).map_err(|e| e.to_string())?;
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "model-view-poster w={} h={} yaw={:.3} pitch={:.3} bytes={}",
+                image.width,
+                image.height,
+                self.orbit.yaw,
+                self.orbit.pitch,
+                png.len()
+            )
+        });
+        Ok(png)
     }
 
     /// Turn the camera from this frame's pointer on the picture.
@@ -461,7 +554,9 @@ impl ModelView {
         let drawn = self
             .orbit
             .camera(&self.bounds, f64::from(width) / f64::from(height))
-            .and_then(|camera| render(&self.model.meshes, &camera, &options));
+            .and_then(|camera| {
+                render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
+            });
         self.rendered = Some(wanted);
         match drawn {
             Ok(image) => {
@@ -470,13 +565,14 @@ impl ModelView {
                     .chunks_exact(4)
                     .filter(|px| *px != options.background)
                     .count();
+                let (chromatic, hues) = colourfulness(&image.rgba);
                 let hash = image.rgba.iter().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
                     (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
                 });
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} covered={covered} hash={hash:016x}",
+                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
                         self.orbit.yaw,
                         self.orbit.pitch,
                         self.orbit.zoom,
@@ -515,9 +611,51 @@ impl ModelView {
     }
 }
 
+/// A channel spread at or above this is a colour, not a shade of grey.
+const CHROMA: f32 = 48.0;
+
+/// How many pixels of `rgba` are coloured rather than grey, and how many of
+/// twelve 30-degree hue sectors hold at least 1% of them, for the trace a
+/// driven check reads.
+fn colourfulness(rgba: &[u8]) -> (usize, usize) {
+    let mut sectors = [0_usize; 12];
+    let mut chromatic = 0;
+    for px in rgba.chunks_exact(4) {
+        let (r, g, b) = (f32::from(px[0]), f32::from(px[1]), f32::from(px[2]));
+        let (max, min) = (r.max(g).max(b), r.min(g).min(b));
+        let spread = max - min;
+        if spread < CHROMA {
+            continue;
+        }
+        chromatic += 1;
+        let top = px[0].max(px[1]).max(px[2]);
+        let hue = if px[0] == top {
+            ((g - b) / spread).rem_euclid(6.0)
+        } else if px[1] == top {
+            (b - r) / spread + 2.0
+        } else {
+            (r - g) / spread + 4.0
+        };
+        // `hue` is in [0, 6): two sectors per unit.
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let sector = ((hue * 2.0) as usize).min(11);
+        sectors[sector] += 1;
+    }
+    let floor = (chromatic / 100).max(1);
+    (chromatic, sectors.iter().filter(|n| **n >= floor).count())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn grey_is_not_colour_and_two_hues_count_twice() {
+        let grey = [90, 90, 90, 255, 200, 200, 200, 255];
+        assert_eq!(colourfulness(&grey), (0, 0));
+        let red_and_blue = [220, 30, 30, 255, 30, 30, 220, 255, 128, 128, 128, 255];
+        assert_eq!(colourfulness(&red_and_blue), (2, 2));
+    }
 
     #[test]
     fn the_named_views_look_the_way_their_names_say() {

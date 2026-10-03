@@ -28,6 +28,10 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
         // Opened in `apply`, which holds the dialogs; without `3d` there is
         // no button.
         AttachmentAction::ViewModel { .. } => {}
+        AttachmentAction::SetModelPoster { artwork, png } => {
+            super::models::set_poster(doc, &artwork, &png);
+        }
+        AttachmentAction::PickModelPoster { artwork } => super::models::pick_poster(doc, &artwork),
     }
 }
 

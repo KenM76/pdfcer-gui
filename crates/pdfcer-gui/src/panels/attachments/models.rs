@@ -17,6 +17,8 @@ pub const REGION_MESH: &str = "models.mesh"; // ui-text-exempt: trace region nam
 /// The region the first PRC model's View button publishes.
 #[cfg(feature = "3d")]
 pub const REGION_VIEW: &str = "models.view"; // ui-text-exempt: trace region name, never displayed
+/// The first *Picture…* button, on a model with a page picture to replace.
+pub const REGION_POSTER: &str = "models.poster"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the section; a document with no 3D content draws nothing.
 pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
@@ -41,6 +43,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
     }
     #[cfg(feature = "3d")]
     let mut first_mesh = true;
+    let mut first_poster = true;
     for (ordinal, artwork) in listed.iter().enumerate() {
         ui.label(t::row(artwork));
         if let Some(said) = t::source(artwork) {
@@ -77,7 +80,31 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
                     }));
                 }
             }
+            if has_own_poster(artwork) {
+                let poster = ui
+                    .button(t::poster_button())
+                    .on_hover_text(t::poster_tooltip());
+                if std::mem::take(&mut first_poster) {
+                    crate::diag::ui_rect_visible(REGION_POSTER, poster.rect, ui.clip_rect());
+                }
+                if poster.clicked() {
+                    actions.push(Action::Attachment(AttachmentAction::PickModelPoster {
+                        artwork: artwork.clone(),
+                    }));
+                }
+            }
         });
     }
     ui.separator();
+}
+
+/// A `/3D` annotation of its own, whose page picture `set_3d_poster` can
+/// replace; a RichMedia asset has none.
+#[must_use]
+pub fn has_own_poster(artwork: &pdfcer_core::threed::ThreeDArtwork) -> bool {
+    artwork.annot_id.is_some()
+        && matches!(
+            artwork.source,
+            pdfcer_core::threed::ThreeDSource::Stream { .. }
+        )
 }

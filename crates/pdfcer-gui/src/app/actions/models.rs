@@ -98,14 +98,26 @@ struct Meshed {
 /// A PRC model's triangles, each part placed where its assembly puts it.
 #[cfg(feature = "3d")]
 pub(crate) struct Assembled {
-    /// One mesh per placed part.
+    /// One mesh per placed part; a part with faces of several colours is one
+    /// mesh per colour.
     pub meshes: Vec<pdfcer_3d::TriangleMesh>,
+    /// Each mesh's colour from the model tree, straight RGBA, parallel to
+    /// [`Self::meshes`]; empty when the parts could not be placed.
+    pub colours: Vec<Option<[u8; 4]>>,
     pub triangles: usize,
-    /// Tessellations that are not triangles pdfcer can rebuild.
+    /// Tessellations that are not triangles pdfcer can draw.
     pub skipped: usize,
     /// `false` when the assembly tree could not be read and each mesh is
     /// where its file stores it.
     pub placed: bool,
+}
+
+#[cfg(feature = "3d")]
+impl Assembled {
+    /// Meshes the model gives no colour, which draw grey.
+    pub(crate) fn uncoloured(&self) -> usize {
+        self.meshes.len() - self.colours.iter().flatten().count()
+    }
 }
 
 /// Why [`assemble`] produced nothing to draw or save.
@@ -120,64 +132,23 @@ pub(crate) enum Unassembled {
     },
 }
 
-/// Decode a PRC model and place its parts, as the engine's `3d-render` does.
+/// Decode a PRC model and place and colour its parts with
+/// `pdfcer_3d::assemble`.
 #[cfg(feature = "3d")]
 pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
-    use pdfcer_3d::{PrcFile, Tessellation};
-    if !data.starts_with(b"PRC") {
-        return Err(Unassembled::NotPrc);
-    }
-    let prc = PrcFile::parse(data).map_err(|e| Unassembled::Unreadable(e.to_string()))?;
-    let (mut skipped, mut compressed) = (0usize, 0usize);
-    let mut by_index = Vec::with_capacity(prc.file_structures.len());
-    for structure in &prc.file_structures {
-        let found = structure
-            .tessellations()
-            .map_err(|e| Unassembled::Unreadable(e.to_string()))?;
-        let row: Vec<_> = found
-            .into_iter()
-            .map(|tessellation| match tessellation {
-                Tessellation::Mesh(mesh)
-                | Tessellation::Compressed {
-                    mesh: Some(mesh), ..
-                } => Some(mesh),
-                Tessellation::Compressed { mesh: None, .. } => {
-                    compressed += 1;
-                    skipped += 1;
-                    None
-                }
-                _ => {
-                    skipped += 1;
-                    None
-                }
-            })
-            .collect();
-        by_index.push(row);
-    }
-    let mut meshes = Vec::new();
-    let placements = prc.placements().unwrap_or_default();
-    for p in &placements {
-        let mesh = by_index
-            .get(p.file_structure)
-            .and_then(|row: &Vec<Option<pdfcer_3d::TriangleMesh>>| row.get(p.tessellation))
-            .and_then(Option::as_ref);
-        if let Some(mesh) = mesh {
-            meshes.push(mesh.transformed(&p.matrix));
-        }
-    }
-    let placed = !meshes.is_empty();
-    if !placed {
-        meshes = by_index.into_iter().flatten().flatten().collect();
-    }
-    let triangles: usize = meshes.iter().map(|m| m.triangles.len()).sum();
-    if triangles == 0 {
-        return Err(Unassembled::Empty { compressed });
-    }
+    use pdfcer_3d::AssembleError;
+    let model = pdfcer_3d::assemble(data).map_err(|why| match why {
+        AssembleError::NotPrc => Unassembled::NotPrc,
+        AssembleError::CompressedOnly { count, .. } => Unassembled::Empty { compressed: count },
+        AssembleError::NoTriangles => Unassembled::Empty { compressed: 0 },
+        other => Unassembled::Unreadable(other.to_string()),
+    })?;
     Ok(Assembled {
-        meshes,
-        triangles,
-        skipped,
-        placed,
+        skipped: model.wires + model.markups + model.compressed,
+        placed: model.unplaced.is_none(),
+        triangles: model.triangles,
+        colours: model.colours,
+        meshes: model.meshes,
     })
 }
 
@@ -326,6 +297,67 @@ pub(super) fn save_mesh(_doc: &mut OpenDoc, _artwork: &ThreeDArtwork) {
     });
 }
 
+/// Pick a picture file and make it the page picture of `artwork`.
+pub(super) fn pick_poster(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
+    let crate::app::files::Picked::Path(source) = crate::app::files::pick_image_source() else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            "model-poster-cancelled".to_owned()
+        });
+        return;
+    };
+    match std::fs::read(&source) {
+        Ok(picture) => set_poster(doc, artwork, &picture),
+        Err(error) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "model-poster-declined reason=unreadable kind={:?}",
+                    error.kind()
+                )
+            });
+            super::record_note(doc.edit_epoch, t::poster_unreadable(&error.to_string()));
+        }
+    }
+}
+
+/// Replace the page picture of `artwork` with `picture` (image file bytes),
+/// fitted inside its rectangle: one undo entry. Refused, with a sentence,
+/// when the model moved or the picture cannot be read.
+pub(super) fn set_poster(doc: &mut OpenDoc, artwork: &ThreeDArtwork, picture: &[u8]) {
+    let page = artwork.page_index;
+    let listed = list_3d_with_notes(&*doc.session).0.contains(artwork);
+    let target = artwork.annot_id.filter(|_| listed);
+    let ready = match (target, pdfcer_core::image_import::import(picture)) {
+        (Some(annot), Ok(image)) => Ok((annot, image)),
+        (None, _) => Err(("moved", t::poster_not_set().to_owned())),
+        (Some(_), Err(error)) => Err(("picture", t::poster_unreadable(&error.to_string()))),
+    };
+    let (annot, image) = match ready {
+        Ok(ready) => ready,
+        Err((reason, said)) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("model-poster-declined page={page} reason={reason}")
+            });
+            super::record_note(doc.edit_epoch, said);
+            return;
+        }
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "model-poster-requested page={page} annot={} w={} h={}",
+            annot.num, image.width, image.height
+        )
+    });
+    super::apply::vector_edit(doc, "set-3d-poster", page, 1, |session| {
+        session
+            .set_3d_poster(page, annot, &image)
+            .map(|_| vec![t::poster_set(page)])
+    });
+}
+
 /// Pick a U3D or PRC file and place it, centred, on `page`: one undo entry.
 pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
     let crate::app::files::Picked::Path(source) = crate::app::files::pick_model_source() else {
@@ -397,15 +429,18 @@ fn poster_note(poster: &ThreeDPoster) -> Option<String> {
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
-        format!("model-insert-poster drawn={drawn} reason={reason}")
+        let uncoloured = match poster {
+            ThreeDPoster::Rendered(r) => r.uncoloured_meshes,
+            _ => 0,
+        };
+        format!("model-insert-poster drawn={drawn} reason={reason} uncoloured={uncoloured}")
     });
     match poster {
-        ThreeDPoster::Rendered(r) => Some(
-            t::poster_rendered(
-                r.compressed_skipped > 0 || r.wires_skipped > 0 || r.unplaced.is_some(),
-            )
-            .to_owned(),
-        ),
+        ThreeDPoster::Rendered(r) => Some(t::poster_rendered(
+            r.compressed_skipped > 0 || r.wires_skipped > 0 || r.unplaced.is_some(),
+            r.uncoloured_meshes,
+            r.meshes,
+        )),
         ThreeDPoster::Placeholder(why) => Some(t::poster_placeholder(&why.to_string())),
         _ => None,
     }

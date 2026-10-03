@@ -1,7 +1,7 @@
-# `app::actions::models` — place a 3D model on a page; save an embedded one out
+# `app::actions::models` — place a 3D model on a page; save, view and re-picture one
 
-Two verbs, both reached through `AttachmentAction` because both open a native
-file dialog and so must run in the apply arm, never in a layout pass.
+Every verb is reached through `AttachmentAction`: those that open a native
+file dialog must run in the apply arm, never in a layout pass.
 
 ## `insert(doc, page)` — Edit ▸ Insert ▸ 3D model…
 
@@ -15,9 +15,9 @@ file dialog and so must run in the apply arm, never in a layout pass.
 4. `model-insert-requested page= format= bytes=`, then the vector funnel
    under the label `add-3d` — one undo entry; a refusal traces
    `add-3d-refused`.
-5. Notes: what was placed and that pdfcer draws a placeholder picture (the
-   engine renders no 3D scene); plus a version warning when the document's
-   declared PDF version is below the one the format needs.
+5. Notes: what was placed and what the page picture is (`poster_note`); plus
+   a version warning when the document's declared PDF version is below the
+   one the format needs.
 
 `centred` is a 4:3 box, half the page width (capped by its height), centred
 on the crop box.
@@ -43,15 +43,20 @@ feature the button is not drawn.
 
 Driven by `ui-verify` check `a_3d_model_is_placed_listed_and_saved_back`.
 
-## `assemble(data)` — decode and place a PRC model (feature `3d`)
+## `assemble(data)` — decode, place and colour a PRC model (feature `3d`)
 
-Parses the PRC (`pdfcer_3d::PrcFile`), keeps every `Tessellation::Mesh` and
-every rebuilt `Compressed { mesh: Some(..) }`, and counts the rest as
-skipped. Each `PrcFile::placements` entry transforms its mesh into place;
-when placements yield nothing (the tree is unreadable or empty) every mesh is
-kept where its file stores it and `placed` is false. `Unassembled` says why
-there is nothing: not PRC, unreadable, or no triangles (naming compressed
-meshes the engine could not rebuild).
+A thin mapping of `pdfcer_3d::assemble`, the routine the engine's own mesh
+export, renderer and default poster use, so the viewer cannot disagree with
+the page picture. `Assembled::colours` is parallel to `meshes` (empty when
+the tree could not be read; `placed` is then false and each mesh sits where
+its file stores it); `uncoloured()` counts the meshes drawn grey. `skipped`
+is wires + markups + compressed meshes left out. `Unassembled` maps
+`AssembleError`: `NotPrc`; `CompressedOnly { count }` and `NoTriangles` to
+`Empty`; anything else to `Unreadable` with the engine's sentence.
+
+The page picture's status line (`poster_note`) counts the poster's
+`uncoloured_meshes` the same way; its trace is
+`model-insert-poster drawn= reason= uncoloured=`.
 
 ## `load_view(doc, artwork)` — the View… button (feature `3d`)
 
@@ -60,3 +65,28 @@ sentence `apply` records as a note (with `model-view-declined page=`). On
 success `apply` opens `dialogs::model3d`.
 
 Driven by `ui-verify` check `a_3d_model_turns_under_the_pointer`.
+
+## `set_poster(doc, artwork, picture)` — a new page picture
+
+`picture` is image file bytes. The row is re-listed and must still be present
+with an annotation of its own, and the bytes must import
+(`image_import::import`); otherwise nothing changes and a sentence is noted
+(`model-poster-declined page= reason=moved|picture`). Then
+`model-poster-requested page= annot= w= h=` and the vector funnel under the
+label `set-3d-poster`: `EditSession::set_3d_poster` fits the picture inside
+the annotation's rectangle, preserving its shape, and rewrites only `/AP /N`;
+the model is untouched. One undo entry.
+
+Reached two ways: the viewer's *Use this view on the page*
+(`SetModelPoster`, a PNG the viewer drew), and *Picture…* on the
+Attachments row (`PickModelPoster` → `pick_poster`, which asks
+`files::pick_image_source` for a file; `PDFCER_DIAG_IMAGE_PATH` answers it in
+driven runs; `model-poster-cancelled` when dismissed, and
+`model-poster-declined reason=unreadable kind=` with a note when the file
+cannot be read).
+
+The viewer's picture crosses as PNG bytes because the engine has no public
+way to build an `ImportedImage` from raw pixels (our `G106`).
+
+Driven by `ui-verify` checks `the_3d_viewers_view_becomes_the_page_picture`
+and `a_picture_file_becomes_a_3d_models_page_picture`.

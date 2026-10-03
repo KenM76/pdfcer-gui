@@ -887,7 +887,7 @@ impl DialogsState {
             self.labels = None;
         }
         #[cfg(feature = "3d")]
-        if self.model3d.as_mut().map(|d| d.show(ctx)) == Some(false) {
+        if self.model3d.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.model3d = None;
         }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
