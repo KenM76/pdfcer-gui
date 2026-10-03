@@ -159,3 +159,6 @@
 - [OCRcer adoption triggers a release](project_ocrcer_release_trigger.md) — pre-approved: wire options + publish when the engine says so.
 - [A filtered test run hides the registry tests](feedback_filtered_test_run.md) — a new command reddens 4 far-away tests; run the lib suite unfiltered.
 - [An engine count is not the operator's](feedback_engine_count_not_operators.md) — purge verb said 0 while the rewrite removed the password.
+- [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
+- [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.
+- [Read a passing check's trace](feedback_read_passing_trace.md) — the receipt said page 2 while the index oracle passed.

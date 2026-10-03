@@ -381,3 +381,13 @@ foreground cap, gets moved to the background, and the memory watchdog killed it
 twice. Ken set `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1` as a User
 environment variable; it takes effect only after Claude Code restarts. If it is
 not in effect, ask Ken before packaging without `--verify`.
+
+## A full disk TRUNCATES the file being patched — 2026-10-02
+
+D: hit 0 bytes free with other sessions' fuzz runs going. `patchlib.patch` opens
+the target `'wb'` before writing, so the `ENOSPC` left a source file at **0
+bytes**, which `git diff --stat` showed as 869 deletions. Restored with `git show
+HEAD:path > path` once space was back. **How to apply:** before any batch of
+writes, `df -h /d`. Under ~5 GB, first delete `target/debug` (50 GB here, all
+rebuildable). After any `No space left` error, check `git diff --stat` for a file
+gone to zero.
