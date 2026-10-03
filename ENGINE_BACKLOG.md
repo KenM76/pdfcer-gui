@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **78 of 296** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `wanted` — a real gap — **78 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -103,7 +103,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Paint tiling patterns (`PatternType 1`, §8.7.3 Table 75) for fills, strokes and text … | **wanted — in the pin, not yet wired.** Engine Pass 448.0. Tiled fills, strokes and text now paint on the canvas as they print, because it draws through `pdfcer-render`; `ColorDiagnostics::tiling_patterns_painted` counts a success and has nothing to say. The shell does not read `patterns_unpainted` yet; what remains is that a pattern the renderer declines needs an off-canvas note from that count. |
 | **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **wanted — in the pin, not yet wired.** The engine answered G094 with this; it is paste step P9. What it takes here: Office's EMF copy on the clipboard, and a dropped or inserted `.emf`, place as vector content (or a stamp in a markup-only mode), with each skipped record, approximation, font substitution and ignored EMF+ part named off-canvas, and an EMF+-only file refused in the engine's words. |
 | **PaddleOCR-VL engine** — vision-language OCR compiled behind `ocr-vl`, weights as an add-on folder; the modules `pdfcer_core::ocr::engine_paddle_vl`, `pdfcer_core::ocr::vl_pre`, `pdfcer_core::ocr::vl_decode`, `pdfcer_core::ocr::vl_tokenizer` and `pdfcer_core::ocr::json_lite` | **wanted — in the pin, not yet wired.** It reaches this shell through the OCR add-on discovery row above: once the Recognise text dialog lists discovered add-ons, a PaddleOCR-VL folder appears there like any other. What is owed beyond that row is its disclosure: results are one word per line, region-aligned and inferred, which the OCR report must say off-canvas. |
-| **Export a page region as vector content WITH the viewer's state, geometry outside the rect truly removed** — `pageops::extract_region`, `RegionExport`, `RegionReport`, `RegionError` (our `G099`, Pass 449.0) | **wanted — after the pin; O272's snapshot copy takes it next.** What it takes here: the snapshot box's Copy cuts the box out through `extract_region` with the viewer's annotation and layer state, and makes the SVG, EMF and picture from the one-page result, so nothing outside the box reaches the clipboard. When `RegionReport::has_residuals` is true, or the engine refuses the region, the picture is placed alone and the status row says why. |
+| **Export a page region as vector content WITH the viewer's state, geometry outside the rect truly removed** — `pageops::extract_region`, `RegionExport`, `RegionReport`, `RegionError`, the module `pdfcer_core::pageops::region` (our `G099`, Pass 449.0) | **wanted — after the pin; O272's snapshot copy takes it next.** What it takes here: the snapshot box's Copy cuts the box out through `extract_region` with the viewer's annotation and layer state, and makes the SVG, EMF and picture from the one-page result, so nothing outside the box reaches the clipboard. When `RegionReport::has_residuals` is true, or the engine refuses the region, the picture is placed alone and the status row says why. |
 | **Add an image stamp annotation** — `EditSession::add_image_stamp`, a picture contain-fitted into a `/Stamp` appearance, the module `pdfcer_core::edit::image_stamp` | **wanted — in the pin, not yet wired.** The engine answered G095 with this. What it takes here: *Paste as stamp* calls `add_image_stamp` directly instead of wrapping the picture in a one-page scratch PDF and registering it as custom-stamp artwork, and that scratch-file route is deleted with its cause. |
 | **Set, clear and position a push-button's icon** — `WidgetEdit::with_button_icon`/`without_button_icon`/`with_caption_position`, the modules `pdfcer_core::annot_author::button_icon` and `pdfcer_core::edit::button_icon`, the field `WidgetEdit::button_icon`, refusal `EditError::NotAPushButton` | **wanted — in the pin, not yet wired.** The engine answered G097 with this. What it takes here: the push-button properties gain an Icon field (choose a picture, clear it) and a caption-position choice, and a picture pasted onto a selected push button sets its icon. |
 | **Import an SVG as vector content** — `svg_import::import`, `EditSession::add_svg`/`add_svg_stamp`, `SvgImportNotes`, the modules `pdfcer_core::svg_import` and `pdfcer_core::edit::svg`, undo kind `CommandKind::AddSvg`, compiled behind the forwarded `svg-import` | **wanted — in the pin, not yet wired.** What it takes here: a dropped or inserted `.svg` places as vector content (or a stamp in a markup-only mode), each skipped feature in `SvgImportNotes` becomes an off-canvas note, and the engine's named gap — a `<pattern>` fill renders blank in our canvas though the file is correct — is disclosed off-canvas when the notes say a pattern was placed. |
@@ -178,7 +178,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 296** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `blocked` — waiting on something named — **2 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -196,7 +196,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 296** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -207,7 +207,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 296** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `declined` — deliberately no surface — **17 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -234,6 +234,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, declined) | Why |
 |---|---|
+| **A run's own embedded program sets the characters its font dictionary cannot encode** — the module `pdfcer_core::text_edit::same_program` (`CidFontProgram`, `CidProgramUse`), `EditOptions::cid_font_program`, `EditOptions::with_cid_font_program` (Pass 430.3, 430.4) | **declined as a setting — the default is taken.** The engine's default, `CidFontProgram::StripCmap`, already sets such characters through a new CID font over the run's own program and stays within §9.9 in every case, and every text edit here takes it without asking. `ShareStream` would knowingly break §9.9 to save bytes and `Off` brings back the refusal; neither is a choice the operator should have to make. When the engine is forced to share a program that keeps its `cmap`, it says so in `TextEditOutcome::disclosures`, which `app::actions::textcommit` shows verbatim. |
 | Upgrade a below-opset-13 OCR model on load — `pdfcer_core::ocr::onnx_upgrade` | **declined as a surface.** `PaddleEngine::from_model_dir` applies it inside the load; the shell benefits by calling the loader and has no choice to offer. The consequence for packaging — the official PP-OCRv5 `inference.onnx` now loads unconverted — is the package's business, not a control's. |
 | Form XObject viewport culling — a `Do` whose `/BBox`, mapped … | **declined — the cull is lossless by construction.** §8.10.1 makes `/BBox` a clip, so a culled form cannot mark a pixel and the raster is byte-identical. `app::status::notes::findings` reports only findings that change *what the operator can see*, and it excludes `tolerated` and `compat_skipped` on exactly that argument; `forms_culled` belongs with those two. It becomes wanted the day a **performance** readout exists; it is not wanted on a correctness one. |
 | Image viewport culling — an image `Do` whose unit square, ma… | **declined, on the row above's argument** — lossless by construction (§8.9.5.2: `Do` paints only the unit square), byte-identical across the engine's fixtures, so a culled image cannot change what the operator sees and has no place on a **correctness** readout. Filed apart from `forms_culled` — the engine spells this one `interpret::Diagnostics::images_culled` — because the gap between the two counters is itself the diagnostic. On a large street map nearly every image culls with peak memory unchanged, so that file's cost is `ContentToken` volume rather than image decoding. Becomes wanted with its sibling the day a **performance** readout exists. |
@@ -249,7 +250,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **200 of 296** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **200 of 297** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
