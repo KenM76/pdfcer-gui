@@ -85,10 +85,7 @@ pub fn copy_snapshot(doc: &crate::opendoc::OpenDoc) -> Result<SnapshotCopy, Refu
     // ui-text-exempt: a clippy lint name, never displayed
     let dpi_f = dpi as f32;
     let options = render_options(doc);
-    let mut state = RegionExport::new().with_annotations(options.annotations);
-    if let Some(hidden) = &doc.layers.hidden {
-        state = state.with_hidden_layers(hidden.iter().copied());
-    }
+    let state = region_state(doc, &options);
     // The view, so unsaved edits are what is copied — as `place::page_payload`.
     let view = doc.session.view();
     let (payload, vectors) = match extract_region(&view, laid.page, region.crop_box, &state) {
@@ -121,6 +118,27 @@ pub fn copy_snapshot(doc: &crate::opendoc::OpenDoc) -> Result<SnapshotCopy, Refu
         height_px,
         vectors,
     })
+}
+
+/// **The snapshot box cut out as a one-page PDF**, under the viewer's
+/// annotation and layer state and with unsaved edits. `NoPage` when there is
+/// no box or it lies off its page; `Render` carries the engine's refusal.
+pub fn snapshot_pdf(doc: &crate::opendoc::OpenDoc) -> Result<(Vec<u8>, RegionReport), Refusal> {
+    let laid = doc.snapshot.ok_or(Refusal::NoPage)?;
+    let page = doc.pages.get(laid.page).ok_or(Refusal::NoPage)?;
+    let region = cropped(page, laid.rect).ok_or(Refusal::NoPage)?;
+    let state = region_state(doc, &render_options(doc));
+    extract_region(&doc.session.view(), laid.page, region.crop_box, &state)
+        .map_err(|error| Refusal::Render(error.to_string()))
+}
+
+/// The engine's region settings for the viewer's annotation and layer state.
+fn region_state(doc: &crate::opendoc::OpenDoc, options: &RenderOptions) -> RegionExport {
+    let mut state = RegionExport::new().with_annotations(options.annotations);
+    if let Some(hidden) = &doc.layers.hidden {
+        state = state.with_hidden_layers(hidden.iter().copied());
+    }
+    state
 }
 
 /// Every format from the engine's one-page cut, or the picture alone when the

@@ -199,6 +199,10 @@ pub(super) fn band() -> Vec<Command> {
         command("view.tool_snapshot", t::view_tool_snapshot(), 267)
             .with_icon("snapshot")
             .enabled_when("doc.pages"),
+        // The snapshot box's own menu; its operand is the box, so no ribbon home.
+        command("view.snapshot_save_pdf", t::view_snapshot_save_pdf(), 268)
+            .with_icon("save-as")
+            .enabled_when("doc.pages"),
         //
         // Beside `view.tool_hand` because View ▸ Navigate is where the *other*
         // pointer-tool toggle already lives, and because View is the one tab

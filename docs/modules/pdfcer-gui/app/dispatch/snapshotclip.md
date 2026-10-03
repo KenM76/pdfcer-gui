@@ -23,5 +23,6 @@ nothing when the tool is down.
     `no-box`, `render`, `would-degrade`, `clipboard`, and the page copy's
     refusal sentence.
 - Reached from the Copy chord and from the box's right-click menu,
-  `canvas.snapshot`, whose one row is `edit.copy`. Copy is allowed in every
+  `canvas.snapshot`, whose rows are `edit.copy` and `view.snapshot_save_pdf`
+  (`dispatch::snapshotsave`). Copy is allowed in every
   mode, so the box copies in Read.

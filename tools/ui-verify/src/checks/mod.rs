@@ -1125,6 +1125,7 @@ pub mod snapshot_dpi;
 pub mod snapshot_grips;
 /// A snapshot copy pastes back into pdfcer as a drawing, not a picture.
 pub mod snapshot_paste;
+pub mod snapshot_save;
 
 /// **The Bookmarks panel could not REORGANISE** — `Pass 161.0` shipped
 /// `move_outline_item` and `set_outline_open`, and this drives both through the

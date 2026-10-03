@@ -34,6 +34,8 @@ pub(crate) mod pageclip;
 pub(crate) mod pages;
 /// Copy while a snapshot box is laid: the box.
 pub(crate) mod snapshotclip;
+/// The snapshot box, saved as a one-page PDF.
+pub(crate) mod snapshotsave;
 /// **The two text-copy verbs** — the page's words and the whole document's,
 /// onto the clipboard.
 pub(crate) mod textcopy;
@@ -545,6 +547,9 @@ impl PdfcerApp {
             // fixed.
             id if crate::app::dispatch::zoom::handles(id) => {
                 crate::app::dispatch::zoom::dispatch(self, ctx, id, actions);
+            }
+            "view.snapshot_save_pdf" => {
+                crate::app::dispatch::snapshotsave::save(self);
             }
 
             // **The two text-EDITING verbs**, and they are the defect this

@@ -1,6 +1,67 @@
 //! # `text::snapshot` — what the snapshot box says on the status row
 
 use crate::clipboard::snapshot::{SnapshotCopy, Vectors};
+use pdfcer_core::pageops::RegionReport;
+
+/// The save dialog's title.
+#[must_use]
+pub const fn save_title() -> &'static str {
+    "Save the snapshot box as a PDF"
+}
+
+/// Why nothing was saved: there is no box, or it lies off its page.
+#[must_use]
+pub const fn save_no_box() -> &'static str {
+    "There is no snapshot box to save. Draw one with the Snapshot tool on the View tab \
+     first."
+}
+
+/// Why nothing was saved: the file picked is the document on screen.
+#[must_use]
+pub const fn save_over_document() -> &'static str {
+    "The snapshot box was not saved: that file is the document on screen. Pick another \
+     name."
+}
+
+/// Why nothing was saved: the engine refused the region, in its own words.
+#[must_use]
+pub fn save_refused(why: &str) -> String {
+    format!("The snapshot box could not be cut out of its page: {why}. Nothing was saved.")
+}
+
+/// Why nothing was saved: the file could not be written.
+#[must_use]
+pub fn save_failed(path: &str, why: &str) -> String {
+    format!("The snapshot box could not be written to {path}: {why}.")
+}
+
+/// **What saving the snapshot box wrote**: the file, its page size, and
+/// anything the engine left out or could not cut away.
+#[must_use]
+pub fn saved_pdf(path: &str, report: &RegionReport) -> String {
+    let (w, h) = (
+        report.rect.urx - report.rect.llx,
+        report.rect.ury - report.rect.lly,
+    );
+    let edge = match report.glyphs_removed {
+        0 => String::new(),
+        1 => " One character crossing its edge was left out.".to_owned(),
+        n => format!(" {n} characters crossing its edge were left out."),
+    };
+    let cut = if report.has_residuals() {
+        " Some drawing outside the box could not be cut away; it is in the file, beyond the \
+         page's edge."
+    } else {
+        " Everything outside the box was cut away."
+    };
+    let said = format!(
+        "Saved the snapshot box as a one-page PDF, {w:.0} \u{d7} {h:.0} pt: {path}.{cut}{edge}"
+    );
+    report
+        .notes
+        .iter()
+        .fold(said, |text, note| format!("{text} {note}"))
+}
 
 /// **What a snapshot copy put on the clipboard**, said on the status row:
 /// the picture's size and resolution, whether the vectors went with it, and

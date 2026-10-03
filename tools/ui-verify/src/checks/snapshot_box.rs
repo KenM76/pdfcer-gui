@@ -117,6 +117,16 @@ pub(super) fn launch(
     report: &mut CheckReport,
     stem: &str,
 ) -> Result<(Rig, PageGeometry)> {
+    launch_with(ctx, report, stem, &[])
+}
+
+/// [`launch`], with `env` added to the app's environment.
+pub(super) fn launch_with(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+    env: &[(String, String)],
+) -> Result<(Rig, PageGeometry)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -146,6 +156,7 @@ pub(super) fn launch(
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.env.extend_from_slice(env);
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();

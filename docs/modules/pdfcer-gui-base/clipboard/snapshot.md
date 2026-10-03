@@ -52,5 +52,9 @@ EMF, PNG, DIBV5), then the cut page itself as `application/pdf`, placed by
 - `SnapshotCopy` reports the formats placed, the dpi used and the dpi asked,
   the picture's pixel size and the `Vectors` outcome; the dispatcher traces them
   and states them on the status row (`text::snapshot::copied`).
+- `snapshot_pdf(doc)` is the same cut, `region_state` and all, returned as
+  bytes with the engine's `RegionReport` instead of placed on the clipboard;
+  *Save as PDF…* on the box writes it to a file (`app::dispatch::snapshotsave`).
+  `Refusal::NoPage` and `Refusal::Render` mean what they mean for the copy.
 - **Cost.** The cut runs on the UI thread. It has not been measured on a dense
   drawing.

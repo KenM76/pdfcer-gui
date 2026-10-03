@@ -73,9 +73,10 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 36 → 37: `markup.flatten` on the canvas markup menu.
     // 37 → 41: the canvas dimension menu, four rows.
     // 41 → 43: Show area and Show perimeter on the dimension menu.
+    // 44 → 45: Save as PDF… on the snapshot box's menu.
     assert_eq!(
         (glyph, blank, absent),
-        (44, 1, 0),
+        (45, 1, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

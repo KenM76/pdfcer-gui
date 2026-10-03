@@ -114,6 +114,7 @@ view.rulers  Rulers
 view.show_annotations  Annotations
 view.show_points  Points
 view.smart_select  Smart select
+view.snapshot_save_pdf  Save as PDF…
 view.text_chunks  Text chunks
 view.tool_hand  Hand
 view.tool_node  Points

@@ -130,6 +130,16 @@ pub const fn edit_copy() -> CommandText {
     )
 }
 
+/// `view.snapshot_save_pdf` — the snapshot box's menu.
+#[must_use]
+pub const fn view_snapshot_save_pdf() -> CommandText {
+    CommandText::new(
+        "Save as PDF\u{2026}",
+        "Save what is inside the snapshot box as a one-page PDF, cut to the box, with \
+         comments and layers as the page shows them. The document is not changed.",
+    )
+}
+
 /// `edit.paste` — the object clipboard's paste.
 #[must_use]
 pub const fn edit_paste() -> CommandText {

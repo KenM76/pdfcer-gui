@@ -695,6 +695,7 @@
             context: "canvas.snapshot",
             items: [
                 Command(id: "edit.copy"),
+                Command(id: "view.snapshot_save_pdf"),
             ],
         ),
         (

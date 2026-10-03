@@ -406,8 +406,11 @@ pub fn built_in() -> Menus {
             Item::command("view.zoom_selection"),
         ]))
         // -------------------------------------------------------------------
-        // canvas.snapshot — inside the snapshot box: copy it (O272).
-        .with(Menu::new(CANVAS_SNAPSHOT).with_items([Item::command("edit.copy")]))
+        // canvas.snapshot — inside the snapshot box: copy it, or save it as a PDF.
+        .with(Menu::new(CANVAS_SNAPSHOT).with_items([
+            Item::command("edit.copy"),
+            Item::command("view.snapshot_save_pdf"),
+        ]))
         // -------------------------------------------------------------------
         // canvas.empty — the view menu.
         //

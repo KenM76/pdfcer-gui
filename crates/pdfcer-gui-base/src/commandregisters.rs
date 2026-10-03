@@ -549,6 +549,11 @@ pub const TAB_SCOPED: &[(&str, &str)] = &[
         "The mirror of `markup.add_node`, with the same operand and the same argument — this corner, the one under the pointer. It is additionally the more dangerous of the two to give a ribbon home: a button that removed some invented default corner would silently reshape a drawing on a press the operator read as harmless.",
     ),
     (
+        "view.snapshot_save_pdf",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is THE SNAPSHOT BOX THE OPERATOR RIGHT-CLICKED INSIDE. A ribbon button would act on a box drawn earlier and perhaps scrolled out of view. The capability is discoverable from View ▸ Navigate's `view.tool_snapshot`, which draws the box whose menu offers it.",
+    ),
+    (
         "format.dimension_diameter",
         // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
         "Its operand is THE CIRCULAR CE DIMENSION THAT WAS RIGHT-CLICKED, and the row is drawn only when that dimension currently shows its radius. The other home for the same switch is the Properties panel's Radius / Diameter choice.",
