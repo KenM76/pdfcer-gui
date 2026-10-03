@@ -87,7 +87,7 @@
 - [Slack in screen units shrinks in his](feedback_slack_screen_units.md) — viewport-sized areas die at high zoom.
 - [A runner's sentinel indicts the runner](feedback_runners_sentinel.md) — 210 checks "swept", every chunk rc=2.
 - [Mutate before stamping, report your dirt](feedback_tool_mutates_tree.md) — `cargo update` earned the `-dirty`.
-- [`gh release create` tags remotely](feedback_gh_release_create.md) — `git describe` goes stale; fetch tags.
+- [`gh release create` tags remotely](feedback_gh_release_create.md) — fetch tags; push main FIRST or the tag lands on old remote main.
 - [Meaning can change under a signature](feedback_capability_change.md) — `is_editable` went false → *is a path*.
 - [A refusal filtered on the opposite test](feedback_refusal_filtered.md) — the symptom is SILENCE, which nobody reports.
 - [A substring survives a narrowing](feedback_substring_match.md) — words stayed, the condition shrank.
@@ -162,3 +162,4 @@
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
 - [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.
 - [Read a passing check's trace](feedback_read_passing_trace.md) — the receipt said page 2 while the index oracle passed.
+- [Push only with a release](feedback_push_only_with_release.md) — commit locally; main goes to origin only inside an engine-triggered release.

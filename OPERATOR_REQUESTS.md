@@ -489,6 +489,18 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 **Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. `Ctrl+V` works for it too, not only the ribbon's Paste. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`, `ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`. Text from Word or anywhere else now pastes at the pointer as well: as page text in Edit, as a text-box comment in Review (`text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`). A picture file dropped on a page lands where it was dropped, at its natural size, with no window; Alt as you drop opens the window instead (`a_dropped_picture_lands_where_it_was_dropped`). A dropped text file becomes pages after the one on screen (`a_dropped_text_file_becomes_pages_after_this_one`). A PDF dropped alone on an open document asks whether to open it, insert its pages after this one, or place its first page where it was dropped (`a_dropped_pdf_asks_open_insert_or_place`). In Review a copied picture pastes as a stamp at the pointer, by `Ctrl+V` or Markup ▸ Paste picture as stamp (`a_copied_picture_pastes_as_a_stamp_in_review`). File ▸ New from clipboard and Pages ▸ Insert from clipboard make a new PDF of what you copied, or add it as pages after the one you are on: a picture as a page its own size, text as Import text sets it (`the_clipboard_becomes_a_new_pdf_or_pages_after_this_one`). SVG and EMF wait on the engine (G093, G094). Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
+## O283 — **QUEUED — after O282** — 3D models in their own colours, and the rest of the engine's 3D
+
+> **Ken:** *"I also think the engine has a way to show 3d model previews and colour mapping."*
+
+He is right: the engine assembles a model with each part's own colour and can draw it that way, translucent parts included, and can draw a default view for the page picture. The 3D viewer and the picture on the page are to show the model in its own colours, with uncoloured parts in grey, replacing the one flat colour they use now. Placing a model uses the engine's default view as its page picture wherever the engine can draw it. The rest of the engine's 3D abilities (saved views, U3D and others) are to be audited against the program: the cheap ones wired, the rest listed.
+
+## O282 — **QUEUED — next after the engine v0.75.0 release** — extra OCR model folders in Settings, and a drop-down to choose the model
+
+> **Ken:** *"The GUI needs a way in the settings to let the user add other locations to look for OCR models to use. The radio button selector for choosing a model needs to be changed to a drop down menu."*
+
+Two parts. Settings gets a list of extra folders to search for OCR models (Add… with a folder picker, Remove), kept between sessions. They are searched after the models bundled with the program, the same way the command line's `ocr_folder` setting and `--ocr-folder` option work. The Recognise text dialog then chooses the model from a drop-down listing every model found, add-ons such as PaddleOCR-VL included, by its own label. A model this build cannot run is shown greyed with the reason. If the remembered model has gone missing, the dialog says so rather than quietly using another.
+
 ## O281 — **BUILT AND DRIVEN — awaiting your verdict** — title bars follow the light or dark theme
 
 > **Ken:** *"in dark mode the window title bar isn't recoloured to match the mode."*

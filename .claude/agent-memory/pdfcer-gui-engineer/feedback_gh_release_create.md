@@ -48,3 +48,12 @@ target_commitish is invalid* (measured 2026-09-28). Pass
 actually built from, rather than whatever `main` is by then.
 
 **`--target` takes a full SHA.** A short hash fails with HTTP 422 `target_commitish is invalid`; pass `$(git rev-parse HEAD)`.
+
+**Third trap: `--target main` names the REMOTE main.** If the local commits
+were never pushed, the tag lands on GitHub's older main while the zip holds the
+newer build. Measured 2026-10-03: v0.5.0-dev.20261003.1 was tagged at 2620b10f
+with 7 unpushed commits, so the zip was a5423376. Push main first, or pass the
+full SHA (which also fails if that SHA is unpushed). Afterwards, check
+`git rev-parse <tag>^{commit}` against the SHA in the zip name. To repair:
+`git push origin main`, then `git tag -f` and `git push -f` the tag. The release
+stays attached to the tag.
