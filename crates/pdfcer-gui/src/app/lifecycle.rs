@@ -209,7 +209,7 @@ impl PdfcerApp {
     }
 
     /// The half of the two New verbs that is not about *what* was created.
-    fn adopt_created(
+    pub(in crate::app) fn adopt_created(
         &mut self,
         made: Result<(Document, Vec<pdfcer_core::page_tree::Page>), String>,
     ) {

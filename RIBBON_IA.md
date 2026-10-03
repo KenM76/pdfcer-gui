@@ -209,7 +209,7 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 
 | Group | Commands |
 |---|---|
-| **File** | New (blank) · New from template… (page size) · Open… · Recent ⌄ · Close |
+| **File** | New (blank) · New from template… (page size) · New from clipboard · Open… · Recent ⌄ · Close |
 | **Recognise** | OCR… |
 | **Save** | Save · Save as… · Save a copy… · Save compacted · Revert |
 | **Export** | Export DXF… · Export image… (PNG/JPEG/TIFF, DPI picker) · Export text… · Import text · Stamp collection · Export form data ⌄ (FDF / XFDF / CSV) · Import form data · Copy this page's text · Copy the whole document's text |
@@ -298,7 +298,7 @@ window, where both are checkboxes.
 
 | Group | Commands |
 |---|---|
-| **Insert** | Insert blank · Insert from file… · Insert scan |
+| **Insert** | Insert blank · Insert from file… · Insert from clipboard · Insert scan |
 | **Clipboard** | Cut · Copy · Paste |
 | **Organise** | Delete · Extract… · Replace… · Move up / Move down · Split… · Merge into this document… |
 | **Transform** | Rotate left / right · Crop… · Resize… |

@@ -690,6 +690,8 @@ pub mod deep_zoom;
 
 pub mod deeper_rung_delete;
 
+/// What another program copied becomes a new PDF, or pages after this one.
+pub mod clip_pages;
 /// A picture dropped on a page lands where it was dropped, through the
 /// scripted pointer's `drop` step.
 pub mod dropped_file;

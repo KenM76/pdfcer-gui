@@ -304,6 +304,7 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         // from that state, and a predicate on one of them would be a
         // difference between siblings with no argument behind it.
         "file.new_from_template",
+        "file.new_from_clipboard",
         "file.open",
         // Available with nothing open, like `file.open`, and for the same
         // reason: it is how you GET a document. Its own control greys

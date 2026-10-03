@@ -14,13 +14,15 @@ pub fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Insert — new pages arriving from somewhere.
             //
-            // One of the three specified commands exists. `Insert blank`
-            // is **C** and `Insert scan` is **N**.
+            // `Insert blank` is **C** and `Insert scan` is **N**.
             // ---------------------------------------------------------------
             group(
                 "insert",
                 ribbon::group_pages_insert(),
-                [large("pages.insert_from_file")],
+                [
+                    large("pages.insert_from_file"),
+                    large("pages.insert_from_clipboard"),
+                ],
             ),
             // ---------------------------------------------------------------
             // Organise — the existing rail commands, given a ribbon home.

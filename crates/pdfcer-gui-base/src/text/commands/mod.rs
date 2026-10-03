@@ -30,7 +30,7 @@ impl CommandText {
 mod file;
 pub use file::{
     file_export_image, file_export_tables, file_export_text, file_export_word, file_import_text,
-    file_save_as,
+    file_new_from_clipboard, file_save_as, pages_insert_from_clipboard,
 };
 
 /// **The View tab's entries**, a module of its own under R2.

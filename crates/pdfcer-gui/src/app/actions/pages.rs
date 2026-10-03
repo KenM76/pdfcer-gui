@@ -333,7 +333,7 @@ pub(super) fn insert_from_view(
                         labels_dropped: outcome.source_page_labels_dropped,
                         labels_stale: outcome.page_labels_stale,
                     },
-                    landing,
+                    landing.checked_sub(1),
                 )]
             })
     });

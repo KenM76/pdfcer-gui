@@ -25,6 +25,14 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.insert_from_file", t::pages_insert_from_file(), 300)
             .with_icon("insert-pages")
             .enabled_when("doc.pages"),
+        // `paste` is shared with `edit.paste`: both take the clipboard.
+        command(
+            "pages.insert_from_clipboard",
+            t::pages_insert_from_clipboard(),
+            301,
+        )
+        .with_icon("paste")
+        .enabled_when("doc.pages"),
         // `delete` is the waste-bin glyph, shared with `format.delete` under
         // the header's shared-key convention: the verb is the same one and
         // the two are never drawn together, because Format is contextual and

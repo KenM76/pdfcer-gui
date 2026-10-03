@@ -120,6 +120,12 @@ impl ImportTextDialog {
         })
     }
 
+    /// The template this window describes with its controls untouched.
+    #[must_use]
+    pub fn default_template() -> pdfcer_core::text_edit::PageTemplate {
+        Self::open(std::path::PathBuf::new(), 0).template()
+    }
+
     /// The engine's position for the selected radio.
     const fn insert_position(&self) -> pdfcer_core::pageops::InsertPosition {
         use pdfcer_core::pageops::InsertPosition;

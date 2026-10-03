@@ -281,6 +281,10 @@ fn no_two_declines_share_a_sentence() {
         )),
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Nothing),
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::NoPicture),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::NothingForPages),
+        Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::NotAPage(
+            "x".to_owned(),
+        )),
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unplaceable(
             "x".to_owned(),
         )),

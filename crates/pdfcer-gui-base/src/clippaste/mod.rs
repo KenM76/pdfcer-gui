@@ -9,6 +9,7 @@
 //! a picture and [`textbox`] for text.
 
 pub mod dib;
+pub mod page;
 pub mod textbox;
 
 use pdfcer_core::image_import::ImportedImage;

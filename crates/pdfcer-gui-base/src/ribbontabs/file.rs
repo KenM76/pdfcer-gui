@@ -51,6 +51,7 @@ pub fn tab() -> Tab {
                     large("file.new"),
                     large("file.open"),
                     command("file.new_from_template"),
+                    command("file.new_from_clipboard"),
                     Item::custom(super::RECENT_FILES),
                     command("file.close"),
                 ],

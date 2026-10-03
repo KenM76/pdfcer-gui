@@ -12,6 +12,12 @@ pub enum OsPasteRefusal {
     Unplaceable(String),
     /// No picture, where only a picture will do.
     NoPicture,
+    /// Neither a picture nor text, where either would become pages.
+    NothingForPages,
+    /// A picture that could not be made into a page; the field is the reason.
+    NotAPage(String),
+    /// Text the engine would not set as pages; the field is its sentence.
+    PagesRefused(String),
     /// Nothing a page can take.
     Nothing,
 }
@@ -30,6 +36,13 @@ impl OsPasteRefusal {
             Self::NoPicture => Cow::Borrowed(
                 "The clipboard holds no picture. Copy one in another program, then paste it as a stamp.",
             ),
+            Self::NothingForPages => Cow::Borrowed(
+                "The clipboard holds no picture or text to make pages from. Copy one in another program, then try again.",
+            ),
+            Self::NotAPage(why) => Cow::Owned(format!(
+                "pdfcer could not make a page of the clipboard picture: {why}. Nothing was added."
+            )),
+            Self::PagesRefused(why) => Cow::Owned(why.clone()),
             Self::Nothing => Cow::Borrowed(
                 "The clipboard holds nothing pdfcer can paste onto a page. Copy a picture, some text, or something in pdfcer, and paste again.",
             ),

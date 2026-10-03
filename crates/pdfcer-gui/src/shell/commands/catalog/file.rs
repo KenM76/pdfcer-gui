@@ -105,6 +105,8 @@ pub(super) fn band() -> Vec<Command> {
         // they are the operator it exists for.
         command("file.new_from_template", t::file_new_from_template(), 104)
             .with_icon("new-from-template"),
+        // No enable predicate, as `file.new`. `paste` is shared with `edit.paste`.
+        command("file.new_from_clipboard", t::file_new_from_clipboard(), 107).with_icon("paste"),
         command("file.open", t::file_open(), 100).with_icon("open"),
         command("file.close", t::file_close(), 101)
             .with_icon("close")

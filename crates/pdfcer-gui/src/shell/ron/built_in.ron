@@ -47,6 +47,7 @@
                         Command(id: "file.new", size: Large),
                         Command(id: "file.open", size: Large),
                         Command(id: "file.new_from_template"),
+                        Command(id: "file.new_from_clipboard"),
                         Custom(kind: "recent_files"),
                         Command(id: "file.close"),
                     ],
@@ -251,6 +252,7 @@
                     caption: "Insert",
                     items: [
                         Command(id: "pages.insert_from_file", size: Large),
+                        Command(id: "pages.insert_from_clipboard", size: Large),
                     ],
                     collapse: 2,
                 ),

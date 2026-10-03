@@ -127,8 +127,13 @@ fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
     if !report.coalesced {
         out.push(t::many_undo_steps(report.undo_entries));
     }
+    out.extend(judgements(report));
+    out
+}
 
-    // The six judgements, each only when it happened.
+/// What the setting decided about the text, each only when it happened.
+pub(crate) fn judgements(report: &PlaceTextReport) -> Vec<String> {
+    let mut out = Vec::new();
     if report.paragraphs_split_across_pages > 0 {
         out.push(t::paragraphs_split(report.paragraphs_split_across_pages));
     }
@@ -160,7 +165,7 @@ fn disclosures(report: &PlaceTextReport, pages_before: usize) -> Vec<String> {
 }
 
 /// **One refusal, as a sentence.**
-fn refusal_for(error: &PlaceTextError) -> String {
+pub(crate) fn refusal_for(error: &PlaceTextError) -> String {
     match error {
         // Both of these are the SAME operator problem seen from two sides —
         // the column has no width, or the column has no height — and both are

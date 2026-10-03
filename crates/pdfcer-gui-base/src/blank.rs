@@ -2,8 +2,8 @@
 //!
 //! `file.new` (`RIBBON_IA.md` §5.1, the File ▸ File band) makes a blank
 //! document. This module holds the 443 bytes it makes it *out of*, the
-//! decisions behind them, the one-page picture document a pasted stamp is
-//! drawn from, and nothing else — the lifetime transition itself is
+//! decisions behind them, the documents the clipboard becomes (a picture as
+//! one page, text as pages), and nothing else — the lifetime transition itself is
 //! `pdfcer-gui`'s `PdfcerApp::new_document`'s, beside `open_path` and
 //! `close_document`, because that is one subject and this is another.
 //!
@@ -170,6 +170,46 @@ pub fn picture_page(image: &pdfcer_core::image_import::ImportedImage) -> Result<
     Ok(bytes)
 }
 
+/// Why text could not be set as pages of their own.
+#[derive(Debug)]
+pub enum TextPagesError {
+    /// The engine refused the text or the template.
+    Refused(pdfcer_core::text_edit::PlaceTextError),
+    /// The document could not be made or written; the engine's sentence.
+    Failed(String),
+}
+
+/// The bytes of a document holding only the pages `text` sets on `template`,
+/// and the engine's report of what the setting decided.
+///
+/// Exempt from the settings funnel for [`document_sized`]'s reason: no
+/// `/Info`, no annotation, and the bytes are re-parsed before anything is
+/// saved.
+///
+/// # Errors
+///
+/// [`TextPagesError::Refused`] for anything `place_text` refuses, before any
+/// page exists; [`TextPagesError::Failed`] when the template, the removal of
+/// its blank page or the rewrite fails.
+pub fn text_pages(
+    text: &str,
+    template: &pdfcer_core::text_edit::PageTemplate,
+) -> Result<(Vec<u8>, pdfcer_core::text_edit::PlaceTextReport), TextPagesError> {
+    let failed = |e: &dyn std::fmt::Display| TextPagesError::Failed(e.to_string());
+    let base = Document::from_bytes(TEMPLATE.to_vec()).map_err(|e| failed(&e))?;
+    let mut session = pdfcer_core::edit::EditSession::new(base);
+    // `place_text` needs a page to splice beside; the template's blank page is
+    // that page, and it goes once the text's pages follow it.
+    let report = session
+        .place_text(text, template, pdfcer_core::pageops::InsertPosition::End)
+        .map_err(TextPagesError::Refused)?;
+    session.delete_pages(&[0]).map_err(|e| failed(&e))?;
+    let (bytes, _report) = session
+        .to_full_bytes(&pdfcer_core::writer::SaveOptions::identity())
+        .map_err(|e| failed(&e))?;
+    Ok((bytes, report))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,6 +232,23 @@ mod tests {
         assert_eq!(pages.len(), 1);
         let m = pages[0].media_box;
         assert!((m.width() - 48.0).abs() < 0.1 && (m.height() - 24.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn text_becomes_only_its_own_pages() {
+        let (bytes, report) =
+            text_pages("one\u{c}two", &pdfcer_core::text_edit::PageTemplate::new()).unwrap();
+        let (_doc, pages) = crate::clippaste::page::opened(bytes).unwrap();
+        assert_eq!(report.pages_created, 2);
+        assert_eq!(pages.len(), 2);
+    }
+
+    #[test]
+    fn empty_text_is_the_engines_refusal() {
+        assert!(matches!(
+            text_pages("  ", &pdfcer_core::text_edit::PageTemplate::new()),
+            Err(TextPagesError::Refused(_))
+        ));
     }
 
     /// **The compiled-in template really is a document.**

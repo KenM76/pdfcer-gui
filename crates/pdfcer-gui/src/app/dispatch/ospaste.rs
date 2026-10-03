@@ -21,6 +21,9 @@ use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_gui_base::clippaste::{self, Incoming, textbox};
 
+/// New PDF from Clipboard and Insert Pages from Clipboard.
+pub mod pages;
+
 /// What the OS clipboard holds, when it is the content a paste should take.
 #[must_use]
 pub fn newer(ctx: &egui::Context, has_clip: bool) -> Option<Incoming> {
@@ -173,14 +176,9 @@ fn stamp(page: usize, rect: Rect, image: &ImportedImage, format: &str, actions: 
 /// copy is written once.
 fn stamp_file(image: &ImportedImage) -> Result<std::path::PathBuf, String> {
     let bytes = pdfcer_gui_base::blank::picture_page(image)?;
-    // ui-text-exempt: a folder name, never displayed
-    // temp-path-exempt: the running program's folder, not a test's; each file is named by the clipboard's change counter.
-    let dir = std::env::temp_dir().join("pdfcer-gui");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     // ui-text-exempt: a file name, never displayed
-    let file = dir.join(format!("pasted-picture-{}.pdf", clippaste::sequence()));
-    std::fs::write(&file, bytes).map_err(|e| e.to_string())?;
-    Ok(file)
+    let name = format!("pasted-picture-{}.pdf", clippaste::sequence());
+    clippaste::page::scratch(&name, &bytes)
 }
 
 /// Text as page text where content can change, else as a text-box comment.

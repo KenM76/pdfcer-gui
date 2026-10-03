@@ -32,7 +32,7 @@ pub fn handles(id: &str) -> bool {
             | "edit.duplicate"
             // Another program's picture as a stamp: `dispatch::ospaste`.
             | "markup.paste_image_stamp"
-    )
+    ) || super::ospaste::pages::handles(id)
 }
 
 /// Route one clipboard command.
@@ -51,7 +51,7 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
         // selection.
         "edit.duplicate" => duplicate(app, id, actions),
         "markup.paste_image_stamp" => super::ospaste::paste_stamp(app, ctx, id, actions),
-        _ => {}
+        _ => super::ospaste::pages::dispatch(app, id, actions),
     }
 }
 

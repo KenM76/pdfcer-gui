@@ -67,6 +67,26 @@ pub const fn file_import_text() -> CommandText {
     )
 }
 
+/// `file.new_from_clipboard`
+#[must_use]
+pub const fn file_new_from_clipboard() -> CommandText {
+    CommandText::new(
+        "New from clipboard",
+        "Make a new document from what you copied in another program: a picture becomes one page \
+         its own size, and text is set as pages as Import text does.",
+    )
+}
+
+/// `pages.insert_from_clipboard`
+#[must_use]
+pub const fn pages_insert_from_clipboard() -> CommandText {
+    CommandText::new(
+        "Insert from clipboard",
+        "Add what you copied in another program as pages after the one you are on: a picture \
+         becomes one page its own size, and text is set as pages as Import text does.",
+    )
+}
+
 /// **Save As** — `OPERATOR_REQUESTS.md` O95.
 pub const fn file_save_as() -> CommandText {
     CommandText::new(

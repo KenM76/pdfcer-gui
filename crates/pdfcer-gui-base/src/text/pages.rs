@@ -296,6 +296,9 @@ pub struct Structures {
     pub labels_stale: bool,
 }
 
+/// The receipt for an insert; `after_page_index` is the 0-based page the
+/// insert follows, `None` for an insert before the first page.
+///
 /// # TWO numbers, because they are two different pieces of news
 #[must_use]
 pub fn inserted(
@@ -303,11 +306,13 @@ pub fn inserted(
     orphans: usize,
     unrecoverable: usize,
     structures: Structures,
-    after_page_index: usize,
+    after_page_index: Option<usize>,
 ) -> String {
-    let after = after_page_index.saturating_add(1);
     let pages = if count == 1 { "page" } else { "pages" };
-    let mut line = format!("Inserted {count} {pages} after page {after}.");
+    let mut line = match after_page_index {
+        Some(index) => format!("Inserted {count} {pages} after page {}.", index + 1),
+        None => format!("Inserted {count} {pages} at the start."),
+    };
     if structures.outline_dropped {
         line.push_str(" That file's bookmarks did not come across.");
     }
@@ -593,7 +598,7 @@ mod tests {
     /// controls.**
     #[test]
     fn no_orphans_means_no_clause_about_them() {
-        let quiet = inserted(4, 0, 0, Structures::default(), 6);
+        let quiet = inserted(4, 0, 0, Structures::default(), Some(6));
         assert!(
             !quiet.contains("form"),
             "a zero count must say nothing: {quiet}"
@@ -604,10 +609,18 @@ mod tests {
         );
     }
 
+    #[test]
+    fn an_insert_before_the_first_page_says_at_the_start() {
+        assert_eq!(
+            inserted(1, 0, 0, Structures::default(), None),
+            "Inserted 1 page at the start."
+        );
+    }
+
     /// A source that had nothing to lose is told nothing about losing it.
     #[test]
     fn a_source_with_no_structures_produces_no_clause_about_them() {
-        let bare = inserted(2, 0, 0, Structures::default(), 0);
+        let bare = inserted(2, 0, 0, Structures::default(), Some(0));
         assert_eq!(
             bare, "Inserted 2 pages after page 1.",
             "nothing may be claimed about structures the source did not have"
@@ -625,7 +638,7 @@ mod tests {
                 outline_dropped: true,
                 ..Structures::default()
             },
-            0,
+            Some(0),
         );
         assert!(
             outline.contains("bookmarks did not come across"),
@@ -641,7 +654,7 @@ mod tests {
                 labels_dropped: true,
                 ..Structures::default()
             },
-            0,
+            Some(0),
         );
         assert!(
             labels.contains("page numbering did not come across either"),
@@ -663,7 +676,7 @@ mod tests {
                 labels_dropped: true,
                 labels_stale: true,
             },
-            0,
+            Some(0),
         );
         let stale = all.find("This document numbers its own pages").expect(&all);
         let dropped = all.find("Nor did its page numbering").expect(&all);
@@ -680,12 +693,12 @@ mod tests {
     /// A real count is stated, unhedged, agrees in number, and names the route.
     #[test]
     fn a_real_count_is_stated_without_hedging() {
-        let one = inserted(1, 1, 0, Structures::default(), 0);
+        let one = inserted(1, 1, 0, Structures::default(), Some(0));
         assert!(one.contains("1 form control needs re-registering"), "{one}");
         assert!(!one.contains("Any"), "the hedge is gone: {one}");
         assert!(one.contains("Tab order"), "the route is named: {one}");
 
-        let many = inserted(2, 3, 0, Structures::default(), 0);
+        let many = inserted(2, 3, 0, Structures::default(), Some(0));
         assert!(
             many.contains("3 form controls need re-registering"),
             "{many}"
@@ -697,7 +710,7 @@ mod tests {
     /// **difference**, not the total.
     #[test]
     fn the_recoverable_count_excludes_the_ones_that_cannot_be_recovered() {
-        let measured = inserted(1, 13, 2, Structures::default(), 0);
+        let measured = inserted(1, 13, 2, Structures::default(), Some(0));
         assert!(
             measured.contains("11 form controls need re-registering"),
             "13 minus the 2 that cannot be: {measured}"
@@ -715,7 +728,7 @@ mod tests {
     /// Every orphan being unrecoverable produces one sentence, not a zero.
     #[test]
     fn all_unrecoverable_means_no_re_registering_clause() {
-        let all_lost = inserted(1, 2, 2, Structures::default(), 0);
+        let all_lost = inserted(1, 2, 2, Structures::default(), Some(0));
         assert!(
             !all_lost.contains("re-registering"),
             "there is nothing to re-register: {all_lost}"
@@ -734,7 +747,7 @@ mod tests {
     #[test]
     fn every_conditional_clause_reads_alone_as_well_as_in_sequence() {
         // Each clause as the ONLY one, which is the case a continuation breaks.
-        let only_unrecoverable = inserted(1, 3, 3, Structures::default(), 0);
+        let only_unrecoverable = inserted(1, 3, 3, Structures::default(), Some(0));
         let only_labels = inserted(
             1,
             0,
@@ -743,7 +756,7 @@ mod tests {
                 labels_dropped: true,
                 ..Structures::default()
             },
-            0,
+            Some(0),
         );
         for line in [&only_unrecoverable, &only_labels] {
             for continuation in [" more ", "Nor did", " either lost"] {
@@ -763,7 +776,7 @@ mod tests {
                 labels_dropped: true,
                 ..Structures::default()
             },
-            0,
+            Some(0),
         );
         assert!(both.contains("3 more lost"), "{both}");
         assert!(both.contains("Nor did"), "{both}");
@@ -772,7 +785,7 @@ mod tests {
     /// A count larger than the total cannot panic.
     #[test]
     fn an_impossible_pair_does_not_panic() {
-        let odd = inserted(1, 1, 4, Structures::default(), 0);
+        let odd = inserted(1, 1, 4, Structures::default(), Some(0));
         assert!(!odd.contains("re-registering"), "{odd}");
         assert!(odd.contains("4 form controls lost their"), "{odd}");
     }
@@ -780,7 +793,11 @@ mod tests {
     /// The page count agrees in number too.
     #[test]
     fn one_page_is_a_page_and_two_are_pages() {
-        assert!(inserted(1, 0, 0, Structures::default(), 0).contains("Inserted 1 page after"));
-        assert!(inserted(2, 0, 0, Structures::default(), 0).contains("Inserted 2 pages after"));
+        assert!(
+            inserted(1, 0, 0, Structures::default(), Some(0)).contains("Inserted 1 page after")
+        );
+        assert!(
+            inserted(2, 0, 0, Structures::default(), Some(0)).contains("Inserted 2 pages after")
+        );
     }
 }
