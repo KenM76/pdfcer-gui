@@ -755,6 +755,8 @@ mod tests {
                 // The widget states no /MK /BC. See `ENGINE_BACKLOG.md`: neither
                 // this colour nor `background` is consumed by this shell yet.
                 border_color: None,
+                icon: None,
+                caption_position: None,
                 border: None,
                 visibility: None,
                 annot_flags: pdfcer_core::annot::AnnotFlags(0),

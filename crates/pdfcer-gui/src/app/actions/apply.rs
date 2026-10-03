@@ -434,7 +434,7 @@ impl PdfcerApp {
                     };
                     session.add_image(&spec).map(|outcome| {
                         let d = &outcome.disclosures;
-                        crate::text::images::placement_disclosures(
+                        let mut notes = crate::text::images::placement_disclosures(
                             d.effective_dpi,
                             d.below_screen_resolution,
                             d.letterboxed,
@@ -442,7 +442,9 @@ impl PdfcerApp {
                             d.recompressed,
                             d.source_bytes,
                             d.stored_bytes,
-                        )
+                        );
+                        notes.extend(crate::text::images::source_decoding_notes(d));
+                        notes
                     })
                 });
                 // **And it arrives SELECTED** — 2026-08-26, closing the

@@ -108,6 +108,8 @@ fn drawn_widget() -> Widget {
         // `editor_fill`. /BC is read and not yet drawn, and that is the only
         // half of this pair still outstanding.
         border_color: None,
+        icon: None,
+        caption_position: None,
         border: None,
         visibility: None,
         annot_flags: pdfcer_core::annot::AnnotFlags(0),

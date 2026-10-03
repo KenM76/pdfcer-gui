@@ -131,6 +131,7 @@ fn square_perimeter() -> DimensionKind {
             Point::new(0.0, 100.0),
         ],
         closed: true,
+        area: false,
         offset: 0.0,
         text_along: 0.0,
     }
@@ -186,6 +187,7 @@ fn authored(
             DimensionKind::Perimeter {
                 points: points.clone(),
                 closed,
+                area: false,
                 offset: 0.0,
                 text_along: 0.0,
             },

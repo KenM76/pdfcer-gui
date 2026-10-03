@@ -8,7 +8,9 @@
 //! Oracles are the app's `image-dropped` lines: one picture is centred within
 //! the tolerance of the drop point and Ctrl+Z traces `undo-applied`; two
 //! pictures dropped together land at the drop point and one cascade step down
-//! and right of it; a GIF traces `drop-refused ext=gif` and places nothing;
+//! and right of it; a two-frame GIF is placed and its `add-image` line
+//! discloses the one frame left out; a `.dwg` traces `drop-refused ext=dwg`
+//! and places nothing;
 //! with Alt held nothing is placed and the placement window's
 //! `dialog:insert-image` region is declared.
 
@@ -30,6 +32,26 @@ const PLACEMENT_REGION: &str = "dialog:insert-image";
 const CASCADE_PT: f64 = 18.0;
 const SIZE: (f64, f64) = (48.0, 24.0);
 const SECOND: (f64, f64) = (300.0, 300.0);
+const APPLIED: &str = "add-image";
+const FRAMES_NOTE: &str = "only its first frame was placed, and 1 frame was left out"; // ui-text-exempt: the oracle's expected sentence, never displayed by the harness
+
+/// One GIF frame: a control extension, a 1×1 descriptor and its LZW data
+/// (clear, index 0, end).
+const GIF_FRAME: &[u8] = &[
+    0x21, 0xf9, 0x04, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01,
+    0x00, 0x00, 0x02, 0x02, 0x44, 0x01, 0x00,
+];
+
+/// A 1×1 two-frame GIF89a with a black-and-white global colour table.
+fn animated_gif() -> Vec<u8> {
+    let mut gif = b"GIF89a".to_vec();
+    gif.extend_from_slice(&[0x01, 0x00, 0x01, 0x00, 0x80, 0x00, 0x00]);
+    gif.extend_from_slice(&[0x00, 0x00, 0x00, 0xff, 0xff, 0xff]);
+    gif.extend_from_slice(GIF_FRAME);
+    gif.extend_from_slice(GIF_FRAME);
+    gif.push(0x3b);
+    gif
+}
 
 /// See the module documentation.
 pub struct ADroppedPictureLandsWhereItWasDropped;
@@ -59,15 +81,17 @@ impl Check for ADroppedPictureLandsWhereItWasDropped {
 }
 
 /// Two PNGs and a GIF, written beside the trace.
-fn fixtures(ctx: &CheckContext) -> Result<[PathBuf; 3]> {
+fn fixtures(ctx: &CheckContext) -> Result<[PathBuf; 4]> {
     let png = crate::png::encode_rgb(48, 24, &[90u8; 48 * 24 * 3])
         .ok_or_else(|| Error::new("the harness's own PNG encoder refused its fixture"))?;
     let files = [
         ctx.out("dropped-a.png"),
         ctx.out("dropped-b.png"),
-        ctx.out("dropped-c.gif"),
+        ctx.out("dropped-c.dwg"),
+        ctx.out("dropped-d.gif"),
     ];
-    for (path, bytes) in files.iter().zip([&png[..], &png[..], b"GIF89a"]) {
+    let gif = animated_gif();
+    for (path, bytes) in files.iter().zip([&png[..], &png[..], b"AC1032", &gif[..]]) {
         std::fs::write(path, bytes)
             .map_err(|e| Error::new(format!("cannot write {}: {e}", path.display())))?;
     }
@@ -79,15 +103,18 @@ fn drive(
     report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
-    files: &[PathBuf; 3],
+    files: &[PathBuf; 4],
 ) -> Result<Option<String>> {
-    let [a, b, gif] = files;
+    let [a, b, dwg, gif] = files;
     let mut failure = one(ctx, report, session, pointer, a)?;
     if failure.is_none() {
         failure = two(ctx, report, session, pointer, a, b)?;
     }
     if failure.is_none() {
-        failure = refused(ctx, session, pointer, gif)?;
+        failure = animated(ctx, report, session, pointer, gif)?;
+    }
+    if failure.is_none() {
+        failure = refused(ctx, session, pointer, dwg)?;
     }
     if failure.is_none() {
         failure = alt_opens_the_window(ctx, session, pointer, a)?;
@@ -172,23 +199,48 @@ fn two(
 }
 
 /// A GIF is named back and nothing is placed.
-fn refused(
+fn animated(
     ctx: &CheckContext,
+    report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
     gif: &Path,
 ) -> Result<Option<String>> {
-    let refusals = osp::count(session, REFUSED)?;
+    let applied = osp::count(session, APPLIED)?;
     let placed = drop_at(ctx, session, pointer, osp::FIRST, None, &[gif])?;
+    if placed.len() != 1 {
+        return Ok(Some(format!(
+            "a dropped two-frame GIF traced {} `{PLACED}` line(s), not 1.",
+            placed.len()
+        )));
+    }
+    let trace = session.trace()?;
+    let Some(line) = trace.events(APPLIED).nth(applied) else {
+        return Ok(Some(format!("a dropped GIF traced no `{APPLIED}` line.")));
+    };
+    report.note(format!("the GIF's edit line: `{}`", line.raw));
+    Ok((!line.raw.contains(FRAMES_NOTE)).then(|| {
+        format!("the GIF's `{APPLIED}` line does not disclose the frame left out: `{FRAMES_NOTE}`.")
+    }))
+}
+
+fn refused(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    dwg: &Path,
+) -> Result<Option<String>> {
+    let refusals = osp::count(session, REFUSED)?;
+    let placed = drop_at(ctx, session, pointer, osp::FIRST, None, &[dwg])?;
     if !placed.is_empty() {
-        return Ok(Some("a dropped GIF was placed on the page.".to_owned()));
+        return Ok(Some("a dropped .dwg was placed on the page.".to_owned()));
     }
     let trace = session.trace()?;
     let named = trace
         .events(REFUSED)
         .nth(refusals)
-        .is_some_and(|l| l.get("ext") == Some("gif"));
-    Ok((!named).then(|| format!("a dropped GIF traced no `{REFUSED} ext=gif` line.")))
+        .is_some_and(|l| l.get("ext") == Some("dwg"));
+    Ok((!named).then(|| format!("a dropped .dwg traced no `{REFUSED} ext=dwg` line.")))
 }
 
 /// With Alt held the placement window opens and nothing is placed.

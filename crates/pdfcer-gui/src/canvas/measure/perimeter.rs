@@ -83,6 +83,7 @@ impl PerimeterPick {
         Some(DimensionKind::Perimeter {
             points: self.points.clone(),
             closed: self.closed,
+            area: false,
             offset: 0.0,
             text_along: 0.0,
         })
@@ -103,6 +104,7 @@ impl PerimeterPick {
             // drawing the closing segment before they do would show a shape
             // one segment longer than the one this click will commit.
             closed: false,
+            area: false,
             offset: 0.0,
             text_along: 0.0,
         })

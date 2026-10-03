@@ -125,6 +125,7 @@ mod tests {
         let kind = DimensionKind::Perimeter {
             points: vec![p(0.0, 0.0), p(10.0, 0.0), p(10.0, 10.0), p(0.0, 10.0)],
             closed: true,
+            area: false,
             offset: 0.0,
             text_along: 0.0,
         };

@@ -152,6 +152,7 @@ pub fn placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, 
     if let DimensionKind::Perimeter {
         points,
         closed,
+        area,
         offset,
         text_along,
     } = kind
@@ -161,6 +162,7 @@ pub fn placed(kind: &DimensionKind, dx: f64, dy: f64) -> Option<(DimensionKind, 
             DimensionKind::Perimeter {
                 points: points.clone(),
                 closed: *closed,
+                area: *area,
                 offset,
                 text_along,
             },
@@ -548,6 +550,7 @@ fn inner(
             &DimensionKind::Perimeter {
                 points: moved,
                 closed,
+                area: false,
                 offset: 0.0,
                 text_along: 0.0,
             },
@@ -591,6 +594,7 @@ fn preview_of(points: &[Point], closed: bool) -> Vec<(Point, Point)> {
     super::measure::pick::dimension_preview_segments(&DimensionKind::Perimeter {
         points: points.to_vec(),
         closed,
+        area: false,
         offset: 0.0,
         text_along: 0.0,
     })

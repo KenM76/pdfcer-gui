@@ -6,7 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/dropped.md`.
 
 /// Pictures that a later engine may read, named with their own remedy.
-const CONVERTIBLE: &[&str] = &["gif", "webp"];
+const CONVERTIBLE: &[&str] = &["webp"];
 
 /// Several pictures were dropped with Alt held, which opens the placement
 /// window for the first.
@@ -39,7 +39,7 @@ pub const fn text_needs_a_document() -> &'static str {
 #[must_use]
 pub fn not_accepted(ext: &str) -> String {
     if ext.is_empty() {
-        "pdfcer takes a PDF to open, a PNG, JPEG, BMP or TIFF to place on the page, or a .txt \
+        "pdfcer takes a PDF to open, a PNG, JPEG, BMP, GIF or TIFF to place on the page, or a .txt \
          file to add as pages. That file has no extension, so pdfcer could not tell what it was."
             .to_owned()
     } else if CONVERTIBLE.contains(&ext) {
@@ -49,7 +49,7 @@ pub fn not_accepted(ext: &str) -> String {
         )
     } else {
         format!(
-            "pdfcer takes a PDF to open, a PNG, JPEG, BMP or TIFF to place on the page, or a \
+            "pdfcer takes a PDF to open, a PNG, JPEG, BMP, GIF or TIFF to place on the page, or a \
              .txt file to add as pages. It does not read .{ext} files."
         )
     }
@@ -112,7 +112,7 @@ mod tests {
             image_needs_a_document().to_owned(),
             text_needs_a_document().to_owned(),
             not_accepted("dwg"),
-            not_accepted("gif"),
+            not_accepted("webp"),
             not_accepted(""),
         ];
         for s in all {
@@ -136,7 +136,7 @@ mod tests {
         assert!(not_accepted("webp").contains(".webp"));
     }
 
-    /// A GIF or WebP gets a remedy, not the list of what is taken.
+    /// A WebP gets a remedy, not the list of what is taken.
     #[test]
     fn a_convertible_picture_is_told_how_to_convert() {
         for ext in CONVERTIBLE {

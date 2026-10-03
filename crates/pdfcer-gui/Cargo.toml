@@ -57,7 +57,7 @@ path = "src/main.rs"
 # `Cargo.lock` pins and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "ocrcer", "paddle", "signing", "timestamp", "3d"]
+default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "3d", "svg-import"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # `3d` — the PRC reader in `pdfcer-3d`, for the Attachments panel's
@@ -179,6 +179,12 @@ ocrcer = ["pdfcer-core/ocrcer", "pdfcer-gui-base/ocrcer"]
 # `paddle` — PaddleOCR, the third recogniser in the Recognise-text dialog.
 # Its PP-OCRv5 English/French models ship in the portable folder's `models/paddle`.
 paddle = ["pdfcer-core/paddle", "pdfcer-gui-base/paddle"]
+
+# `ocr-vl` — the PaddleOCR-VL recogniser; its weights are an add-on folder.
+ocr-vl = ["pdfcer-core/ocr-vl"]
+
+# `svg-import` — placing an SVG as vector content.
+svg-import = ["pdfcer-core/svg-import"]
 
 [dependencies]
 # native-window = the four `user32` calls that make a dialog OWNED by the

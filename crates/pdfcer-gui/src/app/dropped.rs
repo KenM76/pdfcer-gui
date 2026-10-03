@@ -32,7 +32,7 @@ pub enum Dropped {
 
 /// The extensions the image picker offers, which is the list this must agree
 /// with.
-const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "tif", "tiff"];
+const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff"];
 
 /// How far each further dropped picture sits from the one before, in points,
 /// down and to the right.
@@ -290,13 +290,13 @@ mod tests {
     /// The drop list and the picker's filter must agree.
     #[test]
     fn the_drop_list_matches_what_the_picker_offers() {
-        const PICKER: &[&str] = &["png", "jpg", "jpeg", "bmp", "tif", "tiff"];
+        const PICKER: &[&str] = &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff"];
         assert_eq!(IMAGE_EXTENSIONS, PICKER);
     }
 
     #[test]
     fn a_mixed_drop_keeps_every_file_in_its_order() {
-        let files: Vec<PathBuf> = ["a.png", "b.pdf", "c.gif", "d.jpg", "e.pdf", "f.TXT"]
+        let files: Vec<PathBuf> = ["a.png", "b.pdf", "c.dwg", "d.jpg", "e.pdf", "f.TXT"]
             .into_iter()
             .map(PathBuf::from)
             .collect();
@@ -306,7 +306,7 @@ mod tests {
             s.documents,
             [PathBuf::from("b.pdf"), PathBuf::from("e.pdf")]
         );
-        assert_eq!(s.refused, ["gif"]);
+        assert_eq!(s.refused, ["dwg"]);
         assert_eq!(s.texts, [PathBuf::from("f.TXT")]);
     }
 

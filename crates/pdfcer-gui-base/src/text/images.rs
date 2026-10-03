@@ -287,6 +287,61 @@ pub fn placement_disclosures(
     out
 }
 
+/// What decoding a GIF or TIFF left out or reinterpreted, one sentence each.
+#[must_use]
+pub fn source_decoding_notes(d: &pdfcer_core::edit::ImageAuthorDisclosures) -> Vec<String> {
+    let mut out = Vec::new();
+    if d.gif_frames_ignored > 0 {
+        out.push(format!(
+            "The GIF is animated; only its first frame was placed, and {} {} left out.",
+            d.gif_frames_ignored,
+            if d.gif_frames_ignored == 1 {
+                "frame was"
+            } else {
+                "frames were"
+            }
+        ));
+    }
+    if d.tiff_pages_ignored > 0 {
+        out.push(format!(
+            "The TIFF has {} more {}; only the first was placed.",
+            d.tiff_pages_ignored,
+            if d.tiff_pages_ignored == 1 {
+                "page"
+            } else {
+                "pages"
+            }
+        ));
+    }
+    if d.tiff_extra_samples_dropped > 0 {
+        out.push(format!(
+            "The TIFF carried {} extra {} with no stated meaning; {} left out rather than read as transparency.",
+            d.tiff_extra_samples_dropped,
+            if d.tiff_extra_samples_dropped == 1 { "channel" } else { "channels" },
+            if d.tiff_extra_samples_dropped == 1 { "it was" } else { "they were" }
+        ));
+    }
+    if d.tiff_associated_alpha_unpremultiplied {
+        out.push(
+            "The TIFF's transparency was converted for PDF; the faintest edges may differ slightly."
+                .to_owned(),
+        );
+    }
+    if d.tiff_white_is_zero_inverted {
+        out.push(
+            "The TIFF stores white as zero, so its tones were flipped to print as it looks."
+                .to_owned(),
+        );
+    }
+    if d.tiff_palette_assumed_8bit {
+        out.push(
+            "The TIFF's colour table was read as 8-bit because every value fits; if its colours look wrong, that guess is why."
+                .to_owned(),
+        );
+    }
+    out
+}
+
 /// How the stored size compares with the source file's.
 #[must_use]
 fn byte_change(source: usize, stored: usize) -> String {
