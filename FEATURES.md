@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.73.0, a git dependency on the local engine repository, pinned at **`b821fcf8`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.73.0, a git dependency on the local engine repository, pinned at **`7f83ef86`** — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** Edit › Insert › *3D model…* places a U3D or PRC model on the page, and the Attachments panel lists every 3D model a document carries, with *Save model…* to write it out unchanged, and *Save as mesh…* to write a PRC model's triangles as STL or OBJ. A PRC model shows the engine's shaded picture of it on the page, and the status line says it is pdfcer's view; a U3D model keeps a placeholder. The model itself opens in a 3D-capable reader such as Acrobat. STEP files are refused with the advice to convert them. Edit › Align and Distribute (Ctrl+Shift+A)
 lines up, spaces and arranges selected objects: align to an edge or centre,
