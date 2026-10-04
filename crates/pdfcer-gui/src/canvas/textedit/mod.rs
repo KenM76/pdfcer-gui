@@ -380,6 +380,7 @@ pub(super) fn commit_into(
                 original: original.clone(),
                 replacement: draft.text.clone(),
                 reface: reface::take(ctx, draft),
+                workarounds: false,
             });
             typing::follow(ctx, draft.page, *run, original, &draft.text, actions);
         }
@@ -638,6 +639,7 @@ mod tests {
                 original: "A".to_owned(),
                 replacement: String::new(),
                 reface: None,
+                workarounds: false,
             },
             "emptying a run is an edit, not a change of mind"
         );
@@ -673,6 +675,7 @@ mod tests {
                 original: "REV A".to_owned(),
                 replacement: "REV B".to_owned(),
                 reface: None,
+                workarounds: false,
             }
         );
     }

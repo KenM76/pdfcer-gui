@@ -81,6 +81,8 @@ pub mod tool;
 /// because the engine has two verbs and Acrobat's own scripting model has two
 /// scopes; see its header.
 pub mod widgetedit;
+/// The offer to make a refused text edit another way.
+pub mod workaround;
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -203,6 +205,9 @@ fn body_sections(
     // been abandoned. Folding it in would let a refusal suppress *"nothing is
     // selected"* while genuinely nothing is.
     let _drew_refused_char = refusedchar::section(ui, doc, state.refused_char_mut(), actions);
+    // The workaround offer: scoped to an edit like the block above, so it is
+    // not part of `something_drew` either.
+    let _drew_workaround = workaround::section(ui, doc, actions);
     // **The armed tool's settings, second** — the controls that were in
     // the Tool panel until O123 moved them here.
     //

@@ -1022,6 +1022,8 @@ pub mod text_click_routes;
 pub mod text_tool_click_types;
 pub mod word_line_edit;
 pub mod word_styles;
+/// A refused text edit offers the way the engine can make it.
+pub mod workaround_offer;
 
 pub mod zoom_burst;
 pub mod zoom_gallery;

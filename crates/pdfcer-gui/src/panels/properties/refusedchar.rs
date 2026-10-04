@@ -265,6 +265,7 @@ pub(super) fn section(
             original: typed.original,
             replacement: typed.replacement,
             reface: None,
+            workarounds: false,
         });
         ui.separator();
         return true;

@@ -171,6 +171,7 @@ pub(crate) fn record_edit_text_refusal(
         )
     });
     record_edit_text(why);
+    offer_workaround(page, run, error);
     // **O141 — the offer, raised in the same breath as the sentence.**
     //
     // One event, two surfaces: the bar says *what stopped* and names where the
@@ -224,4 +225,21 @@ fn refused_char_kind(
     } else {
         RefusedCharacter::NotInTheFont(c)
     })
+}
+
+/// Raise the Properties panel's offer when the engine names a workaround for
+/// this refusal, or say the workaround itself was refused.
+fn offer_workaround(page: usize, run: usize, error: &pdfcer_core::text_edit::EditError) {
+    use crate::panels::properties::workaround;
+    if let pdfcer_core::text_edit::EditError::WorkaroundRefused { why, .. } = error {
+        workaround::record_failed(why.clone());
+        return;
+    }
+    let Some(offered) = error.workaround() else {
+        return;
+    };
+    let typed = crate::canvas::textedit::last_commit().filter(|c| c.page == page && c.run == run);
+    if let Some(typed) = typed {
+        workaround::record(typed, offered);
+    }
 }

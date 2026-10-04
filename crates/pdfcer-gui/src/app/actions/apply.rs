@@ -757,13 +757,17 @@ impl PdfcerApp {
                 original,
                 replacement,
                 reface,
+                workarounds,
             } => super::textcommit::commit_text_edit(
                 doc,
-                page,
-                run,
-                &original,
-                &replacement,
+                &super::textcommit::Typed {
+                    page,
+                    run,
+                    original: &original,
+                    replacement: &replacement,
+                },
                 reface.as_ref(),
+                workarounds,
             ),
             // New page text, through the same funnel and the same four steps.
             //

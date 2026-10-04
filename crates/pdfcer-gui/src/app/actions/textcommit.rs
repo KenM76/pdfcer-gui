@@ -34,21 +34,40 @@ use crate::app::state::OpenDoc;
 
 use super::funnel::vector_edit;
 
-/// **Replace a run of text that is already on the page.**
+/// What the operator typed into which run.
+pub(super) struct Typed<'a> {
+    pub page: usize,
+    pub run: usize,
+    pub original: &'a str,
+    pub replacement: &'a str,
+}
+
+/// **Replace a run of text that is already on the page.** With `workarounds`
+/// the engine applies the workaround it offers when the exact edit is refused,
+/// and the report says which one it used.
 pub(super) fn commit_text_edit(
     doc: &mut OpenDoc,
-    page: usize,
-    run: usize,
-    original: &str,
-    replacement: &str,
+    typed: &Typed<'_>,
     reface: Option<&pdfcer_gui_base::editmodel::reface::Reface>,
+    workarounds: bool,
 ) {
+    let &Typed {
+        page,
+        run,
+        original,
+        replacement,
+    } = typed;
     if let Some(reface) = reface
         && super::reface::try_commit(doc, page, run, original, replacement, reface)
     {
         return;
     }
-    let plan = crate::canvas::textedit::plan(doc, page, run, original, replacement);
+    let mut plan = crate::canvas::textedit::plan(doc, page, run, original, replacement);
+    if workarounds {
+        plan.options = plan
+            .options
+            .with_workarounds(pdfcer_core::text_edit::WorkaroundPolicy::Apply);
+    }
     let reason = plan.reason;
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -122,6 +141,7 @@ pub(super) fn commit_text_edit(
                 // what a wrong build gets wrong about them; this arm
                 // routes, as every other arm here does.
                 crate::canvas::textedit::report::trace_target(page, run, &report);
+                trace_workaround(page, run, workarounds, report.workaround.as_ref());
                 let mut notes = report.disclosures.clone();
                 if reason.pins_the_tail() {
                     notes.push(crate::text::textedit::pinned_tail_disclosure(reason));
@@ -144,4 +164,23 @@ pub(super) fn commit_text_edit(
         before_line,
         crate::canvas::textedit::report::read_line(doc, page, run),
     );
+}
+
+/// `edit-text-workaround`: whether the commit allowed a workaround, and the one
+/// the engine used (`none` when the exact edit went through).
+fn trace_workaround(
+    page: usize,
+    run: usize,
+    allowed: bool,
+    used: Option<&pdfcer_core::text_edit::WorkaroundUse>,
+) {
+    if !allowed {
+        return;
+    }
+    crate::diag::trace(|| {
+        let (label, exact) = used.map_or(("none", 1), |u| {
+            (u.workaround.label(), u8::from(u.workaround.is_exact()))
+        });
+        format!("edit-text-workaround page={page} run={run} used={label} exact={exact}")
+    });
 }

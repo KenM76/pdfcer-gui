@@ -217,6 +217,7 @@ pub mod tool;
 /// destructive twin of `embed`, and the four consequences an operator cannot
 /// see on the canvas.
 pub mod unembed;
+pub mod workaround;
 
 /// Every word the Settings window shows — the thirteen spec-ambiguity choices,
 /// what each leaves open, and what each costs.

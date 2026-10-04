@@ -961,6 +961,10 @@ pub enum Action {
         /// Typed characters the run's font lacks, planned at the keystroke to
         /// be set in the nearest face that has them.
         reface: Option<crate::editmodel::reface::Reface>,
+        /// Apply the workaround the engine offers if the exact edit is
+        /// refused (`WorkaroundPolicy::Apply`). Set only by the operator's
+        /// press on the offer, never by typing.
+        workarounds: bool,
     },
     /// **Place NEW page text** — `edit.add_text`'s verb.
     ///

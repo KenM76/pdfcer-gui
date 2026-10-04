@@ -454,6 +454,7 @@ impl PanelsState {
         self.pages.cache.force_on(previews_on);
         self.pages.cache.set_budget(preview_budget);
         properties::refusedchar::forget_document();
+        properties::workaround::forget_document();
     }
 
     /// The operator's state in the Objects tree — what is expanded, and what
