@@ -418,6 +418,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(word_line_edit::ALineWrittenInPiecesEdits),
         // A refused edit offers its workaround, and the press makes it.
         Box::new(workaround_offer::ARefusedEditOffersItsWorkaround),
+        Box::new(installed_letter::ALetterNoPageFontHasIsTypedInAnInstalledFace),
         Box::new(draft_keys::TheDraftKeysDoWhatAWordProcessorDoes),
         Box::new(enter_paragraph::EnterBreaksAParagraphOnThePage),
         Box::new(text_click_routes::ATextToolClickReachesWhatIsUnderIt),

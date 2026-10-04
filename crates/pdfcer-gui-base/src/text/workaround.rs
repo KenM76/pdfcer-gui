@@ -49,6 +49,25 @@ pub const fn apply_hover() -> &'static str {
     "Makes the edit you typed using the way described above. Undo takes it back."
 }
 
+/// The button that types a refused letter in a face from the font folders.
+#[must_use]
+pub fn installed_letter_button(character: char) -> String {
+    format!("Type \u{201c}{character}\u{201d} in an installed font")
+}
+
+/// The button's hover text.
+#[must_use]
+pub const fn installed_letter_hover() -> &'static str {
+    "pdfcer picks a font from your font folders that has this letter, embeds the letters \
+     it needs, and makes the edit. The status line names the font. Undo takes it back."
+}
+
+/// What the press changes, above the button.
+#[must_use]
+pub const fn installed_letter_note() -> &'static str {
+    "Or keep this font and set only the letters it lacks in an installed font."
+}
+
 /// The other way was tried and could not be applied; `why` is the engine's
 /// reason.
 #[must_use]

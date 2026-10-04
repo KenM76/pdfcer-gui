@@ -33,6 +33,8 @@ pub mod pen;
 pub mod reface;
 /// Why a click could not open a caret.
 pub mod refusal;
+/// The font folders offered to the engine's replacement-face ladder.
+pub mod replacementfaces;
 // The byte-level proof that the untouched tail did not move, with an
 // `EditOptions::default()` run beside it as the falsifier. `#[cfg(test)]`
 // inside; it compiles to nothing in a release build.

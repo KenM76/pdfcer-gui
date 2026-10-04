@@ -136,7 +136,7 @@ impl SubsetAugmenter for InstalledFaces {
 }
 
 /// The font files directly in `folder`, sorted; none when it cannot be read.
-fn font_files(folder: &Path) -> Vec<PathBuf> {
+pub(crate) fn font_files(folder: &Path) -> Vec<PathBuf> {
     let Ok(entries) = std::fs::read_dir(folder) else {
         return Vec::new();
     };

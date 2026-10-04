@@ -74,6 +74,19 @@ pub fn folders_still_indexing() -> String {
     "pdfcer is still reading the font folders; type the letter again in a moment.".to_owned()
 }
 
+/// Why a face the ladder picked could not be cut: the folders were read again
+/// since it was offered.
+#[must_use]
+pub fn face_no_longer_offered() -> String {
+    "the font folders changed while the replacement face was being chosen.".to_owned()
+}
+
+/// Why a face the ladder picked could not be cut: its file could not be read.
+#[must_use]
+pub fn face_unreadable() -> String {
+    "its font file could not be read again.".to_owned()
+}
+
 /// Where a **bundled** donor came from, for the row and for the engine's
 /// `SuppliedFont::source`.
 #[must_use]

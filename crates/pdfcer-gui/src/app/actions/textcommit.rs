@@ -64,9 +64,10 @@ pub(super) fn commit_text_edit(
     }
     let mut plan = crate::canvas::textedit::plan(doc, page, run, original, replacement);
     if workarounds {
-        plan.options = plan
+        let options = plan
             .options
             .with_workarounds(pdfcer_core::text_edit::WorkaroundPolicy::Apply);
+        plan.options = crate::canvas::textedit::installed::laddered(doc, options);
     }
     let reason = plan.reason;
     crate::diag::trace(|| {
@@ -141,7 +142,7 @@ pub(super) fn commit_text_edit(
                 // what a wrong build gets wrong about them; this arm
                 // routes, as every other arm here does.
                 crate::canvas::textedit::report::trace_target(page, run, &report);
-                trace_workaround(page, run, workarounds, report.workaround.as_ref());
+                trace_workaround(page, run, workarounds, &report);
                 let mut notes = report.disclosures.clone();
                 if reason.pins_the_tail() {
                     notes.push(crate::text::textedit::pinned_tail_disclosure(reason));
@@ -166,21 +167,30 @@ pub(super) fn commit_text_edit(
     );
 }
 
-/// `edit-text-workaround`: whether the commit allowed a workaround, and the one
-/// the engine used (`none` when the exact edit went through).
+/// `edit-text-workaround`: whether the commit allowed a workaround, the one the
+/// engine used (`none` when the exact edit went through), and the face its
+/// replacement-face ladder picked (`face=none` when it picked none).
 fn trace_workaround(
     page: usize,
     run: usize,
     allowed: bool,
-    used: Option<&pdfcer_core::text_edit::WorkaroundUse>,
+    report: &pdfcer_core::text_edit::EditReport,
 ) {
     if !allowed {
         return;
     }
     crate::diag::trace(|| {
-        let (label, exact) = used.map_or(("none", 1), |u| {
+        let (label, exact) = report.workaround.as_ref().map_or(("none", 1), |u| {
             (u.workaround.label(), u8::from(u.workaround.is_exact()))
         });
-        format!("edit-text-workaround page={page} run={run} used={label} exact={exact}")
+        let picked = report.fallback.as_ref().and_then(|f| f.chosen_by.as_ref());
+        let (face, rung) = picked.map_or_else(
+            || ("none".to_owned(), "none".to_owned()),
+            |m| (m.face.clone(), m.rung.to_string()),
+        );
+        format!(
+            "edit-text-workaround page={page} run={run} used={label} exact={exact} \
+             face={face} rung={rung}"
+        )
     });
 }

@@ -307,6 +307,7 @@ pub(super) fn section(
             .label(egui::RichText::new(t::refused_char_no_face(refused.character)).small())
             .rect;
         crate::diag::ui_rect_visible(DISCLOSURE_REGION, dead, ui.clip_rect());
+        installed_letter(ui, doc, &refused, actions);
         ui.separator();
         return true;
     }
@@ -346,8 +347,29 @@ pub(super) fn section(
             change: StyleChange::Face(selector),
         });
     }
+    installed_letter(ui, doc, &refused, actions);
     ui.separator();
     true
+}
+
+/// The installed-font offer, for a letter refused at the keystroke only: a
+/// commit-time refusal has no live draft to type it into.
+fn installed_letter(
+    ui: &mut egui::Ui,
+    doc: &OpenDoc,
+    refused: &RefusedCharacter,
+    actions: &mut Vec<Action>,
+) {
+    if refused.typed.is_none() {
+        super::installedletter::offer(
+            ui,
+            doc,
+            refused.page,
+            refused.run,
+            refused.character,
+            actions,
+        );
+    }
 }
 
 /// Fill [`RefusedCharUi::faces`] when the stamp has moved, and otherwise keep

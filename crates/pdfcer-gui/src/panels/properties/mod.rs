@@ -67,6 +67,8 @@ pub mod refusedchar;
 mod runwidth;
 
 pub use pdfcer_gui_base::swatch;
+/// A refused letter typed in a face from the font folders.
+pub mod installedletter;
 /// The **selected text's** face, size, weight and colour — O37's Font
 /// controls, built panel-first as §5.8 says to.
 pub mod text;
