@@ -180,6 +180,8 @@ mod archive;
 mod evidence;
 /// Edit ▸ Forms ▸ Repair fonts.
 mod formfonts;
+/// Put the selection on a layer: `LayerAction::Assign`.
+pub mod layerassign;
 /// Folders and moves in the Layers panel: `LayerAction::Order`.
 mod layerorder;
 /// Create, change and delete a layer: `Action::Layer`.

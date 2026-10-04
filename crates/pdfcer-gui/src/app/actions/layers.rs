@@ -19,6 +19,10 @@ use crate::text::panels::layeredit::{self as t, LayerRefusal};
 
 /// Apply one layer act.
 pub(super) fn apply(doc: &mut OpenDoc, action: LayerAction) {
+    if let LayerAction::Assign { layer } = action {
+        super::layerassign::apply(doc, layer);
+        return;
+    }
     if let LayerAction::Order(OrderAction::Move(m)) = &action
         && !super::layerorder::worth_moving(doc, m)
     {
@@ -97,11 +101,13 @@ fn run(session: &mut EditSession, action: LayerAction) -> Result<Vec<String>, Ed
             Ok(vec![t::flattened(&out)])
         }
         LayerAction::Order(op) => super::layerorder::run(session, op),
+        // Applied by `layerassign`, which reads its operand from the document.
+        LayerAction::Assign { .. } => Ok(Vec::new()),
     }
 }
 
 /// The layer's display name, read before the delete takes it away.
-fn name_of(session: &EditSession, layer: ObjId) -> String {
+pub(super) fn name_of(session: &EditSession, layer: ObjId) -> String {
     pdfcer_core::layers::read_layers(&session.view())
         .layers
         .into_iter()

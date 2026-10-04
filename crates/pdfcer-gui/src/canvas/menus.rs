@@ -565,6 +565,11 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::TEXT_MERGE_ALLOWED, merge.allowed),
         ]);
     }
+    // The selection this click made decides whether Move to layer is drawn.
+    overrides.push((
+        menus::LAYER_ASSIGNABLE,
+        !reading && layer_assignable(chosen, doc, selection),
+    ));
     let conditions = host.with_conditions(&overrides);
 
     // 4.
@@ -580,6 +585,24 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         });
     }
     tokens
+}
+
+/// Whether `format.move_to_layer` belongs on the `chosen` menu. A field
+/// right-click is answered from the menu, because the field it selects
+/// reaches `OpenDoc::selected_field` only after this frame.
+fn layer_assignable(
+    chosen: CanvasMenu,
+    doc: &crate::app::state::OpenDoc,
+    selection: &SelectionState,
+) -> bool {
+    use crate::app::actions::layerassign;
+    match chosen {
+        CanvasMenu::Field => layerassign::has_layers(doc),
+        CanvasMenu::Object | CanvasMenu::Markup | CanvasMenu::Dimension => {
+            layerassign::offered(doc, selection)
+        }
+        _ => false,
+    }
 }
 
 /// **Is this right-click about a placed markup shape?**

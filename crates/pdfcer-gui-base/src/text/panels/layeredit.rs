@@ -486,6 +486,22 @@ pub enum LayerRefusal {
     OrderNotEditable,
     /// A move onto the entry itself or into something inside it.
     IntoItself,
+    /// Nothing is selected to put on a layer.
+    AssignNothing,
+    /// The selection holds parts of an object, which share the object's layer.
+    AssignParts,
+    /// The selection spans more than one page.
+    AssignSeveralPages,
+    /// `EditError::LayerContentNotRewritable` from `set_objects_layer`: a
+    /// picture or group carries its own `/OC`.
+    AssignOwnRule,
+    /// `VectorEditError::LayerSectionHoldsTaggedContent`.
+    AssignTagged,
+    /// The other `set_objects_layer` section refusals: the page's layer
+    /// sections cannot be split around the selection.
+    AssignTangled,
+    /// `EditError::AnnotationLocked`.
+    AssignLocked,
 }
 
 impl LayerRefusal {
@@ -520,6 +536,23 @@ impl LayerRefusal {
                 "This document's layer list cannot be rearranged safely, so nothing was changed."
             }
             Self::IntoItself => "An entry cannot go inside itself, so nothing was moved.",
+            Self::AssignNothing => "Select something on the page to put it on a layer.",
+            Self::AssignParts => {
+                "A part of an object is always on the object's layer. Select the whole object to move it. Nothing was moved."
+            }
+            Self::AssignSeveralPages => {
+                "The selection is on more than one page. Move one page's objects at a time. Nothing was moved."
+            }
+            Self::AssignOwnRule => {
+                "A picture or group in the selection carries its own layer setting, which a move cannot replace. Nothing was moved."
+            }
+            Self::AssignTagged => {
+                "Part of the selection is tagged for accessibility inside its layer section, and moving it would break that tagging. Nothing was moved."
+            }
+            Self::AssignTangled => {
+                "The page encloses the selection in a way that cannot be split cleanly. Nothing was moved."
+            }
+            Self::AssignLocked => "That item is locked against changes, so it was not moved.",
         }
     }
 }

@@ -52,6 +52,9 @@ pub mod layers;
 
 /// What the Layers panel says when it creates, edits or deletes a layer.
 pub mod layeredit;
+
+/// What Properties and Move to layer say when the selection changes layer.
+pub mod layerassign;
 pub use layers::layer_selection_unlayered;
 
 /// **A choice field's `/Opt` list**, and the three `/Ff` flags Acrobat groups

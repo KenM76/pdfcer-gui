@@ -114,6 +114,13 @@ pub const TEXT_MERGE_OFFERED: &str = "selection.text_merge_offered";
 /// operator can change the selection and try again.
 pub const TEXT_MERGE_ALLOWED: &str = "selection.text_merge_allowed";
 
+/// **The selection can be moved to a layer** — `format.move_to_layer`'s
+/// `enabled_when` and its canvas-menu `shown_when`. Published by
+/// `PdfcerApp::conditions` and corrected per right-click by
+/// [`crate::canvas::menus`], both from
+/// `crate::app::actions::layerassign::offered`.
+pub const LAYER_ASSIGNABLE: &str = "selection.layer_assignable";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.
@@ -380,6 +387,7 @@ pub fn built_in() -> Menus {
             // Delete, and pressing it wrote one line to the trace and said
             // nothing. `panels::properties::annotdelete` carries the finding and
             // the sentence that replaces the control.
+            Item::command("format.move_to_layer").shown_when(LAYER_ASSIGNABLE),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
         // -------------------------------------------------------------------
@@ -481,6 +489,7 @@ pub fn built_in() -> Menus {
         // meaning: *deleting what is selected would not be refused*.
         .with(Menu::new(CANVAS_FIELD).with_items([
             Item::command("format.properties"),
+            Item::command("format.move_to_layer").shown_when(LAYER_ASSIGNABLE),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
         // -------------------------------------------------------------------
@@ -586,6 +595,7 @@ pub fn built_in() -> Menus {
             // which is what keeps this row alive in Review — deleting a comment
             // is exactly what Review is for.
             Item::command("markup.flatten").shown_when(FLATTEN_OFFERED),
+            Item::command("format.move_to_layer").shown_when(LAYER_ASSIGNABLE),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
         // -------------------------------------------------------------------
@@ -611,6 +621,7 @@ pub fn built_in() -> Menus {
             Item::command("format.dimension_area").shown_when(DIMENSION_AREA_OFFERED),
             Item::command("format.dimension_perimeter").shown_when(DIMENSION_PERIMETER_OFFERED),
             Item::Separator,
+            Item::command("format.move_to_layer").shown_when(LAYER_ASSIGNABLE),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
         .with(Menu::new(CANVAS_TEXT).with_items([Item::command("edit.reflow_block")]))

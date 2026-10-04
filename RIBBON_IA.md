@@ -519,6 +519,15 @@ Selection group already follows internally.
 This tab is what makes selection *mean* something: without it, selecting an
 object gives an object-tree row and no way to act on it.
 
+**Move to layer…** (`format.move_to_layer`) sits in the Selection group before
+Delete, and on the object, field, markup and dimension canvas menus before
+Delete: it changes where the thing lives, which is more commitment than how it
+looks and less than destroying it. It opens a small window rather than a
+submenu because a drawing can carry dozens of layers. The same choice is the
+Properties panel's Layer row, where the selection's current layer is shown.
+Both are offered only when the document has a layer and the selection is
+whole objects on one page, an annotation or a field (`selection.layer_assignable`).
+
 **Where it appears, and what it must never do when it does.** A contextual
 tab is appended **after every fixed tab**, and appearing **never activates
 it**. Both halves are load-bearing and neither is cosmetic: a tab that

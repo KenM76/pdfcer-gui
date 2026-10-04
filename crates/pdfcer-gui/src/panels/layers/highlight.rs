@@ -38,6 +38,12 @@ pub fn resolve(doc: &OpenDoc) -> Membership {
     let Some(annot) = doc.selection.annot() else {
         return resolve_content(doc);
     };
+    on_annotation(doc, annot.target.page, annot.target.id)
+}
+
+/// Which layer the annotation (or widget) `id` on `page` is on.
+#[must_use]
+pub fn on_annotation(doc: &OpenDoc, page: usize, id: pdfcer_core::object::ObjId) -> Membership {
     let view = doc.session.view();
     // `pages_in` and not `EditSession::pages()`: the panel holds a shared
     // `&OpenDoc` and the session's own accessor takes `&mut self`. This is the
@@ -48,7 +54,7 @@ pub fn resolve(doc: &OpenDoc) -> Membership {
         // exists for.
         return Membership::Unknown(Unresolved::PageNotDecomposed);
     };
-    let Some(page) = pages.get(annot.target.page) else {
+    let Some(page) = pages.get(page) else {
         // The selection names a page the current revision does not have —
         // reachable for one frame after a page delete, before the selection is
         // re-resolved.
@@ -56,7 +62,7 @@ pub fn resolve(doc: &OpenDoc) -> Membership {
     };
     match pdfcer_core::annot::page_annotations(&view, page.id)
         .into_iter()
-        .find(|a| a.id == Some(annot.target.id))
+        .find(|a| a.id == Some(id))
     {
         Some(a) => match a.oc {
             Some(oc) => Membership::Group(oc),

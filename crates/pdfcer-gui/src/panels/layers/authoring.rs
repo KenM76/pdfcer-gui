@@ -132,7 +132,7 @@ pub(super) fn publish_row(name: &str, rect: egui::Rect) {
 
 /// Publish `rect` as `<prefix>.<name>`, every character of `name` outside
 /// `[A-Za-z0-9]` written `_`.
-pub(super) fn publish_keyed(prefix: &str, name: &str, rect: egui::Rect) {
+pub(crate) fn publish_keyed(prefix: &str, name: &str, rect: egui::Rect) {
     let key: String = name
         .chars()
         .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })

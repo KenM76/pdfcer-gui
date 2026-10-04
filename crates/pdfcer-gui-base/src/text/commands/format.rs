@@ -55,6 +55,17 @@ pub const fn format_merge_text_runs() -> CommandText {
     )
 }
 
+/// `format.move_to_layer`
+#[must_use]
+pub const fn format_move_to_layer() -> CommandText {
+    CommandText::new(
+        "Move to layer\u{2026}",
+        "Put the selected objects, comment or form field on another layer, or on no layer. \
+         Greyed when nothing whole is selected on one page, or the document has no layers. \
+         Undo reverses it.",
+    )
+}
+
 /// `format.dimension_diameter`
 #[must_use]
 pub const fn format_dimension_diameter() -> CommandText {

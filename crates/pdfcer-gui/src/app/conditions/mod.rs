@@ -320,6 +320,13 @@ impl PdfcerApp {
                     }
                 }
             }
+            // A movable selection in a document with layers:
+            // `format.move_to_layer`.
+            if self.capabilities().edit_content
+                && crate::app::actions::layerassign::offered(doc, &doc.selection)
+            {
+                set.set(crate::shell::menus::LAYER_ASSIGNABLE);
+            }
             //
             // > `undo.available` and `redo.available` are still deliberately
             // > absent: there is no undo stack to report on yet. Setting them

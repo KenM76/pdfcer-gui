@@ -34,7 +34,7 @@ use pdfcer_gui_base::layersearch as search;
 pub(crate) mod highlight;
 
 /// New layer, and each row's Properties and Delete.
-mod authoring;
+pub(crate) mod authoring;
 
 /// Merge a layer into another; Flatten all.
 mod combine;

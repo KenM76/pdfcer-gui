@@ -1,0 +1,58 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /OCProperties << /OCGs [6 0 R 7 0 R] /D << /Name (Default) /BaseState /ON /Order [6 0 R 7 0 R] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 800 600] /Resources << /Font << /Helv 5 0 R >> /Properties << /OC1 6 0 R /OC2 7 0 R >> >> /Contents 4 0 R /Annots [8 0 R] >>
+endobj
+4 0 obj
+<< /Length 175 >>
+stream
+q 0 0 0.8 rg 100 100 300 200 re f Q
+/OC /OC1 BDC
+q 0.4 0.4 0.4 RG 4 w 450 100 300 150 re S Q
+EMC
+/OC /OC2 BDC
+q BT /Helv 20 Tf 0 0.5 0 rg 100 520 Td (NOTES LAYER) Tj ET Q
+EMC
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /OCG /Name (Walls) >>
+endobj
+7 0 obj
+<< /Type /OCG /Name (Notes) >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Square /Rect [480 350 720 520] /C [1 0 0] /BS << /W 3 >> /P 3 0 R /AP << /N 9 0 R >> >>
+endobj
+9 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 240 170] /Length 38 >>
+stream
+q 1 0 0 RG 3 w 1.5 1.5 237 167 re S Q
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000165 00000 n 
+0000000222 00000 n 
+0000000406 00000 n 
+0000000631 00000 n 
+0000000728 00000 n 
+0000000774 00000 n 
+0000000820 00000 n 
+0000000949 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1086
+%%EOF

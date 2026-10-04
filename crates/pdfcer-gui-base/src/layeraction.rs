@@ -47,6 +47,14 @@ pub enum LayerAction {
     },
     /// A folder or a move in the panel's list.
     Order(OrderAction),
+    /// Put the selection on `layer`, or on no layer (`None`):
+    /// `EditSession::set_objects_layer` for page content,
+    /// `EditSession::set_annotation_layer` for an annotation or a form
+    /// field's widget. The operand is read from the selection when applied.
+    Assign {
+        /// The group's object id, or `None` for no layer.
+        layer: Option<ObjId>,
+    },
 }
 
 /// One arrangement of the panel's list; paths are `layerorder` paths.
@@ -93,6 +101,7 @@ impl LayerAction {
             Self::Order(OrderAction::RenameFolder { .. }) => "layer-folder-rename",
             Self::Order(OrderAction::DeleteFolder { .. }) => "layer-folder-remove",
             Self::Order(OrderAction::Move(_)) => "layer-move",
+            Self::Assign { .. } => "layer-assign",
         }
     }
 }

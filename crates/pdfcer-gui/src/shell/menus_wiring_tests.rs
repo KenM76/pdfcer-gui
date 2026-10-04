@@ -74,9 +74,10 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 37 → 41: the canvas dimension menu, four rows.
     // 41 → 43: Show area and Show perimeter on the dimension menu.
     // 44 → 45: Save as PDF… on the snapshot box's menu.
+    // 45 → 49: Move to layer… on the object, field, markup and dimension menus.
     assert_eq!(
         (glyph, blank, absent),
-        (45, 1, 0),
+        (49, 1, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

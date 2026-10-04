@@ -48,6 +48,8 @@ pub mod geometry;
 // the selection is on screen whenever nothing else has anything to say. See
 // that module's header for the argument, and [`body_sections`] for the rule
 // this panel keeps because of it.
+/// The selection's layer, and the Move to layer window.
+pub mod layer;
 /// Restyling a markup that is already on the page — colour, line width and
 /// opacity, through `EditSession::set_markup_style`.
 mod markup;
@@ -291,6 +293,7 @@ fn body_sections(
     let drew_run_width = runwidth::section(ui, doc, actions);
     let drew_geometry = geometry::section(ui, doc, state.geometry_mut(), actions);
     let drew_paint = paint::section(ui, doc, actions);
+    let drew_layer = layer::section(ui, doc, actions);
     // **BOUND** — `OPERATOR_REQUESTS.md` O75: *has anything in this panel
     // described the selection?*
     //
@@ -304,6 +307,7 @@ fn body_sections(
     // is selected"* is true. Each term below keeps its own note, because each
     // records a case where omitting it puts a wrong sentence on screen.
     let something_drew = drew_dimension
+        || drew_layer
         || drew_markup
         || drew_annot_delete
         || drew_geometry

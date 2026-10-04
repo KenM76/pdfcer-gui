@@ -46,6 +46,8 @@ pub(crate) fn handles(id: &str) -> bool {
             | "format.unshare_form"
             // Joins the selected runs of one text object (G035).
             | "format.merge_text_runs"
+            // Opens the Move to layer window for the selection.
+            | "format.move_to_layer"
             // The Font group's three custom controls: a custom control REPORTS
             // (it parks an operand and returns a token) and this file ACTS.
             // Bold, Italic, the decorations and alignment are
@@ -524,6 +526,22 @@ pub(crate) fn dispatch(
                     None => {
                         crate::app::status::decline::record_run_merge(RunMergeRefusal::NeedsTwoRuns)
                     }
+                }
+            }
+        }
+        "format.move_to_layer" if !app.capabilities().edit_content => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "format-move-to-layer-declined reason=mode-cannot-edit-content".to_owned()
+            });
+        }
+        // The window opens only over a movable selection; otherwise the
+        // refusal says why, as the press would.
+        "format.move_to_layer" => {
+            if let Status::Open(doc) = &app.status {
+                match crate::app::actions::layerassign::operand(doc) {
+                    Ok(_) => crate::panels::properties::layer::open_window(ctx),
+                    Err(why) => crate::app::status::decline::record_layer(why),
                 }
             }
         }

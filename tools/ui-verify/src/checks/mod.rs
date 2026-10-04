@@ -584,6 +584,8 @@ pub mod canvas_choice_fill;
 pub mod option_arrows;
 
 pub mod forms_spotlight;
+/// Put a selected object or annotation on a layer.
+pub mod layer_assign;
 /// Create, rename and delete a layer from the Layers panel.
 pub mod layer_authoring;
 /// Merge a layer into another and flatten all, from the Layers panel.

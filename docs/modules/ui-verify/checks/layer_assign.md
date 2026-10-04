@@ -1,0 +1,30 @@
+# `ui-verify/checks/layer_assign`
+
+`layer_assign_moves_the_selection` — a selected page object goes onto a layer
+from the Properties panel, Ctrl+Z takes it off, and a selected annotation goes
+onto a layer from its right-click Move to layer… window.
+
+# What it drives
+
+Its own fixture, `fixtures/layer-assign.pdf` (ignores `--pdf`): two layers,
+`Walls` (6 0) and `Notes` (7 0), an unlayered blue box at 100..400 × 100..300,
+and a `/Square` annotation at 480..720 × 350..520 with no `/OC`.
+
+1. Edit mode; click the box's centre; bring `dock.tab.file.properties`
+   forward if the combo is not drawn.
+2. `properties.layer.combo`, then `properties.layer.option.Walls`:
+   `layer-assigned kind=objects moved=1 … layer=6_0`.
+3. Ctrl+Z: `undo-applied`.
+4. Walls again: `moved=1` once more. A Ctrl+Z that undid nothing leaves the
+   combo on Walls, so the choice changes nothing and no line follows.
+5. Click inside the annotation (`annot-select`), right-click it, press
+   `menu.item.canvas.markup.format.move_to_layer`, then
+   `layer-assign.window.combo`, `layer-assign.window.option.Notes`,
+   `layer-assign.window.go`: `layer-assigned kind=annotation subtype=Square
+   changed=true … layer=7_0`.
+
+# Driven off-screen
+
+Scripted pointer, window at `-4200,-4200`, `spec.place = false`; it runs under
+`--no-input`. Falsified by a combo that raises nothing (red at step 2) and by
+an annotation move that passes no layer (red at step 5, `changed=false`).
