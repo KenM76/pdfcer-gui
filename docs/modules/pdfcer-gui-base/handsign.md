@@ -35,23 +35,15 @@ operator may want to delete by hand, and it is the only thing *Remember my
 signature on this computer* writes. Unticking the box and placing deletes it.
 A damaged file is ignored whole (`from_text` returns `None`), never partly used.
 
-## The ledger
+## Which boxes are signed
 
-The engine writes the signature as ordinary content and records nothing tying
-it to the field (request **G073**). `Ledger` reconstructs *"is field F
-hand-signed?"* from undo depths:
+Every placement wraps what it writes in the engine's hand-signature tag
+(`/pdfc_HandSig <</Field (name)>> BDC … EMC`, `pdfcer_core::hand_sig`), so the
+document itself records which field a mark signs. `HandSigned` holds the field
+names `EditSession::hand_signatures` last found and the edit epoch it measured
+at; `app::handsigned::refresh` re-measures whenever the epoch moves, on the
+pages carrying an unsigned `/Sig` box only. Undo, redo, save and reopen need no
+bookkeeping: each changes the content, and the next measurement reads it. A
+mark whose objects were all deleted leaves an empty sequence the engine does
+not count, so its box shows its tag again.
 
-- `placed(field, depth)` after the commit: the entry is live at that depth.
-- `undone(depth)` / `redone(depth)` after a history step: an entry is applied
-  iff its depth `≤` the current undo depth.
-- `reconcile(redo_depth)` with `redo_depth == 0` drops every unapplied entry,
-  because a new edit has cleared the redo stack and that placement can never
-  come back. Run every frame and before each history step, which is what
-  separates a redo from a new edit at the same depth.
-
-Known limits. Past the engine's undo cap (256) every new commit evicts the
-oldest entry and the depth stops rising, so depths stop naming commands: undoing
-a later edit there can mark a placement undone while its ink is still on the
-page. The failure is a *sign here* tag shown on a box that is signed, never a
-signature hidden or removed. After a save and reopen every box shows its tag
-again until G073 lands.

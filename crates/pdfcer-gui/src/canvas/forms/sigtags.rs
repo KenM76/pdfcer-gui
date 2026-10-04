@@ -1,6 +1,6 @@
 //! Unsigned signature boxes on the page: a red corner tag, a *Click to sign*
 //! tip, and a click that opens the *Sign here* window on that box — Acrobat's
-//! behaviour. A box this session has signed by hand is not passed in.
+//! behaviour. A box the document carries a hand signature for gets none.
 
 use egui::{Pos2, Ui, vec2};
 use egui_shell::theme::Theme;
@@ -23,7 +23,7 @@ pub(super) fn overlay(
     pages: &[PageView],
     drawn: &[DrawnPage],
     unsigned: &[FieldTarget],
-    signed: &pdfcer_gui_base::handsign::Ledger,
+    signed: &pdfcer_gui_base::handsign::HandSigned,
     actions: &mut Vec<Action>,
 ) -> bool {
     // Each kept box carries its index in the full list: the signing strip's

@@ -144,6 +144,7 @@ pub mod archive;
 pub mod hand_sign;
 pub mod next_box;
 mod reaching;
+pub mod reopened;
 pub mod sign_box;
 pub mod timestamp;
 pub mod typed_sign;

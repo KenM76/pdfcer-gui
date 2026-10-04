@@ -198,7 +198,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let placed = trace.events("hand-sign-placed").last().map(|l| {
         (
             l.get_usize("strokes"),
-            l.get_usize("signed"),
+            l.get_usize("tagged"),
             l.get_usize("undo_depth"),
         )
     });
@@ -239,17 +239,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let source_bytes = std::fs::read(&source).unwrap_or_default();
     let bytes = std::fs::read(&saved).unwrap_or_default();
     let ranges = count(&bytes, b"/ByteRange");
+    let tags = count(&bytes, b"/pdfc_HandSig");
     let sig_fields = count(&bytes, b"/FT /Sig");
     report.note(format!(
         "box {first:?}; ink before={ink_before} after={ink_after} undone={ink_undone}; placed \
-         (strokes, signed, undo_depth)={placed:?}; refused={refused:?}; tag after placing at \
+         (strokes, tagged, undo_depth)={placed:?}; refused={refused:?}; tag after placing at \
          {next:?}, after undo {undone_box:?}, after redo {redone_box:?}; saved {} bytes (source \
-         {}), /ByteRange x{ranges}, /FT /Sig x{sig_fields}",
+         {}), /ByteRange x{ranges}, /FT /Sig x{sig_fields}, /pdfc_HandSig x{tags}",
         bytes.len(),
         source_bytes.len()
     ));
 
     let mut findings = Vec::new();
+    if tags == 0 {
+        findings.push(
+            "the saved copy holds no `/pdfc_HandSig` tag: the signature is not recorded in the              document, so the box reads unsigned after reopening."
+                .to_owned(),
+        );
+    }
     if !outside.is_empty() {
         findings.push(format!(
             "the Sign here window draws {} outside its own body: clipped or off the window.",
@@ -265,8 +272,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     match placed {
         Some((Some(strokes), Some(1), Some(_))) if strokes >= 2 => {}
         other => findings.push(format!(
-            "placing traced (strokes, signed, undo_depth)={other:?}, refused={refused:?}; two \
-             strokes and one signed box were drawn."
+            "placing traced (strokes, tagged, undo_depth)={other:?}, refused={refused:?}; two \
+             strokes, tagged with the box's field name, were drawn."
         )),
     }
     if ink_after < 20 {

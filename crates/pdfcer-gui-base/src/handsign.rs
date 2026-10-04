@@ -1,12 +1,13 @@
-//! # `handsign` — a hand signature, drawn or typed: its strokes, their fit into a signature box, the copy kept on this computer, and which boxes this session has signed
+//! # `handsign` — a hand signature, drawn or typed: its strokes, their fit into a signature box, the copy kept on this computer, and which boxes are signed
 //!
 //! Contract: [`Mark`] holds strokes in a y-down space of any unit; [`fit`]
 //! places a mark inside a y-down target rectangle by the rule below and
-//! returns points in that same space; [`Ledger`] answers *"is this field
-//! hand-signed in this session?"* from undo-stack depths alone.
+//! returns points in that same space; [`HandSigned`] answers *"is this field
+//! hand-signed?"* from the document's own hand-signature tags.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/handsign.md`.
 
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 use egui::{Pos2, Rect, pos2};
@@ -293,102 +294,42 @@ pub fn forget() -> bool {
     }
 }
 
-/// Whether a placement is applied, or sits on the redo stack.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum State {
-    Applied,
-    Undone,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct Entry {
-    field: String,
-    /// The undo depth right after the placement committed: the placement is
-    /// applied exactly while the undo depth is at least this.
-    depth: usize,
-    state: State,
-}
-
-/// **Which signature fields this session has hand-signed.**
+/// **Which signature fields carry a hand signature**, as
+/// `EditSession::hand_signatures` last found them in the document, and the
+/// edit epoch that measurement belongs to.
 ///
-/// A hand signature is page content and leaves the `/Sig` field empty, so
-/// nothing in the document says the box is signed. This ledger follows each
-/// placement through the command log by undo depth:
-///
-/// - [`Self::placed`] after the placement commits;
-/// - [`Self::undone`] / [`Self::redone`] after each history step, with the
-///   new undo depth;
-/// - [`Self::reconcile`] every frame and before each history step: with the
-///   redo stack empty nothing can be on it, so every undone placement is gone.
-///
-/// The redo case cannot be read from depths alone (a new edit and a redo of
-/// the last undone command both leave `undo + 1, redo 0` when one command was
-/// undone), which is why history steps report themselves.
-///
-/// Known limit: once the engine's undo stack reaches its cap and evicts its
-/// oldest command, recorded depths are one too high per eviction. The ledger
-/// ends with the session; the engine request G073 replaces it.
+/// The document is the record: every placement is tagged with its field's
+/// name, so undo, redo and reopen need no bookkeeping here, only a fresh
+/// measurement once the epoch moves.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Ledger {
-    entries: Vec<Entry>,
+pub struct HandSigned {
+    measured_at: Option<u64>,
+    fields: BTreeSet<String>,
 }
 
-impl Ledger {
-    /// Record a placement on `field` that left the undo stack at `depth`.
-    pub fn placed(&mut self, field: &str, depth: usize) {
-        self.reconcile(0);
-        self.entries.push(Entry {
-            field: field.to_owned(),
-            depth,
-            state: State::Applied,
-        });
+impl HandSigned {
+    /// Whether the set was measured at `epoch`.
+    #[must_use]
+    pub fn is_current(&self, epoch: u64) -> bool {
+        self.measured_at == Some(epoch)
     }
 
-    /// After an undo left the stack at `undo_depth`.
-    pub fn undone(&mut self, undo_depth: usize) {
-        for e in &mut self.entries {
-            if e.state == State::Applied && e.depth > undo_depth {
-                e.state = State::Undone;
-            }
-        }
+    /// Replace the set with what a measurement at `epoch` found.
+    pub fn measured(&mut self, epoch: u64, fields: impl IntoIterator<Item = String>) {
+        self.measured_at = Some(epoch);
+        self.fields = fields.into_iter().collect();
     }
 
-    /// After a redo left the stack at `undo_depth`.
-    pub fn redone(&mut self, undo_depth: usize) {
-        for e in &mut self.entries {
-            if e.state == State::Undone && e.depth <= undo_depth {
-                e.state = State::Applied;
-            }
-        }
-    }
-
-    /// Drop undone placements when the redo stack is empty.
-    pub fn reconcile(&mut self, redo_depth: usize) {
-        if redo_depth == 0 {
-            self.entries.retain(|e| e.state == State::Applied);
-        }
-    }
-
-    /// Whether `field` carries an applied hand signature.
+    /// Whether `field` carries a hand signature.
     #[must_use]
     pub fn is_signed(&self, field: &str) -> bool {
-        self.entries
-            .iter()
-            .any(|e| e.state == State::Applied && e.field == field)
+        self.fields.contains(field)
     }
 
     /// How many distinct fields are hand-signed.
     #[must_use]
     pub fn signed_count(&self) -> usize {
-        let mut fields: Vec<&str> = self
-            .entries
-            .iter()
-            .filter(|e| e.state == State::Applied)
-            .map(|e| e.field.as_str())
-            .collect();
-        fields.sort_unstable();
-        fields.dedup();
-        fields.len()
+        self.fields.len()
     }
 }
 

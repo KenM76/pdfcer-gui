@@ -144,6 +144,8 @@ pub mod surfaces;
 /// floating panel, and the coordinate questions being in another window
 /// forces.
 pub mod floats;
+/// Which signature boxes the document records as hand-signed.
+pub mod handsigned;
 /// The signing strip: *Signed N of M* and Next, over the page (O269).
 pub mod signstrip;
 /// **Which runs a Format command acts on** - one answer, two gestures.

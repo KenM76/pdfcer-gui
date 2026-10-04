@@ -17,9 +17,10 @@ Why page content, not an Ink annotation or a `/Sig` value:
   added later.
 
 The ink is a fixed dark blue-black, a document colour rather than a theme role,
-because it is written into the file. On success the field enters
-`OpenDoc::hand_signed`, which hides its *sign here* tag (see the ledger in
-`pdfcer-gui-base/handsign.md`).
+because it is written into the file. Both routes tag what they write with the
+field's name (`MarkupOptions::hand_signature`, `AddTextRequest::with_hand_signature`),
+and the box counts as signed because the document says so (see *Which boxes
+are signed* in `pdfcer-gui-base/handsign.md`).
 
 ## Typed
 

@@ -3,8 +3,9 @@
 //! Contract: a drawn signature is one `EditSession::add_markup_as_content`
 //! Ink call and a typed one is one `EditSession::add_text` call in an
 //! embedded subset of its handwriting face, each through the funnel, so one
-//! undo step and content that renders exactly as it saves; on success the
-//! field enters `OpenDoc::hand_signed`. The `/Sig` field is not touched, so a
+//! undo step and content that renders exactly as it saves. Both are tagged
+//! with the field's name, which is how `app::handsigned` later finds the box
+//! signed. The `/Sig` field is not touched, so a
 //! certificate signature can still be added to it later.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/handsign.md`.
@@ -78,10 +79,14 @@ fn place_drawn(doc: &mut OpenDoc, field: &str, page: usize, rect: egui::Rect, ma
         color: Color::Rgb(INK.0, INK.1, INK.2),
         width: f64::from(fitted.width),
     };
+    let options = MarkupOptions {
+        hand_signature: Some(field.to_owned()),
+        ..MarkupOptions::default()
+    };
     let mut applied = None;
     vector_edit(doc, "place-hand-signature", page, 1, |session| {
         session
-            .add_markup_as_content(page, &spec, &MarkupOptions::default())
+            .add_markup_as_content(page, &spec, &options)
             .map(|outcome| {
                 applied = Some(outcome.objects.clone());
                 outcome.paste.disclosures
@@ -91,15 +96,13 @@ fn place_drawn(doc: &mut OpenDoc, field: &str, page: usize, rect: egui::Rect, ma
         return;
     };
     let depth = doc.session.undo_depth();
-    doc.hand_signed.placed(field, depth);
+    let tagged = u8::from(tagged(doc, field, page));
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed. No field name: it
         // is text from the operator's own document.
         format!(
-            "hand-sign-placed via=draw page={page} strokes={count} points={points} objects={}..{} undo_depth={depth} signed={}",
-            objects.start,
-            objects.end,
-            doc.hand_signed.signed_count()
+            "hand-sign-placed via=draw page={page} strokes={count} points={points} objects={}..{} undo_depth={depth} tagged={tagged}",
+            objects.start, objects.end
         )
     });
 }
@@ -151,7 +154,8 @@ fn place_typed(doc: &mut OpenDoc, field: &str, page: usize, rect: egui::Rect, ty
     .with_embedded_face(plan)
     .with_provenance(FontProvenance::Supplied)
     .with_size(f64::from(size))
-    .with_color(NewTextColor::Rgb(INK.0, INK.1, INK.2));
+    .with_color(NewTextColor::Rgb(INK.0, INK.1, INK.2))
+    .with_hand_signature(field);
     let before = doc.edit_epoch;
     vector_edit(doc, "place-typed-signature", page, 1, |session| {
         session.add_text(&req).map(|report| report.disclosures)
@@ -160,15 +164,22 @@ fn place_typed(doc: &mut OpenDoc, field: &str, page: usize, rect: egui::Rect, ty
         return;
     }
     let depth = doc.session.undo_depth();
-    doc.hand_signed.placed(field, depth);
+    let tagged = u8::from(tagged(doc, field, page));
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed. No field name or
         // typed name: both are the operator's own text.
         format!(
-            "hand-sign-placed via=type page={page} face={} chars={} size={size:.1} undo_depth={depth} signed={}",
+            "hand-sign-placed via=type page={page} face={} chars={} size={size:.1} undo_depth={depth} tagged={tagged}",
             face.label.replace(' ', "_"),
-            typed.name.chars().count(),
-            doc.hand_signed.signed_count()
+            typed.name.chars().count()
         )
     });
+}
+
+/// Whether `page` now reads back a hand-signature tag naming `field`.
+fn tagged(doc: &OpenDoc, field: &str, page: usize) -> bool {
+    doc.pages.get(page).is_some_and(|sheet| {
+        pdfcer_core::hand_sig::hand_signatures(&doc.session.view(), sheet)
+            .is_ok_and(|marks| marks.iter().any(|m| m.field == field))
+    })
 }

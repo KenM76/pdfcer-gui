@@ -580,9 +580,9 @@ pub struct OpenDoc {
     /// line, which is why the bump belongs in the funnel every mutation is
     /// already required to pass through rather than at each verb.
     pub edit_epoch: u64,
-    /// Which signature fields this session has signed by hand — see
-    /// [`crate::handsign::Ledger`].
-    pub hand_signed: crate::handsign::Ledger,
+    /// Which signature fields the document carries a hand signature for —
+    /// see [`crate::handsign::HandSigned`].
+    pub hand_signed: crate::handsign::HandSigned,
     /// **The engine's content digest for one page, measured on a frame when
     /// this shell held the session exclusively.**
     ///
@@ -1092,7 +1092,7 @@ impl OpenDoc {
             // by a reset somebody has to call.
             find_reveal: None,
             edit_epoch: 0,
-            hand_signed: crate::handsign::Ledger::default(),
+            hand_signed: crate::handsign::HandSigned::default(),
             content_generation: std::cell::Cell::new(None),
             objects_traced_for: None,
             pasteboard_overhang: egui::Vec2::ZERO,

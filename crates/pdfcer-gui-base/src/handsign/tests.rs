@@ -127,38 +127,13 @@ fn a_damaged_saved_file_is_ignored_whole() {
 }
 
 #[test]
-fn the_ledger_follows_undo_and_redo() {
-    let mut l = Ledger::default();
-    l.placed("Sig1", 3);
-    assert!(l.is_signed("Sig1"));
-    l.reconcile(0);
-    l.undone(2);
-    assert!(!l.is_signed("Sig1"));
-    l.reconcile(1);
-    l.redone(3);
-    assert!(l.is_signed("Sig1"));
-    assert_eq!(l.signed_count(), 1);
-}
-
-#[test]
-fn a_new_edit_after_an_undo_forgets_the_placement() {
-    let mut l = Ledger::default();
-    l.placed("Sig1", 3);
-    l.undone(2);
-    // A new edit clears the redo stack: undo 3, redo 0.
-    l.reconcile(0);
-    // A redo of some later command must not bring it back.
-    l.redone(3);
-    assert!(!l.is_signed("Sig1"));
-}
-
-#[test]
-fn undoing_a_later_edit_leaves_the_placement_applied() {
-    let mut l = Ledger::default();
-    l.placed("Sig1", 3);
-    l.placed("Sig2", 4);
-    l.undone(3);
-    assert!(l.is_signed("Sig1"));
-    assert!(!l.is_signed("Sig2"));
-    assert_eq!(l.signed_count(), 1);
+fn the_signed_set_is_what_the_last_measurement_found() {
+    let mut h = HandSigned::default();
+    assert!(!h.is_current(0));
+    h.measured(0, ["Sig1".to_owned(), "Sig1".to_owned(), "Sig2".to_owned()]);
+    assert!(h.is_current(0) && !h.is_current(1));
+    assert!(h.is_signed("Sig1") && !h.is_signed("Sig3"));
+    assert_eq!(h.signed_count(), 2);
+    h.measured(1, Vec::new());
+    assert!(!h.is_signed("Sig1"));
 }

@@ -22,13 +22,15 @@ Off the desktop, scripted pointer only, on a copy of
 - **Layout.** The tab, `handsign.name`, `handsign.preview` and
   `handsign.place` lie inside `handsign.body` (the dialog is an immediate
   viewport, which eframe never screenshots).
-- **Placement.** `hand-sign-placed via=type chars=11 signed=1`, with a face.
+- **Placement.** `hand-sign-placed via=type chars=11 tagged=1`, with a face.
 - **Pixels.** The same ink oracle as the drawn check: zero before, at least 20
   after, zero after Ctrl+Z.
 - **Tag.** After placing, `form.sign-box` names the next box down; after
   Ctrl+Z, the first again.
 - **File.** The copy embeds a TrueType program (`/FontFile2`), so another
-  reader shows the same face, and carries no `/ByteRange`.
+  reader shows the same face, carries a `/pdfc_HandSig` tag, and carries no
+  `/ByteRange`. Falsified by dropping `with_hand_signature`: the file arm
+  fires.
 
 The trace carries the character count, never the name, so a run on the
 operator's own file records nothing personal.

@@ -20,12 +20,12 @@ content above a fit-to-viewport page is the recorded zoom feedback loop.
 
 Fields, not widgets. A signature field with two widgets on two pages is one
 signature, so `progress` takes the distinct field names in `Placed::unsigned`
-and asks the hand-signed ledger which are signed. A box signed with a digital
+and asks `OpenDoc::hand_signed` which are signed. A box signed with a digital
 ID is not in `unsigned` at all and so is in neither number.
 
-The ledger lives in memory, so a document signed by hand, saved and reopened
-counts its boxes as unsigned again. That is the engine request for persisting
-hand-signed state, not something the strip can repair.
+`OpenDoc::hand_signed` is measured from the document's own hand-signature
+tags (`app::handsigned`), so a box signed by hand, saved and reopened still
+counts as signed.
 
 ## What Next does
 

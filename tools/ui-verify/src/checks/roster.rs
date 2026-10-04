@@ -989,6 +989,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(digital_id::DigitalIdCreatedAndChosen),
         Box::new(signing::typed_sign::ATypedSignatureLandsInItsBox),
         Box::new(signing::next_box::NextReachesEveryBoxToSign),
+        Box::new(signing::reopened::ASignedBoxStaysSignedAfterReopening),
         Box::new(redaction::RedactionRemovesAndProvesIt),
         // Immediately after `redaction`, which it shares a fixture generator
         // with. Read in this order the two answer the same question from

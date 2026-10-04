@@ -165,7 +165,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         (
             l.get("via").map(str::to_owned),
             l.get_usize("chars"),
-            l.get_usize("signed"),
+            l.get_usize("tagged"),
             l.get("face").map(str::to_owned),
         )
     });
@@ -208,16 +208,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let bytes = std::fs::read(&saved).unwrap_or_default();
     let ranges = count(&bytes, b"/ByteRange");
+    let tags = count(&bytes, b"/pdfc_HandSig");
     let font_files = count(&bytes, b"/FontFile2");
     report.note(format!(
         "box {first:?}; ink before={ink_before} after={ink_after} undone={ink_undone}; requested \
-         via={requested:?}; placed (via, chars, signed, face)={placed:?}; refused={refused:?}; \
+         via={requested:?}; placed (via, chars, tagged, face)={placed:?}; refused={refused:?}; \
          tag after placing at {next:?}, after undo {undone_box:?}; saved {} bytes, /FontFile2 \
-         x{font_files}, /ByteRange x{ranges}",
+         x{font_files}, /ByteRange x{ranges}, /pdfc_HandSig x{tags}",
         bytes.len()
     ));
 
     let mut findings = Vec::new();
+    if tags == 0 {
+        findings.push(
+            "the saved copy holds no `/pdfc_HandSig` tag: the signature is not recorded in the              document, so the box reads unsigned after reopening."
+                .to_owned(),
+        );
+    }
     if !outside.is_empty() {
         findings.push(format!(
             "the Type tab draws {} outside the window's body, or not at all.",
@@ -234,8 +241,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     match &placed {
         Some((Some(via), Some(n), Some(1), Some(_))) if via == "type" && *n == chars => {}
         other => findings.push(format!(
-            "placing traced (via, chars, signed, face)={other:?}, refused={refused:?}; a typed \
-             name of {chars} characters signing one box was expected."
+            "placing traced (via, chars, tagged, face)={other:?}, refused={refused:?}; a typed \
+             name of {chars} characters, tagged with the box's field name, was expected."
         )),
     }
     if ink_after < 20 {

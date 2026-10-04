@@ -19,21 +19,21 @@ Off the desktop, scripted pointer only, on a copy of
 - **Layout.** `handsign.pad`, `handsign.place` and `handsign.digital-id` lie
   inside `handsign.body`. The dialog is an immediate viewport, which eframe
   never screenshots, so regions are the only layout witness for it.
-- **Placement.** `hand-sign-placed strokes>=2 signed=1`.
+- **Placement.** `hand-sign-placed strokes>=2 tagged=1`: the page reads back
+  a `/pdfc_HandSig` sequence naming the box's field.
 - **Pixels.** Ink-coloured pixels (blue well above red and green) in the box
   and the band one box-height above it: zero before (the control: the
   fixture's border is grey, its captions black), at least 20 after, zero after
   Ctrl+Z.
 - **Tag.** After placing, `form.sign-box` names the *next* box down; after
   Ctrl+Z, the first again; after redo, the next again.
-- **File.** The copy is longer than the source, carries no `/ByteRange`, and
-  still names `/FT /Sig` three times.
+- **File.** The copy is longer than the source, carries a `/pdfc_HandSig`
+  tag and no `/ByteRange`, and still names `/FT /Sig` three times.
 
 ## Falsified
 
-- Ledger never told of the placement and the ink black: four arms fire
-  (placement, pixels, tag, redo).
-- Undo not reported to the ledger: only the after-undo tag arm fires.
+- The write left untagged (`MarkupOptions::hand_signature` `None`): the
+  file and placement arms fire.
 - The body region swapped for the pad's in the check: the layout arm fires.
 
 ## Settings isolation
