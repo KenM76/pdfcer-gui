@@ -52,7 +52,7 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Current queue (coordinator's order).** O284 items 1 to 6 are committed, each driven and falsified. Next is item 7, driving Copy page as vector. Then O284's FEATURES-only rows (text JSON/spans, tables JSON, tags/layout JSON, QDF). Then O285 in its listed order, with split per the operator ruling recorded in O285 and ENGINE_BACKLOG. The pin is at the v0.76.0 tag, which carries G100 (place a PDF page as content), G106 (`ImportedImage::from_rgba8`), G103/G104 (coloured 3D) and G105 (saved views); none is wired yet.
+**Current queue (coordinator's order).** O284 items 1 to 7 are committed, each driven and falsified; item 7 is driven to the clipboard's door (`copy_as_vector_without_the_mouse`), and the Windows placement and the Word paste wait for a free machine. Then O284's FEATURES-only rows (text JSON/spans, tables JSON, tags/layout JSON, QDF). Then O285 in its listed order, with split per the operator ruling recorded in O285 and ENGINE_BACKLOG. The pin is at the v0.76.0 tag, which carries G100 (place a PDF page as content), G106 (`ImportedImage::from_rgba8`), G103/G104 (coloured 3D) and G105 (saved views); none is wired yet.
 
 **Start here on `continue`.** The release tree `0a56b608` (engine v0.72.0,
 `35769c3b`) was published to OneDrive and GitHub as `v0.5.0-dev.20261002.1`,

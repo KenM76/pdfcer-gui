@@ -286,8 +286,17 @@ pub(super) fn place_withheld(payload: &CopyPayload) -> Result<Vec<&'static str>,
     put(&frame(payload))
 }
 
-/// Hand framed entries to the operating system's clipboard.
+/// The environment variable that sends a copy-out to a folder instead of the
+/// clipboard, so a driven check can read the payload without replacing the
+/// operator's clipboard.
+pub const DIAG_CLIPBOARD_DIR: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an environment variable name, never displayed
+
+/// Hand framed entries to the operating system's clipboard, or to
+/// [`DIAG_CLIPBOARD_DIR`] when it is set.
 fn put(staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
+    if let Some(dir) = std::env::var_os(DIAG_CLIPBOARD_DIR) {
+        return capture(std::path::Path::new(&dir), staged);
+    }
     let entries: Vec<native_clipboard::Entry<'_>> = staged
         .iter()
         .map(|item| native_clipboard::Entry {
@@ -297,6 +306,42 @@ fn put(staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
         })
         .collect();
     native_clipboard::place(&entries).map_err(Refusal::Clipboard)
+}
+
+/// Write each entry to `<dir>/<n>-<format>.bin`, `n` counting from 1 in
+/// placement order, and return the names as a placement would. The OS
+/// clipboard is not opened. A failed write is the clipboard's `Stage` refusal
+/// for that format, the same one a handle that cannot be made gives.
+fn capture(dir: &std::path::Path, staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
+    if staged.is_empty() {
+        return Err(Refusal::Clipboard(native_clipboard::PlaceError::Nothing));
+    }
+    let stage = |name| Refusal::Clipboard(native_clipboard::PlaceError::Stage(name));
+    std::fs::create_dir_all(dir).map_err(|_| stage(staged[0].format.name()))?;
+    let mut names = Vec::with_capacity(staged.len());
+    for (n, item) in staged.iter().enumerate() {
+        let name = item.format.name();
+        let file = dir.join(format!("{}-{}.bin", n + 1, file_stem(name)));
+        std::fs::write(&file, &item.bytes).map_err(|_| stage(name))?;
+        names.push(name);
+    }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "clipboard-captured dir={} formats={}",
+            dir.display(),
+            names.len()
+        )
+    });
+    Ok(names)
+}
+
+/// A format name with the characters a file name cannot hold replaced:
+/// `image/svg+xml` becomes `image_svg_xml`.
+fn file_stem(name: &str) -> String {
+    name.chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect()
 }
 
 /// **How each format's bytes become a clipboard handle.**
@@ -412,6 +457,33 @@ mod tests {
 
     /// **The registered slots are exactly the formats `ClipFormat` says
     /// are registered**, so the shell's vocabulary and Win32's cannot drift.
+    #[test]
+    fn a_capture_writes_each_entry_in_placement_order() {
+        let dir = std::env::temp_dir().join(format!("pdfcer-capture-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let framed = frame(&full());
+        let names = capture(&dir, &framed).expect("captured");
+        assert_eq!(
+            names,
+            framed.iter().map(|e| e.format.name()).collect::<Vec<_>>()
+        );
+        let mut files: Vec<String> = std::fs::read_dir(&dir)
+            .expect("dir")
+            .map(|e| e.expect("entry").file_name().to_string_lossy().into_owned())
+            .collect();
+        files.sort();
+        assert_eq!(
+            files.first().map(String::as_str),
+            Some("1-image_svg_xml.bin")
+        );
+        assert_eq!(files.len(), names.len());
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(
+            capture(&dir, &[]),
+            Err(Refusal::Clipboard(native_clipboard::PlaceError::Nothing))
+        );
+    }
+
     #[test]
     fn the_registered_slots_match_the_registered_formats() {
         for format in ORDER {

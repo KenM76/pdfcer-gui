@@ -369,6 +369,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(small_first_page::ASmallFirstPageIsTheCurrentPage),
         Box::new(export_image_emf::ExportImageWritesAMetafile),
         Box::new(copy_as_vector::CopyAsVectorPlacesTheMeasuredOrder),
+        Box::new(copy_as_vector_scripted::CopyAsVectorWithoutTheMouse),
         Box::new(export_text::ExportTextWritesTheDocumentsWords),
         // Insert an image. Its last assertion is the one
         // that matters: the promised resolution and the reported one are the

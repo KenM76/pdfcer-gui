@@ -153,6 +153,7 @@ pub mod recovery_losses;
 /// clipboard — which it REPLACES, so nothing else can be asserted about it
 /// afterwards. ⬜ **NOT RUN**; its module header says why.
 pub mod copy_as_vector;
+pub mod copy_as_vector_scripted;
 
 // O120's fourth export format, and the one a driven check is worth most for:
 // EMF is the ONLY vector route LibreOffice 24.x and Word's Paste Special have,

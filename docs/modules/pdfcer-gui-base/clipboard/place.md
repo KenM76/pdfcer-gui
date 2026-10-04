@@ -72,6 +72,16 @@ review rather than by a unit test. Said plainly rather than dressed up: the
 `unsafe` placement has no automated coverage, and a test that gave it some
 would silently destroy whatever the operator had copied.
 
+## The capture seam
+
+`PDFCER_DIAG_CLIPBOARD_DIR`, when set, makes `put` write each framed entry
+to that folder as `<n>-<format>.bin` (`n` from 1, the format name with every
+non-alphanumeric character as `_`), in placement order, instead of calling
+`native-clipboard`, and trace `clipboard-captured dir=… formats=N`. A driven
+check reads the payload without replacing the operator's clipboard. A file
+that cannot be written is refused as `PlaceError::Stage(<format>)`, the
+same refusal a payload Windows rejects before the clipboard is opened.
+
 ## Item notes
 
 ### `const COPY_DPI`
