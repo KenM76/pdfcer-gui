@@ -391,3 +391,8 @@ HEAD:path > path` once space was back. **How to apply:** before any batch of
 writes, `df -h /d`. Under ~5 GB, first delete `target/debug` (50 GB here, all
 rebuildable). After any `No space left` error, check `git diff --stat` for a file
 gone to zero.
+
+2026-10-04: D: hit 12 KB free mid-release; the release build failed writing an
+`.rmeta` (os error 112). `rm -rf target/debug/incremental` alone freed 26 GB and
+cost only a slower next debug build — the cheapest first cut. Check `df -h /d`
+BEFORE a release build, not after it fails.
