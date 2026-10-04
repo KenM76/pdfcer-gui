@@ -602,6 +602,8 @@ pub mod layer_combine;
 pub mod layer_folders;
 /// Make a markup part of the page from its right-click menu.
 pub mod markup_flatten;
+/// Markup ▸ Media clip: a dragged region carries the clip, its type and its choices.
+pub mod media_clip;
 pub mod password_fill;
 /// Propose replacement words for selected text from Markup.
 pub mod replace_text;

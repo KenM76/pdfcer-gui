@@ -21,6 +21,9 @@ pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt:
 /// The seam that answers the **attach a sound** picker.
 pub const DIAG_SOUND_PATH: &str = "PDFCER_DIAG_SOUND_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The seam that answers the **place a media clip** picker.
+pub const DIAG_MEDIA_PATH: &str = "PDFCER_DIAG_MEDIA_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The seam that answers the **3D model to insert** picker.
 pub const DIAG_MODEL_PATH: &str = "PDFCER_DIAG_MODEL_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -308,6 +311,32 @@ pub fn pick_sound_source() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("sound-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask which video or audio clip to place in a page region** (§12.5.6.18).
+#[must_use]
+pub fn pick_media_source() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_MEDIA_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("media-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::screenannot::pick_title())
+        .add_filter(
+            crate::text::screenannot::filter_media(),
+            &crate::text::screenannot::media_extensions(),
+        )
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("media-picked source=native answer={answer:?}")
     });
     answer
 }

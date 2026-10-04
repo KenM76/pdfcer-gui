@@ -727,10 +727,11 @@ pub use annotate::{
     markup_add_node, markup_arrow, markup_attach_file, markup_cloud, markup_comments,
     markup_ellipse, markup_finish, markup_flatten, markup_flatten_page, markup_highlight,
     markup_ink, markup_insert_text, markup_paste_image_stamp, markup_polygon, markup_polyline,
-    markup_rectangle, markup_remove_node, markup_replace_text, markup_sound, markup_squiggly,
-    markup_stamp, markup_sticky_note, markup_strikeout, markup_text_box, markup_underline,
-    measure_area, measure_finish, measure_length, measure_linear, measure_manage_groups,
-    measure_perimeter, measure_radius_diameter, measure_set_scale, measure_two_line,
+    markup_rectangle, markup_remove_node, markup_replace_text, markup_screen, markup_sound,
+    markup_squiggly, markup_stamp, markup_sticky_note, markup_strikeout, markup_text_box,
+    markup_underline, measure_area, measure_finish, measure_length, measure_linear,
+    measure_manage_groups, measure_perimeter, measure_radius_diameter, measure_set_scale,
+    measure_two_line,
 };
 
 /// The five Format ▸ Markup controls, a module of their own under **R2**.

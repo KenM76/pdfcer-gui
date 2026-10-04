@@ -642,6 +642,12 @@ impl PdfcerApp {
                             .open_sound_annot(&self.status, page, rect, file);
                     }
                 }
+                crate::canvas::textannot::TextAnnotKind::Screen => {
+                    if let Some(file) = super::screenannot::pick() {
+                        self.dialogs
+                            .open_screen_annot(&self.status, page, rect, file);
+                    }
+                }
                 _ => self.dialogs.open_text_annot(&self.status, page, kind, rect),
             },
             Action::NewComment(comment) => {

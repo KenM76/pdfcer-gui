@@ -253,6 +253,8 @@ pub enum Icon {
     TextReplace,
     /// Markup → Attach sound: a recording stored behind an icon on the page.
     Sound,
+    /// Markup → Media clip: a video or audio clip played from a page region.
+    Screen,
     /// Text → FreeText box.
     TextFreeText,
     /// Text → Sticky note.

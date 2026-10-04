@@ -421,6 +421,7 @@
                         Command(id: "markup.stamp", size: Large),
                         Command(id: "markup.attach_file"),
                         Command(id: "markup.sound"),
+                        Command(id: "markup.screen"),
                         Command(id: "markup.paste_image_stamp"),
                         Command(id: "markup.insert_text"),
                         Command(id: "markup.replace_text"),

@@ -210,6 +210,8 @@ pub mod runmerge;
 /// explaining what a ratio is measured *against*, when the honest answer for a
 /// PDF is 1/72 inch and nobody's intuition is in those.
 pub mod scale;
+/// Markup ▸ Media clip: a video or audio clip played from a page region.
+pub mod screenannot;
 /// Markup ▸ Attach sound: a recording stored in the PDF behind an icon.
 pub mod soundannot;
 /// Every word Pages ▸ Split… shows, its preview and its receipt.

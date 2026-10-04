@@ -39,6 +39,25 @@ pub enum NewComment {
         /// How the WAV is converted to a PDF sound.
         import: pdfcer_core::sound::WavImportOptions,
     },
+    /// **Play a media clip from a page region** (`/Screen`, §12.5.6.18).
+    /// The file was picked in `BeginTextAnnot`'s apply arm; its bytes are
+    /// read at apply time.
+    Screen {
+        /// The 0-based page.
+        page: usize,
+        /// The play region, in PDF user space.
+        rect: pdfcer_core::page_tree::Rect,
+        /// The clip.
+        file: std::path::PathBuf,
+        /// The clip's MIME type (`/CT`), as the window last showed it.
+        content_type: String,
+        /// What starts playback.
+        trigger: pdfcer_core::annot_author::ScreenTrigger,
+        /// The clip's temporary-file permission (`/TF`).
+        temp_access: pdfcer_core::annot_author::MediaTempAccess,
+        /// The description (`/Contents`), trimmed; `None` when none was typed.
+        description: Option<String>,
+    },
     /// **Mark where words are to be inserted** (`/Caret`, §12.5.6.11).
     Caret {
         /// The 0-based page.

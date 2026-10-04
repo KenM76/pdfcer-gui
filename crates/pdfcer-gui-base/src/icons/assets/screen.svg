@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A frame with a play triangle: Markup ▸ Media clip, the appearance a
+       /Screen region draws on the page. -->
+  <rect x="6" y="10" width="36" height="28" rx="2" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M20 17v14l11-7z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

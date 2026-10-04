@@ -44,6 +44,7 @@ pub const fn title(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Attachment => "Attach a file",
         TextAnnotKind::Caret => "Insert text",
         TextAnnotKind::Sound => "Attach a sound",
+        TextAnnotKind::Screen => "Place a media clip",
     }
 }
 
@@ -78,6 +79,11 @@ pub const fn intro(kind: TextAnnotKind) -> &'static str {
              clicking the icon plays it. PDF 2.0 deprecates sound comments, so \
              some readers may not play them. The icon prints; the sound does not."
         }
+        TextAnnotKind::Screen => {
+            "The clip is stored inside this PDF and plays in the region you \
+             drew. A frame with a play symbol shows there and prints; the clip \
+             does not. Many readers, including most browsers, do not play clips."
+        }
     }
 }
 
@@ -93,7 +99,7 @@ pub const fn hint(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Stamp => "",
         TextAnnotKind::Attachment => "Description (optional)",
         TextAnnotKind::Caret => "Words to insert",
-        TextAnnotKind::Sound => "Description (optional)",
+        TextAnnotKind::Sound | TextAnnotKind::Screen => "Description (optional)",
     }
 }
 
@@ -121,6 +127,10 @@ pub const fn bound(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Sound => {
             "Shown when the comment is opened, in a standard Latin font; other \
              alphabets come out as question marks."
+        }
+        TextAnnotKind::Screen => {
+            "Stored as the region's description; readers that list a page's \
+             media show it."
         }
     }
 }
@@ -232,7 +242,7 @@ pub const fn accept_disabled(kind: TextAnnotKind) -> &'static str {
         // as `hint` is.
         TextAnnotKind::Stamp => "",
         // Unreachable: the file is picked before the dialog opens.
-        TextAnnotKind::Attachment | TextAnnotKind::Sound => "",
+        TextAnnotKind::Attachment | TextAnnotKind::Sound | TextAnnotKind::Screen => "",
         TextAnnotKind::Caret => "Type the words to insert, or tick New paragraph.",
     }
 }
@@ -459,8 +469,11 @@ mod tests {
                 "{kind:?}'s hint disagrees with whether it takes typing"
             );
             assert_eq!(!bound(*kind).is_empty(), typed, "{kind:?}'s bound");
-            let required =
-                typed && !matches!(kind, TextAnnotKind::Attachment | TextAnnotKind::Sound);
+            let required = typed
+                && !matches!(
+                    kind,
+                    TextAnnotKind::Attachment | TextAnnotKind::Sound | TextAnnotKind::Screen
+                );
             assert_eq!(
                 !accept_disabled(*kind).is_empty(),
                 required,

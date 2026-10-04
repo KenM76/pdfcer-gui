@@ -141,6 +141,8 @@ pub struct TextAnnotDialog {
     attach: Option<attach::Chosen>,
     /// The recording, icon and import choices, for the attach-sound kind only.
     sound: Option<sound::Chosen>,
+    /// The clip, its type and its playback choices, for the media-clip kind only.
+    screen: Option<screen::Chosen>,
     /// The new-paragraph choice, for the insert-text kind only.
     caret: Option<caret::Choice>,
 }
@@ -227,6 +229,10 @@ const ATTACH_EXTRA_PTS: f32 = 170.0;
 /// The attach-sound kind's file line, two-icon chooser and two import choices.
 const SOUND_EXTRA_PTS: f32 = 170.0;
 
+/// The media-clip kind's file line, type field, two triggers and the
+/// temporary-file chooser.
+const SCREEN_EXTRA_PTS: f32 = 330.0;
+
 /// The insert-text kind's new-paragraph choice and its sentence.
 const CARET_EXTRA_PTS: f32 = 70.0;
 
@@ -302,6 +308,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
         TextAnnotKind::Stamp => STAMP_EXTRA_PTS + custom_extra,
         TextAnnotKind::Attachment => ATTACH_EXTRA_PTS,
         TextAnnotKind::Sound => SOUND_EXTRA_PTS,
+        TextAnnotKind::Screen => SCREEN_EXTRA_PTS,
         TextAnnotKind::Caret => CARET_EXTRA_PTS,
         TextAnnotKind::TextBox => 0.0,
     };
@@ -436,6 +443,7 @@ impl TextAnnotDialog {
             focus_attempts: 0,
             attach: None,
             sound: None,
+            screen: None,
             caret: (kind == TextAnnotKind::Caret).then(caret::Choice::default),
         }
     }
@@ -451,6 +459,13 @@ impl TextAnnotDialog {
     #[must_use]
     pub fn with_sound(mut self, file: std::path::PathBuf) -> Self {
         self.sound = Some(sound::Chosen::new(file));
+        self
+    }
+
+    /// Carry the clip a media-clip window was opened for.
+    #[must_use]
+    pub fn with_screen(mut self, file: std::path::PathBuf) -> Self {
+        self.screen = Some(screen::Chosen::new(file));
         self
     }
 
@@ -520,6 +535,10 @@ impl TextAnnotDialog {
                 actions.push(chosen.action(self.page, self.rect, &self.text));
                 return false;
             }
+            if let Some(chosen) = &self.screen {
+                actions.push(chosen.action(self.page, self.rect, &self.text));
+                return false;
+            }
             if let Some(choice) = &self.caret {
                 actions.push(choice.action(self.page, self.rect, &self.text));
                 return false;
@@ -583,6 +602,9 @@ impl TextAnnotDialog {
         if let Some(chosen) = &mut self.sound {
             chosen.show(ui);
         }
+        if let Some(chosen) = &mut self.screen {
+            chosen.show(ui);
+        }
         if let Some(choice) = &mut self.caret {
             choice.show(ui);
         }
@@ -597,13 +619,18 @@ impl TextAnnotDialog {
             // than hides: the control is *temporarily* unavailable — a
             // keystroke makes it live — which is exactly what greying is
             // reserved for.
-            // The attach-file and attach-sound kinds' words are an optional
-            // description.
+            // The attach-file, attach-sound and media-clip kinds' words are an
+            // optional description.
             let ready = match &self.caret {
                 Some(choice) => choice.ready(&self.text),
                 None => {
                     self.kind.uses_gallery()
-                        || matches!(self.kind, TextAnnotKind::Attachment | TextAnnotKind::Sound)
+                        || matches!(
+                            self.kind,
+                            TextAnnotKind::Attachment
+                                | TextAnnotKind::Sound
+                                | TextAnnotKind::Screen
+                        )
                         || !self.text.trim().is_empty()
                 }
             };
@@ -998,6 +1025,11 @@ pub use attach::REGION_ATTACH_ICON;
 #[path = "textannot_sound.rs"]
 mod sound;
 pub use sound::{REGION_SOUND_DOWNMIX, REGION_SOUND_ICON, REGION_SOUND_RESAMPLE};
+
+#[path = "textannot_screen.rs"]
+mod screen;
+pub(crate) use screen::trigger_token;
+pub use screen::{REGION_SCREEN_TEMP, REGION_SCREEN_TRIGGER, REGION_SCREEN_TYPE};
 
 #[path = "textannot_caret.rs"]
 mod caret;

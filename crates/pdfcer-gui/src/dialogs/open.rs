@@ -232,6 +232,29 @@ impl DialogsState {
         );
     }
 
+    /// **Open the media-clip dialog** for a region dragged on `page`, once
+    /// the clip has been picked.
+    pub fn open_screen_annot(
+        &mut self,
+        status: &Status,
+        page: usize,
+        rect: pdfcer_core::page_tree::Rect,
+        file: std::path::PathBuf,
+    ) {
+        if !matches!(status, Status::Open(_)) {
+            return;
+        }
+        self.text_annot = Some(
+            textannot::TextAnnotDialog::open(
+                page,
+                crate::canvas::textannot::TextAnnotKind::Screen,
+                rect,
+                None,
+            )
+            .with_screen(file),
+        );
+    }
+
     /// **Open the placement dialog for a form control just put on the page.**
     pub fn open_form_field(
         &mut self,

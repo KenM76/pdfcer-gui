@@ -519,6 +519,11 @@ pub(super) const ATTACHMENT: &str = include_str!("assets/attachment.svg");
 /// Authored for pdfcer in the header §3 style contract — a speaker cone with two waves.
 pub(super) const SOUND: &str = include_str!("assets/sound.svg");
 
+/// `screen.svg` — the art for [`super::Icon::Screen`].
+///
+/// Authored for pdfcer in the header §3 style contract — a frame with a play triangle.
+pub(super) const SCREEN: &str = include_str!("assets/screen.svg");
+
 /// `check.svg` — the art for [`super::Icon::Accept`].
 ///
 /// Complete the gesture in progress — `markup.finish` and `measure.finish`.

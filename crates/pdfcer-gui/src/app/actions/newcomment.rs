@@ -50,6 +50,28 @@ pub(super) fn apply(doc: &mut OpenDoc, prefs: &Prefs, pen: Pen, comment: NewComm
             pen.text_annot_colour(TextAnnotKind::Sound),
             pen.opacity_option(),
         ),
+        NewComment::Screen {
+            page,
+            rect,
+            file,
+            content_type,
+            trigger,
+            temp_access,
+            description,
+        } => super::screenannot::place(
+            doc,
+            &super::screenannot::Placed {
+                page,
+                rect,
+                file: &file,
+                content_type: &content_type,
+                trigger,
+                temp_access,
+                description: description.as_deref(),
+            },
+            pen.text_annot_colour(TextAnnotKind::Screen),
+            pen.opacity_option(),
+        ),
         NewComment::Caret {
             page,
             at,

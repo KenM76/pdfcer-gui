@@ -93,6 +93,7 @@ pub fn tab() -> Tab {
                     large("markup.stamp"),
                     command("markup.attach_file"),
                     command("markup.sound"),
+                    command("markup.screen"),
                     command("markup.paste_image_stamp"),
                     command("markup.insert_text"),
                     command("markup.replace_text"),

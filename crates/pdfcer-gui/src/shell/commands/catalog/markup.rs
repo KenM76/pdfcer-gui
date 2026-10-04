@@ -302,6 +302,9 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.sound", t::markup_sound(), 527)
             .with_icon("sound")
             .enabled_when("doc.pages"),
+        command("markup.screen", t::markup_screen(), 528)
+            .with_icon("screen")
+            .enabled_when("doc.pages"),
         command("markup.insert_text", t::markup_insert_text(), 525)
             .with_icon("text-caret")
             .enabled_when("doc.pages"),

@@ -263,6 +263,15 @@ pub const fn markup_sound() -> CommandText {
     )
 }
 
+/// `markup.screen`
+#[must_use]
+pub const fn markup_screen() -> CommandText {
+    CommandText::new(
+        "Media clip",
+        "Store a video or audio clip inside the PDF, played in a region you drag on the page.",
+    )
+}
+
 /// `markup.insert_text`
 #[must_use]
 pub const fn markup_insert_text() -> CommandText {

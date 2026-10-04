@@ -94,7 +94,8 @@ impl PenSlot {
             crate::wordmarkup::TextAnnotKind::TextBox => Self::TextBox,
             crate::wordmarkup::TextAnnotKind::Sticky
             | crate::wordmarkup::TextAnnotKind::Attachment
-            | crate::wordmarkup::TextAnnotKind::Sound => Self::Note,
+            | crate::wordmarkup::TextAnnotKind::Sound
+            | crate::wordmarkup::TextAnnotKind::Screen => Self::Note,
             crate::wordmarkup::TextAnnotKind::Stamp => Self::Stamp,
             crate::wordmarkup::TextAnnotKind::Caret => Self::Caret,
         }
@@ -472,12 +473,18 @@ mod tests {
     #[test]
     fn the_three_text_annotation_kinds_do_not_share_a_pen() {
         use crate::wordmarkup::TextAnnotKind;
-        // The attachment and sound markers are icons on the page like a note's,
-        // and take the note's colour by design; they are pinned to it below.
+        // The attachment and sound markers and the media frame are drawn by
+        // pdfcer like a note's icon, and take the note's colour by design; they
+        // are pinned to it below.
         let kinds: Vec<TextAnnotKind> = TextAnnotKind::ALL
             .iter()
             .copied()
-            .filter(|k| !matches!(k, TextAnnotKind::Attachment | TextAnnotKind::Sound))
+            .filter(|k| {
+                !matches!(
+                    k,
+                    TextAnnotKind::Attachment | TextAnnotKind::Sound | TextAnnotKind::Screen
+                )
+            })
             .collect();
         let slots: Vec<PenSlot> = kinds.iter().map(|k| PenSlot::of_text_annot(*k)).collect();
         for i in 0..slots.len() {
@@ -497,6 +504,7 @@ mod tests {
             PenSlot::Note
         );
         assert_eq!(PenSlot::of_text_annot(TextAnnotKind::Sound), PenSlot::Note);
+        assert_eq!(PenSlot::of_text_annot(TextAnnotKind::Screen), PenSlot::Note);
         assert_eq!(
             Pen::default().text_annot_colour(TextAnnotKind::Sticky),
             palette::components(palette::NOTE_PURPLE)

@@ -9,7 +9,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/wordmarkup.md`.
 
 use pdfcer_core::annot_author::{
-    AttachmentIcon, Color, SoundIcon, StampName, StampStyle, StickyIcon, TextAnnotSpec,
+    AttachmentIcon, Color, MediaTempAccess, ScreenTrigger, SoundIcon, StampName, StampStyle,
+    StickyIcon, TextAnnotSpec,
 };
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::page_tree::Rect;
@@ -39,6 +40,10 @@ pub enum TextAnnotKind {
     /// Its text is an optional description; the clip is the payload, so it
     /// never reaches [`spec`].
     Sound,
+    /// `/Screen` — a dragged region that plays an embedded video or audio
+    /// clip. Its text is an optional description; the clip is the payload,
+    /// so it never reaches [`spec`].
+    Screen,
 }
 
 impl TextAnnotKind {
@@ -50,6 +55,7 @@ impl TextAnnotKind {
         Self::Attachment,
         Self::Caret,
         Self::Sound,
+        Self::Screen,
     ];
 
     /// The command id that arms this kind.
@@ -68,6 +74,8 @@ impl TextAnnotKind {
             Self::Caret => "markup.insert_text",
             // ui-text-exempt: command ids, never displayed
             Self::Sound => "markup.sound",
+            // ui-text-exempt: command ids, never displayed
+            Self::Screen => "markup.screen",
         }
     }
 
@@ -81,7 +89,7 @@ impl TextAnnotKind {
     #[must_use]
     pub const fn is_dragged(self) -> bool {
         match self {
-            Self::TextBox | Self::Stamp => true,
+            Self::TextBox | Self::Stamp | Self::Screen => true,
             Self::Sticky | Self::Attachment | Self::Caret | Self::Sound => false,
         }
     }
@@ -128,6 +136,17 @@ pub const ATTACHMENT_ICONS: &[AttachmentIcon] = &[
 /// The sound icons offered, in the order the dialog lists them
 /// (§12.5.6.16 Table 185).
 pub const SOUND_ICONS: &[SoundIcon] = &[SoundIcon::Speaker, SoundIcon::Mic];
+
+/// What can start a media clip, in the order the dialog lists them.
+pub const SCREEN_TRIGGERS: &[ScreenTrigger] = &[ScreenTrigger::Click, ScreenTrigger::PageOpen];
+
+/// The temporary-file permissions offered, in the order the dialog lists
+/// them (§13.2.4.3 Table 275).
+pub const TEMP_ACCESS: &[MediaTempAccess] = &[
+    MediaTempAccess::Never,
+    MediaTempAccess::Access,
+    MediaTempAccess::Always,
+];
 
 /// The icon a fresh sound comment carries: the standard's default.
 pub const DEFAULT_SOUND_ICON: SoundIcon = SoundIcon::Speaker;
@@ -244,7 +263,10 @@ pub fn spec(
     let (r, g, b) = colour;
     Some(match kind {
         // Each has its own engine verb, reached through `NewComment`.
-        TextAnnotKind::Attachment | TextAnnotKind::Caret | TextAnnotKind::Sound => return None,
+        TextAnnotKind::Attachment
+        | TextAnnotKind::Caret
+        | TextAnnotKind::Sound
+        | TextAnnotKind::Screen => return None,
         TextAnnotKind::TextBox => TextAnnotSpec::FreeText {
             rect,
             text: text.to_owned(),
@@ -660,7 +682,7 @@ mod tests {
                 TextAnnotKind::Sticky,
                 TextAnnotKind::Attachment,
                 TextAnnotKind::Caret,
-                TextAnnotKind::Sound
+                TextAnnotKind::Sound,
             ]
         );
         let gallery: Vec<_> = TextAnnotKind::ALL

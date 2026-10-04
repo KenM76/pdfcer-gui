@@ -58,6 +58,7 @@ pub(crate) mod models;
 mod newcomment;
 /// Placing a picture or drawing, and selecting what was placed.
 mod picture;
+mod screenannot;
 mod soundannot;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
 use pdfcer_gui_base::displaypiece as chrome;

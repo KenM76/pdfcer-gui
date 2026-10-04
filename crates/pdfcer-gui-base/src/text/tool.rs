@@ -147,6 +147,7 @@ pub const fn text_annot_instruction(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Sound => {
             "Click where the sound's icon should sit, then choose the recording."
         }
+        TextAnnotKind::Screen => "Drag out the region the clip plays in, then choose the clip.",
     }
 }
 
