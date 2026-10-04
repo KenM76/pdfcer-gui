@@ -392,11 +392,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 198 → 199: `view.tool_snapshot` (O272), View ▸ Navigate.
     // 199 → 200: `view.snapshot_save_pdf` (O284), the snapshot box's menu.
     // 200 → 201: `pages.split` (O285), Pages ▸ Organise.
+    // 201 → 203: `file.export_structure` and `file.import_structure`, File ▸ Export.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        201 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        203 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -800,10 +801,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 180 → 181: `view.tool_snapshot` names `snapshot`, drawn for it.
     // 181 → 182: `view.snapshot_save_pdf` names `save-as`, shared.
     // 182 → 183: `pages.split` names `split`, drawn for it.
+    // 183 → 185: the QDF pair name `export` and `import-form-data`, shared.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        183 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        185 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

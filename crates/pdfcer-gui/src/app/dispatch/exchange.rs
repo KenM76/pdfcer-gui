@@ -18,6 +18,8 @@ pub(crate) fn claims(id: &str) -> bool {
             | "file.export_form_data"
             | "file.import_form_data"
             | "file.stamp_collection"
+            | "file.export_structure"
+            | "file.import_structure"
     )
 }
 
@@ -111,6 +113,18 @@ impl PdfcerApp {
                 {
                     actions.push(Action::Field(
                         crate::app::actions::forms::FieldAction::Import { path },
+                    ));
+                }
+            }
+            "file.export_structure" => actions.push(Action::Write(
+                crate::app::actions::write::WriteAction::Structure,
+            )),
+            // Picked here for `file.import_form_data`'s reason.
+            "file.import_structure" => {
+                if let crate::app::files::Picked::Path(edited) = crate::app::files::pick_document()
+                {
+                    actions.push(Action::Write(
+                        crate::app::actions::write::WriteAction::CompileStructure { edited },
                     ));
                 }
             }

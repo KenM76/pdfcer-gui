@@ -502,7 +502,7 @@ pub(super) fn band() -> Vec<Command> {
         // 119 sits immediately below the derivative cluster (120-125: DXF, form
         // data, page text, document text, image, text) and immediately above
         // `file.import_form_data` at 118. The File band's genuinely free tokens
-        // after this one are 107-109, 114-117, 133-139, 143-149 and 153-159.
+        // after this one are 107, 114-117, 133-139, 143-149 and 153-159.
         command("file.stamp_collection", t::file_stamp_collection(), 119)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
@@ -522,6 +522,22 @@ pub(super) fn band() -> Vec<Command> {
         command("file.import_form_data", t::file_import_form_data(), 118)
             .with_icon("import-form-data")
             .enabled_when("doc.pages"),
+        // The QDF round trip, export then compile, for the form-data pair's
+        // reason. Both read the document and write a new file.
+        command(
+            "file.export_structure",
+            crate::text::structure::file_export_structure(),
+            108,
+        )
+        .with_icon("export")
+        .enabled_when("doc.pages"),
+        command(
+            "file.import_structure",
+            crate::text::structure::file_import_structure(),
+            109,
+        )
+        .with_icon("import-form-data")
+        .enabled_when("doc.pages"),
         //
         // This is the same taxonomy move `view.panel_forms` records one block
         // down, applied to the same line from the other side. Filling a form is

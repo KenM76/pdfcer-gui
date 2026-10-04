@@ -269,6 +269,8 @@ mod purge_passwords;
 /// other `Action` variant asks the document to
 /// change, and these two touch only shell state.
 pub mod selecting;
+/// File ▸ Export ▸ the QDF round trip: export for hand editing, compile back.
+mod structure;
 /// A tagged PDF's own structure for the Word and table exports, with its disclosure.
 use pdfcer_gui_base::taggedexport as tagged;
 

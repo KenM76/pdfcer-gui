@@ -128,11 +128,16 @@ A third variable rather than a shared one, on the argument
 pickers makes a run that opens a PDF and inserts a picture unwritable, and
 a run meant to test one quietly test both. Three verbs, three seams.
 
-### `static OPEN_QUEUE_POS`
+### `static OPEN_QUEUE_POS`, `static SAVE_QUEUE_POS`
 
 A property of the process, not of a document: the queue exists to
 provision a process with several documents, so its position must
 survive every one of them being opened and closed.
+
+`PDFCER_DIAG_SAVE_PATH` takes the same `;` queue, counted separately, for a
+check that writes several files in one process (the QDF round trip writes
+an export, then a compiled copy). Its env-answered trace also carries the
+picker's `title=`, which is how a check reads a count shown only there.
 
 ### `fn queued`
 

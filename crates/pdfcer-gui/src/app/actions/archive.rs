@@ -24,7 +24,7 @@ pub(super) fn stamp(doc: &mut OpenDoc, server: &str) {
         crate::diag::trace(|| format!("archive-refused reason={reason}")); // ui-text-exempt: diagnostic trace, never displayed
         crate::app::actions::record_note(epoch, sentence);
     };
-    if same_file(&target, &doc.path) {
+    if crate::app::files::same_file(&target, &doc.path) {
         return note("source", t::not_the_source().to_owned());
     }
     let Some(authority) = crate::sign::timestamp::authority_for(server) else {
@@ -70,12 +70,4 @@ pub(super) fn stamp(doc: &mut OpenDoc, server: &str) {
             &t::level(report.prior_signatures, report.dss_present),
         ),
     );
-}
-
-/// Whether two paths name one file, compared after resolving both.
-fn same_file(a: &std::path::Path, b: &std::path::Path) -> bool {
-    match (a.canonicalize(), b.canonicalize()) {
-        (Ok(a), Ok(b)) => a == b,
-        _ => a == b,
-    }
 }

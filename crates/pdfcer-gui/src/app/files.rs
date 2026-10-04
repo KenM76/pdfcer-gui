@@ -92,7 +92,7 @@ pub enum Picked {
 #[must_use]
 pub fn pick_document() -> Picked {
     if let Some(raw) = std::env::var_os(DIAG_OPEN_PATH) {
-        let answer = match queued(&raw) {
+        let answer = match queued(&raw, &OPEN_QUEUE_POS) {
             Some(answer) => answer,
             // Not a queue, so the single-valued seam answers exactly as it
             // always has. `from_env` cannot return `None` for a value that is
@@ -121,16 +121,22 @@ pub fn pick_document() -> Picked {
 thread_local! {
     /// How many answers this process has already taken from the open queue.
     static OPEN_QUEUE_POS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    /// How many answers this process has already taken from the save queue.
+    static SAVE_QUEUE_POS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
-/// Take this call's answer from a `;`-separated queue, one entry per call.
-fn queued(raw: &OsString) -> Option<Picked> {
+/// Take this call's answer from a `;`-separated queue, one entry per call,
+/// counting in `position`.
+fn queued(
+    raw: &OsString,
+    position: &'static std::thread::LocalKey<std::cell::Cell<usize>>,
+) -> Option<Picked> {
     let text = raw.to_string_lossy();
     if !text.contains(';') {
         return None;
     }
     let entries: Vec<&str> = text.split(';').collect();
-    let taken = OPEN_QUEUE_POS.with(|pos| {
+    let taken = position.with(|pos| {
         let index = pos.get();
         pos.set(index + 1);
         entries.get(index).copied()
@@ -661,11 +667,14 @@ pub fn pick_merge_sources() -> Vec<PathBuf> {
 /// **Ask where to write a new document.**
 #[must_use]
 pub fn pick_save_path(suggested: &std::path::Path, title: &str) -> Picked {
-    if let Some(answer) = from_env(std::env::var_os(DIAG_SAVE_PATH)) {
+    if let Some(raw) = std::env::var_os(DIAG_SAVE_PATH) {
+        let answer = queued(&raw, &SAVE_QUEUE_POS)
+            .or_else(|| from_env(Some(raw)))
+            .unwrap_or(Picked::Cancelled);
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "save-picked source=env answer={answer:?}"
+                "save-picked source=env answer={answer:?} title={title}"
             )
         });
         return answer;
@@ -694,6 +703,18 @@ fn native_save(suggested: &std::path::Path, title: &str) -> Picked {
     dialog.save_file().map_or(Picked::Cancelled, Picked::Path)
 }
 
+/// Whether two paths name one file, by canonical path when both exist and
+/// case-insensitively otherwise (Windows file names are).
+#[must_use]
+pub fn same_file(a: &std::path::Path, b: &std::path::Path) -> bool {
+    match (a.canonicalize(), b.canonicalize()) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => a
+            .to_string_lossy()
+            .eq_ignore_ascii_case(&b.to_string_lossy()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -711,26 +732,38 @@ mod tests {
     #[test]
     fn a_single_path_is_not_a_queue_and_never_runs_out() {
         let raw = OsString::from("C:/drawings/one.pdf");
-        assert_eq!(queued(&raw), None);
-        assert_eq!(queued(&raw), None);
+        assert_eq!(queued(&raw, &OPEN_QUEUE_POS), None);
+        assert_eq!(queued(&raw, &OPEN_QUEUE_POS), None);
     }
 
     /// Entries come back in order, one per call.
     #[test]
     fn a_joined_list_answers_one_document_per_call_in_order() {
         let raw = OsString::from("a.pdf;b.pdf;c.pdf");
-        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("a.pdf"))));
-        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("b.pdf"))));
-        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("c.pdf"))));
+        assert_eq!(
+            queued(&raw, &OPEN_QUEUE_POS),
+            Some(Picked::Path(PathBuf::from("a.pdf")))
+        );
+        assert_eq!(
+            queued(&raw, &OPEN_QUEUE_POS),
+            Some(Picked::Path(PathBuf::from("b.pdf")))
+        );
+        assert_eq!(
+            queued(&raw, &OPEN_QUEUE_POS),
+            Some(Picked::Path(PathBuf::from("c.pdf")))
+        );
     }
 
     /// Past the end the answer is a declined dialog, not a native picker.
     #[test]
     fn an_exhausted_queue_declines_rather_than_opening_a_dialog() {
         let raw = OsString::from("only.pdf;");
-        assert_eq!(queued(&raw), Some(Picked::Path(PathBuf::from("only.pdf"))));
-        assert_eq!(queued(&raw), Some(Picked::Cancelled));
-        assert_eq!(queued(&raw), Some(Picked::Cancelled));
+        assert_eq!(
+            queued(&raw, &OPEN_QUEUE_POS),
+            Some(Picked::Path(PathBuf::from("only.pdf")))
+        );
+        assert_eq!(queued(&raw, &OPEN_QUEUE_POS), Some(Picked::Cancelled));
+        assert_eq!(queued(&raw, &OPEN_QUEUE_POS), Some(Picked::Cancelled));
     }
 
     /// The handler token the ribbon would raise for `id`.

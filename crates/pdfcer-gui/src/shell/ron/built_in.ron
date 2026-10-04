@@ -84,6 +84,8 @@
                         Command(id: "file.stamp_collection"),
                         Command(id: "file.export_form_data"),
                         Command(id: "file.import_form_data"),
+                        Command(id: "file.export_structure"),
+                        Command(id: "file.import_structure"),
                         Command(id: "file.copy_page_text"),
                         Command(id: "file.copy_document_text"),
                     ],

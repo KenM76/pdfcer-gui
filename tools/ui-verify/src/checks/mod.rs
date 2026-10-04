@@ -78,6 +78,8 @@ pub mod measure_place_scripted;
 pub mod purge_passwords_scripted;
 /// Pages ▸ Split… writes the files its preview listed, by each rule.
 pub mod split_pages;
+/// File ▸ Export ▸ the QDF round trip, and its stale-base refusal.
+pub mod structure_round_trip;
 
 pub mod driving;
 

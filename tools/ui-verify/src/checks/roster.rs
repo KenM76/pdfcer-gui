@@ -445,6 +445,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(extract_pages_labels::ExtractPagesKeepsOrDropsTheLabels),
         Box::new(split_pages::SplitWritesTheFilesTheWindowListed),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
+        Box::new(structure_round_trip::HandEditsCompileBackAsAnAppendedUpdate),
         Box::new(evidence_scripted::ValidationEvidenceAddedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
         Box::new(labels_scripted::PageLabelsWithoutTheMouse),

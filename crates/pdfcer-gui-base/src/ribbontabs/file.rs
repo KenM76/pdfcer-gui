@@ -194,6 +194,8 @@ pub fn tab() -> Tab {
                     // they will do first. It is also the order of increasing
                     // consequence: exporting reads, importing writes.
                     command("file.import_form_data"),
+                    command("file.export_structure"),
+                    command("file.import_structure"),
                     command("file.copy_page_text"),
                     command("file.copy_document_text"),
                 ],

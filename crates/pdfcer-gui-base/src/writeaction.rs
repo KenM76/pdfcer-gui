@@ -138,6 +138,15 @@ pub enum WriteAction {
     /// **Write a copy holding no stored password-field value.** Carries
     /// nothing, for [`Self::FormData`]'s reason.
     PurgePasswords,
+    /// **Write a copy laid out for hand editing** (qpdf's QDF). Carries
+    /// nothing, for [`Self::FormData`]'s reason.
+    Structure,
+    /// **Compile a hand-edited copy back into an incremental update** written
+    /// to a file the operator picks. The open document is not changed.
+    CompileStructure {
+        /// The hand-edited copy, picked before the action was raised.
+        edited: std::path::PathBuf,
+    },
     /// **Write the already-serialised compacted copy to a file the operator
     /// picks.**
     ///

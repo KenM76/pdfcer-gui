@@ -73,7 +73,7 @@ pub fn plan(
     let mut existing = 0;
     for part in &parts {
         let target = request.folder.join(&part.name);
-        if source.is_some_and(|s| same_file(s, &target)) {
+        if source.is_some_and(|s| crate::app::files::same_file(s, &target)) {
             return Preview::Refused(t::would_overwrite_source(&part.name));
         }
         existing += usize::from(target.exists());
@@ -99,17 +99,6 @@ fn refusal(error: &PageOpError) -> String {
         PageOpError::NoSplitPoints => t::no_split_points().to_owned(),
         PageOpError::AmbiguousNames { first, second } => t::ambiguous_names(*first, *second),
         other => t::plan_failed(&other.to_string()),
-    }
-}
-
-/// Whether two paths name one file, by canonical path when both exist and
-/// case-insensitively otherwise (Windows file names are).
-fn same_file(a: &Path, b: &Path) -> bool {
-    match (a.canonicalize(), b.canonicalize()) {
-        (Ok(a), Ok(b)) => a == b,
-        _ => a
-            .to_string_lossy()
-            .eq_ignore_ascii_case(&b.to_string_lossy()),
     }
 }
 

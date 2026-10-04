@@ -1052,6 +1052,10 @@ impl PdfcerApp {
                 super::write::WriteAction::PurgePasswords => {
                     super::purge_passwords::purge(doc);
                 }
+                super::write::WriteAction::Structure => super::structure::export(doc),
+                super::write::WriteAction::CompileStructure { edited } => {
+                    super::structure::compile(doc, &edited);
+                }
                 // O169. The picker, the folder Acrobat scans, and the
                 // whole disclosure live in `super::stamps`. It changes no
                 // document: the ticked pages are extracted into a new one and

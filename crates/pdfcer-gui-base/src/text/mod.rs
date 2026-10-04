@@ -210,6 +210,8 @@ pub mod runmerge;
 pub mod scale;
 /// Every word Pages ▸ Split… shows, its preview and its receipt.
 pub mod split_pages;
+/// Every word the hand-editing round trip (QDF) shows.
+pub mod structure;
 /// Every word the tools say: the one-line status strip, the Properties
 /// panel's armed-tool section, and the canvas refusals.
 pub mod tool;
