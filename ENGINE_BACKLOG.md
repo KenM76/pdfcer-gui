@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **66 of 307** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `wanted` — a real gap — **67 of 308** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -70,6 +70,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **`/CropBox`/`/BleedBox`/`/TrimBox`/`/ArtBox` now resolve as their INTERSECTION with `/MediaBox`** — `Page::crop_box` is the effective box; `BoxResolution` per box | **wanted: the intersection is consumed, the disclosure is not.** <!--namesake:crop_box--> the field is read everywhere and is the effective box, so the shell no longer intersects it itself. <!--namesake:BoxResolution--> the shell's test fixtures construct `BoxResolution::Defaulted` because `Page` has no constructor (our request `G060`); no surface reads the variant. Owed: disclose a `Clipped` or `Unusable` crop box off-canvas in the page properties (R8b). The renderer reports the same fact per render as `Diagnostics::page_crop_box`; the page properties read the page, so that field has no reader here. Our request `G059`. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all, so a press or CAD export gets one overhang reported and three not. The engine's `FEATURES.md` records that the three boxes are left byte-identical without drawing that consequence. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here. |
+| **Compile a hand edit straight into the open session, and know which file a copy was exported from** — `pdfcer_core::edit::editable_source` (`EditSession::import_editable`, `CommandKind::ImportEditable`), `pdfcer_core::editable::source` (`EditableSource`), `pdfcer_core::editable::fingerprint`, `ImportReport`'s `ExportBase::Matches`/`ExportBase::Differs`/`ExportBase::Unrecorded` | **wanted; in the pin, not yet wired.** The engine's answer to G112 and G113. *Compile hand edits…* still serializes the session and reparses it, and its stale-copy guard is a process-wide memo that cannot see a copy exported in an earlier run. Wiring it means importing into the session as one undo entry and wording the base: `Differs` refuses as the memo does now, `Unrecorded` (a copy from before the header existed) is disclosed in the receipt, never silently accepted. Then the memo is deleted with its cause. |
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 
 ### Text
@@ -166,7 +167,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **5 of 307** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `blocked` — waiting on something named — **5 of 308** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -193,7 +194,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 307** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 308** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -204,7 +205,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 307** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `declined` — deliberately no surface — **16 of 308** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -246,7 +247,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **220 of 307** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **220 of 308** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
