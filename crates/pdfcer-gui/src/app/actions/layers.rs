@@ -1,4 +1,4 @@
-//! # `app::actions::layers` — `Action::Layer`: create, change, delete, merge and flatten layers
+//! # `app::actions::layers` — `Action::Layer`: create, change, delete, merge and flatten layers, and arrange the list
 //!
 //! Contract: each [`LayerAction`] is one `EditSession` verb through the edit
 //! funnel, so it is one undo entry and its sentence reaches the status bar.
@@ -11,7 +11,7 @@ use pdfcer_core::edit::{
     LayerFlattenOutcome, LayerMergeOutcome,
 };
 use pdfcer_core::object::ObjId;
-use pdfcer_gui_base::layeraction::LayerAction;
+use pdfcer_gui_base::layeraction::{LayerAction, OrderAction};
 
 use crate::app::state::OpenDoc;
 use crate::app::status::decline;
@@ -19,6 +19,11 @@ use crate::text::panels::layeredit::{self as t, LayerRefusal};
 
 /// Apply one layer act.
 pub(super) fn apply(doc: &mut OpenDoc, action: LayerAction) {
+    if let LayerAction::Order(OrderAction::Move(m)) = &action
+        && !super::layerorder::worth_moving(doc, m)
+    {
+        return;
+    }
     let label = action.label();
     super::apply::vector_edit(doc, label, 0, 1, |session| {
         run(session, action).inspect_err(word_refusal)
@@ -91,6 +96,7 @@ fn run(session: &mut EditSession, action: LayerAction) -> Result<Vec<String>, Ed
             });
             Ok(vec![t::flattened(&out)])
         }
+        LayerAction::Order(op) => super::layerorder::run(session, op),
     }
 }
 
@@ -114,6 +120,10 @@ fn word_refusal(error: &EditError) {
         EditError::LayerHasWidget { .. } => LayerRefusal::HasWidget,
         EditError::LayerContentNotRewritable { .. } => LayerRefusal::ContentNotRewritable,
         EditError::HiddenLayersNeedPolicy { .. } => LayerRefusal::HiddenNeedChoice,
+        EditError::NotALayerFolder { .. } => LayerRefusal::NotAFolder,
+        EditError::LayerOrderPathNotFound { .. } => LayerRefusal::OrderPathNotFound,
+        EditError::LayerOrderInexpressible => LayerRefusal::OrderInexpressible,
+        EditError::LayerOrderNotEditable { .. } => LayerRefusal::OrderNotEditable,
         _ => return,
     };
     decline::record_layer(why);

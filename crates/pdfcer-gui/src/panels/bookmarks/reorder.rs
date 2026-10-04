@@ -92,17 +92,29 @@ pub fn band_at(rect: Rect, y: f32) -> Band {
 /// The bottom of `rows[index]`'s **subtree**, as it was drawn.
 #[must_use]
 pub fn subtree_bottom(rows: &[VisibleRow], index: usize) -> f32 {
+    subtree_bottom_by(rows, index, |r| r.level, |r| r.rect.bottom())
+}
+
+/// [`subtree_bottom`] for any drawn tree: `depth` and `bottom` read a row.
+#[must_use]
+pub fn subtree_bottom_by<R>(
+    rows: &[R],
+    index: usize,
+    depth: impl Fn(&R) -> usize,
+    bottom: impl Fn(&R) -> f32,
+) -> f32 {
     let Some(anchor) = rows.get(index) else {
         return 0.0;
     };
-    let mut bottom = anchor.rect.bottom();
+    let level = depth(anchor);
+    let mut lowest = bottom(anchor);
     for row in &rows[index.saturating_add(1)..] {
-        if row.level <= anchor.level {
+        if depth(row) <= level {
             break;
         }
-        bottom = row.rect.bottom();
+        lowest = bottom(row);
     }
-    bottom
+    lowest
 }
 
 /// What releasing on a landing would do — the three answers the caret has to
@@ -318,16 +330,7 @@ pub fn paint_caret(ui: &Ui, target: Option<&DropTarget>) {
     let Some(target) = target else {
         return;
     };
-    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
-    let colour = match target.landing {
-        Landing::Lands => base,
-        Landing::NoChange => base.gamma_multiply(CARET_DIMMED),
-        Landing::OwnSubtree => base.gamma_multiply(CARET_REFUSED),
-    };
-    ui.painter().line_segment(
-        [target.caret.left_top(), target.caret.right_top()],
-        egui::Stroke::new(CARET_PTS, colour),
-    );
+    paint_line(ui, target.caret, target.landing);
     crate::diag::ui_rect_visible(REGION_CARET, target.caret.expand(CARET_PTS), ui.clip_rect());
     crate::diag::trace_changed(CARET_SLOT, || {
         format!(
@@ -339,6 +342,21 @@ pub fn paint_caret(ui: &Ui, target: Option<&DropTarget>) {
             target.caret,
         )
     });
+}
+
+/// The insertion line along `caret`'s top edge, at the strength `landing`
+/// earns; shared by every reorderable tree.
+pub fn paint_line(ui: &Ui, caret: Rect, landing: Landing) {
+    let base = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
+    let colour = match landing {
+        Landing::Lands => base,
+        Landing::NoChange => base.gamma_multiply(CARET_DIMMED),
+        Landing::OwnSubtree => base.gamma_multiply(CARET_REFUSED),
+    };
+    ui.painter().line_segment(
+        [caret.left_top(), caret.right_top()],
+        egui::Stroke::new(CARET_PTS, colour),
+    );
 }
 
 /// Trace slot for the once-per-change caret line.

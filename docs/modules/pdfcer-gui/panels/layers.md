@@ -1,10 +1,9 @@
 # `panels::layers` — the document's optional-content groups
 
-Salvaged from the old shell's `panels_structure.rs`. The **report** came
-across whole at S3; the **checkbox did not**, and at S4 it is back, with
-the `/RBGroups` radio behaviour and the Reset control that travelled with
-it. This module's header is therefore in two halves: what the panel says,
-and the history of the control it says it about.
+One row per layer with its visibility switch, arranged as the document's
+`/D /Order` arranges it — folders, sublayers, unlabelled groupings — while the
+search field is empty, and as a flat filtered list while it is not. The tree,
+its moves and its folders are in `layers/tree.md`.
 
 # What it shows that a name cannot
 
@@ -195,8 +194,8 @@ now, the same fix [`crate::panels::bookmarks`] made for its disabled rows.
 
 # The footer
 
-New layer and Flatten are in `panels::footer`'s collapsed **Add and edit
-layers** section. The reset row (drawn once the view differs from the
+New layer, New folder and Flatten are in `panels::footer`'s collapsed **Add
+and edit layers** section. The reset row (drawn once the view differs from the
 document) and the canvas-selection report (drawn after a canvas click) are in
 the footer's unconditional part: both appear in answer to a click, and above
 the list they would move every row. The search field and the static notes stay

@@ -1,19 +1,19 @@
 //! # `panels::layers` — the document's optional-content groups
 //!
-//! Salvaged from the old shell's `panels_structure.rs`. The **report** came
-//! across whole at S3; the **checkbox did not**, and at S4 it is back, with
-//! the `/RBGroups` radio behaviour and the Reset control that travelled with
-//! it. This module's header is therefore in two halves: what the panel says,
-//! and the history of the control it says it about.
+//! Contract: one row per layer with its visibility switch, arranged as the
+//! document's `/D /Order` arranges it (folders, sublayers, groupings) while
+//! the search field is empty and as a flat filtered list while it is not.
+//! Every disclosure about the document sits above the list; everything that
+//! appears in answer to a click sits in the footer. Nothing here writes the
+//! document: every control raises an [`Action`].
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/layers.md`.
 
-/// Only [`settle`] and the tests below need a set type of their own; the
-/// panel body works entirely with the one `OpenDoc::hidden_layers` hands it.
+/// Only [`settle`] and the tests below need a set type of their own.
 #[cfg(test)]
 use std::collections::BTreeSet;
 
-use pdfcer_core::layers::Layers;
+use pdfcer_core::layers::{Layer, Layers};
 use pdfcer_core::object::ObjId;
 
 use crate::app::actions::Action;
@@ -27,16 +27,10 @@ pub const REGION_TOOLS: &str = "layers.tools"; // ui-text-exempt: trace region n
 use crate::text::panels::layers as tl;
 use crate::text::panels::layersearch as ts;
 
-/// **Narrowing the list as you type** — the predicate, the counts, and the
-/// three decisions behind them. Its own file under R2, and because a rule in
-/// a file of its own can be swept with no window open.
+/// Narrowing the list as you type: the predicate and the counts.
 use pdfcer_gui_base::layersearch as search;
 
-/// **Which layer the current selection is on** — the five-valued answer, the
-/// join that folds a multi-object selection, and the two engine divergences
-/// building the page-object route found. Its header carries what `pdfcer-core`
-/// can and cannot say, with `file:line` for every symbol.
-///
+/// Which layer the current selection is on.
 pub(crate) mod highlight;
 
 /// New layer, and each row's Properties and Delete.
@@ -45,16 +39,24 @@ mod authoring;
 /// Merge a layer into another; Flatten all.
 mod combine;
 
+/// Dragging a layer or folder to a new place.
+mod drag;
+
+/// New folder, and the Rename folder window.
+mod folders;
+
+/// One layer's row.
+mod row;
+
+/// The list as the document's `/Order` arranges it.
+mod tree;
+
 /// The trace name of the search field's rectangle.
 // ui-text-exempt: trace region name, never displayed.
 const REGION_SEARCH: &str = "panel.layers.search";
 /// The trace name of the control that empties the search field.
 // ui-text-exempt: trace region name, never displayed.
 const REGION_SEARCH_CLEAR: &str = "panel.layers.search.clear";
-/// Where the last-scrolled-to layer is remembered, so the list is scrolled
-/// on the frame the selection changes and not on every frame after it.
-// ui-text-exempt: a memory key, never displayed.
-const SCROLL_MEMO: &str = "panel-layers-scrolled-to";
 
 /// Draw the Layers panel.
 pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
@@ -66,6 +68,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     if authoring {
         authoring::windows(ui.ctx(), actions);
         combine::windows(ui.ctx(), &read, actions);
+        folders::rename_window(ui.ctx(), actions);
     }
     if read.diagnostics.no_optional_content {
         ui.label(t::layers_none());
@@ -81,363 +84,45 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         }
         return;
     }
-    ui.label(t::layers_count(read.layers.len()));
-    ui.label(
-        egui::RichText::new(t::layers_session_only_note())
-            .small()
-            .weak(),
-    );
-
-    // The set the page is ACTUALLY drawn from — the operator's override if
-    // there is one, and otherwise the document's own answer. Every row's tick
-    // reads from this rather than from `visible_by_default`, or a checkbox
-    // would tick itself back the moment the panel repainted.
+    // The set the page is ACTUALLY drawn from: the operator's override if
+    // there is one, else the document's own. A tick read from
+    // `visible_by_default` would tick itself back on the next repaint.
     let effective_hidden = doc.hidden_layers();
-    // What the document asks for, resolved by the same function the renderer
-    // would have used. Held separately so the panel can say how far the two
-    // have diverged; see the module docs on why this beats counting clicks.
-    let document_hidden = pdfcer_core::annot::optional_content_default_off(&view);
     let differing = effective_hidden
-        .symmetric_difference(&document_hidden)
+        .symmetric_difference(&pdfcer_core::annot::optional_content_default_off(&view))
         .count();
-
-    // §8.11.4.4: some of these states are not the document's to state — a
-    // viewer recomputes them from the magnification. The rows below show
-    // what the document OPENS in, so a zoom-banded layer can read "shown"
-    // while its content is off the page. Said here rather than left to be
-    // discovered as a defect.
-    if read.diagnostics.auto_managed_groups > 0 {
-        ui.label(
-            egui::RichText::new(t::layers_auto_managed(read.diagnostics.auto_managed_groups))
-                .small(),
-        );
-    }
-    // **The search field**, and it sits BELOW the block of
-    // document-wide disclosures and ABOVE the list it filters.
-    //
-    // The order is the whole of the placement decision. Everything above it —
-    // the layer count, the session-only note, the override count and its
-    // Reset, the auto-managed line — describes **the document**, and none of
-    // it changes when the operator types. Everything below describes **the
-    // list**. Putting the field above those lines would place a control that
-    // narrows a view inside a block of statements about a file, and the first
-    // thing an operator would ask is whether the counts above it were now
-    // counting the filtered set. They are not.
-    //
-    // Drawn only when there is more than one layer —
-    // `search::MIN_LAYERS_FOR_SEARCH` carries that argument: a search over one
-    // row can only remove the row.
-    let total = read.layers.len();
-    let query = if total >= search::MIN_LAYERS_FOR_SEARCH {
-        ui.horizontal(|ui| {
-            let field = ui.add(
-                // escape-disposition: not-content — a filter over the layer list.
-                egui::TextEdit::singleline(state.layers_search_mut())
-                    .hint_text(ts::field_hint())
-                    .desired_width(f32::INFINITY),
-            );
-            crate::diag::ui_rect(REGION_SEARCH, field.rect);
-            field.on_hover_text(ts::field_tooltip());
-        });
-        // Read back AFTER the field is drawn, so this frame filters on what
-        // was just typed rather than on last frame's value — which is what
-        // makes "the list narrows as you type" literally true instead of one
-        // frame behind.
-        state.layers_search_mut().trim().to_owned()
-    } else {
-        // Not merely "draw no field": the stored query is emptied too.
-        // Without this, a document with sixteen layers filtered down to
-        // `A-ANNO`, followed by one with a single layer, would filter that
-        // single layer out through a box that is no longer on screen — a row
-        // missing with no visible cause and no control to undo it.
-        state.layers_search_mut().clear();
-        String::new()
-    };
-    let shown: Vec<&pdfcer_core::layers::Layer> = read
-        .layers
-        .iter()
-        .filter(|l| search::matches(&row_name(l), &query))
-        .collect();
-    // `Filtered::all` for the unfiltered case rather than a `hidden: 0`
-    // literal: the two are the same value and only one of them says which
-    // state it is.
-    let filtered = if query.is_empty() {
-        search::Filtered::all(total)
-    } else {
-        search::Filtered {
-            shown: shown.len(),
-            hidden: total - shown.len(),
-        }
-    };
-    // EVERY disclosure sits ABOVE the list, without exception — the rule
-    // `panels::comments` states and follows. A line under a list is a line an
-    // operator scrolls past.
-    // Two gates that agree, and they are not redundant: `is_narrowed` is the
-    // MODEL's answer to "did the query remove anything" and `narrowed` is the
-    // CATALOG's answer to "is there a sentence for that". Either alone would
-    // work today; both together mean a future change to one of them cannot
-    // silently start drawing a line on an unfiltered list.
-    if let Some(line) = ts::narrowed(filtered.shown, total).filter(|_| filtered.is_narrowed()) {
-        ui.label(egui::RichText::new(line).small());
-    }
-    if filtered.is_empty_because_of_the_query() {
-        // R9: an empty result is not a placeholder, and it still owes a
-        // sentence — because the operator can SEE that the document has
-        // layers, having been looking at them a moment ago. The sentence
-        // quotes their query back, which is the only way to be sure the
-        // search ran rather than the panel having failed.
-        ui.label(ts::none_matched(&query, total));
-        let clear = ui
-            .button(ts::clear_label())
-            .on_hover_text(ts::clear_tooltip());
-        crate::diag::ui_rect(REGION_SEARCH_CLEAR, clear.rect);
-        if clear.clicked() {
-            state.layers_search_mut().clear();
-        }
-        // Return before the scroll area. An empty `ScrollArea` still
-        // reserves and paints its region, so drawing one here would put a
-        // blank panel-coloured slab under the sentence — which reads as the
-        // list having failed to draw rather than as there being nothing in it.
+    document_lines(ui, &read);
+    let Some(query) = search_field(ui, &read, state) else {
         return;
-    }
-    // **Which layer the canvas selection is on** — the operator's
-    // *"selecting an object highlights that layer"*.
-    //
-    // Resolved ONCE per frame, before the list, because two things need it:
-    // the sentence below and the row emphasis inside the loop. Resolving it
-    // per row would ask the engine once per layer for an answer that does not
-    // vary by layer.
-    //
-    // Five-valued, and no two of the five render the same. See
-    // [`highlight`]'s header for the lattice and for the two engine
-    // divergences building the page-object route found.
+    };
     let membership = highlight::resolve(doc);
     let highlighted = membership.highlighted();
-
-    // **Where the answer's row sits relative to what is ON SCREEN**, which
-    // is not the same question as whether the document has such a layer.
-    //
-    // The panel draws `shown` — the search-filtered list — and a plate on a
-    // row the query has narrowed away is a plate nobody can see. That state is
-    // byte-identical, from the operator's chair, to the feature not working:
-    // they select an object and nothing lights up. It was silent until this
-    // block existed.
-    //
-    // Three outcomes, and the second and third have different remedies (clear
-    // the search; nothing, the document does not list the group), so they get
-    // different sentences rather than one hedge covering both.
-    let off_list_name = highlighted.and_then(|id| {
-        if shown.iter().any(|l| l.id == id) {
-            None
-        } else {
-            layer_name_for(&read, id)
-        }
-    });
-    let row = match (highlighted, off_list_name.as_deref()) {
-        (None, _) => tl::RowOfAnswer::NotAGroup,
-        (Some(_), Some(name)) => tl::RowOfAnswer::HiddenBySearch(name),
-        // On screen, or named by page content and absent from
-        // `/OCProperties` — `read_layers` reports the document's registered
-        // groups, so a group it does not know is `NotListed` by construction.
-        (Some(id), None) => {
-            if shown.iter().any(|l| l.id == id) {
-                tl::RowOfAnswer::OnScreen
-            } else {
-                tl::RowOfAnswer::NotListed
-            }
-        }
-    };
-    let report = tl::layer_selection_report(membership, row);
-    // **The operator's own finding, said back to him.** One path object on
-    // his drawing holds 1,194 subpaths across half a sheet, so *"this is on
-    // layer Grid"* is exact about a thing far larger than the circle he
-    // clicked. Stated as a count rather than as a hedge, and only when the
-    // number is greater than one — see
-    // [`crate::text::panels::layers::layer_selection_granularity`].
+    let report = selection_report(&read, &query, membership);
+    // One path object can hold a thousand subpaths, so "this is on layer
+    // Grid" is said with the count when it is more than one.
     let granularity = highlight::parts_in_selected_object(doc).map(tl::layer_selection_granularity);
     ui.separator();
 
-    // Collected while the read is borrowed, turned into actions after — the
-    // actions-not-mutations discipline, and the same shape
-    // `crate::panels::bookmarks` uses for its click.
-    let mut toggled: Option<(ObjId, bool)> = None;
-
+    let cx = row::RowCtx {
+        read: &read,
+        hidden: &effective_hidden,
+        highlighted,
+        authoring,
+    };
+    let mut toggled = None;
     egui::ScrollArea::vertical()
         .id_salt("layers-rows")
         .max_height(footer::list_height(ui, REGION_TOOLS))
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            for l in shown {
-                // An undeclared name shows as a placeholder, never as an
-                // invented one. `/Name` is Required (Table 98), so its
-                // absence is a real malformation and a synthesised "Layer 3"
-                // would disguise it as data from the file.
-                // The SAME function the search matches against — see
-                // [`row_name`]. Two spellings of "what this row is called"
-                // would let a layer be drawn under one name and searched
-                // under another, which is the one defect this feature can
-                // produce that the operator could not diagnose.
-                let name = row_name(l);
-                let effective = !effective_hidden.contains(&l.id);
-                let notes = row_caveats(&read, l, effective);
-                // **The highlight**, and it is a background PLATE rather
-                // than bolder or coloured text.
-                //
-                // Three reasons, and the first is a gate:
-                //
-                // 1. `RichText::strong()` is unusable in this application
-                //    (`DEFECTS.md` D11, `check-strong-text.sh`) — it resolves
-                //    to the ACCENT-FILLED widget foreground and would render
-                //    pale on the panel. Colouring the text instead would need
-                //    a role, and every text role in this theme is spoken for.
-                // 2. A row is not one widget. It is a padlock, a check box, a
-                //    state word and a name, and emphasis applied to "the row"
-                //    has to be applied to a rectangle rather than to a string
-                //    — otherwise the tick and the marker stay unemphasised and
-                //    the eye reads a highlighted NAME beside an ordinary row.
-                // 3. R84: never colour alone. A plate is a shape as well as a
-                //    tint, so it survives greyscale and colour-vision
-                //    deficiency, which a recoloured label does not.
-                //
-                // `selected_plate` and not the accent fill: this is the
-                // same role the Objects panel's selected row uses, so "the
-                // thing the canvas selection corresponds to" looks the same in
-                // both panels rather than being two inventions.
-                let is_highlighted = highlighted == Some(l.id);
-                let row = ui.scope(|ui| {
-                if is_highlighted {
-                    let plate = ui.available_rect_before_wrap();
-                    let plate = egui::Rect::from_min_size(
-                        plate.min,
-                        egui::vec2(plate.width(), ui.spacing().interact_size.y),
-                    );
-                    ui.painter().rect_filled(
-                        plate,
-                        ui.visuals().widgets.hovered.corner_radius,
-                        egui_shell::Theme::of(ui.ctx()).palette.selected_plate,
-                    );
-                }
-                ui.horizontal(|ui| {
-                    //
-                    // The comment above says this row's whole problem is that
-                    // it *looks broken* — a check box that will not move, with
-                    // the reason available only on hover. That was as far as
-                    // the fix could go: `on_disabled_hover_text` is the only
-                    // channel a disabled widget has, and a tooltip is a thing
-                    // the operator must already suspect something to go
-                    // looking for.
-                    //
-                    // ⇒ The padlock is the part that does not need suspecting.
-                    // It states the reason **before** the pointer arrives,
-                    // which is the difference between a control that is
-                    // explained and one that is explicable.
-                    //
-                    // Drawn only when `/Locked` is set (Table 101), never as
-                    // an open padlock on the unlocked rows. R9: an absent
-                    // condition renders NOTHING. A row of open padlocks would
-                    // be sixteen pictures saying "normal", which is noise the
-                    // eye then has to filter to find the one that matters —
-                    // and the one that matters is exactly what this is for.
-                    //
-                    // `text_muted`, not the accent. This is a STATEMENT
-                    // about the file, not a state of the application and not
-                    // something the operator did. An accented padlock would
-                    // read as "selected" or as a warning, and §12.5.3's
-                    // `/Locked` bit is neither — it is the producer's
-                    // recorded intent, as ordinary as the layer's name.
-                    if l.locked {
-                        let (rect, _) = ui.allocate_exact_size(
-                            egui::Vec2::splat(ui.spacing().icon_width),
-                            egui::Sense::hover(),
-                        );
-                        crate::icons::paint_icon(
-                            ui.painter(),
-                            crate::icons::Icon::Locked,
-                            rect,
-                            egui_shell::Theme::of(ui.ctx()).palette.text_muted,
-                            crate::icons::IconWeight::Regular,
-                        );
-                    }
-                    let mut want = effective;
-                    let cb = ui
-                        .add_enabled(!l.locked, egui::Checkbox::new(&mut want, ""))
-                        .on_hover_text(if l.locked {
-                            t::layer_locked_tooltip()
-                        } else {
-                            t::layer_toggle_tooltip()
-                        })
-                        .on_disabled_hover_text(t::layer_locked_tooltip());
-                    if cb.changed() {
-                        toggled = Some((l.id, want));
-                    }
-                    // The state as TEXT as well as a tick (R84): never
-                    // colour or a glyph alone, and it is what still says
-                    // which way the document itself asked when the two
-                    // disagree.
-                    ui.label(if effective {
-                        t::layer_visible_marker()
-                    } else {
-                        t::layer_hidden_marker()
-                    });
-                    // Every caveat that applies, hung off the name. Folded
-                    // rather than written as a chain of `if`s so that adding
-                    // one cannot leave the previous last line assigning to a
-                    // variable nothing reads — and so that the LIST is a pure
-                    // value this module can test.
-                    let label = ui.label(name.clone()).interact(egui::Sense::click());
-                    if authoring {
-                        authoring::row_menu(&label, &read, l, &name);
-                        authoring::publish_row(&name, label.rect);
-                    }
-                    let _row = notes
-                        .into_iter()
-                        .fold(label, |r, note| r.on_hover_text(note));
-                });
-                });
-                // **Scrolled into view**, and only on the frame the
-                // selection CHANGES to this layer — not every frame it is
-                // still on it.
-                //
-                // `scroll_to_rect` every frame would pin the list: the
-                // operator could not scroll away from the highlighted row to
-                // look at another one, because the next frame would drag them
-                // back. That is the same class of fight
-                // `dock::floatwin` documents for a position re-asserted every
-                // frame, one surface down.
-                //
-                // The comparison is against the LAST HIGHLIGHTED id rather
-                // than against a "selection changed" event, because there is
-                // no event: the panel is handed a document and works out the
-                // answer, so "changed" is something it has to remember. One
-                // `Option<ObjId>` in `egui::Memory`, keyed to this panel.
-                if is_highlighted {
-                    let key = egui::Id::new(SCROLL_MEMO);
-                    let last = ui.ctx().data(|d| d.get_temp::<ObjId>(key));
-                    if last != Some(l.id) {
-                        ui.ctx().data_mut(|d| d.insert_temp(key, l.id));
-                        ui.scroll_to_rect(row.response.rect, Some(egui::Align::Center));
-                    }
-                }
-                crate::diag::trace(|| {
-                    // `highlighted=` is what makes "selecting an object
-                    // highlights that layer" a DRIVABLE claim. Without it a
-                    // check can see that rows were drawn and cannot see which
-                    // one carries the plate, so the only assertion available
-                    // would be that *something* changed — which passes under a
-                    // plant that highlights a constant. It is per row, not one
-                    // summary line, so the check can also assert that exactly
-                    // one row is lit.
-                    format!(
-                        "layer-row name={:?} visible={effective} default={} locked={} registered={} intent_view={} highlighted={is_highlighted}",
-                        l.name, l.visible_by_default, l.locked, l.in_default_config, l.intent_view
-                    )
-                });
-            }
+            toggled = if query.is_empty() {
+                let tree = pdfcer_gui_base::layerorder::tree(&read.order);
+                tree::show(ui, &cx, &tree, actions)
+            } else {
+                flat(ui, &cx, &query)
+            };
         });
 
-    // Everything that appears in answer to a click — the reset row after a
-    // toggle, the selection report after a canvas click — is in the footer, so
-    // it grows the footer upward and never moves a row. See `panels::footer`.
     let mut reset = false;
     footer::show(
         ui,
@@ -461,6 +146,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         },
         authoring.then_some(|ui: &mut egui::Ui| {
             authoring::new_layer_row(ui, &read, actions);
+            folders::new_folder_row(ui, &read, actions);
             combine::flatten_button(ui, &read);
         }),
     );
@@ -472,8 +158,114 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     }
 }
 
-/// **What this layer's row is called** — the one spelling of it.
-fn row_name(l: &pdfcer_core::layers::Layer) -> String {
+/// The lines about the document as a whole, above the search field.
+fn document_lines(ui: &mut egui::Ui, read: &Layers) {
+    ui.label(t::layers_count(read.layers.len()));
+    ui.label(
+        egui::RichText::new(t::layers_session_only_note())
+            .small()
+            .weak(),
+    );
+    // §8.11.4.4: a viewer recomputes some states from the magnification, so
+    // a zoom-banded layer can read "shown" while its content is off the page.
+    if read.diagnostics.auto_managed_groups > 0 {
+        ui.label(
+            egui::RichText::new(t::layers_auto_managed(read.diagnostics.auto_managed_groups))
+                .small(),
+        );
+    }
+}
+
+/// The search field and the lines about what it narrowed. `None` when the
+/// query matched nothing: the sentence and its Clear button are drawn, and no
+/// list is (an empty scroll area paints a blank slab).
+fn search_field(ui: &mut egui::Ui, read: &Layers, state: &mut PanelsState) -> Option<String> {
+    let total = read.layers.len();
+    if total < search::MIN_LAYERS_FOR_SEARCH {
+        // The stored query is emptied too, or a query typed on another
+        // document would filter this one through a box that is not drawn.
+        state.layers_search_mut().clear();
+        return Some(String::new());
+    }
+    ui.horizontal(|ui| {
+        let field = ui.add(
+            // escape-disposition: not-content — a filter over the layer list.
+            egui::TextEdit::singleline(state.layers_search_mut())
+                .hint_text(ts::field_hint())
+                .desired_width(f32::INFINITY),
+        );
+        crate::diag::ui_rect(REGION_SEARCH, field.rect);
+        field.on_hover_text(ts::field_tooltip());
+    });
+    // Read back after the field is drawn, so this frame filters on what was
+    // just typed.
+    let query = state.layers_search_mut().trim().to_owned();
+    let shown = read
+        .layers
+        .iter()
+        .filter(|l| search::matches(&row_name(l), &query))
+        .count();
+    let filtered = if query.is_empty() {
+        search::Filtered::all(total)
+    } else {
+        search::Filtered {
+            shown,
+            hidden: total - shown,
+        }
+    };
+    if let Some(line) = ts::narrowed(filtered.shown, total).filter(|_| filtered.is_narrowed()) {
+        ui.label(egui::RichText::new(line).small());
+    }
+    if filtered.is_empty_because_of_the_query() {
+        ui.label(ts::none_matched(&query, total));
+        let clear = ui
+            .button(ts::clear_label())
+            .on_hover_text(ts::clear_tooltip());
+        crate::diag::ui_rect(REGION_SEARCH_CLEAR, clear.rect);
+        if clear.clicked() {
+            state.layers_search_mut().clear();
+        }
+        return None;
+    }
+    Some(query)
+}
+
+/// The sentence about the canvas selection's layer, if one is owed. A row
+/// the query has filtered away has a different remedy (clear the search)
+/// from a group the document does not list (none), so they are two answers.
+fn selection_report(read: &Layers, query: &str, m: highlight::Membership) -> Option<String> {
+    let highlighted = m.highlighted();
+    let filtered_away = highlighted
+        .and_then(|id| read.layers.iter().find(|l| l.id == id))
+        .map(row_name)
+        .filter(|name| !search::matches(name, query));
+    let row = match (highlighted, filtered_away.as_deref()) {
+        (None, _) => tl::RowOfAnswer::NotAGroup,
+        (Some(_), Some(name)) => tl::RowOfAnswer::HiddenBySearch(name),
+        (Some(id), None) if read.layers.iter().any(|l| l.id == id) => tl::RowOfAnswer::OnScreen,
+        (Some(_), None) => tl::RowOfAnswer::NotListed,
+    };
+    tl::layer_selection_report(m, row)
+}
+
+/// The filtered list: every matching layer, flat, with no moves.
+fn flat(ui: &mut egui::Ui, cx: &row::RowCtx<'_>, query: &str) -> Option<(ObjId, bool)> {
+    let mut toggled = None;
+    for l in cx
+        .read
+        .layers
+        .iter()
+        .filter(|l| search::matches(&row_name(l), query))
+    {
+        toggled = toggled.or(row::draw(ui, cx, l, |_| {}).toggled);
+    }
+    toggled
+}
+
+/// What this layer's row is called: the one spelling the row and the search
+/// both use. An undeclared `/Name` (Required, Table 98) shows as a
+/// placeholder, never an invented one.
+fn row_name(l: &Layer) -> String {
     if l.name_declared {
         l.name.clone()
     } else {

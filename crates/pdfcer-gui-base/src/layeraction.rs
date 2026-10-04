@@ -3,9 +3,12 @@
 //! Carried by `Action::Layer` from the Layers panel to
 //! `pdfcer_gui::app::actions::layers`, which calls the matching
 //! `EditSession` verb through the edit funnel. Each is one undo entry.
+//! [`OrderAction`] arranges the panel's list (`/D /Order`) and nothing else.
 
 use pdfcer_core::edit::{HiddenLayerPolicy, LayerContentPolicy, LayerEdit};
 use pdfcer_core::object::ObjId;
+
+use crate::layerorder::Move;
 
 /// One authoring act on the document's optional-content groups.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,6 +45,38 @@ pub enum LayerAction {
         /// What becomes of layers hidden when the document opens.
         hidden: HiddenLayerPolicy,
     },
+    /// A folder or a move in the panel's list.
+    Order(OrderAction),
+}
+
+/// One arrangement of the panel's list; paths are `layerorder` paths.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OrderAction {
+    /// `EditSession::add_layer_folder`: an empty folder before the child at
+    /// `index` of `parent`.
+    AddFolder {
+        /// The folder's parent.
+        parent: Vec<usize>,
+        /// Its slot among the parent's children.
+        index: usize,
+        /// Its label; never empty.
+        label: String,
+    },
+    /// `EditSession::rename_layer_folder`.
+    RenameFolder {
+        /// The folder.
+        at: Vec<usize>,
+        /// The new label.
+        label: String,
+    },
+    /// `EditSession::delete_layer_folder`: what it held takes its place.
+    DeleteFolder {
+        /// The folder.
+        at: Vec<usize>,
+    },
+    /// `EditSession::move_layer_node`, given in the tree as it is now and
+    /// resolved by `layerorder::engine_move`.
+    Move(Move),
 }
 
 impl LayerAction {
@@ -54,6 +89,10 @@ impl LayerAction {
             Self::Delete { .. } => "layer-delete",
             Self::Merge { .. } => "layer-merge",
             Self::Flatten { .. } => "layer-flatten",
+            Self::Order(OrderAction::AddFolder { .. }) => "layer-folder-add",
+            Self::Order(OrderAction::RenameFolder { .. }) => "layer-folder-rename",
+            Self::Order(OrderAction::DeleteFolder { .. }) => "layer-folder-remove",
+            Self::Order(OrderAction::Move(_)) => "layer-move",
         }
     }
 }

@@ -180,6 +180,8 @@ mod archive;
 mod evidence;
 /// Edit ▸ Forms ▸ Repair fonts.
 mod formfonts;
+/// Folders and moves in the Layers panel: `LayerAction::Order`.
+mod layerorder;
 /// Create, change and delete a layer: `Action::Layer`.
 mod layers;
 /// OCR text layers pdfcer wrote: the re-run policy and Remove OCR text.

@@ -588,6 +588,8 @@ pub mod forms_spotlight;
 pub mod layer_authoring;
 /// Merge a layer into another and flatten all, from the Layers panel.
 pub mod layer_combine;
+/// Folders and moves in the Layers panel's tree.
+pub mod layer_folders;
 /// Make a markup part of the page from its right-click menu.
 pub mod markup_flatten;
 pub mod password_fill;

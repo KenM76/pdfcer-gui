@@ -322,6 +322,144 @@ pub fn flattened(o: &LayerFlattenOutcome) -> String {
     line
 }
 
+/// The name field beside the New folder button, when empty.
+#[must_use]
+pub const fn new_folder_hint() -> &'static str {
+    "New folder name"
+}
+
+/// The button that creates a folder.
+#[must_use]
+pub const fn new_folder() -> &'static str {
+    "New folder"
+}
+
+/// Its tooltip.
+#[must_use]
+pub const fn new_folder_tooltip() -> &'static str {
+    "Add a folder at the bottom of the list, to group layers under. A folder only arranges this panel: it has no visibility of its own and hides nothing. Leave the name box empty to call it \u{201c}New folder\u{201d}."
+}
+
+/// The name a folder gets when the box is empty; `n` makes it unique.
+#[must_use]
+pub fn default_folder_name(n: usize) -> String {
+    if n <= 1 {
+        "New folder".to_owned()
+    } else {
+        format!("New folder {n}")
+    }
+}
+
+/// A folder row's tooltip.
+#[must_use]
+pub const fn folder_tooltip() -> &'static str {
+    "A folder groups layers in this panel only. It has no visibility of its own: show or hide the layers in it. Drag a layer onto it to file it here; right-click for more."
+}
+
+/// Row menu: one place earlier.
+#[must_use]
+pub const fn menu_move_up() -> &'static str {
+    "Move up"
+}
+
+/// Row menu: one place later.
+#[must_use]
+pub const fn menu_move_down() -> &'static str {
+    "Move down"
+}
+
+/// Row menu: out of the folder or layer holding the entry.
+#[must_use]
+pub fn menu_move_out(holder: &str) -> String {
+    format!("Move out of \u{201c}{holder}\u{201d}")
+}
+
+/// Row menu: out of an unlabelled group.
+#[must_use]
+pub const fn menu_move_out_of_group() -> &'static str {
+    "Move out of its group"
+}
+
+/// Row menu: the submenu of folders.
+#[must_use]
+pub const fn menu_move_into() -> &'static str {
+    "Move into folder"
+}
+
+/// Folder menu: rename.
+#[must_use]
+pub const fn menu_rename_folder() -> &'static str {
+    "Rename folder\u{2026}"
+}
+
+/// Folder menu: remove the folder, keeping what it holds.
+#[must_use]
+pub const fn menu_remove_folder() -> &'static str {
+    "Remove folder (keep its layers)"
+}
+
+/// The rename window's title.
+#[must_use]
+pub fn rename_folder_title(label: &str) -> String {
+    format!("Rename folder \u{201c}{label}\u{201d}")
+}
+
+/// Where an entry now sits: a folder or layer, and its place there.
+#[must_use]
+pub fn place_in(holder: &str, position: usize) -> String {
+    format!("in \u{201c}{holder}\u{201d}, position {position}")
+}
+
+/// Where an entry now sits: the top level.
+#[must_use]
+pub fn place_top(position: usize) -> String {
+    format!("at the outermost level of the list, position {position}")
+}
+
+/// Where an entry now sits: an unlabelled group.
+#[must_use]
+pub fn place_in_group(position: usize) -> String {
+    format!("in an unnamed group, position {position}")
+}
+
+/// The disclosure after a move.
+#[must_use]
+pub fn moved(name: &str, place: &str) -> String {
+    format!("\u{201c}{name}\u{201d} is now {place}.")
+}
+
+/// The disclosure after a folder is added.
+#[must_use]
+pub fn folder_added(label: &str, place: &str) -> String {
+    format!("Added the folder \u{201c}{label}\u{201d} {place}.")
+}
+
+/// The disclosure after a folder is renamed.
+#[must_use]
+pub fn folder_renamed(was: &str, now: &str) -> String {
+    format!("Renamed the folder \u{201c}{was}\u{201d} to \u{201c}{now}\u{201d}.")
+}
+
+/// The disclosure after a folder is removed.
+#[must_use]
+pub fn folder_removed(label: &str, held: usize) -> String {
+    match held {
+        0 => format!("Removed the empty folder \u{201c}{label}\u{201d}."),
+        1 => format!(
+            "Removed the folder \u{201c}{label}\u{201d}; the one entry it held is in its place. No layer was deleted."
+        ),
+        n => format!(
+            "Removed the folder \u{201c}{label}\u{201d}; the {n} entries it held are in its place. No layer was deleted."
+        ),
+    }
+}
+
+/// A folder written directly after a layer (`LayerOrderOutcome::follows_layer`).
+#[must_use]
+pub const fn folder_follows_layer() -> &'static str {
+    "The folder now comes straight after a layer, a placement the PDF standard leaves open: pdfcer shows it beside that layer, but another reader may show it under the layer."
+}
+
 /// Why a layer edit wrote nothing — the status-bar decline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LayerRefusal {
@@ -338,6 +476,16 @@ pub enum LayerRefusal {
     /// `EditError::HiddenLayersNeedPolicy`: a flatten with hidden layers and
     /// no choice made about them.
     HiddenNeedChoice,
+    /// `EditError::NotALayerFolder`.
+    NotAFolder,
+    /// `EditError::LayerOrderPathNotFound`.
+    OrderPathNotFound,
+    /// `EditError::LayerOrderInexpressible`.
+    OrderInexpressible,
+    /// `EditError::LayerOrderNotEditable`.
+    OrderNotEditable,
+    /// A move onto the entry itself or into something inside it.
+    IntoItself,
 }
 
 impl LayerRefusal {
@@ -361,6 +509,17 @@ impl LayerRefusal {
             Self::HiddenNeedChoice => {
                 "Some layers start hidden. Choose whether to remove or show what they draw. Nothing was flattened."
             }
+            Self::NotAFolder => "That entry is a layer, not a folder, so nothing was changed.",
+            Self::OrderPathNotFound => {
+                "That entry is no longer where it was in the list, so nothing was changed."
+            }
+            Self::OrderInexpressible => {
+                "The layer list cannot hold that arrangement without regrouping other entries, so nothing was moved. A folder cannot be the first entry under a layer."
+            }
+            Self::OrderNotEditable => {
+                "This document's layer list cannot be rearranged safely, so nothing was changed."
+            }
+            Self::IntoItself => "An entry cannot go inside itself, so nothing was moved.",
         }
     }
 }
@@ -373,6 +532,8 @@ mod tests {
     fn default_names_are_unique_and_the_first_is_plain() {
         assert_eq!(default_name(1), "New layer");
         assert_eq!(default_name(3), "New layer 3");
+        assert_eq!(default_folder_name(1), "New folder");
+        assert_eq!(default_folder_name(2), "New folder 2");
     }
 
     #[test]

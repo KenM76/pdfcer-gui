@@ -45,13 +45,46 @@ pub(super) fn enabled(ctx: &egui::Context) -> bool {
     crate::canvas::tool::capabilities(ctx).edit_content
 }
 
+/// The words and regions of one name-box-and-button row.
+pub(super) struct NameRow {
+    /// Where the half-typed name is kept between frames.
+    pub key: &'static str,
+    pub region_name: &'static str,
+    pub region_button: &'static str,
+    pub hint: &'static str,
+    pub button: &'static str,
+    pub tooltip: &'static str,
+}
+
 /// The name field and New layer button.
 pub(super) fn new_layer_row(ui: &mut egui::Ui, read: &Layers, actions: &mut Vec<Action>) {
-    let key = egui::Id::new(NEW_NAME_KEY);
+    let words = NameRow {
+        key: NEW_NAME_KEY,
+        region_name: REGION_NEW_NAME,
+        region_button: REGION_NEW,
+        hint: t::new_name_hint(),
+        button: t::new_layer(),
+        tooltip: t::new_layer_tooltip(),
+    };
+    if let Some(typed) = name_row(ui, &words) {
+        let name = if typed.is_empty() {
+            unused_default(read)
+        } else {
+            typed
+        };
+        actions.push(Action::Layer(LayerAction::Add { name }));
+    }
+}
+
+/// A name field and a button; the trimmed name (perhaps empty) when the
+/// button is pressed or Enter is struck in the field.
+pub(super) fn name_row(ui: &mut egui::Ui, w: &NameRow) -> Option<String> {
+    let key = egui::Id::new(w.key);
     let mut name: String = ui.ctx().data(|d| d.get_temp(key)).unwrap_or_default();
+    let mut pressed = None;
     ui.horizontal(|ui| {
         // The field gives up width so the button is never cut off by a narrow panel.
-        let button_w = egui::WidgetText::from(t::new_layer())
+        let button_w = egui::WidgetText::from(w.button)
             .into_galley(
                 ui,
                 Some(egui::TextWrapMode::Extend),
@@ -64,29 +97,22 @@ pub(super) fn new_layer_row(ui: &mut egui::Ui, read: &Layers, actions: &mut Vec<
         let field_w = (ui.available_width() - button_w - 2.0 * ui.spacing().item_spacing.x)
             .clamp(60.0, 140.0);
         let field = ui.add(
-            // escape-disposition: not-content — a layer name, stored as a text string.
+            // escape-disposition: not-content — a layer or folder name, stored as a text string.
             egui::TextEdit::singleline(&mut name)
-                .hint_text(t::new_name_hint())
+                .hint_text(w.hint)
                 .desired_width(field_w),
         );
-        crate::diag::ui_rect(REGION_NEW_NAME, field.rect);
+        crate::diag::ui_rect(w.region_name, field.rect);
         let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-        let button = ui
-            .button(t::new_layer())
-            .on_hover_text(t::new_layer_tooltip());
-        crate::diag::ui_rect(REGION_NEW, button.rect);
+        let button = ui.button(w.button).on_hover_text(w.tooltip);
+        crate::diag::ui_rect(w.region_button, button.rect);
         if button.clicked() || enter {
-            let typed = name.trim();
-            let name_to_use = if typed.is_empty() {
-                unused_default(read)
-            } else {
-                typed.to_owned()
-            };
-            actions.push(Action::Layer(LayerAction::Add { name: name_to_use }));
+            pressed = Some(name.trim().to_owned());
             name.clear();
         }
     });
     ui.ctx().data_mut(|d| d.insert_temp(key, name));
+    pressed
 }
 
 /// The first default name no layer already has.
@@ -115,7 +141,13 @@ pub(super) fn publish_keyed(prefix: &str, name: &str, rect: egui::Rect) {
 }
 
 /// Attach the row's right-click menu to `response`, the row's name label.
-pub(super) fn row_menu(response: &egui::Response, read: &Layers, l: &Layer, name: &str) {
+pub(super) fn row_menu(
+    response: &egui::Response,
+    read: &Layers,
+    l: &Layer,
+    name: &str,
+    menu_extra: impl FnOnce(&mut egui::Ui),
+) {
     response.context_menu(|ui| {
         let props = ui.button(t::menu_properties());
         crate::diag::ui_rect(REGION_MENU_PROPS, props.rect);
@@ -143,6 +175,7 @@ pub(super) fn row_menu(response: &egui::Response, read: &Layers, l: &Layer, name
             ui.close();
         }
         super::combine::menu_item(ui, read, l, name);
+        menu_extra(ui);
     });
 }
 

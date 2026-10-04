@@ -532,6 +532,9 @@ pub mod fieldaction;
 /// The verbs that author a layer.
 pub mod layeraction;
 
+/// The Layers panel's tree, and where a move in it puts an entry.
+pub mod layerorder;
+
 /// What the form-field placement dialog collects and remembers.
 pub mod formdraft;
 
