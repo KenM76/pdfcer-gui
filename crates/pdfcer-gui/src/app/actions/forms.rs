@@ -18,6 +18,8 @@ pub mod groups;
 /// **Putting a copied form field back** — `EditSession::paste_field`. Its
 /// header carries why the shell does almost nothing in it any more.
 mod paste;
+/// **A field's format, validate and calculate scripts.**
+mod scripts;
 /// **Verbs about the BOX rather than the field** — rotation today, and the
 /// natural home for the next one. A field's identity and a widget's placement
 /// are two subjects.
@@ -72,6 +74,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
             super::buttonicon::pick(doc, &field, widget);
         }
         FieldAction::DeleteField { field } => delete::field(doc, &field),
+        FieldAction::SetScript { field, edit } => scripts::set(doc, &field, *edit),
         FieldAction::MoveWidget {
             field,
             widget,

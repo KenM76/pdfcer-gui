@@ -338,6 +338,8 @@ pub mod export_keeptext;
 /// not a refusal: the paste worked, and the sentence exists because part of the
 /// field could not travel and the operator cannot see which part.
 pub mod fieldclip;
+/// The words for a form field's format, validate and calculate scripts.
+pub mod fieldscripts;
 /// What the font-donor scan says when it skips a file — five sentences, all
 /// about something that did not happen. See its header for why a skip is worth
 /// a sentence.

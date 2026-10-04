@@ -200,6 +200,12 @@ pub enum FieldAction {
         /// Which placement, indexing `Field::widgets`.
         widget: usize,
     },
+    /// **Set or clear one of a text or drop-down field's scripts.** Raised by
+    /// `panels::properties::fieldscripts`. Boxed: a helper is large.
+    SetScript {
+        field: String,
+        edit: Box<crate::fieldscript::ScriptEdit>,
+    },
     /// **Delete the selected field, with every widget it draws.**
     ///
     /// Distinct from [`Self::DeleteWidget`] and the distinction is not a

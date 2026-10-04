@@ -528,6 +528,8 @@ pub mod formedit;
 
 /// The verbs whose subject is a form field.
 pub mod fieldaction;
+/// A form field's format, validate and calculate scripts, as drafts.
+pub mod fieldscript;
 
 /// The verbs that author a layer.
 pub mod layeraction;

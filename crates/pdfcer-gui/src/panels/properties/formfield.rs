@@ -152,6 +152,8 @@ pub fn section(
         actions,
     );
     ui.add_space(6.0);
+    super::fieldscripts::section(ui, doc, &form, field, actions);
+    ui.add_space(6.0);
     delete_row(ui, field, &selected, delete_refused, actions);
     ui.add_space(6.0);
     // What is left out of reach, and it is now the WIDGET half rather than

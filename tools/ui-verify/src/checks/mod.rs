@@ -589,6 +589,8 @@ pub mod attach_file;
 pub mod attach_sound;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
+/// A text field calculated from others and given a range, from Properties.
+pub mod field_scripts;
 pub mod forms_spotlight;
 /// Mark an insertion with a caret from Markup.
 pub mod insert_text;

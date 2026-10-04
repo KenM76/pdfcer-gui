@@ -41,6 +41,8 @@ pub mod face;
 /// `EditSession::edit_field`. See its header for the sentence it deletes and
 /// for the field-vs-widget scope rule.
 pub mod fieldedit;
+/// A text or drop-down field's format, validate and calculate scripts.
+pub mod fieldscripts;
 pub mod formfield;
 pub mod geometry;
 // The document's own properties are `crate::panels::docprops`, a panel of
