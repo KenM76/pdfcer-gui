@@ -52,7 +52,7 @@ channel: a reply is an input to *how* a thing is built, never to *which*. Each
 row's argument is in `OPERATOR_REQUESTS.md`, which **only Ken closes**; the open
 set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
-**Current queue (coordinator's order).** O284 items 1 to 7 are committed, each driven and falsified; item 7 is driven to the clipboard's door (`copy_as_vector_without_the_mouse`), and the Windows placement and the Word paste wait for a free machine. O284's not-offered rows (JSON, QDF) are in FEATURES' shell-only backlog. O285 item 1, SVG and EMF placed as vector artwork through Insert image and a drop, is committed and driven (`insert_image_places_a_drawing`). Next: O285 item 2 (image stamps as real stamps, and button icons), then scale_pages fit/fill, bold/italic off, then split per the operator ruling recorded in O285 and ENGINE_BACKLOG. The pin is at the v0.76.0 tag, which carries G100 (place a PDF page as content), G106 (`ImportedImage::from_rgba8`), G103/G104 (coloured 3D) and G105 (saved views); none is wired yet.
+**Current queue (coordinator's order).** O284 items 1 to 7 are committed, each driven and falsified; item 7 is driven to the clipboard's door (`copy_as_vector_without_the_mouse`), and the Windows placement and the Word paste wait for a free machine. O284's not-offered rows (JSON, QDF) are in FEATURES' shell-only backlog. O285 item 1, SVG and EMF placed as vector artwork through Insert image and a drop, is committed and driven (`insert_image_places_a_drawing`). O285 item 2 is committed and driven: a picture pasted or dropped in Review is an `add_image_stamp` comment (signed, dated, pen opacity, upright on a rotated page), a drawing dropped in Review an `add_svg_stamp`/`add_emf_stamp` (G107 for its options), and a push button's Properties set, remove and position its icon (`a_copied_picture_pastes_as_a_stamp_in_review`, `a_dropped_picture_stamps_in_review`, `a_push_button_takes_a_picture`; G108 filed). Still owed from item 2: a picture pasted onto a selected push button. Never call `capture::window_to_png` in an off-screen drive: it raises the window and grabs the desktop. Next: scale_pages fit/fill, bold/italic off, then split per the operator ruling recorded in O285 and ENGINE_BACKLOG. The pin is at the v0.76.0 tag, which carries G100 (place a PDF page as content), G106 (`ImportedImage::from_rgba8`), G103/G104 (coloured 3D) and G105 (saved views); none is wired yet.
 
 **Start here on `continue`.** The release tree `0a56b608` (engine v0.72.0,
 `35769c3b`) was published to OneDrive and GitHub as `v0.5.0-dev.20261002.1`,
@@ -81,8 +81,7 @@ Measure: `ui-verify --no-input --check a_picture_copied_in_another_program_paste
 --check the_clipboard_becomes_a_new_pdf_or_pages_after_this_one`; the second
 posts key messages to the launched window only.
 The check writes the real clipboard; `ClipGuard` snapshots it and restores it
-only if nothing else wrote it meanwhile. In Review a clipboard picture becomes a custom stamp made from a temporary
-one-page PDF (`blank::picture_page`) until G095 `add_image_stamp` lands.
+only if nothing else wrote it meanwhile. In Review a clipboard picture becomes an `add_image_stamp` comment.
 File ▸ New from clipboard and Pages ▸ Insert from clipboard are
 `app::dispatch::ospaste::pages`. Measure ▸ Area (O280) sits beside Perimeter
 and a closed perimeter ce dimension switches between perimeter and area

@@ -164,3 +164,4 @@
 - [Read a passing check's trace](feedback_read_passing_trace.md) — the receipt said page 2 while the index oracle passed.
 - [Push only with a release](feedback_push_only_with_release.md) — commit locally; main goes to origin only inside an engine-triggered release.
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
+- [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — window_to_png raises + screen-grabs; photographed SolidWorks off-screen.

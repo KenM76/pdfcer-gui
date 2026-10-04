@@ -52,12 +52,6 @@ impl OsPasteRefusal {
     }
 }
 
-/// The name a pasted picture's stamp carries.
-#[must_use]
-pub const fn pasted_picture() -> &'static str {
-    "Pasted picture"
-}
-
 /// The name a pasted drawing's stamp carries.
 #[must_use]
 pub const fn pasted_drawing() -> &'static str {

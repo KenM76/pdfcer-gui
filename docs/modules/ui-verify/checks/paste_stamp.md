@@ -19,13 +19,14 @@ restored afterwards.
 
 | step | requires |
 |---|---|
-| 1 | a `clip-pasted kind=image as=stamp` line, 48×24 pt within 0.5, centred on the pointer (`osp::lands`), then a new `custom-stamp-placed` line |
+| 1 | a `clip-pasted kind=image as=stamp` line, 48×24 pt within 0.5, centred on the pointer (`osp::lands`), then a new `picture-stamp-placed` line |
 | 2 | a new `undo-applied` line |
-| 3 | a second `as=stamp` line of the same size and another `custom-stamp-placed` |
+| 3 | a second `as=stamp` line of the same size and another `picture-stamp-placed` |
 | 4 | no new `clip-pasted` line and a `command-declined id=edit.paste` |
 
 ## Falsification
 
 Placing the picture as page content in Review (the Edit branch) traces
 `as=content` and fails step 1. Dropping the `rect_at` centring fails
-`osp::lands`.
+`osp::lands`. Making `actions::picture::stamp` return before its edit traces
+no `picture-stamp-placed` and fails step 1.

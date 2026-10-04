@@ -446,11 +446,11 @@ fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::R
     }
 }
 
-/// **Write the note on an annotation that already exists** — `/Contents`, and
-/// conditionally `/T` and `/M` — as one undoable command.
-pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<&str>) {
-    // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`,
-    // which is what keeps a future field a non-breaking addition for us.
+/// `text` as a note signed by `author` (none when blank) and dated now in UTC
+/// (none when the clock is before 1970). `/T` and `/M` are reachable only
+/// through a note, so a mark with no words still passes an empty one.
+pub(super) fn signed_note(text: &str, author: Option<&str>) -> pdfcer_core::edit::MarkupNote {
+    // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`.
     let mut note = pdfcer_core::edit::MarkupNote::new(text);
     if let Some(author) = author.map(str::trim).filter(|a| !a.is_empty()) {
         note = note.by(author);
@@ -458,6 +458,13 @@ pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<
     if let Some(stamp) = crate::app::clock::pdf_date_utc() {
         note = note.at(stamp);
     }
+    note
+}
+
+/// **Write the note on an annotation that already exists** — `/Contents`, and
+/// conditionally `/T` and `/M` — as one undoable command.
+pub(super) fn set_note(doc: &mut OpenDoc, id: ObjId, text: &str, author: Option<&str>) {
+    let note = signed_note(text, author);
     super::apply::vector_edit(doc, "set-markup-note", 0, 1, |session| {
         session.set_markup_note(id, &note).map(|change| {
             crate::diag::trace(|| {
@@ -608,15 +615,7 @@ pub(super) fn clear_note(doc: &mut OpenDoc, id: ObjId) {
 
 /// **Answer a comment** — `EditSession::add_reply`, §12.5.6.2 Table 170.
 pub(super) fn add_reply(doc: &mut OpenDoc, parent: ObjId, text: &str, author: Option<&str>) {
-    // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`, and
-    // the same shape `set_note` uses two screens up.
-    let mut note = pdfcer_core::edit::MarkupNote::new(text);
-    if let Some(author) = author.map(str::trim).filter(|a| !a.is_empty()) {
-        note = note.by(author);
-    }
-    if let Some(stamp) = crate::app::clock::pdf_date_utc() {
-        note = note.at(stamp);
-    }
+    let note = signed_note(text, author);
     super::apply::vector_edit(doc, "add-reply", 0, 1, |session| {
         session.add_reply(parent, &note).map(|added| {
             crate::diag::trace(|| {

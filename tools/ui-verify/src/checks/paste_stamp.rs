@@ -8,9 +8,9 @@
 //! bitmap at 96 pixels per inch, which is 48×24 pt.
 //!
 //! Oracles: in Review a paste traces `clip-pasted kind=image as=stamp` with a
-//! 48×24 pt rectangle centred on the pointer, then `custom-stamp-placed`, and
+//! 48×24 pt rectangle centred on the pointer, then `picture-stamp-placed`, and
 //! Ctrl+Z traces `undo-applied`; the ribbon command traces a second
-//! `as=stamp` line of the same size and another `custom-stamp-placed`; in Read
+//! `as=stamp` line of the same size and another `picture-stamp-placed`; in Read
 //! a paste traces no `clip-pasted` line and a `command-declined id=edit.paste`.
 
 use super::os_image_paste::{self as osp, ClipGuard};
@@ -24,7 +24,7 @@ use crate::report::CheckReport;
 use crate::sys;
 
 const STEM: &str = "paste-stamp";
-const PLACED: &str = "custom-stamp-placed";
+const PLACED: &str = "picture-stamp-placed";
 const DECLINED: &str = "command-declined";
 const UNDONE: &str = "undo-applied";
 const UI_RECT: &str = "ui-rect";
@@ -94,7 +94,7 @@ fn switch(session: &Session, pointer: &ScriptedPointer, digit: &str) -> Result<(
 }
 
 /// The `n`th `clip-pasted` line's rectangle, required to be a stamp of
-/// [`SIZE`], and a `custom-stamp-placed` line after it.
+/// [`SIZE`], and a `picture-stamp-placed` line after it.
 fn stamped(
     session: &Session,
     n: usize,

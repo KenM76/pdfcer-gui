@@ -315,8 +315,8 @@ pub enum ModeRefusal {
     /// `edit.paste` with **a drawing copied from a PDF** on the clipboard, in a
     /// mode that authors no markup.
     PasteDrawing,
-    /// A picture **dropped** on the page, in a mode that does not change page
-    /// content.
+    /// A picture **dropped** on the page, in a mode that adds neither content
+    /// nor comments.
     DropPicture,
     /// `edit.cut` over **page content**, in a mode that does not change it.
     CutContent,
@@ -370,7 +370,7 @@ impl ModeRefusal {
                 "The clipboard holds a drawing copied from a PDF, and this mode adds nothing to the page. Switch to Review or Edit to paste it as a stamp."
             }
             Self::DropPicture => {
-                "A dropped picture goes onto the page, and this mode does not change what is on the page. Switch to Edit and drop it again."
+                "A dropped picture goes onto the page as content in Edit or as a stamp in Review, and this mode adds nothing to the page. Switch to Edit or Review and drop it again."
             }
             Self::CutContent => {
                 "That is page content, and this mode does not change what is on the page. Nothing has been removed — switch to Edit to cut it."
@@ -492,6 +492,7 @@ mod tests {
             (ModeRefusal::PasteDrawing, edit),
             (ModeRefusal::PasteDrawing, review),
             (ModeRefusal::DropPicture, edit),
+            (ModeRefusal::DropPicture, review),
             (ModeRefusal::CutContent, edit),
             (ModeRefusal::CutMarkup, review),
             (ModeRefusal::CutField, edit),

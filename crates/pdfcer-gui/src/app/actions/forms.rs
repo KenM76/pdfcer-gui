@@ -68,6 +68,9 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
         FieldAction::SetButtonAction { field, action } => {
             set_button_action(doc, &field, *action);
         }
+        FieldAction::PickButtonIcon { field, widget } => {
+            super::buttonicon::pick(doc, &field, widget);
+        }
         FieldAction::DeleteField { field } => delete::field(doc, &field),
         FieldAction::MoveWidget {
             field,

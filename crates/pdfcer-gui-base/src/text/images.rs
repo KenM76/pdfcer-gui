@@ -402,6 +402,13 @@ pub fn drawing_disclosures(distorted: bool, notes: Option<&str>) -> Vec<String> 
     out
 }
 
+/// A drawing placed as a stamp, when the operator had set an author name or
+/// an opacity the engine's drawing-stamp verb cannot take.
+#[must_use]
+pub const fn drawing_stamp_unsigned() -> &'static str {
+    "A drawing's stamp carries no author name, date or opacity yet, so this one is unsigned and opaque."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -106,9 +106,8 @@ impl Picture {
 }
 
 #[cfg(test)]
+#[cfg(feature = "svg-import")]
 mod tests {
-    #![cfg(feature = "svg-import")]
-
     use super::*;
 
     const SVG: &[u8] = br#"<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">

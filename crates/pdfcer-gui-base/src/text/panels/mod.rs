@@ -19,6 +19,8 @@ pub mod attachments;
 /// The words for **moving** a bookmark and for **expanding or collapsing**
 /// one — `pdfcer-core` `Pass 161.0`'s two verbs.
 pub mod bookmarks;
+/// A push button's picture and where its caption sits beside it.
+pub mod buttonicon;
 pub mod comments;
 /// The ce-dimension properties section — the bottom tier of the style cascade
 /// made reachable, with the tier each value came from named beside it.

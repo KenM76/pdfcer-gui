@@ -32,7 +32,8 @@ of them tells the operator anything.
 | **one PDF alone**, with a document open | ask: open it (the default, Enter), insert all its pages after the page on screen, or place its first page as artwork at the drop point — see `dialogs/drop_pdf.md`; with neither of the last two offered by the mode, or no readable page, it opens |
 | a **raster image** (png/jpg/bmp/gif/tif) with a document open | place it at the drop point at its natural size, as one undoable edit; later pictures in the same drop cascade one `CASCADE_PT` step down and right |
 | the same, with **Alt** held | open the placement window for the first picture, the one `edit.insert_image` opens |
-| the same, in a mode that does not change page content | refuse, naming Edit |
+| the same, in a mode that authors comments but not content (Review) | place it as a `/Stamp` comment at the same rectangle, through `Action::StampPicture` — see `actions/picture.md`; the `image-dropped` line carries `as=stamp` |
+| the same, in a mode that adds neither (Read) | refuse, naming Edit and Review |
 | a raster image with **no** document open | say so, and say what to do about it |
 | a **text file** (`.txt`) with a document open | set it as new pages directly after the page on screen, as File ▸ Import text as pages does with its controls untouched; several keep their drop order, and an empty one is the engine's refusal |
 | a **WebP** | say how to convert it |

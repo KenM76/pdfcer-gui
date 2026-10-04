@@ -810,6 +810,17 @@ pub enum Action {
         /// The imported picture.
         image: std::sync::Arc<crate::picture::Picture>,
     },
+    /// **Place a picture as a `/Stamp` comment**, signed and dated, turned
+    /// upright on a rotated page. Raised where the mode authors markup but
+    /// not content: a paste, Paste picture as stamp, and a drop.
+    StampPicture {
+        /// The 0-based page.
+        page: usize,
+        /// The stamp's `/Rect`, in PDF user space.
+        rect: pdfcer_core::page_tree::Rect,
+        /// The imported picture.
+        image: std::sync::Arc<crate::picture::Picture>,
+    },
     /// **Read this document's bytes again under the OTHER reading of a
     /// key the file names twice** — the operator's intervention in a parse
     /// decision.

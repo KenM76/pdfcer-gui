@@ -123,6 +123,7 @@ pub fn section(
     visibility_row(ui, widget, fqn, widget_index, actions);
     ui.add_space(4.0);
     caption_row(ui, draft, actions, fqn, widget_index);
+    super::buttonicon::rows(ui, field, widget, fqn, widget_index, actions);
 
     crate::diag::ui_rect(REGION, ui.min_rect());
     true

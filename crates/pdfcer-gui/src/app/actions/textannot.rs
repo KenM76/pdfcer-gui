@@ -153,25 +153,13 @@ pub(super) fn commit(
     // labelled `Z` was the one option ruled out. `None` means the system clock
     // is before 1970, and omitting `/M` beats writing a comment dated 1969.
     //
-    // Builders, not a struct literal: `MarkupNote` is `#[non_exhaustive]`,
-    // which is what keeps a future field a non-breaking addition here. `by`
-    // and `at` take the value, so both are applied conditionally rather than
-    // passed as `Option`.
-    //
     // **Shadowed, not a second name.** `text` the parameter is gone from this
     // scope after this line, so a later reader cannot reach the raw string
     // even by accident — the two callers below have nothing else to pass. A
     // `let words = …` beside a live `text` would leave the mistake
     // representable, and it is a mistake that compiles.
     let text = crate::canvas::textannot::painted_text(text);
-    let mut note = pdfcer_core::edit::MarkupNote::new(text);
-    let author = prefs.author_name.trim();
-    if !author.is_empty() {
-        note = note.by(author);
-    }
-    if let Some(stamp) = crate::app::clock::pdf_date_utc() {
-        note = note.at(stamp);
-    }
+    let note = super::annots::signed_note(text, Some(&prefs.author_name));
     let options = MarkupOptions {
         note: Some(note),
         // No dash on a note, a text box or a stamp, and that is a decision

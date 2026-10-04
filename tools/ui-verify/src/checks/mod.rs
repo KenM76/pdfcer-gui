@@ -703,6 +703,8 @@ pub mod deeper_rung_delete;
 
 /// What another program copied becomes a new PDF, or pages after this one.
 pub mod clip_pages;
+/// In Review a dropped picture or drawing becomes a stamp; Read places nothing.
+pub mod drop_stamp;
 /// A picture dropped on a page lands where it was dropped, through the
 /// scripted pointer's `drop` step.
 pub mod dropped_file;
@@ -1077,6 +1079,8 @@ pub mod model_view_picture;
 /// The view chosen in the 3D viewer, or a picture file, becomes the page picture of the model.
 pub mod model_view_poster;
 
+/// A push button takes a picture, moves its caption beside it, and loses it.
+pub mod button_icon;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the

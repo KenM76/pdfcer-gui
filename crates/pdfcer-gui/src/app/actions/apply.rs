@@ -419,6 +419,14 @@ impl PdfcerApp {
                 fit,
                 image,
             } => super::picture::insert(doc, page, rect, fit, &image),
+            Action::StampPicture { page, rect, image } => super::picture::stamp(
+                doc,
+                page,
+                rect,
+                &image,
+                self.prefs.author_name.trim(),
+                self.pen.opacity_option(),
+            ),
             // One dictionary entry, through the same four-step protocol as a
             // page rewrite — because the protocol is what makes an edit
             // undoable, epoch-bumping and cache-invalidating, and a shortcut

@@ -941,6 +941,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(dropped_text::ADroppedTextFileBecomesPagesAfterThisOne),
         Box::new(dropped_pdf::ADroppedPdfAsksOpenInsertOrPlace),
         Box::new(paste_stamp::ACopiedPicturePastesAsAStampInReview),
+        Box::new(drop_stamp::ADroppedPictureStampsInReview),
         Box::new(clip_pages::TheClipboardBecomesANewPdfOrPagesAfterThisOne),
         Box::new(caption_theme::TitleBarsFollowTheTheme),
         Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
@@ -1073,6 +1074,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(paste_chord::CtrlVPastesAPicture),
         Box::new(paste_text::OsTextPastesAsATextBox),
         Box::new(widget_no_border::EveryFieldKindCanLoseItsBorder),
+        Box::new(button_icon::APushButtonTakesAPicture),
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
         // Its opposite number: `comment_note` proves a
         // comment can be WRITTEN, and this one proves one can be READ — in

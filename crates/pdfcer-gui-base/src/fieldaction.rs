@@ -189,6 +189,17 @@ pub enum FieldAction {
         /// What it should do, or `None` to make it inert.
         action: Box<Option<pdfcer_core::edit::ButtonAction>>,
     },
+    /// **Ask for a picture and make it a push button's icon**, `/MK /I`.
+    ///
+    /// Carries no image: the picker opens in the apply phase, as
+    /// `Action::ExportFormData`'s does, because a native modal opened from a
+    /// widget's `clicked()` blocks mid-frame.
+    PickButtonIcon {
+        /// The button's fully-qualified name.
+        field: String,
+        /// Which placement, indexing `Field::widgets`.
+        widget: usize,
+    },
     /// **Delete the selected field, with every widget it draws.**
     ///
     /// Distinct from [`Self::DeleteWidget`] and the distinction is not a

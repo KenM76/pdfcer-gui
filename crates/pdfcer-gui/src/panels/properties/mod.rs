@@ -17,6 +17,8 @@
 /// it** — `EditSession::annotation_deletion_refusal` and
 /// `annotation_deletion_preview`.
 pub mod annotdelete;
+/// A push button's picture and its caption position, under the box's rows.
+pub mod buttonicon;
 /// A **choice field's `/Opt` list** and the three `/Ff` flags Acrobat groups
 /// with it. Its own module under R2 and on the seam the code takes:
 /// [`fieldedit`] draws a field's flags, this draws the list those flags

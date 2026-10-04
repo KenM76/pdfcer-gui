@@ -3,7 +3,7 @@
 //! The drop nobody claimed: each PDF opens (one dropped alone on an open
 //! document asks whether to open, insert or place it), each picture lands on the page at
 //! the drop point at its natural size (later ones cascading down and to the
-//! right), each text file becomes pages after the one on screen, and anything
+//! right; a stamp in a mode that authors markup but not content), each text file becomes pages after the one on screen, and anything
 //! else is named back. Alt held as it lands opens the
 //! placement window for the first picture instead.
 //!
@@ -204,7 +204,8 @@ fn pages(app: &PdfcerApp, texts: &[PathBuf], actions: &mut Vec<Action>) {
     );
 }
 
-/// Each picture at its natural size, the first centred on `at`.
+/// Each picture at its natural size, the first centred on `at`: page content
+/// where the mode edits it, a stamp where it only authors markup.
 fn place(
     app: &PdfcerApp,
     ctx: &egui::Context,
@@ -212,7 +213,8 @@ fn place(
     images: &[PathBuf],
     actions: &mut Vec<Action>,
 ) {
-    if !app.capabilities().edit_content {
+    let caps = app.capabilities();
+    if !caps.edit_content && !caps.author_markup {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             "drop-declined reason=mode-cannot-place-here".to_owned()
@@ -234,15 +236,28 @@ fn place(
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
-                "image-dropped i={i} page={page} llx={:.2} lly={:.2} urx={:.2} ury={:.2}",
-                rect.llx, rect.lly, rect.urx, rect.ury
+                "image-dropped i={i} page={page} llx={:.2} lly={:.2} urx={:.2} ury={:.2} as={}",
+                rect.llx,
+                rect.lly,
+                rect.urx,
+                rect.ury,
+                if caps.edit_content {
+                    "content"
+                } else {
+                    "stamp"
+                }
             )
         });
-        actions.push(Action::InsertImage {
-            page,
-            rect,
-            fit: pdfcer_core::edit::ImageFit::Contain,
-            image: std::sync::Arc::new(picture),
+        let image = std::sync::Arc::new(picture);
+        actions.push(if caps.edit_content {
+            Action::InsertImage {
+                page,
+                rect,
+                fit: pdfcer_core::edit::ImageFit::Contain,
+                image,
+            }
+        } else {
+            Action::StampPicture { page, rect, image }
         });
     }
 }

@@ -114,7 +114,7 @@ fn picture(
     };
     let rect = clippaste::rect_at(at, image.natural_size_pt(), crop);
     if !caps.edit_content {
-        return stamp(page, rect, &image, format, actions);
+        return stamp(page, rect, image, format, actions);
     }
     pasted(
         &format!("kind=image format={format} as=content"), // ui-text-exempt: diagnostic trace
@@ -149,19 +149,18 @@ pub fn paste_stamp(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
         return;
     };
     let rect = clippaste::rect_at(at, image.natural_size_pt(), crop);
-    stamp(page, rect, &image, format, actions);
+    stamp(page, rect, *image, format, actions);
 }
 
-/// `image` as custom-stamp artwork filling `rect` on `page`.
-fn stamp(page: usize, rect: Rect, image: &ImportedImage, format: &str, actions: &mut Vec<Action>) {
-    let file = match stamp_file(image) {
-        Ok(file) => file,
-        Err(why) => return decline("unplaceable", OsPasteRefusal::Unplaceable(why)),
-    };
+/// `image` as a `/Stamp` comment filling `rect` on `page`.
+fn stamp(page: usize, rect: Rect, image: ImportedImage, format: &str, actions: &mut Vec<Action>) {
     // ui-text-exempt: diagnostic trace, never displayed in the UI
     pasted(&format!("kind=image format={format} as=stamp"), page, rect);
-    let label = crate::text::ospaste::pasted_picture();
-    actions.push(stamp_action(page, rect, file, label));
+    actions.push(Action::StampPicture {
+        page,
+        rect,
+        image: std::sync::Arc::new(pdfcer_gui_base::picture::Picture::Raster(image)),
+    });
 }
 
 /// A drawing as a stamp its own size, centred on the pointer or the view.
@@ -210,16 +209,6 @@ fn stamp_action(page: usize, rect: Rect, file: std::path::PathBuf, label: &str) 
             dynamic: false,
         }),
     }
-}
-
-/// `image`'s one-page PDF, written to the temporary folder for the stamp
-/// verb to read; the file is named by the clipboard's change counter, so one
-/// copy is written once.
-fn stamp_file(image: &ImportedImage) -> Result<std::path::PathBuf, String> {
-    let bytes = pdfcer_gui_base::blank::picture_page(image)?;
-    // ui-text-exempt: a file name, never displayed
-    let name = format!("pasted-picture-{}.pdf", clippaste::sequence());
-    clippaste::page::scratch(&name, &bytes)
 }
 
 /// Text as page text where content can change, else as a text-box comment.
