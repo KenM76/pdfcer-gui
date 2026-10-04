@@ -12,7 +12,6 @@ use pdfcer_core::edit::{
 };
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::pageops::{OrientationPolicy, ScaleMode, ScaleReport, ScaleRequest};
-use pdfcer_core::vector::VectorObject;
 
 use crate::app::state::OpenDoc;
 use crate::text::page_size as t;
@@ -192,16 +191,9 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
     if pages.contains(&doc.view.page_index)
         && let Some(provider) = doc.page_objects()
     {
-        // Not `PageObjects::page_bbox`: it counts paths that paint nothing,
-        // so a scaled page's `re W n` clip read as drawing (request G109).
-        let bounds = provider
-            .page_objects()
-            .objects
-            .iter()
-            .filter(|o| !matches!(o, VectorObject::Path(p) if p.style.is_invisible()))
-            .fold(pdfcer_core::vector::Bounds::EMPTY, |acc, o| {
-                acc.union(o.page_bbox())
-            });
+        // Skips paths that paint nothing, so a scaled page's `re W n` clip is
+        // not read as drawing.
+        let bounds = provider.page_objects().page_bbox();
         if !bounds.is_empty() {
             drawn = Some(Rect::from_corners(
                 bounds.min.x,

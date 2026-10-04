@@ -11,16 +11,20 @@ faces in the operator's font folders.
 - `for_folders(folders)` returns one `'static` source per distinct folder
   list (the engine holds a `&'static dyn ReplacementFaces`), leaked once and
   reused.
-- `candidates(chars)` reads every font file in the folders
-  (`installedfaces::font_files`, at most `fontlibrary::MAX_FONT_FILE_BYTES`
-  each), asks `pdfcer_render::font::InstalledFaces` to describe each file's
-  faces, renumbers the candidates into one id space, and drops the bytes. It
-  remembers which file and which id within the file each candidate came from,
-  and traces `replacement-faces folders= faces= ms=`.
-- `plan(candidate, chars)` reads the picked file again and asks it to cut the
-  subset. A candidate from an earlier call, or a file that has since gone,
-  answers a sentence (`text::fonts::face_no_longer_offered`,
-  `face_unreadable`); the engine discloses it and tries the next face.
+- `candidates(chars)` answers from a `pdfcer_render::font::FaceCatalog`
+  holding every face in the folders (`installedfaces::font_files`, at most
+  `fontlibrary::MAX_FONT_FILE_BYTES` each): descriptions and coverage, never
+  font bytes. The catalogue is built on the first call and rebuilt whenever
+  the folders' listing (path, size, modified time) differs from the one it was
+  built from, so a font installed mid-session is offered. It traces
+  `replacement-faces folders= faces= ms=`.
+- `plan(candidate, chars)` asks the catalogue the last `candidates` call
+  answered from, whose loader reads only the picked file. Only `candidates`
+  rebuilds, so a candidate's id is always read in the catalogue that numbered
+  it. A file that has since gone or grown too large answers
+  `text::fonts::face_unreadable`; no catalogue at all answers
+  `face_no_longer_offered`. The engine discloses the sentence and tries the
+  next face.
 - `laddered(options, faces)` adds the source to an edit's options.
 
 ## Why it is applied only on the press
@@ -44,14 +48,12 @@ the canvas.
 
 ## Why no bytes are kept
 
-`pdfcer_render::font::InstalledFaces` holds every font's bytes for as long as
-it lives; this computer's font folder is several hundred megabytes. The ladder
-runs once per press, so reading the folders per press (well under a second
-here) is cheaper than holding them for the session. Engine request G111 asks
-for a provider that keeps names, not bytes; when it lands this module goes.
+This computer's font folder is several hundred megabytes. The catalogue keeps
+what ranking needs and reads one file when a face is picked, so holding it for
+the session costs descriptions, not fonts. Listing the folders on each press
+is what keeps it current; it reads metadata only.
 
 ## What it does not decide
 
-Which face wins is the engine's ranking. Among faces that tie, it currently
-takes the first in file order (engine request G110); the shell does not
-re-rank.
+Which face wins is the engine's ranking, including its metric-equivalent rung
+(a Helvetica run gets Arial). The shell does not re-rank.

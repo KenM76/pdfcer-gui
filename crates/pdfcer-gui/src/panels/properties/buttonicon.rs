@@ -131,10 +131,10 @@ fn position_row(
     });
 }
 
-/// Every icon edit may replace artwork another program drew, because a
+/// An icon or caption-position edit replaces artwork another program drew
+/// (the engine's default, `ForeignAppearance::ReplaceOnIconEdit`), because a
 /// button that keeps it shows no picture; the status line says when it did.
 fn push_edit(actions: &mut Vec<Action>, fqn: &str, widget_index: usize, edit: WidgetEdit) {
-    let edit = edit.with_replace_foreign_appearance(true);
     let touched = if edit.caption_position.is_some() {
         t::touched_caption_position()
     } else {

@@ -196,7 +196,7 @@ pub fn field_appearance_not_repainted(resized: bool, why: &str) -> String {
     }
 }
 
-/// **Another program's check box or radio artwork was replaced by pdfcer's.**
+/// **Another program's field artwork was replaced by pdfcer's.**
 #[must_use]
 pub const fn field_foreign_appearance_replaced() -> &'static str {
     "This box was drawn by another program, so pdfcer redrew it in its own style. The look it \

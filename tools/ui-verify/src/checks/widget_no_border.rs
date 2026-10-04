@@ -6,10 +6,9 @@
 //! scripted pointer opens the Border combo and presses *No border*, and the
 //! panel's re-read of the document must say `border=none width=0.00`. The
 //! border colour must be gone too, except on a check box or radio, whose mark
-//! is drawn in it. Every field but the push button must also come back
-//! `redrawn=yes`: an unsigned signature field and another program's check box
-//! or radio are redrawn without the frame. A push button another program drew
-//! is kept as it is, which the engine does not cover and the status line says.
+//! is drawn in it. Every field must also come back `redrawn=yes`: an unsigned
+//! signature field and another program's check box, radio or push button are
+//! redrawn without the frame.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
@@ -41,7 +40,7 @@ const FIELDS: [(&str, bool, bool); 7] = [
     ("RadioGroup", true, true),
     ("ComboOne", false, true),
     ("ListOne", false, true),
-    ("PushOne", false, false),
+    ("PushOne", false, true),
     ("SigOne", false, true),
 ];
 

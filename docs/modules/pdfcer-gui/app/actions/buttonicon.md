@@ -15,13 +15,12 @@ inside a frame's drawing would block the paint that raised it.
    records the reason on the status line. The engine's icon verb takes an
    `ImportedImage` only.
 
-**Every icon edit sets `replace_foreign_appearance`.** A button another
-program drew keeps its artwork by default, and then the picture never shows:
-the edit applies, the panel says it has a picture, the canvas is unchanged.
-Choosing a picture is the operator committing to it showing — the argument
-the Border control makes for a check box. The status line says when foreign
-artwork was replaced. `panels/properties/buttonicon.md`'s `push_edit` does
-the same for Remove and the caption position.
+**Every icon edit redraws foreign artwork.** The engine's default,
+`ForeignAppearance::ReplaceOnIconEdit`, replaces another program's artwork
+when an edit touches the icon; kept, it would hide the picture while the panel
+says it has one. The status line says when foreign artwork was replaced.
+`panels/properties/buttonicon.md`'s `push_edit` relies on the same default
+for Remove and the caption position.
 
 Without a caption position the engine picks one: picture only for a button
 with no caption, caption below otherwise.

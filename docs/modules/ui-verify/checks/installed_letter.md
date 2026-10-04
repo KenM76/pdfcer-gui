@@ -29,7 +29,7 @@ raised.
    `committed=yes`.
 
 Which face wins is the engine's ranking and is not asserted; on this computer
-it is a coverage-rung tie broken by file order (engine request G110).
+the fixture's Helvetica run gets `ArialMT` on the metric-equivalent rung.
 
 ## Falsification
 

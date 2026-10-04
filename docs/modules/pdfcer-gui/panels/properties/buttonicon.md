@@ -14,8 +14,8 @@ field kind renders nothing: the engine refuses an icon there
 
 The caption combo is hidden without a picture because with none the button
 draws its caption alone whatever `/TP` says. Every edit goes through
-`push_edit`, which sets `replace_foreign_appearance` (see
-`actions/buttonicon.md`).
+`push_edit`, on the engine's default that redraws foreign artwork on an icon
+edit (see `actions/buttonicon.md`).
 
 Trace regions: `properties.widget_edit.button_icon` (the rows), `.choose`,
 `.remove`, `.position`, and each open combo entry `.position.<tp>`.

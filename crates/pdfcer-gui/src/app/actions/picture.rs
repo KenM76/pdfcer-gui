@@ -35,10 +35,7 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize, rect: Rect, fit: ImageFit, 
 
 /// Place `picture` as a `/Stamp` comment filling `rect` on `page`, pre-turned
 /// by the page's `/Rotate` so it reads upright (`super::customstamp` carries
-/// the argument). A raster is signed by `author`, dated and given the pen's
-/// `opacity`; a drawing gets neither, because `add_svg_stamp` and
-/// `add_emf_stamp` take no options (request G107), and says so when the
-/// operator had set either.
+/// the argument), signed by `author`, dated and given the pen's `opacity`.
 pub(super) fn stamp(
     doc: &mut OpenDoc,
     page: usize,
@@ -49,8 +46,11 @@ pub(super) fn stamp(
 ) {
     let rotate = doc.pages.get(page).map_or(0, |p| p.rotate);
     let kind = picture.kind();
-    let unsigned =
-        !matches!(picture, Picture::Raster(_)) && (!author.is_empty() || opacity.is_some());
+    let options = pdfcer_core::edit::MarkupOptions {
+        note: Some(super::annots::signed_note("", Some(author))),
+        opacity,
+        ..Default::default()
+    };
     let label = match picture {
         Picture::Raster(_) => "stamp-image",
         #[cfg(feature = "svg-import")]
@@ -58,31 +58,21 @@ pub(super) fn stamp(
         Picture::Emf(_) => "stamp-emf",
     };
     vector_edit(doc, label, page, 1, |session| {
-        let (id, mut notes) = match picture {
-            Picture::Raster(image) => {
-                let options = pdfcer_core::edit::MarkupOptions {
-                    note: Some(super::annots::signed_note("", Some(author))),
-                    opacity,
-                    ..Default::default()
-                };
-                (
-                    Some(session.add_image_stamp(page, rect, image, &options)?),
-                    Vec::new(),
-                )
-            }
+        let (id, notes) = match picture {
+            Picture::Raster(image) => (
+                Some(session.add_image_stamp(page, rect, image, &options)?),
+                Vec::new(),
+            ),
             #[cfg(feature = "svg-import")]
             Picture::Svg(svg) => {
-                let p = session.add_svg_stamp(page, rect, svg)?;
+                let p = session.add_svg_stamp(page, rect, svg, &options)?;
                 (p.annot_id, drawing_notes(p.distorted, &p.notes.summary()))
             }
             Picture::Emf(emf) => {
-                let p = session.add_emf_stamp(page, rect, emf)?;
+                let p = session.add_emf_stamp(page, rect, emf, &options)?;
                 (p.annot_id, drawing_notes(p.distorted, &p.notes.summary()))
             }
         };
-        if unsigned {
-            notes.push(images::drawing_stamp_unsigned().to_owned());
-        }
         let turned = match id.filter(|_| rotate != 0) {
             Some(id) => {
                 let pivot = ((rect.llx + rect.urx) / 2.0, (rect.lly + rect.ury) / 2.0);
@@ -98,7 +88,7 @@ pub(super) fn stamp(
                 "picture-stamp-placed kind={kind} id={} page={page} rotate={rotate} \
                  turned={turned} signed={}",
                 id.map_or(0, |id| id.num),
-                !unsigned && !author.is_empty()
+                !author.is_empty()
             )
         });
         Ok::<_, pdfcer_core::edit::EditError>(notes)

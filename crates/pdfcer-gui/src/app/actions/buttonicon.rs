@@ -27,11 +27,9 @@ pub(super) fn pick(doc: &mut OpenDoc, field: &str, widget: usize) {
         .and_then(|bytes| Picture::import(&source, &bytes));
     let refusal = match &picture {
         Ok(Picture::Raster(image)) => {
-            // As `panels::properties::buttonicon::push_edit`: foreign artwork
-            // would hide the picture.
-            let edit = WidgetEdit::new()
-                .with_button_icon(image)
-                .with_replace_foreign_appearance(true);
+            // An icon edit replaces another producer's artwork by default
+            // (`ForeignAppearance::ReplaceOnIconEdit`); the status line says so.
+            let edit = WidgetEdit::new().with_button_icon(image);
             super::forms::edit_widget(doc, field, widget, &edit, t::touched_icon());
             return;
         }

@@ -274,10 +274,8 @@ than the choice being made quietly.
 
 ### `fn survey` — the drawn extent skips paths that paint nothing
 
-`PageObjects::page_bbox` counts `n`-painted paths, so after a scale the
-`re W n` clip read as drawing the size of the old visible region. The survey
-folds the object bounds itself, skipping `PaintStyle::is_invisible` paths;
-reported to the engine as G109.
+`PageObjects::page_bbox` skips `n`-painted paths, so after a scale the
+`re W n` clip is not read as drawing the size of the old visible region.
 
 ### `fn survey`
 

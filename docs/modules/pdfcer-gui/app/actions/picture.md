@@ -28,9 +28,9 @@ a paste in Review, Markup ▸ Paste picture as stamp, and a drop in Review. One
 
 | Picture | Verb | Signed, dated, pen opacity |
 |---|---|---|
-| Raster | `add_image_stamp(page, rect, &ImportedImage, &MarkupOptions)` | yes: the note is `annots::signed_note("", author)`, `/CA` is the pen's opacity |
-| SVG | `add_svg_stamp(page, rect, &ImportedSvg)` | no — the verb takes no options (request G107); when the operator has an author name or an opacity set, the status line says the stamp is unsigned and opaque |
-| EMF | `add_emf_stamp(page, rect, &ImportedEmf)` | the same |
+| Raster | `add_image_stamp(page, rect, &ImportedImage, &MarkupOptions)` | yes: one `MarkupOptions` for all three; the note is `annots::signed_note("", author)`, `/CA` is the pen's opacity |
+| SVG | `add_svg_stamp(page, rect, &ImportedSvg, &MarkupOptions)` | yes, the same options as a raster |
+| EMF | `add_emf_stamp(page, rect, &ImportedEmf, &MarkupOptions)` | yes |
 
 On a page with `/Rotate` the stamp is turned by the same angle about the
 rectangle's centre (`set_annotation_rotation`) inside the same edit, so it

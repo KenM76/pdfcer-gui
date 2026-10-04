@@ -33,5 +33,5 @@ must not.
 
 ## Falsification
 
-Setting `replace_foreign_appearance(false)` on the Choose edit fails the
-Choose row on `redrawn`.
+Setting `with_foreign_appearance(ForeignAppearance::Keep)` on the Choose
+edit fails the Choose row on `redrawn`.

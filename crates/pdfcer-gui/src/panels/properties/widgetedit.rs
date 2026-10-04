@@ -409,7 +409,7 @@ fn border_style_row(
 fn border_edit(border: pdfcer_core::edit::BorderSpec) -> WidgetEdit {
     WidgetEdit::new()
         .with_border(border)
-        .with_replace_foreign_appearance(true)
+        .with_foreign_appearance(pdfcer_core::edit::ForeignAppearance::Replace)
 }
 
 /// The width spinner, for a widget with a stated border.

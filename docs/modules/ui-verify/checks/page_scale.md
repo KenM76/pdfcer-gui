@@ -31,7 +31,6 @@ step 4.
 ## Falsification
 
 Making `PageSizeDialog::commit` push `SetPageSize` whatever the choice fails
-step 3 with *"the commit ran the box-only resize"*. Before the survey skipped
-paths that paint nothing, step 4 read the scale's `re W n` clip as drawing
-(297.64 × 416.69) and failed with *"It changed by some other factor"*; that is
-request G109.
+step 3 with *"the commit ran the box-only resize"*. A drawn extent that counts
+paths painting nothing reads the scale's `re W n` clip as drawing
+(297.64 × 416.69) and fails step 4 with *"It changed by some other factor"*.
