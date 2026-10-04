@@ -21,10 +21,14 @@ pub fn filter_pdf() -> &'static str {
     "PDF documents"
 }
 
-/// The picker filter for a raster image.
+/// The picker filter for a picture or drawing; it names `picture::EXTENSIONS`.
 #[must_use]
 pub fn filter_image() -> &'static str {
-    "Images (PNG, JPEG, BMP, TIFF)"
+    if cfg!(feature = "svg-import") {
+        "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, SVG, EMF)"
+    } else {
+        "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, EMF)"
+    }
 }
 
 /// The picker filter for a plain text file.

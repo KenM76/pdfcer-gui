@@ -46,9 +46,9 @@ use std::sync::Arc;
 
 use egui::Ui;
 use pdfcer_core::edit::{ImageFit, NewImage};
-use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_gui_base::entry;
+use pdfcer_gui_base::picture::Picture;
 
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
@@ -71,15 +71,9 @@ const MIN_MM: f64 = 1.0;
 ///
 /// Existence is the "open" state, as everywhere in [`super`].
 pub struct InsertImageDialog {
-    /// The imported picture.
-    ///
-    /// `Arc`, and it is the only field here that is not a number. An
-    /// `ImportedImage` owns the decoded or re-encoded stream bytes — megabytes
-    /// for a scan — and the `Action` this window raises has to carry it out of
-    /// the frame to the apply phase. Cloning it there would double the peak,
-    /// and borrowing it would tie an `Action` to a widget's lifetime, which is
-    /// the coupling the funnel exists to remove.
-    image: Arc<ImportedImage>,
+    /// The imported picture or drawing, shared with the `Action` this window
+    /// raises so its megabytes are never copied.
+    image: Arc<Picture>,
     /// The chosen file's name, for the window's first row.
     ///
     /// The **name**, not the path: the window is about the picture, and a full
@@ -123,7 +117,7 @@ pub struct InsertImageDialog {
 impl InsertImageDialog {
     /// Open the window for an already-imported picture.
     #[must_use]
-    pub fn open(image: Arc<ImportedImage>, name: String, doc: &OpenDoc) -> Self {
+    pub fn open(image: Arc<Picture>, name: String, doc: &OpenDoc) -> Self {
         let page_index = doc.view.page_index;
         let (pw, ph) = doc.pages.get(page_index).map_or((0.0, 0.0), |page| {
             let (w, h) = crate::viewer::page_extent_pts(page);
@@ -206,13 +200,21 @@ impl InsertImageDialog {
             // here would be low by exactly the letterbox ratio under `Contain`,
             // which is the default, and both numbers would look perfectly
             // reasonable.
-            let (dpi_x, _) = self.spec(rect).effective_dpi();
+            let dpi = self.spec(rect).map_or_else(
+                || "none".to_owned(),
+                |s| format!("{:.0}", s.effective_dpi().0),
+            );
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "insert-image-requested page={} llx={:.2} lly={:.2} urx={:.2} ury={:.2} \
-                     fit={:?} dpi={dpi_x:.0}",
-                    self.page_index, rect.llx, rect.lly, rect.urx, rect.ury, self.fit
+                    "insert-image-requested kind={} page={} llx={:.2} lly={:.2} urx={:.2} ury={:.2} fit={:?} dpi={dpi}",
+                    self.image.kind(),
+                    self.page_index,
+                    rect.llx,
+                    rect.lly,
+                    rect.urx,
+                    rect.ury,
+                    self.fit
                 )
             });
             actions.push(Action::InsertImage {
@@ -246,17 +248,17 @@ impl InsertImageDialog {
         rect_pt(self.x_mm, self.y_mm, self.width_mm, self.height_mm)
     }
 
-    /// The placement spec, built the one way.
-    fn spec<'a>(&'a self, rect: Rect) -> NewImage<'a> {
-        let spec = NewImage::new(self.page_index, rect, &self.image);
-        match self.fit {
+    /// A raster's placement spec, built the one way; `None` for a drawing,
+    /// which has no fit or resolution.
+    fn spec<'a>(&'a self, rect: Rect) -> Option<NewImage<'a>> {
+        let spec = NewImage::new(self.page_index, rect, self.image.raster()?);
+        Some(match self.fit {
             ImageFit::Stretch => spec.stretching(),
-            // `Contain` is the constructor's default, and the wildcard is
-            // forced by `#[non_exhaustive]` rather than chosen. A third fit
-            // mode would land here as Contain, which is the safe direction: it
-            // never distorts a picture nobody asked to distort.
+            // `Contain` is the constructor's default; the wildcard is forced
+            // by `#[non_exhaustive]` and lands a new mode on the side that
+            // never distorts.
             _ => spec,
-        }
+        })
     }
 
     /// Whether the current box can be placed, and what is wrong if not.
@@ -276,21 +278,7 @@ impl InsertImageDialog {
         ui.add_space(8.0);
 
         // --- what the picture is -----------------------------------------
-        ui.horizontal(|ui| {
-            ui.label(t::source_label());
-            ui.label(&self.name);
-        });
-        let (px_w, px_h) = self.image.display_size_px();
-        ui.horizontal(|ui| {
-            ui.label(t::source_size_label());
-            ui.label(t::source_size(self.image.format, px_w, px_h));
-        });
-        let (nw, nh) = self.image.natural_size_pt();
-        ui.weak(t::natural_size(
-            crate::units::mm_from_points(nw),
-            crate::units::mm_from_points(nh),
-            self.image.dpi,
-        ));
+        self.source_rows(ui);
         ui.add_space(8.0);
 
         // --- where it goes ------------------------------------------------
@@ -335,16 +323,23 @@ impl InsertImageDialog {
         ui.add_space(8.0);
 
         // --- how it fits ---------------------------------------------------
+        if self.image.raster().is_none() {
+            ui.weak(t::drawing_fills_the_box());
+            ui.add_space(8.0);
+            self.commit_row(ui);
+            return;
+        }
         ui.label(t::fit_heading());
         for option in [ImageFit::Contain, ImageFit::Stretch] {
             ui.radio_value(&mut self.fit, option, t::fit_name(option));
         }
         ui.weak(t::fit_hint(self.fit));
+        let Some(spec) = self.spec(self.rect_pt()) else {
+            return;
+        };
 
         // The landing, from the ENGINE's own arithmetic. Shown only when it
-        // differs from the box, which under `Stretch` is never — a line
-        // restating the two numbers above it would be noise.
-        let spec = self.spec(self.rect_pt());
+        // differs from the box, which under `Stretch` is never.
         let placed = spec.placed_rect();
         let asked = self.rect_pt();
         let differs = (placed.urx - placed.llx - (asked.urx - asked.llx)).abs() > 0.5
@@ -376,7 +371,43 @@ impl InsertImageDialog {
         }
         ui.add_space(8.0);
 
-        // --- commit --------------------------------------------------------
+        self.commit_row(ui);
+    }
+
+    /// The source file's name, then what the picture or drawing is and its
+    /// own size on paper.
+    fn source_rows(&self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.label(t::source_label());
+            ui.label(&self.name);
+        });
+        let (nw, nh) = self.image.natural_size_pt();
+        let (w_mm, h_mm) = (
+            crate::units::mm_from_points(nw),
+            crate::units::mm_from_points(nh),
+        );
+        let Some(raster) = self.image.raster() else {
+            ui.horizontal(|ui| {
+                ui.label(t::source_size_label());
+                ui.label(t::drawing_source(self.image.kind()));
+            });
+            ui.weak(t::drawing_natural_size(w_mm, h_mm));
+            if let Some(notes) = self.image.drawing_notes() {
+                ui.label(t::drawing_not_exact(&notes));
+            }
+            return;
+        };
+        let (px_w, px_h) = raster.display_size_px();
+        ui.horizontal(|ui| {
+            ui.label(t::source_size_label());
+            ui.label(t::source_size(raster.format, px_w, px_h));
+        });
+        ui.weak(t::natural_size(w_mm, h_mm, raster.dpi));
+    }
+
+    /// The Insert and Cancel row; Insert is absent while the box cannot be
+    /// placed, with the reason in its place.
+    fn commit_row(&mut self, ui: &mut Ui) {
         ui.separator();
         ui.horizontal(|ui| {
             match self.refusal() {
@@ -448,11 +479,7 @@ fn spinner(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -
 
 /// Open the window for `status`, or decline.
 #[must_use]
-pub fn open_for(
-    status: &Status,
-    image: Arc<ImportedImage>,
-    name: String,
-) -> Option<InsertImageDialog> {
+pub fn open_for(status: &Status, image: Arc<Picture>, name: String) -> Option<InsertImageDialog> {
     match status {
         Status::Open(doc) if !doc.pages.is_empty() => {
             Some(InsertImageDialog::open(image, name, doc))

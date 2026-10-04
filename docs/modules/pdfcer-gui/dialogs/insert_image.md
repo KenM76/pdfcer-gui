@@ -221,3 +221,11 @@ Applies the two guards every dialog in [`super`] applies at the one place it
 is built. The no-document guard is real here rather than ceremonial: the
 window's box is seeded from a page's extent, and a window over an empty
 canvas would open on a zero-sized sheet and refuse its own default.
+
+## Drawings
+
+An SVG or EMF opens the same window. It shows the drawing's kind, natural
+size and the import's notes (what it did not carry) before Insert, and offers
+no fit choice: the engine stretches a drawing to the box, which the window
+says, and a stretch is disclosed after placement. The resolution preview is
+raster-only. See `docs/modules/pdfcer-gui-base/picture.md`.

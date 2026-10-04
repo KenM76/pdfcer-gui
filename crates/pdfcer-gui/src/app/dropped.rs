@@ -30,9 +30,8 @@ pub enum Dropped {
     Unknown(String),
 }
 
-/// The extensions the image picker offers, which is the list this must agree
-/// with.
-const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff"];
+/// The extensions the image picker offers, read from the one list.
+const IMAGE_EXTENSIONS: &[&str] = pdfcer_gui_base::picture::EXTENSIONS;
 
 /// How far each further dropped picture sits from the one before, in points,
 /// down and to the right.
@@ -227,11 +226,11 @@ fn place(
         return;
     };
     for (i, path) in images.iter().enumerate() {
-        let Some(image) = crate::app::dispatch::images::import(&app.status, path) else {
+        let Some(picture) = crate::app::dispatch::images::import(&app.status, path) else {
             continue;
         };
         let rect =
-            pdfcer_gui_base::clippaste::rect_at(cascade(point, i), image.natural_size_pt(), crop);
+            pdfcer_gui_base::clippaste::rect_at(cascade(point, i), picture.natural_size_pt(), crop);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
@@ -243,7 +242,7 @@ fn place(
             page,
             rect,
             fit: pdfcer_core::edit::ImageFit::Contain,
-            image: std::sync::Arc::new(image),
+            image: std::sync::Arc::new(picture),
         });
     }
 }
@@ -287,11 +286,19 @@ mod tests {
         );
     }
 
-    /// The drop list and the picker's filter must agree.
     #[test]
-    fn the_drop_list_matches_what_the_picker_offers() {
-        const PICKER: &[&str] = &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff"];
-        assert_eq!(IMAGE_EXTENSIONS, PICKER);
+    fn a_drawing_drops_as_a_picture() {
+        let names: &[&str] = if cfg!(feature = "svg-import") {
+            &["logo.svg", "PLAN.EMF"]
+        } else {
+            &["PLAN.EMF"]
+        };
+        for &name in names {
+            assert!(
+                matches!(classify(Path::new(name)), Dropped::Image(_)),
+                "{name}"
+            );
+        }
     }
 
     #[test]

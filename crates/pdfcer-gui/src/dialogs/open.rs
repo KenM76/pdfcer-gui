@@ -464,7 +464,7 @@ impl DialogsState {
     pub fn open_insert_image(
         &mut self,
         status: &Status,
-        image: std::sync::Arc<pdfcer_core::image_import::ImportedImage>,
+        image: std::sync::Arc<pdfcer_gui_base::picture::Picture>,
         name: String,
     ) {
         if self.insert_image.is_some() {

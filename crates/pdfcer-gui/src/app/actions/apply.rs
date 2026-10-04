@@ -418,78 +418,7 @@ impl PdfcerApp {
                 rect,
                 fit,
                 image,
-            } => {
-                vector_edit(doc, "add-image", page, 1, |session| {
-                    // The builder, not a struct literal: `NewImage` is
-                    // `#[non_exhaustive]`, so a downstream crate cannot
-                    // construct it field-by-field — and the constructor is
-                    // what keeps a field added upstream from silently
-                    // defaulting here.
-                    let spec = pdfcer_core::edit::NewImage::new(page, rect, &image);
-                    let spec = match fit {
-                        pdfcer_core::edit::ImageFit::Stretch => spec.stretching(),
-                        // `Contain` is the constructor's own default, and the
-                        // wildcard is forced by `#[non_exhaustive]` rather than
-                        // chosen. A third fit mode pdfcer gains would land here
-                        // as Contain, which is the safe direction: it never
-                        // distorts a picture the operator did not ask to
-                        // distort.
-                        _ => spec,
-                    };
-                    session.add_image(&spec).map(|outcome| {
-                        let d = &outcome.disclosures;
-                        let mut notes = crate::text::images::placement_disclosures(
-                            d.effective_dpi,
-                            d.below_screen_resolution,
-                            d.letterboxed,
-                            d.aspect_distorted,
-                            d.recompressed,
-                            d.source_bytes,
-                            d.stored_bytes,
-                        );
-                        notes.extend(crate::text::images::source_decoding_notes(d));
-                        notes
-                    })
-                });
-                // **And it arrives SELECTED** — 2026-08-26, closing the
-                // operator's *"if I add an image I Expect to click on it to
-                // resize but dragging doesn't resize."*
-                //
-                // He was right about the symptom and it was never the resize: a
-                // driven check had already proved a selected image resizes from
-                // a corner grip and moves from a body drag. It arrived
-                // unselected, so his first press was a press on unselected
-                // paper, and `gesture::meaning` reads that as a marquee.
-                //
-                // The new image is the LAST object in paint order, because
-                // `add_image` appends to the content stream — so its target is
-                // the decomposition's final index. Taken from the rebuilt model
-                // rather than from a count kept before the edit: the edit
-                // invalidated the cache, `page_objects()` rebuilds it against
-                // the new epoch, and a remembered count would be a count of the
-                // page as it was.
-                //
-                // A placement that produced no model — a page whose content
-                // stream will not decompose — simply leaves the selection
-                // alone. The image is still on the page; what is missing is the
-                // shell's ability to name it, and inventing an index for it
-                // would select whatever happens to be at that position.
-                //
-                // The count is taken and the borrow released in one
-                // statement, before the selection is touched. `page_objects()`
-                // hands back a `Ref` into the document's own cache, and
-                // `select_placed` wants `&mut doc.selection` — holding the
-                // first across the second does not compile, which is the
-                // borrow checker enforcing the short-borrow discipline the
-                // panels already keep by hand.
-                let count = doc
-                    .page_objects()
-                    .map(|provider| provider.page_objects().objects.len());
-                if let Some(last) = count.and_then(|n| n.checked_sub(1)) {
-                    doc.selection
-                        .select_placed(page, crate::canvas::target::TargetId::Object(last as u64));
-                }
-            }
+            } => super::picture::insert(doc, page, rect, fit, &image),
             // One dictionary entry, through the same four-step protocol as a
             // page rewrite — because the protocol is what makes an edit
             // undoable, epoch-bumping and cache-invalidating, and a shortcut

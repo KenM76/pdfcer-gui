@@ -787,48 +787,28 @@ pub enum Action {
         /// Which fonts, and what happens to their subset tags.
         request: Box<pdfcer_core::font_unembed::UnembedRequest>,
     },
-    /// **Place a raster image on the page.**
+    /// **Place a picture on the page**: a raster through `add_image`, an SVG
+    /// or EMF drawing through `add_svg` or `add_emf`, which keep it vector.
     ///
-    /// Raised by `crate::dialogs::insert_image` and by nothing else.
+    /// Raised by `crate::dialogs::insert_image`, a dropped file and a pasted
+    /// clipboard picture. The picture is the operand and travels in the
+    /// action, in an `Arc` because a scan's stream is megabytes and the engine
+    /// takes it by reference. The rectangle is in points, converted once by
+    /// the raiser, so the apply arm holds no second conversion.
     ///
-    /// # Why the imported picture travels in the action
-    ///
-    /// Because it is the **operand**, and an `Action` is a complete statement
-    /// of intent resolvable after the frame that raised it. The dialog closes
-    /// on the same frame it commits, so nothing else would still be holding the
-    /// bytes by the time the queue drains.
-    ///
-    /// `Arc`, not the value: an `ImportedImage` owns the decoded or re-encoded
-    /// stream — megabytes for a scan — and moving a clone through the queue
-    /// would double the peak for no gain. The engine takes it by reference, so
-    /// the apply arm never copies it either.
-    ///
-    /// # Why the rectangle is in POINTS
-    ///
-    /// The dialog asks in millimetres, because that is what a drafter measures
-    /// in, and converts **once** — in one function that the validity check, the
-    /// landing preview and this field all read. Carrying millimetres here would
-    /// put a second conversion in the apply arm and give the window two chances
-    /// to disagree with the document about where the picture went.
-    ///
-    /// # What the apply arm owes afterwards
-    ///
-    /// `add_image` returns an `ImageAuthorOutcome` whose `disclosures` are
-    /// **all facts the operator cannot see at editing zoom**: the effective
-    /// resolution, whether the shape was preserved or stretched, and whether
-    /// pdfcer re-encoded the source rather than storing its bytes. Every one of
-    /// them looks identical on screen and different on a plot, which makes them
-    /// rule 4's surviving half exactly. They are returned from `vector_edit`'s
-    /// closure, which is how they reach the status bar.
+    /// The apply arm returns the verb's disclosures — resolution, shape kept
+    /// or stretched, re-encoding, and a drawing's skipped features — none of
+    /// which is visible at editing zoom.
     InsertImage {
         /// The 0-based page it is placed on, frozen when the dialog opened.
         page: usize,
         /// The box, in PDF user space.
         rect: pdfcer_core::page_tree::Rect,
-        /// What happens when the box's shape differs from the picture's.
+        /// What happens when the box's shape differs from a raster's; a
+        /// drawing always fills the box.
         fit: pdfcer_core::edit::ImageFit,
-        /// The imported picture. See above for why it is an `Arc`.
-        image: std::sync::Arc<pdfcer_core::image_import::ImportedImage>,
+        /// The imported picture.
+        image: std::sync::Arc<crate::picture::Picture>,
     },
     /// **Read this document's bytes again under the OTHER reading of a
     /// key the file names twice** — the operator's intervention in a parse

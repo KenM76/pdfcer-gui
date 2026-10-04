@@ -125,7 +125,7 @@ fn picture(
         page,
         rect,
         fit: pdfcer_core::edit::ImageFit::Contain,
-        image: std::sync::Arc::new(image),
+        image: std::sync::Arc::new(pdfcer_gui_base::picture::Picture::Raster(image)),
     });
 }
 

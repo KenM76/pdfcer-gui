@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **79 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `wanted` — a real gap — **77 of 304** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -100,13 +100,11 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **`GlyphProvenance` carries line width and render mode** — `GlyphProvenance::line_width`, `render_mode()`, `text_edit::synth::detect_at` with `synth::shear_of`, `synth::unshear` and `synth::MIN_DETECT_STROKE_RATIO` (our `G087`, Pass 441.0) | **wanted — in the pin, not yet wired.** <!--namesake:GlyphProvenance--> The shell reads provenance's font, matrix and text state today, not the new fields. <!--namesake:line_width--> Its other `line_width`s are markup stroke widths. <!--namesake:render_mode--> `weight::at` reads the text state's `render_mode` operand, not the new method. `canvas::textedit::weight::at` decides whether Bold and Italic show pressed from the font name and the render mode, passing a line width of 0 because provenance carries none, so a synthetic bold drawn by widening the stroke is judged without its width. `detect_at` reads the width from the glyph and replaces that call. |
 | **Program-type OCR add-ons** — a folder may carry an executable engine; `pdfcer-ocr-host` (`OcrRunner`, `RunOptions`, `ProgramPolicy`), `check_runnable`, settings key `ocr_program_addons` | **wanted — after the pin.** The engine's notice of 2026-10-02 (`notice_2026-10-02_program_ocr_addons_and_ocr_host_crate.md`) gives the drop-down contract: list with `discover_ocr_models`, enable each by `check_runnable` and show its `Err` verbatim as the disabled reason, label by `kind()` and `program()`, run through `OcrRunner::load` then `recognize`. What it takes here: a pin move past the change, the `pdfcer-ocr-host` dependency with the same OCR features as `pdfcer-core`, the Recognise text dialog's recogniser list drawn from discovery, an off-canvas line naming the program a run started (`runner.as_program()`), a run stopped (not warned) on a `RunnerError` naming a changed file, and a setting for `ocr_program_addons`. It supersedes the Tesseract row above, which becomes one discovered add-on. |
 | Paint tiling patterns (`PatternType 1`, §8.7.3 Table 75) for fills, strokes and text … | **wanted — in the pin, not yet wired.** Engine Pass 448.0. Tiled fills, strokes and text now paint on the canvas as they print, because it draws through `pdfcer-render`; `ColorDiagnostics::tiling_patterns_painted` counts a success and has nothing to say. The shell does not read `patterns_unpainted` yet; what remains is that a pattern the renderer declines needs an off-canvas note from that count. |
-| **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **wanted — in the pin, not yet wired.** The engine answered G094 with this; it is paste step P9. What it takes here: Office's EMF copy on the clipboard, and a dropped or inserted `.emf`, place as vector content (or a stamp in a markup-only mode), with each skipped record, approximation, font substitution and ignored EMF+ part named off-canvas, and an EMF+-only file refused in the engine's words. |
 | **PaddleOCR-VL engine** — vision-language OCR compiled behind `ocr-vl`, weights as an add-on folder; the modules `pdfcer_core::ocr::engine_paddle_vl`, `pdfcer_core::ocr::vl_pre`, `pdfcer_core::ocr::vl_decode`, `pdfcer_core::ocr::vl_tokenizer` and `pdfcer_core::ocr::json_lite` | **wanted — listed, not yet runnable.** Recognise text's Model drop-down lists a PaddleOCR-VL add-on folder by its manifest label, disabled with the reason: the pin has no runner for it (our `G102`, answered on engine main by the row below). What is owed is the run and its disclosure: results are one word per line, region-aligned and inferred, which the OCR report must say off-canvas. |
 | **Place a PDF page's own content directly onto another page, not behind a Stamp** — `EditSession::place_page_content` (our `G100`, Pass 450.0) | **wanted.** The pin carries it: the verb's report is `pdfcer_core::edit::page_artwork` (`PlacedPageContent`: `rect`, `distorted`, `objects_imported`, `resources_renamed`, `form_id`, `content_id`) and its undo kind is `CommandKind::PlacePageContent`. It is the paste-back half of `O272`. <!--namesake:place_page_artwork--> Today the stamp verb is called: a snapshot pasted back (`dispatch::ospaste::drawing`) and a dropped PDF placed as artwork both arrive as a stamp in Edit as well as Review, so in Edit the drawing selects, hides and deletes as markup and only flattening makes it part of the page. What it takes here: Edit-mode paste of `application/pdf` calls `place_page_content` while Review keeps the stamp, with its scale and `distorted` disclosure on the status line. |
 | **Every in-process OCR engine, including PaddleOCR-VL add-ons, runs through `pdfcer-ocr-host`'s `OcrRunner`, not a separate route per shell** — `ocr-vl` on `pdfcer-ocr-host`, `OcrRunner::check_runnable` accepting `engine = paddle-vl`, `OcrRunner::disclosure()` (our `G102`, Pass 442.5) | **wanted — after the pin.** On engine main past `f6c76a22`. Wiring it is a pin move in its own commit, `ocr-vl` enabled on our `pdfcer-ocr-host` dependency, the drop-down's VL entry made runnable through `OcrRunner`, and `disclosure()` shown in the OCR report. Until then the entry stays disabled with the `G102` reason. |
 | **Add an image stamp annotation** — `EditSession::add_image_stamp`, a picture contain-fitted into a `/Stamp` appearance, the module `pdfcer_core::edit::image_stamp` | **wanted — in the pin, not yet wired.** The engine answered G095 with this. What it takes here: *Paste as stamp* calls `add_image_stamp` directly instead of wrapping the picture in a one-page scratch PDF and registering it as custom-stamp artwork, and that scratch-file route is deleted with its cause. |
 | **Set, clear and position a push-button's icon** — `WidgetEdit::with_button_icon`/`without_button_icon`/`with_caption_position`, the modules `pdfcer_core::annot_author::button_icon` and `pdfcer_core::edit::button_icon`, the field `WidgetEdit::button_icon`, refusal `EditError::NotAPushButton` | **wanted — in the pin, not yet wired.** The engine answered G097 with this. What it takes here: the push-button properties gain an Icon field (choose a picture, clear it) and a caption-position choice, and a picture pasted onto a selected push button sets its icon. |
-| **Import an SVG as vector content** — `svg_import::import`, `EditSession::add_svg`/`add_svg_stamp`, `SvgImportNotes`, the modules `pdfcer_core::svg_import` and `pdfcer_core::edit::svg`, undo kind `CommandKind::AddSvg`, compiled behind the forwarded `svg-import` | **wanted — in the pin, not yet wired.** What it takes here: a dropped or inserted `.svg` places as vector content (or a stamp in a markup-only mode), each skipped feature in `SvgImportNotes` becomes an off-canvas note, and the engine's named gap — a `<pattern>` fill renders blank in our canvas though the file is correct — is disclosed off-canvas when the notes say a pattern was placed. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -179,7 +177,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **3 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `blocked` — waiting on something named — **4 of 304** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -201,10 +199,11 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
 | **List the 3D model tree — node names, hierarchy, hidden/suppressed state** — `PrcFile::model_tree`, `ModelNode` (`pdfcer-3d`, engine Pass 461.0) | **blocked on the next pin.** On engine main after the v0.76.0 tag. Wanted in the 3D viewer: a part tree beside the model showing each node's name, depth and stored hidden/suppressed state, with a borrowed display name disclosed off-canvas as the engine reports it. |
+| **Render 3D diffuse textures on an uncompressed mesh** … | **blocked on the next pin.** Engine `Pass 462.0` (`77777d07`) is after the pinned v0.76.0, so this build cannot draw it. The 3D viewer and the poster both draw through `pdfcer_3d::render_coloured`; when the pin moves, what this shell owes is the disclosure: the count of textures drawn in their base colour instead, off-canvas beside the viewer's uncoloured-part count, and a driven check on a textured fixture. |
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 304** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -215,7 +214,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `declined` — deliberately no surface — **17 of 304** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -258,7 +257,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **204 of 303** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **206 of 304** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -266,6 +265,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **shipped for Insert image and a drop; the clipboard and the stamp are still owed.** An inserted or dropped `.emf` is placed by `add_emf` (`app::actions::picture`), its `EmfImportNotes::summary()` shown in the window before Insert and repeated in the disclosures, an import refusal in the engine's words; driven by `insert_image_places_a_drawing`. Still owed: Office's EMF copy on the clipboard (paste step P9) and `add_emf_stamp` in a markup-only mode. |
+| **Import an SVG as vector content** — `svg_import::import`, `EditSession::add_svg`/`add_svg_stamp`, `SvgImportNotes`, the modules `pdfcer_core::svg_import` and `pdfcer_core::edit::svg`, undo kind `CommandKind::AddSvg`, compiled behind the forwarded `svg-import` | **shipped for Insert image and a drop; the stamp is still owed.** An inserted or dropped `.svg` is placed by `add_svg` (`app::actions::picture`), `SvgImportNotes::summary()` shown in the window before Insert and repeated in the disclosures; driven by `insert_image_places_a_drawing`, whose fixture's `<text>` is reported not carried. Still owed: `add_svg_stamp` in a markup-only mode. The `<pattern>` clause is moot: the notes carry no "pattern placed" signal to key a disclosure on, and tiled fills paint on the canvas since engine Pass 448.0 (the tiling-patterns row). |
 | **Decode GIF (87a/89a) on image import** — first frame plus transparency as `/SMask`; `ImportNotes::gif_frames_ignored`, `ImageFormat::Gif`, the module `pdfcer_core::image_import::gif` | **shipped — Insert ▸ Picture, a dropped `.gif`, and the picture picker's filter.** Our G096. `app::dropped::IMAGE_EXTENSIONS` and the picker take `gif`, and the placement disclosure names how many animation frames were left out from `ImageAuthorDisclosures::gif_frames_ignored`, beside the TIFF notes from the same struct (`tiff_pages_ignored`, `tiff_associated_alpha_unpremultiplied`, `tiff_white_is_zero_inverted`, `tiff_extra_samples_dropped`, `tiff_palette_assumed_8bit`). |
 | View an embedded 3D model with camera controls (orbit/pan/zoom) … | **built — *View…* on a PRC row of the Attachments panel's 3D models section (feature `3d`), driven (`a_3d_model_turns_under_the_pointer`).** The engine's `421.1` (GUI controls) is this project's half of `421.0`: `pdfcer_3d::assemble` places and colours the meshes and `pdfcer_3d::render_coloured` draws them from a `Camera::fit` the window turns, moves and zooms, re-rendering only when the camera or the picture size changes. Named views Isometric / Front / Right / Top / Back, Fit, a Perspective switch. Each part in its own colour; one the file gives none is grey, and the window counts them. |
 | `merge_document` carries layers … | **built.** <!--namesake:merge_document--> Pages ▸ Merge into this document's status line names `MergeOutcome::layers_merged`, and `layer_configs_dropped` only when non-zero; the trace line carries both. Engine-backed test `merging_a_layered_file_names_its_layers` (falsified). No driven check: the merge opens a file picker. |

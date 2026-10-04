@@ -354,6 +354,54 @@ fn byte_change(source: usize, stored: usize) -> String {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Drawings — an SVG or EMF placed as vector artwork
+// ---------------------------------------------------------------------------
+
+/// What a drawing is, on the window's Picture row; `kind` is
+/// `Picture::kind`.
+#[must_use]
+pub fn drawing_source(kind: &str) -> String {
+    format!(
+        "{} drawing · placed as lines and fills, not pixels",
+        kind.to_ascii_uppercase()
+    )
+}
+
+/// A drawing's own size on paper.
+#[must_use]
+pub fn drawing_natural_size(width_mm: f64, height_mm: f64) -> String {
+    let width_mm = crate::units::whole(width_mm);
+    let height_mm = crate::units::whole(height_mm);
+    format!("{width_mm} × {height_mm} mm at its own size")
+}
+
+/// How a drawing meets the box, in place of the raster fit choice.
+#[must_use]
+pub const fn drawing_fills_the_box() -> &'static str {
+    "The drawing fills the box. A box of a different shape stretches it."
+}
+
+/// What the import could not carry exactly, before the drawing is placed;
+/// `summary` is the engine's operator line.
+#[must_use]
+pub fn drawing_not_exact(summary: &str) -> String {
+    format!("Not everything in the file comes across exactly — {summary}.")
+}
+
+/// What a drawing's placement did that the page does not show.
+#[must_use]
+pub fn drawing_disclosures(distorted: bool, notes: Option<&str>) -> Vec<String> {
+    let mut out = vec!["The drawing was placed as vector artwork.".to_owned()];
+    if distorted {
+        out.push("The drawing was stretched to fill the box, so its shape has changed.".to_owned());
+    }
+    if let Some(summary) = notes {
+        out.push(drawing_not_exact(summary));
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

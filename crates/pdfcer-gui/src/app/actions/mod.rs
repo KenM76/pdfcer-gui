@@ -51,6 +51,8 @@ pub mod bookmarks;
 mod markupdest;
 /// Saving an embedded 3D model out to a file.
 pub(crate) mod models;
+/// Placing a picture or drawing, and selecting what was placed.
+mod picture;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
 use pdfcer_gui_base::displaypiece as chrome;
 /// Committing a paragraph's whole text, from a draft Enter opened on it.

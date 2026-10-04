@@ -601,3 +601,6 @@ pub mod alignlayout;
 
 /// A freehand mark's points, addressed per stroke and flat at once.
 pub mod inkaddress;
+
+/// A file chosen for the page: a raster picture or a vector drawing.
+pub mod picture;

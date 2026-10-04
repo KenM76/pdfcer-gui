@@ -188,7 +188,7 @@ pub fn pick_image_source() -> Picked {
         .set_title(crate::text::images::window_title())
         .add_filter(
             crate::text::files::filter_image(),
-            &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff"],
+            pdfcer_gui_base::picture::EXTENSIONS,
         )
         .add_filter(crate::text::files::filter_all(), &["*"])
         .pick_file()

@@ -5,7 +5,7 @@
 
 use crate::app::state::Status;
 use crate::dialogs::DialogsState;
-use pdfcer_core::image_import::ImportedImage;
+use pdfcer_gui_base::picture::Picture;
 
 /// The whole of `edit.insert_image` after its capability guard.
 pub(super) fn insert(dialogs: &mut DialogsState, status: &Status) {
@@ -26,22 +26,16 @@ pub(crate) fn insert_path(dialogs: &mut DialogsState, status: &Status, path: &st
     dialogs.open_insert_image(status, std::sync::Arc::new(image), name);
 }
 
-/// Read and import the picture at `path` on this thread; a failure is
-/// recorded as a note naming the reason, and answers `None`.
-pub(crate) fn import(status: &Status, path: &std::path::Path) -> Option<ImportedImage> {
+/// Read and import the picture or drawing at `path` on this thread; a
+/// failure is recorded as a note naming the reason, and answers `None`.
+pub(crate) fn import(status: &Status, path: &std::path::Path) -> Option<Picture> {
     let outcome = std::fs::read(path)
         .map_err(|e| e.to_string())
-        .and_then(|bytes| pdfcer_core::image_import::import(&bytes).map_err(|e| e.to_string()));
+        .and_then(|bytes| Picture::import(path, &bytes));
     match outcome {
-        Ok(image) => {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                format!(
-                    "image-imported format={:?} px={}x{} dpi={:?}",
-                    image.format, image.width, image.height, image.dpi
-                )
-            });
-            Some(image)
+        Ok(picture) => {
+            crate::diag::trace(|| imported_line(&picture));
+            Some(picture)
         }
         Err(detail) => {
             crate::diag::trace(|| {
@@ -57,6 +51,27 @@ pub(crate) fn import(status: &Status, path: &std::path::Path) -> Option<Imported
                 );
             }
             None
+        }
+    }
+}
+
+/// The `image-imported` trace line: a raster's format, pixels and declared
+/// resolution, or a drawing's kind, size in points and import notes.
+fn imported_line(picture: &Picture) -> String {
+    match picture.raster() {
+        Some(image) => format!(
+            "image-imported kind=image format={:?} px={}x{} dpi={:?}", // ui-text-exempt: diagnostic trace
+            image.format, image.width, image.height, image.dpi
+        ),
+        None => {
+            let (w, h) = picture.natural_size_pt();
+            format!(
+                "image-imported kind={} pt={w:.2}x{h:.2} notes=\"{}\"", // ui-text-exempt: diagnostic trace
+                picture.kind(),
+                picture
+                    .drawing_notes()
+                    .map_or_else(|| "none".to_owned(), |n| n.replace('"', "'")) // ui-text-exempt: diagnostic trace
+            )
         }
     }
 }

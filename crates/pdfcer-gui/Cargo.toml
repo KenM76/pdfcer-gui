@@ -184,7 +184,7 @@ paddle = ["pdfcer-core/paddle", "pdfcer-gui-base/paddle"]
 ocr-vl = ["pdfcer-core/ocr-vl"]
 
 # `svg-import` — placing an SVG as vector content.
-svg-import = ["pdfcer-core/svg-import"]
+svg-import = ["pdfcer-core/svg-import", "pdfcer-gui-base/svg-import"]
 
 [dependencies]
 # native-window = the four `user32` calls that make a dialog OWNED by the
