@@ -31,11 +31,21 @@ pub enum TextAnnotKind {
     /// Its text is an optional description; the file is the payload, so it
     /// never reaches [`spec`].
     Attachment,
+    /// `/Caret` — a proofreading mark where words are to be inserted; the
+    /// words travel as its note. Its own verb authors it, so it never
+    /// reaches [`spec`].
+    Caret,
 }
 
 impl TextAnnotKind {
     /// Every kind, in the order the Markup tab offers them.
-    pub const ALL: &'static [Self] = &[Self::TextBox, Self::Sticky, Self::Stamp, Self::Attachment];
+    pub const ALL: &'static [Self] = &[
+        Self::TextBox,
+        Self::Sticky,
+        Self::Stamp,
+        Self::Attachment,
+        Self::Caret,
+    ];
 
     /// The command id that arms this kind.
     #[must_use]
@@ -49,6 +59,8 @@ impl TextAnnotKind {
             Self::Stamp => "markup.stamp",
             // ui-text-exempt: command ids, never displayed
             Self::Attachment => "markup.attach_file",
+            // ui-text-exempt: command ids, never displayed
+            Self::Caret => "markup.insert_text",
         }
     }
 
@@ -63,7 +75,7 @@ impl TextAnnotKind {
     pub const fn is_dragged(self) -> bool {
         match self {
             Self::TextBox | Self::Stamp => true,
-            Self::Sticky | Self::Attachment => false,
+            Self::Sticky | Self::Attachment | Self::Caret => false,
         }
     }
 
@@ -218,7 +230,7 @@ pub fn spec(
     let (r, g, b) = colour;
     Some(match kind {
         // The file is the payload; `actions::attachment` authors it.
-        TextAnnotKind::Attachment => return None,
+        TextAnnotKind::Attachment | TextAnnotKind::Caret => return None,
         TextAnnotKind::TextBox => TextAnnotSpec::FreeText {
             rect,
             text: text.to_owned(),
@@ -619,7 +631,8 @@ mod tests {
         assert!(TextAnnotKind::from_command("markup.rectangle").is_none());
     }
 
-    /// The two markers are placed by a click, and exactly one kind uses a gallery.
+    /// The two markers and the caret are placed by a click, and exactly one
+    /// kind uses a gallery.
     #[test]
     fn the_two_odd_ones_out_are_the_ones_expected() {
         let clicked: Vec<_> = TextAnnotKind::ALL
@@ -629,7 +642,11 @@ mod tests {
             .collect();
         assert_eq!(
             clicked,
-            vec![TextAnnotKind::Sticky, TextAnnotKind::Attachment]
+            vec![
+                TextAnnotKind::Sticky,
+                TextAnnotKind::Attachment,
+                TextAnnotKind::Caret
+            ]
         );
         let gallery: Vec<_> = TextAnnotKind::ALL
             .iter()

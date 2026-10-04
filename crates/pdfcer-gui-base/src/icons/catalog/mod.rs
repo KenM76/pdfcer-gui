@@ -247,6 +247,10 @@ pub enum Icon {
     TextStrikeout,
     /// Markup → Squiggly-underline the selected text.
     TextSquiggly,
+    /// Markup → Insert text: a caret where words are to be added.
+    TextCaret,
+    /// Markup → Replace text: the selection struck through, a caret after it.
+    TextReplace,
     /// Text → FreeText box.
     TextFreeText,
     /// Text → Sticky note.

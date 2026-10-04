@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic proofreading replace-mark shape — generic, no trademark risk -->
+  <!-- ui-spec §3.3 "text markup family": a text line struck through, and a caret
+       under its right end pointing up — the strike-out and caret pair a Replace
+       Text comment draws. -->
+  <path d="M8 16h22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M6 24h26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M8 32h22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M34 38l5-9 5 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

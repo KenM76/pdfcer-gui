@@ -318,6 +318,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(layer_folders::LayerFoldersShowAndReorganise),
         Box::new(layer_assign::LayerAssignMovesTheSelection),
         Box::new(attach_file::AFileAttachesAsAMarker),
+        Box::new(insert_text::ACaretMarksAnInsertion),
+        Box::new(replace_text::ReplacingTextStrikesAndCarets),
         Box::new(markup_flatten::AMarkupCanBeMadePartOfThePage),
         Box::new(display_two_rows::TheDisplayButtonsStackInTwoRows),
         Box::new(title_build_stamp::TheTitleBarCarriesTheBuildTime),

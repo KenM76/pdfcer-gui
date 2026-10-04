@@ -139,6 +139,8 @@ pub struct TextAnnotDialog {
     focus_attempts: u8,
     /// The file and marker icon, for the attach-file kind only.
     attach: Option<attach::Chosen>,
+    /// The new-paragraph choice, for the insert-text kind only.
+    caret: Option<caret::Choice>,
 }
 
 /// **How many frames may ask for the text field's focus before giving up.**
@@ -220,6 +222,9 @@ const STAMP_EXTRA_PTS: f32 = 190.0;
 /// The attach-file kind's file line and four-icon chooser.
 const ATTACH_EXTRA_PTS: f32 = 170.0;
 
+/// The insert-text kind's new-paragraph choice and its sentence.
+const CARET_EXTRA_PTS: f32 = 70.0;
+
 /// **How much taller the stamp's window opens for each CATEGORY of the
 /// operator's own stamps**, in points.
 ///
@@ -291,6 +296,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
         // times.
         TextAnnotKind::Stamp => STAMP_EXTRA_PTS + custom_extra,
         TextAnnotKind::Attachment => ATTACH_EXTRA_PTS,
+        TextAnnotKind::Caret => CARET_EXTRA_PTS,
         TextAnnotKind::TextBox => 0.0,
     };
     egui::vec2(
@@ -423,6 +429,7 @@ impl TextAnnotDialog {
             focused_once: false,
             focus_attempts: 0,
             attach: None,
+            caret: (kind == TextAnnotKind::Caret).then(caret::Choice::default),
         }
     }
 
@@ -460,7 +467,7 @@ impl TextAnnotDialog {
         // *should* go without also having to be a statement about monitors.
         let (frame, ()) = crate::dialogs::host::Host::new(
             "text-annot", // ui-text-exempt: a viewport key, never displayed.
-            t::title(self.kind),
+            self.title(),
             size,
             MIN_WINDOW_PTS,
         )
@@ -495,6 +502,10 @@ impl TextAnnotDialog {
                 }
                 return false;
             }
+            if let Some(choice) = &self.caret {
+                actions.push(choice.action(self.page, self.rect, &self.text));
+                return false;
+            }
             actions.push(Action::CommitTextAnnot {
                 page: self.page,
                 kind: self.kind,
@@ -522,7 +533,7 @@ impl TextAnnotDialog {
     /// The field or the gallery — everything above the button row, and the
     /// only part of this window that scrolls.
     fn body(&mut self, ui: &mut Ui) {
-        ui.label(t::intro(self.kind));
+        ui.label(self.intro());
         ui.add_space(8.0);
 
         if self.kind.uses_gallery() {
@@ -551,6 +562,9 @@ impl TextAnnotDialog {
         if let Some(chosen) = &mut self.attach {
             chosen.show(ui);
         }
+        if let Some(choice) = &mut self.caret {
+            choice.show(ui);
+        }
     }
 
     /// **The two buttons, pinned to the bottom of the window.**
@@ -563,9 +577,14 @@ impl TextAnnotDialog {
             // keystroke makes it live — which is exactly what greying is
             // reserved for.
             // The attach-file kind's words are an optional description.
-            let ready = self.kind.uses_gallery()
-                || self.kind == TextAnnotKind::Attachment
-                || !self.text.trim().is_empty();
+            let ready = match &self.caret {
+                Some(choice) => choice.ready(&self.text),
+                None => {
+                    self.kind.uses_gallery()
+                        || self.kind == TextAnnotKind::Attachment
+                        || !self.text.trim().is_empty()
+                }
+            };
             let accept = ui.add_enabled(ready, egui::Button::new(t::accept()));
             //
             // `ui_rect` publishes a rectangle whether or not it is on the
@@ -581,7 +600,7 @@ impl TextAnnotDialog {
                 self.accept_requested = true;
             }
             if !ready {
-                accept.on_disabled_hover_text(t::accept_disabled(self.kind));
+                accept.on_disabled_hover_text(self.accept_disabled());
             }
             let cancel = ui.button(t::cancel());
             crate::diag::ui_rect_visible(REGION_CANCEL, cancel.rect, ui.clip_rect());
@@ -593,6 +612,7 @@ impl TextAnnotDialog {
 
     /// The free-text field, for the two kinds whose words the operator writes.
     fn field(&mut self, ui: &mut Ui) {
+        let hint = self.hint();
         let response = ui.add(
             // escape-disposition: dialog-cancels — the one surface where the key
             // still reaches a discard, and it is a dialog, so Cancel is the point.
@@ -601,7 +621,7 @@ impl TextAnnotDialog {
             egui::TextEdit::multiline(&mut self.text)
                 .desired_rows(4)
                 .desired_width(f32::INFINITY)
-                .hint_text(t::hint(self.kind))
+                .hint_text(hint)
                 .char_limit(MAX_TEXT_CHARS),
         );
         crate::diag::ui_rect(REGION_TEXT, response.rect);
@@ -952,6 +972,10 @@ impl TextAnnotDialog {
 #[path = "textannot_attach.rs"]
 mod attach;
 pub use attach::REGION_ATTACH_ICON;
+
+#[path = "textannot_caret.rs"]
+mod caret;
+pub use caret::REGION_CARET_PARAGRAPH;
 
 #[cfg(test)]
 #[path = "textannot_tests.rs"]

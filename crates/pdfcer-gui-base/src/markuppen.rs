@@ -52,6 +52,8 @@ pub enum PenSlot {
     TextBox,
     /// `/Stamp` — a framed label.
     Stamp,
+    /// `/Caret` — insert and replace text.
+    Caret,
 }
 
 impl PenSlot {
@@ -65,6 +67,7 @@ impl PenSlot {
         PenSlot::Note,
         PenSlot::TextBox,
         PenSlot::Stamp,
+        PenSlot::Caret,
     ];
 
     /// **Which pen draws this kind.**
@@ -92,6 +95,7 @@ impl PenSlot {
             crate::wordmarkup::TextAnnotKind::Sticky
             | crate::wordmarkup::TextAnnotKind::Attachment => Self::Note,
             crate::wordmarkup::TextAnnotKind::Stamp => Self::Stamp,
+            crate::wordmarkup::TextAnnotKind::Caret => Self::Caret,
         }
     }
 }
@@ -121,6 +125,8 @@ pub struct Pen {
     pub text_box: (f64, f64, f64),
     /// The stamp's colour — [`PenSlot::Stamp`].
     pub stamp: (f64, f64, f64),
+    /// The caret's colour — [`PenSlot::Caret`].
+    pub caret: (f64, f64, f64),
     /// Border and stroke width, in PDF points.
     ///
     /// Clamped to [`MIN_WIDTH_PTS`]`..=`[`MAX_WIDTH_PTS`] by the control that
@@ -228,6 +234,8 @@ impl Default for Pen {
             text_box: palette::components(palette::MARKUP_RED),
             // DOCUMENT COLOUR: Acrobat's `cStamp`.
             stamp: palette::components(palette::MARKUP_RED),
+            // DOCUMENT COLOUR: Acrobat's `cCaret`.
+            caret: palette::components(palette::CARET_MAGENTA),
             width_pts: 2.0,
             opacity: 1.0,
             // Solid, which writes no dash at all — see the field's own doc
@@ -267,6 +275,7 @@ impl Pen {
             PenSlot::Note => self.note,
             PenSlot::TextBox => self.text_box,
             PenSlot::Stamp => self.stamp,
+            PenSlot::Caret => self.caret,
         }
     }
 
@@ -282,6 +291,7 @@ impl Pen {
             PenSlot::Note => self.note = rgb,
             PenSlot::TextBox => self.text_box = rgb,
             PenSlot::Stamp => self.stamp = rgb,
+            PenSlot::Caret => self.caret = rgb,
         }
     }
 
@@ -376,6 +386,7 @@ mod tests {
             (PenSlot::Note, palette::NOTE_PURPLE),
             (PenSlot::TextBox, palette::MARKUP_RED),
             (PenSlot::Stamp, palette::MARKUP_RED),
+            (PenSlot::Caret, palette::CARET_MAGENTA),
         ];
         assert_eq!(
             expected.len(),

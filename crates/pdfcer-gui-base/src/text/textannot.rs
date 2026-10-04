@@ -42,6 +42,7 @@ pub const fn title(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Sticky => "Sticky note",
         TextAnnotKind::Stamp => "Stamp",
         TextAnnotKind::Attachment => "Attach a file",
+        TextAnnotKind::Caret => "Insert text",
     }
 }
 
@@ -67,6 +68,10 @@ pub const fn intro(kind: TextAnnotKind) -> &'static str {
              Anyone with the PDF can open or save the file from the marker. \
              The marker prints; the file does not."
         }
+        TextAnnotKind::Caret => {
+            "A caret marks where the words should go. They are a proposal in a \
+             comment: the page's own text does not change."
+        }
     }
 }
 
@@ -81,6 +86,7 @@ pub const fn hint(kind: TextAnnotKind) -> &'static str {
         // dialog is a worse outcome than a placeholder nobody sees.
         TextAnnotKind::Stamp => "",
         TextAnnotKind::Attachment => "Description (optional)",
+        TextAnnotKind::Caret => "Words to insert",
     }
 }
 
@@ -100,6 +106,10 @@ pub const fn bound(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Attachment => {
             "Stored with the file, and shown by PDF readers as the attachment's \
              description."
+        }
+        TextAnnotKind::Caret => {
+            "Shown when the comment is opened, in a standard Latin font; other \
+             alphabets come out as question marks."
         }
     }
 }
@@ -212,7 +222,65 @@ pub const fn accept_disabled(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Stamp => "",
         // Unreachable: the file is picked before the dialog opens.
         TextAnnotKind::Attachment => "",
+        TextAnnotKind::Caret => "Type the words to insert, or tick New paragraph.",
     }
+}
+
+/// The label of the caret's new-paragraph choice.
+#[must_use]
+pub const fn caret_paragraph() -> &'static str {
+    "New paragraph"
+}
+
+/// What the new-paragraph choice adds, said under it.
+#[must_use]
+pub const fn caret_paragraph_bound() -> &'static str {
+    "Adds a paragraph mark (¶) above the caret, asking for a paragraph break there."
+}
+
+/// The disclosure after a caret is placed.
+#[must_use]
+pub fn caret_placed(page: usize) -> String {
+    format!(
+        "Insert-text comment added on page {}. The page's text is unchanged; \
+         the words are in the comment.",
+        page + 1
+    )
+}
+
+/// The replace-text window's title.
+#[must_use]
+pub const fn replace_title() -> &'static str {
+    "Replace text"
+}
+
+/// The sentence under the replace-text title.
+#[must_use]
+pub const fn replace_intro() -> &'static str {
+    "The selected text is struck through and a caret follows it. The new words \
+         are a proposal in a comment: the page's own text does not change."
+}
+
+/// The replace-text field's placeholder.
+#[must_use]
+pub const fn replace_hint() -> &'static str {
+    "Replacement words"
+}
+
+/// Why Add is greyed in the replace-text window.
+#[must_use]
+pub const fn replace_accept_disabled() -> &'static str {
+    "Type the replacement words first."
+}
+
+/// The disclosure after a replace-text comment is placed.
+#[must_use]
+pub fn replace_placed(page: usize) -> String {
+    format!(
+        "Replace-text comment added on page {}. The page's text is unchanged; \
+         the replacement is in the comment.",
+        page + 1
+    )
 }
 
 /// The abandon control.

@@ -366,7 +366,7 @@ signature-locked — with a visible badge, not a hidden global toggle.
 |---|---|
 | **Shapes** | Rectangle · Ellipse · Line · Arrow · Polyline · Polygon · Cloud · Ink (freehand) · Finish |
 | **Text markup** | Highlight · Underline · Strikeout · Squiggly |
-| **Notes** | Text box · Sticky note · Callout · Stamp ⌄ · Paste picture as stamp · Attach file |
+| **Notes** | Text box · Sticky note · Callout · Stamp ⌄ · Paste picture as stamp · Attach file · Insert text · Replace text |
 | **Style** | Colour · Line width · Fill · Opacity · Line style |
 | **Arrange** | Bring to front · Bring forward · Send backward · Send to back |
 | **Comments** | Comments panel · Make all part of the page · Clear page · Clear all |

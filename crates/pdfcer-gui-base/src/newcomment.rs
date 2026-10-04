@@ -22,4 +22,30 @@ pub enum NewComment {
         /// `None` when the operator typed none.
         description: Option<String>,
     },
+    /// **Mark where words are to be inserted** (`/Caret`, §12.5.6.11).
+    Caret {
+        /// The 0-based page.
+        page: usize,
+        /// Where the operator clicked, in PDF user space; the caret's apex
+        /// sits there.
+        at: (f64, f64),
+        /// The words to insert, trimmed; `None` when only a paragraph break
+        /// is asked for.
+        text: Option<String>,
+        /// Whether a paragraph mark accompanies the caret (`/Sy /P`).
+        paragraph: bool,
+    },
+    /// **Propose replacement words for selected text**: a `/StrikeOut` over
+    /// the selection grouped under a `/Caret` carrying the words.
+    ReplaceText {
+        /// The 0-based page the selection is on.
+        page: usize,
+        /// The caret's apex, in PDF user space: the end of the selection's
+        /// last line, a caret's height above that line's bottom.
+        at: (f64, f64),
+        /// The replacement words, trimmed and non-empty.
+        text: String,
+        /// The selected lines' boxes, in content order.
+        struck: Vec<pdfcer_core::annot_author::Quad>,
+    },
 }

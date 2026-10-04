@@ -254,6 +254,24 @@ pub const fn markup_attach_file() -> CommandText {
     )
 }
 
+/// `markup.insert_text`
+#[must_use]
+pub const fn markup_insert_text() -> CommandText {
+    CommandText::new(
+        "Insert text",
+        "Mark where words should be added, with a caret and the words in a comment.",
+    )
+}
+
+/// `markup.replace_text`
+#[must_use]
+pub const fn markup_replace_text() -> CommandText {
+    CommandText::new(
+        "Replace text",
+        "Strike through the selected text and propose new words in a comment.",
+    )
+}
+
 /// `markup.stamp`
 #[must_use]
 pub const fn markup_stamp() -> CommandText {

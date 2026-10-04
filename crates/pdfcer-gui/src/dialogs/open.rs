@@ -195,6 +195,20 @@ impl DialogsState {
         );
     }
 
+    /// **Open the replace-text dialog** over text selected on `page`, whose
+    /// line boxes are `struck`.
+    pub fn open_replace_text(
+        &mut self,
+        status: &Status,
+        page: usize,
+        struck: Vec<pdfcer_core::annot_author::Quad>,
+    ) {
+        if !matches!(status, Status::Open(_)) {
+            return;
+        }
+        self.text_annot = textannot::TextAnnotDialog::replacing(page, struck);
+    }
+
     /// **Open the placement dialog for a form control just put on the page.**
     pub fn open_form_field(
         &mut self,

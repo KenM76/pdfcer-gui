@@ -60,7 +60,10 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
     Some(match icon {
         Icon::ApplyRedactions | Icon::Accept => (Hue::Affirm, &[0]),
         Icon::CheckBox | Icon::FinishShape | Icon::AddText => (Hue::Affirm, &[1]),
-        Icon::RenderDiagnostics | Icon::FormField | Icon::InsertImage => (Hue::Affirm, &[2]),
+        Icon::RenderDiagnostics | Icon::FormField | Icon::InsertImage | Icon::TextCaret => {
+            (Hue::Affirm, &[2])
+        }
+        Icon::TextReplace => (Hue::Affirm, &[3]),
         Icon::New | Icon::InsertPages => (Hue::Affirm, &[2, 3]),
         Icon::Permissions => (Hue::Affirm, &[2, 4]),
         Icon::Open | Icon::FontFolders | Icon::EditText => (Hue::Mark, &[0]),

@@ -90,6 +90,8 @@ pub fn tab() -> Tab {
                     large("markup.sticky_note"),
                     large("markup.stamp"),
                     large("markup.attach_file"),
+                    large("markup.insert_text"),
+                    large("markup.replace_text"),
                     large("markup.paste_image_stamp"),
                 ],
             ),

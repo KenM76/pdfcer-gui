@@ -420,6 +420,8 @@
                         Command(id: "markup.sticky_note", size: Large),
                         Command(id: "markup.stamp", size: Large),
                         Command(id: "markup.attach_file", size: Large),
+                        Command(id: "markup.insert_text", size: Large),
+                        Command(id: "markup.replace_text", size: Large),
                         Command(id: "markup.paste_image_stamp", size: Large),
                     ],
                     collapse: 2,

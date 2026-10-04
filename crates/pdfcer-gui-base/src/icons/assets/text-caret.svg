@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic proofreading-caret shape — generic, no trademark risk -->
+  <!-- ui-spec §3.3 "text markup family": two text lines, the lower one parted, and a
+       caret under the parting pointing up into it — the insertion mark a /Caret
+       annotation draws. The gap is wider than the caret's apex so the two never
+       touch at 16 px. -->
+  <path d="M11 15h26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M11 24h9M28 24h9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M18 38l6-9 6 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

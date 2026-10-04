@@ -75,6 +75,7 @@ pub(crate) mod markupnodes;
 /// operand problem (a command id is a verb with no noun) and the
 /// park-and-drain shape that answers it.
 pub(crate) mod panels;
+mod replacetext;
 pub(crate) mod routes;
 pub(crate) mod security;
 pub(crate) mod settings;
@@ -810,6 +811,7 @@ impl PdfcerApp {
             // a pure function that owns every rule about which selection is
             // eligible and what a stale one means, and this reads one published
             // capability, calls it once, and pushes what comes back.
+            "markup.replace_text" => replacetext::dispatch(self),
             id if crate::shell::commands::text_mark_for_command(id).is_some() => {
                 let Some(kind) = crate::shell::commands::text_mark_for_command(id) else {
                     return;

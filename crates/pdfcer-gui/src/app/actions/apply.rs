@@ -639,26 +639,9 @@ impl PdfcerApp {
                     self.dialogs.open_text_annot(&self.status, page, kind, rect);
                 }
             }
-            Action::NewComment(pdfcer_gui_base::newcomment::NewComment::Attachment {
-                page,
-                rect,
-                file,
-                icon,
-                description,
-            }) => super::attachannot::place(
-                doc,
-                &self.prefs,
-                &super::attachannot::Placed {
-                    page,
-                    rect,
-                    file: &file,
-                    icon,
-                    description: description.as_deref(),
-                },
-                self.pen
-                    .text_annot_colour(crate::canvas::textannot::TextAnnotKind::Attachment),
-                self.pen.opacity_option(),
-            ),
+            Action::NewComment(comment) => {
+                super::newcomment::apply(doc, &self.prefs, self.pen, comment);
+            }
             // …and this is the one that reaches the document, through the same
             // `vector_edit` funnel every other authoring verb uses. The engine
             // verb differs (`add_text_annotation` rather than `add_markup`)

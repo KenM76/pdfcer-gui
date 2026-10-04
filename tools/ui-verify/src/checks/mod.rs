@@ -588,6 +588,8 @@ pub mod attach_file;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
 pub mod forms_spotlight;
+/// Mark an insertion with a caret from Markup.
+pub mod insert_text;
 /// Put a selected object or annotation on a layer.
 pub mod layer_assign;
 /// Create, rename and delete a layer from the Layers panel.
@@ -599,6 +601,8 @@ pub mod layer_folders;
 /// Make a markup part of the page from its right-click menu.
 pub mod markup_flatten;
 pub mod password_fill;
+/// Propose replacement words for selected text from Markup.
+pub mod replace_text;
 
 /// **Selecting a page object names the layer it is on** — O126's third
 /// feature, driven at last. Its header carries the vacuous-pass argument for

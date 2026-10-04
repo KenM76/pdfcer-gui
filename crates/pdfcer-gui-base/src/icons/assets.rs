@@ -388,6 +388,16 @@ pub(super) const TEXT_SELECT: &str = include_str!("assets/text-select.svg");
 /// Authored for pdfcer in the header §3 style contract — the wavy member of the text-markup family, whose four lobes are a legibility decision the asset records.
 pub(super) const TEXT_SQUIGGLY: &str = include_str!("assets/text-squiggly.svg");
 
+/// `text-caret.svg` — the art for [`super::Icon::TextCaret`].
+///
+/// Authored for pdfcer in the header §3 style contract — a parted text line with a caret pointing up into the parting.
+pub(super) const TEXT_CARET: &str = include_str!("assets/text-caret.svg");
+
+/// `text-replace.svg` — the art for [`super::Icon::TextReplace`].
+///
+/// Authored for pdfcer in the header §3 style contract — a struck text line with a caret under its right end.
+pub(super) const TEXT_REPLACE: &str = include_str!("assets/text-replace.svg");
+
 /// `text-sticky.svg` — the art for [`super::Icon::TextSticky`].
 ///
 /// Authored for pdfcer in the header §3 style contract.

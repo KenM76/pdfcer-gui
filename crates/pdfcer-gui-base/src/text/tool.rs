@@ -143,6 +143,7 @@ pub const fn text_annot_instruction(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Attachment => {
             "Click where the file's marker should sit, then choose the file."
         }
+        TextAnnotKind::Caret => "Click where the words should go, then type them.",
     }
 }
 

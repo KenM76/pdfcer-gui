@@ -395,11 +395,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 201 → 203: `file.export_structure` and `file.import_structure`, File ▸ Export.
     // 203 → 204: `format.move_to_layer`, Format ▸ Selection and four canvas menus.
     // 204 → 205: `markup.attach_file`, Markup ▸ Notes.
+    // 205 → 206: `markup.insert_text`, Markup ▸ Notes.
+    // 206 → 207: `markup.replace_text`, Markup ▸ Notes.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        205 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        207 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -806,10 +808,12 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 183 → 185: the QDF pair name `export` and `import-form-data`, shared.
     // 185 → 186: `format.move_to_layer` names `layers`, shared.
     // 186 → 187: `markup.attach_file` names `attachment`, shared with `edit.attachments`.
+    // 187 → 188: `markup.insert_text` names `text-caret`, drawn for it.
+    // 188 → 189: `markup.replace_text` names `text-replace`, drawn for it.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        187 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        189 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

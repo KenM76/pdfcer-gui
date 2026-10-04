@@ -50,10 +50,12 @@ pub mod attachments;
 pub mod bookmarks;
 /// A push button's picture: the picker, then `edit_widget`.
 mod buttonicon;
+mod caretannot;
 /// Where a Review mark lands: an annotation, or the page's own content.
 mod markupdest;
 /// Saving an embedded 3D model out to a file.
 pub(crate) mod models;
+mod newcomment;
 /// Placing a picture or drawing, and selecting what was placed.
 mod picture;
 /// `ViewChrome` — which piece of View ▸ Display an action is about.
