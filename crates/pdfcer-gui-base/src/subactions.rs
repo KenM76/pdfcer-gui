@@ -620,6 +620,24 @@ pub enum PageAction {
         /// Never applied when the write did not happen.
         delete_after: bool,
     },
+    /// **Write this document as several new files**, divided by the rule in
+    /// the request. Raised by Pages ▸ Split… once its preview lists the
+    /// files; the open document is not changed. Applied through
+    /// `pdfcer_gui::app::actions::split::split`.
+    SplitDocument(SplitRequest),
+}
+/// Everything a split needs from its window.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SplitRequest {
+    /// Where each new file starts.
+    pub criterion: pdfcer_core::pageops::SplitCriterion,
+    /// The file-name pattern; the engine fills `{stem}`, `{n}`, `{start}` and
+    /// `{end}`.
+    pub template: String,
+    /// The folder every file is written to.
+    pub folder: std::path::PathBuf,
+    /// Whether each file's pages keep the labels they show here.
+    pub labels: pdfcer_core::pageops::ExtractedPageLabels,
 }
 /// **What is selected**, as an action a panel can raise.
 #[derive(Debug, Clone, PartialEq)]

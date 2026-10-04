@@ -721,6 +721,7 @@ pub(super) fn apply(
                 delete_arm(doc, panels, &pages, separations);
             }
         }
+        PageAction::SplitDocument(request) => super::split::split(doc, &request, separations),
     }
 }
 

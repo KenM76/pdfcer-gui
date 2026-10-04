@@ -440,6 +440,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_word_scripted::ExportWordFollowsTheTags),
         Box::new(export_word_scripted::ExportWordHonoursItsChoices),
         Box::new(extract_pages_labels::ExtractPagesKeepsOrDropsTheLabels),
+        Box::new(split_pages::SplitWritesTheFilesTheWindowListed),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
         Box::new(evidence_scripted::ValidationEvidenceAddedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),

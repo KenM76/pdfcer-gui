@@ -274,6 +274,7 @@
                         Command(id: "pages.extract"),
                         Command(id: "pages.move_up"),
                         Command(id: "pages.move_down"),
+                        Command(id: "pages.split"),
                         Command(id: "pages.merge_into"),
                     ],
                 ),

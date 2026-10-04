@@ -71,6 +71,7 @@ pub fn tab() -> Tab {
                     command("pages.extract"),
                     command("pages.move_up"),
                     command("pages.move_down"),
+                    command("pages.split"),
                     command("pages.merge_into"),
                 ],
             ),

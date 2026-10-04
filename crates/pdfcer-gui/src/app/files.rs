@@ -41,6 +41,9 @@ pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-ex
 /// The harness seam for [`pick_ocr_folder`].
 pub const DIAG_OCR_FOLDER_PATH: &str = "PDFCER_DIAG_OCR_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The harness seam for [`pick_split_folder`].
+pub const DIAG_SPLIT_FOLDER_PATH: &str = "PDFCER_DIAG_SPLIT_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The harness seam for [`pick_acrobat`] — `OPERATOR_REQUESTS.md` O122.
 pub const DIAG_ACROBAT_PATH: &str = "PDFCER_DIAG_ACROBAT_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -430,11 +433,31 @@ pub fn pick_font_folder() -> Picked {
 /// Ask for a folder Recognise text may find OCR models in.
 #[must_use]
 pub fn pick_ocr_folder() -> Picked {
-    let (answer, source) = match from_env(std::env::var_os(DIAG_OCR_FOLDER_PATH)) {
+    pick_folder_traced(
+        DIAG_OCR_FOLDER_PATH,
+        crate::text::settings::ocrmodels::dialog_title(),
+        "ocr-folder-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// Ask for the folder Pages ▸ Split… writes its files to.
+#[must_use]
+pub fn pick_split_folder() -> Picked {
+    pick_folder_traced(
+        DIAG_SPLIT_FOLDER_PATH,
+        crate::text::split_pages::folder_dialog_title(),
+        "split-folder-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// A folder picker answered by `env` when it is set, else the native dialog,
+/// tracing `<event> source=<env|native> path=<path|none>`.
+fn pick_folder_traced(env: &str, title: &str, event: &str) -> Picked {
+    let (answer, source) = match from_env(std::env::var_os(env)) {
         Some(answer) => (answer, "env"), // ui-text-exempt: trace token
         None => (
             rfd::FileDialog::new()
-                .set_title(crate::text::settings::ocrmodels::dialog_title())
+                .set_title(title)
                 .pick_folder()
                 .map_or(Picked::Cancelled, Picked::Path),
             "native", // ui-text-exempt: trace token
@@ -446,7 +469,7 @@ pub fn pick_ocr_folder() -> Picked {
             _ => String::from("none"), // ui-text-exempt: trace token
         };
         // ui-text-exempt: diagnostic trace, never displayed.
-        format!("ocr-folder-picked source={source} path={path}")
+        format!("{event} source={source} path={path}")
     });
     answer
 }

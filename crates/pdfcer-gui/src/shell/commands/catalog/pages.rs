@@ -95,6 +95,9 @@ pub(super) fn band() -> Vec<Command> {
         // curved tails carry the whole meaning. Distinct from
         // `page-extract` two entries above, which is the same family's opposite
         // sense — an arrow LEAVING a page.
+        command("pages.split", t::pages_split(), 314)
+            .with_icon("split")
+            .enabled_when("doc.pages"),
         command("pages.merge_into", t::pages_merge_into(), 315)
             .with_icon("merge")
             .enabled_when("doc.pages"),

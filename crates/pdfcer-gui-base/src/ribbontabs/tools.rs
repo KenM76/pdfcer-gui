@@ -18,8 +18,8 @@ pub fn tab() -> Tab {
                 "batch",
                 ribbon::group_tools_batch(),
                 // One item, and that is correct rather than unfinished.
-                // `tools.split_files` is unregistered until the boundary
-                // chooser exists (R9, O68); merge is wired and stays.
+                // `tools.split_files` is unregistered until the split window
+                // takes files from disk (R9, O68); merge is wired and stays.
                 //
                 // The band is NOT deleted for being short. The rule that
                 // deletes a band is emptiness — an empty captioned band is a

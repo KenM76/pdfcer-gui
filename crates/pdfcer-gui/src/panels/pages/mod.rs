@@ -1037,27 +1037,17 @@ mod tests {
                  nothing at all"
             );
         }
-        // …and the one the menu deliberately leaves out is absent from that
-        // list rather than forgotten: `pages.merge_into` is a document-level
-        // verb that acts on the whole file rather than on the sheets pointed
-        // at. It stays on the ribbon's Pages tab.
-        //
-        // `pages.split` is deliberately absent from this list and is
-        // UNREGISTERED — `OPERATOR_REQUESTS.md` O68. R9: a capability that is
-        // not built renders nothing rather than a drawn, enabled control with
-        // no dispatch arm. What it needs first is a boundary chooser, a
-        // destination directory and a name template, and it returns with
-        // `tools.split_files` when those exist.
-        //
-        // A single assertion rather than a one-element loop — clippy
-        // refuses the loop and is right to. It becomes a loop again when a
-        // second id joins it.
-        let id = "pages.merge_into";
-        assert!(
-            registry.get(id).is_some(),
-            "`{id}` is expected to exist on the ribbon even though the \
-             tile menu does not offer it"
-        );
+        // …and the two the menu deliberately leaves out are absent from that
+        // list rather than forgotten: `pages.merge_into` and `pages.split` are
+        // document-level verbs that act on the whole file rather than on the
+        // sheets pointed at. Both stay on the ribbon's Pages tab.
+        for id in ["pages.merge_into", "pages.split"] {
+            assert!(
+                registry.get(id).is_some(),
+                "`{id}` is expected to exist on the ribbon even though the \
+                 tile menu does not offer it"
+            );
+        }
     }
 
     /// **The measurement behind this panel's policy, on the real

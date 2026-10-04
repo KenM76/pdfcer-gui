@@ -53,23 +53,12 @@ pub const PLANNED: &[(&str, &str)] = &[
     // press an inert button. `no_scaffolded_command_is_also_planned` keeps the
     // two lists disjoint, which is what makes the distinction mean something.
     (
-        "pages.split",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — the boundary chooser does not exist. `pageops::plan_split` takes a plan \
-         (every N pages, at bookmarks, at an explicit list) plus a destination directory \
-         and a name template, and there is no honest default: splitting a 36-sheet \
-         drawing set into 36 files because nobody was asked is not a lesser version of \
-         the feature. The engine half is COMPLETE and was built for this dialog — \
-         `plan_split` is separate from `split` precisely so a UI can preview the parts \
-         before anything is written.",
-    ),
-    (
         "tools.split_files",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — the same dialog as `pages.split` with a different operand set: one or more \
-         files chosen on disk rather than the open document. It comes back when that \
-         dialog does, and not before, because half a chooser is a control that splits \
-         somebody's drawing set the way pdfcer guessed.",
+        "N — `pages.split`'s window splits the OPEN document. This command's operand is \
+         one or more files chosen on disk, and the window has no file list yet; it is \
+         that window plus a picker, and until the picker exists a button here would split \
+         whatever happened to be open.",
     ),
     // -- File -- `RIBBON_IA.md` §5.1 ----------------------------------------
     //

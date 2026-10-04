@@ -71,6 +71,9 @@ pub(crate) mod merge;
 /// `Action::CommitTextEdit`. Its header carries why that body computes rather
 /// than routes, and why the two neighbouring commit verbs are not here.
 mod reface;
+/// Writing one document as several files — Pages ▸ Split…. The window's
+/// preview reads its `plan`, so it is reachable from `crate::dialogs`.
+pub(crate) mod split;
 /// Author an Acrobat **stamp collection** from this document's pages —
 /// `OPERATOR_REQUESTS.md` O169.
 mod stamps;

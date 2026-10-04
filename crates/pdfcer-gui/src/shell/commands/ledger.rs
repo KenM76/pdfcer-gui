@@ -76,8 +76,8 @@ fn registration_succeeds_and_registers_every_command() {
     // host and the engine verb was complete. These three are removed
     // because R9 says a capability that is not built renders nothing —
     // greying is for the temporarily unavailable, and "the dialog was
-    // never written" is not temporary. The two splits come back together
-    // when the boundary chooser exists.
+    // never written" is not temporary. `pages.split` is registered again
+    // below; `tools.split_files` waits for a file list in its window.
     // 126 → 127: `view.smart_select` REGISTERED —
     // `OPERATOR_REQUESTS.md` O70. Ken: *"we should have a checkbox in
     // navigate for a Smart-Selector option."* The count moves WITH the
@@ -391,11 +391,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 195 → 198: `measure.area`, and Show area / Show perimeter on a dimension.
     // 198 → 199: `view.tool_snapshot` (O272), View ▸ Navigate.
     // 199 → 200: `view.snapshot_save_pdf` (O284), the snapshot box's menu.
+    // 200 → 201: `pages.split` (O285), Pages ▸ Organise.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        200 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        201 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -798,10 +799,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // names `measure-perimeter`.
     // 180 → 181: `view.tool_snapshot` names `snapshot`, drawn for it.
     // 181 → 182: `view.snapshot_save_pdf` names `save-as`, shared.
+    // 182 → 183: `pages.split` names `split`, drawn for it.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        182 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        183 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

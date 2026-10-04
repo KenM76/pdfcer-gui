@@ -208,6 +208,8 @@ pub mod runmerge;
 /// explaining what a ratio is measured *against*, when the honest answer for a
 /// PDF is 1/72 inch and nobody's intuition is in those.
 pub mod scale;
+/// Every word Pages ▸ Split… shows, its preview and its receipt.
+pub mod split_pages;
 /// Every word the tools say: the one-line status strip, the Properties
 /// panel's armed-tool section, and the canvas refusals.
 pub mod tool;

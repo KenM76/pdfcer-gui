@@ -1050,47 +1050,10 @@ impl PdfcerApp {
             "view.show_annotations" => actions.push(Action::ToggleAnnotations),
             // The page verbs — rotate, delete, extract, move. Their arms and
             // the operand rule they share live in `dispatch::pages`, split out
-            // under R2; see its header for the seam and for the three page
-            // commands that still have no arm.
+            // under R2; see its header for the seam.
             id if crate::app::dispatch::pages::handles(id) => {
                 crate::app::dispatch::pages::dispatch(self, id, actions);
             }
-            // **`pages.split` has no arm, and is absent rather than
-            // forgotten.**
-            //
-            // It is registered, drawn on the Pages tab and reachable. It is not
-            // in the page tile's context menu — which is the one place
-            // `RIBBON_IA.md` P3's "render nothing rather than a control that
-            // fails" rule would be breached by its absence, and `panels::pages`'
-            // own test records the exclusion as deliberate: these *"are
-            // document-level verbs that act on the whole file rather than on the
-            // sheets pointed at, and both open a dialog this build has not
-            // built."*
-            //
-            // What is missing is a **boundary chooser**.
-            // `pdfcer_core::pageops::split`'s `plan_split` takes a `SplitPlan` —
-            // every N pages, at bookmarks, at an explicit list — and a
-            // destination *directory* plus a name template. There is no honest
-            // default: splitting a 36-sheet drawing set into 36 files because
-            // nobody was asked is not a lesser version of the feature.
-            //
-            // **`pages.merge_into` and `pages.insert_from_file` are NOT on
-            // this list**, and a reader who finds a document saying they are
-            // should believe this file: both have arms two hundred lines above.
-            // The claim that kept them here was that `insert` returns the bytes
-            // of a NEW document, so wiring it would mean replacing
-            // `OpenDoc::session` wholesale and discarding the command log —
-            // which `EditSession::merge_document` answers outright. A prose
-            // reason describing a command as unimplemented, in the file that
-            // implements it, is the clearest statement there is of why a blocker
-            // is prose and prose is checked by nothing.
-            //
-            // `pages.split` therefore falls through to
-            // `command-unimplemented`, which is the honest report.
-            // Deliberately NOT given an arm that traces a prettier decline: a
-            // command that says "not yet" is still a command that does nothing,
-            // and dressing it up would make the trace harder to grep for what is
-            // genuinely unwired.
             // The two text-copy verbs live in `dispatch::textcopy`, on the
             // seam `dispatch::images` and `dispatch::pages` are drawn along: a
             // family whose bodies are longer than most whole tabs and whose

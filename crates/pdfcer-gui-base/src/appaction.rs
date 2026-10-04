@@ -524,8 +524,9 @@ pub enum Action {
     //
     // Four variants for five commands (`pages.rotate_left` and
     // `pages.rotate_right` share one), plus `pages.extract`, which is not here
-    // at all — see `ExtractPages` below for why it is and `pages.split` /
+    // at all — see `ExtractPages` below for why it is and
     // `pages.merge_into` / `pages.insert_from_file` for why they are not.
+    // `pages.split` is `PageAction::SplitDocument`.
     //
     // # Why the operand list travels, and is not re-derived at apply time
     //

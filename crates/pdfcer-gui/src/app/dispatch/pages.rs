@@ -37,6 +37,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.rotate_right"
             | "pages.delete"
             | "pages.extract"
+            | "pages.split"
             | "pages.move_up"
             | "pages.move_down"
             | "pages.resize"
@@ -203,6 +204,15 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 return;
             };
             app.dialogs.open_extract_pages(doc, &pages);
+        }
+        // A window: the rule has no honest default. Pages picked in the rail
+        // prefill *After pages*; the page on screen is not a pick.
+        "pages.split" => {
+            let picked: Vec<usize> = app.panels.selected_pages().iter().copied().collect();
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            app.dialogs.open_split_pages(doc, &picked);
         }
         // **The two move verbs, and the one arm in this family that can
         // decline.**

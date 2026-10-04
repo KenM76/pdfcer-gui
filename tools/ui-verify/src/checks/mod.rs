@@ -76,6 +76,8 @@ pub mod labels_scripted;
 pub mod measure_area_scripted;
 pub mod measure_place_scripted;
 pub mod purge_passwords_scripted;
+/// Pages ▸ Split… writes the files its preview listed, by each rule.
+pub mod split_pages;
 
 pub mod driving;
 
@@ -1011,7 +1013,7 @@ pub mod refused_keys;
 pub mod replace_all;
 /// Double, triple and Shift+arrow selection, a drag over text, rotated carets.
 pub mod selection_gestures;
-/// Ctrl+B on the word at the caret, and the ribbon's paragraph alignment.
+/// Ctrl+B and Ctrl+I pressed again take their style off.
 pub mod style_off;
 /// A letter an embedded subset outlines but never showed can be typed.
 pub mod subset_glyph;

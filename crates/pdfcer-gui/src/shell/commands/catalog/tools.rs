@@ -22,19 +22,10 @@ pub(super) fn band() -> Vec<Command> {
         // ===================================================================
         command("tools.merge_files", t::tools_merge_files(), 700).with_icon("combine"),
         //
-        // The operator pressed it and nothing happened. It had no dispatch arm
-        // and its blocker is real and names a missing capability in THIS
-        // repository: a boundary chooser (every N pages / at bookmarks / an
-        // explicit list), a destination directory and a name template.
-        // `plan_split` was built to feed exactly that dialog — the engine's own
-        // comment says *"nothing is written until you click Split"* — and the
-        // dialog does not exist.
-        //
-        // R9 decides the rest: an unavailable capability renders NOTHING.
-        // Greying is reserved for the *temporarily* unavailable and is always
-        // explained on hover, and there is no honest hover sentence for "this
-        // was never written". It returns with `pages.split`, which is the same
-        // dialog with a different operand set. Both are in `manifest::PLANNED`.
+        // `tools.split_files` is not registered: `pages.split`'s window splits
+        // the open document, and splitting files chosen on disk needs a file
+        // list it does not have. R9: an unavailable capability renders
+        // nothing. Its reason is in `manifest::PLANNED`.
         command("tools.font_folders", t::tools_font_folders(), 710).with_icon("font-folders"),
         //
         // What the borrow was costing: [`crate::icons::Icon::Fonts`] belongs to

@@ -59,6 +59,8 @@ pub mod extract_pages;
 pub mod formfield;
 /// The *Sign here* window: a signature drawn by hand, placed in a box.
 pub mod handsign;
+/// Pages ▸ Split…: the rule, the file names, the folder and the preview.
+pub mod split_pages;
 /// **A dialog is an OS window** — the operator's report, and
 /// `ui-conventions/dialogs.md` G1. One host, so the path of least resistance
 /// and the right answer are the same call; its header carries what an OS
@@ -448,6 +450,7 @@ pub struct DialogsState {
     export_tables: Option<export_tables::ExportTablesDialog>,
     export_word: Option<export_word::ExportWordDialog>,
     extract_pages: Option<extract_pages::ExtractPagesDialog>,
+    split_pages: Option<split_pages::SplitPagesDialog>,
 
     /// The unsaved-edits confirmation, when one is open.
     ///
@@ -815,6 +818,14 @@ impl DialogsState {
         if self.extract_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.extract_pages = None;
         }
+        if self
+            .split_pages
+            .as_mut()
+            .map(|d| d.show(ctx, actions, status))
+            == Some(false)
+        {
+            self.split_pages = None;
+        }
         if self.embed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.embed = None;
         }
@@ -1167,6 +1178,7 @@ impl DialogsState {
         self.export_tables = None;
         self.export_word = None;
         self.extract_pages = None;
+        self.split_pages = None;
         self.embed = None;
         self.unembed = None;
         // On this list for `stamp_collection`'s reason in its strongest form:

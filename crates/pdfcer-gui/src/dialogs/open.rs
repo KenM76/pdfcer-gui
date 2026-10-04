@@ -7,7 +7,7 @@ use super::{
     DialogsState, about, bates, compact, diagnostics, embed, export_dxf, export_image,
     export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_image,
     insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print, protect, redact,
-    scale, shortcuts, stamp_collection, textannot, unembed,
+    scale, shortcuts, split_pages, stamp_collection, textannot, unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -370,6 +370,13 @@ impl DialogsState {
             return;
         }
         self.extract_pages = Some(extract_pages::ExtractPagesDialog::open(doc, pages));
+    }
+
+    /// The dispatch target for `pages.split`, with the rail's picked pages.
+    pub fn open_split_pages(&mut self, doc: &crate::app::state::OpenDoc, picked: &[usize]) {
+        if self.split_pages.is_none() {
+            self.split_pages = Some(split_pages::SplitPagesDialog::open(doc, picked));
+        }
     }
 
     /// Open the Export-image window for the open document.

@@ -311,11 +311,10 @@ silence rather than an error."*
 agree — because a menu attached to a context nobody defines opens nothing at
 all, silently.
 
-The six verbs it offers all reach a dispatch arm. `pages.split` does not,
-and is deliberately **not** on this menu: the dispatcher records what it is
-waiting for. `pages.merge_into` and `pages.insert_from_file` are wired but
-are document-level verbs rather than verbs about the sheets pointed at, so
-they stay on the ribbon's Pages tab.
+The six verbs it offers all reach a dispatch arm. `pages.split`,
+`pages.merge_into` and `pages.insert_from_file` are document-level verbs
+rather than verbs about the sheets pointed at, so they stay on the ribbon's
+Pages tab; Split… does read the rail's picks as its starting break points.
 
 ### `fn body`
 
