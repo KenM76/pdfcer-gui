@@ -397,11 +397,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 204 → 205: `markup.attach_file`, Markup ▸ Notes.
     // 205 → 206: `markup.insert_text`, Markup ▸ Notes.
     // 206 → 207: `markup.replace_text`, Markup ▸ Notes.
+    // 207 → 208: `markup.sound`, Markup ▸ Notes.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        207 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        208 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -810,10 +811,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 186 → 187: `markup.attach_file` names `attachment`, shared with `edit.attachments`.
     // 187 → 188: `markup.insert_text` names `text-caret`, drawn for it.
     // 188 → 189: `markup.replace_text` names `text-replace`, drawn for it.
+    // 189 → 190: `markup.sound` names `sound`, drawn for it.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        189 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        190 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

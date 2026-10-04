@@ -139,6 +139,8 @@ pub struct TextAnnotDialog {
     focus_attempts: u8,
     /// The file and marker icon, for the attach-file kind only.
     attach: Option<attach::Chosen>,
+    /// The recording, icon and import choices, for the attach-sound kind only.
+    sound: Option<sound::Chosen>,
     /// The new-paragraph choice, for the insert-text kind only.
     caret: Option<caret::Choice>,
 }
@@ -222,6 +224,9 @@ const STAMP_EXTRA_PTS: f32 = 190.0;
 /// The attach-file kind's file line and four-icon chooser.
 const ATTACH_EXTRA_PTS: f32 = 170.0;
 
+/// The attach-sound kind's file line, two-icon chooser and two import choices.
+const SOUND_EXTRA_PTS: f32 = 170.0;
+
 /// The insert-text kind's new-paragraph choice and its sentence.
 const CARET_EXTRA_PTS: f32 = 70.0;
 
@@ -296,6 +301,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
         // times.
         TextAnnotKind::Stamp => STAMP_EXTRA_PTS + custom_extra,
         TextAnnotKind::Attachment => ATTACH_EXTRA_PTS,
+        TextAnnotKind::Sound => SOUND_EXTRA_PTS,
         TextAnnotKind::Caret => CARET_EXTRA_PTS,
         TextAnnotKind::TextBox => 0.0,
     };
@@ -429,6 +435,7 @@ impl TextAnnotDialog {
             focused_once: false,
             focus_attempts: 0,
             attach: None,
+            sound: None,
             caret: (kind == TextAnnotKind::Caret).then(caret::Choice::default),
         }
     }
@@ -437,6 +444,13 @@ impl TextAnnotDialog {
     #[must_use]
     pub fn with_file(mut self, file: std::path::PathBuf) -> Self {
         self.attach = Some(attach::Chosen::new(file));
+        self
+    }
+
+    /// Carry the recording an attach-sound window was opened for.
+    #[must_use]
+    pub fn with_sound(mut self, file: std::path::PathBuf) -> Self {
+        self.sound = Some(sound::Chosen::new(file));
         self
     }
 
@@ -502,6 +516,10 @@ impl TextAnnotDialog {
                 }
                 return false;
             }
+            if let Some(chosen) = &self.sound {
+                actions.push(chosen.action(self.page, self.rect, &self.text));
+                return false;
+            }
             if let Some(choice) = &self.caret {
                 actions.push(choice.action(self.page, self.rect, &self.text));
                 return false;
@@ -562,6 +580,9 @@ impl TextAnnotDialog {
         if let Some(chosen) = &mut self.attach {
             chosen.show(ui);
         }
+        if let Some(chosen) = &mut self.sound {
+            chosen.show(ui);
+        }
         if let Some(choice) = &mut self.caret {
             choice.show(ui);
         }
@@ -576,12 +597,13 @@ impl TextAnnotDialog {
             // than hides: the control is *temporarily* unavailable — a
             // keystroke makes it live — which is exactly what greying is
             // reserved for.
-            // The attach-file kind's words are an optional description.
+            // The attach-file and attach-sound kinds' words are an optional
+            // description.
             let ready = match &self.caret {
                 Some(choice) => choice.ready(&self.text),
                 None => {
                     self.kind.uses_gallery()
-                        || self.kind == TextAnnotKind::Attachment
+                        || matches!(self.kind, TextAnnotKind::Attachment | TextAnnotKind::Sound)
                         || !self.text.trim().is_empty()
                 }
             };
@@ -972,6 +994,10 @@ impl TextAnnotDialog {
 #[path = "textannot_attach.rs"]
 mod attach;
 pub use attach::REGION_ATTACH_ICON;
+
+#[path = "textannot_sound.rs"]
+mod sound;
+pub use sound::{REGION_SOUND_DOWNMIX, REGION_SOUND_ICON, REGION_SOUND_RESAMPLE};
 
 #[path = "textannot_caret.rs"]
 mod caret;

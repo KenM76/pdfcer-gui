@@ -585,6 +585,8 @@ pub mod option_arrows;
 
 /// Attach a file to a page as a marker from Markup.
 pub mod attach_file;
+/// Attach a WAV recording to a page from Markup.
+pub mod attach_sound;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
 pub mod forms_spotlight;

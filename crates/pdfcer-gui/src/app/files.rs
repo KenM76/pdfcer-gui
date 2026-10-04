@@ -18,6 +18,9 @@ pub const DIAG_OPEN_PATH: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an 
 pub const DIAG_FONT_FILE_PATH: &str = "PDFCER_DIAG_FONT_FILE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 pub const DIAG_ATTACH_PATH: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The seam that answers the **attach a sound** picker.
+pub const DIAG_SOUND_PATH: &str = "PDFCER_DIAG_SOUND_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The seam that answers the **3D model to insert** picker.
 pub const DIAG_MODEL_PATH: &str = "PDFCER_DIAG_MODEL_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -282,6 +285,29 @@ pub fn pick_attachment_source() -> Picked {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("attach-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
+/// **Ask which WAV recording to attach to a page** (§12.5.6.16).
+#[must_use]
+pub fn pick_sound_source() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_SOUND_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("sound-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::soundannot::pick_title())
+        .add_filter(crate::text::soundannot::filter_wav(), &["wav"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("sound-picked source=native answer={answer:?}")
     });
     answer
 }

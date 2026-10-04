@@ -43,6 +43,7 @@ pub const fn title(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Stamp => "Stamp",
         TextAnnotKind::Attachment => "Attach a file",
         TextAnnotKind::Caret => "Insert text",
+        TextAnnotKind::Sound => "Attach a sound",
     }
 }
 
@@ -72,6 +73,11 @@ pub const fn intro(kind: TextAnnotKind) -> &'static str {
             "A caret marks where the words should go. They are a proposal in a \
              comment: the page's own text does not change."
         }
+        TextAnnotKind::Sound => {
+            "The recording is stored inside this PDF and an icon shows where; \
+             clicking the icon plays it. PDF 2.0 deprecates sound comments, so \
+             some readers may not play them. The icon prints; the sound does not."
+        }
     }
 }
 
@@ -87,6 +93,7 @@ pub const fn hint(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::Stamp => "",
         TextAnnotKind::Attachment => "Description (optional)",
         TextAnnotKind::Caret => "Words to insert",
+        TextAnnotKind::Sound => "Description (optional)",
     }
 }
 
@@ -108,6 +115,10 @@ pub const fn bound(kind: TextAnnotKind) -> &'static str {
              description."
         }
         TextAnnotKind::Caret => {
+            "Shown when the comment is opened, in a standard Latin font; other \
+             alphabets come out as question marks."
+        }
+        TextAnnotKind::Sound => {
             "Shown when the comment is opened, in a standard Latin font; other \
              alphabets come out as question marks."
         }
@@ -221,7 +232,7 @@ pub const fn accept_disabled(kind: TextAnnotKind) -> &'static str {
         // as `hint` is.
         TextAnnotKind::Stamp => "",
         // Unreachable: the file is picked before the dialog opens.
-        TextAnnotKind::Attachment => "",
+        TextAnnotKind::Attachment | TextAnnotKind::Sound => "",
         TextAnnotKind::Caret => "Type the words to insert, or tick New paragraph.",
     }
 }
@@ -448,7 +459,8 @@ mod tests {
                 "{kind:?}'s hint disagrees with whether it takes typing"
             );
             assert_eq!(!bound(*kind).is_empty(), typed, "{kind:?}'s bound");
-            let required = typed && *kind != TextAnnotKind::Attachment;
+            let required =
+                typed && !matches!(kind, TextAnnotKind::Attachment | TextAnnotKind::Sound);
             assert_eq!(
                 !accept_disabled(*kind).is_empty(),
                 required,

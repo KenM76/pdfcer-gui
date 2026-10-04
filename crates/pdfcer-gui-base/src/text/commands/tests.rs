@@ -105,6 +105,7 @@ fn all() -> Vec<CommandText> {
         markup_sticky_note(),
         markup_stamp(),
         markup_attach_file(),
+        markup_sound(),
         markup_insert_text(),
         markup_replace_text(),
         markup_paste_image_stamp(),

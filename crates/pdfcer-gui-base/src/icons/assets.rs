@@ -514,6 +514,11 @@ pub(super) const APPLY_REDACTIONS: &str = include_str!("assets/apply-redactions.
 /// Attachments (`edit.attachments`) — the files this document carries.
 pub(super) const ATTACHMENT: &str = include_str!("assets/attachment.svg");
 
+/// `sound.svg` — the art for [`super::Icon::Sound`].
+///
+/// Authored for pdfcer in the header §3 style contract — a speaker cone with two waves.
+pub(super) const SOUND: &str = include_str!("assets/sound.svg");
+
 /// `check.svg` — the art for [`super::Icon::Accept`].
 ///
 /// Complete the gesture in progress — `markup.finish` and `measure.finish`.

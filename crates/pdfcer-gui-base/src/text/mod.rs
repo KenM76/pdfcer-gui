@@ -49,9 +49,10 @@ pub mod arrange;
 /// header carries the platform fact every word is shaped by: no program can
 /// make itself the default PDF viewer, so the offer must never claim it did.
 pub mod assoc;
+/// Markup ▸ Attach file: a file stored in the PDF behind a marker on a page.
+pub mod attachannot;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
-pub mod attachannot;
 pub mod attachclip;
 /// Pages ▸ Stamp ▸ Bates numbering…: its window and its receipt.
 /// Consumed by `pdfcer_gui::dialogs::bates`.
@@ -209,6 +210,8 @@ pub mod runmerge;
 /// explaining what a ratio is measured *against*, when the honest answer for a
 /// PDF is 1/72 inch and nobody's intuition is in those.
 pub mod scale;
+/// Markup ▸ Attach sound: a recording stored in the PDF behind an icon.
+pub mod soundannot;
 /// Every word Pages ▸ Split… shows, its preview and its receipt.
 pub mod split_pages;
 /// Every word the hand-editing round trip (QDF) shows.

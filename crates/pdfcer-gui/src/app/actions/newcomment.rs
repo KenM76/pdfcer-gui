@@ -29,6 +29,27 @@ pub(super) fn apply(doc: &mut OpenDoc, prefs: &Prefs, pen: Pen, comment: NewComm
             pen.text_annot_colour(TextAnnotKind::Attachment),
             pen.opacity_option(),
         ),
+        NewComment::Sound {
+            page,
+            rect,
+            file,
+            icon,
+            description,
+            import,
+        } => super::soundannot::place(
+            doc,
+            prefs,
+            &super::soundannot::Placed {
+                page,
+                rect,
+                file: &file,
+                icon,
+                description: description.as_deref(),
+                import,
+            },
+            pen.text_annot_colour(TextAnnotKind::Sound),
+            pen.opacity_option(),
+        ),
         NewComment::Caret {
             page,
             at,

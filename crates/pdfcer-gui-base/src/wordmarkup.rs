@@ -9,7 +9,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/wordmarkup.md`.
 
 use pdfcer_core::annot_author::{
-    AttachmentIcon, Color, StampName, StampStyle, StickyIcon, TextAnnotSpec,
+    AttachmentIcon, Color, SoundIcon, StampName, StampStyle, StickyIcon, TextAnnotSpec,
 };
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::page_tree::Rect;
@@ -35,6 +35,10 @@ pub enum TextAnnotKind {
     /// words travel as its note. Its own verb authors it, so it never
     /// reaches [`spec`].
     Caret,
+    /// `/Sound` — a speaker or microphone icon carrying a recorded clip.
+    /// Its text is an optional description; the clip is the payload, so it
+    /// never reaches [`spec`].
+    Sound,
 }
 
 impl TextAnnotKind {
@@ -45,6 +49,7 @@ impl TextAnnotKind {
         Self::Stamp,
         Self::Attachment,
         Self::Caret,
+        Self::Sound,
     ];
 
     /// The command id that arms this kind.
@@ -61,6 +66,8 @@ impl TextAnnotKind {
             Self::Attachment => "markup.attach_file",
             // ui-text-exempt: command ids, never displayed
             Self::Caret => "markup.insert_text",
+            // ui-text-exempt: command ids, never displayed
+            Self::Sound => "markup.sound",
         }
     }
 
@@ -75,7 +82,7 @@ impl TextAnnotKind {
     pub const fn is_dragged(self) -> bool {
         match self {
             Self::TextBox | Self::Stamp => true,
-            Self::Sticky | Self::Attachment | Self::Caret => false,
+            Self::Sticky | Self::Attachment | Self::Caret | Self::Sound => false,
         }
     }
 
@@ -117,6 +124,13 @@ pub const ATTACHMENT_ICONS: &[AttachmentIcon] = &[
     AttachmentIcon::Graph,
     AttachmentIcon::Tag,
 ];
+
+/// The sound icons offered, in the order the dialog lists them
+/// (§12.5.6.16 Table 185).
+pub const SOUND_ICONS: &[SoundIcon] = &[SoundIcon::Speaker, SoundIcon::Mic];
+
+/// The icon a fresh sound comment carries: the standard's default.
+pub const DEFAULT_SOUND_ICON: SoundIcon = SoundIcon::Speaker;
 
 /// The icon a fresh file attachment carries: the standard's default.
 pub const DEFAULT_ATTACHMENT_ICON: AttachmentIcon = AttachmentIcon::PushPin;
@@ -229,8 +243,8 @@ pub fn spec(
     }
     let (r, g, b) = colour;
     Some(match kind {
-        // The file is the payload; `actions::attachment` authors it.
-        TextAnnotKind::Attachment | TextAnnotKind::Caret => return None,
+        // Each has its own engine verb, reached through `NewComment`.
+        TextAnnotKind::Attachment | TextAnnotKind::Caret | TextAnnotKind::Sound => return None,
         TextAnnotKind::TextBox => TextAnnotSpec::FreeText {
             rect,
             text: text.to_owned(),
@@ -631,7 +645,7 @@ mod tests {
         assert!(TextAnnotKind::from_command("markup.rectangle").is_none());
     }
 
-    /// The two markers and the caret are placed by a click, and exactly one
+    /// The three markers and the caret are placed by a click, and exactly one
     /// kind uses a gallery.
     #[test]
     fn the_two_odd_ones_out_are_the_ones_expected() {
@@ -645,7 +659,8 @@ mod tests {
             vec![
                 TextAnnotKind::Sticky,
                 TextAnnotKind::Attachment,
-                TextAnnotKind::Caret
+                TextAnnotKind::Caret,
+                TextAnnotKind::Sound
             ]
         );
         let gallery: Vec<_> = TextAnnotKind::ALL

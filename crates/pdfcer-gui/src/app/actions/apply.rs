@@ -629,16 +629,21 @@ impl PdfcerApp {
                 signature,
             }) => super::handsign::place(doc, &field, page, rect, &signature),
             Action::Field(action) => super::forms::apply(doc, action),
-            Action::BeginTextAnnot { page, kind, rect } => {
-                if kind == crate::canvas::textannot::TextAnnotKind::Attachment {
+            Action::BeginTextAnnot { page, kind, rect } => match kind {
+                crate::canvas::textannot::TextAnnotKind::Attachment => {
                     if let Some(file) = super::attachannot::pick() {
                         self.dialogs
                             .open_attach_annot(&self.status, page, rect, file);
                     }
-                } else {
-                    self.dialogs.open_text_annot(&self.status, page, kind, rect);
                 }
-            }
+                crate::canvas::textannot::TextAnnotKind::Sound => {
+                    if let Some(file) = super::soundannot::pick() {
+                        self.dialogs
+                            .open_sound_annot(&self.status, page, rect, file);
+                    }
+                }
+                _ => self.dialogs.open_text_annot(&self.status, page, kind, rect),
+            },
             Action::NewComment(comment) => {
                 super::newcomment::apply(doc, &self.prefs, self.pen, comment);
             }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic loudspeaker shape — generic, no trademark risk -->
+  <!-- A speaker cone with two sound waves: Markup ▸ Attach sound, the icon a
+       /Sound comment's default /Speaker draws on the page. -->
+  <path d="M8 19h7l9-7v24l-9-7H8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M30 18a8 8 0 0 1 0 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M35 13a15 15 0 0 1 0 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

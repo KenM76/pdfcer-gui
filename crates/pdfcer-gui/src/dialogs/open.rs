@@ -209,6 +209,29 @@ impl DialogsState {
         self.text_annot = textannot::TextAnnotDialog::replacing(page, struck);
     }
 
+    /// **Open the attach-sound dialog** for an icon clicked onto `page`, once
+    /// the recording has been picked.
+    pub fn open_sound_annot(
+        &mut self,
+        status: &Status,
+        page: usize,
+        rect: pdfcer_core::page_tree::Rect,
+        file: std::path::PathBuf,
+    ) {
+        if !matches!(status, Status::Open(_)) {
+            return;
+        }
+        self.text_annot = Some(
+            textannot::TextAnnotDialog::open(
+                page,
+                crate::canvas::textannot::TextAnnotKind::Sound,
+                rect,
+                None,
+            )
+            .with_sound(file),
+        );
+    }
+
     /// **Open the placement dialog for a form control just put on the page.**
     pub fn open_form_field(
         &mut self,

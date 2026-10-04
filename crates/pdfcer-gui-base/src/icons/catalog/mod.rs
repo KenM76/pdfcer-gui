@@ -251,6 +251,8 @@ pub enum Icon {
     TextCaret,
     /// Markup → Replace text: the selection struck through, a caret after it.
     TextReplace,
+    /// Markup → Attach sound: a recording stored behind an icon on the page.
+    Sound,
     /// Text → FreeText box.
     TextFreeText,
     /// Text → Sticky note.

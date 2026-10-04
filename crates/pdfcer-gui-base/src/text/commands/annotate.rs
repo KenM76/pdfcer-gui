@@ -254,6 +254,15 @@ pub const fn markup_attach_file() -> CommandText {
     )
 }
 
+/// `markup.sound`
+#[must_use]
+pub const fn markup_sound() -> CommandText {
+    CommandText::new(
+        "Attach sound",
+        "Store a WAV recording inside the PDF, with an icon on the page that plays it.",
+    )
+}
+
 /// `markup.insert_text`
 #[must_use]
 pub const fn markup_insert_text() -> CommandText {

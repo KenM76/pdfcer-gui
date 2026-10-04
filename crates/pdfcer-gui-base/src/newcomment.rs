@@ -22,6 +22,23 @@ pub enum NewComment {
         /// `None` when the operator typed none.
         description: Option<String>,
     },
+    /// **Attach a recording to a page** (`/Sound`, §12.5.6.16). The file
+    /// was picked in `BeginTextAnnot`'s apply arm; it is read and converted
+    /// at apply time.
+    Sound {
+        /// The 0-based page.
+        page: usize,
+        /// The icon's rectangle, in PDF user space.
+        rect: pdfcer_core::page_tree::Rect,
+        /// The WAV file.
+        file: std::path::PathBuf,
+        /// The icon (`/Name`).
+        icon: pdfcer_core::annot_author::SoundIcon,
+        /// The description (`/Contents`), trimmed; `None` when none was typed.
+        description: Option<String>,
+        /// How the WAV is converted to a PDF sound.
+        import: pdfcer_core::sound::WavImportOptions,
+    },
     /// **Mark where words are to be inserted** (`/Caret`, §12.5.6.11).
     Caret {
         /// The 0-based page.

@@ -299,6 +299,9 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.attach_file", t::markup_attach_file(), 524)
             .with_icon("attachment")
             .enabled_when("doc.pages"),
+        command("markup.sound", t::markup_sound(), 527)
+            .with_icon("sound")
+            .enabled_when("doc.pages"),
         command("markup.insert_text", t::markup_insert_text(), 525)
             .with_icon("text-caret")
             .enabled_when("doc.pages"),

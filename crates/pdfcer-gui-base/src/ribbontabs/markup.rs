@@ -80,7 +80,9 @@ pub fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Notes. `Callout` is **N**; the stamp control exists and
             // needs a gallery, which is a change to the control rather
-            // than a new command.
+            // than a new command. The three most-used are large; the rest
+            // stack in two columns so the group still fits a 1,400-wide
+            // window without collapsing.
             // ---------------------------------------------------------------
             group(
                 "notes",
@@ -89,10 +91,11 @@ pub fn tab() -> Tab {
                     large("markup.text_box"),
                     large("markup.sticky_note"),
                     large("markup.stamp"),
-                    large("markup.attach_file"),
-                    large("markup.insert_text"),
-                    large("markup.replace_text"),
-                    large("markup.paste_image_stamp"),
+                    command("markup.attach_file"),
+                    command("markup.sound"),
+                    command("markup.paste_image_stamp"),
+                    command("markup.insert_text"),
+                    command("markup.replace_text"),
                 ],
             ),
             // ---------------------------------------------------------------
