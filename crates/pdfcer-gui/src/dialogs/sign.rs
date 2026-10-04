@@ -222,6 +222,8 @@ pub struct SignDialog {
     open_certificate_requested: bool,
     /// Set by the file-picker control, consumed after the closure.
     pick_requested: bool,
+    /// The *Create a digital ID* form, while it is open.
+    create: Option<create_id::CreateId>,
     /// Set by the confirm control, consumed after the closure.
     ///
     /// The two-step every dialog here uses, and load-bearing rather than
@@ -338,6 +340,7 @@ impl SignDialog {
             overwrite_acknowledged: false,
             open_certificate_requested: false,
             pick_requested: false,
+            create: None,
             confirm_requested: false,
             open_signed_requested: false,
             close_requested: false,
@@ -376,6 +379,7 @@ impl SignDialog {
         if std::mem::take(&mut self.open_certificate_requested) {
             self.open_identity();
         }
+        self.create_id_after(ctx);
         if std::mem::take(&mut self.confirm_requested) && ready {
             self.commit(doc, actions);
             self.remember_server(prefs);
@@ -788,6 +792,7 @@ pub(super) fn open_for(
     Some(SignDialog::open(doc, remembered_server))
 }
 
+mod create_id;
 mod sections;
 
 #[cfg(test)]

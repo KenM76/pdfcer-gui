@@ -59,6 +59,7 @@ impl SignDialog {
                     .as_deref()
                     .map_or_else(|| t::certificate_none_chosen().to_owned(), file_name_of),
             );
+            self.create_id_button(ui);
         });
         ui.add_space(6.0);
         ui.label(t::passphrase_label());
@@ -91,6 +92,7 @@ impl SignDialog {
         if open.clicked() {
             self.open_certificate_requested = true;
         }
+        self.create_id_section(ui, theme);
 
         if let Some(error) = &self.identity_error {
             ui.add_space(6.0);

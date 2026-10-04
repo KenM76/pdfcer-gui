@@ -47,6 +47,7 @@ fn filling() -> SignDialog {
         overwrite_acknowledged: false,
         open_certificate_requested: false,
         pick_requested: false,
+        create: None,
         confirm_requested: false,
         open_signed_requested: false,
         close_requested: false,

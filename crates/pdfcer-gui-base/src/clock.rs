@@ -8,6 +8,13 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// **Now, as whole seconds since the Unix epoch.** `None` on a clock before the
+/// epoch, for the reason given at [`pdf_date_utc`].
+#[must_use]
+pub fn unix_now() -> Option<u64> {
+    Some(SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs())
+}
+
 /// **Now, as a PDF date string in UTC** — `D:YYYYMMDDHHmmSSZ`.
 ///
 /// `None` if the system clock is before the Unix epoch, which is the one
@@ -26,8 +33,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// ```
 #[must_use]
 pub fn pdf_date_utc() -> Option<String> {
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs();
-    Some(format_pdf_date(secs))
+    unix_now().map(format_pdf_date)
 }
 
 /// **A moment as `YYYY-MM-DD`, UTC** — the calendar date and nothing else.

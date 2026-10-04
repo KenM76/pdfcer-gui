@@ -583,6 +583,8 @@ pub mod canvas_choice_fill;
 /// the measurement for why the third row's rectangle is not asserted.
 pub mod option_arrows;
 
+/// Create a self-signed digital ID in the Sign window and sign with it.
+pub mod digital_id;
 pub mod forms_spotlight;
 /// Put a selected object or annotation on a layer.
 pub mod layer_assign;

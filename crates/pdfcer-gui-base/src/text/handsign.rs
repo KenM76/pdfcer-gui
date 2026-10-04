@@ -85,8 +85,9 @@ pub const fn digital_id() -> &'static str {
 /// Hover on [`digital_id`].
 #[must_use]
 pub const fn digital_id_hover() -> &'static str {
-    "A certificate signature proves who signed and shows any later change. You need a digital \
-     ID file (.pfx or .p12)."
+    "A certificate signature shows any later change, and names the signer as far as the \
+     certificate is trusted. Use a digital ID file (.pfx or .p12), or create one in the Sign \
+     window."
 }
 
 /// The tab for drawing a signature with the mouse.

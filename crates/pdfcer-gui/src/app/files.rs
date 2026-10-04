@@ -55,6 +55,12 @@ pub const DIAG_TRUST_STORE_PATH: &str = "PDFCER_DIAG_TRUST_STORE_PATH"; // ui-te
 /// check signs with.
 #[cfg(feature = "signing")]
 pub const DIAG_CERTIFICATE_PATH: &str = "PDFCER_DIAG_CERTIFICATE_PATH"; // ui-text-exempt: an environment variable name, never displayed
+/// Answers [`pick_new_digital_id_target`] in driven runs.
+#[cfg(feature = "signing")]
+pub const DIAG_DIGITAL_ID_PATH: &str = "PDFCER_DIAG_DIGITAL_ID_PATH"; // ui-text-exempt: an environment variable name, never displayed
+/// Answers [`pick_shared_certificate_target`] in driven runs.
+#[cfg(feature = "signing")]
+pub const DIAG_SHARE_CERTIFICATE_PATH: &str = "PDFCER_DIAG_SHARE_CERTIFICATE_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The environment variable that answers the **save** dialog instead of
 /// opening it.
@@ -559,6 +565,66 @@ pub fn pick_certificate() -> Picked {
         // the path itself is absent.
         format!(
             "certificate-picked source=native chosen={}",
+            u8::from(matches!(answer, Picked::Path(_)))
+        )
+    });
+    answer
+}
+
+/// **Where to save a new digital ID** — a `.pfx` holding a private key.
+#[cfg(feature = "signing")]
+#[must_use]
+pub fn pick_new_digital_id_target(suggested: &std::path::Path) -> Picked {
+    use crate::text::digital_id as t;
+    pick_key_file_target(
+        "digital-id", // ui-text-exempt: a trace token, never displayed
+        DIAG_DIGITAL_ID_PATH,
+        suggested,
+        (t::save_title(), t::pfx_filter(), "pfx"), // ui-text-exempt: a file extension
+    )
+}
+
+/// **Where to save a digital ID's public certificate** — a `.cer` to send.
+#[cfg(feature = "signing")]
+#[must_use]
+pub fn pick_shared_certificate_target(suggested: &std::path::Path) -> Picked {
+    use crate::text::digital_id as t;
+    pick_key_file_target(
+        "share-certificate", // ui-text-exempt: a trace token, never displayed
+        DIAG_SHARE_CERTIFICATE_PATH,
+        suggested,
+        (t::share_title(), t::cer_filter(), "cer"), // ui-text-exempt: a file extension
+    )
+}
+
+/// A typed save whose trace says only whether a path was chosen, never which:
+/// [`pick_certificate`]'s rule, because these files sit beside a private key.
+#[cfg(feature = "signing")]
+fn pick_key_file_target(
+    token: &str,
+    seam: &str,
+    suggested: &std::path::Path,
+    (title, filter, ext): (&str, &str, &str),
+) -> Picked {
+    let (source, answer) = if let Some(answer) = from_env(std::env::var_os(seam)) {
+        ("env", answer) // ui-text-exempt: a trace token, never displayed
+    } else {
+        let mut dialog = rfd::FileDialog::new()
+            .set_title(title)
+            .add_filter(filter, &[ext]);
+        if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {
+            dialog = dialog.set_directory(dir);
+        }
+        if let Some(name) = suggested.file_name() {
+            dialog = dialog.set_file_name(name.to_string_lossy());
+        }
+        let picked = dialog.save_file().map_or(Picked::Cancelled, Picked::Path);
+        ("native", picked) // ui-text-exempt: a trace token, never displayed
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "{token}-picked source={source} chosen={}",
             u8::from(matches!(answer, Picked::Path(_)))
         )
     });

@@ -231,6 +231,9 @@ pub mod snapshot;
 /// File ▸ Security ▸ Add archive time-stamp….
 #[cfg(feature = "signing")]
 pub mod archive;
+/// The *Create a digital ID* form in the Sign window.
+#[cfg(feature = "signing")]
+pub mod digital_id;
 /// File ▸ Security ▸ Add validation evidence….
 #[cfg(feature = "signing")]
 pub mod evidence;
