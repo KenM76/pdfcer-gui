@@ -7,6 +7,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/formfield.md`.
 
 use crate::formfieldkind::FormFieldKind;
+use pdfcer_core::annot_author::CheckStyle;
 
 /// The window title, which names the kind being placed.
 #[must_use]
@@ -151,6 +152,43 @@ pub fn export_note() -> String {
     "What the form submits when the box is ticked. \u{201c}Yes\u{201d} is what \
      most software expects."
         .to_owned()
+}
+
+/// The label of a check box's mark picker.
+#[must_use]
+pub fn mark_label() -> String {
+    "Mark".to_owned()
+}
+
+/// What the mark picker changes.
+#[must_use]
+pub fn mark_hover() -> String {
+    "The symbol drawn in the box when it is ticked. Other programs draw the same symbol.".to_owned()
+}
+
+/// Every check-box mark, in the order the picker lists them.
+pub const CHECK_STYLES: [CheckStyle; 6] = [
+    CheckStyle::Check,
+    CheckStyle::Cross,
+    CheckStyle::Star,
+    CheckStyle::Circle,
+    CheckStyle::Square,
+    CheckStyle::Diamond,
+];
+
+/// One check-box mark's name.
+#[must_use]
+pub fn check_style_label(style: CheckStyle) -> String {
+    match style {
+        CheckStyle::Cross => "Cross",
+        CheckStyle::Star => "Star",
+        CheckStyle::Circle => "Circle",
+        CheckStyle::Square => "Square",
+        CheckStyle::Diamond => "Diamond",
+        // `Check`, and any mark a newer engine adds before this list does.
+        _ => "Tick",
+    }
+    .to_owned()
 }
 
 /// How a radio group works, said before the operator names one.

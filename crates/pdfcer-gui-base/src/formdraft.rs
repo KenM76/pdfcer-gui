@@ -76,6 +76,10 @@ pub struct Draft {
     pub export_value: String,
     /// **Check box / radio** — whether it starts on.
     pub checked: bool,
+    /// **Check box** — the mark drawn when it is on. Not offered for a radio
+    /// button: the engine draws every radio button as a dot whatever style it
+    /// is given.
+    pub check_style: pdfcer_core::annot_author::CheckStyle,
     /// **Choice** — the options, one per line.
     ///
     /// Held as one string rather than a `Vec<String>` because that is what the
@@ -161,6 +165,7 @@ impl Draft {
             // is what Acrobat writes and is therefore what most scripts expect.
             export_value: "Yes".to_owned(), // ui-text-exempt: a PDF /AS name written into the file, never displayed as UI copy
             checked: false,
+            check_style: pdfcer_core::annot_author::CheckStyle::Check,
             options: String::new(),
             combo: true,
             editable: false,

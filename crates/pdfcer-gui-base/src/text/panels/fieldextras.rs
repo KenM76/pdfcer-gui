@@ -54,3 +54,15 @@ pub const fn label_export_name_hover() -> &'static str {
      submitted, in place of the field name. Nothing on the page changes. Leave it empty to \
      use the field name."
 }
+
+/// `/Ff` bit 3 (NoExport), written as the positive.
+#[must_use]
+pub const fn flag_sent() -> &'static str {
+    "Sent with the form"
+}
+
+/// See [`flag_sent`].
+#[must_use]
+pub const fn flag_sent_hover() -> &'static str {
+    "When off, this field's value is left out when the form's data is submitted or exported. It still shows and prints, and can still be filled in."
+}

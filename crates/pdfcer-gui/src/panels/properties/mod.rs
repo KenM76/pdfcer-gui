@@ -17,8 +17,12 @@
 /// it** — `EditSession::annotation_deletion_refusal` and
 /// `annotation_deletion_preview`.
 pub mod annotdelete;
+/// The selected annotation's show, print and lock switches.
+pub mod annotflags;
 /// A push button's picture and its caption position, under the box's rows.
 pub mod buttonicon;
+/// A check box's mark, in place of the caption box.
+pub mod checkmark;
 /// A **choice field's `/Opt` list** and the three `/Ff` flags Acrobat groups
 /// with it. Its own module under R2 and on the seam the code takes:
 /// [`fieldedit`] draws a field's flags, this draws the list those flags
@@ -254,6 +258,7 @@ fn body_sections(
     // stamp — where `markup` and `dimension` each draw for one. Deletion is the
     // one verb they share, and `annotation_deletion_refusal` is a document-wide
     // question that does not care which `/Subtype` is selected.
+    let drew_annot_flags = annotflags::section(ui, doc, actions);
     let drew_annot_delete = annotdelete::section(ui, doc, state.annot_delete_mut());
     // The geometry fields sit between the sections that WRITE and the
     // section that describes, because that is what they are: the only editable
@@ -315,6 +320,7 @@ fn body_sections(
         || drew_layer
         || drew_markup
         || drew_annot_delete
+        || drew_annot_flags
         || drew_geometry
         || drew_form_field
         || drew_text

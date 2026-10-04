@@ -116,6 +116,7 @@ pub(in crate::app::actions) fn author(
                 spec.required = draft.required;
                 spec.border = border;
                 spec.chrome = chrome;
+                spec.style = draft.check_style;
                 session.add_check_box(&spec)
             }
             K::Radio => {

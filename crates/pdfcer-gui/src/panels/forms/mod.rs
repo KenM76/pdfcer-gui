@@ -286,6 +286,12 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc, edits: &mut Vec<FormEdit>) 
             t::forms_fill_autosize_note(&disclosure.field, size),
         );
     }
+    if let Some(limit) = disclosure.exceeds_max_len {
+        ui.colored_label(
+            ui.visuals().warn_fg_color,
+            t::forms_fill_over_max_len_note(&disclosure.field, limit),
+        );
+    }
     if let Some(value) = disclosure.password_withheld {
         ui.label(t::forms_fill_password_withheld_note(&disclosure.field));
         let store = ui

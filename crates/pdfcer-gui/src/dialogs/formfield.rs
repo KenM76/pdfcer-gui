@@ -21,6 +21,8 @@ const REGION_BODY: &str = "dialog.form_field.body";
 const REGION_ACCEPT: &str = "dialog.form_field.accept";
 /// The name field's rect — the one control that decides whether Accept is live.
 const REGION_NAME: &str = "dialog.form_field.name";
+/// A check box's mark picker.
+const REGION_MARK: &str = "dialog.form_field.mark";
 /// The `/MK` `/BG` swatch's rect.
 const REGION_BACKGROUND: &str = "dialog.form_field.background";
 /// The `/MK` `/BC` swatch's rect.
@@ -158,8 +160,8 @@ fn content_height(kind: FormFieldKind) -> f32 {
         FormFieldKind::Text => {
             LABEL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS * 3.0 + GAP_PTS + CONTROL_PTS
         }
-        // Ticked-by-default, then the export value and what it means.
-        FormFieldKind::CheckBox => CONTROL_PTS + GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS,
+        // Ticked-by-default, the mark, then the export value and what it means.
+        FormFieldKind::CheckBox => CONTROL_PTS * 2.0 + GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS,
         // The group note first — it is the sentence that stops the commonest
         // form-authoring mistake — then the value and the starts-selected box.
         FormFieldKind::Radio => {
@@ -507,6 +509,21 @@ impl FormFieldDialog {
     /// A check box's two extra choices.
     fn check_rows(&mut self, ui: &mut Ui) {
         ui.checkbox(&mut self.draft.checked, t::checked());
+        ui.horizontal(|ui| {
+            ui.label(t::mark_label()).on_hover_text(t::mark_hover());
+            let combo = egui::ComboBox::from_id_salt(REGION_MARK)
+                .selected_text(t::check_style_label(self.draft.check_style))
+                .show_ui(ui, |ui| {
+                    for style in t::CHECK_STYLES {
+                        ui.selectable_value(
+                            &mut self.draft.check_style,
+                            style,
+                            t::check_style_label(style),
+                        );
+                    }
+                });
+            crate::diag::ui_rect(REGION_MARK, combo.response.rect);
+        });
         ui.add_space(6.0);
         ui.label(t::export_label());
         ui.add(

@@ -703,4 +703,18 @@ pub enum AnnotAction {
         /// engine's own words are *"an override set, not a replacement"*.
         style: pdfcer_core::edit::TextAnnotStyle,
     },
+    /// **Turn one of the annotation-flag switches on or off**, resolved
+    /// against the document's `/F` when applied; see
+    /// [`crate::annotflagswitch`]. Never raised for a widget, whose
+    /// visibility is the form field's own control.
+    SetFlag {
+        /// The page it is on, to find its current flags.
+        page: usize,
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which switch.
+        switch: crate::annotflagswitch::FlagSwitch,
+        /// Its new state.
+        on: bool,
+    },
 }

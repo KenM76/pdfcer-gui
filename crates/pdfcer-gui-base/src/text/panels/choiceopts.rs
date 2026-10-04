@@ -169,6 +169,18 @@ pub const fn label_default_hover() -> &'static str {
     "Which option a Reset button puts back. This is separate from what the field says now."
 }
 
+/// `/DV` for a list box that allows several selections.
+#[must_use]
+pub const fn label_default_many() -> &'static str {
+    "Selected after Reset"
+}
+
+/// See [`label_default_many`].
+#[must_use]
+pub const fn label_default_many_hover() -> &'static str {
+    "The options a Reset button selects. Tick none and Reset clears the list. This is separate from what is selected now."
+}
+
 /// The default-choice chooser's "no default" entry.
 ///
 /// *"Nothing"* rather than *"None"*: the state it names is the field being

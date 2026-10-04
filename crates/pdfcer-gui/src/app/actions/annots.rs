@@ -35,6 +35,8 @@ use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
 
+/// One annotation-flag switch.
+mod flags;
 /// Make one markup part of the page.
 mod flatten;
 pub(crate) use flatten::refusal as flatten_refusal;
@@ -763,6 +765,12 @@ pub(super) fn apply_action(
         // owns that and raises nothing. Reached only from an explicit control;
         // the variant's docs carry the undo argument.
         A::SetOpen { id, open } => set_open(doc, id, open),
+        A::SetFlag {
+            page,
+            id,
+            switch,
+            on,
+        } => flags::set_flag(doc, page, id, switch, on),
         // The node verbs, and the operator's *"I also can't edit or delete
         // nodes of a markup shape once it is drawn."*
         //

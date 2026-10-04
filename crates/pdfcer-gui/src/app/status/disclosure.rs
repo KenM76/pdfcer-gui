@@ -83,6 +83,12 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
             d.unencodable_chars,
         ));
     }
+    if let Some(limit) = d.exceeds_max_len {
+        if !line.is_empty() {
+            line.push(' ');
+        }
+        line.push_str(&t_forms::forms_fill_over_max_len_note(&d.field, limit));
+    }
     if d.password_withheld.is_some() {
         if !line.is_empty() {
             line.push(' ');

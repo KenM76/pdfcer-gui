@@ -728,6 +728,19 @@ pub const fn touched_border_width() -> &'static str {
     "the border width"
 }
 
+/// What an edit of a check box's mark touched, for the status line.
+#[must_use]
+pub const fn touched_mark() -> &'static str {
+    "the mark"
+}
+
+/// A check box's mark when another program chose a symbol pdfcer has no
+/// name for.
+#[must_use]
+pub fn mark_unnamed() -> String {
+    "Another program's symbol".to_owned()
+}
+
 /// The caption field.
 #[must_use]
 pub const fn touched_caption() -> &'static str {

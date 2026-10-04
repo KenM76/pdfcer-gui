@@ -517,6 +517,9 @@ pub mod navdest;
 /// The verbs whose subject is an annotation.
 pub mod annotaction;
 
+/// The annotation-flag switches and what each does to the `/F` word.
+pub mod annotflagswitch;
+
 /// The verbs whose subject is text style, a ce dimension, a redaction or an attachment.
 pub mod editactions;
 

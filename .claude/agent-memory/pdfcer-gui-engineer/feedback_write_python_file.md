@@ -201,3 +201,10 @@ every `\n` as CRLF, so a patch script flips a whole LF file to CRLF (git warns
 "CRLF will be replaced by LF"). Read and write with `newline=''`. And the
 escape rule held again the same day, twice: a `\` + newline continuation in a
 heredoc payload arrived as a gap. For a Rust `\`-continued literal, use Edit.
+
+**2026-10-04, again: eleven files flipped to CRLF in one session** by
+`open(p,'w')` patch scripts, caught only by git's "CRLF will be replaced"
+warning on an unrelated `git diff`. Sweep before staging:
+`git status --porcelain | awk '{print $2}' | while read f; do tr -cd '\r' < "$f" | wc -c; done`
+against `git show HEAD:$f` for the same count; repair with `sed -i 's/\r$//'`.
+Default every patch script to `newline=''` on both open calls, no exceptions.

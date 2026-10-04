@@ -10,6 +10,8 @@
 /// The Align and Distribute panel.
 pub mod align;
 
+/// The selected annotation's show, print and lock switches.
+pub mod annotflags;
 /// **The annotation half of the Properties panel's geometry section** —
 /// X/Y/W/H, typeable over a selected markup.
 pub mod annotgeometry;

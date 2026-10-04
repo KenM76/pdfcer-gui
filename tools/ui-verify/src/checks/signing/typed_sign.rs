@@ -221,7 +221,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let mut findings = Vec::new();
     if tags == 0 {
         findings.push(
-            "the saved copy holds no `/pdfc_HandSig` tag: the signature is not recorded in the              document, so the box reads unsigned after reopening."
+            "the saved copy holds no `/pdfc_HandSig` tag: the signature is not recorded in the document, so the box reads unsigned after reopening."
                 .to_owned(),
         );
     }

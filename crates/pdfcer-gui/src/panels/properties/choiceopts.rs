@@ -281,11 +281,22 @@ pub fn section(
     }
 
     let current = if wrote { list } else { stored.clone() };
-    if let Some(choice) = default_row(ui, field, &current) {
-        edit = match choice {
-            Some(export) => edit.with_default_value(export),
-            None => edit.clearing_default_value(),
-        };
+    let changed = if field.flags.has(FieldFlags::MULTI_SELECT) && !combo {
+        default_selections_row(ui, field, &current).map(|picked| {
+            if picked.is_empty() {
+                edit.clone().clearing_default_value()
+            } else {
+                edit.clone().with_default_selections(picked)
+            }
+        })
+    } else {
+        default_row(ui, field, &current).map(|choice| match choice {
+            Some(export) => edit.clone().with_default_value(export),
+            None => edit.clone().clearing_default_value(),
+        })
+    };
+    if let Some(next) = changed {
+        edit = next;
         touched = TOUCHED_DEFAULT;
         wrote = true;
     }
@@ -540,6 +551,51 @@ fn default_row(ui: &mut Ui, field: &Field, list: &[OptionRow]) -> Option<Option<
         .response;
     crate::diag::ui_control(DEFAULT_REGION, &response, ui.clip_rect());
     (chosen != current).then_some(chosen)
+}
+
+/// A multi-select list box's `/DV`: one checkbox per option, so a reset can
+/// restore several. Returns the new selection, in list order, when one changed.
+fn default_selections_row(ui: &mut Ui, field: &Field, list: &[OptionRow]) -> Option<Vec<String>> {
+    let current = current_defaults(field);
+    crate::diag::trace_changed(DEFAULT_REGION, || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed
+            "choice-defaults-read field={} defaults={}",
+            field.fully_qualified_name,
+            if current.is_empty() {
+                "-".to_owned()
+            } else {
+                current.join("|")
+            }
+        )
+    });
+    ui.label(t::label_default_many())
+        .on_hover_text(t::label_default_many_hover());
+    let mut toggled = false;
+    let mut picked = Vec::new();
+    for (i, row) in list.iter().enumerate() {
+        let mut on = current.contains(&row.export);
+        let response = ui.checkbox(&mut on, &row.display);
+        // ui-text-exempt: trace region name, never displayed
+        let region = format!("{DEFAULT_REGION}.{i}");
+        crate::diag::ui_rect_visible(&region, response.rect, ui.clip_rect());
+        toggled |= response.changed();
+        if on {
+            picked.push(row.export.clone());
+        }
+    }
+    toggled.then_some(picked)
+}
+
+/// Every export value in the field's `/DV`.
+fn current_defaults(field: &Field) -> Vec<String> {
+    match &field.default_value {
+        pdfcer_core::forms::FieldValue::Choice(items) => items
+            .iter()
+            .map(|raw| pdfcer_core::edit::decode_text_string(raw).text)
+            .collect(),
+        _ => Vec::new(),
+    }
 }
 
 /// The field's current `/DV`, as an export value.

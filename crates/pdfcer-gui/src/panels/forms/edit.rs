@@ -69,6 +69,9 @@ pub struct FillDisclosure {
     /// `Some` only when the engine withheld it. Held so the panel can offer to
     /// store it after all; it lives only as long as this disclosure does.
     pub password_withheld: Option<String>,
+    /// `Some(limit)` when the value is longer than the field's `/MaxLen`. The
+    /// engine stores it in full; a comb field draws only the first `limit`.
+    pub exceeds_max_len: Option<i64>,
 }
 
 impl FillDisclosure {
@@ -78,6 +81,7 @@ impl FillDisclosure {
         self.applied_autosize.is_none()
             && self.unencodable_chars == 0
             && self.password_withheld.is_none()
+            && self.exceeds_max_len.is_none()
     }
 }
 
@@ -177,6 +181,10 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
             let withheld = disclosed
                 .as_ref()
                 .is_some_and(|d| d.password_withheld.is_some());
+            let over = disclosed
+                .as_ref()
+                .and_then(|d| d.exceeds_max_len)
+                .map_or_else(|| "none".to_owned(), |n| n.to_string());
             record_fill_disclosure(disclosed.map(|d| FillDisclosure {
                 epoch: doc.edit_epoch,
                 ..d
@@ -195,7 +203,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
                 let size = disclosed_size.map_or_else(|| "none".to_owned(), |s| format!("{s:.1}"));
                 format!(
                     "{label} commands={commands} epoch={} autosize={size} bound={bound} \
-                     password_withheld={withheld}",
+                     password_withheld={withheld} over_max_len={over}",
                     doc.edit_epoch
                 )
             });
@@ -304,6 +312,7 @@ fn disclosure_of(field: &str, value: &str, out: &FillOutcome) -> FillDisclosure 
         applied_autosize: out.applied_autosize,
         applied_autosize_bound: out.applied_autosize_bound,
         unencodable_chars: out.unencodable_chars,
+        exceeds_max_len: out.exceeds_max_len,
     }
 }
 
@@ -614,6 +623,52 @@ mod tests {
         );
     }
 
+    /// A value longer than the field's `/MaxLen` is stored whole and the
+    /// limit carried back; one within it carries nothing.
+    #[test]
+    fn a_fill_over_the_character_limit_is_disclosed() {
+        use crate::panels::objects::test_support::engine_fixture;
+
+        let path = engine_fixture("forms/demo-form.pdf");
+        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let mut session = EditSession::new(doc);
+        let target = {
+            let view = session.view();
+            let form = pdfcer_core::forms::parse_acroform(&view).expect("the fixture has a form");
+            form.fields
+                .iter()
+                .find(|f| {
+                    f.field_type == Some(pdfcer_core::forms::FieldType::Text)
+                        && !f.flags.read_only()
+                })
+                .map(|f| f.fully_qualified_name.clone())
+                .expect("the fixture has a text field")
+        };
+        session
+            .edit_field(
+                &target,
+                &pdfcer_core::edit::FieldEdit::new().with_max_len(Some(3)),
+            )
+            .expect("a limit can be set");
+        let fill = |session: &mut EditSession, value: &str| {
+            run(
+                session,
+                &FormEdit::FillText {
+                    field: target.clone(),
+                    value: value.to_owned(),
+                },
+            )
+            .expect("a fill succeeds")
+            .disclosed
+            .expect("a fill always reports an outcome")
+        };
+        let within = fill(&mut session, "abc");
+        assert_eq!(within.exceeds_max_len, None);
+        let over = fill(&mut session, "abcdef");
+        assert_eq!(over.exceeds_max_len, Some(3));
+        assert!(!over.is_empty(), "the limit must reach the status line");
+    }
+
     /// **A disclosure is shown only while it describes the revision on
     /// screen.**
     #[test]
@@ -625,6 +680,7 @@ mod tests {
             applied_autosize_bound: Some(pdfcer_core::vartext::AutoFitBound::Height),
             unencodable_chars: 0,
             password_withheld: None,
+            exceeds_max_len: None,
         }));
         assert!(last_fill_disclosure(7).is_some());
         assert!(
@@ -641,6 +697,7 @@ mod tests {
             applied_autosize_bound: None,
             unencodable_chars: 0,
             password_withheld: None,
+            exceeds_max_len: None,
         }));
         assert!(
             last_fill_disclosure(7).is_none(),

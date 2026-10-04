@@ -585,10 +585,16 @@ pub mod canvas_choice_fill;
 /// the measurement for why the third row's rectangle is not asserted.
 pub mod option_arrows;
 
+/// Hide, print and show an annotation again from Properties and Comments.
+pub mod annot_flags;
 /// Attach a file to a page as a marker from Markup.
 pub mod attach_file;
 /// Attach a WAV recording to a page from Markup.
 pub mod attach_sound;
+/// Choose a check box's mark from Properties.
+pub mod check_mark;
+/// Give a multi-select list several default choices from Properties.
+pub mod choice_defaults;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
 pub mod field_extras;

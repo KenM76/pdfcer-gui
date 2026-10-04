@@ -34,6 +34,8 @@ pub use pdfcer_gui_base::commentnote as note;
 /// the panel that holds the operator's unfinished words and the only part whose
 /// output is a verb.
 mod editor;
+/// *Show on screen* on a hidden comment's row.
+mod shown;
 
 use pdfcer_core::object::ObjId;
 
@@ -638,6 +640,7 @@ fn row(
             *sink.go = Some((comment.page_index, comment.id));
         }
         delete_control(ui, comment, sink);
+        shown::control(ui, comment, sink);
     });
 }
 

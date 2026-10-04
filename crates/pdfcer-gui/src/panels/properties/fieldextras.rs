@@ -1,5 +1,6 @@
 //! A placed field's less-used properties: a text field's scrolling,
-//! spell-check and file-select flags, and every field's export name (`/TM`).
+//! spell-check and file-select flags, and every field's export name (`/TM`)
+//! and whether it is sent with the form (`/Ff` bit 3, NoExport).
 //!
 //! The flags are advisory to the reader that fills the form in; pdfcer neither
 //! scrolls, spell-checks nor submits differently for them. File select changes
@@ -28,6 +29,9 @@ pub const FILE_SELECT_REGION: &str = "properties.field_edit.file_select";
 /// The file-select sentence's region, published only while the flag is set.
 // ui-text-exempt: trace region name, never displayed
 pub const FILE_SELECT_NOTE_REGION: &str = "properties.field_edit.file_select.note";
+/// The Sent with the form checkbox's region.
+// ui-text-exempt: trace region name, never displayed
+pub const SENT_REGION: &str = "properties.field_edit.sent";
 /// The Export name box's region.
 // ui-text-exempt: trace region name, never displayed
 pub const EXPORT_NAME_REGION: &str = "properties.field_edit.export_name";
@@ -96,6 +100,24 @@ pub fn text_flags(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Actio
     }
 }
 
+/// `/Ff` bit 3 (NoExport), drawn as its positive. Every field type has it.
+pub fn sent_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action>) {
+    let mut on = !field.flags.no_export();
+    let response = ui.checkbox(&mut on, t::flag_sent());
+    crate::diag::ui_rect_visible(SENT_REGION, response.rect, ui.clip_rect());
+    if response.on_hover_text(t::flag_sent_hover()).changed() {
+        actions.push(
+            FieldAction::EditProperties {
+                field: fqn.to_owned(),
+                edit: FieldEdit::new().with_no_export(!on),
+                // ui-text-exempt: a control name carried for a refusal message.
+                touched: "sent with the form",
+            }
+            .into(),
+        );
+    }
+}
+
 /// `/TM`, committed when the box loses focus with a changed value; an empty
 /// box removes it.
 pub fn export_name_row(
@@ -143,10 +165,11 @@ fn trace_read(field: &Field, fqn: &str, export: &str) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(
-            "field-extras-read field={fqn} scroll={} spell={} file={} export={}",
+            "field-extras-read field={fqn} scroll={} spell={} file={} sent={} export={}",
             u8::from(!flags.has(FieldFlags::DO_NOT_SCROLL)),
             u8::from(!flags.has(FieldFlags::DO_NOT_SPELL_CHECK)),
             u8::from(flags.has(FieldFlags::FILE_SELECT)),
+            u8::from(!flags.no_export()),
             if export.is_empty() { "-" } else { export },
         )
     });

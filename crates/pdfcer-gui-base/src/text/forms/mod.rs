@@ -679,6 +679,16 @@ pub fn forms_fill_unencodable_note(field: &str, count: usize) -> String {
     )
 }
 
+/// Rule-4 disclosure: the value is longer than the field's character limit.
+/// pdfcer kept all of it; a reader enforcing the limit, or a comb field's
+/// boxes, shows only the first `limit` characters.
+#[must_use]
+pub fn forms_fill_over_max_len_note(field: &str, limit: i64) -> String {
+    format!(
+        "“{field}” allows {limit} character(s) and this value is longer. All of it was saved, but other programs, and a field drawn as boxes, show only the first {limit}."
+    )
+}
+
 /// Rule-4 disclosure: a password field was filled and **nothing was stored**.
 #[must_use]
 pub fn forms_fill_password_withheld_note(field: &str) -> String {

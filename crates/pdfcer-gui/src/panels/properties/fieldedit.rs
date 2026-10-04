@@ -207,6 +207,7 @@ pub fn section(
     }
 
     tooltip_row(ui, fqn, state, actions);
+    super::fieldextras::sent_row(ui, field, fqn, actions);
     super::fieldextras::export_name_row(ui, field, fqn, state, actions);
 
     //
