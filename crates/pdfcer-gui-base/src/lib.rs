@@ -541,6 +541,9 @@ pub mod formdraft;
 /// The ruler guides a document carries, and their on-disk spelling.
 pub mod guidemodel;
 
+/// The comment kinds placed through their own engine verb.
+pub mod newcomment;
+
 /// The action vocabulary: one variant per operator intent.
 pub mod appaction;
 

@@ -296,6 +296,9 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.stamp", t::markup_stamp(), 522)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
+        command("markup.attach_file", t::markup_attach_file(), 524)
+            .with_icon("attachment")
+            .enabled_when("doc.pages"),
         // `paste` is shared with `edit.paste`: both put the clipboard on the page.
         command(
             "markup.paste_image_stamp",

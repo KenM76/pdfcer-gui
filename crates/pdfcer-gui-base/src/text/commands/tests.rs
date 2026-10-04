@@ -104,6 +104,7 @@ fn all() -> Vec<CommandText> {
         markup_text_box(),
         markup_sticky_note(),
         markup_stamp(),
+        markup_attach_file(),
         markup_paste_image_stamp(),
         markup_comments(),
         measure_linear(),

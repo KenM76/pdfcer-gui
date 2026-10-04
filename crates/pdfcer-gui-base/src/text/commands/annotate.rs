@@ -245,6 +245,15 @@ pub const fn markup_sticky_note() -> CommandText {
     )
 }
 
+/// `markup.attach_file`
+#[must_use]
+pub const fn markup_attach_file() -> CommandText {
+    CommandText::new(
+        "Attach file",
+        "Store a file inside the PDF, with a marker on the page that opens it.",
+    )
+}
+
 /// `markup.stamp`
 #[must_use]
 pub const fn markup_stamp() -> CommandText {

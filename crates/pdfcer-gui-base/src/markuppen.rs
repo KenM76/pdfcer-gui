@@ -89,7 +89,8 @@ impl PenSlot {
     pub const fn of_text_annot(kind: crate::wordmarkup::TextAnnotKind) -> Self {
         match kind {
             crate::wordmarkup::TextAnnotKind::TextBox => Self::TextBox,
-            crate::wordmarkup::TextAnnotKind::Sticky => Self::Note,
+            crate::wordmarkup::TextAnnotKind::Sticky
+            | crate::wordmarkup::TextAnnotKind::Attachment => Self::Note,
             crate::wordmarkup::TextAnnotKind::Stamp => Self::Stamp,
         }
     }
@@ -459,24 +460,30 @@ mod tests {
     #[test]
     fn the_three_text_annotation_kinds_do_not_share_a_pen() {
         use crate::wordmarkup::TextAnnotKind;
-        let slots: Vec<PenSlot> = TextAnnotKind::ALL
+        // The attachment marker is an icon on the page like a note's, and takes
+        // the note's colour by design; it is pinned to that slot below.
+        let kinds: Vec<TextAnnotKind> = TextAnnotKind::ALL
             .iter()
-            .map(|k| PenSlot::of_text_annot(*k))
+            .copied()
+            .filter(|k| *k != TextAnnotKind::Attachment)
             .collect();
+        let slots: Vec<PenSlot> = kinds.iter().map(|k| PenSlot::of_text_annot(*k)).collect();
         for i in 0..slots.len() {
             for j in (i + 1)..slots.len() {
                 assert_ne!(
-                    slots[i],
-                    slots[j],
+                    slots[i], slots[j],
                     "{:?} and {:?} share a pen slot",
-                    TextAnnotKind::ALL[i],
-                    TextAnnotKind::ALL[j]
+                    kinds[i], kinds[j]
                 );
             }
         }
         // …and the sticky note is on the note slot specifically, which is the
         // one whose Acrobat value differs from the shape pen's.
         assert_eq!(PenSlot::of_text_annot(TextAnnotKind::Sticky), PenSlot::Note);
+        assert_eq!(
+            PenSlot::of_text_annot(TextAnnotKind::Attachment),
+            PenSlot::Note
+        );
         assert_eq!(
             Pen::default().text_annot_colour(TextAnnotKind::Sticky),
             palette::components(palette::NOTE_PURPLE)

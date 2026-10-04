@@ -172,6 +172,29 @@ impl DialogsState {
         ));
     }
 
+    /// **Open the attach-file dialog** for a marker clicked onto `page`,
+    /// once `file` has been picked.
+    pub fn open_attach_annot(
+        &mut self,
+        status: &Status,
+        page: usize,
+        rect: pdfcer_core::page_tree::Rect,
+        file: std::path::PathBuf,
+    ) {
+        if !matches!(status, Status::Open(_)) {
+            return;
+        }
+        self.text_annot = Some(
+            textannot::TextAnnotDialog::open(
+                page,
+                crate::canvas::textannot::TextAnnotKind::Attachment,
+                rect,
+                None,
+            )
+            .with_file(file),
+        );
+    }
+
     /// **Open the placement dialog for a form control just put on the page.**
     pub fn open_form_field(
         &mut self,

@@ -8,7 +8,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/wordmarkup.md`.
 
-use pdfcer_core::annot_author::{Color, StampName, StampStyle, StickyIcon, TextAnnotSpec};
+use pdfcer_core::annot_author::{
+    AttachmentIcon, Color, StampName, StampStyle, StickyIcon, TextAnnotSpec,
+};
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::vartext::{Quadding, TextColor};
@@ -25,11 +27,15 @@ pub enum TextAnnotKind {
     Sticky,
     /// `/Stamp` — a framed label: APPROVED, REVISED, and the rest.
     Stamp,
+    /// `/FileAttachment` — a marker carrying a file embedded in the PDF.
+    /// Its text is an optional description; the file is the payload, so it
+    /// never reaches [`spec`].
+    Attachment,
 }
 
 impl TextAnnotKind {
     /// Every kind, in the order the Markup tab offers them.
-    pub const ALL: &'static [Self] = &[Self::TextBox, Self::Sticky, Self::Stamp];
+    pub const ALL: &'static [Self] = &[Self::TextBox, Self::Sticky, Self::Stamp, Self::Attachment];
 
     /// The command id that arms this kind.
     #[must_use]
@@ -41,6 +47,8 @@ impl TextAnnotKind {
             Self::Sticky => "markup.sticky_note",
             // ui-text-exempt: command ids, never displayed
             Self::Stamp => "markup.stamp",
+            // ui-text-exempt: command ids, never displayed
+            Self::Attachment => "markup.attach_file",
         }
     }
 
@@ -55,7 +63,7 @@ impl TextAnnotKind {
     pub const fn is_dragged(self) -> bool {
         match self {
             Self::TextBox | Self::Stamp => true,
-            Self::Sticky => false,
+            Self::Sticky | Self::Attachment => false,
         }
     }
 
@@ -88,6 +96,18 @@ pub const STICKY_ICONS: &[StickyIcon] = &[
     StickyIcon::Paragraph,
     StickyIcon::Insert,
 ];
+
+/// The file-attachment icons offered, in the order the dialog lists them
+/// (§12.5.6.15 Table 184).
+pub const ATTACHMENT_ICONS: &[AttachmentIcon] = &[
+    AttachmentIcon::PushPin,
+    AttachmentIcon::Paperclip,
+    AttachmentIcon::Graph,
+    AttachmentIcon::Tag,
+];
+
+/// The icon a fresh file attachment carries: the standard's default.
+pub const DEFAULT_ATTACHMENT_ICON: AttachmentIcon = AttachmentIcon::PushPin;
 
 /// The icon a fresh sticky note carries.
 pub const DEFAULT_STICKY_ICON: StickyIcon = StickyIcon::Comment;
@@ -197,6 +217,8 @@ pub fn spec(
     }
     let (r, g, b) = colour;
     Some(match kind {
+        // The file is the payload; `actions::attachment` authors it.
+        TextAnnotKind::Attachment => return None,
         TextAnnotKind::TextBox => TextAnnotSpec::FreeText {
             rect,
             text: text.to_owned(),
@@ -597,7 +619,7 @@ mod tests {
         assert!(TextAnnotKind::from_command("markup.rectangle").is_none());
     }
 
-    /// Exactly one kind is placed by a click, and exactly one uses a gallery.
+    /// The two markers are placed by a click, and exactly one kind uses a gallery.
     #[test]
     fn the_two_odd_ones_out_are_the_ones_expected() {
         let clicked: Vec<_> = TextAnnotKind::ALL
@@ -605,7 +627,10 @@ mod tests {
             .filter(|k| !k.is_dragged())
             .copied()
             .collect();
-        assert_eq!(clicked, vec![TextAnnotKind::Sticky]);
+        assert_eq!(
+            clicked,
+            vec![TextAnnotKind::Sticky, TextAnnotKind::Attachment]
+        );
         let gallery: Vec<_> = TextAnnotKind::ALL
             .iter()
             .filter(|k| k.uses_gallery())

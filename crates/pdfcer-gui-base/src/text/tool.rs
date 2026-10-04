@@ -140,6 +140,9 @@ pub const fn text_annot_instruction(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::TextBox => "Drag out the box, then type into it.",
         TextAnnotKind::Sticky => "Click where the note should sit, then type into it.",
         TextAnnotKind::Stamp => "Drag out the area the stamp should cover.",
+        TextAnnotKind::Attachment => {
+            "Click where the file's marker should sit, then choose the file."
+        }
     }
 }
 

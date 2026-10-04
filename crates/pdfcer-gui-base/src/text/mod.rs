@@ -51,6 +51,7 @@ pub mod arrange;
 pub mod assoc;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
+pub mod attachannot;
 pub mod attachclip;
 /// Pages ▸ Stamp ▸ Bates numbering…: its window and its receipt.
 /// Consumed by `pdfcer_gui::dialogs::bates`.

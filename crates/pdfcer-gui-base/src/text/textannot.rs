@@ -41,6 +41,7 @@ pub const fn title(kind: TextAnnotKind) -> &'static str {
         TextAnnotKind::TextBox => "Text box",
         TextAnnotKind::Sticky => "Sticky note",
         TextAnnotKind::Stamp => "Stamp",
+        TextAnnotKind::Attachment => "Attach a file",
     }
 }
 
@@ -61,6 +62,11 @@ pub const fn intro(kind: TextAnnotKind) -> &'static str {
             "A standard stamp, drawn into the box you dragged. It is written \
              onto the page and it prints."
         }
+        TextAnnotKind::Attachment => {
+            "The file is stored inside this PDF and a marker shows where. \
+             Anyone with the PDF can open or save the file from the marker. \
+             The marker prints; the file does not."
+        }
     }
 }
 
@@ -74,6 +80,7 @@ pub const fn hint(kind: TextAnnotKind) -> &'static str {
         // answered rather than left to a `todo!()`, because a panic in a
         // dialog is a worse outcome than a placeholder nobody sees.
         TextAnnotKind::Stamp => "",
+        TextAnnotKind::Attachment => "Description (optional)",
     }
 }
 
@@ -90,6 +97,10 @@ pub const fn bound(kind: TextAnnotKind) -> &'static str {
              alphabets come out as question marks."
         }
         TextAnnotKind::Stamp => "",
+        TextAnnotKind::Attachment => {
+            "Stored with the file, and shown by PDF readers as the attachment's \
+             description."
+        }
     }
 }
 
@@ -199,6 +210,8 @@ pub const fn accept_disabled(kind: TextAnnotKind) -> &'static str {
         // Unreachable: a stamp is always ready. Answered rather than panicking,
         // as `hint` is.
         TextAnnotKind::Stamp => "",
+        // Unreachable: the file is picked before the dialog opens.
+        TextAnnotKind::Attachment => "",
     }
 }
 
@@ -351,7 +364,9 @@ mod tests {
         assert_ne!(boxed, sticky, "the two kinds share a sentence");
     }
 
-    /// Every kind that takes typing has a hint, a bound and a greyed reason.
+    /// Every kind that takes typing has a hint and a bound, and every kind whose
+    /// typing is required has a greyed reason. An attachment's description is
+    /// optional, so its Add is never greyed.
     ///
     /// And the stamp has none of the three, which is the assertion that stops
     /// a field being added to it later without anyone deciding to.
@@ -365,9 +380,10 @@ mod tests {
                 "{kind:?}'s hint disagrees with whether it takes typing"
             );
             assert_eq!(!bound(*kind).is_empty(), typed, "{kind:?}'s bound");
+            let required = typed && *kind != TextAnnotKind::Attachment;
             assert_eq!(
                 !accept_disabled(*kind).is_empty(),
-                typed,
+                required,
                 "{kind:?}'s disabled reason"
             );
             assert!(!title(*kind).is_empty());

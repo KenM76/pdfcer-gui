@@ -41,6 +41,7 @@ mod addtext;
 pub(crate) mod annots;
 /// What applying an [`Action`] does — the interpreter half of this module.
 mod apply;
+mod attachannot;
 /// The three verbs whose subject is a whole **file living inside the
 /// document** — attach, remove, and save one out (ISO 32000-1 §7.11.4.1).
 pub mod attachments;

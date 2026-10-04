@@ -394,11 +394,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 200 → 201: `pages.split` (O285), Pages ▸ Organise.
     // 201 → 203: `file.export_structure` and `file.import_structure`, File ▸ Export.
     // 203 → 204: `format.move_to_layer`, Format ▸ Selection and four canvas menus.
+    // 204 → 205: `markup.attach_file`, Markup ▸ Notes.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        204 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        205 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -804,10 +805,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 182 → 183: `pages.split` names `split`, drawn for it.
     // 183 → 185: the QDF pair name `export` and `import-form-data`, shared.
     // 185 → 186: `format.move_to_layer` names `layers`, shared.
+    // 186 → 187: `markup.attach_file` names `attachment`, shared with `edit.attachments`.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        186 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        187 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

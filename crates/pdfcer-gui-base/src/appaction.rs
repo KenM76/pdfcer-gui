@@ -4,27 +4,8 @@
 //! what an action *is*, when it is raised, when it is applied, and why the
 //! funnel exists at all; this file is the list.
 //!
-//! ## Why it is a file of its own
-//!
-//! Rule R2, and the seam [`super`]'s header had already half-drawn. That
-//! header says, of the day the module's prose moved to `OVERVIEW.md`:
-//!
-//! > this file has exactly one seam and it is not where the lines are: the
-//! > whole body is **one enum**, which cannot be split without inventing a
-//! > nested variant and rewriting every match arm in the crate.
-//!
-//! Both halves of that are still true. The enum still cannot be split
-//! internally without a sub-enum, and the bulk is still prose — but *"one
-//! enum"* and *"the module that declares six submodules and re-exports the
-//! disclosure recorder"* are two subjects, and putting them in two files is
-//! the ordinary Rust seam between a module and its principal type.
-//!
-//! ## What this does NOT buy, stated so nobody has to find out
-//!
-//! Headroom. This file is close to the ceiling on the day it was made, and the
-//! next family of variants to grow will have to become a sub-enum beside
-//! `PageAction` and `DimensionAction`. [`super`]'s declaration of this module
-//! carries the measurement of which family that should be and why.
+//! The enum cannot be split internally without a sub-enum, so a new family
+//! of variants becomes one beside `PageAction` and `NewComment`.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/appaction.md`.
 
@@ -1369,6 +1350,8 @@ pub enum Action {
         /// Acrobat's own, with the provenance and its caveat on that constant.
         icon: pdfcer_core::annot_author::StickyIcon,
     },
+    /// **Author a comment kind that has its own engine verb.**
+    NewComment(crate::newcomment::NewComment),
     /// **Everything whose subject is a REDACTION** — mark by search, mark
     /// a whole page, mark what is selected, take one mark off, and arm or
     /// disarm the removal that happens at the next save.
@@ -1491,5 +1474,12 @@ impl From<crate::subactions::VectorAction> for Action {
     /// So a call site says what it MEANS and the wrapping is not its problem.
     fn from(v: crate::subactions::VectorAction) -> Self {
         Self::Vector(v)
+    }
+}
+
+impl From<crate::newcomment::NewComment> for Action {
+    /// So a call site says what it MEANS and the wrapping is not its problem.
+    fn from(c: crate::newcomment::NewComment) -> Self {
+        Self::NewComment(c)
     }
 }

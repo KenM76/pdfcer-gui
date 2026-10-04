@@ -509,6 +509,7 @@ declare an intention before pointing at anything.
 | ✅ | **A shape you drew can have its nodes moved and deleted** |
 | ✅ | **Note text, colour, line width, fill and opacity all ship**, on the Format tab's Markup band (`app/markupband.rs`, five custom controls on `fontband`'s architecture: line colour, fill with *No fill*, line width, opacity and arrowheads) and in the Properties panel, for every kind including the sticky note, the text box and the stamp |
 | ✅ | **Text box, sticky note and stamp** — all three place, and **a stamp's text size is the operator's to choose**, the box growing to hold it |
+| ✅ | **Attach a file to a page as a marker** (O285) — Markup ▸ Notes ▸ *Attach file*, in Review: click where the marker goes, choose the file, optionally describe it and pick Push pin, Paperclip, Graph or Tag. The file is stored in the PDF behind the marker, the marker prints, and the status line says the file is a copy. One undo entry (`add_file_attachment_annotation`). Driven: `a_file_attaches_as_a_marker` |
 | ✅ | **The comments you write are signed and dated** — `/T` and `/M` are written on every annotation pdfcer authors |
 | ✅ | **Markup can be authored see-through** — an Opacity control on Markup ▸ Style, applied to every kind including the sticky note and the text box |
 | ⬜ | **A markup shape has a right-click menu** — `canvas.markup`, the sixth canvas context. Built, undriven |

@@ -137,6 +137,8 @@ pub struct TextAnnotDialog {
     /// operator for the rest of the dialog's life. See
     /// [`FOCUS_ATTEMPT_FRAMES`].
     focus_attempts: u8,
+    /// The file and marker icon, for the attach-file kind only.
+    attach: Option<attach::Chosen>,
 }
 
 /// **How many frames may ask for the text field's focus before giving up.**
@@ -215,6 +217,9 @@ const STICKY_EXTRA_PTS: f32 = 190.0;
 /// too.
 const STAMP_EXTRA_PTS: f32 = 190.0;
 
+/// The attach-file kind's file line and four-icon chooser.
+const ATTACH_EXTRA_PTS: f32 = 170.0;
+
 /// **How much taller the stamp's window opens for each CATEGORY of the
 /// operator's own stamps**, in points.
 ///
@@ -285,6 +290,7 @@ fn window_size(screen: egui::Rect, kind: TextAnnotKind, custom_extra: f32) -> eg
         // operator's stamps is not the feedback loop this file forbids three
         // times.
         TextAnnotKind::Stamp => STAMP_EXTRA_PTS + custom_extra,
+        TextAnnotKind::Attachment => ATTACH_EXTRA_PTS,
         TextAnnotKind::TextBox => 0.0,
     };
     egui::vec2(
@@ -416,7 +422,15 @@ impl TextAnnotDialog {
             close_requested: false,
             focused_once: false,
             focus_attempts: 0,
+            attach: None,
         }
+    }
+
+    /// Carry the file an attach-file window was opened for.
+    #[must_use]
+    pub fn with_file(mut self, file: std::path::PathBuf) -> Self {
+        self.attach = Some(attach::Chosen::new(file));
+        self
     }
 
     /// Draw one frame. Returns `false` when it should close.
@@ -475,6 +489,12 @@ impl TextAnnotDialog {
             if self.kind.uses_gallery() {
                 self.committed = Some(LastStamp::taken(self.stamp, self.custom.as_ref()));
             }
+            if self.kind == TextAnnotKind::Attachment {
+                if let Some(chosen) = &self.attach {
+                    actions.push(chosen.action(self.page, self.rect, &self.text));
+                }
+                return false;
+            }
             actions.push(Action::CommitTextAnnot {
                 page: self.page,
                 kind: self.kind,
@@ -528,6 +548,9 @@ impl TextAnnotDialog {
         // comes from its own `/Name` vocabulary and a `/FreeText` has no icon
         // at all.
         self.icons(ui);
+        if let Some(chosen) = &mut self.attach {
+            chosen.show(ui);
+        }
     }
 
     /// **The two buttons, pinned to the bottom of the window.**
@@ -539,7 +562,10 @@ impl TextAnnotDialog {
             // than hides: the control is *temporarily* unavailable — a
             // keystroke makes it live — which is exactly what greying is
             // reserved for.
-            let ready = self.kind.uses_gallery() || !self.text.trim().is_empty();
+            // The attach-file kind's words are an optional description.
+            let ready = self.kind.uses_gallery()
+                || self.kind == TextAnnotKind::Attachment
+                || !self.text.trim().is_empty();
             let accept = ui.add_enabled(ready, egui::Button::new(t::accept()));
             //
             // `ui_rect` publishes a rectangle whether or not it is on the
@@ -922,6 +948,10 @@ impl TextAnnotDialog {
         true
     }
 }
+
+#[path = "textannot_attach.rs"]
+mod attach;
+pub use attach::REGION_ATTACH_ICON;
 
 #[cfg(test)]
 #[path = "textannot_tests.rs"]

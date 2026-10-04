@@ -630,8 +630,35 @@ impl PdfcerApp {
             }) => super::handsign::place(doc, &field, page, rect, &signature),
             Action::Field(action) => super::forms::apply(doc, action),
             Action::BeginTextAnnot { page, kind, rect } => {
-                self.dialogs.open_text_annot(&self.status, page, kind, rect);
+                if kind == crate::canvas::textannot::TextAnnotKind::Attachment {
+                    if let Some(file) = super::attachannot::pick() {
+                        self.dialogs
+                            .open_attach_annot(&self.status, page, rect, file);
+                    }
+                } else {
+                    self.dialogs.open_text_annot(&self.status, page, kind, rect);
+                }
             }
+            Action::NewComment(pdfcer_gui_base::newcomment::NewComment::Attachment {
+                page,
+                rect,
+                file,
+                icon,
+                description,
+            }) => super::attachannot::place(
+                doc,
+                &self.prefs,
+                &super::attachannot::Placed {
+                    page,
+                    rect,
+                    file: &file,
+                    icon,
+                    description: description.as_deref(),
+                },
+                self.pen
+                    .text_annot_colour(crate::canvas::textannot::TextAnnotKind::Attachment),
+                self.pen.opacity_option(),
+            ),
             // …and this is the one that reaches the document, through the same
             // `vector_edit` funnel every other authoring verb uses. The engine
             // verb differs (`add_text_annotation` rather than `add_markup`)

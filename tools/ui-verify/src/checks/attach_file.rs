@@ -1,0 +1,224 @@
+//! `a_file_attaches_as_a_marker` — Markup ▸ Attach file, a click on the page,
+//! the picker's file, the Paperclip marker and Add put a `/FileAttachment`
+//! marker on the page carrying the file's bytes.
+//!
+//! Design and rationale: `docs/modules/ui-verify/checks/attach_file.md`.
+
+use crate::checks::driving::{
+    SHELL_DIAG_ENV, click_mode_segment, declared_in, declared_names, list, repo_fixture,
+};
+use crate::checks::{Check, CheckContext};
+use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
+use crate::error::{Error, Result};
+use crate::input::scripted::ScriptedPointer;
+use crate::launch::{LaunchSpec, Session};
+use crate::report::CheckReport;
+
+const FIXTURE: &str = "layer-assign.pdf";
+const METHOD: &str = "Rebuild it with `python fixtures/layer-assign.PROVENANCE.py`.";
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
+const ATTACH_ENV: &str = "PDFCER_DIAG_ATTACH_PATH"; // ui-text-exempt: an environment variable name
+/// The attached file's bytes; their count is the oracle for what was embedded.
+const PAYLOAD: &[u8] = b"pdfcer attach-file check payload\n";
+/// An empty spot on the fixture's 800 x 600 page, clear of its box and annotation.
+const SPOT: (f64, f64) = (150.0, 450.0);
+const TAB: &str = "ribbon.tab.markup";
+const ITEM: &str = "ribbon.item.markup.attach_file";
+const PAPERCLIP: &str = "text-annot.attach-icon.Paperclip";
+const ACCEPT: &str = "text-annot.accept";
+
+/// See the module documentation.
+pub struct AFileAttachesAsAMarker;
+
+impl Check for AFileAttachesAsAMarker {
+    fn name(&self) -> &'static str {
+        "a_file_attaches_as_a_marker"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Markup > Attach file does not arm, a click on the page never asks for a file or never \
+         opens the window, the chosen marker icon is lost, or Add never reaches \
+         add_file_attachment_annotation with the file's bytes"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven = launch(ctx, &mut report).and_then(|(session, pointer)| {
+            let outcome = drive(ctx, &mut report, &session, &pointer);
+            let parked = pointer.gone(&session);
+            match outcome? {
+                Some(failure) => Ok(Some(failure)),
+                None => parked.map(|_| None),
+            }
+        });
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+macro_rules! step {
+    ($e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(why) => return Ok(Some(why)),
+        }
+    };
+}
+
+fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {
+    let exe = ctx.resolve_exe().ok_or_else(|| {
+        Error::new(format!(
+            "no binary to drive. Pass --exe, or build the profile's default at {}.",
+            ctx.profile.default_exe
+        ))
+    })?;
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
+    let payload = ctx.out("attach-file.payload.txt");
+    std::fs::write(&payload, PAYLOAD)
+        .map_err(|e| Error::new(format!("cannot write {}: {e}", payload.display())))?;
+    let mut spec = LaunchSpec::new(&exe, ctx.out("attach_file.trace.txt"));
+    spec.pdf = Some(repo_fixture(FIXTURE, METHOD)?);
+    spec.env.push((
+        ctx.profile.diag_env.0.to_owned(),
+        ctx.profile.diag_env.1.to_owned(),
+    ));
+    spec.env
+        .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.env.push((
+        ATTACH_ENV.to_owned(),
+        payload.to_string_lossy().into_owned(),
+    ));
+    spec.place = false;
+    spec.allow_stale = ctx.allow_stale;
+    spec.source_root = ctx.source_root.clone();
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("attach_file.pointer.txt"))?;
+    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
+    report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
+    report.note(format!("launched as pid {}", session.pid()));
+    session.settle(40);
+    Ok((session, pointer))
+}
+
+/// Click a declared region, or the failure naming the regions under `family`.
+fn press(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    region: &str,
+    family: &str,
+) -> Result<std::result::Result<(), String>> {
+    let trace = session.trace()?;
+    let Some((r, viewport)) = declared_in(&trace, ui_rect, region) else {
+        return Ok(Err(format!(
+            "no `{region}` region. Regions beginning `{family}`: {}. Trace: {}.",
+            list(&declared_names(&trace, ui_rect, family)),
+            session.trace_path().display()
+        )));
+    };
+    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(r))?;
+    session.settle(20);
+    Ok(Ok(()))
+}
+
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    let ui_rect = ctx
+        .profile
+        .vocab
+        .ui_rect_event
+        .ok_or_else(|| Error::new("the profile names no ui-rect trace event."))?;
+    click_mode_segment(session, pointer, ui_rect, "review")?;
+    session.settle(20);
+    step!(press(session, pointer, ui_rect, TAB, "ribbon.tab.")?);
+    step!(press(
+        session,
+        pointer,
+        ui_rect,
+        ITEM,
+        "ribbon.item.markup."
+    )?);
+    let trace = session.trace()?;
+    if !trace
+        .events("markup-tool")
+        .any(|l| l.get("tool").is_some_and(|t| t.contains("Attachment")))
+    {
+        return Ok(Some(format!(
+            "Markup > Attach file traced no `markup-tool tool=…Attachment…` line, so it armed \
+             nothing. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    let pdf = repo_fixture(FIXTURE, METHOD)?;
+    let page = crate::fixture::page_geometry(&pdf)
+        .ok_or_else(|| Error::new("could not read a page size from the fixture."))?;
+    let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, 0)?;
+    pointer.click(
+        session,
+        mapping.doc_to_window(DocPoint::new(0, SPOT.0, SPOT.1))?,
+    )?;
+    session.settle(30);
+    let trace = session.trace()?;
+    let Some(open) = trace.events("attach-annot-open").next() else {
+        return Ok(Some(format!(
+            "the click on the page traced no `attach-annot-open`: the file was never asked \
+             for or the window never opened. Picker: {}.",
+            trace
+                .events("attach-picked")
+                .last()
+                .map_or("no `attach-picked` line", |l| l.raw.as_str())
+        )));
+    };
+    report.note(open.raw.clone());
+    step!(press(session, pointer, ui_rect, PAPERCLIP, "text-annot.")?);
+    step!(press(session, pointer, ui_rect, ACCEPT, "text-annot.")?);
+    session.settle(20);
+    placed(session, report)
+}
+
+/// The read line must carry the payload's size and the Paperclip, and the
+/// placed line a non-zero id.
+fn placed(session: &Session, report: &mut CheckReport) -> Result<Option<String>> {
+    let trace = session.trace()?;
+    let Some(read) = trace.events("attach-annot-read").next() else {
+        return Ok(Some(format!(
+            "Add traced no `attach-annot-read`: the window's accept never reached the place \
+             action. Unreadable: {}.",
+            trace
+                .events("attach-annot-unreadable")
+                .next()
+                .map_or("none", |l| l.raw.as_str())
+        )));
+    };
+    report.note(read.raw.clone());
+    let size = PAYLOAD.len().to_string();
+    if read.get("bytes") != Some(size.as_str()) || read.get("icon") != Some("Paperclip") {
+        return Ok(Some(format!(
+            "★★★ the attachment read `{}`; it must carry bytes={size} and icon=Paperclip.",
+            read.raw
+        )));
+    }
+    let Some(line) = trace.events("attach-annot-placed").next() else {
+        return Ok(Some(
+            "★★★ the file was read and no `attach-annot-placed` followed, so the engine never \
+             authored the marker."
+                .to_owned(),
+        ));
+    };
+    report.note(line.raw.clone());
+    Ok(line
+        .get("id")
+        .is_none_or(|id| id == "0")
+        .then(|| format!("★★★ the placed line `{}` names no object.", line.raw)))
+}
