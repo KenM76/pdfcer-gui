@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **50 of 309** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `wanted` — a real gap — **51 of 309** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -77,7 +77,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Preflight a text-object split without committing it** — `EditSession::text_object_split_refusal(page, object, before_runs)` … | **wanted — our G114, answered after the pin.** `canvas::runsplit::operand` greys *Split into lines* only on an inherited-position cut, because `text_split_refusal` needs a `ContentStream` the object model does not hold; a `'`/`"` line or an open marked-content section is refused on the press instead. Consuming it: move the pin, call this verb with the `before_runs` from `text_object_split_plan` when the right-click parks the row, grey it with the refusal's sentence, and delete the partial preflight. `a_text_object_splits_into_lines` then asserts the `quote-operator.pdf` row is greyed rather than refused on the press. |
+| **Preflight a text-object split without committing it** — `EditSession::text_object_split_refusal(page, object, before_runs)` … | **wanted — our G114, answered and in the pin; not wired yet.** `canvas::runsplit::operand` greys *Split into lines* only on an inherited-position cut, because `text_split_refusal` needs a `ContentStream` the object model does not hold; a `'`/`"` line or an open marked-content section is refused on the press instead. Consuming it: move the pin, call this verb with the `before_runs` from `text_object_split_plan` when the right-click parks the row, grey it with the refusal's sentence, and delete the partial preflight. `a_text_object_splits_into_lines` then asserts the `quote-operator.pdf` row is greyed rather than refused on the press. |
 | Restyle text whose own face cannot take a style, falling through to a donor the shell supplies — `FormatRequest::style_donor`, `FormatRequest::style_donors`, `EditSession::preview_style_ladder_with_donors`, `StyleRung::SuppliedFaceEmbedded` | **wanted.** <!--namesake:SuppliedFaceEmbedded--> the shell names the variant only to give the ladder's trace line a token for every rung; it never passes a donor, so the rung cannot be reached from here. Rung 3 of the style ladder: when neither the page nor the standard fourteen have the bold or italic sibling, the engine embeds a subset of a donor face the caller names. The shell passes none today, so Bold on such text still ends at synthesis or a refusal. The donor is a file the operator picks, as *Font file…* already does for a face change (that path attaches `FormatRequest::embed_font` through `embedded_font`); the preview must go through `preview_style_ladder_with_donors` with the same donors so the tooltip and the result agree. |
 | List the form XObjects a page paints, and how many places … | **wanted.** The engine answers *how many places paint this form?* only where this shell already asks it: `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. The argument for declining is real and is kept here so it is not re-derived — the number matters most exactly where it is already shown — but on a thirty-six-sheet SolidWorks set, where one title block is a single form, the operator wants the blast radius **before** picking up the tool, not in the disclosure afterwards. |
 | **`/ToUnicode` partial inversion** — a composite font's character map is inverted per CHARACTER, not per font … | **wanted — the capability is in the pin and the sentence is not.** The engine refuses an `edit_text` at the ambiguous character, naming every candidate code (`RInvTrigger::Ambiguous`), rather than refusing the whole font; only a wholly uninvertible map refuses everything. Nothing in `crates/pdfcer-gui` mentions `RInvTrigger`, `partial_inverse` or `ambiguous_chars`, so a refusal that could say *this one character is not addressable, the rest of the font edits* still arrives through `EditRefusal::of`'s four coarse buckets. That sentence is the work. `ToUnicodeCMap::partial_inverse` splits a map into `unambiguous`, `ambiguous`, `multi_char_codes` and `empty_codes`; `CompositeEncoding::ambiguous_chars` asks the same of an encoding and is the call an operator-facing sentence would make. |
@@ -119,6 +119,12 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
 | Read `/RC` rich content and `/DS` default style on a markup annotation, any subtype — `Annotation::rich_contents`/`default_style`, `annot::rich_text_in`, `RichText::Inline`/`RichText::Stream` | **wanted.** <!--namesake:default_style--> the forms panel's `default_style` is a form field's, not this annotation accessor. The engine reads a comment's rich-text body and default style; this shell shows only the plain `/Contents`. A comment authored in Acrobat with bold, colour or size therefore reads flat here, and nothing says formatting exists. The Comments panel and the Properties panel's note field are where it belongs: at the least a read-only disclosure that the comment carries rich text, better its runs rendered. `set_markup_note` already drops a stale `/RC` on edit and this shell discloses that drop, so reading is the missing half. |
 
+### Forms (AcroForm)
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Set or clear a widget's border dash pattern directly, and record one authored at creation** — `WidgetEdit::border_dash`, `WidgetChrome::with_border_dash` | **wanted — our G116, answered and in the pin; not wired yet.** `border_dict` now records `/BS /D`, and `WidgetEdit::with_border_dash` sets or removes it on an existing widget, so a pattern survives the next redraw. Consuming it: a dash field beside the border style on the Properties panel's Appearance section, written through `edit_widget` and read back from the widget. No pattern field is offered until then (R9). |
+
 ### Redaction & security
 
 | Row (`FEATURES.md`, wanted) | Why |
@@ -150,7 +156,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **6 of 309** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
+## `blocked` — waiting on something named — **5 of 309** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -166,12 +172,6 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 |---|---|
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
-
-### Forms (AcroForm)
-
-| Row (`FEATURES.md`, blocked) | Why |
-|---|---|
-| **A dashed widget border** — `WidgetChrome::with_border_dash` / `WidgetChrome::border_dash` | **blocked on our G116.** `border_dict` writes only `/S` and `/W`, and `border_dash_of` keeps an existing `/D` only, so a dash pattern set through `with_border_dash` is drawn into the appearance but not recorded, and the next redraw loses it. `WidgetEdit` has no dash input either. No pattern field is offered until both land (R9). |
 
 ### Text editing
 
