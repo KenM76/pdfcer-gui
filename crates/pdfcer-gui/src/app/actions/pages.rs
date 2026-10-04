@@ -526,6 +526,16 @@ pub(super) fn apply(
                 );
             }
         }
+        // The drawing scales onto the new sheet; body and disclosures in
+        // `super::pagesize::scale`.
+        PageAction::ScalePages { pages, request } => {
+            if !pages.is_empty() {
+                let first = pages.first().copied().unwrap_or(0);
+                super::apply::vector_edit(doc, "page-scaled", first, pages.len(), |session| {
+                    super::pagesize::scale(session, &pages, &request)
+                });
+            }
+        }
         PageAction::StampBates { stamp, first } => {
             let page = stamp.pages.as_ref().and_then(|p| p.first().copied());
             let n = stamp.pages.as_ref().map_or(0, Vec::len);

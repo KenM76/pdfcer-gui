@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **75 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `wanted` — a real gap — **74 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -75,7 +75,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **wanted; in the pin, not yet wired.** The add-text, add-image and markup-as-content verbs this shell already calls each gain `layer: Option<ObjId>`; `None` is the unlayered verb, and the add and its placement are one undo entry. The surface is a *Draw onto layer* chooser beside the Edit-mode add tools and Paste, defaulting to none, listing `read_layers`' layers plus New layer…. A layer the add cannot use is refused as `AddTextError::Layer`, and as `AddTextError::LayerNeedsSession` outside an edit session. |
 | **Put an annotation (including a widget) onto a layer** — `EditSession::set_annotation_layer` | **wanted; in the pin, not yet wired.** One `CommandKind::SetAnnotationLayer` undo entry returning an `AnnotationLayerChange` — `before`, `after`, `changed`, the annotation's `subtype`, and `popup_written` when its pop-up moved with it. The surface is the selection: a *Layer* chooser in Properties for a selected annotation or form field, listing the document's layers plus *none*, and the same item on the right-click menu. |
 | **Put existing page content onto a layer** — `EditSession::set_objects_layer` | **wanted; in the pin, not yet wired.** Planned by `plan_set_layer`; one `CommandKind::SetObjectsLayer` entry returning an `ObjectsLayerChange` — `moved`, `unchanged`, `binding_added` with the `property_name` bound, and `disclosures`. The surface is the same *Layer* chooser, offered for a selection of page objects; the engine refuses tagged content (`VectorEditError::LayerSectionHoldsTaggedContent`), spans crossing nesting (`VectorEditError::LayerSectionCrossesNesting`) or left unbalanced (`VectorEditError::LayerSpanUnbalanced`), and objects carrying their own `/OC`, and each refusal is an off-canvas sentence. |
-| Scale page contents to a target size ("resize page contents") … | **wanted; in the pin, not yet wired.** The Page size window changes the sheet and leaves the drawing where it was; `EditSession::scale_pages` scales the drawing onto the new sheet, uniformly, `fit` (pad, centred) or `fill` (cover, crop), rewriting every present page box and carrying annotations, widgets and link destinations with it. What it takes: a "Scale the drawing to the new size" choice in that window beside the existing box-only resize, with Fit/Fill; one undo step; the page refusal for a page carrying ce dimensions worded by name, not greyed. |
 
 ### Text
 
@@ -175,7 +174,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **5 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `blocked` — waiting on something named — **5 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -202,7 +201,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -213,7 +212,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `declined` — deliberately no surface — **17 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -256,7 +255,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **208 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **209 of 305** <!-- counted by tools/walk-engine-backlog.py, 2026-10-04; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -524,6 +523,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Review status — `/State` + `/StateModel`** (`Pass 253.1`): read `Annotation::state` … | **Reachable — undriven.** `app::actions::reviewstate` records a comment's review status through `EditSession::add_review_state`, and `shell::manifest::markup` says the tab is not called Review because Review promises compare, resolve and track; this is the first of the three. The engine does not interpret the strings, so the vocabulary is this shell's to present and an unknown value must be shown, not normalised. Both halves are built: `panels::comments::reviewstate` shows one line per reviewer — §12.5.6.3 makes status a per-author `/IRT` chain, not a field — and builds the filter chooser from the document, so an unknown value is filterable in the file's own spelling. Not yet driven; compare and resolve, the other two thirds of the promise, are not built. |
 | **Add an image stamp annotation** — `EditSession::add_image_stamp`, a picture contain-fitted into a `/Stamp` appearance, the module `pdfcer_core::edit::image_stamp` | **shipped.** `app::actions::picture::stamp` calls it for a picture pasted in Review, Markup ▸ Paste picture as stamp, and a picture dropped in Review, with the author, date and pen opacity in `MarkupOptions`, turned upright on a rotated page; the scratch-PDF route is deleted. Driven by `a_copied_picture_pastes_as_a_stamp_in_review` and `a_dropped_picture_stamps_in_review`. |
 | **Set, clear and position a push-button's icon** — `WidgetEdit::with_button_icon`/`without_button_icon`/`with_caption_position`, the modules `pdfcer_core::annot_author::button_icon` and `pdfcer_core::edit::button_icon`, the field `WidgetEdit::button_icon`, refusal `EditError::NotAPushButton` | **shipped, except paste onto a button.** A push button's Properties choose, replace and remove its picture and pick `/TP` (`panels::properties::buttonicon`, `app::actions::buttonicon`), each edit with `replace_foreign_appearance` so another program's artwork does not hide the picture (reported as G108: the method's doc promises the redraw unconditionally). Driven by `a_push_button_takes_a_picture`. Still owed: a picture pasted onto a selected push button sets its icon. |
+| Scale page contents to a target size ("resize page contents") … | **shipped.** Pages ▸ Sheet size offers three outcomes under its heading: leave the drawing where it is (the box-only resize), or scale it to **fit** (centred, padded) or **fill** (covering, what runs past hidden) the new sheet, through `EditSession::scale_pages` as one undo step. The factor is quoted before the commit from `pageops::scale::plan_placement`; quarter-turned sets are transposed into displayed terms and a mixed set uses `OrientationPolicy::Match`, said in the window. `ScaleRefusedCeDimensions` is worded by page number; a Fill's hidden overflow and unscaled geospatial measures are disclosed on the status line. Driven by `scaling_a_sheet_scales_the_drawing`. The drawn-extent survey works around `PageObjects::page_bbox` counting the scale's `re W n` clip (G109). |
 
 ## Filed requests for Word-like text editing — not verdict rows
 

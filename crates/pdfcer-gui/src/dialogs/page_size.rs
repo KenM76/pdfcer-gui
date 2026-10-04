@@ -7,6 +7,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/page_size.md`.
 
 use egui::Ui;
+use pdfcer_core::pageops::ScaleMode;
 use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
@@ -40,6 +41,11 @@ const REGION_OUTCOME: &str = "page-size.outcome";
 
 /// The scale diagram.
 const REGION_DIAGRAM: &str = "page-size.diagram";
+
+/// The three "what happens to the drawing" radios.
+const REGION_DRAWING_STAYS: &str = "page-size.drawing.stays";
+const REGION_DRAWING_FIT: &str = "page-size.drawing.fit";
+const REGION_DRAWING_FILL: &str = "page-size.drawing.fill";
 
 /// The smallest custom sheet this window will make, in millimetres.
 const MIN_CUSTOM_MM: i64 = 2;
@@ -89,6 +95,9 @@ pub struct PageSizeDialog {
     custom_w_mm: i64,
     /// The custom height in millimetres.
     custom_h_mm: i64,
+    /// What happens to the drawing: `None` leaves it where it is and changes
+    /// only the media box; `Some` scales it onto the new sheet.
+    scale: Option<ScaleMode>,
     /// Set by the commit button, consumed after the window closure returns.
     ///
     /// Deferred by one statement for the reason every other committing dialog
@@ -147,41 +156,22 @@ impl PageSizeDialog {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 "page-size-opened sheets={} distinct={} unread={} drawn={} \
-                 open_choice={choice:?} landscape={landscape}",
+                 open_choice={choice:?} landscape={landscape} extent={}",
                 survey.pages.len(),
                 survey.distinct_sizes(),
                 survey.unread,
                 u8::from(survey.drawn.is_some()),
+                survey.drawn.map_or_else(
+                    || "none".to_owned(), // ui-text-exempt: trace value, never displayed
+                    |r| format!("{:.2},{:.2},{:.2},{:.2}", r.llx, r.lly, r.urx, r.ury)
+                ),
             )
         });
 
-        // **Every sheet in the DOCUMENT, not only the operands, and this
-        // line exists for a check rather than for the operator.**
-        //
-        // R1's rule is that a passing unit test is not a report of working
-        // software, and the only thing that can report it here is a process
-        // outside this one reading **the document**. A saved file is bytes; the
-        // shell's page tree is what a reader of those bytes resolves. So the
-        // one honest oracle available to `ui-verify` is to open the written
-        // file in a **fresh binary** and have that binary say what page sizes it
-        // resolved — which is what this publishes.
-        //
-        // `crate::app::blank`'s `document_sized` makes the identical argument
-        // for `new-document-sized`, and `ui-verify`'s
-        // `new_document_sizes_the_page` reads it for the identical reason: *a
-        // trace of the request says what the code was told; a trace of the page
-        // tree says what a reader of the file will see.*
-        //
-        // Whole-document rather than operand-scoped, because the property
-        // worth asserting has **two halves**: the picked sheet became the size
-        // that was asked for, AND the sheet beside it did not. A line covering
-        // only the operands could not carry the second, and a check whose
-        // baseline has no dynamic range cannot produce a verdict.
-        //
-        // ⚠ Capped. On a 500-sheet set this would otherwise be 500 lines on
-        // every window open. The cap is announced on the summary line rather
-        // than silently applied, because a truncated census that does not say
-        // so is indistinguishable from a complete one.
+        // Every sheet in the DOCUMENT, for `ui-verify`: reopening a saved file
+        // in a fresh binary and reading this is the oracle for "the picked
+        // sheet changed AND its neighbour did not". Capped, and the cap is
+        // announced on the summary line so a truncated census says so.
         for (index, page) in doc.pages.iter().enumerate().take(DOCUMENT_SURVEY_CAP) {
             let media = page.media_box;
             crate::diag::trace(|| {
@@ -211,6 +201,7 @@ impl PageSizeDialog {
             landscape,
             custom_w_mm,
             custom_h_mm,
+            scale: None,
             apply_requested: false,
             close_requested: false,
         })
@@ -231,28 +222,38 @@ impl PageSizeDialog {
         let open = !frame.closed;
 
         if std::mem::take(&mut self.apply_requested) {
-            let (w, h) = self.sheet_pt();
-            let rect = self.survey.target_rect(w, h);
-            crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "page-size-commit n={} size_id={} landscape={} w_pt={w:.2} h_pt={h:.2} \
-                     llx={:.2} lly={:.2} choice={:?}",
-                    self.survey.pages.len(),
-                    self.size_id(),
-                    self.landscape,
-                    rect.llx,
-                    rect.lly,
-                    self.choice,
-                )
-            });
-            actions.push(Action::Page(PageAction::SetPageSize {
-                pages: self.survey.pages.clone(),
-                rect,
-            }));
+            actions.push(self.commit());
             return false;
         }
         open && !std::mem::take(&mut self.close_requested)
+    }
+
+    /// The action the commit button stands for, traced as `page-size-commit`.
+    fn commit(&self) -> Action {
+        let (w, h) = self.sheet_pt();
+        let rect = self.survey.target_rect(w, h);
+        crate::diag::trace(|| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "page-size-commit n={} size_id={} landscape={} w_pt={w:.2} h_pt={h:.2} \
+                 llx={:.2} lly={:.2} choice={:?} drawing={}",
+                self.survey.pages.len(),
+                self.size_id(),
+                self.landscape,
+                rect.llx,
+                rect.lly,
+                self.choice,
+                drawing_id(self.scale),
+            )
+        });
+        let pages = self.survey.pages.clone();
+        match self.scale {
+            None => Action::Page(PageAction::SetPageSize { pages, rect }),
+            Some(mode) => Action::Page(PageAction::ScalePages {
+                pages,
+                request: self.survey.scale_request(w, h, mode),
+            }),
+        }
     }
 
     /// The sheet this window currently describes, in points, **after**
@@ -348,15 +349,19 @@ impl PageSizeDialog {
         ui.add_space(8.0);
         ui.separator();
         ui.label(t::outcome_heading());
-        self.diagram(ui);
-        self.outcome(ui);
-
-        if self.survey.common_origin.is_none() {
-            ui.label(
-                egui::RichText::new(t::origin_differs())
-                    .small()
-                    .color(ui.visuals().warn_fg_color),
-            );
+        self.drawing_choice(ui);
+        if let Some(mode) = self.scale {
+            self.scaled_outcome(ui, mode);
+        } else {
+            self.diagram(ui);
+            self.outcome(ui);
+            if self.survey.common_origin.is_none() {
+                ui.label(
+                    egui::RichText::new(t::origin_differs())
+                        .small()
+                        .color(ui.visuals().warn_fg_color),
+                );
+            }
         }
 
         ui.separator();
@@ -379,7 +384,12 @@ impl PageSizeDialog {
             if self.is_valid() {
                 let apply = ui.button(t::apply());
                 crate::diag::ui_rect(REGION_APPLY, apply.rect);
-                if apply.on_hover_text(t::apply_tooltip()).clicked() {
+                let tooltip = if self.scale.is_some() {
+                    t::apply_scaled_tooltip()
+                } else {
+                    t::apply_tooltip()
+                };
+                if apply.on_hover_text(tooltip).clicked() {
                     self.apply_requested = true;
                 }
             }
@@ -478,7 +488,54 @@ impl PageSizeDialog {
         }
     }
 
-    /// **The sentence that says what happens to the drawing.**
+    /// Leave the drawing where it is, or scale it to fit or fill the sheet.
+    fn drawing_choice(&mut self, ui: &mut Ui) {
+        for (mode, label, region) in [
+            (None, t::drawing_stays(), REGION_DRAWING_STAYS),
+            (Some(ScaleMode::Fit), t::drawing_fit(), REGION_DRAWING_FIT),
+            (
+                Some(ScaleMode::Fill),
+                t::drawing_fill(),
+                REGION_DRAWING_FILL,
+            ),
+        ] {
+            let radio = ui.radio(self.scale == mode, label);
+            crate::diag::ui_rect(region, radio.rect);
+            if radio.clicked() {
+                self.scale = mode;
+            }
+        }
+        ui.add_space(4.0);
+    }
+
+    /// What a scale will do, with the factor from the engine's own placement
+    /// plan, so the number on screen is the one the commit applies.
+    fn scaled_outcome(&self, ui: &mut Ui, mode: ScaleMode) {
+        let (w, h) = self.sheet_pt();
+        let span = self
+            .survey
+            .scale_span(&self.survey.scale_request(w, h, mode));
+        let response = match span {
+            Some((low, high)) => ui.label(t::scaled_outcome(mode == ScaleMode::Fill, low, high)),
+            None => ui.label(
+                egui::RichText::new(t::refused_degenerate()).color(ui.visuals().warn_fg_color),
+            ),
+        };
+        crate::diag::ui_rect(REGION_OUTCOME, response.rect);
+        if self.survey.orientation_mixed() {
+            ui.label(egui::RichText::new(t::orientation_mixed()).small().weak());
+        }
+        crate::diag::trace_changed("page-size-scaled", || {
+            let (low, high) = span.unwrap_or((0.0, 0.0));
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "page-size-scaled mode={mode:?} scale_min={low:.4} scale_max={high:.4} mixed={}",
+                u8::from(self.survey.orientation_mixed()),
+            )
+        });
+    }
+
+    /// **The sentence that says what happens to the drawing left in place.**
     fn outcome(&self, ui: &mut Ui) {
         let (w, h) = self.sheet_pt();
         let target = self.survey.target_rect(w, h);
@@ -625,6 +682,15 @@ impl PageSizeDialog {
     }
 }
 
+/// The commit trace's name for a drawing choice.
+const fn drawing_id(scale: Option<ScaleMode>) -> &'static str {
+    match scale {
+        None => "stays",                 // ui-text-exempt: trace identifier, never displayed
+        Some(ScaleMode::Fit) => "fit",   // ui-text-exempt: trace identifier, never displayed
+        Some(ScaleMode::Fill) => "fill", // ui-text-exempt: trace identifier, never displayed
+    }
+}
+
 /// A millimetre box: shows `mm`, reads a typed unit or arithmetic.
 fn mm_box<'a>(ui: &mut Ui, value: &'a mut i64) -> (egui::DragValue<'a>, entry::Refusal) {
     entry::drag_value(
@@ -651,11 +717,13 @@ mod tests {
                 drawn: Some(Rect::from_corners(80.0, 60.0, 2231.54, 1620.0)),
                 unread: 0,
                 common_origin: Some((0.0, 0.0)),
+                sources: vec![(sheet, 0)],
             },
             choice: Choice::Standard(pdfcer_core::paper::PaperSize::A1),
             landscape: true,
             custom_w_mm: 841,
             custom_h_mm: 594,
+            scale: None,
             apply_requested: false,
             close_requested: false,
         }
@@ -744,6 +812,25 @@ mod tests {
             "the drawing runs well past A4's right edge: {right}"
         );
         assert!(top > 700.0, "and past its top: {top}");
+    }
+
+    /// **The commit stands for the drawing choice**: box-only by default, a
+    /// scale onto the picked sheet when one is chosen.
+    #[test]
+    fn the_commit_carries_the_drawing_choice() {
+        let mut dialog = a1_landscape();
+        dialog.choice = Choice::Standard(pdfcer_core::paper::PaperSize::A3);
+        assert!(matches!(
+            dialog.commit(),
+            Action::Page(PageAction::SetPageSize { .. })
+        ));
+        dialog.scale = Some(ScaleMode::Fill);
+        let Action::Page(PageAction::ScalePages { pages, request }) = dialog.commit() else {
+            panic!("a chosen scale commits a ScalePages");
+        };
+        assert_eq!(pages, vec![0]);
+        assert_eq!(request.mode, ScaleMode::Fill);
+        assert!((request.width - 1190.55).abs() < 0.1, "{request:?}");
     }
 
     /// **Growing the sheet is not reported as a crop.**

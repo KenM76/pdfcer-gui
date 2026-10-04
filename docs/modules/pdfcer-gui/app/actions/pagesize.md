@@ -51,24 +51,30 @@ calibration to keep its numbers honest, and would silently falsify every
 group it missed. This verb cannot get that wrong, because it does not touch
 them.
 
-## 2. Why there is no "scale to fit", and what it would have cost
+## 2. Scaling the drawing is the engine's verb, not a composition
 
-The engine has no scale-to-fit verb, and composing one here would not have
-been a small thing. `EditSession::transform_objects` can wrap a selection of
-**page objects** in `q <cm> … Q` — kind-agnostic, one undoable command — but
-it takes explicit object indices on **one** page and does not touch
-annotations, form-field widgets or ce dimensions, which have their own five
-verbs (`move_annotation`, `resize_annotation`, `move_widget`,
-`move_dimension`, `set_group_scale`). A true scale-to-fit is therefore six
-verbs composed across N pages, each with its own refusals, and its most
-likely failure — a ce dimension group left at the old calibration — produces
-a drawing that *prints a wrong measurement and looks perfectly correct*.
+[`scale`] is the body of `PageAction::ScalePages`: one call to
+`EditSession::scale_pages`, which wraps each page's content in
+`q s 0 0 s tx ty cm <old visible region> re W n … Q`, rewrites every present
+page box to the new sheet, and moves annotations, widgets, `/Measure`
+factors and link destinations with it, as one undo step. Composing it here
+from `transform_objects` and the five annotation and dimension verbs was
+rejected: its likely failure, a ce dimension left at the old calibration,
+prints a wrong measurement that looks right. The engine refuses a page that
+carries ce dimensions instead (`ScaleRefusedCeDimensions`), and [`refusal`]
+words that by page number.
 
-⇒ **pdfcer changes the paper.** The decision is not "scale-to-fit is hard",
-it is that a half-built scale-to-fit is the worst artefact in this problem
-space. What is built instead is the thing that makes the crop survivable:
-the operator is told, **before he commits and in points**, exactly how far
-his drawing runs past the paper he has picked. See [`survey`].
+`ScaleRequest` states the sheet as the page is **displayed** (after
+`/Rotate`), while the window states it as the media box is written, so
+[`SheetSurvey::scale_request`] transposes when every operand is
+quarter-turned and asks for `OrientationPolicy::Match` when the set is mixed.
+[`SheetSurvey::scale_span`] quotes the factor before the commit from the
+engine's own `pageops::scale::plan_placement`, so the number in the window is
+the one the commit applies.
+
+What `scale` discloses, off-canvas: on a Fill, the sheets whose scaled
+drawing now runs past the paper ([`fill_overflow`], 0.01 pt slack); and any
+geospatial `/Measure` the engine left unscaled.
 
 ## 3. The shell measures what the engine says it cannot
 
@@ -265,6 +271,13 @@ whole selection, and that is the property that buys the single undo
 entry. The fallback is the origin, and
 [`crate::text::page_size::origin_differs`] is drawn in the window rather
 than the choice being made quietly.
+
+### `fn survey` — the drawn extent skips paths that paint nothing
+
+`PageObjects::page_bbox` counts `n`-painted paths, so after a scale the
+`re W n` clip read as drawing the size of the old visible region. The survey
+folds the object bounds itself, skipping `PaintStyle::is_invisible` paths;
+reported to the engine as G109.
 
 ### `fn survey`
 

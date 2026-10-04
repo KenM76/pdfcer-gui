@@ -523,6 +523,9 @@ pub mod page_prefetch;
 /// tell a whole-file write from one that carried only the last field touched.
 pub mod page_previews_pref;
 
+/// Fit onto a new sheet scales the drawing by the factor the window quoted.
+pub mod page_scale;
+
 pub mod page_size;
 
 /// **A save that would produce blank pages in Acrobat is refused** —

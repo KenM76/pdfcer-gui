@@ -95,6 +95,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // an OPEN one can be changed. The chooser they drive is the same
         // widget, reached from two different commands.
         Box::new(page_size::ResizingASheetChangesThePaperInTheSavedFile),
+        Box::new(page_scale::ScalingASheetScalesTheDrawing),
         // Clicks and captures, so it takes the desktop — but only with the
         // mouse, and only for a few seconds. Placed after the three ribbon
         // chrome checks because it depends on the same rects they read and a

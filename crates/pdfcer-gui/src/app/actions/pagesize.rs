@@ -11,6 +11,8 @@ use pdfcer_core::edit::{
     MediaBoxEntry, PageResize,
 };
 use pdfcer_core::page_tree::Rect;
+use pdfcer_core::pageops::{OrientationPolicy, ScaleMode, ScaleReport, ScaleRequest};
+use pdfcer_core::vector::VectorObject;
 
 use crate::app::state::OpenDoc;
 use crate::text::page_size as t;
@@ -55,6 +57,9 @@ pub struct SheetSurvey {
     /// `None` when they disagree — see [`target_rect`], which is where it
     /// changes what gets written.
     pub common_origin: Option<(f64, f64)>,
+    /// Each operand's visible region (its effective crop box) and `/Rotate`,
+    /// in `pages` order: what `scale_pages` maps onto the new sheet.
+    pub sources: Vec<(Rect, u16)>,
 }
 
 impl SheetSurvey {
@@ -107,6 +112,54 @@ impl SheetSurvey {
         let (llx, lly) = self.common_origin.unwrap_or((0.0, 0.0));
         Rect::from_corners(llx, lly, llx + w_pt, lly + h_pt)
     }
+
+    /// **The request that scales the operands onto a `w_pt` × `h_pt` sheet.**
+    ///
+    /// The window states sizes as the media box is written, and
+    /// `ScaleRequest` states them as the page is displayed, so a set whose
+    /// every sheet is turned a quarter has its size transposed. A set mixing
+    /// turned and unturned sheets cannot be one exact request, so it uses
+    /// `OrientationPolicy::Match` and each sheet keeps its own orientation;
+    /// [`Self::orientation_mixed`] lets the window say so.
+    #[must_use]
+    pub fn scale_request(&self, w_pt: f64, h_pt: f64, mode: ScaleMode) -> ScaleRequest {
+        let turned = self.turned();
+        let request = if turned == self.sources.len() && turned > 0 {
+            ScaleRequest::new(h_pt, w_pt)
+        } else {
+            ScaleRequest::new(w_pt, h_pt)
+        };
+        let orientation = if self.orientation_mixed() {
+            OrientationPolicy::Match
+        } else {
+            OrientationPolicy::Exact
+        };
+        request.with_mode(mode).with_orientation(orientation)
+    }
+
+    /// Whether the operands mix quarter-turned and unturned sheets.
+    #[must_use]
+    pub fn orientation_mixed(&self) -> bool {
+        let turned = self.turned();
+        turned > 0 && turned < self.sources.len()
+    }
+
+    fn turned(&self) -> usize {
+        self.sources.iter().filter(|(_, r)| r % 180 == 90).count()
+    }
+
+    /// The smallest and largest factor `request` scales the operands by, from
+    /// the engine's own placement plan. `None` when no sheet can be planned.
+    #[must_use]
+    pub fn scale_span(&self, request: &ScaleRequest) -> Option<(f64, f64)> {
+        self.sources
+            .iter()
+            .filter_map(|&(r, rot)| pdfcer_core::pageops::scale::plan_placement(r, rot, request))
+            .map(|p| p.scale)
+            .fold(None, |span, s| {
+                Some(span.map_or((s, s), |(lo, hi): (f64, f64)| (lo.min(s), hi.max(s))))
+            })
+    }
 }
 
 /// Read the picked sheets and what is drawn on them.
@@ -115,6 +168,10 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
     let boxes: Vec<Rect> = pages
         .iter()
         .filter_map(|&i| doc.pages.get(i).map(|page| page.media_box))
+        .collect();
+    let sources: Vec<(Rect, u16)> = pages
+        .iter()
+        .filter_map(|&i| doc.pages.get(i).map(|page| (page.crop_box, page.rotate)))
         .collect();
 
     // The corner every operand shares, if they share one. Compared with the
@@ -135,7 +192,16 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
     if pages.contains(&doc.view.page_index)
         && let Some(provider) = doc.page_objects()
     {
-        let bounds = provider.page_objects().page_bbox();
+        // Not `PageObjects::page_bbox`: it counts paths that paint nothing,
+        // so a scaled page's `re W n` clip read as drawing (request G109).
+        let bounds = provider
+            .page_objects()
+            .objects
+            .iter()
+            .filter(|o| !matches!(o, VectorObject::Path(p) if p.style.is_invisible()))
+            .fold(pdfcer_core::vector::Bounds::EMPTY, |acc, o| {
+                acc.union(o.page_bbox())
+            });
         if !bounds.is_empty() {
             drawn = Some(Rect::from_corners(
                 bounds.min.x,
@@ -158,6 +224,7 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
         drawn,
         unread: pages.len().saturating_sub(measured),
         common_origin,
+        sources,
     }
 }
 
@@ -201,22 +268,23 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
 ///
 /// # Errors
 ///
-/// [`EditError::CertificationForbidsChange`] — measured, and the one refusal an
-/// operator will actually meet. [`EditError::MediaBoxDegenerate`] — unreachable
-/// from the window, which bounds its own custom fields, and reachable from a
-/// future caller. [`EditError::PageOutOfRange`], [`EditError::PageTree`],
-/// [`EditError::NotADictionary`].
+/// The operator's sentence for the engine's refusal ([`refusal`]):
+/// `CertificationForbidsChange` is the one an operator will actually meet;
+/// `MediaBoxDegenerate` is unreachable from the window, which bounds its own
+/// custom fields.
 ///
 /// [`PageAction::SetPageSize`]: super::pages::PageAction::SetPageSize
 pub(super) fn set(
     session: &mut EditSession,
     pages: &[usize],
     rect: Rect,
-) -> Result<Vec<String>, EditError> {
+) -> Result<Vec<String>, String> {
     // `WhenItMatched`: a crop box that showed the whole old sheet becomes the
     // new sheet, so a resize grows what is seen — the Word, Acrobat and CAD
     // shape. One cropped to a smaller region keeps its crop, and says so below.
-    let resized = session.resize_pages(pages, rect, CropFollow::WhenItMatched)?;
+    let resized = session
+        .resize_pages(pages, rect, CropFollow::WhenItMatched)
+        .map_err(refusal)?;
     let followed = resized
         .iter()
         .filter(|&&PageResize { crop, .. }| crop.is_some())
@@ -236,20 +304,7 @@ pub(super) fn set(
     // the request and dropped the write would have a perfect `w=`/`h=` here and
     // an unchanged document — which is the whole class of defect this project
     // is named after.
-    let after = session.pages().unwrap_or_default();
-    for &index in pages {
-        let media = after.get(index).map(|page| page.media_box);
-        crate::diag::trace(|| {
-            format!(
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "page-size-sheet index={index} w={:.2} h={:.2} llx={:.2} lly={:.2}",
-                media.map_or(0.0, |m| m.urx - m.llx),
-                media.map_or(0.0, |m| m.ury - m.lly),
-                media.map_or(0.0, |m| m.llx),
-                media.map_or(0.0, |m| m.lly),
-            )
-        });
-    }
+    let after = trace_sheets(session, pages);
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -401,6 +456,104 @@ pub fn remove_bates(
 }
 
 /// How many changes ended in `want`.
+/// Publish `page-size-sheet` for each of `pages` from the session's page tree
+/// as it now is, and return that tree.
+fn trace_sheets(session: &EditSession, pages: &[usize]) -> Vec<pdfcer_core::page_tree::Page> {
+    let after = session.pages().unwrap_or_default();
+    for &index in pages {
+        let media = after.get(index).map(|page| page.media_box);
+        crate::diag::trace(|| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "page-size-sheet index={index} w={:.2} h={:.2} llx={:.2} lly={:.2}",
+                media.map_or(0.0, |m| m.urx - m.llx),
+                media.map_or(0.0, |m| m.ury - m.lly),
+                media.map_or(0.0, |m| m.llx),
+                media.map_or(0.0, |m| m.lly),
+            )
+        });
+    }
+    after
+}
+
+/// **The body of `PageAction::ScalePages`**: scale the drawing on `pages`
+/// onto `request`'s sheet as one undo step, returning the off-canvas
+/// sentences its outcome owes (R8b).
+///
+/// # Errors
+///
+/// The operator's sentence for the engine's refusal; see [`refusal`].
+pub fn scale(
+    session: &mut EditSession,
+    pages: &[usize],
+    request: &ScaleRequest,
+) -> Result<Vec<String>, String> {
+    let report = session.scale_pages(pages, request).map_err(refusal)?;
+    trace_sheets(session, pages);
+    let hidden = fill_overflow(&report);
+    let (lo, hi) = report
+        .pages
+        .iter()
+        .map(|p| p.placement.scale)
+        .fold((f64::INFINITY, 0.0_f64), |(lo, hi), s| {
+            (lo.min(s), hi.max(s))
+        });
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "page-scale-applied n={} mode={:?} scale_min={lo:.4} scale_max={hi:.4} flipped={} annotations={} measures={} destinations={} geo_unchanged={} overflow={hidden}",
+            report.pages.len(),
+            request.mode,
+            report
+                .pages
+                .iter()
+                .filter(|p| p.placement.orientation_flipped)
+                .count(),
+            report.pages.iter().map(|p| p.annotations).sum::<usize>(),
+            report.pages.iter().map(|p| p.measures).sum::<usize>(),
+            report.destinations,
+            report.geo_measures_unchanged,
+        )
+    });
+    let mut notes = Vec::new();
+    if hidden > 0 {
+        notes.push(t::disclosure_fill_hidden(hidden));
+    }
+    if report.geo_measures_unchanged > 0 {
+        notes.push(t::disclosure_geo_unchanged(report.geo_measures_unchanged));
+    }
+    Ok(notes)
+}
+
+/// How many scaled sheets now carry drawing past their edges: a `Fill` whose
+/// scaled source is larger than the target on either axis.
+fn fill_overflow(report: &ScaleReport) -> usize {
+    const SLACK_PT: f64 = 0.01;
+    report
+        .pages
+        .iter()
+        .filter(|p| {
+            let s = p.placement.scale;
+            let target = p.placement.target;
+            s * p.source.width() > target.width() + SLACK_PT
+                || s * p.source.height() > target.height() + SLACK_PT
+        })
+        .count()
+}
+
+/// The operator's sentence for a refused page-geometry edit. Pages are
+/// numbered from 1 here; the engine's own message numbers them from 0.
+fn refusal(err: EditError) -> String {
+    match err {
+        EditError::ScaleRefusedCeDimensions { page_index, count } => {
+            t::refused_ce_dimensions(page_index + 1, count)
+        }
+        EditError::CertificationForbidsChange { .. } => t::refused_certified().to_owned(),
+        EditError::MediaBoxDegenerate { .. } => t::refused_degenerate().to_owned(),
+        other => other.to_string(),
+    }
+}
+
 fn count_entry(changes: &[MediaBoxChange], want: MediaBoxEntry) -> usize {
     changes.iter().filter(|c| c.entry == want).count()
 }
@@ -463,11 +616,80 @@ mod tests {
         });
         SheetSurvey {
             pages: (0..boxes.len()).collect(),
+            sources: boxes.iter().map(|&r| (r, 0)).collect(),
             boxes,
             drawn: None,
             unread: 0,
             common_origin,
         }
+    }
+
+    /// **A quarter-turned set has its size transposed; a mixed set matches
+    /// each sheet's orientation instead.**
+    #[test]
+    fn the_scale_request_speaks_in_displayed_orientation() {
+        let a1 = Rect::from_corners(0.0, 0.0, 2383.94, 1683.78);
+        let mut survey = survey_of(vec![a1, a1]);
+        let plain = survey.scale_request(595.0, 842.0, ScaleMode::Fit);
+        assert_eq!((plain.width, plain.height), (595.0, 842.0));
+        assert_eq!(plain.orientation, OrientationPolicy::Exact);
+
+        survey.sources = vec![(a1, 90), (a1, 270)];
+        let turned = survey.scale_request(595.0, 842.0, ScaleMode::Fill);
+        assert_eq!((turned.width, turned.height), (842.0, 595.0));
+        assert_eq!(turned.mode, ScaleMode::Fill);
+        assert!(!survey.orientation_mixed());
+
+        survey.sources = vec![(a1, 90), (a1, 0)];
+        assert!(survey.orientation_mixed());
+        assert_eq!(
+            survey
+                .scale_request(595.0, 842.0, ScaleMode::Fit)
+                .orientation,
+            OrientationPolicy::Match
+        );
+    }
+
+    /// **The pre-commit factor is the engine's: A1 landscape onto A3
+    /// landscape is half size, fit or fill.**
+    #[test]
+    fn the_quoted_factor_is_the_engines_plan() {
+        let survey = survey_of(vec![Rect::from_corners(0.0, 0.0, 2383.94, 1683.78)]);
+        let request = survey.scale_request(1190.55, 841.89, ScaleMode::Fit);
+        let (lo, hi) = survey.scale_span(&request).expect("a real sheet plans");
+        assert!(
+            (lo - 0.5).abs() < 0.001 && (hi - lo).abs() < 1e-9,
+            "{lo} {hi}"
+        );
+    }
+
+    /// **Scaling lands the new sheet and moves the content; a ce-dimension
+    /// refusal is worded with a 1-based page.**
+    #[test]
+    fn scaling_lands_the_sheet_and_words_its_refusal() {
+        let (doc, _pages) = crate::app::blank::document().expect("the template parses");
+        let mut session = EditSession::new(doc);
+        let before = session.pages().expect("the page tree walks")[0].media_box;
+        let half = ScaleRequest::new(before.width() / 2.0, before.height() / 2.0);
+        let notes = scale(&mut session, &[0], &half).expect("a blank page scales");
+        let media = session.pages().expect("the page tree walks")[0].media_box;
+        assert!(
+            (media.width() - before.width() / 2.0).abs() < 0.01,
+            "{media:?}"
+        );
+        assert!(
+            notes.is_empty(),
+            "a same-shape fit hides nothing: {notes:?}"
+        );
+
+        let worded = refusal(EditError::ScaleRefusedCeDimensions {
+            page_index: 2,
+            count: 4,
+        });
+        assert!(
+            worded.starts_with("Page 3 carries 4 ce dimensions"),
+            "{worded}"
+        );
     }
 
     /// **The overhang is the operator's own case, in his own numbers.**
@@ -612,7 +834,11 @@ mod tests {
 
         let degenerate = Rect::from_corners(0.0, 0.0, 0.0, 500.0);
         let refusal = set(&mut session, &[0], degenerate);
-        assert!(refusal.is_err(), "a zero-area sheet must be refused");
+        assert_eq!(
+            refusal.err().as_deref(),
+            Some(t::refused_degenerate()),
+            "a zero-area sheet must be refused in the operator's words"
+        );
 
         let after = session.pages().expect("the page tree walks")[0].media_box;
         assert_eq!(

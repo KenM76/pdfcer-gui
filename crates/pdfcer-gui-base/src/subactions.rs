@@ -452,6 +452,15 @@ pub enum PageAction {
         /// by the engine before anything is touched.
         rect: pdfcer_core::page_tree::Rect,
     },
+    /// Scale the drawing on `pages` onto a new sheet size, as one undo step.
+    /// Unlike [`Self::SetPageSize`] the content, comments, fields and link
+    /// destinations move and scale with the sheet.
+    ScalePages {
+        /// 0-based page indices, ascending and unique.
+        pages: Vec<usize>,
+        /// The displayed sheet size, fit or fill, and the orientation policy.
+        request: pdfcer_core::pageops::ScaleRequest,
+    },
     /// Bates-number the picked sheets in document order, as one undo step.
     /// `stamp.pages` is the operand set; `first` is the first number.
     StampBates {

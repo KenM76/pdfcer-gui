@@ -54,6 +54,20 @@ holds a decomposition per page. [`crate::app::actions::pagesize::survey`] is
 where the two are put together, with its cost bounded and its boundary
 stated.
 
+## What happens to the drawing: three choices
+
+Under the outcome heading, three radios: leave the drawing where it is
+(the default, `None`: `PageAction::SetPageSize`, the box-only resize and its
+overhang measurement), scale it to **fit** inside the new sheet, centred, or
+to **fill** it. A scale commits `PageAction::ScalePages` with the survey's
+`scale_request`, and the window swaps the diagram and overhang line for
+`text::page_size::scaled_outcome`, whose factor comes from the engine's own
+placement plan (`SheetSurvey::scale_span`). A set mixing quarter-turned and
+unturned sheets says that each keeps its own orientation. Regions:
+`page-size.drawing.stays|fit|fill`; traces: `page-size-scaled` (the quote,
+de-duplicated) and `drawing=` on `page-size-commit`. Driven by ui-verify's
+`scaling_a_sheet_scales_the_drawing`.
+
 ## Rule 4, and the one affordance that is allowed on the canvas
 
 **R8b rule 4: disclosure is off-canvas; applied content renders exactly as

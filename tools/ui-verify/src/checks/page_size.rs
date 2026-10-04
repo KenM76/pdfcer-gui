@@ -13,11 +13,11 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 /// Off the desktop, so the check runs while the operator uses the machine.
-const OFFSCREEN: &str = "-4200,-4200,1400,900";
+pub(crate) const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
 /// The fixture, pinned. See the module header: this check needs **more than
 /// one page**, so that the sheet it does not touch can be the control.
-const FIXTURE: &str = "fixtures/cropped-sheets.pdf";
+pub(crate) const FIXTURE: &str = "fixtures/cropped-sheets.pdf";
 
 /// The Pages tab.
 const PAGES_TAB: &str = "pages";
@@ -57,16 +57,16 @@ const EXPECTED_SIZE_ID: &str = "a6";
 const PT_PER_MM: f64 = 72.0 / 25.4;
 
 /// A6 portrait, in points: 105 × 148 mm.
-const A6_PT: (f64, f64) = (105.0 * PT_PER_MM, 148.0 * PT_PER_MM);
+pub(crate) const A6_PT: (f64, f64) = (105.0 * PT_PER_MM, 148.0 * PT_PER_MM);
 
 /// How close the read-back must be, in points.
-const TOLERANCE_PT: f64 = 0.1;
+pub(crate) const TOLERANCE_PT: f64 = 0.1;
 
 /// The Portrait radio, clicked explicitly rather than assumed.
 const PORTRAIT: &str = "page-size.portrait";
 
 /// The commit button.
-const APPLY: &str = "page-size.apply";
+pub(crate) const APPLY: &str = "page-size.apply";
 
 /// See the module documentation.
 pub struct ResizingASheetChangesThePaperInTheSavedFile;
@@ -94,11 +94,11 @@ impl Check for ResizingASheetChangesThePaperInTheSavedFile {
 
 /// One sheet's geometry as a process resolved it.
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct Sheet {
+pub(crate) struct Sheet {
     /// Width in points.
-    w: f64,
+    pub(crate) w: f64,
     /// Height in points.
-    h: f64,
+    pub(crate) h: f64,
 }
 
 /// The canvas line naming the visible area it frames.
@@ -135,7 +135,7 @@ fn sheets(trace: &crate::trace::Trace) -> std::collections::BTreeMap<usize, Shee
 }
 
 /// Open the sheet-size window and return the census it publishes.
-fn open_and_census(
+pub(crate) fn open_and_census(
     session: &Session,
     driver: &ScriptedPointer,
     ui_rect: &str,
@@ -319,71 +319,22 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     // -- PHASE B: pick A6 portrait and commit -------------------------------
     report.note("phase B: choosing A6 portrait in the window and pressing its commit button");
 
-    // The combo popup is painted a frame after the click, so open it and then
-    // ask whether the entry appeared, retrying rather than lengthening the
-    // settle: a longer settle is a magic number tuned against one machine, and
-    // a retry that does not help means the aim, not the wait.
-    let entry = format!("page-size.size.item.{A6_INDEX}");
-    let mut opened = false;
-    for _ in 0..3 {
-        click_dialog_region(&session, driver, ui_rect, SIZE_COMBO)?;
-        session.settle(10);
-        if driving::declared(&session.trace()?, ui_rect, &entry).is_some() {
-            opened = true;
-            break;
-        }
-    }
-    if !opened {
-        return Err(Error::new(format!(
-            "the size list did not open, or opened without an entry `{entry}`. Entries it did \
-             declare: {}.",
-            driving::list(&driving::declared_names(
-                &session.trace()?,
-                ui_rect,
-                "page-size.size.item."
-            ))
-        )));
-    }
-    click_dialog_region(&session, driver, ui_rect, &entry)?;
-    session.settle(10);
-    // Portrait explicitly: the window opens on the operand sheet's own
-    // orientation, so the assertion below is about a sheet this check chose.
-    click_dialog_region(&session, driver, ui_rect, PORTRAIT)?;
-    session.settle(10);
+    pick_a6_portrait(&session, driver, ui_rect)?;
     click_dialog_region(&session, driver, ui_rect, APPLY)?;
     session.settle(30);
 
     let trace = session.trace()?;
     let Some(commit) = trace.events(COMMIT_EVENT).last() else {
         return Ok(Some(format!(
-            "the commit button was clicked and the window published no `{COMMIT_EVENT}`. The \
-             control is drawn (this check clicked the rect it declared), so it took the press \
-             and did nothing — which is the `visible control, silently inert` defect this suite \
-             exists for."
+            "the commit button was clicked and the window published no `{COMMIT_EVENT}`. The control is drawn (this check clicked the rect it declared), so it took the press and did nothing — which is the `visible control, silently inert` defect this suite exists for."
         )));
     };
     let asked = (
         commit.get("w_pt").and_then(|v| v.parse::<f64>().ok()),
         commit.get("h_pt").and_then(|v| v.parse::<f64>().ok()),
     );
-
-    // **Did the entry this check clicked turn out to be A6?**
-    //
-    // A SKIP rather than a FAIL, because a size the engine inserted into the
-    // middle of `PaperSize::ALL` is a change to the table and not a defect in
-    // the application — and reporting it as a failure would send the reader
-    // looking for a bug in a window that is working perfectly. This is the
-    // whole reason `size_id` is published: without it the run would go red one
-    // assertion later, with a message naming the wrong culprit.
     let picked = commit.get("size_id").unwrap_or("?");
-    if picked != EXPECTED_SIZE_ID {
-        return Err(Error::new(format!(
-            "this check clicks size-list entry {A6_INDEX} expecting `{EXPECTED_SIZE_ID}`, and \
-             the window reports it committed `{picked}`. `PaperSize::ALL` has changed order — \
-             the engine's own docs say that table will grow — so the INDEX is stale, not the \
-             application. Move {A6_INDEX} to A6's new position and re-run."
-        )));
-    }
+    a6_or_stale_index(picked)?;
     report.note(format!(
         "the window committed n={} as `{picked}` at {:?}",
         commit.get("n").unwrap_or("?"),
@@ -569,10 +520,65 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     Ok(None)
 }
 
+/// Choose A6 portrait in the open sheet-size window, without committing.
+pub(crate) fn pick_a6_portrait(
+    session: &Session,
+    driver: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<()> {
+    // The combo popup is painted a frame after the click, so open it and then
+    // ask whether the entry appeared, retrying rather than lengthening the
+    // settle: a longer settle is a magic number tuned against one machine, and
+    // a retry that does not help means the aim, not the wait.
+    let entry = format!("page-size.size.item.{A6_INDEX}");
+    let mut opened = false;
+    for _ in 0..3 {
+        click_dialog_region(session, driver, ui_rect, SIZE_COMBO)?;
+        session.settle(10);
+        if driving::declared(&session.trace()?, ui_rect, &entry).is_some() {
+            opened = true;
+            break;
+        }
+    }
+    if !opened {
+        return Err(Error::new(format!(
+            "the size list did not open, or opened without an entry `{entry}`. Entries it did \
+             declare: {}.",
+            driving::list(&driving::declared_names(
+                &session.trace()?,
+                ui_rect,
+                "page-size.size.item."
+            ))
+        )));
+    }
+    click_dialog_region(session, driver, ui_rect, &entry)?;
+    session.settle(10);
+    // Portrait explicitly: the window opens on the operand sheet's own
+    // orientation, so the assertion below is about a sheet this check chose.
+    click_dialog_region(session, driver, ui_rect, PORTRAIT)?;
+    session.settle(10);
+    Ok(())
+}
+
+/// SKIP unless the size-list entry this check clicked committed as A6: a size
+/// inserted into `PaperSize::ALL` moves the index, which makes the check stale,
+/// not the window wrong.
+pub(crate) fn a6_or_stale_index(picked: &str) -> Result<()> {
+    if picked != EXPECTED_SIZE_ID {
+        return Err(Error::new(format!(
+            "this check clicks size-list entry {A6_INDEX} expecting `{EXPECTED_SIZE_ID}`, and \
+             the window reports it committed `{picked}`. `PaperSize::ALL` has changed order — \
+             the engine's own docs say that table will grow — so the INDEX is stale, not the \
+             application. Move {A6_INDEX} to A6's new position and re-run."
+        )));
+    }
+    Ok(())
+}
+
 /// Click a region the **application** declared, converting against the frame it
 /// was declared in.
 ///
-fn click_dialog_region(
+pub(crate) fn click_dialog_region(
     session: &Session,
     driver: &ScriptedPointer,
     ui_rect: &str,

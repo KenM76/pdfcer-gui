@@ -14,9 +14,9 @@ pub const fn window_title() -> &'static str {
 /// The standing rule, first line of the window, before any choice.
 #[must_use]
 pub const fn intro() -> &'static str {
-    "This changes the paper, not the drawing. Nothing on the page moves, and \
-     nothing is scaled to fit — so a sheet made smaller keeps its drawing where \
-     it is and the part that no longer fits stops being on the page."
+    "This changes the paper. Choose what happens to the drawing: left where it \
+     is, so a smaller sheet loses the part that no longer fits, or scaled onto \
+     the new sheet."
 }
 
 /// Heading for the "what these sheets are now" line.
@@ -200,8 +200,8 @@ pub fn overhang(left: f64, right: f64, bottom: f64, top: f64) -> String {
     }
     format!(
         "The drawing runs {}. That part stops being on the page — it is not removed from the \
-         file, but no reader will show it and any other tool is allowed to discard it. pdfcer \
-         will not shrink the drawing to fit.",
+         file, but no reader will show it and any other tool is allowed to discard it. Leaving \
+         the drawing where it is does not shrink it; choose to scale it to fit instead.",
         join_and(&edges)
     )
 }
@@ -364,6 +364,117 @@ pub const fn refused_degenerate() -> &'static str {
     "That sheet has no area, so there is nothing to write."
 }
 
+// -- what happens to the drawing --------------------------------------------
+
+/// The choice that leaves the drawing where it is and changes only the paper.
+#[must_use]
+pub const fn drawing_stays() -> &'static str {
+    "Leave the drawing where it is — only the paper changes"
+}
+
+/// The choice that scales the drawing to fit inside the new sheet.
+#[must_use]
+pub const fn drawing_fit() -> &'static str {
+    "Scale the drawing to fit the new sheet, centred"
+}
+
+/// The choice that scales the drawing to cover the new sheet.
+#[must_use]
+pub const fn drawing_fill() -> &'static str {
+    "Scale the drawing to fill the new sheet"
+}
+
+/// What a scale will do, before the commit. `low`/`high` are the smallest and
+/// largest factor across the picked sheets, as fractions (0.5 is half size).
+#[must_use]
+pub fn scaled_outcome(fill: bool, low: f64, high: f64) -> String {
+    let factor = if (high - low).abs() < 0.0005 {
+        format!("to {}", percent(low))
+    } else {
+        format!("by between {} and {}", percent(low), percent(high))
+    };
+    let edges = if fill {
+        "It covers the whole sheet; what runs past an edge is hidden, not removed from the file."
+    } else {
+        "It is centred, with blank margins where its shape differs from the sheet's."
+    };
+    format!(
+        "The drawing is scaled {factor}. {edges} Comments, form fields and links move and scale \
+         with it, and a measurement still reads the same value."
+    )
+}
+
+/// `0.5` → `"50%"`, with one decimal below 10%.
+fn percent(factor: f64) -> String {
+    let pct = factor * 100.0;
+    if pct < 10.0 {
+        format!("{pct:.1}%")
+    } else {
+        format!("{pct:.0}%")
+    }
+}
+
+/// The commit button's tooltip when the drawing is scaled.
+#[must_use]
+pub const fn apply_scaled_tooltip() -> &'static str {
+    "Scale the drawing onto the new sheet size on the picked pages. One Undo reverses the whole \
+     set."
+}
+
+/// After a fill: on `n` sheets part of the drawing now runs past the sheet.
+#[must_use]
+pub fn disclosure_fill_hidden(n: usize) -> String {
+    format!(
+        "On {n} {} the scaled drawing runs past the sheet. That part is hidden, not removed — \
+         but any other tool the file passes through may discard it.",
+        sheets(n)
+    )
+}
+
+/// `n` map (geospatial) measurements were left as they were.
+#[must_use]
+pub fn disclosure_geo_unchanged(n: usize) -> String {
+    format!(
+        "{n} map {} not rescaled, so {} read map coordinates from where the drawing used to be.",
+        if n == 1 {
+            "registration was"
+        } else {
+            "registrations were"
+        },
+        if n == 1 { "it may" } else { "they may" },
+    )
+}
+
+/// The engine refused to scale a sheet that carries ce dimensions.
+/// `page` is 1-based.
+#[must_use]
+pub fn refused_ce_dimensions(page: usize, count: usize) -> String {
+    format!(
+        "Page {page} carries {count} ce {}, and scaling the sheet would change what {}, \
+         so nothing was scaled. Delete {} first, or leave the drawing where it is and change \
+         only the paper.",
+        if count == 1 {
+            "dimension"
+        } else {
+            "dimensions"
+        },
+        if count == 1 {
+            "it measures"
+        } else {
+            "they measure"
+        },
+        if count == 1 { "it" } else { "them" },
+    )
+}
+
+/// The picked sheets mix quarter-turned and unturned pages, so a scale keeps
+/// each sheet's own orientation.
+#[must_use]
+pub const fn orientation_mixed() -> &'static str {
+    "These sheets do not all face the same way, so each keeps its own orientation and the \
+     Portrait/Landscape choice is not used."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -371,16 +482,15 @@ mod tests {
     /// **The crop-not-scale rule is stated, in the operator's words, in
     /// the first line of the window.**
     #[test]
-    fn the_intro_says_the_drawing_does_not_move_and_is_not_scaled() {
+    fn the_intro_offers_both_fates_of_the_drawing() {
         let intro = intro();
         assert!(
-            intro.contains("not the drawing"),
-            "the intro must say the paper changes and the drawing does not: {intro}"
+            intro.contains("left where it is") && intro.contains("loses"),
+            "the intro must say a left drawing loses what no longer fits: {intro}"
         );
         assert!(
-            intro.contains("scaled"),
-            "the intro must say nothing is scaled to fit — the belief every other page-size \
-             control in the world installs: {intro}"
+            intro.contains("scaled onto"),
+            "the intro must say the drawing can be scaled instead: {intro}"
         );
     }
 
@@ -412,7 +522,7 @@ mod tests {
     fn the_overhang_line_says_pdfcer_will_not_shrink_the_drawing() {
         let line = overhang(0.0, 10.0, 0.0, 0.0);
         assert!(
-            line.contains("not shrink the drawing to fit"),
+            line.contains("does not shrink it") && line.contains("scale it to fit"),
             "the overhang line must say what pdfcer will NOT do: {line}"
         );
     }
@@ -444,6 +554,16 @@ mod tests {
             apply_tooltip().to_owned(),
             refused_certified().to_owned(),
             refused_degenerate().to_owned(),
+            drawing_stays().to_owned(),
+            drawing_fit().to_owned(),
+            drawing_fill().to_owned(),
+            apply_scaled_tooltip().to_owned(),
+            orientation_mixed().to_owned(),
+            scaled_outcome(false, 0.5, 0.5),
+            scaled_outcome(true, 0.05, 0.5),
+            disclosure_fill_hidden(2),
+            disclosure_geo_unchanged(1),
+            refused_ce_dimensions(3, 4),
             overhang(1.0, 2.0, 3.0, 4.0),
             overhang_unmeasurable(1, 2),
             disclosure_lost_area(2),
