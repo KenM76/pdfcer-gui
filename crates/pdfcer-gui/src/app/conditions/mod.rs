@@ -319,6 +319,18 @@ impl PdfcerApp {
                         set.set(crate::shell::menus::TEXT_MERGE_ALLOWED);
                     }
                 }
+                // One text object of several lines: `format.split_text_lines`.
+                let split = crate::canvas::runsplit::operand(
+                    doc.page_objects().as_deref(),
+                    &doc.selection,
+                    doc.view.page_index,
+                );
+                if let Some(split) = split {
+                    set.set(crate::shell::menus::TEXT_SPLIT_OFFERED);
+                    if split.allowed() {
+                        set.set(crate::shell::menus::TEXT_SPLIT_ALLOWED);
+                    }
+                }
             }
             // A movable selection in a document with layers:
             // `format.move_to_layer`.

@@ -26,6 +26,8 @@ pub mod off_page_blank_overhang;
 pub mod remove_ocr;
 pub mod repair_form_fonts;
 pub mod run_width;
+/// One text object split into one per line, and a split the engine refuses.
+pub mod split_lines;
 pub mod spots_flattened;
 pub mod text_render_mode;
 

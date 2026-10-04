@@ -411,6 +411,10 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             .then(|| crate::canvas::runmerge::operand(targets, selection, page))
             .flatten();
         crate::canvas::runmerge::park(&ctx, crate::canvas::runmerge::MenuRow::of(merge.as_ref()));
+        let split = matches!(chosen, CanvasMenu::Object)
+            .then(|| crate::canvas::runsplit::operand(targets, selection, page))
+            .flatten();
+        crate::canvas::runsplit::park(&ctx, split.as_ref());
         crate::canvas::runmenu::trace(run_pick);
         crate::diag::trace(|| {
             format!(
@@ -563,6 +567,11 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
         overrides.extend([
             (menus::TEXT_MERGE_OFFERED, merge.offered),
             (menus::TEXT_MERGE_ALLOWED, merge.allowed),
+        ]);
+        let split = crate::canvas::runsplit::parked(&ctx);
+        overrides.extend([
+            (menus::TEXT_SPLIT_OFFERED, split.offered),
+            (menus::TEXT_SPLIT_ALLOWED, split.allowed),
         ]);
     }
     // The selection this click made decides whether Move to layer is drawn.

@@ -108,6 +108,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             | VectorAction::DeleteSubpath { .. }
             | VectorAction::DeleteTextLine { .. }
             | VectorAction::DeleteNode { .. }
+            | VectorAction::SplitTextLines { .. }
     );
     let epoch = doc.edit_epoch;
     match action {
@@ -685,8 +686,11 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                     })
             });
         }
+        VectorAction::SplitTextLines { page, object } => {
+            super::runsplit::apply(doc, page, object);
+        }
     }
-    // A delete renumbers what follows it, so a surviving selection would name
+    // A delete or a split renumbers what follows it, so a surviving selection would name
     // objects the operator never picked, and a second Delete would remove them.
     if deletes && doc.edit_epoch != epoch {
         doc.selection.clear();

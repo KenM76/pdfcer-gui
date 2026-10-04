@@ -146,6 +146,7 @@ impl Declined {
             Self::Rotate(why) => (*why).line(),
             Self::Unshare(why) => (*why).line(),
             Self::RunMerge(why) => (*why).line(),
+            Self::RunSplit(why) => (*why).line(),
             Self::Replace(why) => return why.line().into(),
             // Reaches across to `crate::text::clipboard` on the same rule the
             // arms above use: a string lives with the surface that owns its

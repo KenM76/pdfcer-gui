@@ -114,6 +114,18 @@ pub const TEXT_MERGE_OFFERED: &str = "selection.text_merge_offered";
 /// operator can change the selection and try again.
 pub const TEXT_MERGE_ALLOWED: &str = "selection.text_merge_allowed";
 
+/// **The selection is one page text object of two or more lines** — the
+/// `visible_when` of `format.split_text_lines` on the canvas menu, from
+/// [`crate::canvas::runsplit::operand`], parked per right-click like
+/// [`TEXT_MERGE_OFFERED`].
+pub const TEXT_SPLIT_OFFERED: &str = "selection.text_split_offered";
+
+/// **No line of that object inherits its position** — the command's
+/// `enabled_when`. The rest of the engine's refusals need the content stream,
+/// which the object model does not carry, so they reach the status line on
+/// the press instead.
+pub const TEXT_SPLIT_ALLOWED: &str = "selection.text_split_allowed";
+
 /// **The selection can be moved to a layer** — `format.move_to_layer`'s
 /// `enabled_when` and its canvas-menu `shown_when`. Published by
 /// `PdfcerApp::conditions` and corrected per right-click by
@@ -322,6 +334,7 @@ pub fn built_in() -> Menus {
             // same `selection.in_form` predicate as the row above it.
             Item::command("format.unshare_form"),
             Item::command("format.merge_text_runs").shown_when(TEXT_MERGE_OFFERED),
+            Item::command("format.split_text_lines").shown_when(TEXT_SPLIT_OFFERED),
             // **Mark what was pointed at for redaction**, at the pointer —
             // `OPERATOR_REQUESTS.md` O217, whose requirement is that redaction
             // address *the same unit, by the same gestures* as everything else

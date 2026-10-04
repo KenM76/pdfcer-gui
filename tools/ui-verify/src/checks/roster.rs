@@ -176,6 +176,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(text_render_mode::ChoosingARenderModeReachesTheDocument),
         Box::new(run_width::TypingARunWidthReachesTheDocument),
         Box::new(merge_runs::MergingTextRunsReachesTheDocument),
+        Box::new(split_lines::ATextObjectSplitsIntoLines),
         Box::new(repair_form_fonts::RepairingFormFontsReachesTheDocument),
         Box::new(ocr_layer_view::OcrLayerIsShownAndBlended),
         Box::new(ocr_colour_setting::OcrColourIsReadAndReset),

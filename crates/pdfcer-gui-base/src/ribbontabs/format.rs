@@ -207,6 +207,8 @@ pub fn tab() -> Tab {
                     // Rewrites a content stream, so withheld where content is
                     // not authored; greyed on the engine's preflight otherwise.
                     command("format.merge_text_runs").shown_when(FONT_VISIBLE_WHEN),
+                    // Rewrites a content stream; greyed off a multi-line text object.
+                    command("format.split_text_lines").shown_when(FONT_VISIBLE_WHEN),
                     // Rewrites a content stream or an annotation's `/OC`.
                     command("format.move_to_layer").shown_when(FONT_VISIBLE_WHEN),
                     // **Withheld, not greyed, where the engine would refuse
@@ -265,6 +267,7 @@ mod tests {
         "format.select_form",
         "format.unshare_form",
         "format.merge_text_runs",
+        "format.split_text_lines",
         "format.move_to_layer",
     ];
 

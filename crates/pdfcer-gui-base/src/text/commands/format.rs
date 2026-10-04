@@ -55,6 +55,21 @@ pub const fn format_merge_text_runs() -> CommandText {
     )
 }
 
+/// `format.split_text_lines`
+///
+/// Offered on one selected text object of two or more lines. Greyed only
+/// where a line has no position of its own; the other refusals need the
+/// content stream and reach the status line on the press.
+#[must_use]
+pub const fn format_split_text_lines() -> CommandText {
+    CommandText::new(
+        "Split into lines",
+        "Make each line of the selected text its own object, so each can be moved, styled or \
+         deleted on its own. The lines stay exactly where they are. pdfcer works out where the \
+         lines break from their positions, and says how many it found. Undo rejoins them.",
+    )
+}
+
 /// `format.move_to_layer`
 #[must_use]
 pub const fn format_move_to_layer() -> CommandText {

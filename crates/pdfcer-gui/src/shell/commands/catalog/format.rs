@@ -148,6 +148,11 @@ pub(super) fn band() -> Vec<Command> {
         command("format.merge_text_runs", t::format_merge_text_runs(), 816)
             .with_icon("combine")
             .enabled_when(crate::shell::menus::TEXT_MERGE_ALLOWED),
+        // The reverse of the merge: one text object into one per line. The
+        // glyph is `split`, shared with `pages.split` on the Pages tab.
+        command("format.split_text_lines", t::format_split_text_lines(), 828)
+            .with_icon("split")
+            .enabled_when(crate::shell::menus::TEXT_SPLIT_ALLOWED),
         // Puts the selection on a layer through a window; Properties' Layer
         // row is the inline route to the same act.
         command("format.move_to_layer", t::format_move_to_layer(), 827)

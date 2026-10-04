@@ -128,6 +128,7 @@ fn all() -> Vec<CommandText> {
         tools_render_diagnostics(),
         format_delete(),
         format_merge_text_runs(),
+        format_split_text_lines(),
         format_dimension_diameter(),
         format_dimension_radius(),
         format_dimension_area(),

@@ -399,11 +399,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 206 → 207: `markup.replace_text`, Markup ▸ Notes.
     // 207 → 208: `markup.sound`, Markup ▸ Notes.
     // 208 → 209: `markup.screen`, Markup ▸ Notes.
+    // 209 → 210: `format.split_text_lines`, canvas object menu and Format ▸ Selection.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        209 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        210 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -814,10 +815,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 188 → 189: `markup.replace_text` names `text-replace`, drawn for it.
     // 189 → 190: `markup.sound` names `sound`, drawn for it.
     // 190 → 191: `markup.screen` names `screen`, drawn for it.
+    // 191 → 192: `format.split_text_lines` names `split`, shared with `pages.split`.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        191 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        192 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

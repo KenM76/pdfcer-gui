@@ -92,8 +92,6 @@ pub(crate) fn record_unshare(why: crate::text::unshare::UnshareRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Unshare(why)));
 }
 
-/// Record why `format.merge_text_runs` merged nothing. A success is narrated
-/// through the funnel's disclosures instead.
 /// Record why a paste of another program's copy placed nothing.
 pub(crate) fn record_os_paste(why: crate::text::ospaste::OsPasteRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::OsPaste(why)));
@@ -103,6 +101,15 @@ pub(crate) fn record_os_paste(why: crate::text::ospaste::OsPasteRefusal) {
 /// through the funnel's disclosures instead.
 pub(crate) fn record_run_merge(why: crate::text::runmerge::RunMergeRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::RunMerge(why)));
+}
+
+/// Record why `format.split_text_lines` split nothing, and trace it.
+pub(crate) fn record_run_split(why: crate::text::runsplit::RunSplitRefusal) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("split-text-lines-declined reason={}", why.token())
+    });
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::RunSplit(why)));
 }
 
 /// Record why a Find bar Replace rewrote nothing.

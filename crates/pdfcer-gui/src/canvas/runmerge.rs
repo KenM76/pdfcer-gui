@@ -117,14 +117,25 @@ const ROW_MEMORY_KEY: &str = "pdfcer-gui.canvas.runmerge.row";
 
 /// Park the row the right-click found.
 pub fn park(ctx: &egui::Context, row: MenuRow) {
-    ctx.data_mut(|d| d.insert_temp(egui::Id::new(ROW_MEMORY_KEY), row));
+    park_at(ctx, ROW_MEMORY_KEY, row);
 }
 
 /// The parked row; neither offered nor allowed before any right-click.
 #[must_use]
 pub fn parked(ctx: &egui::Context) -> MenuRow {
+    parked_at(ctx, ROW_MEMORY_KEY)
+}
+
+/// Park `row` under `key`, for a menu row parked the same way as this one.
+pub fn park_at(ctx: &egui::Context, key: &str, row: MenuRow) {
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(key), row));
+}
+
+/// The row parked under `key`; neither offered nor allowed before any.
+#[must_use]
+pub fn parked_at(ctx: &egui::Context, key: &str) -> MenuRow {
     ctx.data_mut(|d| {
-        d.get_temp::<MenuRow>(egui::Id::new(ROW_MEMORY_KEY))
+        d.get_temp::<MenuRow>(egui::Id::new(key))
             .unwrap_or_default()
     })
 }

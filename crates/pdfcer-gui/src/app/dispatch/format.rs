@@ -46,6 +46,8 @@ pub(crate) fn handles(id: &str) -> bool {
             | "format.unshare_form"
             // Joins the selected runs of one text object (G035).
             | "format.merge_text_runs"
+            // Cuts one text object into one per line.
+            | "format.split_text_lines"
             // Opens the Move to layer window for the selection.
             | "format.move_to_layer"
             // The Font group's three custom controls: a custom control REPORTS
@@ -526,6 +528,21 @@ pub(crate) fn dispatch(
                     None => {
                         crate::app::status::decline::record_run_merge(RunMergeRefusal::NeedsTwoRuns)
                     }
+                }
+            }
+        }
+        "format.split_text_lines" if !app.capabilities().edit_content => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "format-split-text-lines-declined reason=mode-cannot-edit-content".to_owned()
+            });
+        }
+        // Re-derived on the press, as the merge is.
+        "format.split_text_lines" => {
+            if let Status::Open(doc) = &app.status {
+                match crate::canvas::runsplit::press(doc) {
+                    Ok(split) => actions.push(split),
+                    Err(why) => crate::app::status::decline::record_run_split(why),
                 }
             }
         }

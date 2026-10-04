@@ -206,6 +206,8 @@ pub mod ribbon;
 pub mod rotating;
 /// Why merging text runs was declined, and the width it wrote.
 pub mod runmerge;
+/// Why splitting a text object into its lines was declined, and the piece count.
+pub mod runsplit;
 /// Every word the Set-scale dialog shows. The hardest job in this catalog:
 /// explaining what a ratio is measured *against*, when the honest answer for a
 /// PDF is 1/72 inch and nobody's intuition is in those.

@@ -358,6 +358,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.select_form",
                 "format.unshare_form",
                 "format.merge_text_runs",
+                "format.split_text_lines",
                 "edit.redact_selection",
                 "format.move_to_layer",
                 "format.delete",

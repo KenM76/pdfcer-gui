@@ -567,6 +567,7 @@
                         Command(id: "format.select_form", visible_when: "mode.edit_content"),
                         Command(id: "format.unshare_form", visible_when: "mode.edit_content"),
                         Command(id: "format.merge_text_runs", visible_when: "mode.edit_content"),
+                        Command(id: "format.split_text_lines", visible_when: "mode.edit_content"),
                         Command(id: "format.move_to_layer", visible_when: "mode.edit_content"),
                         Command(id: "format.delete", visible_when: "selection.delete_permitted"),
                     ],
@@ -689,6 +690,10 @@
                 Command(id: "format.select_form"),
                 Command(id: "format.unshare_form"),
                 Command(id: "format.merge_text_runs", visible_when: "selection.text_merge_offered"),
+                Command(
+                    id: "format.split_text_lines",
+                    visible_when: "selection.text_split_offered",
+                ),
                 Command(id: "edit.redact_selection"),
                 Command(id: "format.move_to_layer", visible_when: "selection.layer_assignable"),
                 Command(id: "format.delete", visible_when: "selection.delete_permitted"),

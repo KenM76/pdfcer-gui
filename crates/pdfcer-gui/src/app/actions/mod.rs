@@ -153,6 +153,8 @@ mod replace;
 /// module is *"what happens to a thing that already exists"* and this one adds
 /// a separate annotation and changes nothing about the comment it names.
 pub mod reviewstate;
+/// One text object cut into one per line.
+mod runsplit;
 /// The one arm that signs a document — `Action::SignDocument`'s body, split
 /// on the seam `saving`, `redact` and `destination` already occupy.
 /// `#[cfg]` for `crate::sign`'s reason: without the capability there is

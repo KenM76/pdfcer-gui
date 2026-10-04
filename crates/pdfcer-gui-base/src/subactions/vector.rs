@@ -673,4 +673,14 @@ pub enum VectorAction {
         /// Ascending, consecutive run indices; at least two.
         runs: Vec<usize>,
     },
+    /// Cut one page text object into one object per inferred line
+    /// (`EditSession::text_object_split_plan` with `SplitGranularity::Line`,
+    /// then `EditSession::split_text_object`). One undo entry,
+    /// `CommandKind::SplitTextObject`; later objects renumber up by the cut count.
+    SplitTextLines {
+        /// The 0-based page.
+        page: usize,
+        /// The page object index of the text object.
+        object: usize,
+    },
 }
