@@ -1,9 +1,8 @@
 //! # `canvas::textedit::weight` — is this text bold, is it italic, and how
 //!
 //! The read behind the pressed state of the ribbon's Bold and Italic toggles
-//! and behind what a press does (`OPERATOR_REQUESTS.md` O273): a real face is
-//! taken off by choosing another face, a synthetic weight by clearing the
-//! render mode that makes it.
+//! and behind what a press does (`OPERATOR_REQUESTS.md` O273): an axis read
+//! present, as the face or as synthesis, is asked off.
 //!
 //! Read from the glyph at a text position, so a range inside a run answers for
 //! its own first letter rather than for the run's.

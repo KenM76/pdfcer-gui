@@ -11,11 +11,9 @@
 //! 2. **A live text sweep**: exactly the swept characters.
 //! 3. **A selected text object**: its whole runs.
 //!
-//! Bold and Italic are toggles. Bold read as absent is added; synthetic bold
-//! (fill-and-stroke rendering) is taken off by returning to fill-only; bold
-//! that is the face itself is declined with the remedy, because the engine's
-//! style ladder cannot yet remove an axis. Italic present is declined for the
-//! same reason.
+//! Bold and Italic are toggles: an axis read as absent is asked on, one read
+//! as present (a bold face or a synthesised stroke or slant) is asked off,
+//! and the engine's style ladder decides how (`StyleTarget`).
 //!
 //! Alignment acts on whole paragraphs: the caret's, or every one the sweep or
 //! object touches.
@@ -112,10 +110,7 @@ pub(crate) fn dispatch(
     };
     let pending = match decoration {
         Some(kind) => typing::Pending::Decorate(kind),
-        None => match toggle(id, read_weight(ctx, doc, &target)) {
-            Ok(change) => typing::Pending::Style(change),
-            Err(why) => return refuse(id, why),
-        },
+        None => typing::Pending::Style(toggle(id, read_weight(ctx, doc, &target))),
     };
     match target {
         Target::Range {
@@ -262,26 +257,21 @@ fn read_weight(ctx: &egui::Context, doc: &OpenDoc, target: &Target) -> Option<we
     }
 }
 
-/// What a Bold or Italic press changes, given what the text carries now.
-fn toggle(id: &str, weight: Option<weight::Weight>) -> Result<StyleChange, TextStyleRefusal> {
+/// What a Bold or Italic press changes, given what the text carries now:
+/// the pressed axis flipped, the other kept.
+fn toggle(id: &str, weight: Option<weight::Weight>) -> StyleChange {
     let (bold, italic) = weight.map_or((Axis::Absent, Axis::Absent), |w| (w.bold, w.italic));
     if id == "format.bold" {
-        return match bold {
-            Axis::Absent => Ok(StyleChange::Weight {
-                bold: true,
-                italic: false,
-            }),
-            Axis::Synthetic => Ok(StyleChange::RenderMode(0)),
-            Axis::Face => Err(TextStyleRefusal::BoldIsFace),
-        };
+        StyleChange::Weight {
+            bold: Some(!bold.present()),
+            italic: None,
+        }
+    } else {
+        StyleChange::Weight {
+            bold: None,
+            italic: Some(!italic.present()),
+        }
     }
-    if italic.present() {
-        return Err(TextStyleRefusal::ItalicStays);
-    }
-    Ok(StyleChange::Weight {
-        bold: false,
-        italic: true,
-    })
 }
 
 /// The whole of `runs` as one character range, with the text it reads.

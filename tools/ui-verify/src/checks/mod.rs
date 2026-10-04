@@ -1011,13 +1011,14 @@ pub mod refused_keys;
 pub mod replace_all;
 /// Double, triple and Shift+arrow selection, a drag over text, rotated carets.
 pub mod selection_gestures;
+/// Ctrl+B on the word at the caret, and the ribbon's paragraph alignment.
+pub mod style_off;
 /// A letter an embedded subset outlines but never showed can be typed.
 pub mod subset_glyph;
 /// Text-tool clicks reach a note, a field or a scan's remedy.
 pub mod text_click_routes;
 pub mod text_tool_click_types;
 pub mod word_line_edit;
-/// Ctrl+B on the word at the caret, and the ribbon's paragraph alignment.
 pub mod word_styles;
 
 pub mod zoom_burst;

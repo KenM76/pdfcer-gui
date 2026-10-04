@@ -258,10 +258,10 @@ pub enum TextStyleRefusal {
     /// The chosen characters also appear earlier in the same piece of text,
     /// and the engine addresses a part of a piece by its first occurrence.
     SpanAmbiguous,
-    /// Bold is the face itself, so taking it off means choosing a regular face.
-    BoldIsFace,
-    /// Italic cannot be taken off text that has it.
-    ItalicStays,
+    /// An axis asked off is the face itself, and no face of its family
+    /// without it can show the text; carries the axes (`"bold"`, `"italic"`,
+    /// `"bold italic"`), in the engine's words.
+    NoPlainFace(&'static str),
     /// The caret is in new text, which takes its style from the pen.
     NewText,
 }
@@ -306,6 +306,11 @@ impl TextStyleRefusal {
             // with a subject the operator can see. See the variant's own docs
             // for why the list could not be had until `Pass 296.1`.
             Self::FaceLacksCharacters(remedy) => return coverage_line(remedy),
+            Self::NoPlainFace(style) => {
+                return std::borrow::Cow::Owned(format!(
+                    "This text is {style} by its face, and no face of the same typeface without {style} is on this page or among the fourteen standard faces. Nothing changed; pick a face in the Font box, or a font file."
+                ));
+            }
             Self::FontFileUnusable(why) => {
                 return std::borrow::Cow::Owned(format!(
                     "pdfcer could not use that font file and changed nothing — {}.",
@@ -350,12 +355,6 @@ impl TextStyleRefusal {
             }
             Self::SpanAmbiguous => {
                 "The same letters appear earlier in this piece of text, and pdfcer cannot yet restyle the later copy on its own. Nothing changed; select the whole word or line instead."
-            }
-            Self::BoldIsFace => {
-                "This text is set in a bold face. To take bold off, pick the regular face in the Font box."
-            }
-            Self::ItalicStays => {
-                "pdfcer cannot yet take italic off text that has it. Nothing changed; pick an upright face in the Font box if the page has one."
             }
             Self::NewText => {
                 "New text takes its style from the text pen. Finish it with Enter, then select it to style part of it."
@@ -519,6 +518,40 @@ pub fn text_style_used_standard_face(bold: bool, italic: bool, to: &str) -> Stri
 pub fn text_style_already_that_way(bold: bool, italic: bool) -> String {
     let style = axes(bold, italic);
     format!("This text is already {style}, so pdfcer left its weight and slant alone.")
+}
+
+/// Disclosure, taking an axis **off** onto a real face: `to` is the face of
+/// the text's own typeface without it, from the page (`standard: false`) or
+/// the fourteen standard faces.
+#[must_use]
+pub fn text_style_off_face(bold: bool, italic: bool, to: &str, standard: bool) -> String {
+    let style = axes(bold, italic);
+    if standard {
+        format!(
+            "pdfcer set this text in {to}, the form of its own typeface without {style} among the fourteen standard faces every reader carries, so nothing was embedded."
+        )
+    } else {
+        format!(
+            "pdfcer set this text in {to}, the form of its own typeface without {style} that this page already carried."
+        )
+    }
+}
+
+/// Disclosure, taking an axis **off** that was synthesised: the stroke or
+/// slant was undone and the face is unchanged.
+#[must_use]
+pub fn text_style_off_unsynthesised(bold: bool, italic: bool) -> String {
+    let style = axes(bold, italic);
+    format!(
+        "This text's {style} was drawn by thickening or slanting the letters, and pdfcer undid that; its face is unchanged."
+    )
+}
+
+/// Disclosure, taking an axis **off** text that did not have it.
+#[must_use]
+pub fn text_style_already_without(bold: bool, italic: bool) -> String {
+    let style = axes(bold, italic);
+    format!("This text is not {style}, so pdfcer left its weight and slant alone.")
 }
 
 /// Disclosure, **ladder rung 4**: nothing real was available, so the letters

@@ -175,8 +175,8 @@ fn bold_binds_a_real_standard_face_on_a_page_with_no_bold_face() {
         0,
         &[0],
         &StyleChange::Weight {
-            bold: true,
-            italic: false,
+            bold: Some(true),
+            italic: None,
         },
     );
 
@@ -232,8 +232,8 @@ fn the_standard_face_rung_tells_the_operator_it_used_a_real_face() {
         0,
         &[0],
         &StyleChange::Weight {
-            bold: true,
-            italic: false,
+            bold: Some(true),
+            italic: None,
         },
     );
 
@@ -273,8 +273,8 @@ fn bold_takes_the_covering_real_face_on_a_page_that_has_one() {
         0,
         &[0],
         &StyleChange::Weight {
-            bold: true,
-            italic: false,
+            bold: Some(true),
+            italic: None,
         },
     );
 
@@ -493,6 +493,13 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
         (
             E::ShearUnsupported("the follower would move".to_owned()),
             R::ItalicWouldMove,
+        ),
+        (
+            E::NoFaceWithoutStyle {
+                run_font: "Helvetica-Bold".to_owned(),
+                style: "bold",
+            },
+            R::NoPlainFace("bold"),
         ),
         //
         // It wraps `text_edit::Refusal`, which is `#[non_exhaustive]` with all
@@ -748,4 +755,37 @@ fn a_composite_font_refusal_says_it_is_the_font() {
             "the composite sentence offers a remedy that does not exist ({invented:?}): {line:?}"
         );
     }
+}
+
+/// **Bold off returns a bolded run to its own regular face**, the page's,
+/// and says so: the first press bound `Helvetica-Bold` (rung 2), the second
+/// asks the axis off (`StyleTarget`) and rung 1 binds the run's original
+/// `Helvetica` resource again.
+#[test]
+fn bold_off_returns_to_the_regular_face_the_page_carries() {
+    let mut doc = open_local_fixture(ROTATED_TEXT);
+    let (size_before, face_before) = style_of(&doc, 0);
+    let weight = |bold| StyleChange::Weight {
+        bold: Some(bold),
+        italic: None,
+    };
+    apply(&mut doc, 0, &[0], &weight(true));
+    assert_ne!(style_of(&doc, 0).1, face_before, "the first press bolds");
+    let bolded = doc.edit_epoch;
+
+    apply(&mut doc, 0, &[0], &weight(false));
+    assert_ne!(doc.edit_epoch, bolded, "bold off must apply");
+    let (size_after, face_after) = style_of(&doc, 0);
+    assert_eq!(
+        face_after, face_before,
+        "bold off must bind the run's own regular face, the resource it started in"
+    );
+    assert!((size_after - size_before).abs() < 0.01);
+    let shown = crate::app::actions::disclosure::last_edit_disclosure(doc.edit_epoch)
+        .expect("taking bold off owes the operator a sentence");
+    let joined = shown.notes.join(" ");
+    assert!(
+        joined.contains("without bold") && joined.contains("already carried"),
+        "the sentence must say the page's own face without bold was used; it said: {joined}"
+    );
 }

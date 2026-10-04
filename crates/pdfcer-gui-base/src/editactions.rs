@@ -6,7 +6,7 @@ use pdfcer_core::dimension::{
     StyleOverrides, Unit,
 };
 use pdfcer_core::edit::GroupDeletion;
-use pdfcer_core::text_edit::{FormatRequest, NewFill, StyleSynthesis};
+use pdfcer_core::text_edit::{FormatRequest, NewFill, StyleTarget};
 
 /// One property of a text run, and the value the operator chose for it.
 #[derive(Debug, Clone, PartialEq)]
@@ -26,7 +26,8 @@ pub enum StyleChange {
     /// `None` asks the operator which file; the dispatcher asks, and restyles
     /// with `Some` only when a file was picked.
     FaceFile(Option<std::path::PathBuf>),
-    /// Weight and slant, as two independent flags.
+    /// Weight and slant, each on (`Some(true)`), off (`Some(false)`) or kept
+    /// (`None`).
     ///
     /// Deliberately **not** named `Synthetic`, because whether it ends up
     /// synthetic is the engine's decision and not the operator's: the variant
@@ -34,10 +35,10 @@ pub enum StyleChange {
     /// operator asked for bold; how bold is achieved on this page is a fact
     /// they are told afterwards.
     Weight {
-        /// Bold wanted.
-        bold: bool,
-        /// Italic wanted.
-        italic: bool,
+        /// The bold axis.
+        bold: Option<bool>,
+        /// The italic axis.
+        italic: Option<bool>,
     },
     /// A text render mode (`Tr`, 0..=7), as the engine's `TextRenderMode`
     /// byte. `3` is invisible (the OCR layer's mode).
@@ -75,7 +76,7 @@ impl StyleChange {
             // `set_synthetic`, is `FormatError::Unsupported`. Nothing else in
             // this table sets either, and `Face` is its own variant, so one
             // press is one verb.
-            Self::Weight { bold, italic } => req.style(StyleSynthesis::new(*bold, *italic)),
+            Self::Weight { bold, italic } => req.style(StyleTarget::new(*bold, *italic)),
             Self::RenderMode(mode) => req.render_mode(*mode),
             // Never stamped: `apply` routes it to `runwidth` first, and a
             // font file's plan is built once per gesture by `textstyle`,

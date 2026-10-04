@@ -20,7 +20,7 @@ because somebody asked the engine instead of inferring from its index.
 | **colour** | `set_fill` | none. pdfcer stores the SPACE the operator chose (`rg`/`g`/`k`) instead of force-converting to DeviceRGB the way Acrobat does |
 | **face** | `set_font` | the target must **already be a font resource on the page**; refused by name otherwise (`FF-C`) |
 | **face from a file** | `embedded_font` | the file must subset (`plan_subset`) and cover every character of the runs; one plan per gesture, built from every swept run's characters, so each operator's request carries the same subset |
-| **bold / italic** | `set_style` | walks the ladder below; one named refusal, on italic only |
+| **bold / italic** | `set_style` with a `StyleTarget` | each axis on, off or kept; walks the ladder below. Off binds the run's own family without the axis, or undoes a synthesised stroke or slant (`textstyle::off`); a face that is itself bold with no plain sibling is refused (`NoFaceWithoutStyle`) |
 
 ## The style ladder belongs to the engine, and rung 2 is why that matters
 

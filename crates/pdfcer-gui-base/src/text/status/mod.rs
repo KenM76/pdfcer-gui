@@ -78,9 +78,12 @@ pub use selection::{
     // outcomes, the engine distinguishes them, and one sentence covering both
     // would tell the operator less than the engine already knows.
     text_style_already_that_way,
+    text_style_already_without,
     text_style_faked,
     text_style_faked_warning,
     text_style_multi,
+    text_style_off_face,
+    text_style_off_unsynthesised,
     text_style_used_other_family,
     text_style_used_sibling_face,
     text_style_used_standard_face,

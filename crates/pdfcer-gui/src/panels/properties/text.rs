@@ -516,8 +516,8 @@ fn weight_row(
                 page,
                 runs: runs.to_vec(),
                 change: StyleChange::Weight {
-                    bold: true,
-                    italic: false,
+                    bold: Some(true),
+                    italic: None,
                 },
             });
         }
@@ -528,8 +528,8 @@ fn weight_row(
                 page,
                 runs: runs.to_vec(),
                 change: StyleChange::Weight {
-                    bold: false,
-                    italic: true,
+                    bold: None,
+                    italic: Some(true),
                 },
             });
         }

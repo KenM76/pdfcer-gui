@@ -402,6 +402,10 @@ fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) {
 /// [`FormatReport::disclosures`]: pdfcer_core::text_edit::FormatReport::disclosures
 fn ladder_note(report: &FormatReport, policy: StylePolicy) -> Option<String> {
     let ladder: &StyleLadder = report.style_ladder.as_ref()?;
+    off::trace(ladder);
+    if !ladder.removed.is_none() && ladder.requested.is_none() {
+        return off::note(ladder);
+    }
     let bold = ladder.requested.bold();
     let italic = ladder.requested.italic();
 
@@ -532,6 +536,7 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
         // to go looking for a face that does not exist. The full detail is in
         // the `text-style-declined detail=` trace, where debugging wants it.
         FormatError::SynthesisRefusedByPosture { .. } => t::TextStyleRefusal::FakingDeclined,
+        FormatError::NoFaceWithoutStyle { style, .. } => t::TextStyleRefusal::NoPlainFace(style),
         FormatError::InvalidRenderMode { .. } => t::TextStyleRefusal::RenderModeInvalid,
         FormatError::ConflictingRenderMode => t::TextStyleRefusal::RenderModeWithFakeBold,
         FormatError::BadTargetWidth(_) => t::TextStyleRefusal::WidthNotPositive,
@@ -615,6 +620,7 @@ fn render_mode_note(report: &FormatReport) -> Option<String> {
 
 mod align;
 pub(super) use align::align;
+mod off;
 mod runwidth;
 pub(super) mod span;
 
