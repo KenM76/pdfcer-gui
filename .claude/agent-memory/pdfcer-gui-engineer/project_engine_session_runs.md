@@ -33,6 +33,14 @@ on a request within minutes of it being filed.
    was appended as a same-day addendum. Expect that: they read the model you are
    describing, and they read it more closely.
 
+4. **`check-engine-backlog` reads the engine's LIVE `docs/FEATURES.md`, not the
+   pin.** 2026-10-03: a full run passed it at 19:20; the engine filed Pass 461.0
+   (3D model tree) at 19:53; the next run, over a markdown-only change here,
+   failed it. A gate going red between two runs with nothing changed in this
+   repo is the engine moving. Read the row, check whether it's in the pin
+   (`git merge-base --is-ancestor <sha> <pin>`), and file it `blocked` on the
+   next pin if not.
+
 **How to apply:**
 
 - Run `cargo update -p pdfcer-core -p pdfcer-render -p pdfcer-print` at the *start*
