@@ -5,9 +5,9 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/field_scripts.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
+use crate::checks::driving::{SHELL_DIAG_ENV, repo_fixture};
+use crate::checks::properties_pane;
 use crate::checks::{Check, CheckContext};
-use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -18,7 +18,6 @@ const INVOKE: &str = "mode.edit,file.properties";
 const FIXTURE: &str = "three-text-fields.pdf";
 const METHOD: &str = "Rebuild it with `python fixtures/three-text-fields.PROVENANCE.py`.";
 const FIELD: &str = "FieldThree";
-const PANEL_BODY: &str = "dock.body.file.properties";
 const TAB_CALCULATE: &str = "properties.field_scripts.tab.calculate";
 const TAB_VALIDATE: &str = "properties.field_scripts.tab.validate";
 const CALCULATED: &str = "properties.field_scripts.calculated";
@@ -31,7 +30,6 @@ const LOWEST_VALUE: &str = "properties.field_scripts.lowest.value";
 const APPLY: &str = "properties.field_scripts.apply";
 const READ: &str = "field-scripts-read";
 const SET: &str = "field-script-set";
-const MAX_SCROLL: usize = 12;
 
 /// See the module documentation.
 pub struct AFieldIsCalculatedFromOthers;
@@ -110,30 +108,7 @@ fn press(
     pointer: &ScriptedPointer,
     region: &str,
 ) -> Result<Option<String>> {
-    let ui_rect = ctx
-        .profile
-        .vocab
-        .ui_rect_event
-        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    for _ in 0..=MAX_SCROLL {
-        let trace = session.trace()?;
-        if let Some((rect, vp)) = declared_in(&trace, ui_rect, region) {
-            pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
-            session.settle(20);
-            return Ok(vp);
-        }
-        let (panel, vp) = declared_in(&trace, ui_rect, PANEL_BODY).ok_or_else(|| {
-            Error::new(format!(
-                "no `{PANEL_BODY}` region, so the Properties panel is not open."
-            ))
-        })?;
-        pointer.wheel_in(session, vp.as_deref(), WindowPoint::centre_of(panel), -3.0)?;
-        session.settle(10);
-    }
-    Err(Error::new(format!(
-        "no visible `{region}` after {MAX_SCROLL} wheel turns. Trace: {}",
-        session.trace_path().display()
-    )))
+    properties_pane::press(ctx, session, pointer, region, 20)
 }
 
 /// The newest `field-scripts-read` line's value for `trigger`.

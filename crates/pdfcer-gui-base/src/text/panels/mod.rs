@@ -61,6 +61,9 @@ pub use layers::layer_selection_unlayered;
 /// with it. Its own module under R2 and on the seam the code takes; the header
 /// argues the Shown/Sent vocabulary.
 pub mod choiceopts;
+/// A text field's scrolling, spell-check and file-select flags, and every
+/// field's export name.
+pub mod fieldextras;
 /// The Fonts panel's inventory report.
 pub mod fonts;
 /// **The Forms panel and the form-field half of Properties** — a placed

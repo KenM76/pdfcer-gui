@@ -591,6 +591,7 @@ pub mod attach_file;
 pub mod attach_sound;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
+pub mod field_extras;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;
 pub mod forms_spotlight;
@@ -609,6 +610,7 @@ pub mod markup_flatten;
 /// Markup ▸ Media clip: a dragged region carries the clip, its type and its choices.
 pub mod media_clip;
 pub mod password_fill;
+pub mod properties_pane;
 /// Propose replacement words for selected text from Markup.
 pub mod replace_text;
 

@@ -136,6 +136,7 @@ pub fn section(
         // else, which is the failure mode that gate exists for.
         default_value_row(ui, fqn, state, actions);
         alignment_row(ui, field, fqn, actions);
+        super::fieldextras::text_flags(ui, field, fqn, actions);
     }
 
     // -- Radio buttons ------------------------------------------------------
@@ -206,6 +207,7 @@ pub fn section(
     }
 
     tooltip_row(ui, fqn, state, actions);
+    super::fieldextras::export_name_row(ui, field, fqn, state, actions);
 
     //
     // `ui_rect_visible` publishes a region only when at least 60 % of it lies
@@ -751,19 +753,33 @@ pub struct FieldPropsDraft {
     /// Table 224's own convention. A draft because the spinner commits on
     /// release rather than on every frame of a drag.
     font_size: f64,
+    /// `/TM`, the export name, being typed.
+    pub(super) export_name: String,
+    /// `/TM` as the document holds it, for the reason
+    /// [`Self::tooltip_stored`] gives.
+    pub(super) export_name_stored: String,
+}
+
+/// What a draft is seeded from: the field as the document holds it.
+#[derive(Default)]
+struct Stored {
+    max_len: Option<i64>,
+    tooltip: String,
+    default_value: String,
+    export_name: String,
+    font_size: f64,
 }
 
 impl FieldPropsDraft {
     /// Re-read from the document when the stamp has moved.
-    fn sync(
-        &mut self,
-        max_len: Option<i64>,
-        tooltip: String,
-        default_value: String,
-        font_size: f64,
-        fqn: &str,
-        epoch: u64,
-    ) {
+    fn sync(&mut self, stored: Stored, fqn: &str, epoch: u64) {
+        let Stored {
+            max_len,
+            tooltip,
+            default_value,
+            export_name,
+            font_size,
+        } = stored;
         let stamp = (fqn.to_owned(), epoch);
         if self.stamp.as_ref() == Some(&stamp) {
             return;
@@ -774,16 +790,19 @@ impl FieldPropsDraft {
         self.tooltip.clone_from(&self.tooltip_stored);
         self.default_value_stored = default_value;
         self.default_value.clone_from(&self.default_value_stored);
+        self.export_name_stored = export_name;
+        self.export_name.clone_from(&self.export_name_stored);
         self.font_size = font_size;
     }
 
-    /// Pull the two typed values off a real field, and sync.
+    /// Pull the typed values off a real field, and sync.
     fn read(&mut self, field: &Field, fqn: &str, epoch: u64) {
-        let tooltip = field
-            .alternate_name
-            .as_deref()
-            .map(|raw| String::from_utf8_lossy(raw).into_owned())
-            .unwrap_or_default();
+        let text_string = |raw: Option<&[u8]>| {
+            raw.map(|raw| pdfcer_core::edit::decode_text_string(raw).text)
+                .unwrap_or_default()
+        };
+        let tooltip = text_string(field.alternate_name.as_deref());
+        let export_name = text_string(field.mapping_name.as_deref());
         // `display_text()` rather than a match on `FieldValue`. The enum is
         // `#[non_exhaustive]` and the engine owns the decoding rule (§7.9.2);
         // re-deriving it here would be a second statement of what a field's
@@ -794,7 +813,17 @@ impl FieldPropsDraft {
         // at its call site.
         let default_value = field.default_value.display_text();
         let size = current_appearance(field).size;
-        self.sync(field.max_len, tooltip, default_value, size, fqn, epoch);
+        self.sync(
+            Stored {
+                max_len: field.max_len,
+                tooltip,
+                default_value,
+                export_name,
+                font_size: size,
+            },
+            fqn,
+            epoch,
+        );
     }
 }
 
@@ -847,7 +876,17 @@ mod tests {
     fn a_draft_is_reseeded_when_the_selection_moves() {
         let mut draft = FieldPropsDraft::default();
 
-        draft.sync(Some(8), "first".to_owned(), "100".to_owned(), 0.0, "A", 0);
+        draft.sync(
+            Stored {
+                max_len: Some(8),
+                tooltip: "first".to_owned(),
+                default_value: "100".to_owned(),
+                export_name: String::new(),
+                font_size: 0.0,
+            },
+            "A",
+            0,
+        );
         assert_eq!(draft.tooltip, "first");
         assert_eq!(draft.max_len, 8);
         assert_eq!(draft.default_value, "100");
@@ -856,7 +895,17 @@ mod tests {
         draft.tooltip = "half typed".to_owned();
         draft.default_value = "999".to_owned();
         // …and clicks a different field.
-        draft.sync(None, "second".to_owned(), "0".to_owned(), 0.0, "B", 0);
+        draft.sync(
+            Stored {
+                max_len: None,
+                tooltip: "second".to_owned(),
+                default_value: "0".to_owned(),
+                export_name: String::new(),
+                font_size: 0.0,
+            },
+            "B",
+            0,
+        );
         assert_eq!(
             draft.tooltip, "second",
             "the half-typed tooltip must not survive onto another field"
@@ -883,14 +932,44 @@ mod tests {
     #[test]
     fn an_edit_to_the_same_field_reseeds_the_draft() {
         let mut draft = FieldPropsDraft::default();
-        draft.sync(Some(8), String::new(), String::new(), 0.0, "A", 0);
+        draft.sync(
+            Stored {
+                max_len: Some(8),
+                tooltip: String::new(),
+                default_value: String::new(),
+                export_name: String::new(),
+                font_size: 0.0,
+            },
+            "A",
+            0,
+        );
         assert_eq!(draft.max_len, 8);
 
         // Same name, same epoch — the pane has not been told anything changed.
-        draft.sync(Some(12), String::new(), String::new(), 0.0, "A", 0);
+        draft.sync(
+            Stored {
+                max_len: Some(12),
+                tooltip: String::new(),
+                default_value: String::new(),
+                export_name: String::new(),
+                font_size: 0.0,
+            },
+            "A",
+            0,
+        );
         assert_eq!(draft.max_len, 8, "no epoch change, no re-read");
 
-        draft.sync(Some(12), String::new(), String::new(), 0.0, "A", 1);
+        draft.sync(
+            Stored {
+                max_len: Some(12),
+                tooltip: String::new(),
+                default_value: String::new(),
+                export_name: String::new(),
+                font_size: 0.0,
+            },
+            "A",
+            1,
+        );
         assert_eq!(
             draft.max_len, 12,
             "the epoch moved, so the value is re-read"

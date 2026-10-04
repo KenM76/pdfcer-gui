@@ -14,9 +14,9 @@
 //! With an SVG, *Choose picture…* traces
 //! `button-icon-declined reason=svg` and applies no edit.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
+use crate::checks::driving::{SHELL_DIAG_ENV, repo_fixture};
+use crate::checks::properties_pane;
 use crate::checks::{Check, CheckContext};
-use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -31,7 +31,6 @@ const METHOD: &str = "One widget of every field kind pdfcer reads — see \
 const DRAWING: &str = "vector-art.svg";
 const DRAWING_METHOD: &str = "See fixtures/vector-art.PROVENANCE.md.";
 const FIELD: &str = "PushOne";
-const PANEL_BODY: &str = "dock.body.file.properties";
 const CHOOSE: &str = "properties.widget_edit.button_icon.choose";
 const REMOVE: &str = "properties.widget_edit.button_icon.remove";
 const POSITION: &str = "properties.widget_edit.button_icon.position";
@@ -39,7 +38,6 @@ const ICON_ONLY: &str = "properties.widget_edit.button_icon.position.1";
 const SHOWN: &str = "button-icon-shown";
 const APPLIED: &str = "edit-widget-applied";
 const DECLINED: &str = "button-icon-declined";
-const MAX_SCROLL: usize = 12;
 
 /// See the module documentation.
 pub struct APushButtonTakesAPicture;
@@ -118,30 +116,7 @@ fn press(
     pointer: &ScriptedPointer,
     region: &str,
 ) -> Result<()> {
-    let ui_rect = ctx
-        .profile
-        .vocab
-        .ui_rect_event
-        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    for _ in 0..=MAX_SCROLL {
-        let trace = session.trace()?;
-        if let Some((rect, vp)) = declared_in(&trace, ui_rect, region) {
-            pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
-            session.settle(30);
-            return Ok(());
-        }
-        let (panel, vp) = declared_in(&trace, ui_rect, PANEL_BODY).ok_or_else(|| {
-            Error::new(format!(
-                "no `{PANEL_BODY}` region, so the Properties panel is not open."
-            ))
-        })?;
-        pointer.wheel_in(session, vp.as_deref(), WindowPoint::centre_of(panel), -3.0)?;
-        session.settle(10);
-    }
-    Err(Error::new(format!(
-        "no visible `{region}` after {MAX_SCROLL} wheel turns. Trace: {}",
-        session.trace_path().display()
-    )))
+    properties_pane::press(ctx, session, pointer, region, 30).map(|_| ())
 }
 
 /// The panel's latest `button-icon-shown` line for the button, as
