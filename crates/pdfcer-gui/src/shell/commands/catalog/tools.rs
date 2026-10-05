@@ -66,5 +66,8 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("render-diagnostics")
         .enabled_when("doc.open"),
+        command("tools.ink_picker", t::tools_ink_picker(), 721)
+            .with_icon("ink-picker")
+            .enabled_when("doc.pages"),
     ]
 }

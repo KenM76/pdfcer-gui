@@ -291,6 +291,9 @@ pub enum CanvasTool {
     Place(crate::canvas::placing::PlaceKind),
     /// Lays a box to copy from — View ▸ Snapshot. See [`crate::canvas::snapshot`].
     Snapshot,
+    /// Reads the ink under a click — Tools ▸ Diagnostics ▸ Ink picker. See
+    /// [`crate::canvas::inkpick`].
+    InkPicker,
 }
 
 impl CanvasTool {
@@ -313,7 +316,7 @@ impl CanvasTool {
             // Crosshair, joining the Form / Markup / TextAnnot group for
             // their stated reason: the gesture is *put something here*, and a
             // crosshair is the one cursor that says so without implying what.
-            Self::Place(_) | Self::Snapshot => Some(CursorIcon::Crosshair),
+            Self::Place(_) | Self::Snapshot | Self::InkPicker => Some(CursorIcon::Crosshair),
             Self::Select => None,
             // **The same answer as `Select` — `None` — and that is the whole
             // point.** The Node tool's feedback is the anchors it draws, not a

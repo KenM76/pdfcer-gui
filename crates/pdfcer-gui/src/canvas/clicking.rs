@@ -581,6 +581,9 @@ pub fn click(
             doc.current_page(),
             actions,
         );
+    } else if active_tool == crate::canvas::tool::CanvasTool::InkPicker {
+        let zoom = map.page_vec_to_screen(egui::Vec2::X).x;
+        crate::canvas::inkpick::click(ctx, doc, page_index, point, zoom);
     } else if matches!(active_tool, crate::canvas::tool::CanvasTool::Place(_)) {
         // A CLICK places the corner and leaves the size to the window that
         // asked — `OPERATOR_REQUESTS.md` O66.

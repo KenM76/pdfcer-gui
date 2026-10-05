@@ -1,12 +1,13 @@
 //! `print_shop` — the render notes name the colour findings, and View ▸
 //! Display ▸ Skip tiny details leaves out what is too small to see and says
-//! how much.
+//! how much. `ink_picker` — Tools ▸ Diagnostics ▸ Ink picker reads the inks at
+//! a click, overprint included.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/print_shop.md`.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, declared_names, list, repo_fixture};
 use crate::checks::{Check, CheckContext};
-use crate::coords::WindowPoint;
+use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -15,6 +16,8 @@ use crate::trace::TraceLine;
 
 const OFFSCREEN: &str = "-4200,-4200,1200,1350";
 const INVOKE: &str = "mode.edit,tools.render_diagnostics";
+/// The Tools tab is an Edit-mode tab.
+const EDIT: &str = "mode.edit";
 const FIXTURE: &str = "print-shop.pdf";
 const METHOD: &str = "Rebuild it with `python fixtures/print-shop.PROVENANCE.py`.";
 const UI_RECT: &str = "ui-rect";
@@ -25,6 +28,17 @@ const SKIP_TINY: &str = "ribbon.item.view.skip_tiny_details";
 const DISCLOSURE: &str = "status-group:tiny-details";
 /// The fixture's 0.2 pt forms, every one under half a pixel at fit.
 const SPECKS: &str = "400";
+const TOOLS_TAB: &str = "ribbon.tab.tools";
+const PICKER: &str = "ribbon.item.tools.ink_picker";
+const ARMED: &str = "ink-picker"; // ui-text-exempt: a trace event name, never displayed
+const PROBE: &str = "ink-probe"; // ui-text-exempt: a trace event name, never displayed
+const SHOWN: &str = "ink-picker-shown"; // ui-text-exempt: a trace event name, never displayed
+/// Page points to click and the cyan and magenta owed there: cyan alone, then
+/// the overprinted magenta over it, which a press prints as both.
+const AIMS: [(f64, f64, &str, &str); 2] = [
+    (320.0, 110.0, "1.000", "0.000"),
+    (400.0, 152.0, "1.000", "1.000"),
+];
 
 /// See the module documentation.
 pub struct PrintShopFindingsAndTinyDetails;
@@ -42,14 +56,15 @@ impl Check for PrintShopFindingsAndTinyDetails {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        let driven = launch(ctx, &mut report).and_then(|(session, pointer)| {
-            let outcome = steps(&mut report, &session, &pointer);
-            let parked = pointer.gone(&session);
-            match outcome? {
-                Some(failure) => Ok(Some(failure)),
-                None => parked.map(|_| None),
-            }
-        });
+        let driven =
+            launch(ctx, &mut report, self.name(), Some(INVOKE)).and_then(|(session, pointer)| {
+                let outcome = steps(&mut report, &session, &pointer);
+                let parked = pointer.gone(&session);
+                match outcome? {
+                    Some(failure) => Ok(Some(failure)),
+                    None => parked.map(|_| None),
+                }
+            });
         match driven {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
@@ -58,7 +73,45 @@ impl Check for PrintShopFindingsAndTinyDetails {
     }
 }
 
-fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {
+/// See the module documentation.
+pub struct InkPickerReadsOverprint;
+
+impl Check for InkPickerReadsOverprint {
+    fn name(&self) -> &'static str {
+        "ink_picker"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Tools ▸ Diagnostics ▸ Ink picker cannot be armed from the ribbon, a click reads no ink, \
+         reads the screen colour instead of the inks, loses an overprinted ink, or the tool strip \
+         never shows the reading"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven =
+            launch(ctx, &mut report, self.name(), Some(EDIT)).and_then(|(session, pointer)| {
+                let outcome = picker(ctx, &mut report, &session, &pointer);
+                let parked = pointer.gone(&session);
+                match outcome? {
+                    Some(failure) => Ok(Some(failure)),
+                    None => parked.map(|_| None),
+                }
+            });
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    name: &str,
+    invoke: Option<&str>,
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -68,20 +121,23 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("print_shop.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{name}.trace.txt")));
     spec.pdf = Some(repo_fixture(FIXTURE, METHOD)?);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
         (viewport_env, OFFSCREEN),
-        ("PDFCER_DIAG_INVOKE", INVOKE),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
+    }
+    if let Some(invoke) = invoke {
+        spec.env
+            .push(("PDFCER_DIAG_INVOKE".to_owned(), invoke.to_owned()));
     }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("print_shop.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{name}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
@@ -201,6 +257,61 @@ fn tiny_details(
             "the render skipped {SPECKS} specks and `{DISCLOSURE}` was never declared: the \
              canvas stopped showing what will print without saying so."
         )));
+    }
+    Ok(None)
+}
+
+/// Arm the picker from the ribbon, click cyan alone and then the overprinted
+/// overlap, and read the inks the engine probed and the strip showed.
+fn picker(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    if await_line(session, TINY, 0, |_| true)?.is_none() {
+        return Ok(Some(format!(
+            "no `{TINY}` line: the canvas never rendered the page."
+        )));
+    }
+    press(session, pointer, TOOLS_TAB)?;
+    press(session, pointer, PICKER)?;
+    let armed = |l: &TraceLine| l.get("armed") == Some("true");
+    if await_line(session, ARMED, 0, armed)?.is_none() {
+        return Ok(Some(format!(
+            "`{PICKER}` was pressed and no `{ARMED} armed=true` followed: the ribbon item does \
+             not arm the tool."
+        )));
+    }
+    let pdf = repo_fixture(FIXTURE, METHOD)?;
+    let page = crate::fixture::page_geometry(&pdf)
+        .ok_or_else(|| Error::new(format!("cannot read a page size from {}.", pdf.display())))?;
+    let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
+    for (n, &(x, y, c, m)) in AIMS.iter().enumerate() {
+        let mark = session.trace()?.mark();
+        pointer.click(session, mapping.doc_to_window(DocPoint::new(0, x, y))?)?;
+        let Some(line) = await_line(session, PROBE, mark, |_| true)? else {
+            return Ok(Some(format!(
+                "a click at {x}, {y} pt with the picker armed produced no `{PROBE}` line: the \
+                 click never reached a probe render, or the render never answered."
+            )));
+        };
+        report.note(format!("probe: `{}`", line.raw));
+        if line.get("source") != Some("ink") || line.get("c") != Some(c) || line.get("m") != Some(m)
+        {
+            return Ok(Some(format!(
+                "at {x}, {y} pt the fixture prints c={c} m={m} from the ink buffer; the probe \
+                 read `{}`.",
+                line.raw
+            )));
+        }
+        if n == 0 && await_line(session, SHOWN, mark, |l| l.get("kind") == Some("inks"))?.is_none()
+        {
+            return Ok(Some(format!(
+                "the probe read inks and no `{SHOWN} kind=inks` followed: the tool strip never \
+                 showed the reading."
+            )));
+        }
     }
     Ok(None)
 }

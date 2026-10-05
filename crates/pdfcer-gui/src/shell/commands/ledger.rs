@@ -401,11 +401,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 208 → 209: `markup.screen`, Markup ▸ Notes.
     // 209 → 210: `format.split_text_lines`, canvas object menu and Format ▸ Selection.
     // 210 → 211: `view.skip_tiny_details`, View ▸ Display.
+    // 211 → 212: `tools.ink_picker`, Tools ▸ Diagnostics.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        211 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        212 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -818,10 +819,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 190 → 191: `markup.screen` names `screen`, drawn for it.
     // 191 → 192: `format.split_text_lines` names `split`, shared with `pages.split`.
     // 192 → 193: `view.skip_tiny_details` names `skip-tiny`, drawn for it.
+    // 193 → 194: `tools.ink_picker` names `ink-picker`, drawn for it.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        193 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        194 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

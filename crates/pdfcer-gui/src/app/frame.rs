@@ -1225,6 +1225,7 @@ impl eframe::App for PdfcerApp {
         if let Status::Open(doc) = &mut self.status {
             crate::canvas::snapshot::settle(&ctx, doc);
         }
+        crate::canvas::inkpick::settle(&ctx);
 
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();

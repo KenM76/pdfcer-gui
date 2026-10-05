@@ -62,7 +62,7 @@ pub fn tab() -> Tab {
             group(
                 "diagnostics",
                 ribbon::group_tools_diagnostics(),
-                [large("tools.render_diagnostics")],
+                [large("tools.render_diagnostics"), large("tools.ink_picker")],
             ),
         ])
 }

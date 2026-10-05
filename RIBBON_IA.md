@@ -484,7 +484,7 @@ inferred.
 | **Compare** | Compare documents… |
 | **Fonts** | Font folders… · Embed fonts · Unembed fonts |
 | **Validate** | PDF/A validate & convert… · Optimise… |
-| **Diagnostics** | Render diagnostics |
+| **Diagnostics** | Render diagnostics · Ink picker |
 
 Tools is the tab for things that either operate on files other than the open
 one, or are configured once and rarely touched. Redact is on Edit ▸ Protect,

@@ -516,6 +516,7 @@
                     caption: "Diagnostics",
                     items: [
                         Command(id: "tools.render_diagnostics", size: Large),
+                        Command(id: "tools.ink_picker", size: Large),
                     ],
                     collapse: 1,
                 ),

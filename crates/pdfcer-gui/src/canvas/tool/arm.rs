@@ -163,6 +163,7 @@ pub fn toggle_hand(ctx: &egui::Context) -> CanvasTool {
         | CanvasTool::TextAnnot(_)
         | CanvasTool::Place(_)
         | CanvasTool::Snapshot
+        | CanvasTool::InkPicker
         | CanvasTool::Text
         | CanvasTool::TextEdit(_)
         | CanvasTool::Form(_) => CanvasTool::Hand,
@@ -184,6 +185,7 @@ pub fn toggle_text(ctx: &egui::Context) -> CanvasTool {
         | CanvasTool::Hand
         | CanvasTool::Place(_)
         | CanvasTool::Snapshot
+        | CanvasTool::InkPicker
         | CanvasTool::Markup(_)
         | CanvasTool::Measure(_)
         | CanvasTool::TextAnnot(_)
@@ -379,8 +381,12 @@ pub fn retire_forbidden(ctx: &egui::Context, caps: Capabilities) -> bool {
         // arm — where the reason is stated — rather than as a `true` on a line of
         // its own, so that a future reader adding a fifth tool has to decide which
         // of the two groups it joins.
-        // Snapshot reads and copies; every mode may.
-        CanvasTool::Select | CanvasTool::Hand | CanvasTool::Text | CanvasTool::Snapshot => true,
+        // Snapshot reads and copies, the ink picker reads; every mode may.
+        CanvasTool::Select
+        | CanvasTool::Hand
+        | CanvasTool::Text
+        | CanvasTool::Snapshot
+        | CanvasTool::InkPicker => true,
         // **Node is on the OTHER side of the line the paragraph above
         // draws, and it answers to TWO capabilities.**
         //

@@ -1255,6 +1255,9 @@ impl PdfcerApp {
             // control is gated on `doc.open` and a chord bound to the same id is
             // not.
             "tools.render_diagnostics" => self.dialogs.open_diagnostics(&self.status),
+            "tools.ink_picker" => {
+                let _ = crate::canvas::inkpick::toggle(ctx);
+            }
             // **The four panel-layout verbs.**
             //
             // A guard arm rather than four literals, and it sits ABOVE

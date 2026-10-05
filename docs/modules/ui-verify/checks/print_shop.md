@@ -32,3 +32,20 @@ draws everything when off, and says on the status bar how much it left out.
 
 Scripted pointer, window at `-4200,-4200`, `spec.place = false`; it runs under
 `--no-input`.
+
+# `ink_picker`, in the same file
+
+Tools ▸ Diagnostics ▸ Ink picker reads the inks at a click. Same fixture,
+`PDFCER_DIAG_INVOKE=mode.edit` (the Tools tab is an Edit-mode tab).
+
+1. Scripted clicks on `ribbon.tab.tools`, then `ribbon.item.tools.ink_picker`;
+   owed: `ink-picker armed=true`.
+2. A click at page point (320, 110), cyan alone: owed `ink-probe source=ink
+   c=1.000 m=0.000`, then `ink-picker-shown kind=inks` (the tool strip showed
+   the reading).
+3. A click at (400, 152), the overprinted magenta over the cyan: owed
+   `source=ink c=1.000 m=1.000`. A knocked-out overprint reads m=1 c=0.
+
+Falsified: dropping `with_ink_probe` from the options fails step 2 with
+`source=failed`; mislabelling an ink reading as `screen` fails step 2's
+`kind=inks`.

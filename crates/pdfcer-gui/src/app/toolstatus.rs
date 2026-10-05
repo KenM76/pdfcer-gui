@@ -139,6 +139,7 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
             t::snapshot_instruction().to_owned(),
             Some(t::snapshot_stays().to_owned()),
         ),
+        CanvasTool::InkPicker => crate::canvas::inkpick::sentence(ctx, doc),
         CanvasTool::TextAnnot(kind) => (
             t::text_annot_instruction(kind).to_owned(),
             Some(t::text_annot_release().to_owned()),
@@ -249,6 +250,7 @@ fn command_for(tool: CanvasTool) -> Option<&'static str> {
         CanvasTool::Node => Some("view.tool_node"),
         CanvasTool::Hand => Some("view.tool_hand"),
         CanvasTool::Snapshot => Some("view.tool_snapshot"),
+        CanvasTool::InkPicker => Some("tools.ink_picker"),
         CanvasTool::Text => Some("view.tool_text"),
         CanvasTool::Markup(kind) => Some(crate::shell::commands::markup_command(kind)),
         // Each kind names its own command, which is what lets the strip show
@@ -307,6 +309,7 @@ mod tests {
             CanvasTool::Node,
             CanvasTool::Hand,
             CanvasTool::Snapshot,
+            CanvasTool::InkPicker,
             CanvasTool::Text,
             CanvasTool::TextEdit(TextEditKind::Add),
             CanvasTool::TextEdit(TextEditKind::Edit),

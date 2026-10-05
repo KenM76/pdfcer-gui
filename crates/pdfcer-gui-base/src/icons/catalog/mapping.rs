@@ -192,6 +192,7 @@ impl Icon {
         Icon::Italic,
         Icon::LineWeights,
         Icon::SkipTiny,
+        Icon::InkPicker,
         Icon::AlignBefore,
         Icon::AlignLeft,
         Icon::AlignCentreH,
@@ -311,6 +312,7 @@ impl Icon {
             Icon::Italic => assets::ITALIC,
             Icon::LineWeights => assets::LINE_WEIGHTS,
             Icon::SkipTiny => assets::SKIP_TINY,
+            Icon::InkPicker => assets::INK_PICKER,
             Icon::Markup => assets::MARKUP,
             Icon::Text => assets::TEXT,
             Icon::EditText => assets::EDIT,
@@ -515,6 +517,8 @@ impl Icon {
             Icon::LineWeights => "line-weights",
             // ui-text-exempt: icon key, never displayed
             Icon::SkipTiny => "skip-tiny",
+            // ui-text-exempt: icon key, never displayed
+            Icon::InkPicker => "ink-picker",
             Icon::Markup => "markup",
             Icon::Text => "text",
             Icon::EditText => "edit-text",

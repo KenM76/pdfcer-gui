@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- An eyedropper over a drop: Tools ▸ Diagnostics ▸ Ink picker, which reads
+       the ink at a point. The drop is what separates it from a pen. -->
+  <path d="M34 6l8 8-5 5-8-8z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M31 13L12 32l-2 6 6-2 19-19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9 37c-2 2.5-3 4-3 5a3 3 0 0 0 6 0c0-1-1-2.5-3-5z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+</svg>

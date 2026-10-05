@@ -1162,6 +1162,9 @@ pub enum Icon {
     /// Leave out shapes too small to see — `view.skip_tiny_details`.
     SkipTiny,
 
+    /// Read the ink at a point — `tools.ink_picker`.
+    InkPicker,
+
     // The Align panel's buttons (O264), one per control, Inkscape's layout.
     /// Align: objects placed to the left of the anchor, touching it.
     AlignBefore,

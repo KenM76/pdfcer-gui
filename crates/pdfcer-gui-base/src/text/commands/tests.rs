@@ -127,6 +127,7 @@ fn all() -> Vec<CommandText> {
         tools_embed_fonts(),
         tools_unembed_fonts(),
         tools_render_diagnostics(),
+        tools_ink_picker(),
         format_delete(),
         format_merge_text_runs(),
         format_split_text_lines(),

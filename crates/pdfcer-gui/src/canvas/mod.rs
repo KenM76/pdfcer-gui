@@ -16,6 +16,7 @@
 pub mod form_marks;
 pub mod formfield;
 pub mod forms;
+pub mod inkpick;
 /// Pointing at the page instead of typing coordinates — `OPERATOR_REQUESTS.md`
 /// O66. A shared arm, not a feature of one dialog: his sentence was about
 /// *"anything we are inserting"*.

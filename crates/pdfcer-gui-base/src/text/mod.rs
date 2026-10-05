@@ -121,6 +121,7 @@ pub mod import_text;
 /// printed: they are correct, useful to a developer, and written in the
 /// implementer's voice.
 pub mod importtext;
+pub mod inkpick;
 /// Pages ▸ Stamp ▸ Number pages…: its window and its receipts.
 /// Consumed by `pdfcer_gui::dialogs::labels`.
 pub mod labels;

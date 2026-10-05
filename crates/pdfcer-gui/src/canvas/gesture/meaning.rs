@@ -541,6 +541,13 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             click: false,
         };
     }
+    // The ink picker: a click reads, a drag is nothing. Every mode may.
+    if tool == CanvasTool::InkPicker {
+        return PressMeaning {
+            drag: None,
+            click: true,
+        };
+    }
     if let CanvasTool::Place(kind) = tool {
         let permitted = kind.capability(caps);
         return PressMeaning {

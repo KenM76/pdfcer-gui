@@ -824,6 +824,16 @@ pub const fn tools_render_diagnostics() -> CommandText {
     )
 }
 
+/// `tools.ink_picker`
+#[must_use]
+pub const fn tools_ink_picker() -> CommandText {
+    CommandText::new(
+        "Ink picker",
+        "Click a point on the page to read the cyan, magenta, yellow, black and spot ink a \
+         press would put there.",
+    )
+}
+
 // ===========================================================================
 // MODES
 //
