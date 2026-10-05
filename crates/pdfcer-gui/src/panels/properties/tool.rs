@@ -14,6 +14,8 @@ use crate::text::tool as t;
 pub const REGION: &str = "properties.tool"; // ui-text-exempt: trace region name, never displayed
 /// The region the text pen's controls publish.
 pub const REGION_TEXT_PEN: &str = "properties.tool.text_pen"; // ui-text-exempt: trace region name, never displayed
+/// The text pen's invisible switch.
+pub const REGION_TEXT_PEN_INVISIBLE: &str = "properties.tool.text_pen_invisible"; // ui-text-exempt: trace region name, never displayed
 /// The region the Select tool's three scale switches publish.
 pub const REGION_SCALE_SWITCHES: &str = "properties.tool.scale_switches"; // ui-text-exempt: trace region name, never displayed
 /// The *Scale line weight* switch's own rect.
@@ -163,6 +165,10 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
         ui.label(t::text_pen_colour_label());
         ui.color_edit_button_srgb(&mut current.colour);
     });
+    let invisible = ui
+        .checkbox(&mut current.invisible, t::text_pen_invisible_label())
+        .on_hover_text(t::text_pen_invisible_hover());
+    crate::diag::ui_rect_visible(REGION_TEXT_PEN_INVISIBLE, invisible.rect, ui.clip_rect());
     ui.label(egui::RichText::new(t::text_pen_note()).small().weak());
 
     // Written back only when it CHANGED. An unconditional `insert_temp` would
@@ -173,12 +179,13 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
-                "text-pen face={:?} size={:.1} rgb={},{},{}",
+                "text-pen face={:?} size={:.1} rgb={},{},{} invisible={}",
                 current.face,
                 current.size_pt,
                 current.colour[0],
                 current.colour[1],
-                current.colour[2]
+                current.colour[2],
+                u8::from(current.invisible)
             )
         });
         pen::store(ctx, current);
@@ -282,6 +289,7 @@ mod tests {
         let names = [
             REGION,
             REGION_TEXT_PEN,
+            REGION_TEXT_PEN_INVISIBLE,
             REGION_SCALE_SWITCHES,
             REGION_SCALE_STROKE,
             REGION_SCALE_INSETS,

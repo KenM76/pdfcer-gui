@@ -41,7 +41,8 @@ pub fn sync(ctx: &egui::Context, rgb: [u8; 3]) {
 }
 
 /// [`colour`] as egui sees it.
-fn colour32(ctx: &egui::Context) -> Color32 {
+#[must_use]
+pub fn colour32(ctx: &egui::Context) -> Color32 {
     let [r, g, b] = colour(ctx);
     // NOT A THEME COLOUR: the operator's own, set through `OPERATOR_REQUESTS.md`
     // O229 and persisted. A theme must never move it — restyling the
@@ -139,8 +140,17 @@ pub(super) fn draw_text(
     let Some(page) = doc.pages.get(text.page_index) else {
         return;
     };
+    let edited = edited_box(painter.ctx(), doc, text.page_index);
+    let mut held = 0;
     for run in &text.runs {
         if !is_ocr_run(run) {
+            continue;
+        }
+        if run
+            .bbox
+            .is_some_and(|b| edited.is_some_and(|e| holds(e, b)))
+        {
+            held += 1;
             continue;
         }
         // A run with no geometry — derived whitespace, or an `/ActualText`
@@ -160,6 +170,35 @@ pub(super) fn draw_text(
         }
         draw_run(painter, screen, run.text.trim(), ink);
     }
+    crate::diag::trace_changed("ocr-layer-held", || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("ocr-layer-held runs={held}")
+    });
+}
+
+/// The page-space box of the invisible run an open text edit is rewriting on
+/// `page`, which `textedit::shaped` draws instead in its own font. `None`
+/// while that preview has fallen back to the stand-in box.
+fn edited_box(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    page: usize,
+) -> Option<pdfcer_core::page_tree::Rect> {
+    let draft = super::textedit::read(ctx)?;
+    let super::textedit::Anchor::Run { run, .. } = draft.anchor else {
+        return None;
+    };
+    if draft.page != page || !super::textedit::shaped::read(ctx, &draft)?.invisible() {
+        return None;
+    }
+    doc.provenance_page_text(page)?.runs.get(run)?.bbox
+}
+
+/// Whether `run`'s centre lies inside `edited`: the two extractions group the
+/// same glyphs, so the edited run's box holds its counterpart's centre.
+fn holds(edited: pdfcer_core::page_tree::Rect, run: pdfcer_core::page_tree::Rect) -> bool {
+    let (x, y) = ((run.llx + run.urx) / 2.0, (run.lly + run.ury) / 2.0);
+    edited.llx <= x && x <= edited.urx && edited.lly <= y && y <= edited.ury
 }
 
 /// One run, fitted to its own box.

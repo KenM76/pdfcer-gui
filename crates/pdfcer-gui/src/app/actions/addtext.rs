@@ -36,6 +36,7 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
     let crop = doc.pages.get(placed.page).map(|p| p.crop_box);
     let page = placed.page;
     let (req, promoted) = request(&placed, crop);
+    let invisible = placed.pen.invisible;
     let lines = req.text.split('\n').count();
     // The epoch is read BEFORE the verb, because it is how this arm learns
     // whether the verb SUCCEEDED.
@@ -52,6 +53,9 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
             let mut notes = report.disclosures;
             if promoted {
                 notes.push(crate::text::textedit::point_text_became_a_block().to_owned());
+            }
+            if invisible {
+                notes.push(crate::text::textedit::added_invisible().to_owned());
             }
             notes
         })
@@ -106,7 +110,8 @@ pub(super) fn request(
     )
     .with_font(placed.pen.face)
     .with_size(placed.pen.size())
-    .with_color(placed.pen.engine_colour());
+    .with_color(placed.pen.engine_colour())
+    .with_render_mode(placed.pen.render_mode());
 
     if let Some((llx, lly, urx, ury)) = placed.wrap {
         // The operator drew this rectangle. Nothing to decide and nothing to

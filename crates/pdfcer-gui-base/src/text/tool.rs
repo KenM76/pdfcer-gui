@@ -402,6 +402,20 @@ pub const fn text_pen_colour_label() -> &'static str {
     "Colour"
 }
 
+/// The invisible switch's label.
+#[must_use]
+pub const fn text_pen_invisible_label() -> &'static str {
+    "Invisible (recognised-text layer)"
+}
+
+/// What the invisible switch does, on hover.
+#[must_use]
+pub const fn text_pen_invisible_hover() -> &'static str {
+    "Write the text the way a scan's recognised text is stored: it is never drawn, and it can \
+     be found, selected and copied. Use it to add a word the recognition missed. See it by turning \
+     the text layer on from View."
+}
+
 /// The sentence under the three controls.
 #[must_use]
 pub const fn text_pen_note() -> &'static str {

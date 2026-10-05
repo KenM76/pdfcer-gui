@@ -16,9 +16,6 @@ pub enum PreviewFallback {
     /// The font has no outlines pdfcer can draw (a Type 3 or an unreadable
     /// program).
     NoOutlines,
-    /// The text is drawn invisibly on the page (render mode 3 or 7), as an
-    /// OCR layer is.
-    Invisible,
     /// The font's glyphs do not pair one to one with the characters typed, so
     /// no caret can be placed between them.
     Unpaired,
@@ -36,7 +33,6 @@ impl PreviewFallback {
         match self {
             Self::Refused => "refused", // ui-text-exempt: a trace token, never displayed
             Self::NoOutlines => "no-outlines", // ui-text-exempt: a trace token, never displayed
-            Self::Invisible => "invisible", // ui-text-exempt: a trace token, never displayed
             Self::Unpaired => "unpaired", // ui-text-exempt: a trace token, never displayed
             Self::TooLarge => "too-large", // ui-text-exempt: a trace token, never displayed
             Self::Reface => "reface",   // ui-text-exempt: a trace token, never displayed
@@ -55,10 +51,6 @@ pub const fn line(why: PreviewFallback) -> &'static str {
         PreviewFallback::NoOutlines => {
             "Your typing is shown in a stand-in font: pdfcer cannot draw this text's font for a \
              preview. The saved text uses the text's own font."
-        }
-        PreviewFallback::Invisible => {
-            "Your typing is shown in a stand-in font because this text is invisible on the page, \
-             like a scanned page's search layer. It stays invisible when saved."
         }
         PreviewFallback::Unpaired => {
             "Your typing is shown in a stand-in font: this font's characters and shapes do not \
@@ -86,7 +78,6 @@ mod tests {
         let all = [
             P::Refused,
             P::NoOutlines,
-            P::Invisible,
             P::Unpaired,
             P::TooLarge,
             P::Reface,

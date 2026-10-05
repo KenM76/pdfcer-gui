@@ -18,7 +18,6 @@ drawn by `paint`.
   - the draft is not on an existing run;
   - the engine refuses the edit;
   - `skipped` is set (Type 3 or unsupported machinery);
-  - the render mode is 3 or 7 (invisible text);
   - glyph count differs from character count, so a caret stop could not be
     placed on each character.
 
@@ -28,6 +27,11 @@ drawn by `paint`.
   limit. `fallback::publish` hands the reason to the status bar, which says
   it in a sentence from `text::previewfallback` (R8b: off-canvas, never on the
   page).
+- **Invisible runs (render mode 3 or 7)** are laid out like any other, then
+  drawn in the OCR layer's colour, whether or not that layer is shown, with no
+  paper cover, since there is nothing
+  painted beneath them to hide. `canvas::ocrlayer` leaves the run to this
+  preview while it is laid out.
 - **Coordinate spaces.**
   - Outlines, `stops` and `up` are in page user space.
   - `page_to_screen` reads the page→screen affine off three mapped points, so

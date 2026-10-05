@@ -68,6 +68,17 @@ The cost is bounded instead, in two ways that omit nothing visible:
 So this module owes no "some were not shown" disclosure, because there is
 no state in which it does not show one.
 
+## The run being edited is left to the editor
+
+While a text edit is open on an invisible run and `textedit::shaped` has laid
+it out, that preview draws the run in its own font, in this layer's colour
+(`colour32`), and this module skips the run (`edited_box`, `holds`): drawing
+both would show the old and the new text on top of each other. The two
+extractions number runs differently, so the run is matched by its centre
+falling inside the edited run's box. When the preview has fallen back to the
+stand-in box, nothing is skipped. `ocr-layer-held runs=` traces how many runs
+were left to the editor.
+
 ## One page
 
 [`crate::app::state::OpenDoc::page_text`] caches the **current page only**.

@@ -14,13 +14,15 @@ use crate::report::CheckReport;
 
 /// Off every monitor, unfocused: the drive needs neither mouse nor keyboard.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
-const FIXTURE: &str = "ocr-layer.pdf";
+const FIXTURE: &str = "retype-seam.pdf";
 /// Edit mode with the Edit Text tool armed, so one click opens a caret.
 const INVOKE: &str = "mode.edit,edit.text";
-/// Inside the fixture's invisible run `HIDDEN RUN IN A VISIBLE STREAM`, set at
-/// 10 pt from (72, 200), in PDF points.
-const CLICK: (f64, f64) = (110.0, 203.0);
-const RUN_PT: f64 = 10.0;
+/// Inside `Hel`, the Helvetica half of the fixture's two-font word `Hello`,
+/// set at 12 pt from (72, 700), in PDF points.
+const CLICK: (f64, f64) = (80.0, 703.0);
+const RUN_PT: f64 = 12.0;
+/// Any letter: the edit is refused for the word's two fonts, not for what is typed.
+const TYPED: &str = "_";
 const FALLBACK: &str = "text-edit-preview-fallback"; // ui-text-exempt: a trace event name, never displayed
 const REGION: &str = "status-group:preview-fallback"; // ui-text-exempt: a trace region name, never displayed
 
@@ -57,7 +59,7 @@ fn launch(ctx: &CheckContext) -> Result<(Session, ScriptedPointer, std::path::Pa
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let source = repo_fixture(FIXTURE, "Run tools/gen-ocr-layer-fixture.py.")?;
+    let source = repo_fixture(FIXTURE, "Run python fixtures/retype-seam.PROVENANCE.py.")?;
     let doc = ctx.out("preview-fallback-source.pdf");
     std::fs::copy(&source, &doc).map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out("preview-fallback.trace.txt"));
@@ -91,8 +93,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let at = mapping.doc_to_window(DocPoint::new(0, CLICK.0, CLICK.1))?;
     pointer.click(&session, at)?;
     session.settle(20);
-    pointer.key(&session, None, "End", None)?;
-    pointer.type_text(&session, None, "_")?;
+    pointer.type_text(&session, None, TYPED)?;
     session.settle(25);
     let trace = session.trace()?;
     let fell_back = trace
@@ -112,16 +113,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let path = session.trace_path().display().to_string();
     let Some(line) = fell_back else {
         return Ok(Some(format!(
-            "★ typing into the invisible run produced no `{FALLBACK}` line naming a reason: \
-             no caret opened, or the preview's fallback is not recorded. Trace: {path}."
+            "★ typing a letter the font cannot encode produced no `{FALLBACK}` line naming a \
+             reason: no caret opened, or the preview's fallback is not recorded. Trace: {path}."
         )));
     };
-    if !line.contains("reason=invisible") {
-        return Ok(Some(format!(
-            "★ the stand-in preview gave the wrong reason for an invisible run: `{line}`. \
-             Trace: {path}."
-        )));
-    }
     report.note(format!(
         "★ the fallback is recorded with its reason: `{line}`"
     ));

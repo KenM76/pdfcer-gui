@@ -7,11 +7,13 @@
 //! page space. [`paint`] draws them over the run. [`read`] returning `None`
 //! means the caller draws the shell-font editor box instead; that happens when
 //! the draft is not on an existing run, the engine would refuse the edit, the
-//! font has no outlines (Type 3, unsupported machinery), the run is invisible
-//! (render mode 3 or 7), or glyphs and characters do not pair one to one, so no
-//! caret could be placed. Each case is held as a `PreviewFallback` reason
+//! font has no outlines (Type 3, unsupported machinery), or glyphs and
+//! characters do not pair one to one, so no caret could be placed. Each case is held as a `PreviewFallback` reason
 //! ([`fallback`]) for the status bar to word. Keys planned in another face
 //! are laid out with that face as the engine's fallback, so they preview in it.
+//! An invisible run (render mode 3 or 7, an OCR layer) is drawn in the OCR
+//! overlay's colour with no paper cover, since it paints nothing over the scan
+//! beneath; `canvas::ocrlayer` leaves the run being edited to this preview.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/shaped.md`.
 
@@ -67,6 +69,8 @@ pub struct Shaped {
     up: Vec2,
     /// The run's ink.
     ink: Color32,
+    /// The run paints nothing (render mode 3 or 7).
+    pub(super) invisible: bool,
     /// The extent of everything drawn: advance by ascent and descent.
     pub(super) bbox: [f64; 4],
     /// The text laid out.
@@ -75,6 +79,14 @@ pub struct Shaped {
     /// replacement covers, when the preview is spliced from a narrowed edit
     /// (`splice`); `None` blanks the whole body.
     pub(super) blank: Option<[f32; 4]>,
+}
+
+impl Shaped {
+    /// Whether the run paints nothing (render mode 3 or 7).
+    #[must_use]
+    pub fn invisible(&self) -> bool {
+        self.invisible
+    }
 }
 
 #[derive(Clone)]
@@ -228,10 +240,10 @@ pub(super) fn shape(
     if count == 0 || preview.glyphs.len() != count {
         return Err(PreviewFallback::Unpaired);
     }
-    let ink = match preview.render_mode {
-        0 | 2 | 4 | 6 => &preview.fill,
-        1 | 5 => &preview.stroke,
-        _ => return Err(PreviewFallback::Invisible),
+    let (ink, invisible) = match preview.render_mode {
+        1 | 5 => (&preview.stroke, false),
+        3 | 7 => (&preview.fill, true),
+        _ => (&preview.fill, false),
     };
     let outlines = pdfcer_render::edit_preview::preview_outlines(
         &doc.session.view(),
@@ -265,6 +277,7 @@ pub(super) fn shape(
         stops,
         up: Vec2::new(last[2] as f32, last[3] as f32),
         ink: colour(ink),
+        invisible,
         bbox: preview.bbox,
         text: text.to_owned(),
         blank: None,
@@ -337,22 +350,29 @@ pub fn paint(
     if body.width() * ppp > MAX_SIDE_PX || body.height() * ppp > MAX_SIDE_PX {
         return false;
     }
-    let Some(ink) = ink_texture(ctx, &m, shaped, body) else {
+    let colour = if shaped.invisible {
+        crate::canvas::ocrlayer::colour32(ctx)
+    } else {
+        shaped.ink
+    };
+    let Some(ink) = ink_texture(ctx, &m, shaped, colour, body) else {
         return false;
     };
     let theme = egui_shell::theme::Theme::of(ctx);
     let painter = ui.painter();
     let up = |at: Pos2, by: f32| apply(&m, at + shaped.up * by);
 
-    // NOT A THEME COLOUR: paper white, the page's own background, which the
-    // cover must match; the image tint below is the identity.
     let white = shaped.blank.map_or(body, |[x0, y0, x1, y1]| {
         let held = egui::Rect::from_points(
             &[(x0, y0), (x1, y0), (x0, y1), (x1, y1)].map(|(x, y)| apply(&m, Pos2::new(x, y))),
         );
         ink_box.union(held).expand(1.0)
     });
-    painter.rect_filled(white, 0.0, Color32::WHITE);
+    if !shaped.invisible {
+        // NOT A THEME COLOUR: paper white, the page's own background, which
+        // the cover must match; the image tint below is the identity.
+        painter.rect_filled(white, 0.0, Color32::WHITE);
+    }
     if let Some((from, to)) = super::caret::range(draft.mark, draft.caret) {
         for i in from..to.min(shaped.stops.len() - 1) {
             let (a, b) = (shaped.stops[i], shaped.stops[i + 1]);
@@ -404,16 +424,17 @@ fn ink_texture(
     ctx: &egui::Context,
     m: &[f32; 6],
     shaped: &Shaped,
+    colour: Color32,
     body: egui::Rect,
 ) -> Option<egui::TextureHandle> {
     let ppp = ctx.pixels_per_point();
     let key = (
-        shaped.text.clone(),
+        (shaped.text.clone(), colour.to_array()),
         [body.min.x, body.min.y, body.max.x, body.max.y, ppp].map(|v| (v * 8.0).round() as i64),
     );
     let id = egui::Id::new(TEXTURE);
     if let Some((held, texture)) =
-        ctx.data(|d| d.get_temp::<((String, [i64; 5]), egui::TextureHandle)>(id))
+        ctx.data(|d| d.get_temp::<(((String, [u8; 4]), [i64; 5]), egui::TextureHandle)>(id))
         && held == key
     {
         return Some(texture);
@@ -432,7 +453,7 @@ fn ink_texture(
         (m[5] - body.min.y) * ppp,
     );
     let mut paint = tiny_skia::Paint::default();
-    paint.set_color_rgba8(shaped.ink.r(), shaped.ink.g(), shaped.ink.b(), 255);
+    paint.set_color_rgba8(colour.r(), colour.g(), colour.b(), 255);
     paint.anti_alias = true;
     for path in shaped.outlines.iter().flatten() {
         pixmap.fill_path(path, &paint, tiny_skia::FillRule::Winding, to_pixels, None);

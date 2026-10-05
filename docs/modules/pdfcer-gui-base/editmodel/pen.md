@@ -53,6 +53,15 @@ picks 8 pt Courier for a note expects it still to be 8 pt Courier in the next
 document, and a per-document reset would be a preference silently thrown
 away.
 
+## The invisible switch
+
+`invisible` writes the run in rendering mode 3 (`render_mode`), the storage
+of a scan's recognised text, so the operator can add a word the recognition
+missed (O286). Only modes 0 and 3 are offered: the other six paint outlines or
+clip, which are styling questions for Format, not a way of adding text. The
+run is not inside the page's OCR marked section (`G123`), and the commit says
+so.
+
 ## What is deliberately NOT here
 
 - **A donor font.** `NewTextFace::Embedded` takes a whole `FontEmbedPlan`,

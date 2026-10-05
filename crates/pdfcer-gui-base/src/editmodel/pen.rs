@@ -19,6 +19,9 @@ pub struct TextPen {
     pub size_pt: f64,
     /// The ink, as sRGB bytes.
     pub colour: [u8; 3],
+    /// Written in rendering mode 3: present, searchable and copyable, and
+    /// never drawn, which is how a scan's recognised text is stored.
+    pub invisible: bool,
 }
 
 impl Default for TextPen {
@@ -30,6 +33,7 @@ impl Default for TextPen {
             face: Std14::Helvetica,
             size_pt: 12.0,
             colour: [0, 0, 0],
+            invisible: false,
         }
     }
 }
@@ -62,6 +66,12 @@ impl TextPen {
                 f64::from(self.colour[2]) / 255.0,
             )
         }
+    }
+
+    /// The rendering mode the engine writes: 3 when invisible, else 0.
+    #[must_use]
+    pub const fn render_mode(self) -> u8 {
+        if self.invisible { 3 } else { 0 }
     }
 
     /// The size, clamped to what the controls offer.

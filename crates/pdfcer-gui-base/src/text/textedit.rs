@@ -451,6 +451,14 @@ impl EnterRefusal {
     }
 }
 
+/// The disclosure owed when text was added with the pen's invisible switch
+/// on, beside the engine's own about rendering mode 3.
+#[must_use]
+pub const fn added_invisible() -> &'static str {
+    "The invisible text is not part of the page's recognised-text layer: removing that layer \
+     leaves it in place."
+}
+
 /// The disclosure owed when a **clicked** text draft turns out to be
 /// multi-line.
 #[must_use]

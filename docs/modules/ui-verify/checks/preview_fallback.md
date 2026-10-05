@@ -4,10 +4,9 @@
 text cannot be previewed in the text's own font, the stand-in is set at the
 text's size times the zoom, and the status bar says why.
 
-The fixture is `fixtures/ocr-layer.pdf`. Its run `HIDDEN RUN IN A VISIBLE
-STREAM` is 10 pt Helvetica at rendering mode 3, so the engine's layout is
-invisible ink and the preview must fall back to the shell's font
-(`PreviewFallback::Invisible`).
+The fixture is `fixtures/retype-seam.pdf`. Its word `Hello` is 12 pt, drawn as
+`Hel` in Helvetica and `lo` in Times-Roman; the engine refuses an exact edit
+across the two fonts, so the preview falls back with `reason=refused`.
 
 The window is placed off the desktop and driven only through
 `ScriptedPointer`, with `PDFCER_DIAG_INVOKE=mode.edit,edit.text` arming the
@@ -15,16 +14,15 @@ Edit Text tool, so the check runs under `--no-input`.
 
 ## Steps
 
-1. **Open a caret and type.** A click inside the hidden run, `End`, then `_`.
-   The last `text-edit-preview-fallback` line naming a reason must read
-   `reason=invisible`.
-2. **Size.** Its `font_pt` must be within 3 % of 10 pt times the canvas zoom
+1. **Open a caret and type.** A click inside `Hel`, then `_`. A
+   `text-edit-preview-fallback` line naming a reason other than `none` must
+   be traced.
+2. **Size.** Its `font_pt` must be within 3 % of 12 pt times the canvas zoom
    the trace reports.
 3. **Disclosure.** The status bar must have declared the region
    `status-group:preview-fallback` while the draft was open.
 
 ## Falsification
 
-With the stand-in sized by the old rule (the glyph box's screen height clamped
-to 11–40 pt, times 0.72), step 2 fails: at the default fit zoom the font is
-about 0.83 of the run's size. With the status line removed, step 3 fails.
+Scaling the stand-in's `font_pt` by 0.72 in `canvas::textedit::paint` fails
+step 2 (7.23 pt against 10.04). With the status line removed, step 3 fails.
