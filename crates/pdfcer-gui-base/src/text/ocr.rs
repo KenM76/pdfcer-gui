@@ -195,6 +195,32 @@ pub const fn engine_label(engine: crate::ocr::EngineId) -> &'static str {
     }
 }
 
+/// The name of an engine reached only through an add-on, by its token.
+#[must_use]
+pub fn token_label(token: &str) -> Option<&'static str> {
+    match token {
+        "tesseract" => Some("Tesseract"),
+        "paddle-vl" => Some("PaddleOCR-VL"),
+        _ => None,
+    }
+}
+
+/// The program a run started, its language and what was checked before it ran.
+#[must_use]
+pub fn program_ran(program: &str, languages: &str, hashed_files: Option<usize>) -> String {
+    let checked = hashed_files.map_or_else(
+        || "It has no manifest, so nothing was checked before it ran.".to_owned(),
+        |n| {
+            format!(
+                "Its {n} file(s) were checked against the add-on's SHA-256 list before each page."
+            )
+        },
+    );
+    format!(
+        "The pages were read by a separate program, {program}, in language {languages}. {checked}"
+    )
+}
+
 /// **The sentence that replaced the whole save apparatus.**
 #[must_use]
 pub fn applied_to_document() -> &'static str {
@@ -236,21 +262,6 @@ pub fn models_missing(searched: &[String]) -> String {
         "The recognition models are not installed. They ship in the models folder beside \
          pdfcer-gui.exe; this build looked in: {list}"
     )
-}
-
-/// The run read characters through a dictionary file.
-#[must_use]
-pub fn dictionary_file(path: &str) -> String {
-    format!(
-        "Characters were read through the dictionary in {path}. If it does not match the \
-         recognition model, the text will be confident nonsense."
-    )
-}
-
-/// The run read characters through the model's own character list.
-#[must_use]
-pub fn dictionary_embedded() -> &'static str {
-    "Characters were read through the character list built into the recognition model."
 }
 
 /// This build was compiled without the recogniser.

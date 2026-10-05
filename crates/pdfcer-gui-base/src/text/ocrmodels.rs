@@ -2,6 +2,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/ocr/catalog.md`.
 
+use pdfcer_core::ocr::addon_manifest::AddonKind;
+
 use crate::ocr::catalog::{Choice, Unrunnable};
 
 /// The label before the model list.
@@ -17,15 +19,23 @@ pub const fn none_chosen() -> &'static str {
 }
 
 /// A model's name as the list shows it: its manifest label, else the
-/// recogniser's name, else the model's own name.
+/// recogniser's name, else the model's own name; a program add-on also names
+/// the program it starts.
 #[must_use]
 pub fn label(choice: &Choice) -> String {
-    choice.label.clone().unwrap_or_else(|| {
-        choice.engine.map_or_else(
-            || choice.name.clone(),
-            |e| super::ocr::engine_label(e).to_owned(),
-        )
-    })
+    let base = choice.label.clone().unwrap_or_else(|| {
+        choice
+            .engine
+            .map(super::ocr::engine_label)
+            .or_else(|| super::ocr::token_label(&choice.engine_token))
+            .map_or_else(|| choice.name.clone(), str::to_owned)
+    });
+    match choice.model.program() {
+        Some(program) if choice.model.kind() == AddonKind::Program => {
+            format!("{base} (runs {program})")
+        }
+        _ => base,
+    }
 }
 
 /// A model this build cannot run, as the list shows it.
@@ -34,25 +44,10 @@ pub fn unrunnable_label(choice: &Choice) -> String {
     format!("{} (cannot run here)", label(choice))
 }
 
-/// Why a model cannot run, as a clause.
+/// Why a model cannot run: the engine's own sentence, without its stop.
 #[must_use]
 pub fn why(why: &Unrunnable) -> String {
-    match why {
-        Unrunnable::NotInBuild(engine) => format!(
-            "this build does not include the {} recogniser",
-            super::ocr::engine_label(*engine)
-        ),
-        Unrunnable::MissingFiles(files) => {
-            format!("its folder is missing {}", files.join(", "))
-        }
-        Unrunnable::NoVlRunner => {
-            "pdfcer cannot run PaddleOCR-VL models yet; support is waiting on the engine".to_owned()
-        }
-        Unrunnable::Program => {
-            "it is a program of its own, and this build cannot run add-on programs".to_owned()
-        }
-        Unrunnable::UnknownEngine(token) => format!("pdfcer does not know the engine {token}"),
-    }
+    why.reason().trim_end_matches('.').to_owned()
 }
 
 /// A model's hover: where it is, and why it cannot run if it cannot.

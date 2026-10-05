@@ -7,6 +7,7 @@
 ocr_folder = E:/models/extra
 ocr_folder = F:/more
 ocr_model = paddle-vl
+ocr_program_addons = refuse
 ```
 
 # Contract
@@ -16,6 +17,12 @@ ocr_model = paddle-vl
   returns `false`.
 - `ocr_model` is the discovery name (`OcrModel::name`) of the model last run.
   Absent means "none remembered"; `ocr_engine` then decides the start.
+- `ocr_program_addons` is `allow` or `refuse`; absent is allow, and only
+  `refuse` is written. Refused, a model whose manifest says `kind = program`
+  (Tesseract) is listed but cannot be chosen (`refuse_programs`). Allowed is
+  the default because an add-on program is hash-checked against its manifest
+  before every page; the setting exists for an operator who wants no
+  external process started at all.
 - An empty value is a `BadValue` note and the line is ignored.
 - The bundled `models` folder is never stored: it is always searched first.
 

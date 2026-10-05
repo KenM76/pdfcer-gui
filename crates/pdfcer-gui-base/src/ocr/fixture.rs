@@ -525,7 +525,7 @@ mod tests {
     #[ignore = "several seconds, and needs the ocrs model weights on disk"]
     fn recognises_the_synthetic_page() {
         let recognised = recognise_and_apply(
-            super::super::EngineId::Ocrs,
+            "ocrs",
             PathBuf::from("D:/Dev/pdfcer/crates/pdfcer-core/assets/models/ocrs"),
             &MUST_RECOGNISE,
         );
@@ -552,7 +552,7 @@ mod tests {
     #[ignore = "needs OCRcer's model file on disk"]
     fn ocrcer_recognises_the_synthetic_page() {
         let recognised = recognise_and_apply(
-            super::super::EngineId::Ocrcer,
+            "ocrcer",
             PathBuf::from("D:/Dev/OCRcer/model/out"),
             // Not "41177": OCRcer spaces the drawing number around its narrow
             // `1` ("41 1 77"), a word-segmentation miss reported in
@@ -581,7 +581,7 @@ mod tests {
     /// application does, and require every word of `must` in what the
     /// ordinary extractor reads back.
     fn recognise_and_apply(
-        engine: super::super::EngineId,
+        engine: &str,
         models: PathBuf,
         must: &[&str],
     ) -> super::super::Recognised {
@@ -609,8 +609,14 @@ mod tests {
             // configured set, because there is no `Settings` on this thread and
             // nothing here depends on one.
             extract_options: pdfcer_core::text_extract::ExtractOptions::default(),
-            engine,
-            model_dir: models,
+            model: pdfcer_core::ocr::addons::OcrModel {
+                name: engine.to_owned(),
+                engine: engine.to_owned(),
+                folder: models.clone(),
+                root: models,
+                manifest: None,
+            },
+            policy: pdfcer_ocr_host::ProgramPolicy::Allow,
         });
         let mut job = out;
         let recognised = loop {

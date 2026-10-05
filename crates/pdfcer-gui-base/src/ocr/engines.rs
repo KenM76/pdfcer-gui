@@ -1,5 +1,5 @@
-//! Which recognisers this build carries, where each one's model lives, and the
-//! loaded model a run holds.
+//! Which recognisers this build carries.
+//! Loading and running a model is `pdfcer_ocr_host::OcrRunner`.
 //!
 //! [`EngineId`] names every engine this shell knows how to drive, compiled in
 //! or not, so a preference naming one survives a build that lacks it.
@@ -11,12 +11,6 @@
 //! `words_to_page_space_on` is the one place they are flipped, for all of them.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/ocr/engines.md`.
-
-use std::path::Path;
-
-use pdfcer_core::ocr::{RecognizedWord, models};
-
-use super::Refusal;
 
 /// A recogniser this shell can drive.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -58,69 +52,6 @@ impl EngineId {
             Self::Paddle => cfg!(feature = "paddle"),
         }
     }
-
-    /// The directory under a model root that holds this engine's files.
-    ///
-    /// The engine's own constant where it publishes one, so a rename there
-    /// cannot leave this resolving a directory the engine then refuses.
-    #[must_use]
-    pub const fn model_dir(self) -> models::EngineDirName {
-        match self {
-            #[cfg(feature = "ocrs")]
-            Self::Ocrs => pdfcer_core::ocr::engine_ocrs::MODEL_DIR,
-            #[cfg(not(feature = "ocrs"))]
-            Self::Ocrs => "ocrs",
-            Self::Ocrcer => OCRCER_MODEL_DIR,
-            #[cfg(feature = "paddle")]
-            Self::Paddle => pdfcer_core::ocr::engine_paddle::MODEL_DIR,
-            #[cfg(not(feature = "paddle"))]
-            Self::Paddle => "paddle",
-        }
-    }
-
-    /// The files a model directory must hold to count as found.
-    ///
-    /// Empty for an engine this build did not link: resolution then only has
-    /// to name where the files would have gone.
-    #[must_use]
-    pub const fn model_files(self) -> &'static [&'static str] {
-        match self {
-            #[cfg(feature = "ocrs")]
-            Self::Ocrs => &[
-                pdfcer_core::ocr::engine_ocrs::DETECTION_MODEL,
-                pdfcer_core::ocr::engine_ocrs::RECOGNITION_MODEL,
-            ],
-            #[cfg(feature = "ocrcer")]
-            Self::Ocrcer => &[OCRCER_MODEL_FILE],
-            #[cfg(feature = "paddle")]
-            Self::Paddle => &[
-                pdfcer_core::ocr::engine_paddle::DETECTION_MODEL,
-                pdfcer_core::ocr::engine_paddle::RECOGNITION_MODEL,
-            ],
-            #[allow(unreachable_patterns)]
-            _ => &[],
-        }
-    }
-
-    /// Whether the engine scores its words.
-    #[must_use]
-    pub const fn reports_confidence(self) -> bool {
-        match self {
-            Self::Ocrs => false,
-            Self::Ocrcer | Self::Paddle => true,
-        }
-    }
-}
-
-/// Where a run's character dictionary came from, for an engine that reads
-/// through one. A mismatched dictionary reads as confident nonsense, so the
-/// report names it.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Dictionary {
-    /// A dictionary file beside the model.
-    File(std::path::PathBuf),
-    /// The character list embedded in the recognition model.
-    Embedded,
 }
 
 /// The engines this build can run, default first. Empty in a build with none.
@@ -132,120 +63,15 @@ pub fn available() -> Vec<EngineId> {
         .collect()
 }
 
-/// OCRcer's directory under a model root. Equal to the engine's
-/// `engine_ocrcer::MODEL_DIR`, which exists only when the feature is on; a
-/// test holds the two together.
-pub const OCRCER_MODEL_DIR: models::EngineDirName = "ocrcer";
-
-/// OCRcer's single model file, inside [`OCRCER_MODEL_DIR`]; the engine's
-/// `engine_ocrcer::MODEL_FILE`.
+/// OCRcer's single model file; the engine's `engine_ocrcer::MODEL_FILE`,
+/// which exists only when the feature is on. A test holds the two together.
 pub const OCRCER_MODEL_FILE: &str = "ocrcer.ocrw";
-
-/// A loaded model, held for a whole run so a hundred pages load it once.
-/// Boxed: the engines differ in size by kilobytes.
-pub(super) enum Recogniser {
-    #[cfg(feature = "ocrs")]
-    Ocrs(Box<pdfcer_core::ocr::engine_ocrs::OcrsEngine>),
-    #[cfg(feature = "ocrcer")]
-    Ocrcer(Box<pdfcer_core::ocr::engine_ocrcer::OcrcerEngine>),
-    #[cfg(feature = "paddle")]
-    Paddle(Box<pdfcer_core::ocr::engine_paddle::PaddleEngine>),
-}
-
-impl Recogniser {
-    /// Load `engine`'s model from `model_dir`. Refuses before any page is
-    /// rasterised, so a build without the engine spends no time rendering.
-    pub(super) fn load(engine: EngineId, model_dir: &Path) -> Result<Self, Refusal> {
-        let _ = model_dir;
-        match engine {
-            #[cfg(feature = "ocrs")]
-            EngineId::Ocrs => pdfcer_core::ocr::engine_ocrs::OcrsEngine::from_model_dir(model_dir)
-                .map(|e| Self::Ocrs(Box::new(e)))
-                .map_err(|e| Refusal::Engine(e.to_string())),
-            #[cfg(feature = "ocrcer")]
-            EngineId::Ocrcer => {
-                let bytes = std::fs::read(model_dir.join(OCRCER_MODEL_FILE))
-                    .map_err(|e| Refusal::Engine(e.to_string()))?;
-                pdfcer_core::ocr::engine_ocrcer::OcrcerEngine::from_bytes(&bytes)
-                    .map(|e| Self::Ocrcer(Box::new(e)))
-                    .map_err(|e| Refusal::Engine(e.to_string()))
-            }
-            #[cfg(feature = "paddle")]
-            EngineId::Paddle => {
-                pdfcer_core::ocr::engine_paddle::PaddleEngine::from_model_dir(model_dir)
-                    .map(|e| Self::Paddle(Box::new(e)))
-                    .map_err(|e| Refusal::Engine(e.to_string()))
-            }
-            #[allow(unreachable_patterns)]
-            _ => Err(Refusal::EngineAbsent),
-        }
-    }
-
-    /// Recognise one greyscale image: row-major, top-down, `width * height`
-    /// bytes.
-    pub(super) fn recognise(
-        &self,
-        width: u32,
-        height: u32,
-        grey: &[u8],
-    ) -> Result<Vec<RecognizedWord>, Refusal> {
-        #[cfg(any(feature = "ocrs", feature = "ocrcer", feature = "paddle"))]
-        use pdfcer_core::ocr::OcrEngine as _;
-        let _ = (width, height, grey);
-        match self {
-            #[cfg(feature = "ocrs")]
-            Self::Ocrs(e) => e
-                .recognize(width, height, grey)
-                .map_err(|e| Refusal::Engine(e.to_string())),
-            #[cfg(feature = "ocrcer")]
-            Self::Ocrcer(e) => e
-                .recognize(width, height, grey)
-                .map_err(|e| Refusal::Engine(e.to_string())),
-            #[cfg(feature = "paddle")]
-            Self::Paddle(e) => e
-                .recognize(width, height, grey)
-                .map_err(|e| Refusal::Engine(e.to_string())),
-            #[allow(unreachable_patterns)]
-            _ => Err(Refusal::EngineAbsent),
-        }
-    }
-
-    /// The loaded engine's own `OcrEngine::reports_confidence`.
-    pub(super) fn reports_confidence(&self) -> bool {
-        #[cfg(any(feature = "ocrs", feature = "ocrcer", feature = "paddle"))]
-        use pdfcer_core::ocr::OcrEngine as _;
-        match self {
-            #[cfg(feature = "ocrs")]
-            Self::Ocrs(e) => e.reports_confidence(),
-            #[cfg(feature = "ocrcer")]
-            Self::Ocrcer(e) => e.reports_confidence(),
-            #[cfg(feature = "paddle")]
-            Self::Paddle(e) => e.reports_confidence(),
-            #[allow(unreachable_patterns)]
-            _ => false,
-        }
-    }
-
-    /// The character dictionary the loaded engine reads through, if it has
-    /// one.
-    pub(super) fn dictionary(&self) -> Option<Dictionary> {
-        match self {
-            #[cfg(feature = "paddle")]
-            Self::Paddle(e) => Some(match e.dictionary_source() {
-                pdfcer_core::ocr::engine_paddle::DictionarySource::File(p) => {
-                    Dictionary::File(p.clone())
-                }
-                _ => Dictionary::Embedded,
-            }),
-            #[allow(unreachable_patterns)]
-            _ => None,
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(any(feature = "paddle", feature = "ocrcer"))]
+    use pdfcer_ocr_host::RunnerError;
 
     #[test]
     fn every_key_round_trips_and_no_two_engines_share_one() {
@@ -276,31 +102,31 @@ mod tests {
     }
 
     #[test]
-    fn the_model_directories_are_distinct() {
-        let dirs: std::collections::HashSet<_> =
-            EngineId::ALL.into_iter().map(EngineId::model_dir).collect();
-        assert_eq!(dirs.len(), EngineId::ALL.len());
-        assert_eq!(EngineId::Ocrs.model_dir(), "ocrs");
-        assert_eq!(EngineId::Paddle.model_dir(), "paddle");
-    }
-
-    #[test]
     #[cfg(feature = "ocrcer")]
     fn the_ocrcer_names_are_the_engines() {
-        use pdfcer_core::ocr::engine_ocrcer::{MODEL_DIR, MODEL_FILE};
-        assert_eq!(OCRCER_MODEL_DIR, MODEL_DIR);
-        assert_eq!(OCRCER_MODEL_FILE, MODEL_FILE);
+        assert_eq!(
+            OCRCER_MODEL_FILE,
+            pdfcer_core::ocr::engine_ocrcer::MODEL_FILE
+        );
     }
 
-    #[test]
-    #[cfg(feature = "paddle")]
-    fn the_paddle_names_are_the_engines() {
-        use pdfcer_core::ocr::engine_paddle::{DETECTION_MODEL, MODEL_DIR, RECOGNITION_MODEL};
-        assert_eq!(EngineId::Paddle.model_dir(), MODEL_DIR);
-        assert_eq!(
-            EngineId::Paddle.model_files(),
-            &[DETECTION_MODEL, RECOGNITION_MODEL]
-        );
+    /// Load a bare model folder of `engine` the way a run does.
+    #[cfg(any(feature = "paddle", feature = "ocrcer"))]
+    fn load_bare(engine: EngineId, dir: &std::path::Path) -> RunnerError {
+        let model = pdfcer_core::ocr::addons::OcrModel {
+            name: engine.key().to_owned(),
+            engine: engine.key().to_owned(),
+            folder: dir.to_path_buf(),
+            root: dir.to_path_buf(),
+            manifest: None,
+        };
+        match pdfcer_ocr_host::OcrRunner::load(
+            &model,
+            &pdfcer_ocr_host::RunOptions::new("eng", 300.0),
+        ) {
+            Ok(_) => panic!("a bare {} folder loaded", engine.key()),
+            Err(e) => e,
+        }
     }
 
     /// PaddleOCR files that are not ONNX models are a named engine refusal.
@@ -309,13 +135,12 @@ mod tests {
     fn a_corrupt_paddle_model_is_refused_by_the_engine() {
         let dir = std::env::temp_dir().join(format!("pdfcer-paddle-bad-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("temp dir");
-        for f in EngineId::Paddle.model_files() {
+        use pdfcer_core::ocr::engine_paddle::{DETECTION_MODEL, RECOGNITION_MODEL};
+        for f in [DETECTION_MODEL, RECOGNITION_MODEL] {
             std::fs::write(dir.join(f), b"not a model").expect("write");
         }
-        let err = Recogniser::load(EngineId::Paddle, &dir)
-            .err()
-            .expect("refused");
-        assert!(matches!(err, Refusal::Engine(_)), "{err:?}");
+        let err = load_bare(EngineId::Paddle, &dir);
+        assert!(matches!(err, RunnerError::Engine(_)), "{err:?}");
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -327,10 +152,8 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pdfcer-ocrcer-bad-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("temp dir");
         std::fs::write(dir.join(OCRCER_MODEL_FILE), b"not a model").expect("write");
-        let err = Recogniser::load(EngineId::Ocrcer, &dir)
-            .err()
-            .expect("refused");
-        assert!(matches!(err, Refusal::Engine(_)), "{err:?}");
+        let err = load_bare(EngineId::Ocrcer, &dir);
+        assert!(matches!(err, RunnerError::Engine(_)), "{err:?}");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

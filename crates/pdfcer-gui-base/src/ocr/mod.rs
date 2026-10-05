@@ -39,15 +39,15 @@ pub mod catalog;
 /// Which recognisers this build carries, their model directories, and the
 /// loaded model a run holds.
 mod engines;
-pub use engines::{Dictionary, EngineId, OCRCER_MODEL_DIR, OCRCER_MODEL_FILE, available};
+pub use engines::{EngineId, OCRCER_MODEL_FILE, available};
 
-use engines::Recogniser;
+use pdfcer_ocr_host::{OcrRunner, ProgramPolicy, ProgramSource, RunOptions};
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use pdfcer_core::edit::EditSession;
-use pdfcer_core::ocr::{OcrPage, models};
+use pdfcer_core::ocr::OcrPage;
 use pdfcer_core::page_tree::{self, Rect};
 
 /// **The raster size recognition is run at, as a pixel count** — measured,
@@ -147,12 +147,16 @@ pub struct Recognised {
     /// order, and either mistake puts one page's words on another page with no
     /// diagnostic short of reading the output.
     pub pages: Vec<(usize, pdfcer_core::ocr::OcrPage)>,
-    /// The recogniser that read these pages; its key is written into the
-    /// layer's marker, so the file says which engine produced the text.
-    pub engine: EngineId,
-    /// The character dictionary the recogniser read through, for an engine
-    /// that has one; the report names it.
-    pub dictionary: Option<Dictionary>,
+    /// The engine token of the model that read these pages; it is written
+    /// into the layer's marker, so the file says which engine produced the text.
+    pub engine: String,
+    /// Whether the loaded engine scores its words.
+    pub confidence: bool,
+    /// The engine's own disclosure of what it inferred (PaddleOCR's
+    /// dictionary, PaddleOCR-VL's reading), verbatim.
+    pub disclosure: Option<String>,
+    /// The separate program that read the pages, for a program add-on.
+    pub program: Option<ProgramRun>,
     /// The resolution the page was actually rasterized at.
     ///
     /// Derived from the page's area by [`fitted_dpi`], so it varies per page and
@@ -183,6 +187,47 @@ pub struct Recognised {
     /// result the operator needs to see, and a bare *"success"* would let them
     /// believe the other thirty-eight had been done.
     pub pages_skipped: usize,
+}
+
+/// A program add-on's run, for the off-canvas report: the operator is owed
+/// which executable read his pages and what was checked before it ran.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProgramRun {
+    /// The executable run.
+    pub program: PathBuf,
+    /// Its language argument, e.g. `eng`.
+    pub languages: String,
+    /// How many files the manifest pins and re-checks before each page;
+    /// `None` for a folder run without a manifest, where nothing is hashed.
+    pub hashed_files: Option<usize>,
+}
+
+impl ProgramRun {
+    fn of(runner: &OcrRunner) -> Option<Self> {
+        let p = runner.as_program()?;
+        Some(Self {
+            program: p.program().to_path_buf(),
+            languages: p.languages().to_owned(),
+            hashed_files: match p.source() {
+                ProgramSource::Addon { hashed_files, .. } => Some(*hashed_files),
+                _ => None,
+            },
+        })
+    }
+}
+
+/// The language argument a model is run with: English when the manifest
+/// names it or names nothing, else the first language it names.
+// ui-text-exempt: a Tesseract language code, never displayed.
+const DEFAULT_LANGUAGE: &str = "eng";
+
+fn languages(model: &pdfcer_core::ocr::addons::OcrModel) -> String {
+    let named = model.languages();
+    if named.is_empty() || named.iter().any(|l| l == DEFAULT_LANGUAGE) {
+        DEFAULT_LANGUAGE.to_owned()
+    } else {
+        named[0].clone()
+    }
 }
 
 /// Device pixels per PDF user-space unit for a given DPI.
@@ -231,28 +276,6 @@ pub fn greyscale(rgba: &[u8], width: u32, height: u32) -> Vec<u8> {
     // colour of paper the recogniser will correctly find nothing on.
     out.resize(expected, 0xFF);
     out
-}
-
-/// Where this shell looks for model files.
-pub fn resolve_models(
-    engine: EngineId,
-    exe_dir: Option<&Path>,
-    user_data: Option<&Path>,
-) -> Result<models::ModelSource, models::ModelsNotFound> {
-    //
-    // The plain `resolve_model_dir` asks only `is_dir()`. So an **empty**
-    // `models/ocrs` beside the executable RESOLVES — and, worse, it wins the
-    // search order, so an operator's own good copy further down is never
-    // reached. The failure then surfaces later and in the wrong vocabulary: the
-    // engine reports a missing model file after this shell has already told
-    // them the models were found.
-    models::resolve_model_dir_with(
-        engine.model_dir(),
-        None,
-        exe_dir,
-        user_data,
-        engine.model_files(),
-    )
 }
 
 /// The directory the running executable is in, if it can be determined.
@@ -330,11 +353,10 @@ pub struct Request {
     /// Built on the UI thread by the dialog, where `Settings` lives, and moved
     /// to the worker with the rest of the request.
     pub extract_options: pdfcer_core::text_extract::ExtractOptions,
-    /// The recogniser to run; one [`available`] reports.
-    pub engine: EngineId,
-    /// The directory holding `engine`'s model files, from [`resolve_models`]
-    /// for the same engine.
-    pub model_dir: PathBuf,
+    /// The discovered model to run, through `pdfcer_ocr_host::OcrRunner`.
+    pub model: pdfcer_core::ocr::addons::OcrModel,
+    /// Whether a program add-on may run.
+    pub policy: ProgramPolicy,
 }
 
 /// The worker body. Runs on the spawned thread; touches no GUI type.
@@ -351,12 +373,7 @@ pub(in crate::ocr) fn recognise(
     // page 40 of 200 reports as a whole document recognised.
     let mut stopped_after: Option<usize> = None;
 
-    let recogniser = Recogniser::load(request.engine, &request.model_dir)?;
-    debug_assert_eq!(
-        recogniser.reports_confidence(),
-        request.engine.reports_confidence(),
-        "the dialog words its disclosure from EngineId; the page is stamped from the engine"
-    );
+    let recogniser = load(request)?;
 
     let mut pages = Vec::new();
     let mut total_words = 0usize;
@@ -453,13 +470,29 @@ pub(in crate::ocr) fn recognise(
     Ok(Recognised {
         pages_written: pages.len(),
         pages,
-        engine: request.engine,
-        dictionary: recogniser.dictionary(),
+        engine: request.model.engine.clone(),
+        confidence: recogniser.reports_confidence(),
+        disclosure: recogniser.disclosure(),
+        program: ProgramRun::of(&recogniser),
         effective_dpi: dpi,
         words_recognised: total_words,
         pages_skipped,
         stopped_after,
     })
+}
+
+/// Load the request's model once for the whole run, before any page is
+/// rasterised. A program add-on is told the first page's resolution: the
+/// runner fixes it at load, while each page is rasterised at its own.
+fn load(request: &Request) -> Result<OcrRunner, Refusal> {
+    let first_dpi = request
+        .pages
+        .first()
+        .and_then(|&i| pages_of(request).ok()?.get(i).map(|p| p.crop_box))
+        .map_or(MAX_DPI, |b| fitted_dpi(b.urx - b.llx, b.ury - b.lly));
+    let mut options = RunOptions::new(languages(&request.model), first_dpi);
+    options.policy = request.policy;
+    OcrRunner::load(&request.model, &options).map_err(|e| Refusal::Engine(e.to_string()))
 }
 
 /// What recognising one page produced, before anything is applied.
@@ -479,7 +512,7 @@ struct OnePage {
 ///
 fn recognise_one(
     request: &Request,
-    recogniser: &Recogniser,
+    recogniser: &OcrRunner,
     page_index: usize,
 ) -> Result<OnePage, Refusal> {
     // **THE SESSION'S VIEW, NOT ITS BASE AND NOT THE FILE.**
@@ -540,7 +573,11 @@ fn recognise_one(
     let (w, h) = (rendered.pixmap.width(), rendered.pixmap.height());
     let grey = greyscale(rendered.pixmap.data(), w, h);
 
-    let words = recogniser.recognise(w, h, &grey)?;
+    // A program add-on re-checks its pinned files before each page; a file
+    // changed mid-run fails here, and the run stops with the engine's sentence.
+    let words = recogniser
+        .recognize(w, h, &grey)
+        .map_err(|e| Refusal::Engine(e.to_string()))?;
     let words_recognised = words.len();
     // The flip, and the ONLY place it happens. See the module header.
     //
@@ -591,7 +628,7 @@ fn recognise_one(
         recognised: OcrPage {
             words: placed,
             // Asked of the loaded engine rather than assumed: `ocrs` scores
-            // nothing, OCRcer scores every word.
+            // nothing, the others score every word.
             confidence_available: recogniser.reports_confidence(),
         },
         words: words_recognised,
@@ -738,72 +775,9 @@ mod tests {
         assert_eq!(out[15], 0xFF, "the padding is paper, not ink");
     }
 
-    /// **`ocrs` reports no confidence, and the shell says so.** If this
-    /// became `true` the dialog would drop its "nothing here has been scored"
-    /// statement and a page of unscored guesses would present as checked.
-    #[test]
-    #[cfg(feature = "ocrs")]
-    fn ocrs_scores_nothing() {
-        assert!(!EngineId::Ocrs.reports_confidence());
-    }
-
     /// The two absences are two different refusals.
     #[test]
     fn a_missing_engine_and_missing_models_are_distinct_refusals() {
         assert_ne!(Refusal::EngineAbsent, Refusal::ModelsMissing(Vec::new()));
-    }
-
-    /// The model directory name is the engine's own, not a second spelling.
-    #[test]
-    fn the_model_directory_is_the_engines_own_name() {
-        assert_eq!(EngineId::Ocrs.model_dir(), "ocrs");
-        assert_eq!(EngineId::Ocrcer.model_dir(), OCRCER_MODEL_DIR);
-    }
-
-    /// Nothing is resolved from a directory that does not exist, and every
-    /// place that was looked in comes back.
-    #[test]
-    fn a_failed_resolution_reports_everywhere_it_looked() {
-        // temp-path-exempt: never created -- the assertion is that resolving
-        // against a directory that is not there fails.
-        let nowhere = std::env::temp_dir().join("pdfcer-no-models-here-4c1a");
-        let err =
-            resolve_models(EngineId::Ocrs, Some(&nowhere), None).expect_err("nothing is there");
-        assert_eq!(err.engine, EngineId::Ocrs.model_dir());
-        assert_eq!(err.searched.len(), 1);
-        assert!(err.to_string().contains("ocrs"));
-    }
-
-    /// **An EMPTY `models/ocrs` does not resolve, and so cannot shadow a
-    /// good copy further down the search order.**
-    #[test]
-    #[cfg(feature = "ocrs")]
-    fn an_empty_model_directory_is_rejected_but_a_filled_one_resolves() {
-        let root =
-            std::env::temp_dir().join(format!("pdfcer-empty-models-9f3b-{}", std::process::id()));
-        let dir = root.join("models").join(EngineId::Ocrs.model_dir());
-        let _ = std::fs::remove_dir_all(&root);
-        std::fs::create_dir_all(&dir).expect("temp dir");
-
-        // Empty: must be refused, or it shadows.
-        let err = resolve_models(EngineId::Ocrs, Some(&root), None)
-            .expect_err("an empty models directory must NOT resolve, or it shadows a good one");
-        assert_eq!(err.engine, EngineId::Ocrs.model_dir());
-        assert!(
-            !err.searched.is_empty(),
-            "the directory must be REPORTED as searched, so the message names a place the operator can go and look"
-        );
-
-        // Filled: must be accepted — otherwise the assertion above proves
-        // nothing about emptiness.
-        for f in EngineId::Ocrs.model_files() {
-            std::fs::write(dir.join(f), b"not a real model, but a real file").expect("write");
-        }
-        assert!(
-            resolve_models(EngineId::Ocrs, Some(&root), None).is_ok(),
-            "a directory containing both model files must resolve"
-        );
-
-        let _ = std::fs::remove_dir_all(&root);
     }
 }

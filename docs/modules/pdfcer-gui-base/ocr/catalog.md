@@ -13,18 +13,30 @@ folders (`OcrModelPrefs`) in order, duplicates dropped. Earlier roots win a
 name clash; the engine reports the shadowed one as a note. A missing bundled
 folder is not reported (a build may ship no models); a missing extra folder is.
 
-# Runnability (`Unrunnable`, trace token in brackets)
+# Runnability (`Unrunnable`)
 
-| Case | Token |
+The engine decides: `pdfcer_ocr_host::OcrRunner::check_runnable(model,
+policy)`. This module keeps the refusal's own sentence as the reason and maps
+the `RunnerError` variant to a stable trace token (`token_of`):
+
+| Engine refusal | Token |
 |---|---|
-| Manifest says `kind = program` — no host for an add-on program | `program` |
-| Engine `paddle-vl` — the engine's runner cannot run one yet (G102) | `no-vl-runner` |
-| Engine token this shell does not know | `unknown-engine` |
-| Engine known but not linked into this build | `not-in-build` |
-| Folder lacks a file `EngineId::model_files` names | `missing-files` |
+| `EngineNotInBuild` (includes an engine token nobody knows) | `not-in-build` |
+| `MissingFile` | `missing-files` |
+| `NeedsProgramKind` | `needs-program-kind` |
+| `Verify` | `verify` |
+| `ProgramRefusal::RefusedByPolicy` | `refused-by-policy` |
+| `ProgramRefusal::NoProgramHash` / `NoProtocol` / `ProgramMissing` / `NotAProgram` | `no-program-hash` / `no-protocol` / `program-missing` / `not-a-program` |
+| any other refusal | `program-refused`, `program`, `engine`, `other` |
 
-`OcrModel::verify` (checksums) is never called here: a VL add-on is over a
-gigabyte and the dialog opens on every click of the command.
+`policy(allow)` builds the `ProgramPolicy` from the Settings checkbox
+(`ocr_program_addons`). Refused program add-ons are still listed, disabled,
+so the operator sees what the setting costs.
+
+`check_runnable` does not hash: `OcrModel::verify` on a VL add-on reads over
+a gigabyte and the dialog opens on every click of the command. A program
+add-on's hashes are checked by the runner before each page, and a mismatch
+stops the run.
 
 # Starting choice (`start`)
 

@@ -1,6 +1,6 @@
 //! `an_extra_ocr_folder_adds_its_models_to_the_dropdown` — a folder added on
 //! Settings ▸ OCR models puts its models in Recognise text's drop-down, a
-//! PaddleOCR-VL add-on there is listed and cannot be chosen, a remembered
+//! PaddleOCR-VL add-on with no weights there is listed and cannot be chosen, a remembered
 //! model that is gone is named rather than replaced, and the copy chosen is
 //! the one that runs.
 //!
@@ -130,7 +130,7 @@ fn plant(root: &Path) -> Result<()> {
 }
 
 /// `pdfcer_core::ocr::addons::MANIFEST_FILE`, which this harness does not link.
-const fn pdfcer_manifest_name() -> &'static str {
+pub(super) const fn pdfcer_manifest_name() -> &'static str {
     "pdfcer-ocr-model.txt"
 }
 
@@ -255,10 +255,10 @@ fn read_the_list(
         )));
     }
     let vl_why = listed(VL).and_then(|l| l.get("why").map(str::to_owned));
-    if vl_why.as_deref() != Some("no-vl-runner") {
+    if vl_why.as_deref() != Some("missing-files") {
         return Ok(Some(format!(
-            "the PaddleOCR-VL stub should list as unrunnable with why=no-vl-runner; it says \
-             {vl_why:?}."
+            "the PaddleOCR-VL stub holds no weights, so a build with the VL runner lists it as \
+             unrunnable with why=missing-files; it says {vl_why:?}."
         )));
     }
     if start.get("chosen") != Some("none") || start.get("remembered") != Some(GONE) {
@@ -268,7 +268,7 @@ fn read_the_list(
             start.raw
         )));
     }
-    report.note("the copy lists runnable, the VL stub lists with no-vl-runner, nothing replaced");
+    report.note("the copy lists runnable, the VL stub lists with missing-files, nothing replaced");
     Ok(None)
 }
 
@@ -360,7 +360,12 @@ fn pick(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, index: usiz
 }
 
 /// Click a declared region in whichever viewport declared it.
-fn click(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, name: &str) -> Result<()> {
+pub(super) fn click(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+) -> Result<()> {
     let trace = session.trace()?;
     let (rect, viewport) = driving::declared_in(&trace, ui_rect, name).ok_or_else(|| {
         Error::new(format!(
@@ -374,7 +379,7 @@ fn click(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, name: &str
 }
 
 /// The last `event` line, or `none`.
-fn raw(trace: &Trace, event: &str) -> String {
+pub(super) fn raw(trace: &Trace, event: &str) -> String {
     trace
         .last(event)
         .map_or_else(|| "none".to_owned(), |l| l.raw.clone())

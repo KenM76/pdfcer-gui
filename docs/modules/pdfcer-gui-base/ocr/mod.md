@@ -374,25 +374,6 @@ Alpha is ignored: the rasterizer is asked for a white-backed page, so every
 pixel is already composited and an alpha channel that is uniformly opaque
 carries no information.
 
-### `fn resolve_models`
-
-Two locations, in `pdfcer-core`'s order: beside the running executable
-(the portable-folder case, which is how `tools/package-portable.py` ships
-them), then the platform user-data directory (so a developer running out of
-`target/` can put them somewhere durable without copying 12 MB into a
-build output that `cargo clean` deletes).
-
-No operator-supplied path is passed today because no setting offers one.
-`resolve_model_dir`'s first parameter is left `None` rather than
-synthesised, which keeps its documented rule — *a named path that is
-missing is an error, never a silent fallback* — reachable the day a setting
-exists.
-
-# Errors
-
-[`models::ModelsNotFound`], carrying every path that was tried, which is
-the actionable half of the message.
-
 ### `fn exe_dir`
 
 `None` rather than a guess when `current_exe` fails: a wrong directory here

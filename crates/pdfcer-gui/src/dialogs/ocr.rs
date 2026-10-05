@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use egui_shell::theme::Theme;
 
 use crate::app::state::{OpenDoc, Status};
-use crate::ocr::{self, Dictionary, EngineId, Job, Refusal, Request};
+use crate::ocr::{self, EngineId, Job, ProgramRun, Refusal, Request};
 use crate::text::ocr as t;
 
 // ---------------------------------------------------------------------------
@@ -80,9 +80,12 @@ enum Phase {
         /// document is done — and finds out months later, searching for a word
         /// on page 150 that is not in the layer.
         stopped_at: Option<(usize, usize)>,
-        /// The character dictionary the recogniser read through, when it
-        /// has one.
-        dictionary: Option<Dictionary>,
+        /// Whether the engine scored its words.
+        confidence: bool,
+        /// The engine's own sentence about the run, shown verbatim.
+        disclosure: Option<String>,
+        /// The separate program that read the pages, when one did.
+        program: Option<ProgramRun>,
     },
     /// **The operator pressed Cancel.** Nothing was kept and nothing written.
     ///
@@ -156,8 +159,8 @@ pub struct OcrDialog {
     skip_pages_with_text: bool,
     /// The models on offer and the one chosen.
     models: super::ocr_model::ModelPicker,
-    /// The recogniser of the run this dialog started, for its report.
-    engine: EngineId,
+    /// The engine token of the run this dialog started, for the preference.
+    engine: String,
     /// The model a run just started with; [`Self::show`] stores it and its
     /// engine as the preferences, because only `show` holds them.
     remember: Option<String>,
@@ -286,8 +289,8 @@ impl OcrDialog {
         let models = super::ocr_model::ModelPicker::open(prefs);
         let engine = models
             .chosen()
-            .and_then(|c| c.engine)
-            .unwrap_or(EngineId::Ocrs);
+            .map(|c| c.engine_token.clone())
+            .unwrap_or_default();
         Self {
             page_index: doc.view.page_index,
             // The rail's selection, captured once — see `Self::picked` for
@@ -345,18 +348,19 @@ impl OcrDialog {
             self.body(ui, doc);
         });
         let open = !frame.closed;
+        let engine = EngineId::from_key(&self.engine).or(prefs.ocr_engine);
         if let Some(model) = self.remember.take()
-            && (prefs.ocr_engine != Some(self.engine)
+            && (prefs.ocr_engine != engine
                 || prefs.ocr_models.model.as_deref() != Some(model.as_str()))
         {
-            prefs.ocr_engine = Some(self.engine);
+            prefs.ocr_engine = engine;
             prefs.ocr_models.model = Some(model.clone());
             let saved = prefs.save().is_ok();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
                     "ocr-engine-remembered engine={} model={model} saved={saved}",
-                    self.engine.key()
+                    self.engine
                 )
             });
         }
@@ -425,7 +429,9 @@ impl OcrDialog {
                     written: recognised.pages_written,
                     skipped: recognised.pages_skipped,
                     words: recognised.words_recognised,
-                    dictionary: recognised.dictionary.clone(),
+                    confidence: recognised.confidence,
+                    disclosure: recognised.disclosure.clone(),
+                    program: recognised.program.clone(),
                     // Carried into the outcome so the sentence the operator
                     // reads afterwards can say the run ended early. A partial
                     // layer reported as a whole one is the failure this whole
@@ -588,7 +594,9 @@ impl OcrDialog {
                 skipped,
                 words,
                 stopped_at,
-                dictionary,
+                confidence,
+                disclosure,
+                program,
             } => {
                 // **What this says now, and what it no longer has to.**
                 //
@@ -623,13 +631,24 @@ impl OcrDialog {
                 // one fact a reader who skims must not miss, and it is about
                 // the RECOGNITION rather than about the edit — so it does not
                 // belong on the disclosure channel with the counts.
-                let confidence = confidence_sentence(self.engine);
-                let mut disclosures = vec![confidence.to_owned()];
-                disclosures.extend(dictionary.as_ref().map(dictionary_sentence));
-                Self::answered(ui, &theme, confidence, &disclosures);
+                // The list below it is the engine's sentence and the program
+                // line; the confidence sentence is drawn once, above them.
+                let scored = *confidence;
+                let disclosures: Vec<String> = disclosure
+                    .iter()
+                    .cloned()
+                    .chain(program.as_ref().map(program_sentence))
+                    .collect();
+                Self::answered(ui, &theme, confidence_sentence(scored), &disclosures);
+                let ran = program
+                    .as_ref()
+                    .map_or_else(|| "none".to_owned(), |p| p.program.display().to_string());
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
-                    format!("ocr-applied written={written} skipped={skipped} words={words}")
+                    format!(
+                        "ocr-applied written={written} skipped={skipped} words={words} scored={scored} disclosed={} program={ran}",
+                        disclosures.len(),
+                    )
                 });
             }
             // Cancelled draws its own sentence rather than a refusal's.
@@ -793,22 +812,24 @@ impl OcrDialog {
     /// There is no unsaved-edits guard: `EditSession::add_ocr_layer` plans
     /// against the session graph, so a recognised copy carries unsaved edits.
     fn preflight(&self) -> Option<Refusal> {
-        if ocr::available().is_empty() {
-            return Some(Refusal::EngineAbsent);
+        if self.models.any_runnable() {
+            return None;
         }
-        (!self.models.any_runnable()).then(|| Refusal::ModelsMissing(self.models.roots().to_vec()))
+        // Nothing runnable and no engine linked: the build, not the models.
+        Some(if crate::ocr::available().is_empty() {
+            Refusal::EngineAbsent
+        } else {
+            Refusal::ModelsMissing(self.models.roots().to_vec())
+        })
     }
 
     /// Spawn the worker on the chosen model.
     fn start(&mut self, doc: &OpenDoc) {
-        let Some((name, engine, folder)) = self
-            .models
-            .chosen()
-            .and_then(|c| Some((c.name.clone(), c.engine?, c.folder.clone())))
-        else {
+        let Some(model) = self.models.chosen().map(|c| c.model.clone()) else {
             return;
         };
-        self.engine = engine;
+        let (name, folder) = (model.name.clone(), model.folder.clone());
+        self.engine.clone_from(&model.engine);
         let bundled = ocr::exe_dir().map(|d| d.join(ocr::catalog::BUNDLED_DIR));
         let source = if bundled.is_some_and(|b| folder.starts_with(b)) {
             "bundled" // ui-text-exempt: trace token
@@ -819,7 +840,7 @@ impl OcrDialog {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
                 "ocr-started engine={} page={} models={} source={source} model={name}",
-                engine.key(),
+                model.engine,
                 self.page_index,
                 folder.display(),
             )
@@ -836,8 +857,8 @@ impl OcrDialog {
                 use crate::app::settings::SettingsExt as _;
                 doc.settings.extract_options()
             },
-            engine,
-            model_dir: folder,
+            policy: self.models.policy(),
+            model,
         }));
         self.remember = Some(name);
     }
@@ -871,12 +892,13 @@ const FOOTER_RESERVE: f32 = 96.0;
 /// The least height the disclosure list may be given.
 const LIST_FLOOR: f32 = 48.0;
 
-/// The sentence naming the character dictionary a run read through.
-fn dictionary_sentence(dictionary: &Dictionary) -> String {
-    match dictionary {
-        Dictionary::File(path) => t::dictionary_file(&path.display().to_string()),
-        Dictionary::Embedded => t::dictionary_embedded().to_owned(),
-    }
+/// The sentence naming the separate program a run started.
+fn program_sentence(run: &ProgramRun) -> String {
+    t::program_ran(
+        &run.program.display().to_string(),
+        &run.languages,
+        run.hashed_files,
+    )
 }
 
 /// The operator-visible sentence for a refusal.
@@ -930,8 +952,8 @@ pub fn suggested_path(source: &Path) -> PathBuf {
 }
 
 /// The sentence saying what the engine's scores are, or that it has none.
-fn confidence_sentence(engine: EngineId) -> &'static str {
-    if engine.reports_confidence() {
+fn confidence_sentence(scored: bool) -> &'static str {
+    if scored {
         t::scored_confidence()
     } else {
         t::no_confidence()

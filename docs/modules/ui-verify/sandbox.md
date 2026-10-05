@@ -112,8 +112,8 @@ not.
 ## What is brought across, and what deliberately is not
 
 **Brought:** the executable, its sibling `models/` directory, and any sibling
-`.dll`. `models/ocrs` is resolved *beside the executable* by
-`crate::ocr::resolve_models`, and a sandbox without it would make
+`.dll`. `models/` is the first root `crate::ocr::catalog::roots` searches, *beside
+the executable*, and a sandbox without it would make
 `ocr_finds_words_in_a_scan` report a missing model directory — which is a
 SKIP, and a SKIP is not red, so the check could be dead for the rest of the
 project's life while the suite looked healthy. That is the `repo_fixture`

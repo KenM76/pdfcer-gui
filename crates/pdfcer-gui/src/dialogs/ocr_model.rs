@@ -21,6 +21,8 @@ pub(super) struct ModelPicker {
     chosen: Option<usize>,
     /// The remembered model's sentence, while nothing has been chosen over it.
     notice: Option<String>,
+    /// Whether program add-ons may run; discovery and the run both obey it.
+    policy: catalog::ProgramPolicy,
 }
 
 impl ModelPicker {
@@ -30,7 +32,8 @@ impl ModelPicker {
         let exe = crate::ocr::exe_dir();
         let roots = catalog::roots(exe.as_deref(), prefs.ocr_models.folders());
         let bundled = exe.map(|d| d.join(catalog::BUNDLED_DIR));
-        let catalog = catalog::discover(roots, bundled.as_deref());
+        let policy = catalog::policy(!prefs.ocr_models.refuse_programs);
+        let catalog = catalog::discover(roots, bundled.as_deref(), policy);
         let remembered = prefs.ocr_models.model.as_deref();
         let start = catalog::start(&catalog, remembered, prefs.ocr_engine);
         for c in &catalog.choices {
@@ -69,7 +72,13 @@ impl ModelPicker {
             catalog,
             chosen,
             notice,
+            policy,
         }
+    }
+
+    /// The program policy discovery ran under, for the run to obey.
+    pub(super) const fn policy(&self) -> catalog::ProgramPolicy {
+        self.policy
     }
 
     /// The chosen model; always one this build can run.

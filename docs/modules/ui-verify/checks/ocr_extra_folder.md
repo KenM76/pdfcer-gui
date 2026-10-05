@@ -15,7 +15,8 @@ model chosen from it is the one that runs.**
    `PDFCER_DIAG_INVOKE=file.settings` and `PDFCER_DIAG_OCR_FOLDER` set to the
    planted root. Click the OCR models page, Add…, Save.
 4. Open File › Recognise text. Assert: `ui-verify-ocrs` listed runnable;
-   `ui-verify-vl` listed with `why=no-vl-runner`; `ocr-model-start
+   `ui-verify-vl` listed with `why=missing-files` (the engine's VL runner is
+   linked; the planted folder has no weights); `ocr-model-start
    chosen=none remembered=ui-verify-gone`.
 5. Click the VL entry: no `ocr-model-chosen` may follow. Click the copy:
    `ocr-model-chosen name=ui-verify-ocrs`.
@@ -31,3 +32,6 @@ planted copy: a pass cannot come from the bundled ocrs.
   copy not listed).
 - Unrunnable VL entry drawn selectable: FAIL at step 5
   (`ocr-model-chosen name=ui-verify-vl`).
+
+A VL run is not driven: no VL weights exist on this machine. The program
+add-on route is driven by `a_program_ocr_addon_runs_and_is_disclosed`.

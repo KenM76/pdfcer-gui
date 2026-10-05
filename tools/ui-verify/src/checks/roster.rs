@@ -1356,6 +1356,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(ocr::OcrcerRecognisesAPageAndTheDocumentKeepsIt),
         Box::new(ocr::PaddleRecognisesAPageAndTheDocumentKeepsIt),
         Box::new(ocr_extra_folder::AnExtraOcrFolderAddsItsModelsToTheDropdown),
+        Box::new(ocr_program_addon::AProgramOcrAddonRunsAndIsDisclosed),
         // The three about a run in progress. After the one-page check, because
         // a build in which recognition does not work at all should say so
         // before three checks spend a minute apiece observing it not working.

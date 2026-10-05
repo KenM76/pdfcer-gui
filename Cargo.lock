@@ -2821,6 +2821,7 @@ dependencies = [
  "native-window",
  "pdfcer-core",
  "pdfcer-fetch",
+ "pdfcer-ocr-host",
  "pdfcer-print",
  "pdfcer-render",
  "syn 2.0.119",
@@ -2852,6 +2853,15 @@ dependencies = [
  "sha2",
  "thiserror 2.0.21",
  "weezl 0.2.1",
+]
+
+[[package]]
+name = "pdfcer-ocr-host"
+version = "0.78.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c7deddd29f27dabca65ac7a7f33918fdeacd7c29"
+dependencies = [
+ "pdfcer-core",
+ "thiserror 2.0.21",
 ]
 
 [[package]]

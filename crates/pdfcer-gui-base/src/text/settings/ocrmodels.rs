@@ -57,3 +57,17 @@ pub const fn found() -> &'static str {
 pub const fn found_none() -> &'static str {
     "No models found in these folders."
 }
+
+/// The checkbox allowing model folders that run a separate program.
+#[must_use]
+pub const fn allow_programs() -> &'static str {
+    "Allow models that run a separate program, such as Tesseract"
+}
+
+/// The checkbox's hover: what allowing it means, and what refusing costs.
+#[must_use]
+pub const fn allow_programs_hover() -> &'static str {
+    "Some models are not files pdfcer reads but a program it starts, such as tesseract.exe. \
+     An add-on's program is checked against its manifest's SHA-256 list before each page. \
+     Turned off, those models are listed but cannot be chosen."
+}

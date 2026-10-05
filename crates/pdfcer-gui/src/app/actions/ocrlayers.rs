@@ -24,10 +24,10 @@ use crate::app::status::decline;
 use crate::text::ocr::{self as t, OcrLayerRefusal};
 
 /// The options a recognition by `engine` is applied with.
-pub(super) fn options(engine: pdfcer_gui_base::ocr::EngineId) -> OcrLayerOptions {
+pub(super) fn options(engine: &str) -> OcrLayerOptions {
     OcrLayerOptions::new()
         .with_existing(ExistingLayers::Replace)
-        .with_engine(engine.key())
+        .with_engine(engine)
 }
 
 /// Every page's engine disclosures, preceded by one run-wide total of the

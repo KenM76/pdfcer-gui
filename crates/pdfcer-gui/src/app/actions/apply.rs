@@ -455,7 +455,7 @@ impl PdfcerApp {
                     // Replace policy: a re-run takes pdfcer's earlier layer
                     // off in the same undo step.
                     session
-                        .add_ocr_layer(&layers, &super::ocrlayers::options(engine))
+                        .add_ocr_layer(&layers, &super::ocrlayers::options(&engine))
                         // Every page's disclosures, flattened onto the one
                         // channel every other edit reports on. The dialog does
                         // NOT re-render them: two accounts of one run, worded

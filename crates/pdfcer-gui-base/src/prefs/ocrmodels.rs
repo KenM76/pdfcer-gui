@@ -1,8 +1,10 @@
 //! # `prefs::ocrmodels` — where Recognise text looks for models, and which it used
 //!
-//! Two keys. `ocr_folder` (repeated, in search order, the engine's own
+//! Three keys. `ocr_folder` (repeated, in search order, the engine's own
 //! spelling) names a folder searched after the bundled `models` folder;
-//! `ocr_model` names the model last run, by its discovery name.
+//! `ocr_model` names the model last run, by its discovery name;
+//! `ocr_program_addons = refuse` stops model folders from running a program
+//! (Tesseract), and is written only when set, since allowing is the default.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/prefs/ocrmodels.md`.
 
@@ -14,6 +16,12 @@ use super::printing::KeyOutcome;
 const FOLDER_KEY: &str = "ocr_folder";
 // ui-text-exempt: a file KEY, written into preferences.txt and parsed back.
 const MODEL_KEY: &str = "ocr_model";
+// ui-text-exempt: a file KEY, written into preferences.txt and parsed back.
+const PROGRAMS_KEY: &str = "ocr_program_addons";
+// ui-text-exempt: a file VALUE of PROGRAMS_KEY.
+const PROGRAMS_REFUSE: &str = "refuse";
+// ui-text-exempt: a file VALUE of PROGRAMS_KEY.
+const PROGRAMS_ALLOW: &str = "allow";
 
 /// The extra model folders and the remembered model.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -21,6 +29,8 @@ pub struct OcrModelPrefs {
     folders: Vec<PathBuf>,
     /// The discovery name of the model last run; `None` before the first run.
     pub model: Option<String>,
+    /// Whether model folders that run a separate program are refused.
+    pub refuse_programs: bool,
 }
 
 impl OcrModelPrefs {
@@ -63,6 +73,17 @@ pub(super) fn parse_key(prefs: &mut OcrModelPrefs, key: &str, value: &str) -> Ke
             prefs.model = Some(value.to_owned());
             KeyOutcome::Accepted
         }
+        PROGRAMS_KEY => match value {
+            PROGRAMS_REFUSE => {
+                prefs.refuse_programs = true;
+                KeyOutcome::Accepted
+            }
+            PROGRAMS_ALLOW => {
+                prefs.refuse_programs = false;
+                KeyOutcome::Accepted
+            }
+            _ => KeyOutcome::BadValue,
+        },
         _ => KeyOutcome::NotMine,
     }
 }
@@ -75,6 +96,8 @@ pub(super) fn write_block(prefs: &OcrModelPrefs, out: &mut String) {
          # folder beside pdfcer-gui.exe. Repeat the key for more than one; they\n\
          # are searched in the order they appear here. Up to 16.\n\
          # ocr_model: the model Recognise text last ran, by its name.\n\
+         # ocr_program_addons: allow or refuse model folders that run a\n\
+         # separate program, such as Tesseract. Allowed when absent.\n\
          ",
     );
     for folder in &prefs.folders {
@@ -88,6 +111,10 @@ pub(super) fn write_block(prefs: &OcrModelPrefs, out: &mut String) {
         out.push_str("ocr_model = ");
         out.push_str(model);
         out.push('\n');
+    }
+    if prefs.refuse_programs {
+        // ui-text-exempt: a file KEY, separator and value, never displayed.
+        out.push_str("ocr_program_addons = refuse\n");
     }
 }
 
@@ -114,6 +141,7 @@ mod tests {
         assert!(original.add_folder(Path::new("E:/models b")));
         assert!(original.add_folder(Path::new("E:/a")));
         original.model = Some("paddle-vl".to_owned());
+        original.refuse_programs = true;
         let mut out = String::new();
         write_block(&original, &mut out);
         assert_eq!(read_back(&out), original);
@@ -143,5 +171,28 @@ mod tests {
             KeyOutcome::NotMine
         );
         assert_eq!(prefs, OcrModelPrefs::default());
+    }
+
+    #[test]
+    fn program_add_ons_are_allowed_unless_refused() {
+        let mut prefs = OcrModelPrefs::default();
+        assert!(!prefs.refuse_programs);
+        let mut out = String::new();
+        write_block(&prefs, &mut out);
+        assert!(!out.contains("ocr_program_addons ="), "{out}");
+        assert_eq!(
+            parse_key(&mut prefs, PROGRAMS_KEY, "maybe"),
+            KeyOutcome::BadValue
+        );
+        assert_eq!(
+            parse_key(&mut prefs, PROGRAMS_KEY, " refuse "),
+            KeyOutcome::Accepted
+        );
+        assert!(prefs.refuse_programs);
+        assert_eq!(
+            parse_key(&mut prefs, PROGRAMS_KEY, PROGRAMS_ALLOW),
+            KeyOutcome::Accepted
+        );
+        assert!(!prefs.refuse_programs);
     }
 }

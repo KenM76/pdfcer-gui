@@ -10,7 +10,11 @@ catalogued setting (`text::settings::ocrmodels::{title, silence, radius}`).
   then discovery's notes (a folder that does not exist, a shadowed name). The
   list is cached per folder list: the search index draws this page on every
   search and discovery reads the disk.
-- Regions: `settings.ocr` (page), `settings.ocr.add`.
+- A checkbox, *Allow models that run a separate program*, sets
+  `ocr_program_addons`; a change traces `ocr-programs-allowed allow=`. The
+  found-models cache is keyed on it too, so a refused program add-on shows
+  as such at once.
+- Regions: `settings.ocr` (page), `settings.ocr.add`, `settings.ocr.programs`.
 
 Changes apply when Save is pressed and the next time Recognise text opens.
 See `docs/modules/pdfcer-gui-base/ocr/catalog.md` for search order and

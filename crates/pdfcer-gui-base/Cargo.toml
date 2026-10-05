@@ -72,6 +72,12 @@ pdfcer-fetch = { git = "file:///D:/Dev/pdfcer", branch = "main", default-feature
 # `pdfcer-gui`'s, for the unification reason given above.
 pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
+# pdfcer-ocr-host — runs a discovered OCR model of any kind, including a
+# program add-on (Tesseract) run as a separate process, which pdfcer-core
+# never does. Same spec as the engine crates above, for unification; its
+# recogniser features forward the same names below.
+pdfcer-ocr-host = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
+
 # Poster tiling (`poster`): the engine lays the tiles out, this crate adds the
 # band for marks and labels and draws them.
 pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
@@ -85,20 +91,22 @@ syn = { version = "2.0.119", features = ["full", "visit"] }
 # `default-features = false` and forwards its own `ocrs`, which documents what
 # the flag gates; it is a default here only so this crate builds and tests
 # alone as the program ships.
-default = ["ocrs", "ocrcer", "paddle", "svg-import"]
-ocrs = ["pdfcer-core/ocrs"]
+default = ["ocrs", "ocrcer", "paddle", "ocr-vl", "svg-import"]
+ocrs = ["pdfcer-core/ocrs", "pdfcer-ocr-host/ocrs"]
 # `svg-import` — reading an SVG as a vector drawing (`picture::Picture::Svg`).
 svg-import = ["pdfcer-core/svg-import"]
 # `ocrcer` — the second recogniser, `pdfcer_core::ocr::engine_ocrcer`, whose
 # `ocrcer-core` the engine vendors from OCRcer's newest local commit. Offered
 # beside `ocrs`, never instead of it.
-ocrcer = ["pdfcer-core/ocrcer"]
+ocrcer = ["pdfcer-core/ocrcer", "pdfcer-ocr-host/ocrcer"]
 
 # `paddle` — the third recogniser, `pdfcer_core::ocr::engine_paddle`
 # (PaddleOCR PP-OCR exports run through `rten`, which `ocrs` already links).
 # The package ships PP-OCRv5 det.onnx, a Latin rec.onnx and its dict.txt in
 # `models/paddle`; an operator may replace rec.onnx and dict.txt for another language.
-paddle = ["pdfcer-core/paddle"]
+paddle = ["pdfcer-core/paddle", "pdfcer-ocr-host/paddle"]
+# `ocr-vl` — PaddleOCR-VL, whose weights are an add-on folder.
+ocr-vl = ["pdfcer-core/ocr-vl", "pdfcer-ocr-host/ocr-vl"]
 # The private-key side; `pdfcer-gui` forwards its own `signing` here. Not a
 # default: base carries no capability the top crate did not ask for.
 signing = ["pdfcer-core/signing"]

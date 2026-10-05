@@ -156,11 +156,12 @@ reachable from a test — the button and the window are not.
 ### `fn answered`
 
 **The confidence sentence is drawn first and separately, above the
-list.** `OcrLayerReport::disclosures()` already contains a sentence
-making the same point, and this is deliberate duplication rather than an
-oversight: the engine's version sits fourth in a list of counts, and the
-one fact that must survive a skim is that **nothing here was scored**.
-A reader who takes in one line takes in that one.
+list**, because the one fact that must survive a skim is whether anything
+was scored. The list below holds what the confidence sentence does not:
+`OcrRunner::disclosure()` (an inferring engine's own statement, such as
+PaddleOCR-VL's region-aligned words) and, when a program add-on ran, which
+program it was, its languages and how many files its manifest hashes
+(`program_sentence`). The confidence sentence is not repeated there.
 
 Drawn in the plain text role, never `.strong()` — `DEFECTS.md` D11
 records that role as unusable in this theme, and a named palette exists
@@ -177,17 +178,6 @@ nothing, which is the exact opposite of what this dialog is for.
 One place, so the dialog cannot word a refusal differently from anywhere
 else that grows a need for it, and so `text::ocr`'s catalog is the only
 thing that has to be read to know what pdfcer says when OCR declines.
-
-### `fn user_data_dir`
-
-`None` today, and that is a statement rather than a stub: this shell has no
-user-data directory of its own — `app::persistence` writes its layout beside
-the executable — so there is no second place to look and reporting one would
-name a path in a "searched here" list that was never searched.
-
-It exists as a function because `ocr::resolve_models` takes the parameter
-and the day a user-data location appears there is one call site to change
-rather than three.
 
 ### `fn an_unsaved_edit_no_longer_refuses_recognition`
 
@@ -225,9 +215,9 @@ the last step.
 
 ### `fn a_missing_model_directory_names_every_place_that_was_tried`
 
-`models::ModelsNotFound` carries them precisely so the operator learns
-where to put the files; dropping them at the display boundary would
-undo that in the last inch.
+`Refusal::ModelsMissing` carries the catalog's roots precisely so the
+operator learns where to put a model; dropping them at the display boundary
+would undo that in the last inch.
 
 ### `fn this_page_only_is_the_captured_page`
 

@@ -2,16 +2,18 @@
 //! discovery finds under the bundled `models` folder and the operator's extra
 //! folders, each paired with whether this build can run it and, if not, why.
 //!
-//! Discovery is `pdfcer_core::ocr::addons::discover_ocr_models`; this module
-//! only decides runnability and the starting choice. A remembered model that
-//! is gone is reported, never silently replaced.
+//! Discovery is `pdfcer_core::ocr::addons::discover_ocr_models`; runnability is
+//! `pdfcer_ocr_host::check_runnable`, whose refusal is shown in its own words.
+//! This module only adds the starting choice. A remembered model that is gone
+//! is reported, never silently replaced.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/ocr/catalog.md`.
 
 use std::path::{Path, PathBuf};
 
-use pdfcer_core::ocr::addon_manifest::AddonKind;
 use pdfcer_core::ocr::addons::{DiscoveryNote, OcrModel, discover_ocr_models};
+pub use pdfcer_ocr_host::ProgramPolicy;
+use pdfcer_ocr_host::{ProgramError, ProgramRefusal, RunnerError};
 
 use super::EngineId;
 
@@ -23,32 +25,65 @@ pub const PADDLE_VL: &str = "paddle-vl";
 // ui-text-exempt: a directory name, never displayed.
 pub const BUNDLED_DIR: &str = "models";
 
-/// Why a discovered model cannot run in this build.
+/// Why a discovered model cannot run here: the engine's refusal, verbatim,
+/// and a stable token for the trace.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Unrunnable {
-    /// This build did not link the engine.
-    NotInBuild(EngineId),
-    /// The folder lacks files the engine loads; the names are relative.
-    MissingFiles(Vec<String>),
-    /// A PaddleOCR-VL model. The engine's runner cannot run one yet.
-    NoVlRunner,
-    /// An add-on carrying its own program, which this build has no host for.
-    Program,
-    /// An engine token this shell does not know.
-    UnknownEngine(String),
+pub struct Unrunnable {
+    token: &'static str,
+    reason: String,
 }
 
 impl Unrunnable {
+    /// The engine's refusal.
+    #[must_use]
+    pub fn from_error(error: &RunnerError) -> Self {
+        Self {
+            token: token_of(error),
+            reason: error.to_string(),
+        }
+    }
+
     /// The stable trace token.
     #[must_use]
     pub const fn token(&self) -> &'static str {
-        match self {
-            Self::NotInBuild(_) => "not-in-build",
-            Self::MissingFiles(_) => "missing-files",
-            Self::NoVlRunner => "no-vl-runner",
-            Self::Program => "program",
-            Self::UnknownEngine(_) => "unknown-engine",
-        }
+        self.token
+    }
+
+    /// The engine's sentence.
+    #[must_use]
+    pub fn reason(&self) -> &str {
+        &self.reason
+    }
+}
+
+// ui-text-exempt: trace tokens, never displayed.
+const fn token_of(error: &RunnerError) -> &'static str {
+    match error {
+        RunnerError::EngineNotInBuild { .. } => "not-in-build",
+        RunnerError::MissingFile { .. } => "missing-files",
+        RunnerError::NeedsProgramKind { .. } => "needs-program-kind",
+        RunnerError::Verify { .. } => "verify",
+        RunnerError::Program(ProgramError::Refused(refusal)) => match refusal {
+            ProgramRefusal::RefusedByPolicy { .. } => "refused-by-policy",
+            ProgramRefusal::NoProgramHash { .. } => "no-program-hash",
+            ProgramRefusal::NoProtocol { .. } => "no-protocol",
+            ProgramRefusal::ProgramMissing { .. } => "program-missing",
+            ProgramRefusal::NotAProgram { .. } => "not-a-program",
+            _ => "program-refused",
+        },
+        RunnerError::Program(_) => "program",
+        RunnerError::Engine(_) => "engine",
+        _ => "other",
+    }
+}
+
+/// The program policy the `ocr_program_addons` preference names.
+#[must_use]
+pub const fn policy(allow_programs: bool) -> ProgramPolicy {
+    if allow_programs {
+        ProgramPolicy::Allow
+    } else {
+        ProgramPolicy::Refuse
     }
 }
 
@@ -67,6 +102,8 @@ pub struct Choice {
     pub folder: PathBuf,
     /// `None` when this build can run it.
     pub unrunnable: Option<Unrunnable>,
+    /// What discovery found; what a run loads.
+    pub model: OcrModel,
 }
 
 impl Choice {
@@ -116,10 +153,11 @@ pub fn roots(exe_dir: Option<&Path>, extra: &[PathBuf]) -> Vec<PathBuf> {
     out
 }
 
-/// Discover every model under `roots`. A bundled folder that does not exist
-/// is not reported: a build with no bundled models is a valid build.
+/// Discover every model under `roots`, judged under `policy`. A bundled
+/// folder that does not exist is not reported: a build with no bundled models
+/// is a valid build.
 #[must_use]
-pub fn discover(roots: Vec<PathBuf>, bundled: Option<&Path>) -> Catalog {
+pub fn discover(roots: Vec<PathBuf>, bundled: Option<&Path>, policy: ProgramPolicy) -> Catalog {
     let found = discover_ocr_models(&roots);
     let notes = found
         .notes
@@ -127,7 +165,7 @@ pub fn discover(roots: Vec<PathBuf>, bundled: Option<&Path>) -> Catalog {
         .filter(|n| !matches!(n, DiscoveryNote::RootMissing(p) if Some(p.as_path()) == bundled))
         .map(ToString::to_string)
         .collect();
-    let choices = found.models.iter().map(choice).collect();
+    let choices = found.models.iter().map(|m| choice(m, policy)).collect();
     Catalog {
         roots,
         choices,
@@ -135,44 +173,24 @@ pub fn discover(roots: Vec<PathBuf>, bundled: Option<&Path>) -> Catalog {
     }
 }
 
-fn choice(model: &OcrModel) -> Choice {
-    let engine = EngineId::from_key(&model.engine);
+fn choice(model: &OcrModel, policy: ProgramPolicy) -> Choice {
     Choice {
         name: model.name.clone(),
         label: model.label().map(str::to_owned),
         engine_token: model.engine.clone(),
-        engine,
+        engine: EngineId::from_key(&model.engine),
         folder: model.folder.clone(),
-        unrunnable: unrunnable(model, engine),
+        unrunnable: pdfcer_ocr_host::check_runnable(model, policy)
+            .err()
+            .map(|e| Unrunnable::from_error(&e)),
+        model: model.clone(),
     }
-}
-
-fn unrunnable(model: &OcrModel, engine: Option<EngineId>) -> Option<Unrunnable> {
-    if model.kind() == AddonKind::Program {
-        return Some(Unrunnable::Program);
-    }
-    let Some(engine) = engine else {
-        return Some(if model.engine == PADDLE_VL {
-            Unrunnable::NoVlRunner
-        } else {
-            Unrunnable::UnknownEngine(model.engine.clone())
-        });
-    };
-    if !engine.compiled_in() {
-        return Some(Unrunnable::NotInBuild(engine));
-    }
-    let missing: Vec<String> = engine
-        .model_files()
-        .iter()
-        .filter(|f| !model.folder.join(f).is_file())
-        .map(|f| (*f).to_owned())
-        .collect();
-    (!missing.is_empty()).then_some(Unrunnable::MissingFiles(missing))
 }
 
 /// The starting choice: the remembered model when it can run, else nothing
 /// with the reason; with no remembered model, the first runnable model of the
-/// remembered engine, else of the first engine in [`EngineId::ALL`] order.
+/// remembered engine, else of the first engine in [`EngineId::ALL`] order,
+/// else the first runnable model of any engine.
 #[must_use]
 pub fn start(catalog: &Catalog, model: Option<&str>, engine: Option<EngineId>) -> Start {
     if let Some(name) = model {
@@ -193,6 +211,7 @@ pub fn start(catalog: &Catalog, model: Option<&str>, engine: Option<EngineId>) -
     engine
         .and_then(first_of)
         .or_else(|| EngineId::ALL.into_iter().find_map(first_of))
+        .or_else(|| catalog.choices.iter().position(Choice::runnable))
         .map_or(Start::Nothing, Start::Chosen)
 }
 
@@ -233,45 +252,50 @@ mod tests {
         );
     }
 
+    fn token(cat: &Catalog, name: &str) -> Option<&'static str> {
+        let c = cat.choices.iter().find(|c| c.name == name).expect(name);
+        c.unrunnable.as_ref().map(Unrunnable::token)
+    }
+
+    /// A VL add-on without its weights is refused by the engine's own check.
     #[test]
-    fn a_vl_add_on_lists_but_cannot_run() {
+    fn a_vl_add_on_without_its_files_lists_with_the_engines_reason() {
         let root = scratch("vl");
         add_on(
             &root,
             "vl",
             "name = vl-test\nengine = paddle-vl\nlabel = VL test\n",
         );
-        let cat = discover(vec![root.clone()], None);
-        let c = cat
-            .choices
-            .iter()
-            .find(|c| c.name == "vl-test")
-            .expect("listed");
+        let cat = discover(vec![root.clone()], None, ProgramPolicy::Allow);
+        let c = &cat.choices[0];
         assert_eq!(c.label.as_deref(), Some("VL test"));
-        assert_eq!(c.unrunnable, Some(Unrunnable::NoVlRunner));
+        let want = if cfg!(feature = "ocr-vl") {
+            "missing-files"
+        } else {
+            "not-in-build"
+        };
+        assert_eq!(token(&cat, "vl-test"), Some(want));
+        let why = c.unrunnable.as_ref().expect("refused");
+        assert!(why.reason().contains("vl-test"), "{why:?}");
         let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
-    fn an_unknown_engine_and_a_program_are_named_as_such() {
+    fn program_and_unknown_models_carry_the_engines_refusal() {
         let root = scratch("odd");
         add_on(&root, "x", "name = x\nengine = tesseract\n");
+        add_on(&root, "u", "name = u\nengine = nonesuch\n");
         add_on(
             &root,
             "p",
             "name = p\nengine = ocrs\nkind = program\nprogram = run.exe\n",
         );
-        let cat = discover(vec![root.clone()], None);
-        let by = |n: &str| {
-            cat.choices
-                .iter()
-                .find(|c| c.name == n)
-                .expect(n)
-                .unrunnable
-                .clone()
-        };
-        assert_eq!(by("x"), Some(Unrunnable::UnknownEngine("tesseract".into())));
-        assert_eq!(by("p"), Some(Unrunnable::Program));
+        let cat = discover(vec![root.clone()], None, ProgramPolicy::Allow);
+        assert_eq!(token(&cat, "x"), Some("needs-program-kind"));
+        assert_eq!(token(&cat, "u"), Some("not-in-build"));
+        assert_eq!(token(&cat, "p"), Some("no-protocol"));
+        let cat = discover(vec![root.clone()], None, ProgramPolicy::Refuse);
+        assert_eq!(token(&cat, "p"), Some("refused-by-policy"));
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -280,12 +304,12 @@ mod tests {
     fn a_model_without_its_files_names_them() {
         let root = scratch("files");
         add_on(&root, "o", "name = o\nengine = ocrcer\n");
-        let cat = discover(vec![root.clone()], None);
-        assert_eq!(
-            cat.choices[0].unrunnable,
-            Some(Unrunnable::MissingFiles(vec![
-                super::super::OCRCER_MODEL_FILE.to_owned()
-            ]))
+        let cat = discover(vec![root.clone()], None, ProgramPolicy::Allow);
+        assert_eq!(token(&cat, "o"), Some("missing-files"));
+        let why = cat.choices[0].unrunnable.as_ref().expect("refused");
+        assert!(
+            why.reason().contains(super::super::OCRCER_MODEL_FILE),
+            "{why:?}"
         );
         let _ = std::fs::remove_dir_all(&root);
     }
@@ -296,20 +320,35 @@ mod tests {
             "pdfcer-ocr-catalog-never-there-{}",
             std::process::id()
         ));
-        let cat = discover(vec![gone.clone()], Some(&gone));
+        let cat = discover(vec![gone.clone()], Some(&gone), ProgramPolicy::Allow);
         assert!(cat.notes.is_empty(), "{:?}", cat.notes);
-        let cat = discover(vec![gone], None);
+        let cat = discover(vec![gone], None, ProgramPolicy::Allow);
         assert_eq!(cat.notes.len(), 1);
     }
 
+    fn refused() -> Unrunnable {
+        Unrunnable {
+            token: "not-in-build",
+            reason: String::new(),
+        }
+    }
+
     fn listed(name: &str, engine: Option<EngineId>, runnable: bool) -> Choice {
+        let token = engine.map_or(PADDLE_VL, EngineId::key).to_owned();
         Choice {
             name: name.to_owned(),
             label: None,
-            engine_token: engine.map_or("paddle-vl", EngineId::key).to_owned(),
+            engine_token: token.clone(),
             engine,
             folder: PathBuf::from(name),
-            unrunnable: (!runnable).then_some(Unrunnable::NoVlRunner),
+            unrunnable: (!runnable).then(refused),
+            model: OcrModel {
+                name: name.to_owned(),
+                engine: token,
+                folder: PathBuf::from(name),
+                root: PathBuf::new(),
+                manifest: None,
+            },
         }
     }
 
@@ -342,7 +381,7 @@ mod tests {
             start(&cat, Some("vl"), None),
             Start::Remembered {
                 name: "vl".into(),
-                why: Some(Unrunnable::NoVlRunner)
+                why: Some(refused())
             }
         );
     }
@@ -360,5 +399,10 @@ mod tests {
         assert_eq!(start(&cat, None, None), Start::Chosen(2));
         assert_eq!(start(&cat, None, Some(EngineId::Ocrcer)), Start::Chosen(1));
         assert_eq!(start(&Catalog::default(), None, None), Start::Nothing);
+        let only_vl = Catalog {
+            choices: vec![listed("vl", None, true)],
+            ..Catalog::default()
+        };
+        assert_eq!(start(&only_vl, None, None), Start::Chosen(0));
     }
 }
