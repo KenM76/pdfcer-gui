@@ -316,38 +316,7 @@ impl PdfcerApp {
                 )
             });
 
-            // **DOES THIS DOCUMENT REACH OUTSIDE ITSELF?** — asked once,
-            // here, because this is the moment the operator has the file and
-            // has not yet acted on it.
-            //
-            // pdfcer runs none of these (NF4 is standing: actions are recognised
-            // and round-tripped, never executed), so nothing is about to
-            // happen — which is exactly why this is a sentence and not a
-            // dialog. What the operator can do is KNOW, before they hand the
-            // drawing on or press a button in a viewer that does run them.
-            //
-            // Silent on the overwhelming majority of documents. See
-            // `reachout::ReachOut::worth_saying` for why an ordinary
-            // calculating form must produce nothing at all.
-            let reach = crate::app::reachout::scan(&doc.session);
-            if reach.worth_saying() {
-                let sentence = crate::text::reachout::disclosure(reach);
-                // The SENTENCE is traced, not merely the fact that one was
-                // recorded. `record_note` puts prose on the status bar and
-                // traces nothing, so without this a driven check could prove
-                // the scan ran and could not prove the operator was told —
-                // which is the entire subject. The wording is the feature here:
-                // a disclosure that named the action and omitted *"pdfcer never
-                // does any of that"* would be an alarm about something that
-                // cannot happen in this program.
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed. It
-                    // carries the operator-facing sentence so a check can read
-                    // it; the sentence itself lives in `text::reachout`.
-                    format!("reach-out-disclosed text={sentence:?}")
-                });
-                crate::app::actions::record_note(doc.edit_epoch, sentence);
-            }
+            crate::app::opennotes::disclose(doc);
         }
 
         // Forget the panels' own view state, because a NEW DOCUMENT is

@@ -78,6 +78,8 @@ pub mod modes;
 /// nothing else, so it reports a number instead of a handler token. See its
 /// header.
 mod ocrband;
+/// The sentences a file earns the moment it opens: a wrapper, an action that reaches out.
+pub mod opennotes;
 pub mod panels;
 pub use pdfcer_gui_base::dockpersist as persistence;
 /// The **selection filter**, on disk — where it lives, and why it is written

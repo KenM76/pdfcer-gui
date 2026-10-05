@@ -39,6 +39,8 @@ use crate::app::state::OpenDoc;
 use crate::text::anomalies as t_anomalies;
 use crate::text::panels::docprops as t;
 
+/// Security notes: the wrapper warning and the action census.
+mod security;
 /// The stamp-collection disclosure section — `OPERATOR_REQUESTS.md` **O169**.
 mod stamps;
 
@@ -154,6 +156,7 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
     // that sets it, which reads as a note about the edit the operator just made
     // rather than as a description of the file he opened.
     stamps::section(ui, doc);
+    security::section(ui, doc);
     ui.add_space(6.0);
 
     let stored = drafts.sync(doc);

@@ -233,6 +233,8 @@ pub mod workaround;
 /// Every word the Settings window shows — the thirteen spec-ambiguity choices,
 /// what each leaves open, and what each costs.
 pub mod security;
+/// Document properties ▸ Security notes and the open-time wrapper warning.
+pub mod securitynotes;
 pub mod shortcuts;
 /// What the snapshot box says on the status row.
 pub mod snapshot;

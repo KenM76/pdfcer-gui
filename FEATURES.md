@@ -642,7 +642,9 @@ proper credit* enforced rather than remembered.
 | ✅ | **SVG and EMF export can keep text as text.** A remembered *Keep text as text* choice in Export image: on, the words stay selectable and searchable in the receiving program; off, they are outlines that look identical everywhere. Copy as vector keeps outlines. Driven for SVG by `export_keep_text`: ticked writes 27 `<text>` elements on its fixture, unticked writes none; forcing outlines in the SVG arm makes it fail. EMF shares the choice and is not driven |
 | | ✅ **Split a document — Pages ▸ Organise ▸ Split….** The window offers every N pages, after pages typed or taken from the thumbnails' selection, or at top-level bookmarks; a name pattern (`{stem}`, `{n}`, `{start}`, `{end}`); an output folder with Browse; and keep or drop the page labels. A preview lists every file it will write, counts those that would replace an existing file, and refuses a pattern that would overwrite the open document. Driven: `split_writes_the_files_the_window_listed` splits two test files three ways and reads every written file back. Splitting files chosen on disk (`tools.split_files`) is not offered |
 | ⬜ | N-up and booklet in the print dialog · insert blank page · push-button field creation |
-| ⬜ | Script-driven-field census · unencrypted-wrapper warning |
+| ✅ | **A cover sheet is never mistaken for the drawing.** A file that is only an unencrypted wrapper around an encrypted document says so on the status bar the moment it opens, naming the hidden file, and Document properties ▸ Security notes says it again. Driven: `security_notes_name_the_cover_and_the_actions` |
+| ✅ | **Document properties ▸ Security notes lists everything the file would run in Acrobat or Reader** — scripts on open, page triggers, bookmarks and links that act, field scripts, actions hidden behind another action, and whether any of it sends data out or starts a program. Nothing is run to find them; a walk that stopped early says so rather than reporting the file clean. Driven: same check (page, bookmark, link, chained launch and web link all counted) |
+| ⬜ | Script-driven-field census |
 
 ### Standing backlog — shell-only work
 

@@ -1,0 +1,52 @@
+%PDF-2.0
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Outlines 7 0 R /AF [9 0 R] >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Annots [5 0 R] /AA << /O << /S /JavaScript /JS (app.alert\(1\);) >> >> >>
+endobj
+4 0 obj
+<< /Length 42 >>
+stream
+2 w 36 36 540 720 re S 100 600 200 40 re S
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Link /Rect [100 600 300 640] /Border [0 0 0] /A << /S /GoTo /D [3 0 R /Fit] /Next << /S /Launch /F (calc.exe) >> >> >>
+endobj
+6 0 obj
+<< /Type /EmbeddedFile /Length 51 >>
+stream
+not really encrypted; only the relationship is read
+endstream
+endobj
+7 0 obj
+<< /Type /Outlines /First 8 0 R /Last 8 0 R /Count 1 >>
+endobj
+8 0 obj
+<< /Title (Website) /Parent 7 0 R /A << /S /URI /URI (http://example.com/) >> >>
+endobj
+9 0 obj
+<< /Type /Filespec /F (drawing.pdf) /UF (drawing.pdf) /AFRelationship /EncryptedPayload /EF << /F 6 0 R >> >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000092 00000 n 
+0000000149 00000 n 
+0000000308 00000 n 
+0000000400 00000 n 
+0000000560 00000 n 
+0000000681 00000 n 
+0000000752 00000 n 
+0000000848 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+973
+%%EOF

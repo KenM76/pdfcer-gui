@@ -328,6 +328,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(print_shop::InkPickerReadsOverprint),
+        Box::new(security_notes::SecurityNotesNameTheCoverAndTheActions),
         Box::new(insert_text::ACaretMarksAnInsertion),
         Box::new(replace_text::ReplacingTextStrikesAndCarets),
         Box::new(markup_flatten::AMarkupCanBeMadePartOfThePage),
