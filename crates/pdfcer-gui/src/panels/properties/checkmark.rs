@@ -1,14 +1,12 @@
-//! # `panels::properties::checkmark` — a check box's mark (`/MK /CA`)
+//! # `panels::properties::checkmark` — a check box's or radio button's mark (`/MK /CA`)
 //!
-//! Drawn by `widgetedit::section` in place of the caption box, for a check box
-//! only: the engine draws `/MK /CA` as the check box's glyph (`CheckStyle`), so
-//! a typed caption there is one character of ZapfDingbats the operator cannot
-//! read. A pick raises `FieldAction::EditWidget` with the style's character and
+//! Drawn by `widgetedit::section` in place of the caption box: the engine draws
+//! `/MK /CA` as the glyph (`CheckStyle`), so a typed caption there is one
+//! character of ZapfDingbats the operator cannot read. A pick raises
+//! `FieldAction::EditWidget` with the style's character and
 //! `ForeignAppearance::Replace`, because a box another program drew keeps its
-//! own artwork otherwise and the pick would show nothing.
-//!
-//! No radio-button equivalent: the engine draws every radio button as a dot
-//! whatever style it is given (request G115).
+//! own artwork otherwise and the pick would show nothing. A widget with no
+//! `/MK /CA` is drawn with the kind's default: a tick, or a radio's dot.
 
 use egui::Ui;
 use pdfcer_core::annot_author::CheckStyle;
@@ -24,16 +22,22 @@ use crate::text::panels::formfield as tp;
 // ui-text-exempt: trace region name, never displayed
 pub const REGION: &str = "properties.widget_edit.mark";
 
-/// Whether `field` is a check box, the one kind this row is drawn for.
+/// Whether `field` is a check box or a radio button, the kinds this row is
+/// drawn for.
 #[must_use]
 pub fn applies(field: &Field) -> bool {
-    field.field_type == Some(FieldType::Button) && field.button_kind == Some(ButtonKind::Check)
+    field.field_type == Some(FieldType::Button)
+        && matches!(
+            field.button_kind,
+            Some(ButtonKind::Check | ButtonKind::Radio)
+        )
 }
 
 /// The mark `widget` is drawn with: `None` when its `/MK /CA` names a symbol
 /// pdfcer has no name for, which another program chose.
-fn current(widget: &Widget) -> Option<CheckStyle> {
+fn current(field: &Field, widget: &Widget) -> Option<CheckStyle> {
     match widget.caption.as_deref().and_then(|c| c.first().copied()) {
+        None if field.button_kind == Some(ButtonKind::Radio) => Some(CheckStyle::Circle),
         None => Some(CheckStyle::Check),
         Some(c) => CheckStyle::from_mk_caption_char(c),
     }
@@ -42,12 +46,13 @@ fn current(widget: &Widget) -> Option<CheckStyle> {
 /// The mark row.
 pub fn row(
     ui: &mut Ui,
+    field: &Field,
     widget: &Widget,
     fqn: &str,
     widget_index: usize,
     actions: &mut Vec<Action>,
 ) {
-    let now = current(widget);
+    let now = current(field, widget);
     crate::diag::trace_changed(REGION, || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
@@ -126,6 +131,6 @@ mod tests {
             .find(|f| f.fully_qualified_name == "mark_probe")
             .expect("the probe is in the form");
         assert!(applies(field));
-        assert_eq!(current(&field.widgets[0]), Some(CheckStyle::Star));
+        assert_eq!(current(field, &field.widgets[0]), Some(CheckStyle::Star));
     }
 }

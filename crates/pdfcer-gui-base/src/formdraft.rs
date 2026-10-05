@@ -76,10 +76,11 @@ pub struct Draft {
     pub export_value: String,
     /// **Check box / radio** — whether it starts on.
     pub checked: bool,
-    /// **Check box** — the mark drawn when it is on. Not offered for a radio
-    /// button: the engine draws every radio button as a dot whatever style it
-    /// is given.
+    /// **Check box** — the mark drawn when it is on.
     pub check_style: pdfcer_core::annot_author::CheckStyle,
+    /// **Radio button** — the mark drawn when it is chosen. `Circle`, the
+    /// default, is the dot and writes no `/MK /CA`.
+    pub radio_style: pdfcer_core::annot_author::CheckStyle,
     /// **Choice** — the options, one per line.
     ///
     /// Held as one string rather than a `Vec<String>` because that is what the
@@ -166,6 +167,7 @@ impl Draft {
             export_value: "Yes".to_owned(), // ui-text-exempt: a PDF /AS name written into the file, never displayed as UI copy
             checked: false,
             check_style: pdfcer_core::annot_author::CheckStyle::Check,
+            radio_style: pdfcer_core::annot_author::CheckStyle::Circle,
             options: String::new(),
             combo: true,
             editable: false,

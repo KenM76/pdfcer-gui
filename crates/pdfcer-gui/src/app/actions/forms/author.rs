@@ -133,6 +133,7 @@ pub(in crate::app::actions) fn author(
                 spec.required = draft.required;
                 spec.border = border;
                 spec.chrome = chrome;
+                spec.style = draft.radio_style;
                 session.add_radio_button(&spec)
             }
             K::Choice => {

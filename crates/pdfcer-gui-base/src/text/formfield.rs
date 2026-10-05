@@ -163,10 +163,10 @@ pub fn mark_label() -> String {
 /// What the mark picker changes.
 #[must_use]
 pub fn mark_hover() -> String {
-    "The symbol drawn in the box when it is ticked. Other programs draw the same symbol.".to_owned()
+    "The symbol drawn in the box when it is on. Other programs draw the same symbol.".to_owned()
 }
 
-/// Every check-box mark, in the order the picker lists them.
+/// Every check-box and radio-button mark, in the order the picker lists them.
 pub const CHECK_STYLES: [CheckStyle; 6] = [
     CheckStyle::Check,
     CheckStyle::Cross,
@@ -176,7 +176,7 @@ pub const CHECK_STYLES: [CheckStyle; 6] = [
     CheckStyle::Diamond,
 ];
 
-/// One check-box mark's name.
+/// One mark's name.
 #[must_use]
 pub fn check_style_label(style: CheckStyle) -> String {
     match style {

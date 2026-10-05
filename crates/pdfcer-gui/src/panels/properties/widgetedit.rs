@@ -125,7 +125,7 @@ pub fn section(
     visibility_row(ui, widget, fqn, widget_index, actions);
     ui.add_space(4.0);
     if super::checkmark::applies(field) {
-        super::checkmark::row(ui, widget, fqn, widget_index, actions);
+        super::checkmark::row(ui, field, widget, fqn, widget_index, actions);
     } else {
         caption_row(ui, draft, actions, fqn, widget_index);
     }

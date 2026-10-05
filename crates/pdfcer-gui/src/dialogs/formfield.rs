@@ -21,7 +21,7 @@ const REGION_BODY: &str = "dialog.form_field.body";
 const REGION_ACCEPT: &str = "dialog.form_field.accept";
 /// The name field's rect — the one control that decides whether Accept is live.
 const REGION_NAME: &str = "dialog.form_field.name";
-/// A check box's mark picker.
+/// The mark picker, for a check box or a radio button.
 const REGION_MARK: &str = "dialog.form_field.mark";
 /// The `/MK` `/BG` swatch's rect.
 const REGION_BACKGROUND: &str = "dialog.form_field.background";
@@ -163,9 +163,10 @@ fn content_height(kind: FormFieldKind) -> f32 {
         // Ticked-by-default, the mark, then the export value and what it means.
         FormFieldKind::CheckBox => CONTROL_PTS * 2.0 + GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS,
         // The group note first — it is the sentence that stops the commonest
-        // form-authoring mistake — then the value and the starts-selected box.
+        // form-authoring mistake — then the value, the starts-selected box and
+        // the mark.
         FormFieldKind::Radio => {
-            NOTE_PTS + GAP_PTS + LABEL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS
+            NOTE_PTS + GAP_PTS + LABEL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS * 2.0
         }
         // The options box is four rows tall; then the drop-down/list pair,
         // one conditional flag, and sort.
@@ -509,21 +510,7 @@ impl FormFieldDialog {
     /// A check box's two extra choices.
     fn check_rows(&mut self, ui: &mut Ui) {
         ui.checkbox(&mut self.draft.checked, t::checked());
-        ui.horizontal(|ui| {
-            ui.label(t::mark_label()).on_hover_text(t::mark_hover());
-            let combo = egui::ComboBox::from_id_salt(REGION_MARK)
-                .selected_text(t::check_style_label(self.draft.check_style))
-                .show_ui(ui, |ui| {
-                    for style in t::CHECK_STYLES {
-                        ui.selectable_value(
-                            &mut self.draft.check_style,
-                            style,
-                            t::check_style_label(style),
-                        );
-                    }
-                });
-            crate::diag::ui_rect(REGION_MARK, combo.response.rect);
-        });
+        mark_row(ui, &mut self.draft.check_style);
         ui.add_space(6.0);
         ui.label(t::export_label());
         ui.add(
@@ -548,6 +535,7 @@ impl FormFieldDialog {
         );
         ui.add_space(6.0);
         ui.checkbox(&mut self.draft.checked, t::radio_selected());
+        mark_row(ui, &mut self.draft.radio_style);
     }
 
     /// A drop-down's options and four flags.
@@ -691,6 +679,26 @@ impl FormFieldDialog {
 fn accept_requested_by_harness() -> bool {
     crate::diag::enabled()
         && std::env::var("PDFCER_DIAG_FORM_ACCEPT").is_ok_and(|v| !v.is_empty() && v != "0")
+}
+
+/// The Mark picker: the style one check box or radio button is drawn with.
+fn mark_row(ui: &mut Ui, style: &mut pdfcer_core::annot_author::CheckStyle) {
+    ui.horizontal(|ui| {
+        ui.label(t::mark_label()).on_hover_text(t::mark_hover());
+        let combo = egui::ComboBox::from_id_salt(REGION_MARK)
+            .selected_text(t::check_style_label(*style))
+            .show_ui(ui, |ui| {
+                for (i, choice) in t::CHECK_STYLES.into_iter().enumerate() {
+                    let entry = ui.selectable_value(style, choice, t::check_style_label(choice));
+                    crate::diag::ui_rect_visible(
+                        &format!("{REGION_MARK}.{i}"), // ui-text-exempt: trace region name
+                        entry.rect,
+                        ui.clip_rect(),
+                    );
+                }
+            });
+        crate::diag::ui_rect(REGION_MARK, combo.response.rect);
+    });
 }
 
 #[cfg(test)]

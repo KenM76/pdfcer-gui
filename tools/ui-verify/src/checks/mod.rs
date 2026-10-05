@@ -624,6 +624,7 @@ pub mod layer_folders;
 pub mod markup_flatten;
 /// Markup ▸ Media clip: a dragged region carries the clip, its type and its choices.
 pub mod media_clip;
+pub mod new_radio_mark;
 pub mod password_fill;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;
