@@ -1,55 +1,59 @@
 # `app::actions::structure` — Export for hand editing… and Compile hand edits…
 
 The PDF-internals round trip qpdf calls QDF, on `pdfcer_core::editable`. Both
-commands sit on File ▸ Export, read the document, and write a new file. The
-open document is never changed.
+commands sit on File ▸ Export. The export writes a new file; the compile
+changes the open document as one undo entry, and Save writes it.
 
 ## Export (`WriteAction::Structure`)
 
-1. Serialize the session as Save would (unsaved edits included) and reparse
-   it: `editable::export` takes a `Document`, and the session has none to
-   lend.
-2. `editable::export`: every object top-level, every stream decoded with its
-   `/Filter` dropped, a classic xref. `EditableError::Encrypted` is refused
-   with its own sentence: a plaintext copy of an encrypted file is a
+1. `editable::export(&session)`: the session itself, unsaved edits included.
+   Every object top-level, every stream decoded with its `/Filter` dropped, a
+   classic xref, and a `%PdfcerExportBase sha256:` header line carrying
+   `editable::fingerprint` of the session. `EditableError::Encrypted` is
+   refused with its own sentence: a plaintext copy of an encrypted file is a
    decryption.
-3. Pick a path (default `<stem>.qdf.pdf`); refuse the open document's own path.
-4. Write, and record the export in the stale-base memo.
+2. Pick a path (default `<stem>.qdf.pdf`); refuse the open document's own path.
+3. Write it. The receipt counts the session's live objects
+   (`EditableSource::object_ids`).
 
 ## Compile (`WriteAction::CompileStructure { edited }`)
 
 The edited file is picked in `dispatch::exchange` before the action, for
 `file.import_form_data`'s reason.
 
-1. Serialize and reparse the document as above: this is the *original* the
-   diff is taken against.
-2. Refuse an encrypted original; refuse an edited file that does not parse.
-3. **Stale-base guard** (below).
-4. `editable::import` diffs the two. Streams compare by decoded content, so a
-   stream the export decompressed is not counted as changed. An empty report
-   is refused with *nothing changed*: it is the one failure the operator
-   cannot otherwise see.
-5. Refuse under an enforced certification
-   (`signature::census(..).forbids_structural_change()`), the refusal an
-   `EditSession` edit would get.
-6. Pick a path, with the change counts in the picker's title (default
-   `<stem>-compiled.pdf`); refuse the open document's path and the edited
-   copy's.
-7. `writer::save_incremental(original, dirty, save options)`: the original's
-   bytes unchanged, then one update holding only the changed, added and
-   deleted objects, so a signature over anything not edited stays valid.
+1. Refuse an edited file that does not parse.
+2. **Stale-base guard** (below).
+3. `EditSession::import_editable` through `apply::vector_edit` (label
+   `compile-hand-edits`), so undo, the epoch and the page resync are the
+   funnel's. The diff is taken against the session's current state; streams
+   compare by decoded content, so a stream the export decompressed is not
+   counted as changed. The engine records nothing when nothing changed.
+4. The receipt is the funnel's disclosure list: the counts, the streams
+   matched only after decoding, and for an unrecorded base the sentence that
+   it could not be checked. An empty report says *nothing changed*: it is the
+   one outcome the operator cannot otherwise see.
+5. A refusal (`DocumentEncrypted` under a permission that forbids modifying
+   contents, `CertificationForbidsChange`, or anything else in the engine's
+   words) is worded as a note.
+
+Save then writes an incremental update by default: the original's bytes
+unchanged and only the changed, added and deleted objects appended, so a
+signature over anything not edited stays valid.
 
 ## The stale-base guard
 
-`import` diffs against whatever it is handed. A copy exported before a later
-edit (or from another document) differs from the document by that edit too,
-and compiling it would silently undo it, deleting objects added since. Each
-export records, in a process-wide map keyed by the canonical path written, a
-hash of the bytes it was taken from. A compile of a recorded path whose
-current bytes hash differently is refused. A copy exported in an earlier run
-is not recorded and compiles as it stands; the counts in the picker title are
-its disclosure. Engine request: a source fingerprint carried in the export
-would make this guard work across runs.
+The compile diffs against the session as it is now. A copy exported before a
+later edit (or from another document) differs by that edit too, and
+compiling it would undo it, deleting objects added since.
+
+| `editable::recorded_base(edited)` | Outcome |
+|---|---|
+| equals `editable::fingerprint(session)` | applied (`base=matches`) |
+| differs | refused, `stale-base`; nothing changes |
+| absent | applied (`base=unrecorded`), and the receipt says it could not be checked |
+
+The fingerprint hashes content, not layout, so a save, a reopen or a later
+run does not make a current export stale.
 
 ## Trace
 
@@ -58,10 +62,10 @@ would make this guard work across runs.
 | `export-structure objects= bytes= path=` | export written |
 | `export-structure-refused reason=encrypted\|overwrite` | export refused |
 | `export-structure-cancelled` | picker dismissed |
-| `import-structure modified= added= removed= unchanged= streams_matched= path=` | compiled copy written |
-| `import-structure-refused reason=encrypted\|stale-base\|unchanged\|certified\|overwrite` | compile refused |
+| `compile-hand-edits page=0 n=0 epoch= disclosures=` | the funnel's line for the edit |
+| `import-structure modified= added= removed= unchanged= streams_matched= base=` | applied |
+| `import-structure-refused reason=stale-base\|unchanged\|encrypted\|certified\|engine` | not applied |
 | `import-structure-failed reason=unreadable detail=` | edited copy does not parse |
-| `import-structure-cancelled` | picker dismissed |
-| `structure-failed reason=serialize\|reopen\|export\|write\|write-file detail=` | failed |
+| `structure-failed reason=export\|write-file detail=` | failed |
 
 Verified by `ui-verify` check `hand_edits_compile_back_as_an_appended_update`.

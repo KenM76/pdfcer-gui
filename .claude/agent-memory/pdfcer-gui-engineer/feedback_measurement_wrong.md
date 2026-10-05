@@ -270,3 +270,8 @@ answer **by identity** rather than by ranking, and plant the condition in a
 self-test (`PATH` cut to the system directory), because read straight the
 failure cannot occur on the machine asserting it.
 
+**The saved file instead of the open session (2026-10-05, O286 item 1).** Three
+saved-file checks said "not reproduced" while Ken's open document refused
+every edit and Find: a panel cache's `Weak<EditSession>` broke `Arc::get_mut`,
+and only his layout.ron drew that panel. Assert in the live session first, with
+HIS layout copied in.

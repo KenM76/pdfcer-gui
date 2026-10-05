@@ -15,3 +15,5 @@ check-ui-strings, after a 10-minute run.
 
 **How to apply:** after `cargo fmt`, run `bash tools/gates/check-ui-strings.sh`
 (it takes seconds) before starting the full sweep.
+
+A second route to the same failure: wrapping the flagged line in an `if` pushed it past check-theme-colors' seven-line marker window, and the gate went red. Put the marker comment directly above the line it explains, inside the block.
