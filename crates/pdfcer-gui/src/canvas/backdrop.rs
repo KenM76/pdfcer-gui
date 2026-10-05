@@ -107,4 +107,17 @@ pub(super) fn publish_coverage(
             u8::from(!doc.view.line_weights),
         )
     });
+    // The same instrument for `view.skip_tiny_details`: the engine's count of
+    // what it skipped, beside the mode the request carried.
+    crate::diag::trace_on_change("canvas-tiny", || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "skipped={} mode={}",
+            doc.page_texture.as_ref().map_or_else(
+                || "none".to_owned(),
+                |t| t.diagnostics.subpixel_culled.to_string()
+            ),
+            u8::from(doc.view.skip_tiny_details),
+        )
+    });
 }

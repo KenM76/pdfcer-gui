@@ -196,6 +196,8 @@ pub(super) const REGION_DRAFT_NOTE: &str = "status-group:draft-note"; // ui-text
 /// The "line weights are off, so this is not what will print" line —
 /// `OPERATOR_REQUESTS.md` **O137**.
 pub(super) const REGION_LINE_WEIGHTS: &str = "status-group:line-weights"; // ui-text-exempt: trace region name, never displayed
+/// The "tiny details are being skipped" line, while `view.skip_tiny_details` is on.
+pub(super) const REGION_TINY_DETAILS: &str = "status-group:tiny-details"; // ui-text-exempt: trace region name, never displayed
 
 /// `Actual size · Fit width · Fit page`.
 const REGION_FIT: &str = "status-group:fit"; // ui-text-exempt: trace region name, never displayed

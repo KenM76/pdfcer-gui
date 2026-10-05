@@ -249,6 +249,9 @@ pub struct RenderRequest {
     /// operator has flipped the toggle again, and what it must report is the
     /// picture it actually drew.
     pub stroke_display: pdfcer_render::font::StrokeDisplay,
+    /// `view.skip_tiny_details`, canvas only; assigned to the options in
+    /// `render_on_worker` and nowhere else, like [`Self::stroke_display`].
+    pub subpixel_culling: bool,
     /// The operator's configuration, as of the frame this request was built.
     ///
     /// **Five of the thirteen settings change what a rasterization looks
@@ -540,6 +543,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // The rule is enforced rather than asserted: see the request field's docs
     // and `pdfcer_gui::app::settings::tests::only_the_canvas_worker_sets_stroke_display`.
     options.stroke_display = request.stroke_display;
+    options.subpixel_culling = request.subpixel_culling;
     // Cloned rather than moved because the worker takes the request by
     // reference — a `BTreeSet<ObjId>` per render, against a rasterization
     // measured in seconds. `None` here is not the same as an empty set: it
@@ -891,6 +895,16 @@ mod tests {
             moved(RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Hairline)),
             "stroke display"
         );
+    }
+
+    /// Skipping tiny details is a discrete key input, like line weights.
+    #[test]
+    fn the_render_key_moves_when_tiny_details_are_skipped() {
+        let all = RenderKey::new(3, 2.0, true, 7, StrokeDisplay::Actual);
+        let skipped = all.with_tiny_details_skipped(true);
+        assert_ne!(all, skipped);
+        assert_ne!(all.discrete_inputs(), skipped.discrete_inputs());
+        assert_eq!(all.scale_bits(), skipped.scale_bits());
     }
 
     /// **Turning line weights off makes every cached raster stale** —

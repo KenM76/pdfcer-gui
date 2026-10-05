@@ -256,6 +256,9 @@ pub(super) fn tab() -> Tab {
                     // the order puts the most consequential switch where a
                     // reader arrives at it having understood the cheap ones.
                     icon_only("view.line_weights"),
+                    // Beside line weights: the other switch that changes the
+                    // drawing itself rather than adding furniture.
+                    icon_only("view.skip_tiny_details"),
                     // **LAST, and it is the only member of this
                     // group that changes the LAYOUT.** The three overlays
                     // add furniture; `view.line_weights` changes the

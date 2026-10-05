@@ -417,6 +417,12 @@ pub(super) fn band() -> Vec<Command> {
         command("view.line_weights", t::view_line_weights(), 235)
             .with_icon("line-weights")
             .enabled_when("doc.pages"),
+        // Lossy on purpose: the engine skips a drawn piece whose whole extent
+        // is under half a pixel. Canvas only, like line weights; the status
+        // bar says how many were skipped while it is on.
+        command("view.skip_tiny_details", t::view_skip_tiny_details(), 237)
+            .with_icon("skip-tiny")
+            .enabled_when("doc.pages"),
         //
         // > *"in our view ribbon area we need an option to show the stuff
         // > that is off page or not (and when not showing the stuff that is

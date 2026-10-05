@@ -48,6 +48,8 @@ pub fn chrome_command(chrome: crate::app::actions::ViewChrome) -> &'static str {
         // ui-text-exempt: command ids, never displayed
         C::LineWeights => "view.line_weights",
         // ui-text-exempt: command ids, never displayed
+        C::SkipTinyDetails => "view.skip_tiny_details",
+        // ui-text-exempt: command ids, never displayed
         C::OffPage => "view.off_page",
         // ui-text-exempt: command ids, never displayed
         C::OcrLayer => "view.ocr_layer",

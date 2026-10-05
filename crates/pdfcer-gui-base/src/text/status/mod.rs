@@ -20,6 +20,8 @@ pub use diagnostics::{
 };
 
 mod formdelete;
+mod inknotes;
+pub use inknotes::*;
 mod refused;
 mod selection;
 
@@ -43,7 +45,9 @@ pub use resize::{resize_fixed_size_marker, resize_not_rebuildable};
 
 /// Re-exported rather than moved-and-repathed.
 pub mod waiting;
-pub use waiting::{line_weights_no_effect, line_weights_off, page_catching_up};
+pub use waiting::{
+    line_weights_no_effect, line_weights_off, page_catching_up, tiny_details_skipped,
+};
 
 pub use selection::{
     // A type rather than a flat function, because the refusal has more than

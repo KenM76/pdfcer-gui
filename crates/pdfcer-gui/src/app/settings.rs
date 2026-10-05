@@ -563,7 +563,7 @@ mod tests {
             fn visit_expr_assign(&mut self, node: &'ast syn::ExprAssign) {
                 if let syn::Expr::Field(field) = &*node.left
                     && let syn::Member::Named(name) = &field.member
-                    && name == "stroke_display"
+                    && (name == "stroke_display" || name == "subpixel_culling")
                 {
                     self.hits += 1;
                 }
@@ -647,8 +647,8 @@ mod tests {
         walk(&base, &mut violations);
         assert!(
             violations.is_empty(),
-            "`stroke_display` is set outside the canvas worker. O137's whole safety argument \
-             is that line weights never leave the screen — print, print preview and every \
+            "`stroke_display` or `subpixel_culling` is set outside the canvas worker. The \
+             safety argument of both view modes is that they never leave the screen — print, print preview and every \
              export render the document's REAL widths. If the new site can reach a printer, a \
              file or the clipboard, remove the assignment: the funnel's default is already \
              `StrokeDisplay::Actual`.\n{}",
@@ -662,9 +662,9 @@ mod tests {
         // reports about the button this replaces.
         assert_eq!(
             scan(&base.join("renderworker.rs")),
-            1,
-            "the canvas worker must assign `stroke_display` exactly once — zero means \
-             `view.line_weights` reaches no renderer at all"
+            2,
+            "the canvas worker must assign `stroke_display` and `subpixel_culling` once each — \
+             fewer means `view.line_weights` or `view.skip_tiny_details` reaches no renderer"
         );
         // O233: the print dialog's own *Fixed line width*, which the operator
         // asked for by name. Off by default and blind to `view.line_weights`.

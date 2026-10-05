@@ -248,6 +248,11 @@ pub struct ViewState {
     /// `pdfcer_gui::text::commands::view_line_weights` for that decision and where a
     /// preference would go if he asks for one.
     pub line_weights: bool,
+    /// **`view.skip_tiny_details`** — skip drawing groups smaller than half a
+    /// device pixel (`RenderOptions::subpixel_culling`). Lossy, so off by
+    /// default, canvas only, and disclosed with the count it skipped. Part of
+    /// the render key for the reason [`Self::line_weights`] is.
+    pub skip_tiny_details: bool,
     /// **`view.off_page` — may the canvas show, and reach, the marks
     /// that sit outside the sheet?**
     ///
@@ -358,6 +363,7 @@ impl Default for ViewState {
             // weights OFF. See the field's own docs for why the toggle is
             // named for the weights rather than for the hairline.
             line_weights: true,
+            skip_tiny_details: false,
             // Off, and this is the one default that is routinely
             // *overridden* on the way in: `pdfcer_gui::app::prefs::offpage`
             // answers per ribbon mode (Read off, Review and Edit on) and

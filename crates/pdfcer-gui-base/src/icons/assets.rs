@@ -844,6 +844,9 @@ pub(super) const ITALIC: &str = include_str!("assets/italic.svg");
 /// `line-weights.svg` — the art for [`super::Icon::LineWeights`].
 pub(super) const LINE_WEIGHTS: &str = include_str!("assets/line-weights.svg");
 
+/// `skip-tiny.svg` — the art for [`super::Icon::SkipTiny`].
+pub(super) const SKIP_TINY: &str = include_str!("assets/skip-tiny.svg");
+
 /// `align-before.svg` — the art for [`super::Icon::AlignBefore`].
 pub(super) const ALIGN_BEFORE: &str = include_str!("assets/align-before.svg");
 

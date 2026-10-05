@@ -124,6 +124,9 @@ pub enum ViewChrome {
     /// veiled by the canvas and the text is drawn over it, both every frame.
     /// `pdfcer_gui::canvas::ocrlayer` carries why veiling beats re-rasterizing.
     OcrLayer,
+    /// `view.skip_tiny_details` — leave out drawn pieces too small to see at
+    /// this zoom. Reaches the render request, like [`Self::LineWeights`].
+    SkipTinyDetails,
 }
 
 impl ViewChrome {
@@ -134,6 +137,7 @@ impl ViewChrome {
         ViewChrome::Guides,
         ViewChrome::ShowPoints,
         ViewChrome::LineWeights,
+        ViewChrome::SkipTinyDetails,
         ViewChrome::OffPage,
         ViewChrome::OcrLayer,
     ];
@@ -147,6 +151,7 @@ impl ViewChrome {
             ViewChrome::Guides => view.guides,
             ViewChrome::ShowPoints => view.show_points,
             ViewChrome::LineWeights => view.line_weights,
+            ViewChrome::SkipTinyDetails => view.skip_tiny_details,
             ViewChrome::OffPage => view.off_page,
             // The one variant whose field is not a `bool`. *Is the mode on?*
             // is `.is_some()`, and where the slider sits inside the mode is a
@@ -164,6 +169,7 @@ impl ViewChrome {
             ViewChrome::Guides => view.guides = on,
             ViewChrome::ShowPoints => view.show_points = on,
             ViewChrome::LineWeights => view.line_weights = on,
+            ViewChrome::SkipTinyDetails => view.skip_tiny_details = on,
             ViewChrome::OffPage => view.off_page = on,
             // Turning it on lands the slider at the default rather than at
             // the position it last held, and that is deliberate: the previous

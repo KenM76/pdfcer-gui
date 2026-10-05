@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A large square kept and a cluster of specks struck through:
+       View ▸ Display ▸ Skip tiny details, which leaves out shapes too small to see. -->
+  <rect x="5" y="5" width="20" height="20" rx="2" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="33" cy="33" r="2.5" fill="currentColor"/>
+  <circle cx="41" cy="33" r="2.5" fill="currentColor"/>
+  <circle cx="33" cy="41" r="2.5" fill="currentColor"/>
+  <circle cx="41" cy="41" r="2.5" fill="currentColor"/>
+  <path d="M27 45L45 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

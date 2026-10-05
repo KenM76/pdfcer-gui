@@ -90,6 +90,10 @@ pub struct RenderKey {
     /// `render::strategy::overscanned` is a pure function of the visible
     /// rect — which is exactly the property its own test pins.
     region_bits: Option<[u64; 4]>,
+    /// Whether groups under half a device pixel were skipped
+    /// (`view.skip_tiny_details`). Discrete, like `stroke_display`: a raster
+    /// drawn under the other answer is a different picture.
+    skip_tiny: bool,
 }
 
 impl RenderKey {
@@ -115,6 +119,7 @@ impl RenderKey {
             layers_generation,
             stroke_display,
             region_bits: None,
+            skip_tiny: false,
         }
     }
 
@@ -129,6 +134,13 @@ impl RenderKey {
                 r.ury.to_bits(),
             ]
         });
+        self
+    }
+
+    /// Mark this key as drawn with tiny details skipped, or not.
+    #[must_use]
+    pub fn with_tiny_details_skipped(mut self, skip: bool) -> Self {
+        self.skip_tiny = skip;
         self
     }
 
@@ -158,7 +170,7 @@ impl RenderKey {
 
     /// The inputs whose change must re-rasterize **immediately**.
     #[must_use]
-    pub fn discrete_inputs(&self) -> (usize, bool, u64, pdfcer_render::font::StrokeDisplay) {
+    pub fn discrete_inputs(&self) -> (usize, bool, u64, pdfcer_render::font::StrokeDisplay, bool) {
         (
             self.page_index,
             self.annotations,
@@ -170,6 +182,7 @@ impl RenderKey {
             // control whose whole complaint history is "it never worked" is the
             // worst available latency.
             self.stroke_display,
+            self.skip_tiny,
         )
     }
 
@@ -195,5 +208,6 @@ impl RenderKey {
             request.stroke_display,
         )
         .with_region(request.region)
+        .with_tiny_details_skipped(request.subpixel_culling)
     }
 }

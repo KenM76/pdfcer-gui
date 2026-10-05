@@ -326,6 +326,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(check_mark::ACheckBoxsMarkCanBeChosen),
         Box::new(choice_defaults::AMultiSelectListsDefaultsCanBeChosen),
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
+        Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(insert_text::ACaretMarksAnInsertion),
         Box::new(replace_text::ReplacingTextStrikesAndCarets),
         Box::new(markup_flatten::AMarkupCanBeMadePartOfThePage),

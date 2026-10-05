@@ -132,6 +132,13 @@ impl DiagnosticsDialog {
             .max_height((ui.available_height() - FOOTER_RESERVE).max(LIST_FLOOR))
             .show(ui, |ui| {
                 let findings = crate::app::status::notes::findings(&texture.diagnostics);
+                let page = texture.key.page();
+                let ink = crate::app::status::notes::ink_trace(&texture.diagnostics);
+                let shown = findings.len();
+                crate::diag::trace_changed("render-findings", move || {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!("render-findings page={page} shown={shown} {ink}")
+                });
                 if findings.is_empty() {
                     ui.label(t::clean());
                 } else {

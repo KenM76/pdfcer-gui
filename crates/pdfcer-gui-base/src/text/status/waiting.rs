@@ -21,6 +21,22 @@ pub const fn line_weights_off() -> &'static str {
      still use the real widths."
 }
 
+/// **Tiny details are being skipped, so this is not everything that will print.**
+#[must_use]
+pub fn tiny_details_skipped(n: usize) -> String {
+    match n {
+        0 => "Skip tiny details is on \u{2014} nothing in view was small enough to leave out."
+            .to_owned(),
+        1 => "Skip tiny details is on \u{2014} 1 piece too small to see was left out. Printing \
+              and exporting draw everything."
+            .to_owned(),
+        _ => format!(
+            "Skip tiny details is on \u{2014} {n} pieces too small to see were left out. \
+             Printing and exporting draw everything."
+        ),
+    }
+}
+
 /// **The line-weights mode is on and it changed NOTHING in view** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the half this shell asked the engine
 /// for by name.

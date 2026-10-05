@@ -13,6 +13,8 @@ use crate::text::status as t;
 
 use super::{NOTES_WIDTH_FRACTION, ROW_HEIGHT_PTS};
 
+mod ink;
+
 /// Named region: the disclosure triangle, plus its one line of render notes
 /// when open.
 ///
@@ -153,7 +155,13 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
             .filter(|(n, _)| *n > 0)
             .map(|(n, render)| render(n)),
     );
+    out.extend(ink::findings(d));
     out
+}
+
+/// The colour counters as `key=count` pairs, for the trace.
+pub(crate) fn ink_trace(d: &pdfcer_render::Diagnostics) -> String {
+    ink::trace_pairs(d)
 }
 
 #[cfg(test)]

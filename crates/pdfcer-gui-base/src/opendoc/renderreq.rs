@@ -48,6 +48,7 @@ impl OpenDoc {
             self.view.stroke_display(),
         )
         .with_region(self.region_for(page_index))
+        .with_tiny_details_skipped(self.view.skip_tiny_details)
     }
 
     /// The region to rasterize for `page_index`, if the canvas set one **for
@@ -86,6 +87,7 @@ impl OpenDoc {
             // place this is read, and no export or print path builds a
             // `RenderRequest` at all.
             stroke_display: self.view.stroke_display(),
+            subpixel_culling: self.view.skip_tiny_details,
             layers: self.layer_visibility(),
             layers_generation: self.layers.generation,
             // The SNAPSHOT, not a live read — see the field's own docs.

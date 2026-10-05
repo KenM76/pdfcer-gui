@@ -11,7 +11,8 @@ use egui::{Align, Layout, Vec2};
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_DRAFT_NOTE,
     REGION_EDIT_DISCLOSURE, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES,
-    REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED, ROW_HEIGHT_PTS,
+    REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS,
+    ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -300,6 +301,21 @@ fn line_weights_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_LINE_WEIGHTS, line);
 }
 
+/// `view.skip_tiny_details` is on: the canvas leaves out pieces under half a
+/// pixel, which print and export still draw. A state line like
+/// [`line_weights_disclosure`]; no texture yet means no count, so the line
+/// waits for one rather than reporting zero.
+fn tiny_details_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    if !doc.view.skip_tiny_details {
+        return;
+    }
+    let Some(texture) = doc.page_texture.as_ref() else {
+        return;
+    };
+    let line = t::tiny_details_skipped(texture.diagnostics.subpixel_culled);
+    disclosure_line(ui, REGION_TINY_DETAILS, &line);
+}
+
 /// Draw all of them, in the order the parent expects.
 pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // First, and the order is the argument: the other three describe what an
@@ -334,4 +350,5 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // because it can be up for an hour — so it is the one that should yield
     // rightmost when the bar runs short, and last is where that happens.
     line_weights_disclosure(ui, doc);
+    tiny_details_disclosure(ui, doc);
 }

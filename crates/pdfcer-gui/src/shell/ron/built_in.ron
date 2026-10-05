@@ -208,6 +208,7 @@
                         Command(id: "view.grid", size: Small),
                         Command(id: "view.guides", size: Small),
                         Command(id: "view.line_weights", size: Small),
+                        Command(id: "view.skip_tiny_details", size: Small),
                         Command(id: "view.off_page", size: Small),
                         Command(id: "view.ocr_layer", size: Small),
                         Custom(kind: "ocr_blend", visible_when: "selected:view.ocr_layer"),

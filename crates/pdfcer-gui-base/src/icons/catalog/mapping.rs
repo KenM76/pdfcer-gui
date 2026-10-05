@@ -191,6 +191,7 @@ impl Icon {
         Icon::Bold,
         Icon::Italic,
         Icon::LineWeights,
+        Icon::SkipTiny,
         Icon::AlignBefore,
         Icon::AlignLeft,
         Icon::AlignCentreH,
@@ -309,6 +310,7 @@ impl Icon {
             Icon::Bold => assets::BOLD,
             Icon::Italic => assets::ITALIC,
             Icon::LineWeights => assets::LINE_WEIGHTS,
+            Icon::SkipTiny => assets::SKIP_TINY,
             Icon::Markup => assets::MARKUP,
             Icon::Text => assets::TEXT,
             Icon::EditText => assets::EDIT,
@@ -511,6 +513,8 @@ impl Icon {
             Icon::Italic => "italic",
             // ui-text-exempt: icon catalogue key, never displayed
             Icon::LineWeights => "line-weights",
+            // ui-text-exempt: icon key, never displayed
+            Icon::SkipTiny => "skip-tiny",
             Icon::Markup => "markup",
             Icon::Text => "text",
             Icon::EditText => "edit-text",

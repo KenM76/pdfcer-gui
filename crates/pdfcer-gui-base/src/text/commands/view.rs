@@ -410,6 +410,17 @@ pub const fn view_line_weights() -> CommandText {
     )
 }
 
+/// `view.skip_tiny_details`
+#[must_use]
+pub const fn view_skip_tiny_details() -> CommandText {
+    CommandText::new(
+        "Skip tiny details",
+        "Leave out drawn pieces too small to see at this zoom, such as the thousands of specks \
+         in a dense hatch, so a heavy drawing redraws faster. Zoom in and they come back. \
+         Printing and exporting always draw everything.",
+    )
+}
+
 /// `view.off_page`
 #[must_use]
 pub const fn view_off_page() -> CommandText {
