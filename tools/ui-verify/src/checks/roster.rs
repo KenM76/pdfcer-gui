@@ -324,6 +324,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(field_scripts::AFieldIsCalculatedFromOthers),
         Box::new(field_extras::ATextFieldsExtrasReachTheFile),
         Box::new(check_mark::ACheckBoxsMarkCanBeChosen),
+        Box::new(widget_dash::AWidgetBordersDashCanBeChosen),
         Box::new(choice_defaults::AMultiSelectListsDefaultsCanBeChosen),
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),

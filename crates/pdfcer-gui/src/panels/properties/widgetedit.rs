@@ -12,6 +12,7 @@ use pdfcer_gui_base::entry;
 use super::mkcolour;
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
+use crate::canvas::markup::linestyle::DashReading;
 use crate::panels::PanelsState;
 use crate::text::panels::formfield as t;
 
@@ -68,12 +69,13 @@ const SPEED: f64 = 0.25;
 pub fn section(
     ui: &mut Ui,
     field: &Field,
-    fqn: &str,
-    widget_index: usize,
+    selected: &pdfcer_gui_base::docidentity::SelectedField,
+    dash: DashReading,
     state: &mut PanelsState,
     epoch: u64,
     actions: &mut Vec<Action>,
 ) -> bool {
+    let (fqn, widget_index) = (selected.field.as_str(), selected.widget);
     let Some(widget) = field.widgets.get(widget_index) else {
         return false;
     };
@@ -113,7 +115,7 @@ pub fn section(
     // one they will not find, and a driven check could not reach it either.
     rotation_row(ui, widget, fqn, widget_index, actions);
     ui.add_space(4.0);
-    border_rows(ui, field, widget, fqn, widget_index, actions);
+    border_rows(ui, field, widget, dash, (fqn, widget_index), actions);
     ui.add_space(4.0);
     // Directly under the border STYLE and WIDTH, because the three are one
     // thought and `/BC` is the ink the style is stroked in. Above
@@ -268,8 +270,8 @@ fn border_rows(
     ui: &mut Ui,
     field: &Field,
     widget: &Widget,
-    fqn: &str,
-    widget_index: usize,
+    dash: DashReading,
+    (fqn, widget_index): (&str, usize),
     actions: &mut Vec<Action>,
 ) {
     use pdfcer_core::forms::ButtonKind;
@@ -286,6 +288,13 @@ fn border_rows(
     // number it showed would be the invention.
     if let Some(border) = widget.border {
         border_width_row(ui, border, fqn, widget_index, actions);
+    }
+    if !borderless(widget.border)
+        && widget
+            .border
+            .is_some_and(|b| b.style == pdfcer_core::edit::BorderStyle::Dashed)
+    {
+        super::widgetdash::row(ui, dash, fqn, widget_index, actions);
     }
 }
 
@@ -385,13 +394,15 @@ fn border_style_row(
                         edit.without_border_color()
                     });
                 }
-                for style in STYLES {
+                for (i, style) in STYLES.into_iter().enumerate() {
                     let selected = !none && current.is_some_and(|b| b.style == style);
-                    if ui
-                        .selectable_label(selected, t::border_style_label(style))
-                        .clicked()
-                        && !selected
-                    {
+                    let entry = ui.selectable_label(selected, t::border_style_label(style));
+                    crate::diag::ui_rect_visible(
+                        &format!("{BORDER_REGION}.{i}"), // ui-text-exempt: trace region name
+                        entry.rect,
+                        ui.clip_rect(),
+                    );
+                    if entry.clicked() && !selected {
                         // The width travels with the style, because `/BS` is
                         // one dictionary and `BorderSpec` is one value. No
                         // stated border, or none, gets the standard's

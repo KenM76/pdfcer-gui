@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **41 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `wanted` — a real gap — **40 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -118,7 +118,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Set or clear a widget's border dash pattern directly, and record one authored at creation** — `WidgetEdit::border_dash`, `WidgetChrome::with_border_dash` | **wanted — our G116, answered and in the pin; not wired yet.** `border_dict` now records `/BS /D`, and `WidgetEdit::with_border_dash` sets or removes it on an existing widget, so a pattern survives the next redraw. Consuming it: a dash field beside the border style on the Properties panel's Appearance section, written through `edit_widget` and read back from the widget. No pattern field is offered until then (R9). |
 
 ### Redaction & security
 
@@ -226,7 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **250 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **251 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -383,6 +382,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Set or clear a widget's border dash pattern directly, and record one authored at creation** — `WidgetEdit::border_dash`, `WidgetChrome::with_border_dash` | **shipped for a field on the page.** A text field, list or button whose border is Dashed gets a Dash row under the style in Properties ▸ Appearance (`panels::properties::widgetdash`), offering Dashed, Long dash and Dash-dot; a pick writes `/BS /D` through `edit_widget` with `WidgetEdit::with_border_dash` and `ForeignAppearance::Replace`, and the row reads the pattern back off the widget dictionary (`linestyle::read`, since `forms::Widget` carries no dash). A solid border shows no row, because the engine draws `/D` on Dashed alone. `WidgetChrome::with_border_dash` at creation is not offered: the new-field window authors solid borders only, so a pattern chosen there would never be drawn. Driven: `a_widget_borders_dash_can_be_chosen`. |
 | **Choose a check-box/radio-button glyph style at creation** — `CheckStyle`, `NewCheckBox::style` | **shipped for check boxes; radio buttons blocked on our G115.** The new check-box window's *Mark* combo sets `NewCheckBox::style` from `Draft::check_style`; Properties' *Mark* row (`panels::properties::checkmark`) restyles an existing box through `edit_widget` with the style's `/MK /CA` character and `ForeignAppearance::Replace`, which the engine redraws by recovering the style with `CheckStyle::from_mk_caption_char` — its own route, not a workaround. Driven: `a_check_boxs_mark_can_be_chosen`. A radio button's style is accepted and ignored (every radio is drawn as a dot), so no radio control is offered (R9). |
 | **A radio button's chosen glyph style is now drawn** — `NewRadioButton::style`, `CheckStyle` | **wanted — our G115, answered upstream past the pin.** `add_radio_button` draws the mark `NewRadioButton::style` names and writes `/MK /CA` for every style but `Circle`, and a resize or caption edit recovers it from `/MK /CA`. Consuming it, after the pin moves: the new radio-button window takes the check box's *Mark* combo, and Properties' *Mark* row (`panels::properties::checkmark`) admits radio widgets. Until then no radio control is offered (R9). |
 | **A value longer than `/MaxLen` is kept whole and drawn short** — `FillOutcome::exceeds_max_len` | **shipped.** `FillDisclosure::exceeds_max_len` carries the limit from the fill's outcome to a status-line note naming the field and the limit (`app::status::disclosure`); nothing on the canvas. Unit-tested: `a_fill_over_the_character_limit_is_disclosed`. |

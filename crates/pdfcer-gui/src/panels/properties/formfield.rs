@@ -145,8 +145,8 @@ pub fn section(
     super::widgetedit::section(
         ui,
         field,
-        &selected.field,
-        selected.widget,
+        &selected,
+        widget_dash(doc, field, selected.widget),
         state,
         epoch,
         actions,
@@ -182,6 +182,26 @@ pub fn section(
     // rect that is true of what an operator can see and point at.
     crate::diag::ui_rect(REGION, ui.min_rect());
     true
+}
+
+/// What `/BS /D` says on the selected widget, read off its dictionary because
+/// `forms::Widget` carries no dash (request G126).
+fn widget_dash(
+    doc: &OpenDoc,
+    field: &pdfcer_core::forms::Field,
+    widget: usize,
+) -> crate::canvas::markup::linestyle::DashReading {
+    use pdfcer_core::object::Object;
+    let solid = crate::canvas::markup::linestyle::DashReading::Solid;
+    let Some(id) = field.widgets.get(widget).map(|w| w.id) else {
+        return solid;
+    };
+    match doc.session.value(id) {
+        Some(Object::Dict(dict)) => {
+            crate::canvas::markup::linestyle::read(&doc.session.graph(), dict)
+        }
+        _ => solid,
+    }
 }
 
 /// The read-only facts: what this field is, where it is, and what it holds.

@@ -309,6 +309,7 @@ pub mod trust_store;
 
 pub mod unembed_fonts;
 
+pub mod widget_dash;
 pub mod widget_move;
 
 pub mod widget_rotate;

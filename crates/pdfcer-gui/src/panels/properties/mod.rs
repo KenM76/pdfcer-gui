@@ -93,6 +93,7 @@ pub mod tool;
 /// file rather than four more rows in [`fieldedit`],
 /// because the engine has two verbs and Acrobat's own scripting model has two
 /// scopes; see its header.
+pub mod widgetdash;
 pub mod widgetedit;
 /// The offer to make a refused text edit another way.
 pub mod workaround;

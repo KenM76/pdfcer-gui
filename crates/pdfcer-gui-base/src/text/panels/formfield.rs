@@ -722,6 +722,24 @@ pub const fn touched_border() -> &'static str {
     "the border"
 }
 
+/// The dash picker.
+#[must_use]
+pub const fn touched_dash() -> &'static str {
+    "the dash"
+}
+
+/// The dash row's label.
+#[must_use]
+pub const fn label_dash() -> &'static str {
+    "Dash"
+}
+
+/// What the dash picker changes.
+#[must_use]
+pub const fn dash_hover() -> &'static str {
+    "The pattern a dashed border is drawn with."
+}
+
 /// The border width spinner.
 #[must_use]
 pub const fn touched_border_width() -> &'static str {
