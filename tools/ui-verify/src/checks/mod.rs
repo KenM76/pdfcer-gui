@@ -416,6 +416,7 @@ pub mod ocr_export_scripted;
 /// the tally advancing, Stop keeping the work, Cancel discarding it. Separate
 /// from [`ocr`] because all three need a multi-page run and that module's
 /// one-page fixture has no observable middle. Its header carries the argument.
+pub mod ocr_live_search;
 pub mod ocr_progress;
 pub mod ocr_scripted;
 

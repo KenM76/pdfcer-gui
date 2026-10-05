@@ -156,7 +156,13 @@ pub struct OpenDoc {
     /// calls [`RenderWorker::cancel_and_wait`] — `Arc::get_mut` fails while
     /// a render is running, and the alternatives were rejected with numbers
     /// (see that method).
+    ///
+    /// `Arc::get_mut` also fails while any `Weak` to it exists, so nothing
+    /// may keep one: a cache that must name this document keys on
+    /// [`Self::serial`].
     pub session: Arc<EditSession>,
+    /// Which open document this is, unique for the life of the process.
+    pub serial: u64,
     /// The flattened page vector, resolved once at open.
     pub pages: Vec<Page>,
     /// **Which reading of the file this is** — the [`LoadOptions`] the
@@ -996,6 +1002,12 @@ pub struct OpenDoc {
     pub snapshot: Option<crate::snapshotbox::SnapshotBox>,
 }
 
+/// A fresh [`OpenDoc::serial`].
+fn next_serial() -> u64 {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+    NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+}
+
 impl OpenDoc {
     /// Build the state for a freshly opened document.
     pub fn new(path: PathBuf, session: EditSession, pages: Vec<Page>) -> Self {
@@ -1049,6 +1061,7 @@ impl OpenDoc {
             path,
             origin,
             session: Arc::new(session),
+            serial: next_serial(),
             pages,
             frame: ViewFrame::new(view.zoom),
             view,

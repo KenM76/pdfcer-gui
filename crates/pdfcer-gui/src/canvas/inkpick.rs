@@ -20,7 +20,7 @@
 //! - A reading belongs to one document, page and edit; it is not shown once
 //!   any of the three has moved on.
 
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Mutex};
 
 use egui::{Context, Id, Pos2};
 use pdfcer_core::edit::EditSession;
@@ -49,8 +49,8 @@ pub enum Found {
 /// One click's reading, and what it is a reading of.
 #[derive(Debug, Clone)]
 pub struct Reading {
-    /// The document it was taken on.
-    session: Weak<EditSession>,
+    /// The document it was taken on, as [`OpenDoc::serial`].
+    doc: u64,
     /// Page index.
     pub page: usize,
     /// The edit it was taken after.
@@ -99,11 +99,9 @@ pub fn current(ctx: &Context, doc: &OpenDoc) -> Option<Reading> {
     let state = shared(ctx);
     let guard = state.lock().ok()?;
     let reading = guard.reading.as_ref()?;
-    let same_doc = reading
-        .session
-        .upgrade()
-        .is_some_and(|s| Arc::ptr_eq(&s, &doc.session));
-    (same_doc && reading.page == doc.view.page_index && reading.epoch == doc.edit_epoch)
+    (reading.doc == doc.serial
+        && reading.page == doc.view.page_index
+        && reading.epoch == doc.edit_epoch)
         .then(|| reading.clone())
 }
 
@@ -129,7 +127,7 @@ pub fn click(ctx: &Context, doc: &OpenDoc, page_index: usize, point: Pos2, zoom:
         page: request.page,
     };
     let reading = Reading {
-        session: Arc::downgrade(&doc.session),
+        doc: doc.serial,
         page: page_index,
         epoch: doc.edit_epoch,
         at,

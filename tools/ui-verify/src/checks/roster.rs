@@ -465,6 +465,12 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(structure_round_trip::HandEditsCompileBackAsAnAppendedUpdate),
         Box::new(evidence_scripted::ValidationEvidenceAddedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
+        Box::new(ocr_live_search::RecognisedTextIsSearchableBeforeSaving {
+            ending: ocr_live_search::Ending::Finished,
+        }),
+        Box::new(ocr_live_search::RecognisedTextIsSearchableBeforeSaving {
+            ending: ocr_live_search::Ending::Stopped,
+        }),
         Box::new(ocr_scripted::RecognisedTextIsInTheSavedFile { engine: "ocrs" }),
         Box::new(ocr_scripted::RecognisedTextIsInTheSavedFile { engine: "paddle" }),
         Box::new(ocr_scripted::RecognisedTextIsInTheSavedFile {

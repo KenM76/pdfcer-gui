@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **41 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `wanted` — a real gap — **42 of 313** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,6 +66,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Operator-initiated download** — pinned URL + SHA-256 verified in memory before anything reaches disk (`pdfcer-fetch`); the pinned list `pdfcer_core::ocr::models::fetchable_models` … | **wanted, O285: Settings ▸ OCR models is where it goes, next in the queue.** The list is `ocrs` alone and `tools/package-portable.py` already stages `models/ocrs` beside the binary, so what an operator gains is repair: a deleted or damaged model file, which the OCR dialog names today as missing (`Refusal::ModelsMissing`) with no way back short of re-installing. The shell links `pdfcer-fetch` already, for the RFC 3161 timestamp round trip, so the network crate is not a new dependency; the fetch must run off the UI thread and be strippable with the `timestamp` feature's pattern (R8). |
 | Set a page's size (`/MediaBox`) — writing a value equal … | **wanted.** No operator-facing page-size control exists. `set_media_box` is called in exactly one place — `app::blank`, sizing a **new** blank document — so the verb is linked and the surface is not: a drawing that arrives on the wrong sheet size cannot be put right here. The Pages panel's context menu is where it belongs, beside rotate and extract. |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **`/CropBox`/`/BleedBox`/`/TrimBox`/`/ArtBox` now resolve as their INTERSECTION with `/MediaBox`** — `Page::crop_box` is the effective box; `BoxResolution` per box | **wanted: the intersection is consumed, the disclosure is not.** <!--namesake:crop_box--> the field is read everywhere and is the effective box, so the shell no longer intersects it itself. <!--namesake:BoxResolution--> the shell's test fixtures construct `BoxResolution::Defaulted` because `Page` has no constructor (our request `G060`); no surface reads the variant. Owed: disclose a `Clipped` or `Unusable` crop box off-canvas in the page properties (R8b). The renderer reports the same fact per render as `Diagnostics::page_crop_box`; the page properties read the page, so that field has no reader here. Our request `G059`. |
@@ -146,7 +147,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **5 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `blocked` — waiting on something named — **5 of 313** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -173,7 +174,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 313** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -184,7 +185,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `declined` — deliberately no surface — **16 of 313** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -226,7 +227,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **250 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **250 of 313** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

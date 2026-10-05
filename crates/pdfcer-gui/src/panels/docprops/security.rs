@@ -13,10 +13,7 @@
 //! - A walk that hit its ceiling says *stopped looking*, never *nothing*.
 //! - Disclosure only: nothing here blocks, and nothing is drawn on the page.
 
-use std::sync::{Arc, Weak};
-
 use egui::{Id, Ui};
-use pdfcer_core::edit::EditSession;
 use pdfcer_core::forms::FormJavaScript;
 
 use crate::app::state::OpenDoc;
@@ -28,7 +25,8 @@ pub const REGION: &str = "docprops.security-notes"; // ui-text-exempt: trace reg
 /// What the engine said about one document at one edit.
 #[derive(Clone)]
 struct Notes {
-    session: Weak<EditSession>,
+    /// [`OpenDoc::serial`].
+    doc: u64,
     epoch: u64,
     wrapper: Option<String>,
     scan: FormJavaScript,
@@ -40,15 +38,13 @@ fn notes(ui: &Ui, doc: &OpenDoc) -> Notes {
     let cached: Option<Notes> = ui.ctx().data(|d| d.get_temp(id));
     if let Some(n) = cached
         && n.epoch == doc.edit_epoch
-        && n.session
-            .upgrade()
-            .is_some_and(|s| Arc::ptr_eq(&s, &doc.session))
+        && n.doc == doc.serial
     {
         return n;
     }
     let view = doc.session.view();
     let notes = Notes {
-        session: Arc::downgrade(&doc.session),
+        doc: doc.serial,
         epoch: doc.edit_epoch,
         wrapper: pdfcer_core::wrapper::detect(&view).message(),
         scan: pdfcer_core::forms::scan_javascript(&view),
