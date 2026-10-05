@@ -127,7 +127,6 @@ run "check-strong-text --self-test" bash "$HERE/check-strong-text.sh" --self-tes
 run "check-shipped-assets --self-test" bash "$HERE/check-shipped-assets.sh" --self-test
 run "check-string-gaps --self-test" bash "$HERE/check-string-gaps.sh" --self-test
 run "check-trace-names --self-test" python "$HERE/check-trace-names.py" --self-test
-run "check-ink-roster --self-test" python "$HERE/check-ink-roster.py" --self-test
 run "check-orphan-docs --self-test" python "$HERE/check-orphan-docs.py" --self-test
 run "check-region-names --self-test" python "$HERE/check-region-names.py" --self-test
 run "check-doc-markup --self-test" python "$HERE/check-doc-markup.py" --self-test
@@ -435,7 +434,6 @@ run "check-suite-name-absent" python "$ROOT/tools/check-suite-name-absent.py"
 # real sources at the commit before its defect was fixed, because a self-test
 # proves only that a mechanism fires on input its own author planted.
 run "check-trace-names" python "$HERE/check-trace-names.py"
-run "check-ink-roster" python "$HERE/check-ink-roster.py"
 
 # `check-texture-census` protects an argument from ELIMINATION, which is the
 # kind that rots quietly.

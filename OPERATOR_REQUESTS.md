@@ -489,6 +489,24 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 **Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. `Ctrl+V` works for it too, not only the ribbon's Paste. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`, `ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`. Text from Word or anywhere else now pastes at the pointer as well: as page text in Edit, as a text-box comment in Review (`text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`). A picture file dropped on a page lands where it was dropped, at its natural size, with no window; Alt as you drop opens the window instead (`a_dropped_picture_lands_where_it_was_dropped`). A dropped text file becomes pages after the one on screen (`a_dropped_text_file_becomes_pages_after_this_one`). A PDF dropped alone on an open document asks whether to open it, insert its pages after this one, or place its first page where it was dropped (`a_dropped_pdf_asks_open_insert_or_place`). In Review a copied picture pastes as a stamp at the pointer, by `Ctrl+V` or Markup ▸ Paste picture as stamp (`a_copied_picture_pastes_as_a_stamp_in_review`). File ▸ New from clipboard and Pages ▸ Insert from clipboard make a new PDF of what you copied, or add it as pages after the one you are on: a picture as a page its own size, text as Import text sets it (`the_clipboard_becomes_a_new_pdf_or_pages_after_this_one`). SVG and EMF wait on the engine (G093, G094). Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
+## O286 — **OPEN, ahead of O285** — recognised text lands in the file again, in paragraphs and columns, and is a layer you can see, export and edit
+
+His words, relayed and condensed: OCR text that has been detected is not added to the PDF in v0.5.0-dev.20261005.1; v0.5.0-dev.20261004.2 adds it. *"Can we get it to set detection into paragraphs, columns, etc?"* The OCR layer should show in the Layers tree; it should export to Word and the other export formats; editing it should be what-you-see-is-what-you-get with a live preview, through the same text editing as any other text; new text can be added to it at a new place; and PaddleOCR-VL 1.5, which he believes the engine supports, should be offered.
+
+In his order:
+
+1. **The regression.** Recognised text is written into the document again. Found by bisecting between the two release tags on a scanned fixture, never on his files, and covered by a driven check that would have caught it.
+2. **Layout.** Recognised text lands as paragraph and column blocks, not as loose lines, using what the engine offers.
+3. **Layers tree.** The OCR layer is a row in the Layers panel.
+4. **Export.** Word and the other export formats offer the OCR layer's text.
+5. **Editing.** The OCR layer's text is edited in place with a live preview, by the same editing as ordinary text.
+6. **Adding text.** New text can be placed on the OCR layer at a new place.
+7. **PaddleOCR-VL 1.5.** What the program offers is confirmed, and 1.5 is offered if it is not.
+
+Each item gets a driven check and a falsification. A release follows all seven, not the first alone.
+
+**Where it stands.** Recorded; item 1 started.
+
 ## O285 — **IN PROGRESS** — the rest of what the engine can do, including how a document is split
 
 > **Ken:** *"How document splitting happens should be users choice — continue implementing everything you are missing."*

@@ -302,8 +302,10 @@ fn is_ident_start(c: char) -> bool {
     c.is_ascii_alphabetic() || c == '_'
 }
 
+/// `.` is allowed after the first character: the engine's dotted metrics keys
+/// (`color.spaces_unresolved`) are traced under their own names.
 fn is_ident(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_' || c == '-'
+    c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.'
 }
 
 #[cfg(test)]
@@ -320,6 +322,17 @@ mod tests {
         assert_eq!(l.event, "delete-objects");
         assert_eq!(l.get_usize("n"), Some(1));
         assert_eq!(l.get("indices"), Some("[7]"));
+    }
+
+    #[test]
+    fn a_dotted_key_is_one_key() {
+        let t = Trace::parse(
+            "pdfcer-diag f shown=2 color.spaces_unresolved=1 x=0.5",
+            PREFIX,
+        );
+        let l = &t.lines[0];
+        assert_eq!(l.get_usize("color.spaces_unresolved"), Some(1));
+        assert_eq!(l.get("x"), Some("0.5"));
     }
 
     /// The case a whitespace splitter gets wrong, and the reason this parser

@@ -203,14 +203,14 @@ fn findings(report: &mut CheckReport, session: &Session) -> Result<Option<String
     report.note(format!("findings: `{}`", line.raw));
     let count = |k: &str| line.get(k).and_then(|v| v.parse::<usize>().ok());
     let (cs, sh, shown) = (
-        count("cs_unresolved"),
-        count("shadings_refused"),
+        count("color.spaces_unresolved"),
+        count("shading.refused"),
         count("shown"),
     );
     if cs != Some(1) || sh != Some(1) || shown.is_none_or(|n| n < 2) {
         return Ok(Some(format!(
             "the fixture names one unresolvable colour space and one missing shading; the \
-             window read cs_unresolved={cs:?} shadings_refused={sh:?} shown={shown:?}, where \
+             window read color.spaces_unresolved={cs:?} shading.refused={sh:?} shown={shown:?}, where \
              1, 1 and at least 2 sentences were owed. `{}`.",
             line.raw
         )));

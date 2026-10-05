@@ -10,8 +10,9 @@ draws everything when off, and says on the status bar how much it left out.
 `fixtures/print-shop.PROVENANCE.py`, with
 `PDFCER_DIAG_INVOKE=mode.edit,tools.render_diagnostics`.
 
-1. `render-findings` (traced by the Render diagnostics window): the roster's
-   `key=count` pairs. Owed: `cs_unresolved=1`, `shadings_refused=1`, and
+1. `render-findings` (traced by the Render diagnostics window): every engine
+   divergence counter as `key=count`. Owed: `color.spaces_unresolved=1`,
+   `shading.refused=1`, and
    `shown` at least 2, so both reached the list as sentences.
 2. `canvas-tiny skipped=0 mode=0` before the toggle: off skips nothing.
 3. Scripted clicks on `ribbon.tab.view`, then

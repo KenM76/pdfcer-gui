@@ -144,6 +144,13 @@ pub fn ink_shadings_refused(n: usize) -> String {
     )
 }
 
+/// A divergence counter this build has no sentence for, named by its engine
+/// key so a counter added upstream is still disclosed.
+#[must_use]
+pub fn ink_unworded(key: &str, n: usize) -> String {
+    format!("{n} drawn differently from what the file asks ({key})")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

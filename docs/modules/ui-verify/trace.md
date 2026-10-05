@@ -76,7 +76,8 @@ The algorithm, and why it is not a regex or a `split_whitespace`:
 
 1. Walk the characters, maintaining bracket depth over `[`, `(`, `{` and a
    flag for being inside a double-quoted string (honouring `\` escapes).
-2. A **key boundary** is an identifier starting at depth zero, outside a
+2. A **key boundary** is an identifier (a letter or `_`, then letters,
+   digits, `_`, `-` or `.`) starting at depth zero, outside a
    string, at the start of the tail or immediately after a space, and
    followed by `=`.
 3. Each value runs from just after its `=` to just before the next key
