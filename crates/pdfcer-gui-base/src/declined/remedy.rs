@@ -21,6 +21,9 @@ impl Declined {
             | Self::Reflow(ReflowRefusal::Encrypted) => {
                 Some("file.encrypt") // ui-text-exempt: command id, never displayed
             }
+            Self::Rc4Refused => {
+                Some("file.allow_rc4_edits") // ui-text-exempt: command id, never displayed
+            }
             _ => None,
         }
     }
@@ -46,6 +49,7 @@ mod tests {
             Declined::Reflow(ReflowRefusal::Encrypted).remedy(),
             Some("file.encrypt")
         );
+        assert_eq!(Declined::Rc4Refused.remedy(), Some("file.allow_rc4_edits"));
         assert_eq!(Declined::TextClick(Refusal::NoRun).remedy(), None);
     }
 }

@@ -42,6 +42,7 @@ pub fn disclose(doc: &OpenDoc) {
         });
         notes.push(sentence);
     }
+    notes.extend(crate::app::rc4::on_open(doc));
     if !notes.is_empty() {
         crate::app::actions::record_notes(doc.edit_epoch, notes);
     }

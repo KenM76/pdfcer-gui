@@ -152,3 +152,12 @@ fn nothing_sheddable_loses_its_last_route() {
         "the page box has no other home and must never be sheddable"
     );
 }
+
+/// The left half leaves room for exactly the groups that are never shed, and
+/// nothing before any has been measured.
+#[test]
+fn the_left_half_leaves_room_for_the_groups_that_are_never_shed() {
+    let kept = measured_width(&[Group::Page, Group::Zoom, Group::Filter], &measured());
+    assert!((floor_width(&measured()) - kept - 6.0).abs() < 1e-3);
+    assert!(floor_width(&Widths::default()).abs() < f32::EPSILON);
+}

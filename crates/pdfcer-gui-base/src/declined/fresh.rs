@@ -267,7 +267,8 @@ impl Declined {
             | Self::Layer(_)
             | Self::MarkupFlatten(_)
             | Self::FormFontsNothingToRepair
-            | Self::OsPaste(_) => true,
+            | Self::OsPaste(_)
+            | Self::Rc4Refused => true,
         }
     }
 }

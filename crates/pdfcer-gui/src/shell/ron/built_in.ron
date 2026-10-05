@@ -97,6 +97,11 @@
                     items: [
                         Command(id: "file.purge_password_values", size: Large),
                         Command(id: "file.encrypt", size: Large),
+                        Command(
+                            id: "file.allow_rc4_edits",
+                            size: Large,
+                            visible_when: "doc.rc4",
+                        ),
                         Command(id: "file.permissions", size: Large),
                         Command(
                             id: "file.sign",

@@ -162,6 +162,9 @@ pub fn save_in_place(doc: &OpenDoc) -> bool {
     // they did not know they had.
     let mut notes = vec![crate::text::files::saved_in_place(&target)];
     notes.extend(signature);
+    if let Written::Ordinary(report) = &written {
+        notes.extend(crate::app::rc4::after_save(report.rc4_keystream_reused));
+    }
     crate::app::actions::record_notes(doc.edit_epoch, notes);
     // …and, when the save performed a staged redaction, the sentence that
     // says so — recorded AFTER `record_notes`, deliberately, so it is the
@@ -252,9 +255,14 @@ fn write_and_report(doc: &OpenDoc, target: &Path) -> bool {
             // it. Rule 4 governs, and it points the other way from §5.
             //
             // It is `None` for every unsigned document, so the common case
-            // still adds nothing at all.
-            if let Some(note) = signature {
-                crate::app::actions::record_note(doc.edit_epoch, note);
+            // still adds nothing at all. The RC4 sentence is the same kind of
+            // fact: what the save cost the file's protection.
+            let notes: Vec<String> = signature
+                .into_iter()
+                .chain(crate::app::rc4::after_save(report.rc4_keystream_reused))
+                .collect();
+            if !notes.is_empty() {
+                crate::app::actions::record_notes(doc.edit_epoch, notes);
             }
             true
         }

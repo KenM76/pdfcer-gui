@@ -274,6 +274,7 @@ pub fn tab() -> Tab {
                 [
                     large("file.purge_password_values"),
                     large("file.encrypt"),
+                    large("file.allow_rc4_edits").shown_when("doc.rc4"),
                     large("file.permissions"),
                     large("file.sign").provided_by("signing"),
                     large("file.add_validation_evidence").provided_by("signing"),

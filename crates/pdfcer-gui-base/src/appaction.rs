@@ -172,6 +172,9 @@ pub enum Action {
     /// File ▸ Security ▸ Add validation evidence…: pick files, embed them in
     /// `/DSS`, as one undo entry. See `super::evidence`.
     AddValidationEvidence,
+    /// File ▸ Security ▸ Allow edits under RC4: flip this document's RC4
+    /// append policy. A session setting, not an edit. See `app::rc4`.
+    ToggleRc4Append,
     /// File ▸ Security ▸ Add archive time-stamp…: pick a target, ask `server`.
     ArchiveTimestamp {
         server: String,

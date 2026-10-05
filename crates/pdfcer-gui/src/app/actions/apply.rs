@@ -466,6 +466,7 @@ impl PdfcerApp {
             }
             Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
             Action::RepairFormFonts => super::formfonts::repair(doc),
+            Action::ToggleRc4Append => crate::app::rc4::toggle(doc),
             // Registered only with `signing`; without it nothing raises this.
             Action::AddValidationEvidence => {
                 #[cfg(feature = "signing")]

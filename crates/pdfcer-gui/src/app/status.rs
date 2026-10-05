@@ -381,108 +381,116 @@ pub fn show(
         // render notes are something pdfcer volunteers. When the bar runs out of
         // room the left is what yields, and within the left the volunteered
         // line should yield before the asked-for one.
-        selected::show(ui, doc);
+        // The left half is capped at what the never-shed groups leave: past
+        // it, a line or a decline's button is drawn under the zoom group and a
+        // click on it lands on the zoom.
+        let budget =
+            (ui.available_width() - fitting::floor_width(&fitting_widths(ui.ctx()))).max(0.0);
+        ui.scope(|ui| {
+            ui.set_max_width(budget);
+            selected::show(ui, doc);
 
-        // Left: the narrator, demoted behind a disclosure.
-        notes::show(ui, doc);
+            // Left: the narrator, demoted behind a disclosure.
+            notes::show(ui, doc);
 
-        // …and beside it, what the last fill INFERRED — which is not
-        // demoted, because it is not narration.
-        //
-        // Rule 4's surviving half: an inference the operator **cannot see**
-        // still owes an off-canvas report. `applied_autosize` (pdfcer chose
-        // the point size) and `unencodable_chars` (characters replaced with
-        // `?`) are the only two facts a fill produces that are **not
-        // re-derivable from the saved document** — afterwards they look
-        // exactly like the author's own decision.
-        //
-        // The Forms panel shows them too, and that is not enough now that
-        // filling also happens on the canvas: a fill can happen in **Read
-        // mode with the panel closed**, and the disclosure would then be
-        // reachable only by an operator who thought to switch modes and open
-        // a panel to look for a message they were never told existed. That is
-        // a silent inference, which is the one thing rule 4 forbids
-        // outright.
-        //
-        // It is keyed on `edit_epoch`, so it says nothing about a document
-        // that has moved on — an undo or any later edit retires it without
-        // anything having to remember to.
+            // …and beside it, what the last fill INFERRED — which is not
+            // demoted, because it is not narration.
+            //
+            // Rule 4's surviving half: an inference the operator **cannot see**
+            // still owes an off-canvas report. `applied_autosize` (pdfcer chose
+            // the point size) and `unencodable_chars` (characters replaced with
+            // `?`) are the only two facts a fill produces that are **not
+            // re-derivable from the saved document** — afterwards they look
+            // exactly like the author's own decision.
+            //
+            // The Forms panel shows them too, and that is not enough now that
+            // filling also happens on the canvas: a fill can happen in **Read
+            // mode with the panel closed**, and the disclosure would then be
+            // reachable only by an operator who thought to switch modes and open
+            // a panel to look for a message they were never told existed. That is
+            // a silent inference, which is the one thing rule 4 forbids
+            // outright.
+            //
+            // It is keyed on `edit_epoch`, so it says nothing about a document
+            // that has moved on — an undo or any later edit retires it without
+            // anything having to remember to.
 
-        // …and the same obligation for the verbs that move geometry.
-        //
-        // A move or a delete sometimes has to change how an object is
-        // *written* in order to express what the operator asked for — an `re`
-        // rectangle becomes four explicit lines when one corner moves on its
-        // own, because a rectangle can only describe a box. The picture is
-        // identical and the bytes are not recoverable by dragging the corner
-        // back, so this is the same species of fact as an inferred auto-size:
-        // something pdfcer decided that the saved document cannot afterwards be
-        // asked about.
-        //
-        // `pdfcer-core` returns these sentences and
-        // `crate::app::actions::vector_edit` traces them. Tracing is
-        // recording, not disclosing — that function's own header says so —
-        // and this is where they are disclosed.
-        //
-        // Keyed on `edit_epoch` exactly as its neighbour is, and for the same
-        // reason: an undo or any later edit retires the sentence without
-        // anything having to remember to. The two can never both be live —
-        // one edit bumps the epoch once and records at most one of them.
-        disclosure::all(ui, doc);
+            // …and the same obligation for the verbs that move geometry.
+            //
+            // A move or a delete sometimes has to change how an object is
+            // *written* in order to express what the operator asked for — an `re`
+            // rectangle becomes four explicit lines when one corner moves on its
+            // own, because a rectangle can only describe a box. The picture is
+            // identical and the bytes are not recoverable by dragging the corner
+            // back, so this is the same species of fact as an inferred auto-size:
+            // something pdfcer decided that the saved document cannot afterwards be
+            // asked about.
+            //
+            // `pdfcer-core` returns these sentences and
+            // `crate::app::actions::vector_edit` traces them. Tracing is
+            // recording, not disclosing — that function's own header says so —
+            // and this is where they are disclosed.
+            //
+            // Keyed on `edit_epoch` exactly as its neighbour is, and for the same
+            // reason: an undo or any later edit retires the sentence without
+            // anything having to remember to. The two can never both be live —
+            // one edit bumps the epoch once and records at most one of them.
+            disclosure::all(ui, doc);
 
-        // …and the opposite speech act, in the same place.
-        //
-        // The three lines above all say *something happened*. This one says
-        // *nothing happened*: a command was invoked and declined, because
-        // there was nothing for it to act on. Today that is zoom-to-selection
-        // with no resolvable bounds and no canvas — `canvas::zoom` returns
-        // those outcomes and traces them, and this is where the dispatcher
-        // turns one into a sentence instead of dropping it.
-        //
-        // It is drawn here rather than folded into `edit_disclosure` because
-        // it is a **different store**, not a different message: a decline
-        // changes no document, so `edit_epoch` never moves, and an
-        // epoch-keyed decline would still be on screen forty gestures later.
-        // It retires by the operator's next act instead — `page_box`'s clamp
-        // note's rule, not the disclosures'. See `decline`'s header.
-        //
-        // It can coexist with an edit disclosure (an edit, then a deselect,
-        // then the chord), and that is bounded rather than unbounded: each
-        // line takes a fraction of what *remains*, so the left half converges
-        // and the right-to-left cluster opposite is what yields — the same
-        // behaviour the render-notes line has always had.
-        // Before the decline note, because it outranks it: a decline
-        // explains why one gesture did nothing, while this explains why
-        // EVERY gesture will. An operator reading the bar because the
-        // canvas stopped responding needs the general answer first.
-        filter::empty_note(ui, *filter);
+            // …and the opposite speech act, in the same place.
+            //
+            // The three lines above all say *something happened*. This one says
+            // *nothing happened*: a command was invoked and declined, because
+            // there was nothing for it to act on. Today that is zoom-to-selection
+            // with no resolvable bounds and no canvas — `canvas::zoom` returns
+            // those outcomes and traces them, and this is where the dispatcher
+            // turns one into a sentence instead of dropping it.
+            //
+            // It is drawn here rather than folded into `edit_disclosure` because
+            // it is a **different store**, not a different message: a decline
+            // changes no document, so `edit_epoch` never moves, and an
+            // epoch-keyed decline would still be on screen forty gestures later.
+            // It retires by the operator's next act instead — `page_box`'s clamp
+            // note's rule, not the disclosures'. See `decline`'s header.
+            //
+            // It can coexist with an edit disclosure (an edit, then a deselect,
+            // then the chord), and that is bounded rather than unbounded: each
+            // line takes a fraction of what *remains*, so the left half converges
+            // and the right-to-left cluster opposite is what yields — the same
+            // behaviour the render-notes line has always had.
+            // Before the decline note, because it outranks it: a decline
+            // explains why one gesture did nothing, while this explains why
+            // EVERY gesture will. An operator reading the bar because the
+            // canvas stopped responding needs the general answer first.
+            filter::empty_note(ui, *filter);
 
-        // …and the same species of fact about one DIRECTION — O186.
-        //
-        // *"Why will every zoom-in gesture do nothing?"*, which is the empty
-        // filter's question narrowed to one axis, and it belongs here for the
-        // same reason: between the general answer above and the
-        // single-gesture answer below. An operator reading this bar because a
-        // control stopped responding wants them in that order.
-        //
-        // It is deliberately NOT part of `decline::show`. The clamped region
-        // zoom that module declines to word is a partial grant the zoom readout
-        // already explains; this one the readout cannot explain, because the
-        // number it shows did not move. That argument is in `rasterstop`'s
-        // header, and beside `decline`'s own ruling, because those are the two
-        // places the next reader will look.
-        rasterstop::show(ui, doc);
+            // …and the same species of fact about one DIRECTION — O186.
+            //
+            // *"Why will every zoom-in gesture do nothing?"*, which is the empty
+            // filter's question narrowed to one axis, and it belongs here for the
+            // same reason: between the general answer above and the
+            // single-gesture answer below. An operator reading this bar because a
+            // control stopped responding wants them in that order.
+            //
+            // It is deliberately NOT part of `decline::show`. The clamped region
+            // zoom that module declines to word is a partial grant the zoom readout
+            // already explains; this one the readout cannot explain, because the
+            // number it shows did not move. That argument is in `rasterstop`'s
+            // header, and beside `decline`'s own ruling, because those are the two
+            // places the next reader will look.
+            rasterstop::show(ui, doc);
 
-        // …and the same species of fact about one MODE.
-        //
-        // Below `rasterstop` because that one explains why a gesture the
-        // operator just made did nothing, and this one explains why a mode he
-        // turned on some time ago is showing nothing — the first is the
-        // answer to a question he is asking right now, the second to one he
-        // may not have thought to ask yet.
-        ocrlayer::show(ui, doc);
+            // …and the same species of fact about one MODE.
+            //
+            // Below `rasterstop` because that one explains why a gesture the
+            // operator just made did nothing, and this one explains why a mode he
+            // turned on some time ago is showing nothing — the first is the
+            // answer to a question he is asking right now, the second to one he
+            // may not have thought to ask yet.
+            ocrlayer::show(ui, doc);
 
-        decline::show(ui, doc, commands, actions);
+            decline::show(ui, doc, commands, actions);
+        });
 
         // Right: the controls that must never move.
         //

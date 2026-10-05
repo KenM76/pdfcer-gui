@@ -81,6 +81,8 @@ mod ocrband;
 /// The sentences a file earns the moment it opens: a wrapper, an action that reaches out.
 pub mod opennotes;
 pub mod panels;
+/// Edits to a document kept under RC4, on request only.
+pub mod rc4;
 pub use pdfcer_gui_base::dockpersist as persistence;
 /// The **selection filter**, on disk — where it lives, and why it is written
 /// immediately where the dock layout is debounced.

@@ -42,3 +42,11 @@ continuation, so it deleted both. **Never write a Rust wrap through a Python
 string.** Put the Rust text in with the Edit tool, or write the script with the
 Write tool and use a raw string (`r'''…'''`), then run the gap gate before
 quoting the batch clean.
+
+**2026-10-04, fifth time: five literals in one session**, every one written as a
+doubled backslash in a python heredoc. The doubling does not survive: the Bash
+tool's transport collapses it to one before python runs (proved the same hour:
+a python line holding a doubled backslash in quotes died with "unexpected
+character after line continuation"). Two were caught by `check-string-gaps`
+in the full gate run, three by reading the check's own SKIP output. Rust text
+with a wrap goes in through Edit, always.

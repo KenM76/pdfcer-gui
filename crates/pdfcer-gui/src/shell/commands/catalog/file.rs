@@ -502,7 +502,7 @@ pub(super) fn band() -> Vec<Command> {
         // 119 sits immediately below the derivative cluster (120-125: DXF, form
         // data, page text, document text, image, text) and immediately above
         // `file.import_form_data` at 118. The File band's genuinely free tokens
-        // after this one are 107, 114-117, 133-139, 143-149 and 153-159.
+        // after this one are 107, 114-117, 134-139, 143-149 and 153-159.
         command("file.stamp_collection", t::file_stamp_collection(), 119)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
@@ -704,6 +704,14 @@ pub(super) fn band() -> Vec<Command> {
         command("file.encrypt", crate::text::protect::file_encrypt(), 126)
             .with_icon("encrypt")
             .enabled_when("doc.open"),
+        // A switch, pressed while allowed; shown only on an RC4 document.
+        command(
+            crate::app::rc4::COMMAND,
+            crate::text::rc4::allow_edits(),
+            133,
+        )
+        .with_icon("encrypt")
+        .enabled_when(crate::app::rc4::CONDITION),
         command(
             "file.permissions",
             crate::text::protect::file_permissions(),

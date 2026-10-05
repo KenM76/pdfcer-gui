@@ -22,6 +22,7 @@ pub(crate) fn claims(id: &str) -> bool {
             | "file.sign"
             | "file.add_validation_evidence"
             | "file.add_archive_timestamp"
+            | "file.allow_rc4_edits"
     )
 }
 
@@ -35,6 +36,10 @@ impl PdfcerApp {
     ) {
         // No window: the scan decides whether there is anything to do, and the
         // picker opens in the apply phase once the clean copy exists.
+        if id == crate::app::rc4::COMMAND {
+            actions.push(crate::app::actions::Action::ToggleRc4Append);
+            return;
+        }
         if id == "file.add_validation_evidence" {
             actions.push(crate::app::actions::Action::AddValidationEvidence);
             return;
@@ -97,6 +102,7 @@ mod tests {
             "file.sign",
             "file.add_validation_evidence",
             "file.add_archive_timestamp",
+            "file.allow_rc4_edits",
         ]
         .into_iter()
         .filter(|id| reg.get(id).is_some())
@@ -109,7 +115,7 @@ mod tests {
         // supported builds.
         assert_eq!(
             registered.len(),
-            3 + 2 * usize::from(cfg!(feature = "signing"))
+            4 + 2 * usize::from(cfg!(feature = "signing"))
                 + usize::from(cfg!(feature = "timestamp")),
             "every registered Security command: {registered:?}"
         );

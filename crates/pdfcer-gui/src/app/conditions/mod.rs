@@ -67,6 +67,7 @@ impl PdfcerApp {
         }
         if let Status::Open(doc) = &self.status {
             set.set("doc.open");
+            crate::app::rc4::publish(doc, &mut set);
             if !doc.pages.is_empty() {
                 set.set("doc.pages");
                 // **THE ONE LINE**, and it was written as one line on

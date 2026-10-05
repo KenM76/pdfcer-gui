@@ -61,13 +61,14 @@ pub(super) fn stamp(doc: &mut OpenDoc, server: &str) {
             report.notes.len()
         )
     });
-    crate::app::actions::record_note(
-        epoch,
-        t::written(
-            &target.display().to_string(),
-            &report.timestamp.gen_time,
-            &report.timestamp.tsa_subject,
-            &t::level(report.prior_signatures, report.dss_present),
-        ),
+    let written = t::written(
+        &target.display().to_string(),
+        &report.timestamp.gen_time,
+        &report.timestamp.tsa_subject,
+        &t::level(report.prior_signatures, report.dss_present),
     );
+    let notes: Vec<String> = std::iter::once(written)
+        .chain(crate::app::rc4::after_save(report.rc4_keystream_reused))
+        .collect();
+    crate::app::actions::record_notes(epoch, notes);
 }

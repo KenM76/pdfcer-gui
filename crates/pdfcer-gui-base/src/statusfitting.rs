@@ -82,6 +82,23 @@ impl Widths {
 /// How much room a separator between two groups needs, in points.
 const SEPARATOR_PTS: f32 = 6.0;
 
+/// The room the bar's left half must leave: what the groups this module never
+/// sheds occupied last frame, with the separator before them. Zero until they
+/// have been measured.
+#[must_use]
+pub fn floor_width(widths: &Widths) -> f32 {
+    let kept: Vec<Group> = Group::ORDER
+        .into_iter()
+        .filter(|g| still_reachable_at(*g).is_none())
+        .collect();
+    let width = measured_width(&kept, widths);
+    if width > 0.0 {
+        width + SEPARATOR_PTS
+    } else {
+        0.0
+    }
+}
+
 /// **Which of the cluster's groups fit in `available` points.**
 #[must_use]
 pub fn affordable(available: f32, widths: &Widths) -> Vec<Group> {

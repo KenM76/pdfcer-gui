@@ -122,7 +122,7 @@ fn run(
 
     // --- 4. write, and say exactly what was written -----------------------
     let report = prepared.report();
-    let details = t::written_details(&t::Written {
+    let mut details = t::written_details(&t::Written {
         field: &report.field_name,
         subject: &report.signer_subject,
         serial: &report.signer_serial_hex,
@@ -140,6 +140,10 @@ fn run(
             serial: &stamp.serial_hex,
         }),
     });
+    if let Some(rc4) = crate::app::rc4::after_save(report.rc4_keystream_reused) {
+        details.push('\n');
+        details.push_str(&rc4);
+    }
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //

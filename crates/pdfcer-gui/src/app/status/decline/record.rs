@@ -92,6 +92,11 @@ pub(crate) fn record_unshare(why: crate::text::unshare::UnshareRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Unshare(why)));
 }
 
+/// Record that an edit was refused because the file is kept under RC4.
+pub(crate) fn record_rc4_refused() {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::Rc4Refused));
+}
+
 /// Record why a paste of another program's copy placed nothing.
 pub(crate) fn record_os_paste(why: crate::text::ospaste::OsPasteRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::OsPaste(why)));

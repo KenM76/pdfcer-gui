@@ -234,6 +234,10 @@ fn vector_edit_scoped<E: std::fmt::Display>(
         // `PDFCER_DIAG` wants §9.6.6.4, and the operator wants to know their
         // drawing is intact.
         Err(error) => {
+            // An RC4 refusal names its own remedy; `refused` yields to it.
+            if crate::app::rc4::explains(doc, &error.to_string()) {
+                crate::app::status::decline::record_rc4_refused();
+            }
             floor.refused();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
