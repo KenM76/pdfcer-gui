@@ -465,6 +465,11 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(structure_round_trip::HandEditsCompileBackAsAnAppendedUpdate),
         Box::new(evidence_scripted::ValidationEvidenceAddedWithoutTheMouse),
         Box::new(bates_scripted::BatesNumberingWithoutTheMouse),
+        Box::new(ocr_scripted::RecognisedTextIsInTheSavedFile { engine: "ocrs" }),
+        Box::new(ocr_scripted::RecognisedTextIsInTheSavedFile { engine: "paddle" }),
+        Box::new(ocr_scripted::RecognisedTextIsInTheSavedFile {
+            engine: "paddle-vl",
+        }),
         Box::new(labels_scripted::PageLabelsWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),
         Box::new(measure_area_scripted::AnAreaMeasuresTheRegionItEncloses),

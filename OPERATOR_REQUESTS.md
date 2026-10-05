@@ -505,7 +505,7 @@ In his order:
 
 Each item gets a driven check and a falsification. A release follows all seven, not the first alone.
 
-**Where it stands.** Recorded; item 1 started.
+**Where it stands.** Item 1 not reproduced: on a synthetic scan and on an 8-page scanned drawing, with his own settings and preferences copied in, both release builds write the layer, save it, and a fresh launch refuses the saved page as already holding text; the two saved files are byte-identical. Neither the engine nor the shell changed the OCR write between the tags. In both releases PaddleOCR-VL is listed but cannot run: with it remembered, Run is greyed and its hover says to choose another model. Asked what he ran, on what, and how he saw the text missing. Driven: `recognised_text_is_in_the_saved_file`, `paddle_text_is_in_the_saved_file`, `paddle_vl_text_is_in_the_saved_file`, falsified by two plants. Item 7: the unreleased build runs PaddleOCR-VL through the engine's OCR host, and his installed add-on lists as *PaddleOCR-VL 1.5 (q8, rewritten for rten)*, driven by the VL variant. Items 2, 3, 4 and 6 filed to the engine as G121, G122, G124 and G123. G125: any edit on a page folds the OCR layer's stream into the page's content and the engine stops finding the layer, so editing it (item 5) loses it and the Layers-tree workaround (item 3) fails.
 
 ## O285 — **IN PROGRESS** — the rest of what the engine can do, including how a document is split
 

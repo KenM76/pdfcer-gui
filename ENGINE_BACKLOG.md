@@ -560,6 +560,17 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G096** — GIF is recognised and refused, never decoded. A dropped `.gif` is refused with the engine's sentence; a GIF copied in a browser pastes through the PNG the browser also puts on the clipboard.
 - **G097** — a push button's icon cannot be set from an image. No icon row is offered.
 
+## Filed requests for the OCR layer — not verdict rows
+
+The requests O286 waits on (OPERATOR_REQUESTS), filed in the request
+channel. They join a verdict section when the engine answers.
+
+- **G121** — an OCR layer is written as loose words with no lines, paragraphs or columns; `OcrPage` holds only words and no layout stage runs before the write. The shell does not reorder words itself.
+- **G122** — an OCR layer is not an optional-content group, so no Layers panel can list it. The `set_objects_layer` workaround fails on `G125`; no Layers row is offered.
+- **G123** — text added with `with_render_mode(3)` carries no `/pdfc_OCR` marker, so it is not part of the layer it was typed onto.
+- **G124** — extraction cannot select the OCR layer's text: `ExtractedGlyph` has `invisible` and no marked-content tag.
+- **G125** — any edit on a page folds its OCR layer's stream into the page's first `/Contents` stream, and `read_marker` stops finding the layer. No shell workaround exists.
+
 ## Snapshot box
 
 The request O272's vector copy waits on.
