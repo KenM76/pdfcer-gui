@@ -12,8 +12,9 @@ draws everything when off, and says on the status bar how much it left out.
 
 1. `render-findings` (traced by the Render diagnostics window): every engine
    divergence counter as `key=count`. Owed: `color.spaces_unresolved=1`,
-   `shading.refused=1`, and
-   `shown` at least 2, so both reached the list as sentences.
+   `shading.refused=1`, `color.patterns_unpainted=1` (a `/Pattern` fill naming
+   no pattern the page holds), and `shown` at least 3, so all three reached
+   the list as sentences.
 2. `canvas-tiny skipped=0 mode=0` before the toggle: off skips nothing.
 3. Scripted clicks on `ribbon.tab.view`, then
    `ribbon.item.view.skip_tiny_details`.
@@ -24,8 +25,10 @@ draws everything when off, and says on the status bar how much it left out.
 
 # Falsified
 
-- Removing `ink::findings` from `notes::findings` drops `shown` below 2 and
+- Removing `ink::findings` from `notes::findings` drops `shown` below 3 and
   fails step 1.
+- A fixture without the unresolvable pattern fill reads
+  `color.patterns_unpainted=0 shown=2` and fails step 1.
 - Not copying `skip_tiny_details` into the render request leaves `skipped=0`
   after the press and fails step 4.
 

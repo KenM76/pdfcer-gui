@@ -1,4 +1,5 @@
-//! `print_shop` — the render notes name the colour findings, and View ▸
+//! `print_shop` — the render notes name the colour findings, an unpainted
+//! pattern among them, and View ▸
 //! Display ▸ Skip tiny details leaves out what is too small to see and says
 //! how much. `ink_picker` — Tools ▸ Diagnostics ▸ Ink picker reads the inks at
 //! a click, overprint included.
@@ -202,16 +203,18 @@ fn findings(report: &mut CheckReport, session: &Session) -> Result<Option<String
     };
     report.note(format!("findings: `{}`", line.raw));
     let count = |k: &str| line.get(k).and_then(|v| v.parse::<usize>().ok());
-    let (cs, sh, shown) = (
+    let (cs, sh, pat, shown) = (
         count("color.spaces_unresolved"),
         count("shading.refused"),
+        count("color.patterns_unpainted"),
         count("shown"),
     );
-    if cs != Some(1) || sh != Some(1) || shown.is_none_or(|n| n < 2) {
+    if cs != Some(1) || sh != Some(1) || pat != Some(1) || shown.is_none_or(|n| n < 3) {
         return Ok(Some(format!(
-            "the fixture names one unresolvable colour space and one missing shading; the \
-             window read color.spaces_unresolved={cs:?} shading.refused={sh:?} shown={shown:?}, where \
-             1, 1 and at least 2 sentences were owed. `{}`.",
+            "the fixture names one unresolvable colour space, one missing shading and one \
+             missing pattern; the window read color.spaces_unresolved={cs:?} \
+             shading.refused={sh:?} color.patterns_unpainted={pat:?} shown={shown:?}, where 1, \
+             1, 1 and at least 3 sentences were owed. `{}`.",
             line.raw
         )));
     }

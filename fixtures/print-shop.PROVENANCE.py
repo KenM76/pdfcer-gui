@@ -1,4 +1,4 @@
-"""Author `print-shop.pdf`: one Letter page whose render trips two of the
+"""Author `print-shop.pdf`: one Letter page whose render trips three of the
 engine's DIVERGENCE counters and carries detail too small to see at fit.
 
     python fixtures/print-shop.PROVENANCE.py
@@ -11,6 +11,8 @@ Driven by `tools/ui-verify/src/checks/print_shop.rs`.
   engine refuses it and counts `shading.refused` (`shadings_refused`).
 - `/Nowhere cs` names a colour space the resources do not hold, so it counts
   `color.spaces_unresolved` (`cs_unresolved`).
+- `/Pattern cs /Nowhere scn` selects a pattern the resources do not hold, so
+  the fill paints nothing and counts `color.patterns_unpainted`.
 - 400 copies of a 10 x 10 form XObject drawn at 0.02 scale: each is 0.2 pt
   square, under `pdfcer_render::interpret::SUBPIXEL_CULL_PX` (half a device
   pixel) at any fit zoom below 2.5 px/pt, so with subpixel culling on every one
@@ -37,6 +39,7 @@ content = '\n'.join(
         '2 w 36 36 540 720 re S',
         '/Nowhere sh',
         '/Nowhere cs 0.5 sc 72 100 144 72 re f',
+        '/Pattern cs /Nowhere scn 72 200 144 72 re f',
         '1 0 0 0 k 300 100 144 72 re f q /GS0 gs 0 1 0 0 k 340 120 144 72 re f Q',
         *tiny,
     ]
