@@ -1,7 +1,8 @@
 //! `a_snapshot_pastes_back_as_a_drawing` — in Review, a snapshot box laid
 //! round a drawing and copied puts a one-page PDF on the clipboard beside the
-//! picture, and Ctrl+V places that PDF back as a stamp the box's size; in Read
-//! the same paste is refused. Driven through the scripted pointer on a window
+//! picture, and Ctrl+V places that PDF back as a stamp the box's size; in Edit
+//! the same paste draws it into the page's content, one undo; in Read it is
+//! refused. Driven through the scripted pointer on a window
 //! placed off the desktop; the clipboard is restored afterwards.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/snapshot_paste.md`.
@@ -17,6 +18,8 @@ use crate::sys;
 
 const COPIED: &str = "clipboard-snapshot-copy"; // ui-text-exempt: a trace event name, never displayed
 const PLACED: &str = "custom-stamp-placed"; // ui-text-exempt: a trace event name, never displayed
+const CONTENT: &str = "page-content-placed"; // ui-text-exempt: a trace event name, never displayed
+const UNDONE: &str = "undo-applied"; // ui-text-exempt: a trace event name, never displayed
 const DECLINED: &str = "command-declined"; // ui-text-exempt: a trace event name, never displayed
 const PDF: &str = "application/pdf"; // ui-text-exempt: a clipboard format name, never displayed
 /// How far the stamp's sides may sit from the box's: the box line rounds its
@@ -93,6 +96,10 @@ fn drive(
 
     let at = window(PASTE_AT.0 * w, PASTE_AT.1 * h)?;
     let mut failure = pasted_in_review(&rig, report, at, size)?;
+    if failure.is_none() {
+        switch(&rig, "3")?;
+        failure = pasted_in_edit(&rig, report, at, size)?;
+    }
     if failure.is_none() {
         switch(&rig, "1")?;
         failure = read_refuses(&rig, at)?;
@@ -183,6 +190,68 @@ fn pasted_in_review(
 }
 
 /// In Read the same paste places nothing and is declined.
+/// Ctrl+V at `at` in Edit draws the drawing into the page's content at the
+/// box's size, through `place_page_content` and not the stamp verb, and one
+/// Ctrl+Z takes it back.
+fn pasted_in_edit(
+    rig: &Rig,
+    report: &mut CheckReport,
+    at: WindowPoint,
+    (w, h): (f64, f64),
+) -> Result<Option<String>> {
+    let s = &rig.session;
+    let (pasted, content, stamped, undone) = (
+        osp::count(s, osp::PASTED)?,
+        osp::count(s, CONTENT)?,
+        osp::count(s, PLACED)?,
+        osp::count(s, UNDONE)?,
+    );
+    rig.pointer.hover(s, at)?;
+    rig.pointer.paste(s, None, "x")?;
+    rig.session.settle(30);
+    let trace = s.trace()?;
+    let Some(line) = trace.events(osp::PASTED).nth(pasted) else {
+        return Ok(Some(format!(
+            "Ctrl+V in Edit traced no `{}` line.",
+            osp::PASTED
+        )));
+    };
+    report.note(format!("Edit paste: `{}`", line.raw));
+    if line.get("kind") != Some("pdf") || line.get("as") != Some("content") {
+        return Ok(Some(format!(
+            "Ctrl+V in Edit placed kind={} as={}, not the drawing as page content.",
+            line.get("kind").unwrap_or("-"),
+            line.get("as").unwrap_or("-")
+        )));
+    }
+    let Some(placed) = trace.events(CONTENT).nth(content) else {
+        return Ok(Some(format!(
+            "the drawing was asked for as content but no `{CONTENT}` line followed."
+        )));
+    };
+    report.note(format!("placed: `{}`", placed.raw));
+    if trace.events(PLACED).count() != stamped {
+        return Ok(Some(format!(
+            "Ctrl+V in Edit traced `{PLACED}`: the drawing went in as a stamp."
+        )));
+    }
+    let scale = |k: &str| placed.get(k).and_then(|v| v.parse::<f64>().ok());
+    let natural = |v: Option<f64>| v.is_some_and(|v| (v - 1.0).abs() < 0.01);
+    if !natural(scale("scale-x")) || !natural(scale("scale-y")) {
+        return Ok(Some(format!(
+            "the drawing went in at scale {:?} x {:?}; the box's own size, {w:.2} x {h:.2} pt, \
+             was expected.",
+            scale("scale-x"),
+            scale("scale-y")
+        )));
+    }
+    rig.pointer.gone(s)?;
+    rig.pointer.key(s, None, "Z", Some("ctrl"))?;
+    rig.session.settle(20);
+    Ok((osp::count(s, UNDONE)? == undone)
+        .then(|| "Ctrl+Z did not undo the placed drawing.".to_owned()))
+}
+
 fn read_refuses(rig: &Rig, at: WindowPoint) -> Result<Option<String>> {
     let (pasted, declined) = (
         osp::count(&rig.session, osp::PASTED)?,

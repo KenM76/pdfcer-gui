@@ -57,6 +57,7 @@ mod markupdest;
 pub(crate) mod models;
 mod newcomment;
 /// Placing a picture or drawing, and selecting what was placed.
+mod pagecontent;
 mod picture;
 mod screenannot;
 mod soundannot;

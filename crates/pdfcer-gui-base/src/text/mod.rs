@@ -170,6 +170,8 @@ pub mod page_size;
 /// operator cannot see. Its header carries why a page paste is rule 4's
 /// sharpest case.
 pub mod pageclip;
+/// What another PDF's page placed into a page's content says.
+pub mod pagecontent;
 pub mod pages;
 /// The two sentences a save refused by [`crate::pagetree`]'s structural
 /// guard says — *"this document says it has 36 pages and only 34 are really

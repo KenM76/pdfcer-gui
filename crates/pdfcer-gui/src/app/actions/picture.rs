@@ -141,7 +141,7 @@ fn raster(
 /// after the edit, and its borrow ends before the selection is touched. A page
 /// that no longer decomposes leaves the selection alone rather than naming an
 /// index that may be some other object.
-fn select_newest(doc: &mut OpenDoc, page: usize) {
+pub(super) fn select_newest(doc: &mut OpenDoc, page: usize) {
     let count = doc
         .page_objects()
         .map(|provider| provider.page_objects().objects.len());

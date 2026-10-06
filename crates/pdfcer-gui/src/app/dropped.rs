@@ -156,10 +156,10 @@ fn documents(
         let caps = app.capabilities();
         let offer = crate::dialogs::drop_pdf::Offer {
             insert_after: caps.edit_content.then_some(doc.view.page_index),
-            place_at: caps
-                .author_markup
+            place_at: (caps.author_markup || caps.edit_content)
                 .then(|| crate::app::dispatch::ospaste::target_at(app, ctx, at))
                 .flatten(),
+            as_content: caps.edit_content,
         };
         if let Some(dialog) = crate::dialogs::drop_pdf::DropPdfDialog::read(only.clone(), offer) {
             crate::diag::trace(|| {

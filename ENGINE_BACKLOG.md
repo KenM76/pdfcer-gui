@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **39 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `wanted` — a real gap — **38 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -89,7 +89,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Replace a block's text and re-wrap it** — `EditSession::edit_block_text`, `edit_block_text_preview`, `block_at_point` (our `G076`, Pass 433.0) | **wanted: Enter is wired; the draft's preview, the joins and the paste are not.** <!--namesake:edit_block_text--> <!--namesake:edit_block_text_preview--> Enter in a line of a one-look paragraph re-anchors the draft on its block (`canvas::textedit::promote`, previewed with `edit_block_text_preview` before it opens), and the commit is one `edit_block_text` (`app::actions::blocktext`); driven by `enter_breaks_a_paragraph_on_the_page`. A paragraph mixing looks declines rather than be flattened, by a shell-side look comparison that is a subset of the engine's (our `G101`). The modules are `pdfcer_core::edit::block_text` and `pdfcer_core::text_edit::block_text`; the undo entry is `pdfcer_core::edit::CommandKind::EditBlockText`. Owed: the open paragraph drawn from the engine's preview, Backspace and Delete joining lines, a multi-line paste, `block_at_point` for a paragraph opened by a click. |
 | **`GlyphProvenance` carries line width and render mode** — `GlyphProvenance::line_width`, `render_mode()`, `text_edit::synth::detect_at` with `synth::shear_of`, `synth::unshear` and `synth::MIN_DETECT_STROKE_RATIO` (our `G087`, Pass 441.0) | **wanted — in the pin, not yet wired.** <!--namesake:GlyphProvenance--> The shell reads provenance's font, matrix and text state today, not the new fields. <!--namesake:line_width--> Its other `line_width`s are markup stroke widths. <!--namesake:render_mode--> `weight::at` reads the text state's `render_mode` operand, not the new method. `canvas::textedit::weight::at` decides whether Bold and Italic show pressed from the font name and the render mode, passing a line width of 0 because provenance carries none, so a synthetic bold drawn by widening the stroke is judged without its width. `detect_at` reads the width from the glyph and replaces that call. |
 | Paint tiling patterns (`PatternType 1`, §8.7.3 Table 75) for fills, strokes and text … | **wanted — in the pin, not yet wired.** Engine Pass 448.0. Tiled fills, strokes and text now paint on the canvas as they print, because it draws through `pdfcer-render`; `ColorDiagnostics::tiling_patterns_painted` counts a success and has nothing to say. The shell does not read `patterns_unpainted` yet; what remains is that a pattern the renderer declines needs an off-canvas note from that count. |
-| **Place a PDF page's own content directly onto another page, not behind a Stamp** — `EditSession::place_page_content` (our `G100`, Pass 450.0) | **wanted.** The pin carries it: the verb's report is `pdfcer_core::edit::page_artwork` (`PlacedPageContent`: `rect`, `distorted`, `objects_imported`, `resources_renamed`, `form_id`, `content_id`) and its undo kind is `CommandKind::PlacePageContent`. It is the paste-back half of `O272`. <!--namesake:place_page_artwork--> Today the stamp verb is called: a snapshot pasted back (`dispatch::ospaste::drawing`) and a dropped PDF placed as artwork both arrive as a stamp in Edit as well as Review, so in Edit the drawing selects, hides and deletes as markup and only flattening makes it part of the page. What it takes here: Edit-mode paste of `application/pdf` calls `place_page_content` while Review keeps the stamp, with its scale and `distorted` disclosure on the status line. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -144,7 +143,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **5 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `blocked` — waiting on something named — **5 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -171,7 +170,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -182,7 +181,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `declined` — deliberately no surface — **16 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -224,7 +223,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **252 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-05; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **253 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -268,6 +267,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Place a PDF page's own content directly onto another page, not behind a Stamp** — `EditSession::place_page_content` (our `G100`, Pass 450.0) | **shipped.** `app::actions::pagecontent::place` calls `place_page_content` once through the funnel and selects the placed form; its scale, a stretch, and source comments or fields not carried go to the status line. A snapshot pasted back in Edit (`dispatch::ospaste::drawing`) and a dropped PDF's Place in Edit (`dialogs::drop_pdf`) take it; Review keeps the stamp, as does Paste as Stamp. It is the paste-back half of `O272`. <!--namesake:place_page_artwork--> Driven by `a_snapshot_pastes_back_as_a_drawing` and `a_dropped_pdf_asks_open_insert_or_place`. |
 | **Opt-in disclosed workaround for a refused text edit** — `EditOptions::with_workarounds`, `EditOptions::workarounds`, `WorkaroundPolicy::{Refuse, Apply}`, the module `pdfcer_core::text_edit::workaround`, `EditError::WorkaroundRefused` (Pass 436.0) | **shipped — offered in Properties.** A refused text edit whose `EditError::workaround` names one is offered there, worded per `Workaround` variant with whether the result is exact; *Make the edit this way* re-commits the same edit with `WorkaroundPolicy::Apply`, never by default. The engine's disclosure (`EditReport::workaround`) reaches the status line; `EditError::WorkaroundRefused` replaces the button with the engine's reason. Driven: `a_refused_edit_offers_its_workaround` on `fixtures/quote-operator.pdf`. |
 | **Augment an embedded font subset from an installed face — simple and composite** — `EditOptions::with_subset_augment`, `SubsetAugment`, `pdfcer_render::font::InstalledFaceAugmenter`; the modules `pdfcer_core::text_edit::subset_augment` and `pdfcer_render::font::augment`; `TextEditPreview::font_program` (our `G075` (b), Pass 430.1) | **shipped — every typed edit's options carry an augmenter over this computer's font folders.** `editmodel::installedfaces` indexes the folders on a background thread at start and after Settings is saved; `canvas::textedit::installed::augmented` hands it to the plan, the commit and `run_repertoire_with` alike, and `pdfcer_render::edit_preview::preview_outlines` draws `TextEditPreview::font_program`. The engine's disclosure names the face it took the glyph from, and `app::actions::textcommit` reports it. Until the index is built the augmenter offers nothing and says why. Simple TrueType only at this pin: the composite slice is a later engine commit than `Cargo.lock` holds, and reaches the same call site without GUI work when the pin moves. Driven: `a_key_the_subset_lacks_comes_from_its_installed_face`. |
 | **Set a refused text-edit replacement in a same-face sibling font resource** — `EditOptions::with_sibling_fonts`, `EditOptions::sibling_fonts` (Pass 430.1, decision 174) | **shipped — `editmodel::disposition::typing` turns it on for every typed edit.** A key the run's subset refuses is set in another resource on the page naming the same face before the shell re-faces it; the commit's own disclosure says so, and `app::actions::textcommit` reports it. |
@@ -576,7 +576,7 @@ channel. They join a verdict section when the engine answers.
 The request O272's vector copy waits on.
 
 - **G099** — a page region cannot be exported with the viewer's state applied. Cropping a cloned `Page` hides the geometry outside the box but leaves it in the SVG, EMF or PDF. Answered by `pageops::extract_region` (its row under shipped); the snapshot copy is built on it.
-- **G100** — another PDF's page placed as page content rather than a stamp. Answered by `EditSession::place_page_content`, in the pin and not yet wired (its row under wanted).
+- **G100** — another PDF's page placed as page content rather than a stamp. Answered by `EditSession::place_page_content`, wired (its row under shipped).
 
 ## Measuring area
 

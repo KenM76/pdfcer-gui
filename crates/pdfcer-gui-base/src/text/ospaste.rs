@@ -20,6 +20,9 @@ pub enum OsPasteRefusal {
     NotAPage(String),
     /// Text the engine would not set as pages; the field is its sentence.
     PagesRefused(String),
+    /// A PDF to draw into the page that could not be read; the field is the
+    /// reason.
+    SourceUnreadable(String),
     /// Nothing a page can take.
     Nothing,
 }
@@ -45,6 +48,9 @@ impl OsPasteRefusal {
                 "pdfcer could not make a page of what the clipboard holds: {why}. Nothing was added."
             )),
             Self::PagesRefused(why) => Cow::Owned(why.clone()),
+            Self::SourceUnreadable(why) => Cow::Owned(format!(
+                "pdfcer could not read the PDF to place: {why}. Nothing was placed."
+            )),
             Self::Nothing => Cow::Borrowed(
                 "The clipboard holds nothing pdfcer can paste onto a page. Copy a picture, some text, or something in pdfcer, and paste again.",
             ),

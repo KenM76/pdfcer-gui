@@ -689,6 +689,12 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         VectorAction::SplitTextLines { page, object } => {
             super::runsplit::apply(doc, page, object);
         }
+        VectorAction::PlacePageContent {
+            page,
+            rect,
+            file,
+            source_page,
+        } => super::pagecontent::place(doc, &file, source_page, page, rect),
     }
     // A delete or a split renumbers what follows it, so a surviving selection would name
     // objects the operator never picked, and a second Delete would remove them.

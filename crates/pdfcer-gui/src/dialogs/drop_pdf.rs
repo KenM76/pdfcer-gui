@@ -2,7 +2,8 @@
 //!
 //! Asked when exactly one PDF lands on the window while a document is open:
 //! open it (the default, which Enter takes), insert all of its pages after the
-//! page on screen, or place its first page as artwork at the drop point. A
+//! page on screen, or place its first page at the drop point: drawn into the
+//! page's content where the mode edits content, else as a stamp. A
 //! choice the mode does not offer is absent; with neither offered the drop
 //! simply opens, as does a file with no readable page.
 //!
@@ -14,8 +15,8 @@ use egui::Ui;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::pageops::InsertPosition;
 
-use crate::app::actions::Action;
 use crate::app::actions::pages::PageAction;
+use crate::app::actions::{Action, VectorAction};
 use crate::canvas::textannot::{
     DEFAULT_STAMP, DEFAULT_STAMP_SIZE, DEFAULT_STICKY_ICON, TextAnnotKind,
 };
@@ -37,6 +38,9 @@ pub struct Offer {
     /// The drop's page, its point there in PDF user space, and that page's
     /// crop box, when placing is offered.
     pub place_at: Option<(usize, (f64, f64), Rect)>,
+    /// Whether Place draws into the page's content rather than adding a
+    /// stamp.
+    pub as_content: bool,
 }
 
 /// Where the first page would go: the target page and the rectangle on it.
@@ -44,6 +48,7 @@ pub struct Offer {
 struct Placement {
     page: usize,
     rect: Rect,
+    as_content: bool,
 }
 
 /// The three answers that author something.
@@ -104,6 +109,7 @@ impl DropPdfDialog {
         let place = offer.place_at.map(|(page, point, crop)| Placement {
             page,
             rect: pdfcer_gui_base::clippaste::rect_at(point, (first.width(), first.height()), crop),
+            as_content: offer.as_content,
         });
         Self {
             path,
@@ -127,23 +133,36 @@ impl DropPdfDialog {
                     position: InsertPosition::After(current),
                 })
             }),
-            // Through the custom-stamp route: page 0 of the file is the
-            // artwork, exactly as a stamp collection's page is.
-            Choice::Place => self.place.map(|p| Action::CommitTextAnnot {
+            Choice::Place => self.place.map(|p| self.placed(p)),
+        }
+    }
+
+    /// Page 0 of the file drawn into the page's content, or, where the mode
+    /// only authors markup, as a custom stamp exactly as a stamp collection's
+    /// page is.
+    fn placed(&self, p: Placement) -> Action {
+        if p.as_content {
+            return Action::Vector(VectorAction::PlacePageContent {
                 page: p.page,
-                kind: TextAnnotKind::Stamp,
                 rect: p.rect,
-                text: String::new(),
-                stamp: DEFAULT_STAMP,
-                stamp_size: DEFAULT_STAMP_SIZE,
-                icon: DEFAULT_STICKY_ICON,
-                custom: Some(CustomStamp {
-                    label: self.name.clone(),
-                    category: String::new(),
-                    file: self.path.clone(),
-                    page_index: 0,
-                    dynamic: false,
-                }),
+                file: self.path.clone(),
+                source_page: 0,
+            });
+        }
+        Action::CommitTextAnnot {
+            page: p.page,
+            kind: TextAnnotKind::Stamp,
+            rect: p.rect,
+            text: String::new(),
+            stamp: DEFAULT_STAMP,
+            stamp_size: DEFAULT_STAMP_SIZE,
+            icon: DEFAULT_STICKY_ICON,
+            custom: Some(CustomStamp {
+                label: self.name.clone(),
+                category: String::new(),
+                file: self.path.clone(),
+                page_index: 0,
+                dynamic: false,
             }),
         }
     }
@@ -250,6 +269,7 @@ mod tests {
                 ury: 792.0,
             },
         )),
+        as_content: false,
     };
 
     /// Insert takes every page, after the page on screen.
@@ -281,6 +301,26 @@ mod tests {
         assert_eq!(r, rect(128.0, 464.0, 272.0, 536.0));
     }
 
+    /// Where the mode edits content, Place draws page 1 into the page.
+    #[test]
+    fn place_in_edit_draws_into_the_page() {
+        let offer = Offer {
+            as_content: true,
+            ..BOTH
+        };
+        let Some(Action::Vector(VectorAction::PlacePageContent {
+            page,
+            rect: r,
+            source_page,
+            ..
+        })) = dialog(offer).action(Choice::Place)
+        else {
+            panic!("place in Edit must raise PlacePageContent");
+        };
+        assert_eq!((page, source_page), (2, 0));
+        assert_eq!(r, rect(128.0, 464.0, 272.0, 536.0));
+    }
+
     /// A choice the mode did not offer raises nothing, and an offer of
     /// nothing opens no window.
     #[test]
@@ -288,6 +328,7 @@ mod tests {
         let none = Offer {
             insert_after: None,
             place_at: None,
+            as_content: false,
         };
         assert!(dialog(none).action(Choice::Insert).is_none());
         assert!(dialog(none).action(Choice::Place).is_none());

@@ -8,7 +8,8 @@
 //! Oracles: each drop traces `drop-pdf-asked insert=true place=true`. Insert
 //! traces `insert-pages page=1 n=2` and undoes; Place traces
 //! `drop-pdf-chosen choice=place` with a 144×72 pt rectangle centred on the
-//! drop point, then `custom-stamp-placed`, and undoes; Enter in the window
+//! drop point, then `page-content-placed` and no `custom-stamp-placed` (Edit
+//! draws the page into the content rather than stamping it), and undoes; Enter in the window
 //! traces `drop-pdf-chosen choice=open` and an `open ok` naming the file.
 
 use super::os_image_paste as osp;
@@ -26,7 +27,8 @@ const FILE: &str = "dropped-pdf-logo.pdf";
 const ASKED: &str = "drop-pdf-asked";
 const CHOSEN: &str = "drop-pdf-chosen";
 const INSERTED: &str = "insert-pages";
-const PLACED: &str = "custom-stamp-placed";
+const PLACED: &str = "page-content-placed";
+const STAMPED: &str = "custom-stamp-placed";
 const OPENED: &str = "open";
 const UNDONE: &str = "undo-applied";
 const UI_RECT: &str = "ui-rect";
@@ -218,6 +220,7 @@ fn places(
         return Ok(Some(failure));
     }
     let (chosen, placed) = (osp::count(session, CHOSEN)?, osp::count(session, PLACED)?);
+    let stamped = osp::count(session, STAMPED)?;
     press(session, pointer, PLACE)?;
     let trace = session.trace()?;
     let Some(r) = trace
@@ -237,6 +240,11 @@ fn places(
     if trace.events(PLACED).count() == placed {
         return Ok(Some(format!(
             "Place chose a rectangle but no `{PLACED}` line followed."
+        )));
+    }
+    if trace.events(STAMPED).count() != stamped {
+        return Ok(Some(format!(
+            "Place in Edit traced `{STAMPED}`: the page went in as a stamp, not as content."
         )));
     }
     undoes(session, pointer, "the placed page")

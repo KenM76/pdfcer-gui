@@ -19,7 +19,7 @@ the file opens.
 |---|---|---|
 | **Open it** — the default, drawn as the accent button, taken by Enter | always | `Action::Open`, as File ▸ Open |
 | Insert its *N* pages after page *p* | the mode changes page content (`edit_content`) | `PageAction::InsertPagesFromFile` with every page, `InsertPosition::After(current)` — the Insert pages window's defaults |
-| Place its first page here, as artwork | the mode authors markup (`author_markup`) and the drop point has a page | `Action::CommitTextAnnot` with a `CustomStamp` naming page 0 of the file, through `customstamp::place` |
+| Place its first page here, as artwork | the mode edits content or authors markup, and the drop point has a page | where the mode edits content, `VectorAction::PlacePageContent` for page 0 of the file, through `pagecontent::place`: the sheet becomes the page's own drawing. Where it only authors markup, `Action::CommitTextAnnot` with a `CustomStamp` naming page 0, through `customstamp::place` |
 | Cancel | always | nothing |
 
 An answer the mode does not offer is absent, not greyed. When neither insert
@@ -37,9 +37,9 @@ words.
 The rectangle is the first page's crop box at natural size, centred on the
 drop point and kept on the page by `clippaste::rect_at`, exactly as a dropped
 picture lands. A full sheet dropped on a sheet of the same size therefore
-covers it; a small one lands where it was dropped. The engine verb
-(`place_page_artwork`) maps the crop box onto the rectangle, so the aspect
-ratio is preserved.
+covers it; a small one lands where it was dropped. Both engine verbs
+(`place_page_content`, `place_page_artwork`) map the crop box onto the
+rectangle, so the aspect ratio is preserved.
 
 ## Trace
 

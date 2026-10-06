@@ -9,9 +9,9 @@
 //! the page; a mode that only authors markup places it as a stamp, as does
 //! [`paste_stamp`] in any mode that authors markup. With a push button
 //! selected in a mode that edits content, the picture becomes the button's
-//! icon instead. A drawing (a PDF another
-//! copy placed) lands as a stamp its crop box's size in any mode that authors
-//! markup, Edit included: the engine places a PDF page only as stamp artwork.
+//! icon instead. A drawing (a PDF another copy placed) lands its crop box's
+//! size: drawn into the page's content in a mode that edits content, as a
+//! stamp in one that only authors markup and from [`paste_stamp`].
 //! Text becomes page text in
 //! a mode that edits content and a
 //! `/FreeText` comment in one that only authors markup;
@@ -60,7 +60,9 @@ pub fn paste(
 ) {
     match incoming {
         Incoming::Image { image, format } => picture(app, ctx, id, *image, format, actions),
-        Incoming::Pdf { bytes, size_pt } => drawing(app, ctx, id, &bytes, size_pt, actions),
+        Incoming::Pdf { bytes, size_pt } => {
+            drawing(app, ctx, id, (&bytes, size_pt), false, actions);
+        }
         Incoming::Text(text) => words(app, ctx, id, &text, actions),
         Incoming::Unreadable(why) => decline("unreadable", OsPasteRefusal::Unreadable(why)),
         Incoming::Nothing => decline("nothing", OsPasteRefusal::Nothing),
@@ -143,7 +145,7 @@ pub fn paste_stamp(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
     let (image, format) = match read() {
         Incoming::Image { image, format } => (image, format),
         Incoming::Pdf { bytes, size_pt } => {
-            return drawing(app, ctx, id, &bytes, size_pt, actions);
+            return drawing(app, ctx, id, (&bytes, size_pt), true, actions);
         }
         Incoming::Unreadable(why) => return decline("unreadable", OsPasteRefusal::Unreadable(why)),
         Incoming::Text(_) | Incoming::Nothing => {
@@ -209,16 +211,20 @@ fn button_icon(
     );
 }
 
-/// A drawing as a stamp its own size, centred on the pointer or the view.
+/// A drawing its own size, centred on the pointer or the view: drawn into
+/// the page's content where the mode edits content and `as_stamp` is false,
+/// else as a stamp.
 fn drawing(
     app: &PdfcerApp,
     ctx: &egui::Context,
     id: &str,
-    bytes: &[u8],
-    size_pt: (f64, f64),
+    (bytes, size_pt): (&[u8], (f64, f64)),
+    as_stamp: bool,
     actions: &mut Vec<Action>,
 ) {
-    if !app.capabilities().author_markup {
+    let caps = app.capabilities();
+    let as_content = caps.edit_content && !as_stamp;
+    if !as_content && !caps.author_markup {
         return refuse(id, ModeRefusal::PasteDrawing);
     }
     let Some((page, at, crop)) = target(app, ctx) else {
@@ -231,6 +237,19 @@ fn drawing(
         Ok(file) => file,
         Err(why) => return decline("unplaceable", OsPasteRefusal::Unplaceable(why)),
     };
+    if as_content {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        pasted("kind=pdf as=content", page, rect);
+        actions.push(Action::Vector(
+            crate::app::actions::VectorAction::PlacePageContent {
+                page,
+                rect,
+                file,
+                source_page: 0,
+            },
+        ));
+        return;
+    }
     // ui-text-exempt: diagnostic trace, never displayed in the UI
     pasted("kind=pdf as=stamp", page, rect);
     let label = crate::text::ospaste::pasted_drawing();

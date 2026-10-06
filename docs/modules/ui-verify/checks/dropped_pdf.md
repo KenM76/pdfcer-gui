@@ -20,6 +20,7 @@ since Edit offers both.
   and Ctrl+Z must trace `undo-applied`.
 - **Place** (clicking `drop-pdf.place`) must trace
   `drop-pdf-chosen choice=place` with a 144×72 pt rectangle centred on the
-  drop point, then `custom-stamp-placed`, and Ctrl+Z must undo it.
+  drop point, then `page-content-placed` (Edit draws the sheet into the
+  page's content) and no `custom-stamp-placed`, and Ctrl+Z must undo it.
 - **Open** is pressed with Enter in the window, which proves it is the
   default: a new `open` line must name the dropped file.

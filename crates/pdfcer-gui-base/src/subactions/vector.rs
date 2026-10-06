@@ -683,4 +683,18 @@ pub enum VectorAction {
         /// The page object index of the text object.
         object: usize,
     },
+    /// Draw page `source_page` of the PDF at `file` into `page`'s content,
+    /// filling `rect` (`EditSession::place_page_content`). One undo entry,
+    /// `CommandKind::PlacePageContent`; the placed form is appended last in
+    /// paint order and selected.
+    PlacePageContent {
+        /// The 0-based page to draw on.
+        page: usize,
+        /// Where the source's crop box lands, in PDF user space.
+        rect: pdfcer_core::page_tree::Rect,
+        /// The source PDF, read when the action applies.
+        file: std::path::PathBuf,
+        /// The 0-based page of `file` to draw.
+        source_page: usize,
+    },
 }

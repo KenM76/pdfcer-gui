@@ -3,11 +3,11 @@
 `a_snapshot_pastes_back_as_a_drawing` — in Review, a snapshot box laid round a
 drawing and copied puts a one-page PDF on the clipboard under
 `application/pdf`, and Ctrl+V places that PDF back as a stamp the box's size;
-in Read the same paste is refused (O272). It shares the launch, the rig and the
+in Edit it draws it into the page's content instead; in Read the same paste is refused (O272). It shares the launch, the rig and the
 box-line reader of [`snapshot_box`](snapshot_box.md) and the clipboard helpers
 of [`snapshot_copy`](snapshot_copy.md), and runs under `--no-input`: the Copy
 and Paste chords are the scripted pointer's `copy` and `paste` events, and the
-mode switches are scripted `Ctrl+2` and `Ctrl+1`.
+mode switches are scripted `Ctrl+2`, `Ctrl+3` and `Ctrl+1`.
 
 The clipboard is snapshotted before the run and restored after it with
 `ClipGuard`, unless another program wrote it in between.
@@ -25,7 +25,11 @@ The clipboard is snapshotted before the run and restored after it with
 3. Hover at (0.75, 0.30) of the page and send Paste. Require the next
    `clip-pasted` line to be `kind=pdf as=stamp`, its rectangle the box's width
    and height within 0.5 pt, and a `custom-stamp-placed` line after it.
-4. Switch to Read and paste again at the same point. Require no new
+4. Switch to Edit and paste again at the same point. Require the next
+   `clip-pasted` line to be `kind=pdf as=content`, a `page-content-placed`
+   line with `scale-x` and `scale-y` within 0.01 of 1 (the box's own size), no
+   new `custom-stamp-placed` line, and Ctrl+Z to trace `undo-applied`.
+5. Switch to Read and paste again at the same point. Require no new
    `clip-pasted` line and a `command-declined id=edit.paste` line.
 
 The clipboard also holds the picture, at the box's size in points (its PNG
