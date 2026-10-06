@@ -143,6 +143,8 @@ impl Check for ADocumentCanBeSignedAndTheSignatureIsInTheFile {
 pub mod archive;
 pub mod hand_sign;
 pub mod next_box;
+pub mod picture_sign;
+pub mod placement;
 mod reaching;
 pub mod reopened;
 pub mod sign_box;

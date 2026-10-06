@@ -501,7 +501,7 @@ In three parts:
 
 Each part gets a driven check and a falsification.
 
-**Where it stands.** Filed; not started.
+**Where it stands.** Parts 1 and 2 built: the *Picture* tab and the placing preview, driven by `a_picture_signature_lands_in_its_box` and `a_signature_lands_where_it_was_put`, each falsified. Part 3 not yet built.
 
 ## O286 — **OPEN, ahead of O285** — recognised text lands in the file again, in paragraphs and columns, and is a layer you can see, export and edit
 

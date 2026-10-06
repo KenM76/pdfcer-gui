@@ -28,6 +28,8 @@ pub enum Surface {
     DimensionDrag,
     /// The 3D model viewer's picture, sized by its window, not the zoom.
     ModelView,
+    /// A signature picture in the *Sign here* window, at a fixed size.
+    SignaturePicture,
 }
 
 /// The page-shaped part of an upload, present only when there is one.

@@ -179,3 +179,91 @@ pub const fn next_box() -> &'static str {
 pub const fn next_box_hint() -> &'static str {
     "Scroll to the next signature box still to sign. Click the box to sign it."
 }
+
+/// The tab for using a picture of a signature.
+#[must_use]
+pub const fn tab_picture() -> &'static str {
+    "Picture"
+}
+
+/// The Picture tab's instruction.
+#[must_use]
+pub const fn picture_intro() -> &'static str {
+    "Use a picture of your signature: a scan or photo saved as PNG, JPEG, BMP or TIFF."
+}
+
+/// Opens the file picker for a signature picture.
+#[must_use]
+pub const fn choose_picture() -> &'static str {
+    "Choose picture…"
+}
+
+/// Shown faintly in the preview before a picture is chosen.
+#[must_use]
+pub const fn picture_hint() -> &'static str {
+    "No picture chosen"
+}
+
+/// The chosen file could not be read as a picture; `detail` is the reason.
+#[must_use]
+pub fn picture_unreadable(detail: &str) -> String {
+    format!("That file could not be read as a picture ({detail}). Choose another.")
+}
+
+/// The make-the-paper-clear option.
+#[must_use]
+pub const fn clear_white() -> &'static str {
+    "Make white see-through"
+}
+
+/// Hover on [`clear_white`].
+#[must_use]
+pub const fn clear_white_hover() -> &'static str {
+    "Lets the page show through the white paper around your signature, so it does not \
+     cover lines or text in the box."
+}
+
+/// Hover on [`clear_white`] when the picture cannot have it.
+#[must_use]
+pub const fn clear_white_unavailable() -> &'static str {
+    "This picture already has see-through parts, or is in CMYK or indexed colour, so white \
+     is left as it is."
+}
+
+/// Hover on the greyed Picture tab when the page is shown turned.
+#[must_use]
+pub const fn picture_needs_upright_page() -> &'static str {
+    "A picture signature can only be placed on a page shown upright. Turn the page back, or \
+     draw your signature instead."
+}
+
+/// Hover on the place button while no picture is chosen.
+#[must_use]
+pub const fn place_needs_picture() -> &'static str {
+    "Choose a picture of your signature first."
+}
+
+/// The placement preview's instruction; `stretchable` is whether Shift
+/// changes the proportions.
+#[must_use]
+pub const fn placement_hint(stretchable: bool) -> &'static str {
+    if stretchable {
+        "Where it lands in the box: drag it to move it, drag a corner to resize it. Hold \
+         Shift to change its proportions."
+    } else {
+        "Where it lands in the box: drag it to move it, drag a corner to resize it."
+    }
+}
+
+/// Puts the signature back where it lands by default.
+#[must_use]
+pub const fn reset_fit() -> &'static str {
+    "Reset to fit"
+}
+
+/// Hover on [`reset_fit`].
+#[must_use]
+pub const fn reset_fit_hover() -> &'static str {
+    "Put the signature back where it lands by default: as large as the box allows, at its \
+     left."
+}

@@ -14,8 +14,6 @@ use std::sync::{Arc, OnceLock};
 use egui::{Pos2, Rect, pos2};
 use pdfcer_core::font_embed::FontEmbedPlan;
 
-use super::{CENTRE_BELOW, FILL, INSET, RISE};
-
 /// The file a remembered typed signature is kept in, beside `settings.txt`.
 pub const TYPED_FILE: &str = "typed-signature.txt"; // ui-text-exempt: a file name, never displayed as copy
 
@@ -112,21 +110,22 @@ pub struct TypedFit {
 #[must_use]
 pub fn fit_typed(advance: f32, ascent: f32, descent: f32, target: Rect) -> Option<TypedFit> {
     let height = ascent - descent;
-    if !(advance > 0.0 && height > 0.0 && target.width() > 0.0 && target.height() > 0.0) {
+    if !(advance > 0.0 && height > 0.0) {
         return None;
     }
-    let (w, h) = (target.width(), target.height());
-    let size = (FILL * w / advance).min(FILL * RISE * h / height);
-    let placed_h = height * size;
-    let top = if placed_h <= CENTRE_BELOW * h {
-        target.min.y + (h - placed_h) / 2.0
-    } else {
-        target.max.y - (1.0 - FILL) * h - placed_h
-    };
-    Some(TypedFit {
+    let ink = super::place::fit_rect(egui::vec2(advance, height), target)?;
+    Some(typed_in(ascent, descent, ink))
+}
+
+/// The name set so its face's full height fills `ink.height()`, its first
+/// glyph at `ink`'s left edge. The width follows from the size.
+#[must_use]
+pub fn typed_in(ascent: f32, descent: f32, ink: Rect) -> TypedFit {
+    let size = ink.height() / (ascent - descent).max(f32::EPSILON);
+    TypedFit {
         size,
-        origin: pos2(target.min.x + INSET * w, top + ascent * size),
-    })
+        origin: pos2(ink.min.x, ink.min.y + ascent * size),
+    }
 }
 
 /// A remembered typed signature: the face and the name.
@@ -161,9 +160,7 @@ impl Typed {
 }
 
 fn typed_path() -> Option<PathBuf> {
-    pdfcer_core::settings::resolve_store()
-        .directory()
-        .map(|dir| dir.join(TYPED_FILE))
+    super::kept_path(TYPED_FILE)
 }
 
 /// The remembered typed signature, if one is kept and readable.
@@ -174,24 +171,12 @@ pub fn load() -> Option<Typed> {
 
 /// Keep `typed` on this computer. Returns whether it was written.
 pub fn save(typed: &Typed) -> bool {
-    let Some(path) = typed_path() else {
-        return false;
-    };
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    std::fs::write(&path, typed.to_text()).is_ok()
+    super::keep(TYPED_FILE, typed.to_text().as_bytes())
 }
 
 /// Delete the remembered typed signature. Absent already is success.
 pub fn forget() -> bool {
-    match typed_path() {
-        Some(path) => match std::fs::remove_file(path) {
-            Ok(()) => true,
-            Err(e) => e.kind() == std::io::ErrorKind::NotFound,
-        },
-        None => true,
-    }
+    super::unkeep(TYPED_FILE)
 }
 
 /// Whether text written along `sheet`'s own x axis reads left to right on

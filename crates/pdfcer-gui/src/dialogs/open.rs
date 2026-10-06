@@ -91,6 +91,7 @@ impl DialogsState {
             rect,
             &self.last_signature,
             typeable,
+            crate::app::settings::SettingsExt::render_options(&doc.settings),
         ));
         // ui-text-exempt: diagnostic trace, never displayed. No field name: it
         // is text from the operator's own document.

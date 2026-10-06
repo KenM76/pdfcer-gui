@@ -377,8 +377,8 @@ pub enum FieldAction {
         /// The field's fully-qualified name.
         field: String,
     },
-    /// **Write a hand signature, drawn or typed, into the page, inside this
-    /// box.** One undo step; the `/Sig` field itself is left empty.
+    /// **Write a hand signature, drawn, typed or a picture, into the page,
+    /// inside this box.** One undo step; the `/Sig` field itself is left empty.
     HandSign {
         /// The field's fully-qualified name, for the session's ledger.
         field: String,
@@ -388,6 +388,9 @@ pub enum FieldAction {
         rect: egui::Rect,
         /// The signature; a drawn one is normalised.
         signature: crate::handsign::Signature,
+        /// Where in the box the operator put it; `None` lands it by the fit
+        /// rule.
+        placement: Option<crate::handsign::place::Placement>,
     },
     /// **Author the form control the dialog just accepted.**
     ///

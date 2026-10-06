@@ -15,6 +15,8 @@ use egui::{Pos2, Rect, pos2};
 /// The file a remembered signature is kept in, beside `settings.txt`.
 pub const SAVED_FILE: &str = "hand-signature.txt"; // ui-text-exempt: a file name, never displayed as copy
 
+pub mod picture;
+pub mod place;
 pub mod typed;
 
 /// A signature the operator made: drawn with the mouse, or typed in a
@@ -25,6 +27,8 @@ pub enum Signature {
     Drawn(Mark),
     /// A name and the face it is written in.
     Typed(typed::Typed),
+    /// A picture file of the signature.
+    Picture(picture::SigPicture),
 }
 
 /// The tolerance [`Mark::simplified`] removes detail below, in pad points.
@@ -206,32 +210,34 @@ const PEN_FRACTION: f32 = 0.04;
 const PEN_MIN: f32 = 0.6;
 const PEN_MAX: f32 = 2.5;
 
-/// Place `mark` in `target` (y-down): scaled uniformly to 95 % of the box
-/// width or of twice its height, whichever binds; left-aligned with a 3 %
-/// inset; centred vertically when it fits in 90 % of the height, otherwise
-/// standing on the box's lower edge and rising above it. `None` for a mark
-/// with no extent or a degenerate target.
+/// Place `mark` in `target` (y-down) by [`place::fit_rect`]'s rule. `None`
+/// for a mark with no extent or a degenerate target.
 #[must_use]
 pub fn fit(mark: &Mark, target: Rect) -> Option<Fitted> {
-    if !mark.has_extent() || !(target.width() > 0.0 && target.height() > 0.0) {
+    if !mark.has_extent() {
         return None;
     }
     let ink = mark.bounds()?;
-    let (w, h) = (target.width(), target.height());
-    let by_width = (ink.width() > 0.0).then(|| FILL * w / ink.width());
-    let by_height = (ink.height() > 0.0).then(|| FILL * RISE * h / ink.height());
-    let scale = match (by_width, by_height) {
-        (Some(a), Some(b)) => a.min(b),
-        (Some(a), None) | (None, Some(a)) => a,
+    fit_into(mark, place::fit_rect(ink.size(), target)?)
+}
+
+/// `mark` stretched so its ink fills `ink_rect` (y-down). A side the mark
+/// has no extent along takes the other side's scale. `None` for a mark with
+/// no extent.
+#[must_use]
+pub fn fit_into(mark: &Mark, ink_rect: Rect) -> Option<Fitted> {
+    if !mark.has_extent() {
+        return None;
+    }
+    let ink = mark.bounds()?;
+    let sx = (ink.width() > 0.0).then(|| ink_rect.width() / ink.width());
+    let sy = (ink.height() > 0.0).then(|| ink_rect.height() / ink.height());
+    let (sx, sy) = match (sx, sy) {
+        (Some(x), Some(y)) => (x, y),
+        (Some(x), None) => (x, x),
+        (None, Some(y)) => (y, y),
         (None, None) => return None,
     };
-    let placed_h = ink.height() * scale;
-    let top = if placed_h <= CENTRE_BELOW * h {
-        target.min.y + (h - placed_h) / 2.0
-    } else {
-        target.max.y - (1.0 - FILL) * h - placed_h
-    };
-    let left = target.min.x + INSET * w;
     let strokes = mark
         .strokes
         .iter()
@@ -241,8 +247,8 @@ pub fn fit(mark: &Mark, target: Rect) -> Option<Fitted> {
                 .iter()
                 .map(|p| {
                     pos2(
-                        left + (p.x - ink.min.x) * scale,
-                        top + (p.y - ink.min.y) * scale,
+                        ink_rect.min.x + (p.x - ink.min.x) * sx,
+                        ink_rect.min.y + (p.y - ink.min.y) * sy,
                     )
                 })
                 .collect();
@@ -252,17 +258,45 @@ pub fn fit(mark: &Mark, target: Rect) -> Option<Fitted> {
             out
         })
         .collect();
-    let width = (placed_h * PEN_FRACTION).clamp(PEN_MIN, PEN_MAX);
+    let width = (ink_rect.height() * PEN_FRACTION).clamp(PEN_MIN, PEN_MAX);
     Some(Fitted { strokes, width })
+}
+
+/// Where the kept file `name` lives, beside `settings.txt`, or `None` when
+/// this install has nowhere to keep one.
+pub(crate) fn kept_path(name: &str) -> Option<PathBuf> {
+    pdfcer_core::settings::resolve_store()
+        .directory()
+        .map(|dir| dir.join(name))
+}
+
+/// Write the kept file `name`. Returns whether it was written.
+pub(crate) fn keep(name: &str, bytes: &[u8]) -> bool {
+    let Some(path) = kept_path(name) else {
+        return false;
+    };
+    if let Some(parent) = path.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    std::fs::write(&path, bytes).is_ok()
+}
+
+/// Delete the kept file `name`. Absent already is success.
+pub(crate) fn unkeep(name: &str) -> bool {
+    match kept_path(name) {
+        Some(path) => match std::fs::remove_file(path) {
+            Ok(()) => true,
+            Err(e) => e.kind() == std::io::ErrorKind::NotFound,
+        },
+        None => true,
+    }
 }
 
 /// Where a remembered signature lives, or `None` when this install has
 /// nowhere to keep one.
 #[must_use]
 pub fn saved_path() -> Option<PathBuf> {
-    pdfcer_core::settings::resolve_store()
-        .directory()
-        .map(|dir| dir.join(SAVED_FILE))
+    kept_path(SAVED_FILE)
 }
 
 /// The remembered signature, if one is kept and readable.
@@ -274,24 +308,12 @@ pub fn load_saved() -> Option<Mark> {
 
 /// Keep `mark` (normalised) on this computer. Returns whether it was written.
 pub fn save(mark: &Mark) -> bool {
-    let Some(path) = saved_path() else {
-        return false;
-    };
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    std::fs::write(&path, mark.normalised().to_text()).is_ok()
+    keep(SAVED_FILE, mark.normalised().to_text().as_bytes())
 }
 
 /// Delete the remembered signature. Absent already is success.
 pub fn forget() -> bool {
-    match saved_path() {
-        Some(path) => match std::fs::remove_file(path) {
-            Ok(()) => true,
-            Err(e) => e.kind() == std::io::ErrorKind::NotFound,
-        },
-        None => true,
-    }
+    unkeep(SAVED_FILE)
 }
 
 /// **Which signature fields carry a hand signature**, as

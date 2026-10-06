@@ -628,7 +628,8 @@ impl PdfcerApp {
                 page,
                 rect,
                 signature,
-            }) => super::handsign::place(doc, &field, page, rect, &signature),
+                placement,
+            }) => super::handsign::place(doc, &field, page, rect, &signature, placement),
             Action::Field(action) => super::forms::apply(doc, action),
             Action::BeginTextAnnot { page, kind, rect } => match kind {
                 crate::canvas::textannot::TextAnnotKind::Attachment => {

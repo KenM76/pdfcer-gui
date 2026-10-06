@@ -1,8 +1,10 @@
 # `dialogs::handsign` — the *Sign here* window
 
-Opens on a click on an unsigned signature box. Two tabs, **Draw** and
-**Type**; press **Place signature** and the window closes with the signature
-in the box. It opens on the tab last placed from.
+Opens on a click on an unsigned signature box. Three tabs, **Draw**, **Type**
+and **Picture**, above a preview of the box showing where the signature will
+land; press **Place signature** and the window closes with the signature in
+the box. It opens on the tab last placed from this run, else on the first
+kind with a remembered copy: drawn, typed, picture.
 
 ## Draw
 
@@ -34,10 +36,39 @@ in the box. It opens on the tab last placed from.
 - Greyed, with the reason on hover, on a page shown turned: the engine's text
   verb writes along the page's own x axis only.
 
-## Both
+## Picture
+
+- Greyed, with the reason on hover, on a page shown turned: `add_image`
+  places along the page's own axes.
+- **Choose picture…** opens the image picker the Insert Image command uses
+  (`pick_image_source`), so the same formats and the same scripted-path hook
+  apply. A file that does not import is reported in the danger role with the
+  importer's sentence.
+- *Make white see-through* is ticked for a new picture when it can apply, and
+  greyed with the reason when it cannot (`handsign::picture`).
+- The picture in the preview is the engine's own drawing of it
+  (`handsign::picture::preview`), redrawn when the clear-white choice
+  changes, so the preview and the page agree.
+
+## Where it lands
+
+- The preview draws the allowed region (the box and the rise above it) in the
+  panel colour, the box in the surface colour and outlined, and the signature
+  where it would land, outlined in the accent with corner and edge grips.
+- Drag the body to move it; drag a corner to resize it with its proportions
+  kept; Shift frees them, and an edge stretches one side, for a drawn mark or
+  a picture. A typed name keeps the face's proportions.
+- Untouched, the signature lands by the fit rule. A change of shape (another
+  stroke, another name, another picture) or of tab returns it to the fit,
+  because a rectangle chosen for one shape would distort another.
+- **Reset to fit** returns it to the fit rule.
+- The choice travels as `handsign::place::Placement`, relative to the box.
+
+## All three
 
 - *Remember my signature on this computer* keeps a copy of whichever was
-  placed; unticked, placing deletes both copies.
+  placed; unticked, placing deletes all three copies.
 
-The window writes nothing: it pushes `FieldAction::HandSign` (carrying a `Signature`, drawn or typed) or
+The window writes nothing: it pushes `FieldAction::HandSign` (carrying a
+`Signature`, drawn, typed or a picture, and the chosen `Placement` or `None`) or
 `FieldAction::SignWithId`.

@@ -1,18 +1,26 @@
-//! # `dialogs::handsign` — the *Sign here* window: draw or type a signature, place it in the box
+//! # `dialogs::handsign` — the *Sign here* window: draw, type or choose a picture of a signature, place it in the box
 //!
 //! Opened by a click on an unsigned signature box. Contract: Place pushes one
-//! [`FieldAction::HandSign`] carrying the drawn mark (normalised) or the typed
-//! name and face; the Type tab is drawn only when a handwriting face is
-//! usable; the digital-ID link pushes [`FieldAction::SignWithId`] and is drawn
-//! only when `file.sign` is registered. The window writes nothing to the
+//! [`FieldAction::HandSign`] carrying the drawn mark (normalised), the typed
+//! name and face, or the picture, and where in the box the operator put it
+//! (`None` for the fit rule); the Type tab is drawn only when a handwriting
+//! face is usable; the Type and Picture tabs are usable only on a page shown
+//! upright; the digital-ID link pushes [`FieldAction::SignWithId`] and is
+//! drawn only when `file.sign` is registered. The window writes nothing to the
 //! document itself.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/handsign.md`.
 
-use egui::{FontFamily, FontId, Pos2, Sense, Stroke, Ui, vec2};
+use egui::{FontFamily, FontId, Painter, Pos2, Sense, Stroke, Ui, Vec2, vec2};
 use egui_shell::theme::Theme;
+use pdfcer_gui_base::handsign::picture::{self as sigpicture, SigPicture};
 use pdfcer_gui_base::handsign::typed::{self, Typed};
 use pdfcer_gui_base::handsign::{self, Mark, Signature};
+
+mod picture;
+mod placing;
+
+use placing::Ink;
 
 use crate::app::actions::Action;
 use crate::app::actions::forms::FieldAction;
@@ -33,6 +41,11 @@ pub const REGION_DIGITAL_ID: &str = "handsign.digital-id";
 /// The Type tab.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_TAB_TYPE: &str = "handsign.tab-type";
+/// The Picture tab.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_TAB_PICTURE: &str = "handsign.tab-picture";
+pub use picture::{REGION_CHOOSE, REGION_CLEAR_WHITE};
+pub use placing::{REGION_INK, REGION_PLACEMENT, REGION_RESET};
 /// The name field on the Type tab.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_NAME: &str = "handsign.name";
@@ -58,8 +71,10 @@ pub struct LastSignature {
     pub drawn: Option<Mark>,
     /// The last typed signature.
     pub typed: Option<Typed>,
-    /// Whether the last placed was typed, so the window opens on that tab.
-    pub was_typed: bool,
+    /// The last picture signature.
+    pub picture: Option<SigPicture>,
+    /// The tab the last placed came from, so the window opens on it.
+    was: Tab,
 }
 
 impl LastSignature {
@@ -68,20 +83,37 @@ impl LastSignature {
         match placed {
             Signature::Drawn(mark) => {
                 self.drawn = Some(mark);
-                self.was_typed = false;
+                self.was = Tab::Draw;
             }
             Signature::Typed(typed) => {
                 self.typed = Some(typed);
-                self.was_typed = true;
+                self.was = Tab::Type;
+            }
+            Signature::Picture(picture) => {
+                self.picture = Some(picture);
+                self.was = Tab::Picture;
             }
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum Tab {
+    #[default]
     Draw,
     Type,
+    Picture,
+}
+
+impl Tab {
+    /// The tab as the placement preview tells tabs apart.
+    const fn key(self) -> u8 {
+        match self {
+            Self::Draw => 0,
+            Self::Type => 1,
+            Self::Picture => 2,
+        }
+    }
 }
 
 /// The window, and the box it signs.
@@ -100,13 +132,19 @@ pub struct HandSignDialog {
     name: String,
     /// The index into [`typed::faces`] the name is shown in.
     face: usize,
-    /// Whether a typed name would read along the box on this page.
-    typeable: bool,
+    /// Whether the page is shown upright, which a typed or picture
+    /// signature needs.
+    upright: bool,
     /// Whether the name field still needs keyboard focus.
     focus_name: bool,
     /// The name and face last checked against the face's characters, and
-    /// the reason it cannot write them, if any.
-    coverage: Option<(String, usize, Option<String>)>,
+    /// either the name's proportions (advance by full height, per point of
+    /// size) or the reason the face cannot write it.
+    coverage: Option<(String, usize, Result<Vec2, String>)>,
+    /// The Picture tab.
+    picture: picture::PictureTab,
+    /// Where in the box the operator put the signature.
+    placing: placing::Placing,
     remember: bool,
     place_requested: bool,
     id_requested: bool,
@@ -116,32 +154,45 @@ pub struct HandSignDialog {
 impl HandSignDialog {
     /// Open on the box `rect` (canvas space) of `field` on `page`. This run's
     /// last signatures come first; the copies remembered on disk are the
-    /// fallback. `typeable` is whether the page is shown upright, which a
-    /// typed signature needs.
+    /// fallback. `upright` is whether the page is shown upright, which a
+    /// typed or picture signature needs.
     #[must_use]
     pub fn open(
         field: &str,
         page: usize,
         rect: egui::Rect,
         last: &LastSignature,
-        typeable: bool,
+        upright: bool,
+        render: pdfcer_render::RenderOptions,
     ) -> Self {
         let saved = handsign::load_saved();
         let saved_typed = typed::load();
-        let remember = saved.is_some() || saved_typed.is_some();
+        let saved_picture = sigpicture::load();
+        let remember = saved.is_some() || saved_typed.is_some() || saved_picture.is_some();
         let typed_last = last.typed.clone().or(saved_typed);
+        let picture_last = last.picture.clone().or(saved_picture);
         let faces = typed::faces();
         let face = typed_last
             .as_ref()
             .and_then(|t| faces.iter().position(|f| f.label == t.face))
             .unwrap_or(0);
-        let can_type = typeable && !faces.is_empty();
-        let typed_first =
-            last.was_typed || (last.drawn.is_none() && saved.is_none() && typed_last.is_some());
-        let tab = if can_type && typed_first {
+        let placed_this_run =
+            last.drawn.is_some() || last.typed.is_some() || last.picture.is_some();
+        let wanted = if placed_this_run {
+            last.was
+        } else if saved.is_some() {
+            Tab::Draw
+        } else if typed_last.is_some() {
             Tab::Type
+        } else if picture_last.is_some() {
+            Tab::Picture
         } else {
             Tab::Draw
+        };
+        let tab = match wanted {
+            Tab::Type if upright && !faces.is_empty() => Tab::Type,
+            Tab::Picture if upright => Tab::Picture,
+            _ => Tab::Draw,
         };
         Self {
             field: field.to_owned(),
@@ -153,9 +204,11 @@ impl HandSignDialog {
             last: last.drawn.clone().or(saved),
             name: typed_last.map(|t| t.name).unwrap_or_default(),
             face,
-            typeable,
+            upright,
             focus_name: tab == Tab::Type,
             coverage: None,
+            picture: picture::PictureTab::with(picture_last, render),
+            placing: placing::Placing::default(),
             remember,
             place_requested: false,
             id_requested: false,
@@ -174,8 +227,8 @@ impl HandSignDialog {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "hand-sign", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
-            egui::vec2(560.0, 440.0),
-            egui::vec2(420.0, 380.0),
+            egui::vec2(560.0, 640.0),
+            egui::vec2(420.0, 520.0),
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
@@ -187,11 +240,13 @@ impl HandSignDialog {
             && let Some(signature) = self.signature()
         {
             let kept = self.keep(&signature);
+            let placement = self.placing.chosen();
+            let placed = if placement.is_some() { "chosen" } else { "fit" }; // ui-text-exempt: diagnostic trace value
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 match &signature {
                     Signature::Drawn(mark) => format!(
-                        "hand-sign-requested via=draw page={} strokes={} points={} remembered={}",
+                        "hand-sign-requested via=draw page={} strokes={} points={} remembered={} placement={placed}",
                         self.page,
                         mark.strokes.len(),
                         mark.point_count(),
@@ -199,10 +254,17 @@ impl HandSignDialog {
                     ),
                     // No name: it is the operator's own.
                     Signature::Typed(typed) => format!(
-                        "hand-sign-requested via=type page={} face={} chars={} remembered={}",
+                        "hand-sign-requested via=type page={} face={} chars={} remembered={} placement={placed}",
                         self.page,
                         typed.face.replace(' ', "_"),
                         typed.name.chars().count(),
+                        u8::from(kept)
+                    ),
+                    Signature::Picture(picture) => format!(
+                        "hand-sign-requested via=picture page={} bytes={} clear_white={} remembered={} placement={placed}",
+                        self.page,
+                        picture.bytes.len(),
+                        u8::from(picture.clear_white),
                         u8::from(kept)
                     ),
                 }
@@ -212,6 +274,7 @@ impl HandSignDialog {
                 page: self.page,
                 rect: self.rect,
                 signature: signature.clone(),
+                placement,
             }));
             return (false, Some(signature));
         }
@@ -241,7 +304,7 @@ impl HandSignDialog {
                 let covered = self
                     .coverage
                     .as_ref()
-                    .is_some_and(|(n, f, why)| n == name && *f == self.face && why.is_none());
+                    .is_some_and(|(n, f, ink)| n == name && *f == self.face && ink.is_ok());
                 (!name.is_empty() && covered).then(|| {
                     Signature::Typed(Typed {
                         face: face.label.to_owned(),
@@ -249,6 +312,7 @@ impl HandSignDialog {
                     })
                 })
             }
+            Tab::Picture => self.picture.signature().map(Signature::Picture),
         }
     }
 
@@ -258,35 +322,26 @@ impl HandSignDialog {
         if !self.remember {
             handsign::forget();
             typed::forget();
+            sigpicture::forget();
             return false;
         }
         match signature {
             Signature::Drawn(mark) => handsign::save(mark),
             Signature::Typed(typed) => typed::save(typed),
+            Signature::Picture(picture) => sigpicture::save(picture),
         }
     }
 
     fn body(&mut self, ui: &mut Ui, offer_id: bool) {
-        if !typed::faces().is_empty() {
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.tab, Tab::Draw, t::tab_draw());
-                let typing = ui
-                    .add_enabled_ui(self.typeable, |ui| {
-                        ui.selectable_value(&mut self.tab, Tab::Type, t::tab_type())
-                    })
-                    .inner
-                    .on_disabled_hover_text(t::type_needs_upright_page());
-                crate::diag::ui_rect_visible(REGION_TAB_TYPE, typing.rect, ui.clip_rect());
-                if typing.clicked() {
-                    self.focus_name = true;
-                }
-            });
-            ui.add_space(4.0);
-        }
+        self.tabs(ui);
         match self.tab {
             Tab::Draw => self.draw_tab(ui),
             Tab::Type => self.type_tab(ui),
+            Tab::Picture => self.picture.show(ui),
         }
+        ui.add_space(6.0);
+        self.placement(ui);
+        ui.add_space(6.0);
         ui.checkbox(&mut self.remember, t::remember())
             .on_hover_text(t::remember_hover());
         ui.add_space(4.0);
@@ -298,6 +353,7 @@ impl HandSignDialog {
             let why = match self.tab {
                 Tab::Draw => t::place_needs_drawing(),
                 Tab::Type => t::place_needs_name(),
+                Tab::Picture => t::place_needs_picture(),
             };
             let place = ui
                 .add_enabled(ready, egui::Button::new(t::place()))
@@ -320,6 +376,83 @@ impl HandSignDialog {
                 self.id_requested = true;
             }
         }
+    }
+
+    /// Draw, Type when a handwriting face is usable, and Picture; the last
+    /// two only on an upright page.
+    fn tabs(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.tab, Tab::Draw, t::tab_draw());
+            if !typed::faces().is_empty() {
+                let typing = ui
+                    .add_enabled_ui(self.upright, |ui| {
+                        ui.selectable_value(&mut self.tab, Tab::Type, t::tab_type())
+                    })
+                    .inner
+                    .on_disabled_hover_text(t::type_needs_upright_page());
+                crate::diag::ui_rect_visible(REGION_TAB_TYPE, typing.rect, ui.clip_rect());
+                if typing.clicked() {
+                    self.focus_name = true;
+                }
+            }
+            let picture = ui
+                .add_enabled_ui(self.upright, |ui| {
+                    ui.selectable_value(&mut self.tab, Tab::Picture, t::tab_picture())
+                })
+                .inner
+                .on_disabled_hover_text(t::picture_needs_upright_page());
+            crate::diag::ui_rect_visible(REGION_TAB_PICTURE, picture.rect, ui.clip_rect());
+        });
+        ui.add_space(4.0);
+    }
+
+    /// The signature's proportions on the current tab, `None` while there is
+    /// nothing to place, and whether they may change.
+    fn ink(&self) -> (Option<Vec2>, bool) {
+        match self.tab {
+            Tab::Draw => (
+                self.mark
+                    .has_extent()
+                    .then(|| self.mark.bounds())
+                    .flatten()
+                    .map(|b| b.size()),
+                true,
+            ),
+            Tab::Type => {
+                let name = self.name.trim();
+                let ink = self.coverage.as_ref().and_then(|(n, f, ink)| {
+                    (n == name && *f == self.face)
+                        .then(|| ink.as_ref().ok().copied())
+                        .flatten()
+                });
+                (ink, false)
+            }
+            Tab::Picture => (self.picture.chosen.as_ref().map(|c| c.size), true),
+        }
+    }
+
+    /// Where in the box the signature lands, drawn to scale and adjustable.
+    fn placement(&mut self, ui: &mut Ui) {
+        let (ink, stretchable) = self.ink();
+        let ctx = ui.ctx().clone();
+        let colour = Theme::of(&ctx).palette.text;
+        let tab = self.tab;
+        let mark = &self.mark;
+        let name = self.name.trim();
+        let face = self.face;
+        let picture = &mut self.picture;
+        self.placing.show(
+            ui,
+            self.rect,
+            tab.key(),
+            ink,
+            stretchable,
+            &mut |painter, at| match tab {
+                Tab::Draw => paint_mark(painter, mark, at, colour),
+                Tab::Type => paint_name(&ctx, painter, name, face, ink, at, colour),
+                Tab::Picture => picture.paint(&ctx, painter, at),
+            },
+        );
     }
 
     fn draw_tab(&mut self, ui: &mut Ui) {
@@ -376,7 +509,7 @@ impl HandSignDialog {
             }
         });
         self.check_coverage();
-        if let Some((_, _, Some(why))) = &self.coverage {
+        if let Some((_, _, Err(why))) = &self.coverage {
             let danger = Theme::of(ui.ctx()).palette.danger;
             ui.colored_label(danger, t::style_cannot_write(why));
         }
@@ -397,10 +530,16 @@ impl HandSignDialog {
         {
             return;
         }
-        let why = typed::faces()
+        let ink = typed::faces()
             .get(self.face)
-            .and_then(|face| typed::plan(face, name).err());
-        self.coverage = Some((name.to_owned(), self.face, why));
+            .ok_or_else(String::new)
+            .and_then(|face| {
+                let plan = typed::plan(face, name)?;
+                let advance = typed::advance(&plan, name).ok_or_else(String::new)?;
+                let height = (plan.metrics.ascent as f32 - plan.metrics.descent as f32) / 1000.0;
+                Ok(vec2(advance, height))
+            });
+        self.coverage = Some((name.to_owned(), self.face, ink));
     }
 
     /// The typed name in the face that will be embedded, sized to the area.
@@ -564,6 +703,45 @@ fn preview_family(
     ));
     ctx.request_repaint();
     None
+}
+
+/// `mark` drawn into `at` as it would be placed.
+fn paint_mark(painter: &Painter, mark: &Mark, at: Ink, colour: egui::Color32) {
+    let Some(fitted) = handsign::fit_into(mark, at.canvas) else {
+        return;
+    };
+    let pen = Stroke::new(fitted.width * at.scale, colour);
+    for stroke in fitted.strokes {
+        let points: Vec<Pos2> = stroke.into_iter().map(|p| at.to_screen(p)).collect();
+        painter.add(egui::Shape::line(points, pen));
+    }
+}
+
+/// `name` in face `face` drawn into `at`, its full height filling it; `ink`
+/// is its proportions per point of size.
+fn paint_name(
+    ctx: &egui::Context,
+    painter: &Painter,
+    name: &str,
+    face: usize,
+    ink: Option<Vec2>,
+    at: Ink,
+    colour: egui::Color32,
+) {
+    let (Some(ink), Some(found)) = (ink, typed::faces().get(face)) else {
+        return;
+    };
+    let Some(family) = preview_family(ctx, face, found) else {
+        return;
+    };
+    let size = at.screen.height() / ink.y.max(f32::EPSILON);
+    painter.text(
+        at.screen.left_center(),
+        egui::Align2::LEFT_CENTER,
+        name,
+        FontId::new(size, family),
+        colour,
+    );
 }
 
 /// A normalised mark scaled back into a pad of `size`, centred, with margin.
