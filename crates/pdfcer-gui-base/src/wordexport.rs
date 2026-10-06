@@ -18,6 +18,8 @@ pub struct WordExportPlan {
     pub tables: bool,
     /// Where headings, paragraphs and tables come from.
     pub structure: StructureSource,
+    /// Which text is kept by membership of a pdfcer OCR layer.
+    pub ocr_layer: crate::exporttext::OcrLayerFilter,
 }
 
 impl WordExportPlan {
@@ -31,6 +33,7 @@ impl WordExportPlan {
             page_breaks: true,
             tables: true,
             structure: StructureSource::Auto,
+            ocr_layer: crate::exporttext::OcrLayerFilter::All,
         }
     }
 }

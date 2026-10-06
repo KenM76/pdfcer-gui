@@ -22,6 +22,11 @@ save dialog.
 4. The text holds `VISIBLE CONTROL STAMP`, which proves the page was read, and
    every one of `SITE`, `PLAN`, `REVISION`, `DRAWING`, which only the OCR layer
    spells.
+5. The window's open line says `ocr_layer_pages=0`: the fixture's layer is not
+   one pdfcer wrote, so the recognised-text choice is not offered.
+
+`exported_text` is the drive and the file read, shared with
+`ocr_export_filter`, which clicks a recognised-text choice before Export.
 
 # Why this fixture and not a recognition
 
@@ -30,12 +35,6 @@ model reads. The fixture's layer is written in the engine's own emission
 shape (`fixtures/ocr-layer.PROVENANCE.md`), so the check runs in any build and
 its words are fixed. That a real recognition reaches the saved file is
 `ocr_scripted`'s claim; this check starts from a saved layer.
-
-# What it does not claim
-
-The exports carry ALL text on the page, the OCR layer mixed with visible text
-in reading order. Exporting the OCR layer alone, or leaving it out, needs the
-extraction to say which glyphs are the layer's (`G124`).
 
 # Falsified
 

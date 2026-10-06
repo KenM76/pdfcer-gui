@@ -8,6 +8,7 @@
 use egui::Ui;
 
 use crate::app::actions::Action;
+use crate::app::actions::exporttext::{OcrLayerFilter, ocr_layer_key};
 use crate::app::actions::imageexport::{PageScope, resolve_pages};
 use crate::app::actions::wordexport::{StructureSource, WordExportPlan};
 use crate::app::state::{OpenDoc, Status};
@@ -47,6 +48,17 @@ pub const fn region_for_structure(structure: StructureSource) -> &'static str {
     }
 }
 
+/// The region ONE recognised-text radio publishes.
+#[must_use]
+pub const fn region_for_recognised(filter: OcrLayerFilter) -> &'static str {
+    match filter {
+        // ui-text-exempt: trace region names, never displayed.
+        OcrLayerFilter::OnlyOcrLayer => "export-word.recognised.only",
+        OcrLayerFilter::WithoutOcrLayer => "export-word.recognised.without",
+        _ => "export-word.recognised.all",
+    }
+}
+
 /// The Export-to-Word window's live state.
 pub struct ExportWordDialog {
     /// The page on screen at open, frozen so paging behind the window does
@@ -59,6 +71,10 @@ pub struct ExportWordDialog {
     page_breaks: bool,
     tables: bool,
     structure: StructureSource,
+    /// Pages carrying an OCR layer pdfcer wrote, counted at open; zero hides
+    /// the recognised-text choice.
+    layer_pages: usize,
+    ocr_layer: OcrLayerFilter,
     export_requested: bool,
     close_requested: bool,
 }
@@ -76,14 +92,16 @@ impl ExportWordDialog {
             page_breaks: defaults.page_breaks,
             tables: defaults.tables,
             structure: defaults.structure,
+            layer_pages: crate::dialogs::recognised::layer_pages(doc),
+            ocr_layer: defaults.ocr_layer,
             export_requested: false,
             close_requested: false,
         };
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-word-open page={} pages={}",
-                dialog.page_index, dialog.page_count
+                "export-word-open page={} pages={} ocr_layer_pages={}",
+                dialog.page_index, dialog.page_count, dialog.layer_pages
             )
         });
         dialog
@@ -109,11 +127,13 @@ impl ExportWordDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-word-requested pages={} page_breaks={} table_option={} structure={}",
+                    "export-word-requested pages={} page_breaks={} table_option={} structure={} \
+                     recognised={}",
                     plan.pages.len(),
                     u8::from(plan.page_breaks),
                     u8::from(plan.tables),
                     plan.structure.key(),
+                    ocr_layer_key(plan.ocr_layer),
                 )
             });
             actions.push(Action::Write(
@@ -136,6 +156,7 @@ impl ExportWordDialog {
             page_breaks: self.page_breaks,
             tables: self.tables,
             structure: self.structure,
+            ocr_layer: self.ocr_layer,
             ..WordExportPlan::new(pages)
         })
     }
@@ -162,6 +183,15 @@ impl ExportWordDialog {
         }
         ui.weak(t::structure_hint(self.structure));
         ui.add_space(8.0);
+        if self.layer_pages > 0 {
+            crate::dialogs::recognised::section(
+                ui,
+                &mut self.ocr_layer,
+                self.layer_pages,
+                region_for_recognised,
+            );
+            ui.add_space(8.0);
+        }
 
         ui.separator();
         let ready = self.plan().is_some();

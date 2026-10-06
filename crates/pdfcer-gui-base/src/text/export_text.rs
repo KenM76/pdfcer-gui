@@ -407,6 +407,52 @@ pub fn export_failed(detail: &str) -> String {
     format!("The text could not be written: {detail}")
 }
 
+/// The heading over the recognised-text choice, shown only when the
+/// document has an OCR layer pdfcer wrote.
+#[must_use]
+pub const fn recognised_heading() -> &'static str {
+    "Recognised text"
+}
+
+/// One recognised-text choice.
+#[must_use]
+pub const fn recognised_name(filter: crate::exporttext::OcrLayerFilter) -> &'static str {
+    use crate::exporttext::OcrLayerFilter;
+    match filter {
+        OcrLayerFilter::OnlyOcrLayer => "Only the recognised text",
+        OcrLayerFilter::WithoutOcrLayer => "Leave the recognised text out",
+        _ => "Include the recognised text",
+    }
+}
+
+/// The line under the recognised-text choice: what that text is, and where.
+#[must_use]
+pub fn recognised_hint(pages: usize) -> String {
+    let where_ = if pages == 1 {
+        "one page".to_owned()
+    } else {
+        format!("{pages} pages")
+    };
+    format!(
+        "Text recognition put invisible text over the scanned picture on \
+         {where_}. Leaving it out keeps only the text the page draws."
+    )
+}
+
+/// The receipt line when the export kept only, or left out, the recognised
+/// text; `None` when it kept everything.
+#[must_use]
+pub fn recognised_receipt(filter: crate::exporttext::OcrLayerFilter) -> Option<String> {
+    use crate::exporttext::OcrLayerFilter;
+    match filter {
+        OcrLayerFilter::OnlyOcrLayer => Some(
+            "Only the recognised text was written; the rest of the page's text was not.".to_owned(),
+        ),
+        OcrLayerFilter::WithoutOcrLayer => Some("The recognised text was left out.".to_owned()),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

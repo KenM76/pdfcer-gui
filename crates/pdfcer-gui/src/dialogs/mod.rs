@@ -59,6 +59,8 @@ pub mod extract_pages;
 pub mod formfield;
 /// The *Sign here* window: a signature drawn by hand, placed in a box.
 pub mod handsign;
+/// The recognised-text choice the Text and Word export windows share.
+pub mod recognised;
 /// Pages ▸ Split…: the rule, the file names, the folder and the preview.
 pub mod split_pages;
 /// **A dialog is an OS window** — the operator's report, and

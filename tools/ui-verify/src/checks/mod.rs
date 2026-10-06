@@ -412,6 +412,7 @@ pub mod ocr_program_addon;
 
 pub mod invisible_text_scripted;
 pub mod ocr_edit_preview;
+pub mod ocr_export_filter;
 pub mod ocr_export_scripted;
 pub mod ocr_layer_kept;
 /// The three checks about a recognition run **while it is still running** —

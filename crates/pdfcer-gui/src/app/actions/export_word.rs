@@ -44,7 +44,10 @@ pub(super) fn export(doc: &mut OpenDoc, plan: &WordExportPlan) {
         );
         return;
     }
-    let options = doc.settings.extract_options();
+    let options = doc
+        .settings
+        .extract_options()
+        .with_ocr_layer(plan.ocr_layer);
     let view = doc.session.view();
     let structured = match super::tagged::lay_out(
         &view,
@@ -157,6 +160,7 @@ fn write(
         Ok(report) => {
             trace_report(&report, found.aligned, structured, &options, target);
             let mut notes = receipt(&report, target);
+            notes.extend(crate::text::export_text::recognised_receipt(plan.ocr_layer));
             notes.extend(super::tagged::notes(&structured.report));
             if plan.structure == StructureSource::Tags
                 && structured.report.fallback == Some(FallbackReason::NoStructureTree)

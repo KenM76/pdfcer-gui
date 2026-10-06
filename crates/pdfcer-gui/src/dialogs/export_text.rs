@@ -6,7 +6,9 @@
 use egui::Ui;
 
 use crate::app::actions::Action;
-use crate::app::actions::exporttext::{LineEndings, PageSeparator, TextExportPlan, TextOrder};
+use crate::app::actions::exporttext::{
+    LineEndings, OcrLayerFilter, PageSeparator, TextExportPlan, TextOrder, ocr_layer_key,
+};
 use crate::app::actions::imageexport::{PageScope, resolve_pages};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::export_text as t;
@@ -47,6 +49,16 @@ pub const fn region_for_order(order: TextOrder) -> &'static str {
         // never displayed.
         TextOrder::AsDrawn => "export-text.order.as-drawn",
         TextOrder::Reading => "export-text.order.reading",
+    }
+}
+/// The region ONE recognised-text radio publishes.
+#[must_use]
+pub const fn region_for_recognised(filter: OcrLayerFilter) -> &'static str {
+    match filter {
+        // ui-text-exempt: trace region names, never displayed.
+        OcrLayerFilter::OnlyOcrLayer => "export-text.recognised.only",
+        OcrLayerFilter::WithoutOcrLayer => "export-text.recognised.without",
+        _ => "export-text.recognised.all",
     }
 }
 /// The region the Windows-line-endings checkbox publishes.
@@ -107,6 +119,12 @@ pub struct ExportTextDialog {
     line_endings: LineEndings,
     /// Whether the file opens with a UTF-8 byte-order mark.
     byte_order_mark: bool,
+    /// Pages carrying an OCR layer pdfcer wrote, counted at open; zero hides
+    /// the recognised-text choice.
+    layer_pages: usize,
+    /// The recognised-text choice. Not remembered between jobs: it is a
+    /// statement about this document's layer.
+    ocr_layer: OcrLayerFilter,
     /// Set by Export, consumed after the window's closure returns.
     export_requested: bool,
     /// Set by Cancel, consumed by [`Self::show`].
@@ -130,6 +148,8 @@ impl ExportTextDialog {
             order: remembered.order,
             line_endings: remembered.line_endings,
             byte_order_mark: remembered.byte_order_mark,
+            layer_pages: crate::dialogs::recognised::layer_pages(doc),
+            ocr_layer: OcrLayerFilter::All,
             export_requested: false,
             close_requested: false,
         };
@@ -140,7 +160,8 @@ impl ExportTextDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "export-text-open page={} pages={} scope={} separator={} order={} endings={} bom={}",
+                "export-text-open page={} pages={} scope={} separator={} order={} endings={} bom={} \
+                 ocr_layer_pages={}",
                 dialog.page_index,
                 dialog.page_count,
                 // Stable lowercase tokens, never `{:?}`. This project's
@@ -155,6 +176,7 @@ impl ExportTextDialog {
                 crate::app::prefs::exporting::text_order_key(dialog.order),
                 crate::app::prefs::exporting::line_endings_key(dialog.line_endings),
                 u8::from(dialog.byte_order_mark),
+                dialog.layer_pages,
             )
         });
         dialog
@@ -204,7 +226,7 @@ impl ExportTextDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "export-text-requested pages={} separator={} endings={} bom={}",
+                    "export-text-requested pages={} separator={} endings={} bom={} recognised={}",
                     plan.pages.len(),
                     // Tokens, never `{:?}`: the same reduction the preferences
                     // file performs, so a check reading this line and a check
@@ -214,7 +236,8 @@ impl ExportTextDialog {
                     // reports the opposite.
                     crate::app::prefs::exporting::separator_key(plan.separator),
                     crate::app::prefs::exporting::line_endings_key(plan.line_endings),
-                    u8::from(plan.byte_order_mark)
+                    u8::from(plan.byte_order_mark),
+                    ocr_layer_key(plan.ocr_layer),
                 )
             });
             actions.push(Action::Write(
@@ -244,6 +267,7 @@ impl ExportTextDialog {
             order: self.order,
             line_endings: self.line_endings,
             byte_order_mark: self.byte_order_mark,
+            ocr_layer: self.ocr_layer,
         })
     }
 
@@ -256,6 +280,15 @@ impl ExportTextDialog {
         ui.add_space(8.0);
         self.order_group(ui);
         ui.add_space(8.0);
+        if self.layer_pages > 0 {
+            crate::dialogs::recognised::section(
+                ui,
+                &mut self.ocr_layer,
+                self.layer_pages,
+                region_for_recognised,
+            );
+            ui.add_space(8.0);
+        }
         self.separator_group(ui);
         ui.add_space(8.0);
         self.file_group(ui);

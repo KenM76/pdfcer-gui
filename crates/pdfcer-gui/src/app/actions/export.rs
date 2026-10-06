@@ -867,7 +867,10 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
     // and the reason binds here hardest of anywhere: the operator's word-gap
     // and `/ActualText` settings decide what the exported string SAYS, and a
     // file that disagreed with the clipboard would be two answers again.
-    let options = doc.settings.extract_options();
+    let options = doc
+        .settings
+        .extract_options()
+        .with_ocr_layer(plan.ocr_layer);
     let extracted = match pdfcer_core::text_extract::extract_pages_view(
         &doc.session.view(),
         &plan.pages,
@@ -945,7 +948,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "export-text pages={} chars={} bytes={} empty={} separator={:?} \
-                     bom={} crlf={:?} order={} inferred={} left_out={}",
+                     bom={} crlf={:?} order={} inferred={} left_out={} recognised={}",
                     pages.len(),
                     assembled.characters,
                     bytes.len(),
@@ -956,6 +959,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
                     crate::app::prefs::exporting::text_order_key(plan.order),
                     layout.as_ref().map_or(0, |d| d.inferred()),
                     layout.as_ref().map_or(0, running_left_out),
+                    super::exporttext::ocr_layer_key(plan.ocr_layer),
                 )
             });
             // The receipt goes FIRST — `record_notes`' own rule: *"the first
@@ -971,6 +975,7 @@ pub(super) fn text(doc: &mut OpenDoc, plan: &super::exporttext::TextExportPlan) 
                 plan.byte_order_mark,
                 matches!(plan.line_endings, super::exporttext::LineEndings::Windows),
             ));
+            notes.extend(t::recognised_receipt(plan.ocr_layer));
             if assembled.markers_added > 0 {
                 notes.push(t::marker_lines_added(assembled.markers_added));
             }

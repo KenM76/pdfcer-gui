@@ -5,6 +5,8 @@
 
 use std::path::{Path, PathBuf};
 
+pub use pdfcer_core::text_extract::OcrLayerFilter;
+
 /// How one page is separated from the next in the written file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PageSeparator {
@@ -68,6 +70,28 @@ pub struct TextExportPlan {
     pub line_endings: LineEndings,
     /// Whether the file opens with a UTF-8 byte-order mark.
     pub byte_order_mark: bool,
+    /// Which text is kept by membership of a pdfcer OCR layer; `All` unless
+    /// the document has a layer and the operator chose otherwise.
+    pub ocr_layer: OcrLayerFilter,
+}
+
+/// The recognised-text choices both text-bearing exports offer, in the order
+/// the windows list them.
+pub const RECOGNISED_CHOICES: [OcrLayerFilter; 3] = [
+    OcrLayerFilter::All,
+    OcrLayerFilter::OnlyOcrLayer,
+    OcrLayerFilter::WithoutOcrLayer,
+];
+
+/// The stable token a trace line carries for `filter`.
+#[must_use]
+pub const fn ocr_layer_key(filter: OcrLayerFilter) -> &'static str {
+    match filter {
+        OcrLayerFilter::All => "all",
+        OcrLayerFilter::OnlyOcrLayer => "only",
+        OcrLayerFilter::WithoutOcrLayer => "without",
+        _ => "other",
+    }
 }
 
 /// The UTF-8 byte-order mark, U+FEFF encoded.
@@ -345,6 +369,7 @@ mod tests {
             order: TextOrder::default(),
             line_endings: LineEndings::default(),
             byte_order_mark: false,
+            ocr_layer: OcrLayerFilter::All,
         };
         let text = "Ø50 ±0.1\n30°\u{000C}second page";
         assert_eq!(encode(text, &plan), text.as_bytes());
@@ -359,6 +384,7 @@ mod tests {
             order: TextOrder::default(),
             line_endings: LineEndings::AsExtracted,
             byte_order_mark: true,
+            ocr_layer: OcrLayerFilter::All,
         };
         let bytes = encode("Ø50", &plan);
         assert_eq!(&bytes[..3], &[0xEF, 0xBB, 0xBF]);
@@ -374,6 +400,7 @@ mod tests {
             order: TextOrder::default(),
             line_endings: LineEndings::Windows,
             byte_order_mark: false,
+            ocr_layer: OcrLayerFilter::All,
         };
         assert_eq!(encode("a\nb", &plan), b"a\r\nb");
         assert_eq!(
@@ -393,6 +420,7 @@ mod tests {
             order: TextOrder::default(),
             line_endings: LineEndings::Windows,
             byte_order_mark: true,
+            ocr_layer: OcrLayerFilter::All,
         };
         let bytes = encode("Ø50 ±0.1\n30°", &plan);
         let round_tripped = String::from_utf8(bytes[3..].to_vec()).unwrap();

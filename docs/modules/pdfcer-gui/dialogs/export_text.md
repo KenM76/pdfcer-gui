@@ -70,6 +70,12 @@ size, columns guessed from gaps) is counted in the receipt too, because the
 operator cannot see an inference in a `.txt` file (R8b). The choice is
 remembered as `export_text_order`.
 
+## Recognised text
+
+Drawn only when the document has an OCR layer pdfcer wrote, and not
+remembered; `dialogs::recognised` carries both arguments. Driven by
+`recognised_text_choice_filters_text`.
+
 ## The page scope is `imageexport`'s, called rather than copied
 
 [`crate::app::actions::imageexport::PageScope`] and `resolve_pages`, which in

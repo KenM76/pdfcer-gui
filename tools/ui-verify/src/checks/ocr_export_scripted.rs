@@ -37,7 +37,7 @@ pub enum Format {
 }
 
 impl Format {
-    const fn item(self) -> &'static str {
+    pub(crate) const fn item(self) -> &'static str {
         match self {
             Self::Word => "ribbon.item.file.export_word", // ui-text-exempt: a trace region name
             Self::Text => "ribbon.item.file.export_text", // ui-text-exempt: a trace region name
@@ -59,10 +59,26 @@ impl Format {
         }
     }
 
-    const fn extension(self) -> &'static str {
+    pub(crate) const fn extension(self) -> &'static str {
         match self {
             Self::Word => "docx", // ui-text-exempt: a file extension
             Self::Text => "txt",  // ui-text-exempt: a file extension
+        }
+    }
+
+    /// The trace line the export window emits when it opens.
+    pub(crate) const fn opened(self) -> &'static str {
+        match self {
+            Self::Word => "export-word-open", // ui-text-exempt: a trace event name
+            Self::Text => "export-text-open", // ui-text-exempt: a trace event name
+        }
+    }
+
+    /// The prefix of the window's recognised-text radios.
+    pub(crate) const fn recognised(self) -> &'static str {
+        match self {
+            Self::Word => "export-word.recognised", // ui-text-exempt: a trace region name
+            Self::Text => "export-text.recognised", // ui-text-exempt: a trace region name
         }
     }
 }
@@ -98,13 +114,44 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, format: Format) -> Result
     let pdf = crate::fixture::workspace_root()
         .join("fixtures")
         .join(FIXTURE);
-    if !pdf.is_file() {
+    let stem = format!("ocr-export-{}", format.extension());
+    let (text, trace) = match exported_text(ctx, report, &pdf, &stem, format, None)? {
+        Ok(done) => done,
+        Err(failure) => return Ok(Some(failure)),
+    };
+    // The fixture's layer is not one pdfcer wrote, so the window must not
+    // offer the recognised-text choice (R9).
+    let pages = trace
+        .last(format.opened())
+        .and_then(|l| l.get("ocr_layer_pages").map(str::to_owned));
+    report.note(format!("ocr_layer_pages={pages:?}"));
+    if pages.as_deref() != Some("0") {
         return Ok(Some(format!(
+            "the window counted `ocr_layer_pages={pages:?}` on a page whose invisible text is \
+             not a pdfcer OCR layer; it must count 0 and offer no recognised-text choice."
+        )));
+    }
+    Ok(judge(&text, &format!("{stem}.{}", format.extension())))
+}
+
+/// Export `pdf` through `format`'s window, clicking the `choose` region
+/// before Export when given, and return the written file's text (the main
+/// part, for Word) with the session's trace. The inner `Err` is a failure
+/// to report.
+pub(crate) fn exported_text(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    pdf: &std::path::Path,
+    stem: &str,
+    format: Format,
+    choose: Option<&str>,
+) -> Result<std::result::Result<(String, crate::trace::Trace), String>> {
+    if !pdf.is_file() {
+        return Ok(Err(format!(
             "the fixture is not at {}; it is committed, so this is a broken checkout.",
             pdf.display()
         )));
     }
-    let stem = format!("ocr-export-{}", format.extension());
     let target = ctx.out(&format!("{stem}.{}", format.extension()));
     let _ = std::fs::remove_file(&target);
     if target.exists() {
@@ -113,9 +160,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, format: Format) -> Result
             target.display()
         )));
     }
-    let (trace, path) = export(ctx, report, &pdf, &target, &stem, format)?;
+    let (trace, path) = export(ctx, report, pdf, &target, stem, format, choose)?;
     let Some(line) = trace.last(format.wrote()) else {
-        return Ok(Some(format!(
+        return Ok(Err(format!(
             "Export was pressed and no `{}` line followed. Refused: {:?}. Failed: {:?}. Trace: \
              {path}.",
             format.wrote(),
@@ -138,10 +185,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport, format: Format) -> Result
         Format::Text => String::from_utf8_lossy(&bytes).into_owned(),
         Format::Word => match zip_part(&bytes, MAIN_PART) {
             Ok(xml) => String::from_utf8_lossy(&xml).into_owned(),
-            Err(why) => return Ok(Some(format!("{}: {why}", target.display()))),
+            Err(why) => return Ok(Err(format!("{}: {why}", target.display()))),
         },
     };
-    Ok(judge(&text, &target.display().to_string()))
+    Ok(Ok((text, trace)))
 }
 
 /// The visible stamp proves the page was read; then every OCR word must be
@@ -213,8 +260,9 @@ fn zip_part(bytes: &[u8], name: &str) -> std::result::Result<Vec<u8>, String> {
     Err(format!("no `{name}` entry in the package"))
 }
 
-/// Launch on `pdf`, click Read mode, the File tab, the export item and its
-/// window's Export button, with the save dialog answered by `target`.
+/// Launch on `pdf`, click Read mode, the File tab, the export item, `choose`
+/// when given, and the window's Export button, with the save dialog answered
+/// by `target`.
 fn export(
     ctx: &CheckContext,
     report: &mut CheckReport,
@@ -222,6 +270,7 @@ fn export(
     target: &std::path::Path,
     stem: &str,
     format: Format,
+    choose: Option<&str>,
 ) -> Result<(crate::trace::Trace, String)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -282,6 +331,9 @@ fn export(
     }
     click(format.item())?;
     session.settle(20);
+    if let Some(region) = choose {
+        click(region)?;
+    }
     click(format.button())?;
     session.settle(30);
     pointer.gone(&session)?;
