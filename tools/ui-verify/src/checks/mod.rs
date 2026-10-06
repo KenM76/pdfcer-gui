@@ -1057,6 +1057,8 @@ pub mod preview_fallback;
 pub mod reface_commit;
 /// Every refused key is named, with one click to a face that has them.
 pub mod refused_keys;
+/// Ctrl+B on the second copy of a repeated word bolds that copy.
+pub mod repeated_word;
 /// The Find bar's Replace and Replace all, and Replace all as one undo.
 pub mod replace_all;
 /// Double, triple and Shift+arrow selection, a drag over text, rotated carets.

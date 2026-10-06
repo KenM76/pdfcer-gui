@@ -255,9 +255,12 @@ pub enum TextStyleRefusal {
     WidthNoBaseline,
     /// The characters a range named have changed since it was chosen.
     SpanMoved,
-    /// The chosen characters also appear earlier in the same piece of text,
-    /// and the engine addresses a part of a piece by its first occurrence.
+    /// The chosen characters overlap an earlier copy of themselves in the
+    /// same piece of text, so no count of copies names them.
     SpanAmbiguous,
+    /// The engine found fewer copies of the chosen characters in their piece
+    /// of text than the selection counted (`FormatError::NoMatch`).
+    SpanNotFound,
     /// An axis asked off is the face itself, and no face of its family
     /// without it can show the text; carries the axes (`"bold"`, `"italic"`,
     /// `"bold italic"`), in the engine's words.
@@ -354,7 +357,10 @@ impl TextStyleRefusal {
                 "The text changed after you selected it, so pdfcer changed nothing. Select it again and retry."
             }
             Self::SpanAmbiguous => {
-                "The same letters appear earlier in this piece of text, and pdfcer cannot yet restyle the later copy on its own. Nothing changed; select the whole word or line instead."
+                "These letters overlap an earlier copy of themselves in this piece of text, so pdfcer cannot tell which copy you mean. Nothing changed; select the whole word or line instead."
+            }
+            Self::SpanNotFound => {
+                "pdfcer could not find the selected letters where the selection put them, so it changed nothing. Select them again and retry."
             }
             Self::NewText => {
                 "New text takes its style from the text pen. Finish it with Enter, then select it to style part of it."

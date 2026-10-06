@@ -104,6 +104,16 @@ pub(crate) struct Driven {
 /// Launch on a copy of `paragraph.pdf` with the Text tool armed in Edit, off
 /// the desktop, with a scripted pointer.
 pub(crate) fn launch(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -> Result<Driven> {
+    launch_on(ctx, report, stem, FIXTURE).map(|(driven, _)| driven)
+}
+
+/// [`launch`] on a copy of `fixtures/<fixture>`; also answers the copy's path.
+pub(crate) fn launch_on(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+    fixture: &str,
+) -> Result<(Driven, std::path::PathBuf)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -120,9 +130,9 @@ pub(crate) fn launch(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let source = crate::fixture::workspace_root()
         .join("fixtures")
-        .join(FIXTURE);
+        .join(fixture);
     let doc = ctx.out(&format!("{stem}.pdf"));
-    std::fs::copy(&source, &doc).map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
+    std::fs::copy(&source, &doc).map_err(|e| Error::new(format!("copying {fixture}: {e}")))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc.clone());
     for (k, v) in [
@@ -142,14 +152,15 @@ pub(crate) fn launch(ctx: &CheckContext, report: &mut CheckReport, stem: &str) -
     report.artifact(pointer.path().to_path_buf());
     session.settle(45);
     let page = crate::fixture::page_geometry(&doc)
-        .ok_or_else(|| Error::new(format!("could not read a page size from {FIXTURE}.")))?;
+        .ok_or_else(|| Error::new(format!("could not read a page size from {fixture}.")))?;
     let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
-    Ok(Driven {
+    let driven = Driven {
         session,
         pointer,
         mapping,
         ui_rect,
-    })
+    };
+    Ok((driven, doc))
 }
 
 impl Driven {

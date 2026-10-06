@@ -453,6 +453,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(selection_gestures::TheTextToolSelectsAsAWordProcessorDoes),
         Box::new(word_styles::CtrlBBoldsTheWordAtTheCaret),
         Box::new(word_styles::TheRibbonAlignsTheParagraphAtTheCaret),
+        Box::new(repeated_word::CtrlBBoldsTheSecondCopyOfARepeatedWord),
         Box::new(style_off::CtrlBAgainTakesBoldOff),
         Box::new(replace_all::ReplaceAllIsOneUndo),
         Box::new(ime::AnImeCompositionTypesOnceCommitted),

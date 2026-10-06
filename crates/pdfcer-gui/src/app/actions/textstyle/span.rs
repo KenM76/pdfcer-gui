@@ -7,10 +7,12 @@
 //!
 //! A restyle is one `format_text` call per show operator the range touches:
 //! an operator wholly inside is addressed by pin alone; one the range cuts is
-//! addressed by pin plus the covered characters as `find`. `find` takes the
-//! first occurrence inside the operator, so a cut whose characters also occur
-//! earlier in the same operator is declined as `SpanAmbiguous` rather than
-//! restyling the earlier copy.
+//! addressed by pin plus the covered characters as `find`, and by which of
+//! their non-overlapping matches in that operator the cut is
+//! (`FormatRequest::occurrence`), so the second `M10` of `M10 x M10` is the
+//! one restyled. A cut that overlaps an earlier copy of itself (`aa` from the
+//! middle of `aaa`) is no match in that count and is declined as
+//! `SpanAmbiguous`.
 //!
 //! A decoration is a text-markup mark written into the page content under
 //! the range's quads, in the text's own colour. It is not tied to the text:
@@ -86,10 +88,9 @@ fn pieces(doc: &OpenDoc, page: usize, span: Span) -> Result<Vec<Piece>, t::TextS
                 let (Some(whole), Some(cut)) = (whole, cut) else {
                     return Err(t::TextStyleRefusal::SpanAmbiguous);
                 };
-                if whole.find(cut) != Some(a - op.text.start) {
-                    return Err(t::TextStyleRefusal::SpanAmbiguous);
-                }
-                FormatRequest::new(page, cut).pinned(pin)
+                let n = occurrence(whole, cut, a - op.text.start)
+                    .ok_or(t::TextStyleRefusal::SpanAmbiguous)?;
+                FormatRequest::new(page, cut).pinned(pin).occurrence(n)
             };
             out.push(Piece {
                 run,
@@ -98,6 +99,12 @@ fn pieces(doc: &OpenDoc, page: usize, span: Span) -> Result<Vec<Piece>, t::TextS
         }
     }
     Ok(out)
+}
+
+/// Which of `cut`'s non-overlapping matches in `whole`, counted from the left,
+/// starts at byte `at`; `None` when none does.
+fn occurrence(whole: &str, cut: &str, at: usize) -> Option<usize> {
+    whole.match_indices(cut).position(|(start, _)| start == at)
 }
 
 /// Restyle exactly the characters `span` covers, then keep them selected.
@@ -220,4 +227,21 @@ fn refuse(page: usize, why: t::TextStyleRefusal, reason: &str) {
         // ui-text-exempt: diagnostic trace, never displayed
         format!("text-style-declined page={page} reason={reason}")
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::occurrence;
+
+    #[test]
+    fn the_second_copy_is_the_second_match() {
+        assert_eq!(occurrence("M10 x M10", "M10", 0), Some(0));
+        assert_eq!(occurrence("M10 x M10", "M10", 6), Some(1));
+    }
+
+    #[test]
+    fn a_cut_overlapping_an_earlier_copy_is_no_match() {
+        assert_eq!(occurrence("aaa", "aa", 1), None);
+        assert_eq!(occurrence("aaa", "aa", 0), Some(0));
+    }
 }

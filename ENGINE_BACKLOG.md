@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **38 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `wanted` — a real gap — **37 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -137,7 +137,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| Restyle the N-th occurrence of repeated text within one operator — `FormatRequest::occurrence` … | **wanted.** The pin carries the setter. A restyle of selected words inside an operator whose text repeats them should send the selection's occurrence, so the second `M10` in `M10 x M10` is the one restyled. `FormatError::NoMatch` past the last match wants its own sentence. |
 | Underline and strikethrough tied to the text, not independent page content — `FormatRequest::decoration` … | **wanted.** The pin carries it: `pdfcer_core::text_edit::decoration` (`DecorationMetrics`, `StrikeSource`, `DecoratedSpan`, `DECORATION_TAG`), set through `FormatRequest::decoration` / `FormatRequest::set_decoration` and measured through `FormatRequest::decoration_metrics`. Format ▸ Font's Underline and Strikethrough today author a text-markup annotation over the characters' quads (`textstyle::span::decorate`), which stays where it was drawn when the text later moves, reflows or is deleted. They should send `DecorationSet::UNDERLINE` / `STRIKETHROUGH` through the restyle path instead, so the rule follows the text inside the same undo entry. `FormatError::DecorationOnInvisibleText` and the form-XObject refusal want sentences, and the x-height fallback for strikethrough is a disclosure owed off-canvas. |
 
 ---
@@ -223,7 +222,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **253 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **254 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -536,6 +535,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Set, clear and position a push-button's icon** — `WidgetEdit::with_button_icon`/`without_button_icon`/`with_caption_position`, the modules `pdfcer_core::annot_author::button_icon` and `pdfcer_core::edit::button_icon`, the field `WidgetEdit::button_icon`, refusal `EditError::NotAPushButton` | **shipped, except paste onto a button.** A push button's Properties choose, replace and remove its picture and pick `/TP` (`panels::properties::buttonicon`, `app::actions::buttonicon`), each edit on the engine's default `ForeignAppearance::ReplaceOnIconEdit` (the module `pdfcer_core::edit::foreign_button`, the field `WidgetEdit::foreign_appearance`), which redraws another program's artwork when the icon changes so it cannot hide the picture. Driven by `a_push_button_takes_a_picture`. Still owed: a picture pasted onto a selected push button sets its icon. |
 | Scale page contents to a target size ("resize page contents") … | **shipped.** Pages ▸ Sheet size offers three outcomes under its heading: leave the drawing where it is (the box-only resize), or scale it to **fit** (centred, padded) or **fill** (covering, what runs past hidden) the new sheet, through `EditSession::scale_pages` as one undo step. The factor is quoted before the commit from `pageops::scale::plan_placement`; quarter-turned sets are transposed into displayed terms and a mixed set uses `OrientationPolicy::Match`, said in the window. `ScaleRefusedCeDimensions` is worded by page number; a Fill's hidden overflow and unscaled geospatial measures are disclosed on the status line. Driven by `scaling_a_sheet_scales_the_drawing`. The drawn-extent survey works around `PageObjects::page_bbox` counting the scale's `re W n` clip (G109). |
 | **Take a style axis OFF** — `StyleTarget` (per-axis on, off or kept) on `FormatRequest::style`, `StyleRung::SynthesisRemoved`, `FormatError::NoFaceWithoutStyle`, module `pdfcer_core::text_edit::format::style_target`, `StyleLadder::unsynthesised` (our `G086`, Pass 441.0) | **shipped.** Ctrl+B and Ctrl+I, and the Format tab's Bold and Italic, ask their axis off when the text at the caret or selection already carries it, as a bold face or as synthesis (`app::dispatch::textformat::toggle`, `StyleChange::Weight` carrying a `StyleTarget`). The status line words the off ladder's rung — the page's own face without the axis, the standard-14 one, or a synthesis undone (`app::actions::textstyle::off`) — and `NoFaceWithoutStyle` is worded with its remedy. Driven: `ctrl_b_again_takes_bold_off`. The Properties panel's Bold and Italic stay apply-only buttons. |
+| Restyle the N-th occurrence of repeated text within one operator — `FormatRequest::occurrence` … | **shipped.** `app::actions::textstyle::span` sends a cut inside an operator as its characters plus `FormatRequest::occurrence(n)`, `n` counted by `span::occurrence` over the operator's non-overlapping matches, so the second `M10` in `M10 x M10` is the one restyled. A cut overlapping an earlier copy of itself matches no count and stays `SpanAmbiguous`; `FormatError::NoMatch` is `TextStyleRefusal::SpanNotFound`, its own sentence. Driven by `ctrl_b_bolds_the_second_copy_of_a_repeated_word`. |
 
 ## Filed requests for Word-like text editing — not verdict rows
 

@@ -542,6 +542,7 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
         FormatError::BadTargetWidth(_) => t::TextStyleRefusal::WidthNotPositive,
         FormatError::NoAdvanceWidth { .. } => t::TextStyleRefusal::WidthNoMetrics,
         FormatError::WidthFitKerned => t::TextStyleRefusal::WidthKerned,
+        FormatError::NoMatch(_) => t::TextStyleRefusal::SpanNotFound,
         FormatError::TextRun(VectorEditError::TextRunHasNoWidth { .. }) => {
             t::TextStyleRefusal::WidthNoBaseline
         }
