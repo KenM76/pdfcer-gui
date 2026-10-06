@@ -75,6 +75,9 @@ struct Held {
     base_font: String,
     /// Every distinct refused key, in the order first refused.
     chars: Vec<char>,
+    /// Those of `chars` the font draws with more than one code
+    /// (`RunRepertoire::ambiguous`), rather than lacks.
+    two_ways: Vec<char>,
     /// The refused keys typed since the draft last changed, in order.
     tail: String,
     /// The draft after the last refusal (or, in a closing stage, after the
@@ -107,6 +110,7 @@ pub(super) fn note(
     ctx: &egui::Context,
     draft: &Draft,
     refused: &[char],
+    two_ways: &[char],
     base_font: &str,
     went_in: bool,
 ) {
@@ -116,17 +120,13 @@ pub(super) fn note(
     let mut held = held_for(ctx, draft.page, *run, base_font);
     if held.stage != Stage::Offer {
         held.chars.clear();
+        held.two_ways.clear();
         held.tail.clear();
         held.at = None;
         held.stage = Stage::Offer;
     }
     held.base_font = base_font.to_owned();
-    for c in refused {
-        if !held.chars.contains(c) {
-            held.chars.push(*c);
-            held.faces = None;
-        }
-    }
+    take(&mut held, refused, two_ways);
     let now = Snapshot::of(draft);
     if went_in {
         held.tail.clear();
@@ -146,6 +146,7 @@ pub(super) fn planned(
     ctx: &egui::Context,
     draft: &Draft,
     keys: &[char],
+    two_ways: &[char],
     base_font: &str,
     face: &str,
 ) {
@@ -155,20 +156,29 @@ pub(super) fn planned(
     let mut held = held_for(ctx, draft.page, *run, base_font);
     if !matches!(held.stage, Stage::Planned { .. }) {
         held.chars.clear();
+        held.two_ways.clear();
     }
     held.base_font = base_font.to_owned();
-    for c in keys {
-        if !held.chars.contains(c) {
-            held.chars.push(*c);
-            held.faces = None;
-        }
-    }
+    take(&mut held, keys, two_ways);
     held.tail.clear();
     held.at = None;
     held.stage = Stage::Planned {
         face: face.to_owned(),
     };
     write(ctx, held);
+}
+
+/// Add `keys` to the held set, remembering which are drawn two ways.
+fn take(held: &mut Held, keys: &[char], two_ways: &[char]) {
+    for c in keys {
+        if !held.chars.contains(c) {
+            held.chars.push(*c);
+            held.faces = None;
+        }
+        if two_ways.contains(c) && !held.two_ways.contains(c) {
+            held.two_ways.push(*c);
+        }
+    }
 }
 
 /// The notice held for `run`, or a fresh one.
@@ -180,6 +190,7 @@ fn held_for(ctx: &egui::Context, page: usize, run: usize, base_font: &str) -> He
             run,
             base_font: base_font.to_owned(),
             chars: Vec::new(),
+            two_ways: Vec::new(),
             tail: String::new(),
             at: None,
             faces: None,
@@ -315,7 +326,7 @@ fn body(
     let font = crate::panels::properties::text::shorten(&held.base_font).to_owned();
     match held.stage.clone() {
         Stage::Offer => {
-            ui.label(t::named(&held.chars, &font));
+            ui.label(t::named(&held.chars, &held.two_ways, &font));
             let Some(face) = best else {
                 if held.faces.is_some() {
                     ui.label(egui::RichText::new(t::no_face(&held.chars)).small());
@@ -332,7 +343,7 @@ fn body(
             offer(ui, doc, held, face, &label, actions);
         }
         Stage::Planned { face: planned } => {
-            ui.label(t::planned(&held.chars, &font, &planned));
+            ui.label(t::planned(&held.chars, &held.two_ways, &font, &planned));
             if let Some(face) = best {
                 offer(ui, doc, held, face, &t::use_whole(&face.label), actions);
             }
@@ -433,10 +444,12 @@ fn trace(held: &mut Held, best: Option<&FaceChoice>) {
         .collect();
     let line = format!(
         // ui-text-exempt: diagnostic trace, never displayed.
-        "text-edit-refused-keys page={} run={} characters={} font={} faces={} face={} state={stage}",
+        "text-edit-refused-keys page={} run={} characters={} two_ways={} font={} faces={} face={} \
+         state={stage}",
         held.page,
         held.run,
         chars.join(","),
+        held.two_ways.len(),
         held.base_font,
         held.faces.as_ref().map_or(0, |(_, f)| f.len()),
         best.map_or("none", |f| f.selector.as_str()),

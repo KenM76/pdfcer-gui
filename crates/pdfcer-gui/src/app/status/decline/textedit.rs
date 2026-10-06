@@ -30,25 +30,16 @@ pub(crate) fn record_enter_cannot_split(why: crate::text::textedit::EnterRefusal
 /// use.
 ///
 ///
-/// # Why the sentence is [`EditRefusal::RunCannotTake`] and not one of the
-/// # two that name a cause
+/// # Which sentence
 ///
-/// Because the shell does not have a cause here — it has a **set**, and the
-/// engine's own source says why the two are not the same thing. A character's
-/// absence from `RunRepertoire::accepted` is the union of at least four
-/// distinct refusals: no glyph for the scalar (R-INV-1/6/7), the embedded
-/// subset's floor, a scalar above the BMP (R-INV-8), and — on the *composite*
-/// font path only — an ambiguous encoding where two CIDs map to one scalar
-/// (R-INV-5), which the simple-font path *accepts* and the composite path
-/// silently drops.
-///
-/// ⇒ Reusing `FontLacksTheCharacter` would put the sentence *"the font here was
-/// built with only the letters your page already prints"* in front of an
-/// operator whose font has the letter twice. And because this gate stops the
-/// keystroke, the engine's own correct sentence would never be reached to
-/// contradict it. So the sentence reports the **measurement** — pdfcer checked,
-/// and this character is not in the set — and points at the remedy, which is
-/// the same remedy for all four causes.
+/// A letter in `RunRepertoire::ambiguous` (`two_ways`) is one the font has
+/// and draws with more than one code, so it gets
+/// [`EditRefusal::RunDrawsTwoWays`]. Any other absence from
+/// `RunRepertoire::accepted` is one of several causes — no glyph for the
+/// scalar, the embedded subset's floor, a scalar above the BMP — which the
+/// repertoire does not tell apart, so [`EditRefusal::RunCannotTake`] reports
+/// the measurement (the letter is not in the set) rather than borrowing
+/// `FontLacksTheCharacter`'s cause. All of them share one remedy: another face.
 ///
 /// # `typed: None`, and it is not an omission
 ///
@@ -70,19 +61,32 @@ pub(crate) fn record_enter_cannot_split(why: crate::text::textedit::EnterRefusal
 /// them.
 ///
 /// [`EditRefusal::RunCannotTake`]: crate::text::textedit::EditRefusal::RunCannotTake
-pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_font: String) {
+/// [`EditRefusal::RunDrawsTwoWays`]: crate::text::textedit::EditRefusal::RunDrawsTwoWays
+pub(crate) fn record_key_refused(
+    page: usize,
+    run: usize,
+    character: char,
+    two_ways: bool,
+    base_font: String,
+) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
         format!(
-            "text-edit-key-declined page={page} run={run} character='{character}' character_font={base_font}"
+            "text-edit-key-declined page={page} run={run} character='{character}' two_ways={} \
+             character_font={base_font}",
+            u8::from(two_ways)
         )
     });
-    record_edit_text(crate::text::textedit::EditRefusal::RunCannotTake(character));
+    record_edit_text(if two_ways {
+        crate::text::textedit::EditRefusal::RunDrawsTwoWays(character)
+    } else {
+        crate::text::textedit::EditRefusal::RunCannotTake(character)
+    });
     // O141's offer, raised in the same breath as the sentence — one event, two
     // surfaces, written together here so a build cannot say one without the
     // other. `typed: None`: see the note above.
-    crate::panels::properties::refusedchar::record(page, run, character, base_font, false, None);
+    crate::panels::properties::refusedchar::record(page, run, character, base_font, two_ways, None);
 }
 
 /// **Record that a committed text edit was refused, and which kind of
@@ -213,8 +217,10 @@ fn missing_character(error: &pdfcer_core::text_edit::EditError) -> Option<(char,
 }
 
 /// Which character-level refusal this is. An ambiguous character the commit
-/// did not add is one the text already held: the engine re-encodes the whole
-/// operator, so an edit elsewhere in it is refused for that letter.
+/// did not add is one the text already held. `edit_text` keeps a held letter's
+/// code, so this arises only where it cannot tell which code belongs to which
+/// letter: the matched text occurs more than once in its show operator, or a
+/// code shows a ligature.
 fn refused_char_kind(
     error: &pdfcer_core::text_edit::EditError,
     typed: Option<&crate::canvas::textedit::Committing>,

@@ -32,12 +32,11 @@ are signed* in `pdfcer-gui-base/handsign.md`).
 spans `to` (PDF user space; `canvas::forms::sigadjust` has already clamped
 `to`). One `EditSession::transform_objects` call through the funnel with the
 scale-and-translate matrix between the two: one undo step. The objects are
-those of `EditSession::page_objects(page)` whose byte spans lie inside a
-`BDC … EMC` sequence tagged `/pdfc_HandSig` with this field's name, found by
-walking `ContentStream::from_page` — the stream `page_objects` was built
-from. The transform rewrites inside the sequence, so the tag survives;
-`hand-sign-adjusted tagged=` re-reads it to say so. The engine's mark carries
-no object list (G127); when it does, this reader goes.
+the union of `HandSignatureMark::objects` over this field's marks from
+`EditSession::hand_signatures(page)` — `page_objects` indices, read just
+before the transform because they hold for one revision only. The transform
+rewrites inside the sequence, so the tag survives; `hand-sign-adjusted
+tagged=` re-reads it to say so.
 
 A rectangle under half a point a side, or a mark whose objects cannot be
 found, is refused with `hand-sign-adjust-refused reason=`.

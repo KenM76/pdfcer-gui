@@ -1,15 +1,14 @@
 # `ui-verify/checks/two_codes`
 
-`a_letter_drawn_two_ways_is_named` — an edit to text holding a letter its
-font draws two ways is refused for that letter and said as such, and text in
-the same font without it still edits.
+`a_letter_drawn_two_ways_is_named`: text holding a letter its font draws two
+ways still edits around it. Typing that letter is said as *drawn two ways*,
+never as the font lacking it.
 
-The engine rewrites a pinned show operator whole, so typing `B` after an `A`
-the font maps from two codes re-encodes the `A` too and is refused with
-`RInvTrigger::Ambiguous` naming `A`. The shell tells that apart from the
-operator having typed the letter by counting it in the draft
-(`RefusedCharacter::added`): fewer or the same in the replacement as in the
-original means the text already held it.
+`EditSession::edit_text` keeps a held letter's own code when it re-encodes a
+show operator, so an edit beside an `A` the font maps from two codes commits.
+`RunRepertoire::ambiguous` names the letters the font draws two ways, so a
+typed `A` is held as `two_ways` in the keystroke notice and the commit's
+re-face sentence (`text::reface::set_in`) says so.
 
 # What it drives
 
@@ -17,24 +16,22 @@ original means the text already held it.
 `B` from (72, 540), 48 pt, one font whose character map gives `A` codes 1
 and 2.
 
-1. Caret into the `A` at (80, 615), End, type `B`, Escape. Owed:
-   `edit-text-classified ... character='A' ... said=TextHoldsTwoGlyphsFor`, no
-   `edit-text page=` line, and the last `refused-char` line reads
-   `character='A'` with `two_ways=1` (the Properties offer says the font draws
-   the letter two ways rather than that it lacks it).
-2. Caret into the `B` at (80, 555), End, type `AB`, Escape. Owed: an
-   `edit-text page=` line whose disclosures hold `pdfcer cannot write ‘A’`
-   and not `has no ‘A’`. The engine sets the `A` in Helvetica; the shell's
-   sentence must not claim the font lacks a letter it has twice.
+1. Caret into the `A` at (80, 615), End, type `B`, Escape, Ctrl+S. Owed: an
+   `edit-text page=` line, no `edit-text-refused`, a `save-in-place
+   outcome=ok`, and the appended revision showing codes 1 then 3, as
+   `<00010003>` or `(\000\001\000\003)`, whichever spelling the engine writes.
+2. Caret into the `B` at (80, 555), End, type `AB`, Escape. Owed:
+   `text-edit-refused-keys ... two_ways=1`, then an `edit-text page=` line
+   whose disclosures hold `draws ‘A’ two different ways` and neither
+   `has no ‘A’` nor `cannot write ‘A’`.
 
 # Falsified
 
-- With `refused_char_kind` returning `TwoGlyphsFor` for a held letter, step 1
-  fails (`said=FontHasTwoGlyphsFor`, which tells him he typed an `A`); the
-  other two findings stay silent.
-- Against the build before this check, all three findings fire: the held
-  letter is said as typed, the offer line has no `two_ways`, and the commit
-  says `This text's font has no ‘A’`.
+- With both `two_ways` filters in `canvas::textedit::repertoire` answering
+  false, step 2 fails on both findings (no `two_ways=1`; the commit says
+  `cannot write ‘A’`). Step 1 stays green, since it measures the engine's carry.
+- A needle that accepted only the hex spelling failed step 1 against an
+  engine that saved the literal string, which is why both spellings are owed.
 
 # Driven off-screen
 

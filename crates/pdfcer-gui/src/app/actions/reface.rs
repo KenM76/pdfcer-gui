@@ -36,7 +36,8 @@ pub(super) fn try_commit(
     replacement: &str,
     reface: &Reface,
 ) -> bool {
-    let chars = crate::canvas::textedit::repertoire::refused_now(doc, page, run, &reface.chars);
+    let (chars, two_ways) =
+        crate::canvas::textedit::repertoire::refused_now(doc, page, run, &reface.chars);
     if chars.is_empty() {
         return false;
     }
@@ -52,9 +53,9 @@ pub(super) fn try_commit(
     vector_edit(doc, "edit-text", page, 1, |session| {
         let (result, tier) = engine.attempt("commit", |r| session.edit_text(r, &engine.options));
         match (result, route) {
-            (Ok(report), _) => Ok(engine_notes(page, run, report, &reface)),
+            (Ok(report), _) => Ok(engine_notes(page, run, report, &reface, &two_ways)),
             (Err(_), Some((plan, tokens))) => {
-                commit(session, &plan, &tokens, &reface, page).map_err(|s| s.to_string())
+                commit(session, &plan, &tokens, &reface, &two_ways, page).map_err(|s| s.to_string())
             }
             (Err(error), None) => {
                 crate::app::status::decline::record_edit_text_refusal(
@@ -104,7 +105,13 @@ fn placeholder_route(
 
 /// The disclosures of an edit the engine committed, with the fallback traced
 /// and said in the operator's terms when it set any characters.
-fn engine_notes(page: usize, run: usize, report: EditReport, reface: &Reface) -> Vec<String> {
+fn engine_notes(
+    page: usize,
+    run: usize,
+    report: EditReport,
+    reface: &Reface,
+    two_ways: &[char],
+) -> Vec<String> {
     let mut notes = report.disclosures;
     if let Some(used) = report.fallback {
         let named: Vec<String> = used
@@ -121,7 +128,7 @@ fn engine_notes(page: usize, run: usize, report: EditReport, reface: &Reface) ->
                 used.base_font
             )
         });
-        notes.push(t::set_in(&used.characters, &reface.label));
+        notes.push(t::set_in(&used.characters, two_ways, &reface.label));
         if used.source == FallbackSource::AddedStandard14 {
             notes.push(t::not_embedded(&reface.label));
         }
@@ -154,6 +161,7 @@ pub(super) fn commit(
     plan: &Plan,
     tokens: &Tokens,
     reface: &Reface,
+    two_ways: &[char],
     page: usize,
 ) -> Result<Vec<String>, Stopped> {
     let stop = |why, detail: String, lost| Stopped {
@@ -192,7 +200,7 @@ pub(super) fn commit(
     if !session.coalesce_last(steps, CommandKind::EditText) {
         notes.push(t::undo_split(steps));
     }
-    notes.push(t::set_in(&reface.chars, &reface.label));
+    notes.push(t::set_in(&reface.chars, two_ways, &reface.label));
     let mut seen = std::collections::HashSet::new();
     notes.retain(|n| seen.insert(n.clone()));
     Ok(notes)

@@ -1024,9 +1024,12 @@ impl PdfcerApp {
                 page,
                 run,
                 character,
+                two_ways,
                 base_font,
             }) => {
-                crate::app::status::decline::record_key_refused(page, run, character, base_font);
+                crate::app::status::decline::record_key_refused(
+                    page, run, character, two_ways, base_font,
+                );
             }
             Action::Write(write) => match write {
                 // (the enum is `super::write::WriteAction`)

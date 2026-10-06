@@ -73,6 +73,9 @@ pub(crate) struct Sieved {
     /// `panels::properties::refusedchar` names the face being replaced and
     /// keys its list of candidates on the character.
     pub refused: Option<(Vec<char>, String)>,
+    /// Those refused characters the font draws with more than one code
+    /// (`RunRepertoire::ambiguous`) rather than lacks.
+    pub two_ways: Vec<char>,
 }
 
 /// **Split a keystroke's text into what this run can take and what it cannot.**
@@ -88,6 +91,7 @@ pub(crate) fn sieve(
         return Sieved {
             kept: typed.to_owned(),
             refused: None,
+            two_ways: Vec::new(),
         };
     };
     let mut kept = String::with_capacity(typed.len());
@@ -99,18 +103,39 @@ pub(crate) fn sieve(
             missing.push(c);
         }
     }
+    let two_ways = missing
+        .iter()
+        .copied()
+        .filter(|c| rep.ambiguous.contains_key(c))
+        .collect();
     let refused = (!missing.is_empty()).then(|| (missing, rep.base_font.clone()));
-    Sieved { kept, refused }
+    Sieved {
+        kept,
+        refused,
+        two_ways,
+    }
 }
 
 /// Which of `chars` the run refuses now, measured afresh (no slot: the
 /// commit has no `egui::Context`). Answers all of them when nothing could be
 /// measured, so the caller keeps its plan.
-pub(crate) fn refused_now(doc: &OpenDoc, page: usize, run: usize, chars: &[char]) -> Vec<char> {
+/// The second list is those refused the font draws two ways.
+pub(crate) fn refused_now(
+    doc: &OpenDoc,
+    page: usize,
+    run: usize,
+    chars: &[char],
+) -> (Vec<char>, Vec<char>) {
     let Some(rep) = measure(doc, page, run) else {
-        return chars.to_vec();
+        return (chars.to_vec(), Vec::new());
     };
-    chars.iter().copied().filter(|c| !rep.accepts(*c)).collect()
+    let refused: Vec<char> = chars.iter().copied().filter(|c| !rep.accepts(*c)).collect();
+    let two_ways = refused
+        .iter()
+        .copied()
+        .filter(|c| rep.ambiguous.contains_key(c))
+        .collect();
+    (refused, two_ways)
 }
 
 /// Drop the held measurement.

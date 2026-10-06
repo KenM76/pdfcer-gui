@@ -164,8 +164,9 @@ pub enum EditRefusal {
     /// document that mostly works, and the sentence says so.
     FontHasTwoGlyphsFor(char),
     /// The same engine refusal for a letter the edit did not add: the text
-    /// already holds it, and the engine rewrites the whole piece of text, so a
-    /// change elsewhere in that piece needs a code for it too. Told apart from
+    /// already holds it, and the engine could not tell which of its codes the
+    /// page used (the match repeats within its show operator, or a code shows
+    /// a ligature), so keeping it would mean choosing one. Told apart from
     /// [`Self::FontHasTwoGlyphsFor`] because that sentence names a letter he
     /// typed and says the rest of the text edits, and here neither is true.
     TextHoldsTwoGlyphsFor(char),
@@ -291,6 +292,10 @@ pub enum EditRefusal {
     /// first keystroke instead of after the last, which is the whole of what
     /// `Pass 280.0` was requested for.
     RunCannotTake(char),
+    /// The same pre-commit gate for a letter the run's font draws with more
+    /// than one code (`RunRepertoire::ambiguous`): the font has it, and pdfcer
+    /// will not pick which glyph a keystroke gets.
+    RunDrawsTwoWays(char),
 }
 
 /// **Which of the two character-level font refusals the engine raised** —
@@ -403,6 +408,7 @@ impl EditRefusal {
             Self::TextMovedAway => "TextMovedAway",
             Self::Unstated => "Unstated",
             Self::RunCannotTake(_) => "RunCannotTake",
+            Self::RunDrawsTwoWays(_) => "RunDrawsTwoWays",
         }
     }
 
@@ -489,6 +495,9 @@ impl EditRefusal {
             Self::RunCannotTake(c) => {
                 return std::borrow::Cow::Owned(run_cannot_take(c));
             }
+            Self::RunDrawsTwoWays(c) => {
+                return std::borrow::Cow::Owned(run_draws_two_ways(c));
+            }
         };
         Cow::Borrowed(fixed)
     }
@@ -544,6 +553,17 @@ pub fn run_cannot_take(character: char) -> String {
     )
 }
 
+/// The sentence for [`EditRefusal::RunDrawsTwoWays`].
+#[must_use]
+pub fn run_draws_two_ways(character: char) -> String {
+    format!(
+        "pdfcer cannot type '{character}' into this text. This line's font draws \
+         '{character}' two different ways, and pdfcer will not choose one for you — it could \
+         change the letter's shape without telling you. Nothing you have already typed is lost. \
+         Open Properties, which offers the faces that spell it only one way."
+    )
+}
+
 //
 // Forty lines arguing a sentence that no longer has an occasion: *"pdfcer will
 // not change these words, because the same words appear N times on this page
@@ -571,7 +591,7 @@ mod tests {
     /// obstacle in its first clause, or promising a remedy this build does not
     /// have, goes red rather than shipping.
     ///
-    const EVERY: [EditRefusal; 9] = [
+    const EVERY: [EditRefusal; 10] = [
         EditRefusal::SplitAcrossPieces,
         EditRefusal::UnsupportedFont,
         // The character is arbitrary here on purpose: this list exists to
@@ -588,6 +608,7 @@ mod tests {
         // another with the character held constant, because the character is
         // the one thing an operator meeting any of them already knows.
         EditRefusal::RunCannotTake('q'),
+        EditRefusal::RunDrawsTwoWays('q'),
     ];
 
     /// **The three character-naming sentences say three different
@@ -605,6 +626,10 @@ mod tests {
         );
         assert_ne!(two, gate);
         assert_ne!(lacks, two);
+        let gate_two = EditRefusal::RunDrawsTwoWays('q').line().into_owned();
+        assert_ne!(gate_two, gate);
+        assert!(gate_two.contains("two different ways") && !gate_two.contains("not one of"));
+        assert!(gate_two.contains("Nothing you have already typed is lost"));
         // And the gate's own distinguishing clause, by content rather than
         // by inequality: the draft survives, which is the whole difference
         // between a refused KEY and a refused COMMIT.
@@ -680,6 +705,7 @@ mod tests {
             EditRefusal::FontLacksTheCharacter('q'),
             EditRefusal::TextHoldsTwoGlyphsFor('q'),
             EditRefusal::RunCannotTake('q'),
+            EditRefusal::RunDrawsTwoWays('q'),
             EditRefusal::DocumentProtected,
             EditRefusal::TextMovedAway,
         ] {

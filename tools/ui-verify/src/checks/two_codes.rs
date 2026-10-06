@@ -1,6 +1,6 @@
-//! `a_letter_drawn_two_ways_is_named` — **an edit to text holding a letter its
-//! font draws two ways is refused for that letter, said as such, and text in
-//! the same font without it still edits**
+//! `a_letter_drawn_two_ways_is_named` — **text holding a letter its font
+//! draws two ways still edits around it, and typing that letter is said as
+//! drawn two ways, not as missing**
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/two_codes.md`.
 
@@ -18,11 +18,16 @@ const KEY_DECLINED: &str = "text-edit-key-declined"; // ui-text-exempt: a trace 
 const APPLIED: &str = "edit-text"; // ui-text-exempt: a trace event name, never displayed
 const REFUSED: &str = "edit-text-refused"; // ui-text-exempt: a trace event name, never displayed
 const CLASSIFIED: &str = "edit-text-classified"; // ui-text-exempt: a trace event name, never displayed
-const OFFER: &str = "refused-char"; // ui-text-exempt: a trace event name, never displayed
+const NOTICE: &str = "text-edit-refused-keys"; // ui-text-exempt: a trace event name, never displayed
+const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
 /// The sentence `text::reface::set_in` owes the `A` set in another face.
-const CANNOT_WRITE: &str = "pdfcer cannot write \u{2018}A\u{2019}"; // ui-text-exempt: a needle for the app's sentence
-/// The sentence it must not say: the font has the letter, twice.
+const TWO_WAYS: &str = "draws \u{2018}A\u{2019} two different ways"; // ui-text-exempt: a needle for the app's sentence
+/// The sentences it must not say: the font has the letter, twice.
 const HAS_NO: &str = "has no \u{2018}A\u{2019}"; // ui-text-exempt: a needle for the app's sentence
+const CANNOT_WRITE: &str = "cannot write \u{2018}A\u{2019}"; // ui-text-exempt: a needle for the app's sentence
+/// The `A` keeping its code 1 beside the added `B`'s code 3, as a hex or a
+/// literal string; the engine chooses the spelling.
+const KEPT_CODE: [&str; 2] = ["<00010003>", r"(\000\001\000\003)"];
 
 /// See the module documentation.
 pub struct ALetterDrawnTwoWaysIsNamed;
@@ -33,9 +38,8 @@ impl Check for ALetterDrawnTwoWaysIsNamed {
     }
 
     fn defect(&self) -> &'static str {
-        "an edit to text holding a letter its font draws two ways was said as the operator \
-         having typed that letter, or as the font lacking it, or the refusal stopped text in \
-         the same font from editing"
+        "an edit beside a letter its font draws two ways was refused, or typing that letter \
+         was said as the font lacking it"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -55,7 +59,9 @@ fn outcomes(d: &Driven, mark: usize) -> Result<Vec<String>> {
         .lines
         .iter()
         .filter(|l| l.lineno > mark)
-        .filter(|l| [KEY_DECLINED, APPLIED, REFUSED, CLASSIFIED].contains(&l.event.as_str()))
+        .filter(|l| {
+            [KEY_DECLINED, APPLIED, REFUSED, CLASSIFIED, NOTICE].contains(&l.event.as_str())
+        })
         .map(|l| l.raw.clone())
         .collect())
 }
@@ -78,47 +84,71 @@ fn type_into(
     Ok(Ok(outcomes(d, mark)?))
 }
 
-/// The last offer's `character` and `two_ways` after trace line `mark`.
-fn offer_after(d: &Driven, mark: usize) -> Result<Option<(String, String)>> {
-    Ok(d.session.trace()?.last_after(OFFER, mark).map(|l| {
-        let field = |k: &str| l.get(k).unwrap_or_default().to_owned();
-        (field("character"), field("two_ways"))
-    }))
+/// Save in place and answer whether it saved and the revision it appended.
+fn save(d: &Driven, doc: &std::path::Path, source_len: usize) -> Result<(bool, Vec<u8>)> {
+    d.pointer.key(&d.session, None, "S", Some("ctrl"))?;
+    d.session.settle(40);
+    let saved = d
+        .session
+        .trace()?
+        .events(SAVED)
+        .last()
+        .is_some_and(|l| l.raw.contains("outcome=ok"));
+    let bytes = std::fs::read(doc)
+        .map_err(|e| crate::error::Error::new(format!("reading the saved copy: {e}")))?;
+    let tail = bytes[source_len.min(bytes.len())..].to_vec();
+    Ok((saved, tail))
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let (d, _doc) = launch_on(ctx, report, "two-codes", FIXTURE)?;
-    let mark = d.session.trace()?.mark();
+    let (d, doc) = launch_on(ctx, report, "two-codes", FIXTURE)?;
+    let source_len = std::fs::metadata(&doc).map_or(0, |m| usize::try_from(m.len()).unwrap_or(0));
     let into_a = match type_into(&d, IN_A, "B")? {
         Ok(lines) => lines,
         Err(why) => return Ok(Some(why)),
     };
-    let offer = offer_after(&d, mark)?;
+    let (saved, tail) = save(&d, &doc, source_len)?;
+    let kept = KEPT_CODE
+        .iter()
+        .any(|k| tail.windows(k.len()).any(|w| w == k.as_bytes()));
     let into_b = match type_into(&d, IN_B, "AB")? {
         Ok(lines) => lines,
         Err(why) => return Ok(Some(why)),
     };
     d.pointer.gone(&d.session)?;
     report.note(format!(
-        "typing `B` after `A`: {into_a:?}; offer {offer:?}. Typing `AB` after `B`: {into_b:?}"
+        "typing `B` after `A`: {into_a:?}; saved={saved} codes 1,3 {kept}. \
+         Typing `AB` after `B`: {into_b:?}"
     ));
     let said = |lines: &[String], needle: &str| lines.iter().any(|l| l.contains(needle));
     let mut findings = Vec::new();
-    if !said(&into_a, "said=TextHoldsTwoGlyphsFor") || said(&into_a, "edit-text page=") {
+    if !said(&into_a, "edit-text page=") || said(&into_a, REFUSED) {
         findings.push(
-            "typing `B` after the `A` was not refused as text holding a letter drawn two ways \
-             (said=TextHoldsTwoGlyphsFor)."
+            "typing `B` after the `A` did not commit: a letter the edit leaves alone was \
+             refused because its font draws it two ways."
                 .to_owned(),
         );
     }
-    if offer != Some(("'A'".to_owned(), "1".to_owned())) {
+    if !saved || !kept {
         findings.push(format!(
-            "the Properties offer read {offer:?}; character='A' with two_ways=1 was owed."
+            "the saved revision does not show codes 1 then 3 (saved={saved}): the `A` did not \
+             keep its code beside the added `B`."
         ));
     }
-    if !said(&into_b, "edit-text page=") || !said(&into_b, CANNOT_WRITE) || said(&into_b, HAS_NO) {
+    if !said(&into_b, "two_ways=1") {
+        findings.push(
+            "typing `A` after the `B` was not noted as a letter drawn two ways (two_ways=1)."
+                .to_owned(),
+        );
+    }
+    if !said(&into_b, "edit-text page=")
+        || !said(&into_b, TWO_WAYS)
+        || said(&into_b, HAS_NO)
+        || said(&into_b, CANNOT_WRITE)
+    {
         findings.push(format!(
-            "typing `AB` after the `B` did not commit saying `{CANNOT_WRITE}` without `{HAS_NO}`."
+            "typing `AB` after the `B` did not commit saying `{TWO_WAYS}` without `{HAS_NO}` \
+             or `{CANNOT_WRITE}`."
         ));
     }
     Ok((!findings.is_empty()).then(|| format!("{} Trace: {}.", findings.join(" "), d.path())))

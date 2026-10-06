@@ -170,13 +170,13 @@ impl Keys<'_> {
     /// standing.
     fn type_text(&mut self, t: &str, kind: EditKind) {
         let draft = &*self.draft;
-        let (kept, refused) = match &draft.anchor {
+        let (kept, refused, two_ways) = match &draft.anchor {
             Anchor::Run { run, .. } => {
                 let s = super::repertoire::sieve(self.ctx, self.doc, draft.page, *run, t);
-                (s.kept, s.refused)
+                (s.kept, s.refused, s.two_ways)
             }
             Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::Block { .. } => {
-                (t.to_owned(), None)
+                (t.to_owned(), None, Vec::new())
             }
         };
         if let (Anchor::Run { run, .. }, Some((missing, base_font))) = (&draft.anchor, &refused) {
@@ -185,10 +185,11 @@ impl Keys<'_> {
                 self.draft.caret = take_selection(self.draft);
                 self.draft.caret = insert_lines(&mut self.draft.text, self.draft.caret, t);
                 self.changed = true;
-                super::refused::planned(self.ctx, self.draft, missing, base_font, &face);
+                super::refused::planned(self.ctx, self.draft, missing, &two_ways, base_font, &face);
                 return;
             }
-            self.key_refused(*run, missing[0], base_font.clone());
+            let doubled = two_ways.contains(&missing[0]);
+            self.key_refused(*run, missing[0], doubled, base_font.clone());
         }
         if !kept.is_empty() {
             self.record(kind);
@@ -197,17 +198,25 @@ impl Keys<'_> {
             self.changed = true;
         }
         if let Some((missing, base_font)) = &refused {
-            super::refused::note(self.ctx, self.draft, missing, base_font, !kept.is_empty());
+            super::refused::note(
+                self.ctx,
+                self.draft,
+                missing,
+                &two_ways,
+                base_font,
+                !kept.is_empty(),
+            );
         }
     }
 
-    fn key_refused(&mut self, run: usize, character: char, base_font: String) {
+    fn key_refused(&mut self, run: usize, character: char, two_ways: bool, base_font: String) {
         let page = self.draft.page;
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
                 "text-edit-key-refused page={page} run={run} character='{character}' \
-                 character_font={base_font}"
+                 two_ways={} character_font={base_font}",
+                u8::from(two_ways)
             )
         });
         self.actions.push(Action::Text(
@@ -215,6 +224,7 @@ impl Keys<'_> {
                 page,
                 run,
                 character,
+                two_ways,
                 base_font,
             },
         ));

@@ -107,6 +107,9 @@ pub enum TextAction {
         run: usize,
         /// The first character the run's font cannot spell.
         character: char,
+        /// Whether the font draws `character` with more than one code
+        /// (`RunRepertoire::ambiguous`) rather than lacks it.
+        two_ways: bool,
         /// The run's `/BaseFont`, which is the face the offer replaces.
         base_font: String,
     },

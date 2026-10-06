@@ -23,15 +23,35 @@ fn quoted(c: char) -> String {
     }
 }
 
+/// Why `font` would not take `chars`: it lacks some, and draws those in
+/// `two_ways` (`RunRepertoire::ambiguous`) with more than one code.
+#[must_use]
+pub fn cause(chars: &[char], two_ways: &[char], font: &str) -> String {
+    let (doubled, absent): (Vec<char>, Vec<char>) =
+        chars.iter().partition(|c| two_ways.contains(c));
+    match (absent.is_empty(), doubled.is_empty()) {
+        (_, true) => format!("{font} has no {}", list(&absent)),
+        (true, false) => format!(
+            "{font} draws {} two different ways and pdfcer will not choose one",
+            list(&doubled)
+        ),
+        (false, false) => format!(
+            "{font} has no {} and draws {} two different ways",
+            list(&absent),
+            list(&doubled)
+        ),
+    }
+}
+
 /// The notice's first line.
 #[must_use]
-pub fn named(chars: &[char], font: &str) -> String {
+pub fn named(chars: &[char], two_ways: &[char], font: &str) -> String {
     let what = if chars.len() == 1 {
         "it was"
     } else {
         "they were"
     };
-    format!("{font} has no {}, so {what} not typed.", list(chars))
+    format!("{}, so {what} not typed.", cause(chars, two_ways, font))
 }
 
 /// The one-click button.
@@ -53,11 +73,11 @@ pub fn no_face(chars: &[char]) -> String {
 
 /// The notice's line when the keys went in, planned for another face.
 #[must_use]
-pub fn planned(chars: &[char], font: &str, face: &str) -> String {
+pub fn planned(chars: &[char], two_ways: &[char], font: &str, face: &str) -> String {
     let what = if chars.len() == 1 { "it" } else { "they" };
     format!(
-        "{font} has no {}, so {what} will be set in {face} when you commit.",
-        list(chars)
+        "{}, so {what} will be set in {face} when you commit.",
+        cause(chars, two_ways, font)
     )
 }
 
@@ -99,7 +119,7 @@ pub fn swap_refused(face: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{list, named, use_face};
+    use super::{list, named, planned, use_face};
 
     #[test]
     fn every_character_is_named() {
@@ -109,8 +129,17 @@ mod tests {
             list(&['Q', 'R', ' ']),
             "\u{2018}Q\u{2019}, \u{2018}R\u{2019} or a space"
         );
-        assert!(named(&['Q', 'R', 'W'], "Arial").contains("\u{2018}W\u{2019}"));
-        assert!(named(&['Q'], "Arial").ends_with("so it was not typed."));
+        assert!(named(&['Q', 'R', 'W'], &[], "Arial").contains("\u{2018}W\u{2019}"));
+        assert!(named(&['Q'], &[], "Arial").ends_with("so it was not typed."));
         assert!(use_face("Helvetica", 3).ends_with("has them"));
+    }
+
+    #[test]
+    fn a_letter_drawn_two_ways_is_not_said_missing() {
+        let both = named(&['A'], &['A'], "Box");
+        assert!(both.contains("draws \u{2018}A\u{2019} two different ways"));
+        assert!(!both.contains("has no"));
+        let mixed = planned(&['Q', 'A'], &['A'], "Box", "Helvetica");
+        assert!(mixed.starts_with("Box has no \u{2018}Q\u{2019} and draws \u{2018}A\u{2019}"));
     }
 }
