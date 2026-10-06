@@ -43,7 +43,6 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
         Some(l) => req.on_layer(l.id),
         None => req,
     };
-    let invisible = placed.pen.invisible;
     let lines = req.text.split('\n').count();
     // The epoch is read BEFORE the verb, because it is how this arm learns
     // whether the verb SUCCEEDED.
@@ -60,9 +59,6 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
             let mut notes = report.disclosures;
             if promoted {
                 notes.push(crate::text::textedit::point_text_became_a_block().to_owned());
-            }
-            if invisible {
-                notes.push(crate::text::textedit::added_invisible().to_owned());
             }
             notes.extend(layer.map(|l| l.receipt));
             notes
@@ -120,6 +116,14 @@ pub(super) fn request(
     .with_size(placed.pen.size())
     .with_color(placed.pen.engine_colour())
     .with_render_mode(placed.pen.render_mode());
+    // Invisible text joins the page's OCR layer as its own marked section
+    // (`/Engine (manual)`), so Remove OCR text takes it and Find reads it as
+    // recognised text.
+    let req = if placed.pen.invisible {
+        req.into_ocr_layer()
+    } else {
+        req
+    };
 
     if let Some((llx, lly, urx, ury)) = placed.wrap {
         // The operator drew this rectangle. Nothing to decide and nothing to
@@ -270,5 +274,17 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// **Invisible text is written into the OCR layer; visible text is not.**
+    #[test]
+    fn only_the_invisible_pen_writes_into_the_ocr_layer() {
+        let mut p = placed("QZXW", None);
+        let (req, _) = request(&p, Some(crop()));
+        assert_eq!(req.ocr_layer, None, "visible text is ordinary page text");
+        p.pen.invisible = true;
+        let (req, _) = request(&p, Some(crop()));
+        assert_eq!(req.ocr_layer.as_deref(), Some("manual"));
+        assert_eq!(req.render_mode, 3);
     }
 }

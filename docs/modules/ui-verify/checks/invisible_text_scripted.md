@@ -20,17 +20,15 @@ under `--no-input` with a `ScriptedPointer`, `PDFCER_DIAG_INVOKE` arming
 5. The saved file is read: every stream body is inflated where it inflates,
    and each `(QZXW) Tj` found is judged by the last `<n> Tr` between its `BT`
    and the `Tj`. Every one must be mode 3, and there must be at least one.
+6. Each of those streams must open a `/pdfc_OCR` section before the show,
+   with `/Engine (manual)` in its property list: the run is part of the
+   page's recognised-text layer, so Remove OCR text takes it.
 
 The engine writes `<mode> Tr` into every added run, mode 0 included, so the
 visible case produces a readable `0`, not an absence.
-
-# What it does not claim
-
-The run is not inside the page's `/pdfc_OCR` marked section: the engine's
-add-text has no way to place it there (`G123`), so Remove OCR leaves it, which
-the shell discloses after the commit.
 
 # Falsified
 
 Dropping `.with_render_mode(placed.pen.render_mode())` from
 `app::actions::addtext::request` fails step 5 with modes `["0"]`.
+Dropping its `into_ocr_layer()` fails step 6 with no section found.

@@ -1,7 +1,7 @@
 //! `added_invisible_text_is_saved_invisible` — Edit ▸ Add text with the text
 //! pen's Invisible switch ticked in Properties, a click on blank paper, typed
-//! letters, a click away and Ctrl+S write a run in rendering mode 3 into the
-//! saved file. Run with the scripted pointer in a window placed off the
+//! letters, a click away and Ctrl+S write a run in rendering mode 3, inside an
+//! OCR-layer section recorded as `/Engine (manual)`, into the saved file. Run with the scripted pointer in a window placed off the
 //! desktop, on a copy of `fixtures/layer-assign.pdf`.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/invisible_text_scripted.md`.
@@ -225,12 +225,52 @@ fn judge(pdf: &std::path::Path, report: &mut CheckReport) -> Result<Option<Strin
              written."
         )));
     }
-    Ok((!modes.iter().all(|m| m == "3")).then(|| {
-        format!(
+    if !modes.iter().all(|m| m == "3") {
+        return Ok(Some(format!(
             "★★★ the added run is written in rendering mode {modes:?}, not 3: the Invisible \
              switch did not reach the engine, and the word is drawn on the page."
-        )
-    }))
+        )));
+    }
+    let engines = layer_engines_showing(pdf, WORD)?;
+    report.note(format!(
+        "`{shown}` found inside OCR-layer sections recorded as {engines:?}"
+    ));
+    Ok(
+        (engines.len() != modes.len() || engines.iter().any(|e| e != "manual")).then(|| {
+            format!(
+                "★★★ the added run is not inside a `/pdfc_OCR` section recorded as `/Engine \
+                 (manual)` (found {engines:?} for {} show(s)): the word is not part of the \
+                 recognised-text layer, so Remove OCR text leaves it.",
+                modes.len()
+            )
+        }),
+    )
+}
+
+/// For each stream of `pdf` showing `(word)`, the `/Engine` of the
+/// `/pdfc_OCR` section opened before the show, when there is one.
+fn layer_engines_showing(pdf: &std::path::Path, word: &str) -> Result<Vec<String>> {
+    let bytes = std::fs::read(pdf).map_err(|e| Error::new(format!("reading the save: {e}")))?;
+    let shown = format!("({word})");
+    let mut engines = Vec::new();
+    for body in streams(&bytes) {
+        let text = String::from_utf8_lossy(&body);
+        let Some(at) = text.find(&shown) else {
+            continue;
+        };
+        let head = &text[..at];
+        let Some(open) = head.rfind("/pdfc_OCR") else {
+            continue;
+        };
+        let props = &head[open..];
+        let engine = props
+            .find("/Engine (")
+            .map(|i| &props[i + "/Engine (".len()..])
+            .and_then(|rest| rest.split_once(')'))
+            .map_or("none", |(name, _)| name);
+        engines.push(engine.to_owned());
+    }
+    Ok(engines)
 }
 
 /// The rendering mode in force where each stream of `pdf` shows the literal
@@ -259,7 +299,7 @@ pub(crate) fn modes_showing(pdf: &std::path::Path, word: &str) -> Result<Vec<Str
 }
 
 /// Every stream body in the file, inflated when it inflates, raw otherwise.
-fn streams(bytes: &[u8]) -> Vec<Vec<u8>> {
+pub(crate) fn streams(bytes: &[u8]) -> Vec<Vec<u8>> {
     let mut out = Vec::new();
     let mut from = 0;
     while let Some(start) = find(&bytes[from..], b"stream").map(|i| from + i) {

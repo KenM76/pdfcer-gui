@@ -36,10 +36,8 @@ A copy of `fixtures/ocr-layer.pdf`, off the desktop under `--no-input` with a
 # What it does not claim
 
 The fixture's layer has no `/pdfc_OCR` marked section, so nothing here says
-whether that section survives an edit. On a layer pdfcer recognised it does
-not: the engine collapses the page's extra `/Contents` streams into the first
-when it edits, and the section goes with them (`G125`). The word stays
-invisible either way.
+whether that section survives an edit; `an_edited_ocr_layer_stays_a_layer`
+(`ocr_layer_kept`) drives that on a layer pdfcer wrote.
 
 # Falsified
 

@@ -58,9 +58,10 @@ away.
 `invisible` writes the run in rendering mode 3 (`render_mode`), the storage
 of a scan's recognised text, so the operator can add a word the recognition
 missed (O286). Only modes 0 and 3 are offered: the other six paint outlines or
-clip, which are styling questions for Format, not a way of adding text. The
-run is not inside the page's OCR marked section (`G123`), and the commit says
-so.
+clip, which are styling questions for Format, not a way of adding text.
+`app::actions::addtext::request` also sends the run into the page's OCR layer
+(`AddTextRequest::into_ocr_layer`, recorded as `/Engine (manual)`), so Remove
+OCR text takes it with the recognised words.
 
 ## What is deliberately NOT here
 
