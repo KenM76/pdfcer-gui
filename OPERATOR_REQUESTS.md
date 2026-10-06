@@ -489,6 +489,20 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 **Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. `Ctrl+V` works for it too, not only the ribbon's Paste. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`, `ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`. Text from Word or anywhere else now pastes at the pointer as well: as page text in Edit, as a text-box comment in Review (`text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`). A picture file dropped on a page lands where it was dropped, at its natural size, with no window; Alt as you drop opens the window instead (`a_dropped_picture_lands_where_it_was_dropped`). A dropped text file becomes pages after the one on screen (`a_dropped_text_file_becomes_pages_after_this_one`). A PDF dropped alone on an open document asks whether to open it, insert its pages after this one, or place its first page where it was dropped (`a_dropped_pdf_asks_open_insert_or_place`). In Review a copied picture pastes as a stamp at the pointer, by `Ctrl+V` or Markup ▸ Paste picture as stamp (`a_copied_picture_pastes_as_a_stamp_in_review`). File ▸ New from clipboard and Pages ▸ Insert from clipboard make a new PDF of what you copied, or add it as pages after the one you are on: a picture as a page its own size, text as Import text sets it (`the_clipboard_becomes_a_new_pdf_or_pages_after_this_one`). SVG and EMF wait on the engine (G093, G094). Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
+## O287 — **OPEN, first in the queue** — a signature can be a picture, and a placed signature can be moved and resized inside its box
+
+> **Ken:** *"Can you also make it so the signing a document with a mouse drawn signature allows an image import for a signature as an option too? In both cases we should be able to resize and reposition the signature, and edit its placement and size within the signature field on the page if we don't like how it landed there."*
+
+In three parts:
+
+1. **A picture as the signature.** The Sign here window offers a picture file (PNG, JPEG, BMP or TIFF) beside drawing and typing. It lands in the box as a drawn signature does, its shape kept, recorded as the box's hand signature, and can be remembered on this computer as the drawn one can. A transparent PNG keeps its transparency; a scan on white paper can have its white made transparent.
+2. **Placing it before it lands.** The window shows the box with the signature in it: drag to move it, corner grips to resize it (shape kept; Shift to stretch), and *Reset to fit*.
+3. **Adjusting it afterwards.** A signature already in a box, drawn, typed or a picture, can be selected on the page and moved or resized with grips, kept within the box with the same overrun a short box allows. It stays the box's signature, and each adjustment is one Ctrl+Z.
+
+Each part gets a driven check and a falsification.
+
+**Where it stands.** Filed; not started.
+
 ## O286 — **OPEN, ahead of O285** — recognised text lands in the file again, in paragraphs and columns, and is a layer you can see, export and edit
 
 His words, relayed and condensed: OCR text that has been detected is not added to the PDF in v0.5.0-dev.20261005.1; v0.5.0-dev.20261004.2 adds it. *"Can we get it to set detection into paragraphs, columns, etc?"* The OCR layer should show in the Layers tree; it should export to Word and the other export formats; editing it should be what-you-see-is-what-you-get with a live preview, through the same text editing as any other text; new text can be added to it at a new place; and PaddleOCR-VL 1.5, which he believes the engine supports, should be offered.

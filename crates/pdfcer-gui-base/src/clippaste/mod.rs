@@ -114,27 +114,18 @@ pub fn text_from_utf16(bytes: &[u8]) -> String {
     String::from_utf16_lossy(&units)
 }
 
-/// A clipboard bitmap as an imported picture, by way of a PNG so the engine's
-/// one import path does the rest.
+/// A clipboard bitmap as an imported picture, its samples handed straight to
+/// `ImportedImage::from_rgba8`; the bitmap's stated resolution, when it has
+/// one, is its `dpi` on both axes.
 ///
 /// # Errors
 /// A sentence naming why the bitmap could not be read.
 pub fn image_from_dib(bytes: &[u8]) -> Result<ImportedImage, String> {
-    use crate::text::ospaste as t;
-    use pdfcer_render::tiny_skia::{ColorU8, IntSize, Pixmap};
-    let rgba = dib::decode(bytes).map_err(|e| t::dib_error(e).to_owned())?;
-    let size = IntSize::from_wh(rgba.width, rgba.height).ok_or(t::empty_bitmap())?;
-    let premultiplied = rgba
-        .pixels
-        .chunks_exact(4)
-        .flat_map(|p| {
-            let c = ColorU8::from_rgba(p[0], p[1], p[2], p[3]).premultiply();
-            [c.red(), c.green(), c.blue(), c.alpha()]
-        })
-        .collect();
-    let pixmap = Pixmap::from_vec(premultiplied, size).ok_or(t::bitmap_too_large())?;
-    let png = pdfcer_render::export::encode_png(&pixmap, rgba.dpi).map_err(|e| e.to_string())?;
-    pdfcer_core::image_import::import(&png).map_err(|e| e.to_string())
+    let rgba = dib::decode(bytes).map_err(|e| crate::text::ospaste::dib_error(e).to_owned())?;
+    let mut image = ImportedImage::from_rgba8(rgba.width, rgba.height, &rgba.pixels)
+        .map_err(|e| e.to_string())?;
+    image.dpi = rgba.dpi.map(|d| (f64::from(d), f64::from(d)));
+    Ok(image)
 }
 
 /// Where a picture of `natural` points lands: centred on `at`, scaled down

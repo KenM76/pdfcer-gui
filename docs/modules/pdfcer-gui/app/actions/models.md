@@ -78,15 +78,16 @@ the annotation's rectangle, preserving its shape, and rewrites only `/AP /N`;
 the model is untouched. One undo entry.
 
 Reached two ways: the viewer's *Use this view on the page*
-(`SetModelPoster`, a PNG the viewer drew), and *Picture…* on the
+(`SetModelPoster`, the samples the viewer drew, built with
+`ImportedImage::from_rgba8`), and *Picture…* on the
 Attachments row (`PickModelPoster` → `pick_poster`, which asks
 `files::pick_image_source` for a file; `PDFCER_DIAG_IMAGE_PATH` answers it in
 driven runs; `model-poster-cancelled` when dismissed, and
 `model-poster-declined reason=unreadable kind=` with a note when the file
 cannot be read).
 
-The viewer's picture crosses as PNG bytes because the engine has no public
-way to build an `ImportedImage` from raw pixels (our `G106`).
+`model-poster-requested … image=` says how the picture reached the engine:
+`pixels` from the viewer, `file` from a picked file.
 
 Driven by `ui-verify` checks `the_3d_viewers_view_becomes_the_page_picture`
 and `a_picture_file_becomes_a_3d_models_page_picture`.

@@ -36,6 +36,14 @@ pub const REGION_USE_ON_PAGE: &str = "model3d.use_on_page"; // ui-text-exempt: t
 /// The *Save picture…* button.
 pub const REGION_SAVE_PICTURE: &str = "model3d.save_picture"; // ui-text-exempt: trace region name, never displayed
 
+/// A picture of the current view: unpremultiplied RGBA, row-major from the
+/// top.
+struct Drawn {
+    width: u32,
+    height: u32,
+    rgba: Vec<u8>,
+}
+
 /// What a picture drawn from the current view is for.
 #[derive(Clone, Copy)]
 enum PictureFor {
@@ -221,8 +229,8 @@ pub(crate) struct ModelView {
     escape_left_full_screen: bool,
     /// The host drew a real OS window, the only kind that can fill the screen.
     native: bool,
-    /// A picture of this view, as PNG, waiting for the action queue.
-    picture: Option<(PictureFor, Vec<u8>)>,
+    /// A picture of this view, waiting for the action queue.
+    picture: Option<(PictureFor, Drawn)>,
 }
 
 impl ModelView {
@@ -275,12 +283,8 @@ impl ModelView {
         .minimizable()
         .show(ctx, |ui| self.body(ui));
         self.native = frame.class == egui::ViewportClass::Immediate;
-        if let Some((purpose, png)) = self.picture.take() {
-            let artwork = self.artwork.clone();
-            actions.push(Action::Attachment(match purpose {
-                PictureFor::Page => AttachmentAction::SetModelPoster { artwork, png },
-                PictureFor::File => AttachmentAction::SaveModelPicture { artwork, png },
-            }));
+        if let Some((purpose, drawn)) = self.picture.take() {
+            self.queue(purpose, drawn, actions);
         }
         let closed = frame.closed && !std::mem::take(&mut self.escape_left_full_screen);
         let button = std::mem::take(&mut self.close_requested);
@@ -481,16 +485,37 @@ impl ModelView {
         if !button.clicked() {
             return;
         }
-        match self.poster_png() {
-            Ok(png) => self.picture = Some((purpose, png)),
+        match self.poster() {
+            Ok(drawn) => self.picture = Some((purpose, drawn)),
             Err(said) => self.failed = Some(t::poster_not_drawn(&said)),
         }
     }
 
+    /// Queue `drawn` for `purpose`: the page's picture takes the samples as
+    /// they are, a file takes them encoded as PNG.
+    fn queue(&mut self, purpose: PictureFor, drawn: Drawn, actions: &mut Vec<Action>) {
+        let artwork = self.artwork.clone();
+        let action = match purpose {
+            PictureFor::Page => AttachmentAction::SetModelPoster {
+                artwork,
+                width: drawn.width,
+                height: drawn.height,
+                rgba: drawn.rgba,
+            },
+            PictureFor::File => match png(&drawn) {
+                Ok(png) => AttachmentAction::SaveModelPicture { artwork, png },
+                Err(said) => {
+                    self.failed = Some(t::poster_not_drawn(&said));
+                    return;
+                }
+            },
+        };
+        actions.push(Action::Attachment(action));
+    }
+
     /// This view, at the picture's shape, on the white the engine's own
-    /// poster uses, as PNG bytes.
-    fn poster_png(&self) -> Result<Vec<u8>, String> {
-        use pdfcer_render::tiny_skia::{ColorU8, IntSize, Pixmap};
+    /// poster uses.
+    fn poster(&self) -> Result<Drawn, String> {
         let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
         let aspect = f64::from(w.max(1)) / f64::from(h.max(1));
         let (width, height) = if aspect >= 1.0 {
@@ -510,17 +535,6 @@ impl ModelView {
                 render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
             })
             .map_err(|e| e.to_string())?;
-        let premultiplied = image
-            .rgba
-            .chunks_exact(4)
-            .flat_map(|p| {
-                let c = ColorU8::from_rgba(p[0], p[1], p[2], p[3]).premultiply();
-                [c.red(), c.green(), c.blue(), c.alpha()]
-            })
-            .collect();
-        let size = IntSize::from_wh(image.width, image.height).ok_or_else(String::new)?;
-        let pixmap = Pixmap::from_vec(premultiplied, size).ok_or_else(String::new)?;
-        let png = pdfcer_render::export::encode_png(&pixmap, None).map_err(|e| e.to_string())?;
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
@@ -529,10 +543,14 @@ impl ModelView {
                 image.height,
                 self.orbit.yaw,
                 self.orbit.pitch,
-                png.len()
+                image.rgba.len()
             )
         });
-        Ok(png)
+        Ok(Drawn {
+            width: image.width,
+            height: image.height,
+            rgba: image.rgba,
+        })
     }
 
     /// Turn the camera from this frame's pointer on the picture.
@@ -667,6 +685,22 @@ fn colourfulness(rgba: &[u8]) -> (usize, usize) {
     }
     let floor = (chromatic / 100).max(1);
     (chromatic, sectors.iter().filter(|n| **n >= floor).count())
+}
+
+/// `drawn` as PNG file bytes, for *Save picture…*.
+fn png(drawn: &Drawn) -> Result<Vec<u8>, String> {
+    use pdfcer_render::tiny_skia::{ColorU8, IntSize, Pixmap};
+    let premultiplied = drawn
+        .rgba
+        .chunks_exact(4)
+        .flat_map(|p| {
+            let c = ColorU8::from_rgba(p[0], p[1], p[2], p[3]).premultiply();
+            [c.red(), c.green(), c.blue(), c.alpha()]
+        })
+        .collect();
+    let size = IntSize::from_wh(drawn.width, drawn.height).ok_or_else(String::new)?;
+    let pixmap = Pixmap::from_vec(premultiplied, size).ok_or_else(String::new)?;
+    pdfcer_render::export::encode_png(&pixmap, None).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

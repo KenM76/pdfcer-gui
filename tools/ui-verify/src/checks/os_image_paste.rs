@@ -197,6 +197,21 @@ fn paste_at(
     Ok(trace.events(PASTED).nth(before).and_then(rect))
 }
 
+/// The failure when the last paste's bitmap was not handed to the engine as
+/// samples: a `CF_DIB` round-tripped through an encoded file traces
+/// `image=file`.
+fn handed_over(session: &Session) -> Result<Option<String>> {
+    let trace = session.trace()?;
+    let line = trace.events(PASTED).last();
+    Ok(match line.and_then(|l| l.get("image")) {
+        Some("pixels") => None,
+        _ => Some(format!(
+            "the bitmap reached the engine other than as samples: `{}`.",
+            line.map_or("", |l| l.raw.as_str())
+        )),
+    })
+}
+
 /// A `clip-pasted` line's rectangle as `[llx, lly, urx, ury]`.
 pub(super) fn rect(line: &crate::trace::TraceLine) -> Option<[f64; 4]> {
     let field = |k| line.get(k).and_then(|v| v.parse::<f64>().ok());
@@ -265,6 +280,9 @@ fn place_twice(
         )));
     };
     report.note(format!("first paste {}", show(first)));
+    if let Some(failure) = handed_over(session)? {
+        return Ok(Some(failure));
+    }
     if let Some(failure) = lands(first, FIRST, (48.0, 24.0)) {
         return Ok(Some(failure));
     }

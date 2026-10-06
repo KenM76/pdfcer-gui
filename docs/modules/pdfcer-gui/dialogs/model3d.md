@@ -46,11 +46,12 @@ is a `/3D` annotation of its own (`panels::attachments::models::has_own_poster`;
 no page picture to replace). The press renders the current orbit through
 `render_coloured` at the last rendered picture's shape, 1200 pixels on the
 long side, on the engine's default white (the background the engine's own
-poster uses, not the theme's), encodes it as PNG and queues
-`AttachmentAction::SetModelPoster`, which `app::actions::models::set_poster`
-applies as one undo entry. A render failure replaces the picture with its
-sentence and queues nothing. Both buttons draw the same picture
-(`poster_png`); `PictureFor` says where it goes.
+poster uses, not the theme's) and queues its RGBA samples as
+`AttachmentAction::SetModelPoster`; `app::actions::models::set_poster`
+builds the image with `ImportedImage::from_rgba8` and applies it as one undo
+entry. A render failure replaces the picture with its sentence and queues
+nothing. Both buttons draw the same picture (`poster`); `PictureFor` says
+where it goes, and *Save picture…* alone encodes it as PNG (`png`).
 
 ## Lifetime
 

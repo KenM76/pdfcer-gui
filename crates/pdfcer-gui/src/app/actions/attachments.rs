@@ -28,8 +28,14 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
         // Opened in `apply`, which holds the dialogs; without `3d` there is
         // no button.
         AttachmentAction::ViewModel { .. } => {}
-        AttachmentAction::SetModelPoster { artwork, png } => {
-            super::models::set_poster(doc, &artwork, &png);
+        AttachmentAction::SetModelPoster {
+            artwork,
+            width,
+            height,
+            rgba,
+        } => {
+            let image = pdfcer_core::image_import::ImportedImage::from_rgba8(width, height, &rgba);
+            super::models::set_poster(doc, &artwork, image.map_err(|e| e.to_string()));
         }
         AttachmentAction::PickModelPoster { artwork } => super::models::pick_poster(doc, &artwork),
         AttachmentAction::SaveModelPicture { artwork, png } => {

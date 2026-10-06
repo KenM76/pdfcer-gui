@@ -67,15 +67,3 @@ pub fn dib_error(e: DibError) -> &'static str {
         DibError::Size => "the bitmap has no area or is impossibly large",
     }
 }
-
-/// A bitmap with no pixels.
-#[must_use]
-pub fn empty_bitmap() -> &'static str {
-    "the bitmap has no area"
-}
-
-/// A bitmap too large to hold in memory.
-#[must_use]
-pub fn bitmap_too_large() -> &'static str {
-    "the bitmap is too large to hold"
-}

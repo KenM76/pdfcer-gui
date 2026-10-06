@@ -153,6 +153,13 @@ fn drive(
             "the press made no `{EDIT}` edit: the view never reached the page."
         )));
     }
+    let requested = trace.events("model-poster-requested").last();
+    if requested.and_then(|l| l.get("image")) != Some("pixels") {
+        return Ok(Some(format!(
+            "the view reached the engine other than as samples: `{}`.",
+            requested.map_or("", |l| l.raw.as_str())
+        )));
+    }
     let Some(page) = declared(&trace, ui_rect, PAGE_REGION) else {
         return Ok(Some(format!("no `{PAGE_REGION}` region on the canvas.")));
     };

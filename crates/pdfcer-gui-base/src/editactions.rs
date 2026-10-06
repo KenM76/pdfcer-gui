@@ -1175,8 +1175,13 @@ pub enum AttachmentAction {
     SetModelPoster {
         /// The row the viewer was opened on.
         artwork: pdfcer_core::threed::ThreeDArtwork,
-        /// The picture, as PNG file bytes.
-        png: Vec<u8>,
+        /// The picture's width in pixels.
+        width: u32,
+        /// The picture's height in pixels.
+        height: u32,
+        /// The picture's samples, unpremultiplied RGBA, row-major from the
+        /// top, `width × height × 4` bytes, for `ImportedImage::from_rgba8`.
+        rgba: Vec<u8>,
     },
     /// **Pick a picture file and make it the page picture of a 3D model**,
     /// one undo entry. The picker runs in the apply arm, as it does for

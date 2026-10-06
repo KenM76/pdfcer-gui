@@ -122,7 +122,10 @@ fn picture(
         return button_icon(field, widget, &image, format, actions);
     }
     pasted(
-        &format!("kind=image format={format} as=content"), // ui-text-exempt: diagnostic trace
+        &format!(
+            "kind=image format={format} as=content image={}", // ui-text-exempt: diagnostic trace
+            pdfcer_gui_base::picture::samples_route(&image)
+        ),
         page,
         rect,
     );

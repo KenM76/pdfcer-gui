@@ -21,6 +21,17 @@ pub const EXTENSIONS: &[&str] = &[
 #[cfg(not(feature = "svg-import"))]
 pub const EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff", "emf"];
 
+/// How a picture's samples reached the engine, as a trace value: `pixels`
+/// when handed over in memory (`ImportedImage::from_rgba8`), `file` when
+/// decoded from an image file's bytes.
+#[must_use]
+pub fn samples_route(image: &ImportedImage) -> &'static str {
+    match image.format {
+        pdfcer_core::image_import::ImageFormat::Pixels => "pixels", // ui-text-exempt: trace value
+        _ => "file",                                                // ui-text-exempt: trace value
+    }
+}
+
 /// One imported picture, ready for the engine's placement verb.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Picture {
