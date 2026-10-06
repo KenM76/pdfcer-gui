@@ -438,32 +438,7 @@ impl PdfcerApp {
             //
             // **A completed recognition, applied as one edit.**
             //
-            Action::ApplyOcr { pages, engine } => {
-                // The borrowed view the engine's slice wants, built here so the
-                // owned `OcrPage`s outlive it. `page` for the trace is the
-                // first one touched; the count is what makes the line useful.
-                let first = pages.first().map_or(0, |(index, _)| *index);
-                let count = pages.len();
-                vector_edit(doc, "ocr-layer", first, count, |session| {
-                    let layers: Vec<pdfcer_core::edit::OcrPageLayer<'_>> = pages
-                        .iter()
-                        .map(|(index, recognised)| pdfcer_core::edit::OcrPageLayer {
-                            page_index: *index,
-                            recognised,
-                        })
-                        .collect();
-                    // Replace policy: a re-run takes pdfcer's earlier layer
-                    // off in the same undo step.
-                    session
-                        .add_ocr_layer(&layers, &super::ocrlayers::options(&engine))
-                        // Every page's disclosures, flattened onto the one
-                        // channel every other edit reports on. The dialog does
-                        // NOT re-render them: two accounts of one run, worded
-                        // differently, is a pair that drifts.
-                        .map(|reports| super::ocrlayers::recognised_disclosures(&reports))
-                        .inspect_err(super::ocrlayers::word_refusal)
-                });
-            }
+            Action::ApplyOcr { pages, engine } => super::ocrlayers::apply(doc, &pages, &engine),
             Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
             Action::RepairFormFonts => super::formfonts::repair(doc),
             Action::ToggleRc4Append => crate::app::rc4::toggle(doc),

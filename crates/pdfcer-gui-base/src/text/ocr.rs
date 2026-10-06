@@ -364,6 +364,36 @@ pub fn layers_removed(layers: usize, pages: usize) -> String {
     )
 }
 
+/// The name of the layer (optional-content group) recognised text is written
+/// on, so it is a row of the Layers panel. A re-run reuses a layer of this name.
+#[must_use]
+pub fn group_name() -> &'static str {
+    "Recognised text"
+}
+
+/// Added after a write that made the layer.
+#[must_use]
+pub fn group_made() -> String {
+    format!(
+        "The recognised text is on a new layer, \"{}\", in the Layers panel.",
+        group_name()
+    )
+}
+
+/// Added after a removal that left the named layers with nothing on them,
+/// which were deleted in the same step.
+#[must_use]
+pub fn groups_deleted(names: &[String]) -> String {
+    format!(
+        "Nothing else was on the layer {}, so it was deleted too.",
+        names
+            .iter()
+            .map(|n| format!("\"{n}\""))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
+}
+
 /// The disclosure when some layers came off and a later one was refused.
 #[must_use]
 pub fn layers_removed_partly(removed: usize, of: usize) -> String {

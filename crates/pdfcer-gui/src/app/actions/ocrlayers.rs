@@ -14,14 +14,21 @@
 //!   `ocr-layer-structure lines= blocks= structure=`: the reading structure
 //!   the writer laid the words out in, and whether the engine reported it or
 //!   pdfcer inferred it from the word boxes.
+//! - [`apply`] is [`super::Action::ApplyOcr`]: the words written on the layer
+//!   (optional-content group) named [`t::group_name`], so they are a Layers
+//!   panel row; the layer is reused, or made in the same undo step.
 //! - [`remove_all`] is [`super::Action::RemoveOcrLayers`]: every marked layer
-//!   off, as ONE undo entry (`CommandKind::RemoveOcrLayer`), through the funnel.
+//!   off, and each layer (group) that leaves with nothing on it deleted, as
+//!   ONE undo entry (`CommandKind::RemoveOcrLayer`), through the funnel.
 //! - `LayerPresent`, `LayerNotFound` and "none found" reach the status bar as
 //!   [`crate::text::ocr::OcrLayerRefusal`] sentences.
 
-use pdfcer_core::edit::{CommandKind, EditSession};
-use pdfcer_core::ocr::OcrStructureSource;
+use pdfcer_core::edit::{
+    CommandKind, EditError, EditSession, LayerContentPolicy, LayerEdit, OcrPageLayer,
+};
+use pdfcer_core::object::ObjId;
 use pdfcer_core::ocr::layer::{ExistingLayers, OcrLayerError, OcrLayerOptions, OcrLayerReport};
+use pdfcer_core::ocr::{OcrPage, OcrStructureSource};
 
 use crate::app::state::OpenDoc;
 use crate::app::status::decline;
@@ -32,6 +39,98 @@ pub(super) fn options(engine: &str) -> OcrLayerOptions {
     OcrLayerOptions::new()
         .with_existing(ExistingLayers::Replace)
         .with_engine(engine)
+}
+
+/// Why a recognition was not applied.
+enum WriteError {
+    Group(EditError),
+    Layer(OcrLayerError),
+}
+
+impl std::fmt::Display for WriteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Group(e) => write!(f, "{e}"),
+            Self::Layer(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+/// [`super::Action::ApplyOcr`]: the run's words written on the
+/// [`t::group_name`] layer, made when the document has none, as one undo step.
+pub(super) fn apply(doc: &mut OpenDoc, pages: &[(usize, OcrPage)], engine: &str) {
+    let first = pages.first().map_or(0, |(index, _)| *index);
+    super::apply::vector_edit(doc, "ocr-layer", first, pages.len(), |session| {
+        write(session, pages, engine)
+    });
+}
+
+fn write(
+    session: &mut EditSession,
+    pages: &[(usize, OcrPage)],
+    engine: &str,
+) -> Result<Vec<String>, WriteError> {
+    let layers: Vec<OcrPageLayer<'_>> = pages
+        .iter()
+        .map(|(index, recognised)| OcrPageLayer {
+            page_index: *index,
+            recognised,
+        })
+        .collect();
+    let mut made = false;
+    let mut group = match find_group(session) {
+        Some(id) => id,
+        None => make_group(session, &mut made)?,
+    };
+    let mut written = session.add_ocr_layer(&layers, &options(engine).on_layer(group));
+    // A same-named group outside `/OCGs` is not a layer the writer accepts.
+    if !made && matches!(written, Err(OcrLayerError::NotALayerGroup { .. })) {
+        group = make_group(session, &mut made)?;
+        written = session.add_ocr_layer(&layers, &options(engine).on_layer(group));
+    }
+    let reports = match written {
+        Ok(reports) => reports,
+        Err(e) => {
+            if made {
+                session.undo();
+            }
+            word_refusal(&e);
+            return Err(WriteError::Layer(e));
+        }
+    };
+    if made && !session.coalesce_last(2, CommandKind::AddOcrLayer) {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        crate::diag::trace(|| "ocr-layer-unfolded n=2".to_owned());
+    }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "ocr-layer-group id={}_{} made={made}",
+            group.num, group.generation
+        )
+    });
+    let mut out = recognised_disclosures(&reports);
+    if made {
+        out.insert(0, t::group_made());
+    }
+    Ok(out)
+}
+
+/// The first layer named [`t::group_name`], if any.
+fn find_group(session: &EditSession) -> Option<ObjId> {
+    pdfcer_core::layers::read_layers(&session.view())
+        .layers
+        .into_iter()
+        .find(|l| l.name == t::group_name())
+        .map(|l| l.id)
+}
+
+fn make_group(session: &mut EditSession, made: &mut bool) -> Result<ObjId, WriteError> {
+    let id = session
+        .add_layer(t::group_name(), &LayerEdit::new())
+        .map_err(WriteError::Group)?;
+    *made = true;
+    Ok(id)
 }
 
 /// Every page's engine disclosures, preceded by one run-wide total of the
@@ -116,12 +215,18 @@ fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
         return Err(RemoveError::NoneFound);
     }
     let mut pages: Vec<usize> = Vec::new();
+    let mut emptied: Vec<ObjId> = Vec::new();
     let mut removed = 0usize;
     let mut failure = None;
     for layer in &layers {
         match session.remove_ocr_layer(layer) {
-            Ok(_) => {
+            Ok(removal) => {
                 removed += 1;
+                if let Some(group) = removal.optional_content.filter(|_| removal.group_emptied)
+                    && !emptied.contains(&group)
+                {
+                    emptied.push(group);
+                }
                 if !pages.contains(&layer.page_index) {
                     pages.push(layer.page_index);
                 }
@@ -134,10 +239,11 @@ fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
             }
         }
     }
+    let groups = delete_groups(session, &emptied);
     // Committed commands must reach the epoch bump, so a partial run is an
     // `Ok` that says what stayed. The fold is checked; a `false` leaves the
     // removals applied as separate undo steps.
-    if !session.coalesce_last(removed, CommandKind::RemoveOcrLayer) {
+    if !session.coalesce_last(removed + groups.len(), CommandKind::RemoveOcrLayer) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!("remove-ocr-layers-unfolded n={removed}")
@@ -146,11 +252,12 @@ fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "remove-ocr-layers-applied removed={removed} pages={}",
-            pages.len()
+            "remove-ocr-layers-applied removed={removed} pages={} groups-deleted={}",
+            pages.len(),
+            groups.len()
         )
     });
-    Ok(vec![match failure {
+    let mut out = vec![match failure {
         None => t::layers_removed(removed, pages.len()),
         Some(e) => {
             crate::diag::trace(|| {
@@ -162,5 +269,33 @@ fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
             });
             t::layers_removed_partly(removed, layers.len())
         }
-    }])
+    }];
+    if !groups.is_empty() {
+        out.push(t::groups_deleted(&groups));
+    }
+    Ok(out)
+}
+
+/// Delete each layer the removal left with nothing on it, returning the names
+/// of those deleted. A refusal leaves that layer, traced.
+fn delete_groups(session: &mut EditSession, emptied: &[ObjId]) -> Vec<String> {
+    let names = pdfcer_core::layers::read_layers(&session.view()).layers;
+    let mut deleted = Vec::new();
+    for &group in emptied {
+        let name = names
+            .iter()
+            .find(|l| l.id == group)
+            .map_or_else(String::new, |l| l.name.clone());
+        match session.delete_layer(group, LayerContentPolicy::KeepUnlayered) {
+            Ok(_) => deleted.push(name),
+            Err(e) => crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "remove-ocr-layers-group-kept id={}_{} why={e}",
+                    group.num, group.generation
+                )
+            }),
+        }
+    }
+    deleted
 }
