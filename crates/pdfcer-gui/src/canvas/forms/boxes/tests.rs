@@ -111,6 +111,7 @@ fn drawn_widget() -> Widget {
         icon: None,
         caption_position: None,
         border: None,
+        border_dash: None,
         visibility: None,
         annot_flags: pdfcer_core::annot::AnnotFlags(0),
         has_normal_appearance: true,

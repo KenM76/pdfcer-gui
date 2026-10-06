@@ -93,7 +93,7 @@ fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
     let mut failure = None;
     for layer in &layers {
         match session.remove_ocr_layer(layer) {
-            Ok(()) => {
+            Ok(_) => {
                 removed += 1;
                 if !pages.contains(&layer.page_index) {
                     pages.push(layer.page_index);

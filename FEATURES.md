@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.78.0, a git dependency on the local engine repository, pinned at **`c7deddd2`** (the v0.78.0 tag) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.79.0, a git dependency on the local engine repository, pinned at **`da76fdc1`** (the v0.79.0 tag) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** In Edit, a snapshot pasted back and a dropped PDF's *Place* draw the page into the page's own content, one Ctrl+Z; Review keeps a stamp. The 3D viewer opens on the view the file was saved with, and *File's view* returns to it. Bold, Italic, Ctrl+B and Ctrl+I act on the copy of a word you are in when the same word appears twice in one piece of text. Text made bold by outlining its letters shows Bold pressed, and Ctrl+B takes the bold off. The render notes say when a pattern fill drew nothing. Built on engine v0.78.0.
 
@@ -82,7 +82,7 @@ than the number it produced last.
 | **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
-| **Engine** | `pdfcer-core` v0.78.0, pinned as above |
+| **Engine** | `pdfcer-core` v0.79.0, pinned as above |
 | **Panels** | 14 — `Panel::ALL` is `[Self; 14]` in `crates/pdfcer-gui-base/src/panelid.rs`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 41 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 

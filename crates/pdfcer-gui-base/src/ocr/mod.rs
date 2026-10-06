@@ -627,6 +627,9 @@ fn recognise_one(
     Ok(OnePage {
         recognised: OcrPage {
             words: placed,
+            // Empty: the layer writer infers lines and blocks from the boxes.
+            lines: Vec::new(),
+            blocks: Vec::new(),
             // Asked of the loaded engine rather than assumed: `ocrs` scores
             // nothing, the others score every word.
             confidence_available: recogniser.reports_confidence(),
