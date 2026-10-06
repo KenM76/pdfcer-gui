@@ -312,6 +312,9 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         // difference between siblings with no argument behind it.
         "file.new_from_template",
         "file.new_from_clipboard",
+        // It repairs the models folder beside the program, not a document.
+        #[cfg(feature = "model-download")]
+        "file.fetch_ocr_models",
         "file.open",
         // Available with nothing open, like `file.open`, and for the same
         // reason: it is how you GET a document. Its own control greys

@@ -990,5 +990,14 @@ pub(super) fn band() -> Vec<Command> {
         // exists. `doc.open`, not `doc.pages`: a document without a layer is
         // told so on the status bar rather than shown a greyed control.
         command("file.remove_ocr", t::file_remove_ocr(), 162).enabled_when("doc.open"),
+        // `pdfcer_core::ocr::models::FETCHABLE_MODELS` through `pdfcer_fetch`. Needs no
+        // document: it repairs the models folder, not a file. No icon:
+        // `download.svg` is `export`'s, "out of this document", which this is not.
+        #[cfg(feature = "model-download")]
+        command(
+            "file.fetch_ocr_models",
+            crate::text::ocrfetch::file_fetch_ocr_models(),
+            163,
+        ),
     ]
 }

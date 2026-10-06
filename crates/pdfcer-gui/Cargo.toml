@@ -57,7 +57,7 @@ path = "src/main.rs"
 # `Cargo.lock` pins and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "3d", "svg-import"]
+default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "model-download", "3d", "svg-import"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # `3d` — the PRC reader in `pdfcer-3d`, for the Attachments panel's
@@ -119,6 +119,12 @@ signing = ["pdfcer-core/signing", "pdfcer-gui-base/signing"]
 # (`pdfcer_gui_base::sign::timestamp::available`), never a field that fails.
 # Its TLS root store brings CDLA-Permissive-2.0 (see `about.toml`).
 timestamp = ["signing", "pdfcer-gui-base/timestamp"]
+
+# `model-download` — File ▸ Recognise ▸ Download OCR models…, which fetches the
+# engine's pinned model files into `models/` beside the program. Off, the
+# command is not registered and the item is absent. Network code, like
+# `timestamp`.
+model-download = ["pdfcer-gui-base/model-download"]
 
 # ---------------------------------------------------------------------------
 # `ocrs` — the OCR RECOGNISER, and only the recogniser.

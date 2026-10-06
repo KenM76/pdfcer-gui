@@ -36,6 +36,10 @@ pub use job::{Job, Tally};
 /// of them this build can run.
 pub mod catalog;
 
+/// Downloading an engine's pinned model files.
+#[cfg(feature = "model-download")]
+pub mod fetch;
+
 /// Which recognisers this build carries, their model directories, and the
 /// loaded model a run holds.
 mod engines;

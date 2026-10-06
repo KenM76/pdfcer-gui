@@ -63,9 +63,10 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # of one crate; a divergence here would silently compile the engine twice.
 pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
-# pdfcer-fetch = the engine's network crate; only `sign::timestamp` uses it,
-# to ask an RFC 3161 server. Optional behind `timestamp`, so a build without
-# it has no network code (pdfcer-core and pdfcer-render never do).
+# pdfcer-fetch = the engine's network crate: `sign::timestamp` asks an RFC 3161
+# server and `ocr::fetch` downloads pinned model files. Optional behind
+# `timestamp` and `model-download`, so a build with neither has no network code
+# (pdfcer-core and pdfcer-render never do).
 pdfcer-fetch = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false, optional = true }
 
 # pdfcer-render — `ocr` rasterises a page to show the recogniser. Same spec as
@@ -112,6 +113,8 @@ ocr-vl = ["pdfcer-core/ocr-vl", "pdfcer-ocr-host/ocr-vl"]
 signing = ["pdfcer-core/signing"]
 # PAdES B-T: signing plus an RFC 3161 timestamp over the network.
 timestamp = ["signing", "dep:pdfcer-fetch", "pdfcer-fetch/download"]
+# Downloading the engine's pinned OCR model files (`ocr::fetch`).
+model-download = ["dep:pdfcer-fetch", "pdfcer-fetch/download"]
 # `test-fixtures` — `opendoc::fixtures`, for `pdfcer-gui`'s tests. Its
 # dev-dependency turns it on; the shipped program never does.
 test-fixtures = []

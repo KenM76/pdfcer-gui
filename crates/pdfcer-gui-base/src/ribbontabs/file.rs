@@ -84,7 +84,11 @@ pub fn tab() -> Tab {
             group(
                 "recognise",
                 ribbon::group_file_recognise(),
-                [large("file.ocr"), command("file.remove_ocr")],
+                [
+                    large("file.ocr"),
+                    command("file.remove_ocr"),
+                    command("file.fetch_ocr_models").provided_by("model-download"),
+                ],
             ),
             group(
                 "save",

@@ -405,9 +405,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 212 → 213: `file.allow_rc4_edits`, File ▸ Security.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
+    // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        213 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        213 + 2 * usize::from(cfg!(feature = "signing"))
+            + usize::from(cfg!(feature = "timestamp"))
+            + usize::from(cfg!(feature = "model-download"))
     );
 }
 
@@ -1101,8 +1104,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //
         // 17 → 18 — `file.remove_ocr`: a supply refusal. `recognise-text`
         // says "add a layer"; no glyph for taking one off exists yet.
+        // +1 with model-download — `file.fetch_ocr_models`: the download
+        // glyph is spent on `export`.
         refused,
-        18,
+        18 + usize::from(cfg!(feature = "model-download")),
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

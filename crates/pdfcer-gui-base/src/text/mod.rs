@@ -144,6 +144,7 @@ pub mod merge;
 /// `pdfcer_gui::dialogs::new_document`.
 pub mod new_document;
 pub mod ocr;
+pub mod ocrfetch;
 pub mod ocrmodels;
 /// The words for **content that is in the file but not on the
 /// sheet** — the census window's copy. Its header carries the sentence the

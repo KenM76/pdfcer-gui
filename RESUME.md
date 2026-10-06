@@ -58,12 +58,13 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 (tree `6bb392eb`, engine v0.79.0), packaged with `--no-update`, smoke-launched
 off-screen clean, with PaddleOCR-VL copied into its slot's `models/`. It
 carries row 141 (underline and strikethrough tied to the text), row 82 (a
-letter drawn two ways named) and row 74 (the current layer). Next, in order:
-wire what v0.79.0 unblocks (G120 download, G121 reading order, G122/G125 OCR
-layer on a group, G123 added text into the OCR layer, G124 OCR-only export,
-G127 the hand-signature object list, G128/G129 letters drawn two ways, the
-per-run strike source), removing each "engine-blocked" note as it is wired;
-then row 74's remaining adders, then row 85. Prepare the next release once
+letter drawn two ways named) and row 74 (the current layer). Since then
+G120 to G125 are wired, driven and consumed (the OCR set: model download,
+reading order, the layer as a group, added text in the layer, OCR-only
+export). Next, in order: G127 the hand-signature object list, G128/G129
+letters drawn two ways, the per-run strike source, G126 (`Widget::border_dash`,
+retiring the shell's own `/BS /D` reader), removing each "engine-blocked" note
+as it is wired; then row 74's remaining adders, then row 85. Prepare the next release once
 the OCR set is in, or when a new engine tag appears (v0.80.0 brings G130).
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The

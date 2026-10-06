@@ -39,6 +39,9 @@ pub mod export_dxf;
 /// The Export-image window — a picture of the page in a format that can
 /// actually hold what is on it. `OPERATOR_REQUESTS.md` O120.
 pub mod export_image;
+/// File ▸ Recognise ▸ Download OCR models….
+#[cfg(feature = "model-download")]
+pub mod fetch_models;
 /// The WRITING half of what the three export windows remember --
 /// `OPERATOR_REQUESTS.md` O196. Shared by all three because the argument
 /// (the no-op guard, the swallowed failure, the position of the call, the
@@ -407,6 +410,11 @@ pub struct DialogsState {
     /// open document's signatures.
     #[cfg(feature = "timestamp")]
     archive: Option<archive::ArchiveDialog>,
+    /// The Download OCR models window. Application-scoped: it fills the
+    /// models folder, not a document, so closing a document leaves it open
+    /// and a running download finishes.
+    #[cfg(feature = "model-download")]
+    fetch_models: Option<fetch_models::FetchModelsDialog>,
 
     /// The Remove-fonts window, when one is open.
     ///
@@ -728,6 +736,12 @@ impl DialogsState {
             self.shortcuts = None;
         }
 
+        // Application-scoped: it writes beside the program, not into a
+        // document, and is wanted before the first document is opened.
+        #[cfg(feature = "model-download")]
+        if self.fetch_models.as_mut().map(|d| d.show(ctx)) == Some(false) {
+            self.fetch_models = None;
+        }
         let Status::Open(doc) = status else {
             self.close_document_scoped();
             return;

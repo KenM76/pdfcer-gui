@@ -440,6 +440,8 @@ impl PdfcerApp {
                 self.dialogs.open_ocr(&self.status, picked, &self.prefs);
             }
             "file.remove_ocr" => actions.push(Action::RemoveOcrLayers),
+            #[cfg(feature = "model-download")]
+            "file.fetch_ocr_models" => self.dialogs.open_fetch_models(),
             // **Apply redactions.** A dialog, in `file.ocr`'s shape one arm
             // up, and for two of its three reasons plus one of its own.
             //
