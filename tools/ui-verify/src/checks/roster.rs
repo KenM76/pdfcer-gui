@@ -456,6 +456,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(repeated_word::CtrlBBoldsTheSecondCopyOfARepeatedWord),
         Box::new(synthetic_bold::BoldDrawnByAStrokeReadsAsBold),
         Box::new(tied_underline::CtrlUUnderlinesTheTextItself),
+        Box::new(two_codes::ALetterDrawnTwoWaysIsNamed),
         Box::new(style_off::CtrlBAgainTakesBoldOff),
         Box::new(replace_all::ReplaceAllIsOneUndo),
         Box::new(ime::AnImeCompositionTypesOnceCommitted),

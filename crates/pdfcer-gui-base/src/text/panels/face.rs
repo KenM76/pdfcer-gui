@@ -112,6 +112,16 @@ pub fn refused_char_named(character: char, font: &str) -> String {
     )
 }
 
+/// [`refused_char_named`] for a character the font maps from two codes: it
+/// has the letter, and drawing it means choosing one of two shapes.
+#[must_use]
+pub fn refused_char_drawn_two_ways(character: char, font: &str) -> String {
+    format!(
+        "{font} draws the “{character}” two different ways, and pdfcer will not choose one for \
+         you, because the choice could change the letter's shape on the page."
+    )
+}
+
 /// The instruction under [`refused_char_named`], and the label on the chooser.
 #[must_use]
 pub fn refused_char_offer(character: char) -> String {
@@ -163,6 +173,13 @@ pub fn refused_char_blocked(character: char, font: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_letter_drawn_two_ways_is_not_said_missing() {
+        let s = refused_char_drawn_two_ways('A', "Box");
+        assert!(s.contains("Box draws the “A” two different ways"));
+        assert!(!s.contains("not one of the letters"));
+    }
 
     /// **The disclosure carries all three facts it exists to carry.**
     #[test]

@@ -16,6 +16,16 @@ Four pieces have to meet, and each belongs to someone else:
 | a face chooser that offers the standard fourteen | [`super::face`] |
 | `set_font` accepting a face the page does not carry | measured: `set_font=AAAAAA+Arimo-Bold->Helvetica-Bold`, after which the `€` goes in |
 
+## A letter the font draws two ways
+
+A refusal with `RInvTrigger::Ambiguous` names a letter the font *has*, under
+two codes, so the sentence that says the font does not carry it is false.
+`RefusedCharacter::two_ways` is set from the dispatcher's classification and
+picks `refused_char_drawn_two_ways` over `refused_char_named`; the offer is
+the same, because a face that spells the letter once takes the edit. The
+trace line carries it as `two_ways=0|1`. The keystroke-time route records
+`false`: the repertoire leaves an ambiguous letter out without saying why.
+
 ## Why a PANEL block and not a sentence in the status bar
 
 [`crate::app::status::decline`] already words the refusal, and it cannot

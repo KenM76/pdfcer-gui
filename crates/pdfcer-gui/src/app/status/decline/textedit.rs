@@ -82,7 +82,7 @@ pub(crate) fn record_key_refused(page: usize, run: usize, character: char, base_
     // O141's offer, raised in the same breath as the sentence — one event, two
     // surfaces, written together here so a build cannot say one without the
     // other. `typed: None`: see the note above.
-    crate::panels::properties::refusedchar::record(page, run, character, base_font, None);
+    crate::panels::properties::refusedchar::record(page, run, character, base_font, false, None);
 }
 
 /// **Record that a committed text edit was refused, and which kind of
@@ -117,12 +117,16 @@ pub(crate) fn record_edit_text_refusal(
         pdfcer_core::text_edit::EditError::PinnedSpanNotFound { .. }
     );
     let missing = missing_character(error);
-    let why = crate::text::textedit::EditRefusal::of(
-        kind,
-        one_operator,
-        refused_char_kind(error),
-        stale_pin,
+    let typed = crate::canvas::textedit::last_commit().filter(|c| c.page == page && c.run == run);
+    let char_kind = refused_char_kind(error, typed.as_ref());
+    let two_ways = matches!(
+        char_kind,
+        Some(
+            crate::text::textedit::RefusedCharacter::TwoGlyphsFor(_)
+                | crate::text::textedit::RefusedCharacter::HeldTwoGlyphsFor(_)
+        )
     );
+    let why = crate::text::textedit::EditRefusal::of(kind, one_operator, char_kind, stale_pin);
     crate::diag::trace(|| {
         //
         //
@@ -191,9 +195,9 @@ pub(crate) fn record_edit_text_refusal(
         // dispatched it.
         //
         // [`Committing`]: crate::canvas::textedit::Committing
-        let typed =
-            crate::canvas::textedit::last_commit().filter(|c| c.page == page && c.run == run);
-        crate::panels::properties::refusedchar::record(page, run, character, base_font, typed);
+        crate::panels::properties::refusedchar::record(
+            page, run, character, base_font, two_ways, typed,
+        );
     }
 }
 
@@ -208,10 +212,12 @@ fn missing_character(error: &pdfcer_core::text_edit::EditError) -> Option<(char,
     }
 }
 
-/// **Which of the two character-level refusals this is** — `Pass 256.1`,
-/// consumed 2026-09-06.
+/// Which character-level refusal this is. An ambiguous character the commit
+/// did not add is one the text already held: the engine re-encodes the whole
+/// operator, so an edit elsewhere in it is refused for that letter.
 fn refused_char_kind(
     error: &pdfcer_core::text_edit::EditError,
+    typed: Option<&crate::canvas::textedit::Committing>,
 ) -> Option<crate::text::textedit::RefusedCharacter> {
     use crate::text::textedit::RefusedCharacter;
     use pdfcer_core::text_edit::RInvTrigger;
@@ -221,7 +227,11 @@ fn refused_char_kind(
     };
     let c = refusal.character?;
     Some(if refusal.trigger == RInvTrigger::Ambiguous {
-        RefusedCharacter::TwoGlyphsFor(c)
+        if typed.is_none_or(|t| RefusedCharacter::added(c, &t.original, &t.replacement)) {
+            RefusedCharacter::TwoGlyphsFor(c)
+        } else {
+            RefusedCharacter::HeldTwoGlyphsFor(c)
+        }
     } else {
         RefusedCharacter::NotInTheFont(c)
     })

@@ -1074,6 +1074,8 @@ pub mod text_click_routes;
 pub mod text_tool_click_types;
 /// Ctrl+U marks the characters themselves, reads back pressed, and toggles off.
 pub mod tied_underline;
+/// Text holding a letter its font draws two ways is refused for that letter.
+pub mod two_codes;
 pub mod word_line_edit;
 pub mod word_styles;
 /// A refused text edit offers the way the engine can make it.

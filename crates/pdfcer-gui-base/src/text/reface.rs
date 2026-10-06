@@ -1,17 +1,21 @@
 //! # `text::reface` — what a text edit says when some of its characters were
-//! set in another face because the line's own font lacks them
+//! set in another face because the line's own font cannot write them
 //!
 //! Worded here; raised by `pdfcer_gui::app::actions::reface`.
 
 use super::refusedkeys::list;
 
 /// The disclosure on a committed edit: which characters, and which face.
+///
+/// It says the font *cannot write* them, not that it lacks them: the
+/// keystroke repertoire leaves out a letter the font maps from two codes as
+/// well as one it does not carry, and the shell is not told which.
 #[must_use]
 pub fn set_in(chars: &[char], face: &str) -> String {
     let what = if chars.len() == 1 { "it" } else { "them" };
     format!(
-        "This text's font has no {}, so pdfcer set {what} in {face}, the nearest font that has \
-         {what}.",
+        "pdfcer cannot write {} in this text's own font, so it set {what} in {face}, the nearest \
+         font that has {what}.",
         list(chars)
     )
 }

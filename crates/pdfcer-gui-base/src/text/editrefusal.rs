@@ -163,6 +163,12 @@ pub enum EditRefusal {
     /// normally and only the colliding one refuses — so this variant describes a
     /// document that mostly works, and the sentence says so.
     FontHasTwoGlyphsFor(char),
+    /// The same engine refusal for a letter the edit did not add: the text
+    /// already holds it, and the engine rewrites the whole piece of text, so a
+    /// change elsewhere in that piece needs a code for it too. Told apart from
+    /// [`Self::FontHasTwoGlyphsFor`] because that sentence names a letter he
+    /// typed and says the rest of the text edits, and here neither is true.
+    TextHoldsTwoGlyphsFor(char),
     /// `RefusalKind::UnsupportedFont` — the code↔glyph relation is
     /// unrecoverable, or a substitute could not cover the text.
     ///
@@ -296,6 +302,8 @@ pub enum RefusedCharacter {
     /// R-INV-5 on a composite font — the font carries it **twice**, two CIDs map
     /// to it, and pdfcer does not pick glyphs.
     TwoGlyphsFor(char),
+    /// The same R-INV-5 refusal for a letter the commit did not add.
+    HeldTwoGlyphsFor(char),
 }
 
 impl RefusedCharacter {
@@ -303,8 +311,16 @@ impl RefusedCharacter {
     #[must_use]
     pub const fn character(self) -> char {
         match self {
-            Self::NotInTheFont(c) | Self::TwoGlyphsFor(c) => c,
+            Self::NotInTheFont(c) | Self::TwoGlyphsFor(c) | Self::HeldTwoGlyphsFor(c) => c,
         }
+    }
+
+    /// Whether replacing `original` with `replacement` adds a `c`: more of
+    /// them after than before.
+    #[must_use]
+    pub fn added(c: char, original: &str, replacement: &str) -> bool {
+        let count = |s: &str| s.chars().filter(|&x| x == c).count();
+        count(replacement) > count(original)
     }
 }
 
@@ -334,6 +350,9 @@ impl EditRefusal {
             // it is a different sentence. See `RefusedCharacter`.
             (K::UnsupportedFont, Some(RefusedCharacter::TwoGlyphsFor(c))) => {
                 Self::FontHasTwoGlyphsFor(c)
+            }
+            (K::UnsupportedFont, Some(RefusedCharacter::HeldTwoGlyphsFor(c))) => {
+                Self::TextHoldsTwoGlyphsFor(c)
             }
             (K::UnsupportedFont, None) => Self::UnsupportedFont,
             (K::StructureFrozen, _) => Self::DocumentProtected,
@@ -379,6 +398,7 @@ impl EditRefusal {
             Self::UnsupportedFont => "UnsupportedFont",
             Self::FontLacksTheCharacter(_) => "FontLacksTheCharacter",
             Self::FontHasTwoGlyphsFor(_) => "FontHasTwoGlyphsFor",
+            Self::TextHoldsTwoGlyphsFor(_) => "TextHoldsTwoGlyphsFor",
             Self::DocumentProtected => "DocumentProtected",
             Self::TextMovedAway => "TextMovedAway",
             Self::Unstated => "Unstated",
@@ -452,6 +472,9 @@ impl EditRefusal {
             Self::FontHasTwoGlyphsFor(c) => {
                 return std::borrow::Cow::Owned(font_has_two_glyphs_for(c));
             }
+            Self::TextHoldsTwoGlyphsFor(c) => {
+                return std::borrow::Cow::Owned(text_holds_two_glyphs_for(c));
+            }
             Self::DocumentProtected => {
                 "This document's protection does not allow its text to be changed, so pdfcer left \
                  it alone. If you have the password, use Encrypt… and choose Remove the \
@@ -496,6 +519,18 @@ pub fn font_has_two_glyphs_for(character: char) -> String {
     )
 }
 
+/// The sentence for [`EditRefusal::TextHoldsTwoGlyphsFor`].
+#[must_use]
+pub fn text_holds_two_glyphs_for(character: char) -> String {
+    format!(
+        "pdfcer cannot change this text, because it holds the letter '{character}', which its \
+         font draws two different ways, and rewriting the text would mean choosing one, which \
+         could change the letter's shape without telling you. Text in this font without that \
+         letter still edits. Your document is unchanged — open Properties, which offers the \
+         faces that spell it only one way."
+    )
+}
+
 /// **"pdfcer cannot type a `q` here, and it knew before you pressed
 /// the key"** — the status bar's ⊗ sentence for the pre-commit repertoire gate
 /// (`Pass 280.0`, 2026-09-09).
@@ -536,7 +571,7 @@ mod tests {
     /// obstacle in its first clause, or promising a remedy this build does not
     /// have, goes red rather than shipping.
     ///
-    const EVERY: [EditRefusal; 8] = [
+    const EVERY: [EditRefusal; 9] = [
         EditRefusal::SplitAcrossPieces,
         EditRefusal::UnsupportedFont,
         // The character is arbitrary here on purpose: this list exists to
@@ -544,6 +579,7 @@ mod tests {
         EditRefusal::FontLacksTheCharacter('q'),
         // Its Pass 256.1 twin — same character, opposite fact.
         EditRefusal::FontHasTwoGlyphsFor('q'),
+        EditRefusal::TextHoldsTwoGlyphsFor('q'),
         EditRefusal::DocumentProtected,
         EditRefusal::TextMovedAway,
         EditRefusal::Unstated,
@@ -580,6 +616,28 @@ mod tests {
             !lacks.contains("already typed is lost") && !two.contains("already typed is lost"),
             "a commit-time refusal cannot promise a draft that `commit_into` has already abandoned"
         );
+    }
+
+    /// A letter the text already held is not one he typed: its sentence
+    /// names neither typing nor the rest of the text as editable.
+    #[test]
+    fn a_held_ambiguous_letter_is_not_said_as_typed() {
+        use pdfcer_core::text_edit::RefusalKind as K;
+        assert!(RefusedCharacter::added('A', "B", "BA"));
+        assert!(!RefusedCharacter::added('A', "A", "AB"));
+        assert!(RefusedCharacter::added('A', "A", "AA"));
+        assert_eq!(
+            EditRefusal::of(
+                K::UnsupportedFont,
+                true,
+                Some(RefusedCharacter::HeldTwoGlyphsFor('A')),
+                false
+            ),
+            EditRefusal::TextHoldsTwoGlyphsFor('A')
+        );
+        let held = EditRefusal::TextHoldsTwoGlyphsFor('A').line().into_owned();
+        assert!(!held.contains("cannot type") && !held.contains("The rest of this text"));
+        assert!(held.contains("'A'") && held.contains("Properties"));
     }
 
     /// **No sentence opens with the operator.** His report is *"the edit is not
@@ -620,6 +678,7 @@ mod tests {
             EditRefusal::SplitAcrossPieces,
             EditRefusal::UnsupportedFont,
             EditRefusal::FontLacksTheCharacter('q'),
+            EditRefusal::TextHoldsTwoGlyphsFor('q'),
             EditRefusal::RunCannotTake('q'),
             EditRefusal::DocumentProtected,
             EditRefusal::TextMovedAway,

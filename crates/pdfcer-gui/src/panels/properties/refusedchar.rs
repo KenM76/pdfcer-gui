@@ -34,6 +34,8 @@ pub(crate) struct RefusedCharacter {
     /// The `/BaseFont` the edit was refused against, subset tag and all.
     /// `Refusal::base_font`.
     base_font: String,
+    /// The font maps the character from two codes, rather than lacking it.
+    two_ways: bool,
     /// **The words the operator typed, which the refusal threw away.**
     typed: Option<crate::canvas::textedit::Committing>,
 }
@@ -52,6 +54,7 @@ pub(crate) fn record(
     run: usize,
     character: char,
     base_font: String,
+    two_ways: bool,
     typed: Option<crate::canvas::textedit::Committing>,
 ) {
     PENDING.with_borrow_mut(|slot| {
@@ -60,6 +63,7 @@ pub(crate) fn record(
             run,
             character,
             base_font,
+            two_ways,
             typed,
         });
     });
@@ -197,7 +201,7 @@ pub(super) fn section(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "refused-char page={} run={} character={:?} font={font} faces={} state={}",
+            "refused-char page={} run={} character={:?} font={font} faces={} state={} two_ways={}",
             refused.page,
             refused.run,
             refused.character,
@@ -213,7 +217,8 @@ pub(super) fn section(
                 (true, true) => "blocked",
                 (true, false) => "swapped",
                 (false, _) => "offer",
-            }
+            },
+            u8::from(refused.two_ways)
         )
     });
 
@@ -271,7 +276,11 @@ pub(super) fn section(
         return true;
     }
 
-    ui.label(t::refused_char_named(refused.character, &font));
+    ui.label(if refused.two_ways {
+        t::refused_char_drawn_two_ways(refused.character, &font)
+    } else {
+        t::refused_char_named(refused.character, &font)
+    });
 
     // RULE 4's off-canvas report, ABOVE the control it qualifies. See the
     // module header: the letterforms of an added standard-14 face come from the
@@ -435,6 +444,7 @@ mod tests {
             run: 4,
             character: '€',
             base_font: "AAAAAA+Arimo-Bold".to_owned(),
+            two_ways: false,
             typed: Some(typed()),
         }
     }
@@ -450,7 +460,14 @@ mod tests {
     #[test]
     fn a_recorded_refusal_is_adopted_exactly_once() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
+        record(
+            1,
+            4,
+            '€',
+            "AAAAAA+Arimo-Bold".to_owned(),
+            false,
+            Some(typed()),
+        );
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7), "the refusal must be adopted");
         assert_eq!(ui.shown, Some(refusal()));
@@ -466,7 +483,14 @@ mod tests {
     #[test]
     fn an_unrelated_edit_retires_the_offer() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
+        record(
+            1,
+            4,
+            '€',
+            "AAAAAA+Arimo-Bold".to_owned(),
+            false,
+            Some(typed()),
+        );
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
         assert!(!ui.advance(8), "the epoch moved and nothing here caused it");
@@ -478,7 +502,14 @@ mod tests {
     #[test]
     fn taking_the_offer_leaves_the_follow_up_behind() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
+        record(
+            1,
+            4,
+            '€',
+            "AAAAAA+Arimo-Bold".to_owned(),
+            false,
+            Some(typed()),
+        );
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
         ui.taken = Some("Helvetica-Bold".to_owned());
@@ -496,7 +527,14 @@ mod tests {
     #[test]
     fn the_edit_that_lands_retires_the_follow_up() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
+        record(
+            1,
+            4,
+            '€',
+            "AAAAAA+Arimo-Bold".to_owned(),
+            false,
+            Some(typed()),
+        );
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
         ui.taken = Some("Helvetica-Bold".to_owned());
@@ -513,10 +551,17 @@ mod tests {
     #[test]
     fn a_second_refusal_replaces_the_first() {
         drain();
-        record(1, 4, '€', "AAAAAA+Arimo-Bold".to_owned(), Some(typed()));
+        record(
+            1,
+            4,
+            '€',
+            "AAAAAA+Arimo-Bold".to_owned(),
+            false,
+            Some(typed()),
+        );
         let mut ui = RefusedCharUi::default();
         assert!(ui.advance(7));
-        record(2, 9, 'q', "AAAAAA+Arimo-Bold".to_owned(), None);
+        record(2, 9, 'q', "AAAAAA+Arimo-Bold".to_owned(), false, None);
         assert!(ui.advance(7));
         let shown = ui.shown.clone().expect("the second refusal is live");
         assert_eq!(shown.character, 'q');
@@ -550,7 +595,7 @@ mod tests {
         // `fixtures/subset-font-floor.PROVENANCE.md`: `R-INV-1 (embedded-subset
         // floor): character U+0071 'q' … which font [`FIXTURE_FONT`] (an
         // embedded SUBSET) does not already carry on this page`.
-        record(0, 0, 'q', FIXTURE_FONT.to_owned(), None);
+        record(0, 0, 'q', FIXTURE_FONT.to_owned(), false, None);
 
         let ctx = egui::Context::default();
         let input = egui::RawInput {
@@ -635,7 +680,7 @@ mod tests {
 
         // Same run, same fixture, same route as the sibling test — only the
         // character differs, which is what makes the comparison meaningful.
-        record(0, 0, '中', FIXTURE_FONT.to_owned(), None);
+        record(0, 0, '中', FIXTURE_FONT.to_owned(), false, None);
 
         let ctx = egui::Context::default();
         let input = egui::RawInput {
