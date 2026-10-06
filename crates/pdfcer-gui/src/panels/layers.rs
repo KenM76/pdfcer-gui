@@ -103,11 +103,14 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let granularity = highlight::parts_in_selected_object(doc).map(tl::layer_selection_granularity);
     ui.separator();
 
+    let draw_pick = std::cell::Cell::new(None);
     let cx = row::RowCtx {
         read: &read,
         hidden: &effective_hidden,
         highlighted,
         authoring,
+        drawing: doc.draw_layer,
+        draw_pick: &draw_pick,
     };
     let mut toggled = None;
     egui::ScrollArea::vertical()
@@ -155,6 +158,11 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     }
     if let Some((id, visible)) = toggled {
         actions.extend(toggle_actions(&read, id, visible));
+    }
+    if let Some(layer) = draw_pick.get() {
+        actions.push(Action::Layer(
+            pdfcer_gui_base::layeraction::LayerAction::DrawOn { layer },
+        ));
     }
 }
 

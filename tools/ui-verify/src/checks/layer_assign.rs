@@ -26,6 +26,9 @@ const WINDOW_COMBO: &str = "layer-assign.window.combo";
 const WINDOW_NOTES: &str = "layer-assign.window.option.Notes";
 const WINDOW_GO: &str = "layer-assign.window.go";
 const ASSIGNED: &str = "layer-assigned";
+const WALLS_ROW: &str = "panel.layers.row.Walls";
+const VIEW_TAB: &str = "ribbon.tab.view";
+const LAYERS_ITEM: &str = "ribbon.item.view.panel_layers";
 /// The fixture's `Walls` and `Notes` groups, as the trace writes an id.
 const WALLS_ID: &str = "layer=6_0";
 const NOTES_ID: &str = "layer=7_0";
@@ -34,6 +37,87 @@ const NOTES_ID: &str = "layer=7_0";
 const BOX: (f64, f64) = (250.0, 200.0);
 /// A point inside the fixture's `/Square` annotation, in page points.
 const ANNOT: (f64, f64) = (600.0, 435.0);
+
+/// Objects pasted while Walls is the current layer land on Walls.
+pub struct PasteGoesOnTheCurrentLayer;
+
+impl Check for PasteGoesOnTheCurrentLayer {
+    fn name(&self) -> &'static str {
+        "paste_goes_on_the_current_layer"
+    }
+
+    fn defect(&self) -> &'static str {
+        "clicking a layer's name did not make it the layer new content goes on, or objects \
+         pasted afterwards did not land on it"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match with_drive(ctx, &mut report, draw_on) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// The last `layer-row` line for Walls after `mark`, raw.
+fn walls_row(d: &Drive<'_>, mark: usize) -> Result<String> {
+    Ok(d.session
+        .trace()?
+        .lines
+        .iter()
+        .rfind(|l| l.lineno > mark && l.event == "layer-row" && l.raw.contains("name=\"Walls\""))
+        .map(|l| l.raw.clone())
+        .unwrap_or_default())
+}
+
+fn draw_on(d: &Drive<'_>, report: &mut CheckReport) -> Result<Option<String>> {
+    if declared(&d.session.trace()?, d.ui_rect, WALLS_ROW).is_none() {
+        for (region, family) in [
+            (VIEW_TAB, "ribbon.tab."),
+            (LAYERS_ITEM, "ribbon.item.view."),
+        ] {
+            if let Err(why) = d.press(region, family)? {
+                return Ok(Some(why));
+            }
+        }
+        d.session.settle(20);
+    }
+    let mark = d.session.trace()?.mark();
+    if let Err(why) = d.press(WALLS_ROW, "panel.layers.row.")? {
+        return Ok(Some(why));
+    }
+    let chosen = walls_row(d, mark)?;
+    d.pointer.click(d.session, d.at(BOX)?)?;
+    d.session.settle(20);
+    d.pointer.key(d.session, None, "C", Some("ctrl"))?;
+    d.session.settle(10);
+    let mark = d.session.trace()?.mark();
+    d.pointer.key(d.session, None, "V", Some("ctrl"))?;
+    d.session.settle(40);
+    // The paste lands 5 pt up and on top, so a click on the box picks it.
+    d.pointer.click(d.session, d.at(BOX)?)?;
+    d.session.settle(20);
+    let pasted = walls_row(d, mark)?;
+    report.note(format!(
+        "after the click: `{chosen}`; after the paste: `{pasted}`"
+    ));
+    let mut findings = Vec::new();
+    if !chosen.contains("current=1") {
+        findings.push("clicking Walls' name did not make it current (current=1).");
+    }
+    if !pasted.contains("highlighted=true") {
+        findings.push("the pasted object, clicked, is not on Walls (highlighted=true).");
+    }
+    Ok((!findings.is_empty()).then(|| {
+        format!(
+            "{} Trace: {}.",
+            findings.join(" "),
+            d.session.trace_path().display()
+        )
+    }))
+}
 
 /// See the module documentation.
 pub struct LayerAssignMovesTheSelection;
@@ -146,6 +230,20 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+    with_drive(ctx, report, |d, report| {
+        if let Some(failure) = objects(d, report)? {
+            return Ok(Some(failure));
+        }
+        annotation(d, report)
+    })
+}
+
+/// Launch on the fixture in Edit mode and run `body` against it.
+fn with_drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    body: impl FnOnce(&Drive<'_>, &mut CheckReport) -> Result<Option<String>>,
+) -> Result<Option<String>> {
     let (session, pointer) = launch(ctx, report)?;
     let ui_rect = ctx
         .profile
@@ -164,10 +262,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ui_rect,
         mapping,
     };
-    if let Some(failure) = objects(&d, report)? {
-        return Ok(Some(failure));
-    }
-    annotation(&d, report)
+    body(&d, report)
 }
 
 /// The blue box onto Walls from the combo; Ctrl+Z; onto Walls again.

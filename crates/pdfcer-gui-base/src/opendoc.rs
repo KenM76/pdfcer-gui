@@ -1000,6 +1000,10 @@ pub struct OpenDoc {
     /// The operator's optional-content override. See [`LayerOverride`].
     ///
     pub layers: LayerOverride,
+    /// The layer the operator chose for new content, set from the Layers
+    /// panel. Read it through [`Self::draw_layer_now`], which drops an id the
+    /// document no longer registers. View state; never saved.
+    pub draw_layer: Option<pdfcer_core::object::ObjId>,
     /// The View ▸ Snapshot box, if one is laid. View state; never saved.
     pub snapshot: Option<crate::snapshotbox::SnapshotBox>,
 }
@@ -1144,6 +1148,7 @@ impl OpenDoc {
             // — which is a distinct state from "hide nothing". See
             // `LayerOverride`.
             layers: LayerOverride::default(),
+            draw_layer: None,
             snapshot: None,
         }
     }

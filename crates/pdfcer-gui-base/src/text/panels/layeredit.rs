@@ -502,6 +502,8 @@ pub enum LayerRefusal {
     AssignTangled,
     /// `EditError::AnnotationLocked`.
     AssignLocked,
+    /// An add while the layer chosen for new content is hidden.
+    DrawLayerHidden,
 }
 
 impl LayerRefusal {
@@ -553,6 +555,9 @@ impl LayerRefusal {
                 "The page encloses the selection in a way that cannot be split cleanly. Nothing was moved."
             }
             Self::AssignLocked => "That item is locked against changes, so it was not moved.",
+            Self::DrawLayerHidden => {
+                "New content goes on the layer marked in Layers, and that layer is hidden. Show it, or click its name to stop adding to it. Nothing was added."
+            }
         }
     }
 }

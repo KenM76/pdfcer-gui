@@ -14,6 +14,7 @@ use pdfcer_core::layers::{Layer, Layers};
 use pdfcer_core::object::ObjId;
 
 use crate::text::panels as t;
+use crate::text::panels::drawlayer as tdl;
 
 /// Where the last-scrolled-to layer is remembered, so the list is scrolled
 /// on the frame the selection changes and not on every frame after it.
@@ -30,6 +31,10 @@ pub(super) struct RowCtx<'a> {
     pub highlighted: Option<ObjId>,
     /// Whether this mode authors layers (row menus).
     pub authoring: bool,
+    /// The layer new content goes on (`OpenDoc::draw_layer`).
+    pub drawing: Option<ObjId>,
+    /// Set when a click on a registered layer's name sets or clears it.
+    pub draw_pick: &'a std::cell::Cell<Option<Option<ObjId>>>,
 }
 
 /// What a drawn row reports.
@@ -56,11 +61,27 @@ pub(super) fn draw(
         }
         ui.horizontal(|ui| {
             let toggled = check_box(ui, l, effective);
+            let current = cx.drawing == Some(l.id);
+            if current {
+                pencil(ui);
+            }
             let response = ui.add(
                 egui::Button::new(name.clone())
                     .frame(false)
                     .sense(egui::Sense::click_and_drag()),
             );
+            let response = if l.in_default_config {
+                if response.clicked() {
+                    cx.draw_pick.set(Some((!current).then_some(l.id)));
+                }
+                response.on_hover_text(if current {
+                    tdl::current_hover()
+                } else {
+                    tdl::choose_hover()
+                })
+            } else {
+                response
+            };
             if cx.authoring {
                 super::authoring::row_menu(&response, cx.read, l, &name, menu_extra);
                 super::authoring::publish_row(&name, response.rect);
@@ -81,11 +102,32 @@ pub(super) fn draw(
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            "layer-row name={:?} visible={effective} default={} locked={} registered={} intent_view={} highlighted={is_highlighted}",
-            l.name, l.visible_by_default, l.locked, l.in_default_config, l.intent_view
+            "layer-row name={:?} visible={effective} default={} locked={} registered={} intent_view={} highlighted={is_highlighted} current={}",
+            l.name,
+            l.visible_by_default,
+            l.locked,
+            l.in_default_config,
+            l.intent_view,
+            u8::from(cx.drawing == Some(l.id))
         )
     });
     row.inner
+}
+
+/// The current layer's mark before its name: the pencil, drawn at the
+/// height of a row.
+fn pencil(ui: &mut egui::Ui) {
+    let side = ui.spacing().interact_size.y;
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(side, side), egui::Sense::hover());
+    let color = ui.visuals().text_color();
+    crate::icons::paint_icon(
+        ui.painter(),
+        crate::icons::Icon::EditText,
+        rect.shrink(2.0),
+        color,
+        crate::icons::IconWeight::Regular,
+    );
+    response.on_hover_text(tdl::current_hover());
 }
 
 /// The highlight plate: a shape as well as a tint (never colour alone), in

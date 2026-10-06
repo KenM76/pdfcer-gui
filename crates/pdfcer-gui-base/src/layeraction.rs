@@ -55,6 +55,12 @@ pub enum LayerAction {
         /// The group's object id, or `None` for no layer.
         layer: Option<ObjId>,
     },
+    /// Make `layer` the one new content is added on, or clear it with
+    /// `None`. View state on the open document; nothing is written.
+    DrawOn {
+        /// The group's object id, or `None` for no current layer.
+        layer: Option<ObjId>,
+    },
 }
 
 /// One arrangement of the panel's list; paths are `layerorder` paths.
@@ -102,6 +108,7 @@ impl LayerAction {
             Self::Order(OrderAction::DeleteFolder { .. }) => "layer-folder-remove",
             Self::Order(OrderAction::Move(_)) => "layer-move",
             Self::Assign { .. } => "layer-assign",
+            Self::DrawOn { .. } => "layer-draw-on",
         }
     }
 }

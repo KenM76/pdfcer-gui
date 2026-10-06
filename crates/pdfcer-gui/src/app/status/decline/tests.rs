@@ -283,6 +283,7 @@ fn no_two_declines_share_a_sentence() {
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::AssignTagged),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::AssignTangled),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::AssignLocked),
+        Declined::Layer(crate::text::panels::layeredit::LayerRefusal::DrawLayerHidden),
         Declined::MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason::Locked),
         Declined::FormFontsNothingToRepair,
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),

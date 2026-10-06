@@ -16,6 +16,11 @@ use crate::text::images;
 /// raster only: the engine always stretches a drawing to the box, and says so
 /// through `distorted`.
 pub(super) fn insert(doc: &mut OpenDoc, page: usize, rect: Rect, fit: ImageFit, picture: &Picture) {
+    // `add_svg` and `add_emf` take no layer at the pin, so a drawing lands
+    // on none and says so rather than ignoring the operator's choice.
+    let off_layer = doc
+        .draw_layer_now()
+        .map(|(l, _)| crate::text::panels::drawlayer::drawing_not_on_layer(&l.name));
     match picture {
         Picture::Raster(image) => raster(doc, page, rect, fit, image),
         #[cfg(feature = "svg-import")]
@@ -23,11 +28,13 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize, rect: Rect, fit: ImageFit, 
             session
                 .add_svg(page, rect, svg)
                 .map(|p| drawing_notes(p.distorted, &p.notes.summary()))
+                .map(|n| n.into_iter().chain(off_layer.clone()).collect::<Vec<_>>())
         }),
         Picture::Emf(emf) => vector_edit(doc, "add-emf", page, 1, |session| {
             session
                 .add_emf(page, rect, emf)
                 .map(|p| drawing_notes(p.distorted, &p.notes.summary()))
+                .map(|n| n.into_iter().chain(off_layer.clone()).collect::<Vec<_>>())
         }),
     }
     select_newest(doc, page);
@@ -46,9 +53,13 @@ pub(super) fn stamp(
 ) {
     let rotate = doc.pages.get(page).map_or(0, |p| p.rotate);
     let kind = picture.kind();
+    let Ok(layer) = super::drawlayer::for_add(doc, "stamp-image") else {
+        return;
+    };
     let options = pdfcer_core::edit::MarkupOptions {
         note: Some(super::annots::signed_note("", Some(author))),
         opacity,
+        layer: super::drawlayer::id(layer.as_ref()),
         ..Default::default()
     };
     let label = match picture {
@@ -109,9 +120,16 @@ fn raster(
     fit: ImageFit,
     image: &pdfcer_core::image_import::ImportedImage,
 ) {
+    let Ok(layer) = super::drawlayer::for_add(doc, "add-image") else {
+        return;
+    };
     vector_edit(doc, "add-image", page, 1, |session| {
         // The constructor, because `NewImage` is `#[non_exhaustive]`.
         let spec = pdfcer_core::edit::NewImage::new(page, rect, image);
+        let spec = match &layer {
+            Some(l) => spec.on_layer(l.id),
+            None => spec,
+        };
         let spec = match fit {
             ImageFit::Stretch => spec.stretching(),
             // Contain is the default; a fit mode the engine adds lands here,
@@ -130,6 +148,7 @@ fn raster(
                 d.stored_bytes,
             );
             notes.extend(images::source_decoding_notes(d));
+            notes.extend(layer.map(|l| l.receipt));
             notes
         })
     });

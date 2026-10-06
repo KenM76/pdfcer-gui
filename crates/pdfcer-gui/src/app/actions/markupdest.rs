@@ -25,11 +25,19 @@ pub(super) fn author(
     options: &MarkupOptions,
     on_page: bool,
 ) {
+    let Ok(layer) = super::drawlayer::for_add(doc, label) else {
+        return;
+    };
+    let options = &MarkupOptions {
+        layer: super::drawlayer::id(layer.as_ref()).or(options.layer),
+        ..options.clone()
+    };
+    let receipt: Vec<String> = layer.map(|l| l.receipt).into_iter().collect();
     if !on_page {
         vector_edit(doc, label, page, 1, |session| {
             session
                 .add_markup_with(page, spec, options)
-                .map(|_| Vec::new())
+                .map(|_| receipt)
         });
         return;
     }
@@ -40,7 +48,9 @@ pub(super) fn author(
             .map(|outcome| {
                 let MarkupContentOutcome { objects, paste, .. } = outcome;
                 applied = Some((objects, paste.resources_added));
-                paste.disclosures
+                let mut notes = paste.disclosures;
+                notes.extend(receipt);
+                notes
             })
     });
     if let Some((objects, added)) = applied {

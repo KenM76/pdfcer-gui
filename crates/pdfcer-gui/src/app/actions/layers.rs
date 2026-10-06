@@ -19,6 +19,11 @@ use crate::text::panels::layeredit::{self as t, LayerRefusal};
 
 /// Apply one layer act.
 pub(super) fn apply(doc: &mut OpenDoc, action: LayerAction) {
+    if let LayerAction::DrawOn { layer } = action {
+        doc.draw_layer = layer;
+        crate::diag::trace(|| format!("layer-draw-on layer={layer:?}")); // ui-text-exempt: diagnostic trace, never displayed
+        return;
+    }
     if let LayerAction::Assign { layer } = action {
         super::layerassign::apply(doc, layer);
         return;
@@ -102,7 +107,7 @@ fn run(session: &mut EditSession, action: LayerAction) -> Result<Vec<String>, Ed
         }
         LayerAction::Order(op) => super::layerorder::run(session, op),
         // Applied by `layerassign`, which reads its operand from the document.
-        LayerAction::Assign { .. } => Ok(Vec::new()),
+        LayerAction::Assign { .. } | LayerAction::DrawOn { .. } => Ok(Vec::new()),
     }
 }
 

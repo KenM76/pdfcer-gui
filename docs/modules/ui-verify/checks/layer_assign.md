@@ -28,3 +28,20 @@ and a `/Square` annotation at 480..720 × 350..520 with no `/OC`.
 Scripted pointer, window at `-4200,-4200`, `spec.place = false`; it runs under
 `--no-input`. Falsified by a combo that raises nothing (red at step 2) and by
 an annotation move that passes no layer (red at step 5, `changed=false`).
+
+# `paste_goes_on_the_current_layer`
+
+The second check in the module, sharing its launch and `Drive`.
+
+1. Open Layers from View ▸ Layers when no Walls row is declared, and click
+   Walls' name. The next `layer-row` line for Walls must carry `current=1`.
+2. Select the unlayered box, Ctrl+C, Ctrl+V. The paste lands 5 pt up and on
+   top of the box.
+3. Click the box again, which picks the pasted copy. The next `layer-row` line
+   for Walls must carry `highlighted=true`. The highlight is resolved from the
+   selected object's content (`panels::layers::highlight`), so it reads where
+   the engine put the copy, not what the shell asked for. The original box is
+   on no layer, so only a copy on Walls can light the row.
+
+Falsified by pasting with no layer (`paste_objects_on_layer(.., None)`): red at
+step 3. The hidden-layer refusal is not driven here.

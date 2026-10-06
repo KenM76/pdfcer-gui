@@ -591,15 +591,23 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             // Replies whose `/IRT` link the clip stripped; the engine's own
             // disclosure line carries the sentence to the operator.
             let mut unthreaded = 0_u64;
+            let Ok(layer) = super::drawlayer::for_add(doc, "paste-objects") else {
+                return;
+            };
+            let on = super::drawlayer::id(layer.as_ref());
             vector_edit_on_page(doc, "paste-objects", page, clip.len(), |session| {
                 let clip = pdfcer_core::vector::ObjectClip::from_bytes(&clip)?;
-                session.paste_objects(page, &clip, at).map(|outcome| {
-                    added = outcome.resources_added;
-                    pasted = outcome.objects_pasted;
-                    annots = outcome.annotations_pasted;
-                    unthreaded = outcome.replies_unthreaded;
-                    outcome.disclosures
-                })
+                session
+                    .paste_objects_on_layer(page, &clip, at, on)
+                    .map(|outcome| {
+                        added = outcome.resources_added;
+                        pasted = outcome.objects_pasted;
+                        annots = outcome.annotations_pasted;
+                        unthreaded = outcome.replies_unthreaded;
+                        let mut notes = outcome.disclosures;
+                        notes.extend(layer.map(|l| l.receipt));
+                        notes
+                    })
             });
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.

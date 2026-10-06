@@ -35,7 +35,14 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
     // recorded reasoning for the same choice.
     let crop = doc.pages.get(placed.page).map(|p| p.crop_box);
     let page = placed.page;
+    let Ok(layer) = super::drawlayer::for_add(doc, "add-text") else {
+        return;
+    };
     let (req, promoted) = request(&placed, crop);
+    let req = match &layer {
+        Some(l) => req.on_layer(l.id),
+        None => req,
+    };
     let invisible = placed.pen.invisible;
     let lines = req.text.split('\n').count();
     // The epoch is read BEFORE the verb, because it is how this arm learns
@@ -57,6 +64,7 @@ pub(super) fn commit(doc: &mut OpenDoc, placed: Placed) {
             if invisible {
                 notes.push(crate::text::textedit::added_invisible().to_owned());
             }
+            notes.extend(layer.map(|l| l.receipt));
             notes
         })
     });

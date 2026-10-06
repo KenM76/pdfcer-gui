@@ -42,6 +42,21 @@ impl OpenDoc {
         self.layers.generation = self.layers.generation.wrapping_add(1);
     }
 
+    /// The layer new content goes on, with whether it is hidden now, or
+    /// `None` when none is chosen or the chosen group is no longer a
+    /// registered layer (undo, delete and merge can each remove it).
+    #[must_use]
+    pub fn draw_layer_now(&self) -> Option<(pdfcer_core::layers::Layer, bool)> {
+        let id = self.draw_layer?;
+        let read = pdfcer_core::layers::read_layers(&self.session.view());
+        let layer = read
+            .layers
+            .into_iter()
+            .find(|l| l.id == id && l.in_default_config)?;
+        let hidden = self.hidden_layers().contains(&id);
+        Some((layer, hidden))
+    }
+
     /// The override to hand a render, or `None` to obey the document.
     pub fn layer_visibility(&self) -> Option<LayerVisibility> {
         self.layers

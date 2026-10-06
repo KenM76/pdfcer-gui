@@ -318,6 +318,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(layer_combine::LayersCanBeMergedAndFlattened),
         Box::new(layer_folders::LayerFoldersShowAndReorganise),
         Box::new(layer_assign::LayerAssignMovesTheSelection),
+        Box::new(layer_assign::PasteGoesOnTheCurrentLayer),
         Box::new(attach_file::AFileAttachesAsAMarker),
         Box::new(attach_sound::ASoundAttachesAsAnIcon),
         Box::new(media_clip::AClipPlaysFromARegion),
