@@ -77,7 +77,10 @@ pub(super) fn section(
                 // rather than assuming certification.
                 Some(error) => {
                     ui.add_space(4.0);
-                    ui.colored_label(ui.visuals().warn_fg_color, t::field_groups_refusal(error));
+                    ui.colored_label(
+                        ui.visuals().warn_fg_color,
+                        t::field_groups_refusal(error, doc.session.encryption_refusal_cause()),
+                    );
                     ui.add_space(4.0);
                     // The nodes are still LISTED. Knowing what a form is
                     // organised into is a reading, not a change, and a

@@ -611,6 +611,8 @@ pub mod check_mark;
 pub mod choice_defaults;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
+/// An encrypted file edits under its password, or offers its owner password.
+pub mod encrypted_edit;
 pub mod field_extras;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;

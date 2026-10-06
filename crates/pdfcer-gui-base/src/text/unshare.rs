@@ -11,13 +11,6 @@
 /// **Why this page did not get its own copy of the shared drawing.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnshareRefusal {
-    /// The document carries `/Encrypt` (§7.6).
-    ///
-    /// `EditError::DocumentEncrypted`, the engine's first guard. Reachable on
-    /// an ordinary file — plenty of drawing sets ship with an owner password
-    /// set for printing — and completely invisible on the canvas, which is why
-    /// it is worded rather than traced.
-    Encrypted,
     /// The document carries an enforced certification signature (§12.8.4,
     /// `/Perms /DocMDP`).
     ///
@@ -180,14 +173,6 @@ impl UnshareRefusal {
     #[must_use]
     pub const fn line(self) -> &'static str {
         match self {
-            // "Encrypted" is a word the operator will have met — it is what
-            // the password dialog in every other reader calls it — and the
-            // limit is placed on pdfcer, not on the document, because the file
-            // is not malformed and there is nothing in it to fix.
-            Self::Encrypted => {
-                "This document is encrypted, and pdfcer cannot add anything to an encrypted file \
-                 yet. This page still shares that drawing with every other page that uses it."
-            }
             // "Signed", not "certified" — `RotateRefusal::Certified` made
             // the same call and the argument is the same: the operator's word
             // for what happened to the file is that somebody signed it. And it
@@ -352,7 +337,6 @@ mod tests {
     #[test]
     fn every_refusal_is_a_sentence() {
         for why in [
-            UnshareRefusal::Encrypted,
             UnshareRefusal::Certified,
             UnshareRefusal::WouldExposeHiddenObjects,
             UnshareRefusal::Nested,
@@ -376,7 +360,6 @@ mod tests {
     #[test]
     fn every_refusal_says_where_the_sharing_stands() {
         for why in [
-            UnshareRefusal::Encrypted,
             UnshareRefusal::Certified,
             UnshareRefusal::WouldExposeHiddenObjects,
             UnshareRefusal::Nested,

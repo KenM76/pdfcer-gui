@@ -11,6 +11,8 @@
 
 use std::path::{Path, PathBuf};
 
+use pdfcer_core::crypto::PermissionBit;
+use pdfcer_core::document::EncryptedRefusal;
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::page_tree::{Page, Rect};
 use pdfcer_core::sign::apply::{MdpPermission, SignApplyError, SignReport, SignRequest};
@@ -32,8 +34,9 @@ pub mod evidence;
 /// **The document's signing situation, read before anything is offered.**
 #[derive(Debug, Clone)]
 pub struct Standing {
-    /// Whether the document carries an `/Encrypt` dictionary.
-    pub encrypted: bool,
+    /// Why encryption refuses a signature (it needs `ModifyContents`), or
+    /// `None` when it does not.
+    pub encrypted: Option<EncryptedRefusal>,
     /// Whether a deferred redaction is staged and not yet applied or cancelled.
     pub redaction_pending: bool,
     /// Whether the base loaded through cross-reference recovery, which makes
@@ -209,7 +212,7 @@ impl Standing {
         let base = session.document();
         let census = session.signature_census();
         Self {
-            encrypted: base.encryption().is_some(),
+            encrypted: session.encryption_refusal(&[PermissionBit::ModifyContents]),
             redaction_pending: session.has_pending_redaction(),
             recovered: base.loaded_via_recovery(),
             prior_signatures: census.signatures,
@@ -240,8 +243,8 @@ impl Standing {
         if self.redaction_pending {
             return Some(Refusal::RedactionPending);
         }
-        if self.encrypted {
-            return Some(Refusal::Encrypted);
+        if let Some(cause) = self.encrypted {
+            return Some(Refusal::Encrypted(cause));
         }
         if self.certification_permission == Some(1) {
             return Some(Refusal::CertificationForbids { permission: 1 });
@@ -261,9 +264,9 @@ impl Standing {
 pub enum Refusal {
     /// A deferred redaction is staged. Apply or cancel it first.
     RedactionPending,
-    /// The document is encrypted, and pdfcer's incremental writer cannot
-    /// append to an encrypted base.
-    Encrypted,
+    /// The document's encryption refuses the edit a signature is, for this
+    /// cause.
+    Encrypted(EncryptedRefusal),
     /// A certification signature's `/DocMDP` `/P` forbids adding another.
     CertificationForbids {
         /// The `/P` value. Only `1` reaches here — Table 254's `2` is exactly

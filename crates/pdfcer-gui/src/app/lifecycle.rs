@@ -112,6 +112,32 @@ impl PdfcerApp {
         true
     }
 
+    /// Park the active document as needing a password, keeping its reading,
+    /// so the password prompt asks again — for the owner password
+    /// (`app::unlock`).
+    pub(crate) fn unlock_active(&mut self) {
+        let ready = match &self.status {
+            Status::Open(doc) => {
+                crate::app::unlock::locked(doc) && !crate::app::save::has_unsaved_edits(doc)
+            }
+            _ => false,
+        };
+        let (Some(path), Status::Open(doc)) = (self.active_document_path(), &self.status) else {
+            return;
+        };
+        if !ready {
+            // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| "unlock-declined".to_owned());
+            return;
+        }
+        let options = doc.load_options;
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| format!("unlock-reopen path={path:?}"));
+        self.close_slot(self.active_slot);
+        self.park_and_adopt(Status::NeedsPassword { path, options });
+        self.adopt();
+    }
+
     /// The file behind the document on screen, or `None` when there is not one.
     fn active_document_path(&self) -> Option<PathBuf> {
         match &self.status {

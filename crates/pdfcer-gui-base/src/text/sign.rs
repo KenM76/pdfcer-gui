@@ -58,13 +58,19 @@ pub const fn refusal_redaction_pending() -> &'static str {
      and then sign."
 }
 
-/// [`crate::sign::Refusal::Encrypted`].
+/// [`crate::sign::Refusal::Encrypted`] for `PermissionDenied`.
 #[must_use]
-pub const fn refusal_encrypted() -> &'static str {
-    "This document is encrypted. A signature has to be added to the end of the \
-     file, and pdfcer cannot append to an encrypted one — so an encrypted \
-     document cannot be signed at all. Take the password off first (File > \
-     Security > Encrypt…), sign, and put it back on afterwards."
+pub const fn refusal_encrypted_password() -> &'static str {
+    "The password this file was opened with does not allow changing it, and a \
+     signature is a change. Reopen it with the owner password (File > Reopen with \
+     owner password…), then sign."
+}
+
+/// [`crate::sign::Refusal::Encrypted`] for `Rc4NotAllowed`.
+#[must_use]
+pub const fn refusal_encrypted_rc4() -> &'static str {
+    "This file uses the old RC4 encryption, and edits under it are off. Allow \
+     edits under RC4 (File > Security) to sign it."
 }
 
 /// [`crate::sign::Refusal::CertificationForbids`].
@@ -100,7 +106,10 @@ pub fn refusal_line(refusal: crate::sign::Refusal) -> String {
     use crate::sign::Refusal;
     match refusal {
         Refusal::RedactionPending => refusal_redaction_pending().to_owned(),
-        Refusal::Encrypted => refusal_encrypted().to_owned(),
+        Refusal::Encrypted(pdfcer_core::document::EncryptedRefusal::Rc4NotAllowed) => {
+            refusal_encrypted_rc4().to_owned()
+        }
+        Refusal::Encrypted(_) => refusal_encrypted_password().to_owned(),
         Refusal::CertificationForbids { permission } => refusal_certification_forbids(permission),
         Refusal::RecoveredBase => refusal_recovered_base().to_owned(),
         Refusal::NotOnDisk => refusal_not_on_disk().to_owned(),

@@ -7,7 +7,6 @@
 
 use super::Declined;
 use crate::editmodel::refusal::Refusal;
-use crate::text::textedit::{EditRefusal, ReflowRefusal};
 
 impl Declined {
     /// The command id whose dialog removes this decline's cause.
@@ -17,12 +16,11 @@ impl Declined {
             Self::TextClick(Refusal::PictureOfText | Refusal::NoText) => {
                 Some("file.ocr") // ui-text-exempt: command id, never displayed
             }
-            Self::EditText(EditRefusal::DocumentProtected)
-            | Self::Reflow(ReflowRefusal::Encrypted) => {
-                Some("file.encrypt") // ui-text-exempt: command id, never displayed
-            }
             Self::Rc4Refused => {
                 Some("file.allow_rc4_edits") // ui-text-exempt: command id, never displayed
+            }
+            Self::PasswordRefused => {
+                Some("file.unlock") // ui-text-exempt: command id, never displayed
             }
             _ => None,
         }
@@ -42,14 +40,11 @@ mod tests {
             Some("file.ocr")
         );
         assert_eq!(
-            Declined::EditText(EditRefusal::DocumentProtected).remedy(),
-            Some("file.encrypt")
-        );
-        assert_eq!(
-            Declined::Reflow(ReflowRefusal::Encrypted).remedy(),
-            Some("file.encrypt")
+            Declined::EditText(crate::text::textedit::EditRefusal::DocumentProtected).remedy(),
+            None
         );
         assert_eq!(Declined::Rc4Refused.remedy(), Some("file.allow_rc4_edits"));
+        assert_eq!(Declined::PasswordRefused.remedy(), Some("file.unlock"));
         assert_eq!(Declined::TextClick(Refusal::NoRun).remedy(), None);
     }
 }

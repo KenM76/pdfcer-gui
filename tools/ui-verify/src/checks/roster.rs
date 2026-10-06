@@ -336,6 +336,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(print_shop::InkPickerReadsOverprint),
         Box::new(security_notes::SecurityNotesNameTheCoverAndTheActions),
         Box::new(rc4_append::Rc4EditsWaitForTheOperatorAndSayWhatTheyCost),
+        Box::new(encrypted_edit::AnEncryptedFileIsEditedUnderThePasswordItOpenedWith),
         Box::new(insert_text::ACaretMarksAnInsertion),
         Box::new(replace_text::ReplacingTextStrikesAndCarets),
         Box::new(markup_flatten::AMarkupCanBeMadePartOfThePage),

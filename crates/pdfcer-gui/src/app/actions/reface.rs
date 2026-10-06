@@ -54,6 +54,12 @@ pub(super) fn try_commit(
         let (result, tier) = engine.attempt("commit", |r| session.edit_text(r, &engine.options));
         match (result, route) {
             (Ok(report), _) => Ok(engine_notes(page, run, report, &reface, &two_ways)),
+            (Err(error), _) if crate::app::unlock::Refusal::encrypted(&error) => {
+                if let Some(cause) = session.encryption_refusal_cause() {
+                    crate::app::unlock::record_cause(cause);
+                }
+                Err(error.to_string())
+            }
             (Err(_), Some((plan, tokens))) => {
                 commit(session, &plan, &tokens, &reface, &two_ways, page).map_err(|s| s.to_string())
             }

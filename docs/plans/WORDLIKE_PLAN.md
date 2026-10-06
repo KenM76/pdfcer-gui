@@ -87,7 +87,7 @@ Fix classes: **GUI** (this repo only) or **ENGINE** (needs a request; the number
 | E1 | Clicking text on a scan explains why it can't be edited and offers OCR | refuses | A click silently becomes Add text, logged as `text-edit-became-add reason=no-run-under-the-click` (driven). The OCR message names a nonexistent "Tools > OCR"; the real place is File › Recognise (code). | GUI |
 | E2 | Clicking a form field edits the field value | refuses | The click becomes Add text (driven). | GUI (route to the field editor) |
 | E3 | Clicking a text box comment (FreeText) edits it | refuses | The click becomes Add text (code). | GUI (route to the annotation editor) |
-| E4 | Edit a password-protected PDF I can open | refuses | `edit_text` refuses any `/Encrypt` (code). The message names a nonexistent "Protect > Remove security"; the real path is File › Security › Encrypt… → "Remove the protection entirely". | GUI message now; ENGINE G077 |
+| E4 | Edit a password-protected PDF I can open | works | Edits run under the opening password and save encrypted; a withheld edit offers *Unlock* to reopen with the owner password. | shipped (G077, G118) |
 | E5 | Type 3 font text | partial | Editing works partly, and the message is misleading (code). | GUI message; ENGINE G081 cause |
 | E6 | Font without ToUnicode | partial | The message is good (code). | - |
 | E7 | CJK text | partial | Horizontal works partly. Vertical writing is not guarded and is probably laid out wrong (code). | ENGINE G081 (refuse by name) |

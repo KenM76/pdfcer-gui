@@ -19,7 +19,7 @@ fn filling() -> SignDialog {
     SignDialog {
         source: PathBuf::from("D:/drawings/SW41177.pdf"),
         standing: crate::sign::Standing {
-            encrypted: false,
+            encrypted: None,
             redaction_pending: false,
             recovered: false,
             prior_signatures: 0,
@@ -119,7 +119,9 @@ fn re_selecting_the_same_destination_leaves_the_acknowledgement_alone() {
 #[test]
 fn no_phase_but_filling_offers_a_confirm() {
     for phase in [
-        Phase::Refused(crate::sign::Refusal::Encrypted),
+        Phase::Refused(crate::sign::Refusal::Encrypted(
+            pdfcer_core::document::EncryptedRefusal::PermissionDenied,
+        )),
         Phase::Signing,
         Phase::Written {
             path: PathBuf::from("D:/drawings/SW41177-signed.pdf"),
@@ -209,11 +211,12 @@ fn choosing_a_new_certificate_clears_what_the_old_one_said() {
 
 /// **Every refusal has its own sentence, and no two are the same.**
 #[test]
-fn the_five_refusals_are_five_different_sentences() {
+fn the_six_refusals_are_six_different_sentences() {
     use crate::sign::Refusal;
     let lines: Vec<String> = [
         Refusal::RedactionPending,
-        Refusal::Encrypted,
+        Refusal::Encrypted(pdfcer_core::document::EncryptedRefusal::PermissionDenied),
+        Refusal::Encrypted(pdfcer_core::document::EncryptedRefusal::Rc4NotAllowed),
         Refusal::CertificationForbids { permission: 1 },
         Refusal::RecoveredBase,
         Refusal::NotOnDisk,

@@ -27,12 +27,13 @@
 //! a scratch directory, and says so.
 
 use super::*;
+use pdfcer_core::document::EncryptedRefusal;
 use pdfcer_core::page_tree::Rect;
 
 /// A `Standing` with nothing wrong with it.
 fn clean() -> Standing {
     Standing {
-        encrypted: false,
+        encrypted: None,
         redaction_pending: false,
         recovered: false,
         prior_signatures: 0,
@@ -159,10 +160,13 @@ fn a_clean_document_is_not_refused() {
 #[test]
 fn an_encrypted_document_is_refused() {
     let standing = Standing {
-        encrypted: true,
+        encrypted: Some(EncryptedRefusal::PermissionDenied),
         ..clean()
     };
-    assert_eq!(standing.refusal(), Some(Refusal::Encrypted));
+    assert_eq!(
+        standing.refusal(),
+        Some(Refusal::Encrypted(EncryptedRefusal::PermissionDenied))
+    );
 }
 
 /// **A document with a redaction armed is refused, by name.**
@@ -183,7 +187,7 @@ fn a_pending_redaction_is_refused() {
 #[test]
 fn a_pending_redaction_is_named_before_encryption() {
     let standing = Standing {
-        encrypted: true,
+        encrypted: Some(EncryptedRefusal::PermissionDenied),
         redaction_pending: true,
         ..clean()
     };

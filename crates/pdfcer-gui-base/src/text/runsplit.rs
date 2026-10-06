@@ -20,8 +20,6 @@ pub enum RunSplitRefusal {
     LineShowOperator,
     /// A tagged (marked-content) section is open where a line starts.
     InsideTaggedContent,
-    /// The document is encrypted.
-    Encrypted,
     /// The selected object no longer exists as selected.
     Stale,
     /// Anything else the engine refused.
@@ -48,7 +46,6 @@ impl RunSplitRefusal {
     pub fn of_edit(error: &EditError) -> Self {
         match error {
             EditError::VectorEdit(inner) => Self::of_vector(inner),
-            EditError::DocumentEncrypted => Self::Encrypted,
             EditError::PageOutOfRange { .. } => Self::Stale,
             _ => Self::Other,
         }
@@ -63,7 +60,6 @@ impl RunSplitRefusal {
             Self::LineInheritsPosition => "line-inherits-position",
             Self::LineShowOperator => "line-show-operator",
             Self::InsideTaggedContent => "inside-tagged-content",
-            Self::Encrypted => "encrypted",
             Self::Stale => "stale",
             Self::Other => "other",
         }
@@ -92,9 +88,6 @@ impl RunSplitRefusal {
                 "A line of this text starts inside a tagged section of the page, so splitting \
                  there would break the tagging. Nothing was changed."
             }
-            Self::Encrypted => {
-                "This document is encrypted, so its text cannot be split. Nothing was changed."
-            }
             Self::Stale => "The selected text changed before the split ran. Select it again.",
             Self::Other => "pdfcer could not split this text into lines. Nothing was changed.",
         }
@@ -111,13 +104,12 @@ pub fn split_into(pieces: usize) -> String {
 mod tests {
     use super::RunSplitRefusal as R;
 
-    const SAMPLE: [R; 8] = [
+    const SAMPLE: [R; 7] = [
         R::NotOneTextObject,
         R::NoLineBreaks,
         R::LineInheritsPosition,
         R::LineShowOperator,
         R::InsideTaggedContent,
-        R::Encrypted,
         R::Stale,
         R::Other,
     ];

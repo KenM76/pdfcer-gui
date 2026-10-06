@@ -58,10 +58,7 @@
                     items: [
                         Command(id: "file.ocr", size: Large),
                         Command(id: "file.remove_ocr"),
-                        Command(
-                            id: "file.fetch_ocr_models",
-                            capability: "model-download",
-                        ),
+                        Command(id: "file.fetch_ocr_models", capability: "model-download"),
                     ],
                     collapse: 4,
                 ),
@@ -105,6 +102,11 @@
                             id: "file.allow_rc4_edits",
                             size: Large,
                             visible_when: "doc.rc4",
+                        ),
+                        Command(
+                            id: "file.unlock",
+                            size: Large,
+                            visible_when: "doc.locked",
                         ),
                         Command(id: "file.permissions", size: Large),
                         Command(

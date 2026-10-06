@@ -32,7 +32,7 @@ pub fn gate(
     doc.session
         .annotation_deletion_refusal()
         .as_ref()
-        .map(refusal_for)
+        .map(|e| refusal_for(e, doc.session.encryption_refusal_cause()))
         .map(Refusal::Document)
 }
 
@@ -106,10 +106,17 @@ pub fn refuses(doc: &OpenDoc, selection: &crate::canvas::selection::SelectionSta
 }
 
 /// Which sentence an `EditError` from `annotation_deletion_refusal` earns.
-fn refusal_for(error: &pdfcer_core::edit::EditError) -> AnnotDeleteRefusal {
+fn refusal_for(
+    error: &pdfcer_core::edit::EditError,
+    cause: Option<pdfcer_core::document::EncryptedRefusal>,
+) -> AnnotDeleteRefusal {
+    use pdfcer_core::document::EncryptedRefusal;
     use pdfcer_core::edit::EditError;
     match error {
-        EditError::DocumentEncrypted => AnnotDeleteRefusal::Encrypted,
+        EditError::DocumentEncrypted if cause == Some(EncryptedRefusal::Rc4NotAllowed) => {
+            AnnotDeleteRefusal::Rc4
+        }
+        EditError::DocumentEncrypted => AnnotDeleteRefusal::Password,
         EditError::CertificationForbidsChange { .. } => AnnotDeleteRefusal::Certified,
         _ => AnnotDeleteRefusal::Other,
     }
@@ -230,7 +237,7 @@ mod tests {
     #[test]
     fn each_documented_refusal_earns_its_own_sentence() {
         for (error, expected) in [
-            (EditError::DocumentEncrypted, AnnotDeleteRefusal::Encrypted),
+            (EditError::DocumentEncrypted, AnnotDeleteRefusal::Password),
             (
                 EditError::CertificationForbidsChange { permission: 2 },
                 AnnotDeleteRefusal::Certified,
@@ -241,13 +248,13 @@ mod tests {
             ),
         ] {
             assert_eq!(
-                refusal_for(&error),
+                refusal_for(&error, None),
                 expected,
                 "`{error}` must not fall through to the catch-all"
             );
         }
         assert_eq!(
-            refusal_for(&EditError::ObjectNumbersExhausted),
+            refusal_for(&EditError::ObjectNumbersExhausted, None),
             AnnotDeleteRefusal::Other,
             "and something the query does not document must land in `Other` \
              rather than borrowing a sentence about a signature"
@@ -258,7 +265,8 @@ mod tests {
     #[test]
     fn the_refusals_are_told_apart_by_their_words() {
         let lines = [
-            AnnotDeleteRefusal::Encrypted.line(),
+            AnnotDeleteRefusal::Password.line(),
+            AnnotDeleteRefusal::Rc4.line(),
             AnnotDeleteRefusal::Certified.line(),
             AnnotDeleteRefusal::Other.line(),
         ];
@@ -267,7 +275,19 @@ mod tests {
                 assert_ne!(a, b);
             }
         }
-        assert!(AnnotDeleteRefusal::Encrypted.line().contains("encrypted"));
+        assert!(
+            AnnotDeleteRefusal::Password
+                .line()
+                .contains("owner password")
+        );
+        assert!(AnnotDeleteRefusal::Rc4.line().contains("RC4"));
+        assert_eq!(
+            refusal_for(
+                &EditError::DocumentEncrypted,
+                Some(pdfcer_core::document::EncryptedRefusal::Rc4NotAllowed)
+            ),
+            AnnotDeleteRefusal::Rc4
+        );
         assert!(AnnotDeleteRefusal::Certified.line().contains("signature"));
     }
 

@@ -26,8 +26,6 @@ pub enum RunMergeRefusal {
     CompositeFont,
     /// The span fit had no width to cover, or the positions could not be measured.
     NoWidthToSpan,
-    /// The document is encrypted.
-    Encrypted,
     /// The selected runs no longer exist as selected.
     Stale,
     /// Anything else the engine refused.
@@ -60,7 +58,6 @@ impl RunMergeRefusal {
             FormatError::MergeRunsOutOfOrder | FormatError::MergePositionUnknown => {
                 Self::NoWidthToSpan
             }
-            FormatError::Encrypted => Self::Encrypted,
             FormatError::PageIndex(_) => Self::Stale,
             _ => Self::Other,
         }
@@ -100,10 +97,6 @@ impl RunMergeRefusal {
                 "pdfcer could not measure where these text runs start and end, so it cannot \
                  stretch the merged run over them. Nothing was changed."
             }
-            Self::Encrypted => {
-                "This document is encrypted, so its text runs cannot be merged. Nothing was \
-                 changed."
-            }
             Self::Stale => "The selected text changed before the merge ran. Select it again.",
             Self::Other => "pdfcer could not merge these text runs. Nothing was changed.",
         }
@@ -120,7 +113,7 @@ pub fn width_changed(before: f64, after: f64) -> String {
 mod tests {
     use super::RunMergeRefusal as R;
 
-    const ALL: [R; 11] = [
+    const ALL: [R; 10] = [
         R::NeedsTwoRuns,
         R::NotNeighbours,
         R::WouldMoveNextRun,
@@ -129,7 +122,6 @@ mod tests {
         R::CrossesTaggedContent,
         R::CompositeFont,
         R::NoWidthToSpan,
-        R::Encrypted,
         R::Stale,
         R::Other,
     ];

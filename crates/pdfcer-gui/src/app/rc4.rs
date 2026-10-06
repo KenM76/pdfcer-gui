@@ -49,12 +49,6 @@ pub fn refusing(doc: &OpenDoc) -> bool {
     uses_rc4(doc) && !allowed(doc)
 }
 
-/// Whether `error` is the engine's encryption refusal and RC4 is its cause.
-#[must_use]
-pub fn explains(doc: &OpenDoc, error: &str) -> bool {
-    refusing(doc) && error.contains(pdfcer_core::edit::ENCRYPTED_EDIT_REFUSED)
-}
-
 /// Flip the policy and say what it now does.
 pub fn toggle(doc: &mut OpenDoc) {
     let next = if allowed(doc) {

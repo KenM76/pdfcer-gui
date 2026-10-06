@@ -343,8 +343,6 @@ pub enum ReflowRefusal {
     /// than the one that was asked for. R9's rule holds: say what happened and
     /// stop.
     FontIsComposite,
-    /// The document is encrypted, which reflow refuses outright.
-    Encrypted,
     /// The engine could not trace the paragraph's lines back to the operators
     /// that drew them (`ReflowApplyError::NoProvenance`, or an extraction that
     /// failed), so it will not re-wrap what it cannot address.
@@ -399,10 +397,6 @@ impl ReflowRefusal {
                 "pdfcer cannot re-wrap this paragraph: it is drawn in a font that stores more \
                  than one byte per character, and re-wrapping that kind of text is not built \
                  yet. Your document has not been changed."
-            }
-            Self::Encrypted => {
-                "This document is encrypted, so pdfcer cannot re-write its text. To take the \
-                 protection off, use Encrypt… and choose Remove the protection entirely."
             }
             Self::CannotTrace => {
                 "pdfcer cannot tell which parts of the page drew these lines, so it will not \
@@ -515,7 +509,6 @@ mod tests {
             ReflowRefusal::NoBlock,
             ReflowRefusal::PageAlreadyEdited,
             ReflowRefusal::PageSetChanged,
-            ReflowRefusal::Encrypted,
             ReflowRefusal::CannotTrace,
             ReflowRefusal::Other,
         ];

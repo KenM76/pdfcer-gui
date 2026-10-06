@@ -266,6 +266,12 @@ impl std::fmt::Display for SymbolicFontRefusal {
     }
 }
 
+impl crate::app::unlock::Refusal for SymbolicFontRefusal {
+    fn encrypted(&self) -> bool {
+        false
+    }
+}
+
 /// **A refused edit is a sentence, never a silence** —
 /// `OPERATOR_REQUESTS.md` O116.
 #[test]

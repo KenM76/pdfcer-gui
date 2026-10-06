@@ -97,6 +97,12 @@ pub(crate) fn record_rc4_refused() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Rc4Refused));
 }
 
+/// Record that an edit was refused because the opening password withholds
+/// its permission.
+pub(crate) fn record_password_refused() {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::PasswordRefused));
+}
+
 /// Record why a paste of another program's copy placed nothing.
 pub(crate) fn record_os_paste(why: crate::text::ospaste::OsPasteRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::OsPaste(why)));

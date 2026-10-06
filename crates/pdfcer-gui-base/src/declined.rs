@@ -1038,4 +1038,8 @@ pub enum Declined {
     /// operator has not allowed edits under it. Worded in
     /// [`crate::text::rc4::refused`]; offers Allow edits under RC4.
     Rc4Refused,
+    /// An edit refused because the password the document was opened with
+    /// does not grant its permission. Worded in [`crate::text::unlock::refused`];
+    /// offers Reopen with owner password.
+    PasswordRefused,
 }

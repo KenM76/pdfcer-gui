@@ -46,7 +46,7 @@ pub(super) enum EditScope {
 }
 
 /// The document-scoped funnel, and the one ~78 call sites use.
-pub(super) fn vector_edit<E: std::fmt::Display>(
+pub(super) fn vector_edit<E: std::fmt::Display + crate::app::unlock::Refusal>(
     doc: &mut OpenDoc,
     label: &str,
     page: usize,
@@ -58,7 +58,7 @@ pub(super) fn vector_edit<E: std::fmt::Display>(
 
 /// The same funnel, for a verb whose effect is confined to **one page's
 /// content**.
-pub(super) fn vector_edit_on_page<E: std::fmt::Display>(
+pub(super) fn vector_edit_on_page<E: std::fmt::Display + crate::app::unlock::Refusal>(
     doc: &mut OpenDoc,
     label: &str,
     page: usize,
@@ -68,7 +68,7 @@ pub(super) fn vector_edit_on_page<E: std::fmt::Display>(
     vector_edit_scoped(doc, label, page, operands, EditScope::Page(page), edit);
 }
 
-fn vector_edit_scoped<E: std::fmt::Display>(
+fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     doc: &mut OpenDoc,
     label: &str,
     page: usize,
@@ -234,10 +234,9 @@ fn vector_edit_scoped<E: std::fmt::Display>(
         // `PDFCER_DIAG` wants §9.6.6.4, and the operator wants to know their
         // drawing is intact.
         Err(error) => {
-            // An RC4 refusal names its own remedy; `refused` yields to it.
-            if crate::app::rc4::explains(doc, &error.to_string()) {
-                crate::app::status::decline::record_rc4_refused();
-            }
+            // An encryption refusal names its cause's remedy; `refused`
+            // yields to it.
+            crate::app::unlock::record(doc, &error);
             floor.refused();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

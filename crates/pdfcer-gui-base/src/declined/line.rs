@@ -201,6 +201,7 @@ impl Declined {
             Self::TextClick(why) => crate::text::textedit::refusal(*why),
             Self::OsPaste(why) => return why.line(),
             Self::Rc4Refused => crate::text::rc4::refused(),
+            Self::PasswordRefused => crate::text::unlock::refused(),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

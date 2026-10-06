@@ -98,8 +98,9 @@ const REGION_REDACT_CONFIRM: &str = "redact-apply-confirm";
 
 // --- phase B's document ----------------------------------------------------
 
-/// **An encrypted document that opens with NO password.**
-const ENCRYPTED: &str = "encryption/enc-emptyuser.pdf";
+/// **An encrypted document that opens with NO password and grants only
+/// Print**, so its password refuses the change a signature is.
+const ENCRYPTED: &str = "encryption/enc-emptyuser-print-only.pdf";
 
 // --- phases E and F's document ---------------------------------------------
 
@@ -177,7 +178,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let plain = repo_fixture("four-pages.pdf")?;
     let encrypted = engine_fixture(
         ENCRYPTED,
-        "the encrypted document phase B needs (AES-128, empty user password)",
+        "the encrypted document phase B needs (AES-256, empty user password, Print only)",
     )?;
     let certificate = engine_fixture(
         CERT,
@@ -381,12 +382,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ));
         }
         match last_refusal(&session)? {
-            Some(token) if token == "encrypted" => {
+            Some(token) if token == "encrypted-password" => {
                 report.note(format!("phase B: {OPENED_EVENT} refusal={token}"));
             }
             other => findings.push(format!(
                 "PHASE B: `{OPENED_EVENT} refusal=` was {other:?} on an encrypted document; it \
-                 must be `encrypted`. A refusal for the wrong reason sends the operator to fix \
+                 must be `encrypted-password`. A refusal for the wrong reason sends the operator to fix \
                  the wrong thing."
             )),
         }

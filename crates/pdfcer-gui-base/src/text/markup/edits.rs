@@ -139,13 +139,12 @@ pub fn note_removed(previous: &str) -> Option<String> {
 /// `EditSession::annotation_deletion_refusal` answered `Some` (R83).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AnnotDeleteRefusal {
-    /// The document carries `/Encrypt` (§7.6) — `EditError::DocumentEncrypted`,
-    /// the engine's first guard.
-    ///
-    /// Reachable on an entirely ordinary file: plenty of drawing sets ship
-    /// with an owner password set for printing, and nothing on the canvas says
-    /// so.
-    Encrypted,
+    /// `EditError::DocumentEncrypted` because the password the document was
+    /// opened with does not grant the edit (`EncryptedRefusal::PermissionDenied`).
+    Password,
+    /// `EditError::DocumentEncrypted` because the document uses RC4 and edits
+    /// under it are off (`EncryptedRefusal::Rc4NotAllowed`).
+    Rc4,
     /// An enforced certification signature whose `/P` is below 3 (§12.8.2.2
     /// Table 254) — `EditError::CertificationForbidsChange`.
     ///
@@ -175,9 +174,13 @@ impl AnnotDeleteRefusal {
     #[must_use]
     pub const fn line(self) -> &'static str {
         match self {
-            Self::Encrypted => {
-                "This document is encrypted, so pdfcer cannot change anything inside it. \
-                 Its comments and markup can be read here but not deleted."
+            Self::Password => {
+                "The password this file was opened with does not allow its comments and markup \
+                 to be deleted. Reopen it with the owner password to delete them."
+            }
+            Self::Rc4 => {
+                "This file uses the old RC4 encryption, and edits under it are off. Allow edits \
+                 under RC4 to delete its comments and markup."
             }
             Self::Certified => {
                 "A certification signature on this document does not allow its comments and \

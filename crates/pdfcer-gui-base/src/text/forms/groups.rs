@@ -6,6 +6,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/forms/groups.md`.
 
+use pdfcer_core::document::EncryptedRefusal;
 use pdfcer_core::edit::EditError;
 
 /// How many terminal names the pre-press disclosure prints before it stops
@@ -30,11 +31,19 @@ pub fn field_groups_explainer() -> String {
 }
 
 /// **Why no control is offered**, when the document refuses structural change.
+/// `cause` is the session's `encryption_refusal_cause`.
 #[must_use]
-pub fn field_groups_refusal(error: &EditError) -> String {
+pub fn field_groups_refusal(error: &EditError, cause: Option<EncryptedRefusal>) -> String {
     match error {
-        EditError::DocumentEncrypted => "This document is encrypted, so its form structure \
-             cannot be changed. Field groups are listed below and cannot be deleted."
+        EditError::DocumentEncrypted if cause == Some(EncryptedRefusal::Rc4NotAllowed) => {
+            "This file uses the old RC4 encryption, and edits under it are off, so its form \
+             structure cannot be changed. Field groups are listed below; Allow edits under RC4 \
+             to delete them."
+                .to_owned()
+        }
+        EditError::DocumentEncrypted => "The password this file was opened with does not allow \
+             its form structure to be changed. Field groups are listed below; reopen it with the \
+             owner password to delete them."
             .to_owned(),
         _ if is_certification(error) => "A certification signature on this document forbids \
              changing the form's structure. Field groups are listed below and cannot be \
@@ -248,8 +257,13 @@ mod tests {
     /// looking for something that is not in their file.
     #[test]
     fn each_refusal_names_its_own_cause() {
-        let encrypted = field_groups_refusal(&EditError::DocumentEncrypted);
-        assert!(encrypted.contains("encrypted"), "{encrypted}");
+        let encrypted = field_groups_refusal(&EditError::DocumentEncrypted, None);
+        assert!(encrypted.contains("owner password"), "{encrypted}");
+        let rc4 = field_groups_refusal(
+            &EditError::DocumentEncrypted,
+            Some(EncryptedRefusal::Rc4NotAllowed),
+        );
+        assert!(rc4.contains("RC4"), "{rc4}");
         assert!(
             !encrypted.to_ascii_lowercase().contains("signature"),
             "{encrypted}"

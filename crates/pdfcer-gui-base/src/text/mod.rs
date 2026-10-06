@@ -304,6 +304,8 @@ pub mod toolstatus;
 /// Whether a signature's signer can be trusted — and the four different
 /// sentences for the four ways trust can go unchecked.
 pub mod trust;
+/// Every sentence about edits the opening password does not permit.
+pub mod unlock;
 /// The words of the question `file.close` had been promising to ask since it
 /// shipped, and did not.
 pub mod unsaved;

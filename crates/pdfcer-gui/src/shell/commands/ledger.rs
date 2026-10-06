@@ -403,12 +403,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 210 → 211: `view.skip_tiny_details`, View ▸ Display.
     // 211 → 212: `tools.ink_picker`, Tools ▸ Diagnostics.
     // 212 → 213: `file.allow_rc4_edits`, File ▸ Security.
+    // 213 → 214: `file.unlock`, File ▸ Security.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        213 + 2 * usize::from(cfg!(feature = "signing"))
+        214 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "model-download"))
     );
@@ -825,10 +826,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 192 → 193: `view.skip_tiny_details` names `skip-tiny`, drawn for it.
     // 193 → 194: `tools.ink_picker` names `ink-picker`, drawn for it.
     // 194 → 195: `file.allow_rc4_edits` names `encrypt`, shared.
+    // 195 → 196: `file.unlock` names `encrypt`, shared.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        195 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        196 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

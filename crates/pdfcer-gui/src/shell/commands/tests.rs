@@ -272,6 +272,8 @@ fn every_predicate_names_a_documented_condition() {
         "selection.layer_assignable",
         // Published by `app::rc4::publish` while the document uses RC4.
         "doc.rc4",
+        // Published by `app::unlock::publish`.
+        "doc.unlockable",
     ];
     for command in registry().iter() {
         if let egui_shell::commands::Enable::When(name) = &command.enable {

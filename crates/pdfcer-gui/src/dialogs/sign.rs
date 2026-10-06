@@ -10,6 +10,7 @@ use egui_shell::theme::Theme;
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::secret::Secret;
+use pdfcer_core::document::EncryptedRefusal;
 use pdfcer_core::sign::apply::MdpPermission;
 
 use crate::sign::{Authored, Identity, IdentityFailure, Placement, Refusal, Standing};
@@ -294,7 +295,7 @@ impl SignDialog {
                  certification={} prior={} pages={} on_disk={} empty_fields={} \
                  signable_fields={} may_certify={}",
                 refusal_token(standing.refusal()),
-                u8::from(standing.encrypted),
+                u8::from(standing.encrypted.is_some()),
                 u8::from(standing.redaction_pending),
                 u8::from(standing.recovered),
                 standing
@@ -766,7 +767,8 @@ const fn refusal_token(refusal: Option<Refusal>) -> &'static str {
     match refusal {
         None => "none", // ui-text-exempt: trace token, never displayed
         Some(Refusal::RedactionPending) => "redaction-pending", // ui-text-exempt: trace token, never displayed
-        Some(Refusal::Encrypted) => "encrypted", // ui-text-exempt: trace token, never displayed
+        Some(Refusal::Encrypted(EncryptedRefusal::Rc4NotAllowed)) => "encrypted-rc4", // ui-text-exempt: trace token, never displayed
+        Some(Refusal::Encrypted(_)) => "encrypted-password", // ui-text-exempt: trace token, never displayed
         Some(Refusal::CertificationForbids { .. }) => "certification-forbids", // ui-text-exempt: trace token, never displayed
         Some(Refusal::RecoveredBase) => "recovered-base", // ui-text-exempt: trace token, never displayed
         Some(Refusal::NotOnDisk) => "not-on-disk", // ui-text-exempt: trace token, never displayed

@@ -712,6 +712,14 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("encrypt")
         .enabled_when(crate::app::rc4::CONDITION),
+        // Shown while a password withholds an edit; greyed while unsaved.
+        command(
+            crate::app::unlock::COMMAND,
+            crate::text::unlock::reopen(),
+            135,
+        )
+        .with_icon("encrypt")
+        .enabled_when(crate::app::unlock::READY),
         command(
             "file.permissions",
             crate::text::protect::file_permissions(),

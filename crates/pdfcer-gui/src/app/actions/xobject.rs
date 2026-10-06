@@ -118,7 +118,6 @@ fn fanout(doc: &OpenDoc, page: usize, form: ObjId) -> Option<crate::text::unshar
 fn refusal_for(error: &pdfcer_core::edit::EditError) -> UnshareRefusal {
     use pdfcer_core::edit::EditError;
     match error {
-        EditError::DocumentEncrypted => UnshareRefusal::Encrypted,
         EditError::CertificationForbidsChange { .. } => UnshareRefusal::Certified,
         EditError::ObjectCreationWouldExposeHiddenObjects { .. } => {
             UnshareRefusal::WouldExposeHiddenObjects
@@ -140,7 +139,6 @@ mod tests {
     #[test]
     fn each_documented_refusal_earns_its_own_sentence() {
         for (error, expected) in [
-            (EditError::DocumentEncrypted, UnshareRefusal::Encrypted),
             (
                 EditError::CertificationForbidsChange { permission: 2 },
                 UnshareRefusal::Certified,

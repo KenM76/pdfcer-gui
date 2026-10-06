@@ -30,7 +30,7 @@ refusal. The ribbon item is the same command; `reach` covers its routing.
 
 # Falsified
 
-- Dropping `record_rc4_refused` from the funnel's error arm leaves the generic
+- Dropping `unlock::record` from the funnel's error arm leaves the generic
   decline with no button and fails step 3.
 - Without the status bar's cap on its left half (`statusfitting::floor_width`)
   the button is drawn at x 867..1003 under the zoom group (928..1068); the

@@ -23,6 +23,7 @@
 //! - `LayerPresent`, `LayerNotFound` and "none found" reach the status bar as
 //!   [`crate::text::ocr::OcrLayerRefusal`] sentences.
 
+use crate::app::unlock::Refusal;
 use pdfcer_core::edit::{
     CommandKind, EditError, EditSession, LayerContentPolicy, LayerEdit, OcrPageLayer,
 };
@@ -52,6 +53,15 @@ impl std::fmt::Display for WriteError {
         match self {
             Self::Group(e) => write!(f, "{e}"),
             Self::Layer(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl Refusal for WriteError {
+    fn encrypted(&self) -> bool {
+        match self {
+            Self::Group(e) => e.encrypted(),
+            Self::Layer(e) => e.encrypted(),
         }
     }
 }
@@ -185,6 +195,12 @@ enum RemoveError {
     PageTree(pdfcer_core::page_tree::PageTreeError),
     Layer(OcrLayerError),
     NoneFound,
+}
+
+impl Refusal for RemoveError {
+    fn encrypted(&self) -> bool {
+        matches!(self, Self::Layer(e) if e.encrypted())
+    }
 }
 
 impl std::fmt::Display for RemoveError {

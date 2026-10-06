@@ -579,9 +579,6 @@ pub(super) fn reflow_refusal(error: &pdfcer_core::text_edit::ReflowApplyError) -
     use pdfcer_core::text_edit::ReflowApplyError as E;
     use pdfcer_core::text_edit::ReflowDecline as D;
     match error {
-        // Named by variant because the engine names it by variant, and because
-        // its remedy — remove the protection — is narrower than its decline.
-        E::Encrypted => ReflowRefusal::Encrypted,
         // Named by **trigger**, not by variant, and the distinction is the
         // whole safety of this arm. `ReflowApplyError::Refused` is documented
         // as "the font-on-edit gate refused, by name (composite/CJK,

@@ -83,6 +83,8 @@ pub mod opennotes;
 pub mod panels;
 /// Edits to a document kept under RC4, on request only.
 pub mod rc4;
+/// Edits an encrypted document refuses, and reopening it for its owner password.
+pub mod unlock;
 pub use pdfcer_gui_base::dockpersist as persistence;
 /// The **selection filter**, on disk — where it lives, and why it is written
 /// immediately where the dock layout is debounced.

@@ -8,6 +8,7 @@
 
 use crate::app::state::OpenDoc;
 use crate::app::status::decline;
+use crate::app::unlock::Refusal;
 
 /// Why the repair wrote nothing.
 enum RepairError {
@@ -21,6 +22,12 @@ impl std::fmt::Display for RepairError {
             Self::Edit(e) => write!(f, "{e}"),
             Self::NothingInline => f.write_str("no inline /DR font"),
         }
+    }
+}
+
+impl Refusal for RepairError {
+    fn encrypted(&self) -> bool {
+        matches!(self, Self::Edit(e) if e.encrypted())
     }
 }
 

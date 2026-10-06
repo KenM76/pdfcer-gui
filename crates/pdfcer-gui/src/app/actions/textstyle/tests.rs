@@ -388,11 +388,6 @@ fn a_named_cause_comes_from_a_named_engine_variant() {
     use pdfcer_core::text_edit::ReflowApplyError as E;
 
     assert_eq!(
-        super::reflow_refusal(&E::Encrypted),
-        ReflowRefusal::Encrypted,
-        "`E::Encrypted` is a distinct engine variant, so the shell may and must name that cause"
-    );
-    assert_eq!(
         super::reflow_refusal(&E::NoProvenance),
         ReflowRefusal::CannotTrace,
         "`NoProvenance` names its own cause and keeps its own sentence"

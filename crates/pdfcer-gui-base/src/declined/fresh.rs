@@ -268,7 +268,8 @@ impl Declined {
             | Self::MarkupFlatten(_)
             | Self::FormFontsNothingToRepair
             | Self::OsPaste(_)
-            | Self::Rc4Refused => true,
+            | Self::Rc4Refused
+            | Self::PasswordRefused => true,
         }
     }
 }

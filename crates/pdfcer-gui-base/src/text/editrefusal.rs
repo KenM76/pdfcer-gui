@@ -234,8 +234,9 @@ pub enum EditRefusal {
     /// route the operator does not find. What changed is that the bar now names
     /// the obstacle *specifically* before pointing at the panel.
     FontLacksTheCharacter(char),
-    /// `RefusalKind::StructureFrozen` — encryption, an enforced certification
-    /// signature, or a suppressed object set.
+    /// `RefusalKind::StructureFrozen` — an enforced certification signature or
+    /// a suppressed object set. Encryption is the same kind, but the funnel
+    /// replaces this decline with its cause's (`app::unlock`).
     DocumentProtected,
     /// `RefusalKind::NotFound` on a run the shell had measured as a **single**
     /// operator, so the split explanation is unavailable and the honest reading
@@ -483,8 +484,7 @@ impl EditRefusal {
             }
             Self::DocumentProtected => {
                 "This document's protection does not allow its text to be changed, so pdfcer left \
-                 it alone. If you have the password, use Encrypt… and choose Remove the \
-                 protection entirely, then edit."
+                 it alone."
             }
             Self::TextMovedAway => {
                 "pdfcer could not find the text this edit named — the page has moved on since the \
