@@ -10,6 +10,8 @@
 
 use std::collections::BTreeSet;
 
+use pdfcer_gui_base::handsign::SignedMark;
+
 use crate::app::state::OpenDoc;
 
 /// Bring `doc.hand_signed` up to `doc.edit_epoch`; a no-op when current.
@@ -30,7 +32,11 @@ pub fn refresh(ctx: &egui::Context, doc: &mut OpenDoc) {
                 continue;
             };
             match pdfcer_core::hand_sig::hand_signatures(&view, page) {
-                Ok(marks) => fields.extend(marks.into_iter().map(|m| m.field)),
+                Ok(marks) => fields.extend(marks.into_iter().map(|m| SignedMark {
+                    field: m.field,
+                    page: p,
+                    bounds: m.bounds,
+                })),
                 Err(_) => failed += 1,
             }
         }

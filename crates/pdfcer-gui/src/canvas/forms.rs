@@ -29,6 +29,7 @@ mod tabbing;
 /// pick sends. Split out under R2; see its header, and in particular its on
 /// why the side is chosen before the constraint rather than after it.
 mod choosing;
+mod sigadjust;
 mod sigtags;
 
 /// The live `egui::TextEdit` laid over a widget rectangle, and the three
@@ -418,6 +419,16 @@ pub(super) fn overlay(
             &doc.hand_signed,
             actions,
         );
+        let sheets = &doc.pages;
+        sigadjust::overlay(
+            ui,
+            sheets,
+            pages,
+            drawn,
+            &placed.unsigned,
+            &doc.hand_signed,
+            actions,
+        );
         return;
     }
 
@@ -455,6 +466,14 @@ pub(super) fn overlay(
     // here, before the fill click, though the two lists never overlap.
     let signing = sigtags::overlay(
         ui,
+        pages,
+        drawn,
+        &placed.unsigned,
+        &doc.hand_signed,
+        actions,
+    ) | sigadjust::overlay(
+        ui,
+        &doc.pages,
         pages,
         drawn,
         &placed.unsigned,

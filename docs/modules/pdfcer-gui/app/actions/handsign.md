@@ -26,6 +26,22 @@ field's name (`MarkupOptions::hand_signature`, `AddTextRequest::with_hand_signat
 and the box counts as signed because the document says so (see *Which boxes
 are signed* in `pdfcer-gui-base/handsign.md`).
 
+## Adjusted
+
+`adjust` moves or resizes a placed signature, any kind, so what spans `from`
+spans `to` (PDF user space; `canvas::forms::sigadjust` has already clamped
+`to`). One `EditSession::transform_objects` call through the funnel with the
+scale-and-translate matrix between the two: one undo step. The objects are
+those of `EditSession::page_objects(page)` whose byte spans lie inside a
+`BDC … EMC` sequence tagged `/pdfc_HandSig` with this field's name, found by
+walking `ContentStream::from_page` — the stream `page_objects` was built
+from. The transform rewrites inside the sequence, so the tag survives;
+`hand-sign-adjusted tagged=` re-reads it to say so. The engine's mark carries
+no object list (G127); when it does, this reader goes.
+
+A rectangle under half a point a side, or a mark whose objects cannot be
+found, is refused with `hand-sign-adjust-refused reason=`.
+
 ## Typed
 
 The name is set by `typed_in` so the face's full height fills the ink

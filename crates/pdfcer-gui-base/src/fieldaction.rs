@@ -392,6 +392,19 @@ pub enum FieldAction {
         /// rule.
         placement: Option<crate::handsign::place::Placement>,
     },
+    /// **Move or resize a placed hand signature** so what spans `from`
+    /// spans `to`, both in PDF user space. One undo step; the mark keeps its
+    /// tag.
+    AdjustHandSign {
+        /// The field it signs.
+        field: String,
+        /// The 0-based page.
+        page: usize,
+        /// Where it is now.
+        from: pdfcer_core::page_tree::Rect,
+        /// Where it is wanted.
+        to: pdfcer_core::page_tree::Rect,
+    },
     /// **Author the form control the dialog just accepted.**
     ///
     /// Raised by `crate::dialogs::formfield` and by nothing else. This is the

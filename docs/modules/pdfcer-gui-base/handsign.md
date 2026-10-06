@@ -39,9 +39,10 @@ A damaged file is ignored whole (`from_text` returns `None`), never partly used.
 
 Every placement wraps what it writes in the engine's hand-signature tag
 (`/pdfc_HandSig <</Field (name)>> BDC … EMC`, `pdfcer_core::hand_sig`), so the
-document itself records which field a mark signs. `HandSigned` holds the field
-names `EditSession::hand_signatures` last found and the edit epoch it measured
-at; `app::handsigned::refresh` re-measures whenever the epoch moves, on the
+document itself records which field a mark signs. `HandSigned` holds the marks
+`hand_sig::hand_signatures` last found (`SignedMark`: field, page, bounds in
+PDF user space; the page's canvas overlay selects and adjusts them), the field
+names derived from them, and the edit epoch it measured at; `app::handsigned::refresh` re-measures whenever the epoch moves, on the
 pages carrying an unsigned `/Sig` box only. Undo, redo, save and reopen need no
 bookkeeping: each changes the content, and the next measurement reads it. A
 mark whose objects were all deleted leaves an empty sequence the engine does

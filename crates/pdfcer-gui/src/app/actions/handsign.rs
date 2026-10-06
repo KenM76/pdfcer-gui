@@ -21,7 +21,10 @@ use pdfcer_gui_base::handsign::typed::{self, Typed};
 use pdfcer_gui_base::handsign::{self, Mark, Signature};
 
 use super::funnel::vector_edit;
+
+mod adjust;
 use crate::app::state::OpenDoc;
+pub(in crate::app::actions) use adjust::adjust;
 
 /// The ink: a dark blue-black, the colour of a ballpoint signature, so it
 /// reads as handwriting beside black form text. A document colour, not a

@@ -501,7 +501,7 @@ In three parts:
 
 Each part gets a driven check and a falsification.
 
-**Where it stands.** Parts 1 and 2 built: the *Picture* tab and the placing preview, driven by `a_picture_signature_lands_in_its_box` and `a_signature_lands_where_it_was_put`, each falsified. Part 3 not yet built.
+**Where it stands.** Parts 1 and 2 built: the *Picture* tab and the placing preview, driven by `a_picture_signature_lands_in_its_box` and `a_signature_lands_where_it_was_put`, each falsified. Part 3 built: a placed signature is selected on the page and moved or resized with grips, one undo each, still tagged (`a_placed_signature_moves_and_resizes`, falsified twice). The engine's mark names no objects, so the shell finds them itself; reported as G127. All three parts await his confirmation.
 
 ## O286 — **OPEN, ahead of O285** — recognised text lands in the file again, in paragraphs and columns, and is a layer you can see, export and edit
 

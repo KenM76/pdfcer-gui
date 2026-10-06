@@ -323,10 +323,22 @@ pub fn forget() -> bool {
 /// The document is the record: every placement is tagged with its field's
 /// name, so undo, redo and reopen need no bookkeeping here, only a fresh
 /// measurement once the epoch moves.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct HandSigned {
     measured_at: Option<u64>,
     fields: BTreeSet<String>,
+    marks: Vec<SignedMark>,
+}
+
+/// One hand-signature mark as the document holds it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SignedMark {
+    /// The signature field it signs.
+    pub field: String,
+    /// The 0-based page.
+    pub page: usize,
+    /// What it covers, in PDF user space.
+    pub bounds: pdfcer_core::page_tree::Rect,
 }
 
 impl HandSigned {
@@ -336,10 +348,17 @@ impl HandSigned {
         self.measured_at == Some(epoch)
     }
 
-    /// Replace the set with what a measurement at `epoch` found.
-    pub fn measured(&mut self, epoch: u64, fields: impl IntoIterator<Item = String>) {
+    /// Replace the set with the marks a measurement at `epoch` found.
+    pub fn measured(&mut self, epoch: u64, marks: Vec<SignedMark>) {
         self.measured_at = Some(epoch);
-        self.fields = fields.into_iter().collect();
+        self.fields = marks.iter().map(|m| m.field.clone()).collect();
+        self.marks = marks;
+    }
+
+    /// Every mark the last measurement found, in page order.
+    #[must_use]
+    pub fn marks(&self) -> &[SignedMark] {
+        &self.marks
     }
 
     /// Whether `field` carries a hand signature.

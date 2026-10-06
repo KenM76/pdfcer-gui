@@ -130,7 +130,18 @@ fn a_damaged_saved_file_is_ignored_whole() {
 fn the_signed_set_is_what_the_last_measurement_found() {
     let mut h = HandSigned::default();
     assert!(!h.is_current(0));
-    h.measured(0, ["Sig1".to_owned(), "Sig1".to_owned(), "Sig2".to_owned()]);
+    let mark = |field: &str, page| SignedMark {
+        field: field.to_owned(),
+        page,
+        bounds: pdfcer_core::page_tree::Rect {
+            llx: 0.0,
+            lly: 0.0,
+            urx: 1.0,
+            ury: 1.0,
+        },
+    };
+    h.measured(0, vec![mark("Sig1", 0), mark("Sig1", 1), mark("Sig2", 1)]);
+    assert_eq!(h.marks().len(), 3);
     assert!(h.is_current(0) && !h.is_current(1));
     assert!(h.is_signed("Sig1") && !h.is_signed("Sig3"));
     assert_eq!(h.signed_count(), 2);

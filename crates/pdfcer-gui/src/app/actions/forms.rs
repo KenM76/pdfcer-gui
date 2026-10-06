@@ -94,6 +94,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
         FieldAction::DeleteGroup { group } => groups::delete(doc, &group),
         FieldAction::Adopt { page, widget, name } => adopt(doc, page, widget, name),
         FieldAction::Edit(edit) => crate::panels::forms::edit::apply(doc, &edit),
+        FieldAction::AdjustHandSign {
+            field,
+            page,
+            from,
+            to,
+        } => super::handsign::adjust(doc, &field, page, from, to),
         // Unreachable rather than unhandled, and named so the compiler will
         // say so if the split above is ever changed without changing this.
         FieldAction::Begin { .. }

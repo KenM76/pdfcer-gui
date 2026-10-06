@@ -1020,6 +1020,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(signing::typed_sign::ATypedSignatureLandsInItsBox),
         Box::new(signing::picture_sign::APictureSignatureLandsInItsBox),
         Box::new(signing::placement::ASignatureLandsWhereItWasPut),
+        Box::new(signing::adjusting::APlacedSignatureMovesAndResizes),
         Box::new(signing::next_box::NextReachesEveryBoxToSign),
         Box::new(signing::reopened::ASignedBoxStaysSignedAfterReopening),
         Box::new(redaction::RedactionRemovesAndProvesIt),
