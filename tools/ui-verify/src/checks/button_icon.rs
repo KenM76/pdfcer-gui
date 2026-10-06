@@ -30,13 +30,13 @@ const METHOD: &str = "One widget of every field kind pdfcer reads — see \
                       `fixtures/all-field-kinds.PROVENANCE.py`.";
 const DRAWING: &str = "vector-art.svg";
 const DRAWING_METHOD: &str = "See fixtures/vector-art.PROVENANCE.md.";
-const FIELD: &str = "PushOne";
+pub(super) const FIELD: &str = "PushOne";
 const CHOOSE: &str = "properties.widget_edit.button_icon.choose";
 const REMOVE: &str = "properties.widget_edit.button_icon.remove";
 const POSITION: &str = "properties.widget_edit.button_icon.position";
 const ICON_ONLY: &str = "properties.widget_edit.button_icon.position.1";
 const SHOWN: &str = "button-icon-shown";
-const APPLIED: &str = "edit-widget-applied";
+pub(super) const APPLIED: &str = "edit-widget-applied";
 const DECLINED: &str = "button-icon-declined";
 
 /// See the module documentation.
@@ -67,7 +67,7 @@ impl Check for APushButtonTakesAPicture {
 }
 
 /// Launch on a copy of the fixture with the picker answering `image`.
-fn launch(
+pub(super) fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
     stem: &str,
@@ -121,7 +121,7 @@ fn press(
 
 /// The panel's latest `button-icon-shown` line for the button, as
 /// `(icon, position)`.
-fn shown(session: &Session) -> Result<Option<(String, String)>> {
+pub(super) fn shown(session: &Session) -> Result<Option<(String, String)>> {
     let trace = session.trace()?;
     Ok(trace
         .events(SHOWN)
@@ -151,12 +151,12 @@ fn undrawn(session: &Session, step: &str) -> Result<Option<String>> {
         }))
 }
 
-fn count(session: &Session, event: &str) -> Result<usize> {
+pub(super) fn count(session: &Session, event: &str) -> Result<usize> {
     Ok(session.trace()?.events(event).count())
 }
 
 /// Park the pointer after the verdict, so a park failure never hides a FAIL.
-fn finish(
+pub(super) fn finish(
     session: &Session,
     pointer: &ScriptedPointer,
     outcome: Result<Option<String>>,

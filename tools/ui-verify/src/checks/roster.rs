@@ -1123,6 +1123,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(paste_text::OsTextPastesAsATextBox),
         Box::new(widget_no_border::EveryFieldKindCanLoseItsBorder),
         Box::new(button_icon::APushButtonTakesAPicture),
+        Box::new(button_icon_paste::APicturePastesOntoASelectedPushButton),
         Box::new(comment_note::ANoteCanBeWrittenOntoAShape),
         // Its opposite number: `comment_note` proves a
         // comment can be WRITTEN, and this one proves one can be READ — in

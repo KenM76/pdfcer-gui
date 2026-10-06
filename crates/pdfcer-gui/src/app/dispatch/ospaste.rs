@@ -7,7 +7,9 @@
 //! [`paste`] places what it read as one undoable edit. A picture lands at its
 //! natural size, centred on the pointer (or the view centre), kept wholly on
 //! the page; a mode that only authors markup places it as a stamp, as does
-//! [`paste_stamp`] in any mode that authors markup. A drawing (a PDF another
+//! [`paste_stamp`] in any mode that authors markup. With a push button
+//! selected in a mode that edits content, the picture becomes the button's
+//! icon instead. A drawing (a PDF another
 //! copy placed) lands as a stamp its crop box's size in any mode that authors
 //! markup, Edit included: the engine places a PDF page only as stamp artwork.
 //! Text becomes page text in
@@ -116,6 +118,9 @@ fn picture(
     if !caps.edit_content {
         return stamp(page, rect, image, format, actions);
     }
+    if let Some((field, widget)) = selected_push_button(app) {
+        return button_icon(field, widget, &image, format, actions);
+    }
     pasted(
         &format!("kind=image format={format} as=content"), // ui-text-exempt: diagnostic trace
         page,
@@ -161,6 +166,44 @@ fn stamp(page: usize, rect: Rect, image: ImportedImage, format: &str, actions: &
         rect,
         image: std::sync::Arc::new(pdfcer_gui_base::picture::Picture::Raster(image)),
     });
+}
+
+/// The selected field and placement, when the selection is a push button.
+fn selected_push_button(app: &PdfcerApp) -> Option<(String, usize)> {
+    let Status::Open(doc) = &app.status else {
+        return None;
+    };
+    let selected = doc.selected_field.as_ref()?;
+    let form = pdfcer_core::forms::parse_acroform(&doc.session.view())?;
+    form.fields
+        .iter()
+        .find(|f| f.fully_qualified_name == selected.field)
+        .filter(|f| crate::panels::properties::buttonicon::is_push_button(f))
+        .map(|_| (selected.field.clone(), selected.widget))
+}
+
+/// The picture as the selected push button's icon, the edit Properties'
+/// *Choose picture…* makes.
+fn button_icon(
+    field: String,
+    widget: usize,
+    image: &ImportedImage,
+    format: &str,
+    actions: &mut Vec<Action>,
+) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("clip-pasted source=os kind=image format={format} as=button-icon field={field}")
+    });
+    actions.push(
+        pdfcer_gui_base::fieldaction::FieldAction::EditWidget {
+            field,
+            widget,
+            edit: pdfcer_core::edit::WidgetEdit::new().with_button_icon(image),
+            touched: crate::text::panels::buttonicon::touched_icon(),
+        }
+        .into(),
+    );
 }
 
 /// A drawing as a stamp its own size, centred on the pointer or the view.
