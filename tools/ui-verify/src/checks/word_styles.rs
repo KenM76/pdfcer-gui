@@ -184,6 +184,11 @@ impl Driven {
         Ok(Ok(()))
     }
 
+    /// Whether the last frame declared `region`.
+    pub(crate) fn declares(&self, region: &str) -> Result<bool> {
+        Ok(declared(&self.session.trace()?, self.ui_rect, region).is_some())
+    }
+
     /// Click a declared region.
     pub(crate) fn click(&self, region: &str) -> Result<()> {
         let trace = self.session.trace()?;

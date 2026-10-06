@@ -1068,6 +1068,8 @@ pub mod repeated_word;
 pub mod replace_all;
 /// Double, triple and Shift+arrow selection, a drag over text, rotated carets.
 pub mod selection_gestures;
+/// A strikethrough says where its line's height came from.
+pub mod strike_source;
 /// Ctrl+B and Ctrl+I pressed again take their style off.
 pub mod style_off;
 /// A letter an embedded subset outlines but never showed can be typed.
@@ -1079,7 +1081,7 @@ pub mod text_click_routes;
 pub mod text_tool_click_types;
 /// Ctrl+U marks the characters themselves, reads back pressed, and toggles off.
 pub mod tied_underline;
-/// Text holding a letter its font draws two ways is refused for that letter.
+/// Text holding a letter its font draws two ways still edits around it.
 pub mod two_codes;
 pub mod word_line_edit;
 pub mod word_styles;

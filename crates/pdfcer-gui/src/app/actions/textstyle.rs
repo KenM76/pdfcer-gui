@@ -264,6 +264,13 @@ pub(super) fn format_op(
                 if let Some(note) = render_mode_note(&report) {
                     notes.push(note);
                 }
+                if let Some(source) = report.strike_source {
+                    let source = strike_token(source);
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed
+                        format!("text-strike-source page={page} source={source}")
+                    });
+                }
                 notes.extend(report.disclosures);
                 Ok(notes.clone())
             }
@@ -275,6 +282,18 @@ pub(super) fn format_op(
         }
     });
     outcome.map_or(Ok(notes), Err)
+}
+
+/// The trace token for where a strikethrough's line came from. The engine
+/// words the matching clause in `FormatReport::disclosures`.
+const fn strike_token(source: pdfcer_core::text_edit::decoration::StrikeSource) -> &'static str {
+    use pdfcer_core::text_edit::decoration::StrikeSource;
+    match source {
+        StrikeSource::FontTable => "font_table",
+        StrikeSource::XHeight => "x_height",
+        StrikeSource::QuarterEm => "quarter_em",
+        _ => "other",
+    }
 }
 
 /// The subset of the font at `path` covering every character of `runs` on
@@ -313,7 +332,11 @@ fn emit_carried(doc: &OpenDoc, page: usize, applied: usize, total: usize, carrie
     }
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!("text-style-disclosed page={page} n={}", notes.len())
+        format!(
+            "text-style-disclosed page={page} n={} notes=\"{}\"",
+            notes.len(),
+            notes.join(" | ")
+        )
     });
     super::disclosure::record_edit_disclosure(Some(super::disclosure::EditDisclosure {
         epoch: doc.edit_epoch,
