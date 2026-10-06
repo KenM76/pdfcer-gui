@@ -10,23 +10,27 @@
 //!
 //! Design: `docs/modules/pdfcer-gui/dialogs/model3d.md`.
 
-use std::f64::consts::FRAC_PI_2;
-
 use egui::{Sense, TextureHandle, TextureOptions, Ui};
 // The 3D renderer's options, not the page renderer's that settings own.
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::{Bounds, Camera, Projection, render_coloured};
+use pdfcer_3d::{Bounds, render_coloured};
 
 use crate::app::actions::Action;
 use crate::app::actions::attachments::AttachmentAction;
 use crate::app::actions::models::Assembled;
 use crate::text::panels::models as t;
-use pdfcer_core::threed::ThreeDArtwork;
+use pdfcer_core::threed::{ThreeDArtwork, ThreeDSavedView};
+
+mod orbit;
+
+use orbit::{Orbit, PITCH_LIMIT};
 
 /// The picture's published region, for `ui-verify`.
 pub const REGION_IMAGE: &str = "model3d.image"; // ui-text-exempt: trace region name, never displayed
-/// One named view's button; the suffix is its index in [`VIEWS`].
+/// One named view's button; the suffix is its index in `t::view_names`.
 pub const REGION_VIEW_PREFIX: &str = "model3d.view."; // ui-text-exempt: trace region name, never displayed
+/// The *File's view* button.
+pub const REGION_FILE_VIEW: &str = "model3d.view.file"; // ui-text-exempt: trace region name, never displayed
 /// The Fit button.
 pub const REGION_FIT: &str = "model3d.fit"; // ui-text-exempt: trace region name, never displayed
 /// The Close button.
@@ -60,149 +64,13 @@ pub const REGION_FULL_SCREEN: &str = "model3d.full_screen"; // ui-text-exempt: t
 /// The viewer's OS window key.
 const VIEWPORT_KEY: &str = "model-3d"; // ui-text-exempt: a viewport key, never displayed
 
-/// The named views as (yaw, pitch) in degrees, in `t::view_names` order.
-/// Yaw 0 looks along +y (the front of a z-up model); pitch looks down.
-pub const VIEWS: [(f64, f64); 5] = [
-    (45.0, 35.264),
-    (0.0, 0.0),
-    (90.0, 0.0),
-    (0.0, 89.0),
-    (180.0, 0.0),
-];
-
 /// Radians turned per point dragged.
 const ORBIT_RATE: f64 = 0.01;
-/// Kept off ±90° so the view never looks straight along the z-up axis.
-const PITCH_LIMIT: f64 = FRAC_PI_2 - 0.01;
 /// The largest picture rendered, in pixels a side; the CPU renderer's cost
 /// grows with the area.
 const MAX_SIDE: f32 = 1600.0;
 /// The long side, in pixels, of a picture made for the page.
 const POSTER_SIDE: f64 = 1200.0;
-/// The zoom range, as a multiple of the fitted view.
-const ZOOM_RANGE: (f64, f64) = (0.05, 50.0);
-
-/// Where the camera is, relative to a fitted view.
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct Orbit {
-    /// Radians around z.
-    yaw: f64,
-    /// Radians above the horizon, looking down when positive.
-    pitch: f64,
-    /// 1 frames the whole model.
-    zoom: f64,
-    /// The target's shift along the image's right and up, in model radii.
-    pan: [f64; 2],
-    perspective: bool,
-}
-
-impl Orbit {
-    fn named(index: usize, perspective: bool) -> Self {
-        let (yaw, pitch) = VIEWS[index];
-        Self {
-            yaw: yaw.to_radians(),
-            pitch: pitch.to_radians(),
-            zoom: 1.0,
-            pan: [0.0, 0.0],
-            perspective,
-        }
-    }
-
-    /// The unit direction the camera looks along.
-    fn direction(&self) -> [f64; 3] {
-        let (sy, cy) = self.yaw.sin_cos();
-        let (sp, cp) = self.pitch.sin_cos();
-        [-sy * cp, cy * cp, -sp]
-    }
-
-    /// Multiply the zoom by `factor`, keeping the model point under the
-    /// pointer where it is on the picture.
-    ///
-    /// `offset` is the pointer's position from the picture's centre, right and
-    /// up, in picture heights. Exact on the plane through the target facing
-    /// the camera, the plane the pan moves in.
-    fn zoom_at(&mut self, bounds: &Bounds, aspect: f64, factor: f64, offset: [f64; 2]) {
-        let before = self.zoom;
-        let after = (before * factor).clamp(ZOOM_RANGE.0, ZOOM_RANGE.1);
-        let fitted = Self {
-            zoom: 1.0,
-            pan: [0.0, 0.0],
-            ..*self
-        };
-        // The fitted view's visible height, in model radii: what one picture
-        // height spans at zoom 1.
-        let span = fitted
-            .camera(bounds, aspect)
-            .map_or(2.0, |c| visible_height(&c))
-            / radius(bounds);
-        for (pan, off) in self.pan.iter_mut().zip(offset) {
-            *pan += off * span * (1.0 / before - 1.0 / after);
-        }
-        self.zoom = after;
-    }
-
-    /// The camera for `bounds` in an image of `aspect` (width / height).
-    fn camera(&self, bounds: &Bounds, aspect: f64) -> Result<Camera, pdfcer_3d::RenderError> {
-        let dir = self.direction();
-        let up = [0.0, 0.0, 1.0];
-        let mut camera = Camera::fit(bounds, dir, up, self.perspective, aspect)?;
-        let radius = radius(bounds);
-        let right = normalise(cross(dir, up));
-        let image_up = cross(right, dir);
-        let shift: [f64; 3] =
-            std::array::from_fn(|i| (right[i] * self.pan[0] + image_up[i] * self.pan[1]) * radius);
-        let target: [f64; 3] = std::array::from_fn(|i| camera.target[i] + shift[i]);
-        camera.eye =
-            std::array::from_fn(|i| target[i] + (camera.eye[i] - camera.target[i]) / self.zoom);
-        camera.target = target;
-        if let Projection::Orthographic { height } = camera.projection {
-            camera.projection = Projection::Orthographic {
-                height: height / self.zoom,
-            };
-        }
-        Ok(camera)
-    }
-}
-
-/// The model's radius, or 1 for a model with no extent.
-fn radius(bounds: &Bounds) -> f64 {
-    match bounds.radius() {
-        r if r.is_finite() && r > 0.0 => r,
-        _ => 1.0,
-    }
-}
-
-/// How much of the target plane the picture shows vertically, in model units.
-fn visible_height(camera: &Camera) -> f64 {
-    match camera.projection {
-        Projection::Orthographic { height } => height,
-        Projection::Perspective { fov_y } => {
-            let distance = (0..3)
-                .map(|i| (camera.eye[i] - camera.target[i]).powi(2))
-                .sum::<f64>()
-                .sqrt();
-            2.0 * distance * (fov_y.to_radians() / 2.0).tan()
-        }
-    }
-}
-
-fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    ]
-}
-
-fn normalise(v: [f64; 3]) -> [f64; 3] {
-    let length = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-    if length > 0.0 {
-        v.map(|c| c / length)
-    } else {
-        [1.0, 0.0, 0.0]
-    }
-}
-
 /// What the current picture was rendered for.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Rendered {
@@ -219,6 +87,9 @@ pub(crate) struct ModelView {
     model: Assembled,
     bounds: Bounds,
     orbit: Orbit,
+    /// The file's opening view (`default_3d_view`), the camera it opens on
+    /// when that view carries one.
+    opening: Option<ThreeDSavedView>,
     texture: Option<TextureHandle>,
     rendered: Option<Rendered>,
     failed: Option<String>,
@@ -234,7 +105,8 @@ pub(crate) struct ModelView {
 }
 
 impl ModelView {
-    /// Open on `model`, decoded from `artwork`, at the isometric view.
+    /// Open on `model`, decoded from `artwork`, at the file's opening view
+    /// when it carries a camera, else at the isometric view.
     #[must_use]
     pub(crate) fn open(artwork: ThreeDArtwork, model: Assembled) -> Self {
         let page_index = artwork.page_index;
@@ -242,15 +114,18 @@ impl ModelView {
             min: [0.0; 3],
             max: [0.0; 3],
         });
+        let opening = model.opening.clone();
+        let saved = opening.as_ref().and_then(Orbit::saved);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} placed={}",
+                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} placed={} file-view={}",
                 model.meshes.len(),
                 model.uncoloured(),
                 model.triangles,
                 model.skipped,
-                model.placed
+                model.placed,
+                u8::from(saved.is_some())
             )
         });
         Self {
@@ -258,7 +133,8 @@ impl ModelView {
             artwork,
             model,
             bounds,
-            orbit: Orbit::named(0, true),
+            orbit: saved.unwrap_or_else(|| Orbit::named(0, true)),
+            opening,
             texture: None,
             rendered: None,
             failed: None,
@@ -294,6 +170,35 @@ impl ModelView {
             crate::diag::trace(|| format!("model-view-closed how={how}"));
         }
         !closed && !button
+    }
+
+    /// *File's view*: back to the camera the file opens on, offered only
+    /// when its opening view carries one.
+    fn file_view_control(&mut self, ui: &mut Ui) {
+        let Some(saved) = self.opening.as_ref().and_then(Orbit::saved) else {
+            return;
+        };
+        let button = ui
+            .button(t::view_file())
+            .on_hover_text(t::view_file_tooltip());
+        crate::diag::ui_rect_visible(REGION_FILE_VIEW, button.rect, ui.clip_rect());
+        if button.clicked() {
+            self.orbit = saved;
+        }
+    }
+
+    /// While the file's view fixes the framing, how its scale was read: the
+    /// standard gives the orthographic scale no unit.
+    fn file_view_note(&self, ui: &mut Ui) {
+        if !self.orbit.framed || self.orbit.perspective {
+            return;
+        }
+        let aspect = self.rendered.map_or(1.0, |r| {
+            f64::from(r.size[0].max(1)) / f64::from(r.size[1].max(1))
+        });
+        if let Some(aim) = self.opening.as_ref().and_then(|v| v.aim(aspect)) {
+            ui.small(t::view_file_note(&aim.source()));
+        }
     }
 
     /// Full screen from the button or F11, and Escape out of it: the
@@ -376,6 +281,7 @@ impl ModelView {
 
     fn body(&mut self, ui: &mut Ui) {
         ui.horizontal_wrapped(|ui| {
+            self.file_view_control(ui);
             for (i, name) in t::view_names().into_iter().enumerate() {
                 let button = ui.button(name);
                 crate::diag::ui_rect_visible(
@@ -395,12 +301,14 @@ impl ModelView {
             if fit.clicked() {
                 self.orbit.zoom = 1.0;
                 self.orbit.pan = [0.0, 0.0];
+                self.orbit.framed = false;
             }
             ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
                 .on_hover_text(t::view_perspective_tooltip());
             self.full_screen_control(ui);
         });
         ui.small(t::view_hint());
+        self.file_view_note(ui);
 
         let footer = ui.spacing().interact_size.y * 3.0;
         let area = egui::vec2(
@@ -530,7 +438,7 @@ impl ModelView {
         };
         let image = self
             .orbit
-            .camera(&self.bounds, aspect)
+            .camera(&self.bounds, aspect, self.opening.as_ref())
             .and_then(|camera| {
                 render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
             })
@@ -580,7 +488,8 @@ impl ModelView {
                 ];
                 let aspect = f64::from(rect.width().max(1.0)) / height;
                 let factor = f64::from(scroll / 200.0).exp();
-                self.orbit.zoom_at(&self.bounds, aspect, factor, offset);
+                self.orbit
+                    .zoom_at(&self.bounds, aspect, factor, offset, self.opening.as_ref());
             }
         }
     }
@@ -593,12 +502,15 @@ impl ModelView {
             background: wanted.background.to_array(),
             ..ModelRenderOptions::default()
         };
-        let drawn = self
-            .orbit
-            .camera(&self.bounds, f64::from(width) / f64::from(height))
-            .and_then(|camera| {
-                render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
-            });
+        let camera = self.orbit.camera(
+            &self.bounds,
+            f64::from(width) / f64::from(height),
+            self.opening.as_ref(),
+        );
+        let aimed = camera.as_ref().map(aim_of).unwrap_or_default();
+        let drawn = camera.and_then(|camera| {
+            render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
+        });
         self.rendered = Some(wanted);
         match drawn {
             Ok(image) => {
@@ -614,13 +526,14 @@ impl ModelView {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
+                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
                         self.orbit.yaw,
                         self.orbit.pitch,
                         self.orbit.zoom,
                         self.orbit.pan[0],
                         self.orbit.pan[1],
-                        self.orbit.perspective
+                        self.orbit.perspective,
+                        self.orbit.framed
                     )
                 });
                 crate::render::pressure::record_other(
@@ -651,6 +564,28 @@ impl ModelView {
             }
         }
     }
+}
+
+/// A camera's unit look direction and up, as `dir=x,y,z up=x,y,z`, for the
+/// trace a driven check reads.
+fn aim_of(camera: &pdfcer_3d::Camera) -> String {
+    let unit = |v: [f64; 3]| {
+        let length = v
+            .iter()
+            .map(|c| c * c)
+            .sum::<f64>()
+            .sqrt()
+            .max(f64::MIN_POSITIVE);
+        format!(
+            "{:.4},{:.4},{:.4}",
+            v[0] / length,
+            v[1] / length,
+            v[2] / length
+        )
+    };
+    let look = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
+    // ui-text-exempt: diagnostic trace, never displayed
+    format!("dir={} up={}", unit(look), unit(camera.up))
 }
 
 /// A channel spread at or above this is a colour, not a shade of grey.
@@ -713,88 +648,5 @@ mod tests {
         assert_eq!(colourfulness(&grey), (0, 0));
         let red_and_blue = [220, 30, 30, 255, 30, 30, 220, 255, 128, 128, 128, 255];
         assert_eq!(colourfulness(&red_and_blue), (2, 2));
-    }
-
-    #[test]
-    fn the_named_views_look_the_way_their_names_say() {
-        let front = Orbit::named(1, false).direction();
-        assert!(
-            (front[1] - 1.0).abs() < 1e-9,
-            "front looks along +y: {front:?}"
-        );
-        let top = Orbit::named(3, false).direction();
-        assert!(top[2] < -0.99, "top looks down: {top:?}");
-        let iso = Orbit::named(0, false).direction();
-        assert!(iso[0] < 0.0 && iso[1] > 0.0 && iso[2] < 0.0, "{iso:?}");
-    }
-
-    #[test]
-    fn zoom_brings_the_eye_closer_and_pan_moves_the_target() {
-        let bounds = Bounds {
-            min: [-1.0; 3],
-            max: [1.0; 3],
-        };
-        let mut orbit = Orbit::named(1, true);
-        let fitted = orbit.camera(&bounds, 1.0).expect("a view forms");
-        orbit.zoom = 2.0;
-        orbit.pan = [0.5, 0.0];
-        let moved = orbit.camera(&bounds, 1.0).expect("a view forms");
-        let gap = |c: &Camera| {
-            (0..3)
-                .map(|i| (c.eye[i] - c.target[i]).powi(2))
-                .sum::<f64>()
-                .sqrt()
-        };
-        assert!((gap(&moved) - gap(&fitted) / 2.0).abs() < 1e-9);
-        assert!(moved.target != fitted.target);
-        assert!(
-            moved.target[2].abs() < 1e-9,
-            "a sideways pan keeps the height"
-        );
-    }
-
-    /// The model point on the target plane at `offset` (picture heights,
-    /// right and up from the centre).
-    fn under(orbit: &Orbit, bounds: &Bounds, aspect: f64, offset: [f64; 2]) -> [f64; 3] {
-        let camera = orbit.camera(bounds, aspect).expect("a view forms");
-        let dir = orbit.direction();
-        let right = normalise(cross(dir, [0.0, 0.0, 1.0]));
-        let up = cross(right, dir);
-        let h = visible_height(&camera);
-        std::array::from_fn(|i| camera.target[i] + (right[i] * offset[0] + up[i] * offset[1]) * h)
-    }
-
-    #[test]
-    fn a_wheel_zoom_keeps_the_point_under_the_pointer_still() {
-        let bounds = Bounds {
-            min: [-1.0, -2.0, -0.5],
-            max: [3.0, 1.0, 2.0],
-        };
-        for perspective in [true, false] {
-            let mut orbit = Orbit::named(0, perspective);
-            orbit.pan = [0.1, -0.2];
-            let (aspect, offset) = (1.6, [0.3, -0.15]);
-            let before = under(&orbit, &bounds, aspect, offset);
-            orbit.zoom_at(&bounds, aspect, 2.5, offset);
-            let after = under(&orbit, &bounds, aspect, offset);
-            for i in 0..3 {
-                assert!(
-                    (before[i] - after[i]).abs() < 1e-9,
-                    "{before:?} vs {after:?}"
-                );
-            }
-            assert!((orbit.zoom - 2.5).abs() < 1e-12);
-        }
-    }
-
-    #[test]
-    fn a_wheel_zoom_at_the_centre_does_not_pan() {
-        let bounds = Bounds {
-            min: [-1.0; 3],
-            max: [1.0; 3],
-        };
-        let mut orbit = Orbit::named(1, true);
-        orbit.zoom_at(&bounds, 1.0, 3.0, [0.0, 0.0]);
-        assert_eq!(orbit.pan, [0.0, 0.0]);
     }
 }

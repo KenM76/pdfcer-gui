@@ -103,6 +103,8 @@ pub(crate) struct Assembled {
     /// `false` when the assembly tree could not be read and each mesh is
     /// where its file stores it.
     pub placed: bool,
+    /// The file's opening view (`default_3d_view`), set by [`load_view`].
+    pub opening: Option<pdfcer_core::threed::ThreeDSavedView>,
 }
 
 #[cfg(feature = "3d")]
@@ -142,6 +144,7 @@ pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
         triangles: model.triangles,
         colours: model.colours,
         meshes: model.meshes,
+        opening: None,
     })
 }
 
@@ -175,14 +178,17 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
     if !list_3d_with_notes(&*doc.session).0.contains(artwork) {
         return Err(t::gone().to_owned());
     }
-    let data = extract_3d(&doc.session.view(), artwork)
+    let view = doc.session.view();
+    let data = extract_3d(&view, artwork)
         .map_err(|e| t::extract_failed(&e.to_string()))?
         .data;
-    assemble(&data).map_err(|why| match why {
+    let mut model = assemble(&data).map_err(|why| match why {
         Unassembled::NotPrc => t::view_not_prc().to_owned(),
         Unassembled::Unreadable(detail) => t::mesh_unreadable(&detail),
         Unassembled::Empty { compressed } => t::view_empty(compressed),
-    })
+    })?;
+    model.opening = pdfcer_core::threed::default_3d_view(&view, artwork);
+    Ok(model)
 }
 
 /// Decode `artwork` and write its triangles as STL or OBJ, chosen by the

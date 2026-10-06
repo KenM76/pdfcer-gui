@@ -1141,6 +1141,9 @@ pub mod button_icon;
 pub mod button_icon_paste;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
+/// The 3D viewer opens on the file's own saved view, and *File's view* returns
+/// to it.
+pub mod model_saved_view;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the
 /// scripted pointer.
 pub mod model_view;

@@ -398,6 +398,25 @@ pub fn view_reset_tooltip() -> &'static str {
     "Frame the whole model again, without changing the side you look from."
 }
 
+/// The button back to the camera the file opens on.
+#[must_use]
+pub fn view_file() -> &'static str {
+    "File's view"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_file_tooltip() -> &'static str {
+    "Look from the view this file opens on, as its author saved it."
+}
+
+/// How the file's opening view is drawn; `source` is the engine's sentence
+/// naming the view and how its scale was read.
+#[must_use]
+pub fn view_file_note(source: &str) -> String {
+    format!("Shown from {source}.")
+}
+
 /// The projection switch.
 #[must_use]
 pub fn view_perspective() -> &'static str {

@@ -252,6 +252,32 @@ pub fn heavy_stroke_target() -> (std::path::PathBuf, DocPoint) {
     (pdf, DocPoint::new(0, 150.0, 260.0))
 }
 
+/// A PDF file of `objects`, numbered from 1 in order, with object 1 as the
+/// catalog: header, bodies, cross-reference table and trailer. A body may
+/// hold binary stream data.
+#[must_use]
+pub fn pdf_of(objects: &[Vec<u8>]) -> Vec<u8> {
+    let mut out = b"%PDF-1.7\n".to_vec();
+    let mut offsets = Vec::with_capacity(objects.len());
+    for (i, body) in objects.iter().enumerate() {
+        offsets.push(out.len());
+        out.extend_from_slice(format!("{} 0 obj\n", i + 1).as_bytes());
+        out.extend_from_slice(body);
+        out.extend_from_slice(b"\nendobj\n");
+    }
+    let xref = out.len();
+    let mut table = format!("xref\n0 {}\n0000000000 65535 f \n", objects.len() + 1);
+    for offset in offsets {
+        table.push_str(&format!("{offset:010} 00000 n \n"));
+    }
+    table.push_str(&format!(
+        "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+        objects.len() + 1
+    ));
+    out.extend_from_slice(table.as_bytes());
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
