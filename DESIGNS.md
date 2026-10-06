@@ -2487,3 +2487,63 @@ citation rather than an explanation to give the operator.
   has on every document, whether or not it would ever have failed.
 - **Should a parked document's rasters be dropped under pressure**, given the
   cost is a re-render when he switches back to it.
+
+## Row 74 — a current layer that new content goes on
+
+The backlog row *"Choose a layer when adding new content"*. The engine already
+takes a layer on every add path at the pin; the shell passes none.
+
+### The engine surface
+
+| Add path in the shell | Engine call that takes the layer |
+|---|---|
+| Add text (`app::actions::addtext`) | `AddTextRequest::on_layer(ObjId)`, honoured by `EditSession::add_text`; refusals `AddTextError::Layer`, `AddTextError::LayerNeedsSession` |
+| Picture insert, raster/SVG/EMF (`app::actions::picture::raster`) | `NewImage::on_layer(ObjId)` |
+| Paste objects (`app::actions::vector`) | `EditSession::paste_objects_on_layer(page, &clip, at, Option<ObjId>)` in place of `paste_objects` |
+| Markup and every annotation adder (`markupdest`, `picture` stamp, `textannot`, `handsign`, `soundannot`, `screenannot`, `caretannot`, `attachannot`, `models`) | `MarkupOptions::layer: Option<ObjId>`, read by the adders through `on_layer_if` |
+| Markup as page content (`markupdest`) | Unverified whether `add_markup_as_content` reads `MarkupOptions::layer` — read the engine at the pin before claiming it |
+
+An id that is not a registered group is refused by the engine with
+`EditError::LayerNotFound`.
+
+### The interaction
+
+The conventional one (Illustrator, Inkscape, AutoCAD's current layer): click a
+layer's name in the Layers panel and it becomes the layer new content is drawn
+on; click it again to clear it. The current row carries the pencil icon
+(`Icon::EditText`) beside its name, with hover text saying what it means. The
+name's click is unused today — the name is a frameless button whose drag
+`panels::layers::tree` uses to reorder — so the click and the drag do not
+compete. Only registered layers (`Layer::in_default_config`) can be made
+current: an unregistered group is refused by the engine.
+
+### State
+
+`OpenDoc::draw_layer: Option<ObjId>`, read through an accessor that validates
+the id against `read_layers` at the moment of use and returns `None` when the
+layer no longer exists. Undo, delete and merge can all remove it under the
+selection. A fresh `OpenDoc` is built on open and on the redaction replace, so
+the choice resets there without extra code.
+
+### Refusal and disclosure
+
+- An add while the current layer is **hidden** is refused before the engine is
+  called, as Illustrator and Inkscape refuse drawing on a hidden layer: new
+  content that vanishes on arrival reads as a failed add. The sentence is a new
+  unit variant of `LayerRefusal` recorded through `record_layer`, so no new
+  `Declined` variant is needed. Draft: *"New content goes on the layer marked
+  in Layers, and that layer is hidden. Show it, or click its name to stop
+  drawing on it. Nothing was added."*
+- A successful add onto a layer appends a receipt to the add's notes naming
+  the layer, so the status line says where the content went (the canvas shows
+  nothing different, per the rule that applied content renders as saved).
+- The `layer-row` trace gains `current=0|1`; each add path's trace gains
+  `layer=<id|none>`.
+
+### The driven check
+
+`fixtures/layer-assign.pdf` (layers Walls and Notes). Click Walls' name, add
+text, save, and assert the saved content wraps the new text in
+`/OC /<Walls' property name> BDC`. Falsify by dropping `.on_layer` from the add
+text path. A second leg hides Walls and asserts the refusal sentence and no
+`add-text` trace.
