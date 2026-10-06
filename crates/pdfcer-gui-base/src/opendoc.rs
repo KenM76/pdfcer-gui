@@ -611,6 +611,8 @@ pub struct OpenDoc {
     /// before any of this existed. Slow is the safe direction, and it is the
     /// only direction reachable when the measurement is missed.
     pub content_generation: std::cell::Cell<Option<(usize, u64, u64)>>,
+    /// The engine's last split preflight (`splitpreflight`).
+    pub split_preflight: Option<splitpreflight::SplitPreflight>,
     /// **The same question, asked per page** — `OPERATOR_REQUESTS.md` O74.
     ///
     /// [`edit_epoch`](Self::edit_epoch) above says *something changed*; this
@@ -1107,6 +1109,7 @@ impl OpenDoc {
             edit_epoch: 0,
             hand_signed: crate::handsign::HandSigned::default(),
             content_generation: std::cell::Cell::new(None),
+            split_preflight: None,
             objects_traced_for: None,
             pasteboard_overhang: egui::Vec2::ZERO,
             // Whole page until the canvas says otherwise.
@@ -1215,3 +1218,4 @@ mod tests;
 
 pub mod cache;
 pub mod layers;
+pub mod splitpreflight;

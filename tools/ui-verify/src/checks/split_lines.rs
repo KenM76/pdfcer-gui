@@ -1,6 +1,6 @@
 //! `a_text_object_splits_into_lines` — the canvas object menu's *Split into
 //! lines* cuts one three-line text object into three, Ctrl+Z rejoins them, and
-//! a text object the engine refuses to cut says why on the press.
+//! a text object the engine refuses to cut is greyed before the press.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/split_lines.md`.
 
@@ -18,6 +18,7 @@ const OFFSCREEN: &str = "-4200,-4200,1200,900";
 const MENU_ROW: &str = "menu.item.canvas.object.format.split_text_lines";
 const APPLIED: &str = "split-text-lines-applied";
 const DECLINED: &str = "split-text-lines-declined";
+const PREFLIGHT: &str = "split-preflight";
 
 /// One driven document: its fixture, how to rebuild it, and a point on its text.
 struct Case {
@@ -207,7 +208,8 @@ fn splits(
     Ok(None)
 }
 
-/// A line drawn with `'` is refused on the press, with its reason.
+/// A line drawn with `'` is refused before the press: the engine's preflight
+/// names it and the greyed row swallows the click.
 fn refuses(
     session: &Session,
     _pointer: &ScriptedPointer,
@@ -221,19 +223,28 @@ fn refuses(
             line.raw
         )));
     }
-    let Some(line) = trace.last_after(DECLINED, mark) else {
+    let Some(preflight) = trace.last_after(PREFLIGHT, 0) else {
         return Ok(Some(format!(
-            "★★★ a refused split traced no `{DECLINED}`, so the status line said nothing. \
-             Trace: {}.",
+            "★★★ selecting the text traced no `{PREFLIGHT}`: the engine was never asked whether \
+             the split would be refused. Trace: {}.",
             session.trace_path().display()
         )));
     };
-    report.note(line.raw.clone());
-    Ok((line.get("reason") != Some("line-show-operator")).then(|| {
-        format!(
-            "the refusal named `{}`, not `line-show-operator`: `{}`.",
-            line.get("reason").unwrap_or("nothing"),
+    report.note(preflight.raw.clone());
+    if preflight.get("refusal") != Some("line-show-operator") {
+        return Ok(Some(format!(
+            "★★★ the preflight answered `{}`, not `line-show-operator`: `{}`.",
+            preflight.get("refusal").unwrap_or("nothing"),
+            preflight.raw
+        )));
+    }
+    if let Some(line) = trace.last_after(DECLINED, mark) {
+        return Ok(Some(format!(
+            "★★★ the row the engine refused was pressable: the click reached the press, \
+             which declined it (`{}`). The row should have been greyed.",
             line.raw
-        )
-    }))
+        )));
+    }
+    report.note("the refused row was greyed; the click reached no press");
+    Ok(None)
 }

@@ -351,6 +351,7 @@ impl eframe::App for PdfcerApp {
         // measured at, and is ignored once that epoch is stale.
         if let Status::Open(doc) = &mut self.status {
             doc.refresh_content_generation();
+            crate::canvas::runsplit::refresh(doc);
             crate::app::handsigned::refresh(&ctx, doc);
         }
 

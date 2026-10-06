@@ -2,7 +2,7 @@
 
 `a_text_object_splits_into_lines` — the canvas object menu's *Split into
 lines* cuts one text object into one per line; Ctrl+Z rejoins them; a text
-object the engine refuses to cut says why.
+object the engine refuses to cut is greyed before the press.
 
 # What it drives
 
@@ -16,13 +16,15 @@ Two launches, each on a copy of its fixture in the output folder.
    `disclosed=1` is the engine plan's inference disclosure, which goes to the
    status line. Then Ctrl+Z must trace `undo-applied`: one undo entry.
 2. `fixtures/quote-operator.pdf`: two lines, the second drawn with `'`. The
-   row is offered, because the object model cannot see the operator (see
-   `canvas::runsplit`). The press must trace no `split-text-lines-applied`
-   and must trace `split-text-lines-declined reason=line-show-operator`, the
-   record behind the status-line sentence.
+   object model cannot see the operator; the engine's preflight
+   (`EditSession::text_object_split_refusal`, asked by `canvas::runsplit::refresh`)
+   can. Selecting the text must trace
+   `split-preflight … refusal=line-show-operator`, and pressing the row must
+   trace neither `split-text-lines-applied` nor `split-text-lines-declined`:
+   the row is greyed, so the click reaches no press.
 
-The second half is what makes the partial preflight safe: it proves a refusal
-only the content stream can see still reaches the operator.
+The second half fails on a build that greys only what the object model sees:
+the row stays pressable and the press traces the decline.
 
 # Driven off-screen
 

@@ -1,15 +1,16 @@
 //! The operand of `format.split_text_lines`: one selected page text object
-//! whose runs the engine would cut into two or more lines, and the part of the
-//! engine's preflight the object model can answer.
+//! whose runs the engine would cut into two or more lines, and whether the
+//! engine would refuse the cut.
 //!
 //! The cuts come from `pdfcer_core::vector::text_object_split_points` with
 //! `SplitGranularity::Line`, the function `EditSession::text_object_split_plan`
 //! calls, so the menu offers exactly the objects the press would cut. The
-//! preflight is partial: `text_split_refusal` also needs the page's
-//! `ContentStream` to see a `'`/`"` show operator or an open marked-content
-//! section, and the provider holds none. Those two refusals arrive on the press,
-//! on the status line. The engine request for a session-level preflight is
-//! G114 (`request_G114_a_text_split_cannot_be_preflighted_from_a_session.md`).
+//! refusal is `EditSession::text_object_split_refusal`, asked once per
+//! selection and edit epoch by [`refresh`] on the frame-level `&mut` and read
+//! back from `OpenDoc::split_preflight`. Until that answer exists (the render
+//! worker holds the session) only the refusal the object model can see, an
+//! inherited-position run at a cut, greys the row; the press still words any
+//! other refusal on the status line.
 
 use pdfcer_core::vector::{
     RunPositioning, SplitGranularity, VectorEditError, VectorObject, text_object_split_points,
@@ -21,6 +22,7 @@ use crate::canvas::runmerge::{MenuRow, park_at, parked_at};
 use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::panels::objects::provider::ObjectModelProvider;
 use crate::text::runsplit::RunSplitRefusal;
+use pdfcer_gui_base::opendoc::splitpreflight::SplitPreflight;
 
 /// One page text object and where the engine would cut it.
 #[derive(Debug, Clone, PartialEq)]
@@ -79,6 +81,103 @@ pub fn operand(
     })
 }
 
+/// [`operand`] for the document's selection on its current page, with the
+/// engine's stored preflight answer when it is about this object, these cuts
+/// and this edit epoch.
+#[must_use]
+pub fn operand_of(doc: &OpenDoc) -> Option<SplitOperand> {
+    let page = doc.view.page_index;
+    let mut split = {
+        let targets = doc.page_objects();
+        operand(targets.as_deref(), &doc.selection, page)?
+    };
+    if split.refusal.is_none() {
+        let answer = doc
+            .split_preflight
+            .as_ref()
+            .and_then(|p| p.answer((page, split.object), &split.cuts, doc.edit_epoch));
+        split.refusal = answer.flatten().cloned();
+    }
+    Some(split)
+}
+
+/// The engine's stored refusal for the one object `selection` holds, when the
+/// stored answer is about that object at this edit epoch. For the canvas menu,
+/// which has the parked row but no object model on later frames, and whose
+/// selection is lent out of `doc` while it draws.
+#[must_use]
+pub fn engine_refusal<'a>(
+    doc: &'a OpenDoc,
+    selection: &SelectionState,
+) -> Option<&'a VectorEditError> {
+    let page = doc.view.page_index;
+    let [only] = selection.entries() else {
+        return None;
+    };
+    let object = only.object.page_object_index()?;
+    doc.split_preflight
+        .as_ref()
+        .filter(|p| p.page == page && p.object == object && p.edit_epoch == doc.edit_epoch)?
+        .refusal
+        .as_ref()
+}
+
+/// Ask the engine whether the selection's split would be refused, unless the
+/// stored answer is already about it. Silent while the render worker shares
+/// the session; the next frame asks again.
+pub fn refresh(doc: &mut OpenDoc) {
+    let Some(split) = operand_of(doc) else {
+        return;
+    };
+    let page = doc.view.page_index;
+    let epoch = doc.edit_epoch;
+    if doc
+        .split_preflight
+        .as_ref()
+        .is_some_and(|p| p.answer((page, split.object), &split.cuts, epoch).is_some())
+    {
+        return;
+    }
+    let Some(session) = std::sync::Arc::get_mut(&mut doc.session) else {
+        return;
+    };
+    // An `Err` is a document- or page-level refusal the press words itself;
+    // it greys nothing here.
+    let answer = session.text_object_split_refusal(page, split.object, &split.cuts);
+    let token = match &answer {
+        Ok(refusal) => refusal.as_ref().map_or("none", refusal_token),
+        Err(_) => "error",
+    };
+    let refusal = answer.ok().flatten();
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI.
+            "split-preflight page={page} object={} cuts={} refusal={}",
+            split.object,
+            split.cuts.len(),
+            token,
+        )
+    });
+    doc.split_preflight = Some(SplitPreflight {
+        page,
+        object: split.object,
+        edit_epoch: epoch,
+        cuts: split.cuts,
+        refusal,
+    });
+}
+
+/// A one-word trace token for a refusal.
+fn refusal_token(e: &VectorEditError) -> &'static str {
+    match e {
+        VectorEditError::SplitRunInheritsPosition { .. } => "inherits-position",
+        VectorEditError::SplitAtLineShowOperator { .. } => "line-show-operator",
+        VectorEditError::SplitInsideMarkedContent { .. } => "marked-content",
+        VectorEditError::EmptySplit => "empty",
+        _ => "other",
+    }
+}
+
 /// The press: re-derive the operand from the selection, giving the action to
 /// queue or why not. A parked menu row is never trusted as the operand.
 ///
@@ -87,10 +186,7 @@ pub fn operand(
 /// The refusal the status line words.
 pub fn press(doc: &OpenDoc) -> Result<Action, RunSplitRefusal> {
     let page = doc.view.page_index;
-    let split = {
-        let targets = doc.page_objects();
-        operand(targets.as_deref(), &doc.selection, page)
-    };
+    let split = operand_of(doc);
     match split {
         Some(SplitOperand {
             object,

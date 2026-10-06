@@ -257,7 +257,7 @@ pub mod rotating;
 pub use pdfcer_gui_base::runmenu;
 /// The operand and preflight of `format.merge_text_runs`.
 pub mod runmerge;
-/// The operand and partial preflight of `format.split_text_lines`.
+/// The operand and engine preflight of `format.split_text_lines`.
 pub mod runsplit;
 /// The eight resize grips, finally committing — built out of `move_nodes`
 /// because `pdfcer-core` has no scale verb, which was re-derived against its

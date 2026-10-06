@@ -568,10 +568,12 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::TEXT_MERGE_OFFERED, merge.offered),
             (menus::TEXT_MERGE_ALLOWED, merge.allowed),
         ]);
+        // The engine's preflight is asked on the frame after the click.
         let split = crate::canvas::runsplit::parked(&ctx);
+        let refused = crate::canvas::runsplit::engine_refusal(doc, selection).is_some();
         overrides.extend([
             (menus::TEXT_SPLIT_OFFERED, split.offered),
-            (menus::TEXT_SPLIT_ALLOWED, split.allowed),
+            (menus::TEXT_SPLIT_ALLOWED, split.allowed && !refused),
         ]);
     }
     // The selection this click made decides whether Move to layer is drawn.

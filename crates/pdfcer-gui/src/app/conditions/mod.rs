@@ -321,11 +321,7 @@ impl PdfcerApp {
                     }
                 }
                 // One text object of several lines: `format.split_text_lines`.
-                let split = crate::canvas::runsplit::operand(
-                    doc.page_objects().as_deref(),
-                    &doc.selection,
-                    doc.view.page_index,
-                );
+                let split = crate::canvas::runsplit::operand_of(doc);
                 if let Some(split) = split {
                     set.set(crate::shell::menus::TEXT_SPLIT_OFFERED);
                     if split.allowed() {
