@@ -1,12 +1,14 @@
 //! `layer_assign_moves_the_selection` — a selected page object is put on a
 //! layer from the Properties panel's Layer combo, Ctrl+Z takes it off again,
 //! and a selected annotation is put on a layer from its right-click Move to
-//! layer… window.
+//! layer… window. `paste_goes_on_the_current_layer` and
+//! `a_caret_goes_on_the_current_layer` — what is added while a layer is
+//! current lands on it.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/layer_assign.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, list, repo_fixture,
+    SHELL_DIAG_ENV, click_mode_segment, declared, declared_in, declared_names, list, repo_fixture,
 };
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
@@ -14,6 +16,15 @@ use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
+
+macro_rules! step {
+    ($e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(why) => return Ok(Some(why)),
+        }
+    };
+}
 
 const FIXTURE: &str = "layer-assign.pdf";
 const METHOD: &str = "Rebuild it with `python fixtures/layer-assign.PROVENANCE.py`.";
@@ -32,6 +43,13 @@ const LAYERS_ITEM: &str = "ribbon.item.view.panel_layers";
 /// The fixture's `Walls` and `Notes` groups, as the trace writes an id.
 const WALLS_ID: &str = "layer=6_0";
 const NOTES_ID: &str = "layer=7_0";
+
+const MARKUP_TAB: &str = "ribbon.tab.markup";
+const INSERT_TEXT: &str = "ribbon.item.markup.insert_text";
+const CARET_ACCEPT: &str = "text-annot.accept";
+/// An empty spot on the page, clear of the box and the annotation; the
+/// caret's apex goes here and its 10 pt body hangs below.
+const SPOT: (f64, f64) = (150.0, 450.0);
 
 /// The centre of the fixture's unlayered blue box, in page points.
 const BOX: (f64, f64) = (250.0, 200.0);
@@ -61,6 +79,119 @@ impl Check for PasteGoesOnTheCurrentLayer {
     }
 }
 
+/// A caret added while Walls is the current layer lands on Walls.
+pub struct ACaretGoesOnTheCurrentLayer;
+
+impl Check for ACaretGoesOnTheCurrentLayer {
+    fn name(&self) -> &'static str {
+        "a_caret_goes_on_the_current_layer"
+    }
+
+    fn defect(&self) -> &'static str {
+        "an annotation added while a layer is current (here a caret) did not land on that \
+         layer: its adder was handed no layer, or the layer did not reach the engine"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match with_drive(ctx, &mut report, caret_on) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Open the Layers panel if needed and click Walls' name; the Walls row after.
+fn make_walls_current(d: &Drive<'_>) -> Result<std::result::Result<String, String>> {
+    if declared(&d.session.trace()?, d.ui_rect, WALLS_ROW).is_none() {
+        for (region, family) in [
+            (VIEW_TAB, "ribbon.tab."),
+            (LAYERS_ITEM, "ribbon.item.view."),
+        ] {
+            if let Err(why) = d.press(region, family)? {
+                return Ok(Err(why));
+            }
+        }
+        d.session.settle(20);
+    }
+    let mark = d.session.trace()?.mark();
+    if let Err(why) = d.press(WALLS_ROW, "panel.layers.row.")? {
+        return Ok(Err(why));
+    }
+    walls_row(d, mark).map(Ok)
+}
+
+/// Walls current; Markup > Insert text; a caret at `SPOT`; Escape; a click on
+/// the caret. The engine's own `/OC` on the selected caret is the oracle.
+fn caret_on(d: &Drive<'_>, report: &mut CheckReport) -> Result<Option<String>> {
+    let chosen = step!(make_walls_current(d)?);
+    step!(d.press(MARKUP_TAB, "ribbon.tab.")?);
+    step!(d.press(INSERT_TEXT, "ribbon.item.markup.")?);
+    let mark = d.session.trace()?.mark();
+    d.pointer.click(d.session, d.at(SPOT)?)?;
+    d.session.settle(30);
+    let Some((accept, viewport)) = declared_in(&d.session.trace()?, d.ui_rect, CARET_ACCEPT) else {
+        return Ok(Some(format!(
+            "a click with Insert text armed opened no window: no `{CARET_ACCEPT}`."
+        )));
+    };
+    d.pointer
+        .type_text(d.session, viewport.as_deref(), "on walls")?;
+    d.session.settle(20);
+    // The window is its own viewport; Add is clicked there.
+    d.pointer.click_in(
+        d.session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(accept),
+    )?;
+    d.session.settle(20);
+    let trace = d.session.trace()?;
+    let on = trace
+        .last_after("add-caret-annot-on-layer", mark)
+        .map(|l| l.raw.clone());
+    let placed = trace
+        .last_after("caret-annot-placed", mark)
+        .map(|l| l.raw.clone());
+    d.pointer.key(d.session, None, "Escape", None)?;
+    d.session.settle(10);
+    let mark = d.session.trace()?.mark();
+    d.pointer.click(d.session, d.at((SPOT.0, SPOT.1 - 5.0))?)?;
+    d.session.settle(20);
+    let selected = d
+        .session
+        .trace()?
+        .last_after("annot-select", mark)
+        .map(|l| l.raw.clone());
+    let row = walls_row(d, mark)?;
+    report.note(format!(
+        "chosen: `{chosen}`; on: {on:?}; placed: {placed:?}; selected: {selected:?}; Walls \
+         after: `{row}`"
+    ));
+    let mut findings = Vec::new();
+    if !chosen.contains("current=1") {
+        findings.push("clicking Walls' name did not make it current (current=1).");
+    }
+    if on.is_none() {
+        findings.push("the caret's add traced no `add-caret-annot-on-layer`.");
+    }
+    if placed.is_none() {
+        findings.push("no `caret-annot-placed`: the engine never authored the caret.");
+    }
+    if selected.is_none() {
+        findings.push("a click on the placed caret traced no `annot-select`.");
+    } else if !row.contains("highlighted=true") {
+        findings.push("the placed caret, selected, is not on Walls (highlighted=true).");
+    }
+    Ok((!findings.is_empty()).then(|| {
+        format!(
+            "{} Trace: {}.",
+            findings.join(" "),
+            d.session.trace_path().display()
+        )
+    }))
+}
+
 /// The last `layer-row` line for Walls after `mark`, raw.
 fn walls_row(d: &Drive<'_>, mark: usize) -> Result<String> {
     Ok(d.session
@@ -73,22 +204,7 @@ fn walls_row(d: &Drive<'_>, mark: usize) -> Result<String> {
 }
 
 fn draw_on(d: &Drive<'_>, report: &mut CheckReport) -> Result<Option<String>> {
-    if declared(&d.session.trace()?, d.ui_rect, WALLS_ROW).is_none() {
-        for (region, family) in [
-            (VIEW_TAB, "ribbon.tab."),
-            (LAYERS_ITEM, "ribbon.item.view."),
-        ] {
-            if let Err(why) = d.press(region, family)? {
-                return Ok(Some(why));
-            }
-        }
-        d.session.settle(20);
-    }
-    let mark = d.session.trace()?.mark();
-    if let Err(why) = d.press(WALLS_ROW, "panel.layers.row.")? {
-        return Ok(Some(why));
-    }
-    let chosen = walls_row(d, mark)?;
+    let chosen = step!(make_walls_current(d)?);
     d.pointer.click(d.session, d.at(BOX)?)?;
     d.session.settle(20);
     d.pointer.key(d.session, None, "C", Some("ctrl"))?;
@@ -186,15 +302,6 @@ impl Drive<'_> {
             )),
         })
     }
-}
-
-macro_rules! step {
-    ($e:expr) => {
-        match $e {
-            Ok(v) => v,
-            Err(why) => return Ok(Some(why)),
-        }
-    };
 }
 
 fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {

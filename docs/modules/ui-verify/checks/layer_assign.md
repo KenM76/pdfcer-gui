@@ -45,3 +45,21 @@ The second check in the module, sharing its launch and `Drive`.
 
 Falsified by pasting with no layer (`paste_objects_on_layer(.., None)`): red at
 step 3. The hidden-layer refusal is not driven here.
+
+# `a_caret_goes_on_the_current_layer`
+
+The third check in the module, sharing its launch and `Drive`, and
+`make_walls_current` with the paste check.
+
+1. Walls current, as above (`current=1`).
+2. Markup ▸ Insert text, a click at (150, 450), `on walls` typed, and
+   `text-annot.accept` clicked in the window's own viewport. Owed:
+   `add-caret-annot-on-layer` and `caret-annot-placed`.
+3. Escape, then a click 5 pt below the apex, inside the caret's body:
+   `annot-select`, and the next `layer-row` for Walls carries
+   `highlighted=true`. `panels::layers::highlight::on_annotation` reads the
+   annotation's `/OC` from the document, so this is the engine's answer.
+
+The caret stands for every adder `drawlayer::onto` serves; the others are not
+driven one by one. Falsified by `onto` keeping `options.layer` instead of the
+current layer: the add still traces its layer, and step 3 goes red.

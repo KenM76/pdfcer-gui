@@ -101,12 +101,17 @@ pub(super) fn place(
             options.note.is_some(),
         )
     });
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-screen-annot", options) else {
+        return;
+    };
     super::apply::vector_edit(doc, "add-screen-annot", page, 1, |session| {
         let id: ObjId = session.add_screen_annotation(page, &spec, &options)?;
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!("screen-annot-placed page={page} id={}", id.num)
         });
-        Ok::<_, pdfcer_core::edit::EditError>(vec![disclosure])
+        Ok::<Vec<String>, pdfcer_core::edit::EditError>(
+            std::iter::once(disclosure).chain(receipt).collect(),
+        )
     });
 }

@@ -70,6 +70,9 @@ pub(super) fn place(
         opacity,
         ..Default::default()
     };
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-caret-annot", options) else {
+        return;
+    };
     let page = placed.page;
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
@@ -87,7 +90,11 @@ pub(super) fn place(
             // ui-text-exempt: diagnostic trace, never displayed
             format!("caret-annot-placed page={page} id={}", id.num)
         });
-        Ok::<_, pdfcer_core::edit::EditError>(vec![t::caret_placed(page)])
+        Ok::<Vec<String>, pdfcer_core::edit::EditError>(
+            std::iter::once(t::caret_placed(page))
+                .chain(receipt)
+                .collect(),
+        )
     });
 }
 
@@ -123,6 +130,9 @@ pub(super) fn replace(
         opacity,
         ..Default::default()
     };
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-replace-text", options) else {
+        return;
+    };
     let page = replaced.page;
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
@@ -143,7 +153,11 @@ pub(super) fn replace(
                 added.caret_id.num, added.strike_out_id.num
             )
         });
-        Ok::<_, pdfcer_core::edit::EditError>(vec![t::replace_placed(page)])
+        Ok::<Vec<String>, pdfcer_core::edit::EditError>(
+            std::iter::once(t::replace_placed(page))
+                .chain(receipt)
+                .collect(),
+        )
     });
 }
 

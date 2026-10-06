@@ -87,6 +87,10 @@ pub(super) fn place(
         opacity,
         ..Default::default()
     };
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-attachment-annot", options)
+    else {
+        return;
+    };
     let page = placed.page;
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
@@ -106,6 +110,10 @@ pub(super) fn place(
             // ui-text-exempt: diagnostic trace, never displayed
             format!("attach-annot-placed page={page} id={}", id.num)
         });
-        Ok::<_, pdfcer_core::edit::EditError>(vec![t::placed(&name, page, size)])
+        Ok::<Vec<String>, pdfcer_core::edit::EditError>(
+            std::iter::once(t::placed(&name, page, size))
+                .chain(receipt)
+                .collect(),
+        )
     });
 }

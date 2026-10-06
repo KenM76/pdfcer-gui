@@ -233,6 +233,9 @@ pub(super) fn commit(
             // ui-text-exempt: diagnostic trace, never displayed
             format!("text-annot-page-rotate page={page} rotate={rotate} turn={upright_turn:?}")
         });
+        let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-text-annot", options) else {
+            return;
+        };
         vector_edit(doc, "add-text-annot", page, 1, |session| {
             // **`_reporting`, not `_with`**, because only this one hands
             // back the disclosures rule 4 owes the operator.
@@ -266,10 +269,9 @@ pub(super) fn commit(
                     )
                 });
             }
-            Ok::<Vec<String>, pdfcer_core::edit::EditError>(disclosures(
-                out.unencodable_chars,
-                out.stamp_label_fit.as_ref(),
-            ))
+            let mut notes = disclosures(out.unencodable_chars, out.stamp_label_fit.as_ref());
+            notes.extend(receipt);
+            Ok::<Vec<String>, pdfcer_core::edit::EditError>(notes)
         });
     } else {
         crate::diag::trace(|| {

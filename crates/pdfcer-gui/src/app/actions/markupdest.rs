@@ -25,14 +25,11 @@ pub(super) fn author(
     options: &MarkupOptions,
     on_page: bool,
 ) {
-    let Ok(layer) = super::drawlayer::for_add(doc, label) else {
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, label, options.clone()) else {
         return;
     };
-    let options = &MarkupOptions {
-        layer: super::drawlayer::id(layer.as_ref()).or(options.layer),
-        ..options.clone()
-    };
-    let receipt: Vec<String> = layer.map(|l| l.receipt).into_iter().collect();
+    let options = &options;
+    let receipt: Vec<String> = receipt.into_iter().collect();
     if !on_page {
         vector_edit(doc, label, page, 1, |session| {
             session

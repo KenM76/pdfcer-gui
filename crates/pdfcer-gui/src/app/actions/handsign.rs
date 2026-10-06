@@ -114,13 +114,19 @@ fn place_drawn(doc: &mut OpenDoc, at: &Target, mark: &Mark) {
         hand_signature: Some(field.to_owned()),
         ..MarkupOptions::default()
     };
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, "place-hand-signature", options)
+    else {
+        return;
+    };
     let mut applied = None;
     vector_edit(doc, "place-hand-signature", page, 1, |session| {
         session
             .add_markup_as_content(page, &spec, &options)
             .map(|outcome| {
                 applied = Some(outcome.objects.clone());
-                outcome.paste.disclosures
+                let mut notes = outcome.paste.disclosures;
+                notes.extend(receipt);
+                notes
             })
     });
     let Some(objects) = applied else {
@@ -190,9 +196,21 @@ fn place_typed(doc: &mut OpenDoc, at: &Target, typed: &Typed) {
     .with_size(f64::from(size))
     .with_color(NewTextColor::Rgb(INK.0, INK.1, INK.2))
     .with_hand_signature(field);
+    let Ok(layer) = super::drawlayer::for_add(doc, "place-typed-signature") else {
+        return;
+    };
+    let req = match &layer {
+        Some(l) => req.on_layer(l.id),
+        None => req,
+    };
+    let receipt = layer.map(|l| l.receipt);
     let before = doc.edit_epoch;
     vector_edit(doc, "place-typed-signature", page, 1, |session| {
-        session.add_text(&req).map(|report| report.disclosures)
+        session.add_text(&req).map(|report| {
+            let mut notes = report.disclosures;
+            notes.extend(receipt);
+            notes
+        })
     });
     if doc.edit_epoch == before {
         return;
@@ -252,11 +270,18 @@ fn place_picture(doc: &mut OpenDoc, at: &Target, picture: &SigPicture) {
         ury: f64::from(a.y.max(b.y)),
     };
     let alpha = u8::from(image.soft_mask.is_some());
+    let Ok(layer) = super::drawlayer::for_add(doc, "place-picture-signature") else {
+        return;
+    };
     let before = doc.edit_epoch;
     vector_edit(doc, "place-picture-signature", page, 1, |session| {
         let spec = NewImage::new(page, rect, &image)
             .stretching()
             .as_hand_signature(field);
+        let spec = match &layer {
+            Some(l) => spec.on_layer(l.id),
+            None => spec,
+        };
         session.add_image(&spec).map(|outcome| {
             let d = &outcome.disclosures;
             let mut notes = crate::text::images::placement_disclosures(
@@ -269,6 +294,7 @@ fn place_picture(doc: &mut OpenDoc, at: &Target, picture: &SigPicture) {
                 d.stored_bytes,
             );
             notes.extend(crate::text::images::source_decoding_notes(d));
+            notes.extend(layer.map(|l| l.receipt));
             notes
         })
     });

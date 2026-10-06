@@ -8,6 +8,7 @@
 //!
 //! Design: `DESIGNS.md`, "Row 74 — a current layer that new content goes on".
 
+use pdfcer_core::edit::MarkupOptions;
 use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
@@ -43,6 +44,21 @@ pub(super) fn for_add(doc: &OpenDoc, label: &str) -> Result<Option<DrawLayer>, (
         id: layer.id,
         receipt: t::receipt(&layer.name),
     }))
+}
+
+/// [`for_add`] folded into an adder's `options`, with the receipt for its
+/// notes. A layer `options` already names is kept when none is current.
+pub(super) fn onto(
+    doc: &OpenDoc,
+    label: &str,
+    options: MarkupOptions,
+) -> Result<(MarkupOptions, Option<String>), ()> {
+    let layer = for_add(doc, label)?;
+    let options = MarkupOptions {
+        layer: id(layer.as_ref()).or(options.layer),
+        ..options
+    };
+    Ok((options, layer.map(|l| l.receipt)))
 }
 
 /// The id alone, for an engine call taking `Option<ObjId>`.

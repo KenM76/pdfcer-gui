@@ -448,9 +448,13 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
         )
     });
     let format = spec.format.clone();
+    let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-3d", MarkupOptions::default())
+    else {
+        return;
+    };
     super::apply::vector_edit(doc, "add-3d", page, 1, |session| {
         session
-            .add_3d_annotation(page, &spec, &MarkupOptions::default())
+            .add_3d_annotation(page, &spec, &options)
             .map(|outcome| {
                 let mut notes = vec![t::inserted(&format, page)];
                 notes.extend(poster_note(&outcome.poster));
@@ -460,6 +464,7 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
                         &outcome.document_version.to_string(),
                     ));
                 }
+                notes.extend(receipt);
                 notes
             })
     });
