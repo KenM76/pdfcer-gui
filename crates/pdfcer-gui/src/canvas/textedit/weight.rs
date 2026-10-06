@@ -10,9 +10,15 @@
 //! Synthesis is the engine's reading of the glyph (`synth::detect_at`): a
 //! fill-and-stroke render mode whose line width is within the band a
 //! synthesized bold uses, or a sheared text matrix.
+//!
+//! Underline and strikethrough are the engine's decoration markers read back
+//! from the content (`decoration::page_decorations`), so a line drawn by
+//! Format ▸ Font presses its toggle like a bold face presses Bold.
 
+use pdfcer_core::text_edit::decoration::{DecorationSet, page_decorations};
 use pdfcer_core::text_edit::synth::{detect_at, name_claims_bold, name_claims_italic};
 use pdfcer_core::text_edit::{BlockRecognitionOptions, EditableTextModel, GlyphRef, TextPosition};
+use pdfcer_core::text_extract::GlyphProvenance;
 
 use crate::app::state::OpenDoc;
 
@@ -35,19 +41,25 @@ impl Axis {
     }
 }
 
-/// Bold and italic for one glyph.
+/// Bold, italic and the decoration lines for one glyph.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Weight {
     /// The weight axis.
     pub bold: Axis,
     /// The slant axis.
     pub italic: Axis,
+    /// The underline and strikethrough the engine's marker gives the glyph.
+    pub lines: DecorationSet,
 }
 
-/// The weight of the first glyph at or after `at` in its run, or `None` when
-/// the run has no glyph with provenance there.
-#[must_use]
-pub fn at(doc: &OpenDoc, page: usize, at: TextPosition) -> Option<Weight> {
+/// The provenance of the first glyph at or after `at` in its run, handed to
+/// `read`; `None` when the run has no glyph with provenance there.
+fn with_glyph<T>(
+    doc: &OpenDoc,
+    page: usize,
+    at: TextPosition,
+    read: impl FnOnce(&GlyphProvenance) -> Option<T>,
+) -> Option<T> {
     let text = doc.provenance_page_text(page)?;
     let run = text.runs.get(at.run)?;
     let index = run
@@ -56,7 +68,33 @@ pub fn at(doc: &OpenDoc, page: usize, at: TextPosition) -> Option<Weight> {
         .position(|g| g.text_start as usize >= at.byte_offset)
         .or_else(|| run.glyphs.len().checked_sub(1))?;
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
-    let p = model.provenance(GlyphRef::new(at.run, index))?;
+    read(model.provenance(GlyphRef::new(at.run, index))?)
+}
+
+/// The decoration lines on the glyph `p` describes; empty when the page's
+/// content does not decode.
+fn lines_of(doc: &OpenDoc, page: usize, p: &GlyphProvenance) -> DecorationSet {
+    let Some(page_ref) = doc.pages.get(page) else {
+        return DecorationSet::NONE;
+    };
+    page_decorations(&doc.session.view(), page_ref).map_or(DecorationSet::NONE, |d| d.of(p))
+}
+
+/// The underline and strikethrough on the first glyph at or after `at`.
+#[must_use]
+pub fn lines_at(doc: &OpenDoc, page: usize, at: TextPosition) -> Option<DecorationSet> {
+    with_glyph(doc, page, at, |p| Some(lines_of(doc, page, p)))
+}
+
+/// The weight of the first glyph at or after `at` in its run, or `None` when
+/// the run has no glyph with provenance there.
+#[must_use]
+pub fn at(doc: &OpenDoc, page: usize, at: TextPosition) -> Option<Weight> {
+    with_glyph(doc, page, at, |p| weight_of(doc, page, p))
+}
+
+/// Bold, italic and lines for one glyph's provenance.
+fn weight_of(doc: &OpenDoc, page: usize, p: &GlyphProvenance) -> Option<Weight> {
     let key = p.font_resource.as_ref()?;
     let key = String::from_utf8_lossy(key);
     let base = doc
@@ -79,5 +117,6 @@ pub fn at(doc: &OpenDoc, page: usize, at: TextPosition) -> Option<Weight> {
     Some(Weight {
         bold: axis(name_claims_bold(&base), synth.bold()),
         italic: axis(name_claims_italic(&base), synth.italic()),
+        lines: lines_of(doc, page, p),
     })
 }

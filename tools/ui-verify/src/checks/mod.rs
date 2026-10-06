@@ -1072,6 +1072,8 @@ pub mod synthetic_bold;
 /// Text-tool clicks reach a note, a field or a scan's remedy.
 pub mod text_click_routes;
 pub mod text_tool_click_types;
+/// Ctrl+U marks the characters themselves, reads back pressed, and toggles off.
+pub mod tied_underline;
 pub mod word_line_edit;
 pub mod word_styles;
 /// A refused text edit offers the way the engine can make it.

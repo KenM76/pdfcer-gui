@@ -427,7 +427,7 @@ A box drawn over the page that stays, with its moving dashed outline, until dism
 
 **Where it stands.** Built. The resolution a picture is copied at, in Settings ▸ Images — 300 dpi unless changed, kept after a restart (driven: `the_snapshot_resolution_persists`). View ▸ Snapshot, beside the hand, arms the tool in any mode: drag on the page to lay a box, drag inside it to move it, drag a corner or side to resize it, and the box stays on the page through zoom and scroll. Putting the tool down — the button again, Escape or another tool — clears the box (driven: `a_snapshot_box_stays_on_the_page_through_a_zoom`, `a_snapshot_box_moves_resizes_and_clears`). The box's outline is a dashed line that keeps moving, and the page inside it stays still (driven: `a_snapshot_box_outline_marches`). Copy, Ctrl+C or the box's right-click menu, puts everything visible inside the box on the clipboard, review marks included and hidden layers left out: a vector drawing (SVG and EMF) for programs that take one, and a picture at the set resolution. Anything outside the box is cut out, not merely hidden, so no other program can find it. When pdfcer cannot cut the region cleanly it copies the picture alone and the status line says why (driven: `a_snapshot_copy_is_cropped_at_the_set_dpi`). A copied snapshot also carries the cut page itself, so pasting it into a PDF places it as a drawing at its own size, not as a picture: in Edit it is drawn into the page's own content, in Review it is a stamp, a review mark; in Read, the status line says to switch mode (driven: `a_snapshot_pastes_back_as_a_drawing`).
 
-## O273 — **BUILT AND DRIVEN, with three limits — awaiting your verdict** — bold, italic, underline and strikethrough on the selected characters, with Ctrl+B, Ctrl+I and Ctrl+U
+## O273 — **BUILT AND DRIVEN, with one limit — awaiting your verdict** — bold, italic, underline and strikethrough on the selected characters, with Ctrl+B, Ctrl+I and Ctrl+U
 
 His words: *"Does bold edit italics underline etc work too and have shortcuts?"*
 
@@ -435,11 +435,13 @@ Today Bold and Italic act only on a whole selected line, underline and strikethr
 
 Inside a text edit, Ctrl+B, Ctrl+I and Ctrl+U act on the selected characters, or on what is typed next at the caret, as in Word; outside one they act on the selected lines. Bold and italic use a real bold or italic face where one exists, and say so when they have to thicken or slant the letters instead. Underline and strikethrough are drawn lines that move with the text. Ribbon buttons for both sit beside Bold and Italic and show pressed when the selection carries the style.
 
-**Where it stands.** Built. Ctrl+B, Ctrl+I and Ctrl+U, and the ribbon's Bold, Italic, Underline and Strikethrough, act on the selected characters while typing, else the word the caret is in, else what you type next; outside a text edit, on the swept characters or the selected lines. Bold and Italic show pressed when the text at the caret has them. Driven: `ctrl_b_bolds_the_word_at_the_caret`. Three limits, each sent to the engine:
+**Where it stands.** Built. Ctrl+B, Ctrl+I and Ctrl+U, and the ribbon's Bold, Italic, Underline and Strikethrough, act on the selected characters while typing, else the word the caret is in, else what you type next; outside a text edit, on the swept characters or the selected lines. Bold and Italic show pressed when the text at the caret has them. Driven: `ctrl_b_bolds_the_word_at_the_caret`, `ctrl_b_again_takes_bold_off`, `ctrl_b_bolds_the_second_copy_of_a_repeated_word`, `ctrl_u_underlines_the_text_itself`.
 
-- Taking bold or italic **off** works only where pdfcer thickened the letters itself; where the bold or italic is the font, the status bar says to choose the plain font in Properties (G086).
-- A word that also appears earlier in the same piece of text is declined rather than risk restyling the earlier one (G084).
-- Underline and strikethrough are lines of their own: they stay put if the text is later moved or rewrapped, and Underline shows pressed only for what you are about to type, not for text already underlined (G085). This is short of "lines that move with the text" above.
+- Taking bold or italic **off** uses the page's own plain face, the standard plain face, or undoes a thickening or slant pdfcer drew. A bold face with no plain face of its typeface anywhere is declined, and the status bar says to choose the plain font in Properties.
+- A word that also appears earlier in the same piece of text is restyled as the copy selected. Letters overlapping an earlier copy of themselves (`aa` inside `aaa`) are declined with that reason.
+- Underline and strikethrough mark the characters themselves: the line moves, rewraps and is deleted with the text, Underline and Strikethrough show pressed for text that already has them, and pressed again they take the line off.
+- The limit: when a font gives no strikethrough position, the edit's note says the line sits at the font's own position, half its x-height or a quarter em, without saying which of the three this text got; naming it waits on the engine.
+
 
 ## O274 — **BUILT AND DRIVEN — awaiting your verdict** — a Keyboard Shortcuts page in Settings
 

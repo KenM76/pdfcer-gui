@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **35 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `wanted` — a real gap — **34 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -135,7 +135,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| Underline and strikethrough tied to the text, not independent page content — `FormatRequest::decoration` … | **wanted.** The pin carries it: `pdfcer_core::text_edit::decoration` (`DecorationMetrics`, `StrikeSource`, `DecoratedSpan`, `DECORATION_TAG`), set through `FormatRequest::decoration` / `FormatRequest::set_decoration` and measured through `FormatRequest::decoration_metrics`. Format ▸ Font's Underline and Strikethrough today author a text-markup annotation over the characters' quads (`textstyle::span::decorate`), which stays where it was drawn when the text later moves, reflows or is deleted. They should send `DecorationSet::UNDERLINE` / `STRIKETHROUGH` through the restyle path instead, so the rule follows the text inside the same undo entry. `FormatError::DecorationOnInvisibleText` and the form-XObject refusal want sentences, and the x-height fallback for strikethrough is a disclosure owed off-canvas. |
 
 ---
 
@@ -220,7 +219,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **256 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **257 of 312** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -536,6 +535,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Restyle the N-th occurrence of repeated text within one operator — `FormatRequest::occurrence` … | **shipped.** `app::actions::textstyle::span` sends a cut inside an operator as its characters plus `FormatRequest::occurrence(n)`, `n` counted by `span::occurrence` over the operator's non-overlapping matches, so the second `M10` in `M10 x M10` is the one restyled. A cut overlapping an earlier copy of itself matches no count and stays `SpanAmbiguous`; `FormatError::NoMatch` is `TextStyleRefusal::SpanNotFound`, its own sentence. Driven by `ctrl_b_bolds_the_second_copy_of_a_repeated_word`. |
 | **`GlyphProvenance` carries line width and render mode** — `GlyphProvenance::line_width`, `render_mode()`, `text_edit::synth::detect_at` with `synth::shear_of`, `synth::unshear` and `synth::MIN_DETECT_STROKE_RATIO` (our `G087`, Pass 441.0) | **shipped.** `canvas::textedit::weight::at` hands the glyph's provenance to `synth::detect_at`, which reads `GlyphProvenance::line_width` and `render_mode()` against `MIN_DETECT_STROKE_RATIO` and the matrix's shear (`synth::shear_of`), so a bold drawn by a stroke shows Bold pressed and Ctrl+B takes it off (`StyleRung::SynthesisRemoved`). `synth::unshear` is the engine's own step in that removal; the shell does not call it. Driven by `bold_drawn_by_a_stroke_reads_as_bold`. |
 | Paint tiling patterns (`PatternType 1`, §8.7.3 Table 75) for fills, strokes and text … | **shipped.** `app::status::notes::ink` words `color.patterns_unpainted` as its own sentence (`t::ink_patterns_unpainted`, *N pattern fill(s) drew nothing*) in the status-bar notes and the Render diagnostics list; a tiling pattern that paints is drawn through `pdfcer-render` and `ColorDiagnostics::tiling_patterns_painted` counts that success, which has nothing to report. Driven by `print_shop`, whose fixture carries a pattern that cannot be resolved (`color.patterns_unpainted=1`, shown=3). |
+| Underline and strikethrough tied to the text, not independent page content — `FormatRequest::decoration` … | **shipped.** Format ▸ Font's Underline and Strikethrough and Ctrl+U send `DecorationSet::UNDERLINE` / `STRIKETHROUGH` through `FormatRequest::decoration` on the restyle path (`textstyle::span::decorate`), one request per piece, so the rule follows the text inside the same undo entry; the toggles read pressed from `page_decorations` at the caret. `FormatError::DecorationOnInvisibleText` has its sentence; inside a form the engine writes the marker and its structure note reaches the edit's disclosures. `DecorationMetrics` stays at its default, `FormatRequest::set_decoration` and `FormatRequest::decoration_metrics` are unused, and `DecoratedSpan` / `DECORATION_TAG` are read only through `page_decorations`. Which `StrikeSource` a run got is not reported (request_strike_source_reported_per_run). Driven: `ctrl_u_underlines_the_text_itself`. |
 
 ## Filed requests for Word-like text editing — not verdict rows
 

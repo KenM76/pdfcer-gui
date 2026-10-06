@@ -261,6 +261,9 @@ pub enum TextStyleRefusal {
     /// The engine found fewer copies of the chosen characters in their piece
     /// of text than the selection counted (`FormatError::NoMatch`).
     SpanNotFound,
+    /// An underline or strikethrough was asked for on text drawn invisibly
+    /// (rendering mode 3 or 7), such as the hidden text layer of a scan.
+    DecorationInvisible,
     /// An axis asked off is the face itself, and no face of its family
     /// without it can show the text; carries the axes (`"bold"`, `"italic"`,
     /// `"bold italic"`), in the engine's words.
@@ -361,6 +364,9 @@ impl TextStyleRefusal {
             }
             Self::SpanNotFound => {
                 "pdfcer could not find the selected letters where the selection put them, so it changed nothing. Select them again and retry."
+            }
+            Self::DecorationInvisible => {
+                "This text is not drawn on the page (it is hidden, like the searchable text behind a scan), so a line under or through it would mark nothing you can see. Nothing changed."
             }
             Self::NewText => {
                 "New text takes its style from the text pen. Finish it with Enter, then select it to style part of it."

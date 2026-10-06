@@ -62,7 +62,7 @@ Fix classes: **GUI** (this repo only) or **ENGINE** (needs a request; the number
 | C1 | Ctrl+B, Ctrl+I and Ctrl+U on a selection | fixed (step 7) | Dead while composing (driven, code). | GUI (the engine's `format_text` takes a substring `find`) |
 | C2 | Restyling a selection restyles only that selection | partial (step 7: the ribbon and Ctrl+B/I/U do; the Properties fields still restyle whole runs) | The GUI applies the style to the whole run (code). The engine supports a substring. | GUI |
 | C3 | Font, size and colour | works | Run granularity only, so this inherits C2. | GUI via C2 |
-| C4 | Underline is real text formatting | partial (step 7: a drawn line in the content, not tied to the run; G085) | It exists only as an annotation (code). | GUI (drawn rule in the content stream via the engine's line verbs); ask if absent |
+| C4 | Underline is real text formatting | fixed (G085: the characters carry the line; driven `ctrl_u_underlines_the_text_itself`) | It existed only as an annotation (code). | GUI via `FormatRequest::decoration` |
 | C5 | Alignment buttons (left, centre, right, justify) | fixed (step 7) | The engine detects alignment, but no GUI control exists (code). Placement decided by Ken: in both places, see step 7. | GUI; re-justify needs G079 |
 | C6 | Superscript and subscript | missing | The engine has `set_rise`/`set_script`, but no command reaches them, and reflow flattens them (code). | GUI; reflow keep needs G079 |
 | C7 | Bullets, numbering and hanging indent | missing | `BlockKind` has only `Paragraph` (code). | ENGINE G079 |

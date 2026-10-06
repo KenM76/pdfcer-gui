@@ -14,16 +14,17 @@
 //! middle of `aaa`) is no match in that count and is declined as
 //! `SpanAmbiguous`.
 //!
-//! A decoration is a text-markup mark written into the page content under
-//! the range's quads, in the text's own colour. It is not tied to the text:
-//! moving or re-wrapping the text later leaves the line where it was.
+//! A decoration is the same pieces sent with `FormatRequest::decoration`: the
+//! engine marks the characters and draws the rule from the mark, so the line
+//! follows the text through later moves, deletes and reflows, in the text's
+//! own colour. Each piece keeps the line it already has on the other axis,
+//! and the press turns its own line off when the range's first letter carries
+//! it, as the pressed toggle shows.
 
-use pdfcer_core::annot_author::{Color, MarkupSpec, TextMarkupKind};
-use pdfcer_core::edit::MarkupOptions;
+use pdfcer_core::text_edit::decoration::DecorationSet;
 use pdfcer_core::text_edit::{
     BlockRecognitionOptions, EditableTextModel, FormatRequest, TextPosition,
 };
-use pdfcer_core::text_extract::TextColor;
 
 use super::StyleChange;
 use crate::app::actions::text::Decoration;
@@ -51,6 +52,8 @@ fn fresh(doc: &OpenDoc, page: usize, span: Span, expected: &str) -> Option<TextS
 /// One `format_text` call of a range restyle.
 struct Piece {
     run: usize,
+    /// Where the piece's characters start.
+    at: TextPosition,
     req: FormatRequest,
 }
 
@@ -94,6 +97,7 @@ fn pieces(doc: &OpenDoc, page: usize, span: Span) -> Result<Vec<Piece>, t::TextS
             };
             out.push(Piece {
                 run,
+                at: TextPosition::new(run, a),
                 req: req.target(target),
             });
         }
@@ -119,19 +123,54 @@ pub(in crate::app::actions) fn apply(
         refuse(page, t::TextStyleRefusal::SpanMoved, "moved");
         return;
     }
-    let pieces = match pieces(doc, page, span) {
-        Ok(pieces) if !pieces.is_empty() => pieces,
-        Ok(_) => return refuse(page, t::TextStyleRefusal::NoRun, "no-glyphs"),
-        Err(why) => return refuse(page, why, "pieces"),
+    let Some(pieces) = checked_pieces(doc, page, span) else {
+        return;
     };
+    let pieces = pieces
+        .into_iter()
+        .map(|p| Piece {
+            req: change.stamp(p.req),
+            ..p
+        })
+        .collect();
+    let (applied, total) = run_pieces(doc, page, pieces);
+    doc.text_selection = fresh(doc, page, span, expected);
+    let kept = doc.text_selection.is_some();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "text-span-style-applied page={page} change={} applied={applied} pieces={total} \
+             reselected={kept}",
+            change.label()
+        )
+    });
+}
+
+/// The pieces of `span`, or `None` after saying why there are none.
+fn checked_pieces(doc: &OpenDoc, page: usize, span: Span) -> Option<Vec<Piece>> {
+    match pieces(doc, page, span) {
+        Ok(pieces) if !pieces.is_empty() => Some(pieces),
+        Ok(_) => {
+            refuse(page, t::TextStyleRefusal::NoRun, "no-glyphs");
+            None
+        }
+        Err(why) => {
+            refuse(page, why, "pieces");
+            None
+        }
+    }
+}
+
+/// Send each piece's request, last first, stopping at the first refusal;
+/// records the gesture's disclosures and returns `(applied, total)`.
+fn run_pieces(doc: &mut OpenDoc, page: usize, pieces: Vec<Piece>) -> (usize, usize) {
     let policy = doc.settings.style_policy;
     let total = pieces.len();
     let mut carried: Vec<String> = Vec::new();
     let mut applied = 0_usize;
     // Last-first: an edit only moves bytes at or after itself.
     for piece in pieces.into_iter().rev() {
-        let req = change.stamp(piece.req);
-        match super::format_op(doc, page, policy, &req) {
+        match super::format_op(doc, page, policy, &piece.req) {
             Ok(notes) => {
                 applied += 1;
                 carried.extend(notes);
@@ -157,20 +196,11 @@ pub(in crate::app::actions) fn apply(
         // operators it crossed, so no "N runs" sentence.
         super::emit_carried(doc, page, applied, 1, &carried);
     }
-    doc.text_selection = fresh(doc, page, span, expected);
-    let kept = doc.text_selection.is_some();
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed
-        format!(
-            "text-span-style-applied page={page} change={} applied={applied} pieces={total} \
-             reselected={kept}",
-            change.label()
-        )
-    });
+    (applied, total)
 }
 
-/// Draw an underline or strikethrough under exactly the characters `span`
-/// covers, then keep them selected.
+/// Turn an underline or strikethrough on or off under exactly the characters
+/// `span` covers, then keep them selected.
 pub(in crate::app::actions) fn decorate(
     doc: &mut OpenDoc,
     page: usize,
@@ -178,45 +208,46 @@ pub(in crate::app::actions) fn decorate(
     expected: &str,
     kind: Decoration,
 ) {
-    let Some(selection) = fresh(doc, page, span, expected) else {
+    if fresh(doc, page, span, expected).is_none() {
         refuse(page, t::TextStyleRefusal::SpanMoved, "moved");
         return;
+    }
+    let Some(pieces) = checked_pieces(doc, page, span) else {
+        return;
     };
-    let color = colour_at(doc, page, span.0.run);
-    let spec = MarkupSpec::TextMarkup {
-        kind: match kind {
-            Decoration::Underline => TextMarkupKind::Underline,
-            Decoration::Strikethrough => TextMarkupKind::StrikeOut,
-        },
-        quads: selection.page_quads,
-        color,
-    };
-    let label = "decorate-text"; // ui-text-exempt: funnel trace label
-    crate::app::actions::markupdest::author(
-        doc,
-        label,
-        page,
-        &spec,
-        &MarkupOptions::default(),
-        true,
-    );
+    let lines = |at| crate::canvas::textedit::weight::lines_at(doc, page, at).unwrap_or_default();
+    let on = !carries(lines(span.0), kind);
+    let pieces: Vec<Piece> = pieces
+        .into_iter()
+        .map(|p| Piece {
+            req: p.req.decoration(with(lines(p.at), kind, on)),
+            ..p
+        })
+        .collect();
+    let (applied, total) = run_pieces(doc, page, pieces);
     doc.text_selection = fresh(doc, page, span, expected);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
-        format!("text-decorate-applied page={page} kind={kind:?}")
+        format!(
+            "text-decorate-applied page={page} kind={kind:?} on={on} applied={applied} \
+             pieces={total}"
+        )
     });
 }
 
-/// The fill of `run`, as an annotation colour; black where it is unreadable.
-fn colour_at(doc: &OpenDoc, page: usize, run: usize) -> Color {
-    let fill = crate::canvas::textedit::pin::inspect(doc, page, run).and_then(|i| i.style.fill);
-    match fill {
-        Some(TextColor::Rgb(r, g, b)) => Color::Rgb(f64::from(r), f64::from(g), f64::from(b)),
-        Some(TextColor::Gray(v)) => Color::Gray(f64::from(v)),
-        Some(TextColor::Cmyk(c, m, y, k)) => {
-            Color::Cmyk(f64::from(c), f64::from(m), f64::from(y), f64::from(k))
-        }
-        _ => Color::Gray(0.0),
+/// Whether `set` carries `kind`'s line.
+const fn carries(set: DecorationSet, kind: Decoration) -> bool {
+    match kind {
+        Decoration::Underline => set.underline,
+        Decoration::Strikethrough => set.strikethrough,
+    }
+}
+
+/// `set` with `kind`'s line turned `on` and the other line kept.
+const fn with(set: DecorationSet, kind: Decoration, on: bool) -> DecorationSet {
+    match kind {
+        Decoration::Underline => set.with_underline(on),
+        Decoration::Strikethrough => set.with_strikethrough(on),
     }
 }
 

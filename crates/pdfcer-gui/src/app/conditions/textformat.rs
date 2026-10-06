@@ -2,11 +2,9 @@
 //! (`OPERATOR_REQUESTS.md` O271, O273).
 //!
 //! A draft on existing text is a text subject for the Font group exactly as a
-//! sweep is, so it enables the group and its tab. Bold and Italic render
-//! pressed when the letter they would act on carries the axis; a pending
-//! style for what is typed next flips that, and is the only thing that presses
-//! Underline or Strikethrough, because a drawn line is not read back from the
-//! page.
+//! sweep is, so it enables the group and its tab. Bold, Italic, Underline and
+//! Strikethrough render pressed when the letter they would act on carries the
+//! axis or line; a pending style for what is typed next flips that.
 //!
 //! The weight read recognises the page's blocks, so it is cached by position
 //! and edit epoch rather than paid every frame.
@@ -68,12 +66,14 @@ impl crate::app::PdfcerApp {
         let holds = |id: &str| pending.as_ref().is_some_and(|(t, c)| t.holds(id, *c));
         let bold = read.is_some_and(|w| w.bold.present()) != holds("format.bold");
         let italic = read.is_some_and(|w| w.italic.present()) != holds("format.italic");
+        let under = read.is_some_and(|w| w.lines.underline) != holds("format.underline");
+        let strike = read.is_some_and(|w| w.lines.strikethrough) != holds("format.strikethrough");
         // ui-text-exempt: registered command ids, never displayed.
         for (id, on) in [
             ("format.bold", bold),
             ("format.italic", italic),
-            ("format.underline", holds("format.underline")),
-            ("format.strikethrough", holds("format.strikethrough")),
+            ("format.underline", under),
+            ("format.strikethrough", strike),
         ] {
             if on {
                 set.set(selected_condition(id));
