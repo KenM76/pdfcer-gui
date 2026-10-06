@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.79.0, a git dependency on the local engine repository, pinned at **`da76fdc1`** (the v0.79.0 tag) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.80.0, a git dependency on the local engine repository, pinned at **`dc39139b`** (the v0.80.0 tag) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** Recognised text reads in order on a page with columns, left column first. It sits on a layer named *Recognised text* that the Layers panel can show and hide, and Remove OCR text deletes that layer too when nothing else is on it. Export to Word and Export text can take the recognised text alone or leave it out. Invisible words typed with Add text join the recognised text, and editing a recognised word no longer breaks the layer. File › Recognise › *Download OCR models…* fetches the recogniser's model files into the `models` folder beside pdfcer, each checked against its published fingerprint before it is saved, and shows their licence.
 
@@ -82,7 +82,7 @@ than the number it produced last.
 | **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
-| **Engine** | `pdfcer-core` v0.79.0, pinned as above |
+| **Engine** | `pdfcer-core` v0.80.0, pinned as above |
 | **Panels** | 14 — `Panel::ALL` is `[Self; 14]` in `crates/pdfcer-gui-base/src/panelid.rs`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 42 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 

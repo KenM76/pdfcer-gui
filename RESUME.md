@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `da76fdc1` (the v0.79.0 tag: carries G118's encryption refusal cause, G119 to G125's OCR work, G126's widget border dash, G127's hand-signature object list, G128/G129's letters drawn two ways, and the per-run strike-source report) — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `dc39139b` (the v0.80.0 tag: carries G130's SVG and EMF placed on a layer, the 3D best-fit meshes and entity colour overrides, and G131's OCR structure sized by em) — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -65,7 +65,8 @@ export), and `v0.5.0-dev.20261006.4` is PREPARED, not published: tree
 `105fdc93`, gates 84 of 84, `D:uilds\pdfcergui-20261006-1506-da76fdc-105fdc93.zip`
 (44,498,885 bytes) mirrored to `pdfcer-gui1` with its userdata kept and
 paddle-vl re-copied, smoke-launched clean (`commands=217`); notes in
-`D:\scratch\s3elease-notes.md`. The main session publishes. Next, in order: G127 the hand-signature object list, G128/G129
+`D:\scratch\s3
+elease-notes.md`. The main session publishes. Next, in order: G127 the hand-signature object list, G128/G129
 letters drawn two ways, the per-run strike source, G126 (`Widget::border_dash`,
 retiring the shell's own `/BS /D` reader), removing each "engine-blocked" note
 as it is wired; then row 74's remaining adders, then row 85. Prepare the next release once
