@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **34 of 314** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `wanted` — a real gap — **32 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,8 +66,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Operator-initiated download** — pinned URL + SHA-256 verified in memory before anything reaches disk (`pdfcer-fetch`); the pinned list `pdfcer_core::ocr::models::fetchable_models` … | **consumed (G120).** File ▸ Recognise ▸ Download OCR models… lists `FETCHABLE_MODELS` and runs `pdfcer_fetch::fetch_verified` per file on its own thread into `<exe dir>/models/<folder>`, the bundled folder the OCR catalogue searches first; the window shows `FetchableModels::attribution` afterwards. Behind the `model-download` feature, registered only with it (R8). Needs no document. Driven by `ocr_models_download_into_the_models_folder`. |
-| **OCR layer: reading order, on a layer, added text, told apart** — `pdfcer_core::ocr::structure`, `pdfcer_core::ocr::layer_report`, `pdfcer_core::ocr::layer_content` (G121 to G125) | **wanted, O286, next.** In the pin. G121 consumed with no call: the shell passes words, traces `pdfcer_core::ocr::layer_report::OcrLayerReport::lines_written`, `blocks_written` and `structure` (`recognised_text_reads_column_by_column`); paragraphs are G131. G122 consumed: the write calls `pdfcer_core::ocr::layer::OcrLayerOptions::on_layer` on the *Recognised text* layer and retries on a new one when refused as `pdfcer_core::ocr::layer::OcrLayerError::NotALayerGroup`; Remove OCR text deletes each group `pdfcer_core::ocr::layer::OcrLayerRemoval::group_emptied` reports (`recognised_text_is_a_layers_row`); `pdfcer_core::ocr::marker::OcrLayerRef::optional_content` unread. G123 consumed: the Invisible pen calls `into_ocr_layer`, the `pdfcer_core::text_edit::addtext::AddTextRequest::with_ocr_layer` default; `pdfcer_core::text_edit::addtext::AddTextError::OcrLayerNeedsSession` is the one-shot route's, unreachable here. G124 consumed: the Text and Word export windows' recognised-text choice is `ExtractOptions::with_ocr_layer` (`recognised_text_choice_filters_word`, `_text`); `TextRun::in_ocr_layer` unread. G125 consumed with no call (`an_edited_ocr_layer_stays_a_layer`). |
 | Set a page's size (`/MediaBox`) — writing a value equal … | **wanted.** No operator-facing page-size control exists. `set_media_box` is called in exactly one place — `app::blank`, sizing a **new** blank document — so the verb is linked and the surface is not: a drawing that arrives on the wrong sheet size cannot be put right here. The Pages panel's context menu is where it belongs, beside rotate and extract. |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **`/CropBox`/`/BleedBox`/`/TrimBox`/`/ArtBox` now resolve as their INTERSECTION with `/MediaBox`** — `Page::crop_box` is the effective box; `BoxResolution` per box | **wanted: the intersection is consumed, the disclosure is not.** <!--namesake:crop_box--> the field is read everywhere and is the effective box, so the shell no longer intersects it itself. <!--namesake:BoxResolution--> the shell's test fixtures construct `BoxResolution::Defaulted` because `Page` has no constructor (our request `G060`); no surface reads the variant. Owed: disclose a `Clipped` or `Unusable` crop box off-canvas in the page properties (R8b). The renderer reports the same fact per render as `Diagnostics::page_crop_box`; the page properties read the page, so that field has no reader here. Our request `G059`. |
@@ -139,7 +137,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **5 of 314** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `blocked` — waiting on something named — **6 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -162,11 +160,12 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 |---|---|
 | **List the 3D model tree — node names, hierarchy, hidden/suppressed state** — `PrcFile::model_tree`, `ModelNode` (`pdfcer-3d`, engine Pass 461.0) | **blocked on the next pin.** On engine main after the v0.76.0 tag. Wanted in the 3D viewer: a part tree beside the model showing each node's name, depth and stored hidden/suppressed state, with a borrowed display name disclosed off-canvas as the engine reports it. |
 | **Render 3D diffuse textures on an uncompressed mesh** … | **blocked on the next pin.** Engine `Pass 462.0` (`77777d07`) is after the pinned v0.76.0, so this build cannot draw it. The 3D viewer and the poster both draw through `pdfcer_3d::render_coloured`; when the pin moves, what this shell owes is the disclosure: the count of textures drawn in their base colour instead, off-canvas beside the viewer's uncoloured-part count, and a driven check on a textured fixture. |
+| **PRC assembly colour/visibility overrides (entity references)** — `EntityOverrides::{Subtree, Everywhere, Ignore}` (`pdfcer-3d`, engine Pass 510.0) | **blocked on the next pin.** Engine `d8426db9` is after the pinned v0.79.0. Wanted in the 3D viewer and the page picture: assemblies drawn with their recolours, hidden items and transparency, the default reach, and the engine's count of recoloured placements disclosed off-canvas. |
 | Tagged-PDF `TextDecorationType` structure attribute — an underline … | **blocked on the pin.** Not in `455d6ba1`; it rides on the decoration row above. Once Format ▸ Font sends `DecorationSet` through the restyle path, the engine writes the `/Layout /TextDecorationType` attribute itself and the shell adds no control. What the shell will owe: the engine's partial-coverage disclosure (a structure element only part-underlined is not split) worded on the status line. |
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 314** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -177,7 +176,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 314** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `declined` — deliberately no surface — **16 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -219,7 +218,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **259 of 314** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **261 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -258,6 +257,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Recover a damaged cross-reference table and tolerate common lenient-PDF defects** — and, since, name what the rebuild could not keep: `RecoveryReport::objects_dropped`, `Vec<DroppedObject>` of `{ number, reason }` | **Reachable and driven.** Document properties' recovery block carries a second line: the two `DropReason` arms counted separately, then the object numbers, truncated at twelve — `panels::docprops::dropped_objects_note`. It renders nothing when the list is empty (R9) and stays off-canvas (R8b rule 4). The driven check `recovery_losses_are_listed_in_document_properties` launches twice, and its control is a file ALSO rebuilt by scanning that lost nothing: against a sound file the absence would be satisfied by three states at once. |
 | **Sign into a pre-placed empty signature field** — `SignRequest::field_name` / `pdfcer sign --field-name` … | **Reachable and driven — File ▸ Security ▸ `Sign…`, third placement option.** `crate::sign::read_empty_signature_fields` lists every `/FT /Sig` field with no `/V`; `crate::sign::Placement` is a three-arm enum so `visible` and `field_name` cannot both be sent. The refusal wording is load-bearing: `crate::text::sign::author_imposed` names the person who prepared the document before it names pdfcer, because the engine is deliberately stricter than Acrobat — refusals arrive on documents Acrobat would sign, and the sentence must say the author's own constraint refused it. Held by `an_author_imposed_refusal_names_the_author_and_not_pdfcer`. Driven by `tools/ui-verify` phases E and F, which read the signature back under the author's field name `SignHere`. Owed: the author-imposed refusal itself is not driven — a refused signing publishes no named region for its sentence, only `sign-applied written=0`, which proves *a* refusal and not *which* one. A region on the failure label closes it; today it is covered by unit tests over `worded()` and by nothing driven. |
 | **Export a page region as vector content WITH the viewer's state, geometry outside the rect truly removed** — `pageops::extract_region`, `RegionExport`, `RegionReport`, `RegionError`, the module `pdfcer_core::pageops::region` (our `G099`, Pass 449.0) | **shipped — View ▸ Snapshot, then Copy (Ctrl+C or the box's right-click menu), driven (`a_snapshot_copy_is_cropped_at_the_set_dpi`).** `clipboard::snapshot::copy_snapshot` cuts the box out through `extract_region` with the viewer's annotation and hidden-layer state and makes the SVG, EMF and picture from the one-page result, so nothing outside the box reaches the clipboard. When `RegionReport::has_residuals` is true, or the engine refuses the region, the picture is placed alone and the status line says why. |
+| **Operator-initiated download** — pinned URL + SHA-256 verified in memory before anything reaches disk (`pdfcer-fetch`); the pinned list `pdfcer_core::ocr::models::fetchable_models` … | **shipped (G120).** File ▸ Recognise ▸ Download OCR models… lists `FETCHABLE_MODELS` and runs `pdfcer_fetch::fetch_verified` per file on its own thread into `<exe dir>/models/<folder>`, the bundled folder the OCR catalogue searches first; the window shows `FetchableModels::attribution` afterwards. Behind the `model-download` feature, registered only with it (R8). Needs no document. Driven by `ocr_models_download_into_the_models_folder`. |
+| **OCR layer: reading order, on a layer, added text, told apart** — `pdfcer_core::ocr::structure`, `pdfcer_core::ocr::layer_report`, `pdfcer_core::ocr::layer_content` (G121 to G125) | **shipped.** G121: no call; the shell passes words and traces `OcrLayerReport::lines_written`, `blocks_written` and `structure` (`recognised_text_reads_column_by_column`); paragraphs are G131. G122: `OcrLayerOptions::on_layer` on the *Recognised text* layer, a new one on `OcrLayerError::NotALayerGroup`; Remove OCR text deletes each `OcrLayerRemoval::group_emptied` group (`recognised_text_is_a_layers_row`). G123: the Invisible pen calls `into_ocr_layer`. G124: the export windows' choice is `ExtractOptions::with_ocr_layer` (`recognised_text_choice_filters_word`, `_text`). G125: no call (`an_edited_ocr_layer_stays_a_layer`). Unread: `OcrLayerRef::optional_content`, `TextRun::in_ocr_layer`. |
 
 ### Text
 

@@ -83,7 +83,7 @@ impl FetchModelsDialog {
         }
         if self.running.is_some() {
             ui.horizontal(|ui| {
-                ui.spinner();
+                ui.add(egui::Spinner::new().color(egui_shell::Theme::of(ui.ctx()).palette.text));
                 ui.label(t::running());
             });
         }
