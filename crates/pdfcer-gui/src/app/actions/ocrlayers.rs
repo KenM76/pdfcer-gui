@@ -10,13 +10,17 @@
 //!   `ExistingLayers::Replace`, so a re-run is one copy of every word, and the
 //!   recogniser's key in the marker.
 //! - [`recognised_disclosures`] adds one sentence totalling `layers_replaced`
-//!   ahead of the engine's per-page lines.
+//!   ahead of the engine's per-page lines, and traces
+//!   `ocr-layer-structure lines= blocks= structure=`: the reading structure
+//!   the writer laid the words out in, and whether the engine reported it or
+//!   pdfcer inferred it from the word boxes.
 //! - [`remove_all`] is [`super::Action::RemoveOcrLayers`]: every marked layer
 //!   off, as ONE undo entry (`CommandKind::RemoveOcrLayer`), through the funnel.
 //! - `LayerPresent`, `LayerNotFound` and "none found" reach the status bar as
 //!   [`crate::text::ocr::OcrLayerRefusal`] sentences.
 
 use pdfcer_core::edit::{CommandKind, EditSession};
+use pdfcer_core::ocr::OcrStructureSource;
 use pdfcer_core::ocr::layer::{ExistingLayers, OcrLayerError, OcrLayerOptions, OcrLayerReport};
 
 use crate::app::state::OpenDoc;
@@ -35,12 +39,35 @@ pub(super) fn options(engine: &str) -> OcrLayerOptions {
 pub(super) fn recognised_disclosures(reports: &[OcrLayerReport]) -> Vec<String> {
     let layers: usize = reports.iter().map(|r| r.layers_replaced).sum();
     let pages = reports.iter().filter(|r| r.layers_replaced > 0).count();
+    crate::diag::trace(|| {
+        let structure = reports
+            .iter()
+            .map(|r| structure_key(r.structure))
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "ocr-layer-structure lines={} blocks={} structure={structure}",
+            reports.iter().map(|r| r.lines_written).sum::<usize>(),
+            reports.iter().map(|r| r.blocks_written).sum::<usize>(),
+        )
+    });
     let mut out = Vec::new();
     if layers > 0 {
         out.push(t::layers_replaced(layers, pages));
     }
     out.extend(reports.iter().flat_map(OcrLayerReport::disclosures));
     out
+}
+
+/// The trace token for where a page's lines and blocks came from.
+const fn structure_key(source: OcrStructureSource) -> &'static str {
+    match source {
+        OcrStructureSource::Reported => "reported",
+        OcrStructureSource::BlocksInferred => "blocks-inferred",
+        OcrStructureSource::Inferred => "inferred",
+        _ => "other",
+    }
 }
 
 /// Word the refusals this shell can name; the rest take the funnel's generic

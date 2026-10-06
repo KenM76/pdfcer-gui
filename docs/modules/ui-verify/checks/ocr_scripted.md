@@ -24,6 +24,10 @@ settle frames where the others get 600.
    not declared.
 2. `ocr-run` clicked; `ocr-started engine=` names the seeded recogniser.
 3. `ocr-recognised pages=1 recognised>0`, then the edit funnel's `ocr-layer`.
+   `ocr-layer-structure` must say `structure=inferred` (the shell hands the
+   writer words only) with at least one block and no fewer lines than blocks,
+   and the `ocr-layer` line's disclosures, which the status line shows, must
+   name the same `N line(s) in M block(s)`.
 4. Ctrl+S gives `save-in-place outcome=ok`; the saved bytes are longer than the
    original and start with them (an appended revision).
 5. A second launch on the saved file runs Recognise text again and must trace
@@ -42,6 +46,8 @@ the fixture.
 
 - Not raising `Action::ApplyOcr` from the dialog's poll: all three variants
   fail at step 3 (no `ocr-layer` line).
+- The v0.78 engine build (`D:/scratch/s3/control`), which writes loose
+  words: fails at step 3 with no `ocr-layer-structure` line.
 - Handing `add_ocr_layer` an empty page list: the ocrs and PaddleOCR variants
   fail at step 4 (the save appends nothing).
 

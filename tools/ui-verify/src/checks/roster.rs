@@ -500,6 +500,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(ocr_export_filter::RecognisedChoiceFilters {
             format: ocr_export_scripted::Format::Text,
         }),
+        Box::new(ocr_reading_order::RecognisedTextReadsColumnByColumn),
         Box::new(labels_scripted::PageLabelsWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),
         Box::new(measure_area_scripted::AnAreaMeasuresTheRegionItEncloses),

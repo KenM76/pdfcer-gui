@@ -35,7 +35,9 @@ const REFUSED: &str = "ocr-refused"; // ui-text-exempt: a trace event name, neve
 const HAS_TEXT: &str = "AlreadyHasText"; // ui-text-exempt: a trace token, never displayed
 /// The edit funnel's line for the applied layer.
 const LAYER: &str = "ocr-layer"; // ui-text-exempt: a trace event name, never displayed
-const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
+/// The layer's reading structure, as the engine's report gave it.
+pub(crate) const STRUCTURE: &str = "ocr-layer-structure"; // ui-text-exempt: a trace event name, never displayed
+pub(crate) const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
 /// Off the desktop, so no OS input can reach it and none of his is taken.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// Settle frames to wait for one recognition, polled in steps of 20.
@@ -148,6 +150,9 @@ fn judge_first(trace: &Trace, engine: &str, path: &str) -> Option<String> {
             trace.last("ocr-layer-refused").map(|l| l.raw.clone())
         ));
     };
+    if let Some(failure) = judge_structure(trace, &layer.raw, path) {
+        return Some(failure);
+    }
     let saved = trace.last(SAVED).map(|l| l.raw.clone());
     if !saved.as_deref().is_some_and(|l| l.contains("outcome=ok")) {
         return Some(format!(
@@ -158,9 +163,40 @@ fn judge_first(trace: &Trace, engine: &str, path: &str) -> Option<String> {
     None
 }
 
+/// The layer was written as lines inside blocks, not loose words, and the
+/// operator was told the structure was inferred: the shell hands the writer
+/// words only, so `structure=inferred`, and the edit's disclosures, which
+/// the status line shows, name the same block count.
+fn judge_structure(trace: &Trace, layer: &str, path: &str) -> Option<String> {
+    let Some(line) = trace.last(STRUCTURE) else {
+        return Some(format!(
+            "★ the layer was applied (`{layer}`) with no `{STRUCTURE}` line: the engine's report \
+             of lines and blocks was not read. Trace: {path}."
+        ));
+    };
+    let lines = line.get_usize("lines").unwrap_or(0);
+    let blocks = line.get_usize("blocks").unwrap_or(0);
+    if line.get("structure") != Some("inferred") || blocks == 0 || lines < blocks {
+        return Some(format!(
+            "★ `{}`: a words-only recognition must be laid out as inferred lines inside at \
+             least one block. Trace: {path}.",
+            line.raw
+        ));
+    }
+    let told = format!("{lines} line(s) in {blocks} block(s)");
+    if !layer.contains(&told) {
+        return Some(format!(
+            "★ the structure was inferred (`{}`) and the edit's disclosures do not say \
+             `{told}`: `{layer}`. Trace: {path}.",
+            line.raw
+        ));
+    }
+    None
+}
+
 /// Seed the recogniser beside the binary, launch on `pdf`, open Recognise
 /// text…, run it, and wait for its answer; with `save`, then press Ctrl+S.
-fn recognise(
+pub(crate) fn recognise(
     ctx: &CheckContext,
     report: &mut CheckReport,
     pdf: &Path,
