@@ -1067,6 +1067,8 @@ pub mod selection_gestures;
 pub mod style_off;
 /// A letter an embedded subset outlines but never showed can be typed.
 pub mod subset_glyph;
+/// Text made bold by a stroke shows Bold pressed, and Ctrl+B takes it off.
+pub mod synthetic_bold;
 /// Text-tool clicks reach a note, a field or a scan's remedy.
 pub mod text_click_routes;
 pub mod text_tool_click_types;

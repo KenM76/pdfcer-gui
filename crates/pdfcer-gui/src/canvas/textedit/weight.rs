@@ -7,13 +7,11 @@
 //! Read from the glyph at a text position, so a range inside a run answers for
 //! its own first letter rather than for the run's.
 //!
-//! The stroke width is passed to `synth::detect` as `0`: `GlyphProvenance`
-//! carries no line width, so every fill-and-stroke render mode on a face whose
-//! name does not claim bold reads as synthetic bold. That is what pdfcer itself
-//! writes, and an outlined display face written by another producer is the one
-//! case it misreads.
+//! Synthesis is the engine's reading of the glyph (`synth::detect_at`): a
+//! fill-and-stroke render mode whose line width is within the band a
+//! synthesized bold uses, or a sheared text matrix.
 
-use pdfcer_core::text_edit::synth::{detect, name_claims_bold, name_claims_italic};
+use pdfcer_core::text_edit::synth::{detect_at, name_claims_bold, name_claims_italic};
 use pdfcer_core::text_edit::{BlockRecognitionOptions, EditableTextModel, GlyphRef, TextPosition};
 
 use crate::app::state::OpenDoc;
@@ -68,12 +66,7 @@ pub fn at(doc: &OpenDoc, page: usize, at: TextPosition) -> Option<Weight> {
         .find(|record| record.resource_names.iter().any(|name| *name == key))
         .and_then(|record| record.base_font.clone())
         .unwrap_or_default();
-    let tm = p.text_matrix.map(f64::from);
-    // `AmbientValue::value` is the operand as written; a render mode is an
-    // integer 0..=7.
-    #[allow(clippy::cast_possible_truncation)]
-    let mode = p.text_state.render_mode.value as i64;
-    let synth = detect(&base, mode, 0.0, f64::from(p.tf_size), tm);
+    let synth = detect_at(&base, p);
     let axis = |face: bool, synthetic: bool| {
         if face {
             Axis::Face
