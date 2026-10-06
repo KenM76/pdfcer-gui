@@ -326,6 +326,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(check_mark::ACheckBoxsMarkCanBeChosen),
         Box::new(check_mark::ARadioButtonsMarkCanBeChosen),
         Box::new(new_radio_mark::ANewRadioButtonsMarkIsChosen),
+        Box::new(new_radio_mark::ANewCheckBoxsMarkIsChosen),
         Box::new(widget_dash::AWidgetBordersDashCanBeChosen),
         Box::new(choice_defaults::AMultiSelectListsDefaultsCanBeChosen),
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
