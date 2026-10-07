@@ -491,6 +491,41 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 **Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. `Ctrl+V` works for it too, not only the ribbon's Paste. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`, `ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`. Text from Word or anywhere else now pastes at the pointer as well: as page text in Edit, as a text-box comment in Review (`text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`). A picture file dropped on a page lands where it was dropped, at its natural size, with no window; Alt as you drop opens the window instead (`a_dropped_picture_lands_where_it_was_dropped`). A dropped text file becomes pages after the one on screen (`a_dropped_text_file_becomes_pages_after_this_one`). A PDF dropped alone on an open document asks whether to open it, insert its pages after this one, or place its first page where it was dropped (`a_dropped_pdf_asks_open_insert_or_place`). In Review a copied picture pastes as a stamp at the pointer, by `Ctrl+V` or Markup ▸ Paste picture as stamp (`a_copied_picture_pastes_as_a_stamp_in_review`). File ▸ New from clipboard and Pages ▸ Insert from clipboard make a new PDF of what you copied, or add it as pages after the one you are on: a picture as a page its own size, text as Import text sets it (`the_clipboard_becomes_a_new_pdf_or_pages_after_this_one`). SVG and EMF wait on the engine (G093, G094). Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
+## O288 — **OPEN, first in the queue (Batch 1; a release follows it)** — editing never blanks or blocks, and eight editing defects
+
+Relayed from Ken in his order; `D:\scratch\s3\ken-list-2026-10-07.md` held the list as given. Each item gets a driven check and a falsification. Engine gaps are filed as G requests, never waited on.
+
+1. **Never blank, never block (top priority).** Adding or editing anything, a ce dimension included, blanks the live preview after the edit; then every page preview blanks and redraws, and he waits for them before he can work again. A picture once drawn, page or thumbnail, is never blanked while it is redrawn: the old one stays until the new one is ready. Redraws run in the background and never hold up the next edit. Only the pages an edit touched are redrawn. The live preview of an add or edit stays until the committed picture replaces it. His words: *"the user interface never slows down to commit work, and never blanks anything out when it is being refreshed - keep the current view in place and draw over it with the new one to replace it."* Reproduced first by a driven check: one edit on a multi-page file, tracing which pages redraw, whether any frame shows a blank page or thumbnail, and the time until the next input is accepted.
+2. **Markup shapes and page shapes.** A line drawn with Markup ▸ Shapes ▸ Line and then made part of the page: dragging an end point previews and does not apply, and none of its properties can be edited. Audit every tool for missing edit features. If markup shapes are meant to differ from page shapes, add tools to make and edit shapes directly on the page.
+3. **A ce dimension group's units convert through its scale.** A group measuring 1000 mm, switched to feet, shows "1000 ft"; it must convert.
+4. **Choose the group when adding a ce dimension:** a drop-down of the existing groups, or a new one.
+5. **A new group can copy an existing group's scale,** so groups share a scale and show different units.
+6. **Horizontal and vertical ce dimensions.** He believes the engine has them because the old program did; check the engine, and file a G request if not.
+7. **Clicking a ce dimension's text selects it.** Today only its other parts do.
+8. **Keys during a text edit go only to the caret.** The arrow keys also move a highlight in the ribbon, and Up and Down also turn pages.
+9. **A text block of two or more lines re-opens as one paragraph,** not as separate lines.
+
+**Where it stands.** Not started.
+
+## O289 — **OPEN, after O288's release (Batch 2)** — twelve requests
+
+Relayed from Ken in his order, to start once the O288 release is out.
+
+10. **A Security tab** on the ribbon, holding the Security and Protect tools.
+11. **The snapshot tool on the left tool strip.**
+12. **3D models:** open one for viewing by clicking it on the page, and choose which axis is up, front, left and so on.
+13. **Deskew:** detect and straighten scanned pages and pictures of text, with the same choices as the OCR options, plus straightening only the selected pictures.
+14. **Remove OCR text** has the same options as Recognise text, choosing pages included.
+15. **Editing the OCR layer is what-you-see-is-what-you-get, live,** through the same editing as ordinary text.
+16. **OCR dictionaries:** choose which to use, or none.
+17. **The OCR vision model:** can it put tables and other features on another layer? Check what the engine offers; file a G request if needed.
+18. **Page thumbnails:** zoomable as Acrobat's are, and sharper: a quick picture at today's quality, then a finer one over it.
+19. **Tabs across windows:** move a tab to another open pdfcer window or tear it off into its own; copy, paste and drag-and-drop work between windows.
+20. **The Open window selects several files** with Shift, Ctrl and Ctrl+Shift.
+21. **Protect ▸ metadata finder:** find the metadata in a file and remove the chosen items, or all of it.
+
+**Where it stands.** Not started.
+
 ## O287 — **OPEN, first in the queue** — a signature can be a picture, and a placed signature can be moved and resized inside its box
 
 > **Ken:** *"Can you also make it so the signing a document with a mouse drawn signature allows an image import for a signature as an option too? In both cases we should be able to resize and reposition the signature, and edit its placement and size within the signature field on the page if we don't like how it landed there."*

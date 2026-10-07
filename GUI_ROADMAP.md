@@ -6,6 +6,29 @@ whoever picks up the next piece of work.
 
 ---
 
+## The current queue: O288, a release, then O289
+
+Ken's list sets the order and replaces every other ordering in this file until
+it is done. Each item's wording is its row in `OPERATOR_REQUESTS.md`.
+
+1. **O288 (Batch 1), in order.** Item 1 first: an edit never blanks a page or
+   thumbnail, never blocks the next input, re-renders only the pages it
+   touched, and keeps its live preview until the committed render replaces it.
+   Then markup and page shapes (with an audit of every tool's edit features),
+   ce dimension units converted through the scale, choosing a group when adding
+   a ce dimension, a new group copying a scale, horizontal and vertical ce
+   dimensions, selecting a ce dimension by its text, keys during a text edit
+   reaching only the caret, and a multi-line text block re-opening as one
+   paragraph.
+2. **A release** in slot `pdfcer-gui1`, prepared and not pushed; the main
+   session publishes.
+3. **O289 (Batch 2), items 10 to 21.**
+
+Engine gaps found on the way are filed as G requests, and the work continues
+around them.
+
+---
+
 ## How the order is chosen
 
 Order by what the operator reaches for, never by what most recently arrived in
