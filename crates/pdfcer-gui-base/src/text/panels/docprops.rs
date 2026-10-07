@@ -189,6 +189,37 @@ pub const fn dropped_tooltip() -> &'static str {
     "When pdfcer rebuilds a damaged index it scans the whole file for anything that looks like the start of an object. Some of what it finds cannot be read back. Most of those are not really objects — they are ordinary compressed data that happens to look like one — and nothing is lost. Occasionally one is real, and then a piece of the document is genuinely gone: a missing drawing, a blank page, an annotation that is not there any more. Compare the pages against the original if you can."
 }
 
+/// The four page boxes, in the order `panels::docprops::boxes` walks them.
+const PAGE_BOXES: [&str; 4] = ["crop box", "bleed box", "trim box", "art box"];
+
+/// What Table 30 uses in place of each of [`PAGE_BOXES`] when it is unusable.
+const PAGE_BOX_DEFAULTS: [&str; 4] = [
+    "the whole sheet",
+    "the crop box",
+    "the crop box",
+    "the crop box",
+];
+
+/// Box `which` (0 crop, 1 bleed, 2 trim, 3 art) runs past the sheet's edge
+/// on `pages` and is read as the part on the sheet.
+#[must_use]
+pub fn page_box_clipped(which: usize, pages: &str) -> String {
+    let name = PAGE_BOXES[which];
+    format!(
+        "The {name} on page(s) {pages} runs past the edge of the sheet; pdfcer uses the part that is on the sheet. The file is not changed."
+    )
+}
+
+/// Box `which` on `pages` misses the sheet or is malformed and its default
+/// stands in.
+#[must_use]
+pub fn page_box_unusable(which: usize, pages: &str) -> String {
+    let (name, instead) = (PAGE_BOXES[which], PAGE_BOX_DEFAULTS[which]);
+    format!(
+        "The {name} on page(s) {pages} misses the sheet or is not a rectangle, so pdfcer uses {instead} in its place. The file is not changed."
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

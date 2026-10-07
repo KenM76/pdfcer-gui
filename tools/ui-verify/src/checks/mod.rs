@@ -636,6 +636,8 @@ pub mod media_clip;
 pub mod new_radio_mark;
 /// The Objects panel says where its list and the page disagree.
 pub mod object_disagreements;
+/// Document properties says which page boxes were not used as written.
+pub mod page_boxes;
 pub mod password_fill;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;

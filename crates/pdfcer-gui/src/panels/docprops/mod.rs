@@ -39,6 +39,8 @@ use crate::app::state::OpenDoc;
 use crate::text::anomalies as t_anomalies;
 use crate::text::panels::docprops as t;
 
+/// Page boxes the file wrote and pdfcer did not use as written.
+mod boxes;
 /// Security notes: the wrapper warning and the action census.
 mod security;
 /// The stamp-collection disclosure section — `OPERATOR_REQUESTS.md` **O169**.
@@ -203,6 +205,7 @@ fn facts(ui: &mut Ui, doc: &OpenDoc) {
     if let Some(size) = sheet_size(doc) {
         fact(ui, t::page_size_label(), &size);
     }
+    boxes::lines(ui, doc);
 
     let encrypted = base.encryption().is_some();
     fact(
