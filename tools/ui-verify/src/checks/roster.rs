@@ -265,6 +265,9 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         // it reuses is broken, so failing in that order reads as a diagnosis.
         Box::new(measure_calibrate::MeasureCalibratesByPickingTwoPoints),
         Box::new(group_unit_converts::ChangingAGroupsUnitKeepsItsRealLengths),
+        Box::new(dimension_tool_options::AHorizontalDimensionMeasuresOnlyTheRun),
+        Box::new(dimension_tool_options::ADimensionJoinsTheGroupMadeInToolOptions),
+        Box::new(dimension_tool_options::ANewGroupCopiesAGroupsScaleInItsOwnUnit),
         // Immediately after the check whose gesture it extends, and the order
         // is a dependency: this one drives the same two-point calibration and
         // then asks what the window did with it. If the pick itself is broken,

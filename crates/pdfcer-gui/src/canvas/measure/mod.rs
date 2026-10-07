@@ -66,6 +66,7 @@ const MEASURE_MEMORY_KEY: &str = "pdfcer-measure-state";
 /// Read the measure state, building one that already agrees with `kind` if
 /// there is none.
 fn load(ctx: &egui::Context, page_index: usize, kind: MeasureKind) -> MeasureState {
+    adopt_queued_group(ctx);
     let id = egui::Id::new(MEASURE_MEMORY_KEY);
     let mut st = ctx
         .data_mut(|d| d.get_temp::<MeasureState>(id))
@@ -112,6 +113,27 @@ pub fn active_group(ctx: &egui::Context) -> Option<pdfcer_core::dimension::Group
     read(ctx).map(|st| st.group)
 }
 
+thread_local! {
+    static QUEUED_GROUP: std::cell::Cell<Option<pdfcer_core::dimension::GroupId>> =
+        const { std::cell::Cell::new(None) };
+}
+
+/// **Make `group` the authoring group from the next frame on.** For the apply
+/// phase, which creates a group and has no `egui::Context` to store it with.
+pub fn queue_active_group(group: pdfcer_core::dimension::GroupId) {
+    QUEUED_GROUP.with(|q| q.set(Some(group)));
+}
+
+fn adopt_queued_group(ctx: &egui::Context) {
+    if let Some(group) = QUEUED_GROUP.with(std::cell::Cell::take) {
+        set_active_group(ctx, group);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("dimension-authoring-group id={} via=created", group.0)
+        });
+    }
+}
+
 /// **Choose the group the next ce dimension will join.**
 pub fn set_active_group(ctx: &egui::Context, group: pdfcer_core::dimension::GroupId) {
     let mut st = read(ctx).unwrap_or_else(|| MeasureState::new(0));
@@ -122,7 +144,27 @@ pub fn set_active_group(ctx: &egui::Context, group: pdfcer_core::dimension::Grou
     store(ctx, st);
 }
 
+/// The direction the linear tool's next ce dimension measures along.
+#[must_use]
+pub fn linear_constraint(ctx: &egui::Context) -> pdfcer_core::vector::AxisConstraint {
+    read(ctx).map_or(pdfcer_core::vector::AxisConstraint::Aligned, |st| {
+        st.linear.constraint
+    })
+}
+
+/// **Choose the direction the linear tool measures along.** A pick in
+/// progress keeps its points; its preview and commit take the new direction.
+pub fn set_linear_constraint(ctx: &egui::Context, constraint: pdfcer_core::vector::AxisConstraint) {
+    let mut st = read(ctx).unwrap_or_else(|| MeasureState::new(0));
+    if st.linear.constraint == constraint {
+        return;
+    }
+    st.linear.constraint = constraint;
+    store(ctx, st);
+}
+
 pub fn read(ctx: &egui::Context) -> Option<MeasureState> {
+    adopt_queued_group(ctx);
     ctx.data_mut(|d| d.get_temp::<MeasureState>(egui::Id::new(MEASURE_MEMORY_KEY)))
 }
 /// The radius/diameter tool's two public entrances, re-exported so that every

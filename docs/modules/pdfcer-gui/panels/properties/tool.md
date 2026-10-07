@@ -23,6 +23,7 @@ panel is the surface that owns that category.
 | text pen **colour** swatch | [`text_pen`] |
 | the pen's disclosure note | [`text_pen`] |
 | the circular measure's **pick list**, one removable row per point | [`measure_points`] |
+| the dimension tools' group, new-group and direction controls | [`tooldim`] |
 | *Scale line weight* | [`scale_switches`] |
 | *Keep the inner margins* | [`scale_switches`] |
 | *Allow the artwork to distort* | [`scale_switches`] |
@@ -45,6 +46,9 @@ pick list — for the two reasons this section has always given:
 2. **An armed tool is the more immediate subject.** When somebody has armed
    the text pen, the question they are about to ask is *what size?*, not
    *what is that path's line width?*
+
+The dimension tools' block (`tooldim`) sits there too, for the same two
+reasons.
 
 **[`Slot::BelowTheSelection`]** — the three resize switches — because
 reason 2 is false for them. They *are* a statement about the next gesture,
@@ -139,7 +143,7 @@ This is the unit half of the reachability claim. The other half is the
 driven check, because a branch that runs is still not a control on
 screen.
 
-### `fn all_three_blocks_are_reachable`
+### `fn all_four_blocks_are_reachable`
 
 The failure this catches is subtle and has happened here before: an arm
 written above another that would have matched, leaving the second

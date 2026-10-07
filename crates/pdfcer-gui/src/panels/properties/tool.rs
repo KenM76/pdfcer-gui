@@ -6,6 +6,8 @@
 use egui::Ui;
 use pdfcer_gui_base::entry;
 
+use crate::app::actions::Action;
+use crate::app::state::OpenDoc;
 use crate::canvas::measure::MeasureKind;
 use crate::canvas::tool::CanvasTool;
 use crate::text::tool as t;
@@ -38,6 +40,9 @@ pub enum Block {
     MeasurePoints,
     /// The three resize modifiers.
     ScaleSwitches,
+    /// The group the next ce dimension joins and, for the linear tool, its
+    /// direction.
+    DimensionTool,
 }
 
 /// The controls `tool` brings, if any.
@@ -60,8 +65,17 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
         // offer a change the commit silently discards.
         CanvasTool::TextEdit(crate::canvas::textedit::TextEditKind::Add) => Some(Block::TextPen),
         CanvasTool::Measure(MeasureKind::Circular) => Some(Block::MeasurePoints),
+        // Every tool that authors a ce dimension; `Scale` calibrates and
+        // authors none.
+        CanvasTool::Measure(
+            MeasureKind::Linear
+            | MeasureKind::TwoLine
+            | MeasureKind::Perimeter
+            | MeasureKind::PathLength
+            | MeasureKind::Area,
+        ) => Some(Block::DimensionTool),
         CanvasTool::TextEdit(_)
-        | CanvasTool::Measure(_)
+        | CanvasTool::Measure(MeasureKind::Scale)
         | CanvasTool::Node
         | CanvasTool::Hand
         | CanvasTool::Text
@@ -99,34 +113,44 @@ pub enum Slot {
 #[must_use]
 pub fn slot_of(block: Block) -> Slot {
     match block {
-        Block::TextPen | Block::MeasurePoints => Slot::AboveTheSelection,
+        Block::TextPen | Block::MeasurePoints | Block::DimensionTool => Slot::AboveTheSelection,
         Block::ScaleSwitches => Slot::BelowTheSelection,
     }
 }
 
 /// The armed tool's settings, drawn above the selection-scoped sections.
-pub(super) fn armed_section(ui: &mut Ui) -> bool {
-    section_in(ui, Slot::AboveTheSelection)
+pub(super) fn armed_section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
+    section_in(ui, Slot::AboveTheSelection, doc, actions)
 }
 
 /// The standing preferences, drawn at the foot of the panel.
-pub(super) fn preferences_section(ui: &mut Ui) -> bool {
-    section_in(ui, Slot::BelowTheSelection)
+pub(super) fn preferences_section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
+    section_in(ui, Slot::BelowTheSelection, doc, actions)
 }
 
 /// Draw the armed tool's block if it belongs in `slot`, and say whether it did.
-fn section_in(ui: &mut Ui, slot: Slot) -> bool {
+fn section_in(ui: &mut Ui, slot: Slot, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     let ctx = ui.ctx().clone();
-    let Some(block) = block_for(crate::canvas::tool::selected(&ctx)) else {
+    let tool = crate::canvas::tool::selected(&ctx);
+    let Some(block) = block_for(tool) else {
         return false;
     };
     if slot_of(block) != slot {
         return false;
     }
-    match block {
-        Block::ScaleSwitches => scale_switches(ui, &ctx),
-        Block::TextPen => text_pen(ui, &ctx),
-        Block::MeasurePoints => measure_points(ui, &ctx),
+    match (block, tool) {
+        (Block::ScaleSwitches, _) => scale_switches(ui, &ctx),
+        (Block::TextPen, _) => text_pen(ui, &ctx),
+        // The circular tool authors a ce dimension too, so it gets the group
+        // row above its pick list.
+        (Block::MeasurePoints, _) => {
+            super::tooldim::section(ui, doc, MeasureKind::Circular, actions);
+            measure_points(ui, &ctx);
+        }
+        (Block::DimensionTool, CanvasTool::Measure(kind)) => {
+            super::tooldim::section(ui, doc, kind, actions);
+        }
+        (Block::DimensionTool, _) => {}
     }
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     ui.separator();
@@ -323,16 +347,20 @@ mod tests {
         );
         // And the negative half, which is what catches an over-eager arm:
         // Edit-text has no pen (it cannot restyle a run it did not write) and
-        // the linear measure has no pick set.
+        // the scale tool authors no ce dimension.
         assert_eq!(block_for(CanvasTool::TextEdit(TextEditKind::Edit)), None);
-        assert_eq!(block_for(CanvasTool::Measure(MeasureKind::Linear)), None);
+        assert_eq!(
+            block_for(CanvasTool::Measure(MeasureKind::Linear)),
+            Some(Block::DimensionTool)
+        );
+        assert_eq!(block_for(CanvasTool::Measure(MeasureKind::Scale)), None);
         assert_eq!(block_for(CanvasTool::Hand), None);
     }
 
-    /// **The three blocks are reachable from three DIFFERENT tools**, so no
+    /// **The four blocks are reachable from four DIFFERENT tools**, so no
     /// two of them can be shadowed by one arm.
     #[test]
-    fn all_three_blocks_are_reachable() {
+    fn all_four_blocks_are_reachable() {
         use crate::canvas::textedit::TextEditKind;
         let every_tool = [
             CanvasTool::Select,
@@ -351,8 +379,8 @@ mod tests {
         reached.dedup();
         assert_eq!(
             reached.len(),
-            3,
-            "one of the three moved control blocks is unreachable: {reached:?}"
+            4,
+            "one of the four control blocks is unreachable: {reached:?}"
         );
     }
 
@@ -363,15 +391,21 @@ mod tests {
         assert_eq!(slot_of(Block::ScaleSwitches), Slot::BelowTheSelection);
         assert_eq!(slot_of(Block::TextPen), Slot::AboveTheSelection);
         assert_eq!(slot_of(Block::MeasurePoints), Slot::AboveTheSelection);
+        assert_eq!(slot_of(Block::DimensionTool), Slot::AboveTheSelection);
     }
 
     /// **Exactly one block occupies the foot of the panel.**
     #[test]
     fn one_block_and_only_one_draws_at_the_foot_of_the_panel() {
-        let below: Vec<Block> = [Block::ScaleSwitches, Block::TextPen, Block::MeasurePoints]
-            .into_iter()
-            .filter(|b| slot_of(*b) == Slot::BelowTheSelection)
-            .collect();
+        let below: Vec<Block> = [
+            Block::ScaleSwitches,
+            Block::TextPen,
+            Block::MeasurePoints,
+            Block::DimensionTool,
+        ]
+        .into_iter()
+        .filter(|b| slot_of(*b) == Slot::BelowTheSelection)
+        .collect();
         assert_eq!(below, vec![Block::ScaleSwitches], "{below:?}");
     }
 }

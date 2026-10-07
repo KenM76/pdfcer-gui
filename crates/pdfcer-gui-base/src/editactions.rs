@@ -262,6 +262,12 @@ pub enum DimensionAction {
         /// an inch group in eighths, which is what a drafter expects without
         /// being asked twice.
         unit: Unit,
+        /// A group whose calibration the new one starts with, converted to
+        /// `unit` so its real lengths agree. The add and the scale fold into
+        /// one undo entry.
+        scale_from: Option<GroupId>,
+        /// Make the new group the one the next ce dimension joins.
+        author_into: bool,
     },
 
     /// **Rename a dimension group.**

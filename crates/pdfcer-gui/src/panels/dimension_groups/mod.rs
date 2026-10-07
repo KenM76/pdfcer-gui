@@ -32,6 +32,14 @@ pub const REGION_DRAW_INTO_PREFIX: &str = "dimension-groups.draw_into."; // ui-t
 /// The prefix of the per-row name regions — what a check clicks to make a group
 /// the one the lower half of the window is configuring.
 pub const REGION_ROW_PREFIX: &str = "dimension-groups.row."; // ui-text-exempt: trace region name, never displayed
+/// The new group's unit combo.
+pub const REGION_NEW_UNIT_COMBO: &str = "dimension-groups.new_unit.combo"; // ui-text-exempt: trace region name, never displayed
+/// One unit in the open new-group unit combo, suffixed with `Unit::token`.
+pub const REGION_NEW_UNIT_OPTION_PREFIX: &str = "dimension-groups.new_unit.option."; // ui-text-exempt: trace region name, never displayed
+/// The new group's scale-source combo.
+pub const REGION_NEW_SCALE_COMBO: &str = "dimension-groups.new_scale.combo"; // ui-text-exempt: trace region name, never displayed
+/// One choice in the open scale-source combo, suffixed with the group id or `own`.
+pub const REGION_NEW_SCALE_OPTION_PREFIX: &str = "dimension-groups.new_scale.option."; // ui-text-exempt: trace region name, never displayed
 
 /// The Manage-dimension-groups window's live state.
 pub const REGION_HEADING_PREFIX: &str = "dimension-groups.heading."; // ui-text-exempt: trace region name, never displayed
@@ -90,6 +98,8 @@ pub struct DimensionGroupsUi {
     /// a unit is one combo away for anybody whose are not. See [`Self::default`]
     /// for why that is a hand-written `Default` rather than a derived one.
     new_unit: Unit,
+    /// The group whose calibration the new one starts with, if any.
+    new_scale_from: Option<GroupId>,
     /// Set by the *Set scale…* button, drained by `crate::app::PdfcerApp`.
     ///
     /// **A request rather than a call**, and the reason changed shape when
@@ -118,6 +128,7 @@ impl Default for DimensionGroupsUi {
             rename: None,
             delete_destination: None,
             new_unit: Unit::Millimeter,
+            new_scale_from: None,
             scale_requested: None,
         }
     }
@@ -208,7 +219,7 @@ impl DimensionGroupsUi {
                 // the part that was actually wrong, and gets the reach for
                 // free — a fold three lines under the list cannot be pushed off
                 // anything.
-                self.add_group(ui, actions);
+                self.add_group(ui, &model, actions);
                 ui.separator();
                 self.selected_group(ui, &model, actions);
             });
@@ -454,15 +465,25 @@ impl DimensionGroupsUi {
     }
 
     /// The new-group controls.
-    fn add_group(&mut self, ui: &mut Ui, actions: &mut Vec<Action>) {
+    fn add_group(
+        &mut self,
+        ui: &mut Ui,
+        model: &pdfcer_core::dimension::DimensionModel,
+        actions: &mut Vec<Action>,
+    ) {
         section(ui, "add", t::new_heading(), false, |ui| {
-            self.add_group_body(ui, actions);
+            self.add_group_body(ui, model, actions);
         });
     }
 
     /// The new-group controls proper, inside their fold.
     ///
-    fn add_group_body(&mut self, ui: &mut Ui, actions: &mut Vec<Action>) {
+    fn add_group_body(
+        &mut self,
+        ui: &mut Ui,
+        model: &pdfcer_core::dimension::DimensionModel,
+        actions: &mut Vec<Action>,
+    ) {
         ui.horizontal_wrapped(|ui| {
             ui.label(t::new_name_label());
             let response =
@@ -472,7 +493,7 @@ impl DimensionGroupsUi {
             crate::diag::ui_rect(REGION_NEW_NAME, response.rect);
 
             ui.label(t::new_unit_label());
-            egui::ComboBox::from_id_salt("dimension-groups-new-unit")
+            let combo = egui::ComboBox::from_id_salt("dimension-groups-new-unit")
                 .selected_text(crate::text::scale::unit_name(self.new_unit))
                 .show_ui(ui, |ui| {
                     // `Unit::all()`, not a hand-written array. The engine's own
@@ -482,15 +503,21 @@ impl DimensionGroupsUi {
                     // a latent divergence rather than an active one, and this is
                     // the version that cannot acquire it.
                     for unit in Unit::all().iter().copied() {
-                        ui.selectable_value(
+                        let row = ui.selectable_value(
                             &mut self.new_unit,
                             unit,
                             crate::text::scale::unit_name(unit),
                         );
+                        crate::diag::ui_rect(
+                            &format!("{REGION_NEW_UNIT_OPTION_PREFIX}{}", unit.token()),
+                            row.rect,
+                        );
                     }
                 });
+            crate::diag::ui_rect(REGION_NEW_UNIT_COMBO, combo.response.rect);
         });
         ui.weak(t::new_unit_hint());
+        self.new_scale_source(ui, model);
 
         let name = self.new_name.trim().to_owned();
         if name.is_empty() {
@@ -524,12 +551,56 @@ impl DimensionGroupsUi {
                 actions.push(Action::Dimension(DimensionAction::AddGroup {
                     name,
                     unit: self.new_unit,
+                    scale_from: self.new_scale_from,
+                    author_into: false,
                 }));
                 // Cleared so a second press cannot silently make a second group
                 // with the same name — which the engine would accept, and which
                 // would leave two indistinguishable rows in the picker.
                 self.new_name.clear();
             }
+        }
+    }
+}
+
+impl DimensionGroupsUi {
+    /// The new group's scale: its own, or another group's converted to the
+    /// new unit.
+    fn new_scale_source(&mut self, ui: &mut Ui, model: &pdfcer_core::dimension::DimensionModel) {
+        if self
+            .new_scale_from
+            .is_some_and(|g| model.group(g).is_none())
+        {
+            self.new_scale_from = None;
+        }
+        let name_of = |g: Option<GroupId>| match g.and_then(|g| model.group(g)) {
+            Some(group) => t::new_scale_same_as(&group.name),
+            None => t::new_scale_own().to_owned(),
+        };
+        ui.horizontal_wrapped(|ui| {
+            ui.label(t::new_scale_label());
+            let combo = egui::ComboBox::from_id_salt("dimension-groups-new-scale")
+                .selected_text(name_of(self.new_scale_from))
+                .show_ui(ui, |ui| {
+                    let own =
+                        ui.selectable_value(&mut self.new_scale_from, None, t::new_scale_own());
+                    crate::diag::ui_rect(&format!("{REGION_NEW_SCALE_OPTION_PREFIX}own"), own.rect);
+                    for group in model.groups() {
+                        let r = ui.selectable_value(
+                            &mut self.new_scale_from,
+                            Some(group.id),
+                            t::new_scale_same_as(&group.name),
+                        );
+                        crate::diag::ui_rect(
+                            &format!("{REGION_NEW_SCALE_OPTION_PREFIX}{}", group.id.0),
+                            r.rect,
+                        );
+                    }
+                });
+            crate::diag::ui_rect(REGION_NEW_SCALE_COMBO, combo.response.rect);
+        });
+        if self.new_scale_from.is_some() {
+            ui.weak(t::new_scale_hint());
         }
     }
 }

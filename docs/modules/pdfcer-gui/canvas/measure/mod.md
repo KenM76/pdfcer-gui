@@ -153,6 +153,20 @@ alias — the same argument `canvas::markup::swatch` makes about the pen, one
 value along. The dimension it eventually authors **is** an action, and
 carries this group in it.
 
+### `fn queue_active_group`
+
+Hands a group made during the apply phase (which has no `egui::Context`) to
+the next frame: a thread-local cell that `load` and `read` drain into
+`set_active_group`, tracing `dimension-authoring-group id= via=created`.
+One slot; a later queue before the next read replaces an earlier one, which
+is right, because only the last group made can be the one meant.
+
+### `fn linear_constraint` / `fn set_linear_constraint`
+
+The linear tool's Aligned / Horizontal / Vertical choice, stored in
+`LinearPick.constraint` so it survives between dimensions. The setter
+creates the state when there is none, for `set_active_group`'s reason.
+
 ### `fn finishable`
 
 # Why this is one function rather than one per tool

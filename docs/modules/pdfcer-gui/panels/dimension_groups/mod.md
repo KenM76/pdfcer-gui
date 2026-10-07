@@ -327,3 +327,14 @@ Choosing a unit sends `SetGroupScale` with the scale re-expressed through
 3.28 ft, not 1000.00 ft). The combo declares `dimension-groups.unit.combo`
 and each option `dimension-groups.unit.option.<token>`, which is how
 `changing_a_groups_unit_keeps_its_real_lengths` reaches them.
+
+### A new group can start from another group's scale
+
+The *Add* fold offers *Scale: Its own (set later)* or *Same as <group>*.
+Choosing a source sends `AddGroup { scale_from: Some(id) }`;
+`actions::dimensions::add_group` converts that group's scale into the new
+group's unit and folds the add and the scale into one undo entry. The unit
+combo declares `dimension-groups.new_unit.combo` and
+`dimension-groups.new_unit.option.<token>`; the scale combo
+`dimension-groups.new_scale.combo` and `dimension-groups.new_scale.option.<own|id>`.
+Driven by `a_new_group_copies_a_groups_scale_in_its_own_unit`.

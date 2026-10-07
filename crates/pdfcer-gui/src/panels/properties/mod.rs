@@ -89,6 +89,8 @@ pub mod textobject;
 /// **The armed tool's own settings** — the text pen's face, size and
 /// colour, the circular measure's pick list, and the three resize switches.
 pub mod tool;
+/// **The dimension tools' group and direction**, drawn inside [`tool`]'s block.
+pub mod tooldim;
 /// The **box** a form field is drawn in — `EditSession::edit_widget`. Its own
 /// file rather than four more rows in [`fieldedit`],
 /// because the engine has two verbs and Acrobat's own scripting model has two
@@ -233,7 +235,7 @@ fn body_sections(
     // the time, so folding it in would collapse the document section for ever
     // and suppress *"nothing is selected"* for ever. That is O75 answered
     // backwards.
-    let _drew_tool = tool::armed_section(ui);
+    let _drew_tool = tool::armed_section(ui, doc, actions);
     // The markup restyle section, first among the selection-scoped ones.
     //
     // Before the ce-dimension section and before the object one, because the
@@ -378,7 +380,7 @@ fn body_sections(
     // answers WHICH of its blocks that applies to, through `tool::slot_of`, so
     // the text pen and the measure pick list keep the top of the panel and only
     // the standing preference sits here.
-    let _drew_preferences = tool::preferences_section(ui);
+    let _drew_preferences = tool::preferences_section(ui, doc, actions);
 }
 
 /// The focused page object's read-only facts.

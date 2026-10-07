@@ -39,6 +39,54 @@ fn set_label(
     });
 }
 
+/// **Add a group**, optionally starting from another group's calibration and
+/// optionally becoming the authoring group.
+fn add_group(
+    doc: &mut OpenDoc,
+    name: &str,
+    unit: pdfcer_core::dimension::Unit,
+    scale_from: Option<pdfcer_core::dimension::GroupId>,
+    author_into: bool,
+) {
+    let source = scale_from.and_then(|g| {
+        doc.session
+            .dimension_model()
+            .group(g)
+            .map(|g| (g.scale, g.format.unit))
+    });
+    let mut created = None;
+    super::apply::vector_edit(doc, "add-dimension-group", 0, 1, |session| {
+        let id = session.add_dimension_group(name, unit)?;
+        created = Some(id);
+        let Some((scale, from)) = source else {
+            return Ok::<_, pdfcer_core::edit::EditError>(Vec::new());
+        };
+        let format = session
+            .dimension_model()
+            .group(id)
+            .map_or_else(|| unit.default_format(), |g| g.format);
+        let scale = crate::units::scale_in_unit(scale, from, unit);
+        session.set_group_scale(id, scale, format)?;
+        let folded = session.coalesce_last(2, pdfcer_core::edit::CommandKind::AddDimension);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "dimension-group-scale-copied group={} unit={unit:?} scale={scale:?} folded={}",
+                id.0,
+                u8::from(folded)
+            )
+        });
+        Ok(if folded {
+            Vec::new()
+        } else {
+            vec![crate::text::dimension_groups::new_group_two_undos().to_owned()]
+        })
+    });
+    if let (true, Some(id)) = (author_into, created) {
+        crate::canvas::measure::queue_active_group(id);
+    }
+}
+
 /// Apply one ce-dimension verb to the open document.
 pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
     if action.regenerates_the_whole_group() {
@@ -54,15 +102,28 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             kind,
             disclosures,
         } => {
+            let constraint = match &kind {
+                pdfcer_core::dimension::DimensionKind::Linear { constraint, .. } => {
+                    constraint_token(*constraint)
+                }
+                _ => "-",
+            };
             super::apply::vector_edit(doc, "add-dimension", page, 1, |session| {
                 // The gesture's disclosures are returned as the edit's, which
                 // is what puts them on the status bar stamped with the epoch
-                // this commit produced. `map` rather than a discarded result:
-                // the id the engine returns is not needed and the list is.
-                session
-                    .add_dimension(page, group, kind)
-                    .map(|_| disclosures)
+                // this commit produced.
+                session.add_dimension(page, group, kind).map(|(annot, dim)| {
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed
+                        format!(
+                            "dimension-added dim={} annot={}_{} group={} constraint={constraint}",
+                            dim.0, annot.num, annot.generation, group.0
+                        )
+                    });
+                    disclosures
+                })
             });
+            trace_members_shown(doc, group);
         }
         DimensionAction::SetGroupScale {
             group,
@@ -80,11 +141,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
         // it is not in `regenerates_the_whole_group` and clears no rasters.
         // It is still a document edit: the sidecar gains a record, and a save
         // taken afterwards carries the group.
-        DimensionAction::AddGroup { name, unit } => {
-            super::apply::vector_edit(doc, "add-dimension-group", 0, 1, |session| {
-                session.add_dimension_group(&name, unit).map(|_| Vec::new())
-            });
-        }
+        DimensionAction::AddGroup {
+            name,
+            unit,
+            scale_from,
+            author_into,
+        } => add_group(doc, &name, unit, scale_from, author_into),
         // The one group verb that regenerates NOTHING. No member's
         // appearance depends on what its group is called, so no raster is
         // dropped and `regenerates_the_whole_group` says so.
@@ -326,6 +388,16 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
     }
 }
 
+/// The trace token for a linear ce dimension's direction.
+const fn constraint_token(c: pdfcer_core::vector::AxisConstraint) -> &'static str {
+    use pdfcer_core::vector::AxisConstraint as A;
+    match c {
+        A::Aligned => "aligned",
+        A::Horizontal => "horizontal",
+        A::Vertical => "vertical",
+    }
+}
+
 /// One `dimension-member-shown` line per member of `group`: the text each
 /// one reads now, as the engine derives it from the group's scale and format.
 fn trace_members_shown(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
@@ -389,6 +461,8 @@ mod tests {
             DimensionAction::AddGroup {
                 name: "Detail".to_owned(),
                 unit: Unit::Millimeter,
+                scale_from: None,
+                author_into: false,
             },
             DimensionAction::SetStyle {
                 dimension: d,

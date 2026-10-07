@@ -209,6 +209,36 @@ pub fn measure_circular_needs_more(points: usize) -> String {
     }
 }
 
+/// The heading over the measure tools' own settings in Tool options.
+#[must_use]
+pub const fn measure_heading() -> &'static str {
+    "Dimension"
+}
+
+/// The label over the linear tool's direction choice.
+#[must_use]
+pub const fn measure_direction_label() -> &'static str {
+    "Direction"
+}
+
+/// One direction a linear dimension can measure along.
+#[must_use]
+pub const fn measure_direction_name(c: pdfcer_core::vector::AxisConstraint) -> &'static str {
+    use pdfcer_core::vector::AxisConstraint as A;
+    match c {
+        A::Aligned => "Aligned",
+        A::Horizontal => "Horizontal",
+        A::Vertical => "Vertical",
+    }
+}
+
+/// What the direction choice does.
+#[must_use]
+pub const fn measure_direction_hint() -> &'static str {
+    "Horizontal and Vertical measure only the run across or the rise between \
+     the two points; Aligned measures straight between them."
+}
+
 /// The heading over the list of points in the circular fit.
 #[must_use]
 pub const fn measure_points_heading() -> &'static str {

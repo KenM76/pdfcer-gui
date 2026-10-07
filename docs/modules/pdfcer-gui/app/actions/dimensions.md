@@ -149,3 +149,22 @@ Under `PDFCER_DIAG` only: after a group's scale or format changes, one
 `dimension-member-shown group= dim= text="…"` line per member, read from
 `model.display`. It is the label the operator now sees, which is the only
 oracle for a unit conversion.
+
+### `fn add_group`
+
+`AddGroup` with a `scale_from` source adds the group, then sets its scale to
+the source's re-expressed in the new unit (`units::scale_in_unit`), and
+folds both into one undo entry with `coalesce_last(2, AddDimension)`. A fold
+the engine refuses leaves two undo steps and says so
+(`new_group_two_undos`); it is never silent. `author_into` queues the new
+group as the authoring group through `canvas::measure::queue_active_group`,
+because this phase has no `egui::Context`. Trace:
+`dimension-group-scale-copied group= unit= scale= folded=0|1`.
+
+### The commit's trace
+
+`dimension-added dim= annot=<num>_<gen> group= constraint=` — `dim` is the
+`DimensionId`, the same number `dimension-member-shown` carries, and
+`constraint` is the linear tool's direction (`-` for other kinds). The
+commit is followed by `trace_members_shown` for its group, so a driven check
+reads the new ce dimension's text from the trace.

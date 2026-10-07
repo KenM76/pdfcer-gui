@@ -20,7 +20,7 @@ crates/pdfcer-gui/src/panels/forms/button.rs::every_modelled_action_names_a_real
 crates/pdfcer-gui/src/panels/forms/edit.rs::every_form_edit_traces_under_its_own_name	FormEdit	LOCAL	8
 crates/pdfcer-gui/src/panels/forms/tab_order/mod.rs::every_tabs_state_has_its_own_sentence	TabsEntry	LOCAL	8
 crates/pdfcer-gui/src/panels/properties/markup/tests.rs::every_label_size_source_is_named_distinctly	StampSizeSource	FOREIGN	3
-crates/pdfcer-gui/src/panels/properties/tool.rs::all_three_blocks_are_reachable	CanvasTool	LOCAL	10
+crates/pdfcer-gui/src/panels/properties/tool.rs::all_four_blocks_are_reachable	CanvasTool	LOCAL	10
 crates/pdfcer-gui/src/panels/signatures.rs::every_unchecked_state_produces_a_sentence_that_says_not_checked	Anchors	LOCAL	4
 crates/pdfcer-gui-base/src/redact/proof.rs::every_opaque_site_is_recognised_by_its_own_dictionary	ResidualSite	LOCAL	8
 crates/pdfcer-gui-base/src/text/anomalies.rs::every_value_kind_renders_to_one_short_line	Object	FOREIGN	11

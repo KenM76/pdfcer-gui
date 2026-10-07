@@ -188,6 +188,63 @@ pub const fn new_needs_a_name() -> &'static str {
      distinguishes from the one above it."
 }
 
+/// The label over the new group's scale choice.
+#[must_use]
+pub const fn new_scale_label() -> &'static str {
+    "Scale"
+}
+
+/// The scale choice that leaves the new group uncalibrated.
+#[must_use]
+pub const fn new_scale_own() -> &'static str {
+    "Its own (set later)"
+}
+
+/// The scale choice that copies another group's calibration.
+#[must_use]
+pub fn new_scale_same_as(group: &str) -> String {
+    format!("Same as {group}")
+}
+
+/// Why a copied scale is converted rather than copied as a number.
+#[must_use]
+pub const fn new_scale_hint() -> &'static str {
+    "A copied scale keeps the drawing's real lengths, written in the new \
+     group's unit."
+}
+
+/// The disclosure when the new group and its copied scale are two undo steps.
+#[must_use]
+pub const fn new_group_two_undos() -> &'static str {
+    "The new group and its scale were added as two steps; undo takes two \
+     presses to remove both."
+}
+
+/// The Tool options label over the group the next dimension joins.
+#[must_use]
+pub const fn tool_group_label() -> &'static str {
+    "Add to group"
+}
+
+/// The group combo's entry that opens the new-group row.
+#[must_use]
+pub const fn tool_new_group() -> &'static str {
+    "New group…"
+}
+
+/// The button that creates the group typed in Tool options and draws into it.
+#[must_use]
+pub const fn tool_create_group() -> &'static str {
+    "Create"
+}
+
+/// What the new-group row in Tool options does.
+#[must_use]
+pub const fn tool_new_group_hint() -> &'static str {
+    "The new group starts with the current group's unit and scale, and the \
+     next dimension joins it."
+}
+
 /// The button that opens the scale window for the selected group.
 #[must_use]
 pub const fn set_scale_button() -> &'static str {
