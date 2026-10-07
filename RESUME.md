@@ -70,7 +70,8 @@ The main session publishes. Next, in order: G132 (a best-fit 3D fixture, so
 the viewer's best-fit disclosure can be driven), G126 (`Widget::border_dash`,
 retiring the shell's own `/BS /D` reader), removing each "engine-blocked" note
 as it is wired, then the rest of ENGINE_BACKLOG. `ocr_reading_order` reads
-7 blocks for the fixture's 4 paragraphs: noted, not filed.
+7 blocks for the fixture's 4 paragraphs: the engine over-splits at a short
+last line, filed as G133; tighten the check to 4 blocks when it lands.
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The
 pin moves to engine tags only. In order:

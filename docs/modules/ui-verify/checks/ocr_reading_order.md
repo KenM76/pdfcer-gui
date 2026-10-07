@@ -25,7 +25,7 @@ heights, the paragraphs opening *Apples*, *Bridges* (left) and *Candles*,
 # Not asserted
 
 That the blocks are the page's four paragraphs: the engine's grouping gives
-seven on this fixture. One block per line, the engine's grouping before
+seven on this fixture, splitting a paragraph off its short last line (G133). One block per line, the engine's grouping before
 v0.80.0 (`lines=15 blocks=15`), fails step 2.
 
 # Falsified

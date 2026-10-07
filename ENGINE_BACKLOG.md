@@ -544,6 +544,10 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 - **G132** — no PRC fixture whose mesh only a best-fit search rebuilds, so the viewer's and mesh-save receipt's best-fit sentence (`t::mesh_best_fit`) is traced but not driven.
 
+## Filed requests for OCR — not verdict rows
+
+- **G133** — an inferred OCR paragraph splits at its last line: `ocr-two-columns.pdf` gives 15 lines in 7 blocks for 4 paragraphs, and on the engine's own paragraph test a short last line splits its paragraph depending on its words' ink shape. The shell passes words and does no grouping; `recognised_text_reads_column_by_column` will require exactly 4 blocks when it lands.
+
 ## Filed requests for Word-like text editing — not verdict rows
 
 The requests `docs/plans/WORDLIKE_PLAN.md` waits on, filed in the request
