@@ -58,18 +58,19 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 (tree `6bb392eb`, engine v0.79.0), packaged with `--no-update`, smoke-launched
 off-screen clean, with PaddleOCR-VL copied into its slot's `models/`. It
 carries row 141 (underline and strikethrough tied to the text), row 82 (a
-letter drawn two ways named) and row 74 (the current layer). Since then
-G120 to G125 are wired, driven and consumed (the OCR set: model download,
-reading order, the layer as a group, added text in the layer, OCR-only
-export), and `v0.5.0-dev.20261006.4` is PREPARED, not published: tree
-`105fdc93`, gates 84 of 84, `D:\Builds\pdfcergui-20261006-1506-da76fdc-105fdc93.zip`
-(44,498,885 bytes) mirrored to `pdfcer-gui1` with its userdata kept and
-paddle-vl re-copied, smoke-launched clean (`commands=217`); notes in
-`D:\scratch\s3\release-notes.md`. The main session publishes. Next, in order: G127 the hand-signature object list, G128/G129
-letters drawn two ways, the per-run strike source, G126 (`Widget::border_dash`,
+letter drawn two ways named) and row 74 (the current layer). Since then G120 to G125, G127 to G131, the strike source, row 74 (every adder,
+SVG and EMF included, on the current layer) and row 85 (editing an encrypted file
+as far as its password allows) are wired and driven, the pin is v0.80.0
+(`dc39139b`), and `v0.5.0-dev.20261006.5` is PREPARED, not published: tree
+`5e897a5e`, gates 84 of 84, `D:\Builds\pdfcergui-20261006-2132-dc39139-5e897a5e.zip`
+(44,512,841 bytes) mirrored to `pdfcer-gui2` with its userdata kept and
+paddle-vl re-copied, smoke-launched clean (`commands=218`); notes in
+`D:\scratch\s3\notes.md`. The previous prepared build sits in `pdfcer-gui1`.
+The main session publishes. Next, in order: G132 (a best-fit 3D fixture, so
+the viewer's best-fit disclosure can be driven), G126 (`Widget::border_dash`,
 retiring the shell's own `/BS /D` reader), removing each "engine-blocked" note
-as it is wired; then row 74's remaining adders, then row 85. Prepare the next release once
-the OCR set is in, or when a new engine tag appears (v0.80.0 brings G130).
+as it is wired, then the rest of ENGINE_BACKLOG. `ocr_reading_order` reads
+7 blocks for the fixture's 4 paragraphs: noted, not filed.
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The
 pin moves to engine tags only. In order:
