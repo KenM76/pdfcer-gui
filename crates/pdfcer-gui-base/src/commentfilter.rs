@@ -186,6 +186,7 @@ mod tests {
             suppressed: false,
             appearance_unresolved: false,
             relation: None,
+            rich: None,
             in_reply_to: None,
         }
     }

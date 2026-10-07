@@ -1068,6 +1068,8 @@ pub mod refused_keys;
 pub mod repeated_word;
 /// The Find bar's Replace and Replace all, and Replace all as one undo.
 pub mod replace_all;
+/// A comment stored as formatted text names its formatting in the panel.
+pub mod rich_comment;
 /// Double, triple and Shift+arrow selection, a drag over text, rotated carets.
 pub mod selection_gestures;
 /// A strikethrough says where its line's height came from.

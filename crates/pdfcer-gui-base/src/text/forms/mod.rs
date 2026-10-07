@@ -272,111 +272,21 @@ pub fn form_field_rich_text_convert_tooltip() -> &'static str {
 /// that would discard it.
 #[must_use]
 pub fn form_field_rich_text_summary(runs: &[pdfcer_core::richtext::Run]) -> String {
-    use pdfcer_core::richtext::Align;
-
-    let mut emphasis: Vec<String> = Vec::new();
-    let mut typography: Vec<String> = Vec::new();
-    let mut layout: Vec<String> = Vec::new();
-    let push = |bucket: &mut Vec<String>, s: String| {
-        if !bucket.contains(&s) {
-            bucket.push(s);
-        }
-    };
-
-    for r in runs {
-        let st = &r.style;
-        if st.weight.is_some_and(|w| w >= 700) {
-            push(&mut emphasis, "bold".to_owned());
-        }
-        if st.italic == Some(true) {
-            push(&mut emphasis, "italic".to_owned());
-        }
-        if st.underline == Some(true) {
-            push(&mut emphasis, "underlined".to_owned());
-        }
-        if st.strikethrough == Some(true) {
-            push(&mut emphasis, "struck through".to_owned());
-        }
-        if let Some(v) = st.baseline_shift_pt {
-            // Named by MEANING. Table 225's positive-is-superscript is the
-            // opposite of the intuition CSS gives, so the sign alone would
-            // mislead anyone who checked.
-            let s = if v > 0.0 { "superscript" } else { "subscript" };
-            push(&mut emphasis, s.to_owned());
-        }
-        if let Some(sz) = st.size_pt {
-            push(&mut typography, format!("{sz} pt"));
-        }
-        if let Some(f) = st.family.first() {
-            push(&mut typography, f.clone());
-        }
-        if let Some([r, g, b]) = st.color {
-            let byte = |v: f64| (v * 255.0).round().clamp(0.0, 255.0) as u8;
-            push(
-                &mut typography,
-                format!("#{:02X}{:02X}{:02X}", byte(r), byte(g), byte(b)),
-            );
-        }
-        if let Some(a) = st.align {
-            // Left is this interface's own reading direction, so naming it
-            // adds a word without distinguishing anything; the other two are
-            // choices someone made.
-            match a {
-                Align::Center => push(&mut layout, "centred".to_owned()),
-                Align::Right => push(&mut layout, "right-aligned".to_owned()),
-                Align::Left => {}
-            }
-        }
-    }
-
-    emphasis.extend(typography);
-    emphasis.extend(layout);
-    if emphasis.is_empty() {
-        return "This field is marked as formatted text, but no formatting is actually set on \
-                it. Converting it to a plain field loses nothing."
+    let words = crate::text::richtext::formatting(runs);
+    if words.is_empty() {
+        return "This field is marked as formatted text, but no formatting is actually set on it. Converting it to a plain field loses nothing."
             .to_owned();
     }
     format!(
         "Formatting in this field: {}. Converting to plain text discards all of it.",
-        emphasis.join(", ")
+        words.join(", ")
     )
 }
 
 /// The per-run breakdown, on hover over the summary.
 #[must_use]
 pub fn form_field_rich_text_runs_tooltip(runs: &[pdfcer_core::richtext::Run]) -> String {
-    let mut s = String::from("Each formatted part of this field:");
-    for r in runs {
-        let text: String = if r.text.chars().count() > 32 {
-            let head: String = r.text.chars().take(32).collect();
-            format!("{head}…")
-        } else {
-            r.text.clone()
-        };
-        let mut bits: Vec<&str> = Vec::new();
-        if r.style.weight.is_some_and(|w| w >= 700) {
-            bits.push("bold");
-        }
-        if r.style.italic == Some(true) {
-            bits.push("italic");
-        }
-        if r.style.underline == Some(true) {
-            bits.push("underlined");
-        }
-        if r.style.strikethrough == Some(true) {
-            bits.push("struck through");
-        }
-        // "as the rest" rather than "plain": a run with no emphasis of its own
-        // still carries the field's default size, family and colour, and
-        // calling it plain would say it has none.
-        let how = if bits.is_empty() {
-            "as the rest".to_owned()
-        } else {
-            bits.join(" + ")
-        };
-        s.push_str(&format!("\n  “{text}” — {how}"));
-    }
-    s
+    crate::text::richtext::breakdown("Each formatted part of this field:", runs)
 }
 
 /// The `/RV` bytes are not valid UTF-8, so they cannot even be parsed.

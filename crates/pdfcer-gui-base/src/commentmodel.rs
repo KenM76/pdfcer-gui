@@ -9,10 +9,11 @@
 
 use std::collections::BTreeSet;
 
-use pdfcer_core::annot::{Annotation, Appearance, ReplyType, page_annotations};
+use pdfcer_core::annot::{Annotation, Appearance, ReplyType, page_annotations, rich_text_in};
 use pdfcer_core::graph::ObjectGraph;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::page_tree::Page;
+use pdfcer_core::view::StreamSource;
 
 /// The whole panel's content, computed once per frame.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -115,6 +116,23 @@ pub struct CommentRow {
     /// direct dictionary — `pdfcer-core` models a dangling `/IRT` rather than
     /// repairing it, and so does this.
     pub in_reply_to: Option<ObjId>,
+    /// `/RC` — the note as formatted text, when the file carries one. The
+    /// panel shows `/Contents` and names this formatting beside it.
+    pub rich: Option<RichNote>,
+}
+
+/// An annotation's `/RC` rich text (§12.7.3.4), resolved from either form.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RichNote {
+    /// The XHTML body, and the `/DS` default style when present.
+    Body {
+        /// The `/RC` XHTML document.
+        xhtml: String,
+        /// The `/DS` CSS declarations.
+        default_style: Option<String>,
+    },
+    /// `/RC` names a stream whose bytes could not be read.
+    Unreadable,
 }
 
 /// What an annotation's `/Contents` actually is.
@@ -184,6 +202,7 @@ pub fn ce_dimension_annots(session: &pdfcer_core::edit::EditSession) -> BTreeSet
 #[must_use]
 pub fn collect<G: ObjectGraph + ?Sized>(
     graph: &G,
+    source: StreamSource<'_>,
     pages: &[Page],
     ce_dimensions: &BTreeSet<ObjId>,
 ) -> Listing {
@@ -207,7 +226,16 @@ pub fn collect<G: ObjectGraph + ?Sized>(
                 listing.excluded.trap_nets += 1;
                 continue;
             }
-            listing.rows.push(row(page_index, &annot, ce_dimensions));
+            let mut r = row(page_index, &annot, ce_dimensions);
+            r.rich = annot.rich_contents.as_ref().map(|rc| {
+                rich_text_in(graph, source, rc).map_or(RichNote::Unreadable, |xhtml| {
+                    RichNote::Body {
+                        xhtml,
+                        default_style: annot.default_style.clone(),
+                    }
+                })
+            });
+            listing.rows.push(r);
         }
     }
     listing
@@ -252,6 +280,7 @@ fn row(page_index: usize, annot: &Annotation, ce_dimensions: &BTreeSet<ObjId>) -
         appearance_unresolved: matches!(annot.appearance, Appearance::StateUnresolved),
         relation,
         in_reply_to: annot.in_reply_to,
+        rich: None,
     }
 }
 

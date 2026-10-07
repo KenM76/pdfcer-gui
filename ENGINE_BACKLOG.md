@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **28 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `wanted` — a real gap — **27 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -68,7 +68,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **`/CropBox`/`/BleedBox`/`/TrimBox`/`/ArtBox` now resolve as their INTERSECTION with `/MediaBox`** — `Page::crop_box` is the effective box; `BoxResolution` per box | **wanted: the intersection is consumed, the disclosure is not.** <!--namesake:crop_box--> the field is read everywhere and is the effective box, so the shell no longer intersects it itself. <!--namesake:BoxResolution--> the shell's test fixtures construct `BoxResolution::Defaulted` because `Page` has no constructor (our request `G060`); no surface reads the variant. Owed: disclose a `Clipped` or `Unusable` crop box off-canvas in the page properties (R8b). The renderer reports the same fact per render as `Diagnostics::page_crop_box`; the page properties read the page, so that field has no reader here. Our request `G059`. |
-| **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all, so a press or CAD export gets one overhang reported and three not. The engine's `FEATURES.md` records that the three boxes are left byte-identical without drawing that consequence. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here. |
+| **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here; asked for in our request `G136`. |
 
 ### Text
 
@@ -103,7 +103,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
-| Read `/RC` rich content and `/DS` default style on a markup annotation, any subtype — `Annotation::rich_contents`/`default_style`, `annot::rich_text_in`, `RichText::Inline`/`RichText::Stream` | **wanted.** <!--namesake:default_style--> the forms panel's `default_style` is a form field's, not this annotation accessor. The engine reads a comment's rich-text body and default style; this shell shows only the plain `/Contents`. A comment authored in Acrobat with bold, colour or size therefore reads flat here, and nothing says formatting exists. The Comments panel and the Properties panel's note field are where it belongs: at the least a read-only disclosure that the comment carries rich text, better its runs rendered. `set_markup_note` already drops a stale `/RC` on edit and this shell discloses that drop, so reading is the missing half. |
 
 ### Forms (AcroForm)
 
@@ -152,7 +151,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -163,7 +162,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-06; do not retype -->
+## `declined` — deliberately no surface — **16 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -205,7 +204,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **269 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **270 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -365,6 +364,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Place a custom stamp's artwork onto a page, as vector — `place_page_artwork` / `pdfcer place-stamp`** | **Built and driven — O172.** `app::actions::customstamp:205` calls it, `stamps::library` is the gallery, and `ui-verify`'s `custom_stamp` drives it. Three findings bind. (1) **Stretch is §12.5.5, not a pdfcer limit** — `/BBox` maps onto `/Rect` on independent axes, so an off-aspect box distorts by definition; `disclosures` shows `distorted` with the percentages. (2) A **dynamic** stamp shows design-time text (`source_widgets_ignored`), knowable from `StampEntry::dynamic` before the call. (3) No `/Name` is written — an open gap, not a defect, and settleable here because Acrobat **Reader** places an existing stamp: one stamp placed in Reader and saved reads the answer. Also settled: a stamp of his whose artwork looks wrong has a BLACK BACKGROUND in its own source file — one `/DCTDecode` RGB image, no `/SMask`, reproduced pixel-identically; transparency needs a JPEG with alpha. |
 | **A `/Text` sticky note or `/Stamp` naming a standard icon is painted from pdfcer's own artwork** instead of left blank when the annotation carries no `/AP`; new counter `annots_icon_painted` | **Reached by a pin bump, and the counter it shipped with is the load-bearing part.** The artwork needed no shell code — the fix is inside `pdfcer-render`'s shared annotation-paint loop, which this canvas already calls, so the correct contribution was to change nothing. `annotations_icon_painted` is a subset of `annotations_without_ap`, so `without_ap − icon_painted` is at last *how many annotations the operator is shown nothing for* — a stamp with no `/AP` renders as clean paper, with no symptom. Built as a tenth entry in `app::status::notes::findings`, suppressed when `annotations_out_of_scope` is non-zero. R43's refusal to synthesise appearances is unchanged for `/Square`, `/Circle`, `/Line`, `/Ink` and `/Caret`; `/FileAttachment` and `/Sound` belong in the request channel. |
 | `pdfcer_core::edit::VertexEditKind::as_str` | **Consumed.** `app::actions::annots::reshape`'s trace prints `edit={}` through it rather than `{:?}`, so the shell's line spells a reshape `move`/`insert`/`remove` exactly as `pdfcer annotation-vertex` does. The `Debug` spelling would have been `Moved`/`Inserted`/`Removed` — two vocabularies for one fact, across a boundary a driven check reads. |
+| Read `/RC` rich content and `/DS` default style on a markup annotation, any subtype — `Annotation::rich_contents`/`default_style`, `annot::rich_text_in`, `RichText::Inline`/`RichText::Stream` | **shipped.** <!--namesake:default_style--> the forms panel's `default_style` is a form field's, not this annotation accessor. `commentmodel::collect` resolves each row's `/RC` through `annot::rich_text_in` (string or stream) into `CommentRow::rich`; `panels::comments::rich::line` parses it with `richtext::parse` and draws one line under the note naming the formatting, each formatted part on hover, and that editing keeps the words and drops the formatting — or that the formatted copy could not be read. Driven by `a_formatted_comment_says_it_is_formatted` on `fixtures/rich-comment.pdf`. Rendering the runs themselves, and the Properties panel's note field, are not built. |
 
 ### Forms (AcroForm)
 

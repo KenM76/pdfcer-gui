@@ -34,6 +34,7 @@ pub use pdfcer_gui_base::commentnote as note;
 /// the panel that holds the operator's unfinished words and the only part whose
 /// output is a verb.
 mod editor;
+mod rich;
 /// *Show on screen* on a hidden comment's row.
 mod shown;
 
@@ -96,7 +97,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
     let ce_dimensions = model::ce_dimension_annots(&doc.session);
     // Read the SESSION, not the file on disk — see the module header.
     let view = doc.session.view();
-    let listing = model::collect(&view, &doc.pages, &ce_dimensions);
+    let listing = model::collect(&view, view.source(), &doc.pages, &ce_dimensions);
     // ONCE per frame, for `ce_dimensions`' reason exactly: a review status
     // lives on OTHER annotations (§12.5.6.3), so answering "what is this
     // comment's status" needs the whole document. Asked per row it would make
@@ -625,6 +626,7 @@ fn row(
         // relationship" would be a placeholder for a fact with no consequence.
         Some(Relation::Other) | None => {}
     }
+    rich::line(ui, comment);
 
     // The note editor, and the control that opens it. Below the disclosures
     // because it is the one thing on the row that *acts*, and an operator
@@ -797,7 +799,7 @@ fn trace(doc: &OpenDoc, listing: &Listing, filter: &filter::Filter) {
              ce_dimensions={ce} suppressed={suppressed} unresolved={unresolved} \
              replies={replies} group_members={group_members} selected={selected} \
              excluded_widgets={} excluded_popups={} excluded_trapnet={} excluded_total={} \
-             filtered={} shown={}",
+             filtered={} shown={} rich={}",
             doc.pages.len(),
             listing.rows.len(),
             listing.with_note_text(),
@@ -809,6 +811,7 @@ fn trace(doc: &OpenDoc, listing: &Listing, filter: &filter::Filter) {
             listing.excluded.total(),
             u8::from(filter.is_narrowing()),
             listing.rows.iter().filter(|r| filter.keeps(r)).count(),
+            listing.rows.iter().filter(|r| r.rich.is_some()).count(),
         )
     });
 }

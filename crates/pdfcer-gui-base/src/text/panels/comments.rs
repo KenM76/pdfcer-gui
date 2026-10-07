@@ -366,6 +366,38 @@ pub fn reply_posted(has_popup: bool) -> Option<&'static str> {
     )
 }
 
+/// A note the file also stores as formatted text (`/RC`), naming the
+/// formatting this panel shows as plain words. `words` is
+/// `text::richtext::formatting`'s list; empty when the formatted copy sets
+/// nothing.
+#[must_use]
+pub fn comment_row_rich_note(words: &[String]) -> String {
+    if words.is_empty() {
+        return "Also stored as formatted text, with no formatting set. Editing the note loses nothing."
+            .to_owned();
+    }
+    format!(
+        "Formatted in the file: {}. Shown here as plain text; editing the note keeps the words and drops the formatting.",
+        words.join(", ")
+    )
+}
+
+/// The formatted copy exists and could not be read. `reason` is the engine's
+/// parse error, or `None` when the stream holding it could not be read.
+#[must_use]
+pub fn comment_row_rich_note_unreadable(reason: Option<&str>) -> String {
+    let why = reason.map_or_else(String::new, |r| format!(" ({r})"));
+    format!(
+        "Also stored as formatted text pdfcer cannot read{why}. Shown here as plain text; editing the note drops the formatted copy."
+    )
+}
+
+/// The per-run breakdown, on hover over [`comment_row_rich_note`].
+#[must_use]
+pub fn comment_row_rich_note_breakdown(runs: &[pdfcer_core::richtext::Run]) -> String {
+    crate::text::richtext::breakdown("Each formatted part of this note:", runs)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

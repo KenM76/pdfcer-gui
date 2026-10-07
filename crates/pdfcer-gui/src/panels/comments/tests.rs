@@ -139,6 +139,7 @@ fn row_by(author: Option<&str>) -> CommentRow {
         appearance_unresolved: false,
         relation: None,
         in_reply_to: None,
+        rich: None,
     }
 }
 
@@ -213,6 +214,7 @@ fn the_page_index_travels_zero_based_and_prints_one_based() {
     let session = pdfcer_core::edit::EditSession::new(doc);
     let listing = model::collect(
         &session.view(),
+        session.view().source(),
         &pages,
         &model::ce_dimension_annots(&session),
     );
@@ -247,6 +249,7 @@ fn the_delete_control_reaches_the_engine() {
 
     let listing = model::collect(
         &session.view(),
+        session.view().source(),
         &pages,
         &model::ce_dimension_annots(&session),
     );
@@ -268,6 +271,7 @@ fn the_delete_control_reaches_the_engine() {
 
     let after = model::collect(
         &session.view(),
+        session.view().source(),
         &pages,
         &model::ce_dimension_annots(&session),
     );
@@ -315,6 +319,7 @@ fn a_reply_resolves_to_the_comment_at_the_head_of_its_thread() {
     let reply_to = |num: u32, parent: Option<u32>| CommentRow {
         id: Some(id(num)),
         in_reply_to: parent.map(id),
+        rich: None,
         ..row_by(None)
     };
 
@@ -338,6 +343,7 @@ fn a_malformed_thread_resolves_to_something_real_rather_than_hanging() {
     let reply_to = |num: u32, parent: Option<u32>| CommentRow {
         id: Some(id(num)),
         in_reply_to: parent.map(id),
+        rich: None,
         ..row_by(None)
     };
 
@@ -373,6 +379,7 @@ fn a_reading_stance_draws_no_reply_editor_even_with_a_reply_draft_open() {
         let doc = crate::app::state::open_fixture("annot/thread.pdf");
         let listing = model::collect(
             &doc.session.view(),
+            doc.session.view().source(),
             &doc.pages,
             &model::ce_dimension_annots(&doc.session),
         );

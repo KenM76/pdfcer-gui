@@ -75,8 +75,14 @@ Waiting for the next engine tag: `AssembledModel::{left_out_parts,
 best_fit_parts}` to name those parts in the viewer, and G133's fix (engine
 Pass 516.0, on engine main): `ocr_reading_order` reads 7 blocks for the
 fixture's 4 paragraphs because the engine over-splits at a short last line;
-tighten the check to 4 when the tag lands. Next, in order: the rest of
-ENGINE_BACKLOG (28 wanted, 2 blocked). Underlining part of a tagged
+tighten the check to 4 when the tag lands. G134 and G135 are also fixed on
+engine main (`AssembledModel::mesh_placements`, `tree`,
+`fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G136 asks
+for the BleedBox, TrimBox and ArtBox overhang on a resize. Next, in order: the
+rest of ENGINE_BACKLOG (27 wanted, 2 blocked). A comment stored as formatted
+text (`/RC`) names its formatting under the note in the Comments panel
+(`a_formatted_comment_says_it_is_formatted`, on `fixtures/rich-comment.pdf`).
+Underlining part of a tagged
 paragraph says on the status line that the structure tree does not record it
 (`underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded`, on
 `fixtures/tagged-paragraph.pdf`; `tagged-report.pdf` has no `/ParentTree`, so

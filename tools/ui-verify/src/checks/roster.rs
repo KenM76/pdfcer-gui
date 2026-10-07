@@ -461,6 +461,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(synthetic_bold::BoldDrawnByAStrokeReadsAsBold),
         Box::new(tied_underline::CtrlUUnderlinesTheTextItself),
         Box::new(tagged_underline::UnderliningPartOfATaggedParagraphSaysItIsNotRecorded),
+        Box::new(rich_comment::AFormattedCommentSaysItIsFormatted),
         Box::new(two_codes::ALetterDrawnTwoWaysIsNamed),
         Box::new(strike_source::AStrikethroughSaysWhereItsLineCameFrom),
         Box::new(style_off::CtrlBAgainTakesBoldOff),

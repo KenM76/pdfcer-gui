@@ -205,6 +205,8 @@ pub mod reviewstate;
 /// The ribbon's structural strings: tab labels and questions, group
 /// captions, mode labels. Consumed by `pdfcer_gui::shell::manifest`.
 pub mod ribbon;
+/// The formatting a rich-text body holds, named; shared by forms and comments.
+pub mod richtext;
 /// Every sentence the **ninth handle** shows — four refusals and two
 /// disclosures, for `pdfcer_gui::canvas::rotating` and the two rotation verbs.
 pub mod rotating;

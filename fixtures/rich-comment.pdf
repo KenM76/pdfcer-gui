@@ -1,0 +1,43 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << >> /Annots [5 0 R 6 0 R] >>
+endobj
+4 0 obj
+<< /Length 0 >>
+stream
+
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Text /Rect [100 650 120 670] /Name /Comment /T (Reviewer) /Contents (Check the weld size) /RC (<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/" xfa:APIVersion="Acrobat:11.0.0" xfa:spec="2.0.2"><p>Check the <b>weld</b> <span style="color:#FF0000">size</span></p></body>) /DS (font: 12pt Helvetica) /C [1 1 0] >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Text /Rect [100 550 120 570] /Name /Comment /T (Reviewer) /Contents (Approved as drawn) /RC 7 0 R /C [1 1 0] >>
+endobj
+7 0 obj
+<< /Length 203 >>
+stream
+<?xml version="1.0"?><body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/" xfa:APIVersion="Acrobat:11.0.0" xfa:spec="2.0.2"><p><i>Approved as drawn</i></p></body>
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000290 00000 n 
+0000000709 00000 n 
+0000000862 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1116
+%%EOF

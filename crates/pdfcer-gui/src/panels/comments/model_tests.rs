@@ -20,7 +20,7 @@ fn open(rel: &str) -> (EditSession, Vec<Page>) {
 fn listing(rel: &str) -> Listing {
     let (session, pages) = open(rel);
     let ce = ce_dimension_annots(&session);
-    collect(&session.view(), &pages, &ce)
+    collect(&session.view(), session.view().source(), &pages, &ce)
 }
 
 /// **A pop-up is excluded, and it is counted rather than dropped.**
@@ -87,7 +87,7 @@ fn a_ce_dimension_is_listed_and_recognised() {
         "this fixture exists to carry a ce dimension; if the sidecar is \
          unreadable the rest of this test proves nothing"
     );
-    let l = collect(&session.view(), &pages, &ce);
+    let l = collect(&session.view(), session.view().source(), &pages, &ce);
     let dims: Vec<&CommentRow> = l.rows.iter().filter(|r| r.is_ce_dimension).collect();
     assert_eq!(
         dims.len(),
@@ -285,6 +285,7 @@ fn the_all_without_notes_condition_is_not_vacuously_true() {
         appearance_unresolved: false,
         relation: None,
         in_reply_to: None,
+        rich: None,
     });
     assert!(l.every_row_lacks_note_text());
     assert_eq!(l.with_note_text(), 0);
@@ -306,9 +307,45 @@ fn the_all_without_notes_condition_is_not_vacuously_true() {
 fn every_row_can_be_navigated_to() {
     let (session, pages) = open("annot/thread.pdf");
     let ce = ce_dimension_annots(&session);
-    let l = collect(&session.view(), &pages, &ce);
+    let l = collect(&session.view(), session.view().source(), &pages, &ce);
     assert!(!l.rows.is_empty());
     for row in &l.rows {
         assert!(row.page_index < pages.len(), "{row:?} is off the end");
     }
+}
+
+/// **A note's `/RC` reaches its row in both forms §12.7.3.4 permits**, a
+/// string carrying a `/DS` and a stream, and parses to the formatting the
+/// row's line names.
+#[test]
+fn a_rich_note_reaches_its_row_as_a_string_and_as_a_stream() {
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/rich-comment.pdf");
+    let doc = Document::load(&path).expect("the fixture loads");
+    let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
+    let session = EditSession::new(doc);
+    let l = collect(
+        &session.view(),
+        session.view().source(),
+        &pages,
+        &std::collections::BTreeSet::new(),
+    );
+    let words = |num: u32| -> Vec<String> {
+        let row = l
+            .rows
+            .iter()
+            .find(|r| r.id.map(|i| i.num) == Some(num))
+            .expect("the fixture's note is listed");
+        let Some(RichNote::Body {
+            xhtml,
+            default_style,
+        }) = &row.rich
+        else {
+            panic!("note {num} carries readable /RC: {:?}", row.rich);
+        };
+        let runs = pdfcer_core::richtext::parse(xhtml, default_style.as_deref()).expect("parses");
+        crate::text::richtext::formatting(&runs)
+    };
+    assert_eq!(words(5), ["bold", "12 pt", "Helvetica", "#FF0000"]);
+    assert_eq!(words(6), ["italic"]);
 }

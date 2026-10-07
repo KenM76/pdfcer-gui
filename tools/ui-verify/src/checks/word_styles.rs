@@ -114,6 +114,18 @@ pub(crate) fn launch_on(
     stem: &str,
     fixture: &str,
 ) -> Result<(Driven, std::path::PathBuf)> {
+    launch_invoking(ctx, report, stem, fixture, INVOKE)
+}
+
+/// [`launch_on`], running the commands `invoke` names (comma-separated ids)
+/// at startup instead of arming the Text tool.
+pub(crate) fn launch_invoking(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+    fixture: &str,
+    invoke: &str,
+) -> Result<(Driven, std::path::PathBuf)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -139,7 +151,7 @@ pub(crate) fn launch_on(
         ctx.profile.diag_env,
         SHELL_DIAG_ENV,
         (viewport_env, OFFSCREEN),
-        ("PDFCER_DIAG_INVOKE", INVOKE),
+        ("PDFCER_DIAG_INVOKE", invoke),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
     }
