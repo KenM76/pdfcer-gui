@@ -77,7 +77,7 @@ Pass 516.0, on engine main): `ocr_reading_order` reads 7 blocks for the
 fixture's 4 paragraphs because the engine over-splits at a short last line;
 tighten the check to 4 when the tag lands. Next, in order: the rest of
 ENGINE_BACKLOG; the `TextDecorationType` row needs only a driven check on a
-part-underlined tagged fixture. `v0.5.0-dev.20261007` is PREPARED, not published: tree `507c67a8`, gates 84
+part-underlined tagged fixture. The next build is PREPARED, not published: tree `507c67a8`, gates 84
 of 84, `D:\Builds\pdfcergui-20261007-0132-dc39139-507c67a8.zip` (44,519,171
 bytes) mirrored to `pdfcer-gui1` with its userdata kept and paddle-vl
 re-copied, smoke-launched clean (`commands=218`); notes in
