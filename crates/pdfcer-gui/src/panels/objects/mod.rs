@@ -5,6 +5,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/mod.md`.
 
+mod disagree;
 pub use pdfcer_gui_base::objectprovider as provider;
 #[cfg(test)]
 mod provider_node_rung_tests;
@@ -92,8 +93,10 @@ pub fn body(
     let provider = &*provider;
     let tree = state.tree_mut();
     let objects = &provider.page_objects().objects;
+    let diagnostics = &provider.page_objects().diagnostics;
     if objects.is_empty() {
         ui.label(t::objects_dock_empty_page_hint());
+        disagree::lines(ui, page_index, diagnostics);
         return Vec::new();
     }
 
@@ -104,6 +107,7 @@ pub fn body(
     let census = summary::census(objects.iter().map(summary::object_kind));
     ui.label(t::objects_dock_intro());
     ui.label(t::objects_dock_summary(census));
+    disagree::lines(ui, page_index, diagnostics);
     ui.separator();
 
     let rows = build_rows(

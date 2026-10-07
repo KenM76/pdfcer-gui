@@ -469,6 +469,32 @@ displays and prints as it should."
     }
 }
 
+// ---------------------------------------------------------------------------
+// Where the list and the picture disagree
+// ---------------------------------------------------------------------------
+
+/// Paths listed and selectable that the page does not show (alpha zero).
+#[must_use]
+pub fn objects_dock_invisible(n: usize) -> String {
+    format!(
+        "{n} path(s) here are fully transparent: they are listed and can be selected, but nothing shows on the page."
+    )
+}
+
+/// Gradients the page shows that the list does not hold.
+#[must_use]
+pub fn objects_dock_shadings(n: usize) -> String {
+    format!("{n} gradient fill(s) on this page are drawn but not listed, and cannot be selected.")
+}
+
+/// Paths whose colour the list names may not be the colour on the page.
+#[must_use]
+pub fn objects_dock_undecoded_colour(n: usize) -> String {
+    format!(
+        "{n} path(s) use a spot, ICC, indexed, Lab or pattern colour; the colour this list names for them may not be the one on the page."
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -80,7 +80,8 @@ engine main (`AssembledModel::mesh_placements`, `tree`,
 `fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G136 (BleedBox, TrimBox and ArtBox overhang on a resize) is fixed on engine
 main too; consume `MediaBoxChange::{bleed,trim,art}_box_outside` with the tag. G137
 asks for `Field::own_quadding`; when it lands delete `states_own_quadding`. Next, in order: the
-rest of ENGINE_BACKLOG (22 wanted, 2 blocked). A field's Alignment can go back
+rest of ENGINE_BACKLOG (21 wanted, 2 blocked). The Objects panel says where its list and
+the page disagree (`objects_panel_says_where_the_list_and_page_disagree`). A field's Alignment can go back
 to Inherited (`a_fields_alignment_can_go_back_to_inherited`). Security notes names password
 values still stored in earlier saved versions
 (`security_notes_say_old_passwords_are_kept`). A comment stored as formatted

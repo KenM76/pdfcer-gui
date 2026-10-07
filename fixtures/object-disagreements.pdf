@@ -1,0 +1,40 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 340 100] /Resources << /ExtGState << /Clear << /Type /ExtGState /ca 0 /CA 0 >> >> /ColorSpace << /Spot [/Separation /PANTONE#20185#20C /DeviceCMYK 5 0 R] >> /Shading << /Ramp 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 131 >>
+stream
+0 g 20 20 60 60 re f
+q /Clear gs 1 0 0 rg 100 20 60 60 re f Q
+q /Spot cs 1 scn 180 20 60 60 re f Q
+q 260 20 60 60 re W n /Ramp sh Q
+endstream
+endobj
+5 0 obj
+<< /FunctionType 2 /Domain [0 1] /C0 [0 0 0 0] /C1 [0 1 0.8 0] /N 1 >>
+endobj
+6 0 obj
+<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [260 0 320 0] /Function << /FunctionType 2 /Domain [0 1] /C0 [0 0 1] /C1 [1 1 0] /N 1 >> /Extend [true true] >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000386 00000 n 
+0000000568 00000 n 
+0000000654 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+830
+%%EOF

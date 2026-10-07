@@ -65,6 +65,17 @@ pub(crate) fn launch_on(
     method: &str,
     stem: &str,
 ) -> Result<Session> {
+    launch_invoking(ctx, report, (fixture, method), stem, INVOKE)
+}
+
+/// [`launch_on`] with `invoke` run on opening instead of Document properties.
+pub(crate) fn launch_invoking(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    (fixture, method): (&str, &str),
+    stem: &str,
+    invoke: &str,
+) -> Result<Session> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -80,7 +91,7 @@ pub(crate) fn launch_on(
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
         (viewport_env, OFFSCREEN),
-        ("PDFCER_DIAG_INVOKE", INVOKE),
+        ("PDFCER_DIAG_INVOKE", invoke),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
     }
