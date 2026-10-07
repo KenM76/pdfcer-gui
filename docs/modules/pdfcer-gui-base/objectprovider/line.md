@@ -133,12 +133,17 @@ answers nearest-first in run indices; several runs of one line under the
 pointer collapse to that line's first sighting, so the caller's
 `first()` is still the nearest thing to the pointer.
 
-Page objects only. A text object painted from inside a form XObject has
-no hit test at any granularity — [`Self::text_run_hits`] indexes the
-page's own list, so answering a leaf from it would return another
-object's runs entirely — and this inherits that hole rather than
-papering over it. `canvas::target`'s `part_hits_of` records it in the
-same terms.
+Page objects only; [`Self::text_line_hits_of`] answers for a form leaf.
+
+### `fn text_line_hits_of`
+
+A page object goes through [`Self::text_line_hits`]. A leaf has no index in
+the page's list, which is all `hit_test_text_runs` takes, so its runs are
+tested here by the engine's rule: run box inflated by the tolerance, nearest
+first by distance to the box. That copy of the rule is a workaround (G147
+asks for an object-taking form, as `hit_test_subpaths_of` is for paths); the
+leaf arm goes when it lands. The unit test holds the two arms to the same
+answer on the same text.
 
 ### `fn text_line_bounds_canvas_of`
 

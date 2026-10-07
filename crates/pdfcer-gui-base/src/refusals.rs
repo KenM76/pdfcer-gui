@@ -46,23 +46,6 @@ pub mod delete {
         /// The Node rung with no anchor picked — *"inside this part, nothing
         /// picked yet"*, which is a real state the ladder can be in.
         NoNodeEntered,
-        /// The entered target is painted **inside a form XObject**, and this shell
-        /// declines rather than deleting it.
-        ///
-        /// THE SENTENCE IS THIS SHELL'S, NOT THE ENGINE'S. The pinned
-        /// `pdfcer-core` declares `delete_text_run_in_form`,
-        /// `delete_subpath_in_form` and `delete_node_in_form` alongside the six
-        /// form-interior move verbs. Nothing upstream forbids this. What is missing
-        /// is entirely local: a leaf carries no page paint-order index, so
-        /// `part_hits_of` matches nothing for it and the Part rung cannot be
-        /// entered inside a form in the first place. Opening that seam is the work,
-        /// and it is the same seam the in-form move verbs already went through.
-        ///
-        /// Until it is opened the refusal is still the right behaviour, because a
-        /// key that silently does nothing is worse than one that says why — but it
-        /// must not be worded, here or on screen, as a limit of the engine. D57
-        /// carries the repair.
-        InsideForm,
         /// The entered object is not addressable by a page paint-order index and
         /// is not a leaf either — unreachable through `TargetId`'s two variants,
         /// carried so a third variant is a compile error rather than a silence.

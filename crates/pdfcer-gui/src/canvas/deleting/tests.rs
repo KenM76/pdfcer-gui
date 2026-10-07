@@ -343,9 +343,11 @@ fn a_form_interior_selection_still_reaches_the_form_delete() {
     );
 }
 
-/// **A LINE inside a form has no delete verb, and says so.**
+/// **A LINE inside a form is addressed by its leaf, never refused for being
+/// inside one.** With the leaf absent from the model the answer is the
+/// model's, not the address space's.
 #[test]
-fn a_part_inside_a_form_declines_because_the_engine_has_no_verb() {
+fn a_part_inside_a_form_is_addressed_by_its_leaf() {
     let mut selection = SelectionState::default();
     selection.click(
         0,
@@ -360,12 +362,51 @@ fn a_part_inside_a_form_declines_because_the_engine_has_no_verb() {
     );
     assert_eq!(selection.level(), SelectionLevel::Part);
     assert_eq!(subject(&selection, 0, None), Err(Refusal::NoObjectModel));
-    // With a model present the answer is the honest one about the address space
-    // rather than about the missing decomposition.
     let provider = provider(TWO_LINES);
     assert_eq!(
         subject(&selection, 0, Some(&provider)),
-        Err(Refusal::InsideForm)
+        Err(Refusal::NoPartsInObject)
+    );
+}
+
+/// Each in-form subject reaches its own leaf-indexed verb.
+#[test]
+fn in_form_subjects_reach_the_in_form_verbs() {
+    assert_eq!(
+        action(DeleteSubject::SubpathInForm {
+            page: 1,
+            leaf: 7,
+            subpath: 2,
+        }),
+        VectorAction::DeleteSubpathInForm {
+            page: 1,
+            leaf: 7,
+            subpath: 2,
+        }
+    );
+    assert_eq!(
+        action(DeleteSubject::NodeInForm {
+            page: 1,
+            leaf: 7,
+            node: 3,
+        }),
+        VectorAction::DeleteNodeInForm {
+            page: 1,
+            leaf: 7,
+            node: 3,
+        }
+    );
+    assert_eq!(
+        action(DeleteSubject::TextLineInForm {
+            page: 1,
+            leaf: 7,
+            line: 0,
+        }),
+        VectorAction::DeleteTextLineInForm {
+            page: 1,
+            leaf: 7,
+            line: 0,
+        }
     );
 }
 

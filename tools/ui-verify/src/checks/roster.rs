@@ -435,6 +435,9 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(form_leaf_move::AThingInsideAWrappedDrawingCanBeDragged),
         Box::new(form_node_move::AnEndPointInsideAWrappedDrawingCanBeDragged),
         Box::new(form_node_move::ALineInsideAPlacedDrawingShowsItsProperties),
+        Box::new(form_part_delete::ASubpathInsideAPlacedDrawingCanBeDeleted),
+        Box::new(form_part_delete::AnAnchorInsideAPlacedDrawingCanBeDeleted),
+        Box::new(form_part_delete::ATextLineInsideAPlacedDrawingCanBeDeleted),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

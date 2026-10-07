@@ -67,6 +67,87 @@ pub enum DeleteSubject {
         /// The anchor, object-scoped.
         node: usize,
     },
+    /// One **subpath** of one path object inside a form XObject —
+    /// `delete_subpath_in_form`.
+    SubpathInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing object, by leaf index.
+        leaf: usize,
+        /// The subpath, in decomposition order.
+        subpath: usize,
+    },
+    /// One **visual line** of one text object inside a form XObject —
+    /// `delete_text_run_in_form`, once per show operator of the line.
+    TextLineInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by leaf index.
+        leaf: usize,
+        /// The line, in content order.
+        line: usize,
+    },
+    /// One **anchor** of one path object inside a form XObject —
+    /// `delete_node_in_form`.
+    NodeInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing object, by leaf index.
+        leaf: usize,
+        /// The anchor, object-scoped.
+        node: usize,
+    },
+}
+
+/// Which index space the entered object is addressed in.
+#[derive(Debug, Clone, Copy)]
+enum Address {
+    /// The page's own paint order.
+    Page(usize),
+    /// `PageObjects::leaves` — painted from inside a form XObject.
+    Leaf(usize),
+}
+
+impl Address {
+    fn of(entry: &Selection) -> Result<Self, Refusal> {
+        if let Some(leaf) = entry.object.leaf_index() {
+            return Ok(Self::Leaf(leaf));
+        }
+        entry
+            .object
+            .page_object_index()
+            .map(Self::Page)
+            .ok_or(Refusal::UnaddressableObject)
+    }
+
+    const fn subpath(self, page: usize, subpath: usize) -> DeleteSubject {
+        match self {
+            Self::Page(object) => DeleteSubject::Subpath {
+                page,
+                object,
+                subpath,
+            },
+            Self::Leaf(leaf) => DeleteSubject::SubpathInForm {
+                page,
+                leaf,
+                subpath,
+            },
+        }
+    }
+
+    const fn text_line(self, page: usize, line: usize) -> DeleteSubject {
+        match self {
+            Self::Page(object) => DeleteSubject::TextLine { page, object, line },
+            Self::Leaf(leaf) => DeleteSubject::TextLineInForm { page, leaf, line },
+        }
+    }
+
+    const fn node(self, page: usize, node: usize) -> DeleteSubject {
+        match self {
+            Self::Page(object) => DeleteSubject::Node { page, object, node },
+            Self::Leaf(leaf) => DeleteSubject::NodeInForm { page, leaf, node },
+        }
+    }
 }
 
 pub use pdfcer_gui_base::refusals::delete::Refusal;
@@ -105,7 +186,8 @@ fn object_rung(selection: &SelectionState, page: usize) -> Result<DeleteSubject,
     }
 }
 
-/// The Part rung: one subpath, or one label.
+/// The Part rung: one subpath, or one label, in whichever index space the
+/// entered object lives.
 fn part_rung(
     selection: &SelectionState,
     page: usize,
@@ -113,19 +195,9 @@ fn part_rung(
 ) -> Result<DeleteSubject, Refusal> {
     let entry = entered(selection, page)?;
     let part = entry.subpath.ok_or(Refusal::NoPartEntered)?;
-    if entry.object.is_leaf() {
-        return Err(Refusal::InsideForm);
-    }
-    let object = entry
-        .object
-        .page_object_index()
-        .ok_or(Refusal::UnaddressableObject)?;
+    let at = Address::of(&entry)?;
     match provider.part_kind_of(entry.object) {
-        Some(PartKind::Subpath) => Ok(DeleteSubject::Subpath {
-            page,
-            object,
-            subpath: part,
-        }),
+        Some(PartKind::Subpath) => Ok(at.subpath(page, part)),
         Some(PartKind::TextLine) => {
             // The whole selected set, not the entered entry — `moving::eligible`
             // reads it the same way one line below and builds a plural move out
@@ -138,20 +210,17 @@ fn part_rung(
             }
             // R83, and the whole reason this function takes a provider rather
             // than a `PartKind`. See the module header.
-            if provider.text_line_delete_would_move_next(object, part) {
+            if provider.text_line_delete_would_move_next_of(entry.object, part) {
                 return Err(Refusal::RunWouldMoveNext(part));
             }
-            Ok(DeleteSubject::TextLine {
-                page,
-                object,
-                line: part,
-            })
+            Ok(at.text_line(page, part))
         }
         None => Err(Refusal::NoPartsInObject),
     }
 }
 
-/// The Node rung: one anchor.
+/// The Node rung: one anchor, in whichever index space the entered object
+/// lives.
 fn node_rung(
     selection: &SelectionState,
     page: usize,
@@ -159,13 +228,7 @@ fn node_rung(
 ) -> Result<DeleteSubject, Refusal> {
     let entry = entered(selection, page)?;
     let node = entry.node.ok_or(Refusal::NoNodeEntered)?;
-    if entry.object.is_leaf() {
-        return Err(Refusal::InsideForm);
-    }
-    let object = entry
-        .object
-        .page_object_index()
-        .ok_or(Refusal::UnaddressableObject)?;
+    let at = Address::of(&entry)?;
     match provider.part_kind_of(entry.object) {
         Some(PartKind::Subpath) => {
             // The whole selected set, not the entered entry — the same read
@@ -178,7 +241,7 @@ fn node_rung(
             if nodes.len() > 1 {
                 return Err(Refusal::ManyNodes(nodes.len()));
             }
-            Ok(DeleteSubject::Node { page, object, node })
+            Ok(at.node(page, node))
         }
         Some(PartKind::TextLine) => Err(Refusal::NoNodeVerbForText),
         None => Err(Refusal::NoPartsInObject),
@@ -217,6 +280,21 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
         }
         DeleteSubject::Node { page, object, node } => {
             VectorAction::DeleteNode { page, object, node }
+        }
+        DeleteSubject::SubpathInForm {
+            page,
+            leaf,
+            subpath,
+        } => VectorAction::DeleteSubpathInForm {
+            page,
+            leaf,
+            subpath,
+        },
+        DeleteSubject::TextLineInForm { page, leaf, line } => {
+            VectorAction::DeleteTextLineInForm { page, leaf, line }
+        }
+        DeleteSubject::NodeInForm { page, leaf, node } => {
+            VectorAction::DeleteNodeInForm { page, leaf, node }
         }
     }
 }

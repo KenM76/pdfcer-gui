@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **17 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `wanted` — a real gap — **16 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -86,7 +86,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)`, memoised and consulted by the editing verbs … | **wanted.** <!--namesake:page_objects--> Every hit in `crates/pdfcer-gui/src/` is this shell's own `OpenDoc::page_objects(&self)`, never the engine's `EditSession::page_objects(&mut self, page_index)`, so a bare-identifier grep reads as *thoroughly consumed* and means the opposite — an absence claim here has to name the receiver. The engine's is called only from `tests/engine_overlay_skew.rs` and `tests/page_generation_covers.rs`. Production still runs the shell's own parse in `panels::objects::provider`, cached separately on `OpenDoc` by `app::cache`, so every edit pays the session's decomposition **and** ours. Wiring it needs a decided answer on cache invalidation: the engine memoises against the session revision and we key on our own. |
-| **Delete a subpath, a node or a text run INSIDE a form XObject** — `delete_subpath_in_form`, `delete_node_in_form`, `delete_text_run_in_form` | **wanted.** Inside a form the Part and Node rungs can move and not delete, while the same rungs on page content can do both — so an operator learns a rule on the page and it stops being true inside a title block. This shell's Part rung is unreachable inside a form today for a separate reason: `part_hits_of` matches on a page-object index and returns nothing for a leaf. That seam has to be opened first, which makes this larger than the in-form move beside it. The three verbs are on the **pinned** revision, so nothing here waits on the engine — and until the seam opens, `Refusal::InsideForm` must not word the decline as an engine limit (D57). |
 | **No rotate, scale or general-transform verb exists for anything inside a form XObject** — the engine offers translation and deletion only | **wanted, and the silence is the defect.** The ten `*_in_form` verbs are `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`, `move_subpath_in_form`, `move_text_run_in_form`, `move_objects_in_form`, `delete_text_run_in_form`, `delete_subpath_in_form`, `delete_node_in_form` and `delete_objects_in_form`. There is no `transform_objects_in_form`. Rotate and resize are reachable only through `transform_objects`, which is page-content-only, so the Format tab's rotate and the eight resize grips are inapplicable to a form-interior selection and nothing says so. Two halves: an engine verb (filed as G144), and until it exists a refusal here worded by name rather than a grip that does nothing. |
 
 ### ce dimensions
@@ -199,7 +198,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **279 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **280 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -302,6 +301,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Edit a Bézier handle, with grab/hover/live preview. … | **Reachable — `app::actions::vector` calls `move_handle`**, and the stage table records Phase 1 complete *but for the clipboard (selection, move, resize by grip and by typed number, multi-node move, Bézier handles)*. The engine's evidence was a `grep -i bezier` over the canvas taken days before the work landed, and **an absence measured once is a claim with a date on it**. |
 | Select several nodes and move them as one surgery, one … | **Reachable — `app::actions::vector` calls `move_nodes`** with a slice, so several nodes move as one surgery and one undo entry. Same stale sweep as the Bézier row above. |
 | Edit geometry INSIDE a form XObject — `move_node_in_form` … | **Reachable — `app::actions::vector` calls `move_node_in_form`** and its siblings, which is the whole point of the deep hit test: click a line inside a title block and drag *that line*. The engine's disclosure data (`FormSurgeryOutcome { invocations, pages }`) is what the shell reports back, deliberately as two numbers rather than one. |
+| **Delete a subpath, a node or a text run INSIDE a form XObject** — `delete_subpath_in_form`, `delete_node_in_form`, `delete_text_run_in_form` | **shipped.** `canvas::deleting` addresses the entered part by its leaf, so Delete on a subpath, an anchor or a text line inside a placed drawing reaches the in-form verb; a text line runs `delete_text_run_in_form` once per show operator, last first, as one undo step. A text leaf's line hit test is the shell's copy of the engine's rule until G147 lands. Driven: `a_subpath_inside_a_placed_drawing_can_be_deleted`, `an_anchor_inside_a_placed_drawing_can_be_deleted`, `a_text_line_inside_a_placed_drawing_can_be_deleted`. |
 | Edit an image, text run or pasted object added in THIS session … | **Reachable by linking the fix, which is the whole of it.** Every content-editing verb resolves a page through the session overlay, and this shell's call sites are unchanged by design. This is the one row here whose evidence is a **revision** rather than a surface: there is no new control to point at and no driven check of this project asserts it. If a reader wants to overturn one verdict in this file, overturn this one. |
 | Ask whether a page's model has changed — `EditSession::page_content_generation(page_index) -> u64` … | **Consumed — `app::cache` calls `page_content_generation`** to decide whether a cached decomposition still describes the page. It is the verb the engine's row says was asked for by name by `pdfcer-gui`, and it is in use. |
 | **Adopt the engine's deep marquee and delete ours** — `hit_test_rect_deep` / `FormMarquee` (`pdfcer-core/src/vector/hit.rs`) … | **Reachable, not driven — our extension is deleted.** `provider::hit_test_rect` is one call to `hit_test_rect_deep` plus a `HitTarget` → `TargetId` mapping; the hand-written leaf loop is gone, and `FormMarquee` is a parameter of `canvas::TargetProvider::hit_test_rect` rather than a constant in one impl. This shell passes `Include` where the engine defaults to `Exclude`, on purpose: here a form LEAF is not an edit operand (`canvas::moving::Refusal::InsideForm`) and the CONTAINER is, so `Exclude` would hand the operator a selection every verb refuses. Safe only because `canvas::marquee::without_page_wrappers` (O88) drops a page-sized wrapper from a crossing band. The result SET is unchanged; only the ORDER moved, to the engine's `paint_order` interleave, which all three consumers ignore. The both-policies assertion was falsified by planting a hard-coded `Include`. |
@@ -560,6 +560,7 @@ The engine verbs a shape made part of the page (O288 item 2) still lacks.
 - **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated.
 - **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself.
+- **G147** — no object-taking text-run hit test: a text line inside a form is picked by the shell's copy of the rule.
 
 ## Filed requests for Word-like text editing — not verdict rows
 

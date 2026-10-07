@@ -250,6 +250,40 @@ pub enum VectorAction {
         /// act on.
         node: usize,
     },
+    /// [`Self::DeleteSubpath`] for a path painted **inside a form XObject** —
+    /// `EditSession::delete_subpath_in_form`. Deleting inside a shared form
+    /// removes the subpath from every page the form is drawn on.
+    DeleteSubpathInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing object, by leaf index.
+        leaf: usize,
+        /// The subpath, in decomposition order.
+        subpath: usize,
+    },
+    /// [`Self::DeleteTextLine`] for a text object painted **inside a form
+    /// XObject** — `EditSession::delete_text_run_in_form`, once per show
+    /// operator of the line, descending, folded into one undo entry.
+    DeleteTextLineInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing text object, by leaf index.
+        leaf: usize,
+        /// The visual line, numbered as
+        /// `ObjectModelProvider::text_line_count_of` counts.
+        line: usize,
+    },
+    /// [`Self::DeleteNode`] for a path painted **inside a form XObject** —
+    /// `EditSession::delete_node_in_form`. Its curve-discard disclosure is
+    /// surfaced by the funnel, as the page twin's is.
+    DeleteNodeInForm {
+        /// The 0-based page.
+        page: usize,
+        /// The enclosing object, by leaf index.
+        leaf: usize,
+        /// The anchor, object-scoped.
+        node: usize,
+    },
     /// Move one **Bézier control point of an object inside a form
     /// XObject** — `EditSession::move_handle_in_form`. O70.
     ///

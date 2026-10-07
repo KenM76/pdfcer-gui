@@ -12,6 +12,8 @@
 
 use pdfcer_core::edit::{CommandKind, EditSession};
 
+mod inform_delete;
+
 pub use pdfcer_gui_base::subactions::VectorAction;
 
 /// **How many objects the page has, and how many parts one of them has** —
@@ -108,6 +110,9 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             | VectorAction::DeleteSubpath { .. }
             | VectorAction::DeleteTextLine { .. }
             | VectorAction::DeleteNode { .. }
+            | VectorAction::DeleteSubpathInForm { .. }
+            | VectorAction::DeleteTextLineInForm { .. }
+            | VectorAction::DeleteNodeInForm { .. }
             | VectorAction::SplitTextLines { .. }
     );
     let epoch = doc.edit_epoch;
@@ -292,6 +297,17 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 before,
                 after,
             );
+        }
+        VectorAction::DeleteSubpathInForm {
+            page,
+            leaf,
+            subpath,
+        } => inform_delete::subpath(doc, page, leaf, subpath),
+        VectorAction::DeleteTextLineInForm { page, leaf, line } => {
+            inform_delete::text_line(doc, page, leaf, line);
+        }
+        VectorAction::DeleteNodeInForm { page, leaf, node } => {
+            inform_delete::node(doc, page, leaf, node);
         }
         VectorAction::MoveHandleInForm {
             page,

@@ -292,38 +292,15 @@ impl CanvasTargetProvider for ObjectModelProvider {
             return Vec::new();
         }
         use crate::objectprovider::PartKind;
-        match (self.part_kind_of(target), target.page_object_index()) {
-            (Some(PartKind::Subpath), _) => self.subpath_hits_of(target, point, tolerance),
-            //
-            // The first version of this override handled `Subpath` and answered
-            // empty for everything else, which silently dropped the `Run` arm
-            // the index-based `part_hits` had always dispatched. The symptom
-            // was `canvas-anchors-declined reason=not-entered`: a Points-tool
-            // click on text found no part, so the rung was never entered and no
-            // points drew. Every unit test passed; the driven suite caught it.
-            //
-            // ⇒ The lesson is the one this project keeps relearning about
-            // generalising a function: the new axis (which index space) is easy
-            // to see, and the axis that was ALREADY there (which kind of part)
-            // is the one that gets dropped.
-            (Some(PartKind::TextLine), Some(object)) => {
-                self.text_line_hits(object, point, tolerance)
-            }
-            // A text line INSIDE a form has no leaf-indexed hit test yet —
-            // `text_line_hits` indexes the page's own list, and answering from it
-            // would return another object's lines entirely. Empty is the honest
-            // answer, and it is the next thing to build rather than an
-            // oversight.
-            (Some(PartKind::TextLine), None) | (None, _) => Vec::new(),
+        // Each part kind has its own hit test, for a page object and a leaf alike.
+        match self.part_kind_of(target) {
+            Some(PartKind::Subpath) => self.subpath_hits_of(target, point, tolerance),
+            Some(PartKind::TextLine) => self.text_line_hits_of(target, point, tolerance),
+            None => Vec::new(),
         }
     }
 
-    // Dispatches on the KIND, for the reason written out at length in
-    // `part_hits_of` above: the first version of that function generalised over
-    // index space and dropped the part-kind axis that was already there, and
-    // this one had the same defect — subpath-only, so a text line's outline
-    // came back `None` the moment the Part rung was reached through a
-    // `TargetId` rather than an object index.
+    // Dispatches on the part kind, as `part_hits_of` does.
     fn part_bounds_of(&self, page_index: usize, target: TargetId, part: usize) -> Option<Rect> {
         if page_index != self.page_index() {
             return None;

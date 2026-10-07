@@ -100,6 +100,47 @@ impl ObjectModelProvider {
         out
     }
 
+    /// [`Self::text_line_hits`], for either index space.
+    ///
+    /// A page object asks the engine's `hit_test_text_runs`, which takes a
+    /// page-list index. A form leaf has no index in that list, so its runs are
+    /// tested here by the same rule: the run box inflated by the tolerance,
+    /// nearest first by distance to the box. The engine has no object-taking
+    /// form of that test (requested as G147); this arm goes when it lands.
+    #[must_use]
+    pub fn text_line_hits_of(&self, target: TargetId, point: Pos2, tolerance: f64) -> Vec<usize> {
+        if let Some(object) = target.page_object_index() {
+            return self.text_line_hits(object, point, tolerance);
+        }
+        let (Some(text), Some(pdf)) = (self.text_of(target), self.canvas_to_pdf(point)) else {
+            return Vec::new();
+        };
+        let tolerance = super::resolve(tolerance);
+        let mut runs: Vec<(f64, usize)> = text
+            .runs
+            .iter()
+            .enumerate()
+            .filter(|(_, run)| run.bounds.inflate(tolerance).contains(pdf))
+            .map(|(i, run)| {
+                let b = run.bounds;
+                let dx = (b.min.x - pdf.x).max(pdf.x - b.max.x).max(0.0);
+                let dy = (b.min.y - pdf.y).max(pdf.y - b.max.y).max(0.0);
+                (dx.hypot(dy), i)
+            })
+            .collect();
+        runs.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let lines = lines_of(text);
+        let mut out: Vec<usize> = Vec::new();
+        for (_, run) in runs {
+            if let Some(line) = lines.iter().position(|r| r.contains(&run))
+                && !out.contains(&line)
+            {
+                out.push(line);
+            }
+        }
+        out
+    }
+
     /// A line's bounds in **canvas** space, for drawing its outline.
     #[must_use]
     pub fn text_line_bounds_canvas_of(&self, target: TargetId, line: usize) -> Option<Rect> {
@@ -243,6 +284,40 @@ mod tests {
             run(104.0, 140.0, 700.0, RunPositioning::Explicit),
             run(144.0, 190.0, 700.0, RunPositioning::Explicit),
         ])
+    }
+
+    /// A leaf's line hit test answers what the page object's does for the same
+    /// text: the two arms of [`ObjectModelProvider::text_line_hits_of`] agree.
+    #[test]
+    fn a_leaf_text_object_hits_its_lines_as_a_page_object_does() {
+        use pdfcer_core::vector::FormLeaf;
+        let page = two_lines();
+        let mut leaf = two_lines();
+        let object = leaf.objects.objects.remove(0);
+        leaf.objects.leaves.push(FormLeaf {
+            object,
+            containment: vec![pdfcer_core::object::ObjId::new(5, 0)],
+            paint_order: 0,
+            placement: Matrix::IDENTITY,
+            form_object_index: 0,
+        });
+        let mut hit_any = false;
+        for (x, y) in [
+            (150.0, 703.0),
+            (100.0, 663.0),
+            (150.0, 663.0),
+            (400.0, 400.0),
+        ] {
+            let point = Pos2::new(x, y);
+            let want = page.text_line_hits(0, point, 1.0);
+            hit_any |= !want.is_empty();
+            assert_eq!(
+                leaf.text_line_hits_of(TargetId::Leaf(0), point, 1.0),
+                want,
+                "at {point:?}"
+            );
+        }
+        assert!(hit_any, "the probe points must reach a line");
     }
 
     #[test]

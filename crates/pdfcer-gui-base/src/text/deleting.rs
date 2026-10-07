@@ -30,19 +30,6 @@ pub const fn refusal(reason: Refusal) -> Option<&'static str> {
              ends — so removing this one would move it somewhere you did not put it. Delete the \
              later label first, then this one.",
         ),
-        // The operator has an outline round the thing they want gone and the
-        // key does nothing. This is a real limit of the engine rather than of
-        // this shell — `pdfcer-core` has one delete verb for the inside of a
-        // container and it removes a whole object — and saying so is the
-        // difference between a limit and a bug.
-        //
-        // The sentence names what DOES work, because it does: pressing Escape
-        // to leave the part and deleting the whole object inside the container
-        // reaches `delete_objects_in_form`, which is wired.
-        Refusal::InsideForm => Some(
-            "This line is inside a group that pdfcer can only remove whole. Press Escape to \
-             step back out to the whole shape, then Delete.",
-        ),
         // Four points highlighted, one press, and pdfcer would remove one of
         // them. Refusing and saying how many is the honest answer; acting on
         // the first is the defect that let a four-anchor drag move one anchor
@@ -91,7 +78,6 @@ mod tests {
     fn every_sentence_is_finished_prose_with_no_baked_gap() {
         for reason in [
             Refusal::RunWouldMoveNext(3),
-            Refusal::InsideForm,
             Refusal::ManyNodes(4),
             Refusal::ManyLines(3),
             Refusal::NoObjectModel,
@@ -113,7 +99,6 @@ mod tests {
     fn no_sentence_writes_a_bare_dimension() {
         for reason in [
             Refusal::RunWouldMoveNext(0),
-            Refusal::InsideForm,
             Refusal::ManyNodes(2),
             Refusal::ManyLines(2),
             Refusal::NoObjectModel,

@@ -125,9 +125,13 @@ fn enter_and_read_properties(
     Ok(None)
 }
 
-fn launch(
+/// Launch off the desktop on a copy of `fixture` (relative to this crate),
+/// with the trace and pointer files named after `stem`.
+pub(super) fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
+    fixture: &str,
+    stem: &str,
 ) -> Result<(Session, ScriptedPointer, PageGeometry)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -138,16 +142,16 @@ fn launch(
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let pdf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(FIXTURE);
+    let pdf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(fixture);
     if !pdf.is_file() {
         return Err(Error::new(format!(
-            "the fixture {FIXTURE} is missing. Run `python tools/gen-form-xobject-fixture.py`."
+            "the fixture {fixture} is missing. Its PROVENANCE file beside it builds it."
         )));
     }
     let page = crate::fixture::page_geometry(&pdf).unwrap_or(FIXTURE_PAGE);
-    let doc = ctx.out("form-node-move.pdf");
-    std::fs::copy(&pdf, &doc).map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("form-node-move.trace.txt"));
+    let doc = ctx.out(&format!("{stem}.pdf"));
+    std::fs::copy(&pdf, &doc).map_err(|e| Error::new(format!("copying {fixture}: {e}")))?;
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
@@ -159,7 +163,7 @@ fn launch(
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("form-node-move.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
@@ -173,7 +177,7 @@ fn launch(
 }
 
 /// What a check does once the window is up; `Some` is a FAIL.
-type Body = fn(
+pub(super) type Body = fn(
     &CheckContext,
     &mut CheckReport,
     &Session,
@@ -182,7 +186,18 @@ type Body = fn(
 ) -> Result<Option<String>>;
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport, body: Body) -> Result<Option<String>> {
-    let (session, pointer, page) = launch(ctx, report)?;
+    run_body(ctx, report, FIXTURE, "form-node-move", body)
+}
+
+/// Launch on `fixture`, run `body`, then park the pointer whatever it found.
+pub(super) fn run_body(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    stem: &str,
+    body: Body,
+) -> Result<Option<String>> {
+    let (session, pointer, page) = launch(ctx, report, fixture, stem)?;
     let outcome = body(ctx, report, &session, &pointer, page);
     let parked = pointer.gone(&session);
     let found = outcome?;
@@ -199,6 +214,18 @@ fn enter_leaf(
     pointer: &ScriptedPointer,
     page: PageGeometry,
 ) -> Result<(&'static str, WindowPoint)> {
+    enter_leaf_at(ctx, session, pointer, page, ON_THE_BAR)
+}
+
+/// Edit mode, then a click and a double-click at `on` (page space): the
+/// selection is the leaf of the form painted there.
+pub(super) fn enter_leaf_at(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+    on: (f64, f64),
+) -> Result<(&'static str, WindowPoint)> {
     let ui_rect = ctx
         .profile
         .vocab
@@ -207,7 +234,7 @@ fn enter_leaf(
     click_mode_segment(session, pointer, ui_rect, MODE)?;
     session.settle(20);
     let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
-    let at = mapping.doc_to_window(DocPoint::new(0, ON_THE_BAR.0, ON_THE_BAR.1))?;
+    let at = mapping.doc_to_window(DocPoint::new(0, on.0, on.1))?;
     pointer.click(session, at)?;
     session.settle(25);
     pointer.double_click(session, at)?;

@@ -87,7 +87,7 @@ which is the drift `deletable_objects_on`'s own header refuses.
 
 ### `fn object_rung`
 
-Unchanged behaviour, lifted verbatim out of `canvas::keys`. The page's own
+The page's own
 paint order wins when both are present, because `delete_objects` is the verb
 with the erase preview and the leaf list is the fallback for a selection
 made **entirely** of form-interior targets — which is the state an ordinary
@@ -95,10 +95,10 @@ click has been able to produce since the deep hit test landed.
 
 ### `fn part_rung`
 
-The kind decides the verb, and the **address space decides whether a verb
-exists at all** — asked in that order, exactly as `moving::eligible` asks
-it, because a form-interior part has no delete verb of any kind and saying
-so first is what stops the kind match promising one.
+The kind decides the verb and the address space decides which one: a part of
+a page object reaches `delete_subpath` or `delete_text_run`, a part of a form
+leaf reaches `delete_subpath_in_form` or `delete_text_run_in_form`. `Address`
+carries that second choice so the kind match is written once.
 
 ### `fn entered`
 
@@ -158,14 +158,12 @@ a routing enum must not be able to represent a case that renders nothing.
 
 # Which refusals get a sentence, and the rule behind the split
 
-Five do, and they are the five an operator meets **without having made a
+Four do, and they are the four an operator meets **without having made a
 mistake**:
 
 * [`Refusal::RunWouldMoveNext`] — they picked a label, pressed Delete, and
   the file's own structure forbids it. There is a remedy and it always
   works.
-* [`Refusal::InsideForm`] — they have an outline round the thing they want
-  gone and the key does nothing. From where they sit, Delete is broken.
 * [`Refusal::ManyNodes`] — they Shift-clicked four anchors and watched four
   highlight. Removing one silently would be worse than refusing.
 * [`Refusal::ManyLines`] — the same press one rung up, and the operator has
