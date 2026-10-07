@@ -1078,6 +1078,8 @@ pub mod style_off;
 pub mod subset_glyph;
 /// Text made bold by a stroke shows Bold pressed, and Ctrl+B takes it off.
 pub mod synthetic_bold;
+/// Part of a tagged paragraph underlined: the structure tree's gap is said.
+pub mod tagged_underline;
 /// Text-tool clicks reach a note, a field or a scan's remedy.
 pub mod text_click_routes;
 pub mod text_tool_click_types;

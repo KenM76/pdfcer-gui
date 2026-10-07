@@ -76,8 +76,11 @@ best_fit_parts}` to name those parts in the viewer, and G133's fix (engine
 Pass 516.0, on engine main): `ocr_reading_order` reads 7 blocks for the
 fixture's 4 paragraphs because the engine over-splits at a short last line;
 tighten the check to 4 when the tag lands. Next, in order: the rest of
-ENGINE_BACKLOG; the `TextDecorationType` row needs only a driven check on a
-part-underlined tagged fixture. `v0.5.0-dev.20261007.1` is published from `507c67a8` and sits in
+ENGINE_BACKLOG (28 wanted, 2 blocked). Underlining part of a tagged
+paragraph says on the status line that the structure tree does not record it
+(`underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded`, on
+`fixtures/tagged-paragraph.pdf`; `tagged-report.pdf` has no `/ParentTree`, so
+the engine finds no elements there). `v0.5.0-dev.20261007.1` is published from `507c67a8` and sits in
 `pdfcer-gui1`; the next release replaces `pdfcer-gui2`. No engine tag past
 v0.80.0 yet.
 Releases go out when the main session judges them appropriate, and the main
