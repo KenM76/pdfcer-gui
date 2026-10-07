@@ -503,7 +503,7 @@ His words: *"OCR text that has been detected isn't added to the pdf in the curre
 6. **Text can be added to the OCR layer at a new place.**
 7. **PaddleOCR-VL 1.5:** he believes the engine already supports it; check and offer it (bears on O289 item 17).
 
-**Where it stands.** Not started.
+**Where it stands.** Item 1: one cause found and fixed, his exact case not reproduced. The recognition thread reported its result while still holding the document, so the edit that writes the text could find the document busy and was dropped with nothing on screen. The thread now lets go first, an edit waits up to half a second for background work to let go, and an edit still refused says so on the status row. Falsified by holding the document 1.5 s after the report (`paddle_text_is_in_the_saved_file` fails; 0.2 s is absorbed). Driven on his most recent file with his PaddleOCR setting, the current build wrote 1,910 recognised lines into the saved file, and with "skip pages that already have text" on (his file has text) it refuses every page instead. Whether either is what he met is his to confirm on the next build. Items 2–7 join Batch 2.
 
 ## O288 — **OPEN, first in the queue (Batch 1; a release follows it)** — editing never blanks or blocks, and eight editing defects
 

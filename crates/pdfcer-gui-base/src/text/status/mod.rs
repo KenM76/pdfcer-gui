@@ -37,7 +37,7 @@ pub use formdelete::field_delete_declined_structural;
 /// that names no cause**, because the engine exposes none this shell may
 /// switch on. Its file carries the argument for every word it does not say,
 /// including why it does not point the operator at Render diagnostics.
-pub use refused::edit_declined_by_engine;
+pub use refused::{edit_declined_by_engine, session_busy};
 /// **Resize refusals** — the un-rebuildable appearance and the fixed-size
 /// marker.
 mod resize;

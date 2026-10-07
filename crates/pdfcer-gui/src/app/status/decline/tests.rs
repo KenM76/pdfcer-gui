@@ -306,6 +306,7 @@ fn no_two_declines_share_a_sentence() {
         )),
         Declined::Rc4Refused,
         Declined::PasswordRefused,
+        Declined::SessionBusy,
     ];
     for (i, a) in all.iter().enumerate() {
         for b in &all[i + 1..] {
@@ -764,7 +765,8 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::FormFontsNothingToRepair
         | Declined::OsPaste(_)
         | Declined::Rc4Refused
-        | Declined::PasswordRefused => {}
+        | Declined::PasswordRefused
+        | Declined::SessionBusy => {}
     }
 }
 

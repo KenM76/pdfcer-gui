@@ -95,6 +95,10 @@ impl Job {
                 control: worker_control,
             };
             let outcome = recognise(&request, &reporter);
+            // The request holds the session; it goes before `Finished` is
+            // sent, because the receiver raises the edit that needs the
+            // session to itself (`Arc::get_mut`) as soon as it reads it.
+            drop(request);
             // The three endings, kept apart. `Cancelled` arrives as a
             // refusal from the loop and is turned into its own outcome here,
             // rather than reaching the dialog as "nothing was recognised" —

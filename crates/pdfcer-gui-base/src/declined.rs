@@ -1042,4 +1042,7 @@ pub enum Declined {
     /// does not grant its permission. Worded in [`crate::text::unlock::refused`];
     /// offers Reopen with owner password.
     PasswordRefused,
+    /// An edit refused because background work still held the document.
+    /// Worded in [`crate::text::status::session_busy`].
+    SessionBusy,
 }

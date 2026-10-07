@@ -50,6 +50,12 @@ the fixture.
   words: fails at step 3 with no `ocr-layer-structure` line.
 - Handing `add_ocr_layer` an empty page list: the ocrs and PaddleOCR variants
   fail at step 4 (the save appends nothing).
+- The recognition thread holding its clone of the session for 1,500 ms after
+  reporting `Finished`: the PaddleOCR variant fails at step 3 with
+  `session-wait ms=504 sole=false` and `ocr-layer-refused
+  reason=session-borrowed`, and the status row shows the session-busy
+  decline. Held for 200 ms, the funnel's bounded wait absorbs it
+  (`session-wait ms=76 sole=true`) and the check passes.
 
 The step-5 arm has not been fired by a plant: no planted defect produced a
 layer that was applied and saved but absent on reopen.

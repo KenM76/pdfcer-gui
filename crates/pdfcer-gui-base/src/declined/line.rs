@@ -202,6 +202,7 @@ impl Declined {
             Self::OsPaste(why) => return why.line(),
             Self::Rc4Refused => crate::text::rc4::refused(),
             Self::PasswordRefused => crate::text::unlock::refused(),
+            Self::SessionBusy => crate::text::status::session_busy(),
         };
         std::borrow::Cow::Borrowed(fixed)
     }

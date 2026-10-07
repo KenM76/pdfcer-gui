@@ -103,6 +103,11 @@ pub(crate) fn record_password_refused() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::PasswordRefused));
 }
 
+/// Record that an edit was refused because background work held the document.
+pub(crate) fn record_session_busy() {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::SessionBusy));
+}
+
 /// Record why a paste of another program's copy placed nothing.
 pub(crate) fn record_os_paste(why: crate::text::ospaste::OsPasteRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::OsPaste(why)));

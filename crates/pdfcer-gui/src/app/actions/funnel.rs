@@ -68,6 +68,33 @@ pub(super) fn vector_edit_on_page<E: std::fmt::Display + crate::app::unlock::Ref
     vector_edit_scoped(doc, label, page, operands, EditScope::Page(page), edit);
 }
 
+/// How long an edit waits for a background holder of the session to let go.
+const SOLE_OWNER_WAIT: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// Wait, up to [`SOLE_OWNER_WAIT`], until `session` has no other owner.
+///
+/// A worker that has just reported its result may still be unwinding its
+/// clone when the result's edit arrives; refusing that edit outright loses
+/// the work. A holder that keeps the session longer is refused with a decline.
+fn wait_for_sole_owner(session: &Arc<EditSession>) {
+    let sole = || Arc::strong_count(session) == 1 && Arc::weak_count(session) == 0;
+    if sole() {
+        return;
+    }
+    let started = std::time::Instant::now();
+    while !sole() && started.elapsed() < SOLE_OWNER_WAIT {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "session-wait ms={} sole={}",
+            started.elapsed().as_millis(),
+            sole()
+        )
+    });
+}
+
 fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     doc: &mut OpenDoc,
     label: &str,
@@ -77,11 +104,13 @@ fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     edit: impl FnOnce(&mut EditSession) -> Result<Vec<String>, E>,
 ) {
     doc.render_worker.cancel_and_wait();
+    wait_for_sole_owner(&doc.session);
     let Some(session) = Arc::get_mut(&mut doc.session) else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!("{label}-refused page={page} n={operands} reason=session-borrowed")
         });
+        crate::app::status::decline::record_session_busy();
         return;
     };
     // The floor under the refusal below, taken **before** the verb runs so

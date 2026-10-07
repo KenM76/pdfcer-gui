@@ -269,7 +269,8 @@ impl Declined {
             | Self::FormFontsNothingToRepair
             | Self::OsPaste(_)
             | Self::Rc4Refused
-            | Self::PasswordRefused => true,
+            | Self::PasswordRefused
+            | Self::SessionBusy => true,
         }
     }
 }

@@ -9,3 +9,11 @@
 pub const fn edit_declined_by_engine() -> &'static str {
     "That change was refused, and the document is unchanged."
 }
+
+/// An edit that found the document still held by background work (a
+/// recognition, a preview render) after the funnel's bounded wait.
+#[must_use]
+pub const fn session_busy() -> &'static str {
+    "Not changed: pdfcer was still finishing background work on this document. Try again \
+     in a moment."
+}
