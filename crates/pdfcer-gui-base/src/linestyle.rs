@@ -124,6 +124,27 @@ impl DashReading {
     }
 }
 
+/// **A widget's border dash as a [`DashReading`]**, from the engine's
+/// `forms::Widget::border_dash` (`/BS /D`, else `/Border`'s fourth element).
+///
+/// The engine gives `None` for a `Dashed` border that states no pattern; the
+/// border is still drawn with Table 166's `[3]`, so the reading is
+/// [`LineStyle::Dashed`]. `dashed` is whether the widget's border style is
+/// `Dashed`.
+#[must_use]
+pub fn of_widget_dash(
+    dash: Option<&pdfcer_core::annot_author::BorderDash>,
+    dashed: bool,
+) -> DashReading {
+    match dash {
+        Some(d) => {
+            LineStyle::of_pattern(d.pattern()).map_or(DashReading::Foreign, DashReading::Offered)
+        }
+        None if dashed => DashReading::Offered(LineStyle::Dashed),
+        None => DashReading::Solid,
+    }
+}
+
 /// **Read `/BS` back as a [`DashReading`]** — Table 166, §12.5.4.
 #[must_use]
 pub fn read<G: pdfcer_core::graph::ObjectGraph + ?Sized>(

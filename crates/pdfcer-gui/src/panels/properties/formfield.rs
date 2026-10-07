@@ -146,7 +146,7 @@ pub fn section(
         ui,
         field,
         &selected,
-        widget_dash(doc, field, selected.widget),
+        widget_dash(field, selected.widget),
         state,
         epoch,
         actions,
@@ -184,24 +184,20 @@ pub fn section(
     true
 }
 
-/// What `/BS /D` says on the selected widget, read off its dictionary because
-/// `forms::Widget` carries no dash (request G126).
+/// The selected widget's border dash, from the engine's `Widget::border_dash`.
 fn widget_dash(
-    doc: &OpenDoc,
     field: &pdfcer_core::forms::Field,
     widget: usize,
 ) -> crate::canvas::markup::linestyle::DashReading {
-    use pdfcer_core::object::Object;
-    let solid = crate::canvas::markup::linestyle::DashReading::Solid;
-    let Some(id) = field.widgets.get(widget).map(|w| w.id) else {
-        return solid;
+    use crate::canvas::markup::linestyle::{DashReading, of_widget_dash};
+    let Some(w) = field.widgets.get(widget) else {
+        return DashReading::Solid;
     };
-    match doc.session.value(id) {
-        Some(Object::Dict(dict)) => {
-            crate::canvas::markup::linestyle::read(&doc.session.graph(), dict)
-        }
-        _ => solid,
-    }
+    let dashed = w
+        .border
+        .as_ref()
+        .is_some_and(|b| b.style == pdfcer_core::edit::BorderStyle::Dashed);
+    of_widget_dash(w.border_dash.as_ref(), dashed)
 }
 
 /// The read-only facts: what this field is, where it is, and what it holds.

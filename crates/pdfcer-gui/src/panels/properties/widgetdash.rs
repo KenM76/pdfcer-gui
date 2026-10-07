@@ -7,8 +7,8 @@
 //! `ForeignAppearance::Replace`, so artwork another program drew is redrawn
 //! with the new pattern rather than kept.
 //!
-//! The current pattern is read from the widget dictionary by the shell's
-//! `linestyle::read`, because `forms::Widget` carries no dash (request G126).
+//! The current pattern is the engine's `forms::Widget::border_dash`, through
+//! `linestyle::of_widget_dash`.
 
 use egui::Ui;
 use pdfcer_core::edit::{ForeignAppearance, WidgetEdit};
@@ -88,7 +88,6 @@ pub fn row(
 mod tests {
     use super::*;
     use pdfcer_core::edit::{BorderSpec, BorderStyle, EditSession, NewTextField, TooltipChoice};
-    use pdfcer_core::object::Object;
     use pdfcer_core::page_tree::Rect;
 
     /// The edit this row pushes must reach `/BS /D` as the pattern the shell's
@@ -119,22 +118,56 @@ mod tests {
         session
             .edit_widget("dash_probe", 0, &edit)
             .expect("the dash is accepted");
-        let id = {
-            let view = session.view();
-            let form = pdfcer_core::forms::parse_acroform(&view).expect("a form");
-            form.fields
-                .iter()
-                .find(|f| f.fully_qualified_name == "dash_probe")
-                .expect("the probe is in the form")
-                .widgets[0]
-                .id
-        };
-        let graph = session.graph();
-        let Some(Object::Dict(dict)) = session.value(id) else {
-            panic!("the widget is a dictionary");
-        };
-        let reading = crate::canvas::markup::linestyle::read(&graph, dict);
+        let reading = probe_reading(&session);
         assert_eq!(reading, DashReading::Offered(LineStyle::DashDot));
         assert_eq!(token(reading), "dash-dot");
+    }
+
+    /// A `Dashed` border stating no pattern reads as `Dashed` (Table 166's
+    /// `[3]`), not as solid and not as a foreign pattern.
+    #[test]
+    fn a_dashed_border_with_no_pattern_reads_as_dashed() {
+        let path = crate::panels::objects::test_support::engine_fixture("forms/demo-form.pdf");
+        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let mut session = EditSession::new(doc);
+        let mut spec = NewTextField::new(
+            0,
+            "dash_probe",
+            Rect {
+                llx: 300.0,
+                lly: 300.0,
+                urx: 400.0,
+                ury: 320.0,
+            },
+        );
+        spec.tooltip = TooltipChoice::Declined;
+        spec.border = BorderSpec {
+            style: BorderStyle::Dashed,
+            width: 1.0,
+        };
+        session
+            .add_text_field(&spec)
+            .expect("a text field is placed");
+        assert_eq!(
+            probe_reading(&session),
+            DashReading::Offered(LineStyle::Dashed)
+        );
+    }
+
+    /// The probe field's first widget, read as the Properties row reads it.
+    fn probe_reading(session: &EditSession) -> DashReading {
+        let view = session.view();
+        let form = pdfcer_core::forms::parse_acroform(&view).expect("a form");
+        let field = form
+            .fields
+            .iter()
+            .find(|f| f.fully_qualified_name == "dash_probe")
+            .expect("the probe is in the form");
+        let w = &field.widgets[0];
+        let dashed = w
+            .border
+            .as_ref()
+            .is_some_and(|b| b.style == BorderStyle::Dashed);
+        crate::canvas::markup::linestyle::of_widget_dash(w.border_dash.as_ref(), dashed)
     }
 }

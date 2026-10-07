@@ -7,9 +7,11 @@ the operator can see (R9).
 
 - **Offered:** the three dashes of `linestyle::LineStyle` (Dashed, Long dash,
   Dash-dot). Solid is the style row's choice, not this one's.
-- **Shown:** what the file says, read off the widget dictionary by
-  `linestyle::read`, because `forms::Widget` carries no dash (G126). A pattern
-  pdfcer has no name for reads as the foreign label and selects nothing.
+- **Shown:** what the file says, from the engine's `forms::Widget::border_dash`
+  (`/BS /D`, else `/Border`'s fourth element) through
+  `linestyle::of_widget_dash`. A `Dashed` border stating no pattern reads as
+  Dashed, the `[3]` it is drawn with. A pattern pdfcer has no name for reads as
+  the foreign label and selects nothing.
 - **A pick:** `FieldAction::EditWidget` with `WidgetEdit::with_border_dash`
   and `ForeignAppearance::Replace`, so another program's artwork is redrawn
   with the new pattern rather than kept.
