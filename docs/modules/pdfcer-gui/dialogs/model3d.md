@@ -3,8 +3,8 @@
 **The 3D model viewer.** Opened by *View…* on a PRC row of the Attachments
 panel's 3D models section (feature `3d`). Holds the placed meshes
 (`app::actions::models::Assembled`) and a camera, and shows the engine's
-software rendering (`pdfcer_3d::render_coloured`, each mesh in its own
-colour, grey where the file gives none) as a texture.
+software rendering (`pdfcer_3d::render_model`: each mesh in its own colour or
+texture picture, grey where the file gives neither) as a texture.
 
 ## Camera
 
@@ -52,8 +52,21 @@ The picture is rendered at the image area's pixel size, capped at 1600 a side
 background changes. A render error replaces the picture with its sentence.
 
 Below the picture: the census, the colour note (naming how many parts are
-grey), the placement note when the assembly tree could not be read, and the
-skipped-part count.
+grey), the textured-part count with one line per texture the engine could
+only draw in its base colour (`AssembledModel::texture_notes`, its reason and
+part count), the placement note when the assembly tree could not be read, and
+the skipped-part count.
+
+## Part list
+
+`dialogs::model3d::parts`, a resizable left panel inside the window (default
+180 pt). `Assembled::tree` is `PrcFile::model_tree` read once at open; on an
+error `Assembled::tree_error` holds the engine's sentence and stands in for
+the list. One row per node in the engine's order, indented 12 pt per depth:
+the name, or *unnamed*; weak when the node is not drawn; a hover note when
+the name is borrowed from its prototype or part (`NameSource`); *hidden*,
+*suppressed* or *not drawn* as stored. Read-only: an assembled mesh carries
+no link back to its node (G134).
 
 ## Use this view on the page; Save picture…
 
@@ -63,7 +76,7 @@ queues `AttachmentAction::SaveModelPicture`, which
 the document is not changed. *Use this view on the page* is on a model that
 is a `/3D` annotation of its own (`panels::attachments::models::has_own_poster`; a RichMedia asset has
 no page picture to replace). The press renders the current orbit through
-`render_coloured` at the last rendered picture's shape, 1200 pixels on the
+`render_model` at the last rendered picture's shape, 1200 pixels on the
 long side, on the engine's default white (the background the engine's own
 poster uses, not the theme's) and queues its RGBA samples as
 `AttachmentAction::SetModelPoster`; `app::actions::models::set_poster`
@@ -79,8 +92,12 @@ and changing documents closes it.
 
 ## Trace
 
-- `model-view-opened page= parts= uncoloured= triangles= skipped= placed= file-view=`
-  — `file-view=1` when it opened on the file's view.
+- `model-view-opened page= parts= uncoloured= triangles= skipped= best-fit= overridden= textured= texture-notes= placed= file-view=`
+  — `file-view=1` when it opened on the file's view; `uncoloured` counts
+  meshes with neither a colour nor a texture.
+- `model-view-parts nodes= hidden= suppressed= borrowed= depths= names= error=`
+  — `depths` and `names` are `|`-joined in list order, an unnamed node `-`;
+  `error=1` when the tree could not be read.
 - `model-view-rendered w= h= yaw= pitch= zoom= perspective= framed= dir= up= covered= chromatic= hues= hash=`
   — `dir` and `up` are the camera's unit look direction and up, `x,y,z`;
   `covered` counts non-background pixels, `hash` is FNV-1a of the RGBA.
@@ -91,11 +108,11 @@ and changing documents closes it.
 - `model-view-render-failed error=`
 - `model-view-poster w= h= yaw= pitch= bytes=` — a picture made for the page.
 - Regions: `model3d.image`, `model3d.view.file`, `model3d.view.0`…`4`, `model3d.fit`,
-  `model3d.close`, `model3d.use_on_page`, `model3d.save_picture`.
+  `model3d.close`, `model3d.use_on_page`, `model3d.save_picture`, `model3d.parts`.
 
 Driven by `ui-verify` checks `a_3d_model_turns_under_the_pointer` (an
 uncoloured model is grey), `a_coloured_3d_model_draws_in_its_own_colours`
 , `the_3d_viewers_view_becomes_the_page_picture` and
 `the_3d_viewer_saves_its_view_as_a_picture`, and
 `the_3d_viewer_opens_on_the_files_view` (the file's view and the way back to
-it).
+it), `the_3d_viewer_draws_a_texture` and `the_3d_viewer_lists_the_model_tree`.

@@ -570,6 +570,73 @@ pub fn view_overridden(n: usize) -> String {
     }
 }
 
+/// Parts drawn with their texture picture.
+#[must_use]
+pub fn view_textured(n: usize) -> String {
+    match n {
+        1 => "One part is drawn with its texture picture.".to_owned(),
+        n => format!("{n} parts are drawn with their texture pictures."),
+    }
+}
+
+/// A texture drawn in its base colour, or only in part: the engine's
+/// `reason` and the parts it affected.
+#[must_use]
+pub fn view_texture_note(reason: &str, parts: usize) -> String {
+    match parts {
+        1 => format!("Texture, one part: {reason}."),
+        n => format!("Texture, {n} parts: {reason}."),
+    }
+}
+
+/// The 3D viewer's part list heading.
+#[must_use]
+pub fn parts_heading(n: usize) -> String {
+    format!("Parts ({n})")
+}
+
+/// The model tree could not be read; the model is still drawn.
+#[must_use]
+pub fn parts_unreadable(why: &str) -> String {
+    format!("The list of parts could not be read: {why}.")
+}
+
+/// A part the file gives no name.
+#[must_use]
+pub fn part_unnamed() -> &'static str {
+    "(unnamed)"
+}
+
+/// A part the file stores as hidden.
+#[must_use]
+pub fn part_hidden() -> &'static str {
+    "hidden"
+}
+
+/// A part the file stores as suppressed.
+#[must_use]
+pub fn part_suppressed() -> &'static str {
+    "suppressed"
+}
+
+/// A part not drawn because a part above it is hidden or suppressed.
+#[must_use]
+pub fn part_not_drawn() -> &'static str {
+    "not drawn"
+}
+
+/// Hover on a name taken from the part this one copies.
+#[must_use]
+pub fn part_named_from_prototype() -> &'static str {
+    "This part has no name of its own; the name is the one of the part it copies."
+}
+
+/// Hover on a name taken from the shape definition.
+#[must_use]
+pub fn part_named_from_part() -> &'static str {
+    "This part has no name of its own; the name is the one of the shape it draws."
+}
+
 /// The document's version predates the format.
 #[must_use]
 pub fn below_version(required: &str, document: &str) -> String {

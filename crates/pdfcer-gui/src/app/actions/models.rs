@@ -92,12 +92,10 @@ struct Meshed {
 /// A PRC model's triangles, each part placed where its assembly puts it.
 #[cfg(feature = "3d")]
 pub(crate) struct Assembled {
-    /// One mesh per placed part; a part with faces of several colours is one
-    /// mesh per colour.
-    pub meshes: Vec<pdfcer_3d::TriangleMesh>,
-    /// Each mesh's colour from the model tree, straight RGBA, parallel to
-    /// [`Self::meshes`]; empty when the parts could not be placed.
-    pub colours: Vec<Option<[u8; 4]>>,
+    /// The engine's placed model: its meshes (one per placed part, or one
+    /// per colour of a part), their colours and textures, drawn whole by
+    /// `pdfcer_3d::render_model`.
+    pub drawn: pdfcer_3d::AssembledModel,
     pub triangles: usize,
     /// Tessellations that are not triangles pdfcer can draw.
     pub skipped: usize,
@@ -112,13 +110,24 @@ pub(crate) struct Assembled {
     pub placed: bool,
     /// The file's opening view (`default_3d_view`), set by [`load_view`].
     pub opening: Option<pdfcer_core::threed::ThreeDSavedView>,
+    /// The assembly tree (`PrcFile::model_tree`), set by [`load_view`].
+    pub tree: Vec<pdfcer_3d::ModelNode>,
+    /// Why [`Self::tree`] could not be read, set by [`load_view`].
+    pub tree_error: Option<String>,
 }
 
 #[cfg(feature = "3d")]
 impl Assembled {
-    /// Meshes the model gives no colour, which draw grey.
+    /// Meshes the model gives neither a colour nor a texture, which draw
+    /// grey.
     pub(crate) fn uncoloured(&self) -> usize {
-        self.meshes.len() - self.colours.iter().flatten().count()
+        let d = &self.drawn;
+        (0..d.meshes.len())
+            .filter(|&i| {
+                d.colours.get(i).copied().flatten().is_none()
+                    && d.mesh_textures.get(i).copied().flatten().is_none()
+            })
+            .count()
     }
 }
 
@@ -151,9 +160,10 @@ pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
         overridden: model.overridden,
         placed: model.unplaced.is_none(),
         triangles: model.triangles,
-        colours: model.colours,
-        meshes: model.meshes,
+        drawn: model,
         opening: None,
+        tree: Vec::new(),
+        tree_error: None,
     })
 }
 
@@ -167,13 +177,13 @@ fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
         Unassembled::Empty { compressed } => t::mesh_empty(compressed),
     })?;
     let bytes = if obj {
-        pdfcer_3d::to_obj(&model.meshes).into_bytes()
+        pdfcer_3d::to_obj(&model.drawn.meshes).into_bytes()
     } else {
-        pdfcer_3d::to_stl(&model.meshes).map_err(|e| t::mesh_unreadable(&e.to_string()))?
+        pdfcer_3d::to_stl(&model.drawn.meshes).map_err(|e| t::mesh_unreadable(&e.to_string()))?
     };
     Ok(Meshed {
         bytes,
-        meshes: model.meshes.len(),
+        meshes: model.drawn.meshes.len(),
         triangles: model.triangles,
         skipped: model.skipped,
         best_fit: model.best_fit,
@@ -198,6 +208,10 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
         Unassembled::Empty { compressed } => t::view_empty(compressed),
     })?;
     model.opening = pdfcer_core::threed::default_3d_view(&view, artwork);
+    match pdfcer_3d::PrcFile::parse(&data).and_then(|prc| prc.model_tree()) {
+        Ok(tree) => model.tree = tree,
+        Err(why) => model.tree_error = Some(why.to_string()),
+    }
     Ok(model)
 }
 
@@ -603,14 +617,14 @@ mod tests {
         };
         assert!(assembled.placed);
         assert!(
-            assembled.meshes.len() >= 2,
+            assembled.drawn.meshes.len() >= 2,
             "{} parts",
-            assembled.meshes.len()
+            assembled.drawn.meshes.len()
         );
         let bounds = |m: &pdfcer_3d::TriangleMesh| pdfcer_3d::Bounds::of(std::slice::from_ref(m));
         assert_ne!(
-            bounds(&assembled.meshes[0]),
-            bounds(&assembled.meshes[1]),
+            bounds(&assembled.drawn.meshes[0]),
+            bounds(&assembled.drawn.meshes[1]),
             "two placed parts sit in the same place"
         );
     }

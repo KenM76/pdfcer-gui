@@ -1141,6 +1141,8 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_colours::AColouredModelDrawsInItsColours),
         Box::new(model_inferences::TheViewerSaysTheAssemblyColouredIt),
         Box::new(model_inferences::TheViewerSaysAMeshWasBestFit),
+        Box::new(model_inferences::TheViewerDrawsATexture),
+        Box::new(model_tree::TheViewerListsTheModelTree),
         Box::new(model_view_poster::TheViewersViewBecomesThePagePicture),
         Box::new(model_view_poster::APictureFileBecomesTheModelsPagePicture),
         Box::new(model_view_picture::TheViewerSavesItsViewAsAPicture),

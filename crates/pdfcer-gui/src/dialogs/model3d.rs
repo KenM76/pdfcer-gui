@@ -13,7 +13,7 @@
 use egui::{Sense, TextureHandle, TextureOptions, Ui};
 // The 3D renderer's options, not the page renderer's that settings own.
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::{Bounds, render_coloured};
+use pdfcer_3d::{Bounds, render_model};
 
 use crate::app::actions::Action;
 use crate::app::actions::attachments::AttachmentAction;
@@ -22,6 +22,7 @@ use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDSavedView};
 
 mod orbit;
+mod parts;
 
 use orbit::{Orbit, PITCH_LIMIT};
 
@@ -110,7 +111,7 @@ impl ModelView {
     #[must_use]
     pub(crate) fn open(artwork: ThreeDArtwork, model: Assembled) -> Self {
         let page_index = artwork.page_index;
-        let bounds = Bounds::of(&model.meshes).unwrap_or(Bounds {
+        let bounds = Bounds::of(&model.drawn.meshes).unwrap_or(Bounds {
             min: [0.0; 3],
             max: [0.0; 3],
         });
@@ -119,15 +120,25 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} placed={} file-view={}",
-                model.meshes.len(),
+                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} textured={} texture-notes={} placed={} file-view={}",
+                model.drawn.meshes.len(),
                 model.uncoloured(),
                 model.triangles,
                 model.skipped,
                 model.best_fit,
                 model.overridden,
+                model.drawn.textured,
+                model.drawn.texture_notes.len(),
                 model.placed,
                 u8::from(saved.is_some())
+            )
+        });
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "model-view-parts {} error={}",
+                parts::trace_fields(&model.tree),
+                u8::from(model.tree_error.is_some())
             )
         });
         Self {
@@ -311,6 +322,12 @@ impl ModelView {
         });
         ui.small(t::view_hint());
         self.file_view_note(ui);
+        egui::Panel::left(egui::Id::new("model3d-parts")) // ui-text-exempt: an egui id, never displayed
+            .resizable(true)
+            .default_size(180.0)
+            .show(ui, |ui| {
+                parts::show(ui, &self.model.tree, self.model.tree_error.as_deref());
+            });
 
         let footer = ui.spacing().interact_size.y * 3.0;
         let area = egui::vec2(
@@ -349,12 +366,12 @@ impl ModelView {
         }
 
         ui.small(t::view_census(
-            self.model.meshes.len(),
+            self.model.drawn.meshes.len(),
             self.model.triangles,
         ));
         ui.small(t::view_colour_note(
             self.model.uncoloured(),
-            self.model.meshes.len(),
+            self.model.drawn.meshes.len(),
         ));
         if !self.model.placed {
             ui.small(t::mesh_placement_note());
@@ -367,6 +384,12 @@ impl ModelView {
         }
         if self.model.overridden > 0 {
             ui.small(t::view_overridden(self.model.overridden));
+        }
+        if self.model.drawn.textured > 0 {
+            ui.small(t::view_textured(self.model.drawn.textured));
+        }
+        for (reason, parts) in &self.model.drawn.texture_notes {
+            ui.small(t::view_texture_note(reason, *parts));
         }
         ui.horizontal(|ui| {
             let close = ui.button(t::view_close());
@@ -447,9 +470,7 @@ impl ModelView {
         let image = self
             .orbit
             .camera(&self.bounds, aspect, self.opening.as_ref())
-            .and_then(|camera| {
-                render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
-            })
+            .and_then(|camera| render_model(&self.model.drawn, &camera, &options))
             .map_err(|e| e.to_string())?;
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -516,9 +537,7 @@ impl ModelView {
             self.opening.as_ref(),
         );
         let aimed = camera.as_ref().map(aim_of).unwrap_or_default();
-        let drawn = camera.and_then(|camera| {
-            render_coloured(&self.model.meshes, &self.model.colours, &camera, &options)
-        });
+        let drawn = camera.and_then(|camera| render_model(&self.model.drawn, &camera, &options));
         self.rendered = Some(wanted);
         match drawn {
             Ok(image) => {

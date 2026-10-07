@@ -61,20 +61,23 @@ carries row 141 (underline and strikethrough tied to the text), row 82 (a
 letter drawn two ways named) and row 74 (the current layer). Since then G120 to G125, G127 to G131, the strike source, row 74 (every adder,
 SVG and EMF included, on the current layer) and row 85 (editing an encrypted file
 as far as its password allows) are wired and driven, the pin is v0.80.0
-(`dc39139b`), and `v0.5.0-dev.20261006.5` is PREPARED, not published: tree
-`5e897a5e`, gates 84 of 84, `D:\Builds\pdfcergui-20261006-2132-dc39139-5e897a5e.zip`
-(44,512,841 bytes) mirrored to `pdfcer-gui2` with its userdata kept and
-paddle-vl re-copied, smoke-launched clean (`commands=218`); notes in
-`D:\scratch\s3\notes.md`. The previous prepared build sits in `pdfcer-gui1`.
-The main session publishes. G132 is consumed: the
-engine's `best_fit.prc` drives the viewer's best-fit count
-(`the_3d_viewer_says_a_mesh_was_best_fit`). Waiting for the next engine tag:
-`AssembledModel::{left_out_parts, best_fit_parts}`, to name those parts in the
-viewer. G126 is consumed: the widget
-dash row reads `Widget::border_dash`. Next, in order: removing each "engine-blocked" note
-as it is wired, then the rest of ENGINE_BACKLOG. `ocr_reading_order` reads
-7 blocks for the fixture's 4 paragraphs: the engine over-splits at a short
-last line, filed as G133; tighten the check to 4 blocks when it lands.
+(`dc39139b`), and `v0.5.0-dev.20261006.5` is published (tree `5e897a5e`).
+Since that build: G132 consumed (the engine's `best_fit.prc` drives the
+viewer's best-fit count, `the_3d_viewer_says_a_mesh_was_best_fit`); G126
+consumed (the widget dash row reads `Widget::border_dash`); the 3D viewer
+draws texture pictures through `render_model` and names any it could only
+draw flat (`the_3d_viewer_draws_a_texture`); and a read-only part list from
+`PrcFile::model_tree` sits beside the picture
+(`the_3d_viewer_lists_the_model_tree`). Filed: G134 (no mesh-to-node link, so
+the list cannot hide or pick a part) and G135 (no PRC fixture names, hides or
+suppresses a part; `model_tree()` errors on four tree-less fixtures).
+Waiting for the next engine tag: `AssembledModel::{left_out_parts,
+best_fit_parts}` to name those parts in the viewer, and G133's fix (engine
+Pass 516.0, on engine main): `ocr_reading_order` reads 7 blocks for the
+fixture's 4 paragraphs because the engine over-splits at a short last line;
+tighten the check to 4 when the tag lands. Next, in order: the rest of
+ENGINE_BACKLOG; the `TextDecorationType` row needs only a driven check on a
+part-underlined tagged fixture. The older release slot is `pdfcer-gui1`.
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The
 pin moves to engine tags only. In order:
