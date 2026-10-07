@@ -557,10 +557,30 @@ passes: engine time the shell cannot move off the UI thread.
 The engine verbs a shape made part of the page (O288 item 2) still lacks.
 
 - **G142** — no in-form paint verb: a markup made part of the page can no longer be recoloured.
-- **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set.
+- **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set. Fixed on engine main as `EditSession::set_object_stroke_style` with `vector::StrokeStyle`, not in the pinned tag; wire it when the pin carries it.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated.
 - **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. The shell discloses it: a leaf-only copy is `clipboard::Refusal::InsideForm`, a mixed copy names the leaves left behind.
-- **G147** — no object-taking text-run hit test: a text line inside a form is picked by the shell's copy of the rule.
+- **G146** — a unit change carried the scale number, not the calibration. Fixed on engine main (`ScaleState::in_unit`, `EditSession::set_group_unit`, `resolve_style` converting a per-dimension override), not in the pinned tag. The shell converts in `units::scale_in_unit` until the pin carries `set_group_unit`, then calls it and deletes the helper.
+- **G147** — no object-taking text-run hit test: a text line inside a form is picked by the shell's copy of the rule. Fixed on engine main as `vector::hit_test_text_runs_of`, not in the pinned tag; when the pin carries it, delete `ObjectModelProvider::text_line_hits_of`'s copy and its agreement test.
+
+## Filed requests from the O288 item 2 tool audit — not verdict rows
+
+Each verified absent in the pin and on engine main before filing.
+
+- **G148** — `set_text_annot_style` on a FreeText un-wraps a foreign box, draws plain `/Contents` over `/RC`, and ignores `font_size`. The shell withholds colour and size for a FreeText.
+- **G149** — a text box's fill, border width, dash, opacity, text colour and face have no verb.
+- **G150** — opacity for a note or stamp, and any restyle of caret, attachment, sound and media marks: no verb.
+- **G151** — a stamp's label cannot be changed after placement.
+- **G152** — a text markup's `/QuadPoints` cannot be re-spanned.
+- **G153** — `set_markup_style` drops `interior` on a Line, so closed arrowheads cannot be filled.
+- **G154** — no verb adds a node to a page path or converts a node or segment kind.
+- **G155** — an image cannot be made translucent.
+- **G156** — an image cannot be replaced in place.
+- **G157** — page objects cannot be restacked; only annotations can.
+- **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`.
+- **G159** — `StyleOverrides` has no dash or opacity for a ce dimension.
+- **G160** — `rotate_widget` takes quarter turns only; `WidgetEdit` has no opacity.
+- **G161** — a link cannot be created, re-targeted or re-bordered.
 
 ## Filed requests for Word-like text editing — not verdict rows
 

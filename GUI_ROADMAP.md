@@ -29,6 +29,24 @@ it is done. Each item's wording is its row in `OPERATOR_REQUESTS.md`.
 Engine gaps found on the way are filed as G requests, and the work continues
 around them.
 
+### O288 item 2's tool audit: what the shell can still build
+
+The engine gaps it found are G148–G161 in `ENGINE_BACKLOG.md`. These have a
+verb in the pin and no route yet:
+
+- **Links:** select, move, resize, delete and copy. `canvas::selection::annot`'s
+  `selectable_on` skips `Link`; check that `/QuadPoints` follow `/Rect`.
+- **Arrow-key nudge** for page objects and leaves inside a placed drawing
+  (`move_objects`, `move_objects_in_form`); `canvas::moving::nudge` refuses
+  them as not a markup.
+- **Typed X and Y** for a leaf inside a placed drawing (`move_objects_in_form`)
+  in Properties ▸ geometry.
+- **Align and Distribute** for leaves inside a placed drawing
+  (`move_objects_each_in_form`).
+- **A typed rotation angle** for page objects (`transform_objects`).
+- **Width, dash and opacity for page paths** once the pin carries G143's
+  `set_object_stroke_style`.
+
 ---
 
 ## How the order is chosen

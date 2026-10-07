@@ -74,6 +74,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                     .set_group_scale(group, scale, format)
                     .map(|_| Vec::new())
             });
+            trace_members_shown(doc, group);
         }
         // Creating a group regenerates nothing — it has no members yet — so
         // it is not in `regenerates_the_whole_group` and clears no rasters.
@@ -320,6 +321,26 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                 session
                     .set_dimension_extension_gap(dimension, end, gap)
                     .map(|()| Vec::new())
+            });
+        }
+    }
+}
+
+/// One `dimension-member-shown` line per member of `group`: the text each
+/// one reads now, as the engine derives it from the group's scale and format.
+fn trace_members_shown(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
+    if !crate::diag::enabled() {
+        return;
+    }
+    let model = doc.session.dimension_model();
+    for member in model.members(group) {
+        if let Some(shown) = model.display(member.id) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "dimension-member-shown group={} dim={} text=\"{}\"",
+                    group.0, member.id.0, shown.text
+                )
             });
         }
     }

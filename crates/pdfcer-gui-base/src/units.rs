@@ -2,7 +2,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/units.md`.
 
-use pdfcer_core::dimension::Unit;
+use pdfcer_core::dimension::{ScaleState, Unit};
 
 /// Convert a length in PDF points into `unit`, at 1:1.
 #[must_use]
@@ -80,9 +80,52 @@ pub fn pixels_per_metre(dpi: f64) -> f64 {
     dpi / 0.0254
 }
 
+/// A group's scale re-expressed in another display unit, so changing a
+/// group's unit keeps every member's real length. `Calibrated` holds real
+/// units per point *in the group's unit*; `NeverSet` and `OneToOne` hold no
+/// unit and pass through.
+#[must_use]
+pub fn scale_in_unit(scale: ScaleState, from: Unit, to: Unit) -> ScaleState {
+    match scale {
+        ScaleState::Calibrated { scale } => ScaleState::Calibrated {
+            scale: scale * to.baseline_per_point() / from.baseline_per_point(),
+        },
+        other => other,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 200 pt at 5 mm/pt is 1000 mm; in feet it must still be 1000 mm.
+    #[test]
+    fn a_calibrated_scale_keeps_its_real_length_across_a_unit_change() {
+        let mm = ScaleState::Calibrated { scale: 5.0 };
+        let ScaleState::Calibrated { scale } =
+            scale_in_unit(mm, Unit::Millimeter, Unit::DecimalFeet)
+        else {
+            panic!("a calibrated scale stays calibrated");
+        };
+        assert!((200.0 * scale - 1000.0 / 304.8).abs() < 1e-9, "{scale}");
+        let back = scale_in_unit(
+            ScaleState::Calibrated { scale },
+            Unit::DecimalFeet,
+            Unit::Millimeter,
+        );
+        let ScaleState::Calibrated { scale } = back else {
+            panic!("a calibrated scale stays calibrated");
+        };
+        assert!((scale - 5.0).abs() < 1e-12, "{scale}");
+    }
+
+    /// A scale that holds no unit is left alone.
+    #[test]
+    fn a_unitless_scale_passes_through() {
+        for state in [ScaleState::NeverSet, ScaleState::OneToOne] {
+            assert_eq!(scale_in_unit(state, Unit::Millimeter, Unit::Inch), state);
+        }
+    }
 
     /// There are **three** spellings of this conversion, not two, and
     /// which pair disagrees depends on the input.

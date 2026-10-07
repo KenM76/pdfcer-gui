@@ -142,3 +142,10 @@ A group is document-scoped and has no page, so `0` is passed with this note
 rather than the signature gaining an `Option<usize>` that every other caller
 would have to spell. The wholesale clear in step 1 is what actually
 discharges the invalidation; the page reaches the funnel only as a label.
+
+### `fn trace_members_shown`
+
+Under `PDFCER_DIAG` only: after a group's scale or format changes, one
+`dimension-member-shown group= dim= text="…"` line per member, read from
+`model.display`. It is the label the operator now sees, which is the only
+oracle for a unit conversion.

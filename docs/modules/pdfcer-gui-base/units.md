@@ -180,3 +180,13 @@ inch and the inverse is `dpi / 72`. Three sites spelled this by hand
 other and always did, so this is consolidation rather than a fix — but it is
 the same physical constant as the rest of this table and leaving it outside
 would have re-created the problem in a second place.
+
+### `fn scale_in_unit`
+
+The same calibration expressed for another unit. A `Calibrated` scale is
+real length per point **in the group's unit**, so a unit change must
+multiply it by `to.baseline_per_point() / from.baseline_per_point()`;
+carrying the number over turns 1000 mm into 1000 ft. `NeverSet` and
+`OneToOne` pass through. It mirrors the engine's `ScaleState::in_unit`
+(G146), which the pinned tag does not carry yet; once the pin carries
+`EditSession::set_group_unit`, the panel calls that and this function goes.

@@ -35,6 +35,10 @@ pub const REGION_ROW_PREFIX: &str = "dimension-groups.row."; // ui-text-exempt: 
 
 /// The Manage-dimension-groups window's live state.
 pub const REGION_HEADING_PREFIX: &str = "dimension-groups.heading."; // ui-text-exempt: trace region name, never displayed
+/// The group unit combo.
+pub const REGION_UNIT_COMBO: &str = "dimension-groups.unit.combo"; // ui-text-exempt: trace region name, never displayed
+/// One unit in the open combo, suffixed with `Unit::token`.
+pub const REGION_UNIT_OPTION_PREFIX: &str = "dimension-groups.unit.option."; // ui-text-exempt: trace region name, never displayed
 
 /// The Manage-dimension-groups panel's live state.
 pub struct DimensionGroupsUi {
@@ -347,29 +351,35 @@ impl DimensionGroupsUi {
             // just not obvious, and making it obvious is a surface's job rather
             // than an API's.
             //
-            // The group's **scale is carried through unchanged**. That is the whole
-            // subtlety: `set_group_scale` takes both, so passing anything but the
-            // group's own `scale` here would silently recalibrate a drawing while
-            // the operator was changing a unit — a far larger act than the one they
-            // asked for, in a control that does not mention it.
+            // The scale is **re-expressed in the new unit**, never carried over:
+            // a `Calibrated` scale is real units per point *in the group's unit*,
+            // so 5 mm/pt kept as-is under feet reads 1000 mm as "1000 ft". The
+            // real length every member measures must not move when only the unit
+            // does (`units::scale_in_unit`).
             ui.horizontal_wrapped(|ui| {
                 ui.label(t::unit_label());
                 let mut unit = group.format.unit;
-                egui::ComboBox::from_id_salt("dimension-group-unit")
+                let combo = egui::ComboBox::from_id_salt("dimension-group-unit")
                     .selected_text(crate::text::scale::unit_name(unit))
                     .show_ui(ui, |ui| {
                         for option in Unit::all().iter().copied() {
-                            ui.selectable_value(
+                            let row = ui.selectable_value(
                                 &mut unit,
                                 option,
                                 crate::text::scale::unit_name(option),
                             );
+                            crate::diag::ui_rect(
+                                // ui-text-exempt: trace region name, never displayed
+                                &format!("{REGION_UNIT_OPTION_PREFIX}{}", option.token()),
+                                row.rect,
+                            );
                         }
                     });
+                crate::diag::ui_rect(REGION_UNIT_COMBO, combo.response.rect);
                 if unit != group.format.unit {
                     actions.push(Action::Dimension(DimensionAction::SetGroupScale {
                         group: group.id,
-                        scale: group.scale,
+                        scale: crate::units::scale_in_unit(group.scale, group.format.unit, unit),
                         // `default_format` rather than mutating the group's own
                         // `unit` field in place, because a `NumberFormat` is a unit
                         // AND how its fractional part is written — and those travel

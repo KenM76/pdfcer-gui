@@ -221,6 +221,7 @@ pub mod form_leaf_move;
 pub mod form_node_move;
 pub mod form_part_copy;
 pub mod form_part_delete;
+pub mod group_unit_converts;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the
 /// three checks that author a field and then try to select it.
