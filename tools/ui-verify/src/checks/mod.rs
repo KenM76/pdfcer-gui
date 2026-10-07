@@ -644,6 +644,8 @@ pub mod print_shop;
 pub mod properties_pane;
 /// Edits to an RC4 file wait for the operator, and a save says what they cost.
 pub mod rc4_append;
+/// A redraw says what it did to a field's text.
+pub mod redraw_layout;
 /// Propose replacement words for selected text from Markup.
 pub mod replace_text;
 /// Document properties ▸ Security notes and the open-time wrapper warning.

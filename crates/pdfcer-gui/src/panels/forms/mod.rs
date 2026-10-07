@@ -309,6 +309,8 @@ fn fill_disclosure(ui: &mut egui::Ui, doc: &OpenDoc, edits: &mut Vec<FormEdit>) 
 
 /// The *save it anyway* button under a withheld-password note.
 pub const REGION_STORE_PASSWORD: &str = "forms.fill.store_password";
+/// The *Redraw values* button.
+pub const REGION_REGENERATE: &str = "forms.regenerate";
 
 /// **Where the fields that cannot be clicked on the page went.**
 fn canvas_routing(ui: &mut egui::Ui, doc: &OpenDoc, fill_refusal: Option<&'static str>) {
@@ -511,6 +513,7 @@ fn whole_form_controls(
             Some(note) => redraw.on_disabled_hover_text(note),
             None => redraw.on_hover_text(t::forms_regenerate_tooltip()),
         };
+        crate::diag::ui_rect_visible(REGION_REGENERATE, redraw.rect, ui.clip_rect());
         if redraw.clicked() {
             edits.push(FormEdit::RegenerateAppearances);
         }

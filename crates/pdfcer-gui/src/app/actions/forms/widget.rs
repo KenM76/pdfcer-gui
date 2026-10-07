@@ -35,6 +35,10 @@ pub(super) fn rotate(doc: &mut OpenDoc, fqn: &str, index: usize, degrees: i64) {
             if let Some(why) = report.appearance_stale.as_deref() {
                 notes.push(crate::text::panels::formfield::widget_rotation_stale(why));
             }
+            notes.extend(crate::text::forms::redraw_notes(
+                crate::text::forms::RedrawSubject::Field(fqn),
+                &report.layout,
+            ));
             notes
         })
     });

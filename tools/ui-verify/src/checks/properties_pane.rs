@@ -74,6 +74,22 @@ pub fn launch_on_field(
     field: &str,
     label: &str,
 ) -> Result<(Session, ScriptedPointer)> {
+    launch_on_field_invoking(ctx, report, (fixture, method), (field, INVOKE), label)
+}
+
+/// [`launch_on_field`] with `invoke` run on opening instead of Edit mode and
+/// the Properties panel.
+///
+/// # Errors
+///
+/// As [`launch_on_field`].
+pub fn launch_on_field_invoking(
+    ctx: &CheckContext,
+    report: &mut crate::report::CheckReport,
+    (fixture, method): (&str, &str),
+    (field, invoke): (&str, &str),
+    label: &str,
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -93,7 +109,7 @@ pub fn launch_on_field(
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         crate::checks::driving::SHELL_DIAG_ENV,
         (viewport_env, OFFSCREEN),
-        ("PDFCER_DIAG_INVOKE", INVOKE),
+        ("PDFCER_DIAG_INVOKE", invoke),
         ("PDFCER_DIAG_SELECT_FIELD", field),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));

@@ -133,6 +133,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
         Ok(Applied {
             commands,
             disclosed,
+            redrawn,
         }) => {
             // A verb that changed nothing must not invalidate anything. This
             // is reachable and not defensive: `Recompute` with an empty plan
@@ -194,8 +195,7 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
                 //
                 //
                 // The bound is the whole subject. A build that reported the
-                // size and dropped the bound — which is what this shell did
-                // until today — produces an identical `commands=1 epoch=N`
+                // size and dropped the bound produces an identical `commands=1 epoch=N`
                 // line while telling the operator *"pdfcer chose 4.0 pt"* about
                 // a field the text is going to overflow. Without this, no
                 // driven check has an oracle for the one outcome that matters.
@@ -203,10 +203,18 @@ pub fn apply(doc: &mut OpenDoc, edit: &FormEdit) {
                 let size = disclosed_size.map_or_else(|| "none".to_owned(), |s| format!("{s:.1}"));
                 format!(
                     "{label} commands={commands} epoch={} autosize={size} bound={bound} \
-                     password_withheld={withheld} over_max_len={over}",
-                    doc.edit_epoch
+                     password_withheld={withheld} over_max_len={over} redrawn={}",
+                    doc.edit_epoch,
+                    if redrawn.is_empty() {
+                        "none".to_owned()
+                    } else {
+                        redrawn.join(" | ")
+                    }
                 )
             });
+            if !redrawn.is_empty() {
+                crate::app::actions::record_notes(doc.edit_epoch, redrawn);
+            }
         }
         // Traced and the document left alone. Every refusal these verbs can
         // raise is asked about before the control is drawn, so reaching here
@@ -272,10 +280,12 @@ struct Applied {
     commands: usize,
     /// The inferences this fill made, if it made any.
     ///
-    /// `None` for every verb that is not a fill: a reset, a flatten and an
-    /// appearance regeneration all change the document without pdfcer choosing
-    /// anything on the operator's behalf.
+    /// `None` for every verb that is not a fill. A reset or a regeneration
+    /// reports what its redraw chose through `redrawn` instead; the trace's
+    /// `autosize=` and `bound=` keys are the fill's alone.
     disclosed: Option<FillDisclosure>,
+    /// What a whole-form redraw decided (`redraw_notes`), for the status line.
+    redrawn: Vec<String>,
 }
 
 impl Applied {
@@ -284,6 +294,19 @@ impl Applied {
         Self {
             commands,
             disclosed: None,
+            redrawn: Vec::new(),
+        }
+    }
+
+    /// A whole-form redraw that changed `commands` things and decided `layout`.
+    fn redrawn(
+        commands: usize,
+        subject: crate::text::forms::RedrawSubject<'_>,
+        layout: &pdfcer_core::edit::LayoutDisclosure,
+    ) -> Self {
+        Self {
+            redrawn: crate::text::forms::redraw_notes(subject, layout),
+            ..Self::plain(commands)
         }
     }
 }
@@ -325,6 +348,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             Ok(Applied {
                 commands: 1,
                 disclosed: Some(disclosure_of(field, value, &out)),
+                redrawn: Vec::new(),
             })
         }
         FormEdit::ConvertRichTextToPlain { field, value } => {
@@ -332,6 +356,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             Ok(Applied {
                 commands: 1,
                 disclosed: Some(disclosure_of(field, value, &out)),
+                redrawn: Vec::new(),
             })
         }
         FormEdit::FillTextStoringPassword { field, value } => {
@@ -339,6 +364,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             Ok(Applied {
                 commands: 1,
                 disclosed: Some(disclosure_of(field, value, &out)),
+                redrawn: Vec::new(),
             })
         }
         FormEdit::SetButtonState { field, state } => {
@@ -390,6 +416,7 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             Ok(Applied {
                 commands: written,
                 disclosed: last.filter(|d| !d.is_empty()),
+                redrawn: Vec::new(),
             })
         }
         FormEdit::Reset => {
@@ -397,7 +424,11 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             // `fields_reset` and not 1: a reset on a form that already holds
             // its defaults commits a command that writes nothing, and the
             // caller uses this to decide whether to invalidate the page.
-            Ok(Applied::plain(out.fields_reset))
+            Ok(Applied::redrawn(
+                out.fields_reset,
+                crate::text::forms::RedrawSubject::Form,
+                &out.layout,
+            ))
         }
         FormEdit::RegenerateAppearances => {
             let out = session.regenerate_appearances()?;
@@ -406,8 +437,16 @@ fn run(session: &mut EditSession, edit: &FormEdit) -> Result<Applied, EditError>
             // it is the whole point of the control on a form whose values were
             // already drawn — so a run that regenerated nothing and cleared
             // the flag must still count as having done something.
-            Ok(Applied::plain(
+            // `RegenOutcome` carries the same four facts unbundled.
+            let mut layout = pdfcer_core::edit::LayoutDisclosure::default();
+            layout.applied_autosize = out.applied_autosize;
+            layout.applied_autosize_bound = out.applied_autosize_bound;
+            layout.da_colour_unmodelled = out.da_colour_unmodelled;
+            layout.unencodable_chars = out.unencodable_chars;
+            Ok(Applied::redrawn(
                 out.regenerated + usize::from(out.need_appearances_cleared),
+                crate::text::forms::RedrawSubject::Form,
+                &layout,
             ))
         }
         FormEdit::Flatten => {

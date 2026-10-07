@@ -466,6 +466,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(security_passwords::SecurityNotesSayOldPasswordsAreKept),
         Box::new(object_disagreements::ObjectsPanelSaysWhereTheListAndPageDisagree),
         Box::new(page_boxes::DocumentPropertiesSayWhichPageBoxesWereNotUsedAsWritten),
+        Box::new(redraw_layout::ARedrawSaysWhatItDidToAFieldsText),
         Box::new(two_codes::ALetterDrawnTwoWaysIsNamed),
         Box::new(strike_source::AStrikethroughSaysWhereItsLineCameFrom),
         Box::new(style_off::CtrlBAgainTakesBoldOff),

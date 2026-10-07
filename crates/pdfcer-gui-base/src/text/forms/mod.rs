@@ -10,6 +10,8 @@
 mod authoring;
 /// Every word the Field-groups section shows.
 pub mod groups;
+/// What a redraw decided about a field's text.
+mod redraw;
 mod tab_order;
 
 pub use authoring::{
@@ -23,6 +25,7 @@ pub use authoring::{
 };
 
 pub use groups::*;
+pub use redraw::{RedrawSubject, redraw_notes};
 pub use tab_order::*;
 
 // ---------------------------------------------------------------------------

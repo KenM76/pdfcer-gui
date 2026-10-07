@@ -80,7 +80,8 @@ engine main (`AssembledModel::mesh_placements`, `tree`,
 `fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G136 (BleedBox, TrimBox and ArtBox overhang on a resize) is fixed on engine
 main too; consume `MediaBoxChange::{bleed,trim,art}_box_outside` with the tag. G137
 asks for `Field::own_quadding`; when it lands delete `states_own_quadding`. Next, in order: the
-rest of ENGINE_BACKLOG (20 wanted, 2 blocked). Document properties names a page box not
+rest of ENGINE_BACKLOG (19 wanted, 2 blocked). Every field redraw says what it decided about the text
+(`a_redraw_says_what_it_did_to_a_fields_text`). Document properties names a page box not
 used as written (`document_properties_say_which_page_boxes_were_not_used_as_written`). The Objects panel says where its list and
 the page disagree (`objects_panel_says_where_the_list_and_page_disagree`). A field's Alignment can go back
 to Inherited (`a_fields_alignment_can_go_back_to_inherited`). Security notes names password

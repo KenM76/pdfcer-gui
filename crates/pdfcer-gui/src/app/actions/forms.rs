@@ -213,6 +213,10 @@ pub(super) fn edit_properties(
             // Nothing at all when the edit was ordinary, which is most of the
             // time. A bar that narrated every checkbox would stop being read,
             // and `vector_edit` treats an empty list as "no line".
+            lines.extend(crate::text::forms::redraw_notes(
+                crate::text::forms::RedrawSubject::Field(&field),
+                &outcome.layout,
+            ));
             let _ = touched;
             lines
         })
@@ -309,6 +313,10 @@ pub(super) fn edit_widget(
                     outcome.siblings_untouched,
                 ));
             }
+            lines.extend(crate::text::forms::redraw_notes(
+                crate::text::forms::RedrawSubject::Field(&field),
+                &outcome.layout,
+            ));
             lines
         })
     });
