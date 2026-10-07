@@ -92,10 +92,8 @@ Underlining part of a tagged
 paragraph says on the status line that the structure tree does not record it
 (`underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded`, on
 `fixtures/tagged-paragraph.pdf`; `tagged-report.pdf` has no `/ParentTree`, so
-the engine finds no elements there). `v0.5.0-dev.20261007.1` is published from `507c67a8` and sits in
-`pdfcer-gui1`. A build of `f3a8e866` is prepared in `pdfcer-gui2`, unpublished
-and with no version yet (the main session names it); the release after it
-replaces `pdfcer-gui1`. No engine tag past v0.80.0 yet.
+the engine finds no elements there). `v0.5.0-dev.20261007.2` is published from `f3a8e866` and sits in
+`pdfcer-gui2`; the next release replaces `pdfcer-gui1`. No engine tag past v0.80.0 yet.
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The
 pin moves to engine tags only. In order:
