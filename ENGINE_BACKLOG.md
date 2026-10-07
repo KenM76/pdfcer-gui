@@ -87,7 +87,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)`, memoised and consulted by the editing verbs … | **wanted.** <!--namesake:page_objects--> Every hit in `crates/pdfcer-gui/src/` is this shell's own `OpenDoc::page_objects(&self)`, never the engine's `EditSession::page_objects(&mut self, page_index)`, so a bare-identifier grep reads as *thoroughly consumed* and means the opposite — an absence claim here has to name the receiver. The engine's is called only from `tests/engine_overlay_skew.rs` and `tests/page_generation_covers.rs`. Production still runs the shell's own parse in `panels::objects::provider`, cached separately on `OpenDoc` by `app::cache`, so every edit pays the session's decomposition **and** ours. Wiring it needs a decided answer on cache invalidation: the engine memoises against the session revision and we key on our own. |
 | **Delete a subpath, a node or a text run INSIDE a form XObject** — `delete_subpath_in_form`, `delete_node_in_form`, `delete_text_run_in_form` | **wanted.** Inside a form the Part and Node rungs can move and not delete, while the same rungs on page content can do both — so an operator learns a rule on the page and it stops being true inside a title block. This shell's Part rung is unreachable inside a form today for a separate reason: `part_hits_of` matches on a page-object index and returns nothing for a leaf. That seam has to be opened first, which makes this larger than the in-form move beside it. The three verbs are on the **pinned** revision, so nothing here waits on the engine — and until the seam opens, `Refusal::InsideForm` must not word the decline as an engine limit (D57). |
-| **No rotate, scale or general-transform verb exists for anything inside a form XObject** — the engine offers translation and deletion only | **wanted, and the silence is the defect.** The ten `*_in_form` verbs are `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`, `move_subpath_in_form`, `move_text_run_in_form`, `move_objects_in_form`, `delete_text_run_in_form`, `delete_subpath_in_form`, `delete_node_in_form` and `delete_objects_in_form`. There is no `transform_objects_in_form`. Rotate and resize are reachable only through `transform_objects`, which is page-content-only, so the Format tab's rotate and the eight resize grips are inapplicable to a form-interior selection and nothing says so. Two halves: an engine verb, and until it exists a refusal here worded by name rather than a grip that does nothing. |
+| **No rotate, scale or general-transform verb exists for anything inside a form XObject** — the engine offers translation and deletion only | **wanted, and the silence is the defect.** The ten `*_in_form` verbs are `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`, `move_subpath_in_form`, `move_text_run_in_form`, `move_objects_in_form`, `delete_text_run_in_form`, `delete_subpath_in_form`, `delete_node_in_form` and `delete_objects_in_form`. There is no `transform_objects_in_form`. Rotate and resize are reachable only through `transform_objects`, which is page-content-only, so the Format tab's rotate and the eight resize grips are inapplicable to a form-interior selection and nothing says so. Two halves: an engine verb (filed as G144), and until it exists a refusal here worded by name rather than a grip that does nothing. |
 
 ### ce dimensions
 
@@ -551,6 +551,15 @@ passes: engine time the shell cannot move off the UI thread.
 - **G139** — a point hit test on a dense path transforms every subpath it holds: 62–65 ms per call on `heavy-pages.pdf`. `ObjectModelProvider::hit_test_all` keeps its last four answers so a drag does not repeat it; the press itself still pays.
 - **G140** — after an edit the page model is only available by decomposing the whole page again: 163–221 ms on the fixture, 469 ms on the benchmark plan.
 - **G141** — moving one object rewrites every stream the page draws, a shared one included: 172–252 ms. Also asks for a way to run a verb off the UI thread.
+
+## Filed requests for shape editing — not verdict rows
+
+The engine verbs a shape made part of the page (O288 item 2) still lacks.
+
+- **G142** — no in-form paint verb: a markup made part of the page can no longer be recoloured.
+- **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set.
+- **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated.
+- **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself.
 
 ## Filed requests for Word-like text editing — not verdict rows
 

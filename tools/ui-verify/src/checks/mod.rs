@@ -218,6 +218,7 @@ pub mod form_groups;
 pub mod form_leaf_descend;
 
 pub mod form_leaf_move;
+pub mod form_node_move;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the
 /// three checks that author a field and then try to select it.

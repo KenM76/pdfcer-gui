@@ -822,6 +822,11 @@ fn run_move(
     provider.text_runs_move_refusal_of(object, &runs)
 }
 
+/// A leaf index as the provider addresses it.
+const fn leaf_target(leaf: usize) -> crate::panels::objects::provider::TargetId {
+    crate::panels::objects::provider::TargetId::Leaf(leaf as u64)
+}
+
 /// The entered anchor's current page-space position, or `None` if the object's
 /// anchor list no longer holds that index.
 fn node_point(provider: &ObjectModelProvider, object: usize, node: usize) -> Option<Point> {
@@ -929,6 +934,10 @@ pub fn drag(
         (MoveSubject::Node { object, node, .. }, Some(provider)) => {
             node_point(provider, *object, *node)
         }
+        (MoveSubject::NodeInForm { leaf, node, .. }, Some(provider)) => provider
+            .object_node_points_of(leaf_target(*leaf))
+            .into_iter()
+            .find_map(|(index, point)| (index == *node).then_some(point)),
         _ => None,
     };
     // The plural rung needs every anchor's position, and that is the allocation
@@ -938,6 +947,9 @@ pub fn drag(
     // gesture that needs it and by no other.
     let points = match (&subject, provider) {
         (MoveSubject::Nodes { object, .. }, Some(provider)) => provider.object_node_points(*object),
+        (MoveSubject::NodesInForm { leaf, .. }, Some(provider)) => {
+            provider.object_node_points_of(leaf_target(*leaf))
+        }
         _ => Vec::new(),
     };
 
