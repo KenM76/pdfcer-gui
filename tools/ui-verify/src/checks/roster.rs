@@ -326,6 +326,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         Box::new(media_clip::AClipPlaysFromARegion),
         Box::new(field_scripts::AFieldIsCalculatedFromOthers),
         Box::new(field_extras::ATextFieldsExtrasReachTheFile),
+        Box::new(inherited_alignment::AFieldsAlignmentCanGoBackToInherited),
         Box::new(check_mark::ACheckBoxsMarkCanBeChosen),
         Box::new(check_mark::ARadioButtonsMarkCanBeChosen),
         Box::new(new_radio_mark::ANewRadioButtonsMarkIsChosen),

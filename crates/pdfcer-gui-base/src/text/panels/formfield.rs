@@ -472,6 +472,21 @@ pub const fn quadding_name(q: pdfcer_core::vartext::Quadding) -> &'static str {
     }
 }
 
+/// The Alignment choice that writes no `/Q` on the field, naming the
+/// justification it then takes from above.
+#[must_use]
+pub fn quadding_inherited(resolved: pdfcer_core::vartext::Quadding) -> String {
+    format!("Inherited ({})", quadding_name(resolved).to_lowercase())
+}
+
+/// See [`label_alignment`].
+#[must_use]
+pub const fn label_alignment_hover() -> &'static str {
+    "Which end of the box the text sits against. Inherited means this field states none and \
+     takes its parent field's, else the form's; Left, Centred and Right state one on this field \
+     that a change above it no longer reaches."
+}
+
 /// The heading over the widget-scoped properties.
 #[must_use]
 pub const fn widget_heading() -> &'static str {

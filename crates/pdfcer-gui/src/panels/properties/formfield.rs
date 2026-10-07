@@ -10,6 +10,7 @@ use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::panels::PanelsState;
 use crate::text::panels::formfield as t;
+use pdfcer_core::object::Object;
 
 /// The section's rect, for `ui-verify`.
 const REGION: &str = "properties.form_field";
@@ -136,7 +137,15 @@ pub fn section(
     //
     // `field.clone()` is deliberately NOT taken: the section reads the field
     // it is handed and raises actions, so the borrow ends with the frame.
-    super::fieldedit::section(ui, field, &selected.field, state, epoch, actions);
+    super::fieldedit::section(
+        ui,
+        field,
+        states_own_quadding(doc, field),
+        &selected.field,
+        state,
+        epoch,
+        actions,
+    );
     ui.add_space(6.0);
     // The WIDGET half, directly under the field half, in the engine's own
     // scope order: what belongs to the field, then what belongs to this one
@@ -383,6 +392,13 @@ fn delete_row(
             );
         }
     });
+}
+
+/// Whether the field's own dictionary carries `/Q`. `pdfcer_core::forms::Field`
+/// exposes only the resolved quadding; an unreadable dictionary counts as
+/// stating none.
+fn states_own_quadding(doc: &OpenDoc, field: &pdfcer_core::forms::Field) -> bool {
+    matches!(doc.session.value(field.id), Some(Object::Dict(d)) if d.get(b"Q").is_some())
 }
 
 #[cfg(test)]

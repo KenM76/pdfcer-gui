@@ -617,6 +617,8 @@ pub mod field_extras;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;
 pub mod forms_spotlight;
+/// A field's alignment chosen, then handed back to what the form states.
+pub mod inherited_alignment;
 /// Mark an insertion with a caret from Markup.
 pub mod insert_text;
 /// Put a selected object or annotation on a layer.

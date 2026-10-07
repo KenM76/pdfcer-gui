@@ -77,9 +77,11 @@ Pass 516.0, on engine main): `ocr_reading_order` reads 7 blocks for the
 fixture's 4 paragraphs because the engine over-splits at a short last line;
 tighten the check to 4 when the tag lands. G134 and G135 are also fixed on
 engine main (`AssembledModel::mesh_placements`, `tree`,
-`fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G136 asks
-for the BleedBox, TrimBox and ArtBox overhang on a resize. Next, in order: the
-rest of ENGINE_BACKLOG (26 wanted, 2 blocked). Security notes names password
+`fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G136 (BleedBox, TrimBox and ArtBox overhang on a resize) is fixed on engine
+main too; consume `MediaBoxChange::{bleed,trim,art}_box_outside` with the tag. G137
+asks for `Field::own_quadding`; when it lands delete `states_own_quadding`. Next, in order: the
+rest of ENGINE_BACKLOG (22 wanted, 2 blocked). A field's Alignment can go back
+to Inherited (`a_fields_alignment_can_go_back_to_inherited`). Security notes names password
 values still stored in earlier saved versions
 (`security_notes_say_old_passwords_are_kept`). A comment stored as formatted
 text (`/RC`) names its formatting under the note in the Comments panel

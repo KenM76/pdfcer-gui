@@ -49,6 +49,7 @@ pub const TEXT_COLOUR_REGION: &str = "properties.field_edit.text_colour";
 pub fn section(
     ui: &mut Ui,
     field: &Field,
+    own_q: bool,
     fqn: &str,
     state: &mut PanelsState,
     epoch: u64,
@@ -135,7 +136,7 @@ pub fn section(
         // a control that writes the wrong PDF type — not nothing, something
         // else, which is the failure mode that gate exists for.
         default_value_row(ui, fqn, state, actions);
-        alignment_row(ui, field, fqn, actions);
+        alignment_row(ui, field, own_q, fqn, actions);
         super::fieldextras::text_flags(ui, field, fqn, actions);
     }
 
@@ -422,29 +423,67 @@ fn default_value_row(ui: &mut Ui, fqn: &str, state: &mut PanelsState, actions: &
     }
 }
 
-/// `/Q` — which end of the box the field's text sits against.
-fn alignment_row(ui: &mut Ui, field: &Field, fqn: &str, actions: &mut Vec<Action>) {
-    let current = field.quadding;
+/// `/Q` — which end of the box the field's text sits against. `own_q` is
+/// whether the field's dictionary states one: `field.quadding` is resolved up
+/// the `/Parent` chain and the `/AcroForm`, so it cannot tell *Left* written
+/// here from nothing written anywhere. `None` in the chooser is *Inherited*.
+fn alignment_row(ui: &mut Ui, field: &Field, own_q: bool, fqn: &str, actions: &mut Vec<Action>) {
+    let resolved = field.quadding;
+    let current = own_q.then_some(resolved);
     let mut chosen = current;
-    let response = ui
-        .horizontal(|ui| {
-            ui.label(t::label_alignment());
-            egui::ComboBox::from_id_salt("properties-field-alignment")
-                .selected_text(t::quadding_name(current))
-                .show_ui(ui, |ui| {
-                    for q in ALL_QUADDINGS {
-                        ui.selectable_value(&mut chosen, q, t::quadding_name(q));
-                    }
-                });
-        })
-        .response;
+    let shown = |q: Option<Quadding>| match q {
+        Some(q) => t::quadding_name(q).to_owned(),
+        None => t::quadding_inherited(resolved),
+    };
+    let row = ui.horizontal(|ui| {
+        ui.label(t::label_alignment());
+        egui::ComboBox::from_id_salt("properties-field-alignment")
+            .selected_text(shown(current))
+            .show_ui(ui, |ui| {
+                let option = ui.selectable_value(&mut chosen, None, shown(None));
+                crate::diag::ui_rect(
+                    // ui-text-exempt: trace region name, never displayed
+                    &format!("{ALIGNMENT_REGION}.option.inherit"),
+                    option.rect,
+                );
+                for q in ALL_QUADDINGS {
+                    let option = ui.selectable_value(&mut chosen, Some(q), shown(Some(q)));
+                    crate::diag::ui_rect(
+                        // ui-text-exempt: trace region name, never displayed
+                        &format!("{ALIGNMENT_REGION}.option.{}", q.code()),
+                        option.rect,
+                    );
+                }
+            })
+            .response
+            .rect
+    });
+    let response = row.response;
     crate::diag::ui_rect_visible(ALIGNMENT_REGION, response.rect, ui.clip_rect());
+    crate::diag::ui_rect_visible(
+        &format!("{ALIGNMENT_REGION}.combo"), // ui-text-exempt: trace region name, never displayed
+        row.inner,
+        ui.clip_rect(),
+    );
+    response.on_hover_text(t::label_alignment_hover());
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "field-alignment-read field={fqn} own={} q={}",
+            u8::from(own_q),
+            resolved.code()
+        )
+    });
 
     if chosen != current {
+        let edit = match chosen {
+            Some(q) => FieldEdit::new().with_quadding(q.code()),
+            None => FieldEdit::new().clearing_quadding(),
+        };
         actions.push(
             FieldAction::EditProperties {
                 field: fqn.to_owned(),
-                edit: FieldEdit::new().with_quadding(chosen.code()),
+                edit,
                 // ui-text-exempt: a control name carried for a refusal message.
                 touched: "alignment",
             }
