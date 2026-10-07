@@ -219,6 +219,7 @@ pub mod form_leaf_descend;
 
 pub mod form_leaf_move;
 pub mod form_node_move;
+pub mod form_part_copy;
 pub mod form_part_delete;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the

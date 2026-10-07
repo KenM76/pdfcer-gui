@@ -145,11 +145,15 @@ selected things, or took a comment without its author and its opacity, looks
 exactly like one that took everything. Nothing errors and nothing is marked,
 which is the definition of sneaky.
 
-# The two halves are different kinds of loss and are said differently
+# The three parts are different kinds of loss and are said differently
 
 * **`left_behind`** — annotations that will not be on the clipboard at all.
   The operator will notice, eventually, and this is what stops it being a
   mystery. Worded by [`cannot_carry`], reused rather than re-phrased.
+* **`in_form`** — parts of a placed drawing (a form XObject) that were
+  selected alongside page content. The engine copies page objects only
+  (G145), so they stay behind; a selection made *only* of such parts is
+  [`Refusal::InsideForm`] instead, which says how to copy the whole drawing.
 * **`thin`** — annotations that *will* paste, and will paste **without their
   author, date, note text and opacity**. This is the one nobody would ever
   report: the mark is on the page, it looks right, and what is missing lives

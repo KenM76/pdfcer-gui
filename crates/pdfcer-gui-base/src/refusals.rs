@@ -209,5 +209,8 @@ pub mod clipboard {
         Unreadable,
         /// The clipboard is empty.
         NothingCopied,
+        /// Everything selected is painted inside a form XObject, and the engine
+        /// copies page objects only (G145). Carries how many were selected.
+        InsideForm(usize),
     }
 }

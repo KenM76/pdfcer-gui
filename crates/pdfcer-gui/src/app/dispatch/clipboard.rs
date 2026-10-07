@@ -194,11 +194,14 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
         // tint and no provisional styling. The disclosure lives off-canvas or
         // it is a lie about the document.
         Ok(crate::canvas::clipboard::Clipped::Selection {
-            left_behind, thin, ..
-        }) if !left_behind.is_empty() || thin > 0 => {
+            left_behind,
+            thin,
+            in_form_left,
+            ..
+        }) if !left_behind.is_empty() || thin > 0 || in_form_left > 0 => {
             crate::app::actions::record_note(
                 doc.edit_epoch,
-                crate::text::clipboard::partial_copy(&left_behind, thin),
+                crate::text::clipboard::partial_copy(&left_behind, thin, in_form_left),
             );
         }
         Ok(_) => {}

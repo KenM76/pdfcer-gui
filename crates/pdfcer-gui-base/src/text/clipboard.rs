@@ -92,6 +92,11 @@ pub fn refusal(reason: Refusal) -> String {
         // *"and 2 others"* is the shape that makes an operator go looking for
         // the other two.
         Refusal::CannotCarry(subtypes) => cannot_carry(&subtypes),
+        Refusal::InsideForm(n) => format!(
+            "Nothing was copied. {} cannot be copied on its own yet. Press Escape until the \
+             whole drawing is selected, then copy that.",
+            in_form_parts(n)
+        ),
         //
         // It read: *"That annotation is not one pdfcer authors — a link, a form
         // field or an attachment — so there is nothing for it to copy."* Every
@@ -167,8 +172,14 @@ fn cannot_carry(subtypes: &[String]) -> String {
 /// **What a copy took, and what it did not** — the one sentence a partial copy
 /// owes before the operator finds out by pasting.
 #[must_use]
-pub fn partial_copy(left_behind: &[String], thin: usize) -> String {
+pub fn partial_copy(left_behind: &[String], thin: usize, in_form: usize) -> String {
     let mut parts = Vec::new();
+    if in_form > 0 {
+        parts.push(format!(
+            "It left behind {}, which cannot be copied on its own yet.",
+            in_form_parts(in_form).to_lowercase()
+        ));
+    }
     if !left_behind.is_empty() {
         parts.push(
             cannot_carry(left_behind).replace("Nothing was copied. You selected", "It left behind"),
@@ -187,6 +198,15 @@ pub fn partial_copy(left_behind: &[String], thin: usize) -> String {
         ));
     }
     format!("Copied, but not all of it. {}", parts.join(" "))
+}
+
+/// "A part of a placed drawing" or "N parts of placed drawings".
+fn in_form_parts(n: usize) -> String {
+    if n == 1 {
+        "A part of a placed drawing".to_owned()
+    } else {
+        format!("{n} parts of placed drawings")
+    }
 }
 
 /// What a content copy leaves on the **operating system's** clipboard.
@@ -412,6 +432,8 @@ mod tests {
             Refusal::EngineRefused,
             Refusal::Unreadable,
             Refusal::NothingCopied,
+            Refusal::InsideForm(1),
+            Refusal::InsideForm(3),
             Refusal::CannotCarry(vec!["Redact".to_owned()]),
             Refusal::CannotCarry(vec!["Widget".to_owned(), "Popup".to_owned()]),
             // A subtype this shell has never seen — the catch-all must still
@@ -431,7 +453,7 @@ mod tests {
     /// arrived thin**, and never claims the copy failed.
     #[test]
     fn a_partial_copy_says_what_arrived_and_what_did_not() {
-        let both = partial_copy(&["Redact".to_owned()], 2);
+        let both = partial_copy(&["Redact".to_owned()], 2, 0);
         assert!(
             both.starts_with("Copied, but not all of it."),
             "★ it must say the copy HAPPENED first — an operator who reads a failure retries a \
@@ -445,11 +467,19 @@ mod tests {
             both.contains("2 comments"),
             "and so must the count that will paste thin: {both:?}"
         );
-        let thin_only = partial_copy(&[], 1);
+        let thin_only = partial_copy(&[], 1, 0);
         assert!(
             thin_only.contains("One comment") && !thin_only.contains("left behind"),
             "★ with nothing refused it must not invent a second clause: {thin_only:?}"
         );
+    }
+
+    /// Parts of a placed drawing that rode along with page content are named.
+    #[test]
+    fn a_copy_that_left_form_parts_behind_says_so() {
+        let s = partial_copy(&[], 0, 2);
+        assert!(s.starts_with("Copied, but not all of it."), "{s:?}");
+        assert!(s.contains("2 parts of placed drawings"), "{s:?}");
     }
 
     /// The OS marker names comments as comments, and a mixed copy as both.

@@ -28,6 +28,14 @@ growing list in the same file as a stable contract makes every landing touch
 the contract's file, and makes the file's size somebody's problem at random
 rather than the problem of whoever owns the growth.
 
+## Two files, one order
+
+The list is split at the selection ladder's text rung: `roster.rs` holds the
+checks up to and including the descent into placed drawings, and
+`roster/from_the_text_rung.rs` the rest. `all()` concatenates them, so the run
+order is unchanged across the join. A new check goes in whichever half its
+neighbours are in.
+
 ## The `pub mod` declarations stayed behind, deliberately
 
 They look like roster material and they are not: a `mod` declaration

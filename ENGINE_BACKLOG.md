@@ -559,7 +559,7 @@ The engine verbs a shape made part of the page (O288 item 2) still lacks.
 - **G142** — no in-form paint verb: a markup made part of the page can no longer be recoloured.
 - **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated.
-- **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself.
+- **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. The shell discloses it: a leaf-only copy is `clipboard::Refusal::InsideForm`, a mixed copy names the leaves left behind.
 - **G147** — no object-taking text-run hit test: a text line inside a form is picked by the shell's copy of the rule.
 
 ## Filed requests for Word-like text editing — not verdict rows

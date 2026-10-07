@@ -125,6 +125,9 @@ pub enum Clipped {
         /// therefore arrive **without** `/CA`, `/T`, `/M` or `/Contents`.
         ///
         thin: usize,
+        /// How many selected targets painted inside a form XObject the copy
+        /// left out: the engine copies page objects only (G145).
+        in_form_left: usize,
         /// **The point that is placed under the cursor on a paste** —
         /// the clip's centre, in **PDF user space**.
         ///
@@ -282,7 +285,15 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     let annots = annotclip::selected(doc)?;
     let page = annots.first().map_or(doc.view.page_index, |a| a.page);
     let objects = doc.selection.object_indices_on(page);
+    let in_form = doc.selection.leaf_indices_on(page).len();
     if objects.is_empty() && annots.is_empty() {
+        if in_form > 0 {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("clipboard-copy-refused reason=inside-form n={in_form}")
+            });
+            return Err(Refusal::InsideForm(in_form));
+        }
         return Err(Refusal::NothingSelected);
     }
     let indices: Vec<usize> = annots.iter().map(|a| a.index).collect();
@@ -324,6 +335,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         annot_ids: annots.iter().map(|a| a.id).collect(),
         left_behind: plan.refused.clone(),
         thin: plan.thin,
+        in_form_left: in_form,
         bytes: clip.to_bytes(),
         page,
         anchor,
@@ -411,7 +423,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         };
         format!(
             "clipboard-copy kind=selection page={page} objects={} annots={} thin={} \
-             left_behind={} bytes={bytes}",
+             left_behind={} in_form_left={in_form} bytes={bytes}",
             objects.len(),
             plan.carried(),
             plan.thin,
