@@ -17,3 +17,5 @@ check-ui-strings, after a 10-minute run.
 (it takes seconds) before starting the full sweep.
 
 A second route to the same failure: wrapping the flagged line in an `if` pushed it past check-theme-colors' seven-line marker window, and the gate went red. Put the marker comment directly above the line it explains, inside the block.
+
+Recurred 2026-10-07, without fmt: a new trace `format!` simply had no marker, and it cost a 45-minute sweep. Run `check-ui-strings.sh` on any new `format!` before EVERY full sweep, not only after fmt.
