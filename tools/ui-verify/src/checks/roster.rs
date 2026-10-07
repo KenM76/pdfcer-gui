@@ -434,6 +434,7 @@ pub fn all() -> Vec<Box<dyn Check>> {
         // gesture then breaks.
         Box::new(form_leaf_move::AThingInsideAWrappedDrawingCanBeDragged),
         Box::new(form_node_move::AnEndPointInsideAWrappedDrawingCanBeDragged),
+        Box::new(form_node_move::ALineInsideAPlacedDrawingShowsItsProperties),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

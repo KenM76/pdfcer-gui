@@ -414,6 +414,9 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
         .first()
         .copied();
     let Some(index) = selected else {
+        if leaf_section(ui, doc) {
+            return true;
+        }
         // Silent when the section drew, because it is not true otherwise. A
         // ce dimension selected on the canvas with nothing focused in the
         // object tree is the ordinary state the instant an operator clicks one,
@@ -501,6 +504,50 @@ fn object_section(ui: &mut egui::Ui, doc: &OpenDoc, something_drew: bool) -> boo
     });
     true
 }
+
+/// The first selected object inside a placed drawing (a form XObject) on the
+/// current page, described read-only with what the engine lets the operator
+/// do to it. `false` when no leaf is selected.
+fn leaf_section(ui: &mut egui::Ui, doc: &OpenDoc) -> bool {
+    let Some(leaf) = doc
+        .selection
+        .leaf_indices_on(doc.view.page_index)
+        .first()
+        .copied()
+    else {
+        return false;
+    };
+    let Some(described) = doc.page_objects().and_then(|provider| {
+        provider
+            .page_objects()
+            .leaves
+            .get(leaf)
+            .map(|l| summary::describe_object(&l.object))
+    }) else {
+        return false;
+    };
+    ui.label(egui::RichText::new(t::properties_leaf_heading()));
+    ui.label(egui::RichText::new(t::properties_leaf_note()).small());
+    ui.separator();
+    // No paint-order row: a leaf has no page paint-order index of its own,
+    // and the one `property_rows` prints is a command-line handle.
+    let index_label = t::field_index();
+    for (label, value) in property_rows(leaf, &described, None) {
+        if label == index_label {
+            continue;
+        }
+        ui.horizontal_wrapped(|ui| {
+            ui.label(egui::RichText::new(label));
+            ui.label(value);
+        });
+    }
+    crate::diag::ui_rect_visible(REGION_LEAF, ui.min_rect(), ui.clip_rect());
+    crate::diag::trace(|| format!("properties-panel leaf={leaf} kind={:?}", described.kind));
+    true
+}
+
+/// The region [`leaf_section`] publishes.
+const REGION_LEAF: &str = "properties.leaf"; // ui-text-exempt: trace region name, never displayed
 
 /// The region [`object_section`] publishes when it has drawn an object's
 /// properties — `OPERATOR_REQUESTS.md` O75.

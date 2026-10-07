@@ -11,6 +11,21 @@ pub fn properties_object_heading() -> &'static str {
     "Object properties"
 }
 
+/// Heading over a selected object that is drawn inside a placed drawing
+/// (a form XObject), such as a markup made part of the page.
+#[must_use]
+pub fn properties_leaf_heading() -> &'static str {
+    "Object inside a placed drawing"
+}
+
+/// What can and cannot be done to an object inside a placed drawing. Its
+/// subject is the engine's missing in-form paint and transform verbs (G142,
+/// G144); delete it when both reach the pin.
+#[must_use]
+pub fn properties_leaf_note() -> &'static str {
+    "It and its points can be dragged. Its colour, line width and size cannot be changed while it is part of a placed drawing."
+}
+
 /// Shown when no object is being shown properties for.
 #[must_use]
 pub fn properties_nothing_focused() -> &'static str {

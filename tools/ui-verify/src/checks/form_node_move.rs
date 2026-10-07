@@ -23,6 +23,9 @@ const PREVIEW: &str = "canvas-shape-preview"; // ui-text-exempt: a trace event n
 const FIRST_ANCHOR: &str = "canvas.anchor.0";
 /// The selected anchor. Mirrors `canvas::overlay::SELECTED_ANCHOR_REGION`.
 const SELECTED_ANCHOR: &str = "canvas.selected-anchor";
+const PANEL: &str = "properties-panel"; // ui-text-exempt: a trace event name, never displayed
+/// Mirrors `panels::properties::REGION_LEAF`.
+const LEAF_REGION: &str = "properties.leaf";
 
 const FIXTURE: &str = "../../fixtures/form-xobject.pdf";
 const FIXTURE_PAGE: PageGeometry = PageGeometry {
@@ -50,12 +53,76 @@ impl Check for AnEndPointInsideAWrappedDrawingCanBeDragged {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        match drive(ctx, &mut report, descend_and_drag) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
         }
     }
+}
+
+pub struct ALineInsideAPlacedDrawingShowsItsProperties;
+
+impl Check for ALineInsideAPlacedDrawingShowsItsProperties {
+    fn name(&self) -> &'static str {
+        "a_line_inside_a_placed_drawing_shows_its_properties"
+    }
+
+    fn defect(&self) -> &'static str {
+        "a line inside a placed drawing (a markup made part of the page) is selected and the \
+         Properties panel shows nothing for it"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match drive(ctx, &mut report, enter_and_read_properties) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn enter_and_read_properties(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<Option<String>> {
+    let (ui_rect, _) = enter_leaf(ctx, session, pointer, page)?;
+    session.settle(20);
+    let trace = session.trace()?;
+    let described = trace
+        .events(PANEL)
+        .filter(|l| l.get("leaf").is_some())
+        .last();
+    let Some(line) = described else {
+        return Ok(Some(format!(
+            "THE LEAF IS SELECTED AND PROPERTIES DESCRIBES NOTHING: no `{PANEL} leaf=` line \
+             (last `{PANEL}`: {}). `panels::properties::leaf_section` must describe \
+             `PageObjects::leaves[i]` when the selection holds no page object. Trace: {}.",
+            trace.last(PANEL).map_or("none", |l| l.raw.as_str()),
+            session.trace_path().display()
+        )));
+    };
+    if line.get("kind") != Some("Path") {
+        return Ok(Some(format!(
+            "Properties described the leaf as something other than a path: `{}`. The bar is a \
+             stroked line. Trace: {}.",
+            line.raw,
+            session.trace_path().display()
+        )));
+    }
+    if driving::declared(&trace, ui_rect, LEAF_REGION).is_none() {
+        return Ok(Some(format!(
+            "the leaf was described and `{LEAF_REGION}` was never on screen: the section drew \
+             outside the panel's visible area. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    report.note(format!("Properties described the leaf: `{}`", line.raw));
+    Ok(None)
 }
 
 fn launch(
@@ -105,22 +172,33 @@ fn launch(
     Ok((session, pointer, page))
 }
 
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+/// What a check does once the window is up; `Some` is a FAIL.
+type Body = fn(
+    &CheckContext,
+    &mut CheckReport,
+    &Session,
+    &ScriptedPointer,
+    PageGeometry,
+) -> Result<Option<String>>;
+
+fn drive(ctx: &CheckContext, report: &mut CheckReport, body: Body) -> Result<Option<String>> {
     let (session, pointer, page) = launch(ctx, report)?;
-    let outcome = descend_and_drag(ctx, report, &session, &pointer, page);
+    let outcome = body(ctx, report, &session, &pointer, page);
     let parked = pointer.gone(&session);
     let found = outcome?;
     parked?;
     Ok(found)
 }
 
-fn descend_and_drag(
+/// Edit mode, then a click and a double-click on the bar: the selection is
+/// the bar, a leaf of the form. Returns the `ui-rect` event name and the
+/// point clicked.
+fn enter_leaf(
     ctx: &CheckContext,
-    report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
     page: PageGeometry,
-) -> Result<Option<String>> {
+) -> Result<(&'static str, WindowPoint)> {
     let ui_rect = ctx
         .profile
         .vocab
@@ -128,10 +206,6 @@ fn descend_and_drag(
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     click_mode_segment(session, pointer, ui_rect, MODE)?;
     session.settle(20);
-
-    // Click selects the wrapping form; a double-click enters it to the bar;
-    // a second double-click at the same point enters the bar's Part rung,
-    // which publishes the anchor marks.
     let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
     let at = mapping.doc_to_window(DocPoint::new(0, ON_THE_BAR.0, ON_THE_BAR.1))?;
     pointer.click(session, at)?;
@@ -151,6 +225,19 @@ fn descend_and_drag(
             session.trace_path().display()
         )));
     }
+    Ok((ui_rect, at))
+}
+
+fn descend_and_drag(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<Option<String>> {
+    // A second double-click at the bar enters its Part rung, which publishes
+    // the anchor marks.
+    let (ui_rect, at) = enter_leaf(ctx, session, pointer, page)?;
     pointer.double_click(session, at)?;
     session.settle(30);
 

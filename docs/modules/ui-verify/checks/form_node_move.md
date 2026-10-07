@@ -1,8 +1,12 @@
 # `ui-verify/checks/form_node_move`
 
-`an_end_point_inside_a_wrapped_drawing_can_be_dragged` — O288 item 2: a line
-made part of the page (which `flatten_annotations` wraps in a form XObject)
-has its end point dragged, and the drag applies.
+Two checks for O288 item 2, on a line made part of the page (which
+`flatten_annotations` wraps in a form XObject):
+
+- `an_end_point_inside_a_wrapped_drawing_can_be_dragged`: its end point is
+  dragged, and the drag applies.
+- `a_line_inside_a_placed_drawing_shows_its_properties`: selecting it shows
+  its properties.
 
 ## What it drives
 
@@ -14,6 +18,9 @@ bar's Part rung and publishes `canvas.anchor.N`; a double-click on
 drag moves it 30 px on each axis.
 
 ## Verdict
+
+The drag check:
+
 
 PASS when a `move-node-in-form` line with `n=1` follows: the funnel writes it
 after the engine returned `Ok`. FAIL with the preview count and the
@@ -27,6 +34,14 @@ With the `NodeInForm` and `NodesInForm` arms removed from
 previews, and no `move-node-in-form` line follows, because `action` refuses
 with `Refusal::NodeNotFound`, which is silent. With the arms back, it PASSes
 with `move-node-in-form page=0 n=1`.
+
+## The Properties check
+
+Same fixture and descent, stopping at the leaf. PASS when a
+`properties-panel leaf=N kind=Path` line is written and the
+`properties.leaf` region is on screen. With the `leaf_section` call removed
+from `panels::properties::object_section` it FAILs: the last
+`properties-panel` line is still the form's (`object=0 kind=FormXObject`).
 
 ## What it does not prove
 
