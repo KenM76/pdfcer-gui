@@ -2498,7 +2498,8 @@ takes a layer on every add path at the pin; the shell passes none.
 | Add path in the shell | Engine call that takes the layer |
 |---|---|
 | Add text (`app::actions::addtext`) | `AddTextRequest::on_layer(ObjId)`, honoured by `EditSession::add_text`; refusals `AddTextError::Layer`, `AddTextError::LayerNeedsSession` |
-| Picture insert, raster/SVG/EMF (`app::actions::picture::raster`) | `NewImage::on_layer(ObjId)` |
+| Picture insert, raster (`app::actions::picture::raster`) | `NewImage::on_layer(ObjId)` |
+| Picture insert, SVG/EMF (`app::actions::picture::insert`) | `EditSession::add_svg_on_layer` / `add_emf_on_layer`, `Option<ObjId>` |
 | Paste objects (`app::actions::vector`) | `EditSession::paste_objects_on_layer(page, &clip, at, Option<ObjId>)` in place of `paste_objects` |
 | Markup and every annotation adder (`markupdest`, `picture` stamp, `textannot`, `handsign`, `soundannot`, `screenannot`, `caretannot`, `attachannot`, `models`) | `MarkupOptions::layer: Option<ObjId>`, read by the adders through `on_layer_if` |
 | Markup as page content (`markupdest`) | Unverified whether `add_markup_as_content` reads `MarkupOptions::layer` — read the engine at the pin before claiming it |

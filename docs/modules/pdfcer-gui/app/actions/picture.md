@@ -7,8 +7,11 @@ its disclosures on the status line:
 | Picture | Verb | Disclosures |
 |---|---|---|
 | Raster | `EditSession::add_image` with `NewImage` (contain unless `fit` is stretch) | effective dpi, below screen resolution, letterboxed, distorted, recompressed, source decoding |
-| SVG | `add_svg(page, rect, &ImportedSvg)` | "placed as vector artwork", a stretch when `distorted`, the import notes |
-| EMF | `add_emf(page, rect, &ImportedEmf)` | the same |
+| SVG | `add_svg_on_layer(page, rect, &ImportedSvg, layer)` | "placed as vector artwork", a stretch when `distorted`, the import notes, the layer's receipt |
+| EMF | `add_emf_on_layer(page, rect, &ImportedEmf, layer)` | the same |
+
+`layer` is the current layer (`drawlayer::for_add`), or `None`; an add while
+the current layer is hidden is refused before the engine is called.
 
 Then `select_newest` selects the page's last object in paint order, which is
 what every placement verb appends. Unselected, the operator's first press on
@@ -17,7 +20,8 @@ comes from the model rebuilt after the edit; a page that no longer decomposes
 leaves the selection alone rather than naming an index that may be another
 object.
 
-Driven: `insert_image_places_a_drawing` (all three kinds).
+Driven: `insert_image_places_a_drawing` (all three kinds);
+`a_drawing_goes_on_the_current_layer` (an SVG on the current layer).
 
 ## `stamp` — a picture as a comment
 

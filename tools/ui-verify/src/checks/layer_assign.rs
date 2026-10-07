@@ -1,14 +1,16 @@
 //! `layer_assign_moves_the_selection` — a selected page object is put on a
 //! layer from the Properties panel's Layer combo, Ctrl+Z takes it off again,
 //! and a selected annotation is put on a layer from its right-click Move to
-//! layer… window. `paste_goes_on_the_current_layer` and
-//! `a_caret_goes_on_the_current_layer` — what is added while a layer is
+//! layer… window. `paste_goes_on_the_current_layer`,
+//! `a_caret_goes_on_the_current_layer` and
+//! `a_drawing_goes_on_the_current_layer` — what is added while a layer is
 //! current lands on it.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/layer_assign.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, click_mode_segment, declared, declared_in, declared_names, list, repo_fixture,
+    SHELL_DIAG_ENV, click_mode_segment, declared, declared_in, declared_names,
+    declared_or_in_overflow, list, repo_fixture,
 };
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
@@ -47,6 +49,11 @@ const NOTES_ID: &str = "layer=7_0";
 const MARKUP_TAB: &str = "ribbon.tab.markup";
 const INSERT_TEXT: &str = "ribbon.item.markup.insert_text";
 const CARET_ACCEPT: &str = "text-annot.accept";
+const EDIT_TAB: &str = "ribbon.tab.edit";
+const INSERT_IMAGE: &str = "ribbon.item.edit.insert_image";
+const IMAGE_INSERT: &str = "insert-image.insert";
+const IMAGE_PATH_ENV: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an environment variable name
+const DRAWING: &str = "vector-art.svg";
 /// An empty spot on the page, clear of the box and the annotation; the
 /// caret's apex goes here and its 10 pt body hangs below.
 const SPOT: (f64, f64) = (150.0, 450.0);
@@ -192,6 +199,81 @@ fn caret_on(d: &Drive<'_>, report: &mut CheckReport) -> Result<Option<String>> {
     }))
 }
 
+/// A drawing goes on the current layer: Walls current; Edit > Insert image
+/// with an SVG; Insert. The placed drawing is selected, and Walls' row says
+/// the selection is on it.
+pub struct ADrawingGoesOnTheCurrentLayer;
+
+impl Check for ADrawingGoesOnTheCurrentLayer {
+    fn name(&self) -> &'static str {
+        "a_drawing_goes_on_the_current_layer"
+    }
+
+    fn defect(&self) -> &'static str {
+        "an SVG or EMF drawing inserted while a layer is current lands on no layer: the add \
+         was handed no layer, or the layer did not reach add_svg_on_layer"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match with_drive(ctx, &mut report, drawing_on) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn drawing_on(d: &Drive<'_>, report: &mut CheckReport) -> Result<Option<String>> {
+    let chosen = step!(make_walls_current(d)?);
+    step!(d.press(EDIT_TAB, "ribbon.tab.")?);
+    let Some(item) = declared_or_in_overflow(d.session, d.pointer, d.ui_rect, INSERT_IMAGE)? else {
+        return Ok(Some(format!("the Edit tab declares no `{INSERT_IMAGE}`.")));
+    };
+    d.pointer.click(d.session, WindowPoint::centre_of(item))?;
+    d.session.settle(40);
+    let Some((insert, viewport)) = declared_in(&d.session.trace()?, d.ui_rect, IMAGE_INSERT) else {
+        return Ok(Some(format!("Insert image declared no `{IMAGE_INSERT}`.")));
+    };
+    let mark = d.session.trace()?.mark();
+    d.pointer.click_in(
+        d.session,
+        viewport.as_deref(),
+        WindowPoint::centre_of(insert),
+    )?;
+    d.session.settle(60);
+    let trace = d.session.trace()?;
+    let on = trace
+        .last_after("add-svg-on-layer", mark)
+        .map(|l| l.raw.clone());
+    let selected = trace
+        .last_after("selection-set", mark)
+        .map(|l| l.raw.clone());
+    let row = walls_row(d, mark)?;
+    report.note(format!(
+        "chosen: `{chosen}`; on: {on:?}; selected: {selected:?}; Walls after: `{row}`"
+    ));
+    let mut findings = Vec::new();
+    if !chosen.contains("current=1") {
+        findings.push("clicking Walls' name did not make it current (current=1).");
+    }
+    if on.is_none() {
+        findings.push("the drawing's add traced no `add-svg-on-layer`.");
+    }
+    if selected.is_none() {
+        findings.push("the placed drawing was not selected (`selection-set`).");
+    } else if !row.contains("highlighted=true") {
+        findings.push("the placed drawing, selected, is not on Walls (highlighted=true).");
+    }
+    Ok((!findings.is_empty()).then(|| {
+        format!(
+            "{} Trace: {}.",
+            findings.join(" "),
+            d.session.trace_path().display()
+        )
+    }))
+}
+
 /// The last `layer-row` line for Walls after `mark`, raw.
 fn walls_row(d: &Drive<'_>, mark: usize) -> Result<String> {
     Ok(d.session
@@ -324,6 +406,9 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    let drawing = repo_fixture(DRAWING, "See fixtures/vector-art.PROVENANCE.md.")?;
+    spec.env
+        .push((IMAGE_PATH_ENV.to_owned(), drawing.display().to_string()));
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();

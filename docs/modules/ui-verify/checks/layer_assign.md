@@ -63,3 +63,18 @@ The third check in the module, sharing its launch and `Drive`, and
 The caret stands for every adder `drawlayer::onto` serves; the others are not
 driven one by one. Falsified by `onto` keeping `options.layer` instead of the
 current layer: the add still traces its layer, and step 3 goes red.
+
+# `a_drawing_goes_on_the_current_layer`
+
+`PDFCER_DIAG_IMAGE_PATH` names the `vector-art.svg` fixture.
+
+1. Walls' name clicked: `layer-row name="Walls" … current=1`.
+2. Edit tab ▸ `ribbon.item.edit.insert_image` (found in the overflow when the
+   band is narrow), then `insert-image.insert`.
+3. `add-svg-on-layer` and `selection-set … via=placed`; Walls' row then reads
+   `highlighted=true`: the selected drawing is on Walls.
+
+Falsified by handing the engine `None` in place of the layer: the trace still
+says `add-svg-on-layer` (the shell resolved the layer) and step 3's
+`highlighted=true` fails.
+

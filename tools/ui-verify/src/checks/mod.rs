@@ -1147,6 +1147,8 @@ pub mod models;
 
 /// A part-coloured 3D model draws in its colours, in the viewer and on the page.
 pub mod model_colours;
+/// The 3D viewer says when an assembly coloured the model.
+pub mod model_inferences;
 /// The 3D viewer saves the view on screen as a PNG picture.
 pub mod model_view_picture;
 /// The view chosen in the 3D viewer, or a picture file, becomes the page picture of the model.

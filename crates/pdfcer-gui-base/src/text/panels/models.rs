@@ -550,6 +550,26 @@ pub fn mesh_skipped(skipped: usize) -> String {
     }
 }
 
+/// Parts only a best-fit search rebuilt.
+#[must_use]
+pub fn mesh_best_fit(n: usize) -> String {
+    match n {
+        1 => "One part was rebuilt by a best fit: the shape drawn uses every value the file stores for it, but another shape might too.".to_owned(),
+        n => format!(
+            "{n} parts were rebuilt by a best fit: each shape drawn uses every value the file stores for it, but another shape might too."
+        ),
+    }
+}
+
+/// Parts coloured by their assembly rather than by themselves.
+#[must_use]
+pub fn view_overridden(n: usize) -> String {
+    match n {
+        1 => "One part takes its colour or visibility from the assembly it sits in.".to_owned(),
+        n => format!("{n} parts take their colour or visibility from the assembly they sit in."),
+    }
+}
+
 /// The document's version predates the format.
 #[must_use]
 pub fn below_version(required: &str, document: &str) -> String {

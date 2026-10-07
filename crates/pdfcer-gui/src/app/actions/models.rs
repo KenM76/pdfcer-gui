@@ -85,6 +85,7 @@ struct Meshed {
     meshes: usize,
     triangles: usize,
     skipped: usize,
+    best_fit: usize,
     placed: bool,
 }
 
@@ -100,6 +101,12 @@ pub(crate) struct Assembled {
     pub triangles: usize,
     /// Tessellations that are not triangles pdfcer can draw.
     pub skipped: usize,
+    /// Compressed meshes only a best-fit search rebuilt: another shape could
+    /// consume the same stored values.
+    pub best_fit: usize,
+    /// Placements an assembly's entity references recoloured, read with the
+    /// engine's default reach (ISO 14739-1 leaves it open).
+    pub overridden: usize,
     /// `false` when the assembly tree could not be read and each mesh is
     /// where its file stores it.
     pub placed: bool,
@@ -140,6 +147,8 @@ pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
     })?;
     Ok(Assembled {
         skipped: model.wires + model.markups + model.compressed,
+        best_fit: model.best_fit,
+        overridden: model.overridden,
         placed: model.unplaced.is_none(),
         triangles: model.triangles,
         colours: model.colours,
@@ -167,6 +176,7 @@ fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
         meshes: model.meshes.len(),
         triangles: model.triangles,
         skipped: model.skipped,
+        best_fit: model.best_fit,
         placed: model.placed,
     })
 }
@@ -242,11 +252,12 @@ pub(super) fn save_mesh(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "mesh-saved obj={obj} bytes={} meshes={} triangles={} skipped={} placed={}",
+                    "mesh-saved obj={obj} bytes={} meshes={} triangles={} skipped={} best-fit={} placed={}",
                     meshed.bytes.len(),
                     meshed.meshes,
                     meshed.triangles,
                     meshed.skipped,
+                    meshed.best_fit,
                     meshed.placed
                 )
             });
@@ -265,6 +276,9 @@ pub(super) fn save_mesh(doc: &mut OpenDoc, artwork: &ThreeDArtwork) {
             ];
             if meshed.skipped > 0 {
                 notes.push(t::mesh_skipped(meshed.skipped));
+            }
+            if meshed.best_fit > 0 {
+                notes.push(t::mesh_best_fit(meshed.best_fit));
             }
             super::record_edit_disclosure(Some(super::EditDisclosure { epoch, notes }));
         }

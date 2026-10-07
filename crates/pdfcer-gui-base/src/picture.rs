@@ -37,10 +37,10 @@ pub fn samples_route(image: &ImportedImage) -> &'static str {
 pub enum Picture {
     /// PNG, JPEG, BMP, GIF or TIFF, placed by `EditSession::add_image`.
     Raster(ImportedImage),
-    /// An SVG drawing, placed by `EditSession::add_svg`.
+    /// An SVG drawing, placed by `EditSession::add_svg_on_layer`.
     #[cfg(feature = "svg-import")]
     Svg(ImportedSvg),
-    /// A Windows enhanced metafile, placed by `EditSession::add_emf`.
+    /// A Windows enhanced metafile, placed by `EditSession::add_emf_on_layer`.
     Emf(ImportedEmf),
 }
 

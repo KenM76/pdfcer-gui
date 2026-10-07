@@ -1,6 +1,7 @@
 //! `app::actions::picture` — the apply half of Insert image: a raster picture
-//! through `EditSession::add_image`, an SVG or EMF drawing through `add_svg` /
-//! `add_emf`, and the placed object selected so the next press resizes it.
+//! through `EditSession::add_image`, an SVG or EMF drawing through
+//! `add_svg_on_layer` / `add_emf_on_layer`, each on the current layer, and the
+//! placed object selected so the next press resizes it.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/picture.md`.
 
@@ -16,27 +17,36 @@ use crate::text::images;
 /// raster only: the engine always stretches a drawing to the box, and says so
 /// through `distorted`.
 pub(super) fn insert(doc: &mut OpenDoc, page: usize, rect: Rect, fit: ImageFit, picture: &Picture) {
-    // `add_svg` and `add_emf` take no layer at the pin, so a drawing lands
-    // on none and says so rather than ignoring the operator's choice.
-    let off_layer = doc
-        .draw_layer_now()
-        .map(|(l, _)| crate::text::panels::drawlayer::drawing_not_on_layer(&l.name));
-    match picture {
-        Picture::Raster(image) => raster(doc, page, rect, fit, image),
+    let label = match picture {
+        Picture::Raster(image) => {
+            raster(doc, page, rect, fit, image);
+            select_newest(doc, page);
+            return;
+        }
         #[cfg(feature = "svg-import")]
-        Picture::Svg(svg) => vector_edit(doc, "add-svg", page, 1, |session| {
-            session
-                .add_svg(page, rect, svg)
-                .map(|p| drawing_notes(p.distorted, &p.notes.summary()))
-                .map(|n| n.into_iter().chain(off_layer.clone()).collect::<Vec<_>>())
-        }),
-        Picture::Emf(emf) => vector_edit(doc, "add-emf", page, 1, |session| {
-            session
-                .add_emf(page, rect, emf)
-                .map(|p| drawing_notes(p.distorted, &p.notes.summary()))
-                .map(|n| n.into_iter().chain(off_layer.clone()).collect::<Vec<_>>())
-        }),
-    }
+        Picture::Svg(_) => "add-svg",
+        Picture::Emf(_) => "add-emf",
+    };
+    let Ok(layer) = super::drawlayer::for_add(doc, label) else {
+        return;
+    };
+    let on = super::drawlayer::id(layer.as_ref());
+    let receipt = layer.map(|l| l.receipt);
+    vector_edit(doc, label, page, 1, |session| {
+        let notes = match picture {
+            Picture::Raster(_) => Vec::new(),
+            #[cfg(feature = "svg-import")]
+            Picture::Svg(svg) => {
+                let p = session.add_svg_on_layer(page, rect, svg, on)?;
+                drawing_notes(p.distorted, &p.notes.summary())
+            }
+            Picture::Emf(emf) => {
+                let p = session.add_emf_on_layer(page, rect, emf, on)?;
+                drawing_notes(p.distorted, &p.notes.summary())
+            }
+        };
+        Ok::<_, pdfcer_core::edit::EditError>(notes.into_iter().chain(receipt.clone()).collect())
+    });
     select_newest(doc, page);
 }
 

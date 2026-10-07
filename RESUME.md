@@ -62,11 +62,10 @@ letter drawn two ways named) and row 74 (the current layer). Since then
 G120 to G125 are wired, driven and consumed (the OCR set: model download,
 reading order, the layer as a group, added text in the layer, OCR-only
 export), and `v0.5.0-dev.20261006.4` is PREPARED, not published: tree
-`105fdc93`, gates 84 of 84, `D:uilds\pdfcergui-20261006-1506-da76fdc-105fdc93.zip`
+`105fdc93`, gates 84 of 84, `D:\Builds\pdfcergui-20261006-1506-da76fdc-105fdc93.zip`
 (44,498,885 bytes) mirrored to `pdfcer-gui1` with its userdata kept and
 paddle-vl re-copied, smoke-launched clean (`commands=217`); notes in
-`D:\scratch\s3
-elease-notes.md`. The main session publishes. Next, in order: G127 the hand-signature object list, G128/G129
+`D:\scratch\s3\release-notes.md`. The main session publishes. Next, in order: G127 the hand-signature object list, G128/G129
 letters drawn two ways, the per-run strike source, G126 (`Widget::border_dash`,
 retiring the shell's own `/BS /D` reader), removing each "engine-blocked" note
 as it is wired; then row 74's remaining adders, then row 85. Prepare the next release once

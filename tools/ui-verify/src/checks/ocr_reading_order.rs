@@ -2,9 +2,8 @@
 //! a scan of two columns of two paragraphs, File ▸ Recognise text… with
 //! `ocrs` writes the layer in lines and blocks laid out column by column, so
 //! Export to Text *as drawn* of the saved file reads the four paragraphs in
-//! order. Paragraph grouping is not asserted: on OCR word boxes the engine
-//! makes every line its own block (G131); the block count is noted. Run with the scripted pointer in a window
-//! placed off the desktop.
+//! order, and the lines are grouped into paragraphs: fewer blocks than lines.
+//! Run with the scripted pointer in a window placed off the desktop.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/ocr_reading_order.md`.
 
@@ -61,14 +60,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!("structure: `{}`", structure.raw));
     let lines = structure.get_usize("lines").unwrap_or(0);
     let blocks = structure.get_usize("blocks").unwrap_or(0);
-    if blocks == 0 || lines < blocks {
+    if blocks == 0 || lines <= blocks {
         return Ok(Some(format!(
-            "★ `{}`: the layer must be written as lines inside blocks. Trace: {path}.",
+            "★ `{}`: the layer must be written as lines grouped into fewer blocks; one block per line is no paragraph grouping. Trace: {path}.",
             structure.raw
         )));
-    }
-    if blocks == lines {
-        report.note("every line is its own block: paragraphs are not grouped (G131)");
     }
     let saved = trace.last(SAVED).map(|l| l.raw.clone());
     if !saved.as_deref().is_some_and(|l| l.contains("outcome=ok")) {

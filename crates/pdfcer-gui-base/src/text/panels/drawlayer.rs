@@ -21,16 +21,6 @@ pub fn receipt(layer: &str) -> String {
     format!("Put on layer \u{201c}{layer}\u{201d}.")
 }
 
-/// The note an SVG or EMF drawing placed as page content leaves while a
-/// current layer is chosen: the engine places those on no layer.
-#[must_use]
-pub fn drawing_not_on_layer(layer: &str) -> String {
-    format!(
-        "This drawing was not put on layer \u{201c}{layer}\u{201d}: pdfcer cannot yet place an \
-         SVG or EMF drawing on a layer. It is on no layer; use Move to layer in Properties."
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

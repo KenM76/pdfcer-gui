@@ -774,7 +774,7 @@ pub enum Action {
         request: Box<pdfcer_core::font_unembed::UnembedRequest>,
     },
     /// **Place a picture on the page**: a raster through `add_image`, an SVG
-    /// or EMF drawing through `add_svg` or `add_emf`, which keep it vector.
+    /// or EMF drawing through `add_svg_on_layer` or `add_emf_on_layer`, which keep it vector.
     ///
     /// Raised by `crate::dialogs::insert_image`, a dropped file and a pasted
     /// clipboard picture. The picture is the operand and travels in the

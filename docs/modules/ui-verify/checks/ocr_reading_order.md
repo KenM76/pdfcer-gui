@@ -14,8 +14,8 @@ heights, the paragraphs opening *Apples*, *Bridges* (left) and *Candles*,
 
 1. File ▸ Recognise text… with `ocrs`, then Ctrl+S
    (`save-in-place outcome=ok`).
-2. `ocr-layer-structure` has at least one block and no fewer lines than
-   blocks.
+2. `ocr-layer-structure` has at least one block and fewer blocks than lines:
+   lines are grouped into paragraphs (`lines=15 blocks=7` on this fixture).
 3. A second launch exports the saved file to Text with
    `export-text.order.as-drawn`, which writes the content stream's order
    rather than re-inferring one, so the file reads the layer as the writer
@@ -24,9 +24,9 @@ heights, the paragraphs opening *Apples*, *Bridges* (left) and *Candles*,
 
 # Not asserted
 
-Paragraphs. On OCR word boxes the engine makes every line its own block
-(`lines=15 blocks=15` on this fixture), filed as G131; the check notes it.
-Tighten step 2 to `blocks < lines` when G131 lands.
+That the blocks are the page's four paragraphs: the engine's grouping gives
+seven on this fixture. One block per line, the engine's grouping before
+v0.80.0 (`lines=15 blocks=15`), fails step 2.
 
 # Falsified
 

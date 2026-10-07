@@ -119,11 +119,13 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} placed={} file-view={}",
+                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} placed={} file-view={}",
                 model.meshes.len(),
                 model.uncoloured(),
                 model.triangles,
                 model.skipped,
+                model.best_fit,
+                model.overridden,
                 model.placed,
                 u8::from(saved.is_some())
             )
@@ -359,6 +361,12 @@ impl ModelView {
         }
         if self.model.skipped > 0 {
             ui.small(t::mesh_skipped(self.model.skipped));
+        }
+        if self.model.best_fit > 0 {
+            ui.small(t::mesh_best_fit(self.model.best_fit));
+        }
+        if self.model.overridden > 0 {
+            ui.small(t::view_overridden(self.model.overridden));
         }
         ui.horizontal(|ui| {
             let close = ui.button(t::view_close());
