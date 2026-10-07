@@ -52,6 +52,19 @@ impl Check for SecurityNotesNameTheCoverAndTheActions {
 }
 
 fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<Session> {
+    launch_on(ctx, report, FIXTURE, METHOD, "security_notes")
+}
+
+/// Launch on `fixtures/<fixture>` with Document properties open, off the
+/// desktop. `method` says how to rebuild a missing fixture; `stem` names the
+/// trace.
+pub(crate) fn launch_on(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    method: &str,
+    stem: &str,
+) -> Result<Session> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -61,8 +74,8 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<Session> {
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("security_notes.trace.txt"));
-    spec.pdf = Some(repo_fixture(FIXTURE, METHOD)?);
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
+    spec.pdf = Some(repo_fixture(fixture, method)?);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
@@ -82,7 +95,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<Session> {
 }
 
 /// The newest `name` line, waiting up to 30 settles.
-fn await_line(session: &Session, name: &str) -> Result<Option<TraceLine>> {
+pub(crate) fn await_line(session: &Session, name: &str) -> Result<Option<TraceLine>> {
     for _ in 0..30 {
         if let Some(line) = session.trace()?.events(name).last() {
             return Ok(Some(line.clone()));

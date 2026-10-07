@@ -642,6 +642,8 @@ pub mod rc4_append;
 pub mod replace_text;
 /// Document properties ▸ Security notes and the open-time wrapper warning.
 pub mod security_notes;
+/// A password typed into an earlier saved version is said, field and version.
+pub mod security_passwords;
 
 /// **Selecting a page object names the layer it is on** — O126's third
 /// feature, driven at last. Its header carries the vacuous-pass argument for

@@ -79,7 +79,9 @@ tighten the check to 4 when the tag lands. G134 and G135 are also fixed on
 engine main (`AssembledModel::mesh_placements`, `tree`,
 `fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G136 asks
 for the BleedBox, TrimBox and ArtBox overhang on a resize. Next, in order: the
-rest of ENGINE_BACKLOG (27 wanted, 2 blocked). A comment stored as formatted
+rest of ENGINE_BACKLOG (26 wanted, 2 blocked). Security notes names password
+values still stored in earlier saved versions
+(`security_notes_say_old_passwords_are_kept`). A comment stored as formatted
 text (`/RC`) names its formatting under the note in the Comments panel
 (`a_formatted_comment_says_it_is_formatted`, on `fixtures/rich-comment.pdf`).
 Underlining part of a tagged

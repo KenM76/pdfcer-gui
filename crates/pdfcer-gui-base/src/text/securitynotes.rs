@@ -82,6 +82,47 @@ pub fn wrapper_status(engine: &str) -> String {
     format!("{engine} File > Document properties > Security notes says the same.")
 }
 
+/// One field holding a stored password value, and the saved version it is
+/// in (1-based, of `of`). Never the value.
+#[must_use]
+pub fn stored_password_at(field: &str, version: usize, of: usize) -> String {
+    format!("{field} (version {version} of {of})")
+}
+
+/// Password values the file holds, each named by
+/// [`stored_password_at`]; `earlier` and `current` count them by whether a
+/// reader still shows the version they are in. `remedy` is the command that
+/// removes them.
+#[must_use]
+pub fn stored_passwords(found: &[String], earlier: usize, current: usize, remedy: &str) -> String {
+    let place = match (earlier, current) {
+        (_, 0) => "in earlier versions a reader no longer shows",
+        (0, _) => "in the version a reader opens",
+        _ => "in earlier versions and in the version a reader opens",
+    };
+    format!(
+        "This file still holds what was typed into password fields, {place}: {}. Hidden or not, \
+         the values are in the file's bytes. File > Security > {remedy} writes a copy without \
+         them.",
+        found.join(", ")
+    )
+}
+
+/// Saved versions of a form that could not be opened on their own, so were
+/// not checked for stored passwords.
+#[must_use]
+pub fn stored_passwords_unchecked(count: usize) -> String {
+    let (word, verb) = if count == 1 {
+        ("version", "was")
+    } else {
+        ("versions", "were")
+    };
+    format!(
+        "{count} saved {word} of this form could not be opened on its own and {verb} not checked \
+         for stored passwords."
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,6 +134,18 @@ mod tests {
             s.contains("4096") && s.contains("unchecked, not clean"),
             "{s}"
         );
+    }
+
+    #[test]
+    fn stored_passwords_name_field_version_and_remedy_and_say_where() {
+        let found = [stored_password_at("PIN", 1, 2)];
+        let s = stored_passwords(&found, 1, 0, "Remove old passwords…");
+        assert!(
+            s.contains("PIN (version 1 of 2)") && s.contains("Remove old passwords…"),
+            "{s}"
+        );
+        assert!(s.contains("no longer shows"), "{s}");
+        assert_ne!(s, stored_passwords(&found, 0, 1, "x"));
     }
 
     #[test]

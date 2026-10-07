@@ -12,15 +12,23 @@
 //!   `security-notes` when measured.
 //! - A walk that hit its ceiling says *stopped looking*, never *nothing*.
 //! - Disclosure only: nothing here blocks, and nothing is drawn on the page.
+//! - Password values kept in saved versions (`scan_stored_password_values`)
+//!   are measured on the file as loaded, once per document and base: they
+//!   change only on save, and pdfcer never stores a password value itself.
 
 use egui::{Id, Ui};
+use pdfcer_core::document::Document;
 use pdfcer_core::forms::FormJavaScript;
+use pdfcer_core::password_history::{PasswordValueScan, scan_stored_password_values};
 
 use crate::app::state::OpenDoc;
 use crate::text::securitynotes as t;
 
 /// The section's region, for the harness.
 pub const REGION: &str = "docprops.security-notes"; // ui-text-exempt: trace region name, never displayed
+
+/// The stored-passwords lines, for the harness.
+pub const PASSWORDS_REGION: &str = "docprops.security-notes.passwords"; // ui-text-exempt: trace region name, never displayed
 
 /// What the engine said about one document at one edit.
 #[derive(Clone)]
@@ -54,6 +62,93 @@ fn notes(ui: &Ui, doc: &OpenDoc) -> Notes {
     notes
 }
 
+/// Password values kept in the file's saved versions, for one base.
+#[derive(Clone)]
+struct Passwords {
+    /// [`OpenDoc::serial`].
+    doc: u64,
+    /// The base's byte length; a save replaces the base.
+    base_len: usize,
+    scan: PasswordValueScan,
+    /// Whether the file as loaded is a form. An unopenable version is only
+    /// worth saying on one: a linearized drawing has one by construction.
+    form: bool,
+}
+
+/// The scan for `doc`'s base, measured when the document or its base moved.
+fn passwords(ui: &Ui, doc: &OpenDoc) -> Passwords {
+    let id = Id::new("docprops-security-passwords");
+    let base = doc.session.document();
+    let base_len = base.bytes().len();
+    let cached: Option<Passwords> = ui.ctx().data(|d| d.get_temp(id));
+    if let Some(p) = cached
+        && p.doc == doc.serial
+        && p.base_len == base_len
+    {
+        return p;
+    }
+    let started = std::time::Instant::now();
+    let p = Passwords {
+        doc: doc.serial,
+        base_len,
+        scan: scan_stored_password_values(base.bytes(), Document::from_bytes),
+        form: pdfcer_core::forms::parse_acroform(base).is_some(),
+    };
+    let ms = started.elapsed().as_millis();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "security-passwords revisions={} unreadable={} earlier={} current={} form={} ms={ms}",
+            p.scan.revisions,
+            p.scan.unreadable_revisions,
+            p.scan.in_superseded().count(),
+            p.scan.in_latest().count(),
+            u8::from(p.form),
+        )
+    });
+    ui.ctx().data_mut(|d| d.insert_temp(id, p.clone()));
+    p
+}
+
+/// The stored-password lines, or nothing when there is nothing to say.
+fn stored_passwords(ui: &mut Ui, p: &Passwords) {
+    let scan = &p.scan;
+    let unchecked = p.form && scan.unreadable_revisions > 0;
+    if scan.stored.is_empty() && !unchecked {
+        return;
+    }
+    let block = ui
+        .scope(|ui| {
+            if !scan.stored.is_empty() {
+                let found: Vec<String> = scan
+                    .stored
+                    .iter()
+                    .map(|s| t::stored_password_at(&s.field, s.revision + 1, scan.revisions))
+                    .collect();
+                let remedy = crate::text::purge_passwords::file_purge_password_values().label;
+                ui.colored_label(
+                    ui.visuals().warn_fg_color,
+                    t::stored_passwords(
+                        &found,
+                        scan.in_superseded().count(),
+                        scan.in_latest().count(),
+                        remedy,
+                    ),
+                );
+            }
+            if unchecked {
+                ui.label(
+                    egui::RichText::new(t::stored_passwords_unchecked(scan.unreadable_revisions))
+                        .small()
+                        .weak(),
+                );
+            }
+        })
+        .response
+        .rect;
+    crate::diag::ui_rect_visible(PASSWORDS_REGION, block, ui.clip_rect());
+}
+
 /// The rows' counts, in [`t::row_labels`] order.
 const fn counts(s: &FormJavaScript) -> [usize; 9] {
     [
@@ -79,6 +174,7 @@ pub(super) fn section(ui: &mut Ui, doc: &OpenDoc) {
             if let Some(warning) = &notes.wrapper {
                 ui.colored_label(ui.visuals().warn_fg_color, warning);
             }
+            stored_passwords(ui, &passwords(ui, doc));
             ui.label(egui::RichText::new(t::actions_heading()).small());
             body(ui, &notes.scan);
         })
