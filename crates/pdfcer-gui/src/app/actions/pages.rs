@@ -97,6 +97,7 @@ pub(super) fn resync(doc: &mut OpenDoc) {
     // is a second statement of the permutation, and the cache refills from the
     // visible set on the next frame anyway.
     doc.strip_rasters.clear();
+    doc.page_epochs.bump_structure();
 
     // …and the CURRENT page's raster, for the same reason and only for that
     // reason.

@@ -149,8 +149,11 @@ pub enum RefusalReason {
     Engine(String),
 }
 
+mod background;
 mod ink;
 mod key;
+
+pub use background::BackgroundResult;
 
 pub use key::RenderKey;
 
@@ -169,6 +172,9 @@ struct InFlight {
 pub struct RenderWorker {
     in_flight: Option<InFlight>,
     next_generation: u64,
+    /// The page-preview slot; see [`background`].
+    background: background::BackgroundSlot,
+    next_background: std::cell::Cell<u64>,
 }
 
 impl std::fmt::Debug for RenderWorker {
@@ -475,6 +481,7 @@ impl RenderWorker {
     )]
     pub fn cancel_and_wait(&mut self) {
         self.cancel_in_flight();
+        self.background.cancel();
     }
 
     /// Cancel, drain and join. Idempotent.
@@ -507,6 +514,7 @@ impl Drop for RenderWorker {
     /// against a session nobody can see.
     fn drop(&mut self) {
         self.cancel_in_flight();
+        self.background.cancel();
     }
 }
 

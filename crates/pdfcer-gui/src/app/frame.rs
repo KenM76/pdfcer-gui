@@ -78,6 +78,7 @@ impl eframe::App for PdfcerApp {
 
     /// eframe 0.35's entry point is `ui`, **not** `update`.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        crate::diag::begin_ui_frame();
         let ctx = ui.ctx().clone();
         // FIRST — read the OpenGL error flag, before this frame does any
         // GL work of its own.
@@ -355,6 +356,7 @@ impl eframe::App for PdfcerApp {
             crate::app::handsigned::refresh(&ctx, doc);
         }
 
+        crate::diag::frame_phase("prelude");
         // Step 0b³ — **publish whether this mode edits page content**, for
         // the canvas helpers that have no `Capabilities` to hand (O71).
         //
@@ -523,6 +525,7 @@ impl eframe::App for PdfcerApp {
         // giving them one to suit a harness would be a ribbon decision.
         keyboard::scripted_press(&ctx);
 
+        crate::diag::frame_phase("setup");
         // Step 1 — keyboard, before any widget can consume a key.
         let page_count = match &self.status {
             Status::Open(doc) => Some(doc.pages.len()),
@@ -652,6 +655,7 @@ impl eframe::App for PdfcerApp {
         }
         self.remote_poll(&ctx, &mut actions);
 
+        crate::diag::frame_phase("input");
         // Step 1b — the ribbon, above the canvas.
         //
         // Added before the `CentralPanel` because panel composition order is
@@ -676,6 +680,7 @@ impl eframe::App for PdfcerApp {
         // Drawn in Read mode too: a question nobody can see is a refusal.
         self.remote_banner(ui);
 
+        crate::diag::frame_phase("ribbon");
         // Step 1b¹ — the DOCUMENT TAB STRIP, under the ribbon and over
         // everything else.
         //
@@ -711,6 +716,7 @@ impl eframe::App for PdfcerApp {
         // in Read mode too, since a signing task is not chrome.
         self.sign_strip(ui, &mut actions);
 
+        crate::diag::frame_phase("strips");
         // Step 1b² — the status bar, before the docks.
         //
         // **Order, not preference.** This module's own header states the rule
@@ -829,6 +835,7 @@ impl eframe::App for PdfcerApp {
                 }
             });
 
+        crate::diag::frame_phase("status");
         // Step 1c — the docks, between the ribbon and the canvas.
         //
         // Order is load-bearing twice over. The ribbon is a full-width bar
@@ -838,6 +845,7 @@ impl eframe::App for PdfcerApp {
         // left and there must be something left for it to take.
         if chrome {
             self.docks(ui, &mut actions);
+            crate::diag::frame_phase("docks");
         }
 
         // Step 1c² — the debounced workspace write, dock drawn or not. Moved
@@ -859,6 +867,7 @@ impl eframe::App for PdfcerApp {
             self.central(ui, &mut actions);
         });
 
+        crate::diag::frame_phase("canvas");
         // Step 2a² — the FIND OVERLAY, over the page.
         //
         // After the canvas, and the order IS the placement. The box is an
@@ -912,6 +921,7 @@ impl eframe::App for PdfcerApp {
             }
         }
 
+        crate::diag::frame_phase("find");
         // Step 2b — modal dialogs, LAST among the surfaces.
         //
         // After the canvas and the docks, because egui draws in call order
@@ -1142,6 +1152,7 @@ impl eframe::App for PdfcerApp {
             });
         }
 
+        crate::diag::frame_phase("dialogs");
         // Step 2b(ii) — the Settings window.
         //
         // Drawn beside the other dialogs but held separately, because its draft
@@ -1228,6 +1239,7 @@ impl eframe::App for PdfcerApp {
         }
         crate::canvas::inkpick::settle(&ctx);
 
+        crate::diag::frame_phase("late");
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);
@@ -1238,6 +1250,7 @@ impl eframe::App for PdfcerApp {
             crate::canvas::textedit::shaped::refresh(&ctx, doc);
         }
 
+        crate::diag::frame_phase("apply");
         // Step 4 — decide whether the picture on screen still matches the
         // state that was just updated, and start a render if not.
         self.settle_and_rasterize(&ctx, pixels_per_point);
@@ -1254,6 +1267,7 @@ impl eframe::App for PdfcerApp {
         // After `settle_and_rasterize` rather than before it, because that
         // call can still declare regions — and a census closed one line early
         // would retire whatever it was about to draw, every frame, forever.
+        crate::diag::frame_phase("settle");
         crate::diag::end_ui_frame();
     }
 }

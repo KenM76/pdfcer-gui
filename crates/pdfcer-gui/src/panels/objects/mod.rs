@@ -484,12 +484,8 @@ fn row_indent(row: ObjectTreeRow) -> f32 {
 fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
     match row {
         ObjectTreeRow::Object { index } => provider
-            .page_objects()
-            .objects
-            .get(index)
-            .map_or_else(String::new, |o| {
-                t::object_row_headline(index, &summary::describe_object(o))
-            }),
+            .summary(index)
+            .map_or_else(String::new, |o| t::object_row_headline(index, o)),
         ObjectTreeRow::Part { object, part } => match provider.part_kind(object) {
             Some(provider::PartKind::TextLine) => t::object_tree_run_row(part),
             // A path's part, and the fallback for an object whose kind
@@ -506,11 +502,7 @@ fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
 /// `None` for a row that has no second, longer form.
 fn row_description(provider: &ObjectModelProvider, row: ObjectTreeRow) -> Option<String> {
     match row {
-        ObjectTreeRow::Object { index } => provider
-            .page_objects()
-            .objects
-            .get(index)
-            .map(|o| t::object_row(index, &summary::describe_object(o))),
+        ObjectTreeRow::Object { index } => provider.summary(index).map(|o| t::object_row(index, o)),
         _ => None,
     }
 }

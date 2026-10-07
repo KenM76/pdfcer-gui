@@ -7,7 +7,7 @@
 //! whose permissions allow comments but not content changes; that refusal
 //! reaches the status line through the funnel too.
 
-use super::funnel::vector_edit;
+use super::funnel::{vector_edit, vector_edit_on_page};
 use crate::app::state::OpenDoc;
 use pdfcer_core::annot_author::MarkupSpec;
 use pdfcer_core::edit::{MarkupContentOutcome, MarkupOptions};
@@ -31,7 +31,8 @@ pub(super) fn author(
     let options = &options;
     let receipt: Vec<String> = receipt.into_iter().collect();
     if !on_page {
-        vector_edit(doc, label, page, 1, |session| {
+        // An annotation changes only its own page's `/Annots`.
+        vector_edit_on_page(doc, label, page, 1, |session| {
             session
                 .add_markup_with(page, spec, options)
                 .map(|_| receipt)

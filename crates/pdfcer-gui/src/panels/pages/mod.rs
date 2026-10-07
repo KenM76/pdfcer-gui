@@ -216,80 +216,26 @@ pub fn body(
     crate::diag::ui_rect("panel-pages", ui.min_rect());
     crate::diag::ui_rect("panel-pages-grid", grid.inner_rect);
 
-    // One page per frame, chosen from what is on screen. See `thumbnails`'
-    // header for why this is one and not two, and why it is here rather than
-    // on the render worker.
-    //
-    // AFTER the grid rather than during it: the scheduling rule wants the
-    // whole visible set, and rendering mid-layout would hold the frame in the
-    // middle of a scroll area with half its rows placed.
-    // **AND NOT WHILE THE OPERATOR IS DOING SOMETHING** —
-    // `OPERATOR_REQUESTS.md` O74, in his words:
-    //
-    // > *"The last thing that should matter is updating the preview."*
-    //
-    // That is a priority rule, not a bug report, and it is worth more than the
-    // per-page invalidation it arrived with. A thumbnail render runs **inline
-    // on the UI thread** (see `thumbnails`' header for why it is not on the
-    // worker, and why moving it there would break `Arc::get_mut` in the edit
-    // funnel), so a single expensive page can put 282 ms between a click and
-    // what it does — measured, on his own 36-sheet set.
-    //
-    // Per-page invalidation shrinks how OFTEN that happens; it cannot stop a
-    // page that genuinely needs redrawing from landing on the frame after the
-    // click that dirtied it. This does: **the rail waits for a quiet moment.**
-    //
-    // Two conditions, and each answers a different way of being busy:
-    //
-    // 1. **No pointer or keyboard event this frame.** A drag, a chord, a scroll
-    //    — anything the operator is in the middle of. Asked of `egui::Context`
-    //    rather than of any one widget, because the question really is "is the
-    //    operator doing something *anywhere*", which is the one case where the
-    //    global read is the correct one.
-    // 2. **`SETTLE_AFTER_EDIT` has passed since the last edit landed.**
-    //    `OpenDoc::last_edit_at` is stamped in the edit funnel, in the same
-    //    statement group as the epoch bump, precisely so a consumer can ask
-    //    this. An edit is usually followed by another — a form is filled field
-    //    after field — and re-rendering between two keystrokes is work thrown
-    //    away before it is looked at.
-    //
-    // It cannot stall the rail. `request_repaint_after` below wakes the
-    // window when the quiet period expires, so a document left alone fills
-    // itself; and an operator who keeps working keeps the deferral, which is
-    // exactly the trade he asked for.
-    let busy = ui.ctx().input(|i| {
-        i.pointer.any_down()
-            || i.pointer.is_moving()
-            || !i.events.is_empty()
-            || i.smooth_scroll_delta != egui::Vec2::ZERO
-    });
+    // Previews render on the worker's background slot, one page at a time,
+    // nearest the current page first, and never hold this frame. A new one is
+    // not started until `SETTLE_AFTER_EDIT` after an edit, because an edit is
+    // usually followed by another and the work would be thrown away; the old
+    // picture stays on its tile meanwhile.
     let settling = doc
         .last_edit_at
         .is_some_and(|at| at.elapsed() < SETTLE_AFTER_EDIT);
-    if busy || settling {
-        // Say why nothing was rendered, so a driven check can tell "deferred"
-        // from "nothing to do" — two states with the same screenshot, which is
-        // this project's recorded reason for tracing a decision rather than
-        // only its outcome.
+    if settling {
         crate::diag::trace_changed(DEFER_SLOT, || {
-            format!(
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "pages-thumbnail-deferred busy={} settling={}",
-                u8::from(busy),
-                u8::from(settling)
-            )
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "pages-thumbnail-deferred settling=1".to_owned()
         });
-        // Come back when the quiet period is over. Without this the window can
-        // go idle mid-deferral and the rail stops filling until the operator
-        // moves the mouse.
         ui.ctx().request_repaint_after(SETTLE_AFTER_EDIT);
-    } else if let Some(page_index) = pages.cache.next_to_render(&visible, current)
-        && let Some(page) = doc.pages.get(page_index)
-    {
-        let centre = viewport_centre(&visible, current);
-        let elapsed = pages
+    }
+    if let Some((page_index, elapsed)) =
+        pages
             .cache
-            .render(ui.ctx(), doc, page_index, page, pixels_per_point, centre);
+            .drive(ui.ctx(), doc, &visible, current, !settling)
+    {
         crate::diag::trace(|| {
             format!(
                 "pages-thumbnail page={} ms={} state={:?} cached={}",
@@ -299,9 +245,6 @@ pub fn body(
                 pages.cache.ready_count(),
             )
         });
-        // A page still to draw means another frame is wanted even if nothing
-        // moved — otherwise the grid would fill only while the operator
-        // happened to be generating input.
         ui.ctx().request_repaint();
     }
 
@@ -322,6 +265,18 @@ pub fn body(
         )
     });
 
+    let census = pages.cache.census(&visible);
+    crate::diag::trace_changed(TILES_SLOT, || {
+        format!(
+            "pages-tiles visible={} ready={} stale={} pending={} blank={}",
+            visible.len(),
+            census.ready,
+            census.stale,
+            census.pending,
+            census.blank,
+        )
+    });
+
     if let Some(page) = go {
         actions.push(Action::GoToPage(page));
     }
@@ -330,6 +285,9 @@ pub fn body(
 
 /// Trace slot for the panel's once-per-change summary.
 const PANEL_SLOT: &str = "pages-panel"; // ui-text-exempt: trace slot name, never displayed
+
+/// Trace slot for the visible tiles' census, [`thumbnails::Census`].
+const TILES_SLOT: &str = "pages-tiles"; // ui-text-exempt: trace slot name, never displayed
 
 /// Trace slot for the deferral line — `OPERATOR_REQUESTS.md` O74.
 const DEFER_SLOT: &str = "pages-thumbnail-deferred"; // ui-text-exempt: trace slot name, never displayed
@@ -604,7 +562,7 @@ fn tile(
     );
 
     match pages.cache.state(page_index) {
-        TileState::Ready => {
+        TileState::Ready | TileState::Stale => {
             if let Some(texture) = pages.cache.texture(page_index) {
                 egui::Image::from_texture(texture)
                     .fit_to_exact_size(rect.size())
@@ -618,7 +576,7 @@ fn tile(
             let words = match state {
                 // ui-text-exempt: a panic message for an arm the match above
                 // already took; never rendered.
-                TileState::Ready => unreachable!("handled above"),
+                TileState::Ready | TileState::Stale => unreachable!("handled above"),
                 TileState::NotDrawnYet => t::thumbnail_not_drawn_yet(),
                 TileState::PreviewsOff => t::thumbnail_previews_off(),
                 TileState::Abandoned => t::thumbnail_abandoned(),

@@ -491,6 +491,20 @@ Ctrl+V and the ribbon's Paste take what another program copied: a picture (Snipp
 
 **Where it stands.** In progress. A picture copied in another program now pastes at the pointer in Edit, and a paste after any outside copy takes that newer copy instead of an older pdfcer clip. `Ctrl+V` works for it too, not only the ribbon's Paste. Driven: `a_picture_copied_in_another_program_pastes_at_the_pointer`, `ctrl_v_pastes_a_picture_when_the_clipboard_holds_no_text`. Text from Word or anywhere else now pastes at the pointer as well: as page text in Edit, as a text-box comment in Review (`text_copied_in_another_program_pastes_as_a_text_box_at_the_pointer`). A picture file dropped on a page lands where it was dropped, at its natural size, with no window; Alt as you drop opens the window instead (`a_dropped_picture_lands_where_it_was_dropped`). A dropped text file becomes pages after the one on screen (`a_dropped_text_file_becomes_pages_after_this_one`). A PDF dropped alone on an open document asks whether to open it, insert its pages after this one, or place its first page where it was dropped (`a_dropped_pdf_asks_open_insert_or_place`). In Review a copied picture pastes as a stamp at the pointer, by `Ctrl+V` or Markup ▸ Paste picture as stamp (`a_copied_picture_pastes_as_a_stamp_in_review`). File ▸ New from clipboard and Pages ▸ Insert from clipboard make a new PDF of what you copied, or add it as pages after the one you are on: a picture as a page its own size, text as Import text sets it (`the_clipboard_becomes_a_new_pdf_or_pages_after_this_one`). SVG and EMF wait on the engine (G093, G094). Dragging a picture or text straight out of another program's window (not a file) waits for your decision.
 
+## O290 — **OPEN; the regression comes first, after O288 item 1** — recognised text no longer lands in the PDF, and the OCR layer as a working layer
+
+His words: *"OCR text that has been detected isn't added to the pdf in the current version. the previous version of pdfcer-gui works. Also Can we get it to set detection into paragraphs, columns, etc? Also this doesn't show up as a layer in the layers tree, but it should I think. Also we want to have the option to export the OCR Layer into a Word/etc document when exporting. Also when I go to edit the OCR layer it isn't WYSIWYG live preview like we have now with editing ordinary text - I'd expect this layer to be using the same functions as our ordinary text. Also I might need to add text to this layer in a new place. We need a way to do this. I also think that PaddleOCR-VL 1.5 support was added by the engine some time ago."*
+
+1. **Regression: recognised text is not written into the PDF.** The release before the current one did write it. Found and fixed first; the release it broke in is named when found.
+2. **Recognition groups text into paragraphs, columns and the like,** not loose lines.
+3. **The OCR layer appears in the Layers tree** like any other layer.
+4. **Export can write the OCR layer to Word and similar formats.**
+5. **Editing the OCR layer is live and WYSIWYG, through ordinary text editing** (the same ask as O289 item 15).
+6. **Text can be added to the OCR layer at a new place.**
+7. **PaddleOCR-VL 1.5:** he believes the engine already supports it; check and offer it (bears on O289 item 17).
+
+**Where it stands.** Not started.
+
 ## O288 — **OPEN, first in the queue (Batch 1; a release follows it)** — editing never blanks or blocks, and eight editing defects
 
 Relayed from Ken in his order; `D:\scratch\s3\ken-list-2026-10-07.md` held the list as given. Each item gets a driven check and a falsification. Engine gaps are filed as G requests, never waited on.
@@ -505,7 +519,7 @@ Relayed from Ken in his order; `D:\scratch\s3\ken-list-2026-10-07.md` held the l
 8. **Keys during a text edit go only to the caret.** The arrow keys also move a highlight in the ribbon, and Up and Down also turn pages.
 9. **A text block of two or more lines re-opens as one paragraph,** not as separate lines.
 
-**Where it stands.** Not started.
+**Where it stands.** Item 1 built: an edit never blanks a page or a thumbnail (an old picture stays until its replacement lands), thumbnails render on a background slot and only for the pages an edit touched, and a drag no longer re-runs the engine's hit test on every frame. Driven by `an_edit_never_blanks_or_blocks` on `fixtures/heavy-pages.pdf`, falsified. What still holds the next input after an edit on a dense page is the engine's own work, the verb plus the page model rebuilt after it: about 0.35–0.45 s on the fixture, more on his site plan. Filed as G139, G140 and G141. Items 2–9 not started.
 
 ## O289 — **OPEN, after O288's release (Batch 2)** — twelve requests
 

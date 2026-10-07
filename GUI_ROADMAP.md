@@ -20,6 +20,8 @@ it is done. Each item's wording is its row in `OPERATOR_REQUESTS.md`.
    dimensions, selecting a ce dimension by its text, keys during a text edit
    reaching only the caret, and a multi-line text block re-opening as one
    paragraph.
+   **O290 item 1** (recognised text no longer written into the PDF) is
+   taken straight after O288 item 1; its other items join Batch 2.
 2. **A release** in slot `pdfcer-gui1`, prepared and not pushed; the main
    session publishes.
 3. **O289 (Batch 2), items 10 to 21.**

@@ -9,16 +9,16 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/pages/thumbnails.md`.
 
 use std::collections::HashMap;
-use std::sync::mpsc::{RecvTimeoutError, channel};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use pdfcer_core::page_tree::Page;
-use pdfcer_render::cancel::RenderCancel;
 
+use super::viewport_centre;
 use crate::app::state::OpenDoc;
+use crate::app::state::pageepoch::PageEpochs;
 use crate::render::pressure::Surface;
 use crate::render::raster::{PageTexture, texture_from_pixels};
-use crate::render::worker::{RenderKey, RenderedPixels};
+use crate::render::worker::{BackgroundResult, RenderRequest};
 
 /// How wide a thumbnail is rasterized, in PDF points.
 pub const THUMBNAIL_WIDTH_PTS: f32 = 140.0;
@@ -48,8 +48,11 @@ pub enum Unavailable {
 /// What a tile should draw.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TileState {
-    /// A picture exists; draw it.
+    /// A picture of the page as it is now; draw it.
     Ready,
+    /// A picture of an earlier revision of the same sheet. Drawn until its
+    /// replacement lands, so an edit never blanks a tile.
+    Stale,
     /// Queued, and previews are on: a picture is coming.
     NotDrawnYet,
     /// Queued, and previews are off: a picture is *not* coming until the
@@ -83,30 +86,10 @@ pub struct ThumbnailCache {
     ready: HashMap<usize, PageTexture>,
     /// The pages that have no picture and are not waiting for one.
     unavailable: HashMap<usize, Unavailable>,
-    /// The **pixels-per-point bits** everything above describes, or `None`
-    /// before the first frame.
-    ///
-    /// **The edit epoch LEFT this key on 2026-08-31** —
-    /// `OPERATOR_REQUESTS.md` O74, the operator: *"all of the page previews
-    /// get re-rendered instead of just the one that is being changed."* It was
-    /// a **document-wide** counter used as the invalidation key for a cache
-    /// holding one entry **per page**, so an edit to sheet 12 threw away the
-    /// pictures of the other thirty-five. Measured on his own 36-sheet
-    /// SolidWorks set: twelve visible tiles, **666 ms of UI-thread work per
-    /// edit**, worst frame 282 ms — all of it between his click and its result.
-    /// The per-page answer now lives in [`Self::built_at`], compared against
-    /// [`crate::app::state::pageepoch::PageEpochs`].
-    ///
-    /// **The page index was never in it, and still is not.** A page change
-    /// moves the highlight ring; it changes no picture, and dropping the cache
-    /// on it would re-rasterize the whole visible grid every time the operator
-    /// pressed Page Down.
-    ///
-    /// `pixels_per_point` **stays**, alone, and stays document-wide — because
-    /// it genuinely is. It is a factor of the raster scale, so dragging the
-    /// window to a monitor with a different density leaves **every** texture at
-    /// the wrong resolution, and the symptom is a grid that is soft or aliased
-    /// with nothing to say why. A per-page density does not exist.
+    /// The pixels-per-point bits every texture was drawn at, or `None` before
+    /// the first frame. Document-wide because density is: moving the window
+    /// to another monitor leaves every texture at the wrong resolution. The
+    /// page index is deliberately not in it; turning a page changes no picture.
     key: Option<u32>,
     /// **The page epoch each held entry was built at**, keyed the same way
     /// [`Self::ready`] and [`Self::unavailable`] are.
@@ -116,16 +99,14 @@ pub struct ThumbnailCache {
     /// leaving the refusals unkeyed would mean an edit never got a second
     /// attempt at a page that had failed.
     built_at: HashMap<usize, u64>,
-    /// The revisions [`Self::sync`] was last given, so [`Self::insert`] can
-    /// stamp a new entry without the render path having to be handed the
-    /// document.
-    ///
-    /// Correct precisely because `sync` runs **once per frame before any
-    /// tile is drawn**, which is a contract `sync`'s own docs already state
-    /// and which several other things here already depend on. A picture
-    /// rendered later in the same frame is a picture of the revision this
-    /// snapshot names.
-    synced: crate::app::state::pageepoch::PageEpochs,
+    /// The revisions [`Self::sync`] was last given; `sync` runs once per frame
+    /// before any tile is drawn.
+    synced: PageEpochs,
+    /// [`PageEpochs::structure`] as of the last sync. A change means page
+    /// indices may name different sheets, so every picture goes.
+    structure: u64,
+    /// The render in the worker's background slot, if this cache started one.
+    requested: Option<Requested>,
     /// The most recent page the budget abandoned, if any.
     ///
     /// **A disclosure, not a decision.** Nothing reads this to decide whether
@@ -153,9 +134,7 @@ pub struct ThumbnailCache {
     /// operator's `0` is converted at exactly one place,
     /// [`budget_from_millis`], and turned back at [`millis_from_budget`].
     ///
-    /// ⚠ `None` means [`Self::render_one`] arms no watchdog and no
-    /// [`RenderCancel`] — see that function's step 1. A page then takes
-    /// however long it takes, on the UI thread.
+    /// `None` lets a preview run as long as it takes, on the worker.
     budget: Option<Duration>,
     /// The page indices in [`Self::ready`], newest last.
     ///
@@ -175,7 +154,9 @@ impl Default for ThumbnailCache {
             unavailable: HashMap::new(),
             key: None,
             built_at: HashMap::new(),
-            synced: crate::app::state::pageepoch::PageEpochs::default(),
+            synced: PageEpochs::default(),
+            structure: 0,
+            requested: None,
             skipped: None,
             on: true,
             budget: PAGE_BUDGET_DEFAULT,
@@ -200,52 +181,44 @@ impl std::fmt::Debug for ThumbnailCache {
 }
 
 impl ThumbnailCache {
-    /// Drop every entry that no longer describes **its own page's** revision,
-    /// or this display.
-    pub fn sync(
-        &mut self,
-        epochs: &crate::app::state::pageepoch::PageEpochs,
-        pixels_per_point: f32,
-    ) {
-        // 1. The density, which really is document-wide. A change here leaves
-        //    every texture at the wrong resolution, so everything goes.
+    /// Bring the cache up to this frame's revisions and display density.
+    ///
+    /// A density or structure change drops everything: every picture is then
+    /// at the wrong resolution or of the wrong sheet. A content edit drops only
+    /// the edited pages' refusals (so they get another attempt); their pictures
+    /// stay, as [`TileState::Stale`], until the new ones land.
+    pub fn sync(&mut self, epochs: &PageEpochs, pixels_per_point: f32) {
         let density = pixels_per_point.to_bits();
-        if self.key != Some(density) {
+        if self.key != Some(density) || self.structure != epochs.structure() {
             self.key = Some(density);
+            self.structure = epochs.structure();
             self.ready.clear();
             self.unavailable.clear();
             self.order.clear();
             self.built_at.clear();
+            self.requested = None;
         }
-
-        // 2. The per-page revisions, which are the O74 fix. An entry is kept
-        //    only while the page it describes has not moved — so an edit on
-        //    sheet 12 drops sheet 12's tile and leaves the rest alone.
-        //
-        //    An entry with no `built_at` is dropped rather than kept. That is
-        //    unreachable today (every insertion stamps one) and it is written
-        //    this way round deliberately: the failure mode of "keep what you
-        //    cannot date" is showing the operator a picture of content he has
-        //    already changed, which rule 4 forbids, and the failure mode of
-        //    "drop what you cannot date" is one extra render.
-        let stale: Vec<usize> = self
-            .built_at
+        // An undated refusal is treated as stale: the cost is one render.
+        let dated = |p: &usize| self.built_at.get(p) == Some(&epochs.get(*p));
+        let refused: Vec<usize> = self
+            .unavailable
             .keys()
             .copied()
-            .chain(self.ready.keys().copied())
-            .chain(self.unavailable.keys().copied())
-            .filter(|p| self.built_at.get(p) != Some(&epochs.get(*p)))
+            .filter(|p| !dated(p))
             .collect();
-        for page in stale {
-            self.ready.remove(&page);
+        for page in refused {
             self.unavailable.remove(&page);
-            self.built_at.remove(&page);
-            self.order.retain(|p| *p != page);
+            if !self.ready.contains_key(&page) {
+                self.built_at.remove(&page);
+            }
         }
-
-        // 3. Remember the revisions this frame is drawing, so an insertion
-        //    later in the same frame stamps the right number.
         self.synced = epochs.clone();
+    }
+
+    /// Whether the held picture of `page_index` shows its current revision.
+    /// An undated picture is never fresh.
+    fn fresh(&self, page_index: usize) -> bool {
+        self.built_at.get(&page_index) == Some(&self.synced.get(page_index))
     }
 
     /// Whether a page would be drawn if one were asked for.
@@ -298,7 +271,12 @@ impl ThumbnailCache {
     #[must_use]
     pub fn state(&self, page_index: usize) -> TileState {
         if self.ready.contains_key(&page_index) {
-            return TileState::Ready;
+            return match (self.fresh(page_index), self.previews_on()) {
+                (true, _) => TileState::Ready,
+                (false, true) => TileState::Stale,
+                // An old picture nobody is going to replace is not shown.
+                (false, false) => TileState::PreviewsOff,
+            };
         }
         match self.unavailable.get(&page_index) {
             Some(Unavailable::Abandoned) => TileState::Abandoned,
@@ -320,194 +298,117 @@ impl ThumbnailCache {
         if !self.previews_on() {
             return None;
         }
-        let pending = |p: &usize| matches!(self.state(*p), TileState::NotDrawnYet);
+        let pending =
+            |p: &usize| matches!(self.state(*p), TileState::NotDrawnYet | TileState::Stale);
         if visible.contains(&current) && pending(&current) {
             return Some(current);
         }
         visible.iter().copied().find(|p| pending(p))
     }
 
-    /// **Rasterize one page and keep the result.**
-    pub fn render(
+    /// **Collect a finished preview, enforce the time limit, and start the
+    /// next one.** Never waits for a render; called once per frame after
+    /// [`Self::sync`]. `may_start` is false while an edit is settling.
+    ///
+    /// Returns the page whose render landed this frame, with its cost.
+    pub fn drive(
         &mut self,
         ctx: &egui::Context,
         doc: &OpenDoc,
-        page_index: usize,
-        page: &Page,
-        pixels_per_point: f32,
-        viewport_centre: usize,
-    ) -> Duration {
-        let scale = raster_scale_for(page, pixels_per_point);
-
-        // Through the funnel, not `RenderOptions::default()`.
-        //
-        // A thumbnail is a small picture of the same page the canvas draws, so
-        // it must obey the same five rendering settings — otherwise an operator
-        // who sets "black ink is black" gets a black drawing and a grey rail of
-        // thumbnails of it, which reads as a rendering bug rather than as a
-        // setting only half applied.
-        //
-        // What the funnel does NOT decide is on the next two lines, and that is
-        // the point of the split: annotations and layers are *this surface's*
-        // answer to what a thumbnail is for, and no setting may override them.
-        use crate::app::settings::SettingsExt;
-        let mut options = doc.settings.render_options();
-        // Annotations always on, and the layer override deliberately absent
-        // — the two decisions that make a thumbnail a *fixed overview* rather
-        // than a second copy of the canvas.
-        //
-        // A thumbnail answers "which sheet is this?", and the answer must not
-        // change because a View ▸ Display toggle was flipped or a layer was
-        // hidden to work on something. `None` layers is "obey the document's
-        // own default configuration" (core API trap T-12.9), which is what a
-        // reader who was handed the file sees, and it is also why these two
-        // inputs are absent from the invalidation key in [`Self::sync`]:
-        // nothing this panel does can vary them.
-        options.annotations = true;
-        options.layers = None;
-        // …and `stroke_display` is deliberately NOT set, which leaves the
-        // funnel's `StrokeDisplay::Actual` — O137's `view.line_weights` does not
-        // reach the rail.
-        //
-        // Same argument as the two lines above, and one of its own. A thumbnail
-        // is a fixed overview, so a View ▸ Display toggle must not change it.
-        // And at thumbnail scale the point is moot in the operator's favour:
-        // every stroke on a page drawn 90 points wide is already under a device
-        // pixel, so the engine's §8.4.3.2 floor has put it at one pixel before
-        // the hairline ceiling could. Turning it on here would cost a whole
-        // second raster of every visible page for a picture nobody could tell
-        // apart.
-        //
-        // ⚠ It follows that the rail is NOT a place to check what the toggle
-        // does. The canvas is.
-
-        let cancel = RenderCancel::new();
-        // Copied out before the thread is spawned: `self` is borrowed
-        // mutably for the whole of this function, so the closure cannot read
-        // the field, and an `Option<Duration>` is `Copy`.
-        let budget = self.budget;
-        // 1. The watchdog — **and only when there is a limit to watch for**.
-        //
-        //
-        //    ⚠ The alternative — a watchdog armed at `Duration::MAX` — was
-        //    rejected. It spawns a thread per page that parks until the
-        //    channel disconnects, which is a thread doing nothing for the
-        //    whole of a render the operator asked not to be bounded.
-        //
-        //    `tx` stays here; dropping it at the end of this function
-        //    disconnects the channel, which wakes the thread with
-        //    `Disconnected` and exits it without cancelling.
-        let (tx, rx) = channel::<()>();
-        let guard = budget.map(|budget| {
-            let watchdog = cancel.clone();
-            std::thread::spawn(move || {
-                if matches!(rx.recv_timeout(budget), Err(RecvTimeoutError::Timeout)) {
-                    watchdog.cancel();
-                }
-            })
-        });
-        if budget.is_some() {
-            options.cancel = Some(cancel.clone());
-        }
-
-        // 2. The render. The `view()` borrow lives and dies inside this
-        //    statement, so no `Arc<EditSession>` clone escapes the frame.
-        let started = Instant::now();
-        let outcome = {
-            let view = doc.session.view();
-            pdfcer_render::render_page_with_view(&view, page, scale, &options)
-        };
-        let elapsed = started.elapsed();
-        drop(tx);
-        // `drop(tx)` is unconditional even when no watchdog was spawned:
-        // `rx` was moved into the closure only in the `Some` arm, so in the
-        // `None` arm the receiver is dropped with `guard`'s `None` and the
-        // sender has nothing to wake. Dropping it anyway costs nothing and
-        // keeps the two paths' shape identical for whoever reads this next.
-        if let Some(guard) = guard {
-            let _ = guard.join();
-        }
-
-        // 3. The outcome.
-        match outcome {
-            Ok(rendered) => {
-                let pixels = RenderedPixels {
-                    pixmap: rendered.pixmap,
-                    diagnostics: rendered.diagnostics,
-                    // Built from the inputs this render actually used, through
-                    // the same key type the canvas's textures carry, so a
-                    // thumbnail is labelled with what produced it rather than
-                    // with what was intended. `annotations: true` and
-                    // `layers_generation: 0` are the fixed reader defaults set
-                    // above; stating them here keeps the key honest rather than
-                    // convenient. `StrokeDisplay::Actual` joins them for the
-                    // same reason and under the same rule: it is what this
-                    // render actually used, stated rather than defaulted into.
-                    key: RenderKey::new(
-                        page_index,
-                        scale,
-                        true,
-                        0,
-                        pdfcer_render::font::StrokeDisplay::Actual,
-                    ),
-                    // The same measurement this function was already taking for
-                    // its own trace, now carried on the value rather than only
-                    // written out — so a thumbnail and a canvas raster report
-                    // their cost through one field. Nothing reads a thumbnail's
-                    // copy today: `tools.render_diagnostics` is about the page
-                    // on the canvas, and a strip of twelve pages would need a
-                    // surface that says *which* twelve.
-                    elapsed,
-                };
-                self.insert(
-                    page_index,
-                    texture_from_pixels(ctx, Surface::Thumbnail, &pixels),
-                    viewport_centre,
-                );
+        visible: &[usize],
+        current: usize,
+        may_start: bool,
+    ) -> Option<(usize, Duration)> {
+        let worker = &doc.render_worker;
+        let landed = match worker.poll_background() {
+            Some(result) => self.land(ctx, result, viewport_centre(visible, current)),
+            None => {
+                self.watch_budget(worker);
+                None
             }
-            // A refusal is stamped too (O74). It is as much a claim about a
-            // revision as a picture is, and an unstamped refusal would be
-            // dropped by `sync` on every frame — or, worse if the polarity were
-            // reversed, would survive the edit that fixed it and the page would
-            // never get a second attempt.
-            Err(_) if cancel.is_cancelled() => {
-                self.unavailable.insert(page_index, Unavailable::Abandoned);
-                self.built_at
-                    .insert(page_index, self.synced.get(page_index));
-                // The disclosure, and the ONLY thing this arm does beyond
-                // recording the tile's state. It does not touch `self.on`.
-                // That is the whole of O151: a page the budget could not
-                // afford is a fact about that page, and the operator's
-                // instruction about the feature is none of its business.
-                //
-                // `budget`, not `elapsed`, because the page's real cost is
-                // unknown — pdfcer stopped it precisely so as not to spend it.
-                //
-                // `budget` is `Some` on every path that reaches here: the
-                // token is only armed when there is a limit (step 1), so a
-                // cancelled render implies one. `map` rather than `expect`
-                // because a disclosure is not worth a panic — if that
-                // invariant is ever broken, the tile still says *Not
-                // finished* and only the sentence above the grid is missing,
-                // which is the failure this whole module prefers.
-                self.skipped = budget.map(|budget| SkippedPage {
-                    page_index,
-                    millis: budget.as_millis(),
-                });
+        };
+        if may_start
+            && self.requested.is_none()
+            && let Some(page_index) = self.next_to_render(visible, current)
+            && let Some(page) = doc.pages.get(page_index)
+        {
+            let scale = raster_scale_for(page, ctx.pixels_per_point());
+            worker.spawn_background(thumbnail_request(doc, page_index, page, scale));
+            self.requested = Some(Requested {
+                page: page_index,
+                epoch: self.synced.get(page_index),
+                structure: self.structure,
+            });
+        }
+        if self.requested.is_some() {
+            // Woken to poll; a finished render does not repaint the window.
+            ctx.request_repaint_after(POLL_EVERY);
+        }
+        landed
+    }
+
+    /// Keep a finished render if it is still a picture of a sheet this cache
+    /// holds, stamped with the revision it was requested at.
+    fn land(
+        &mut self,
+        ctx: &egui::Context,
+        result: BackgroundResult,
+        viewport_centre: usize,
+    ) -> Option<(usize, Duration)> {
+        let requested = self.requested.take()?;
+        let page_index = result.key.page();
+        if requested.page != page_index || requested.structure != self.structure {
+            return None;
+        }
+        match result.outcome? {
+            Ok(pixels) => {
+                let texture = texture_from_pixels(ctx, Surface::Thumbnail, &pixels);
+                self.insert(page_index, texture, viewport_centre, requested.epoch);
             }
             Err(error) => {
                 self.unavailable
-                    .insert(page_index, Unavailable::Failed(error.to_string()));
-                self.built_at
-                    .insert(page_index, self.synced.get(page_index));
+                    .insert(page_index, Unavailable::Failed(refusal_text(&error.reason)));
+                self.built_at.insert(page_index, requested.epoch);
             }
         }
+        Some((page_index, result.elapsed))
+    }
 
-        elapsed
+    /// Abandon the running preview once it has had the operator's time limit,
+    /// or forget it when something else (an edit) cancelled it.
+    ///
+    /// Abandoning records the page as [`Unavailable::Abandoned`] and discloses
+    /// it through [`Self::skipped`]; it never touches [`Self::previews_on`].
+    fn watch_budget(&mut self, worker: &crate::render::worker::RenderWorker) {
+        let Some(requested) = self.requested else {
+            return;
+        };
+        let Some((_, running_for)) = worker.background_in_flight() else {
+            self.requested = None;
+            return;
+        };
+        let Some(budget) = self.budget.filter(|b| running_for >= *b) else {
+            return;
+        };
+        worker.cancel_background();
+        self.requested = None;
+        self.unavailable
+            .insert(requested.page, Unavailable::Abandoned);
+        self.built_at.insert(requested.page, requested.epoch);
+        self.skipped = Some(SkippedPage {
+            page_index: requested.page,
+            millis: budget.as_millis(),
+        });
     }
 
     /// Add a texture, evicting if the cache is full.
-    fn insert(&mut self, page_index: usize, texture: PageTexture, viewport_centre: usize) {
+    fn insert(
+        &mut self,
+        page_index: usize,
+        texture: PageTexture,
+        viewport_centre: usize,
+        epoch: u64,
+    ) {
         if self.ready.len() >= MAX_CACHED_THUMBNAILS
             && let Some(victim) = evict_victim(&self.order, viewport_centre, page_index)
         {
@@ -515,12 +416,7 @@ impl ThumbnailCache {
             self.order.retain(|p| *p != victim);
         }
         self.ready.insert(page_index, texture);
-        // Stamped with the revision `sync` recorded at the top of this frame
-        // (O74). Not `epochs.get()` re-read here: this function has no document
-        // and giving it one would put a document borrow inside the eviction
-        // path for a number that cannot have changed since the frame began.
-        self.built_at
-            .insert(page_index, self.synced.get(page_index));
+        self.built_at.insert(page_index, epoch);
         self.order.retain(|p| *p != page_index);
         self.order.push(page_index);
     }
@@ -529,6 +425,78 @@ impl ThumbnailCache {
     #[must_use]
     pub fn ready_count(&self) -> usize {
         self.ready.len()
+    }
+
+    /// How the visible tiles stand, for the `pages-tiles` trace.
+    #[must_use]
+    pub fn census(&self, visible: &[usize]) -> Census {
+        let mut census = Census::default();
+        for &page in visible {
+            match self.state(page) {
+                TileState::Ready => census.ready += 1,
+                TileState::Stale => {
+                    census.stale += 1;
+                    census.pending += 1;
+                }
+                TileState::NotDrawnYet => {
+                    census.pending += 1;
+                    if self.texture(page).is_none() {
+                        census.blank += 1;
+                    }
+                }
+                TileState::PreviewsOff | TileState::Abandoned | TileState::Failed => {}
+            }
+        }
+        census
+    }
+}
+
+/// The visible tiles counted by state. `blank` is a tile drawn with no picture
+/// while previews are on; `stale` is one showing a picture older than its page.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct Census {
+    pub ready: usize,
+    pub stale: usize,
+    pub pending: usize,
+    pub blank: usize,
+}
+
+/// The page and revision a background render was started for.
+#[derive(Debug, Clone, Copy)]
+struct Requested {
+    page: usize,
+    epoch: u64,
+    structure: u64,
+}
+
+/// How often the rail looks for a finished preview while one is running.
+const POLL_EVERY: Duration = Duration::from_millis(30);
+
+/// A preview's render request. Annotations are always drawn, the document's
+/// own layer configuration is obeyed, strokes keep their real widths and no
+/// detail is culled: a thumbnail answers "which sheet is this?", and no View
+/// toggle may change that answer.
+fn thumbnail_request(doc: &OpenDoc, page_index: usize, page: &Page, scale: f32) -> RenderRequest {
+    RenderRequest {
+        session: std::sync::Arc::clone(&doc.session),
+        page: page.clone(),
+        page_index,
+        raster_scale: scale,
+        annotations: true,
+        stroke_display: pdfcer_render::font::StrokeDisplay::Actual,
+        subpixel_culling: false,
+        settings: doc.settings.clone(),
+        layers: None,
+        layers_generation: 0,
+        region: None,
+    }
+}
+
+/// The renderer's own sentence for a refusal, or the refusal's name.
+fn refusal_text(reason: &crate::render::worker::RefusalReason) -> String {
+    match reason {
+        crate::render::worker::RefusalReason::Engine(sentence) => sentence.clone(),
+        other => format!("{other:?}"),
     }
 }
 

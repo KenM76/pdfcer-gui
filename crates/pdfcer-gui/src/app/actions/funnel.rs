@@ -90,6 +90,8 @@ fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     // argument for why this is a take rather than a comparison, and why it is
     // what makes two presses two events.
     let floor = crate::app::status::decline::before_the_verb();
+    // The commit's own cost on the UI thread, traced as `ms=`.
+    let started = std::time::Instant::now();
     match edit(session) {
         Ok(disclosures) => {
             // Nothing about a successful edit changes: whatever was live goes
@@ -150,11 +152,18 @@ fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
             // edit that touched no page costs one page-tree walk and one `Vec`
             // comparison, per operator gesture, and does nothing else.
             super::pages::resync(doc);
+            // Measured now, while the session is still exclusive: a render
+            // started later this frame would make the per-frame measurement
+            // miss, and the page model would be rebuilt once for the epoch and
+            // again for the digest. An edit that leaves the page's content alone
+            // (a markup) then rebuilds nothing.
+            doc.refresh_content_generation();
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "{label} page={page} n={operands} epoch={} disclosures={}",
+                    "{label} page={page} n={operands} epoch={} ms={} disclosures={}",
                     doc.edit_epoch,
+                    started.elapsed().as_millis(),
                     if disclosures.is_empty() {
                         // ui-text-exempt: diagnostic trace, never displayed in the UI
                         "none".to_owned()

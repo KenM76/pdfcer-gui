@@ -292,6 +292,7 @@ impl PdfcerApp {
 
     /// Draw the left and right docks and their panel bodies.
     pub(super) fn docks(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
+        crate::diag::frame_phase("status");
         // Borrows split before the closure: the body needs `status` and
         // `panels` while `show` holds `dock` mutably, and the closure
         // cannot reach through `self` for them.
@@ -528,6 +529,7 @@ impl PdfcerApp {
                 dock,
                 |panel_id, ui| match crate::panels::Panel::from_command_id(panel_id.as_str()) {
                     Some(panel) => {
+                        let started = std::time::Instant::now();
                         tokens.extend(crate::panels::show(
                             panel,
                             ui,
@@ -536,6 +538,7 @@ impl PdfcerApp {
                             host.as_ref(),
                             actions,
                         ));
+                        trace_panel_cost(panel, started.elapsed());
                     }
                     None => {
                         ui.label(crate::text::panels::panel_unknown());
@@ -884,6 +887,18 @@ fn target_key(t: &egui_shell::dock::DropTarget) -> String {
 
 pub(super) fn publish_dock_rect(r: &egui_shell::dock::RectReport<'_>) -> bool {
     crate::diag::ui_rect_visible(r.name, r.rect, r.clip)
+}
+
+/// Trace a dock panel that took 5 ms or more to draw.
+///
+/// ```text
+/// pdfcer-diag panel-cost panel=Objects ms=48
+/// ```
+fn trace_panel_cost(panel: crate::panels::Panel, took: std::time::Duration) {
+    if took >= std::time::Duration::from_millis(5) {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        crate::diag::trace(|| format!("panel-cost panel={panel:?} ms={}", took.as_millis()));
+    }
 }
 
 #[cfg(test)]

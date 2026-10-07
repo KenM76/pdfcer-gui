@@ -34,6 +34,8 @@ use pdfcer_core::vector::{
 };
 use pdfcer_core::view::DocumentView;
 use pdfcer_render::page_device_geometry;
+
+use crate::objectsummary::{ObjectSummary, describe_object};
 use pdfcer_render::tiny_skia::{Point as SkPoint, Transform};
 
 /// One selectable thing on a page, addressed opaquely — and **which of the
@@ -128,7 +130,23 @@ pub struct ObjectModelProvider {
     /// `None` makes that predicate answer `true`, which is the behaviour
     /// before it existed. A provider that cannot measure must not guess.
     page_extent_px: Option<egui::Vec2>,
+    /// Each object's [`describe_object`] answer, filled on first ask. A
+    /// summary walks every anchor of a path, and one path can hold a whole
+    /// drawing, so the panels must not recompute it every frame.
+    summaries: Vec<std::sync::OnceLock<ObjectSummary>>,
+    /// Recent [`Self::hit_test_all`] questions and answers, newest last. A hit
+    /// test walks every subpath of every path, and one press asks it at two
+    /// tolerances, again on every frame of the drag that follows.
+    recent_hits: std::sync::Mutex<Vec<(HitKey, Vec<TargetId>)>>,
 }
+
+/// How many [`ObjectModelProvider::recent_hits`] are kept.
+const RECENT_HITS: usize = 4;
+/// An engine hit test at least this slow is traced as `hit-test ms=`.
+const HIT_TRACED_MS: u128 = 5;
+
+/// A point hit-test's inputs, compared bit for bit.
+type HitKey = (usize, u32, u32, u64);
 
 /// Which KIND of part the "Part" rung is standing on for a given object.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -196,6 +214,8 @@ impl ObjectModelProvider {
         let (w, h, to_canvas) = page_device_geometry(page, 1.0);
         Ok(Self {
             page_index,
+            summaries: unfilled(&objects),
+            recent_hits: std::sync::Mutex::new(Vec::new()),
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
@@ -217,6 +237,8 @@ impl ObjectModelProvider {
     pub fn from_parts(page_index: usize, objects: PageObjects, to_canvas: Transform) -> Self {
         Self {
             page_index,
+            summaries: unfilled(&objects),
+            recent_hits: std::sync::Mutex::new(Vec::new()),
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
@@ -248,6 +270,17 @@ impl ObjectModelProvider {
     #[must_use]
     pub fn page_objects(&self) -> &PageObjects {
         &self.objects
+    }
+
+    /// [`describe_object`] of object `index`, computed once per provider.
+    #[must_use]
+    pub fn summary(&self, index: usize) -> Option<&ObjectSummary> {
+        let object = self.objects.objects.get(index)?;
+        Some(
+            self.summaries
+                .get(index)?
+                .get_or_init(|| describe_object(object)),
+        )
     }
 
     /// Which subpath of `object` a canvas-space click lands on — the second
@@ -382,7 +415,7 @@ impl ObjectModelProvider {
     #[must_use]
     pub fn subpath_count(&self, index: usize) -> usize {
         match self.objects.objects.get(index) {
-            Some(VectorObject::Path(path)) => path.page_subpaths().len(),
+            Some(VectorObject::Path(path)) => path.subpaths.len(),
             _ => 0,
         }
     }
@@ -403,16 +436,40 @@ impl ObjectModelProvider {
         if page_index != self.page_index {
             return Vec::new();
         }
+        let key = (
+            page_index,
+            point.x.to_bits(),
+            point.y.to_bits(),
+            tolerance.to_bits(),
+        );
+        let mut recent = self
+            .recent_hits
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some((_, answer)) = recent.iter().find(|(asked, _)| *asked == key) {
+            return answer.clone();
+        }
         let Some(pdf) = self.canvas_to_pdf(point) else {
             return Vec::new();
         };
-        hit_test_point_deep(&self.objects, pdf, resolve(tolerance))
+        let started = std::time::Instant::now();
+        let answer: Vec<TargetId> = hit_test_point_deep(&self.objects, pdf, resolve(tolerance))
             .into_iter()
             .map(|hit| match hit {
                 HitTarget::Object(i) => TargetId::Object(i as u64),
                 HitTarget::Leaf(i) => TargetId::Leaf(i as u64),
             })
-            .collect()
+            .collect();
+        let took = started.elapsed().as_millis();
+        if took >= HIT_TRACED_MS {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            crate::diag::trace(|| format!("hit-test page={page_index} ms={took}"));
+        }
+        if recent.len() == RECENT_HITS {
+            recent.remove(0);
+        }
+        recent.push((key, answer.clone()));
+        answer
     }
 
     /// The page paint-order index of the **outermost form** enclosing a
@@ -578,4 +635,13 @@ fn resolve(tolerance: f64) -> f64 {
     } else {
         FALLBACK_SELECT_TOLERANCE
     }
+}
+
+/// One empty summary slot per object.
+fn unfilled(objects: &PageObjects) -> Vec<std::sync::OnceLock<ObjectSummary>> {
+    objects
+        .objects
+        .iter()
+        .map(|_| std::sync::OnceLock::new())
+        .collect()
 }

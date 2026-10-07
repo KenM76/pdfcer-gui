@@ -70,6 +70,7 @@ pub fn show(
     let gutters = rulers::reserve(ui, doc.view.rulers && !doc.pages.is_empty());
     let mut content = gutters.content_ui(ui);
     let (tokens, geometry) = show_in(&mut content, doc, host, find, sampled, actions);
+    crate::diag::frame_phase("canvas-interact");
     rulers::draw(ui, doc, gutters, geometry.as_ref());
     // Starting a guide drag needs a ruler to drag out of; *finishing* one does
     // not, because it may have started on the canvas. So the two halves are
@@ -724,7 +725,22 @@ fn show_in(
         (drawn, avail, content_response.hovered(), content_response)
     });
 
+    crate::diag::frame_phase("canvas-pages");
     let (drawn, viewport_size, content_hovered, content_response) = scroll_output.inner;
+    // The pages drawn this frame with no picture, 1-based, `-` for none.
+    crate::diag::trace_changed(BLANK_SLOT, || {
+        let blank: Vec<String> = drawn
+            .iter()
+            .filter(|d| d.raster.is_none())
+            .map(|d| (d.page + 1).to_string())
+            .collect();
+        let pages = if blank.is_empty() {
+            "-".to_owned()
+        } else {
+            blank.join(",")
+        };
+        format!("canvas-pages-blank pages={pages}")
+    });
     // The offset the area settled on THIS frame: the `offset_before` of any
     // zoom step the operator starts now, and the base the next frame's
     // middle-drag pan moves from.
@@ -954,6 +970,7 @@ fn show_in(
     // page's covers its sheet, the content's covers the sheet AND the gaps AND
     // the slack `geometry::content_extent` adds on every side, which is where
     // an object dragged past the page edge actually is.
+    crate::diag::frame_phase("canvas-overlays");
     let page_gesture = image_response.dragged()
         || image_response.drag_stopped()
         || image_response.clicked()
@@ -1140,6 +1157,9 @@ fn show_in(
         }),
     )
 }
+
+/// Trace slot for the canvas pages drawn without a picture.
+const BLANK_SLOT: &str = "canvas-pages-blank"; // ui-text-exempt: trace slot name, never displayed
 
 /// The canvas's scroll-bar style: **solid, visible, and outside the page**.
 ///

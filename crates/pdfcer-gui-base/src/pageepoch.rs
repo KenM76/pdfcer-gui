@@ -38,6 +38,10 @@ pub struct PageEpochs {
     /// page's answer. The invariant is a property of the issuer rather than of
     /// the arithmetic in `get`, which is why `get` can stay a plain `max`.
     next: u64,
+    /// Raised whenever a page index may name a different sheet (a page added,
+    /// removed, reordered or turned). A per-page picture survives a content
+    /// edit as a stale picture of the same sheet; it does not survive this.
+    structure: u64,
 }
 
 impl PageEpochs {
@@ -73,6 +77,17 @@ impl PageEpochs {
     /// Track a change in the number of pages.
     pub fn resize(&mut self, page_count: usize) {
         self.per_page.resize(page_count, self.all);
+    }
+
+    /// Record that page indices may now name different sheets.
+    pub fn bump_structure(&mut self) {
+        self.structure = self.structure.wrapping_add(1);
+    }
+
+    /// How many times [`Self::bump_structure`] has run.
+    #[must_use]
+    pub fn structure(&self) -> u64 {
+        self.structure
     }
 }
 

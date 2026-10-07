@@ -543,6 +543,15 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 - **G133** — an inferred OCR paragraph splits at its last line: `ocr-two-columns.pdf` gives 15 lines in 7 blocks for 4 paragraphs, and on the engine's own paragraph test a short last line splits its paragraph depending on its words' ink shape. The shell passes words and does no grouping; `recognised_text_reads_column_by_column` will require exactly 4 blocks when it lands.
 
+## Filed requests for edit performance — not verdict rows
+
+What still holds the UI thread on an edit after `an_edit_never_blanks_or_blocks`
+passes: engine time the shell cannot move off the UI thread.
+
+- **G139** — a point hit test on a dense path transforms every subpath it holds: 62–65 ms per call on `heavy-pages.pdf`. `ObjectModelProvider::hit_test_all` keeps its last four answers so a drag does not repeat it; the press itself still pays.
+- **G140** — after an edit the page model is only available by decomposing the whole page again: 163–221 ms on the fixture, 469 ms on the benchmark plan.
+- **G141** — moving one object rewrites every stream the page draws, a shared one included: 172–252 ms. Also asks for a way to run a verb off the UI thread.
+
 ## Filed requests for Word-like text editing — not verdict rows
 
 The requests `docs/plans/WORDLIKE_PLAN.md` waits on, filed in the request

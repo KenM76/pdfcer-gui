@@ -539,6 +539,78 @@ fn frame_tick() {
     }
 }
 
+/// A frame that held the UI thread at least this long is traced as `frame-long`.
+const LONG_FRAME: std::time::Duration = std::time::Duration::from_millis(50);
+
+thread_local! {
+    /// When the frame now being built started, set by [`begin_ui_frame`].
+    static FRAME_STARTED: std::cell::Cell<Option<std::time::Instant>> =
+        const { std::cell::Cell::new(None) };
+    /// The last [`frame_phase`] mark, or the frame's start.
+    static PHASE_MARK: std::cell::Cell<Option<std::time::Instant>> =
+        const { std::cell::Cell::new(None) };
+    /// This frame's phases so far: name and milliseconds.
+    static PHASES: std::cell::RefCell<Vec<(&'static str, u128)>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// A phase shorter than this is left out of a `frame-long` line.
+const PHASE_SHOWN_MS: u128 = 5;
+
+/// Mark the top of a frame, so [`end_ui_frame`] can time it.
+///
+/// ```text
+/// pdfcer-diag frame-long ms=182 phases=docks:131,settle:40
+/// ```
+///
+/// `phases=` names each [`frame_phase`] section of 5 ms or more, `-` for none.
+///
+/// The time is the application's own work between the top of `ui` and the end
+/// of the frame — what holds the next input back — not paint or upload time.
+pub fn begin_ui_frame() {
+    if on() {
+        let now = std::time::Instant::now();
+        FRAME_STARTED.set(Some(now));
+        PHASE_MARK.set(Some(now));
+        PHASES.with_borrow_mut(Vec::clear);
+    }
+}
+
+/// Close the frame section that ends here, under `name`, for the
+/// `frame-long` line's `phases=`. A no-op unless tracing.
+pub fn frame_phase(name: &'static str) {
+    let Some(mark) = PHASE_MARK.get() else {
+        return;
+    };
+    let now = std::time::Instant::now();
+    PHASE_MARK.set(Some(now));
+    PHASES.with_borrow_mut(|p| p.push((name, (now - mark).as_millis())));
+}
+
+/// Trace the frame [`begin_ui_frame`] opened if it took [`LONG_FRAME`] or more.
+fn trace_long_frame() {
+    let Some(started) = FRAME_STARTED.take() else {
+        return;
+    };
+    PHASE_MARK.set(None);
+    let phases = PHASES.take();
+    let took = started.elapsed();
+    if took >= LONG_FRAME {
+        let shown: Vec<String> = phases
+            .iter()
+            .filter(|(_, ms)| *ms >= PHASE_SHOWN_MS)
+            .map(|(name, ms)| format!("{name}:{ms}"))
+            .collect();
+        let shown = if shown.is_empty() {
+            "-".to_owned()
+        } else {
+            shown.join(",")
+        };
+        let ms = took.as_millis();
+        eprintln!("pdfcer-diag frame-long ms={ms} phases={shown}"); // ui-text-exempt: diagnostic trace
+    }
+}
+
 /// **Close a frame's region census and report anything that stopped being
 /// drawn.**
 pub fn end_ui_frame() {
@@ -546,6 +618,7 @@ pub fn end_ui_frame() {
         return;
     }
     frame_tick();
+    trace_long_frame();
     let mut this = lock(&UI_RECTS_THIS_FRAME);
     let mut last = lock(&UI_RECTS_LAST_FRAME);
     let mut retired: Vec<String> = last.difference(&this).cloned().collect();
