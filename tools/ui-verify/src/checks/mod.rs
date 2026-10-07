@@ -217,6 +217,9 @@ pub mod form_groups;
 
 pub mod form_leaf_descend;
 
+/// Shared driving for the ce dimension checks on `dimension-scaled.pdf`.
+mod dimdrive;
+pub mod dimension_text_select;
 pub mod dimension_tool_options;
 pub mod form_leaf_move;
 pub mod form_node_move;

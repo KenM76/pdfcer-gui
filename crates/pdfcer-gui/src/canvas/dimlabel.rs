@@ -95,9 +95,35 @@ pub fn screen_quad(
     Some(out)
 }
 
+/// The canvas-space corners of the text of the ce dimension that `annot`
+/// draws, as it stands; any kind. One engine bake, so asked per click and
+/// only of a dimension whose `/Rect` already holds the click.
+#[must_use]
+pub fn canvas_quad_of(
+    doc: &OpenDoc,
+    page: &pdfcer_core::page_tree::Page,
+    annot: pdfcer_core::object::ObjId,
+) -> Option<[Pos2; 4]> {
+    let model = doc.session.dimension_model();
+    let record = model.dimensions().iter().find(|r| r.annot == Some(annot))?;
+    let quad = doc
+        .session
+        .dimension_preview(record.id, &record.kind)
+        .ok()?
+        .appearance
+        .label_quad;
+    let mut out = [Pos2::ZERO; 4];
+    for (slot, p) in out.iter_mut().zip(quad) {
+        #[allow(clippy::cast_possible_truncation)]
+        let at = Pos2::new(p.x as f32, p.y as f32);
+        *slot = crate::viewer::pdf_space_to_canvas(at, page)?;
+    }
+    Some(out)
+}
+
 /// Whether `p` lies in the convex quad `q`, of either winding, widened by
 /// `slack` on every side.
-fn inside(q: [Pos2; 4], p: Pos2, slack: f32) -> bool {
+pub(crate) fn inside(q: [Pos2; 4], p: Pos2, slack: f32) -> bool {
     let mut distances = [0.0_f32; 4];
     for (i, d) in distances.iter_mut().enumerate() {
         let (a, b) = (q[i], q[(i + 1) % 4]);

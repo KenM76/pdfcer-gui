@@ -4,21 +4,13 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/dimension_tool_options.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
+use super::dimdrive::{click_page, press, reveal, run};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
-use crate::launch::{LaunchSpec, Session};
+use crate::launch::Session;
 use crate::report::CheckReport;
 
-const OFFSCREEN: &str = "-4200,-4200,1400,1000";
-const FIXTURE: &str = "dimension-scaled.pdf";
-const METHOD: &str = "Rebuild it with `python fixtures/dimension-scaled.PROVENANCE.py`.";
-const PAGE: PageGeometry = PageGeometry {
-    width_pt: 400.0,
-    height_pt: 300.0,
-};
 const PROPERTIES_TAB: &str = "dock.tab.file.properties";
 const ADD_HEADING: &str = "dimension-groups.heading.add";
 /// Mirrors `panels::properties::tooldim`'s regions.
@@ -53,26 +45,6 @@ pub struct AHorizontalDimensionMeasuresOnlyTheRun;
 pub struct ADimensionJoinsTheGroupMadeInToolOptions;
 /// A group added with "Same as Default" in feet reads the default's lengths.
 pub struct ANewGroupCopiesAGroupsScaleInItsOwnUnit;
-
-type Body =
-    fn(&CheckContext, &mut CheckReport, &Session, &ScriptedPointer) -> Result<Option<String>>;
-
-fn run(check: &dyn Check, ctx: &CheckContext, invoke: &str, stem: &str, body: Body) -> CheckReport {
-    let mut report = CheckReport::new(check.name(), check.defect());
-    let driven = launch(ctx, &mut report, invoke, stem).and_then(|(session, pointer)| {
-        let outcome = body(ctx, &mut report, &session, &pointer);
-        let parked = pointer.gone(&session);
-        match outcome? {
-            Some(failure) => Ok(Some(failure)),
-            None => parked.map(|_| None),
-        }
-    });
-    match driven {
-        Ok(Some(failure)) => report.fail(failure),
-        Ok(None) => report.pass(),
-        Err(why) => report.from_error(&why),
-    }
-}
 
 impl Check for AHorizontalDimensionMeasuresOnlyTheRun {
     fn name(&self) -> &'static str {
@@ -135,102 +107,6 @@ impl Check for ANewGroupCopiesAGroupsScaleInItsOwnUnit {
             copy_scale,
         )
     }
-}
-
-fn launch(
-    ctx: &CheckContext,
-    report: &mut CheckReport,
-    invoke: &str,
-    stem: &str,
-) -> Result<(Session, ScriptedPointer)> {
-    let exe = ctx.resolve_exe().ok_or_else(|| {
-        Error::new(format!(
-            "no binary to drive. Pass --exe, or build the profile's default at {}.",
-            ctx.profile.default_exe
-        ))
-    })?;
-    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
-        Error::new("the profile has no viewport variable to place the window off the desktop.")
-    })?;
-    let doc = ctx.out(&format!("{stem}.pdf"));
-    std::fs::copy(repo_fixture(FIXTURE, METHOD)?, &doc)
-        .map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
-    spec.pdf = Some(doc);
-    for (k, v) in [
-        (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
-        SHELL_DIAG_ENV,
-        (viewport_env, OFFSCREEN),
-        ("PDFCER_DIAG_INVOKE", invoke),
-    ] {
-        spec.env.push((k.to_owned(), v.to_owned()));
-    }
-    spec.place = false;
-    spec.allow_stale = ctx.allow_stale;
-    spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    report.artifact(session.trace_path().to_path_buf());
-    report.artifact(pointer.path().to_path_buf());
-    report.note(format!("launched as pid {}", session.pid()));
-    session.settle(60);
-    Ok((session, pointer))
-}
-
-fn ui_rect_event(ctx: &CheckContext) -> Result<&'static str> {
-    ctx.profile
-        .vocab
-        .ui_rect_event
-        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))
-}
-
-/// Click `region` where it was last declared; an error naming it when it is not.
-fn press(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-    region: &str,
-) -> Result<()> {
-    let (rect, vp) =
-        declared_in(&session.trace()?, ui_rect_event(ctx)?, region).ok_or_else(|| {
-            Error::new(format!(
-                "`{region}` was never declared. Trace: {}.",
-                session.trace_path().display()
-            ))
-        })?;
-    pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
-    session.settle(30);
-    Ok(())
-}
-
-/// Press `opener` (a dock tab or a folded heading) when `region` has not been drawn yet.
-fn reveal(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-    region: &str,
-    opener: &str,
-) -> Result<()> {
-    if declared_in(&session.trace()?, ui_rect_event(ctx)?, region).is_none() {
-        press(ctx, session, pointer, opener)?;
-    }
-    Ok(())
-}
-
-/// Click `at` (page points) on page 1, through the current canvas mapping.
-fn click_page(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-    at: (f64, f64),
-) -> Result<()> {
-    let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, PAGE, 0)?;
-    let point = mapping.doc_to_window(DocPoint::new(0, at.0, at.1))?;
-    pointer.hover(session, point)?;
-    session.settle(10);
-    pointer.click(session, point)?;
-    session.settle(20);
-    Ok(())
 }
 
 /// Draw A → B, placed at PLACE; the new ce dimension's `dimension-added` line

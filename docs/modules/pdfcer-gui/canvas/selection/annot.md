@@ -284,3 +284,14 @@ tolerance the content hit test uses. That is deliberate: a dimension line
 must be exactly as easy to hit as the drawing line beside it, and a
 separately chosen number here would drift from it the first time either was
 tuned.
+
+### A ce dimension's text claims a click
+
+`under_pointer` accepts a click inside a ce dimension's value text as well as
+on its segments: the segments do not cover the text, so without this only the
+lines selected it (O288 item 7). The box is the engine's
+`DimensionPreview::appearance.label_quad`, through
+`canvas::dimlabel::canvas_quad_of`, the same box the selected dimension's text
+drag hit-tests. It is baked only for a dimension whose `/Rect` already holds
+the click, so a click costs at most one bake per dimension under it. Driven by
+`clicking_a_dimensions_text_selects_it`.

@@ -145,10 +145,18 @@ pub fn selectable_on(
 /// The annotation under `point`, or `None`.
 #[must_use]
 pub fn hit(candidates: &[Candidate], point: Pos2, tolerance: f32) -> Option<AnnotSelection> {
+    hit_where(candidates, |c| c.claims(point, tolerance))
+}
+
+/// The topmost candidate `claims` accepts, as a selection.
+fn hit_where(
+    candidates: &[Candidate],
+    claims: impl Fn(&Candidate) -> bool,
+) -> Option<AnnotSelection> {
     candidates
         .iter()
         .rev()
-        .find(|c| c.claims(point, tolerance))
+        .find(|c| claims(c))
         .map(|c| AnnotSelection {
             target: c.target.clone(),
             outline: c.outline,
@@ -241,7 +249,17 @@ pub fn under_pointer(
     let candidates = selectable_on(&view, page, page_index, &ce, &shapes);
     #[allow(clippy::cast_possible_truncation)]
     let tolerance = map.tolerance() as f32;
-    hit(&candidates, point, tolerance)
+    // A ce dimension's value text is part of it: its segments do not cover
+    // the text, so the engine's own label box claims a click there too. Baked
+    // only for a dimension whose `/Rect` (which holds the text) holds the
+    // click, so a click costs one bake at most per dimension under it.
+    let on_text = |c: &Candidate| {
+        c.target.kind == AnnotKind::CeDimension
+            && c.outline.expand(tolerance).contains(point)
+            && crate::canvas::dimlabel::canvas_quad_of(doc, page, c.target.id)
+                .is_some_and(|q| crate::canvas::dimlabel::inside(q, point, tolerance))
+    };
+    hit_where(&candidates, |c| c.claims(point, tolerance) || on_text(c))
 }
 
 #[cfg(test)]
