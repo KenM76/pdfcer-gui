@@ -168,3 +168,4 @@
 - [A release build skips the tests](feedback_release_build_skips_tests.md) — clippy --all-targets before gates; a test literal cost a run.
 - [A missing-asset SKIP is the scratch folder](feedback_skip_on_missing_asset.md) — paddle "unrunnable" was 3 unlinked files.
 - [Git Bash ps cannot see a sibling call](feedback_ps_blind_sibling.md) — "no process" lied; check via Win32_Process before re-running gates.
+- [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
