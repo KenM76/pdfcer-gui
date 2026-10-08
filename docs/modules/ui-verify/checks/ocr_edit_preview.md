@@ -43,4 +43,6 @@ whether that section survives an edit; `an_edited_ocr_layer_stays_a_layer`
 
 - Painting the preview in the run's own fill instead of `colour32` fails
   assertion 3 (18 layer-coloured, 38 dark pixels).
-- Making `ocrlayer::holds` always false fails assertion 2 (`runs=0`).
+- Making `ocrlayer::edited_run` answer `None` fails assertion 2.
+- Letting `textedit::promote::widen` open a recognised word as its paragraph
+  fails assertion 1 (no `text-edit-shaped` line), as v0.5.0-dev.20261008.3 does.

@@ -130,14 +130,16 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) {
     };
     let run = *run;
     let started = std::time::Instant::now();
-    let result = paragraph(doc, draft.page, run, original).and_then(|p| {
-        if p.lines < 2 {
-            return Err(Declined::no_paragraph("one-line"));
-        }
-        let promoted = promoted(draft, &p);
-        rewrite(doc, draft.page, p.block, p.wrap, &promoted.text)?;
-        Ok((p, promoted))
-    });
+    let result = recognised(doc, draft.page, run)
+        .and_then(|()| paragraph(doc, draft.page, run, original))
+        .and_then(|p| {
+            if p.lines < 2 {
+                return Err(Declined::no_paragraph("one-line"));
+            }
+            let promoted = promoted(draft, &p);
+            rewrite(doc, draft.page, p.block, p.wrap, &promoted.text)?;
+            Ok((p, promoted))
+        });
     let ms = started.elapsed().as_millis();
     match result {
         Ok((p, promoted)) => {
@@ -162,6 +164,22 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) {
                 draft.page, d.token
             )
         }),
+    }
+}
+
+/// Declines a recognised (invisible) word: it stays a run draft, so the edit is
+/// drawn by the same preview that draws the OCR layer (`canvas::ocrink`), in
+/// the word's own size and scale, which a paragraph rewrite would flatten.
+fn recognised(doc: &OpenDoc, page: usize, run: usize) -> Result<(), Declined> {
+    let ocr = doc.provenance_page_text(page).is_some_and(|text| {
+        text.runs
+            .get(run)
+            .is_some_and(crate::canvas::ocrlayer::is_ocr_run)
+    });
+    if ocr {
+        Err(Declined::no_paragraph("recognised-word"))
+    } else {
+        Ok(())
     }
 }
 

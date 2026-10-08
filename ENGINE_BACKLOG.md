@@ -621,6 +621,7 @@ Filed in the request channel for O289's items. They join a verdict section when 
 - **G166** — recognition cannot be given, or denied, a dictionary (item 16).
 - **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17).
 - **G168** — no named 3D views or up-axis choice outside the CLI (item 12); the viewer computes the directions itself until then.
+- **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Worked around in `canvas::ocrink`, which lays each run out through `edit_text_preview` and fills `preview_outlines`; answered on the engine's main as `RenderOptions::with_invisible_text`, waiting for a tag.
 
 ## Filed requests for pasting in from other programs — not verdict rows
 

@@ -23,10 +23,11 @@ screen. Re-rasterizing per slider position would put a render request
 behind a drag, and `OPERATOR_REQUESTS.md` O24 is this shell's record of
 what that costs.
 
-The text's half is **vector, laid out every frame** by [`draw_text`]. It is
-never baked into a texture, because it must stay crisp at every zoom and
-because a cached overlay is a second rendering path for content that has
-exactly one.
+The text's half is drawn by [`draw_text`] in each word's own font through
+`canvas::ocrink`, which lays the page out with the text editor's preview, so
+the layer and an edit of it are one drawing. A run `ocrink` has not laid out
+yet, or cannot, is drawn by the stand-in here: the run's text in the interface
+font, fitted to its box, laid out every frame.
 
 The two sit at different places in `painting`'s layer order — the veil
 under the grid, because it is about the *paper*; the text above the grid
@@ -72,12 +73,13 @@ no state in which it does not show one.
 
 While a text edit is open on an invisible run and `textedit::shaped` has laid
 it out, that preview draws the run in its own font, in this layer's colour
-(`colour32`), and this module skips the run (`edited_box`, `holds`): drawing
-both would show the old and the new text on top of each other. The two
-extractions number runs differently, so the run is matched by its centre
-falling inside the edited run's box. When the preview has fallen back to the
-stand-in box, nothing is skipped. `ocr-layer-held runs=` traces how many runs
-were left to the editor.
+(`colour32`) and at its opacity, and this module skips the run
+(`edited_run`): drawing both would show the old and the new text on top of
+each other. The layer reads the provenance-bearing extraction
+(`OpenDoc::provenance_page_text`), whose run indices the editor uses, so the
+run is matched by index. When the preview has fallen back to the stand-in
+box, nothing is skipped. `ocr-layer-held runs=` traces how many runs were left
+to the editor.
 
 ## One page
 

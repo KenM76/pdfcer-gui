@@ -304,9 +304,12 @@ fn colour(c: &PreviewColour) -> Color32 {
 
 /// The page-space to screen affine, as `[a, b, c, d, e, f]` with
 /// `x' = a·x + c·y + e` and `y' = b·x + d·y + f`, read off three mapped points.
-fn page_to_screen(p: &Preview<'_>, page: &pdfcer_core::page_tree::Page) -> Option<[f32; 6]> {
+pub(crate) fn page_to_screen(
+    map: &crate::canvas::mapping::PageMapping,
+    page: &pdfcer_core::page_tree::Page,
+) -> Option<[f32; 6]> {
     let at = |x: f32, y: f32| {
-        crate::viewer::pdf_space_to_canvas(Pos2::new(x, y), page).map(|c| p.map.to_screen(c))
+        crate::viewer::pdf_space_to_canvas(Pos2::new(x, y), page).map(|c| map.to_screen(c))
     };
     let o = at(0.0, 0.0)?;
     let ex = at(1.0, 0.0)? - o;
@@ -314,7 +317,8 @@ fn page_to_screen(p: &Preview<'_>, page: &pdfcer_core::page_tree::Page) -> Optio
     Some([ex.x, ex.y, ey.x, ey.y, o.x, o.y])
 }
 
-fn apply(m: &[f32; 6], q: Pos2) -> Pos2 {
+/// `q` through the affine `m` (as [`page_to_screen`] writes it).
+pub(crate) fn apply(m: &[f32; 6], q: Pos2) -> Pos2 {
     Pos2::new(
         m[0] * q.x + m[2] * q.y + m[4],
         m[1] * q.x + m[3] * q.y + m[5],
@@ -338,7 +342,7 @@ pub fn paint(
     let Some(page) = p.doc.pages.get(p.page_index) else {
         return false;
     };
-    let Some(m) = page_to_screen(p, page) else {
+    let Some(m) = page_to_screen(p.map, page) else {
         return false;
     };
     let [x0, y0, x1, y1] = shaped.bbox.map(|v| v as f32);
@@ -383,12 +387,18 @@ pub fn paint(
             ));
         }
     }
+    // An invisible run is drawn at the OCR layer's opacity, as the layer
+    // draws the rest of it.
+    let opacity = match (shaped.invisible, p.doc.view.ocr_overlay) {
+        (true, Some(strength)) => crate::canvas::ocrlayer::painted_fraction(strength),
+        _ => 1.0,
+    };
     painter.image(
         ink.id(),
         body,
         egui::Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)),
-        // NOT A THEME COLOUR: the identity tint.
-        Color32::WHITE,
+        // NOT A THEME COLOUR: the identity tint, scaled to the run's opacity.
+        Color32::WHITE.gamma_multiply(opacity),
     );
     painter.rect_stroke(
         body,
@@ -439,6 +449,29 @@ fn ink_texture(
     {
         return Some(texture);
     }
+    let image = fill_paths(shaped.outlines.iter().flatten(), m, body, ppp, colour)?;
+    let [w, h] = image.size;
+    crate::render::pressure::record_other(
+        ctx,
+        crate::render::pressure::Surface::TextDraft,
+        w as u32,
+        h as u32,
+    );
+    let texture = ctx.load_texture(TEXTURE, image, egui::TextureOptions::LINEAR);
+    ctx.data_mut(|d| d.insert_temp(id, (key, texture.clone())));
+    Some(texture)
+}
+
+/// `paths` (page space) filled in `colour` through `m` into an image of the
+/// screen rectangle `body` at `ppp` pixels per point.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+pub(crate) fn fill_paths<'a>(
+    paths: impl IntoIterator<Item = &'a Path>,
+    m: &[f32; 6],
+    body: egui::Rect,
+    ppp: f32,
+    colour: Color32,
+) -> Option<egui::ColorImage> {
     let (w, h) = (
         (body.width() * ppp).ceil().max(1.0) as u32,
         (body.height() * ppp).ceil().max(1.0) as u32,
@@ -455,12 +488,11 @@ fn ink_texture(
     let mut paint = tiny_skia::Paint::default();
     paint.set_color_rgba8(colour.r(), colour.g(), colour.b(), 255);
     paint.anti_alias = true;
-    for path in shaped.outlines.iter().flatten() {
+    for path in paths {
         pixmap.fill_path(path, &paint, tiny_skia::FillRule::Winding, to_pixels, None);
     }
-    let image = egui::ColorImage::from_rgba_premultiplied([w as usize, h as usize], pixmap.data());
-    crate::render::pressure::record_other(ctx, crate::render::pressure::Surface::TextDraft, w, h);
-    let texture = ctx.load_texture(TEXTURE, image, egui::TextureOptions::LINEAR);
-    ctx.data_mut(|d| d.insert_temp(id, (key, texture.clone())));
-    Some(texture)
+    Some(egui::ColorImage::from_rgba_premultiplied(
+        [w as usize, h as usize],
+        pixmap.data(),
+    ))
 }

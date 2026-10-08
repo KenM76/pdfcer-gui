@@ -24,6 +24,9 @@ pub enum Surface {
     Icon,
     /// A text draft's ink, drawn in the run's own font while it is typed.
     TextDraft,
+    /// The OCR layer's text in its own fonts, sized by the visible part of
+    /// the page.
+    OcrLayer,
     /// A ce dimension's baked appearance, drawn where a drag would put it.
     DimensionDrag,
     /// The 3D model viewer's picture, sized by its window, not the zoom.

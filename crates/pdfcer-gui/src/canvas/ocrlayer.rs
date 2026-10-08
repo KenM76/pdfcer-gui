@@ -128,29 +128,37 @@ pub(super) fn draw_text(
     if alpha == 0 {
         return;
     }
-    let ink = super::overlay::at_alpha(colour32(painter.ctx()), alpha);
-    let Some(text) = doc.page_text() else {
+    let colour = colour32(painter.ctx());
+    let ink = super::overlay::at_alpha(colour, alpha);
+    let Some(page_index) = doc.page_text().map(|text| text.page_index) else {
+        return;
+    };
+    // The provenance-bearing extraction, because the edit in progress and
+    // `ocrink` both name runs by its indices.
+    let Some(text) = doc.provenance_page_text(page_index) else {
         return;
     };
     // The page the CACHE describes, found among the pages drawn — never
     // `pages[0]` and never the acting page's map. See the header.
-    let Some(view) = pages.iter().find(|view| view.page == text.page_index) else {
+    let Some(view) = pages.iter().find(|view| view.page == page_index) else {
         return;
     };
-    let Some(page) = doc.pages.get(text.page_index) else {
+    let Some(page) = doc.pages.get(page_index) else {
         return;
     };
-    let edited = edited_box(painter.ctx(), doc, text.page_index);
+    let edited = edited_run(painter.ctx(), page_index);
+    let laid = super::ocrink::step(painter.ctx(), doc, &text);
+    super::ocrink::paint(painter, doc, view, &laid, edited, colour, alpha);
     let mut held = 0;
-    for run in &text.runs {
+    for (i, run) in text.runs.iter().enumerate() {
         if !is_ocr_run(run) {
             continue;
         }
-        if run
-            .bbox
-            .is_some_and(|b| edited.is_some_and(|e| holds(e, b)))
-        {
+        if edited == Some(i) {
             held += 1;
+            continue;
+        }
+        if laid.drawn(i) {
             continue;
         }
         // A run with no geometry — derived whitespace, or an `/ActualText`
@@ -176,29 +184,15 @@ pub(super) fn draw_text(
     });
 }
 
-/// The page-space box of the invisible run an open text edit is rewriting on
-/// `page`, which `textedit::shaped` draws instead in its own font. `None`
-/// while that preview has fallen back to the stand-in box.
-fn edited_box(
-    ctx: &egui::Context,
-    doc: &OpenDoc,
-    page: usize,
-) -> Option<pdfcer_core::page_tree::Rect> {
+/// The invisible run an open text edit is rewriting on `page`, which
+/// `textedit::shaped` draws instead. `None` while that preview has fallen
+/// back to the editor box.
+fn edited_run(ctx: &egui::Context, page: usize) -> Option<usize> {
     let draft = super::textedit::read(ctx)?;
     let super::textedit::Anchor::Run { run, .. } = draft.anchor else {
         return None;
     };
-    if draft.page != page || !super::textedit::shaped::read(ctx, &draft)?.invisible() {
-        return None;
-    }
-    doc.provenance_page_text(page)?.runs.get(run)?.bbox
-}
-
-/// Whether `run`'s centre lies inside `edited`: the two extractions group the
-/// same glyphs, so the edited run's box holds its counterpart's centre.
-fn holds(edited: pdfcer_core::page_tree::Rect, run: pdfcer_core::page_tree::Rect) -> bool {
-    let (x, y) = ((run.llx + run.urx) / 2.0, (run.lly + run.ury) / 2.0);
-    edited.llx <= x && x <= edited.urx && edited.lly <= y && y <= edited.ury
+    (draft.page == page && super::textedit::shaped::read(ctx, &draft)?.invisible()).then_some(run)
 }
 
 /// One run, fitted to its own box.

@@ -203,6 +203,8 @@ pub mod moving;
 /// header carries why the ring is scoped to whatever the selection is
 /// standing in rather than to the page’s own paint order.
 pub mod objring;
+/// The OCR layer's runs in their own fonts, through the text editor's preview.
+pub mod ocrink;
 /// **The invisible text a scan carries, drawn** — `OPERATOR_REQUESTS.md`
 /// O226 and O229. Two layers at two places in `painting`'s order: a paper veil
 /// that fades the raster without re-rendering it, and the recognised runs laid

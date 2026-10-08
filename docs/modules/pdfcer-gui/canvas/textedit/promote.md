@@ -55,8 +55,10 @@ Each decline traces `text-edit-enter-declined page= run= reason=` with one of
 `run-text-differs`, `mixed-looks`, `engine-refuses`. A promotion traces
 `text-edit-promoted page= run= block= len= caret=`.
 
-`widen` declines the same way, plus `one-line` for a paragraph of one line,
-and leaves the run draft. It traces `text-edit-widened page= run= block=
+`widen` declines the same way, plus `one-line` for a paragraph of one line
+and `recognised-word` for an invisible (OCR) run, and leaves the run draft. A
+recognised word is edited as its own run so its preview is the OCR layer's own
+drawing (`canvas::ocrink`), in the word's size and scale. It traces `text-edit-widened page= run= block=
 lines= breaks= len= ms=` or `text-edit-widen-declined page= run= reason= ms=`.
 
 ## Options

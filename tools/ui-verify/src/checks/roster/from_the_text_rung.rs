@@ -76,6 +76,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         }),
         Box::new(invisible_text_scripted::AddedInvisibleTextIsSavedInvisible),
         Box::new(ocr_edit_preview::AnOcrWordIsPreviewedInItsOwnFont),
+        Box::new(ocr_layer_wysiwyg::TheOcrLayerDrawsAWordAsItsEditDoes),
         Box::new(ocr_layer_kept::AnEditedOcrLayerStaysALayer),
         Box::new(ocr_export_filter::RecognisedChoiceFilters {
             format: ocr_export_scripted::Format::Word,
