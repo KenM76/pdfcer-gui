@@ -726,7 +726,13 @@ pub(super) fn interact(
                 if phase == crate::canvas::gesture::Phase::Complete
                     && let Some(page) = doc.current_page()
                 {
-                    crate::canvas::textedit::begin_box(&ctx, doc, page_index, from, to, page);
+                    crate::canvas::textedit::begin_box(
+                        &ctx,
+                        (page_index, page),
+                        kind.unwrap_or(crate::canvas::textedit::TextEditKind::Add),
+                        from,
+                        to,
+                    );
                 }
             }
         }

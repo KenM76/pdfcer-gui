@@ -1074,6 +1074,8 @@ pub mod augment_subset;
 pub mod draft_arrows;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
+/// A paragraph re-opens as one draft and keeps its hand breaks.
+pub mod draft_paragraph;
 /// Enter in a paragraph on the page breaks it.
 pub mod enter_paragraph;
 pub mod ime;

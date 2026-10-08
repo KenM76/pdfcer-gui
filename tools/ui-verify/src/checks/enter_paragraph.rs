@@ -1,6 +1,6 @@
-//! `enter_breaks_a_paragraph_on_the_page` — Enter at the end of a line of a
-//! paragraph already on the page opens the paragraph and breaks it there;
-//! `Ctrl+S` writes two paragraphs.
+//! `enter_breaks_a_paragraph_on_the_page` — a click on a line of a paragraph
+//! already on the page opens the paragraph, Enter at the line's end breaks it
+//! there, and `Ctrl+S` writes the break.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/enter_paragraph.md`.
 
@@ -30,8 +30,8 @@ const LINES: [&str; 6] = [
 ];
 const CARET_LINE: usize = 2;
 const TYPING: &str = "text-edit-typing"; // ui-text-exempt: a trace event name, never displayed
-const PROMOTED: &str = "text-edit-promoted"; // ui-text-exempt: a trace event name, never displayed
-const DECLINED: &str = "text-edit-enter-declined"; // ui-text-exempt: a trace event name, never displayed
+const WIDENED: &str = "text-edit-widened"; // ui-text-exempt: a trace event name, never displayed
+const DECLINED: &str = "text-edit-widen-declined"; // ui-text-exempt: a trace event name, never displayed
 const APPLIED: &str = "edit-block-text-applied"; // ui-text-exempt: a trace event name, never displayed
 const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
 
@@ -122,21 +122,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     pointer.key(&session, None, "Enter", None)?;
     session.settle(20);
 
-    // --- 1: the line opened into its paragraph, caret where it was ---------
-    let joined = LINES.join(" ");
-    let want_len = joined.chars().count();
-    let want_caret = LINES[..=CARET_LINE]
-        .iter()
-        .map(|l| l.chars().count() + 1)
-        .sum::<usize>()
-        - 1;
-    let promoted = last_raw(&session, PROMOTED)?;
-    let len = last_num(&session, PROMOTED, "len")?;
-    let caret = last_num(&session, PROMOTED, "caret")?;
-    if len != Some(want_len) || caret != Some(want_caret) {
+    // --- 1: the click opened the paragraph -------------------------------
+    // Each line end is one character, a space or a kept break.
+    let want_len = LINES.iter().map(|l| l.chars().count()).sum::<usize>() + LINES.len() - 1;
+    let widened = last_raw(&session, WIDENED)?;
+    let len = last_num(&session, WIDENED, "len")?;
+    let breaks = last_num(&session, WIDENED, "breaks")?.unwrap_or(0);
+    if len != Some(want_len) {
         return Ok(Some(format!(
-            "Enter at the end of line 3 did not open the paragraph: promoted {promoted:?} \
-             (want len={want_len} caret={want_caret}); declined {:?}. Trace: {path}.",
+            "a click on line {} did not open the paragraph: widened {widened:?} (want \
+             len={want_len}); declined {:?}. Trace: {path}.",
+            CARET_LINE + 1,
             last_raw(&session, DECLINED)?
         )));
     }
@@ -149,20 +145,21 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!(
-        "Enter opened the paragraph ({want_len} characters, caret {want_caret}) and broke it"
+        "the click opened the paragraph ({want_len} characters, {breaks} kept breaks) and \
+         Enter broke it"
     ));
     let shot = ctx.out("enter-paragraph-open.png");
     pointer.screenshot(&session, &shot)?;
     report.artifact(shot);
 
-    // --- 2: Ctrl+S commits two paragraphs and saves ------------------------
+    // --- 2: Ctrl+S commits one paragraph more than were kept, and saves ---
     pointer.key(&session, None, "S", Some("ctrl"))?;
     session.settle(40);
     let applied = last_raw(&session, APPLIED)?;
     let saved = last_raw(&session, SAVED)?;
     if !applied
         .as_deref()
-        .is_some_and(|l| l.contains("paragraphs=2"))
+        .is_some_and(|l| l.contains(&format!("paragraphs={}", breaks + 2)))
         || !saved.as_deref().is_some_and(|l| l.contains("outcome=ok"))
     {
         return Ok(Some(format!(

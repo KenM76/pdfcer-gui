@@ -106,7 +106,8 @@ the highlight.
 ### `fn click`
 
 Returns the refusal to show, if the click could not begin one. `Ok(())` means
-a draft is now in flight and the next keystroke will reach it.
+a draft is now in flight and the next keystroke will reach it. A run in a
+paragraph of two or more lines opens as the paragraph (`promote::widen`).
 
 # Why an existing draft is committed rather than discarded
 
@@ -120,7 +121,10 @@ unrecoverable, because a draft never reaches the undo stack.
 
 ### `fn begin_box`
 
-The operator, 2026-08-21: *"I should be able to make it multi line."*
+The multi-line entrance. The draft takes the armed tool's kind: `app::frame`
+settles any draft whose kind is not the armed tool's, so a box drawn under
+Edit text with kind `Add` would close on the next frame. The commit follows
+the anchor, so a box authors new text under either tool.
 
 # The conversion is `markup::band::endpoints`, not a new one
 

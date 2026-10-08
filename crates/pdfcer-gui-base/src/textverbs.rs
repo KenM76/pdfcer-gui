@@ -63,6 +63,8 @@ pub enum TextAction {
         run: usize,
         /// Which paragraph.
         block: usize,
+        /// The width to wrap it at, PDF points; `None` for the engine's own.
+        wrap: Option<f64>,
         /// Its new text; `\n` is a paragraph break.
         text: String,
     },

@@ -828,6 +828,7 @@ mod tests {
                 lly: 0.0,
                 urx: 100.0,
                 ury: 50.0,
+                wrap: None,
                 original: "a paragraph".to_owned(), // ui-text-exempt: test fixture text
             },
         ] {

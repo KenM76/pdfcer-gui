@@ -173,18 +173,18 @@ pub fn click(
         Anchor::Origin { .. } | Anchor::Box { .. } => 0,
         Anchor::Block { .. } => text.chars().count(),
     };
-    store(
-        ctx,
-        Draft {
-            page: click.page_index,
-            kind: click.kind,
-            anchor,
-            text,
-            caret,
-            mark: None,
-            seeded: false,
-        },
-    );
+    let mut draft = Draft {
+        page: click.page_index,
+        kind: click.kind,
+        anchor,
+        text,
+        caret,
+        mark: None,
+        seeded: false,
+    };
+    // A line of a paragraph opens as the whole paragraph.
+    super::promote::widen(click.doc, &mut draft);
+    store(ctx, draft);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
@@ -217,13 +217,14 @@ pub fn click(
 }
 
 /// **Open a draft anchored to a dragged rectangle** — the multi-line entrance.
+/// `kind` is the armed tool's: a draft of another kind is settled on the next
+/// frame. The commit follows the anchor, so either kind authors new text.
 pub fn begin_box(
     ctx: &egui::Context,
-    doc: &OpenDoc,
-    page_index: usize,
+    (page_index, page): (usize, &pdfcer_core::page_tree::Page),
+    kind: TextEditKind,
     from: egui::Pos2,
     to: egui::Pos2,
-    page: &pdfcer_core::page_tree::Page,
 ) {
     /// The smallest box, in PDF points, that is worth typing into.
     const MIN_PT: f64 = 12.0;
@@ -255,11 +256,7 @@ pub fn begin_box(
         ctx,
         Draft {
             page: page_index,
-            // `Add`, not `Edit`, and it is not a choice: the box authors new
-            // content through `add_text`. Carrying `Edit` here would send an
-            // empty box down `edit_text`'s planning path, which pins a span in a
-            // run that does not exist.
-            kind: TextEditKind::Add,
+            kind,
             anchor: Anchor::Box { llx, lly, urx, ury },
             text: String::new(),
             caret: 0,
@@ -267,7 +264,6 @@ pub fn begin_box(
             seeded: false,
         },
     );
-    let _ = doc;
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //

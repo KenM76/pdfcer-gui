@@ -234,6 +234,8 @@ pub enum Anchor {
         urx: f64,
         /// Upper-right y.
         ury: f64,
+        /// The width to rewrite it at, `None` for the engine's own.
+        wrap: Option<f64>,
         /// The paragraph's text when it was opened.
         original: String,
     },
@@ -422,6 +424,7 @@ pub(super) fn commit_into(
         Anchor::Block {
             block,
             run,
+            wrap,
             original,
             ..
         } if draft.text != *original => {
@@ -430,6 +433,7 @@ pub(super) fn commit_into(
                     page: draft.page,
                     run: *run,
                     block: *block,
+                    wrap: *wrap,
                     text: draft.text.clone(),
                 },
             ));

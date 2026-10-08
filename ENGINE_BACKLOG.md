@@ -591,6 +591,8 @@ channel. They join a verdict section when the engine answers.
 - **G076** — no verb replaces a paragraph's text and re-wraps it as one edit. Consumed for Enter by `canvas::textedit::promote` and `app::actions::blocktext`.
 - **G101** — a block does not say whether its runs share one look before `edit_block_text` flattens them. Worked around in `canvas::textedit::promote`, which compares font resource, size and fill only.
 - **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face. Consumed at commit by `app::actions::reface::try_commit`; the placeholder route remains for a match across several show operators.
+- **G162** — a paragraph rewrite at the default wrap splits its own widest line. Worked around in `canvas::textedit::promote::options`, which wraps at the box width plus 0.5 pt outside a table cell.
+- **G163** — a block does not say which of its line ends are hard breaks. Worked around in `canvas::textedit::promote::joint`, which keeps a break where the next line's first word would have fitted.
 
 ## Filed requests for pasting in from other programs — not verdict rows
 
