@@ -1,6 +1,7 @@
-//! Shared driving for the ce dimension checks on `fixtures/dimension-scaled.pdf`:
-//! launch off-screen with a ribbon invoke, press a declared region, click a
-//! page point.
+//! Shared off-screen driving: launch a fixture with a ribbon invoke, press a
+//! declared region, click a page point. The ce dimension checks use
+//! `fixtures/dimension-scaled.pdf` through [`run`]; others name theirs through
+//! [`run_on`].
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
@@ -18,6 +19,19 @@ pub(super) const PAGE: PageGeometry = PageGeometry {
     height_pt: 300.0,
 };
 
+/// A checked-in fixture, how to rebuild it, and its page size.
+pub(super) struct Fixture {
+    pub file: &'static str,
+    pub method: &'static str,
+    pub page: PageGeometry,
+}
+
+const DIMENSION_SCALED: Fixture = Fixture {
+    file: FIXTURE,
+    method: METHOD,
+    page: PAGE,
+};
+
 pub(super) type Body =
     fn(&CheckContext, &mut CheckReport, &Session, &ScriptedPointer) -> Result<Option<String>>;
 
@@ -28,8 +42,19 @@ pub(super) fn run(
     stem: &str,
     body: Body,
 ) -> CheckReport {
+    run_on(check, ctx, &DIMENSION_SCALED, invoke, stem, body)
+}
+
+pub(super) fn run_on(
+    check: &dyn Check,
+    ctx: &CheckContext,
+    fixture: &Fixture,
+    invoke: &str,
+    stem: &str,
+    body: Body,
+) -> CheckReport {
     let mut report = CheckReport::new(check.name(), check.defect());
-    let driven = launch(ctx, &mut report, invoke, stem).and_then(|(session, pointer)| {
+    let driven = launch(ctx, &mut report, fixture, invoke, stem).and_then(|(session, pointer)| {
         let outcome = body(ctx, &mut report, &session, &pointer);
         let parked = pointer.gone(&session);
         match outcome? {
@@ -47,6 +72,7 @@ pub(super) fn run(
 pub(super) fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
+    fixture: &Fixture,
     invoke: &str,
     stem: &str,
 ) -> Result<(Session, ScriptedPointer)> {
@@ -60,8 +86,8 @@ pub(super) fn launch(
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
     let doc = ctx.out(&format!("{stem}.pdf"));
-    std::fs::copy(repo_fixture(FIXTURE, METHOD)?, &doc)
-        .map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
+    std::fs::copy(repo_fixture(fixture.file, fixture.method)?, &doc)
+        .map_err(|e| Error::new(format!("copying {}: {e}", fixture.file)))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
@@ -124,15 +150,29 @@ pub(super) fn reveal(
     Ok(())
 }
 
-/// Click `at` (page points) on page 1, through the current canvas mapping.
+/// Click `at` (page points) on page 1 of `dimension-scaled.pdf`.
 pub(super) fn click_page(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
     at: (f64, f64),
 ) -> Result<()> {
-    let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, PAGE, 0)?;
-    let point = mapping.doc_to_window(DocPoint::new(0, at.0, at.1))?;
+    click_on(ctx, session, pointer, &DIMENSION_SCALED, 0, at)
+}
+
+/// Click `at` (page points) on page index `page` of `fixture`, through the
+/// current canvas mapping.
+pub(super) fn click_on(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    fixture: &Fixture,
+    page: usize,
+    at: (f64, f64),
+) -> Result<()> {
+    let mapping =
+        CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, fixture.page, page)?;
+    let point = mapping.doc_to_window(DocPoint::new(page, at.0, at.1))?;
     pointer.hover(session, point)?;
     session.settle(10);
     pointer.click(session, point)?;

@@ -1091,7 +1091,7 @@ pub fn configure_context(ctx: &egui::Context) {
         ctx.add_plugin(script);
     }
     // After the script, so a driven Tab is claimed exactly as an OS one is.
-    ctx.add_plugin(keyclaim::KeyClaim);
+    ctx.add_plugin(keyclaim::KeyClaim::default());
 }
 
 /// The application's own tests, including the `test_support` fixtures three

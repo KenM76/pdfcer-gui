@@ -63,7 +63,7 @@ pub mod draftkeys;
 /// One keystroke's effect on the open draft.
 mod edits;
 pub mod ime;
-pub use edits::claim_tab;
+pub use edits::{claim_tab, hold_arrows};
 /// The open draft's undo stack.
 pub mod history;
 /// Where the pointer is in relation to the editor box, published by `paint`

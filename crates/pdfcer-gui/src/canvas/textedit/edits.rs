@@ -55,6 +55,44 @@ pub fn claim_tab(ctx: &egui::Context, input: &mut egui::RawInput) {
         .collect();
 }
 
+/// Where [`hold_arrows`] remembers the widget whose arrows it holds.
+const HELD_KEY: &str = "pdfcer-draft-held-arrows"; // ui-text-exempt: an `egui::Id` source string, never displayed
+
+/// **Keep the arrow keys from walking egui's focus while a draft is open.**
+/// The draft reads arrows as caret moves, but `Focus::begin_pass` also turns
+/// an unmodified arrow into a directional focus move from whatever widget
+/// holds focus — the page clicked to place the caret — onto the next page
+/// (scrolling to it) or a ribbon button. While a draft is open on the root
+/// viewport with no text field focused, the focused widget is given a lock
+/// filter that keeps both arrow axes; the first frame without a draft hands
+/// the default filter back.
+pub fn hold_arrows(ctx: &egui::Context, input: &egui::RawInput) {
+    // typing-guard-exempt: a focused text field locks its own arrows.
+    if input.viewport_id != egui::ViewportId::ROOT || ctx.text_edit_focused() {
+        return;
+    }
+    let held_id = egui::Id::new(HELD_KEY);
+    let drafting = super::read(ctx).is_some();
+    ctx.memory_mut(|m| {
+        let focused = m.focused();
+        let held: Option<egui::Id> = m.data.get_temp(held_id).flatten();
+        if drafting && let Some(id) = focused {
+            let filter = egui::EventFilter {
+                horizontal_arrows: true,
+                vertical_arrows: true,
+                ..Default::default()
+            };
+            m.set_focus_lock_filter(id, filter);
+            m.data.insert_temp(held_id, Some(id));
+        } else if !drafting && let Some(id) = held {
+            if focused == Some(id) {
+                m.set_focus_lock_filter(id, egui::EventFilter::default());
+            }
+            m.data.insert_temp::<Option<egui::Id>>(held_id, None);
+        }
+    });
+}
+
 /// Whether the draft is still the caller's to store.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Flow {

@@ -1070,6 +1070,8 @@ pub mod wheel_flips_pages;
 
 /// A letter a subset lacks is added from its installed face.
 pub mod augment_subset;
+/// Arrow keys in a text draft move neither focus nor the page.
+pub mod draft_arrows;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
 /// Enter in a paragraph on the page breaks it.
