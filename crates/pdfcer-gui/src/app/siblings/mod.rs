@@ -7,7 +7,8 @@
 //! a file, with no unsaved edits. A window whose last document moves away
 //! closes, as a browser window does when its last tab is dragged out. The
 //! page on screen travels with the document. Dragging a tab off the strip does
-//! the same, by where it is dropped (`drag`).
+//! the same, by where it is dropped (`drag`); a selection dragged onto another
+//! window is pasted there (`objdrop`).
 //!
 //! Frame order: [`PdfcerApp::siblings_poll`] beside `remote_poll`, and
 //! [`PdfcerApp::siblings_picker`] after the actions apply.
@@ -15,7 +16,10 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/siblings.md`.
 
 mod drag;
+mod objdrop;
 mod wire;
+
+pub(crate) use objdrop::selection_released;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, Sender, channel};
@@ -24,9 +28,10 @@ use std::time::{Duration, Instant};
 use eframe::egui;
 
 use super::PdfcerApp;
+use crate::app::actions::Action;
 use crate::app::state::{Origin, Status};
 use crate::text::siblings::{self as t, WindowMoveRefusal};
-use wire::{Arrival, Peer};
+use wire::{Arrival, Peer, Request};
 
 /// How long a peer list is reused before the discovery directory is read
 /// again.
@@ -50,12 +55,13 @@ struct Reply {
 pub struct Siblings {
     started: bool,
     dir: Option<PathBuf>,
-    inbox: Option<Receiver<Arrival>>,
+    inbox: Option<Receiver<Request>>,
     peers: Vec<Peer>,
     peers_read: Option<Instant>,
     /// What the discovery file last said, as written.
     published: Option<(String, Option<[i32; 4]>)>,
     replies: (Sender<Reply>, Receiver<Reply>),
+    drop_replies: (Sender<objdrop::DropReply>, Receiver<objdrop::DropReply>),
     /// The document whose destination the picker is asking for, and its page.
     picking: Option<(PathBuf, Option<usize>)>,
 }
@@ -70,6 +76,7 @@ impl Default for Siblings {
             peers_read: None,
             published: None,
             replies: channel(),
+            drop_replies: channel(),
             picking: None,
         }
     }
@@ -279,15 +286,22 @@ impl PdfcerApp {
 
     /// Take what other windows sent, settle this window's own sends, and keep
     /// the discovery file current.
-    pub(super) fn siblings_poll(&mut self, ctx: &egui::Context) {
+    pub(super) fn siblings_poll(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) {
         self.siblings.ensure_started(ctx);
-        let received: Vec<Arrival> = self
+        let received: Vec<Request> = self
             .siblings
             .inbox
             .as_ref()
             .map(|rx| rx.try_iter().collect())
             .unwrap_or_default();
-        for Arrival { path, page } in received {
+        for request in received {
+            let Arrival { path, page } = match request {
+                Request::Open(arrival) => arrival,
+                Request::Paste { x, y } => {
+                    self.paste_requested(ctx, x, y, actions);
+                    continue;
+                }
+            };
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
@@ -309,6 +323,8 @@ impl PdfcerApp {
             self.settle_send(ctx, reply);
         }
         self.siblings.refresh_peers();
+        objdrop::share_peers(ctx, &self.siblings.peers);
+        self.selection_drop_poll(ctx, actions);
         let documents = self.document_names();
         self.siblings.publish(documents, drag::client_rect_px(ctx));
     }

@@ -19,7 +19,7 @@ use crate::geom::{LRect, Pt};
 use crate::trace::TraceLine;
 
 /// B sits 1,400 pixels below A: off the desktop, and clear of it.
-const BELOW: &str = "-4200,-2800,1400,900";
+pub(super) const BELOW: &str = "-4200,-2800,1400,900";
 const DROPPED: &str = "window-tab-dropped"; // ui-text-exempt: a trace event name
 const RECT: &str = "window-rect"; // ui-text-exempt: a trace event name
 const INNER: &str = "window-inner"; // ui-text-exempt: a trace event name
@@ -108,22 +108,11 @@ fn drop_onto_other(
     ui_rect: &str,
     report: &mut CheckReport,
 ) -> Result<Option<String>> {
-    let (Some(from), Some(to)) = (rect_px(a)?, rect_px(b)?) else {
+    let Some((target, to)) = other_centre(a, b)? else {
         return Ok(Some(format!(
             "a window published no `{RECT}` line, so nothing can be dropped on it."
         )));
     };
-    let ppp = a
-        .session
-        .trace()?
-        .last(INNER)
-        .and_then(|l| l.get("ppp")?.parse::<f32>().ok())
-        .unwrap_or(1.0);
-    // B's centre, in A's points.
-    let target = point(
-        ((to[0] + to[2]) as f32 / 2.0 - from[0] as f32) / ppp,
-        ((to[1] + to[3]) as f32 / 2.0 - from[1] as f32) / ppp,
-    );
     let tab = tab_rect(a, ui_rect, 0)?;
     a.session.expect_exit();
     a.pointer
@@ -162,6 +151,25 @@ fn drop_onto_other(
         ));
     }
     Ok(None)
+}
+
+/// B's centre in A's points, and B's client area in desktop pixels, from both
+/// windows' `window-rect` lines and A's `window-inner ppp=`.
+pub(super) fn other_centre(a: &Window, b: &Window) -> Result<Option<(WindowPoint, [i32; 4])>> {
+    let (Some(from), Some(to)) = (rect_px(a)?, rect_px(b)?) else {
+        return Ok(None);
+    };
+    let ppp = a
+        .session
+        .trace()?
+        .last(INNER)
+        .and_then(|l| l.get("ppp")?.parse::<f32>().ok())
+        .unwrap_or(1.0);
+    let target = point(
+        ((to[0] + to[2]) as f32 / 2.0 - from[0] as f32) / ppp,
+        ((to[1] + to[3]) as f32 / 2.0 - from[1] as f32) / ppp,
+    );
+    Ok(Some((target, to)))
 }
 
 /// B's second tab is dropped well below the strip, on B's own canvas. B's

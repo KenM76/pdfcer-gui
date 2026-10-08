@@ -452,6 +452,12 @@ pub(super) fn interact(
         // ten days, because the fork's two branches could both answer "not
         // mine" and the gesture had nowhere to go.
         //
+        // Released over another pdfcer-gui window: the selection is copied
+        // there, and nothing moves here.
+        GestureOutcome::Move {
+            phase: Phase::Complete,
+            ..
+        } if crate::app::siblings::selection_released(&ctx, shift) => {}
         GestureOutcome::Move { delta, phase } => {
             let previews = crate::canvas::dragroute::moved(
                 &crate::canvas::dragroute::Frame {

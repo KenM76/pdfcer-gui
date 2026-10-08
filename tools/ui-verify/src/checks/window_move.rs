@@ -321,6 +321,19 @@ pub(super) fn launch_at(
     viewport: &str,
     args: &[&str],
 ) -> Result<Window> {
+    launch_with_env(ctx, report, fixture, role, viewport, args, &[])
+}
+
+/// [`launch_at`] with extra environment variables.
+pub(super) fn launch_with_env(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    role: &str,
+    viewport: &str,
+    args: &[&str],
+    env: &[(&str, &str)],
+) -> Result<Window> {
     let exe = ctx
         .resolve_exe()
         .ok_or_else(|| Error::new("no binary to drive. Pass --exe."))?;
@@ -337,7 +350,10 @@ pub(super) fn launch_at(
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
         (viewport_env, viewport),
-    ] {
+    ]
+    .into_iter()
+    .chain(env.iter().copied())
+    {
         spec.env.push((k.to_owned(), v.to_owned()));
     }
     spec.args = args.iter().map(|a| (*a).to_owned()).collect();

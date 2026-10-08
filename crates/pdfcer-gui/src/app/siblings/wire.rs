@@ -12,6 +12,8 @@
 //!   cannot hold a tab, so the fields split unambiguously. `ok` means the path was handed to the receiving
 //!   window's frame; the open itself happens there and reports its own
 //!   failures.
+//! * `paste\t<x>\t<y>\n` asks the window to paste the clip on the clipboard
+//!   at the desktop pixel `(x, y)`, answered the same way.
 //! * The pipe admits the current user only (`native_pipe`'s DACL).
 //! * The discovery file also carries the window's client area in desktop
 //!   pixels, `rect=<left>,<top>,<right>,<bottom>`, so a tab dropped on another
@@ -27,8 +29,11 @@ const PIPE_PREFIX: &str = "pdfcer-gui-window-"; // ui-text-exempt: a pipe name, 
 /// The discovery directory's name inside the settings directory.
 const DIR_NAME: &str = "windows"; // ui-text-exempt: a directory name, never displayed
 
-/// The request verb.
+/// The request verb that opens a file.
 const OPEN: &str = "open"; // ui-text-exempt: a protocol word, never displayed
+
+/// The request verb that pastes the clipboard at a desktop point.
+const PASTE: &str = "paste"; // ui-text-exempt: a protocol word, never displayed
 
 /// The positive reply.
 const OK: &str = "ok"; // ui-text-exempt: a protocol word, never displayed
@@ -76,6 +81,20 @@ pub struct Arrival {
     pub path: PathBuf,
     /// The zero-based page index to show, when the sender named one.
     pub page: Option<usize>,
+}
+
+/// One request another window sent.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Request {
+    /// Open a document.
+    Open(Arrival),
+    /// Paste the clipboard at this desktop pixel.
+    Paste {
+        /// Desktop pixels from the left.
+        x: f32,
+        /// Desktop pixels from the top.
+        y: f32,
+    },
 }
 
 /// This window's pipe name.
@@ -202,11 +221,11 @@ fn parse_rect(v: &str) -> Option<[i32; 4]> {
     <[i32; 4]>::try_from(n).ok()
 }
 
-/// Listen on `pipe` on a thread of its own, handing every requested path to
-/// `inbox` and calling `wake` so the frame that opens it runs.
+/// Listen on `pipe` on a thread of its own, handing every request to `inbox`
+/// and calling `wake` so the frame that acts on it runs.
 pub fn serve(
     pipe: String,
-    inbox: Sender<Arrival>,
+    inbox: Sender<Request>,
     wake: impl Fn() + Send + 'static,
 ) -> std::io::Result<()> {
     std::thread::Builder::new()
@@ -238,21 +257,32 @@ pub fn serve(
         .map(|_| ())
 }
 
-/// What an `open` request names, when the line is one. A page field that is
-/// not a number refuses the whole request rather than dropping the page.
-fn request(connection: &mut impl Read) -> Option<Arrival> {
+/// The request on the line, when it is one. A page or coordinate field that
+/// is not a number refuses the whole request rather than dropping the field.
+fn request(connection: &mut impl Read) -> Option<Request> {
     let mut line = String::new();
     BufReader::new(connection.take(MAX_LINE))
         .read_line(&mut line)
         .ok()?;
     let mut fields = line.trim_end_matches(['\r', '\n']).split('\t');
-    let (verb, path) = (fields.next()?, PathBuf::from(fields.next()?));
-    let page = match fields.next() {
-        Some(p) => Some(p.parse().ok()?),
-        None => None,
+    let request = match fields.next()? {
+        OPEN => {
+            let path = PathBuf::from(fields.next()?);
+            let page = match fields.next() {
+                Some(p) => Some(p.parse().ok()?),
+                None => None,
+            };
+            path.is_absolute()
+                .then_some(Request::Open(Arrival { path, page }))?
+        }
+        PASTE => {
+            let mut coordinate = || fields.next()?.parse::<f32>().ok().filter(|v| v.is_finite());
+            let (x, y) = (coordinate()?, coordinate()?);
+            Request::Paste { x, y }
+        }
+        _ => return None,
     };
-    (verb == OPEN && path.is_absolute() && fields.next().is_none())
-        .then_some(Arrival { path, page })
+    fields.next().is_none().then_some(request)
 }
 
 /// Ask the window listening on `pipe` to open `path` at `page`. Blocks until
@@ -261,19 +291,30 @@ pub fn send_open(pipe: &str, path: &Path, page: Option<usize>) -> Result<(), Str
     let text = path
         .to_str()
         .ok_or_else(|| crate::text::siblings::unsendable_name().to_owned())?;
+    exchange(
+        pipe,
+        &match page {
+            Some(p) => format!("{OPEN}\t{text}\t{p}\n"),
+            None => format!("{OPEN}\t{text}\n"),
+        },
+    )
+}
+
+/// Ask the window listening on `pipe` to paste its clipboard at the desktop
+/// pixel `(x, y)`. Blocks until it answers.
+pub fn send_paste(pipe: &str, x: f32, y: f32) -> Result<(), String> {
+    exchange(pipe, &format!("{PASTE}\t{x}\t{y}\n"))
+}
+
+/// Send one request line and read the answer.
+fn exchange(pipe: &str, line: &str) -> Result<(), String> {
     let mut stream = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
         .open(format!("{}{pipe}", native_pipe::PREFIX))
         .map_err(|e| e.to_string())?;
     stream
-        .write_all(
-            match page {
-                Some(p) => format!("{OPEN}\t{text}\t{p}\n"),
-                None => format!("{OPEN}\t{text}\n"),
-            }
-            .as_bytes(),
-        )
+        .write_all(line.as_bytes())
         .map_err(|e| e.to_string())?;
     let mut reply = String::new();
     BufReader::new((&mut stream).take(MAX_LINE))
@@ -330,10 +371,10 @@ mod tests {
             "/a b.pdf"
         };
         let arrival = |page| {
-            Some(Arrival {
+            Some(Request::Open(Arrival {
                 path: PathBuf::from(absolute),
                 page,
-            })
+            }))
         };
         let good = format!("open\t{absolute}\r\n");
         assert_eq!(request(&mut good.as_bytes()), arrival(None));
@@ -347,5 +388,19 @@ mod tests {
             None
         );
         assert_eq!(request(&mut "open\n".as_bytes()), None);
+    }
+
+    #[test]
+    fn a_paste_names_a_finite_desktop_point() {
+        assert_eq!(
+            request(&mut "paste\t-3492.5\t-2319\n".as_bytes()),
+            Some(Request::Paste {
+                x: -3492.5,
+                y: -2319.0
+            })
+        );
+        assert_eq!(request(&mut "paste\t1\n".as_bytes()), None);
+        assert_eq!(request(&mut "paste\t1\tNaN\n".as_bytes()), None);
+        assert_eq!(request(&mut "paste\t1\t2\t3\n".as_bytes()), None);
     }
 }

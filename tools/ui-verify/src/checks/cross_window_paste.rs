@@ -14,7 +14,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
-const CAPTURE_ENV: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an environment variable name
+pub(super) const CAPTURE_ENV: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an environment variable name
 const MODE: &str = "edit"; // ui-text-exempt: a ribbon mode id
 const TAB: &str = "edit"; // ui-text-exempt: a ribbon tab id
 const SELECT_ALL: &str = "ribbon.item.edit.select_all"; // ui-text-exempt: a trace region name
@@ -145,12 +145,21 @@ fn clip_file_len(dir: &std::path::Path) -> Option<u64> {
         .map(|m| m.len())
 }
 
-fn to_edit_tab(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<()> {
+pub(super) fn to_edit_tab(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<()> {
     driving::click_mode_segment(session, pointer, ui_rect, MODE)?;
     crate::checks::ocr::click_tab(session, pointer, ui_rect, TAB)
 }
 
-fn click(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, name: &str) -> Result<()> {
+pub(super) fn click(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+) -> Result<()> {
     let Some(item) = driving::declared_or_in_overflow(session, pointer, ui_rect, name)? else {
         return Err(Error::new(format!(
             "the Edit tab declares no `{name}`, on the band or in a collapsed group."

@@ -3,7 +3,8 @@
 Moving a document between pdfcer-gui windows. View ▸ Window carries *Move to
 new window* and *Move to other window*; a document tab's menu carries both for
 that tab; and a tab dragged off the strip does one or the other by where it is
-dropped (`drag`).
+dropped (`drag`). A selection dragged off the canvas onto another window is
+pasted there (`objdrop`).
 
 ## What moves
 
@@ -39,6 +40,8 @@ One pipe and one discovery file per window:
   `no\t<reason>\n`. The page is zero-based; a page field that is not a number
   refuses the request. `ok` means the path reached the receiver's frame; the
   open then reports its own failures there.
+- A paste request is `paste\t<x>\t<y>\n`, a desktop pixel; coordinates that
+  are not finite numbers refuse it. `ok` means the request reached the frame.
 
 The server thread hands each path to the frame through a channel and requests a
 repaint, so a window that is idle still opens what it is sent.
@@ -79,6 +82,24 @@ press.
 Conversion to desktop pixels multiplies by `pixels_per_point`, which includes
 the operator's interface scale.
 
+## Dropping a selection on another window (`objdrop`)
+
+A move drag of the selection released outside this window's client area and
+inside another window's published `rect` is not a move. On the release frame
+the canvas skips the commit and records the drop; the next frame copies the
+selection to the clipboard, as Copy does, with the same partial-copy
+disclosure, and sends `paste` with the release point. The receiver pastes as
+Paste does, with the release point standing in for the pointer: the same mode
+gate, the same adoption of the other window's clip, and the viewport's centre
+when the point is not over its canvas.
+
+- A drag copies; Shift held at the release moves. A move cuts the selection
+  here once the receiver has answered `ok`, and only if the document is the
+  same and unedited since the copy.
+- A refusal from the receiver is said here; nothing changes here.
+- The peers' rectangles reach the canvas through the context, written each
+  frame by `siblings_poll`, because the canvas cannot see the window state.
+
 ## Arriving at a page
 
 A page named at open (`show_page`, from the request or from `--page`) sets the
@@ -97,7 +118,9 @@ view's page before the canvas has laid out. Two rules in the canvas keep it:
 `window-move-sent`, `window-move-refused`, `window-move-received`,
 `window-emptied`, `window-torn-off pid= path= page=`, `window-rect pid= rect=`,
 `window-tab-dropped slot= at= desktop= onto=` (`onto=0` when no other window
-was under the drop). `page=` is zero-based, `-1` when none was sent. The picker
+was under the drop), `window-selection-dropped onto= desktop= shift=`,
+`window-paste-sent to=`, `window-paste-refused to= why=`,
+`window-paste-received pid= desktop=`. `page=` is zero-based, `-1` when none was sent. The picker
 declares its buttons as `window-pick.<pid>` and `window-pick.cancel`.
 
 ## Not covered

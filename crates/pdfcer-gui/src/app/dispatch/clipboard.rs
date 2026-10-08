@@ -43,8 +43,14 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
         // absences are the point: it neither reads the internal clipboard nor
         // changes the document. It renders and it places. See `copy_as_vector`.
         "edit.copy_as_vector" => copy_as_vector(app),
-        "edit.paste" => paste(app, ctx, id, PasteAs::NewField, actions),
-        "edit.paste_duplicate" => paste(app, ctx, id, PasteAs::Duplicate, actions),
+        "edit.paste" => {
+            let at = ctx.pointer_latest_pos();
+            paste(app, ctx, id, PasteAs::NewField, at, actions);
+        }
+        "edit.paste_duplicate" => {
+            let at = ctx.pointer_latest_pos();
+            paste(app, ctx, id, PasteAs::Duplicate, at, actions);
+        }
         // Takes no `ctx`, like the copy-OUT and for the mirror reason: it
         // neither reads nor writes the clipboard, so there is nothing in
         // `egui`'s memory for it to consult. Its whole operand is the
@@ -169,11 +175,23 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
     } else {
         crate::canvas::clipboard::copy(ctx, doc)
     };
+    report_copy(doc, outcome);
+}
+
+/// Say what a copy or cut of the selection did not take, and whether it took
+/// anything.
+pub(crate) fn report_copy(
+    doc: &crate::app::state::OpenDoc,
+    outcome: Result<crate::canvas::clipboard::Clipped, crate::canvas::clipboard::Refusal>,
+) -> bool {
     match outcome {
-        Err(refusal) => crate::app::actions::record_note(
-            doc.edit_epoch,
-            crate::text::clipboard::refusal(refusal),
-        ),
+        Err(refusal) => {
+            crate::app::actions::record_note(
+                doc.edit_epoch,
+                crate::text::clipboard::refusal(refusal),
+            );
+            false
+        }
         // **A PARTIAL COPY SAYS SO** — rule 4, "fuzzy never sneaky",
         // applied to the clipboard.
         //
@@ -203,17 +221,30 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
                 doc.edit_epoch,
                 crate::text::clipboard::partial_copy(&left_behind, thin, in_form_left),
             );
+            true
         }
-        Ok(_) => {}
+        Ok(_) => true,
     }
 }
 
-/// `Ctrl+V` and `Ctrl+Shift+V`.
+/// Paste at `at`, a point in this window, for a selection another window
+/// dropped here. `None` pastes at the viewport's centre.
+pub(crate) fn paste_at(
+    app: &mut PdfcerApp,
+    ctx: &egui::Context,
+    at: Option<egui::Pos2>,
+    actions: &mut Vec<Action>,
+) {
+    paste(app, ctx, "edit.paste", PasteAs::NewField, at, actions);
+}
+
+/// `Ctrl+V` and `Ctrl+Shift+V`, landing at `pointer`, a point in this window.
 fn paste(
     app: &mut PdfcerApp,
     ctx: &egui::Context,
     id: &str,
     mode: PasteAs,
+    pointer: Option<egui::Pos2>,
     actions: &mut Vec<Action>,
 ) {
     let Status::Open(doc) = &app.status else {
@@ -309,7 +340,7 @@ fn paste(
     // sheet the operator is pointing at. `None` — the canvas has never drawn —
     // falls every paste back to the offset rule it used before today.
     let target = crate::canvas::zoom::last_frame(ctx).and_then(|f| {
-        let canvas = crate::canvas::zoom::anchor_point(ctx.pointer_latest_pos(), &f);
+        let canvas = crate::canvas::zoom::anchor_point(pointer, &f);
         crate::viewer::canvas_to_pdf_space(canvas, doc.pages.get(f.page)?)
     });
 

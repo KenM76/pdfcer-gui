@@ -6,7 +6,7 @@
 
 use std::borrow::Cow;
 
-/// Why a document did not move to another window.
+/// Why a document, or a selection dropped on another window, did not move.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum WindowMoveRefusal {
     /// The document has edits that are not on disk, or was never saved.
@@ -15,6 +15,9 @@ pub enum WindowMoveRefusal {
     NotSent(String),
     /// No new window could be started; the field is the reason.
     NotStarted(String),
+    /// The window a selection was dropped on did not paste it; the field is
+    /// the reason.
+    SelectionNotSent(String),
 }
 
 impl WindowMoveRefusal {
@@ -31,6 +34,9 @@ impl WindowMoveRefusal {
             )),
             Self::NotStarted(why) => Cow::Owned(format!(
                 "pdfcer could not open a new window: {why}. The document is still open here."
+            )),
+            Self::SelectionNotSent(why) => Cow::Owned(format!(
+                "The other window did not take the selection: {why}. Nothing changed here."
             )),
         }
     }

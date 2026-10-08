@@ -654,7 +654,7 @@ impl eframe::App for PdfcerApp {
             self.dock_menu_panel = None;
         }
         self.remote_poll(&ctx, &mut actions);
-        self.siblings_poll(&ctx);
+        self.siblings_poll(&ctx, &mut actions);
 
         crate::diag::frame_phase("input");
         // Step 1b — the ribbon, above the canvas.

@@ -30,7 +30,7 @@ pub(super) fn client_rect_px(ctx: &egui::Context) -> Option<[i32; 4]> {
 }
 
 /// The desktop pixel under `at`, a point in this window.
-fn desktop_px(ctx: &egui::Context, at: egui::Pos2) -> Option<egui::Pos2> {
+pub(super) fn desktop_px(ctx: &egui::Context, at: egui::Pos2) -> Option<egui::Pos2> {
     let inner = ctx.input(|i| i.viewport().inner_rect)?;
     Some(((inner.min + at.to_vec2()).to_vec2() * ctx.pixels_per_point()).to_pos2())
 }
