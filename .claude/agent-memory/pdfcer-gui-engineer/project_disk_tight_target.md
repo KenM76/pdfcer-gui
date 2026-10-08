@@ -396,3 +396,9 @@ gone to zero.
 `.rmeta` (os error 112). `rm -rf target/debug/incremental` alone freed 26 GB and
 cost only a slower next debug build — the cheapest first cut. Check `df -h /d`
 BEFORE a release build, not after it fails.
+
+2026-10-08: `target/release/incremental` was **21 GB**, the largest single
+cut. That cache exists only because the release profile turns incremental ON on
+purpose (the release build is the dev loop; see the `[profile.release]` comment
+in `Cargo.toml`), so it regrows. Deleting both incremental dirs took D: from 30 to
+61 GB; the next release build was a cold one and nothing else was lost.
