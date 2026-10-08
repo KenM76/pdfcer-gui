@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **16 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `wanted` — a real gap — **16 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -121,7 +121,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **14 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `blocked` — waiting on something named — **15 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -144,6 +144,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 | **Copy objects INSIDE a form XObject** — `EditSession::copy_objects_in_form` | **blocked on an engine tag, request G145.** The engine answered on main, past the v0.80.0 pin; Copy on a part of a placed drawing will call it instead of saying to copy the whole drawing. The pin moves to tags only. |
 | **Resize or rotate objects INSIDE a form XObject** — `transform_objects_in_form` | **blocked on an engine tag, request G144.** The engine answered on main, past the v0.80.0 pin; the grips on a part of a placed drawing resize and rotate through it. The pin moves to tags only. |
 | **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **blocked on an engine tag, request G147.** The engine answered on main, past the v0.80.0 pin; a click on text inside a placed drawing will pick the run through it. The pin moves to tags only. |
+| **Restack page objects** — `EditSession::restack_objects` | **blocked on an engine tag, request G157.** The engine answered on main, past the v0.80.0 pin; Format ▸ Arrange gains Bring to front, Send to back, Forward and Backward through it. The pin moves to tags only. |
 | **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **blocked on an engine tag, request G143.** The engine answered on main, past the v0.80.0 pin; Properties of a page path gain width, dash and opacity through it. The pin moves to tags only. |
 | **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **blocked on an engine tag, request G140.** The engine answered on main, past the v0.80.0 pin; it shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. The pin moves to tags only. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **blocked on an engine tag, request G138.** The engine answered on main (Pass 526.0): every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. This shell's pin moves to tags only and the newest tag predates it, so the canvas still box-tests an image. Owed on the tag: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. |
@@ -161,7 +162,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 | **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **blocked on an engine tag, request G146.** The engine answered on main, past the v0.80.0 pin; the shell already converts a group's scale on a unit change (O288 item 3); a single ce dimension's own unit override converts once it is pinned. The pin moves to tags only. |
 ---
 
-## `unknown` — no opinion formed yet — **0 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -172,7 +173,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `declined` — deliberately no surface — **16 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -214,7 +215,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **280 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **280 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
