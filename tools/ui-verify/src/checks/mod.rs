@@ -660,6 +660,8 @@ pub mod properties_pane;
 pub mod rc4_append;
 /// A redraw says what it did to a field's text.
 pub mod redraw_layout;
+/// Remove metadata takes only the entries ticked.
+pub mod remove_metadata;
 /// Remove OCR text takes only the pages chosen.
 pub mod remove_ocr_pages;
 /// Propose replacement words for selected text from Markup.

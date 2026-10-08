@@ -41,6 +41,13 @@ impl DialogsState {
         self.ocr = ocr::open_for(status, picked, prefs);
     }
 
+    /// Open Security ▸ Remove metadata for the document in `status`.
+    pub fn open_remove_metadata(&mut self, status: &Status) {
+        if self.remove_metadata.is_none() {
+            self.remove_metadata = super::remove_metadata::open_for(status);
+        }
+    }
+
     /// Open File ▸ Remove OCR text. `false` when the document holds no pdfcer
     /// OCR layer, so the caller sends the unfiltered removal whose refusal
     /// says so.

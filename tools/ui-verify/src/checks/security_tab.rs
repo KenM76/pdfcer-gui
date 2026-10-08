@@ -23,7 +23,8 @@ const TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name,
 /// proves the band is drawn.
 const SECURITY: [&str; 2] = ["ribbon.item.file.encrypt", "ribbon.group.security.security"];
 /// The same for the Protect group.
-const PROTECT: [&str; 2] = ["ribbon.item.edit.redact", "ribbon.group.security.protect"];
+/// The redaction items; Protect's Remove metadata is drawn in every mode.
+const PROTECT: [&str; 2] = ["ribbon.item.edit.redact", "ribbon.item.edit.offpage"];
 const RAIL_SNAPSHOT: &str = "rail.navigate.view.tool_snapshot"; // ui-text-exempt: a trace region name, never displayed
 const ARMED: &str = "snapshot-tool";
 

@@ -17,6 +17,7 @@ pub(crate) fn claims(id: &str) -> bool {
     matches!(
         id,
         "file.purge_password_values"
+            | "file.remove_metadata"
             | "file.encrypt"
             | "file.permissions"
             | "file.sign"
@@ -39,6 +40,10 @@ impl PdfcerApp {
         // picker opens in the apply phase once the clean copy exists.
         if id == crate::app::unlock::COMMAND {
             self.unlock_active();
+            return;
+        }
+        if id == "file.remove_metadata" {
+            self.dialogs.open_remove_metadata(&self.status);
             return;
         }
         if id == crate::app::rc4::COMMAND {
@@ -102,6 +107,7 @@ mod tests {
         crate::shell::commands::register(&mut reg);
         let registered: Vec<String> = [
             "file.purge_password_values",
+            "file.remove_metadata",
             "file.encrypt",
             "file.permissions",
             "file.sign",
@@ -121,7 +127,7 @@ mod tests {
         // supported builds.
         assert_eq!(
             registered.len(),
-            5 + 2 * usize::from(cfg!(feature = "signing"))
+            6 + 2 * usize::from(cfg!(feature = "signing"))
                 + usize::from(cfg!(feature = "timestamp")),
             "every registered Security command: {registered:?}"
         );

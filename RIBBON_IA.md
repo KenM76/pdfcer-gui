@@ -671,16 +671,18 @@ menus are not tabs — and it is the path most users try after the keyboard.
 | Group | Commands |
 |---|---|
 | **Security** | Remove old passwords · Encrypt · Allow edits under RC4 (RC4 documents only) · Unlock (locked documents only) · Permissions · Sign · Add validation evidence · Add archive time-stamp |
-| **Protect** | Redact ⌄ (mark page / by text / by pattern) · Redact selection · Off-page · Apply redactions · Sanitise… |
+| **Protect** | Redact ⌄ (mark page / by text / by pattern) · Remove metadata… · Redact selection · Off-page · Apply redactions · Sanitise… |
 
 **Two groups, two kinds of verb.** Security writes something about the
 *file* — a save transform, nothing in the undo log. Protect removes content
 from *pages*; marking is undoable and applying is not.
 
-**The tab is in every mode; Protect is in Edit alone.** Encrypting, signing
-and reading permissions produce a new document, which Read permits.
-Redaction changes page content, so its band is shown only under
-`mode.edit_content`, and is absent — not greyed — in Read and Review.
+**The tab is in every mode; Protect's redaction is in Edit alone.** Encrypting,
+signing and reading permissions produce a new document, which Read permits.
+Redaction changes page content, so its items are shown only under
+`mode.edit_content`, and are absent — not greyed — in Read and Review.
+*Remove metadata…* edits the document's description, not its pages, as
+Document properties does in every mode, so it stays in all three.
 
 The command ids keep their prefixes (`file.encrypt`, `edit.redact`): an id's
 prefix names its handler-token block, not the tab it is drawn on.

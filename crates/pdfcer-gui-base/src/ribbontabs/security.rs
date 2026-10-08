@@ -44,6 +44,10 @@ pub fn tab() -> Tab {
                     // qualified redaction verbs in a column beside it. First
                     // in the group already.
                     large("edit.redact").shown_when(EDIT_CONTENT),
+                    // In every mode, as the Security band is: it edits the
+                    // document's description, never page content. The
+                    // operator asked for it under Protect by name.
+                    large("file.remove_metadata"),
                     // Between mark-by-search and Apply, which is the order an
                     // operator works in: find what you can find, mark what you
                     // cannot, then apply once. Putting it after Apply would put

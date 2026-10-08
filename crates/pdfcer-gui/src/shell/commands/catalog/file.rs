@@ -692,6 +692,14 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("encrypt")
         .enabled_when("doc.pages"),
+        // Token 136. Lists and removes the description entries.
+        command(
+            "file.remove_metadata",
+            crate::text::metadata::file_remove_metadata(),
+            136,
+        )
+        .with_icon("delete")
+        .enabled_when("doc.open"),
         command("file.encrypt", crate::text::protect::file_encrypt(), 126)
             .with_icon("encrypt")
             .enabled_when("doc.open"),

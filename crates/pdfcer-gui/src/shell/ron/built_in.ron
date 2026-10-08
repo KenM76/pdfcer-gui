@@ -505,6 +505,7 @@
                             size: Large,
                             visible_when: "mode.edit_content",
                         ),
+                        Command(id: "file.remove_metadata", size: Large),
                         Command(id: "edit.redact_selection", visible_when: "mode.edit_content"),
                         Command(id: "edit.offpage", visible_when: "mode.edit_content"),
                         Command(id: "edit.redact_apply", visible_when: "mode.edit_content"),

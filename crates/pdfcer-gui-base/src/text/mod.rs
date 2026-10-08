@@ -139,6 +139,8 @@ pub mod markup;
 pub mod maxzoom;
 pub mod measure;
 pub mod merge;
+/// Security ▸ Remove metadata….
+pub mod metadata;
 /// The sized-New dialog's copy — the size list, the orientation pair, the
 /// custom fields and the one refusal. Consumed by
 /// `pdfcer_gui::dialogs::new_document`.

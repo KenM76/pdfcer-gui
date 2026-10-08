@@ -343,6 +343,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(security_tab::TheSnapshotToolIsOnTheLeftRail),
         Box::new(remove_ocr_pages::RemoveOcrTextTakesThePagesChosen),
         Box::new(thumbnail_zoom::ThumbnailsZoomWithoutBlanking),
+        Box::new(remove_metadata::RemoveMetadataTakesOnlyTheEntriesTicked),
         Box::new(model_axes::AModelOpensFromThePageAndTurnsAboutTheChosenUp),
         Box::new(attach_sound::ASoundAttachesAsAnIcon),
         Box::new(media_clip::AClipPlaysFromARegion),

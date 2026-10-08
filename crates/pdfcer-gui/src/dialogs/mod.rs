@@ -98,6 +98,8 @@ mod ocr_model;
 pub mod open;
 /// The "which pages" group Recognise text and Remove OCR text share.
 mod page_scope;
+/// Security ▸ Remove metadata: the description entries, ticked to remove.
+pub mod remove_metadata;
 /// File ▸ Remove OCR text: which pages, and which recogniser's text.
 pub mod remove_ocr;
 /// **The question that comes before pdfcer lets go of the file** —
@@ -200,6 +202,9 @@ pub struct DialogsState {
     /// The Remove-OCR-text window. Document-scoped: it lists the layers the
     /// open document held when it opened.
     remove_ocr: Option<remove_ocr::RemoveOcrDialog>,
+    /// The Remove-metadata window. Document-scoped: it lists the entries the
+    /// open document held when it opened.
+    remove_metadata: Option<remove_metadata::RemoveMetadataDialog>,
 
     /// The Render-diagnostics report, when one is open.
     ///
@@ -858,6 +863,9 @@ impl DialogsState {
         if self.remove_ocr.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.remove_ocr = None;
         }
+        if self.remove_metadata.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.remove_metadata = None;
+        }
         // `registry`: the digital-ID link is drawn only when the certificate
         // route is registered (R8).
         if let Some(dialog) = self.hand_sign.as_mut() {
@@ -1213,6 +1221,7 @@ impl DialogsState {
         self.offpage = None;
         self.compact = None;
         self.remove_ocr = None;
+        self.remove_metadata = None;
         self.hand_sign = None;
         #[cfg(feature = "timestamp")]
         {
