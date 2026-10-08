@@ -74,7 +74,7 @@ refusal tests and never sign anything.
 ### `fn an_encrypted_document_is_refused`
 
 One of the two refusals the build brief names as *reachable rather than
-theoretical*: File ▸ Security ▸ Encrypt… ships, so this shell can produce an
+theoretical*: Security ▸ Encrypt… ships, so this shell can produce an
 encrypted document and then be asked to sign it, in one session, without
 leaving the application.
 

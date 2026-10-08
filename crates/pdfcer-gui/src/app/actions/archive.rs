@@ -1,4 +1,4 @@
-//! File ▸ Security ▸ Add archive time-stamp…: a document time-stamp over the
+//! Security ▸ Add archive time-stamp…: a document time-stamp over the
 //! whole file, through `EditSession::add_document_timestamp`.
 //!
 //! The engine returns the stamped file's bytes and the open document stays as

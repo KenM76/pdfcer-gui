@@ -5,7 +5,7 @@ document's own state, and **refuses a signed document instead of offering a
 form**
 
 `OPERATOR_REQUESTS.md` **O119**. Two ribbon controls —
-`file.encrypt` and `file.permissions` — in a new File ▸ Security group.
+`file.encrypt` and `file.permissions` — in a new Security ▸ Security group.
 
 # The defect this exists to catch, and why a unit test cannot
 

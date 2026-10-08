@@ -26,8 +26,7 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     // PAGES — Organise is the reason; insert and transform support it.
     ("pages", "transform", 1),
     ("pages", "insert", 2),
-    // EDIT — Content is the tab. Protect is the least-reached.
-    ("edit", "protect", 1),
+    // EDIT — Content is the tab.
     ("edit", "forms", 2),
     ("edit", "clipboard", 3),
     ("edit", "insert", 4),
@@ -38,6 +37,8 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     ("markup", "style", 4),
     // MEASURE — Dimension is the tab; Scale is set once per drawing.
     ("measure", "scale", 1),
+    // SECURITY — the file-level band is the tab; redaction folds first.
+    ("security", "protect", 1),
     // TOOLS — no group here outranks another, so all three may collapse.
     ("tools", "diagnostics", 1),
     ("tools", "fonts", 2),

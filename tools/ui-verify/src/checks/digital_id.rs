@@ -19,9 +19,9 @@ use crate::report::CheckReport;
 
 const FIXTURE: &str = "four-pages.pdf";
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
-const TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
+const TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.file.sign"; // ui-text-exempt: a trace region name, never displayed
-const COLLAPSED: &str = "ribbon.group.file.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
+const COLLAPSED: &str = "ribbon.group.security.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
 const BODY: &str = "sign-body";
 const OPEN_FORM: &str = "sign-create-id";
 const NAME: &str = "sign-create-name";

@@ -138,7 +138,7 @@ pub enum Icon {
     /// line says so; the glyph must not contradict it before the panel is
     /// open. An icon is a claim too.
     Signatures,
-    /// **File ▸ Security ▸ Sign…** — authoring a digital signature.
+    /// **Security ▸ Sign…** — authoring a digital signature.
     ///
     /// A page with a cursive stroke on a signing rule. It inherits
     /// [`Icon::Signatures`]' constraint word for word — **not** a seal, badge,

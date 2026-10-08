@@ -156,9 +156,9 @@ fn mark_whole_page(
     // CLOSES the thing this check needs.
     if declared(&session.trace()?, ui_rect, PANEL).is_none() {
         let trace = session.trace()?;
-        let tab = declared(&trace, ui_rect, "ribbon.tab.edit").ok_or_else(|| {
+        let tab = declared(&trace, ui_rect, "ribbon.tab.security").ok_or_else(|| {
             Error::new(format!(
-                "no `ribbon.tab.edit` region. Tabs declared: {}.",
+                "no `ribbon.tab.security` region. Tabs declared: {}.",
                 list(&declared_names(&trace, ui_rect, "ribbon.tab."))
             ))
         })?;
@@ -169,7 +169,7 @@ fn mark_whole_page(
         )?
         .ok_or_else(|| {
             Error::new(format!(
-                "no `{PANEL_ITEM}` region on the Edit tab or in its overflow. Items declared: \
+                "no `{PANEL_ITEM}` region on the Security tab or in its overflow. Items declared: \
                  {}.",
                 list(&declared_names(
                     &session.trace().unwrap_or_default(),

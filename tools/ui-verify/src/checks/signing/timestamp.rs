@@ -4,7 +4,7 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/signing/timestamp.md`.
 
 use super::reaching::{click, click_scrolled, click_tab, drawn, engine_fixture, launch, press};
-use super::{CERT, FILE_TAB, MODE, PASSPHRASE, REGION_CONFIRM, REGION_DIALOG, SIGN};
+use super::{CERT, MODE, PASSPHRASE, REGION_CONFIRM, REGION_DIALOG, SECURITY_TAB, SIGN};
 use super::{REGION_CHOOSE, REGION_OPEN_CERT, REGION_PASSPHRASE};
 use crate::checks::driving::{self, declared_names, list};
 use crate::checks::{Check, CheckContext};
@@ -92,7 +92,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
         if !drawn(&session.trace()?, ui_rect, REGION_DIALOG) {
             return Err(Error::new(format!("{label}: `{SIGN}` opened no window.")));

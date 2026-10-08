@@ -121,6 +121,12 @@ pub fn question_tools() -> &'static str {
     "What do I run across files, or configure once?"
 }
 
+/// The Security tab's question.
+#[must_use]
+pub fn question_security() -> &'static str {
+    "Who may open, change or trust this file, and what must never leave it?"
+}
+
 /// The Format tab's question.
 #[must_use]
 pub fn question_format() -> &'static str {
@@ -317,7 +323,7 @@ pub fn group_edit_forms() -> &'static str {
     "Forms"
 }
 
-/// Edit ▸ Protect.
+/// Security ▸ Protect.
 #[must_use]
 pub fn group_edit_protect() -> &'static str {
     "Protect"

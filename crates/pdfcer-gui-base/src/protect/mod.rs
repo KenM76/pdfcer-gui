@@ -316,7 +316,7 @@ pub enum EngineRefusal {
     /// > save_applying_redaction first, or cancel_pending_redaction"*
     ///
     /// ⚠ **Two internal Rust function names, in a draughtsman's dialog**, on a
-    /// path reachable in one session: arm a redaction, open File ▸ Security ▸
+    /// path reachable in one session: arm a redaction, open Security ▸ Security ▸
     /// Encrypt…. [`crate::text::protect::engine_refusal`]'s own doc comment
     /// warned about exactly this — *"a `to_string()` of the engine's own
     /// message would put an implementer's sentence in front of a draughtsman"*

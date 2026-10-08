@@ -174,7 +174,8 @@ read *Edit text* and *Add text*, with their icons kept.
 | 4 | **Edit** | What am I changing about content that is already there? |
 | 5 | **Markup** | What am I adding for someone else to read? |
 | 6 | **Measure** | What am I measuring, and in what units? |
-| 7 | **Tools** | What do I run across files, or configure once? |
+| 7 | **Security** | Who may open, change or trust this file, and what must never leave it? |
+| 8 | **Tools** | What do I run across files, or configure once? |
 
 Plus one contextual tab:
 
@@ -182,7 +183,12 @@ Plus one contextual tab:
 |---|---|
 | **Format** | A markup, ce dimension, image, vector object or text run is selected |
 
-**Why seven.** Six is one too few for the amount of capability behind them, and
+**Why Security is a tab.** The operator asked for one (O289 item 10): the
+file's passwords, permissions and signatures and the page redactions are
+the tools for deciding what may leave the office, and he looks for them
+together. §5.9 keeps them in two groups because they are two kinds of verb.
+
+**Why seven before it.** Six is one too few for the amount of capability behind them, and
 the sixth ends up carrying two unrelated jobs. The split is: page operations out
 of hiding into their own tab, View given the view controls its name promises,
 and File left as an actual file tab.
@@ -213,7 +219,6 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 | **Recognise** | OCR… · Remove OCR text · Download OCR models… (present only in a build with model download) |
 | **Save** | Save · Save as… · Save a copy… · Save compacted · Revert |
 | **Export** | Export DXF… · Export image… (PNG/JPEG/TIFF, DPI picker) · Export text… · Import text · Stamp collection · Export form data ⌄ (FDF / XFDF / CSV) · Import form data · Export for hand editing… · Compile hand edits… · Copy this page's text · Copy the whole document's text |
-| **Security** | Remove old passwords · Encrypt · Allow edits under RC4 (RC4 documents only) · Permissions · Sign · Add validation evidence · Add archive time-stamp |
 | **Print** | Print… · Imposition… (n-up / booklet / poster) |
 | **Document** | Properties · Fonts |
 | **pdfcer** | Settings… · Keyboard shortcuts · About |
@@ -328,7 +333,6 @@ selection is correct.
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring forward / Send backward · Group / Ungroup · Flip horizontal / vertical |
 | **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
 | **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten · Repair fonts |
-| **Protect** | Redact ⌄ (mark page / by text / by pattern) · Redact selection · Off-page · Apply redactions · Sanitise… |
 
 **Reflow follows the tool that does the retyping**, not the tool that selects:
 an operator reflows a paragraph because they have just retyped a sentence in it.
@@ -423,7 +427,7 @@ whichever shape the packer picks. `RIBBON_SCALING.md` holds the packing rules.
 **The ids are `markup.*` although the group is called Arrange.** A command's
 handler token must sit inside the hundred belonging to its id's prefix, and
 *Arrange* names a **group**, not a tab. §5 names groups freely and ids by tab —
-`markup.highlight` is in Text markup, `file.encrypt` in Security — so the id
+`markup.highlight` is in Text markup, `file.encrypt` in Security's Security group — so the id
 prefix says which tab, the group name says which band, and neither is an
 abbreviation of the other.
 
@@ -487,8 +491,8 @@ inferred.
 | **Diagnostics** | Render diagnostics · Ink picker |
 
 Tools is the tab for things that either operate on files other than the open
-one, or are configured once and rarely touched. Redact is on Edit ▸ Protect,
-where an operator editing a document looks for it. OCR is on File ▸ Recognise
+one, or are configured once and rarely touched. Redact is on Security ▸ Protect,
+beside the other tools that decide what may leave the file. OCR is on File ▸ Recognise
 (§7).
 
 ---
@@ -662,6 +666,27 @@ menus are not tabs — and it is the path most users try after the keyboard.
 
 ---
 
+### 5.9 Security — *who may open, change or trust this file, and what must never leave it?*
+
+| Group | Commands |
+|---|---|
+| **Security** | Remove old passwords · Encrypt · Allow edits under RC4 (RC4 documents only) · Unlock (locked documents only) · Permissions · Sign · Add validation evidence · Add archive time-stamp |
+| **Protect** | Redact ⌄ (mark page / by text / by pattern) · Redact selection · Off-page · Apply redactions · Sanitise… |
+
+**Two groups, two kinds of verb.** Security writes something about the
+*file* — a save transform, nothing in the undo log. Protect removes content
+from *pages*; marking is undoable and applying is not.
+
+**The tab is in every mode; Protect is in Edit alone.** Encrypting, signing
+and reading permissions produce a new document, which Read permits.
+Redaction changes page content, so its band is shown only under
+`mode.edit_content`, and is absent — not greyed — in Read and Review.
+
+The command ids keep their prefixes (`file.encrypt`, `edit.redact`): an id's
+prefix names its handler-token block, not the tab it is drawn on.
+
+---
+
 ## 6. Surfaces that are not tabs
 
 **Quick Access Toolbar** — Open, Save, Undo, Redo. The handful of controls that
@@ -794,7 +819,7 @@ decided and each decision holds.
 | `edit.undo`, `edit.redo` | the QAT alone | any tab | mirroring them onto every tab is what made the band render only the active tab and left undo unreachable (§2). The `edit.` prefix says which tab they would take if they ever got one; no tab is safe for them only because the QAT is always visible |
 
 Three commands sit where a first-time operator looks rather than where a
-returning one remembers: *Copy text*, *Redact* (Edit ▸ Protect) and *Rotate page*
+returning one remembers: *Copy text*, *Redact* (Security ▸ Protect) and *Rotate page*
 (Pages ▸ Transform). That is the trade this layout accepts.
 
 ---

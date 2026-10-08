@@ -1,4 +1,4 @@
-//! The words for **File ▸ Security ▸ Remove old passwords…** — the command,
+//! The words for **Security ▸ Remove old passwords…** — the command,
 //! the picker, the refusals and the receipt. No sentence ever quotes a value:
 //! the engine never reports one, and a receipt that did would leak it.
 

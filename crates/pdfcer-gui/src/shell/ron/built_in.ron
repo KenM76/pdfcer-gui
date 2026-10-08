@@ -7,6 +7,7 @@
             tabs: [
                 "file",
                 "view",
+                "security",
             ],
         ),
         (
@@ -18,6 +19,7 @@
                 "pages",
                 "markup",
                 "measure",
+                "security",
             ],
         ),
         (
@@ -30,6 +32,7 @@
                 "edit",
                 "markup",
                 "measure",
+                "security",
                 "tools",
             ],
         ),
@@ -91,40 +94,6 @@
                         Command(id: "file.copy_document_text"),
                     ],
                     collapse: 3,
-                ),
-                (
-                    id: "security",
-                    caption: "Security",
-                    items: [
-                        Command(id: "file.purge_password_values", size: Large),
-                        Command(id: "file.encrypt", size: Large),
-                        Command(
-                            id: "file.allow_rc4_edits",
-                            size: Large,
-                            visible_when: "doc.rc4",
-                        ),
-                        Command(
-                            id: "file.unlock",
-                            size: Large,
-                            visible_when: "doc.locked",
-                        ),
-                        Command(id: "file.permissions", size: Large),
-                        Command(
-                            id: "file.sign",
-                            size: Large,
-                            capability: "signing",
-                        ),
-                        Command(
-                            id: "file.add_validation_evidence",
-                            size: Large,
-                            capability: "signing",
-                        ),
-                        Command(
-                            id: "file.add_archive_timestamp",
-                            size: Large,
-                            capability: "timestamp",
-                        ),
-                    ],
                 ),
                 (
                     id: "print",
@@ -381,17 +350,6 @@
                     ],
                     collapse: 2,
                 ),
-                (
-                    id: "protect",
-                    caption: "Protect",
-                    items: [
-                        Command(id: "edit.redact", size: Large),
-                        Command(id: "edit.redact_selection"),
-                        Command(id: "edit.offpage"),
-                        Command(id: "edit.redact_apply"),
-                    ],
-                    collapse: 1,
-                ),
             ],
         ),
         (
@@ -494,6 +452,62 @@
                     items: [
                         Command(id: "measure.set_scale", size: Large),
                         Command(id: "measure.manage_groups", size: Large),
+                    ],
+                    collapse: 1,
+                ),
+            ],
+        ),
+        (
+            id: "security",
+            label: "Security",
+            question: "Who may open, change or trust this file, and what must never leave it?",
+            groups: [
+                (
+                    id: "security",
+                    caption: "Security",
+                    items: [
+                        Command(id: "file.purge_password_values", size: Large),
+                        Command(id: "file.encrypt", size: Large),
+                        Command(
+                            id: "file.allow_rc4_edits",
+                            size: Large,
+                            visible_when: "doc.rc4",
+                        ),
+                        Command(
+                            id: "file.unlock",
+                            size: Large,
+                            visible_when: "doc.locked",
+                        ),
+                        Command(id: "file.permissions", size: Large),
+                        Command(
+                            id: "file.sign",
+                            size: Large,
+                            capability: "signing",
+                        ),
+                        Command(
+                            id: "file.add_validation_evidence",
+                            size: Large,
+                            capability: "signing",
+                        ),
+                        Command(
+                            id: "file.add_archive_timestamp",
+                            size: Large,
+                            capability: "timestamp",
+                        ),
+                    ],
+                ),
+                (
+                    id: "protect",
+                    caption: "Protect",
+                    items: [
+                        Command(
+                            id: "edit.redact",
+                            size: Large,
+                            visible_when: "mode.edit_content",
+                        ),
+                        Command(id: "edit.redact_selection", visible_when: "mode.edit_content"),
+                        Command(id: "edit.offpage", visible_when: "mode.edit_content"),
+                        Command(id: "edit.redact_apply", visible_when: "mode.edit_content"),
                     ],
                     collapse: 1,
                 ),
@@ -618,6 +632,7 @@
                 Command(id: "view.tool_node", visible_when: "mode.edit_content"),
                 Command(id: "view.tool_text"),
                 Command(id: "view.tool_hand"),
+                Command(id: "view.tool_snapshot"),
                 Command(id: "view.smart_select", visible_when: "mode.edit_content"),
                 Command(id: "view.text_chunks", visible_when: "mode.edit_content"),
             ],

@@ -12,8 +12,8 @@ keeps the tab from becoming the place leftovers go.
 
 Two consequences worth stating, because both look like omissions:
 
-1. **Redact is not here**; it is Edit ▸ Protect, where someone editing a
-   document looks for it.
+1. **Redact is not here**; it is Security ▸ Protect, beside the other
+   tools that decide what may leave the file.
 2. **The batch pane's jobs are also ribbon commands.** The pane stays —
    the ribbon is the path that can be found without knowing the pane is
    there. Its third job, inserting pages from another file, is on Pages

@@ -193,7 +193,7 @@ pub mod panels;
 pub mod placing;
 /// Every word the print dialog shows. Consumed by `pdfcer_gui::dialogs::print`.
 pub mod print;
-/// Every word File ▸ Security ▸ Remove old passwords… shows, and its receipt.
+/// Every word Security ▸ Remove old passwords… shows, and its receipt.
 pub mod purge_passwords;
 /// The left rail's own words — O123 part 7.
 pub mod rail;
@@ -244,13 +244,13 @@ pub mod shortcuts;
 /// What the snapshot box says on the status row.
 pub mod snapshot;
 
-/// File ▸ Security ▸ Add archive time-stamp….
+/// Security ▸ Add archive time-stamp….
 #[cfg(feature = "signing")]
 pub mod archive;
 /// The *Create a digital ID* form in the Sign window.
 #[cfg(feature = "signing")]
 pub mod digital_id;
-/// File ▸ Security ▸ Add validation evidence….
+/// Security ▸ Add validation evidence….
 #[cfg(feature = "signing")]
 pub mod evidence;
 /// Every operator-facing string on the control that SIGNS a document — the

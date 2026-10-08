@@ -362,7 +362,7 @@ The SIGNING control's glyph, and deliberately a different asset from
 is a **panel toggle** — it opens a report about signatures that already
 exist — and this one **authors** a new one. Sharing a key would make
 `tools/compare-mockup-ribbon.py`'s item comparison unable to tell the
-File ▸ Security band from the View ▸ Panels row, and would put the same
+Security ▸ Security band from the View ▸ Panels row, and would put the same
 picture on a control that reads and one that writes.
 
 ### `const PICK_TEXT`
@@ -426,7 +426,7 @@ that constraint before it states anything else.
 ### `const PERMISSIONS`
 
 What the document permits — the engine's `set_permissions`. Worn by
-`file.permissions` (token 127) on File ▸ Security; `OPERATOR_REQUESTS.md`
+`file.permissions` (token 127) on Security ▸ Security; `OPERATOR_REQUESTS.md`
 O119 is answered and closed.
 
 ### `const SELECT_ALL`

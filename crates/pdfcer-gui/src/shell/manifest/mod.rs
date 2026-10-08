@@ -1,6 +1,6 @@
 //! # shell::manifest — pdfcer's ribbon, as an `egui_shell::Shell` value
 //!
-//! [`built_in`] returns the complete pdfcer shell: eight tabs (seven
+//! [`built_in`] returns the complete pdfcer shell: nine tabs (eight
 //! ordinary plus the contextual Format tab), thirty-seven groups, three
 //! modes, the quick-access toolbar and the keymap. It is the **built-in
 //! layer** of `SHELL_FRAMEWORK.md` §4's three-layer merge:
@@ -17,7 +17,8 @@ mod rail_tests;
 mod view;
 
 use pdfcer_gui_base::ribbontabs::{
-    command, edit, file, format, group, group_two_rows, icon_only, markup, measure, pages, tools,
+    command, edit, file, format, group, group_two_rows, icon_only, markup, measure, pages,
+    security, tools,
 };
 
 use crate::text::ribbon;
@@ -77,17 +78,21 @@ pub fn built_in() -> Shell {
         // The contextual Format tab is in NO mode's list, and is present
         // in all three. See `format.rs`.
         // -------------------------------------------------------------------
-        .with_mode(Mode::new("read", ribbon::mode_read(), ["file", "view"]))
+        .with_mode(Mode::new(
+            "read",
+            ribbon::mode_read(),
+            ["file", "view", "security"],
+        ))
         .with_mode(Mode::new(
             "review",
             ribbon::mode_review(),
-            ["file", "view", "pages", "markup", "measure"],
+            ["file", "view", "pages", "markup", "measure", "security"],
         ))
         .with_mode(Mode::new(
             "edit",
             ribbon::mode_edit(),
             [
-                "file", "view", "pages", "edit", "markup", "measure", "tools",
+                "file", "view", "pages", "edit", "markup", "measure", "security", "tools",
             ],
         ))
         // -------------------------------------------------------------------
@@ -99,6 +104,7 @@ pub fn built_in() -> Shell {
         .with_tab(edit::tab())
         .with_tab(markup::tab())
         .with_tab(measure::tab())
+        .with_tab(security::tab())
         .with_tab(tools::tab())
         .with_contextual_tab(format::tab())
         // -------------------------------------------------------------------
@@ -640,7 +646,7 @@ mod tests {
     #[test]
     fn the_ribbon_has_the_documented_shape() {
         let shell = built_in();
-        assert_eq!(shell.tabs().len(), 7, "seven ordinary tabs");
+        assert_eq!(shell.tabs().len(), 8, "eight ordinary tabs");
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
@@ -683,28 +689,35 @@ mod tests {
         }
     }
 
-    /// The tabs are the seven of `RIBBON_IA.md` §4, in its order.
+    /// The tabs are the eight of `RIBBON_IA.md` §4, in its order.
     #[test]
-    fn the_tabs_are_the_seven_in_specification_order() {
+    fn the_tabs_are_the_eight_in_specification_order() {
         let shell = built_in();
         let ids: Vec<&str> = shell.tabs().iter().map(|t| t.id.as_str()).collect();
         assert_eq!(
             ids,
             [
-                "file", "view", "pages", "edit", "markup", "measure", "tools"
+                "file", "view", "pages", "edit", "markup", "measure", "security", "tools"
             ]
         );
         assert_eq!(shell.contextual_tabs()[0].id, "format");
     }
 
-    /// **Every command id is prefixed with the tab that owns it.**
+    /// **Every command id is prefixed with the tab that owns it** — except
+    /// Security's, which keep the `file.` and `edit.` prefixes that name their
+    /// handler-token blocks (`RIBBON_IA.md` §5.9).
     #[test]
     fn every_command_id_names_its_owning_tab() {
         for tab in built_in().all_tabs() {
+            let prefixes: Vec<String> = if tab.id == "security" {
+                vec!["file.".into(), "edit.".into()]
+            } else {
+                vec![format!("{}.", tab.id)]
+            };
             for group in tab.groups() {
                 for id in group.items().iter().filter_map(Item::command_id) {
                     assert!(
-                        id.starts_with(&format!("{}.", tab.id)),
+                        prefixes.iter().any(|p| id.starts_with(p.as_str())),
                         "`{id}` is on tab `{}` but is not prefixed with it",
                         tab.id
                     );

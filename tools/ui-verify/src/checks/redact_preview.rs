@@ -6,7 +6,7 @@
 use std::path::PathBuf;
 
 use crate::checks::redaction::{
-    self, EDIT_TAB, MODE, PANEL_EVENT, PREPARED_EVENT, REDACT, REFUSED_EVENT, REGION_PREFIX,
+    self, MODE, PANEL_EVENT, PREPARED_EVENT, PROTECT_TAB, REDACT, REFUSED_EVENT, REGION_PREFIX,
     SECRET, WHOLE_PAGE_REGION,
 };
 use crate::checks::{Check, CheckContext, driving};
@@ -117,7 +117,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(16);
 
     // --- mark page 1 ------------------------------------------------------
-    redaction::click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+    redaction::click_tab(&session, &driver, ui_rect, PROTECT_TAB)?;
     redaction::click_command(&session, &driver, ui_rect, REDACT, 20)?;
     redaction::region(&session.trace()?, ui_rect, WHOLE_PAGE_REGION, REGION_PREFIX).map_err(
         |e| {

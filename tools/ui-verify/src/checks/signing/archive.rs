@@ -27,9 +27,9 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-const TAB: &str = "ribbon.tab.file";
+const TAB: &str = "ribbon.tab.security";
 const ITEM: &str = "ribbon.item.file.add_archive_timestamp";
-const COLLAPSED: &str = "ribbon.group.file.security.collapsed";
+const COLLAPSED: &str = "ribbon.group.security.security.collapsed";
 /// Off every monitor, unfocused: the drive needs neither mouse nor keyboard.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const REGION_BODY: &str = "archive.body";

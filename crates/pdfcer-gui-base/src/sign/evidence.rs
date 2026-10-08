@@ -1,4 +1,4 @@
-//! Reading the files File ▸ Security ▸ Add validation evidence… embeds:
+//! Reading the files Security ▸ Add validation evidence… embeds:
 //! certificates, CRLs and OCSP responses, as DER or PEM.
 //!
 //! Contract: [`read`] turns one file into the blobs it holds, each tagged with

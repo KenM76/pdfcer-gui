@@ -153,6 +153,7 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.tool_node").shown_when("mode.edit_content"),
                 Item::command("view.tool_text"),
                 Item::command("view.tool_hand"),
+                Item::command("view.tool_snapshot"),
                 Item::command("view.smart_select").shown_when("mode.edit_content"),
                 Item::command("view.text_chunks").shown_when("mode.edit_content"),
             ],

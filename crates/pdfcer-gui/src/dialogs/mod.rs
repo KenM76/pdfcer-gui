@@ -17,7 +17,7 @@ pub mod about;
 /// dialog for a push button. Its own module because it is the only row group
 /// there that carries a disclosure obligation.
 pub use pdfcer_gui_base::buttonactionpicker as buttonaction;
-/// File ▸ Security ▸ Add archive time-stamp….
+/// Security ▸ Add archive time-stamp….
 #[cfg(feature = "timestamp")]
 pub mod archive;
 /// The Embed-fonts confirmation - everything `embed_fonts` would do to the

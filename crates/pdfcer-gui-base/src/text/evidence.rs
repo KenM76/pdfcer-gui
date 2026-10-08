@@ -1,4 +1,4 @@
-//! The sentences for File ▸ Security ▸ Add validation evidence…, which embeds
+//! The sentences for Security ▸ Add validation evidence…, which embeds
 //! certificates, CRLs and OCSP responses in a signed document's `/DSS` so its
 //! signatures can be checked later without going online (PAdES B-LT).
 

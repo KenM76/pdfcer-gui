@@ -241,7 +241,7 @@ function.
 
 | [`Refusal`] | engine variant | why this shell can reach it |
 |---|---|---|
-| [`Refusal::Encrypted`] | `SignApplyError::Encrypted` | File ▸ Security ▸ Encrypt… ships (`O119`), so this shell can *make* an encrypted document and then be asked to sign it |
+| [`Refusal::Encrypted`] | `SignApplyError::Encrypted` | Security ▸ Encrypt… ships (`O119`), so this shell can *make* an encrypted document and then be asked to sign it |
 | [`Refusal::RedactionPending`] | `SignApplyError::RedactionPending` | deferred redaction ships (`Pass 250.2`), and a pending removal is a normal mid-session state |
 | [`Refusal::CertificationForbids`] | `SignApplyError::CertificationForbids { permission: 1 }` | a certified document opened from disk |
 | [`Refusal::RecoveredBase`] | `SignApplyError::RecoveredBase` | a damaged file that loaded through cross-reference recovery |

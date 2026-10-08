@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 
 use super::driving::{self, declared};
 use super::redaction::{
-    ACK_REGION, APPLY_REGION, CONFIRM_REGION, DESTINATION_NEW_FILE_REGION, EDIT_TAB, MODE,
-    PANEL_EVENT, PREPARED_EVENT, REDACT, REFUSED_EVENT, REGION_PREFIX, SECRET, SURVIVOR,
+    ACK_REGION, APPLY_REGION, CONFIRM_REGION, DESTINATION_NEW_FILE_REGION, MODE, PANEL_EVENT,
+    PREPARED_EVENT, PROTECT_TAB, REDACT, REFUSED_EVENT, REGION_PREFIX, SECRET, SURVIVOR,
     WRITE_FAILED_EVENT, WRITTEN_EVENT, census, click_command, click_region, click_tab, contains,
     launch, region,
 };
@@ -211,7 +211,7 @@ fn run_once(
 
     driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
     session.settle(16);
-    click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+    click_tab(&session, &driver, ui_rect, PROTECT_TAB)?;
     click_command(&session, &driver, ui_rect, REDACT, 20)?;
 
     // --- mark by search ---------------------------------------------------

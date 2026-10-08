@@ -146,11 +146,9 @@ pub(super) fn tab() -> Tab {
                     // line with the answer the shell already had in the other
                     // place the control appears.
                     //
-                    // The `A` chord is unaffected in Read for the better
-                    // reason: `capability::offers_command` filters chords by
-                    // tab visibility, not item visibility, so the chord still
-                    // reaches the arm — and the arm still declines. That is
-                    // the next thing to fix under O69, not this one.
+                    // The `A` chord is refused in Read too:
+                    // `modecapability::offers_command` refuses an item gated
+                    // on `mode.edit_content` in any mode without the Edit tab.
                     icon_only("view.tool_node").shown_when("mode.edit_content"),
                     icon_only("view.tool_text"),
                     icon_only("view.tool_hand"),

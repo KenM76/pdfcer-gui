@@ -20,8 +20,8 @@ use crate::trace::Trace;
 /// The mode whose ribbon carries the File tab.
 const MODE: &str = "read";
 
-/// The File tab.
-const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
+/// The Security tab.
+const SECURITY_TAB: (&str, &str) = ("ribbon.tab.security", "security");
 
 /// The two commands under test.
 const ENCRYPT: &str = "file.encrypt";
@@ -255,7 +255,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
 
         // --- A: Encrypt… on an unprotected document ------------------------
         press(&session, &driver, ui_rect, ENCRYPT)?;
@@ -350,7 +350,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, ENCRYPT)?;
         let trace = session.trace()?;
 

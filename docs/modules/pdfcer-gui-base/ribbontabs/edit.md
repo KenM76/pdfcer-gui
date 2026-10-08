@@ -3,7 +3,8 @@
 The **Edit** tab — *what am I changing about content that is already
 there?*
 
-`RIBBON_IA.md` §5.4. **Four** groups: Content, Insert, Forms, Protect.
+`RIBBON_IA.md` §5.4. Three groups: Content, Insert, Forms. Redaction is
+on the Security tab's Protect group (`security.md`).
 
 
 # Three renames that are the point of the tab
@@ -40,17 +41,6 @@ makes a visible control silently inert* — is precisely the rule the
 master toggle broke. A mode **removes** the tools it disables, so
 there is no click that mysteriously fails. Reintroducing a global
 enable flag under any name would undo that.
-
-# Redact arrives here
-
-From Tools ▸ Protect. One of the three moves a returning user will
-notice, and the reasoning is the same as for the other two: a user
-editing a document looks under Edit for the command that removes
-content from it. Tools is for jobs that run across *other* files.
-
-The pair is kept together and in this order — mark, then apply —
-because the asymmetry between them is the dangerous part: marking is
-reversible and applying is not, and both tooltips say so.
 
 # What is absent
 

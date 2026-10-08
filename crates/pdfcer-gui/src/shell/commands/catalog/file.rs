@@ -639,22 +639,13 @@ pub(super) fn band() -> Vec<Command> {
         // 2026-09-04: *"yes add encryption and permissions"*.
         // ===================================================================
         //
-        // # Why a new group on **File** rather than a row in Edit ▸ Protect
+        // # Why a group of its own beside Protect, not a row in it
         //
-        // The mockup drew it there and the operator approved that mockup, and
-        // the reason it drew it there survives restating: **every other command
-        // on the Edit tab is an undoable edit to page content, and these two are
-        // neither.** `EDITABLE_SURFACES.md` calls `set_encryption` *"a save
-        // transform, not an undoable edit"* — pressing either rewrites every
-        // byte and produces a different file, with nothing entered in the undo
-        // log. Redaction, four groups away on Edit, removes marks from a page
-        // and is undoable right up until it is applied. Putting the two on one
-        // tab would say they are the same kind of verb.
-        //
-        // The position **within** File is the operator's own framing of the
-        // question: O119 asks *"do you want to protect a drawing before you send
-        // it out?"*, so the band sits immediately after the band that sends it
-        // out. `crate::shell::manifest::file` places it there.
+        // Both bands are on the Security tab. Every Protect command removes
+        // content from a page and is undoable until applied; these two are
+        // neither — `EDITABLE_SURFACES.md` calls `set_encryption` *"a save
+        // transform, not an undoable edit"*. Two groups keep the two kinds of
+        // verb apart. `pdfcer_gui_base::ribbontabs::security` places them.
         //
         // # Why both are gated on `doc.open` and NOT on "is it signed"
         //

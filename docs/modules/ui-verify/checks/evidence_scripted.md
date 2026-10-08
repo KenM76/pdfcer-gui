@@ -1,6 +1,6 @@
 # `ui-verify/checks/evidence_scripted`
 
-`validation_evidence_added_without_the_mouse`: File ▸ Security ▸ Add
+`validation_evidence_added_without_the_mouse`: Security ▸ Add
 validation evidence… embeds the chosen files in a signed document, and refuses
 an unsigned one. The window is off the desktop and driven only through
 `ScriptedPointer`, so the check runs under `--no-input`.

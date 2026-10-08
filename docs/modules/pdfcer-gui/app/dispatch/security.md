@@ -1,12 +1,12 @@
 # `pdfcer-gui/app/dispatch/security`
 
-`app::dispatch::security` — the File ▸ Security band's commands
+`app::dispatch::security` — the Security tab's Security band's commands
 
 ## The subject, and why the module is not called `protect`
 
 *Protection* describes encrypting and re-permissioning and not signing — a
 signature protects nothing, it asserts authorship. The module is named after
-what all of its commands share instead: the **File ▸ Security band**. Each
+what all of its commands share instead: the **Security band**. Each
 writes something into the file that is about the file rather than about any
 page, none is an undoable content edit, and each produces a new document
 rather than changing the one on screen.

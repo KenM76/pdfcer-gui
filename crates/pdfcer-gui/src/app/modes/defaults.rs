@@ -331,8 +331,8 @@ fn spec(mode_id: &str) -> ModeSpec {
                     //
                     // Edit is also the only arrangement it appears in, and that
                     // is not a placement decision but a consequence: the toggle
-                    // is `edit.redact`, on the Edit tab, and Read and Review are
-                    // not shown that tab. A mode that mounted this panel could
+                    // is `edit.redact`, in Security ▸ Protect, which Read and
+                    // Review do not show. A mode that mounted this panel could
                     // not reopen it after closing it — the trap
                     // `crate::panels::Panel::Forms` had to be moved off Edit to
                     // escape, arriving here from the other direction.

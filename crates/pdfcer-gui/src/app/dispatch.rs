@@ -228,7 +228,9 @@ impl PdfcerApp {
             // `crate::dialogs::new_document`, behind the same `save_pending`
             // guard `Action::New` takes.
             "file.new_from_template" => self.dialogs.open_new_document(),
-            "file.open" => crate::app::files::raise(crate::app::files::pick_document(), actions),
+            "file.open" => {
+                crate::app::files::raise_all(crate::app::files::pick_documents(), actions)
+            }
             // O122 — the control beside the mode selector. A literal arm
             // rather than a routed one: it has its own `Action`, because what
             // follows is a sequence (save, launch, close) that no existing verb

@@ -280,38 +280,5 @@ pub fn tab() -> Tab {
                     command("edit.form_repair_fonts"),
                 ],
             ),
-            // ---------------------------------------------------------------
-            // Protect — mark, then apply. See the module header.
-            // ---------------------------------------------------------------
-            group(
-                "protect",
-                ribbon::group_edit_protect(),
-                [
-                    // Large — the mockup's `Redact` big, with the two
-                    // qualified redaction verbs in a column beside it. First
-                    // in the group already.
-                    large("edit.redact"),
-                    // Between mark-by-search and Apply, which is the order an
-                    // operator works in: find what you can find, mark what you
-                    // cannot, then apply once. Putting it after Apply would put
-                    // a marking verb on the far side of the destructive one.
-                    command("edit.redact_selection"),
-                    // The census, BETWEEN the marking verbs and Apply, and
-                    // the position is the same argument as its neighbour's
-                    // taken one step further. The operator's sequence is: find
-                    // what you can find, mark what you cannot, **check what you
-                    // could not have known about**, then apply once. It is the
-                    // last thing to do before the irreversible one, because it
-                    // is the only one that can tell you the document was not
-                    // yet clean.
-                    //
-                    // Not Large. `edit.redact` is the group's big button
-                    // because it is where an operator starts; this is where
-                    // they finish, and a second large control in a three-deep
-                    // column would make the group read as two features.
-                    command("edit.offpage"),
-                    command("edit.redact_apply"),
-                ],
-            ),
         ])
 }

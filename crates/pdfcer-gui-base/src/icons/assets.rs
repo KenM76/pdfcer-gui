@@ -753,8 +753,8 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 // |---|---|---|
 // | `export-image` | `file.export_image` | File ▸ Export |
 // | `copy-as-vector` | `edit.copy_as_vector` (token 408) | Edit ▸ Clipboard, icon-only |
-// | `encrypt` | `file.encrypt` (126) | File ▸ Security, large |
-// | `permissions` | `file.permissions` (127) | File ▸ Security, large |
+// | `encrypt` | `file.encrypt` (126) | Security ▸ Security, large |
+// | `permissions` | `file.permissions` (127) | Security ▸ Security, large |
 // | `open-in-acrobat` | `file.open_in_acrobat` | the ribbon's trailing item |
 //
 // ⇒ **Do not write "this is not built" into a comment as a fact about the
@@ -792,7 +792,7 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 //   that rewrites the file), not about a button: the art did not pre-empt his
 //   answer, it let the mockup ask. He answered *"yes add encryption and
 //   permissions"*, and both ship as `file.encrypt` / `file.permissions` on
-//   File ▸ Security, both large, exactly where the mockup drew them.
+//   Security ▸ Security, both large, exactly where the mockup drew them.
 //
 // ⇒ A variant with no command is the SUPPORTED state, not a loose end.
 // [`super::Icon::EditObjects`] is the standing precedent — its command is
@@ -820,7 +820,7 @@ pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg"
 /// `encrypt.svg` — the art for [`super::Icon::Encrypt`].
 ///
 /// Put a password on this document — the engine's `set_encryption`. Worn by
-/// `file.encrypt` (token 126) on File ▸ Security.
+/// `file.encrypt` (token 126) on Security ▸ Security.
 pub(super) const ENCRYPT: &str = include_str!("assets/encrypt.svg");
 
 /// `export-image.svg` — the art for [`super::Icon::ExportImage`].

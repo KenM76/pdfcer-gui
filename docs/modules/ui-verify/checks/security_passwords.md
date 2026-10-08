@@ -3,7 +3,7 @@
 `security_notes_say_old_passwords_are_kept` — a form whose earlier saved
 version stored what was typed into a password field says so in Document
 properties ▸ Security notes, naming the field and the version and never the
-value, and names File ▸ Security ▸ Remove old passwords… as the remedy.
+value, and names Security ▸ Remove old passwords… as the remedy.
 
 # What it drives
 

@@ -20,8 +20,8 @@ use crate::trace::Trace;
 /// The mode whose ribbon carries `edit.redact`.
 pub(super) const MODE: &str = "edit";
 
-/// The Edit tab.
-pub(super) const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
+/// The Security tab, whose Protect group holds Redact.
+pub(super) const PROTECT_TAB: (&str, &str) = ("ribbon.tab.security", "security");
 
 /// The File tab, for the extraction oracle.
 const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
@@ -517,7 +517,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
 
         // --- PHASE B: the marking panel -----------------------------------
-        click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+        click_tab(&session, &driver, ui_rect, PROTECT_TAB)?;
         click_command(&session, &driver, ui_rect, REDACT, 20)?;
         let trace = session.trace()?;
         region(&trace, ui_rect, WHOLE_PAGE_REGION, REGION_PREFIX).map_err(|e| {
@@ -1084,7 +1084,7 @@ mod tests {
                  failure to find it would report an unhelpfully empty list"
             );
         }
-        assert_eq!(EDIT_TAB.0, format!("ribbon.tab.{}", EDIT_TAB.1));
+        assert_eq!(PROTECT_TAB.0, format!("ribbon.tab.{}", PROTECT_TAB.1));
         assert_eq!(FILE_TAB.0, format!("ribbon.tab.{}", FILE_TAB.1));
     }
 }

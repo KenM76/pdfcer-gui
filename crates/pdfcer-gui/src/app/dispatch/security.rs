@@ -1,4 +1,4 @@
-//! `app::dispatch::security` — the File ▸ Security band's commands
+//! `app::dispatch::security` — the Security tab's Security band's commands
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/security.md`.
 

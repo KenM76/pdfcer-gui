@@ -1,4 +1,4 @@
-//! # `app::actions::purge_passwords` — File ▸ Security ▸ Remove old passwords…
+//! # `app::actions::purge_passwords` — Security ▸ Remove old passwords…
 //!
 //! Finds every password-field value stored in any version of the file and
 //! writes a copy holding none. The open document is not changed.
@@ -8,7 +8,7 @@
 //! earlier value. Only a single-version rewrite that also drops the object
 //! streams holding a purged object
 //! (`pdfcer_core::edit::EditSession::to_full_bytes_decomposing_containers`) removes them, and
-//! that is a save transform, like its File ▸ Security neighbours.
+//! that is a save transform, like its Security ▸ Security neighbours.
 //!
 //! The pipeline: serialize the session as Save would (so unsaved edits are
 //! included), scan every version with `scan_stored_password_values`, purge a

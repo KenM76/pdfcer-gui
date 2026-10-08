@@ -18,6 +18,9 @@ const TAB_MARKUP: &str = "markup";
 /// The `measure` tab's id in the manifest.
 // ui-text-exempt: manifest identifier, never displayed.
 const TAB_MEASURE: &str = "measure";
+/// The condition an item carries when only a content-editing mode shows it.
+// ui-text-exempt: a condition name, never displayed.
+pub const EDIT_CONTENT_CONDITION: &str = "mode.edit_content";
 
 /// **What the active mode lets the canvas do to the document.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -290,7 +293,23 @@ pub fn offers_command(shell: Option<&Shell>, mode_id: Option<&str>, command_id: 
     let Some(mode) = shell.modes().iter().find(|m| m.id == mode_id) else {
         return true;
     };
+    // An item shown only where content may be edited is refused elsewhere
+    // even when its tab is listed — Security ▸ Protect in Read.
+    if edit_content_only(owning_tab, command_id) && !mode.tabs().iter().any(|t| t == TAB_EDIT) {
+        return false;
+    }
     mode.tabs().contains(&owning_tab.id)
+}
+
+/// Whether `command_id` is drawn on `tab` only under [`EDIT_CONTENT_CONDITION`].
+fn edit_content_only(tab: &egui_shell::manifest::Tab, command_id: &str) -> bool {
+    tab.groups()
+        .iter()
+        .flat_map(|g| g.items().iter())
+        .any(|item| {
+            matches!(item, Item::Command { id, visible_when: Some(when), .. }
+            if id == command_id && when == EDIT_CONTENT_CONDITION)
+        })
 }
 
 /// Whether a gesture that acts on page **content** may proceed.

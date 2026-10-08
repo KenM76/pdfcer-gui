@@ -1,4 +1,4 @@
-//! `stored_passwords_removed_without_the_mouse` — File ▸ Security ▸ Remove old
+//! `stored_passwords_removed_without_the_mouse` — Security ▸ Remove old
 //! passwords… on `fixtures/password-history.pdf`, whose earlier version stores
 //! a Password field's value, writes a one-version copy that no longer holds
 //! it, on a window placed off the desktop and driven through the scripted
@@ -16,10 +16,10 @@ use crate::report::CheckReport;
 
 /// The line a successful purge writes.
 const WROTE: &str = "purge-passwords"; // ui-text-exempt: a trace event name, never displayed
-const TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
+const TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.file.purge_password_values"; // ui-text-exempt: a trace region name, never displayed
 /// The Security group when the band is too narrow to show it open.
-const COLLAPSED: &str = "ribbon.group.file.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
+const COLLAPSED: &str = "ribbon.group.security.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 /// Off the desktop, so no OS input can reach it and none of his is taken.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
@@ -35,7 +35,7 @@ impl Check for StoredPasswordsRemovedWithoutTheMouse {
     }
 
     fn defect(&self) -> &'static str {
-        "File ▸ Security ▸ Remove old passwords… does not write a copy, or the copy still holds a password value an earlier version of the file stored"
+        "Security ▸ Remove old passwords… does not write a copy, or the copy still holds a password value an earlier version of the file stored"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {

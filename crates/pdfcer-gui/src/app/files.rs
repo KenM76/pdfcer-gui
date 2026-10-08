@@ -13,6 +13,10 @@ const DIAG_IMAGE_PATH: &str = "PDFCER_DIAG_IMAGE_PATH"; // ui-text-exempt: an en
 
 pub const DIAG_OPEN_PATH: &str = "PDFCER_DIAG_OPEN_PATH"; // ui-text-exempt: an environment variable name, never displayed
 
+/// Answers ONE press of Open with every `;`-separated path at once — the
+/// operator's Shift/Ctrl multi-selection in the native dialog.
+pub const DIAG_OPEN_PATHS: &str = "PDFCER_DIAG_OPEN_PATHS"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The seam that answers the **attach a file** picker.
 /// Answers [`pick_font_file`] without a dialog, for `ui-verify`.
 pub const DIAG_FONT_FILE_PATH: &str = "PDFCER_DIAG_FONT_FILE_PATH"; // ui-text-exempt: an environment variable name, never displayed
@@ -100,7 +104,48 @@ pub enum Picked {
     Unavailable,
 }
 
-/// **Ask for a document to open.**
+/// **Ask for the documents to open** — `file.open`. Every file selected in
+/// the dialog (Shift, Ctrl, Ctrl+Shift) is answered, in the dialog's order;
+/// one [`Picked::Cancelled`] when the operator dismissed it.
+#[must_use]
+pub fn pick_documents() -> Vec<Picked> {
+    if let Some(raw) = std::env::var_os(DIAG_OPEN_PATHS) {
+        let answer = several(&raw);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("open-picked source=env-many n={}", answer.len())
+        });
+        return answer;
+    }
+    if std::env::var_os(DIAG_OPEN_PATH).is_some() {
+        return vec![pick_document()];
+    }
+    let answer = native_pick_many();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("open-picked source=native-many n={}", answer.len())
+    });
+    answer
+}
+
+/// A `;`-separated list as one multi-selection; empty entries are skipped,
+/// and a list with none left is a dismissed dialog.
+fn several(raw: &OsString) -> Vec<Picked> {
+    let answer: Vec<Picked> = raw
+        .to_string_lossy()
+        .split(';')
+        .filter(|part| !part.is_empty())
+        .map(|part| Picked::Path(PathBuf::from(part)))
+        .collect();
+    if answer.is_empty() {
+        vec![Picked::Cancelled]
+    } else {
+        answer
+    }
+}
+
+/// **Ask for a document to open** — one file, for a caller that can take
+/// only one (Compile hand edits).
 #[must_use]
 pub fn pick_document() -> Picked {
     if let Some(raw) = std::env::var_os(DIAG_OPEN_PATH) {
@@ -173,6 +218,13 @@ pub fn from_env(value: Option<OsString>) -> Option<Picked> {
     Some(Picked::Path(PathBuf::from(value)))
 }
 
+/// [`raise`] for each answer: every picked file opens in a tab of its own.
+pub fn raise_all(picked: Vec<Picked>, actions: &mut Vec<crate::app::actions::Action>) {
+    for one in picked {
+        raise(one, actions);
+    }
+}
+
 /// **Turn what the picker said into what the application does about it.**
 pub fn raise(picked: Picked, actions: &mut Vec<crate::app::actions::Action>) {
     match picked {
@@ -182,6 +234,21 @@ pub fn raise(picked: Picked, actions: &mut Vec<crate::app::actions::Action>) {
             // ui-text-exempt: diagnostic trace, never displayed.
             "open-unavailable reason=no-picker-in-this-build".to_owned()
         }),
+    }
+}
+
+/// The platform's own picker, with multi-selection on.
+fn native_pick_many() -> Vec<Picked> {
+    let chosen = rfd::FileDialog::new()
+        .set_title(crate::text::files::open_dialog_title())
+        .add_filter(crate::text::files::filter_pdf(), &["pdf"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_files()
+        .unwrap_or_default();
+    if chosen.is_empty() {
+        vec![Picked::Cancelled]
+    } else {
+        chosen.into_iter().map(Picked::Path).collect()
     }
 }
 
@@ -843,6 +910,21 @@ mod tests {
     use crate::app::actions::Action;
     use crate::app::state::Status;
     use crate::panels::objects::test_support::engine_fixture;
+
+    #[test]
+    fn a_multi_selection_opens_every_file_it_names() {
+        let picked = several(&OsString::from("D:\\a.pdf;;D:\\b.pdf"));
+        let mut actions = Vec::new();
+        raise_all(picked, &mut actions);
+        assert_eq!(
+            actions,
+            vec![
+                Action::Open(PathBuf::from("D:\\a.pdf")),
+                Action::Open(PathBuf::from("D:\\b.pdf")),
+            ]
+        );
+        assert_eq!(several(&OsString::from(";")), vec![Picked::Cancelled]);
+    }
 
     /// A four-page fixture that really opens.
     fn fixture() -> PathBuf {

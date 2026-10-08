@@ -112,11 +112,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         "C — n-up, booklet and poster imposition exist in core and the CLI. Needs a \
          print-time dialog.",
     ),
-    (
-        "file.security",
-        "N — no encryption or permissions surface. Encryption is disclosed in the status bar \
-         today, and opening a signed or encrypted document into Read mode is the nearer fix.",
-    ),
     // ⚠ **An about box is a licence obligation on this build, not a
     // courtesy.** For as long as a distribution carries only permissively
     // licensed code, the shipped `LICENSE` covers its notices. This one ships

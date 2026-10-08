@@ -175,7 +175,7 @@ tab states the boundary once, in one sentence, as a fact about this build.
 too has ZERO call sites.** *"Encryption first, signing later"* was the
 right prediction and it came true on 2026-09-04: `file.encrypt` and
 `file.permissions` are registered, dispatched through
-`crate::app::dispatch::security`, drawn on **File ▸ Security**, and
+`crate::app::dispatch::security`, drawn on **Security ▸ Security**, and
 `crate::protect` calls `set_encryption`, `set_permissions` and
 `remove_encryption`. So pdfcer can add a password, remove one, and change
 these permissions. Only *sign a document* is still true.

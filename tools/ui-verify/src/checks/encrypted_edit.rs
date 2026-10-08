@@ -34,7 +34,7 @@ const REFUSED: &str = "rotate-pages-refused"; // ui-text-exempt: a trace event n
 const CAUSE: &str = "edit-encrypted-refused"; // ui-text-exempt: a trace event name, never displayed
 const REOPEN: &str = "unlock-reopen"; // ui-text-exempt: a trace event name, never displayed
 const SAVED: &str = "save-in-place"; // ui-text-exempt: a trace event name, never displayed
-const FILE_TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
+const SECURITY_TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name, never displayed
 const UNLOCK: &str = "ribbon.item.file.unlock"; // ui-text-exempt: a trace region name, never displayed
 const SIGN: &str = "ribbon.item.file.sign"; // ui-text-exempt: a trace region name, never displayed
 const SIGN_OPENED: &str = "sign-opened"; // ui-text-exempt: a trace event name, never displayed
@@ -293,23 +293,23 @@ fn print_only(
     Ok(None)
 }
 
-/// The File tab offers Unlock, and Sign's window names the password as the
+/// The Security tab offers Unlock, and Sign's window names the password as the
 /// cause of its refusal; the window is then closed.
 fn file_tab(
     report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
-    if !press(session, pointer, FILE_TAB)? {
-        return Ok(Some(format!("no `{FILE_TAB}` was declared to press.")));
+    if !press(session, pointer, SECURITY_TAB)? {
+        return Ok(Some(format!("no `{SECURITY_TAB}` was declared to press.")));
     }
     if declared_in(&session.trace()?, UI_RECT, UNLOCK).is_none() {
         return Ok(Some(format!(
-            "the File tab drew no `{UNLOCK}` on a document its password withholds edits from."
+            "the Security tab drew no `{UNLOCK}` on a document its password withholds edits from."
         )));
     }
     if !press(session, pointer, SIGN)? {
-        return Ok(Some(format!("the File tab drew no `{SIGN}`.")));
+        return Ok(Some(format!("the Security tab drew no `{SIGN}`.")));
     }
     let Some(opened) = await_new(session, SIGN_OPENED, 0)? else {
         return Ok(Some(format!("Sign traced no `{SIGN_OPENED}`.")));
@@ -322,7 +322,7 @@ fn file_tab(
             opened.raw
         )));
     }
-    let vp = declared_in(&session.trace()?, UI_RECT, FILE_TAB).and_then(|(_, vp)| vp);
+    let vp = declared_in(&session.trace()?, UI_RECT, SECURITY_TAB).and_then(|(_, vp)| vp);
     pointer.key(session, vp.as_deref(), "Escape", None)?;
     session.settle(20);
     Ok(None)

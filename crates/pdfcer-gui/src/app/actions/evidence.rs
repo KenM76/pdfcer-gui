@@ -1,4 +1,4 @@
-//! File ▸ Security ▸ Add validation evidence…: embed operator-chosen
+//! Security ▸ Add validation evidence…: embed operator-chosen
 //! certificates, CRLs and OCSP responses in the signed document's `/DSS`
 //! (PAdES B-LT), through `EditSession::add_validation_material`.
 //!

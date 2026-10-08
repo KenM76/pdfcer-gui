@@ -354,7 +354,7 @@ pub fn built_in() -> Menus {
             //
             // O53 is the rest of the argument: **a command must not exist only
             // on the ribbon.** The operator who needs this one has just clicked
-            // a chunk and is looking at it; Edit ▸ Protect is the correct
+            // a chunk and is looking at it; Security ▸ Protect is the correct
             // *second* home.
             //
             // ## Why a marking row is allowed where `DESIGNS.md` §6.2 bans an
@@ -384,7 +384,7 @@ pub fn built_in() -> Menus {
             // — `canvas::rightclick` computes `reading = !caps.edit_content`
             // and downgrades every mode that cannot edit content to
             // `CANVAS_READ_OBJECT`, so this menu is reachable in Edit alone,
-            // which is the same mode the Edit tab's Protect group is shown in.
+            // which is the same mode Security ▸ Protect is shown in.
             // A second statement of that fact here would be a second thing to
             // keep in step.
             Item::command("edit.redact_selection"),

@@ -1,4 +1,4 @@
-//! The sentences for File ▸ Security ▸ Add archive time-stamp…, which writes a
+//! The sentences for Security ▸ Add archive time-stamp…, which writes a
 //! copy of the document sealed by a document time-stamp (PAdES B-LTA when the
 //! document is signed and carries validation evidence).
 

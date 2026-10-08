@@ -16,10 +16,8 @@ const MODE: &str = "read";
 /// The mode phase C drives from. Redaction **is** authoring.
 const EDIT_MODE: &str = "edit";
 
-/// The File tab.
-const FILE_TAB: (&str, &str) = ("ribbon.tab.file", "file");
-/// The Edit tab, for phase C's redaction.
-const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
+/// The Security tab: Sign, and phase C's redaction.
+const SECURITY_TAB: (&str, &str) = ("ribbon.tab.security", "security");
 
 /// The command under test.
 const SIGN: &str = "file.sign";
@@ -207,7 +205,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
 
         let trace = session.trace()?;
@@ -361,7 +359,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
         let trace = session.trace()?;
 
@@ -444,7 +442,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         // Redaction is authoring, so it is reached from Edit.
         driving::click_mode_segment(&session, &driver, ui_rect, EDIT_MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, REDACT_CMD)?;
         session.settle(20);
         click(&session, &driver, ui_rect, REGION_WHOLE_PAGE)?;
@@ -455,7 +453,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         click(&session, &driver, ui_rect, REGION_REDACT_CONFIRM)?;
         session.settle(40);
 
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
         let trace = session.trace()?;
 
@@ -573,7 +571,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
 
         let trace = session.trace()?;
@@ -830,7 +828,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
 
         // THE DYNAMIC RANGE for phase H's absence assertion, taken on a
@@ -936,7 +934,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let driver = Driver::new(session.window());
         driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
         session.settle(16);
-        click_tab(&session, &driver, ui_rect, FILE_TAB)?;
+        click_tab(&session, &driver, ui_rect, SECURITY_TAB)?;
         press(&session, &driver, ui_rect, SIGN)?;
         session.settle(20);
 

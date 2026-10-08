@@ -253,8 +253,8 @@ pub const fn no_file_refusal() -> &'static str {
 pub const fn redaction_pending_refusal() -> &'static str {
     "A redaction is armed on this document and has not been applied yet. Changing the protection \
      now would write the version that still contains what you marked for removal, so pdfcer \
-     refuses it. Apply the redaction, or call it off, on the Redact group of the Edit tab, and \
-     then set the protection."
+     refuses it. Apply the redaction, or call it off, in the Protect group of the Security tab, \
+     and then set the protection."
 }
 
 /// The engine refused the operation after the operator pressed.

@@ -1,6 +1,6 @@
-//! # `ribbontabs` — seven of the ribbon's tabs, as `egui_shell` values
+//! # `ribbontabs` — eight of the ribbon's tabs, as `egui_shell` values
 //!
-//! File, Pages, Edit, Markup, Measure, Tools and the contextual Format tab,
+//! File, Pages, Edit, Markup, Measure, Security, Tools and the contextual Format tab,
 //! with the item helpers every tab module writes its lists in and the
 //! condition names and `Item::Custom` kinds those tabs emit. The app's
 //! `shell::manifest::built_in` assembles them with the View tab, which names
@@ -15,6 +15,7 @@ pub mod format;
 pub mod markup;
 pub mod measure;
 pub mod pages;
+pub mod security;
 pub mod tools;
 
 /// **The condition, published by the application each frame, under which an

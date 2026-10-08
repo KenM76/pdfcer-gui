@@ -108,6 +108,7 @@ fn the_two_selection_toggles_are_the_last_rows_of_navigate() {
             "view.tool_node",
             "view.tool_text",
             "view.tool_hand",
+            "view.tool_snapshot",
             "view.smart_select",
             "view.text_chunks",
         ],

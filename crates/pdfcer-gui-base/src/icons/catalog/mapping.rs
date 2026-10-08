@@ -166,7 +166,7 @@ impl Icon {
         // ribbon control yet … the other four are art before button"*, and by
         // the end of 2026-09-04 **all five were named by a registered
         // command**: `edit.copy_as_vector` (token 408, Edit ▸ Clipboard),
-        // `file.encrypt` and `file.permissions` (126 / 127, File ▸ Security),
+        // `file.encrypt` and `file.permissions` (126 / 127, Security ▸ Security),
         // `file.export_image` (File ▸ Export) and `file.open_in_acrobat` (the
         // ribbon's trailing item). The art landed in the morning and the
         // buttons landed in the afternoon; the sentence describing the gap was

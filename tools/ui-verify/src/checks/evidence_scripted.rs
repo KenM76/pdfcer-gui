@@ -1,4 +1,4 @@
-//! `validation_evidence_added_without_the_mouse` — File ▸ Security ▸ Add
+//! `validation_evidence_added_without_the_mouse` — Security ▸ Add
 //! validation evidence… embeds a supplied certificate and CRL, plus the
 //! signer's own certificate, in a signed document, and refuses an unsigned one
 //! with its own reason. The window is off the desktop and driven through the
@@ -16,9 +16,9 @@ use crate::report::CheckReport;
 
 const APPLIED: &str = "evidence-applied"; // ui-text-exempt: a trace event name, never displayed
 const REFUSED: &str = "evidence-refused"; // ui-text-exempt: a trace event name, never displayed
-const TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
+const TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.file.add_validation_evidence"; // ui-text-exempt: a trace region name, never displayed
-const COLLAPSED: &str = "ribbon.group.file.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
+const COLLAPSED: &str = "ribbon.group.security.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
 const FILES_ENV: &str = "PDFCER_DIAG_EVIDENCE_FILES"; // ui-text-exempt: an environment variable name
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
@@ -30,7 +30,7 @@ impl Check for ValidationEvidenceAddedWithoutTheMouse {
     }
 
     fn defect(&self) -> &'static str {
-        "File ▸ Security ▸ Add validation evidence… is unreachable, embeds nothing in a signed document, or does not refuse an unsigned one"
+        "Security ▸ Add validation evidence… is unreachable, embeds nothing in a signed document, or does not refuse an unsigned one"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {

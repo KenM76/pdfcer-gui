@@ -1,6 +1,6 @@
 # `ui-verify/checks/purge_passwords_scripted`
 
-`stored_passwords_removed_without_the_mouse`: File ▸ Security ▸ Remove old
+`stored_passwords_removed_without_the_mouse`: Security ▸ Remove old
 passwords… writes a copy of `fixtures/password-history.pdf` that no longer
 holds the password its first version stored. The window is off the desktop
 and driven only through `ScriptedPointer`, so the check runs under

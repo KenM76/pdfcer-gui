@@ -647,6 +647,8 @@ pub mod media_clip;
 pub mod new_radio_mark;
 /// The Objects panel says where its list and the page disagree.
 pub mod object_disagreements;
+/// Open several documents from one Open.
+pub mod open_many;
 pub mod page_boxes;
 pub mod password_fill;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
@@ -662,6 +664,8 @@ pub mod replace_text;
 pub mod security_notes;
 /// A password typed into an earlier saved version is said, field and version.
 pub mod security_passwords;
+/// The Security tab's two bands, and the rail's snapshot row.
+pub mod security_tab;
 
 /// **Selecting a page object names the layer it is on** — O126's third
 /// feature, driven at last. Its header carries the vacuous-pass argument for
@@ -724,7 +728,7 @@ pub mod properties_metadata;
 /// panel held is on screen in Properties, its new home.
 pub mod properties_tool;
 
-/// O119, driven — File ▸ Security reports the document's own state and refuses
+/// O119, driven — Security ▸ Security reports the document's own state and refuses
 /// a signed document instead of drawing a form. ⚠ Written and NOT RUN.
 pub mod protect;
 

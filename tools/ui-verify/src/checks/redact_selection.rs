@@ -176,7 +176,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ⇒ So this check does depend on the Redact band being drawn where the
     // manifest says. Named rather than hidden: if it fails at this step and
     // `the_ribbon_has_the_documented_shape` also fails, believe that one first.
-    // THE EDIT TAB FIRST. `mode.edit` sets the MODE, which decides which
+    // THE SECURITY TAB FIRST. `mode.edit` sets the MODE, which decides which
     // tabs exist — it does not decide which one is showing, and the shell opens
     // on File. The first version of this check went straight to the item lookup
     // and reported the control missing while the trace held nine
@@ -185,7 +185,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // ⇒ Two different things wear the word "edit" here, and confusing them is
     // cheap to do: a MODE is which tabs you may see, a TAB is which one you are
     // looking at.
-    let Some(tab) = crate::checks::driving::declared(&session.trace()?, ui_rect, "ribbon.tab.edit")
+    let Some(tab) =
+        crate::checks::driving::declared(&session.trace()?, ui_rect, "ribbon.tab.security")
     else {
         // The tab list is built HERE rather than in an `ok_or_else`
         // closure: building it needs `session.trace()?` and a closure cannot
@@ -194,7 +195,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let tabs =
             crate::checks::driving::declared_names(&session.trace()?, ui_rect, "ribbon.tab.");
         return Err(Error::new(format!(
-            "no `ribbon.tab.edit` region, so the Edit tab is not on the ribbon and the \
+            "no `ribbon.tab.security` region, so the Security tab is not on the ribbon and the \
              control under test cannot be reached by pointer. Tabs declared: {}.",
             crate::checks::driving::list(&tabs)
         )));
