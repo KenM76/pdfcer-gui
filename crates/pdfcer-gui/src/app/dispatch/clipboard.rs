@@ -219,7 +219,8 @@ fn paste(
     let Status::Open(doc) = &app.status else {
         return;
     };
-    let clipped = crate::canvas::clipboard::read(ctx);
+    let local = crate::canvas::clipboard::read(ctx);
+    let clipped = crate::canvas::clipshared::adopt(ctx, local.is_some()).or(local);
     if let Some(incoming) = super::ospaste::newer(ctx, clipped.is_some()) {
         super::ospaste::paste(app, ctx, id, incoming, actions);
         return;

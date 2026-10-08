@@ -31,8 +31,8 @@ own rule is that a harness assertion is a claim about the program *and*
 about the harness, so the route with fewer harness-owned failure modes is
 the honest one.
 
-`clipboard-image w=… h=…` is written **after** `set_image_and_text` returns
-true, which is after `SetClipboardData` accepted both payloads. So the line
+`clipboard-image w=… h=…` is written **after** `native_clipboard::place`
+returns, which is after `SetClipboardData` accepted every entry. So the line
 is the application reporting what the operating system told it, which is the
 strongest claim available from inside the process.
 

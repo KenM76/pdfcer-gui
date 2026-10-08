@@ -79,16 +79,6 @@
 #[cfg(windows)]
 mod win32;
 
-/// **A picture other programs can paste** — `OPERATOR_REQUESTS.md` O71.
-///
-/// Its own file rather than a third function in [`win32`], because it is the
-/// first thing in this crate that is not about a *window*: imported symbols of
-/// its own, two clipboard formats and a `BITMAPINFOHEADER`, with an argument
-/// about why the two payloads must be written in one transaction. Everything
-/// the crate header says about hand-written declarations applies to it.
-#[cfg(windows)]
-pub mod clipboard;
-
 /// The paste chord the toolkit drops when the clipboard holds no text.
 #[cfg(windows)]
 pub mod pastechord;
@@ -115,20 +105,6 @@ pub mod pastechord {
     #[must_use]
     pub fn take() -> Option<PasteChord> {
         None
-    }
-}
-
-/// Off Windows, the clipboard writer answers `false` — nothing was written.
-///
-/// A stub module rather than a `cfg` on every call site, matching how
-/// [`own_window`] and [`cursor_position`] are handled: a caller writes one line
-/// and reads one `bool` on every platform.
-#[cfg(not(windows))]
-pub mod clipboard {
-    /// No-op off Windows. See the crate header.
-    #[must_use]
-    pub fn set_image_and_text(_rgba: &[u8], _width: u32, _height: u32, _text: &str) -> bool {
-        false
     }
 }
 

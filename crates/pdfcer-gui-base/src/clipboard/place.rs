@@ -291,39 +291,70 @@ pub(super) fn place_withheld(payload: &CopyPayload) -> Result<Vec<&'static str>,
 /// operator's clipboard.
 pub const DIAG_CLIPBOARD_DIR: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an environment variable name, never displayed
 
-/// Hand framed entries to the operating system's clipboard, or to
-/// [`DIAG_CLIPBOARD_DIR`] when it is set.
+/// Hand framed entries to the clipboard.
 fn put(staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
-    if let Some(dir) = std::env::var_os(DIAG_CLIPBOARD_DIR) {
-        return capture(std::path::Path::new(&dir), staged);
-    }
-    let entries: Vec<native_clipboard::Entry<'_>> = staged
+    put_entries(&entries(staged))
+}
+
+/// The clipboard entries for framed payloads, in the same order.
+fn entries(staged: &[Staged]) -> Vec<native_clipboard::Entry<'_>> {
+    staged
         .iter()
         .map(|item| native_clipboard::Entry {
             name: item.format.name(),
             slot: slot_for(item.format),
             bytes: &item.bytes,
         })
-        .collect();
-    native_clipboard::place(&entries).map_err(Refusal::Clipboard)
+        .collect()
+}
+
+/// Hand `entries` to the operating system's clipboard in one transaction, or
+/// to [`DIAG_CLIPBOARD_DIR`] when it is set. Returns the names that landed.
+///
+/// # Errors
+///
+/// The clipboard's [`native_clipboard::PlaceError`], or its `Stage` refusal
+/// for a capture file that cannot be written.
+pub fn put_entries(entries: &[native_clipboard::Entry<'_>]) -> Result<Vec<&'static str>, Refusal> {
+    if let Some(dir) = std::env::var_os(DIAG_CLIPBOARD_DIR) {
+        return capture(std::path::Path::new(&dir), entries);
+    }
+    native_clipboard::place(entries).map_err(Refusal::Clipboard)
+}
+
+/// Under [`DIAG_CLIPBOARD_DIR`], the bytes the last capture wrote for the
+/// format `name`; `None` when the variable is unset or no such file exists.
+/// The reading half of a capture, so a driven check can paste what another
+/// window copied without either touching the operator's clipboard.
+#[must_use]
+pub fn captured(name: &str) -> Option<Vec<u8>> {
+    let dir = std::env::var_os(DIAG_CLIPBOARD_DIR)?;
+    let suffix = format!("-{}.bin", file_stem(name));
+    std::fs::read_dir(dir)
+        .ok()?
+        .filter_map(Result::ok)
+        .find(|e| e.file_name().to_string_lossy().ends_with(&suffix))
+        .and_then(|e| std::fs::read(e.path()).ok())
 }
 
 /// Write each entry to `<dir>/<n>-<format>.bin`, `n` counting from 1 in
 /// placement order, and return the names as a placement would. The OS
 /// clipboard is not opened. A failed write is the clipboard's `Stage` refusal
 /// for that format, the same one a handle that cannot be made gives.
-fn capture(dir: &std::path::Path, staged: &[Staged]) -> Result<Vec<&'static str>, Refusal> {
-    if staged.is_empty() {
+fn capture(
+    dir: &std::path::Path,
+    entries: &[native_clipboard::Entry<'_>],
+) -> Result<Vec<&'static str>, Refusal> {
+    let Some(first) = entries.first() else {
         return Err(Refusal::Clipboard(native_clipboard::PlaceError::Nothing));
-    }
+    };
     let stage = |name| Refusal::Clipboard(native_clipboard::PlaceError::Stage(name));
-    std::fs::create_dir_all(dir).map_err(|_| stage(staged[0].format.name()))?;
-    let mut names = Vec::with_capacity(staged.len());
-    for (n, item) in staged.iter().enumerate() {
-        let name = item.format.name();
-        let file = dir.join(format!("{}-{}.bin", n + 1, file_stem(name)));
-        std::fs::write(&file, &item.bytes).map_err(|_| stage(name))?;
-        names.push(name);
+    std::fs::create_dir_all(dir).map_err(|_| stage(first.name))?;
+    let mut names = Vec::with_capacity(entries.len());
+    for (n, item) in entries.iter().enumerate() {
+        let file = dir.join(format!("{}-{}.bin", n + 1, file_stem(item.name)));
+        std::fs::write(&file, item.bytes).map_err(|_| stage(item.name))?;
+        names.push(item.name);
     }
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
@@ -462,7 +493,7 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("pdfcer-capture-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let framed = frame(&full());
-        let names = capture(&dir, &framed).expect("captured");
+        let names = capture(&dir, &entries(&framed)).expect("captured");
         assert_eq!(
             names,
             framed.iter().map(|e| e.format.name()).collect::<Vec<_>>()

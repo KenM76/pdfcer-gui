@@ -12,7 +12,21 @@ The operator (`OPERATOR_REQUESTS.md` **O71**):
 clip — an `ObjectClip`, a `MarkupSpec`, structure a bitmap cannot express —
 which is the right payload for pdfcer→pdfcer work and meaningless to Word.
 This module is the other half of the same copy: a picture any program can
-paste.
+paste, placed beside the clip's own bytes under the private format
+`OBJECT_CLIP_FORMAT` (`ObjectClip::to_bytes`), which is what another
+pdfcer-gui window pastes as objects (`canvas::clipshared` in `pdfcer-gui`).
+
+## Three entries, one transaction
+
+`publish` hands `clipboard::place::put_entries`, in this order: the picture
+as `CF_DIBV5` (when the clip has page content to render), the private
+format, and the marker sentence as `CF_UNICODETEXT`. The picture is first
+because a program offered several formats takes the first it reads, and Word
+reading the sentence would paste words. `native_clipboard::place` writes all
+or none: `EmptyClipboard` is per-open, so two transactions would mean the
+second erased the first. Under `clipboard::place::DIAG_CLIPBOARD_DIR` the
+entries go to that folder instead, so a driven check never touches the
+operator's clipboard.
 
 ## Where the pixels come from, and why not the page
 
@@ -38,9 +52,8 @@ different feature and would rightly crop the page. It is not this one.
 
 ## Why it composites onto white
 
-`CF_DIB` at 32 bits has no alpha channel consumers agree about
-(`native_window::clipboard`'s header has the detail). Some read the fourth
-byte, most ignore it, and one that ignores it renders a
+`CF_DIBV5` declares an alpha mask that consumers do not agree about
+honouring. Some read the fourth byte, most ignore it, and one that ignores it renders a
 composited-on-**black** picture — a black rectangle with a drawing in it,
 which is what "pasting a PDF selection" looks like when this is got wrong.
 
@@ -121,13 +134,13 @@ picture look subtly wrong without looking broken.
 
 ### `fn publish`
 
-Returns the picture's size in pixels when it reached the clipboard, and
-`None` when it did not — a caller should treat `None` as *"the internal
-clip is there, the picture is not"* and say nothing to the operator about
+Returns `Published`, whose `picture` is the picture's size in pixels or
+`None` when the clip had nothing to render, and `None` overall when nothing
+reached the clipboard. A caller treats either absence as *"the internal
+clip is there, the picture is not"* and says nothing to the operator about
 it, because the copy they asked for did happen.
 
 `text` is not decoration. `egui-winit` only produces a paste event when
 the OS clipboard holds non-empty text, so writing a picture alone would stop
-`Ctrl+V` arriving in this application at all. The two travel together, in
-one clipboard transaction, and `native_window::clipboard`'s header carries
-the measurement.
+`Ctrl+V` arriving in this application at all. The entries travel together, in
+one clipboard transaction.

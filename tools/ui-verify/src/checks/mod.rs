@@ -617,6 +617,8 @@ pub mod attach_sound;
 pub mod check_mark;
 /// Give a multi-select list several default choices from Properties.
 pub mod choice_defaults;
+/// A selection copied in one window pastes as objects in another.
+pub mod cross_window_paste;
 /// Create a self-signed digital ID in the Sign window and sign with it.
 pub mod digital_id;
 /// Document properties says which page boxes were not used as written.

@@ -80,6 +80,18 @@ pub fn read() -> Incoming {
         .map_or(Incoming::Nothing, Incoming::Text)
 }
 
+/// The selection another pdfcer-gui window copied, as
+/// `ObjectClip::to_bytes`: from the capture folder when a driven check set
+/// one, else from the OS clipboard's private format.
+#[must_use]
+pub fn own_clip() -> Option<Vec<u8>> {
+    use crate::clipimage::OBJECT_CLIP_FORMAT;
+    if std::env::var_os(crate::clipboard::place::DIAG_CLIPBOARD_DIR).is_some() {
+        return crate::clipboard::place::captured(OBJECT_CLIP_FORMAT);
+    }
+    native_clipboard::get(native_clipboard::Format::Registered(OBJECT_CLIP_FORMAT))
+}
+
 /// PDF bytes as a drawing, when they parse and their first page has area.
 fn drawing(bytes: Vec<u8>) -> Option<Incoming> {
     let (_, pages) = page::opened(bytes.clone()).ok()?;

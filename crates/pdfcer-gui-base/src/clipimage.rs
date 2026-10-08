@@ -1,13 +1,16 @@
-//! # `clipimage` — **the copied selection, as a picture other programs
-//! # can paste**
+//! # `clipimage` — **a copied selection on the operating system's clipboard**
 //!
-//! ## What this closes
-//!
-//! The operator (`OPERATOR_REQUESTS.md` **O71**):
+//! Contract: [`publish`] places, in one transaction, a picture of the clip
+//! (when it has page content to render), the clip itself under
+//! [`OBJECT_CLIP_FORMAT`] for another pdfcer-gui window, and a sentence of
+//! text. Under `clipboard::place::DIAG_CLIPBOARD_DIR` the entries go to that
+//! folder instead.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/clipimage.md`.
 
+use native_clipboard::{CF_DIBV5, CF_UNICODETEXT, Entry, Slot};
 use pdfcer_core::vector::ObjectClip;
+use pdfcer_render::tiny_skia::{IntSize, Pixmap};
 
 /// How many pixels the longer edge of the picture aims for.
 const TARGET_EDGE_PX: f32 = 1600.0;
@@ -18,34 +21,101 @@ const MAX_EDGE_PX: f32 = 4096.0;
 /// The smallest scale worth rendering at.
 const MIN_SCALE: f32 = 1.0;
 
-/// **Render a copied selection and put it on the operating system's
-/// clipboard**, alongside `text`.
-pub fn publish(clip: &ObjectClip, text: &str) -> Option<(u32, u32)> {
+/// The registered clipboard format a copied selection travels in between
+/// pdfcer-gui windows: `ObjectClip::to_bytes`, unframed. No other program
+/// reads it.
+pub const OBJECT_CLIP_FORMAT: &str = "pdfcer-gui ObjectClip"; // ui-text-exempt: a clipboard format name, never displayed
+
+/// What [`publish`] placed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Published {
+    /// The picture's size in pixels; `None` when the clip has no page content
+    /// to render (an annotation-only clip) or the render declined.
+    pub picture: Option<(u32, u32)>,
+}
+
+/// **Put a copied selection on the operating system's clipboard**: its
+/// picture, its own bytes and `text`, all or none. `None` when nothing was
+/// placed — the clipboard is held by another program, or this is not Windows.
+pub fn publish(clip: &ObjectClip, text: &str) -> Option<Published> {
+    let picture = picture(clip);
+    let own = clip.to_bytes();
+    let wide: Vec<u8> = text
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .flat_map(u16::to_le_bytes)
+        .collect();
+    let mut entries = Vec::with_capacity(3);
+    // The picture first: a program offered several formats takes the first it
+    // reads, and Word reading the sentence would paste words.
+    if let Some(p) = &picture {
+        entries.push(Entry {
+            name: "CF_DIBV5", // ui-text-exempt: a clipboard format name, never displayed
+            slot: Slot::Predefined(CF_DIBV5),
+            bytes: &p.dib,
+        });
+    }
+    entries.push(Entry {
+        name: OBJECT_CLIP_FORMAT,
+        slot: Slot::Registered,
+        bytes: &own,
+    });
+    entries.push(Entry {
+        name: "CF_UNICODETEXT", // ui-text-exempt: a clipboard format name, never displayed
+        slot: Slot::Predefined(CF_UNICODETEXT),
+        bytes: &wide,
+    });
+    crate::clipboard::place::put_entries(&entries).ok()?;
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("clipboard-objectclip bytes={}", own.len())
+    });
+    if let Some(p) = &picture {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "clipboard-image w={} h={} scale={:.2}",
+                p.width, p.height, p.scale
+            )
+        });
+    }
+    Some(Published {
+        picture: picture.map(|p| (p.width, p.height)),
+    })
+}
+
+/// A rendered clip as `CF_DIBV5` bytes.
+struct Picture {
+    dib: Vec<u8>,
+    width: u32,
+    height: u32,
+    scale: f32,
+}
+
+/// Render the clip's own one-page PDF onto white.
+fn picture(clip: &ObjectClip) -> Option<Picture> {
     let pdf = clip.to_pdf();
     let doc = pdfcer_core::document::Document::from_bytes(pdf.bytes).ok()?;
     let pages = pdfcer_core::page_tree::pages(&doc).ok()?;
     let page = pages.first()?;
-
     let (w_pt, h_pt) = pdf.size;
     let scale = scale_for(w_pt, h_pt)?;
-
-    // `render_page`, the three-argument form, rather than the one this shell
-    // uses for the canvas. That one takes a `DocumentView` and `RenderOptions`
-    // because it renders an EDITING SESSION with the operator's annotation and
-    // layer choices applied. This renders a freshly parsed standalone document
-    // with no session, no annotations and no layers — the clip's own PDF — so
-    // there is nothing for those parameters to say.
+    // The three-argument `render_page`: a freshly parsed standalone document
+    // has no editing session, annotations or layer choices to apply.
     let rendered = pdfcer_render::render_page(&doc, page, scale).ok()?;
-    let pixmap = rendered.pixmap;
-    let (width, height) = (pixmap.width(), pixmap.height());
-    let rgba = on_white(pixmap.data());
-
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!("clipboard-image w={width} h={height} scale={scale:.2}")
-    });
-    native_window::clipboard::set_image_and_text(&rgba, width, height, text)
-        .then_some((width, height))
+    let (width, height) = (rendered.pixmap.width(), rendered.pixmap.height());
+    // Opaque after `on_white`, so straight and premultiplied are the same bytes.
+    let flat = Pixmap::from_vec(
+        on_white(rendered.pixmap.data()),
+        IntSize::from_wh(width, height)?,
+    )?;
+    let dib = crate::clipboard::dib_v5(&flat, crate::clipboard::pixels_per_metre(72.0 * scale));
+    Some(Picture {
+        dib,
+        width,
+        height,
+        scale,
+    })
 }
 
 /// The render scale for a clip of this size, in points.

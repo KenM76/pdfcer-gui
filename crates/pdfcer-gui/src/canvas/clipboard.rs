@@ -356,30 +356,21 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // it is not random, it is not reproducible, and the thing that fixes it has
     // nothing to do with pdfcer.
     //
-    // What goes there is a SENTENCE RATHER THAN THE BYTES, and both halves of
-    // that are deliberate:
-    //
-    // * a human who pastes into a text editor gets something that says what
-    //   happened, not a screenful of binary;
-    // * the real payload is `ObjectClip::to_bytes`, which belongs under a
-    //   **private clipboard format** so a pdfcer→pdfcer paste is lossless — and
-    //   registering one is a Win32 `RegisterClipboardFormat` call this shell
-    //   does not make yet. That is the remaining half of the operator's item 3,
-    //   named here rather than left as a silence.
-    //
-    // Until then the marker is what makes the chord arrive and the in-memory
-    // clip is what is pasted, so a pdfcer→pdfcer paste is already lossless. What
-    // is missing is pdfcer→pdfcer **across two processes**.
+    // The text is a SENTENCE, so a human who pastes into a text editor gets
+    // something that says what happened. The clip's own bytes go beside it
+    // under `clipimage::OBJECT_CLIP_FORMAT`, which is what another pdfcer-gui
+    // window pastes (`canvas::clipshared`); this window pastes its in-memory
+    // copy.
     // **AND A PICTURE BESIDE IT, as of 2026-08-31** —
     // `OPERATOR_REQUESTS.md` O71: *"so we can copy and paste them … outside of
     // the pdfcergui."*
     //
-    // The marker sentence and the bitmap go on in ONE clipboard transaction,
-    // and that is not an optimisation. `EmptyClipboard` is per-open, so two
-    // calls would mean the second erased the first — and if the picture went on
-    // second, this application's own `Ctrl+V` would stop arriving for the
-    // reason the paragraphs above set out. `native_window::clipboard` writes
-    // both or neither.
+    // The sentence, the clip and the bitmap go on in ONE clipboard
+    // transaction, and that is not an optimisation. `EmptyClipboard` is
+    // per-open, so two calls would mean the second erased the first — and if
+    // the picture went on second, this application's own `Ctrl+V` would stop
+    // arriving for the reason the paragraphs above set out.
+    // `native_clipboard::place` writes all or none.
     //
     // It FALLS BACK rather than failing. A clipboard another process is
     // holding, a render that declines, a degenerate clip — each of those loses
@@ -394,11 +385,14 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // clip carries, and a comment's appearance is not page content. The
     // operator still gets the marker, so `Ctrl+V` still arrives.
     let marker = crate::text::clipboard::os_marker(objects.len(), plan.carried());
-    if crate::canvas::clipimage::publish(&clip, &marker).is_none() {
+    let published = crate::canvas::clipimage::publish(&clip, &marker);
+    if published.is_none_or(|p| p.picture.is_none()) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "clipboard-image-declined".to_owned()
         });
+    }
+    if published.is_none() {
         ctx.copy_text(marker);
     }
     crate::diag::trace(|| {

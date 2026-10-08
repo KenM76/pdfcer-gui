@@ -80,8 +80,8 @@
 //!
 //! [`place`] answers [`PlaceError::Unsupported`] and does nothing. A stub
 //! function rather than a `cfg` at every call site, matching how
-//! `native_window::clipboard` is handled: a caller writes one line and reads
-//! one `Result` on every platform.
+//! `native_window`'s Windows-only calls are handled: a caller writes one line
+//! and reads one `Result` on every platform.
 
 #![cfg_attr(not(windows), allow(unused))]
 
@@ -300,11 +300,9 @@ impl std::error::Error for PlaceError {}
 /// tree), which creates the metafile handle *inside* the open guard. Both are
 /// correct with respect to Win32 — `SetEnhMetaFileBits` does not require an
 /// open clipboard — but only this order can honestly claim the transaction is
-/// atomic in the direction that matters. It is also the order
-/// `native_window::clipboard` already argues for, in its own words:
-/// *"holding it across two allocations is holding it longer than necessary,
-/// and an allocation failure inside the open would mean deciding whether to
-/// publish half a transaction."*
+/// atomic in the direction that matters. Allocating first also holds the
+/// clipboard no longer than necessary, and an allocation failure never has to
+/// decide whether to publish half a transaction.
 ///
 /// It also discharges a check `pdfcer-gui`'s exporter explicitly logged as
 /// owed. `app::actions::export`'s `emf_bytes` notes that a *file* export need

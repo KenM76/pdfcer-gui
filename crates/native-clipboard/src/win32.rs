@@ -25,9 +25,8 @@
 //! `native_window::win32` names none, because all four of its symbols are in
 //! `user32`, which the toolchain links by default. This file's symbols are
 //! split across **three**: the clipboard is `user32`, the moveable memory it
-//! takes is `kernel32`, and the metafile is `gdi32`. `native_window::clipboard`
-//! records that the first build of the two-library version *"failed to link
-//! with eight `LNK2019 unresolved external symbol` errors"*, so they are
+//! takes is `kernel32`, and the metafile is `gdi32`. A symbol left to the
+//! default link fails with `LNK2019 unresolved external symbol`, so they are
 //! declared per library. Being explicit is also the honest form: a reader can
 //! see which DLL each call crosses into, and a symbol that moves libraries in a
 //! future SDK fails at link time here rather than at run time somewhere else.
