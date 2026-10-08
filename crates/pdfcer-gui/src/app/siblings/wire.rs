@@ -7,11 +7,15 @@
 //!   directory. Windows of one installation therefore see each other, and a
 //!   copy of the program in another folder — a test sandbox — sees nothing of
 //!   them.
-//! * A request is one line, `open\t<absolute path>\n`, answered `ok\n` or
-//!   `no\t<reason>\n`. `ok` means the path was handed to the receiving
+//! * A request is one line, `open\t<absolute path>[\t<page index>]\n`, answered
+//!   `ok\n` or `no\t<reason>\n`. The page is zero-based; a Windows file name
+//!   cannot hold a tab, so the fields split unambiguously. `ok` means the path was handed to the receiving
 //!   window's frame; the open itself happens there and reports its own
 //!   failures.
 //! * The pipe admits the current user only (`native_pipe`'s DACL).
+//! * The discovery file also carries the window's client area in desktop
+//!   pixels, `rect=<left>,<top>,<right>,<bottom>`, so a tab dropped on another
+//!   window can be matched to it.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
@@ -50,6 +54,28 @@ pub struct Peer {
     pub pipe: String,
     /// The file names of its open documents, as it published them.
     pub documents: String,
+    /// Its client area in desktop pixels, `[left, top, right, bottom]`, when
+    /// it published one.
+    pub rect: Option<[i32; 4]>,
+}
+
+impl Peer {
+    /// Whether the desktop pixel `(x, y)` lies in this window's client area.
+    #[must_use]
+    pub fn contains(&self, x: f32, y: f32) -> bool {
+        self.rect.is_some_and(|[l, t, r, b]| {
+            x >= l as f32 && x < r as f32 && y >= t as f32 && y < b as f32
+        })
+    }
+}
+
+/// A document another window sent: its path, and the page it was showing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Arrival {
+    /// The file, absolute.
+    pub path: PathBuf,
+    /// The zero-based page index to show, when the sender named one.
+    pub page: Option<usize>,
 }
 
 /// This window's pipe name.
@@ -73,12 +99,20 @@ fn file_of(dir: &Path, pid: u32) -> PathBuf {
 
 /// Write this window's discovery file. Written whole and renamed into place,
 /// so a reader never sees half of one.
-pub fn publish(dir: &Path, pipe: &str, documents: &str) -> std::io::Result<()> {
+pub fn publish(
+    dir: &Path,
+    pipe: &str,
+    documents: &str,
+    rect: Option<[i32; 4]>,
+) -> std::io::Result<()> {
     std::fs::create_dir_all(dir)?;
     let pid = std::process::id();
     let staging = dir.join(format!("{pid}.tmp"));
     // One line per field; a document name cannot hold a newline.
-    let body = format!("pipe={pipe}\ndocuments={documents}\n");
+    let mut body = format!("pipe={pipe}\ndocuments={documents}\n");
+    if let Some([l, t, r, b]) = rect {
+        body.push_str(&format!("rect={l},{t},{r},{b}\n"));
+    }
     std::fs::write(&staging, body)?;
     std::fs::rename(&staging, file_of(dir, pid))
 }
@@ -144,11 +178,14 @@ fn listed(dir: &Path) -> impl Iterator<Item = (u32, PathBuf, String)> {
 fn parse(pid: u32, text: &str) -> Option<Peer> {
     let mut pipe = None;
     let mut documents = String::new();
+    let mut rect = None;
     for line in text.lines() {
         if let Some(v) = line.strip_prefix("pipe=") {
             pipe = Some(v.to_owned());
         } else if let Some(v) = line.strip_prefix("documents=") {
             v.clone_into(&mut documents);
+        } else if let Some(v) = line.strip_prefix("rect=") {
+            rect = parse_rect(v);
         }
     }
     let pipe = pipe.filter(|p| p.starts_with(PIPE_PREFIX))?;
@@ -156,14 +193,20 @@ fn parse(pid: u32, text: &str) -> Option<Peer> {
         pid,
         pipe,
         documents,
+        rect,
     })
+}
+
+fn parse_rect(v: &str) -> Option<[i32; 4]> {
+    let n: Vec<i32> = v.split(',').filter_map(|s| s.trim().parse().ok()).collect();
+    <[i32; 4]>::try_from(n).ok()
 }
 
 /// Listen on `pipe` on a thread of its own, handing every requested path to
 /// `inbox` and calling `wake` so the frame that opens it runs.
 pub fn serve(
     pipe: String,
-    inbox: Sender<PathBuf>,
+    inbox: Sender<Arrival>,
     wake: impl Fn() + Send + 'static,
 ) -> std::io::Result<()> {
     std::thread::Builder::new()
@@ -180,8 +223,8 @@ pub fn serve(
                     }
                 };
                 let reply = match request(&mut connection) {
-                    Some(path) => {
-                        if inbox.send(path).is_err() {
+                    Some(arrival) => {
+                        if inbox.send(arrival).is_err() {
                             return;
                         }
                         wake();
@@ -195,20 +238,26 @@ pub fn serve(
         .map(|_| ())
 }
 
-/// The path an `open` request names, when the line is one.
-fn request(connection: &mut impl Read) -> Option<PathBuf> {
+/// What an `open` request names, when the line is one. A page field that is
+/// not a number refuses the whole request rather than dropping the page.
+fn request(connection: &mut impl Read) -> Option<Arrival> {
     let mut line = String::new();
     BufReader::new(connection.take(MAX_LINE))
         .read_line(&mut line)
         .ok()?;
-    let (verb, path) = line.trim_end_matches(['\r', '\n']).split_once('\t')?;
-    let path = PathBuf::from(path);
-    (verb == OPEN && path.is_absolute()).then_some(path)
+    let mut fields = line.trim_end_matches(['\r', '\n']).split('\t');
+    let (verb, path) = (fields.next()?, PathBuf::from(fields.next()?));
+    let page = match fields.next() {
+        Some(p) => Some(p.parse().ok()?),
+        None => None,
+    };
+    (verb == OPEN && path.is_absolute() && fields.next().is_none())
+        .then_some(Arrival { path, page })
 }
 
-/// Ask the window listening on `pipe` to open `path`. Blocks until it
-/// answers, so callers run it off the frame thread.
-pub fn send_open(pipe: &str, path: &Path) -> Result<(), String> {
+/// Ask the window listening on `pipe` to open `path` at `page`. Blocks until
+/// it answers, so callers run it off the frame thread.
+pub fn send_open(pipe: &str, path: &Path, page: Option<usize>) -> Result<(), String> {
     let text = path
         .to_str()
         .ok_or_else(|| crate::text::siblings::unsendable_name().to_owned())?;
@@ -218,7 +267,13 @@ pub fn send_open(pipe: &str, path: &Path) -> Result<(), String> {
         .open(format!("{}{pipe}", native_pipe::PREFIX))
         .map_err(|e| e.to_string())?;
     stream
-        .write_all(format!("{OPEN}\t{text}\n").as_bytes())
+        .write_all(
+            match page {
+                Some(p) => format!("{OPEN}\t{text}\t{p}\n"),
+                None => format!("{OPEN}\t{text}\n"),
+            }
+            .as_bytes(),
+        )
         .map_err(|e| e.to_string())?;
     let mut reply = String::new();
     BufReader::new((&mut stream).take(MAX_LINE))
@@ -243,7 +298,7 @@ mod tests {
     fn a_discovery_file_parses_back_to_its_peer() {
         let peer = parse(
             7,
-            "pipe=pdfcer-gui-window-7\ndocuments=a.pdf \u{b7} b.pdf\n",
+            "pipe=pdfcer-gui-window-7\ndocuments=a.pdf \u{b7} b.pdf\nrect=-10,20,1390,920\n",
         );
         assert_eq!(
             peer,
@@ -251,8 +306,12 @@ mod tests {
                 pid: 7,
                 pipe: "pdfcer-gui-window-7".to_owned(),
                 documents: "a.pdf \u{b7} b.pdf".to_owned(),
+                rect: Some([-10, 20, 1390, 920]),
             })
         );
+        let peer = peer.unwrap();
+        assert!(peer.contains(-10.0, 20.0));
+        assert!(!peer.contains(1390.0, 500.0));
     }
 
     /// A file naming any other pipe is not a window of this program, and a
@@ -270,9 +329,18 @@ mod tests {
         } else {
             "/a b.pdf"
         };
-        let mut good = format!("open\t{absolute}\r\n");
-        assert_eq!(request(&mut good.as_bytes()), Some(PathBuf::from(absolute)));
-        good.clear();
+        let arrival = |page| {
+            Some(Arrival {
+                path: PathBuf::from(absolute),
+                page,
+            })
+        };
+        let good = format!("open\t{absolute}\r\n");
+        assert_eq!(request(&mut good.as_bytes()), arrival(None));
+        let paged = format!("open\t{absolute}\t3\n");
+        assert_eq!(request(&mut paged.as_bytes()), arrival(Some(3)));
+        let bad_page = format!("open\t{absolute}\tthree\n");
+        assert_eq!(request(&mut bad_page.as_bytes()), None);
         assert_eq!(request(&mut "open\trelative.pdf\n".as_bytes()), None);
         assert_eq!(
             request(&mut format!("close\t{absolute}\n").as_bytes()),

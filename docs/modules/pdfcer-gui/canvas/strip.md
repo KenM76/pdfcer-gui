@@ -115,3 +115,9 @@ R2's line limit is a prompt to find the seam rather than to raise the
 limit. Its scroll-space conversion is the same one every other consumer of
 `Strip` needs, and having it beside them is what makes the omission that
 caused O26 visible next time.
+
+The scroll half is skipped while a navigation is unspent (`page_index !=
+tracked_page`): the page a navigation names is not overwritten by where the
+view sits before the page-change scroll moves it. This matters for a page named
+at open, which waits for the seed frame (`canvas::offset`) while frame 0 is
+laid out at offset zero.

@@ -242,8 +242,12 @@ pub(super) fn track_current_page(
         ),
         viewport_size,
     );
+    // A navigation the page-change scroll has not yet spent (a page named at
+    // open waits for the seed frame) is not overwritten by where the view
+    // happens to be before it moves.
     if !deep
         && doc.view.display.is_continuous()
+        && doc.view.page_index == doc.tracked_page
         && let Some(page) = layout.page_at_view(view_rect)
     {
         doc.view.page_index = page;

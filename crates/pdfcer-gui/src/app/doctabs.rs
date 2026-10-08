@@ -150,6 +150,9 @@ impl PdfcerApp {
                 egui_shell::tabstrip::TabIntent::Reorder { from, gap } => {
                     self.move_slot(from, gap);
                 }
+                egui_shell::tabstrip::TabIntent::DragOut { from, at } => {
+                    self.tab_dropped_outside(ui.ctx(), from, at);
+                }
             }
         }
 

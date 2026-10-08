@@ -32,5 +32,5 @@ directory and see each other and nothing of the operator's windows.
 
 ## What it does not cover
 
-Dragging a tab between windows, which is not built. The refusal of a document
+Dragging a tab, which `tab_drag` drives. The refusal of a document
 with unsaved edits, and the picker's Cancel, are not driven.

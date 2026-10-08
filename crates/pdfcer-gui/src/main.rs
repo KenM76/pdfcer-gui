@@ -10,8 +10,11 @@
 //! Argument handling belongs *here* rather than in [`pdfcer_gui::run`]
 //! because anything that can be answered without a window must be answered
 //! before one exists. A terminal invocation — `--help`, `--version`, a bad
-//! path — must not open a window it then has to be told to close. There are
-//! no flags yet; when there are, they are parsed on this side of the call.
+//! path — must not open a window it then has to be told to close.
+//!
+//! Usage: `pdfcer-gui [<file> [--page <n>]]`. `--page` is one-based and shows
+//! that page of the file; a window tearing a tab off passes it so the new
+//! window shows what the tab showed.
 
 // On Windows, prevent a console window from popping up behind the GUI in
 // release builds (the process is a GUI app, not a console app). Debug
@@ -34,6 +37,12 @@ fn main() -> eframe::Result {
     // `args_os` rather than `args` because a path is not required to be
     // valid UTF-8, and a non-UTF-8 path is the operator's business rather
     // than ours to reject.
-    let initial = std::env::args_os().nth(1).map(PathBuf::from);
-    pdfcer_gui::run(initial)
+    let args: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
+    let initial = args.first().map(PathBuf::from);
+    let page = args
+        .windows(2)
+        .find(|w| w[0] == pdfcer_gui::PAGE_ARG)
+        .and_then(|w| w[1].to_str()?.parse::<usize>().ok())
+        .and_then(|n| n.checked_sub(1));
+    pdfcer_gui::run(initial, page)
 }

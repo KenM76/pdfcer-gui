@@ -29,6 +29,8 @@ pub mod run_width;
 /// One text object split into one per line, and a split the engine refuses.
 pub mod split_lines;
 pub mod spots_flattened;
+/// A document tab dragged off the strip moves or tears off, keeping its page.
+pub mod tab_drag;
 pub mod text_render_mode;
 
 /// A check box dragged larger must be REDRAWN, not stretched —

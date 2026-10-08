@@ -83,6 +83,9 @@ use std::path::PathBuf;
 /// resizing, which is the first thing an operator does after launching.
 const INITIAL_WINDOW_SIZE: [f32; 2] = [1100.0, 800.0];
 
+/// The command-line flag naming the one-based page to show; see `main.rs`.
+pub const PAGE_ARG: &str = "--page"; // ui-text-exempt: a command-line flag
+
 /// The smallest window the shell will let the operator make.
 const MIN_WINDOW_SIZE: [f32; 2] = [640.0, 480.0];
 
@@ -105,7 +108,7 @@ fn window_icon() -> egui::IconData {
     }
 }
 
-pub fn run(initial: Option<PathBuf>) -> eframe::Result {
+pub fn run(initial: Option<PathBuf>, page: Option<usize>) -> eframe::Result {
     let mut viewport = egui::ViewportBuilder::default()
         .with_title(text::window_title())
         .with_icon(window_icon())
@@ -200,6 +203,9 @@ pub fn run(initial: Option<PathBuf>) -> eframe::Result {
             });
             if let Some(path) = initial {
                 app.open_path(path);
+                if let Some(page) = page {
+                    app.show_page(page);
+                }
             }
             Ok(Box::new(app))
         }),

@@ -328,7 +328,11 @@ pub(super) fn decide(
         doc.tracked_page = doc.view.page_index;
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("min-reveal", offset);
-    } else if let Some(offset) = crate::canvas::strip::page_scroll_offset(doc, layout, (vp.x, vp.y))
+    } else if doc.canvas_frames >= SEED_FRAME
+        // A page named at open (a moved or torn-off document) is turned to
+        // on the seed frame, which this arm outranks; spent on frame 0, the
+        // seed would re-place the view a frame later.
+        && let Some(offset) = crate::canvas::strip::page_scroll_offset(doc, layout, (vp.x, vp.y))
     {
         // ui-text-exempt: diagnostic token, never displayed in the UI
         return Decision::won("page-scroll", offset);

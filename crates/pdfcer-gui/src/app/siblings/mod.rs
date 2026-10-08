@@ -5,13 +5,16 @@
 //! and this window closes its tab once the other has taken it. A document can
 //! therefore move only when what is on screen is what is on disk: opened from
 //! a file, with no unsaved edits. A window whose last document moves away
-//! closes, as a browser window does when its last tab is dragged out.
+//! closes, as a browser window does when its last tab is dragged out. The
+//! page on screen travels with the document. Dragging a tab off the strip does
+//! the same, by where it is dropped (`drag`).
 //!
 //! Frame order: [`PdfcerApp::siblings_poll`] beside `remote_poll`, and
 //! [`PdfcerApp::siblings_picker`] after the actions apply.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/siblings.md`.
 
+mod drag;
 mod wire;
 
 use std::path::{Path, PathBuf};
@@ -23,7 +26,7 @@ use eframe::egui;
 use super::PdfcerApp;
 use crate::app::state::{Origin, Status};
 use crate::text::siblings::{self as t, WindowMoveRefusal};
-use wire::Peer;
+use wire::{Arrival, Peer};
 
 /// How long a peer list is reused before the discovery directory is read
 /// again.
@@ -47,13 +50,14 @@ struct Reply {
 pub struct Siblings {
     started: bool,
     dir: Option<PathBuf>,
-    inbox: Option<Receiver<PathBuf>>,
+    inbox: Option<Receiver<Arrival>>,
     peers: Vec<Peer>,
     peers_read: Option<Instant>,
-    published: Option<String>,
+    /// What the discovery file last said, as written.
+    published: Option<(String, Option<[i32; 4]>)>,
     replies: (Sender<Reply>, Receiver<Reply>),
-    /// The document whose destination the picker is asking for.
-    picking: Option<PathBuf>,
+    /// The document whose destination the picker is asking for, and its page.
+    picking: Option<(PathBuf, Option<usize>)>,
 }
 
 impl Default for Siblings {
@@ -139,29 +143,46 @@ impl Siblings {
         });
     }
 
-    /// Publish this window's open documents when they changed.
-    fn publish(&mut self, documents: String) {
+    /// Publish this window's open documents and client area when either
+    /// changed.
+    fn publish(&mut self, documents: String, rect: Option<[i32; 4]>) {
         let Some(dir) = &self.dir else {
             return;
         };
-        if self.published.as_ref() == Some(&documents) {
+        let now = (documents, rect);
+        if self.published.as_ref() == Some(&now) {
             return;
         }
-        if wire::publish(dir, &wire::own_pipe(), &documents).is_ok() {
-            self.published = Some(documents);
+        if wire::publish(dir, &wire::own_pipe(), &now.0, now.1).is_ok() {
+            if let Some([l, t, r, b]) = now.1 {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "window-rect pid={} rect={l},{t},{r},{b}",
+                        std::process::id()
+                    )
+                });
+            }
+            self.published = Some(now);
         }
     }
 
     /// Ask `peer` to open `path` without blocking the frame; the answer
     /// arrives through [`Self::replies`].
-    fn send(&self, ctx: &egui::Context, peer: &Peer, path: &Path) {
-        // ui-text-exempt: diagnostic trace, never displayed
-        crate::diag::trace(|| format!("window-move-sending to={} path={path:?}", peer.pid));
+    fn send(&self, ctx: &egui::Context, peer: &Peer, path: &Path, page: Option<usize>) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "window-move-sending to={} path={path:?} page={}",
+                peer.pid,
+                page.map_or(-1, |p| p as i64)
+            )
+        });
         let replies = self.replies.0.clone();
         let wake = ctx.clone();
         let (pid, pipe, path) = (peer.pid, peer.pipe.clone(), path.to_path_buf());
         std::thread::spawn(move || {
-            let result = wire::send_open(&pipe, &super::remote::absolute(&path));
+            let result = wire::send_open(&pipe, &super::remote::absolute(&path), page);
             let _ = replies.send(Reply { pid, path, result });
             wake.request_repaint();
         });
@@ -174,19 +195,23 @@ fn harness_placed() -> bool {
     std::env::var_os(VIEWPORT_ENV).is_some()
 }
 
-/// Start another copy of this program on `path`.
+/// Start another copy of this program on `path`, showing the zero-based
+/// `page`.
 ///
 /// Every `PDFCER_DIAG_*` variable but the placement is removed first, so a
 /// window the test harness placed off the desktop starts its child there too
 /// and nothing that drove the parent drives the child. The child's output goes
 /// nowhere: inherited, its trace would interleave with the parent's, and a
 /// harness reading the parent's would act on the child's regions.
-fn spawn_window(path: &Path) -> std::io::Result<u32> {
+fn spawn_window(path: &Path, page: Option<usize>) -> std::io::Result<u32> {
     use std::process::Stdio;
     let exe = std::env::current_exe()?;
     let mut command = std::process::Command::new(exe);
+    command.arg(super::remote::absolute(path));
+    if let Some(page) = page {
+        command.arg(crate::PAGE_ARG).arg((page + 1).to_string());
+    }
     command
-        .arg(super::remote::absolute(path))
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
@@ -215,6 +240,23 @@ impl PdfcerApp {
         }
     }
 
+    /// The zero-based page the document in `slot` is showing.
+    fn page_of(&self, slot: usize) -> Option<usize> {
+        match self.slot(slot) {
+            Some(Status::Open(doc)) => Some(doc.view.page_index),
+            _ => None,
+        }
+    }
+
+    /// Show the zero-based `page` of the active document, clamped to its
+    /// length; used right after an open.
+    pub(crate) fn show_page(&mut self, page: usize) {
+        if let Status::Open(doc) = &mut self.status {
+            let count = doc.pages.len();
+            doc.view.go_to_page(page, count);
+        }
+    }
+
     /// Set `docs.tear_off` and `docs.move_to_window` for the document in
     /// `slot`.
     pub(super) fn window_conditions(
@@ -239,21 +281,25 @@ impl PdfcerApp {
     /// the discovery file current.
     pub(super) fn siblings_poll(&mut self, ctx: &egui::Context) {
         self.siblings.ensure_started(ctx);
-        let received: Vec<PathBuf> = self
+        let received: Vec<Arrival> = self
             .siblings
             .inbox
             .as_ref()
             .map(|rx| rx.try_iter().collect())
             .unwrap_or_default();
-        for path in received {
+        for Arrival { path, page } in received {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "window-move-received pid={} path={path:?}",
-                    std::process::id()
+                    "window-move-received pid={} path={path:?} page={}",
+                    std::process::id(),
+                    page.map_or(-1, |p| p as i64)
                 )
             });
             self.open_path(path);
+            if let Some(page) = page {
+                self.show_page(page);
+            }
             if !harness_placed() {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
             }
@@ -264,7 +310,7 @@ impl PdfcerApp {
         }
         self.siblings.refresh_peers();
         let documents = self.document_names();
-        self.siblings.publish(documents);
+        self.siblings.publish(documents, drag::client_rect_px(ctx));
     }
 
     /// Close the tab another window has taken, or say why it did not.
@@ -322,10 +368,16 @@ impl PdfcerApp {
             crate::app::status::decline::record_window_move(WindowMoveRefusal::Unsaved);
             return;
         };
-        match spawn_window(&path) {
+        let page = self.page_of(slot);
+        match spawn_window(&path, page) {
             Ok(pid) => {
-                // ui-text-exempt: diagnostic trace, never displayed
-                crate::diag::trace(|| format!("window-torn-off pid={pid} path={path:?}"));
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "window-torn-off pid={pid} path={path:?} page={}",
+                        page.map_or(-1, |p| p as i64)
+                    )
+                });
                 self.close_slot(slot);
             }
             Err(e) => crate::app::status::decline::record_window_move(
@@ -345,15 +397,15 @@ impl PdfcerApp {
             [] => crate::app::status::decline::record_window_move(WindowMoveRefusal::NotSent(
                 t::no_other_window().to_owned(),
             )),
-            [only] => self.siblings.send(ctx, only, &path),
-            _ => self.siblings.picking = Some(path),
+            [only] => self.siblings.send(ctx, only, &path, self.page_of(slot)),
+            _ => self.siblings.picking = Some((path, self.page_of(slot))),
         }
     }
 
     /// The window that asks which other window a document goes to, while one
     /// is being asked.
     pub(super) fn siblings_picker(&mut self, ctx: &egui::Context) {
-        let Some(path) = self.siblings.picking.clone() else {
+        let Some((path, page)) = self.siblings.picking.clone() else {
             return;
         };
         let mut chosen: Option<Option<Peer>> = None;
@@ -381,7 +433,7 @@ impl PdfcerApp {
         };
         self.siblings.picking = None;
         if let Some(peer) = choice {
-            self.siblings.send(ctx, &peer, &path);
+            self.siblings.send(ctx, &peer, &path, page);
         }
     }
 }

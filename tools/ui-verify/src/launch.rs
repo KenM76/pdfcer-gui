@@ -21,6 +21,8 @@ pub struct LaunchSpec {
     /// The document to open — passed as `argv[1]`, the way an operator would
     /// open it from the shell.
     pub pdf: Option<PathBuf>,
+    /// Arguments passed after the document.
+    pub args: Vec<String>,
     /// Environment to add. The diagnostic switch goes here.
     pub env: Vec<(String, String)>,
     /// Where the captured stderr is written.
@@ -60,6 +62,7 @@ impl LaunchSpec {
         Self {
             exe: exe.into(),
             pdf: None,
+            args: Vec::new(),
             env: Vec::new(),
             stderr_path: stderr_path.into(),
             // Generous: a cold start that also has to parse and raster a large
@@ -181,6 +184,7 @@ impl Session {
         if let Some(pdf) = &spec.pdf {
             cmd.arg(pdf);
         }
+        cmd.args(&spec.args);
         for (k, v) in &spec.env {
             cmd.env(k, v);
         }

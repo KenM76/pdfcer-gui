@@ -14,17 +14,17 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::trace::TraceLine;
 
-const OFFSCREEN: &str = "-4200,-4200,1400,900";
+pub(super) const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const TAB: &str = "view"; // ui-text-exempt: a ribbon tab id
 const TO_OTHER: &str = "ribbon.item.view.move_to_window"; // ui-text-exempt: a trace region name
 const TO_NEW: &str = "ribbon.item.view.move_to_new_window"; // ui-text-exempt: a trace region name
 const PICK_PREFIX: &str = "window-pick."; // ui-text-exempt: a trace region name
 const PEERS: &str = "window-peers"; // ui-text-exempt: a trace event name
-const RECEIVED: &str = "window-move-received"; // ui-text-exempt: a trace event name
+pub(super) const RECEIVED: &str = "window-move-received"; // ui-text-exempt: a trace event name
 const SENT: &str = "window-move-sent"; // ui-text-exempt: a trace event name
-const EMPTIED: &str = "window-emptied"; // ui-text-exempt: a trace event name
-const TORN_OFF: &str = "window-torn-off"; // ui-text-exempt: a trace event name
-const TABS: &str = "doc-tabs"; // ui-text-exempt: a trace event name
+pub(super) const EMPTIED: &str = "window-emptied"; // ui-text-exempt: a trace event name
+pub(super) const TORN_OFF: &str = "window-torn-off"; // ui-text-exempt: a trace event name
+pub(super) const TABS: &str = "doc-tabs"; // ui-text-exempt: a trace event name
 
 /// See the module documentation.
 pub struct ADocumentMovesBetweenWindows;
@@ -52,7 +52,7 @@ impl Check for ADocumentMovesBetweenWindows {
 }
 
 /// Kills the torn-off window, which no [`Session`] owns, on every path.
-struct Reaper(Option<u32>);
+pub(super) struct Reaper(pub(super) Option<u32>);
 
 impl Drop for Reaper {
     fn drop(&mut self) {
@@ -65,11 +65,11 @@ impl Drop for Reaper {
 }
 
 /// A launched window and its pointer.
-struct Window {
-    session: Session,
-    pointer: ScriptedPointer,
+pub(super) struct Window {
+    pub(super) session: Session,
+    pub(super) pointer: ScriptedPointer,
     /// The document it was launched on.
-    doc: std::path::PathBuf,
+    pub(super) doc: std::path::PathBuf,
 }
 
 fn assess(
@@ -158,8 +158,13 @@ fn tear_off(b: &Window, ui_rect: &str, report: &mut CheckReport) -> Result<Optio
     Ok(line.get("pid").and_then(|p| p.parse().ok()))
 }
 
-/// The torn-off window published the document it was started on.
-fn torn_off_opened(ctx: &CheckContext, pid: u32, doc: &std::path::Path) -> Result<Option<String>> {
+/// The torn-off window published the document it was started on, within
+/// fifteen seconds.
+pub(super) fn torn_off_opened(
+    ctx: &CheckContext,
+    pid: u32,
+    doc: &std::path::Path,
+) -> Result<Option<String>> {
     let exe = ctx
         .resolve_exe()
         .ok_or_else(|| Error::new("no binary to drive. Pass --exe."))?;
@@ -168,8 +173,20 @@ fn torn_off_opened(ctx: &CheckContext, pid: u32, doc: &std::path::Path) -> Resul
             .join("windows")
             .join(format!("{pid}.txt"))
     });
-    let text = file.as_ref().and_then(|f| std::fs::read_to_string(f).ok());
     let name = doc.file_name().map(|n| n.to_string_lossy().into_owned());
+    // A window just started may not have published yet.
+    let mut text = None;
+    for _ in 0..60 {
+        text = file.as_ref().and_then(|f| std::fs::read_to_string(f).ok());
+        if text
+            .as_ref()
+            .zip(name.as_ref())
+            .is_some_and(|(t, n)| t.contains(n.as_str()))
+        {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(250));
+    }
     match (&text, &name) {
         (Some(text), Some(name)) if text.contains(name.as_str()) => Ok(None),
         _ => Ok(Some(format!(
@@ -223,7 +240,7 @@ fn pick_destination(
 
 /// Wait until `w` sees `n` other windows, moving its pointer so it runs
 /// frames to look.
-fn peers_reach(w: &Window, n: usize) -> Result<Option<String>> {
+pub(super) fn peers_reach(w: &Window, n: usize) -> Result<Option<String>> {
     let want = n.to_string();
     for _ in 0..40 {
         let trace = w.session.trace()?;
@@ -242,13 +259,13 @@ fn peers_reach(w: &Window, n: usize) -> Result<Option<String>> {
 }
 
 /// Whether the line's `path` names `doc`.
-fn names(line: &TraceLine, doc: &std::path::Path) -> bool {
+pub(super) fn names(line: &TraceLine, doc: &std::path::Path) -> bool {
     let name = doc.file_name().map(|n| n.to_string_lossy().into_owned());
     name.is_some_and(|n| line.raw.contains(&n))
 }
 
 /// Whether the process ends within a few seconds.
-fn exits(session: &Session) -> bool {
+pub(super) fn exits(session: &Session) -> bool {
     for _ in 0..40 {
         if session.has_exited().unwrap_or(false) {
             return true;
@@ -258,7 +275,7 @@ fn exits(session: &Session) -> bool {
     false
 }
 
-fn await_line(
+pub(super) fn await_line(
     session: &Session,
     name: &str,
     ok: impl Fn(&TraceLine) -> bool,
@@ -291,6 +308,19 @@ fn launch(
     fixture: &str,
     role: &str,
 ) -> Result<Window> {
+    launch_at(ctx, report, fixture, role, OFFSCREEN, &[])
+}
+
+/// Launch a window on a copy of `fixture` at `viewport`, with `args` after
+/// the document.
+pub(super) fn launch_at(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    role: &str,
+    viewport: &str,
+    args: &[&str],
+) -> Result<Window> {
     let exe = ctx
         .resolve_exe()
         .ok_or_else(|| Error::new("no binary to drive. Pass --exe."))?;
@@ -306,10 +336,11 @@ fn launch(
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
-        (viewport_env, OFFSCREEN),
+        (viewport_env, viewport),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
     }
+    spec.args = args.iter().map(|a| (*a).to_owned()).collect();
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();

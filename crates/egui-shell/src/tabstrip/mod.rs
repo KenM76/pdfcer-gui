@@ -120,7 +120,7 @@ impl TabItem {
 }
 
 /// What the operator asked for. **Never applied here.**
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TabIntent {
     /// Show the tab at this index.
     Activate(usize),
@@ -154,6 +154,20 @@ pub enum TabIntent {
         from: usize,
         /// The boundary it is moving to.
         gap: usize,
+    },
+    /// **The tab at `from` was dragged off the strip and released at `at`.**
+    ///
+    /// Raised instead of [`Self::Reorder`] when the release is farther from
+    /// the strip than one strip-height above or below it, or beyond its ends.
+    /// `at` is in this window's points and may lie outside the window: the
+    /// platform keeps reporting the pointer to the window that holds the
+    /// press. What a tab dropped elsewhere becomes — a window of its own,
+    /// another window's tab — is the caller's to decide.
+    DragOut {
+        /// The tab being dragged.
+        from: usize,
+        /// Where the pointer was released, in this window's points.
+        at: egui::Pos2,
     },
 }
 
@@ -207,6 +221,9 @@ pub struct TabStrip {
     /// its landing: *a hairline between two near-identical labels is precise and
     /// not checkable*.
     pub reordering: Option<(usize, usize)>,
+    /// The tab being dragged while the pointer is off the strip, where a
+    /// release raises [`TabIntent::DragOut`]. `None` otherwise.
+    pub dragging_out: Option<usize>,
 }
 
 /// **Draw the strip.**
@@ -297,7 +314,7 @@ pub fn strip(ui: &mut egui::Ui, theme: &Theme, tabs: &[TabItem], active: usize) 
     }
 
     // 7 — the reorder drag, resolved and painted after everything else.
-    settle_reorder(ui, theme, rect, &mut out);
+    settle_reorder(ui, theme, rect, tabs, &mut out);
 
     out
 }
@@ -316,14 +333,44 @@ fn drag_id(ui: &egui::Ui) -> egui::Id {
 }
 
 /// **Resolve a reorder drag, draw its caret, and settle its release.**
-fn settle_reorder(ui: &mut egui::Ui, theme: &Theme, strip_rect: Rect, out: &mut TabStrip) {
+fn settle_reorder(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    strip_rect: Rect,
+    tabs: &[TabItem],
+    out: &mut TabStrip,
+) {
     let id = drag_id(ui);
     let Some(drag) = ui.ctx().data(|d| d.get_temp::<TabDrag>(id)) else {
         return;
     };
+    let released = ui
+        .ctx()
+        .input(|i| i.pointer.button_released(egui::PointerButton::Primary));
     let Some(pointer) = ui.ctx().pointer_latest_pos() else {
+        // No position to land at: a release ends the drag with no intent,
+        // so it cannot outlive the button.
+        if released {
+            ui.ctx().data_mut(|d| d.remove_temp::<TabDrag>(id));
+        }
         return;
     };
+    if is_off_strip(strip_rect, pointer) {
+        out.dragging_out = Some(drag.from);
+        if let Some(tab) = tabs.get(drag.from) {
+            paint_lifted(ui, theme, &tab.label, pointer);
+        }
+        ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
+        if released {
+            ui.ctx().data_mut(|d| d.remove_temp::<TabDrag>(id));
+            out.dragging_out = None;
+            out.intents.push(TabIntent::DragOut {
+                from: drag.from,
+                at: pointer,
+            });
+        }
+        return;
+    }
 
     // The boundary: how many drawn tabs the pointer has passed the middle of.
     // Seeded from the leftmost drawn tab so a scrolled strip cannot report a
@@ -368,10 +415,7 @@ fn settle_reorder(ui: &mut egui::Ui, theme: &Theme, strip_rect: Rect, out: &mut 
     // the widget that produced it. Reading the input means a drag always ends,
     // which is the property that stops a half-finished drag surviving into the
     // next frame as a caret nobody can get rid of.
-    if ui
-        .ctx()
-        .input(|i| i.pointer.button_released(egui::PointerButton::Primary))
-    {
+    if released {
         ui.ctx().data_mut(|d| d.remove_temp::<TabDrag>(id));
         out.reordering = None;
         out.intents.push(TabIntent::Reorder {
@@ -383,6 +427,36 @@ fn settle_reorder(ui: &mut egui::Ui, theme: &Theme, strip_rect: Rect, out: &mut 
 
 /// How thick the reorder caret is drawn.
 const CARET_PTS: f32 = 2.0;
+
+/// Whether a tab drag at `pointer` has left the strip: beyond its ends, or
+/// more than one strip-height above or below it. The vertical slack keeps a
+/// sloppy sideways drag a reorder.
+fn is_off_strip(strip_rect: Rect, pointer: egui::Pos2) -> bool {
+    !strip_rect
+        .expand2(Vec2::new(0.0, strip_rect.height()))
+        .contains(pointer)
+}
+
+/// The dragged tab's label, drawn at the pointer above everything else while
+/// it is off the strip, so the drag visibly carries the tab.
+fn paint_lifted(ui: &egui::Ui, theme: &Theme, label: &str, pointer: egui::Pos2) {
+    let painter = ui.ctx().layer_painter(egui::LayerId::new(
+        egui::Order::Tooltip,
+        drag_id(ui).with("lifted"), // ui-text-exempt: an id, never displayed
+    ));
+    let font = egui::TextStyle::Button.resolve(ui.style());
+    let galley = painter.layout_no_wrap(label.to_owned(), font, theme.palette.text);
+    let pad = Vec2::new(plan::TAB_PADDING, 4.0);
+    let rect = Rect::from_min_size(pointer + Vec2::new(12.0, 8.0), galley.size() + pad * 2.0);
+    painter.rect(
+        rect,
+        4.0,
+        theme.palette.surface,
+        egui::Stroke::new(1.0, theme.palette.accent),
+        egui::StrokeKind::Inside,
+    );
+    painter.galley(rect.min + pad, galley, theme.palette.text);
+}
 
 /// Draw one document tab: the label, and the ✕ beside it.
 fn draw_tab(
@@ -580,6 +654,20 @@ fn text_width(ui: &egui::Ui, text: &str) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A drag leaves the strip only past one strip-height of vertical slack,
+    /// or beyond its ends.
+    #[test]
+    fn a_drag_leaves_the_strip_past_its_slack() {
+        let strip = Rect::from_min_size(egui::pos2(0.0, 100.0), Vec2::new(800.0, 30.0));
+        assert!(!is_off_strip(strip, egui::pos2(400.0, 115.0)));
+        assert!(!is_off_strip(strip, egui::pos2(400.0, 155.0)));
+        assert!(!is_off_strip(strip, egui::pos2(400.0, 75.0)));
+        assert!(is_off_strip(strip, egui::pos2(400.0, 170.0)));
+        assert!(is_off_strip(strip, egui::pos2(400.0, 60.0)));
+        assert!(is_off_strip(strip, egui::pos2(-5.0, 115.0)));
+        assert!(is_off_strip(strip, egui::pos2(805.0, 115.0)));
+    }
 
     fn items(n: usize) -> Vec<TabItem> {
         (0..n)
