@@ -590,6 +590,36 @@ pub fn merge_failed(detail: &str) -> String {
     format!("That document could not be merged: {detail}")
 }
 
+/// The label before the thumbnail-size buttons.
+#[must_use]
+pub fn thumb_size_label() -> &'static str {
+    "Size"
+}
+
+/// Hover on the smaller-thumbnails button.
+#[must_use]
+pub fn thumb_smaller() -> &'static str {
+    "Smaller thumbnails (Ctrl+wheel over the pages)"
+}
+
+/// Why the smaller-thumbnails button is greyed.
+#[must_use]
+pub fn thumb_smallest() -> &'static str {
+    "The thumbnails are at their smallest"
+}
+
+/// Hover on the larger-thumbnails button.
+#[must_use]
+pub fn thumb_larger() -> &'static str {
+    "Larger thumbnails (Ctrl+wheel over the pages)"
+}
+
+/// Why the larger-thumbnails button is greyed.
+#[must_use]
+pub fn thumb_largest() -> &'static str {
+    "The thumbnails are at their largest"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

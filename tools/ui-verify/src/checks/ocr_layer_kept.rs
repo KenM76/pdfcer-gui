@@ -30,6 +30,8 @@ const CLICK: (f64, f64) = (90.0, 703.0);
 const TYPED: &str = "XQ";
 const TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.file.remove_ocr"; // ui-text-exempt: a trace region name, never displayed
+/// Remove, in the window the item opens.
+const COMMIT: &str = "remove-ocr.commit"; // ui-text-exempt: a trace region name, never displayed
 const COLLAPSED: &str = "ribbon.group.file.recognise.collapsed"; // ui-text-exempt: a trace region name, never displayed
 const APPLIED: &str = "remove-ocr-layers-applied"; // ui-text-exempt: a trace event name, never displayed
 
@@ -208,6 +210,8 @@ fn remove(
         click(COLLAPSED)?;
     }
     click(ITEM)?;
+    session.settle(20);
+    click(COMMIT)?;
     session.settle(30);
     let trace = session.trace()?;
     let Some(applied) = trace.events(APPLIED).last() else {

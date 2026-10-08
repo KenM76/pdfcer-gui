@@ -17,6 +17,8 @@ const MODE: &str = "read";
 const FIXTURE: &str = "ocr-layers.pdf";
 const TAB: &str = "ribbon.tab.file";
 const ITEM: &str = "ribbon.item.file.remove_ocr";
+/// Remove, in the window the item opens.
+const COMMIT: &str = "remove-ocr.commit"; // ui-text-exempt: a trace region name, never displayed
 /// `remove-ocr-layers-applied removed=N pages=M`, after the engine removed N.
 const APPLIED_EVENT: &str = "remove-ocr-layers-applied";
 /// The funnel's line for a press that wrote nothing.
@@ -54,6 +56,12 @@ fn press(session: &Session, driver: &Driver, ui_rect: &str) -> Result<bool> {
     };
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(30);
+    // A document holding pdfcer layers opens the window; one holding none
+    // goes straight to the refusal.
+    if let Some(commit) = driving::declared(&session.trace()?, ui_rect, COMMIT) {
+        driver.click_at(session.frame()?.declared_center(commit))?;
+        session.settle(30);
+    }
     Ok(true)
 }
 

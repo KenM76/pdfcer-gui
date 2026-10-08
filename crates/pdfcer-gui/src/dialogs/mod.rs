@@ -96,6 +96,10 @@ mod ocr_model;
 /// and *how their answers reach the app*. Two different callers, two different
 /// sets of invariants, one receiver.
 pub mod open;
+/// The "which pages" group Recognise text and Remove OCR text share.
+mod page_scope;
+/// File ▸ Remove OCR text: which pages, and which recogniser's text.
+pub mod remove_ocr;
 /// **The question that comes before pdfcer lets go of the file** —
 /// `OPERATOR_REQUESTS.md` O122. Three shapes of one window: save-then-hand-over,
 /// confirm-and-hand-over, and the refusal for a document that has never been
@@ -193,6 +197,9 @@ pub struct DialogsState {
     /// document the operator has already put away, and offering to do that is
     /// how a program ends up with two ideas about what "the document" means.
     ocr: Option<ocr::OcrDialog>,
+    /// The Remove-OCR-text window. Document-scoped: it lists the layers the
+    /// open document held when it opened.
+    remove_ocr: Option<remove_ocr::RemoveOcrDialog>,
 
     /// The Render-diagnostics report, when one is open.
     ///
@@ -848,6 +855,9 @@ impl DialogsState {
         if self.compact.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.compact = None;
         }
+        if self.remove_ocr.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.remove_ocr = None;
+        }
         // `registry`: the digital-ID link is drawn only when the certificate
         // route is registered (R8).
         if let Some(dialog) = self.hand_sign.as_mut() {
@@ -1202,6 +1212,7 @@ impl DialogsState {
         // window that merely goes stale — it is one that keeps working.
         self.offpage = None;
         self.compact = None;
+        self.remove_ocr = None;
         self.hand_sign = None;
         #[cfg(feature = "timestamp")]
         {

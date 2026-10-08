@@ -658,6 +658,8 @@ pub mod properties_pane;
 pub mod rc4_append;
 /// A redraw says what it did to a field's text.
 pub mod redraw_layout;
+/// Remove OCR text takes only the pages chosen.
+pub mod remove_ocr_pages;
 /// Propose replacement words for selected text from Markup.
 pub mod replace_text;
 /// Document properties ▸ Security notes and the open-time wrapper warning.
@@ -666,6 +668,8 @@ pub mod security_notes;
 pub mod security_passwords;
 /// The Security tab's two bands, and the rail's snapshot row.
 pub mod security_tab;
+/// The page thumbnails zoom without a blank tile.
+pub mod thumbnail_zoom;
 
 /// **Selecting a page object names the layer it is on** — O126's third
 /// feature, driven at last. Its header carries the vacuous-pass argument for

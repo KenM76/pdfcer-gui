@@ -439,7 +439,9 @@ impl PdfcerApp {
             // **A completed recognition, applied as one edit.**
             //
             Action::ApplyOcr { pages, engine } => super::ocrlayers::apply(doc, &pages, &engine),
-            Action::RemoveOcrLayers => super::ocrlayers::remove_all(doc),
+            Action::RemoveOcrLayers { pages, engines } => {
+                super::ocrlayers::remove(doc, pages.as_deref(), engines.as_deref());
+            }
             Action::RepairFormFonts => super::formfonts::repair(doc),
             Action::ToggleRc4Append => crate::app::rc4::toggle(doc),
             // Registered only with `signing`; without it nothing raises this.

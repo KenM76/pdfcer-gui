@@ -356,6 +356,49 @@ pub fn layers_replaced(layers: usize, pages: usize) -> String {
     )
 }
 
+/// The Remove-OCR-text window's title.
+#[must_use]
+pub fn remove_title() -> String {
+    "Remove OCR text".to_owned()
+}
+
+/// What the window does, above its choices.
+#[must_use]
+pub fn remove_intro() -> &'static str {
+    "Takes off the invisible text pdfcer added when it recognised the pages. The pages look the same afterwards; Find and copy stop seeing that text. Text other programs added is never touched."
+}
+
+/// The heading over the recogniser checkboxes, shown when the document holds
+/// text from more than one.
+#[must_use]
+pub fn remove_engines_heading() -> &'static str {
+    "Text recognised by:"
+}
+
+/// A recogniser checkbox for layers that recorded no recogniser.
+#[must_use]
+pub fn remove_engine_unrecorded() -> &'static str {
+    "Not recorded"
+}
+
+/// What the current choice names.
+#[must_use]
+pub fn remove_summary(layers: usize, pages: usize) -> String {
+    format!("This removes {layers} OCR text layer(s) on {pages} page(s).")
+}
+
+/// The button that removes.
+#[must_use]
+pub fn remove_button() -> String {
+    "Remove".to_owned()
+}
+
+/// Why Remove is greyed.
+#[must_use]
+pub fn remove_names_nothing() -> &'static str {
+    "The pages and recognisers chosen hold no OCR text pdfcer added. Choose other pages, or tick a recogniser."
+}
+
 /// The disclosure after File ▸ Remove OCR text succeeded.
 #[must_use]
 pub fn layers_removed(layers: usize, pages: usize) -> String {

@@ -41,6 +41,17 @@ impl DialogsState {
         self.ocr = ocr::open_for(status, picked, prefs);
     }
 
+    /// Open File ▸ Remove OCR text. `false` when the document holds no pdfcer
+    /// OCR layer, so the caller sends the unfiltered removal whose refusal
+    /// says so.
+    pub fn open_remove_ocr(&mut self, status: &Status, picked: Vec<usize>) -> bool {
+        if self.remove_ocr.is_some() {
+            return true;
+        }
+        self.remove_ocr = super::remove_ocr::open_for(status, picked);
+        self.remove_ocr.is_some()
+    }
+
     /// Open the Apply-redactions dialog for the document in `status`.
     pub fn open_redact(&mut self, status: &Status, reach: RedactionReach) {
         if self.redact.is_some() {

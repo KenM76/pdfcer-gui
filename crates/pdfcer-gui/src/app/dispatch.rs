@@ -441,7 +441,17 @@ impl PdfcerApp {
                 let picked: Vec<usize> = self.panels.selected_pages().iter().copied().collect();
                 self.dialogs.open_ocr(&self.status, picked, &self.prefs);
             }
-            "file.remove_ocr" => actions.push(Action::RemoveOcrLayers),
+            // The same rail selection as `file.ocr`. No pdfcer layer: the
+            // unfiltered removal runs and its refusal says there is none.
+            "file.remove_ocr" => {
+                let picked: Vec<usize> = self.panels.selected_pages().iter().copied().collect();
+                if !self.dialogs.open_remove_ocr(&self.status, picked) {
+                    actions.push(Action::RemoveOcrLayers {
+                        pages: None,
+                        engines: None,
+                    });
+                }
+            }
             #[cfg(feature = "model-download")]
             "file.fetch_ocr_models" => self.dialogs.open_fetch_models(),
             // **Apply redactions.** A dialog, in `file.ocr`'s shape one arm

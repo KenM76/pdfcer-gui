@@ -15,6 +15,8 @@ use crate::app::state::{OpenDoc, Status};
 use crate::ocr::{self, EngineId, Job, ProgramRun, Refusal, Request};
 use crate::text::ocr as t;
 
+use super::page_scope::PageScope;
+
 // ---------------------------------------------------------------------------
 // Named regions
 //
@@ -105,51 +107,11 @@ enum Phase {
 /// The Recognise-text dialog.
 #[derive(Debug)]
 pub struct OcrDialog {
-    /// The page this transaction is about, captured when the dialog opened.
-    ///
-    /// **Captured, not read per frame**, and that is a correctness
-    /// requirement rather than an optimisation. The operator can page the
-    /// document while the dialog is open; a `Save` that read the *current*
-    /// page index would label bytes recognised from page 3 as belonging to
-    /// whatever page they had scrolled to. The recognition is of one page and
-    /// the dialog remembers which.
-    page_index: usize,
-    /// **Which pages to recognise.**
-    ///
-    /// Recognising only [`Self::page_index`] is not an engine limitation:
-    /// `add_ocr_layer`'s output is a complete PDF that can be fed back in, so
-    /// pages chain. That was measured before this was built, because a wrong
-    /// answer would have corrupted a file.
-    scope: Scope,
-    /// **The rail's page selection, captured when the dialog opened** —
-    /// `OPERATOR_REQUESTS.md` O79.
-    ///
-    /// Zero-based, ascending, and possibly empty — empty is a defined answer
-    /// meaning *nothing is picked*, in which case [`Scope::Picked`] is not
-    /// offered at all (R9: an option with no operand renders nothing).
-    ///
-    /// # Captured rather than read live, and this is the decision worth
-    /// arguing
-    ///
-    /// The rail is on screen beside this window and the operator can work it
-    /// while the dialog is up. Reading the selection live would mean the
-    /// label's number changed under them mid-read, and the run would cover a
-    /// set they had stopped thinking about — the same failure
-    /// [`Self::page_index`] already documents for *"the current page"*, which
-    /// is why both are captured and neither is polled.
-    ///
-    /// The cost is one snapshot per dialog opening, of a `BTreeSet` that on a
-    /// 36-sheet document holds at most 36 `usize`.
-    picked: Vec<usize>,
-    /// The range the operator typed, when [`Self::scope`] is [`Scope::Range`].
-    ///
-    /// Kept as **text**, not as a parsed list, so that a half-typed `1-` is a
-    /// state the field can hold. Parsed on every frame by
-    /// `dialogs::print::tabs::parse_page_range` — the same parser the print
-    /// dialog uses, which is the point: two page-range parsers would accept
-    /// different things on two surfaces of one program, and the operator would
-    /// have to learn which.
-    range: String,
+    /// The page this transaction is about and the pages it covers, both
+    /// captured at open — see [`PageScope`]. A `Save` that read the current
+    /// page would label bytes recognised from page 3 as whatever page the
+    /// operator had scrolled to.
+    scope: PageScope,
     /// Leave alone any page that already draws text. On by default.
     ///
     /// See [`crate::ocr::Refusal::AlreadyHasText`] for the measurement that
@@ -164,11 +126,6 @@ pub struct OcrDialog {
     /// The model a run just started with; [`Self::show`] stores it and its
     /// engine as the preferences, because only `show` holds them.
     remember: Option<String>,
-    /// The page list the last `ocr-scope` line reported.
-    ///
-    /// Kept so the trace fires on a change rather than on a frame. See
-    /// [`Self::scope_group`].
-    traced_scope: Vec<usize>,
     /// The `attempted` count the last `ocr-progress` line reported.
     ///
     /// **Why the numbers are traced at all, when the rect already is.**
@@ -186,9 +143,8 @@ pub struct OcrDialog {
     /// carry one. This line does: `ocr-progress attempted=… of=… words=…
     /// chars=…`, and a check asserts that two of them differ.
     ///
-    /// Traced on **change**, for the reason [`Self::traced_scope`] already
-    /// gives at length: an identical line per frame for twenty seconds is a
-    /// haystack, not a diagnostic. `usize::MAX` is the "nothing traced yet"
+    /// Traced on **change**: an identical line per frame for twenty seconds
+    /// is a haystack, not a diagnostic. `usize::MAX` is the "nothing traced yet"
     /// sentinel rather than `0`, because `attempted == 0` is a real state the
     /// label deliberately does not draw and a `0` sentinel would make the first
     /// genuine `attempted = 0` unreportable if that policy ever changed.
@@ -201,81 +157,6 @@ pub struct OcrDialog {
     /// cannot drop the state it is being drawn from, so it records the request
     /// and the caller acts after the closure returns.
     close_requested: bool,
-}
-
-/// Which pages a recognition run covers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Scope {
-    /// Every page of the document. The default.
-    All,
-    /// Only the page the operator was looking at when the dialog opened.
-    ///
-    /// **When it opened**, not now — the operator can page the document while
-    /// this window is up, and a run that read the *current* index would
-    /// recognise a page they were no longer thinking about. That capture is the
-    /// same argument [`OcrDialog::page_index`] already carries.
-    CurrentPage,
-    /// **The pages picked in the thumbnail rail** —
-    /// `OPERATOR_REQUESTS.md` O79.
-    ///
-    /// The operator: *"the pages I have selected in the thumbnails."*
-    ///
-    /// # Why this is not the same as [`Self::Range`] with the numbers typed in
-    ///
-    /// Because on his documents it is the difference between a feature and a
-    /// chore. A 36-sheet SolidWorks set where four sheets are scans and the
-    /// rest are vector is exactly the case where **All** is minutes of wasted
-    /// work, **This page** is four separate runs, and a typed range is him
-    /// reading page numbers off the rail and retyping them into a text field
-    /// six inches away.
-    ///
-    /// The rail's selection is already the operand for delete, extract,
-    /// rotate and the page clipboard — `PanelsState::selected_pages`, whose
-    /// own doc comment says those verbs *"respect the thumbnail rail's
-    /// selection when there is one"*. OCR was the one page-scoped verb that
-    /// ignored it.
-    ///
-    /// # Captured at OPEN, like [`Self::CurrentPage`], and for the same reason
-    ///
-    /// The operator can work the rail while this window is up. A run that read
-    /// the selection as it is *now* would recognise a set they were no longer
-    /// thinking about, and — worse — the label would have said a different
-    /// number when they read it. See [`OcrDialog::picked`].
-    Picked,
-    /// The pages named in [`OcrDialog::range`].
-    Range,
-}
-
-impl Scope {
-    /// The pages this scope names, zero-based and in order.
-    pub(super) fn pages(
-        self,
-        current: usize,
-        count: usize,
-        range: &str,
-        picked: &[usize],
-    ) -> Option<Vec<usize>> {
-        match self {
-            Self::All => (count > 0).then(|| (0..count).collect()),
-            Self::CurrentPage => (current < count).then(|| vec![current]),
-            // Filtered against the page count rather than trusted (O79). The
-            // selection was captured when the dialog opened and the document
-            // can be edited underneath it — a page deleted from the rail while
-            // this window is up would otherwise hand the engine an index past
-            // the end. `None` for an empty result, exactly as an unresolvable
-            // range gives `None`, so the Recognise button greys by the path
-            // that already exists.
-            Self::Picked => {
-                let pages: Vec<usize> = picked.iter().copied().filter(|p| *p < count).collect();
-                (!pages.is_empty()).then_some(pages)
-            }
-            // The PRINT dialog's parser, deliberately. Two page-range parsers
-            // in one program would accept different things on two surfaces and
-            // the operator would have to learn which one they were talking to.
-            Self::Range => crate::dialogs::print::tabs::parse_page_range(range, count)
-                .filter(|pages| !pages.is_empty()),
-        }
-    }
 }
 
 impl OcrDialog {
@@ -292,22 +173,13 @@ impl OcrDialog {
             .map(|c| c.engine_token.clone())
             .unwrap_or_default();
         Self {
-            page_index: doc.view.page_index,
-            // The rail's selection, captured once — see `Self::picked` for
-            // why it is a snapshot rather than a live read (O79).
-            picked,
-            // **All pages by default**, which is what every surveyed OCR tool
-            // defaults to and what the operator was asking for. The old
-            // behaviour — this page only — is still one click away and is the
-            // right answer when he is checking one sheet, but it is the
-            // unusual want and it should not be the assumption.
-            scope: Scope::All,
-            range: String::new(),
+            // All pages by default, which is what every surveyed OCR tool
+            // defaults to; this page only is one click away.
+            scope: PageScope::new(doc.view.page_index, picked),
             skip_pages_with_text: true,
             models,
             engine,
             remember: None,
-            traced_scope: Vec::new(),
             traced_progress: usize::MAX,
             phase: Phase::Ready,
             close_requested: false,
@@ -703,9 +575,7 @@ impl OcrDialog {
         // case: the operator is mid-way through typing a range and the control
         // will come back on its own. Hiding it would make the dialog jump under
         // their hands as they type.
-        let pages = self
-            .scope
-            .pages(self.page_index, count, &self.range, &self.picked);
+        let pages = self.scope.pages(count);
         let chosen = self.models.chosen().is_some();
         let run = ui
             .add_enabled(pages.is_some() && chosen, egui::Button::new(t::run()))
@@ -721,90 +591,14 @@ impl OcrDialog {
         }
     }
 
-    /// **Which pages.**
+    /// **Which pages**, and whether pages that already draw text are left.
     fn scope_group(&mut self, ui: &mut egui::Ui, count: usize) {
-        ui.label(t::scope_heading());
-        ui.add_space(4.0);
-        let group = ui
-            .vertical(|ui| {
-                ui.radio_value(&mut self.scope, Scope::All, t::scope_all());
-                ui.radio_value(
-                    &mut self.scope,
-                    Scope::CurrentPage,
-                    t::scope_current(self.page_index + 1),
-                );
-                // **The pages picked in the rail** — `OPERATOR_REQUESTS.md`
-                // O79 — drawn only when there ARE some.
-                //
-                // R9: with an empty rail selection this option has no operand,
-                // and a greyed radio reading "Selected pages (0)" would be a
-                // control explaining its own uselessness in a window that
-                // already has three working answers. The remedy is not on this
-                // surface — it is *go and pick some pages* — so there is
-                // nothing a hover could usefully say either.
-                //
-                // Positioned THIRD, between "this page" and a typed range,
-                // which is the order of how much the operator had to do to
-                // express the operand: nothing, one page, a set they picked, a
-                // set they typed.
-                if !self.picked.is_empty() {
-                    ui.radio_value(
-                        &mut self.scope,
-                        Scope::Picked,
-                        t::scope_picked(self.picked.len()),
-                    );
-                }
-                ui.horizontal(|ui| {
-                    ui.radio_value(&mut self.scope, Scope::Range, t::scope_range());
-                    let field = ui.add(
-                        // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
-                        // every field in this window: the first press leaves the box, the second
-                        // cancels.
-                        egui::TextEdit::singleline(&mut self.range)
-                            .desired_width(140.0)
-                            .hint_text(t::scope_range_hint()),
-                    );
-                    // Typing IS the choice. See the doc comment.
-                    if field.gained_focus() || field.changed() {
-                        self.scope = Scope::Range;
-                    }
-                });
-            })
-            .response;
-        crate::diag::ui_rect(REGION_SCOPE, group.rect);
-
+        self.scope.show(ui, count, REGION_SCOPE, REGION_SCOPE);
         ui.add_space(8.0);
         let skip = ui
             .checkbox(&mut self.skip_pages_with_text, t::skip_pages_with_text())
             .on_hover_text(t::skip_pages_with_text_tooltip());
         crate::diag::ui_rect(REGION_SKIP, skip.rect);
-
-        // What the current answer actually resolves to, in pages. Not a
-        // rephrasing of the radio — it is the ONLY place a typed range is
-        // confirmed to have been understood, and it is off in a status line
-        // rather than in the field, per rule 4's disclosure clause.
-        //
-        // Traced on CHANGE, not every frame. A line per frame for as long as
-        // the dialog is open is 90 of the 400 lines in a driven capture, all
-        // identical — which is not a diagnostic, it is a haystack. The ink-trail
-        // rule cuts both ways: a line nobody can find is the same as a line
-        // nobody wrote.
-        let resolved = self
-            .scope
-            .pages(self.page_index, count, &self.range, &self.picked)
-            .unwrap_or_default();
-        if resolved != self.traced_scope {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                format!(
-                    "ocr-scope pages={} first={:?} last={:?}",
-                    resolved.len(),
-                    resolved.first(),
-                    resolved.last()
-                )
-            });
-            self.traced_scope = resolved;
-        }
     }
 
     /// Everything that can be refused before a thread is spawned.
@@ -841,16 +635,13 @@ impl OcrDialog {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 "ocr-started engine={} page={} models={} source={source} model={name}",
                 model.engine,
-                self.page_index,
+                self.scope.page_index,
                 folder.display(),
             )
         });
         self.phase = Phase::Working(Job::spawn(Request {
             session: std::sync::Arc::clone(&doc.session),
-            pages: self
-                .scope
-                .pages(self.page_index, doc.pages.len(), &self.range, &self.picked)
-                .unwrap_or_default(),
+            pages: self.scope.pages(doc.pages.len()).unwrap_or_default(),
             skip_pages_with_text: self.skip_pages_with_text,
             // Through the funnel. See `ocr::Request::extract_options`.
             extract_options: {
@@ -1054,94 +845,5 @@ mod tests {
             )
             .is_none()
         );
-    }
-}
-
-#[cfg(test)]
-mod scope_tests {
-    use super::*;
-
-    /// All pages means all of them, in order, zero-based.
-    #[test]
-    fn all_pages_is_every_page_in_order() {
-        assert_eq!(
-            Scope::All.pages(3, 5, "", &[]),
-            Some(vec![0, 1, 2, 3, 4]),
-            "the current page has no bearing on All"
-        );
-    }
-
-    /// **This page only means the page the dialog OPENED on.**
-    #[test]
-    fn this_page_only_is_the_captured_page() {
-        assert_eq!(Scope::CurrentPage.pages(2, 5, "", &[]), Some(vec![2]));
-    }
-
-    /// **The rail's picked pages are the operand** —
-    /// `OPERATOR_REQUESTS.md` O79.
-    #[test]
-    fn the_picked_pages_are_the_pages_picked() {
-        assert_eq!(
-            Scope::Picked.pages(0, 36, "", &[3, 7, 11, 12]),
-            Some(vec![3, 7, 11, 12]),
-            "the rail's selection is the operand, verbatim"
-        );
-        assert_eq!(
-            Scope::Picked.pages(0, 36, "1-4", &[9]),
-            Some(vec![9]),
-            "a typed range in the field has no bearing on the picked scope"
-        );
-    }
-
-    /// **A picked page the document no longer has is dropped**, and an
-    /// empty result resolves to nothing.
-    #[test]
-    fn a_picked_page_the_document_lost_is_dropped() {
-        assert_eq!(
-            Scope::Picked.pages(0, 5, "", &[1, 4, 9, 20]),
-            Some(vec![1, 4]),
-            "indices past the end are dropped, the rest stand"
-        );
-        assert_eq!(
-            Scope::Picked.pages(0, 5, "", &[9, 20]),
-            None,
-            "nothing left is nothing to run, which greys the button by the existing path"
-        );
-        assert_eq!(
-            Scope::Picked.pages(0, 5, "", &[]),
-            None,
-            "an empty rail selection names no page"
-        );
-    }
-
-    /// A scope naming no page resolves to nothing, which the dialog renders as
-    /// an unavailable button rather than as an error.
-    #[test]
-    fn a_scope_that_names_no_page_resolves_to_nothing() {
-        assert_eq!(Scope::Range.pages(0, 5, "", &[]), None, "an empty range");
-        assert_eq!(Scope::Range.pages(0, 5, "  ", &[]), None, "whitespace");
-        assert_eq!(Scope::Range.pages(0, 5, "9-12", &[]), None, "past the end");
-        assert_eq!(
-            Scope::All.pages(0, 0, "", &[]),
-            None,
-            "a document with no pages"
-        );
-        assert_eq!(
-            Scope::CurrentPage.pages(7, 5, "", &[]),
-            None,
-            "a captured index the document no longer has"
-        );
-    }
-
-    /// **The range field speaks the PRINT dialog's dialect, not its own.**
-    #[test]
-    fn the_range_is_parsed_by_the_print_dialogs_parser() {
-        for input in ["1-3", "2,4", "1-2, 5", "3"] {
-            assert_eq!(
-                Scope::Range.pages(0, 5, input, &[]),
-                crate::dialogs::print::tabs::parse_page_range(input, 5).filter(|p| !p.is_empty()),
-                "the two must agree on {input:?}"
-            );
-        }
     }
 }

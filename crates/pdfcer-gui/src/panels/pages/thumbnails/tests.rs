@@ -489,3 +489,63 @@ fn a_thumbnail_scale_is_always_finite() {
         assert!(scale.is_finite() && scale > 0.0, "scale was {scale}");
     }
 }
+
+/// **A draft is redrawn finer only when the tiles are wider than it**, and
+/// never again at a width that was refused for this revision.
+#[test]
+fn a_finer_picture_is_wanted_only_for_wider_tiles() {
+    assert!(
+        !wants_finer(Grade::Draft, None, None),
+        "tiles fit the draft"
+    );
+    assert!(wants_finer(Grade::Draft, Some(192), None));
+    assert!(
+        !wants_finer(Grade::Fine(192), Some(192), None),
+        "already fine"
+    );
+    assert!(
+        wants_finer(Grade::Fine(192), Some(256), None),
+        "zoomed in again"
+    );
+    assert!(
+        !wants_finer(Grade::Fine(256), Some(192), None),
+        "a larger picture serves a smaller tile"
+    );
+    assert!(
+        !wants_finer(Grade::Draft, Some(192), Some(192)),
+        "refused there"
+    );
+    assert!(
+        !wants_finer(Grade::Draft, Some(256), Some(192)),
+        "and wider"
+    );
+    assert!(
+        wants_finer(Grade::Draft, Some(128 + 64), Some(256)),
+        "narrower may succeed"
+    );
+}
+
+/// The tile width is stepped, so a splitter drag is not a render per frame,
+/// and no fine picture is wanted while the draft is wide enough.
+#[test]
+fn the_fine_width_is_stepped_and_off_for_narrow_tiles() {
+    let mut cache = ThumbnailCache::default();
+    cache.set_tile_width(112.0);
+    assert_eq!(cache.fine_width, None);
+    cache.set_tile_width(141.0);
+    assert_eq!(cache.fine_width, Some(192));
+    cache.set_tile_width(190.0);
+    assert_eq!(cache.fine_width, Some(192));
+    cache.set_tile_width(f32::NAN);
+    assert_eq!(cache.fine_width, None);
+}
+
+/// A page with no picture is never a fine candidate: it gets its draft first.
+#[test]
+fn a_page_with_no_picture_is_not_drawn_finer_first() {
+    let mut cache = ThumbnailCache::default();
+    cache.set_tile_width(400.0);
+    assert_eq!(cache.next_finer(&[0, 1, 2], 1), None);
+    assert_eq!(cache.next_to_render(&[0, 1, 2], 1), Some(1));
+    assert_eq!(cache.pending_grade(1), Grade::Draft);
+}

@@ -16,6 +16,7 @@ pub use pdfcer_gui_base::pageselection as select;
 #[cfg(test)]
 mod select_tests;
 pub mod thumbnails;
+pub mod zoom;
 
 use egui_shell::HandlerToken;
 
@@ -121,6 +122,7 @@ pub fn body(
     // `ThumbnailCache`. Nothing above or below it in this function reads what
     // it writes.
     previews::row(ui, pages, actions);
+    pages.zoom.buttons(ui);
     ui.separator();
 
     let mut go: Option<usize> = None;
@@ -153,6 +155,7 @@ pub fn body(
             // is pointing into.
             paint_caret(ui, drop.as_ref());
         });
+    pages.zoom.wheel(ui, grid.inner_rect);
 
     // The release is read from RAW POINTER INPUT, not from the tile's own
     // `Response`.
@@ -238,10 +241,15 @@ pub fn body(
     {
         crate::diag::trace(|| {
             format!(
-                "pages-thumbnail page={} ms={} state={:?} cached={}",
+                "pages-thumbnail page={} ms={} state={:?} grade={} cached={}",
                 page_index + 1,
                 elapsed.as_millis(),
                 pages.cache.state(page_index),
+                match pages.cache.grade(page_index) {
+                    Some(thumbnails::Grade::Fine(w)) => format!("fine:{w}"),
+                    Some(thumbnails::Grade::Draft) => "draft".to_owned(),
+                    None => "none".to_owned(),
+                },
                 pages.cache.ready_count(),
             )
         });
@@ -268,9 +276,10 @@ pub fn body(
     let census = pages.cache.census(&visible);
     crate::diag::trace_changed(TILES_SLOT, || {
         format!(
-            "pages-tiles visible={} ready={} stale={} pending={} blank={}",
+            "pages-tiles visible={} ready={} fine={} stale={} pending={} blank={}",
             visible.len(),
             census.ready,
+            census.fine,
             census.stale,
             census.pending,
             census.blank,
@@ -469,8 +478,13 @@ fn grid_rows(
 ) {
     let spacing = ui.spacing().item_spacing.x;
     let full_width = ui.available_width();
-    let columns = columns_for(full_width, spacing);
+    let columns = columns_at(
+        full_width,
+        spacing,
+        MIN_TILE_WIDTH_PTS * pages.zoom.factor(),
+    );
     let tile_width = tile_width_for(full_width, spacing, columns);
+    pages.cache.set_tile_width(tile_width);
 
     let mut first = 0usize;
     while first < doc.pages.len() {
@@ -799,13 +813,19 @@ fn tile(
     }
 }
 
-/// How many columns fit in `available` points.
+/// How many columns of the default narrowest tile fit in `available` points.
 #[must_use]
 pub fn columns_for(available: f32, spacing: f32) -> usize {
+    columns_at(available, spacing, MIN_TILE_WIDTH_PTS)
+}
+
+/// How many columns at least `min_tile` points wide fit in `available`.
+#[must_use]
+pub fn columns_at(available: f32, spacing: f32, min_tile: f32) -> usize {
     if !available.is_finite() || available <= 0.0 {
         return 1;
     }
-    let per_column = MIN_TILE_WIDTH_PTS + spacing;
+    let per_column = min_tile + spacing;
     #[allow(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
@@ -862,6 +882,8 @@ pub struct PagesUi {
     pub selection: select::PageSelection,
     /// The pictures, and the policy that fills them.
     pub cache: thumbnails::ThumbnailCache,
+    /// How large the tiles are drawn.
+    pub zoom: zoom::ThumbZoom,
 }
 
 impl std::fmt::Debug for PagesUi {
@@ -869,6 +891,7 @@ impl std::fmt::Debug for PagesUi {
         f.debug_struct("PagesUi")
             .field("selection", &self.selection.len())
             .field("cache", &self.cache)
+            .field("zoom", &self.zoom.factor())
             .finish()
     }
 }
@@ -889,6 +912,15 @@ mod tests {
             columns_for(500.0, 8.0) >= 4,
             "a wide dock must use the width it was given"
         );
+    }
+
+    /// A larger thumbnail size gives fewer, wider columns; the largest fills a
+    /// default dock with one.
+    #[test]
+    fn a_larger_size_gives_fewer_columns() {
+        assert_eq!(columns_at(250.0, 8.0, MIN_TILE_WIDTH_PTS), 2);
+        assert_eq!(columns_at(250.0, 8.0, MIN_TILE_WIDTH_PTS * 0.5), 4);
+        assert_eq!(columns_at(250.0, 8.0, MIN_TILE_WIDTH_PTS * 4.0), 1);
     }
 
     /// A dock dragged to nothing still asks for one column.

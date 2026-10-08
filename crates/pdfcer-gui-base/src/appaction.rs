@@ -164,9 +164,15 @@ pub enum Action {
         /// the layer's marker.
         engine: String,
     },
-    /// File ▸ Remove OCR text: every OCR layer pdfcer wrote comes off, as one
+    /// File ▸ Remove OCR text: the OCR layers pdfcer wrote come off, as one
     /// undo entry. See `super::ocrlayers`.
-    RemoveOcrLayers,
+    RemoveOcrLayers {
+        /// Only layers on these zero-based pages; `None` is every page.
+        pages: Option<Vec<usize>>,
+        /// Only layers whose recorded `/Engine` is one of these (`None`
+        /// inside is a layer that recorded none); `None` is every engine.
+        engines: Option<Vec<Option<String>>>,
+    },
     /// Edit ▸ Forms ▸ Repair fonts: every inline `/DR` font becomes an object
     /// of its own, as one undo entry. See `super::formfonts`.
     RepairFormFonts,

@@ -341,6 +341,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(open_many::SeveralDocumentsOpenFromOneOpen),
         Box::new(security_tab::TheSecurityTabHoldsSecurityAndProtect),
         Box::new(security_tab::TheSnapshotToolIsOnTheLeftRail),
+        Box::new(remove_ocr_pages::RemoveOcrTextTakesThePagesChosen),
+        Box::new(thumbnail_zoom::ThumbnailsZoomWithoutBlanking),
         Box::new(attach_sound::ASoundAttachesAsAnIcon),
         Box::new(media_clip::AClipPlaysFromARegion),
         Box::new(field_scripts::AFieldIsCalculatedFromOthers),

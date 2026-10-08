@@ -6,6 +6,13 @@
 //! the state of tile N?*, *what should I draw next?*, *draw it* — and this
 //! module owns every answer.
 //!
+//! Two passes per picture: a **draft** at [`THUMBNAIL_WIDTH_PTS`], quick on any
+//! page, then — once every visible tile has one — a **fine** render at the
+//! width the tile is actually drawn, when that is wider than the draft. The
+//! draft stays on its tile, stretched, until the fine picture lands; a fine
+//! render that fails or runs out of time leaves the draft. So a tile that has
+//! a picture never loses it to a resize or a zoom.
+//!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/pages/thumbnails.md`.
 
 use std::collections::HashMap;
@@ -29,6 +36,51 @@ pub use pdfcer_gui_base::pagebudget::{
 
 /// How many uploaded thumbnails are kept at once.
 pub const MAX_CACHED_THUMBNAILS: usize = 64;
+
+/// How many fine pictures off screen are kept; the furthest goes first. The
+/// visible ones are never counted against it, so a wide grid of large tiles
+/// cannot evict what it is showing.
+pub const MAX_OFFSCREEN_FINE: usize = 16;
+
+/// Fine renders are made at a tile width rounded up to this many points, so
+/// dragging the dock splitter does not ask for a new picture every frame.
+pub const FINE_STEP_PTS: f32 = 64.0;
+
+/// The resolution a held picture was drawn at.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Grade {
+    /// [`THUMBNAIL_WIDTH_PTS`] wide.
+    Draft,
+    /// This many points wide — a tile width rounded up to [`FINE_STEP_PTS`].
+    Fine(u32),
+}
+
+impl Grade {
+    /// The width in points it was drawn at.
+    #[must_use]
+    pub fn width(self) -> u32 {
+        match self {
+            #[allow(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "a positive constant of a few hundred points" // ui-text-exempt: clippy lint justification, never displayed
+            )]
+            Self::Draft => THUMBNAIL_WIDTH_PTS as u32,
+            Self::Fine(w) => w,
+        }
+    }
+}
+
+/// Whether a picture drawn at `held` should be redrawn finer for tiles
+/// `wanted` points wide (`None`: the draft is wide enough), given the last
+/// fine render refused at this revision, `(width)`.
+#[must_use]
+pub fn wants_finer(held: Grade, wanted: Option<u32>, refused: Option<u32>) -> bool {
+    let Some(wanted) = wanted else {
+        return false;
+    };
+    held.width() < wanted && refused.is_none_or(|r| wanted < r)
+}
 
 /// Why a page has no picture, when the reason is not "not yet".
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -136,6 +188,18 @@ pub struct ThumbnailCache {
     ///
     /// `None` lets a preview run as long as it takes, on the worker.
     budget: Option<Duration>,
+    /// The resolution of each picture in [`Self::ready`].
+    grade: HashMap<usize, Grade>,
+    /// The width fine pictures are wanted at, or `None` while the tiles are
+    /// no wider than the draft. Set each frame by [`Self::set_tile_width`].
+    fine_width: Option<u32>,
+    /// A fine render that failed or ran out of time, by page: the revision
+    /// and the width. Not retried at that width or wider for that revision;
+    /// the draft stays on the tile.
+    fine_refused: HashMap<usize, (u64, u32)>,
+    /// The pages on screen at the last [`Self::drive`]: fine pictures of
+    /// these are never evicted for [`MAX_OFFSCREEN_FINE`].
+    visible: Vec<usize>,
     /// The page indices in [`Self::ready`], newest last.
     ///
     /// Kept beside the map only so eviction has a deterministic tie-break;
@@ -160,6 +224,10 @@ impl Default for ThumbnailCache {
             skipped: None,
             on: true,
             budget: PAGE_BUDGET_DEFAULT,
+            grade: HashMap::new(),
+            fine_width: None,
+            fine_refused: HashMap::new(),
+            visible: Vec::new(),
             order: Vec::new(),
         }
     }
@@ -196,6 +264,8 @@ impl ThumbnailCache {
             self.unavailable.clear();
             self.order.clear();
             self.built_at.clear();
+            self.grade.clear();
+            self.fine_refused.clear();
             self.requested = None;
         }
         // An undated refusal is treated as stale: the cost is one render.
@@ -265,6 +335,71 @@ impl ThumbnailCache {
             self.built_at.remove(&page);
         }
         self.skipped = None;
+        self.fine_refused.clear();
+    }
+
+    /// The width tiles are drawn at this frame, in points. Fine pictures are
+    /// wanted when it is wider than the draft.
+    pub fn set_tile_width(&mut self, width_pts: f32) {
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "a positive tile width of at most a window's width in points" // ui-text-exempt: clippy lint justification, never displayed
+        )]
+        let stepped = ((width_pts / FINE_STEP_PTS).ceil() * FINE_STEP_PTS) as u32;
+        self.fine_width =
+            (width_pts.is_finite() && width_pts > THUMBNAIL_WIDTH_PTS).then_some(stepped);
+    }
+
+    /// The resolution of `page_index`'s picture, if it has one.
+    #[must_use]
+    pub fn grade(&self, page_index: usize) -> Option<Grade> {
+        self.ready
+            .contains_key(&page_index)
+            .then(|| self.grade.get(&page_index).copied().unwrap_or(Grade::Draft))
+    }
+
+    /// The last fine render refused for `page_index` at its current revision.
+    fn refused_at(&self, page_index: usize) -> Option<u32> {
+        self.fine_refused
+            .get(&page_index)
+            .filter(|(epoch, _)| *epoch == self.synced.get(page_index))
+            .map(|(_, width)| *width)
+    }
+
+    /// Whether `page_index`'s picture should be redrawn finer.
+    fn finer(&self, page_index: usize) -> bool {
+        self.grade(page_index)
+            .is_some_and(|held| wants_finer(held, self.fine_width, self.refused_at(page_index)))
+    }
+
+    /// **Which visible picture to redraw finer**, once nothing visible is
+    /// waiting for a first or a current picture. The current page first.
+    #[must_use]
+    pub fn next_finer(&self, visible: &[usize], current: usize) -> Option<usize> {
+        if !self.previews_on() {
+            return None;
+        }
+        let candidate = |p: &usize| self.state(*p) == TileState::Ready && self.finer(*p);
+        if visible.contains(&current) && candidate(&current) {
+            return Some(current);
+        }
+        visible.iter().copied().find(|p| candidate(p))
+    }
+
+    /// The grade to draw a page `next_to_render` picked at: fine when it
+    /// holds an older picture and fine ones are wanted, so a redrawn tile does
+    /// not drop to the draft and climb back.
+    fn pending_grade(&self, page_index: usize) -> Grade {
+        match self.fine_width {
+            Some(w)
+                if self.ready.contains_key(&page_index)
+                    && self.refused_at(page_index).is_none_or(|r| w < r) =>
+            {
+                Grade::Fine(w)
+            }
+            _ => Grade::Draft,
+        }
     }
 
     /// What tile `page_index` should draw.
@@ -320,6 +455,8 @@ impl ThumbnailCache {
         may_start: bool,
     ) -> Option<(usize, Duration)> {
         let worker = &doc.render_worker;
+        self.visible.clear();
+        self.visible.extend_from_slice(visible);
         let landed = match worker.poll_background() {
             Some(result) => self.land(ctx, result, viewport_centre(visible, current)),
             None => {
@@ -327,17 +464,31 @@ impl ThumbnailCache {
                 None
             }
         };
+        let next = self
+            .next_to_render(visible, current)
+            .map(|p| (p, self.pending_grade(p)))
+            .or_else(|| {
+                let w = self.fine_width?;
+                self.next_finer(visible, current)
+                    .map(|p| (p, Grade::Fine(w)))
+            });
         if may_start
             && self.requested.is_none()
-            && let Some(page_index) = self.next_to_render(visible, current)
+            && let Some((page_index, grade)) = next
             && let Some(page) = doc.pages.get(page_index)
         {
-            let scale = raster_scale_for(page, ctx.pixels_per_point());
+            #[allow(
+                clippy::cast_precision_loss,
+                reason = "a width in points of at most a few thousand is exact in f32" // ui-text-exempt: clippy lint justification, never displayed
+            )]
+            let width = grade.width() as f32;
+            let scale = raster_scale_at(page, width, ctx.pixels_per_point());
             worker.spawn_background(thumbnail_request(doc, page_index, page, scale));
             self.requested = Some(Requested {
                 page: page_index,
                 epoch: self.synced.get(page_index),
                 structure: self.structure,
+                grade,
             });
         }
         if self.requested.is_some() {
@@ -364,6 +515,13 @@ impl ThumbnailCache {
             Ok(pixels) => {
                 let texture = texture_from_pixels(ctx, Surface::Thumbnail, &pixels);
                 self.insert(page_index, texture, viewport_centre, requested.epoch);
+                self.grade.insert(page_index, requested.grade);
+                self.evict_offscreen_fine(viewport_centre);
+            }
+            // A finer picture refused: the one on the tile stays.
+            Err(_) if self.keeps_picture(&requested) => {
+                self.fine_refused
+                    .insert(page_index, (requested.epoch, requested.grade.width()));
             }
             Err(error) => {
                 self.unavailable
@@ -392,6 +550,11 @@ impl ThumbnailCache {
         };
         worker.cancel_background();
         self.requested = None;
+        if self.keeps_picture(&requested) {
+            self.fine_refused
+                .insert(requested.page, (requested.epoch, requested.grade.width()));
+            return;
+        }
         self.unavailable
             .insert(requested.page, Unavailable::Abandoned);
         self.built_at.insert(requested.page, requested.epoch);
@@ -399,6 +562,34 @@ impl ThumbnailCache {
             page_index: requested.page,
             millis: budget.as_millis(),
         });
+    }
+
+    /// Whether a refused render leaves a picture on the tile: a fine render of
+    /// a page that already has one.
+    fn keeps_picture(&self, requested: &Requested) -> bool {
+        matches!(requested.grade, Grade::Fine(_)) && self.ready.contains_key(&requested.page)
+    }
+
+    /// Drop the furthest off-screen fine pictures beyond
+    /// [`MAX_OFFSCREEN_FINE`]. The page comes back as a draft when scrolled to.
+    fn evict_offscreen_fine(&mut self, viewport_centre: usize) {
+        let mut offscreen: Vec<usize> = self
+            .grade
+            .iter()
+            .filter(|(p, g)| matches!(g, Grade::Fine(_)) && !self.visible.contains(p))
+            .map(|(p, _)| *p)
+            .collect();
+        if offscreen.len() <= MAX_OFFSCREEN_FINE {
+            return;
+        }
+        offscreen.sort_by_key(|p| std::cmp::Reverse(p.abs_diff(viewport_centre)));
+        let excess = offscreen.len() - MAX_OFFSCREEN_FINE;
+        for page in offscreen.into_iter().take(excess) {
+            self.ready.remove(&page);
+            self.grade.remove(&page);
+            self.built_at.remove(&page);
+            self.order.retain(|p| *p != page);
+        }
     }
 
     /// Add a texture, evicting if the cache is full.
@@ -413,6 +604,7 @@ impl ThumbnailCache {
             && let Some(victim) = evict_victim(&self.order, viewport_centre, page_index)
         {
             self.ready.remove(&victim);
+            self.grade.remove(&victim);
             self.order.retain(|p| *p != victim);
         }
         self.ready.insert(page_index, texture);
@@ -433,7 +625,12 @@ impl ThumbnailCache {
         let mut census = Census::default();
         for &page in visible {
             match self.state(page) {
-                TileState::Ready => census.ready += 1,
+                TileState::Ready => {
+                    census.ready += 1;
+                    if matches!(self.grade(page), Some(Grade::Fine(_))) {
+                        census.fine += 1;
+                    }
+                }
                 TileState::Stale => {
                     census.stale += 1;
                     census.pending += 1;
@@ -452,10 +649,12 @@ impl ThumbnailCache {
 }
 
 /// The visible tiles counted by state. `blank` is a tile drawn with no picture
-/// while previews are on; `stale` is one showing a picture older than its page.
+/// while previews are on; `stale` is one showing a picture older than its page;
+/// `fine` is a ready one drawn finer than the draft.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Census {
     pub ready: usize,
+    pub fine: usize,
     pub stale: usize,
     pub pending: usize,
     pub blank: usize,
@@ -467,6 +666,7 @@ struct Requested {
     page: usize,
     epoch: u64,
     structure: u64,
+    grade: Grade,
 }
 
 /// How often the rail looks for a finished preview while one is running.
@@ -500,17 +700,19 @@ fn refusal_text(reason: &crate::render::worker::RefusalReason) -> String {
     }
 }
 
-/// The raster scale a thumbnail of `page` is drawn at.
+/// The raster scale a draft thumbnail of `page` is drawn at.
 #[must_use]
 pub fn raster_scale_for(page: &Page, pixels_per_point: f32) -> f32 {
+    raster_scale_at(page, THUMBNAIL_WIDTH_PTS, pixels_per_point)
+}
+
+/// The raster scale that draws `page` `width_pts` wide on screen.
+#[must_use]
+pub fn raster_scale_at(page: &Page, width_pts: f32, pixels_per_point: f32) -> f32 {
     use crate::app::prefs::RenderQuality;
     let (width, _) = crate::viewer::page_extent_pts(page);
     if width > 0.0 {
-        crate::viewer::raster_scale(
-            THUMBNAIL_WIDTH_PTS / width,
-            pixels_per_point,
-            RenderQuality::Normal,
-        )
+        crate::viewer::raster_scale(width_pts / width, pixels_per_point, RenderQuality::Normal)
     } else {
         crate::viewer::raster_scale(1.0, pixels_per_point, RenderQuality::Normal)
     }

@@ -17,9 +17,10 @@
 //! - [`apply`] is [`super::Action::ApplyOcr`]: the words written on the layer
 //!   (optional-content group) named [`t::group_name`], so they are a Layers
 //!   panel row; the layer is reused, or made in the same undo step.
-//! - [`remove_all`] is [`super::Action::RemoveOcrLayers`]: every marked layer
-//!   off, and each layer (group) that leaves with nothing on it deleted, as
-//!   ONE undo entry (`CommandKind::RemoveOcrLayer`), through the funnel.
+//! - [`remove`] is [`super::Action::RemoveOcrLayers`]: every marked layer the
+//!   page and engine filters name comes off, and each layer (group) that
+//!   leaves with nothing on it is deleted, as ONE undo entry
+//!   (`CommandKind::RemoveOcrLayer`), through the funnel.
 //! - `LayerPresent`, `LayerNotFound` and "none found" reach the status bar as
 //!   [`crate::text::ocr::OcrLayerRefusal`] sentences.
 
@@ -214,10 +215,15 @@ impl std::fmt::Display for RemoveError {
     }
 }
 
-/// File ▸ Remove OCR text: remove every layer pdfcer wrote, as one undo step.
-pub(super) fn remove_all(doc: &mut OpenDoc) {
+/// File ▸ Remove OCR text: remove the layers pdfcer wrote on `pages` by
+/// `engines` (`None`: no filter), as one undo step.
+pub(super) fn remove(
+    doc: &mut OpenDoc,
+    pages: Option<&[usize]>,
+    engines: Option<&[Option<String>]>,
+) {
     super::apply::vector_edit(doc, "remove-ocr-layers", 0, 0, |session| {
-        remove_in(session).inspect_err(|e| match e {
+        remove_in(session, pages, engines).inspect_err(|e| match e {
             RemoveError::NoneFound => decline::record_ocr_layer(OcrLayerRefusal::NoneFound),
             RemoveError::Layer(e) => word_refusal(e),
             RemoveError::PageTree(_) => {}
@@ -225,8 +231,18 @@ pub(super) fn remove_all(doc: &mut OpenDoc) {
     });
 }
 
-fn remove_in(session: &mut EditSession) -> Result<Vec<String>, RemoveError> {
-    let layers = session.find_ocr_layers().map_err(RemoveError::PageTree)?;
+fn remove_in(
+    session: &mut EditSession,
+    on: Option<&[usize]>,
+    by: Option<&[Option<String>]>,
+) -> Result<Vec<String>, RemoveError> {
+    let layers: Vec<_> = session
+        .find_ocr_layers()
+        .map_err(RemoveError::PageTree)?
+        .into_iter()
+        .filter(|l| on.is_none_or(|p| p.contains(&l.page_index)))
+        .filter(|l| by.is_none_or(|e| e.contains(&l.engine)))
+        .collect();
     if layers.is_empty() {
         return Err(RemoveError::NoneFound);
     }

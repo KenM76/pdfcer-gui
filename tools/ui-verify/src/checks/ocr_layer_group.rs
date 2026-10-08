@@ -26,6 +26,8 @@ const ROW: &str = "panel.layers.row.Recognised_text"; // ui-text-exempt: a trace
 const PANEL_ITEM: &str = "ribbon.item.view.panel_layers"; // ui-text-exempt: a trace region name, never displayed
 const TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.file.remove_ocr"; // ui-text-exempt: a trace region name, never displayed
+/// Remove, in the window the item opens.
+const COMMIT: &str = "remove-ocr.commit"; // ui-text-exempt: a trace region name, never displayed
 const COLLAPSED: &str = "ribbon.group.file.recognise.collapsed"; // ui-text-exempt: a trace region name, never displayed
 const APPLIED: &str = "remove-ocr-layers-applied"; // ui-text-exempt: a trace event name, never displayed
 const UNDO: &str = "undo"; // ui-text-exempt: a trace event name, never displayed
@@ -174,6 +176,8 @@ fn row_remove_undo(
         click(COLLAPSED)?;
     }
     click(ITEM)?;
+    session.settle(20);
+    click(COMMIT)?;
     session.settle(30);
     let trace = session.trace()?;
     let Some(applied) = trace.last(APPLIED) else {
