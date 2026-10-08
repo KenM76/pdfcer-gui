@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **16 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `wanted` — a real gap — **16 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -121,7 +121,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **3 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `blocked` — waiting on something named — **14 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -141,11 +141,27 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
+| **Copy objects INSIDE a form XObject** — `EditSession::copy_objects_in_form` | **blocked on an engine tag, request G145.** The engine answered on main, past the v0.80.0 pin; Copy on a part of a placed drawing will call it instead of saying to copy the whole drawing. The pin moves to tags only. |
+| **Resize or rotate objects INSIDE a form XObject** — `transform_objects_in_form` | **blocked on an engine tag, request G144.** The engine answered on main, past the v0.80.0 pin; the grips on a part of a placed drawing resize and rotate through it. The pin moves to tags only. |
+| **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **blocked on an engine tag, request G147.** The engine answered on main, past the v0.80.0 pin; a click on text inside a placed drawing will pick the run through it. The pin moves to tags only. |
+| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **blocked on an engine tag, request G143.** The engine answered on main, past the v0.80.0 pin; Properties of a page path gain width, dash and opacity through it. The pin moves to tags only. |
+| **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **blocked on an engine tag, request G140.** The engine answered on main, past the v0.80.0 pin; it shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. The pin moves to tags only. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **blocked on an engine tag, request G138.** The engine answered on main (Pass 526.0): every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. This shell's pin moves to tags only and the newest tag predates it, so the canvas still box-tests an image. Owed on the tag: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. |
 
+
+### Annotations, markup & ce dimensions
+
+| Row (`FEATURES.md`, blocked) | Why |
+|---|---|
+| **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **blocked on an engine tag, request G153.** The engine answered on main, past the v0.80.0 pin; Format gains an arrowhead fill through it. The pin moves to tags only. |
+| **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **blocked on an engine tag, request G150.** The engine answered on main, past the v0.80.0 pin; Properties of a note, stamp or media mark gain Opacity through it. The pin moves to tags only. |
+| **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **blocked on an engine tag, request G150.** The engine answered on main, past the v0.80.0 pin; Properties of a marker gain Colour through it. The pin moves to tags only. |
+| **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **blocked on an engine tag, request G148.** The engine answered on main, past the v0.80.0 pin; text box styling re-tests against it. The pin moves to tags only. |
+| **ce dimension dash and opacity** — two more cascaded style properties, `DimDash` | **blocked on an engine tag, request G159.** The engine answered on main, past the v0.80.0 pin; the ce dimension style controls gain dash and opacity through it. The pin moves to tags only. |
+| **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **blocked on an engine tag, request G146.** The engine answered on main, past the v0.80.0 pin; the shell already converts a group's scale on a unit change (O288 item 3); a single ce dimension's own unit override converts once it is pinned. The pin moves to tags only. |
 ---
 
-## `unknown` — no opinion formed yet — **0 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -156,7 +172,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `declined` — deliberately no surface — **16 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -198,7 +214,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **280 of 315** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **280 of 326** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -593,6 +609,16 @@ channel. They join a verdict section when the engine answers.
 - **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face. Consumed at commit by `app::actions::reface::try_commit`; the placeholder route remains for a match across several show operators.
 - **G162** — a paragraph rewrite at the default wrap splits its own widest line. Worked around in `canvas::textedit::promote::options`, which wraps at the box width plus 0.5 pt outside a table cell.
 - **G163** — a block does not say which of its line ends are hard breaks. Worked around in `canvas::textedit::promote::joint`, which keeps a break where the next line's first word would have fitted.
+
+## Filed requests for Ken's Batch 2 (O289) — not verdict rows
+
+Filed in the request channel for O289's items. They join a verdict section when the engine answers.
+
+- **G164** — no inventory of a file's metadata and no verb to remove it (item 21).
+- **G165** — no skew detection or straightening for scanned pages and images (item 13).
+- **G166** — recognition cannot be given, or denied, a dictionary (item 16).
+- **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17).
+- **G168** — no named 3D views or up-axis choice outside the CLI (item 12); the viewer computes the directions itself until then.
 
 ## Filed requests for pasting in from other programs — not verdict rows
 

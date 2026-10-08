@@ -50,7 +50,7 @@ the seat does from the frame after the click.
 
 | line | when |
 |---|---|
-| `keyboard-focus to=<hex id|none> draft=<bool>` | egui's focused widget changed, root viewport, read at end of pass |
+| `keyboard-focus to=<hex id\|none> draft=<bool>` | egui's focused widget changed, root viewport, read at end of pass |
 
 ## Verified by
 
