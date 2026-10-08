@@ -3,7 +3,8 @@
 //! Opened by *View…* on a PRC row of the Attachments panel's 3D models
 //! section. The engine's software renderer draws the placed model from a
 //! camera this window moves: drag orbits, right-drag pans, scroll zooms about
-//! the point under the pointer, and five named views jump to a side. The
+//! the point under the pointer, and five named views jump to a side, measured
+//! about the axis the operator says is up and the Front look he picks. The
 //! window maximises from its title bar and fills the screen from its button or
 //! F11; Escape leaves full screen before it closes the window. A still image is
 //! rendered only when the camera or the picture's size changes.
@@ -21,9 +22,11 @@ use crate::app::actions::models::Assembled;
 use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDSavedView};
 
+mod axes;
 mod orbit;
 mod parts;
 
+use axes::{Axis, Upright};
 use orbit::{Orbit, PITCH_LIMIT};
 
 /// The picture's published region, for `ui-verify`.
@@ -32,6 +35,10 @@ pub const REGION_IMAGE: &str = "model3d.image"; // ui-text-exempt: trace region 
 pub const REGION_VIEW_PREFIX: &str = "model3d.view."; // ui-text-exempt: trace region name, never displayed
 /// The *File's view* button.
 pub const REGION_FILE_VIEW: &str = "model3d.view.file"; // ui-text-exempt: trace region name, never displayed
+/// The up-axis drop-down; its items add `.<index in axes::ALL>`.
+pub const REGION_UP: &str = "model3d.up"; // ui-text-exempt: trace region name, never displayed
+/// The Front-look drop-down; its items add `.<index in axes::ALL>`.
+pub const REGION_FRONT: &str = "model3d.front"; // ui-text-exempt: trace region name, never displayed
 /// The Fit button.
 pub const REGION_FIT: &str = "model3d.fit"; // ui-text-exempt: trace region name, never displayed
 /// The Close button.
@@ -88,6 +95,10 @@ pub(crate) struct ModelView {
     model: Assembled,
     bounds: Bounds,
     orbit: Orbit,
+    /// The axes the named views are measured in.
+    upright: Upright,
+    /// The named view last chosen, re-applied when the axes change.
+    named: usize,
     /// The file's opening view (`default_3d_view`), the camera it opens on
     /// when that view carries one.
     opening: Option<ThreeDSavedView>,
@@ -146,7 +157,9 @@ impl ModelView {
             artwork,
             model,
             bounds,
-            orbit: saved.unwrap_or_else(|| Orbit::named(0, true)),
+            orbit: saved.unwrap_or_else(|| Orbit::named(0, true, Upright::default())),
+            upright: Upright::default(),
+            named: 0,
             opening,
             texture: None,
             rendered: None,
@@ -292,6 +305,45 @@ impl ModelView {
         }
     }
 
+    /// *Up* and *Front looks along*. A change re-applies the named view last
+    /// chosen in the new axes.
+    fn axes_control(&mut self, ui: &mut Ui) {
+        let was = self.upright;
+        let up = axis_choice(
+            ui,
+            (t::view_up(), t::view_up_tooltip()),
+            REGION_UP,
+            was.up,
+            axes::ALL.into_iter(),
+        );
+        let front = axis_choice(
+            ui,
+            (t::view_front(), t::view_front_tooltip()),
+            REGION_FRONT,
+            was.front,
+            was.fronts(),
+        );
+        let chosen = match (up, front) {
+            (Some(up), _) => was.with_up(up),
+            (None, Some(front)) => was.with_front(front),
+            (None, None) => return,
+        };
+        if chosen == was {
+            return;
+        }
+        self.upright = chosen;
+        self.orbit = Orbit::named(self.named, self.orbit.perspective, chosen);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "model-view-axes up={} front={} view={}",
+                chosen.up.token(),
+                chosen.front.token(),
+                self.named
+            )
+        });
+    }
+
     fn body(&mut self, ui: &mut Ui) {
         ui.horizontal_wrapped(|ui| {
             self.file_view_control(ui);
@@ -304,7 +356,8 @@ impl ModelView {
                     ui.clip_rect(),
                 );
                 if button.clicked() {
-                    self.orbit = Orbit::named(i, self.orbit.perspective);
+                    self.named = i;
+                    self.orbit = Orbit::named(i, self.orbit.perspective, self.upright);
                 }
             }
             let fit = ui
@@ -318,6 +371,7 @@ impl ModelView {
             }
             ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
                 .on_hover_text(t::view_perspective_tooltip());
+            self.axes_control(ui);
             self.full_screen_control(ui);
         });
         ui.small(t::view_hint());
@@ -595,6 +649,39 @@ impl ModelView {
 
 /// A camera's unit look direction and up, as `dir=x,y,z up=x,y,z`, for the
 /// trace a driven check reads.
+/// A label and an axis drop-down, the button published as `region` and each
+/// open item as `region.<index>`. Returns the axis picked this frame.
+fn axis_choice(
+    ui: &mut Ui,
+    (label, tip): (&str, &str),
+    region: &str,
+    current: Axis,
+    options: impl Iterator<Item = Axis>,
+) -> Option<Axis> {
+    let names = t::axis_names();
+    let mut picked = None;
+    ui.label(label).on_hover_text(tip);
+    let combo = egui::ComboBox::from_id_salt(region)
+        .selected_text(names[current.index()])
+        .show_ui(ui, |ui| {
+            for axis in options {
+                let item = ui.selectable_label(axis == current, names[axis.index()]);
+                crate::diag::ui_rect_visible(
+                    // ui-text-exempt: trace region name, never displayed
+                    &format!("{region}.{}", axis.index()),
+                    item.rect,
+                    ui.clip_rect(),
+                );
+                if item.clicked() {
+                    picked = Some(axis);
+                }
+            }
+        });
+    crate::diag::ui_rect_visible(region, combo.response.rect, ui.clip_rect());
+    combo.response.on_hover_text(tip);
+    picked
+}
+
 fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let unit = |v: [f64; 3]| {
         let length = v

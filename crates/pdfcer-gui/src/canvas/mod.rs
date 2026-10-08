@@ -162,6 +162,9 @@ pub mod keys;
 /// collapsing the five destination variants into two behaviours is the
 /// defect, and why the affordance is a cursor and never a mark on the page.
 pub mod links;
+/// A click on a 3D model in Read or Review opens the viewer.
+#[cfg(feature = "3d")]
+pub mod models3d;
 pub use pdfcer_gui_base::canvasmapping as mapping;
 /// **What a rubber-band takes, and why the DIRECTION decides it** —
 /// `OPERATOR_REQUESTS.md` O88. Left to right encloses, right to left

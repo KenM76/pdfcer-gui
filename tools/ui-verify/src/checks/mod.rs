@@ -644,6 +644,8 @@ pub mod layer_folders;
 pub mod markup_flatten;
 /// Markup ▸ Media clip: a dragged region carries the clip, its type and its choices.
 pub mod media_clip;
+/// A 3D model opens from the page and turns about the chosen up.
+pub mod model_axes;
 pub mod new_radio_mark;
 /// The Objects panel says where its list and the page disagree.
 pub mod object_disagreements;

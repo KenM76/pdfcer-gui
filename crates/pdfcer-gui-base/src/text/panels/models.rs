@@ -386,6 +386,36 @@ pub fn view_names() -> [&'static str; 5] {
     ["Isometric", "Front", "Right", "Top", "Back"]
 }
 
+/// The up-axis choice's label.
+#[must_use]
+pub fn view_up() -> &'static str {
+    "Up"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_up_tooltip() -> &'static str {
+    "Which of the model's axes points up. Every named view turns about it; the file's own view keeps its own."
+}
+
+/// The Front-look choice's label.
+#[must_use]
+pub fn view_front() -> &'static str {
+    "Front looks along"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_front_tooltip() -> &'static str {
+    "The direction the Front view looks. Right, Top, Back and Isometric follow from it and from Up."
+}
+
+/// The six model axes, in the viewer's choice order.
+#[must_use]
+pub fn axis_names() -> [&'static str; 6] {
+    ["+X", "+Y", "+Z", "-X", "-Y", "-Z"]
+}
+
 /// The fit-and-reset button.
 #[must_use]
 pub fn view_reset() -> &'static str {

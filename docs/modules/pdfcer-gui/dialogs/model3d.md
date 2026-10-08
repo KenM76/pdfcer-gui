@@ -1,7 +1,9 @@
 # `pdfcer-gui/dialogs/model3d`
 
 **The 3D model viewer.** Opened by *View…* on a PRC row of the Attachments
-panel's 3D models section (feature `3d`). Holds the placed meshes
+panel's 3D models section, or by a click on the model's annotation on the page
+in Read or Review (`canvas::models3d`, the same `AttachmentAction::ViewModel`;
+Edit selects it instead) (feature `3d`). Holds the placed meshes
 (`app::actions::models::Assembled`) and a camera, and shows the engine's
 software rendering (`pdfcer_3d::render_model`: each mesh in its own colour or
 texture picture, grey where the file gives neither) as a texture.
@@ -15,8 +17,15 @@ clamped short of ±90° so up never lines up with the view.
 
 - Direction `-sin yaw · cos pitch · right + cos yaw · cos pitch · front -
   sin pitch · up`, with `right = front × up`.
-- Named views use z-up axes (front +y), as the engine's `3d-render` treats a
-  model with no view of its own.
+- Named views use the operator's `axes::Upright`: *Up* (`model3d.up`) picks
+  any signed axis, *Front looks along* (`model3d.front`) one of the four
+  perpendicular to it; items are `<region>.<index in axes::ALL>`. The default
+  is z up, Front along +y, as the engine's `3d-render` treats a model with no
+  view of its own. A new up keeps a Front that is still perpendicular, else
+  takes the convention for that up (along -z for y up, along +y otherwise).
+  A change re-applies the named view last chosen and traces
+  `model-view-axes up= front= view=`. Per window; the file's own view keeps
+  its own axes.
 - The file's opening view (`pdfcer_core::threed::default_3d_view`: the
   annotation's `/3DV`, else the stream's `/DV`, else its first `/VA`) gives
   `Orbit::saved` when it carries a `/C2W` camera: axes are its

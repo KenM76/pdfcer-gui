@@ -1,5 +1,6 @@
 //! The viewer's camera: a turn about an up axis, a zoom and a pan, each
-//! relative to the view that fits the model. A named view turns about z up;
+//! relative to the view that fits the model. A named view turns about the
+//! operator's chosen up ([`Upright`], z by default);
 //! the file's own opening view (`ThreeDSavedView::aim`) turns about its own
 //! up from its own direction, and an orthographic view that fixes its framing
 //! keeps it (`SavedViewAim::frame`) until Fit or a named view drops it.
@@ -9,8 +10,10 @@ use std::f64::consts::FRAC_PI_2;
 use pdfcer_3d::{Bounds, Camera, Projection};
 use pdfcer_core::threed::{ThreeDSavedView, ViewFit};
 
+use super::axes::Upright;
+
 /// The named views as (yaw, pitch) in degrees, in `t::view_names` order.
-/// Yaw 0 looks along +y (the front of a z-up model); pitch looks down.
+/// Yaw 0 looks along the Front direction; pitch looks down.
 const VIEWS: [(f64, f64); 5] = [
     (45.0, 35.264),
     (0.0, 0.0),
@@ -33,11 +36,13 @@ struct Axes {
 }
 
 impl Axes {
-    /// z up, looking along +y: the front of a z-up model.
-    const Z_UP: Self = Self {
-        front: [0.0, 1.0, 0.0],
-        up: [0.0, 0.0, 1.0],
-    };
+    /// The operator's choice; perpendicular by construction.
+    fn upright(upright: Upright) -> Self {
+        Self {
+            front: upright.front.vector(),
+            up: upright.up.vector(),
+        }
+    }
 
     /// A look direction and an up, or `None` when they are not two
     /// independent directions.
@@ -73,7 +78,8 @@ pub(super) struct Orbit {
 }
 
 impl Orbit {
-    pub fn named(index: usize, perspective: bool) -> Self {
+    /// Named view `index`, turned about `upright`.
+    pub fn named(index: usize, perspective: bool, upright: Upright) -> Self {
         let (yaw, pitch) = VIEWS[index];
         Self {
             yaw: yaw.to_radians(),
@@ -81,7 +87,7 @@ impl Orbit {
             zoom: 1.0,
             pan: [0.0, 0.0],
             perspective,
-            axes: Axes::Z_UP,
+            axes: Axes::upright(upright),
             framed: false,
         }
     }
@@ -250,15 +256,24 @@ mod tests {
 
     #[test]
     fn the_named_views_look_the_way_their_names_say() {
-        let front = Orbit::named(1, false).direction();
+        let front = Orbit::named(1, false, Upright::default()).direction();
         assert!(
             (front[1] - 1.0).abs() < 1e-9,
             "front looks along +y: {front:?}"
         );
-        let top = Orbit::named(3, false).direction();
+        let top = Orbit::named(3, false, Upright::default()).direction();
         assert!(top[2] < -0.99, "top looks down: {top:?}");
-        let iso = Orbit::named(0, false).direction();
+        let iso = Orbit::named(0, false, Upright::default()).direction();
         assert!(iso[0] < 0.0 && iso[1] > 0.0 && iso[2] < 0.0, "{iso:?}");
+    }
+
+    #[test]
+    fn with_y_up_the_named_views_turn_about_y() {
+        let upright = Upright::default().with_up(super::super::axes::Axis::PosY);
+        let front = Orbit::named(1, false, upright).direction();
+        assert!(front[2] < -0.999, "front looks along -z: {front:?}");
+        let top = Orbit::named(3, false, upright).direction();
+        assert!(top[1] < -0.99, "top looks down -y: {top:?}");
     }
 
     #[test]
@@ -307,7 +322,7 @@ mod tests {
     #[test]
     fn zoom_brings_the_eye_closer_and_pan_moves_the_target() {
         let bounds = cube();
-        let mut orbit = Orbit::named(1, true);
+        let mut orbit = Orbit::named(1, true, Upright::default());
         let fitted = orbit.camera(&bounds, 1.0, None).expect("a view forms");
         orbit.zoom = 2.0;
         orbit.pan = [0.5, 0.0];
@@ -344,7 +359,11 @@ mod tests {
             max: [3.0, 1.0, 2.0],
         };
         let saved = Orbit::saved(&corner()).expect("a camera matrix");
-        for start in [Orbit::named(0, true), Orbit::named(0, false), saved] {
+        for start in [
+            Orbit::named(0, true, Upright::default()),
+            Orbit::named(0, false, Upright::default()),
+            saved,
+        ] {
             let mut orbit = start;
             orbit.pan = [0.1, -0.2];
             let (aspect, offset) = (1.6, [0.3, -0.15]);
@@ -363,7 +382,7 @@ mod tests {
 
     #[test]
     fn a_wheel_zoom_at_the_centre_does_not_pan() {
-        let mut orbit = Orbit::named(1, true);
+        let mut orbit = Orbit::named(1, true, Upright::default());
         orbit.zoom_at(&cube(), 1.0, 3.0, [0.0, 0.0], None);
         assert_eq!(orbit.pan, [0.0, 0.0]);
     }

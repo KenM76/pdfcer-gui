@@ -260,6 +260,17 @@ pub fn click(
     } else {
         crate::canvas::links::under_pointer(doc, page_index, point)
     };
+    // A 3D model opens in the viewer from a click in Read and Review, as the
+    // Attachments panel's *View…* does; Edit selects it. See `canvas::models3d`.
+    #[cfg(feature = "3d")]
+    let model_hit =
+        if matches!(active_tool, crate::canvas::tool::CanvasTool::Select) && !caps.edit_content {
+            crate::canvas::models3d::under_pointer(doc, page_index, point, map)
+        } else {
+            None
+        };
+    #[cfg(not(feature = "3d"))]
+    let model_hit: Option<pdfcer_core::threed::ThreeDArtwork> = None;
     // A click that missed every annotation, in a mode that could have
     // hit one, **deselects**. Clicking away is the gesture every
     // operator tries first, and without this the outline would survive
@@ -433,6 +444,18 @@ pub fn click(
     // A click that hits no link falls through and means exactly what it meant
     // before — an annotation in Review, an image or text in Read.
     // `under_pointer` is an `Option`, so a miss is not a branch at all.
+    } else if let Some(artwork) = model_hit {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "model-page-click page={} annot={:?}",
+                artwork.page_index,
+                artwork.annot_id.map(|id| id.num)
+            )
+        });
+        actions.push(Action::Attachment(
+            crate::app::actions::attachments::AttachmentAction::ViewModel { artwork },
+        ));
     } else if let Some(link) = link_hit.as_ref() {
         crate::canvas::links::follow(link, doc, actions);
     } else if let Some(hit) = annot_hit {
