@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **16 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `wanted` — a real gap — **16 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -121,7 +121,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **15 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `blocked` — waiting on something named — **16 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -157,12 +157,13 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 | **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **blocked on an engine tag, request G153.** The engine answered on main, past the v0.80.0 pin; Format gains an arrowhead fill through it. The pin moves to tags only. |
 | **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **blocked on an engine tag, request G150.** The engine answered on main, past the v0.80.0 pin; Properties of a note, stamp or media mark gain Opacity through it. The pin moves to tags only. |
 | **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **blocked on an engine tag, request G150.** The engine answered on main, past the v0.80.0 pin; Properties of a marker gain Colour through it. The pin moves to tags only. |
+| **A text box's fill, border width** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is its new fields) | **blocked on an engine tag, request G149.** The engine answered on main, past the v0.80.0 pin; a text box's Properties gain fill, border, dash, opacity and text styling through it. The pin moves to tags only. |
 | **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **blocked on an engine tag, request G148.** The engine answered on main, past the v0.80.0 pin; text box styling re-tests against it. The pin moves to tags only. |
 | **ce dimension dash and opacity** — two more cascaded style properties, `DimDash` | **blocked on an engine tag, request G159.** The engine answered on main, past the v0.80.0 pin; the ce dimension style controls gain dash and opacity through it. The pin moves to tags only. |
 | **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **blocked on an engine tag, request G146.** The engine answered on main, past the v0.80.0 pin; the shell already converts a group's scale on a unit change (O288 item 3); a single ce dimension's own unit override converts once it is pinned. The pin moves to tags only. |
 ---
 
-## `unknown` — no opinion formed yet — **0 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -173,7 +174,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `declined` — deliberately no surface — **16 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -215,7 +216,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **280 of 327** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **280 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-07; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

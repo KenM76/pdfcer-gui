@@ -625,6 +625,30 @@ if ! command -v awk >/dev/null 2>&1; then
     exit 2
 fi
 
+# The table is read AT THE PIN: the shell can wire only what it links, and the
+# engine lands rows on main hourly while a release's gate sweep runs, so a
+# working-tree read fails a verified release on rows nobody could act on yet.
+# Rows past the pin are listed as a note, never a failure.
+# `ENGINE_BACKLOG_AT=worktree` restores the working-tree read.
+PIN="$(grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' "$ROOT/Cargo.lock" 2>/dev/null | sed 's/.*#//')"
+if [ "${ENGINE_BACKLOG_AT:-pin}" != "worktree" ] && [ -n "$PIN" ]; then
+    PINNED="$(mktemp)"
+    trap 'rm -f "$PINNED"' EXIT
+    if git -C "$ENGINE" show "$PIN:docs/FEATURES.md" > "$PINNED" 2>/dev/null; then
+        ahead="$(report "$FEATURES" "$REGISTER" 2>&1 | grep -E '^        [a-z0-9-]+$' | sed 's/^ *//')"
+        if [ -n "$ahead" ]; then
+            echo "note: row(s) on the engine's main past the pin ${PIN:0:8}, not counted until a tag:"
+            printf '%s\n' "$ahead" | sed 's/^/        /'
+            echo
+        fi
+        echo "reading the engine's FEATURES.md at the pinned revision ${PIN:0:8}"
+        FEATURES="$PINNED"
+    else
+        echo "SKIP: the pinned revision $PIN has no docs/FEATURES.md in $ENGINE."
+        exit 2
+    fi
+fi
+
 report "$FEATURES" "$REGISTER"
 rc=$?
 case "$rc" in
