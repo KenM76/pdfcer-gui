@@ -978,3 +978,9 @@ pub(super) const UNDERLINE: &str = include_str!("assets/underline.svg");
 
 /// `strikethrough.svg` — the art for [`super::Icon::Strikethrough`].
 pub(super) const STRIKETHROUGH: &str = include_str!("assets/strikethrough.svg");
+
+/// `window-new.svg` — the art for [`super::Icon::WindowNew`].
+pub(super) const WINDOW_NEW: &str = include_str!("assets/window-new.svg");
+
+/// `window-move.svg` — the art for [`super::Icon::WindowMove`].
+pub(super) const WINDOW_MOVE: &str = include_str!("assets/window-move.svg");

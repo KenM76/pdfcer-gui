@@ -108,6 +108,11 @@ pub(crate) fn record_session_busy() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::SessionBusy));
 }
 
+/// Record why a document did not move to another window.
+pub(crate) fn record_window_move(why: crate::text::siblings::WindowMoveRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::WindowMove(why)));
+}
+
 /// Record why a paste of another program's copy placed nothing.
 pub(crate) fn record_os_paste(why: crate::text::ospaste::OsPasteRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::OsPaste(why)));

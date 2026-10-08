@@ -304,6 +304,13 @@ fn no_two_declines_share_a_sentence() {
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unplaceable(
             "x".to_owned(),
         )),
+        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::Unsaved),
+        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::NotSent(
+            "x".to_owned(),
+        )),
+        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::NotStarted(
+            "x".to_owned(),
+        )),
         Declined::Rc4Refused,
         Declined::PasswordRefused,
         Declined::SessionBusy,
@@ -764,6 +771,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::MarkupFlatten(_)
         | Declined::FormFontsNothingToRepair
         | Declined::OsPaste(_)
+        | Declined::WindowMove(_)
         | Declined::Rc4Refused
         | Declined::PasswordRefused
         | Declined::SessionBusy => {}

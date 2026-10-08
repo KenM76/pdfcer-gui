@@ -227,6 +227,10 @@ native-clipboard = { path = "../native-clipboard" }
 # the window through its registered commands with the operator's consent.
 command-remote = { path = "../command-remote" }
 
+# native-pipe = the named pipe one pdfcer-gui window hands a document to
+# another through (View ▸ Window ▸ Move to other window).
+native-pipe = { path = "../native-pipe" }
+
 # native-gl = read the OpenGL error flag, which the render stack does not.
 #
 # The third `native-*` crate and the same single reason as the other two: this

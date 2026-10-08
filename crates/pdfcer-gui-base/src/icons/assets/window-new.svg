@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Move to new window: a window with a title bar, open at its top-right
+       corner, and an arrow leaving through the gap. The "open in a new window"
+       mark every browser and file manager uses. Primitives only.
+
+       The title bar is what makes the frame a window rather than a sheet; the
+       open corner is what makes the arrow leave rather than point. -->
+  <path d="M24 8H8a2 2 0 0 0-2 2v28a2 2 0 0 0 2 2h28a2 2 0 0 0 2-2V24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M6 16h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M22 26L42 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M30 6h12v12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -268,6 +268,7 @@ impl Declined {
             | Self::MarkupFlatten(_)
             | Self::FormFontsNothingToRepair
             | Self::OsPaste(_)
+            | Self::WindowMove(_)
             | Self::Rc4Refused
             | Self::PasswordRefused
             | Self::SessionBusy => true,

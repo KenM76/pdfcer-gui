@@ -236,6 +236,8 @@ impl Icon {
         Icon::ParaJustify,
         Icon::Underline,
         Icon::Strikethrough,
+        Icon::WindowNew,
+        Icon::WindowMove,
     ];
 
     /// The asset's SVG source.
@@ -434,6 +436,8 @@ impl Icon {
             Icon::ParaJustify => assets::PARA_JUSTIFY,
             Icon::Underline => assets::UNDERLINE,
             Icon::Strikethrough => assets::STRIKETHROUGH,
+            Icon::WindowNew => assets::WINDOW_NEW,
+            Icon::WindowMove => assets::WINDOW_MOVE,
         }
     }
 
@@ -649,6 +653,8 @@ impl Icon {
             Icon::ParaJustify => "para-justify",
             Icon::Underline => "underline",
             Icon::Strikethrough => "strikethrough",
+            Icon::WindowNew => "window-new",
+            Icon::WindowMove => "window-move",
         }
     }
 

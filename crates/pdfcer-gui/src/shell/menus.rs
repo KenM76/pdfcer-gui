@@ -734,6 +734,8 @@ pub fn built_in() -> Menus {
         .with(Menu::new(DOCUMENT_TAB).with_items([
             Item::command("file.close"),
             Item::command("view.close_other_documents"),
+            Item::command("view.move_to_new_window"),
+            Item::command("view.move_to_window"),
         ]))
         .with(Menu::new(OBJECTS_ROW).with_items([Item::command("file.properties")]))
         // -------------------------------------------------------------------

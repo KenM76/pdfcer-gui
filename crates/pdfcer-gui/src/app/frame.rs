@@ -654,6 +654,7 @@ impl eframe::App for PdfcerApp {
             self.dock_menu_panel = None;
         }
         self.remote_poll(&ctx, &mut actions);
+        self.siblings_poll(&ctx);
 
         crate::diag::frame_phase("input");
         // Step 1b — the ribbon, above the canvas.
@@ -1244,6 +1245,7 @@ impl eframe::App for PdfcerApp {
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);
         self.remote_settle(&ctx);
+        self.siblings_picker(&ctx);
         // After the actions, so the in-font draft is laid out for the text
         // this frame's keystrokes produced.
         if let Status::Open(doc) = &self.status {

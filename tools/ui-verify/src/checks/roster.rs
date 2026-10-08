@@ -344,6 +344,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(remove_ocr_pages::RemoveOcrTextTakesThePagesChosen),
         Box::new(thumbnail_zoom::ThumbnailsZoomWithoutBlanking),
         Box::new(cross_window_paste::ASelectionCopiedInOneWindowPastesInAnother),
+        Box::new(window_move::ADocumentMovesBetweenWindows),
         Box::new(remove_metadata::RemoveMetadataTakesOnlyTheEntriesTicked),
         Box::new(model_axes::AModelOpensFromThePageAndTurnsAboutTheChosenUp),
         Box::new(attach_sound::ASoundAttachesAsAnIcon),

@@ -243,6 +243,9 @@ pub mod security;
 /// Document properties ▸ Security notes and the open-time wrapper warning.
 pub mod securitynotes;
 pub mod shortcuts;
+/// What moving a document to another pdfcer-gui window says, and the
+/// picker that asks which window. Consumed by `pdfcer_gui::app::siblings`.
+pub mod siblings;
 /// What the snapshot box says on the status row.
 pub mod snapshot;
 

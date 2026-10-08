@@ -2798,6 +2798,7 @@ dependencies = [
  "flate2",
  "native-clipboard",
  "native-gl",
+ "native-pipe",
  "native-window",
  "pdfcer-3d",
  "pdfcer-core",

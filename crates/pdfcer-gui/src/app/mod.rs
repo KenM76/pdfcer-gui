@@ -137,6 +137,7 @@ pub mod settle;
 
 /// The live link: verbs a connected program may send.
 pub mod remote;
+pub mod siblings;
 
 pub mod state;
 pub mod status;
@@ -603,6 +604,8 @@ pub struct PdfcerApp {
 
     /// The live link to another program; see [`remote`].
     pub remote: remote::Link,
+    /// The other pdfcer-gui windows, and documents moving between them.
+    pub siblings: siblings::Siblings,
 
     /// **The Acrobat this machine has, resolved once** —
     /// `OPERATOR_REQUESTS.md` **O122**.
@@ -1063,6 +1066,7 @@ impl PdfcerApp {
             },
             prefs,
             remote: remote::Link::default(),
+            siblings: siblings::Siblings::default(),
         }
     }
 

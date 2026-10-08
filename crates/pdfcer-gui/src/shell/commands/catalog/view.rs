@@ -734,5 +734,15 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("close-others")
         .enabled_when("docs.multiple"),
+        // **Moving a document to another window.** The operand is the
+        // right-clicked tab from a tab's menu and the document on screen from
+        // the ribbon, as for Close others. Both wait on a saved document,
+        // because the other window opens the file; `app::siblings` argues it.
+        command("view.move_to_new_window", t::view_move_to_new_window(), 269)
+            .with_icon("window-new")
+            .enabled_when("docs.tear_off"),
+        command("view.move_to_window", t::view_move_to_window(), 270)
+            .with_icon("window-move")
+            .enabled_when("docs.move_to_window"),
     ]
 }

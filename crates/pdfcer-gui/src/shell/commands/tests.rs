@@ -66,6 +66,10 @@ fn every_predicate_names_a_documented_condition() {
         // header says why: the one state that needs it most is a failed
         // open with other documents behind it.
         "docs.multiple",
+        // Per tab on a tab's menu, for the document on screen elsewhere; see
+        // `app::siblings`.
+        "docs.tear_off",
+        "docs.move_to_window",
         //
         // Deliberately NOT `!panels.floating` on anything. Nothing is
         // hidden by a panel being floated; a float is a place a panel is,

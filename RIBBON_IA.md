@@ -257,7 +257,7 @@ Panels, where nobody will find it.
 | **Zoom** | Zoom to selection · Zoom to region (marquee) · Actual size · Fit page · Fit width · Fit height |
 | **Display** | Line weights · Skip tiny details · Show annotations · Show points · Off-page · Rulers · Grid · Guides |
 | **Panels** | Sidebar ⌄ · Pages · Bookmarks · Layers · Objects · Signatures · Forms |
-| **Window** | Previous / Next document · Close other documents · Read mode · Full screen · Dock all panels · Auto-hide ribbon · Auto-hide left strip · Floating panels: Off · Allowed · App initiative: Never · Ask · Allowed · Save workspace… · Load workspace ⌄ · Reset layout… |
+| **Window** | Previous / Next document · Close other documents · Move to new window · Move to other window · Read mode · Full screen · Dock all panels · Auto-hide ribbon · Auto-hide left strip · Floating panels: Off · Allowed · App initiative: Never · Ask · Allowed · Save workspace… · Load workspace ⌄ · Reset layout… |
 
 **Single page is the default** and stays so: paging one drawing sheet at a time
 is the right model for drafting review. Continuous is a *mode you choose*
@@ -771,7 +771,7 @@ block:
 | `canvas.markup` | Properties · Add a point here · Remove this point *(each when the mark offers it)* · Make part of the page *(when the engine would accept it)* · Cut · Copy · Paste · Delete *(when permitted)* |
 | `canvas.text` | Reflow paragraph |
 | `dock.tab` | Float panel *(when docked)* · Dock panel *(when floating)* · Close panel · Reset layout |
-| `document.tab` | Close · Close others |
+| `document.tab` | Close · Close others · Move to new window · Move to other window |
 | `objects.row` | Properties |
 | `pages.row` | Move up · Move down · Extract · Rotate left · Rotate right · Delete |
 

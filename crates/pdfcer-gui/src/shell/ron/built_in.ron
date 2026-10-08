@@ -215,6 +215,8 @@
                         Command(id: "view.previous_document"),
                         Command(id: "view.next_document"),
                         Command(id: "view.close_other_documents"),
+                        Command(id: "view.move_to_new_window"),
+                        Command(id: "view.move_to_window"),
                         Command(id: "view.read_mode"),
                         Command(id: "view.fullscreen"),
                         Command(id: "view.dock_all_panels"),
@@ -816,6 +818,8 @@
             items: [
                 Command(id: "file.close"),
                 Command(id: "view.close_other_documents"),
+                Command(id: "view.move_to_new_window"),
+                Command(id: "view.move_to_window"),
             ],
         ),
         (

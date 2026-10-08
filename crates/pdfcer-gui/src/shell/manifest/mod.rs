@@ -793,6 +793,8 @@ mod tests {
                 "view.previous_document",
                 "view.next_document",
                 "view.close_other_documents",
+                "view.move_to_new_window",
+                "view.move_to_window",
                 "view.read_mode",
                 "view.fullscreen",
                 // Before Reset layout: the cheap remedy above the

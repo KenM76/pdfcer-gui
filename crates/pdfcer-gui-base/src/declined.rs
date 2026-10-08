@@ -1034,6 +1034,9 @@ pub enum Declined {
     /// A paste of another program's copy placed nothing. Worded in
     /// [`crate::text::ospaste::OsPasteRefusal`].
     OsPaste(crate::text::ospaste::OsPasteRefusal),
+    /// A document did not move to another window. Worded in
+    /// [`crate::text::siblings::WindowMoveRefusal`].
+    WindowMove(crate::text::siblings::WindowMoveRefusal),
     /// An edit refused because the document is kept under RC4 and the
     /// operator has not allowed edits under it. Worded in
     /// [`crate::text::rc4::refused`]; offers Allow edits under RC4.

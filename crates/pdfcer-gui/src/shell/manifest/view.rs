@@ -431,6 +431,8 @@ pub(super) fn tab() -> Tab {
                     // undiscoverable*. From here it keeps the document on
                     // screen; from a tab, the tab that was right-clicked.
                     command("view.close_other_documents"),
+                    command("view.move_to_new_window"),
+                    command("view.move_to_window"),
                     command("view.read_mode"),
                     command("view.fullscreen"),
                     // **Dock all panels**, immediately before Reset

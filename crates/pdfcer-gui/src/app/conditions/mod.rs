@@ -28,6 +28,8 @@ impl PdfcerApp {
         if self.document_count() > 1 {
             set.set("docs.multiple");
         }
+        // For the document on screen; a tab's menu re-asks for its own tab.
+        self.window_conditions(&mut set, self.active_slot);
         // **At least one panel is in a window of its own**, which is the
         // only thing `view.dock_all_panels` needs to know.
         //

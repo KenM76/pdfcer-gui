@@ -200,6 +200,7 @@ impl Declined {
             Self::FormFontsNothingToRepair => crate::text::formfonts::nothing_to_repair(),
             Self::TextClick(why) => crate::text::textedit::refusal(*why),
             Self::OsPaste(why) => return why.line(),
+            Self::WindowMove(why) => return why.line(),
             Self::Rc4Refused => crate::text::rc4::refused(),
             Self::PasswordRefused => crate::text::unlock::refused(),
             Self::SessionBusy => crate::text::status::session_busy(),

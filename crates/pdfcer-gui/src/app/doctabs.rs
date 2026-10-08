@@ -77,10 +77,15 @@ impl PdfcerApp {
         let theme = egui_shell::theme::Theme::of(ui.ctx());
         let active = self.active_slot;
         let conditions = self.conditions(ui.ctx());
-        let host = self
-            .shell
-            .as_ref()
-            .map(|s| crate::shell::menus::MenuHost::new(s, &self.commands, &conditions));
+        // A tab's menu acts on that tab, so the window-move conditions are
+        // asked again for each tab rather than for the one on screen.
+        let per_tab: Vec<egui_shell::commands::ConditionSet> = (0..count)
+            .map(|slot| {
+                let mut set = conditions.clone();
+                self.window_conditions(&mut set, slot);
+                set
+            })
+            .collect();
 
         let strip = egui_shell::tabstrip::strip(ui, &theme, &tabs, active);
 
@@ -98,8 +103,12 @@ impl PdfcerApp {
         // the same reason: the shell's menu reports a `HandlerToken` and has no
         // channel for an operand.
         let mut menu_tokens: Vec<(usize, egui_shell::HandlerToken)> = Vec::new();
-        if let Some(host) = &host {
+        if let Some(shell) = self.shell.as_ref() {
             for (slot, response) in &strip.responses {
+                let Some(conditions) = per_tab.get(*slot) else {
+                    continue;
+                };
+                let host = crate::shell::menus::MenuHost::new(shell, &self.commands, conditions);
                 for token in host.attach(response, crate::shell::menus::DOCUMENT_TAB) {
                     menu_tokens.push((*slot, token));
                 }

@@ -1252,6 +1252,10 @@ pub enum Icon {
     Underline,
     /// Strike through the selected characters: an S crossed by a rule.
     Strikethrough,
+    /// Move to new window: a window open at one corner, an arrow leaving it.
+    WindowNew,
+    /// Move to other window: an arrow from one window into another.
+    WindowMove,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

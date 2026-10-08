@@ -269,6 +269,12 @@ impl PdfcerApp {
                 let keep = self.tab_menu_target.unwrap_or(self.active_slot);
                 actions.push(Action::CloseOtherDocuments(keep));
             }
+            "view.move_to_new_window" => {
+                self.move_to_new_window(self.tab_menu_target.unwrap_or(self.active_slot));
+            }
+            "view.move_to_window" => {
+                self.move_to_window(ctx, self.tab_menu_target.unwrap_or(self.active_slot));
+            }
             // Applied here rather than raised as an `Action`, which is the
             // same call `crate::app::doctabs` makes for a tab click and for
             // the same reason: switching documents destroys nothing, asks
