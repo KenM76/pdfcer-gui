@@ -348,7 +348,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(window_move::ADocumentMovesBetweenWindows),
         Box::new(tab_drag::ATabDraggedOutMovesItsDocument),
         Box::new(selection_drop::ASelectionDroppedOnAnotherWindowIsCopiedThere),
-        Box::new(remove_metadata::RemoveMetadataTakesOnlyTheEntriesTicked),
+        Box::new(remove_metadata::RemoveMetadataWritesACopyWithoutTheItemsTicked),
         Box::new(model_axes::AModelOpensFromThePageAndTurnsAboutTheChosenUp),
         Box::new(attach_sound::ASoundAttachesAsAnIcon),
         Box::new(media_clip::AClipPlaysFromARegion),

@@ -138,6 +138,13 @@ pub enum WriteAction {
     /// **Write a copy holding no stored password-field value.** Carries
     /// nothing, for [`Self::FormData`]'s reason.
     PurgePasswords,
+    /// **Write a copy without the metadata items named.** Raised by
+    /// `pdfcer_gui::dialogs::remove_metadata`; carries the ticked ids, in
+    /// `pdfcer_core::doc_metadata::MetadataItemId`'s text form.
+    RemoveMetadata {
+        /// The ids, frozen when Remove was pressed.
+        ids: Vec<String>,
+    },
     /// **Write a copy laid out for hand editing** (qpdf's QDF). Carries
     /// nothing, for [`Self::FormData`]'s reason.
     Structure,

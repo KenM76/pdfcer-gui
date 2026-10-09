@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **43 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **42 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -135,7 +135,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Embed a supplied U3D/PRC model as a `/3D` annotation, with a poster … | **wired — Edit ▸ Insert ▸ 3D model…, driven (`a_3d_model_is_placed_listed_and_saved_back`); no poster yet, the engine's placeholder shows.** `EditSession::add_3d_annotation` takes the model bytes and a poster; the shell owes a file picker and a placement rectangle, reached from Insert. The engine renders no 3D scene (refused on scope), so the canvas shows the poster, which is what saved content shows too. Its refusals arrive as `EditError::ThreeD`, and the annotation it writes lists as `AnnotKind::ThreeD`. |
 | Page labels — read and set (Acrobat's Number Pages) … | **wanted — the label-keeping page verbs only.** Reading labels and the Number pages window shipped (the page-labels row under `shipped`). `pdfcer_core::page_labels` (`page_labels`, `label_ranges`, `LabelFormat`, `LabelStyle`) reads what each page shows; `EditSession::set_page_labels` / `clear_page_labels` write it as one undo entry, refusing with `EditError::InvertedPageRange`. `pageops::extract_with_labels` is offered by Pages ▸ Extract…'s *Keep the page labels*. Still wanted: the label-keeping page verbs (`reorder_pages_with_labels`, `delete_pages_with_labels`, `insert_pages_with`) matter only where Acrobat offers the choice: extract, split and page paste already keep labels by default. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
-| **Metadata inventory and removal of hidden information** — lists the kinds a file carries: `pdfcer_core::doc_metadata`, `pdfcer_core::edit::metadata_remove` | **wanted, at the pin since v0.81.0; request G164.** Security ▸ Protect ▸ Remove metadata… (O289 item 21) is drafted against it, one `CommandKind::RemoveMetadata`; wiring is next. |
 | **Named 3D views and up-axis public; write 3D views with a default view into a 3D annotation** — `pdfcer_core::edit::threed_views` | **wanted, at the pin since v0.81.0; request G168.** The 3D viewer's *Save views in the file* (O289 item 12) is drafted against it, one `CommandKind::SetThreeDViews`; the viewer keeps its own view table and writes its cameras through `ThreeDSavedView::from_camera`. |
 
 ### Fonts & rendering
@@ -219,7 +218,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **283 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **284 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -428,6 +427,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, gui `[ ]` is stale) | Where it is reached |
 |---|---|
+| **Metadata inventory and removal of hidden information** — lists the kinds a file carries: `pdfcer_core::doc_metadata`, `pdfcer_core::edit::metadata_remove` | **shipped — Security ▸ Protect ▸ Remove metadata… (O289 item 21).** Lists `EditSession::metadata_inventory` by `MetadataKind`, removes with `remove_metadata` on a fresh session and writes a one-version copy with `to_full_bytes_decomposing_containers`; request G164. The undo step the verb records (`CommandKind::RemoveMetadata`) is never offered: the scratch session it is recorded on is dropped once the copy is written, and the open document is not changed. |
 | Detect an unencrypted wrapper (§7.6.7) and warn that the visible … | **Reachable — on open, and Document properties ▸ Security notes.** `app::opennotes::disclose` calls `wrapper::detect` on every open and puts `WrapperInfo::message` on the status bar's disclosure row ahead of the reach-out sentence; `panels::docprops::security` shows the same sentence over the action census. Driven: `security_notes_name_the_cover_and_the_actions` (`fixtures/security-notes.pdf`, one named `/EncryptedPayload`). |
 | **Edit an RC4-encrypted document (keep RC4 on append, opt-in)** — the module `pdfcer_core::edit::rc4_append` (`EditSession::set_rc4_append`, `EditSession::rc4_append`, `Rc4Append::Refuse`/`Preserve`) and the count `SaveReport::rc4_keystream_reused`, also on `SignReport::rc4_keystream_reused` and `DocTimestampReport` (Pass 471, decision 190) | **shipped.** `app::rc4`: Security ▸ *Allow edits under RC4* (`file.allow_rc4_edits`, shown only on an RC4 document, pressed while allowed) and the button beside the RC4 decline call `set_rc4_append`; the open note, every save, save-a-copy, sign and archive time-stamp say `rc4_keystream_reused`. The RC4 decline is chosen by `encryption_refusal_cause` (`app::unlock`). Driven: `rc4_edits_wait_for_the_operator_and_say_what_they_cost`. |
 | **Edit and sign an encrypted document the supplied password permits** — incremental save of an AES document appends new objects under the file's own key; every edit verb is gated by the `/P` bits the password grants; RC4 append is refused by name | **shipped; our request G077, consumed.** Every edit verb runs under the opening password and saves incrementally under the file's own key. A withheld edit is one sentence and an *Unlock* button (`file.unlock`, `app::unlock`) that reopens the document at the password prompt for its owner password. The sentence is the shell's; `ENCRYPTED_EDIT_REFUSED` is not shown. Driven: `an_encrypted_file_is_edited_under_the_password_it_opened_with`. |
@@ -622,7 +622,7 @@ channel. They join a verdict section when the engine answers.
 
 Filed in the request channel for O289's items. G164 to G169 are answered and at the pin since v0.81.0; G173 is open.
 
-- **G164** — no inventory of a file's metadata and no verb to remove it (item 21). Answered as `EditSession::metadata_inventory` and `remove_metadata`; not yet wired.
+- **G164** — no inventory of a file's metadata and no verb to remove it (item 21). Answered as `EditSession::metadata_inventory` and `remove_metadata`; wired.
 - **G165** — no skew detection or straightening for scanned pages and images (item 13). Answered as `detect_image_skew` and `deskew_image`; wired.
 - **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; wired.
 - **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; wired.

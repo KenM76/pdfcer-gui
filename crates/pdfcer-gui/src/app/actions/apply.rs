@@ -1057,6 +1057,9 @@ impl PdfcerApp {
                 super::write::WriteAction::PurgePasswords => {
                     super::purge_passwords::purge(doc);
                 }
+                super::write::WriteAction::RemoveMetadata { ids } => {
+                    super::remove_metadata::remove(doc, &ids);
+                }
                 super::write::WriteAction::Structure => super::structure::export(doc),
                 super::write::WriteAction::CompileStructure { edited } => {
                     super::structure::compile(doc, &edited);

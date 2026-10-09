@@ -853,8 +853,7 @@ pub enum Action {
     /// **Set or clear one of the document's own information fields** —
     /// `/Title`, `/Author`, `/Subject`, `/Keywords`.
     ///
-    /// Raised by `crate::panels::docprops`, and with `None` by
-    /// `crate::dialogs::remove_metadata`.
+    /// Raised by `crate::panels::docprops`.
     ///
     /// **`Option<String>` is not a defaulted `String`** — `None` REMOVES the
     /// key from `/Info` and `Some("")` writes an empty string object, which are
