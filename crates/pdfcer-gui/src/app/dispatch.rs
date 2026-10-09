@@ -70,6 +70,8 @@ mod forms;
 /// `markup.finish` belongs with them rather than here; see its header for why
 /// the operand — *which* corner — is the seam.
 pub(crate) mod markupnodes;
+/// Format ▸ Nodes — add a node and change the kind of nodes and segments.
+pub(crate) mod nodeshape;
 /// **The four verbs whose subject is a PANEL** — float it, dock it back,
 /// close it, and bring every floating one home. Its header carries the
 /// operand problem (a command id is a verb with no noun) and the
@@ -910,6 +912,7 @@ impl PdfcerApp {
             // built at apply time — see the module's own header for why a list
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
+            id if nodeshape::claims(id) => nodeshape::dispatch(self, id, actions),
             "edit.align_left"
             | "edit.align_right"
             | "edit.align_top"

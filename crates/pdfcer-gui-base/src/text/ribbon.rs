@@ -412,6 +412,12 @@ pub fn group_format_font() -> &'static str {
     "Font"
 }
 
+/// Format ▸ Nodes — the controls that reshape a path at its selected nodes.
+#[must_use]
+pub fn group_format_nodes() -> &'static str {
+    "Nodes"
+}
+
 /// Format ▸ Selection.
 #[must_use]
 pub fn group_format_selection() -> &'static str {

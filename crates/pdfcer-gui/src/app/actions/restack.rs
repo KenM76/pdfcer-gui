@@ -11,6 +11,7 @@ use pdfcer_core::vector::{RestackLimitReason, RestackOutcome, StackMove};
 use crate::app::actions::reorder::ArrangeTo;
 use crate::app::state::OpenDoc;
 use crate::canvas::target::TargetId;
+use crate::diag::index_list as list;
 use crate::text::arrange as words;
 
 /// Move page `page`'s `objects` (paint-order indices) toward `to`.
@@ -84,16 +85,4 @@ const fn to_token(to: ArrangeTo) -> &'static str {
         ArrangeTo::Backward => "backward",
         ArrangeTo::Back => "back",
     }
-}
-
-/// Indices comma-joined for the trace; `-` for none.
-fn list(indices: &[usize]) -> String {
-    if indices.is_empty() {
-        return "-".to_owned();
-    }
-    indices
-        .iter()
-        .map(usize::to_string)
-        .collect::<Vec<_>>()
-        .join(",")
 }

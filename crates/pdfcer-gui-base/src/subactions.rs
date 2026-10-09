@@ -847,6 +847,30 @@ impl ArrangeTo {
         matches!(self, Self::Front | Self::Forward)
     }
 }
+/// **Which path a Format ▸ Nodes command reshapes.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeHost {
+    /// A path on the page, by page object index.
+    Page(usize),
+    /// A path inside a placed drawing, by flattened leaf index.
+    Leaf(usize),
+}
+/// **What a Format ▸ Nodes command does to each selected node.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeShape {
+    /// A node halfway along the segment that leaves the node.
+    Insert,
+    /// Both handles pulled into the node.
+    Corner,
+    /// The handles turned onto one line, each keeping its length.
+    Smooth,
+    /// Smooth, with both handles at their mean length.
+    Symmetric,
+    /// The segment leaving the node becomes a straight line.
+    Line,
+    /// The segment leaving the node becomes a curve.
+    Curve,
+}
 /// **Everything a refused canvas gesture is allowed to put on the status bar.**
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanvasDecline {

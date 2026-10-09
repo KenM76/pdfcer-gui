@@ -742,4 +742,16 @@ pub enum VectorAction {
         /// Which end of the stack.
         to: super::ArrangeTo,
     },
+    /// **Format ▸ Nodes on the selected nodes of one path** — one undo entry;
+    /// a node the engine refuses is skipped and reported.
+    NodeShape {
+        /// The 0-based page.
+        page: usize,
+        /// The path.
+        host: super::NodeHost,
+        /// Object-scoped node indices, ascending and unique.
+        nodes: Vec<usize>,
+        /// What each node gets.
+        shape: super::NodeShape,
+    },
 }

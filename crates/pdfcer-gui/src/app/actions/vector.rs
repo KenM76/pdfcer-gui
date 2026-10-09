@@ -13,6 +13,7 @@
 use pdfcer_core::edit::{CommandKind, EditSession};
 
 mod inform_delete;
+mod nodeshape;
 
 pub use pdfcer_gui_base::subactions::VectorAction;
 
@@ -722,6 +723,12 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
         VectorAction::Restack { page, objects, to } => {
             super::restack::apply(doc, page, &objects, to);
         }
+        VectorAction::NodeShape {
+            page,
+            host,
+            nodes,
+            shape,
+        } => nodeshape::apply(doc, page, host, &nodes, shape),
     }
     // A delete or a split renumbers what follows it, so a surviving selection would name
     // objects the operator never picked, and a second Delete would remove them.

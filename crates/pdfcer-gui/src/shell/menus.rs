@@ -137,6 +137,12 @@ pub const LAYER_ASSIGNABLE: &str = "selection.layer_assignable";
 /// commands' `enabled_when` and their canvas-menu `shown_when`.
 pub const OBJECTS_RESTACKABLE: &str = "selection.objects_restackable";
 
+/// **Nodes of one path are selected that Format ▸ Nodes can reshape**, in a
+/// mode that edits content — the commands' `enabled_when` and the group's
+/// `shown_when`. Not on the canvas object menu: six glyph-less rows would leave
+/// its icon column half empty.
+pub const NODES_SHAPEABLE: &str = "selection.nodes_shapeable";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.

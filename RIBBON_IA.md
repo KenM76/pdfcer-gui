@@ -513,13 +513,19 @@ Contents vary by selection type:
 | Markup | Colour · Fill · Line width · Line style · Opacity · Arrowheads · *Note text* · Delete |
 | ce dimension | Group · Scale · Precision · Units · Standard · Witness lines · Delete |
 | Image | Size · Position · Crop · Opacity · Replace · Delete |
-| Vector object | Stroke · Fill · Winding rule · Node tools · Delete |
+| Vector object | Stroke · Fill · Winding rule · Nodes · Delete |
 | Pages (rail) | Rotate · Delete · Extract · Move |
 
 Band order on the tab is **Font, Markup, Selection**. Every row above ends in
 Delete, so reading left to right goes *change how this looks*, then *describe
 it*, then *destroy it* — increasing commitment, which is the ordering rule the
 Selection group already follows internally.
+
+**Nodes** shows when nodes of one path are selected at the Node rung, on the
+page or inside a placed drawing: Insert node | Corner · Smooth · Symmetric |
+Segment to line · Segment to curve. Each acts on every selected node, as one
+undo step. It is not on the canvas object menu: none of the six has a glyph,
+and the menu's icon column would be left mostly blank.
 
 This tab is what makes selection *mean* something: without it, selecting an
 object gives an object-tree row and no way to act on it.

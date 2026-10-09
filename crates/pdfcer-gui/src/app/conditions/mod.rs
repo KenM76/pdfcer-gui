@@ -589,6 +589,12 @@ impl PdfcerApp {
             {
                 set.set(crate::shell::menus::OBJECTS_RESTACKABLE);
             }
+            // Format ▸ Nodes, on the same test the dispatcher routes on.
+            if self.capabilities().edit_content
+                && crate::app::dispatch::nodeshape::shapeable_nodes(doc).is_some()
+            {
+                set.set(crate::shell::menus::NODES_SHAPEABLE);
+            }
             // `selection.bounds` is NOT `selection.any`, and the gap
             // between them is a real state rather than a defensive check.
             //

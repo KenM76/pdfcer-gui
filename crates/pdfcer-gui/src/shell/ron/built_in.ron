@@ -595,6 +595,38 @@
                     ],
                 ),
                 (
+                    id: "nodes",
+                    caption: "Nodes",
+                    items: [
+                        Command(
+                            id: "format.node_insert",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                        Separator,
+                        Command(
+                            id: "format.node_corner",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                        Command(
+                            id: "format.node_smooth",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                        Command(
+                            id: "format.node_symmetric",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                        Separator,
+                        Command(
+                            id: "format.segment_line",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                        Command(
+                            id: "format.segment_curve",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                    ],
+                ),
+                (
                     id: "selection",
                     caption: "Selection",
                     items: [

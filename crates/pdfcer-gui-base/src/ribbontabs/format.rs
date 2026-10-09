@@ -19,6 +19,12 @@ const FONT_VISIBLE_WHEN: &str = "mode.edit_content"; // ui-text-exempt: a condit
 /// annotation is selected, and this mode may author markup.
 const MARKUP_VISIBLE_WHEN: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed
 
+/// The condition under which the **Nodes** group is drawn: the selection
+/// stands at the Node rung of a path with a node selected, in a mode that
+/// edits content. It implies [`FONT_VISIBLE_WHEN`], so the six are writers
+/// withheld where nothing is authored.
+const NODES_VISIBLE_WHEN: &str = "selection.nodes_shapeable"; // ui-text-exempt: a condition name, never displayed
+
 /// The Format tab.
 pub fn tab() -> Tab {
     Tab::new("format", ribbon::tab_format())
@@ -164,6 +170,24 @@ pub fn tab() -> Tab {
                     Item::custom(super::MARKUP_ENDINGS).shown_when(MARKUP_VISIBLE_WHEN),
                 ],
             ),
+            // Nodes — §5.8's vector-object "Node tools", shown only while
+            // nodes are selected, as Inkscape shows its node toolbar only in
+            // its node tool. Before Selection by the same left-to-right rule:
+            // reshaping is "change how this looks".
+            group(
+                "nodes",
+                ribbon::group_format_nodes(),
+                [
+                    command("format.node_insert").shown_when(NODES_VISIBLE_WHEN),
+                    Item::Separator,
+                    command("format.node_corner").shown_when(NODES_VISIBLE_WHEN),
+                    command("format.node_smooth").shown_when(NODES_VISIBLE_WHEN),
+                    command("format.node_symmetric").shown_when(NODES_VISIBLE_WHEN),
+                    Item::Separator,
+                    command("format.segment_line").shown_when(NODES_VISIBLE_WHEN),
+                    command("format.segment_curve").shown_when(NODES_VISIBLE_WHEN),
+                ],
+            ),
             group(
                 "selection",
                 ribbon::group_format_selection(),
@@ -269,6 +293,12 @@ mod tests {
         "format.merge_text_runs",
         "format.split_text_lines",
         "format.move_to_layer",
+        "format.node_insert",
+        "format.node_corner",
+        "format.node_smooth",
+        "format.node_symmetric",
+        "format.segment_line",
+        "format.segment_curve",
     ];
 
     /// Read on this tab: describe what is selected, and delete it where the
@@ -301,9 +331,11 @@ mod tests {
             if !WRITERS.contains(&id.as_str()) {
                 continue;
             }
-            assert_eq!(
-                visible_when.as_deref(),
-                Some(FONT_VISIBLE_WHEN),
+            assert!(
+                matches!(
+                    visible_when.as_deref(),
+                    Some(FONT_VISIBLE_WHEN | NODES_VISIBLE_WHEN)
+                ),
                 "`{id}` writes to the document but is shown in every mode. R9: an unavailable \
                  capability renders NOTHING. Greying is for something temporarily unavailable and \
                  explained on hover; a mode is a standing choice the operator made in the mode \

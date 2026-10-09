@@ -408,12 +408,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 215 → 217: `view.move_to_new_window` and `view.move_to_window`, View ▸ Window.
     // 217 → 218: `file.deskew`, File ▸ Recognise.
     // 218 → 222: the four Edit ▸ Arrange commands on page objects.
+    // 222 → 228: the six Format ▸ Nodes commands.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        222 + 2 * usize::from(cfg!(feature = "signing"))
+        228 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "model-download"))
     );
@@ -1119,10 +1120,12 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //
         // 19 → 23 — the four Edit ▸ Arrange commands, for the Markup four's
         // supply refusal above: no stacking glyph exists.
+        // 23 → 29 — the six Format ▸ Nodes commands: a supply refusal; no
+        // node-kind glyph exists.
         // +1 with model-download — `file.fetch_ocr_models`: the download
         // glyph is spent on `export`.
         refused,
-        23 + usize::from(cfg!(feature = "model-download")),
+        29 + usize::from(cfg!(feature = "model-download")),
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

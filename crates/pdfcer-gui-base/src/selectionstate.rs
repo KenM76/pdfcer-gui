@@ -513,6 +513,49 @@ impl SelectionState {
             .collect()
     }
 
+    /// **Select several anchors of one object outright, and stand at the Node
+    /// rung** — [`Self::select_parts`]' sibling one rung down. Each pick is
+    /// `(part, node)`, the node object-scoped.
+    pub fn select_nodes(
+        &mut self,
+        page: usize,
+        object: TargetId,
+        picks: &[(Option<usize>, usize)],
+        why: &'static str,
+    ) {
+        self.entries = picks
+            .iter()
+            .map(|&(subpath, node)| Selection {
+                page,
+                object,
+                subpath,
+                node: Some(node),
+            })
+            .collect();
+        self.level = SelectionLevel::Node;
+        self.normalise();
+        let held = self.entries.len();
+        let first = self.entries.first().and_then(|e| e.node);
+        crate::diag::trace(move || {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            let list = if object.is_leaf() { "leaf" } else { "object" };
+            let node = first.map_or_else(|| "none".to_owned(), |n| n.to_string());
+            format!(
+                "selection-set page={page} {list}={} node={node} level=node held={held} via={why}",
+                object.raw()
+            )
+        });
+    }
+
+    /// The part a selected anchor belongs to, as its entry records it.
+    #[must_use]
+    pub fn part_of_node(&self, page: usize, object: TargetId, node: usize) -> Option<usize> {
+        self.entries
+            .iter()
+            .find(|e| e.page == page && e.object == object && e.node == Some(node))
+            .and_then(|e| e.subpath)
+    }
+
     /// Ascend one rung, or clear, or decline the key. See [`EscapeOutcome`].
     pub fn escape(&mut self) -> EscapeOutcome {
         match self.level.ascend() {

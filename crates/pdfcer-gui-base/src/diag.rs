@@ -690,6 +690,19 @@ pub fn trace_on_change(key: &str, value: impl FnOnce() -> String) {
     eprintln!("pdfcer-diag {key} {value}");
 }
 
+/// Indices comma-joined for a trace field; `-` for none, so the field is
+/// never empty and still parses as one token.
+pub fn index_list(indices: &[usize]) -> String {
+    if indices.is_empty() {
+        return "-".to_owned();
+    }
+    indices
+        .iter()
+        .map(usize::to_string)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

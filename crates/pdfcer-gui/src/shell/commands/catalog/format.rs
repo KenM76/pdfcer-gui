@@ -433,8 +433,19 @@ pub(super) fn band() -> Vec<Command> {
         command("format.opacity", t::format_opacity(), 812).enabled_when(MARKUP_RESTYLABLE),
         command("format.line_style", t::format_line_style(), 814).enabled_when(MARKUP_RESTYLABLE),
         command("format.arrowheads", t::format_arrowheads(), 813).enabled_when(MARKUP_RESTYLABLE),
+        // Format ▸ Nodes, routed by `app::dispatch::nodeshape`. No glyph: the
+        // icon catalogue has no node-kind pictures (`ledger`'s refused count).
+        command("format.node_insert", t::format_node_insert(), 840).enabled_when(NODES),
+        command("format.node_corner", t::format_node_corner(), 841).enabled_when(NODES),
+        command("format.node_smooth", t::format_node_smooth(), 842).enabled_when(NODES),
+        command("format.node_symmetric", t::format_node_symmetric(), 843).enabled_when(NODES),
+        command("format.segment_line", t::format_segment_line(), 844).enabled_when(NODES),
+        command("format.segment_curve", t::format_segment_curve(), 845).enabled_when(NODES),
     ]
 }
+
+/// Nodes of one path are selected, in a mode that edits content.
+const NODES: &str = crate::shell::menus::NODES_SHAPEABLE;
 
 /// **A markup annotation is selected, and this mode may author markup.**
 const MARKUP_RESTYLABLE: &str = "selection.markup_restylable"; // ui-text-exempt: a condition name, never displayed

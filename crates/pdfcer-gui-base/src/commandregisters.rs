@@ -446,11 +446,6 @@ pub const PLANNED: &[(&str, &str)] = &[
          is precisely why it belongs in the panel rather than the tab.",
     ),
     (
-        "format.node_tools",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — add, remove and convert a vector object's nodes; panel first.",
-    ),
-    (
         "format.spacing",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — a text run's character and line spacing. Not a scheduling gap and no longer \

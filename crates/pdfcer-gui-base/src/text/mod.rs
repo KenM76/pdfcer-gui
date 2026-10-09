@@ -148,6 +148,8 @@ pub mod metadata;
 /// custom fields and the one refusal. Consumed by
 /// `pdfcer_gui::dialogs::new_document`.
 pub mod new_document;
+/// Format ▸ Nodes: the sentence for selected nodes a press left alone.
+pub mod nodeshape;
 pub mod ocr;
 pub mod ocrfetch;
 pub mod ocrmodels;
