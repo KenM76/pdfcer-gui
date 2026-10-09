@@ -222,6 +222,9 @@ fn every_predicate_names_a_documented_condition() {
         // which it must, since the shell evaluates no predicate for an
         // `Item::Custom`.
         "selection.markup_restylable",
+        // Edit ▸ Arrange: page objects at the Object rung, in a mode that
+        // edits content. `app::dispatch::arrange::restackable_objects`.
+        "selection.objects_restackable",
         //
         // Both are corrected **per right-click** by `canvas::menus`, through
         // `MenuHost::with_conditions`, and the reason they cannot live in the

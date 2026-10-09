@@ -77,9 +77,11 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 45 → 49: Move to layer… on the object, field, markup and dimension menus.
     // 49 → 50: Split into lines on the canvas object menu.
     // 50 → 52: Move to new window and Move to other window on a tab's menu.
+    // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
+    // no stacking glyph exists (see `ledger`'s refused count).
     assert_eq!(
         (glyph, blank, absent),
-        (52, 1, 0),
+        (52, 5, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

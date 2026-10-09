@@ -133,6 +133,10 @@ pub const TEXT_SPLIT_ALLOWED: &str = "selection.text_split_allowed";
 /// `crate::app::actions::layerassign::offered`.
 pub const LAYER_ASSIGNABLE: &str = "selection.layer_assignable";
 
+/// **Page objects are selected that Edit ▸ Arrange can restack** — the
+/// commands' `enabled_when` and their canvas-menu `shown_when`.
+pub const OBJECTS_RESTACKABLE: &str = "selection.objects_restackable";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.
@@ -335,6 +339,10 @@ pub fn built_in() -> Menus {
             Item::command("format.unshare_form"),
             Item::command("format.merge_text_runs").shown_when(TEXT_MERGE_OFFERED),
             Item::command("format.split_text_lines").shown_when(TEXT_SPLIT_OFFERED),
+            Item::command("edit.bring_to_front").shown_when(OBJECTS_RESTACKABLE),
+            Item::command("edit.bring_forward").shown_when(OBJECTS_RESTACKABLE),
+            Item::command("edit.send_backward").shown_when(OBJECTS_RESTACKABLE),
+            Item::command("edit.send_to_back").shown_when(OBJECTS_RESTACKABLE),
             // **Mark what was pointed at for redaction**, at the pointer —
             // `OPERATOR_REQUESTS.md` O217, whose requirement is that redaction
             // address *the same unit, by the same gestures* as everything else

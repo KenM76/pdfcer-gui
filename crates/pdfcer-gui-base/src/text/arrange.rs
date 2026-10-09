@@ -189,6 +189,58 @@ pub const fn trap_net_stays_last() -> &'static str {
      of everything except that."
 }
 
+/// **The selected objects were already where the command would put them.**
+///
+/// A one-step command moves past the nearest object that overlaps the
+/// selection, so with none in that direction nothing visible would change.
+#[must_use]
+pub const fn objects_already_there(front: bool, all_the_way: bool) -> &'static str {
+    match (front, all_the_way) {
+        (true, true) => "The selection was already in front of everything else on the page.",
+        (false, true) => "The selection was already behind everything else on the page.",
+        (true, false) => {
+            "Nothing above the selection overlaps it, so bringing it forward would change \
+             nothing you can see. It stayed where it was."
+        }
+        (false, false) => {
+            "Nothing below the selection overlaps it, so sending it backward would change \
+             nothing you can see. It stayed where it was."
+        }
+    }
+}
+
+/// **Some selected objects stopped short, held by a clipping region or layer
+/// they are drawn inside.**
+#[must_use]
+pub fn objects_held_by_scope(count: usize) -> String {
+    if count == 1 {
+        "One selected object is drawn inside a clipping region or a layer it cannot leave, so \
+         it went only as far as that allows."
+            .to_owned()
+    } else {
+        format!(
+            "{count} selected objects are drawn inside a clipping region or a layer they cannot \
+             leave, so they went only as far as that allows."
+        )
+    }
+}
+
+/// **Some selected objects could not move at all**, because the page's
+/// drawing of the objects around them depends on them staying put.
+#[must_use]
+pub fn objects_not_moved(count: usize) -> String {
+    if count == 1 {
+        "One selected object sets up how the objects after it are drawn, so moving it would \
+         change them too. It stayed where it was."
+            .to_owned()
+    } else {
+        format!(
+            "{count} selected objects set up how the objects after them are drawn, so moving \
+             them would change those too. They stayed where they were."
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -234,6 +286,14 @@ mod tests {
             pinned(4).leak(),
             tab_order_changed(1).leak(),
             tab_order_changed(4).leak(),
+            objects_already_there(true, true),
+            objects_already_there(false, true),
+            objects_already_there(true, false),
+            objects_already_there(false, false),
+            objects_held_by_scope(1).leak(),
+            objects_held_by_scope(3).leak(),
+            objects_not_moved(1).leak(),
+            objects_not_moved(3).leak(),
         ];
         for text in sentences {
             for probe in [

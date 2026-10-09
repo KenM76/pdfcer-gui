@@ -731,4 +731,15 @@ pub enum VectorAction {
         /// The 0-based page of `file` to draw.
         source_page: usize,
     },
+    /// Move page objects in paint order (`EditSession::restack_objects`).
+    /// One undo entry, `CommandKind::RestackObjects`; the engine answers each
+    /// object's new index and the selection follows them.
+    Restack {
+        /// The 0-based page.
+        page: usize,
+        /// Page object indices, ascending and unique.
+        objects: Vec<usize>,
+        /// Which end of the stack.
+        to: super::ArrangeTo,
+    },
 }

@@ -1,13 +1,17 @@
-//! # `app::dispatch::arrange` — the four commands whose subject is a mark's
-//! DEPTH
+//! # `app::dispatch::arrange` — the eight commands whose subject is a mark's
+//! or a page object's DEPTH
+//!
+//! Page objects selected in a mode that edits content are restacked in the
+//! page's paint order; otherwise a selected markup is moved in `/Annots`. The
+//! chords are bound to the `markup.*` ids and reach both.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/arrange.md`.
 
 use crate::app::PdfcerApp;
-use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
 use crate::app::actions::reorder::ArrangeTo;
-use crate::app::state::Status;
+use crate::app::actions::{Action, VectorAction};
+use crate::app::state::{OpenDoc, Status};
 use crate::canvas::selection::AnnotKind;
 
 /// Whether `id` is one of the four Arrange commands.
@@ -24,15 +28,46 @@ fn destination(id: &str) -> Option<ArrangeTo> {
         "markup.bring_forward" => Some(ArrangeTo::Forward),
         "markup.send_backward" => Some(ArrangeTo::Backward),
         "markup.send_to_back" => Some(ArrangeTo::Back),
+        "edit.bring_to_front" => Some(ArrangeTo::Front),
+        "edit.bring_forward" => Some(ArrangeTo::Forward),
+        "edit.send_backward" => Some(ArrangeTo::Backward),
+        "edit.send_to_back" => Some(ArrangeTo::Back),
         _ => None,
     }
 }
 
-/// Dispatch one of the four.
+/// The page and the page objects an Edit ▸ Arrange command would move: the
+/// selection's first page, at the Object rung, page objects only. A part of a
+/// placed drawing has no verb here.
+#[must_use]
+pub(crate) fn restackable_objects(doc: &OpenDoc) -> Option<(usize, Vec<usize>)> {
+    if doc.selection.level() != crate::canvas::selection::SelectionLevel::Object {
+        return None;
+    }
+    let page = doc.selection.entries().first()?.page;
+    let objects = doc.selection.object_indices_on(page);
+    (!objects.is_empty()).then_some((page, objects))
+}
+
+/// Dispatch one of the eight.
 pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let Some(to) = destination(id) else {
         return;
     };
+    if let Status::Open(doc) = &app.status
+        && app.capabilities().edit_content
+        && let Some((page, objects)) = restackable_objects(doc)
+    {
+        actions.push(Action::Vector(VectorAction::Restack { page, objects, to }));
+        return;
+    }
+    if id.starts_with("edit.") {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("command-declined id={id} reason=no-page-objects-selected")
+        });
+        return;
+    }
     if !app.capabilities().author_markup {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -106,6 +141,10 @@ mod tests {
             "markup.bring_forward",
             "markup.send_backward",
             "markup.send_to_back",
+            "edit.bring_to_front",
+            "edit.bring_forward",
+            "edit.send_backward",
+            "edit.send_to_back",
         ] {
             assert!(claims(id), "{id}");
             assert!(destination(id).is_some(), "{id}");
@@ -148,5 +187,13 @@ mod tests {
     fn bring_to_front_means_the_end_of_the_array() {
         assert_eq!(destination("markup.bring_to_front"), Some(ArrangeTo::Front));
         assert_eq!(destination("markup.send_to_back"), Some(ArrangeTo::Back));
+        for (markup, edit) in [
+            ("markup.bring_to_front", "edit.bring_to_front"),
+            ("markup.bring_forward", "edit.bring_forward"),
+            ("markup.send_backward", "edit.send_backward"),
+            ("markup.send_to_back", "edit.send_to_back"),
+        ] {
+            assert_eq!(destination(markup), destination(edit), "{edit}");
+        }
     }
 }

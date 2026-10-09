@@ -137,6 +137,10 @@ fn all() -> Vec<CommandText> {
         format_dimension_area(),
         format_dimension_perimeter(),
         markup_bring_to_front(),
+        edit_bring_to_front(),
+        edit_bring_forward(),
+        edit_send_backward(),
+        edit_send_to_back(),
         markup_bring_forward(),
         markup_send_backward(),
         markup_send_to_back(),
@@ -155,10 +159,45 @@ fn every_command_has_a_label_and_a_tooltip() {
     }
 }
 
-/// **No two commands share a label.**
+/// The Edit tab's Arrange commands, which take the Markup tab's words by
+/// `RIBBON_IA.md` §5.4: the same act on a different kind of thing, never on
+/// one surface together.
+fn edit_arrange() -> [CommandText; 4] {
+    [
+        edit_bring_to_front(),
+        edit_bring_forward(),
+        edit_send_backward(),
+        edit_send_to_back(),
+    ]
+}
+
+/// **The shared Arrange labels are exactly the Markup tab's.**
+#[test]
+fn the_edit_arrange_labels_are_the_markup_ones() {
+    let markup = [
+        markup_bring_to_front(),
+        markup_bring_forward(),
+        markup_send_backward(),
+        markup_send_to_back(),
+    ];
+    for (edit, markup) in edit_arrange().iter().zip(markup.iter()) {
+        assert_eq!(edit.label, markup.label);
+        assert_ne!(
+            edit.tooltip, markup.tooltip,
+            "the tooltip says which kind of thing"
+        );
+    }
+}
+
+/// **No two commands share a label**, apart from the Arrange pairs above.
 #[test]
 fn no_two_commands_share_a_label() {
-    let mut labels: Vec<&str> = all().iter().map(|t| t.label).collect();
+    let shared = edit_arrange();
+    let mut labels: Vec<&str> = all()
+        .iter()
+        .filter(|t| !shared.iter().any(|s| s.tooltip == t.tooltip))
+        .map(|t| t.label)
+        .collect();
     let total = labels.len();
     labels.sort_unstable();
     labels.dedup();

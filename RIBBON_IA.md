@@ -330,7 +330,7 @@ selection is correct.
 |---|---|
 | **Content** | Select all · Edit text · Add text · Reflow block |
 | **Insert** | Image… · Attachments · Shape ⌄ |
-| **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring forward / Send backward · Group / Ungroup · Flip horizontal / vertical |
+| **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
 | **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
 | **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten · Repair fonts |
 
@@ -433,15 +433,16 @@ abbreviation of the other.
 
 #### Two groups are captioned Arrange, and neither moves
 
-§5.4's Edit tab has a group captioned **Arrange** too, and two of the four
-command names are the same words. They are not duplicates in the P1 sense,
+§5.4's Edit tab has a group captioned **Arrange** too, and its four stacking
+commands are the same words. The chords are bound to the Markup ids; the
+dispatcher sends them to whichever subject is selected. They are not duplicates in the P1 sense,
 because their subjects are disjoint:
 
 | | Edit ▸ Arrange (§5.4) | Markup ▸ Arrange (§5.5) |
 |---|---|---|
 | acts on | the **drawing's own** objects — page content | a **markup annotation** you placed |
 | what it reorders | paint order inside the content stream | the page's `/Annots` array |
-| engine verb | none | `reorder_annotations` |
+| engine verb | `restack_objects` | `reorder_annotations` |
 
 **The captions are deliberately not disambiguated.** Renaming either to *Arrange
 marks* or *Arrange objects* would be a caption explaining the ribbon to itself.

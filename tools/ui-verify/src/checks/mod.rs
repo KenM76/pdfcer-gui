@@ -231,6 +231,7 @@ pub mod form_part_copy;
 pub mod form_part_delete;
 pub mod form_style;
 pub mod group_unit_converts;
+pub mod restack;
 pub mod stroke_style;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the

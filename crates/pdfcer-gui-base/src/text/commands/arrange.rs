@@ -40,3 +40,39 @@ pub const fn markup_send_to_back() -> CommandText {
         "Draw the selected mark under everything else on this page, all the way to the back.",
     )
 }
+
+/// `edit.bring_to_front`
+#[must_use]
+pub const fn edit_bring_to_front() -> CommandText {
+    CommandText::new(
+        "Bring to front",
+        "Draw the selected objects over everything else on this page.",
+    )
+}
+
+/// `edit.bring_forward`
+#[must_use]
+pub const fn edit_bring_forward() -> CommandText {
+    CommandText::new(
+        "Bring forward",
+        "Draw the selected objects over the next object that overlaps them.",
+    )
+}
+
+/// `edit.send_backward`
+#[must_use]
+pub const fn edit_send_backward() -> CommandText {
+    CommandText::new(
+        "Send backward",
+        "Draw the selected objects under the next object that overlaps them.",
+    )
+}
+
+/// `edit.send_to_back`
+#[must_use]
+pub const fn edit_send_to_back() -> CommandText {
+    CommandText::new(
+        "Send to back",
+        "Draw the selected objects under everything else on this page.",
+    )
+}

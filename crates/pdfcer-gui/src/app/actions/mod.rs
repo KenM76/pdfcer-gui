@@ -152,6 +152,8 @@ pub mod redactimg;
 mod redactsel;
 /// The Find bar's Replace and Replace all.
 mod replace;
+/// Page objects moved in paint order.
+mod restack;
 /// **Record a comment's review status** — `/State` and `/StateModel`,
 /// §12.5.6.3. Its own file rather than a place in [`annots`], because that
 /// module is *"what happens to a thing that already exists"* and this one adds

@@ -1,5 +1,10 @@
-# `shell::commands::catalog::arrange` — the Markup tab's **Arrange** group:
-which mark is drawn on top
+# `shell::commands::catalog::arrange` — the Markup and Edit tabs'
+**Arrange** groups: which mark, or which page object, is drawn on top
+
+`edit_band` adds the Edit tab's four (`edit.bring_to_front` …
+`edit.send_to_back`, tokens 480–483, enabled on
+`selection.objects_restackable`). They carry no icon for the same refusal
+recorded below.
 
 
 ## The ids are `markup.*` and the file is `arrange.rs`, deliberately

@@ -1,5 +1,5 @@
-//! # `shell::commands::catalog::arrange` — the Markup tab's **Arrange** group:
-//! which mark is drawn on top
+//! # `shell::commands::catalog::arrange` — the Markup and Edit tabs'
+//! **Arrange** groups: which mark, or which page object, is drawn on top
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/shell/commands/catalog/arrange.md`.
 
@@ -19,5 +19,17 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("selection.markup_restylable"),
         command("markup.send_to_back", t::markup_send_to_back(), 563)
             .enabled_when("selection.markup_restylable"),
+    ]
+}
+
+/// The Edit tab's four, on page objects; `app::dispatch::arrange` routes both
+/// sets.
+pub(super) fn edit_band() -> Vec<Command> {
+    use crate::shell::menus::OBJECTS_RESTACKABLE as RESTACKABLE;
+    vec![
+        command("edit.bring_to_front", t::edit_bring_to_front(), 480).enabled_when(RESTACKABLE),
+        command("edit.bring_forward", t::edit_bring_forward(), 481).enabled_when(RESTACKABLE),
+        command("edit.send_backward", t::edit_send_backward(), 482).enabled_when(RESTACKABLE),
+        command("edit.send_to_back", t::edit_send_to_back(), 483).enabled_when(RESTACKABLE),
     ]
 }

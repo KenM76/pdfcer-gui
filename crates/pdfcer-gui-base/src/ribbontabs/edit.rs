@@ -100,6 +100,10 @@ pub fn tab() -> Tab {
                     command("edit.align_centre_x"),
                     command("edit.align_centre_y"),
                     command("edit.align_centre"),
+                    command("edit.bring_to_front"),
+                    command("edit.bring_forward"),
+                    command("edit.send_backward"),
+                    command("edit.send_to_back"),
                 ],
             ),
             //

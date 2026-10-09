@@ -26,6 +26,7 @@ pub(super) fn all() -> Vec<Command> {
     out.extend(view::band());
     out.extend(pages::band());
     out.extend(edit::band());
+    out.extend(arrange::edit_band());
     out.extend(markup::band());
     // The Markup tab's second band. A group rather than a tab — the ids stay
     // `markup.*`; see that file's header for why the file is named for the group
@@ -38,7 +39,7 @@ pub(super) fn all() -> Vec<Command> {
     out
 }
 
-/// the Markup tab's Arrange group — which mark is drawn on top
+/// the Markup and Edit tabs' Arrange groups — what is drawn on top
 mod arrange;
 /// the Edit tab — changing content that is already there
 mod edit;

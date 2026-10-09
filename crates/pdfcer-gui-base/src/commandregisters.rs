@@ -203,16 +203,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         "N — real page shapes, as distinct from the markup shapes on the Markup tab.",
     ),
     (
-        "edit.bring_forward",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — needs a content-stream reordering primitive that does not exist.",
-    ),
-    (
-        "edit.send_backward",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — as `edit.bring_forward`, in the other direction.",
-    ),
-    (
         "edit.group",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — object grouping has no representation in the object model yet.",

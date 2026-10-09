@@ -113,4 +113,9 @@ pub(super) fn history_step(doc: &mut OpenDoc, direction: Direction) {
         // comparing the arms should not have to notice a second one.
         Ok::<_, EditError>(Vec::new())
     });
+    // A restack renumbers the objects it passed, so after its undo or redo the
+    // selection's indices name other objects.
+    if matches!(kind, pdfcer_core::edit::CommandKind::RestackObjects) {
+        doc.selection.clear();
+    }
 }

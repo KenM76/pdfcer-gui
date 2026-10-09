@@ -583,6 +583,12 @@ impl PdfcerApp {
             {
                 set.set("selection.markup_restylable");
             }
+            // Edit ▸ Arrange, on the same test the dispatcher routes on.
+            if self.capabilities().edit_content
+                && crate::app::dispatch::arrange::restackable_objects(doc).is_some()
+            {
+                set.set(crate::shell::menus::OBJECTS_RESTACKABLE);
+            }
             // `selection.bounds` is NOT `selection.any`, and the gap
             // between them is a real state rather than a defensive check.
             //

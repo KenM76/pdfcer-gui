@@ -767,6 +767,7 @@ pub use markupstyle::{
 pub mod arrange;
 
 pub use arrange::{
+    edit_bring_forward, edit_bring_to_front, edit_send_backward, edit_send_to_back,
     markup_bring_forward, markup_bring_to_front, markup_send_backward, markup_send_to_back,
 };
 

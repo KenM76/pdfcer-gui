@@ -1,5 +1,12 @@
-# `app::dispatch::arrange` — the four commands whose subject is a mark's
-DEPTH
+# `app::dispatch::arrange` — the eight commands whose subject is a mark's
+or a page object's DEPTH
+
+Page objects selected at the Object rung, in a mode that edits content, go to
+[`crate::app::actions::restack`]; otherwise a selected markup is moved in
+`/Annots`. The chords are bound to the `markup.*` ids and reach both, so one
+key means *move what I selected*. An `edit.*` id with no page objects
+selected traces `command-declined reason=no-page-objects-selected`; the
+commands are disabled then, so only a stale press reaches it.
 
 Bring to front, Bring forward, Send backward, Send to back. Every drawing
 program has them; this one had the engine verb, a test for it, three written
@@ -46,6 +53,12 @@ before every action queued ahead of it was applied, and the engine refuses a
 stale permutation by name rather than applying it approximately.
 
 ## Item notes
+
+### `fn restackable_objects`
+
+The one test the dispatcher, the `selection.objects_restackable` condition
+and the canvas menu share: the selection's first page, page objects only. A
+part of a placed drawing has no restack verb and yields `None`.
 
 ### `fn destination`
 
