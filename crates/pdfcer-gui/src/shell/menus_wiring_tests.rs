@@ -81,7 +81,7 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // no stacking glyph exists (see `ledger`'s refused count).
     assert_eq!(
         (glyph, blank, absent),
-        (52, 5, 0),
+        (53, 5, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

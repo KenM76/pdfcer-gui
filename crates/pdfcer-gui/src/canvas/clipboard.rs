@@ -260,6 +260,79 @@ pub enum Clipped {
 
 pub use pdfcer_gui_base::refusals::clipboard::Refusal;
 
+/// The clip's centre in page space, from the engine's own bbox over content
+/// items and annotation `/Rect`s; `None` for an empty box.
+pub(crate) fn anchor_of(clip: &pdfcer_core::vector::ObjectClip) -> Option<(f64, f64)> {
+    (!clip.bbox().is_empty()).then(|| {
+        let b = clip.bbox();
+        ((b.min.x + b.max.x) / 2.0, (b.min.y + b.max.y) / 2.0)
+    })
+}
+
+/// Put the copy on the OS clipboard: a sentence, the clip's bytes and a
+/// picture in one transaction, else the sentence alone.
+pub(crate) fn publish(
+    ctx: &egui::Context,
+    clip: &pdfcer_core::vector::ObjectClip,
+    objects: usize,
+    annots: usize,
+) {
+    // AND A MARKER ON THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT
+    // ARRIVE AT ALL.
+    //
+    // Not a nicety and not a placeholder. `egui-winit` turns `Ctrl+V` into
+    // `Event::Paste(contents)` **only if the OS clipboard has non-empty text**,
+    // and returns before pushing a key event either way — so with an empty
+    // clipboard the keystroke vanishes completely, no event of any kind.
+    // `app::keyboard::clipboard_chord` carries the whole account.
+    //
+    // So a copy that put nothing on the OS clipboard would leave `Ctrl+V`
+    // working or not depending on **whether the operator had recently copied
+    // text in another application**, which is the worst kind of intermittent:
+    // it is not random, it is not reproducible, and the thing that fixes it has
+    // nothing to do with pdfcer.
+    //
+    // The text is a SENTENCE, so a human who pastes into a text editor gets
+    // something that says what happened. The clip's own bytes go beside it
+    // under `clipimage::OBJECT_CLIP_FORMAT`, which is what another pdfcer-gui
+    // window pastes (`canvas::clipshared`); this window pastes its in-memory
+    // copy.
+    // **AND A PICTURE BESIDE IT, as of 2026-08-31** —
+    // `OPERATOR_REQUESTS.md` O71: *"so we can copy and paste them … outside of
+    // the pdfcergui."*
+    //
+    // The sentence, the clip and the bitmap go on in ONE clipboard
+    // transaction, and that is not an optimisation. `EmptyClipboard` is
+    // per-open, so two calls would mean the second erased the first — and if
+    // the picture went on second, this application's own `Ctrl+V` would stop
+    // arriving for the reason the paragraphs above set out.
+    // `native_clipboard::place` writes all or none.
+    //
+    // It FALLS BACK rather than failing. A clipboard another process is
+    // holding, a render that declines, a degenerate clip — each of those loses
+    // the picture and none of them loses the copy, so the marker still goes on
+    // by the route it always did and the operator's `Ctrl+V` still works. What
+    // they lose is the paste into Word, and the trace says which.
+    //
+    // An ANNOTATION-only clip reaches `publish` with `clip.items` empty, so
+    // the raster is degenerate and the picture declines — by the same path a
+    // zero-area content clip already took, with no new branch. That is the
+    // right outcome rather than a gap: `clipimage` renders the page content a
+    // clip carries, and a comment's appearance is not page content. The
+    // operator still gets the marker, so `Ctrl+V` still arrives.
+    let marker = crate::text::clipboard::os_marker(objects, annots);
+    let published = crate::canvas::clipimage::publish(clip, &marker);
+    if published.is_none_or(|p| p.picture.is_none()) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "clipboard-image-declined".to_owned()
+        });
+    }
+    if published.is_none() {
+        ctx.copy_text(marker);
+    }
+}
+
 /// Read the clipboard.
 #[must_use]
 pub fn read(ctx: &egui::Context) -> Option<Clipped> {
@@ -325,10 +398,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
     // The clip's OWN bbox, unioned by the engine over both content items
     // and annotation `/Rect`s, converted to a centre.
     //
-    let anchor = (!clip.bbox().is_empty()).then(|| {
-        let b = clip.bbox();
-        ((b.min.x + b.max.x) / 2.0, (b.min.y + b.max.y) / 2.0)
-    });
+    let anchor = anchor_of(&clip);
     let clipped = Clipped::Selection {
         count: clip.len(),
         annotations: plan.carried(),
@@ -341,60 +411,7 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
         anchor,
     };
     store(ctx, clipped.clone());
-    // AND A MARKER ON THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT
-    // ARRIVE AT ALL.
-    //
-    // Not a nicety and not a placeholder. `egui-winit` turns `Ctrl+V` into
-    // `Event::Paste(contents)` **only if the OS clipboard has non-empty text**,
-    // and returns before pushing a key event either way — so with an empty
-    // clipboard the keystroke vanishes completely, no event of any kind.
-    // `app::keyboard::clipboard_chord` carries the whole account.
-    //
-    // So a copy that put nothing on the OS clipboard would leave `Ctrl+V`
-    // working or not depending on **whether the operator had recently copied
-    // text in another application**, which is the worst kind of intermittent:
-    // it is not random, it is not reproducible, and the thing that fixes it has
-    // nothing to do with pdfcer.
-    //
-    // The text is a SENTENCE, so a human who pastes into a text editor gets
-    // something that says what happened. The clip's own bytes go beside it
-    // under `clipimage::OBJECT_CLIP_FORMAT`, which is what another pdfcer-gui
-    // window pastes (`canvas::clipshared`); this window pastes its in-memory
-    // copy.
-    // **AND A PICTURE BESIDE IT, as of 2026-08-31** —
-    // `OPERATOR_REQUESTS.md` O71: *"so we can copy and paste them … outside of
-    // the pdfcergui."*
-    //
-    // The sentence, the clip and the bitmap go on in ONE clipboard
-    // transaction, and that is not an optimisation. `EmptyClipboard` is
-    // per-open, so two calls would mean the second erased the first — and if
-    // the picture went on second, this application's own `Ctrl+V` would stop
-    // arriving for the reason the paragraphs above set out.
-    // `native_clipboard::place` writes all or none.
-    //
-    // It FALLS BACK rather than failing. A clipboard another process is
-    // holding, a render that declines, a degenerate clip — each of those loses
-    // the picture and none of them loses the copy, so the marker still goes on
-    // by the route it always did and the operator's `Ctrl+V` still works. What
-    // they lose is the paste into Word, and the trace says which.
-    //
-    // An ANNOTATION-only clip reaches `publish` with `clip.items` empty, so
-    // the raster is degenerate and the picture declines — by the same path a
-    // zero-area content clip already took, with no new branch. That is the
-    // right outcome rather than a gap: `clipimage` renders the page content a
-    // clip carries, and a comment's appearance is not page content. The
-    // operator still gets the marker, so `Ctrl+V` still arrives.
-    let marker = crate::text::clipboard::os_marker(objects.len(), plan.carried());
-    let published = crate::canvas::clipimage::publish(&clip, &marker);
-    if published.is_none_or(|p| p.picture.is_none()) {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "clipboard-image-declined".to_owned()
-        });
-    }
-    if published.is_none() {
-        ctx.copy_text(marker);
-    }
+    publish(ctx, &clip, objects.len(), plan.carried());
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //

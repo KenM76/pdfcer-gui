@@ -1,11 +1,11 @@
-//! `copying_a_part_of_a_placed_drawing_says_why_nothing_was_copied` — a block
-//! inside a form XObject is selected and copied; the engine copies page
-//! objects only (G145), so the copy must be refused out loud, not as "nothing
-//! is selected".
+//! `a_part_of_a_placed_drawing_can_be_copied_and_pasted` — a polyline inside
+//! a form XObject is selected, copied and pasted; the paste must land as page
+//! content.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/form_part_copy.md`.
 
-use crate::checks::driving;
+use super::dimdrive::press_on_tab;
+use super::os_image_paste::ClipGuard;
 use crate::checks::form_node_move::{enter_leaf_at, run_body};
 use crate::checks::{Check, CheckContext};
 use crate::coords::PageGeometry;
@@ -15,30 +15,34 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 const FIXTURE: &str = "../../fixtures/form-parts.pdf";
-const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
-const REFUSED: &str = "clipboard-copy-refused"; // ui-text-exempt: a trace event name, never displayed
 const COPIED: &str = "clipboard-copy"; // ui-text-exempt: a trace event name, never displayed
-/// Mirrors `app::status::REGION_EDIT_DISCLOSURE`.
-const DISCLOSURE: &str = "status-group:edit-disclosure"; // ui-text-exempt: a trace region name, never displayed
+const APPLIED: &str = "paste-objects-applied"; // ui-text-exempt: a trace event name, never displayed
+const EDIT_TAB: &str = "ribbon.tab.edit";
+const PASTE: &str = "ribbon.item.edit.paste";
 /// Inside the polyline's first leg, leaf 1 of `form-parts.pdf`.
 const ON_THE_POLYLINE: (f64, f64) = (240.0, 120.0);
 
 /// See the module documentation.
-pub struct CopyingAPartOfAPlacedDrawingSaysWhyNothingWasCopied;
+pub struct APartOfAPlacedDrawingCanBeCopiedAndPasted;
 
-impl Check for CopyingAPartOfAPlacedDrawingSaysWhyNothingWasCopied {
+impl Check for APartOfAPlacedDrawingCanBeCopiedAndPasted {
     fn name(&self) -> &'static str {
-        "copying_a_part_of_a_placed_drawing_says_why_nothing_was_copied"
+        "a_part_of_a_placed_drawing_can_be_copied_and_pasted"
     }
 
     fn defect(&self) -> &'static str {
-        "a part inside a placed drawing is selected and Copy says nothing is selected, or \
-         says nothing at all"
+        "a part inside a placed drawing is selected and Copy copies nothing, copies the whole \
+         drawing, or pastes nothing"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match run_body(ctx, &mut report, FIXTURE, self.name(), select_and_copy) {
+        let mut guard = ClipGuard::take();
+        let outcome = run_body(ctx, &mut report, FIXTURE, self.name(), copy_and_paste);
+        // The copy wrote the OS clipboard; put back what was there before.
+        guard.adopt();
+        report.note(guard.release());
+        match outcome {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -46,55 +50,53 @@ impl Check for CopyingAPartOfAPlacedDrawingSaysWhyNothingWasCopied {
     }
 }
 
-fn select_and_copy(
+fn copy_and_paste(
     ctx: &CheckContext,
     report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
     page: PageGeometry,
 ) -> Result<Option<String>> {
-    let (ui_rect, _) = enter_leaf_at(ctx, session, pointer, page, ON_THE_POLYLINE)?;
-    let trace = session.trace()?;
-    report.note(format!(
-        "selected: `{}`",
-        trace.last(SELECTION).map_or("none", |l| l.raw.as_str())
-    ));
-    let mark = trace.mark();
+    enter_leaf_at(ctx, session, pointer, page, ON_THE_POLYLINE)?;
+    let mark = session.trace()?.mark();
     pointer.copy(session, None)?;
     session.settle(30);
-
     let trace = session.trace()?;
-    let refused = trace.last_after(REFUSED, mark);
-    report.note(format!(
-        "after Copy: `{}`",
-        refused.map_or("no refusal", |l| l.raw.as_str())
-    ));
-    if let Some(copied) = trace.last_after(COPIED, mark) {
+    let Some(copied) = trace.last_after(COPIED, mark) else {
         return Ok(Some(format!(
-            "Copy of a part of a placed drawing reported a copy: `{}`. The engine has no \
-             in-form copy (G145). Trace: {}.",
+            "Copy of a part of a placed drawing wrote no `{COPIED}` line. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("copy: `{}`", copied.raw));
+    let right = copied.get("kind") == Some("form-leaves")
+        && copied.get("page") == Some("0")
+        && copied.get("leaves") == Some("1")
+        && copied.get_usize("items") == Some(1);
+    if !right {
+        return Ok(Some(format!(
+            "the copy must read `kind=form-leaves page=0 leaves=1 items=1`; it read `{}`. \
+             Trace: {}.",
             copied.raw,
             session.trace_path().display()
         )));
     }
-    let Some(refused) = refused.filter(|l| l.get("reason") == Some("inside-form")) else {
+
+    let mark = session.trace()?.mark();
+    press_on_tab(ctx, session, pointer, PASTE, EDIT_TAB)?;
+    session.settle(30);
+    let trace = session.trace()?;
+    let Some(applied) = trace.last_after(APPLIED, mark) else {
         return Ok(Some(format!(
-            "Copy of a part of a placed drawing was not refused as inside-form (last refusal: \
-             {}). The operator is told nothing is selected while it is. Trace: {}.",
-            refused.map_or("none", |l| l.raw.as_str()),
+            "Edit ▸ Paste after the copy wrote no `{APPLIED}` line. Trace: {}.",
             session.trace_path().display()
         )));
     };
-    if refused.get_usize("n").is_none_or(|n| n == 0) {
+    report.note(format!("paste: `{}`", applied.raw));
+    if applied.get_usize("pasted") != Some(1) || applied.get("page") != Some("0") {
         return Ok(Some(format!(
-            "`{}` counts no part. Trace: {}.",
-            refused.raw,
-            session.trace_path().display()
-        )));
-    }
-    if driving::declared(&session.trace()?, ui_rect, DISCLOSURE).is_none() {
-        return Ok(Some(format!(
-            "the copy was refused and the status bar drew no `{DISCLOSURE}`. Trace: {}.",
+            "the paste must put one object on page 0; it read `{}`. Trace: {}.",
+            applied.raw,
             session.trace_path().display()
         )));
     }

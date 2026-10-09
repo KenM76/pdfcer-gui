@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **32 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -89,7 +89,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)`, memoised and consulted by the editing verbs … | **wanted.** <!--namesake:page_objects--> Every hit in `crates/pdfcer-gui/src/` is this shell's own `OpenDoc::page_objects(&self)`, never the engine's `EditSession::page_objects(&mut self, page_index)`, so a bare-identifier grep reads as *thoroughly consumed* and means the opposite — an absence claim here has to name the receiver. The engine's is called only from `tests/engine_overlay_skew.rs` and `tests/page_generation_covers.rs`. Production still runs the shell's own parse in `panels::objects::provider`, cached separately on `OpenDoc` by `app::cache`, so every edit pays the session's decomposition **and** ours. Wiring it needs a decided answer on cache invalidation: the engine memoises against the session revision and we key on our own. |
-| **Copy objects INSIDE a form XObject** — `EditSession::copy_objects_in_form` | **wanted, at the pin since v0.81.0; request G145.** Copy on a part of a placed drawing will call it instead of saying to copy the whole drawing. Its module is `pdfcer_core::edit::form_copy`. |
 | **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **wanted, at the pin since v0.81.0; request G147.** A click on text inside a placed drawing will pick the run through it. |
 | **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **wanted, at the pin since v0.81.0; request G140.** It shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **wanted, at the pin since v0.81.0; request G138.** Every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. The canvas still box-tests an image. Owed: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. Its module is `pdfcer_core::vector::image_hit`; the canvas's point queries move to `hit_test_point_with` and `hit_test_point_all_with`. |
@@ -209,7 +208,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **293 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **294 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -327,6 +326,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A placed image's pixels can be replaced in place** — `pdfcer_core::edit::image_replace` | **shipped — Format ▸ Image ▸ Replace image…; G156.** `EditSession::replace_image` with `ImageFit::Contain` in `app::actions::vector::replaceimage`, one `CommandKind::ReplaceImage`, reached from the Format tab, the canvas object menu and the Properties panel when one image XObject or inline image is selected. A form XObject is never offered, so `EditError::ReplaceImageOnOther` cannot arise; an SVG or EMF file is refused by the shell. The `ImageAuthorDisclosures` are worded in the status notes, with the old data kept. Driven: `replace_image_swaps_the_picture_in_place`. |
 | **No rotate, scale or general-transform verb exists for anything inside a form XObject** — the engine offers translation and deletion only | **shipped — the resize grips and the rotate handle on a part of a placed drawing; G144.** The engine's answer is `EditSession::transform_objects_in_form`, which takes a PAGE-space matrix and maps it into the form. `canvas::resizing` and `canvas::rotating` fall back to the selection's form leaves when it holds no page objects, and commit `VectorAction::TransformLeavesInForm` through `app::actions::vector::leaftransform`. The engine's refusals reach the status line through the funnel, and `invocations` and `pages` are traced. Driven by `a_part_of_a_placed_drawing_can_be_resized_and_rotated`, falsified twice. |
 | **Resize or rotate objects INSIDE a form XObject** — `transform_objects_in_form` | **shipped — the grips and the rotate handle on a part of a placed drawing; G144.** `EditSession::transform_objects_in_form` from `app::actions::vector::leaftransform`. Its module is `pdfcer_core::edit::form_transform`. There is no preview twin, so the drawing changes on release. Driven by `a_part_of_a_placed_drawing_can_be_resized_and_rotated`. |
+| **Copy objects INSIDE a form XObject** — `EditSession::copy_objects_in_form`, module `pdfcer_core::edit::form_copy` | **shipped — Copy, Cut and Paste on a part of a placed drawing; G145.** `EditSession::copy_objects_in_form` from `canvas::formclip`, reached when the selection holds form leaves and no page object or annotation. The clip is the same `ObjectClip` a page copy makes and pastes through the same path; the engine bakes the placement into it. Cut is the copy then `delete_objects_in_form`. Driven by `a_part_of_a_placed_drawing_can_be_copied_and_pasted`. |
 
 ### ce dimensions
 
@@ -583,7 +583,7 @@ The engine verbs a shape made part of the page (O288 item 2) still lacks.
 - **G142** — no in-form paint verb: a markup made part of the page can no longer be recoloured. Answered as `EditSession::set_object_paint_in_form` and `EditSession::set_object_stroke_style_in_form`; wired in Properties for a part of a placed drawing.
 - **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set. Answered as `EditSession::set_object_stroke_style` with `vector::StrokeStyle`; wired in Properties ▸ Line and opacity.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated. Answered as `EditSession::transform_objects_in_form`; wired to the resize grips and the rotate handle.
-- **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. The shell discloses it: a leaf-only copy is `clipboard::Refusal::InsideForm`, a mixed copy names the leaves left behind.
+- **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. Answered as `EditSession::copy_objects_in_form`; wired to Copy and Cut.
 - **G146** — a unit change carried the scale number, not the calibration. Answered as `ScaleState::in_unit`, `EditSession::set_group_unit` and `resolve_style` converting a per-dimension override, at the pin since v0.81.0. The shell still converts in `units::scale_in_unit`; calling `set_group_unit` deletes the helper.
 - **G147** — no object-taking text-run hit test: a text line inside a form is picked by the shell's copy of the rule. Fixed on engine main as `vector::hit_test_text_runs_of`, not in the pinned tag; when the pin carries it, delete `ObjectModelProvider::text_line_hits_of`'s copy and its agreement test.
 

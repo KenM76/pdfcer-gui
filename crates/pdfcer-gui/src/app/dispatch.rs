@@ -915,7 +915,7 @@ impl PdfcerApp {
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             id if nodeshape::claims(id) => nodeshape::dispatch(self, id, actions),
-            replaceimage::ID => replaceimage::dispatch(self, actions),
+            "format.replace_image" => replaceimage::dispatch(self, actions),
             "edit.align_left"
             | "edit.align_right"
             | "edit.align_top"

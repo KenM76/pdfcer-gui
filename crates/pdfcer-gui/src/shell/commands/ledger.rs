@@ -836,10 +836,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 196 → 197: `file.remove_metadata` names `delete`, shared.
     // 197 → 199: `view.move_to_new_window` and `view.move_to_window` name
     // `window-new` and `window-move`, drawn for them.
+    // 199 → 200: `format.replace_image` names `replace-image`, drawn for it.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        199 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        200 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

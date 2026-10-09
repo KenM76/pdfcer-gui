@@ -359,6 +359,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.unshare_form",
                 "format.merge_text_runs",
                 "format.split_text_lines",
+                "format.replace_image",
                 "edit.bring_to_front",
                 "edit.bring_forward",
                 "edit.send_backward",

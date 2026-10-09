@@ -102,6 +102,7 @@ pub mod clipboard;
 pub mod clipseq;
 /// A selection another pdfcer-gui window copied, adopted for a paste here.
 pub mod clipshared;
+pub mod formclip;
 /// **What Shift does to a drag** - the axis lock and the aspect lock, written
 /// down once for the five drags that share them. `ui-conventions/drag-moves.md`
 /// D5, found absent from every one of them by the conventions sweep of

@@ -204,15 +204,15 @@ them in **one call** rather than two, so that:
 # AND THEN IT ASKS THE ENGINE WHAT IT DID
 
 
-# PARTS OF A PLACED DRAWING ARE NOT COPIED, AND IT SAYS SO
+# PARTS OF A PLACED DRAWING
 
-`copy_selection` addresses page objects only (G145), so selected leaves
-inside a form XObject cannot ride along. A selection of only leaves is
-[`Refusal::InsideForm`] (traced `clipboard-copy-refused reason=inside-form`),
-never `NothingSelected`, which would tell the operator the selection they can
-see does not exist. A mixed selection copies its page objects and counts the
-leaves in `Clipped::Selection::in_form_left` for `partial_copy`. Driven by
-`copying_a_part_of_a_placed_drawing_says_why_nothing_was_copied`.
+`copy_selection` addresses page objects only. A selection of only parts of a
+placed drawing is copied by `canvas::formclip`, which the dispatcher routes to
+before this module. A mixed selection copies its page objects here and counts
+the parts in `Clipped::Selection::in_form_left` for `partial_copy`. A
+leaf-only selection that still reaches `copy` (from a window drag) is
+[`Refusal::InsideForm`], traced `clipboard-copy-refused reason=inside-form`,
+never `NothingSelected`.
 
 ⇒ **The fork is read off the payload, never off a subtype list here.** A
 list would be a fourth copy of a taxonomy `pdfcer-core` owns, and would be

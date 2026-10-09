@@ -170,6 +170,19 @@ fn copy_or_cut(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut
     }
     // Copy is permitted in every mode and cut is not, and the split is the
     // operator's own *copying is not authoring* ruling.
+    // Parts of a placed drawing go through the engine's form-scoped copy.
+    if let Some((page, leaves)) = crate::canvas::formclip::leaves_only(doc) {
+        let Status::Open(doc) = &mut app.status else {
+            return;
+        };
+        let outcome = if cutting {
+            crate::canvas::formclip::cut(ctx, doc, page, leaves, actions)
+        } else {
+            crate::canvas::formclip::copy(ctx, doc, page, &leaves)
+        };
+        report_copy(doc, outcome);
+        return;
+    }
     let outcome = if cutting {
         crate::canvas::clipboard::cut(ctx, doc, actions)
     } else {
