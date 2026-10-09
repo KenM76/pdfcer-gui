@@ -203,6 +203,7 @@ fn the_three_shapes_with_nodes_report_their_geometry() {
         color: Color::Rgb(0.0, 0.0, 1.0),
         width: 1.0,
         endings: (LineEnding::None, LineEnding::None),
+        interior: None,
     });
     let Geometry { points, closed, .. } =
         geometry(&doc, &select(&doc, id, false)).expect("a line has two ends");
@@ -536,6 +537,7 @@ fn a_line_moves_its_ends_and_refuses_to_gain_one_by_name() {
         color: Color::Rgb(0.0, 0.0, 1.0),
         width: 1.0,
         endings: (LineEnding::None, LineEnding::None),
+        interior: None,
     });
     let pts = points_of(&[(100.0, 100.0), (300.0, 100.0)]);
 

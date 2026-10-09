@@ -416,6 +416,14 @@ fn a_foreign_icon_name_survives_a_colour_only_restyle() {
                 // instead of being silently declined.
                 font_size: None,
                 stamp_fit: None,
+                redraw_as_plain: false,
+                opacity: None,
+                fill: None,
+                border_width: None,
+                dash: None,
+                text_color: None,
+                font: None,
+                label: None,
             },
         )
         .expect("a sticky note restyles");

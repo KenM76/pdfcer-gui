@@ -190,6 +190,18 @@ pub const fn prop_tolerance_places() -> &'static str {
     "Tolerance decimals"
 }
 
+/// The dash-pattern row's label.
+#[must_use]
+pub const fn prop_dash() -> &'static str {
+    "Line style"
+}
+
+/// The opacity row's label.
+#[must_use]
+pub const fn prop_opacity() -> &'static str {
+    "Opacity"
+}
+
 /// The two precision modes.
 #[must_use]
 pub const fn precision_decimal() -> &'static str {

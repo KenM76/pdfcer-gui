@@ -179,7 +179,7 @@ impl Reading {
                 icon: Some(icon.clone()),
                 // A sticky note draws an ICON, not text. `set_text_annot_style`
                 // refuses a label size on one BY NAME
-                // (`StylePropertyNotApplicable`, property "a label font
+                // (`StylePropertyNotApplicable`, property "label font
                 // size"), so this is not "we did not read it" — there is
                 // nothing to read.
                 label: None,
@@ -291,7 +291,7 @@ fn size_row(
     // Two guards, and they are not the same guard twice. The first is about
     // the FACE — a sticky note draws an icon and has no label to size, which is
     // the refusal `set_text_annot_style` makes by name
-    // (`StylePropertyNotApplicable`, property "a label font size"). The second
+    // (`StylePropertyNotApplicable`, property "label font size"). The second
     // is about this PARTICULAR stamp — the face is right and its appearance
     // still shows no text pdfcer can read a size off.
     if current.face != Face::Stamp {
@@ -431,7 +431,7 @@ fn push_size(
 ) {
     actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
         id: target.id,
-        style: TextAnnotStyle {
+        style: Box::new(TextAnnotStyle {
             font_size: Some(size),
             // Named even though it equals the engine's default, because the
             // operator has an opinion about it and a `None` here would hide
@@ -441,7 +441,15 @@ fn push_size(
             stamp_fit: Some(fit),
             color: None,
             icon: None,
-        },
+            redraw_as_plain: false,
+            opacity: None,
+            fill: None,
+            border_width: None,
+            dash: None,
+            text_color: None,
+            font: None,
+            label: None,
+        }),
     }));
 }
 
@@ -464,7 +472,7 @@ fn colour_row(
         if ui.color_edit_button_srgb(&mut rgb).changed() {
             actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
                 id: target.id,
-                style: TextAnnotStyle {
+                style: Box::new(TextAnnotStyle {
                     color: Some(Color::Rgb(
                         f64::from(rgb[0]) / 255.0,
                         f64::from(rgb[1]) / 255.0,
@@ -489,7 +497,15 @@ fn colour_row(
                     icon: None,
                     font_size: None,
                     stamp_fit: None,
-                },
+                    redraw_as_plain: false,
+                    opacity: None,
+                    fill: None,
+                    border_width: None,
+                    dash: None,
+                    text_color: None,
+                    font: None,
+                    label: None,
+                }),
             }));
         }
     });
@@ -553,7 +569,7 @@ fn icon_row(
         {
             actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
                 id: target.id,
-                style: TextAnnotStyle {
+                style: Box::new(TextAnnotStyle {
                     icon: Some(icon),
                     // Left alone — see [`colour_row`]'s note on naming every
                     // other field explicitly, and on why a `..Default::default()`
@@ -561,7 +577,15 @@ fn icon_row(
                     color: None,
                     font_size: None,
                     stamp_fit: None,
-                },
+                    redraw_as_plain: false,
+                    opacity: None,
+                    fill: None,
+                    border_width: None,
+                    dash: None,
+                    text_color: None,
+                    font: None,
+                    label: None,
+                }),
             }));
         }
     });

@@ -701,7 +701,9 @@ pub enum AnnotAction {
         /// What to change. Every field `None` but the one control that moved,
         /// which is `MarkupStyle`'s contract restated for this family — the
         /// engine's own words are *"an override set, not a replacement"*.
-        style: pdfcer_core::edit::TextAnnotStyle,
+        ///
+        /// Boxed: the engine's override set outweighs every other variant.
+        style: Box<pdfcer_core::edit::TextAnnotStyle>,
     },
     /// **Turn one of the annotation-flag switches on or off**, resolved
     /// against the document's `/F` when applied; see

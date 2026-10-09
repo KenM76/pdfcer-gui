@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `dc39139b` (the v0.80.0 tag: carries G130's SVG and EMF placed on a layer, the 3D best-fit meshes and entity colour overrides, and G131's OCR structure sized by em) — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `c0761048` (the v0.81.0 tag: carries the answers to G138 to G169 — in-form copy, transform and text hit-test, restack, path stroke style, annotation opacity and marker colour, text box frame, line interiors, ce dimension dash, metadata removal, deskew, OCR dictionaries, vision layout regions, named 3D views and the invisible-text render; `ENGINE_BACKLOG.md` lists which are wired) — a **branch** pin with no `rev`, so cargo re-resolves it opportunistically and it moves with no `cargo update` on our side. Re-read the lock in the same breath as quoting it; never carry a sha forward from a paragraph written an hour ago. `check-pin-citation.sh` reads this row's third cell and `FEATURES.md`'s first `**Updated:**` line, and fails if either disagrees with the lock |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -95,8 +95,8 @@ Underlining part of a tagged
 paragraph says on the status line that the structure tree does not record it
 (`underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded`, on
 `fixtures/tagged-paragraph.pdf`; `tagged-report.pdf` has no `/ParentTree`, so
-the engine finds no elements there). `v0.5.0-dev.20261007.2` is published from `f3a8e866` and sits in
-`pdfcer-gui2`; the next release replaces `pdfcer-gui1`. No engine tag past v0.80.0 yet.
+the engine finds no elements there). `v0.5.0-dev.20261008.3` is published from `d35d5c30` and sits in
+`pdfcer-gui1`; the next release replaces `pdfcer-gui2`. The pin is v0.81.0, and most of what it answers is not yet wired.
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The
 pin moves to engine tags only. In order:

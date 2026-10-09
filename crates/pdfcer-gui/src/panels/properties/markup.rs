@@ -491,7 +491,7 @@ impl Current {
             _ => (Swatch::default(), None),
         };
         // The interior VALUE, read off the spec arm because that is where a
-        // value lives — only these four arms have an `interior` field and the
+        // value lives — only these arms have an `interior` field and the
         // compiler checks which.
         //
         // ⚠ **This `match` is not the capability answer.** Whether a subtype
@@ -506,7 +506,8 @@ impl Current {
             MarkupSpec::Square { interior, .. }
             | MarkupSpec::Circle { interior, .. }
             | MarkupSpec::Polygon { interior, .. }
-            | MarkupSpec::Cloud { interior, .. } => swatch_of(interior.as_ref()),
+            | MarkupSpec::Cloud { interior, .. }
+            | MarkupSpec::Line { interior, .. } => swatch_of(interior.as_ref()),
             _ => Swatch::default(),
         };
         Self {

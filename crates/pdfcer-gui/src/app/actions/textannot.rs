@@ -482,6 +482,14 @@ mod tests {
                 stamp_fit: Some(pdfcer_core::annot_author::StampFit::GrowToText),
                 color: None,
                 icon: None,
+                redraw_as_plain: false,
+                opacity: None,
+                fill: None,
+                border_width: None,
+                dash: None,
+                text_color: None,
+                font: None,
+                label: None,
             },
         );
 

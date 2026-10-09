@@ -1,12 +1,12 @@
-//! # `dimensionoverrides` — eleven properties, eleven
+//! # `dimensionoverrides` — thirteen properties, thirteen
 //! checkboxes, and the tier each value came from
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/dimensionoverrides.md`.
 
 use egui::Ui;
 use pdfcer_core::dimension::{
-    ArrowForm, DecimalMarker, DimStandard, FractionMode, Group, StyleOverrides, StyleSource, Unit,
-    resolve_style,
+    ArrowForm, DecimalMarker, DimDash, DimStandard, FractionMode, Group, StyleOverrides,
+    StyleProvenance, StyleSource, Unit, resolve_style,
 };
 use pdfcer_core::vector::Rgb;
 
@@ -33,7 +33,7 @@ const PLACES_RANGE: std::ops::RangeInclusive<u32> = 0..=6;
 /// The fraction denominators a drawing actually uses.
 const DENOMINATORS: [u32; 6] = [2, 4, 8, 16, 32, 64];
 
-/// Draw all eleven rows against `overrides`, mutating it in place.
+/// Draw all thirteen rows against `overrides`, mutating it in place.
 pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool {
     crate::diag::ui_rect(REGION, ui.max_rect());
     let provenance = pdfcer_core::dimension::style_provenance(group, overrides);
@@ -178,6 +178,8 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         }
     });
 
+    stroke_rows(ui, &provenance, overrides, resolved.dash, resolved.opacity);
+
     // --- tolerance ------------------------------------------------------
     let unit = resolved.format.unit;
     row(
@@ -217,6 +219,64 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
     }
 
     valid
+}
+
+/// The dash and opacity rows, which share the stroke's appearance.
+///
+/// The dash chooser offers `linestyle::LineStyle::ALL`; a pattern from
+/// elsewhere reads as the chooser's foreign entry until one is picked.
+fn stroke_rows(
+    ui: &mut Ui,
+    provenance: &StyleProvenance,
+    overrides: &mut StyleOverrides,
+    dash: DimDash,
+    opacity: f64,
+) {
+    row(
+        ui,
+        t::prop_dash(),
+        provenance.dash,
+        &mut overrides.dash,
+        || dash,
+    )
+    .edit(ui, |ui, value| {
+        let reading = if value.is_solid() {
+            crate::linestyle::DashReading::Solid
+        } else {
+            crate::linestyle::LineStyle::of_pattern(value.pattern()).map_or(
+                crate::linestyle::DashReading::Foreign,
+                crate::linestyle::DashReading::Offered,
+            )
+        };
+        let picked = crate::linestyle::chooser(ui, "dimension-override-dash", reading, 120.0);
+        if let Some(next) = picked.and_then(|s| DimDash::new(s.pattern().unwrap_or(&[]))) {
+            *value = next;
+        }
+    });
+    row(
+        ui,
+        t::prop_opacity(),
+        provenance.opacity,
+        &mut overrides.opacity,
+        || opacity,
+    )
+    .edit(ui, |ui, value| {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let mut percent = (*value * 100.0).round().clamp(0.0, 100.0) as u8;
+        let (widget, refusal) =
+            crate::entry::drag_value(ui, &mut percent, crate::entry::Kind::Number(&["%"]));
+        let response = refusal.show(
+            ui.add(
+                widget
+                    .range(0..=100)
+                    .speed(1.0)
+                    .suffix(crate::text::markup::opacity_suffix()),
+            ),
+        );
+        if response.changed() {
+            *value = f64::from(percent) / 100.0;
+        }
+    });
 }
 
 /// One row's checkbox and disclosure, with the editor still to be drawn.
@@ -347,7 +407,7 @@ fn rgb_of(c: egui::Color32) -> Rgb {
 /// Every property this panel draws, paired with the provenance field that
 /// discloses it.
 #[cfg(test)]
-const DRAWN: [&str; 11] = [
+const DRAWN: [&str; 13] = [
     "unit",
     "fraction",
     "decimal-marker",
@@ -359,6 +419,8 @@ const DRAWN: [&str; 11] = [
     "color",
     "tolerance",
     "tolerance-places",
+    "dash",
+    "opacity",
 ];
 
 #[cfg(test)]

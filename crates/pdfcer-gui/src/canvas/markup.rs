@@ -162,6 +162,8 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
                     // start is what makes the raw-endpoint rule above
                     // load-bearing rather than decorative.
                     endings: (LineEnding::None, LineEnding::OpenArrow),
+                    // An open arrowhead has nothing to fill.
+                    interior: None,
                 },
                 // Exactly one quad, always, so `validate_geometry`'s empty-quad
                 // refusal is structurally unreachable from this path.

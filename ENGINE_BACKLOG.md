@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **16 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `wanted` — a real gap — **46 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -67,7 +67,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
-| **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, and it is a disclosure gap behind an engine ask.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it — and what is missing is three *fields* on it. `MediaBoxChange` carries `crop_box_outside` and nothing for the other three boxes, so a resize reports one overhang and hides three, and `app::actions::pagesize::disclosures` has no branch to write because there is no field to read. Measured: a `/BleedBox [10 10 1000 1000]` survives a resize to 595×842 with no disclosure at all. Re-measured against the pinned revision: `/BleedBox` appears once in `pdfcer-core`, in `page_tree`'s note that the three do not inherit, and `MediaBoxChange` declares no field for any of them. Three more fields on the engine's report have to exist before anything can be worded here; asked for in our request `G136`. |
+| **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **wanted, at the pin since v0.81.0; request G136.** <!--namesake:MediaBoxChange--> the type itself is consumed — `app::actions::pagesize` imports it and walks it. It now carries `MediaBoxChange::bleed_box_outside`, `MediaBoxChange::trim_box_outside` and `MediaBoxChange::art_box_outside` beside `crop_box_outside`, and `app::actions::pagesize::disclosures` words only the crop box: a resize reports one overhang and hides three until it gains the three branches. |
 
 ### Text
 
@@ -80,6 +80,10 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Cell-aware block model** — each cell of a ruled table is its own block, `BlockKind::TableCell` (our `G080`, Pass 434.0) | **wanted — the caret half; Reflow shipped.** <!--namesake:TableCell--> `app::actions::export_tables`'s `TableCell` is the table extractor's. `canvas::textedit::reflow::block_of_run` numbers blocks over `pdfcer_core::text_edit::model::cells` as `reflow_block` does; overflow arrives as the reflow's own disclosure line, so `ReflowApplyReport::cell_overflow`, `ReflowPreview::cell_overflow` and `CellOverflow` (`pdfcer_core::text_edit::reflow_fit`) are not read. Wanted: Up/Down in `canvas::textedit::blocks` (`pdfcer_core::text_edit::model::navigate`) reads the plain recognition, so Down from a cell can reach the cell beside it; a cell selected as a block would read `Block::cell_rect`. No surface: `BlockDiagnostics::table_cell_blocks`, `BlockDiagnostics::lines_split_by_cell`, `BlockDiagnostics::lines_split_by_gutter`, `BlockDiagnostics::list_item_blocks`, `BlockRecognitionOptions::gutter_min_em`, `BlockRecognitionOptions::gutter_min_lines`. |
 | **Fallback face for an unencodable character** — a character the run's font can't encode is set in a fallback face: `TextEdit::with_fallback`, `FallbackFace`, the module `pdfcer_core::text_edit::fallback` (our `G078`, Pass 431.0) | **wanted: the keystroke, preview and commit are wired; the placeholder route remains.** <!--namesake:with_fallback--> <!--namesake:FallbackFace--> the keystroke confirms the planned face with `EditSession::run_repertoire_with` under it, requiring every key in `pdfcer_core::text_edit::format::RunRepertoire::via_fallback` (`canvas::textedit::reface::engine_takes`, trace `route=engine`), the preview lays the draft out with it (`canvas::textedit::shaped::refresh`), and the commit calls them: `app::actions::reface::try_commit` asks the engine first with `with_fallback(fallbackface::named(face))`, one undo entry for a match in one show operator (driven: `a_key_the_font_lacks_is_set_in_the_nearest_face`). A match across several operators still takes the placeholder route (`format_text`, `find_replace`, `coalesce_last`). Owed: deleting the placeholder route once a multi-operator match is driven. |
 | **Replace a block's text and re-wrap it** — `EditSession::edit_block_text`, `edit_block_text_preview`, `block_at_point` (our `G076`, Pass 433.0) | **wanted: Enter is wired; the draft's preview, the joins and the paste are not.** <!--namesake:edit_block_text--> <!--namesake:edit_block_text_preview--> Enter in a line of a one-look paragraph re-anchors the draft on its block (`canvas::textedit::promote`, previewed with `edit_block_text_preview` before it opens), and the commit is one `edit_block_text` (`app::actions::blocktext`); driven by `enter_breaks_a_paragraph_on_the_page`. A paragraph mixing looks declines rather than be flattened, by a shell-side look comparison that is a subset of the engine's (our `G101`). The modules are `pdfcer_core::edit::block_text` and `pdfcer_core::text_edit::block_text`; the undo entry is `pdfcer_core::edit::CommandKind::EditBlockText`. Owed: the open paragraph drawn from the engine's preview, Backspace and Delete joining lines, a multi-line paste, `block_at_point` for a paragraph opened by a click. |
+| **Rewriting a paragraph with its own text keeps its line count** — the wrap tolerance `linebreak::FIT_TOLERANCE` | **wanted, at the pin since v0.81.0; request G162.** The shell's paragraph rewrite (`canvas::textedit::promote`) calls `edit_block_text` and inherits it with no change here; owed: a driven check that a paragraph retyped unchanged keeps its line count. |
+| **Exact break marker for pdfcer's own block text** — `pdfcer_core::text_edit::model::line_marks`, `LineEndSource::Marked` | **wanted, at the pin since v0.81.0; request G163.** `edit_block_text` writes the markers with no change here. The shell's paragraph join (`canvas::textedit::promote::joint`) still infers a break from whether the next word would have fitted; reading `EditableTextModel::line_ends` makes a pdfcer-written break exact. |
+| **Per-line break-vs-wrap on recognised text blocks** — `pdfcer_core::text_edit::model::line_ends`, `block_text_with_breaks` | **wanted, at the pin since v0.81.0; request G163.** The inference `canvas::textedit::promote::joint` makes, from the engine; calling it deletes `joint`, the workaround the request was filed against. |
+| **Text-run width, merge and split inside a form XObject** — `pdfcer_core::edit::text_form_reshape` | **wanted, at the pin since v0.81.0; request G158.** A text line inside a placed drawing gains width, merge and split through it, as its page-content twins already do; `FormatError::FormLeafOutOfRange` is a refusal to word. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -87,22 +91,42 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)`, memoised and consulted by the editing verbs … | **wanted.** <!--namesake:page_objects--> Every hit in `crates/pdfcer-gui/src/` is this shell's own `OpenDoc::page_objects(&self)`, never the engine's `EditSession::page_objects(&mut self, page_index)`, so a bare-identifier grep reads as *thoroughly consumed* and means the opposite — an absence claim here has to name the receiver. The engine's is called only from `tests/engine_overlay_skew.rs` and `tests/page_generation_covers.rs`. Production still runs the shell's own parse in `panels::objects::provider`, cached separately on `OpenDoc` by `app::cache`, so every edit pays the session's decomposition **and** ours. Wiring it needs a decided answer on cache invalidation: the engine memoises against the session revision and we key on our own. |
 | **No rotate, scale or general-transform verb exists for anything inside a form XObject** — the engine offers translation and deletion only | **wanted, and the silence is the defect.** The ten `*_in_form` verbs are `move_node_in_form`, `move_nodes_in_form`, `move_handle_in_form`, `move_subpath_in_form`, `move_text_run_in_form`, `move_objects_in_form`, `delete_text_run_in_form`, `delete_subpath_in_form`, `delete_node_in_form` and `delete_objects_in_form`. There is no `transform_objects_in_form`. Rotate and resize are reachable only through `transform_objects`, which is page-content-only, so the Format tab's rotate and the eight resize grips are inapplicable to a form-interior selection and nothing says so. Two halves: an engine verb (filed as G144), and until it exists a refusal here worded by name rather than a grip that does nothing. |
+| **Copy objects INSIDE a form XObject** — `EditSession::copy_objects_in_form` | **wanted, at the pin since v0.81.0; request G145.** Copy on a part of a placed drawing will call it instead of saying to copy the whole drawing. Its module is `pdfcer_core::edit::form_copy`. |
+| **Resize or rotate objects INSIDE a form XObject** — `transform_objects_in_form` | **wanted, at the pin since v0.81.0; request G144.** The grips on a part of a placed drawing resize and rotate through it. Its module is `pdfcer_core::edit::form_transform`. |
+| **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **wanted, at the pin since v0.81.0; request G147.** A click on text inside a placed drawing will pick the run through it. |
+| **Restack page objects** — `EditSession::restack_objects` | **wanted, at the pin since v0.81.0; request G157.** Format ▸ Arrange gains Bring to front, Send to back, Forward and Backward through it. Its modules are `pdfcer_core::edit::restack` and `pdfcer_core::vector::restack`; one `CommandKind::RestackObjects` per press. |
+| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **wanted, at the pin since v0.81.0; request G143.** Properties of a page path gain width, dash and opacity through it. Its modules are `pdfcer_core::edit::stroke_style` and `pdfcer_core::vector::stroke_style`, with the in-form twins in `pdfcer_core::edit::form_paint`; one `CommandKind::SetObjectStrokeStyle` per change. Reading the values back takes `PathObject::fill_alpha`, `PathObject::stroke_alpha`, `ImageObject::fill_alpha`, `ImageObject::stroke_alpha` and `ExtGStateParams::dash`. Refusals to word: `VectorEditError::InvalidStrokeStyle`, and `EditError::FormInheritsResources` for opacity inside a form with no resources of its own. |
+| **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **wanted, at the pin since v0.81.0; request G140.** It shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. |
+| **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **wanted, at the pin since v0.81.0; request G138.** Every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. The canvas still box-tests an image. Owed: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. Its module is `pdfcer_core::vector::image_hit`; the canvas's point queries move to `hit_test_point_with` and `hit_test_point_all_with`. |
+| **Add a node to a path; convert a node (corner / smooth / symmetric) or a segment (line / curve)** — `pdfcer_core::edit::node_shape`, `pdfcer_core::vector::edit::node_shape` | **wanted, at the pin since v0.81.0; request G154.** Node editing gains Insert node and the corner, smooth and symmetric conversions through it, one `CommandKind::InsertNode`, `CommandKind::ConvertNode` or `CommandKind::ConvertSegment` each. Refusals to word: `VectorEditError::InvalidSegmentParameter`, `VectorEditError::NoSegmentHere`, `VectorEditError::NodeHasOneSide`. |
+| **A placed image's pixels can be replaced in place** — `pdfcer_core::edit::image_replace` | **wanted, at the pin since v0.81.0; request G156.** An image's right-click menu gains Replace image… through it, one `CommandKind::ReplaceImage`; `EditError::ReplaceImageOnOther` is a refusal to word. |
 
 ### ce dimensions
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **ce dimension dash and opacity** — two more cascaded style properties, at the group tier: — `StyleDefaults::dash` and `StyleDefaults::opacity` are new; the per-dimension tier is drawn | **wanted, at the pin since v0.81.0; request G159.** A ce dimension's Properties override block draws Line style and Opacity rows (`dimensionoverrides::stroke_rows`), because `StyleProvenance::each()` grew to thirteen and the panel's completeness test requires a row per property. Owed: the same two at the group tier (`StyleDefaults::dash`, `StyleDefaults::opacity`) and a driven check. Its module is `pdfcer_core::dimension::dash`. |
+| **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **wanted, at the pin since v0.81.0; request G146.** The shell converts a group's scale on a unit change itself, in `units::scale_in_unit` (O288 item 3); a single ce dimension's own unit override now converts inside `resolve_style`. Owed: call `set_group_unit` and delete the helper. Its module is `pdfcer_core::edit::group_unit`. |
 
 ### Annotations & markup
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
+| **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **wanted, at the pin since v0.81.0; request G153.** A line's Fill swatch appears in Properties and on the Format band because `MarkupStyleSupport::for_subtype(b"Line")` now answers `takes_interior`, and both read the line's `/IC` back; owed: a driven fill of a closed arrowhead. |
+| **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **wanted, at the pin since v0.81.0; request G150.** Properties of a note, stamp or media mark gain Opacity through it. Its module is `pdfcer_core::edit::annot_restyle`; one `CommandKind::SetAnnotOpacity` per change. |
+| **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **wanted, at the pin since v0.81.0; request G150.** Properties of a marker gain Colour through it. One `CommandKind::SetMarkerStyle` per change; `EditError::MarkerAppearanceForeign` is a refusal to word. |
+| **A text box's fill, border width** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is its new fields) | **wanted, at the pin since v0.81.0; request G149.** A text box's Properties gain fill, border, dash, opacity and text styling through it. The report gains `TextAnnotStyleChange::frame_written`, `TextAnnotStyleChange::opacity_written` and `TextAnnotStyleChange::text_style_written`. |
+| **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.81.0; request G148.** Text box styling re-tests against it. It refuses with `EditError::FreeTextAppearanceForeign` and `EditError::FreeTextIsRichText`, and reports `TextAnnotStyleChange::rich_text_dropped`; the shell words neither refusal yet, because it withholds colour and size for a FreeText. |
+| **A placed stamp's words can be changed** — `set_stamp_label` | **wanted, at the pin since v0.81.0; request G151.** A stamp's Properties gain its words through it; the report's `TextAnnotStyleChange::label_written` confirms the write, and `EditError::StampLabelEmpty` is a refusal to word. |
+| **A text markup can be re-spanned** — `respan_text_markup`, `pdfcer_core::edit::markup_respan` | **wanted, at the pin since v0.81.0; request G152.** Dragging a highlight's end grips re-spans it through it, one `CommandKind::RespanTextMarkup`; `EditError::TextMarkupVerbOnOther` is a refusal to word. |
+| **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **wanted, at the pin since v0.81.0; request G161.** Insert gains Link, and a link's Properties gain its target and border, through it: `CommandKind::SetLinkTarget` and `CommandKind::SetLinkBorder`, with `AnnotKind::Link` in the undo labels. Refusals to word: `EditError::LinkBorderWidthInvalid`, `EditError::LinkUriInvalid`, `EditError::LinkVerbOnOther`. |
 
 ### Forms (AcroForm)
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Turn a form widget to any angle, and set its opacity** — `pdfcer_core::edit::widget_angle` | **wanted, at the pin since v0.81.0; request G160.** A field's rotate grip turns it to any angle through it (one `CommandKind::TurnWidget`), and its Properties gain Opacity, disclosed through `WidgetEditOutcome::opacity_disclosure`. Refusals to word: `EditError::WidgetTurnIsQuarterTurn`, `EditError::WidgetTurnNeedsAppearance`, `EditError::WidgetTurnSharedAppearance`, `EditError::WidgetTurned`, `EditError::WidgetOpacityOutOfRange`. |
 
 ### Redaction & security
 
@@ -111,17 +135,23 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Embed a supplied U3D/PRC model as a `/3D` annotation, with a poster … | **wired — Edit ▸ Insert ▸ 3D model…, driven (`a_3d_model_is_placed_listed_and_saved_back`); no poster yet, the engine's placeholder shows.** `EditSession::add_3d_annotation` takes the model bytes and a poster; the shell owes a file picker and a placement rectangle, reached from Insert. The engine renders no 3D scene (refused on scope), so the canvas shows the poster, which is what saved content shows too. Its refusals arrive as `EditError::ThreeD`, and the annotation it writes lists as `AnnotKind::ThreeD`. |
 | Page labels — read and set (Acrobat's Number Pages) … | **wanted — the label-keeping page verbs only.** Reading labels and the Number pages window shipped (the page-labels row under `shipped`). `pdfcer_core::page_labels` (`page_labels`, `label_ranges`, `LabelFormat`, `LabelStyle`) reads what each page shows; `EditSession::set_page_labels` / `clear_page_labels` write it as one undo entry, refusing with `EditError::InvertedPageRange`. `pageops::extract_with_labels` is offered by Pages ▸ Extract…'s *Keep the page labels*. Still wanted: the label-keeping page verbs (`reorder_pages_with_labels`, `delete_pages_with_labels`, `insert_pages_with`) matter only where Acrobat offers the choice: extract, split and page paste already keep labels by default. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
+| **Metadata inventory and removal of hidden information** — lists the kinds a file carries: `pdfcer_core::doc_metadata`, `pdfcer_core::edit::metadata_remove` | **wanted, at the pin since v0.81.0; request G164.** Security ▸ Protect ▸ Remove metadata… (O289 item 21) is drafted against it, one `CommandKind::RemoveMetadata`; wiring is next. |
+| **Named 3D views and up-axis public; write 3D views with a default view into a 3D annotation** — `pdfcer_core::edit::threed_views` | **wanted, at the pin since v0.81.0; request G168.** The 3D viewer's *Save views in the file* (O289 item 12) is drafted against it, one `CommandKind::SetThreeDViews`; the viewer keeps its own view table and writes its cameras through `ThreeDSavedView::from_camera`. |
 
 ### Fonts & rendering
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
+| **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **wanted, at the pin since v0.81.0; request G169.** The OCR layer (O289 item 15) paints each word itself in `canvas::ocrink`; a render with `RenderPolicy::invisible_text` set and `only` true, composited over the page (`RenderOptions::effective_backdrop` is transparent then), replaces it. |
+| **Layout-aware OCR (PaddleOCR-VL)** — finds the page's regions: `pdfcer_core::ocr::layout`, `pdfcer_core::ocr::engine_layout`, `pdfcer_core::ocr::otsl`, `pdfcer_core::ocr::vl_page` | **wanted, at the pin since v0.81.0; request G167.** The OCR window's layer-per-region choice (O289 item 17) sets `OcrLayerOptions::region_layers`; it needs `layout.onnx` in the add-on, which the shipped paddle-vl folder lacks. |
+| **OCR word-list choice** — `RunOptions::with_dictionaries` | **wanted, at the pin since v0.81.0; request G166.** The OCR window's word-list choice (O289 item 16) is drafted against it. |
+| **Skew detection and deskew of a scanned image** — `detect_skew`, `pdfcer_core::deskew`, `pdfcer_core::edit::deskew` | **wanted, at the pin since v0.81.0; request G165.** File ▸ Straighten scans (O289 item 13) is drafted against it, one `CommandKind::DeskewImage` per page; `EditError::DeskewUnsupported` is a refusal to word. |
 
 ---
 
 
-## `blocked` — waiting on something named — **16 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `blocked` — waiting on something named — **2 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -137,33 +167,9 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 |---|---|
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
-### Vector objects (Inkscape-style editing)
-
-| Row (`FEATURES.md`, blocked) | Why |
-|---|---|
-| **Copy objects INSIDE a form XObject** — `EditSession::copy_objects_in_form` | **blocked on an engine tag, request G145.** The engine answered on main, past the v0.80.0 pin; Copy on a part of a placed drawing will call it instead of saying to copy the whole drawing. The pin moves to tags only. |
-| **Resize or rotate objects INSIDE a form XObject** — `transform_objects_in_form` | **blocked on an engine tag, request G144.** The engine answered on main, past the v0.80.0 pin; the grips on a part of a placed drawing resize and rotate through it. The pin moves to tags only. |
-| **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **blocked on an engine tag, request G147.** The engine answered on main, past the v0.80.0 pin; a click on text inside a placed drawing will pick the run through it. The pin moves to tags only. |
-| **Restack page objects** — `EditSession::restack_objects` | **blocked on an engine tag, request G157.** The engine answered on main, past the v0.80.0 pin; Format ▸ Arrange gains Bring to front, Send to back, Forward and Backward through it. The pin moves to tags only. |
-| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **blocked on an engine tag, request G143.** The engine answered on main, past the v0.80.0 pin; Properties of a page path gain width, dash and opacity through it. The pin moves to tags only. |
-| **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **blocked on an engine tag, request G140.** The engine answered on main, past the v0.80.0 pin; it shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. The pin moves to tags only. |
-| **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **blocked on an engine tag, request G138.** The engine answered on main (Pass 526.0): every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. This shell's pin moves to tags only and the newest tag predates it, so the canvas still box-tests an image. Owed on the tag: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. |
-
-
-### Annotations, markup & ce dimensions
-
-| Row (`FEATURES.md`, blocked) | Why |
-|---|---|
-| **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **blocked on an engine tag, request G153.** The engine answered on main, past the v0.80.0 pin; Format gains an arrowhead fill through it. The pin moves to tags only. |
-| **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **blocked on an engine tag, request G150.** The engine answered on main, past the v0.80.0 pin; Properties of a note, stamp or media mark gain Opacity through it. The pin moves to tags only. |
-| **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **blocked on an engine tag, request G150.** The engine answered on main, past the v0.80.0 pin; Properties of a marker gain Colour through it. The pin moves to tags only. |
-| **A text box's fill, border width** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is its new fields) | **blocked on an engine tag, request G149.** The engine answered on main, past the v0.80.0 pin; a text box's Properties gain fill, border, dash, opacity and text styling through it. The pin moves to tags only. |
-| **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **blocked on an engine tag, request G148.** The engine answered on main, past the v0.80.0 pin; text box styling re-tests against it. The pin moves to tags only. |
-| **ce dimension dash and opacity** — two more cascaded style properties, `DimDash` | **blocked on an engine tag, request G159.** The engine answered on main, past the v0.80.0 pin; the ce dimension style controls gain dash and opacity through it. The pin moves to tags only. |
-| **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **blocked on an engine tag, request G146.** The engine answered on main, past the v0.80.0 pin; the shell already converts a group's scale on a unit change (O288 item 3); a single ce dimension's own unit override converts once it is pinned. The pin moves to tags only. |
 ---
 
-## `unknown` — no opinion formed yet — **0 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -174,7 +180,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `declined` — deliberately no surface — **16 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -216,7 +222,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **280 of 328** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **280 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -578,7 +584,7 @@ The engine verbs a shape made part of the page (O288 item 2) still lacks.
 - **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set. Fixed on engine main as `EditSession::set_object_stroke_style` with `vector::StrokeStyle`, not in the pinned tag; wire it when the pin carries it.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated.
 - **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. The shell discloses it: a leaf-only copy is `clipboard::Refusal::InsideForm`, a mixed copy names the leaves left behind.
-- **G146** — a unit change carried the scale number, not the calibration. Fixed on engine main (`ScaleState::in_unit`, `EditSession::set_group_unit`, `resolve_style` converting a per-dimension override), not in the pinned tag. The shell converts in `units::scale_in_unit` until the pin carries `set_group_unit`, then calls it and deletes the helper.
+- **G146** — a unit change carried the scale number, not the calibration. Answered as `ScaleState::in_unit`, `EditSession::set_group_unit` and `resolve_style` converting a per-dimension override, at the pin since v0.81.0. The shell still converts in `units::scale_in_unit`; calling `set_group_unit` deletes the helper.
 - **G147** — no object-taking text-run hit test: a text line inside a form is picked by the shell's copy of the rule. Fixed on engine main as `vector::hit_test_text_runs_of`, not in the pinned tag; when the pin carries it, delete `ObjectModelProvider::text_line_hits_of`'s copy and its agreement test.
 
 ## Filed requests from the O288 item 2 tool audit — not verdict rows
@@ -614,14 +620,14 @@ channel. They join a verdict section when the engine answers.
 
 ## Filed requests for Ken's Batch 2 (O289) — not verdict rows
 
-Filed in the request channel for O289's items. They join a verdict section when the engine answers.
+Filed in the request channel for O289's items. All six are answered and at the pin since v0.81.0.
 
-- **G164** — no inventory of a file's metadata and no verb to remove it (item 21).
-- **G165** — no skew detection or straightening for scanned pages and images (item 13).
-- **G166** — recognition cannot be given, or denied, a dictionary (item 16).
-- **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17).
-- **G168** — no named 3D views or up-axis choice outside the CLI (item 12); the viewer computes the directions itself until then.
-- **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Worked around in `canvas::ocrink`, which lays each run out through `edit_text_preview` and fills `preview_outlines`; answered on the engine's main as `RenderOptions::with_invisible_text`, waiting for a tag.
+- **G164** — no inventory of a file's metadata and no verb to remove it (item 21). Answered as `EditSession::metadata_inventory` and `remove_metadata`; not yet wired.
+- **G165** — no skew detection or straightening for scanned pages and images (item 13). Answered as `detect_image_skew` and `deskew_image`; not yet wired.
+- **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; not yet wired.
+- **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; not yet wired.
+- **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; the viewer computes the directions itself until it is wired.
+- **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Answered as `RenderOptions::with_invisible_text`; `canvas::ocrink` still lays each run out through `edit_text_preview` until the render replaces it.
 
 ## Filed requests for pasting in from other programs — not verdict rows
 

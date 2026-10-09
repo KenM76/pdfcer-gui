@@ -1,4 +1,4 @@
-# `dimensionoverrides` — eleven properties, eleven
+# `dimensionoverrides` — thirteen properties, thirteen
 checkboxes, and the tier each value came from
 
 ## What this is
@@ -73,7 +73,7 @@ Because the editor's type differs per row and its closure has to borrow the
 **unwrapped** value, which only exists after the checkbox has decided
 whether there is one. A single function taking both would need the seed
 closure and the editor closure in the same call, which is where clippy's
-argument budget and the reader's patience both run out at row eleven.
+argument budget and the reader's patience both run out long before row thirteen.
 
 The two-step shape also puts the invariant in the type: `edit` is the only
 way to reach the value, so a row cannot be drawn with a checkbox and no
@@ -98,10 +98,10 @@ operator's first drag starts from where they were.
 ### `const DRAWN`
 
 Exists **only** for the test below, and that is worth the lines. The
-engine's `StyleProvenance::each()` returns a fixed-size `[_; 11]` precisely
-so a consumer gets a compile error rather than a short list when a twelfth
-property lands — but this module does not call `each()`, it reads the fields
-by name, so it would silently keep drawing eleven rows for ever.
+engine's `StyleProvenance::each()` returns a fixed-size `[_; 13]` precisely
+so a consumer gets a compile error rather than a short list when a
+fourteenth property lands — but this module does not call `each()`, it reads the fields
+by name, so it would silently keep drawing thirteen rows for ever.
 
 This closes that: the test compares this list against `each()`'s names.
 
@@ -111,8 +111,8 @@ The gap this closes is specific and would otherwise be silent. The
 engine's `StyleProvenance::each()` is a fixed-size array so that a
 consumer iterating it fails to compile when a property is added — and
 this module reads the provenance **fields by name** rather than
-iterating, which is the right shape for a panel that draws eleven
-different editors and the wrong shape for noticing a twelfth.
+iterating, which is the right shape for a panel that draws thirteen
+different editors and the wrong shape for noticing a fourteenth.
 
 So the array is compared against `each()`'s names here, and adding a
 property to `pdfcer-core` without a row in this file fails this test with
@@ -150,3 +150,11 @@ the value on screen does not jump the moment it becomes editable.
 Returns `false` if any row is currently invalid, in which case the caller
 must not raise an action. Only the tolerance can be invalid; see
 [`super::tolerance`].
+
+### `fn stroke_rows`
+
+Dash and opacity share one function because both describe the stroke and
+`show` is already long. The dash chooser is `linestyle::chooser`, the same
+four entries a markup's line style offers; `DimDash::SOLID` is a real value
+here, not "unset", so a group that dashes everything can keep one ce
+dimension solid. Opacity is edited in whole percent, as on a markup.

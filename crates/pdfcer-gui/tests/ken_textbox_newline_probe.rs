@@ -188,6 +188,7 @@ fn what_does_a_newline_become_in_a_freetext_annotation() {
             multiline: true,
             border: None,
             border_width: 0.0,
+            frame: pdfcer_core::annot_author::FreeTextFrame::default(),
         };
         match session.add_text_annotation(0, &spec) {
             Ok(id) => {

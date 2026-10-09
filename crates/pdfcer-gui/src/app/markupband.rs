@@ -485,9 +485,12 @@ impl Current {
                 color,
                 width,
                 endings,
+                interior,
                 ..
             } => {
                 current.stroke = rgb_of(color);
+                current.interior_set = interior.is_some();
+                current.interior = interior.and_then(rgb_of);
                 current.width = Some(width);
                 current.endings = Some(endings);
             }

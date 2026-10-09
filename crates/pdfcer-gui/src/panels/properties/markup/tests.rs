@@ -85,6 +85,7 @@ fn line(endings: (LineEnding, LineEnding)) -> MarkupSpec {
         color: Color::Gray(0.0),
         width: 1.0,
         endings,
+        interior: None,
     }
 }
 
@@ -195,8 +196,8 @@ fn only_a_shape_with_an_interior_gets_a_fill_row() {
         "a revision cloud is a /Polygon in the file and has an /IC"
     );
     assert!(
-        !current(&line((LineEnding::None, LineEnding::None)), b"Line").offers_fill(),
-        "a line has no interior for /IC to mean anything in"
+        current(&line((LineEnding::None, LineEnding::None)), b"Line").offers_fill(),
+        "a line's /IC fills its closed arrowheads"
     );
 }
 
@@ -287,7 +288,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
         (b"Square", true, true, false, true),
         (b"Circle", true, true, false, false),
         (b"Polygon", true, true, false, true),
-        (b"Line", false, true, true, false),
+        (b"Line", true, true, true, false),
         (b"PolyLine", false, true, false, false),
         (b"Ink", false, true, false, false),
         (b"Highlight", false, false, false, false),
@@ -508,6 +509,7 @@ fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
         multiline: false,
         border: Some(Color::Rgb(1.0, 0.0, 0.0)),
         border_width: 1.0,
+        frame: pdfcer_core::annot_author::FreeTextFrame::default(),
     };
     let boxed = text_current(Some(Reading::of(&spec)), b"FreeText");
     assert!(

@@ -740,6 +740,7 @@ mod tests {
             default_value: FieldValue::Absent,
             default_appearance: None,
             quadding: Quadding::Left,
+            own_quadding: None,
             max_len: None,
             options: Vec::new(),
             top_index: 0,

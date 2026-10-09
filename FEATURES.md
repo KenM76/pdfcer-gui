@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.80.0, a git dependency on the local engine repository, pinned at **`dc39139b`** (the v0.80.0 tag) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.81.0, a git dependency on the local engine repository, pinned at **`c0761048`** (the v0.81.0 tag) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** Editing never blanks or blocks: after an edit the old page and its thumbnail stay on screen until the new picture is ready, only the pages the edit touched are redrawn, and thumbnails redraw in the background. On a dense page the engine's own work still holds the next input for about half a second; that is filed with the engine. Parts of a placed drawing can be edited: drag a line's end point, see one line's own Properties, and delete one bar, end point or line of text. Copying one says to copy the whole drawing instead. ce dimension groups convert their scale when their unit changes, so 1000 mm reads 3.28 ft rather than 1000 ft. Tool options picks the group a new ce dimension joins, or makes a new one. A new group can copy another group's scale in its own unit. The linear ce dimension measures Aligned, Horizontal or Vertical. A click on a ce dimension's value text selects it. While you type, the arrow keys move only the caret: they no longer light up ribbon buttons or turn pages. Text written as two or more lines re-opens as one paragraph, lines broken with Enter stay broken, and a box dragged under Edit text takes typing. Recognised text is no longer dropped when recognition finishes while the document is busy, and a refused write says so. A form redraw says what it did to a field's text. Built on engine v0.80.0.
 
@@ -82,7 +82,7 @@ than the number it produced last.
 | **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
-| **Engine** | `pdfcer-core` v0.80.0, pinned as above |
+| **Engine** | `pdfcer-core` v0.81.0, pinned as above |
 | **Panels** | 14 — `Panel::ALL` is `[Self; 14]` in `crates/pdfcer-gui-base/src/panelid.rs`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 42 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 

@@ -90,6 +90,7 @@ fn which_markup_kinds_does_a_corner_drag_actually_resize() {
                     multiline: true,
                     border: None,
                     border_width: 0.0,
+                    frame: pdfcer_core::annot_author::FreeTextFrame::default(),
                 };
                 s.add_text_annotation(0, &spec).ok()
             }),

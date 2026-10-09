@@ -9,8 +9,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/wordmarkup.md`.
 
 use pdfcer_core::annot_author::{
-    AttachmentIcon, Color, MediaTempAccess, ScreenTrigger, SoundIcon, StampName, StampStyle,
-    StickyIcon, TextAnnotSpec,
+    AttachmentIcon, Color, FreeTextFrame, MediaTempAccess, ScreenTrigger, SoundIcon, StampName,
+    StampStyle, StickyIcon, TextAnnotSpec,
 };
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::page_tree::Rect;
@@ -310,6 +310,9 @@ pub fn spec(
             // would push the operator's second sentence off the page with
             // nothing on screen to say so.
             multiline: true,
+            // No fill and a solid border: a callout drawn over a drawing must
+            // not hide the linework beneath it.
+            frame: FreeTextFrame::default(),
             // A border, unlike Acrobat's borderless default. On a drawing
             // sheet a borderless caption is indistinguishable from the
             // drawing's own annotation, and a revision markup must read as
