@@ -37,6 +37,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(security_passwords::SecurityNotesSayOldPasswordsAreKept),
         Box::new(object_disagreements::ObjectsPanelSaysWhereTheListAndPageDisagree),
         Box::new(page_boxes::DocumentPropertiesSayWhichPageBoxesWereNotUsedAsWritten),
+        Box::new(page_print_boxes::ResizingASheetSaysWhichPrintBoxesReachPastIt),
         Box::new(redraw_layout::ARedrawSaysWhatItDidToAFieldsText),
         Box::new(edit_never_blanks::AnEditNeverBlanksOrBlocks),
         Box::new(two_codes::ALetterDrawnTwoWaysIsNamed),

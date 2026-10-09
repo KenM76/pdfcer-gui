@@ -128,6 +128,12 @@ document is on screen in front of him: *"7 sheets lost area"* is a fact he
 can act on, and seven sentences differing only in a number is a wall he will
 stop reading — which is how a disclosure stops being one.
 
+The print boxes the new sheet no longer contains (`MediaBoxChange`'s
+`bleed_box_outside`, `trim_box_outside`, `art_box_outside`) get one sentence
+per box kind, because each costs something different: a bleed past the paper
+is cut off, a trim box past it no longer states the finished size, and an art
+box past it is only cut where another tool places the page.
+
 ### `fn his_title_block_is_measured_as_running_off_the_right_edge`
 
 His A1 title block sits at x 1831–2207 pt (measured from

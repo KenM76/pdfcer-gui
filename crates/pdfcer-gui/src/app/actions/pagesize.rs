@@ -248,15 +248,11 @@ pub fn survey(doc: &OpenDoc, pages: &[usize]) -> SheetSurvey {
 ///   sized by inheritance. That changes what a *later* edit does to it, which
 ///   is exactly the kind of fact nothing else will ever tell him.
 ///
-/// **What is NOT disclosed, because the engine does not report it.**
-/// `/BleedBox`, `/TrimBox` and `/ArtBox` are left byte-identical (measured — a
-/// `/BleedBox [10 10 1000 1000]` survives a resize to 595 × 842 untouched),
-/// and `MediaBoxChange` carries **no field for them**: only
-/// `crop_box_outside`. A CAD or press export that carries a bleed box therefore
-/// gets one overhang disclosed and three not. Filed for the engine; nothing is
-/// faked here in the meantime, because a disclosure this shell computed from a
-/// walk the engine did not do would be a fifth source of truth about the same
-/// page dictionary.
+/// * `bleed_box_outside`, `trim_box_outside`, `art_box_outside` — the page's
+///   own print boxes, left as written, that the new sheet no longer contains.
+///   Readers intersect each with the media box, so what the box frames is now
+///   cut to the sheet; one sentence per box kind, because a trim box past the
+///   paper changes the finished size and an art box past it does not.
 ///
 /// # Errors
 ///
@@ -301,7 +297,7 @@ pub(super) fn set(
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "page-size-applied n={} asked_w={:.2} asked_h={:.2} lost_area={} crop_outside={} \
-             advisories={} explicit={} inherited_removed={} base_kept={} crop_followed={followed}",
+             bleed_outside={} trim_outside={} art_outside={} advisories={} explicit={} inherited_removed={} base_kept={} crop_followed={followed}",
             changes.len(),
             rect.width(),
             rect.height(),
@@ -310,6 +306,9 @@ pub(super) fn set(
                 .iter()
                 .filter(|c| c.crop_box_outside.is_some())
                 .count(),
+            count_boxes(&changes, |c| c.bleed_box_outside),
+            count_boxes(&changes, |c| c.trim_box_outside),
+            count_boxes(&changes, |c| c.art_box_outside),
             changes.iter().filter(|c| c.size_advisory.is_some()).count(),
             count_entry(&changes, MediaBoxEntry::ExplicitWritten),
             count_entry(&changes, MediaBoxEntry::InheritedSoOwnEntryRemoved),
@@ -550,6 +549,14 @@ fn count_entry(changes: &[MediaBoxChange], want: MediaBoxEntry) -> usize {
     changes.iter().filter(|c| c.entry == want).count()
 }
 
+/// The changes whose `field` names a box left outside the new sheet.
+fn count_boxes<T>(
+    changes: &[MediaBoxChange],
+    field: impl Fn(&MediaBoxChange) -> Option<T>,
+) -> usize {
+    changes.iter().filter(|c| field(c).is_some()).count()
+}
+
 /// The rule-4 sentences for a set of [`MediaBoxChange`]s.
 fn disclosures(changes: &[MediaBoxChange]) -> Vec<String> {
     let mut notes = Vec::new();
@@ -566,6 +573,23 @@ fn disclosures(changes: &[MediaBoxChange]) -> Vec<String> {
     if cropped > 0 {
         notes.push(t::disclosure_crop_outside(cropped));
     }
+    let mut box_note = |n: usize, sentence: fn(usize) -> String| {
+        if n > 0 {
+            notes.push(sentence(n));
+        }
+    };
+    box_note(
+        count_boxes(changes, |c| c.bleed_box_outside),
+        t::disclosure_bleed_outside,
+    );
+    box_note(
+        count_boxes(changes, |c| c.trim_box_outside),
+        t::disclosure_trim_outside,
+    );
+    box_note(
+        count_boxes(changes, |c| c.art_box_outside),
+        t::disclosure_art_outside,
+    );
 
     let inherited = count_entry(changes, MediaBoxEntry::InheritedSoOwnEntryRemoved);
     if inherited > 0 {

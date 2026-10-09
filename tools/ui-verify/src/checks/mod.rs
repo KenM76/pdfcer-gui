@@ -660,6 +660,7 @@ pub mod object_disagreements;
 /// Open several documents from one Open.
 pub mod open_many;
 pub mod page_boxes;
+pub mod page_print_boxes;
 pub mod password_fill;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;

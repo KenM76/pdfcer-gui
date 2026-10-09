@@ -60,6 +60,15 @@ fn sheets(count: usize) -> &'static str {
     if count == 1 { "sheet" } else { "sheets" }
 }
 
+/// `count` sheets with the verb that agrees: "1 sheet carries", "2 sheets carry".
+fn sheets_carry(count: usize) -> &'static str {
+    if count == 1 {
+        "sheet carries"
+    } else {
+        "sheets carry"
+    }
+}
+
 /// Heading above the size list.
 #[must_use]
 pub const fn size_heading() -> &'static str {
@@ -307,9 +316,47 @@ pub fn disclosure_lost_area(n: usize) -> String {
 #[must_use]
 pub fn disclosure_crop_outside(n: usize) -> String {
     format!(
-        "{n} {} carry a crop box bigger than the new paper. pdfcer left it alone; every reader \
+        "{n} {} a crop box bigger than the new paper. pdfcer left it alone; every reader \
          shows the smaller of the two, so the visible area is the new paper.",
-        sheets(n)
+        sheets_carry(n)
+    )
+}
+
+/// `n` sheets carry a `/BleedBox` the new paper no longer contains.
+#[must_use]
+pub fn disclosure_bleed_outside(n: usize) -> String {
+    box_outside(
+        n,
+        "bleed",
+        "the bleed printed around the page is cut to the new paper",
+    )
+}
+
+/// `n` sheets carry a `/TrimBox` the new paper no longer contains.
+#[must_use]
+pub fn disclosure_trim_outside(n: usize) -> String {
+    box_outside(
+        n,
+        "trim",
+        "the finished page is trimmed to the new paper, not to the size the trim box states",
+    )
+}
+
+/// `n` sheets carry an `/ArtBox` the new paper no longer contains.
+#[must_use]
+pub fn disclosure_art_outside(n: usize) -> String {
+    box_outside(
+        n,
+        "art",
+        "a tool that places this page in another uses only the part of its art box on the paper",
+    )
+}
+
+fn box_outside(n: usize, which: &str, consequence: &str) -> String {
+    format!(
+        "{n} {} a {which} box that reaches past the new paper. pdfcer left it alone; \
+         readers and print tools use only the part on the paper, so {consequence}.",
+        sheets_carry(n)
     )
 }
 
@@ -318,10 +365,10 @@ pub fn disclosure_crop_outside(n: usize) -> String {
 #[must_use]
 pub fn disclosure_crop_inside(n: usize) -> String {
     format!(
-        "{n} {} carry a crop box smaller than the new paper, and every reader shows only the \
+        "{n} {} a crop box smaller than the new paper, and every reader shows only the \
          crop box, so the page looks the size it was. The paper did change; the crop box was \
          kept because it framed part of the old sheet, not all of it.",
-        sheets(n)
+        sheets_carry(n)
     )
 }
 
@@ -568,6 +615,9 @@ mod tests {
             overhang_unmeasurable(1, 2),
             disclosure_lost_area(2),
             disclosure_crop_outside(2),
+            disclosure_bleed_outside(2),
+            disclosure_trim_outside(1),
+            disclosure_art_outside(2),
             disclosure_inherited(2),
             disclosure_size_advisory(2, true),
             disclosure_size_advisory(2, false),
