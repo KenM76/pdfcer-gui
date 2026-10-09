@@ -1,5 +1,5 @@
 //! # `panels::properties::strokestyle` — line width, dash and opacity of the
-//! selected page objects
+//! selected page objects, or of the selected parts of one placed drawing
 //!
 //! Paths get Width, Style, Line opacity and Fill opacity; pictures and placed
 //! drawings get one Picture opacity. Width and dash are shown and sent in
@@ -79,17 +79,16 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         return false;
     }
     let page = doc.view.page_index;
-    let objects = doc.selection.object_indices_on(page);
-    if objects.is_empty() {
+    let Some((objects, leaves)) = selected(doc, page) else {
         return false;
-    }
-    let Some(subjects) = read(doc, page, &objects) else {
+    };
+    let Some(subjects) = read(doc, page, &objects, leaves) else {
         return false;
     };
     if subjects.paths.is_empty() && subjects.pictures.is_empty() {
         return false;
     }
-    trace(&subjects);
+    trace(&subjects, leaves);
 
     ui.add_space(6.0);
     ui.separator();
@@ -125,6 +124,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         actions.push(Action::SetObjectStrokeStyle {
             page,
             objects,
+            leaves,
             style,
         });
     }
@@ -168,9 +168,21 @@ fn path_rows(ui: &mut Ui, paths: &[PathRead], send: &mut impl FnMut(StrokeStyle)
     }
 }
 
+/// What the style sections act on: the selected page objects, else the
+/// selected parts of a placed drawing (`true`). A selection holding both acts
+/// on its page objects, because one verb call cannot take both index spaces.
+pub(super) fn selected(doc: &OpenDoc, page: usize) -> Option<(Vec<usize>, bool)> {
+    let objects = doc.selection.object_indices_on(page);
+    if !objects.is_empty() {
+        return Some((objects, false));
+    }
+    let leaves = doc.selection.leaf_indices_on(page);
+    (!leaves.is_empty()).then_some((leaves, true))
+}
+
 /// Read every selected object in one borrow of the provider, dropped before
 /// anything is drawn.
-fn read(doc: &OpenDoc, page: usize, objects: &[usize]) -> Option<Subjects> {
+fn read(doc: &OpenDoc, page: usize, objects: &[usize], leaves: bool) -> Option<Subjects> {
     let provider = doc.page_objects()?;
     let model = provider.page_objects_model(page)?;
     let mut subjects = Subjects {
@@ -178,7 +190,7 @@ fn read(doc: &OpenDoc, page: usize, objects: &[usize]) -> Option<Subjects> {
         pictures: Vec::new(),
     };
     for &index in objects {
-        match model.objects.get(index) {
+        match crate::app::actions::styled_object(model, index, leaves) {
             Some(object @ VectorObject::Path(path)) => {
                 let k = crate::app::actions::stroke_scale(object);
                 subjects.paths.push(PathRead {
@@ -305,14 +317,14 @@ fn mixed_note(ui: &mut Ui, mixed: bool) {
 }
 
 /// One line per change of what the section shows, for a driven check.
-fn trace(subjects: &Subjects) {
+fn trace(subjects: &Subjects, leaves: bool) {
     let none = || "none".to_owned(); // ui-text-exempt: trace token
     let paths = &subjects.paths;
     crate::diag::trace_changed(REGION, || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            "stroke-style-shown paths={} pictures={} width_pt={} dash={} line_alpha={} \
-             fill_alpha={} picture_alpha={}",
+            "stroke-style-shown leaves={leaves} paths={} pictures={} width_pt={} dash={} \
+             line_alpha={} fill_alpha={} picture_alpha={}",
             paths.len(),
             subjects.pictures.len(),
             Reading::of(paths.iter().map(|p| p.width_pt)).map_or_else(none, Reading::token),

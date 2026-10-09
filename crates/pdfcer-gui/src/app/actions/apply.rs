@@ -1172,6 +1172,7 @@ impl PdfcerApp {
             Action::SetObjectPaint {
                 page,
                 objects,
+                leaves,
                 fill,
                 stroke,
             } => {
@@ -1184,24 +1185,30 @@ impl PdfcerApp {
                     g: f32::from(c[1]) / 255.0,
                     b: f32::from(c[2]) / 255.0,
                 };
+                let (fill, stroke) = (fill.map(to_rgb), stroke.map(to_rgb));
                 super::apply::vector_edit(doc, "set-object-paint", page, objects.len(), |s| {
-                    s.set_object_paint(page, &objects, fill.map(to_rgb), stroke.map(to_rgb))
-                        .map(|outcome| {
-                            let changed = outcome.changed.len();
-                            let refused = outcome.refused.len();
-                            vec![if refused == 0 {
-                                crate::text::paint::recoloured(changed)
-                            } else {
-                                crate::text::paint::recoloured_partly(changed, refused)
-                            }]
-                        })
+                    let (paint, reach) = if leaves {
+                        let o = s.set_object_paint_in_form(page, &objects, fill, stroke)?;
+                        (o.paint, o.reach.map(|r| r.disclosures))
+                    } else {
+                        (s.set_object_paint(page, &objects, fill, stroke)?, None)
+                    };
+                    let (changed, refused) = (paint.changed.len(), paint.refused.len());
+                    let mut notes = vec![if refused == 0 {
+                        crate::text::paint::recoloured(changed)
+                    } else {
+                        crate::text::paint::recoloured_partly(changed, refused)
+                    }];
+                    notes.extend(reach.into_iter().flatten());
+                    Ok::<_, pdfcer_core::edit::EditError>(notes)
                 });
             }
             Action::SetObjectStrokeStyle {
                 page,
                 objects,
+                leaves,
                 style,
-            } => super::strokestyle::apply(doc, page, &objects, &style),
+            } => super::strokestyle::apply(doc, page, &objects, leaves, &style),
             Action::Undo => super::history::history_step(doc, super::history::Direction::Undo),
             Action::Redo => super::history::history_step(doc, super::history::Direction::Redo),
             // Reaching here means the frame's drain was removed or moved.

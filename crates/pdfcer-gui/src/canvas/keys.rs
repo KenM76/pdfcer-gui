@@ -330,7 +330,16 @@ pub(super) fn canvas_keys(
     // `disarm_region_zoom` reports whether there was anything armed, so an
     // Escape on an un-armed canvas falls straight through and still ascends,
     // exactly as it did before this branch existed.
-    let escape_available = escape && !escape_consumed && !form_settled;
+    // A popup open when the frame began (a colour picker, a menu) is closed
+    // by this press and owns it; the selection is left alone.
+    let popup_closed = escape && popup_open_at_frame_start(ctx);
+    if popup_closed {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-escape outcome=ClosedPopup".to_owned()
+        });
+    }
+    let escape_available = escape && !escape_consumed && !form_settled && !popup_closed;
     if form_settled {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -867,3 +876,18 @@ pub(super) fn canvas_keys(
 
 #[cfg(test)]
 mod tests;
+
+const POPUP_AT_START: &str = "canvas-keys-popup-at-start"; // ui-text-exempt: an egui data key, never displayed
+
+/// Record whether an egui popup was open as this frame began. Called first
+/// thing in the frame: a popup drawn before the canvas has already closed on
+/// this frame's Escape by the time the ladder reads the key.
+pub(crate) fn note_popup_at_frame_start(ctx: &egui::Context) {
+    let open = egui::Popup::is_any_open(ctx);
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(POPUP_AT_START), open));
+}
+
+fn popup_open_at_frame_start(ctx: &egui::Context) -> bool {
+    ctx.data(|d| d.get_temp::<bool>(egui::Id::new(POPUP_AT_START)))
+        .unwrap_or(false)
+}

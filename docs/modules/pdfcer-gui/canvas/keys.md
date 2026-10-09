@@ -26,6 +26,7 @@ first"*, and rung 3 has two occupants that cannot both be present:
 | # | claimant | who decides | how it says it took the key |
 |---|---|---|---|
 | 0 | a **form field being typed into** | [`crate::canvas::forms`] | [`crate::canvas::forms::escape_spent`]: `true` when a draft was committed |
+| 0b | an **egui popup** (a colour picker, a menu) open when the frame began | `canvas::keys::note_popup_at_frame_start`, called first in the frame, because a popup drawn before the canvas has already closed on this press | the trace `canvas-escape outcome=ClosedPopup`; the selection is untouched |
 | 1 | a **drag in flight**, including a markup band | [`crate::canvas::gesture::GestureState::update`] — the only thing that knows whether there is one | [`crate::canvas::gesture::GestureOutcome::Cancelled`], arriving here as `escape_consumed` |
 | 2 | a **guide drag in flight** | [`crate::canvas::guides::cancel_drag`] | its return value: `true` when there was one |
 | 3a | a **measure pick**, a **markup vertex run**, a **text draft** or a **pending placement** in progress | [`crate::canvas::measure::abandon`] / [`crate::canvas::markup::vertex::abandon`] / [`crate::canvas::textedit::settle`] / [`crate::dialogs::placing`] | its return value: `true` when there was one. Only the text draft **writes** what it retires |

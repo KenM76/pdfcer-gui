@@ -213,3 +213,19 @@ annotation, a form field, a selection with no path in it — rather than
 drawing an empty heading. `geometry::section` states the same rule and for
 the same reason: a heading with nothing under it reads as a control that
 failed to load.
+
+## Parts of a placed drawing
+
+With no page object selected, the section reads the selected leaves of one
+placed drawing (`strokestyle::selected`) and the action carries `leaves`, so
+`EditSession::set_object_paint_in_form` rewrites the drawing's own stream.
+The engine's reach disclosures (other placements of the same drawing) reach
+the status line.
+
+## Region and trace
+
+`properties.paint` (`REGION_PAINT`); the swatches are `properties.paint.fill`
+and `.stroke`, their pickers `<swatch>.picker`.
+
+`paint-shown leaves= paths= fill= stroke=` is written on change. A channel
+prints `r,g,b`, `mixed`, or `ink` when no swatch is offered.

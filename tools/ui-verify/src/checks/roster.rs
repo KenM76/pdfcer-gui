@@ -465,6 +465,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(form_node_move::ALineInsideAPlacedDrawingShowsItsProperties),
         Box::new(stroke_style::ALineWidthIsTypedInPoints),
         Box::new(stroke_style::APicturesOpacityCanBeSet),
+        Box::new(form_style::APartOfAPlacedDrawingTakesAWidthInPoints),
+        Box::new(form_style::APartOfAPlacedDrawingCanBeRecoloured),
         Box::new(form_part_copy::CopyingAPartOfAPlacedDrawingSaysWhyNothingWasCopied),
         Box::new(form_part_delete::ASubpathInsideAPlacedDrawingCanBeDeleted),
         Box::new(form_part_delete::AnAnchorInsideAPlacedDrawingCanBeDeleted),

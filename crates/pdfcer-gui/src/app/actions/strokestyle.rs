@@ -4,12 +4,14 @@
 //! and dash in **points**; `EditSession::set_object_stroke_style` takes them in
 //! each path's own user space. Paths are grouped by their CTM's scale, one verb
 //! call per group, and the calls are folded into one undo step with
-//! `coalesce_last`. Opacity is unitless and needs one call.
+//! `coalesce_last`. Opacity is unitless and needs one call. Leaves of a placed
+//! drawing (`leaves`) go through the `_in_form` twin; a leaf's `ctm` is
+//! already page space, so the conversion is the same.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/strokestyle.md`.
 
 use pdfcer_core::edit::{CommandKind, EditError};
-use pdfcer_core::vector::{Dash, StrokeStyle, VectorObject};
+use pdfcer_core::vector::{Dash, PageObjects, StrokeStyle, VectorObject};
 
 use crate::app::state::OpenDoc;
 use crate::canvas::shapes::average_scale;
@@ -18,14 +20,21 @@ use crate::text::strokestyle as t;
 /// Two scales closer than this, relative, are one group.
 const SAME_SCALE: f64 = 1e-6;
 
-/// Apply `style` (width and dash in points) to `objects` on `page`.
-pub(super) fn apply(doc: &mut OpenDoc, page: usize, objects: &[usize], style: &StrokeStyle) {
+/// Apply `style` (width and dash in points) to `objects` on `page`: page
+/// objects, or `PageObjects::leaves` indices when `leaves`.
+pub(super) fn apply(
+    doc: &mut OpenDoc,
+    page: usize,
+    objects: &[usize],
+    leaves: bool,
+    style: &StrokeStyle,
+) {
     super::apply::vector_edit(doc, "set-object-stroke-style", page, objects.len(), |s| {
         let scales: Vec<(usize, f64)> = {
             let model = s.page_objects(page)?;
             objects
                 .iter()
-                .map(|&i| (i, model.objects.get(i).map_or(1.0, scale_of)))
+                .map(|&i| (i, object_of(&model, i, leaves).map_or(1.0, scale_of)))
                 .collect()
         };
         let calls: Vec<(Vec<usize>, StrokeStyle)> = if style.width.is_none() && style.dash.is_none()
@@ -43,8 +52,17 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, objects: &[usize], style: &S
             user.validate()?;
         }
         let (mut changed, mut refused, mut commands) = (0, 0, 0);
+        let mut reach: Vec<String> = Vec::new();
         for (members, user) in &calls {
-            let outcome = s.set_object_stroke_style(page, members, user)?;
+            let outcome = if leaves {
+                let o = s.set_object_stroke_style_in_form(page, members, user)?;
+                if let Some(r) = o.reach {
+                    reach = r.disclosures;
+                }
+                o.paint
+            } else {
+                s.set_object_stroke_style(page, members, user)?
+            };
             commands += usize::from(!outcome.changed.is_empty());
             changed += outcome.changed.len();
             refused += outcome.refused.len();
@@ -54,6 +72,7 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, objects: &[usize], style: &S
         } else {
             t::restyled_partly(changed, refused)
         }];
+        notes.extend(reach);
         let folded = commands < 2 || s.coalesce_last(commands, CommandKind::SetObjectStrokeStyle);
         if !folded {
             notes.push(t::several_undos(commands));
@@ -76,6 +95,15 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, objects: &[usize], style: &S
         });
         Ok::<_, EditError>(notes)
     });
+}
+
+/// Object `index` of `model`'s page list, or of its leaves when `leaves`.
+pub(crate) fn object_of(model: &PageObjects, index: usize, leaves: bool) -> Option<&VectorObject> {
+    if leaves {
+        model.leaves.get(index).map(|leaf| &leaf.object)
+    } else {
+        model.objects.get(index)
+    }
 }
 
 /// User space to points for one object. Only a path's matters: width and dash

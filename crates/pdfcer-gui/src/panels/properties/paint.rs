@@ -12,6 +12,8 @@ use crate::app::state::OpenDoc;
 use crate::canvas::target::CanvasTargetProvider as _;
 use crate::text::paint as t;
 
+/// The trace slot of the section's `paint-shown` line.
+const REGION_PAINT: &str = "properties.paint"; // ui-text-exempt: a trace region name
 /// The fill swatch's rectangle, for a driven check.
 const REGION_FILL: &str = "properties.paint.fill"; // ui-text-exempt: a trace region name
 /// The stroke swatch's rectangle.
@@ -57,10 +59,9 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         return false;
     }
     let page = doc.view.page_index;
-    let objects = doc.selection.object_indices_on(page);
-    if objects.is_empty() {
+    let Some((objects, leaves)) = super::strokestyle::selected(doc, page) else {
         return false;
-    }
+    };
 
     // Read every selected object's two paints in ONE borrow of the provider,
     // and drop it before anything is drawn. Holding a `Ref` across a `Ui`
@@ -76,7 +77,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
             return false;
         };
         for &object in &objects {
-            match model.objects.get(object) {
+            match crate::app::actions::styled_object(model, object, leaves) {
                 Some(pdfcer_core::vector::VectorObject::Path(path)) => {
                     paints.push((path.fill_paint.clone(), path.stroke_paint.clone()));
                 }
@@ -95,6 +96,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 
     let fill = channel(paints.iter().map(|(f, _)| f));
     let stroke = channel(paints.iter().map(|(_, s)| s));
+    trace(leaves, paints.len(), &fill, &stroke);
 
     ui.add_space(6.0);
     ui.separator();
@@ -148,7 +150,8 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
             // status line would then mix "not a shape" with "a named ink",
             // which are two different pieces of news and only one of them is
             // about the operator's plates.
-            objects: path_indices(doc, page, &objects),
+            objects: path_indices(doc, page, &objects, leaves),
+            leaves,
             fill: to.fill,
             stroke: to.stroke,
         });
@@ -156,8 +159,26 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     true
 }
 
+/// One line per change of what the section shows, for a driven check:
+/// `fill=`/`stroke=` are `r,g,b`, `mixed` or `ink`.
+fn trace(leaves: bool, paths: usize, fill: &Channel, stroke: &Channel) {
+    let token = |c: &Channel| match c.value {
+        Some(super::swatch::Value::Agreed(rgb)) => format!("{},{},{}", rgb[0], rgb[1], rgb[2]),
+        Some(super::swatch::Value::Mixed) => "mixed".to_owned(), // ui-text-exempt: trace token
+        None => "ink".to_owned(),                                // ui-text-exempt: trace token
+    };
+    crate::diag::trace_changed(REGION_PAINT, || {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed
+            "paint-shown leaves={leaves} paths={paths} fill={} stroke={}",
+            token(fill),
+            token(stroke)
+        )
+    });
+}
+
 /// The selected indices that are paths, in selection order.
-fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize]) -> Vec<usize> {
+fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize], leaves: bool) -> Vec<usize> {
     let Some(provider) = doc.page_objects() else {
         return Vec::new();
     };
@@ -169,7 +190,7 @@ fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize]) -> Vec<usize> {
         .copied()
         .filter(|&o| {
             matches!(
-                model.objects.get(o),
+                crate::app::actions::styled_object(model, o, leaves),
                 Some(pdfcer_core::vector::VectorObject::Path(_))
             )
         })

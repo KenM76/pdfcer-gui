@@ -1409,10 +1409,11 @@ pub enum Action {
     SetObjectPaint {
         /// The page the objects are on.
         page: usize,
-        /// Page-object indices. Leaves are not operands: a paint-order verb
-        /// writes to the page's content stream and a leaf's span indexes the
-        /// form's.
+        /// Page-object indices, or `PageObjects::leaves` indices when
+        /// `leaves`: the form is then edited in place, everywhere it is drawn.
         objects: Vec<usize>,
+        /// `objects` are leaves of one invocation of one form (G142).
+        leaves: bool,
         /// The new fill, or `None` to leave it.
         fill: Option<[u8; 3]>,
         /// The new stroke, or `None` to leave it.
@@ -1424,6 +1425,8 @@ pub enum Action {
     SetObjectStrokeStyle {
         page: usize,
         objects: Vec<usize>,
+        /// As on [`Self::SetObjectPaint`].
+        leaves: bool,
         style: pdfcer_core::vector::StrokeStyle,
     },
     /// **Go to a bookmark's destination** — the position half of `/XYZ`,

@@ -196,7 +196,7 @@ fn picture(
 }
 
 /// Click `region`, replace its text with `text`, and press Enter.
-fn type_into(
+pub(super) fn type_into(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
@@ -215,7 +215,7 @@ fn type_into(
 
 /// Wheel the Properties panel until `region` is on screen; the section sits
 /// below the object's geometry rows, under the fold of an off-screen window.
-fn into_view(
+pub(super) fn into_view(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
@@ -238,7 +238,7 @@ fn into_view(
 
 /// The last `stroke-style-shown` line after trace line `mark`, or a token
 /// saying there was none, which every caller's assertion then rejects.
-fn shown_since(session: &Session, mark: usize) -> Result<String> {
+pub(super) fn shown_since(session: &Session, mark: usize) -> Result<String> {
     Ok(session
         .trace()?
         .last_after(SHOWN, mark)

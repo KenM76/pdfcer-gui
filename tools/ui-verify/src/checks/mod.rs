@@ -229,6 +229,7 @@ pub mod form_leaf_move;
 pub mod form_node_move;
 pub mod form_part_copy;
 pub mod form_part_delete;
+pub mod form_style;
 pub mod group_unit_converts;
 pub mod stroke_style;
 

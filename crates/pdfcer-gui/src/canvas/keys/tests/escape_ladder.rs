@@ -604,3 +604,37 @@ fn a_second_escape_retires_the_zoom_the_guide_drag_protected() {
         "two presses, two effects — and neither of them the ladder"
     );
 }
+
+/// An Escape that closes a popup (a colour picker, a menu) leaves the
+/// selection where it was.
+#[test]
+fn an_escape_closing_a_popup_leaves_the_selection_alone() {
+    let mut selection = part_entered();
+    let ctx = Context::default();
+    let mut actions = Vec::new();
+    let mut text_selection = None;
+    egui::Popup::open_id(&ctx, egui::Id::new("picker"));
+    let _ = ctx.run_ui(key(Key::Escape), |ui| {
+        crate::canvas::keys::note_popup_at_frame_start(ui.ctx());
+        canvas_keys(
+            Keys {
+                ctx: ui.ctx(),
+                page_index: 0,
+                pick: PickFilter::all(),
+                caps: Capabilities::FULL,
+                selected_field: None,
+                annot_delete_refused: false,
+                field_delete_refused: false,
+                targets: None,
+                edit_epoch: 0,
+                model_attempted: true,
+                page: None,
+                escape_consumed: false,
+            },
+            &mut selection,
+            &mut text_selection,
+            &mut actions,
+        );
+    });
+    assert_eq!(selection.level(), SelectionLevel::Part);
+}

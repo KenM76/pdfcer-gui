@@ -1,7 +1,12 @@
 # `app::actions::strokestyle` — line width, dash and opacity of page objects
 
 Applies `Action::SetObjectStrokeStyle` through the Document-scoped
-`vector_edit` funnel with `EditSession::set_object_stroke_style`.
+`vector_edit` funnel with `EditSession::set_object_stroke_style`, or, when
+the action's `leaves` is set, with `EditSession::set_object_stroke_style_in_form`
+on leaves of one placed drawing (`PageObjects::leaves`). A leaf's geometry and
+`ctm` are already page space, so its scale is read the same way; `object_of`
+picks the object by index from the right list. The `_in_form` twin's
+`FormSurgeryOutcome::disclosures` are appended to the outcome's notes.
 
 ## Units
 
