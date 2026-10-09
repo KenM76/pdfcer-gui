@@ -61,7 +61,7 @@ pub(super) fn remove(doc: &mut OpenDoc, ids: &[String]) {
         Ok(bytes) => bytes,
         Err(detail) => return fail(doc, "write", &detail),
     };
-    let left = still_listed(&bytes, &removal);
+    let left = still_listed(doc, &bytes, &removal);
     if !left.is_empty() {
         trace_failed("still-present", &left.join(","));
         super::record_note(doc.edit_epoch, t::still_present(&left));
@@ -93,7 +93,8 @@ fn write(
 /// The removed ids the written copy still lists, the file identifier aside.
 /// An unreadable copy lists everything removed: it is not evidence of
 /// absence.
-fn still_listed(bytes: &[u8], removal: &MetadataRemoval) -> Vec<String> {
+fn still_listed(doc: &OpenDoc, bytes: &[u8], removal: &MetadataRemoval) -> Vec<String> {
+    use crate::app::settings::SettingsExt;
     let removed = removal
         .removed
         .iter()
@@ -101,7 +102,9 @@ fn still_listed(bytes: &[u8], removal: &MetadataRemoval) -> Vec<String> {
     let Ok(copy) = Document::from_bytes(bytes.to_vec()) else {
         return removed.map(|id| id.as_str().to_owned()).collect();
     };
-    let listed: std::collections::HashSet<MetadataItemId> = EditSession::new(copy)
+    let listed: std::collections::HashSet<MetadataItemId> = doc
+        .settings
+        .open_session(copy)
         .metadata_inventory()
         .items
         .into_iter()
