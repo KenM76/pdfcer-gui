@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **41 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **39 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -67,7 +67,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
-| **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **shipped — Pages ▸ Sheet size; request G136.** <!--namesake:MediaBoxChange--> `app::actions::pagesize::disclosures` words `MediaBoxChange::bleed_box_outside`, `MediaBoxChange::trim_box_outside` and `MediaBoxChange::art_box_outside` beside `crop_box_outside`, one sentence per box kind, and `page-size-applied` counts each; driven by `resizing_a_sheet_says_which_print_boxes_reach_past_it`, whose art box is the control. |
 
 ### Text
 
@@ -141,7 +140,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **shipped — View ▸ Display ▸ OCR text; request G169.** `canvas::ocrink` renders the visible region through `pdfcer_render::render_page_region` with `RenderOptions::with_invisible_text` in only-mode, on a background thread, and composites the raster over the page; driven by `the_ocr_layer_draws_a_word_as_its_edit_does`. |
 
 ---
 
@@ -217,7 +215,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **285 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **287 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -225,6 +223,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **shipped — Pages ▸ Sheet size; request G136.** <!--namesake:MediaBoxChange--> `app::actions::pagesize::disclosures` words `MediaBoxChange::bleed_box_outside`, `MediaBoxChange::trim_box_outside` and `MediaBoxChange::art_box_outside` beside `crop_box_outside`, one sentence per box kind, and `page-size-applied` counts each; driven by `resizing_a_sheet_says_which_print_boxes_reach_past_it`, whose art box is the control. |
 | **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **shipped for Insert image, a drop, and the stamp; the clipboard is still owed.** An inserted or dropped `.emf` is placed by `add_emf` (`app::actions::picture`), its `EmfImportNotes::summary()` shown in the window before Insert and repeated in the disclosures, an import refusal in the engine's words; driven by `insert_image_places_a_drawing`. A drop in Review places it by `add_emf_stamp`, signed, dated and at the pen's opacity. Still owed: Office's EMF copy on the clipboard (paste step P9). |
 | **Import an SVG as vector content** — `svg_import::import`, `EditSession::add_svg`/`add_svg_stamp`, `SvgImportNotes`, the modules `pdfcer_core::svg_import` and `pdfcer_core::edit::svg`, undo kind `CommandKind::AddSvg`, compiled behind the forwarded `svg-import` | **shipped for Insert image, a drop, and the stamp.** An inserted or dropped `.svg` is placed by `add_svg` (`app::actions::picture`), `SvgImportNotes::summary()` shown in the window before Insert and repeated in the disclosures; driven by `insert_image_places_a_drawing`, whose fixture's `<text>` is reported not carried. A drop in Review places it by `add_svg_stamp` (`a_dropped_picture_stamps_in_review`), signed, dated and at the pen's opacity. The `<pattern>` clause is moot: the notes carry no "pattern placed" signal to key a disclosure on, and tiled fills paint on the canvas since engine Pass 448.0 (the tiling-patterns row). |
 | **Decode GIF (87a/89a) on image import** — first frame plus transparency as `/SMask`; `ImportNotes::gif_frames_ignored`, `ImageFormat::Gif`, the module `pdfcer_core::image_import::gif` | **shipped — Insert ▸ Picture, a dropped `.gif`, and the picture picker's filter.** Our G096. `app::dropped::IMAGE_EXTENSIONS` and the picker take `gif`, and the placement disclosure names how many animation frames were left out from `ImageAuthorDisclosures::gif_frames_ignored`, beside the TIFF notes from the same struct (`tiff_pages_ignored`, `tiff_associated_alpha_unpremultiplied`, `tiff_white_is_zero_inverted`, `tiff_extra_samples_dropped`, `tiff_palette_assumed_8bit`). |
@@ -462,6 +461,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **shipped — View ▸ Display ▸ OCR text; request G169.** `canvas::ocrink` renders the visible region through `pdfcer_render::render_page_region` with `RenderOptions::with_invisible_text` in only-mode (carried as `RenderPolicy::invisible_text`; `RenderOptions::effective_backdrop` is then transparent), on a background thread, and composites the raster over the page; driven by `the_ocr_layer_draws_a_word_as_its_edit_does`. |
 | A font-coverage refusal names a working remedy instead of ending on "choose a font that covers it" — the standard-14 faces `format_text --set-font` would accept for the same character, filtered by `std14_faces_reachable`, carried in `Refusal::message` | **Shipped — the engine added `Refusal::remedy_faces` and this shell consumes it (`Pass 296.1`, requested and shipped 2026-09-11).** `textstyle::refusal_of` carries the list out of `FormatError::CoverageFailure` into `TextStyleRefusal::FaceLacksCharacters(Vec<String>)` (`app/actions/textstyle.rs:976`), and the status line names the faces that *would* show the run (`app/status/decline/line.rs`, `text/status/selection.rs`). No engine prose reaches the bar: what travels is a list of `/BaseFont` names pdfcer computed, and the words around them are this shell's. Empty is a real value — nothing pdfcer can offer covers the character — and falls back to the sentence that predates the field. The prose-parsing trap the old row named is closed rather than avoided, and nothing here calls the naive public `std14_faces_covering`. |
 | Rasterize an arbitrary page region, so magnification is bounded by viewport … | **Reachable — `render::worker` calls `render_page_region` for the canvas**, and `rasteroffpage` calls it for content outside the crop box. The engine's *no GUI code path calls it at all* is the single most consequential stale claim in this file: region rendering is what holds the cost of a zoom flat instead of quadratic, and it is what this shell's canvas is built on. |
 | Opt-in sub-pixel culling — `render-page --fast-subpixel` … | **Reachable — View ▸ Display ▸ *Skip tiny details* (`view.skip_tiny_details`)** sets `RenderOptions::subpixel_culling` on the canvas render request only (`render_on_worker`, the one assignment `only_the_canvas_worker_sets_stroke_display` allows), so print, preview and export draw everything. While it is on the status bar says how many pieces `subpixel_culled` left out. Driven in `print_shop`: 0 skipped with it off, all 400 of the fixture's specks with it on. |
