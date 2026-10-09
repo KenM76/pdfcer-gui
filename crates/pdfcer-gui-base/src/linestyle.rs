@@ -98,6 +98,9 @@ pub enum DashReading {
     Offered(LineStyle),
     /// A dash the file states in a pattern this shell does not offer.
     Foreign,
+    /// A multi-selection whose members disagree. Nothing in the list is
+    /// selected, and picking an entry sets every member to it.
+    Mixed,
 }
 
 impl DashReading {
@@ -110,16 +113,17 @@ impl DashReading {
         match self {
             Self::Solid => Some(LineStyle::Solid),
             Self::Offered(style) => Some(style),
-            Self::Foreign => None,
+            Self::Foreign | Self::Mixed => None,
         }
     }
 
     /// The text the closed chooser shows.
     #[must_use]
     pub const fn label(self) -> &'static str {
-        match self.selected() {
-            Some(style) => style.label(),
-            None => t::line_style_foreign(),
+        match (self, self.selected()) {
+            (_, Some(style)) => style.label(),
+            (Self::Mixed, None) => t::line_style_mixed(),
+            (_, None) => t::line_style_foreign(),
         }
     }
 }

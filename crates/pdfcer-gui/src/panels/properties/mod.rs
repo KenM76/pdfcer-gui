@@ -76,6 +76,8 @@ mod paint;
 pub mod refusedchar;
 /// One text run's width, typed in points (`G038`).
 mod runwidth;
+/// Line width, dash and opacity of selected page objects.
+mod strokestyle;
 
 pub use pdfcer_gui_base::swatch;
 /// A refused letter typed in a face from the font folders.
@@ -306,6 +308,7 @@ fn body_sections(
     let drew_run_width = runwidth::section(ui, doc, actions);
     let drew_geometry = geometry::section(ui, doc, state.geometry_mut(), actions);
     let drew_paint = paint::section(ui, doc, actions);
+    let drew_stroke_style = strokestyle::section(ui, doc, actions);
     let drew_layer = layer::section(ui, doc, actions);
     // **BOUND** — `OPERATOR_REQUESTS.md` O75: *has anything in this panel
     // described the selection?*
@@ -353,7 +356,9 @@ fn body_sections(
         // `paint::section` say something, so with the answer discarded the
         // panel draws a live Fill and Line control under *"Pick a row in the
         // Objects panel"* — the O75 shape exactly.
-        || drew_paint;
+        || drew_paint
+        // A selected picture has no colour row and still draws an opacity row.
+        || drew_stroke_style;
     // …and `object_section` is what USES that predicate, rather than
     // contributing to it. It is the last section, it is the only one that can
     // say *"nothing is selected"*, and it must say that only when nothing above

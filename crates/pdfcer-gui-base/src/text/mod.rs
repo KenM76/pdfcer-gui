@@ -229,6 +229,8 @@ pub mod screenannot;
 pub mod soundannot;
 /// Every word Pages ▸ Split… shows, its preview and its receipt.
 pub mod split_pages;
+/// The line-width, dash and opacity rows of Properties.
+pub mod strokestyle;
 /// Every word the hand-editing round trip (QDF) shows.
 pub mod structure;
 /// Every word the tools say: the one-line status strip, the Properties

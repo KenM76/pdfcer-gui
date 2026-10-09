@@ -302,8 +302,9 @@ const fn shift_end(segment: Segment, dx: f64, dy: f64) -> Segment {
     }
 }
 
-/// The mean of a matrix's two axis scales, for the stroke width.
-fn average_scale(m: Matrix) -> f64 {
+/// The mean of a matrix's two axis scales: user-space length to page points,
+/// for a stroke width or a dash length. `1.0` for a degenerate matrix.
+pub(crate) fn average_scale(m: Matrix) -> f64 {
     let sx = m.a.hypot(m.b);
     let sy = m.c.hypot(m.d);
     let mean = (sx + sy) / 2.0;

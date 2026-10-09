@@ -1418,6 +1418,14 @@ pub enum Action {
         /// The new stroke, or `None` to leave it.
         stroke: Option<[u8; 3]>,
     },
+    /// **Line width, dash and opacity of selected page objects** (G143, G155).
+    /// `style`'s width and dash are in **points**; the apply arm converts each
+    /// object's to its own user space. Argued in `app::actions::strokestyle`.
+    SetObjectStrokeStyle {
+        page: usize,
+        objects: Vec<usize>,
+        style: pdfcer_core::vector::StrokeStyle,
+    },
     /// **Go to a bookmark's destination** — the position half of `/XYZ`,
     /// `/FitH` and `/FitV`, and the whole of `/FitR`.
     ///

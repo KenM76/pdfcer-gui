@@ -142,6 +142,9 @@ mod funnel;
 /// The three arms that mark content for removal. Its header carries the seam
 /// argument and names the one thing deliberately absent from it.
 mod redact;
+/// Line width, dash and opacity of page objects, in points.
+mod strokestyle;
+pub(crate) use strokestyle::scale_of as stroke_scale;
 pub mod redactimg;
 /// **Redact what is selected on the page** — the third marking route, and the
 /// first that does not go through text. Its header carries why the search box

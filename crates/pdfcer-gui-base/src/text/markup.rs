@@ -118,6 +118,12 @@ pub const fn line_style_foreign() -> &'static str {
     "Dashed (the file's own pattern)"
 }
 
+/// The closed dash chooser over a selection whose members disagree.
+#[must_use]
+pub const fn line_style_mixed() -> &'static str {
+    "Mixed"
+}
+
 // ---------------------------------------------------------------------------
 // The palette grid — the name of each colour Acrobat marks up in
 // ---------------------------------------------------------------------------
@@ -334,6 +340,7 @@ mod tests {
             line_style_long_dash(),
             line_style_dash_dot(),
             line_style_foreign(),
+            line_style_mixed(),
         ];
         for name in names {
             assert!(!name.trim().is_empty());

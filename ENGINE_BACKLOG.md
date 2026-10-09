@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **39 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **38 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -94,7 +94,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Resize or rotate objects INSIDE a form XObject** — `transform_objects_in_form` | **wanted, at the pin since v0.81.0; request G144.** The grips on a part of a placed drawing resize and rotate through it. Its module is `pdfcer_core::edit::form_transform`. |
 | **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **wanted, at the pin since v0.81.0; request G147.** A click on text inside a placed drawing will pick the run through it. |
 | **Restack page objects** — `EditSession::restack_objects` | **wanted, at the pin since v0.81.0; request G157.** Format ▸ Arrange gains Bring to front, Send to back, Forward and Backward through it. Its modules are `pdfcer_core::edit::restack` and `pdfcer_core::vector::restack`; one `CommandKind::RestackObjects` per press. |
-| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **wanted, at the pin since v0.81.0; request G143.** Properties of a page path gain width, dash and opacity through it. Its modules are `pdfcer_core::edit::stroke_style` and `pdfcer_core::vector::stroke_style`, with the in-form twins in `pdfcer_core::edit::form_paint`; one `CommandKind::SetObjectStrokeStyle` per change. Reading the values back takes `PathObject::fill_alpha`, `PathObject::stroke_alpha`, `ImageObject::fill_alpha`, `ImageObject::stroke_alpha` and `ExtGStateParams::dash`. Refusals to word: `VectorEditError::InvalidStrokeStyle`, and `EditError::FormInheritsResources` for opacity inside a form with no resources of its own. |
 | **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **wanted, at the pin since v0.81.0; request G140.** It shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **wanted, at the pin since v0.81.0; request G138.** Every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. The canvas still box-tests an image. Owed: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. Its module is `pdfcer_core::vector::image_hit`; the canvas's point queries move to `hit_test_point_with` and `hit_test_point_all_with`. |
 | **Add a node to a path; convert a node (corner / smooth / symmetric) or a segment (line / curve)** — `pdfcer_core::edit::node_shape`, `pdfcer_core::vector::edit::node_shape` | **wanted, at the pin since v0.81.0; request G154.** Node editing gains Insert node and the corner, smooth and symmetric conversions through it, one `CommandKind::InsertNode`, `CommandKind::ConvertNode` or `CommandKind::ConvertSegment` each. Refusals to word: `VectorEditError::InvalidSegmentParameter`, `VectorEditError::NoSegmentHere`, `VectorEditError::NodeHasOneSide`. |
@@ -215,7 +214,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **287 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **288 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -327,6 +326,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Ask whether a page's model has changed — `EditSession::page_content_generation(page_index) -> u64` … | **Consumed — `app::cache` calls `page_content_generation`** to decide whether a cached decomposition still describes the page. It is the verb the engine's row says was asked for by name by `pdfcer-gui`, and it is in use. |
 | **Adopt the engine's deep marquee and delete ours** — `hit_test_rect_deep` / `FormMarquee` (`pdfcer-core/src/vector/hit.rs`) … | **Reachable, not driven — our extension is deleted.** `provider::hit_test_rect` is one call to `hit_test_rect_deep` plus a `HitTarget` → `TargetId` mapping; the hand-written leaf loop is gone, and `FormMarquee` is a parameter of `canvas::TargetProvider::hit_test_rect` rather than a constant in one impl. This shell passes `Include` where the engine defaults to `Exclude`, on purpose: here a form LEAF is not an edit operand (`canvas::moving::Refusal::InsideForm`) and the CONTAINER is, so `Exclude` would hand the operator a selection every verb refuses. Safe only because `canvas::marquee::without_page_wrappers` (O88) drops a page-sized wrapper from a crossing band. The result SET is unchanged; only the ORDER moved, to the engine's `paint_order` interleave, which all three consumers ignore. The both-policies assertion was falsified by planting a hard-coded `Include`. |
 | Selectable-object diagnostics: when the model disagrees with the canvas. Four … | **shipped.** All four are said, and none on the canvas. `oc_sections_hidden` is a status-line finding (`app::status::notes::findings`). The three that say *the object list and the picture disagree* — `paths_invisible_by_alpha`, `shadings_unmodelled`, `paths_with_undecoded_colour` — are one line each under the Objects panel's summary (`panels::objects::disagree::lines`), where the disagreement is met, rather than in the Render-diagnostics dialog, which describes the picture alone. Driven: `objects_panel_says_where_the_list_and_page_disagree` on `fixtures/object-disagreements.pdf`. |
+| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **shipped — Properties ▸ Line and opacity; requests G143 and G155.** A page path's width, dash and both opacities, and a picture's opacity, typed in points; `app::actions::strokestyle` converts per path, one call per CTM scale folded with `EditSession::coalesce_last` (workaround filed as G174). The in-form twins are not wired (G142). Its modules are `pdfcer_core::edit::stroke_style` and `pdfcer_core::vector::stroke_style`, with the in-form twins in `pdfcer_core::edit::form_paint`; one `CommandKind::SetObjectStrokeStyle` per change. Reading the values back takes `PathObject::fill_alpha`, `PathObject::stroke_alpha`, `ImageObject::fill_alpha`, `ImageObject::stroke_alpha` and `ExtGStateParams::dash`. Refusals to word: `VectorEditError::InvalidStrokeStyle`, and `EditError::FormInheritsResources` for opacity inside a form with no resources of its own. |
 
 ### ce dimensions
 
@@ -581,7 +581,7 @@ passes: engine time the shell cannot move off the UI thread.
 The engine verbs a shape made part of the page (O288 item 2) still lacks.
 
 - **G142** — no in-form paint verb: a markup made part of the page can no longer be recoloured.
-- **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set. Fixed on engine main as `EditSession::set_object_stroke_style` with `vector::StrokeStyle`, not in the pinned tag; wire it when the pin carries it.
+- **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set. Answered as `EditSession::set_object_stroke_style` with `vector::StrokeStyle`; wired in Properties ▸ Line and opacity.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated.
 - **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. The shell discloses it: a leaf-only copy is `clipboard::Refusal::InsideForm`, a mixed copy names the leaves left behind.
 - **G146** — a unit change carried the scale number, not the calibration. Answered as `ScaleState::in_unit`, `EditSession::set_group_unit` and `resolve_style` converting a per-dimension override, at the pin since v0.81.0. The shell still converts in `units::scale_in_unit`; calling `set_group_unit` deletes the helper.
@@ -598,13 +598,14 @@ Each verified absent in the pin and on engine main before filing.
 - **G152** — a text markup's `/QuadPoints` cannot be re-spanned.
 - **G153** — `set_markup_style` drops `interior` on a Line, so closed arrowheads cannot be filled.
 - **G154** — no verb adds a node to a page path or converts a node or segment kind.
-- **G155** — an image cannot be made translucent.
+- **G155** — an image cannot be made translucent. Answered by the same verb's alphas; wired as Picture opacity.
 - **G156** — an image cannot be replaced in place.
 - **G157** — page objects cannot be restacked; only annotations can.
 - **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`.
 - **G159** — `StyleOverrides` has no dash or opacity for a ce dimension.
 - **G160** — `rotate_widget` takes quarter turns only; `WidgetEdit` has no opacity.
 - **G161** — a link cannot be created, re-targeted or re-bordered.
+- **G174** — `set_object_stroke_style` takes lengths in each path's user space, so "5 pt" on a selection at two scales needs a call per scale. Workaround report; the shell groups and folds meanwhile.
 
 ## Filed requests for Word-like text editing — not verdict rows
 

@@ -1197,6 +1197,11 @@ impl PdfcerApp {
                         })
                 });
             }
+            Action::SetObjectStrokeStyle {
+                page,
+                objects,
+                style,
+            } => super::strokestyle::apply(doc, page, &objects, &style),
             Action::Undo => super::history::history_step(doc, super::history::Direction::Undo),
             Action::Redo => super::history::history_step(doc, super::history::Direction::Redo),
             // Reaching here means the frame's drain was removed or moved.

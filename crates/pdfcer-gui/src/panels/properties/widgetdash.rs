@@ -25,14 +25,15 @@ pub const REGION: &str = "properties.widget_edit.dash";
 /// The patterns offered, in the order the picker lists them.
 const DASHES: [LineStyle; 3] = [LineStyle::Dashed, LineStyle::LongDash, LineStyle::DashDot];
 
-/// The trace token for what the file says.
-const fn token(reading: DashReading) -> &'static str {
+/// The trace token for a dash reading.
+pub(crate) const fn token(reading: DashReading) -> &'static str {
     match reading {
         DashReading::Solid | DashReading::Offered(LineStyle::Solid) => "solid", // ui-text-exempt: trace token
         DashReading::Offered(LineStyle::Dashed) => "dashed", // ui-text-exempt: trace token
         DashReading::Offered(LineStyle::LongDash) => "long-dash", // ui-text-exempt: trace token
         DashReading::Offered(LineStyle::DashDot) => "dash-dot", // ui-text-exempt: trace token
         DashReading::Foreign => "foreign",                   // ui-text-exempt: trace token
+        DashReading::Mixed => "mixed",                       // ui-text-exempt: trace token
     }
 }
 

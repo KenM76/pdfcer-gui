@@ -44,8 +44,6 @@ verb in the pin and no route yet:
 - **Align and Distribute** for leaves inside a placed drawing
   (`move_objects_each_in_form`).
 - **A typed rotation angle** for page objects (`transform_objects`).
-- **Width, dash and opacity for page paths** once the pin carries G143's
-  `set_object_stroke_style`.
 
 ---
 
