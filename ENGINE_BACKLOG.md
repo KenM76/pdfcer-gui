@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **46 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `wanted` — a real gap — **44 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -144,8 +144,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
 | **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **wanted, at the pin since v0.81.0; request G169.** The OCR layer (O289 item 15) paints each word itself in `canvas::ocrink`; a render with `RenderPolicy::invisible_text` set and `only` true, composited over the page (`RenderOptions::effective_backdrop` is transparent then), replaces it. |
-| **Layout-aware OCR (PaddleOCR-VL)** — finds the page's regions: `pdfcer_core::ocr::layout`, `pdfcer_core::ocr::engine_layout`, `pdfcer_core::ocr::otsl`, `pdfcer_core::ocr::vl_page` | **wanted, at the pin since v0.81.0; request G167.** The OCR window's layer-per-region choice (O289 item 17) sets `OcrLayerOptions::region_layers`; it needs `layout.onnx` in the add-on, which the shipped paddle-vl folder lacks. |
-| **OCR word-list choice** — `RunOptions::with_dictionaries` | **wanted, at the pin since v0.81.0; request G166.** The OCR window's word-list choice (O289 item 16) is drafted against it. |
 | **Skew detection and deskew of a scanned image** — `detect_skew`, `pdfcer_core::deskew`, `pdfcer_core::edit::deskew` | **wanted, at the pin since v0.81.0; request G165.** File ▸ Straighten scans (O289 item 13) is drafted against it, one `CommandKind::DeskewImage` per page; `EditError::DeskewUnsupported` is a refusal to word. |
 
 ---
@@ -222,7 +220,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **280 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **282 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -317,6 +315,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Program-type OCR add-ons** — a folder may carry an executable engine; `pdfcer-ocr-host` (`OcrRunner`, `RunOptions`, `ProgramPolicy`), `check_runnable`, settings key `ocr_program_addons` | **shipped.** Discovery and runnability are `OcrRunner::check_runnable(model, policy)`; Settings ▸ OCR models carries *Allow models that run a separate program* (`ocr_program_addons`, default allow, only `refuse` written). A refused program add-on is listed disabled with `refused-by-policy`; a remembered one chooses nothing. `RunOptions::dpi` is fixed at load while this shell rasterises each page at its own fitted dpi, so a program add-on is told the first page's dpi for every page (workaround, reported as G119). Driven and falsified: `a_program_ocr_addon_runs_and_is_disclosed`. |
 | **PaddleOCR-VL engine** — vision-language OCR compiled behind `ocr-vl`, weights as an add-on folder; the modules `pdfcer_core::ocr::engine_paddle_vl`, `pdfcer_core::ocr::vl_pre`, `pdfcer_core::ocr::vl_decode`, `pdfcer_core::ocr::vl_tokenizer` and `pdfcer_core::ocr::json_lite` | **shipped — listed and runnable; the run is undriven.** `ocr-vl` is a default feature of this shell and is forwarded to `pdfcer-ocr-host`. A VL add-on folder lists by its manifest label and runs through `OcrRunner`; `OcrRunner::disclosure()` is shown in the OCR report. No VL weights exist on this machine, so only the listing is driven (`an_extra_ocr_folder_adds_its_models_to_the_dropdown`: `why=missing-files` for a folder without weights). |
 | **Every in-process OCR engine, including PaddleOCR-VL add-ons, runs through `pdfcer-ocr-host`'s `OcrRunner`, not a separate route per shell** — `ocr-vl` on `pdfcer-ocr-host`, `OcrRunner::check_runnable` accepting `engine = paddle-vl`, `OcrRunner::disclosure()` (our `G102`, Pass 442.5) | **shipped.** Every recogniser — ocrs, OCRcer, PaddleOCR, PaddleOCR-VL and program add-ons — loads through `OcrRunner::load` and recognises through `OcrRunner::recognize`; the shell's per-engine model tables are deleted. Confidence is `OcrRunner::reports_confidence()` of the loaded runner. |
+| **Layout-aware OCR (PaddleOCR-VL)** — finds the page's regions: `pdfcer_core::ocr::layout`, `pdfcer_core::ocr::engine_layout`, `pdfcer_core::ocr::otsl`, `pdfcer_core::ocr::vl_page` | **shipped — File ▸ Recognise text… *Read by layout*.** Drawn for PaddleOCR-VL when its folder holds `layout.onnx` (`ocr::reads_by_layout`, restating the engine's rule until G170). The run sets `RunOptions::with_layout`; `app::actions::ocrlayers::write` puts each region's words on its own layer with `OcrLayerOptions::on_region_layer` (filling `OcrLayerOptions::region_layers`), nests each under *Recognised text* with `EditSession::move_layer_node`, all in one undo step. Remove OCR text deletes the region layers it empties by trial delete until G173. The shipped paddle-vl add-on lacks `layout.onnx`, so no checkbox is drawn there until it is added. Driven by `reading_by_layout_layers_each_region_apart`. |
+| **OCR word-list choice** — `RunOptions::with_dictionaries` | **shipped — File ▸ Recognise text… *No word lists* and *Add word file…*.** `dialogs::ocr_reading` builds the `Dictionaries` sent with the run; *No word lists* is drawn only where the engine accepts it (`ocr::can_drop_word_lists`) and word files only for a program add-on (`ocr::takes_word_files`), restating the engine's private `check_dictionaries` until G170. Driven by `word_lists_reach_the_program_that_reads_them` against the engine's stand-in Tesseract. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -620,14 +620,15 @@ channel. They join a verdict section when the engine answers.
 
 ## Filed requests for Ken's Batch 2 (O289) — not verdict rows
 
-Filed in the request channel for O289's items. All six are answered and at the pin since v0.81.0.
+Filed in the request channel for O289's items. G164 to G169 are answered and at the pin since v0.81.0; G173 is open.
 
 - **G164** — no inventory of a file's metadata and no verb to remove it (item 21). Answered as `EditSession::metadata_inventory` and `remove_metadata`; not yet wired.
 - **G165** — no skew detection or straightening for scanned pages and images (item 13). Answered as `detect_image_skew` and `deskew_image`; not yet wired.
-- **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; not yet wired.
-- **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; not yet wired.
+- **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; wired.
+- **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; wired.
 - **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; the viewer computes the directions itself until it is wired.
 - **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Answered as `RenderOptions::with_invisible_text`; `canvas::ocrink` still lays each run out through `edit_text_preview` until the render replaces it.
+- **G173** — removing an OCR layer does not say which region layers it emptied (item 17). Open; the GUI deletes them by trial delete meanwhile.
 
 ## Filed requests for pasting in from other programs — not verdict rows
 

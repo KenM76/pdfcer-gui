@@ -17,14 +17,15 @@ chosen.**
 3. Launch off-screen on `fixtures/synthetic-image-only.pdf`, open File ›
    Recognise text. Assert `ocr-model name=ui-verify-tess engine=tesseract
    runnable=yes` and `ocr-model-start chosen=ui-verify-tess`.
-4. Run. Assert `ocr-started engine=tesseract`, then `ocr-applied words=4
+4. Run. Assert `ocr-started engine=tesseract`, then `ocr-applied words=5
    scored=true disclosed>=1 program=` ending in
    `ui-verify-tess/tesseract.exe` (either separator).
 5. Relaunch with `ocr_program_addons = refuse` added. Assert the entry lists
    `runnable=no why=refused-by-policy` and `chosen=none`.
 
-The stand-in speaks Tesseract's command-line protocol and returns four fixed
-words at confidence 90, so step 4's count and `scored=true` can only come from
+The stand-in speaks Tesseract's command-line protocol and returns five
+words at confidence 90 (its four fixed words and one naming the `--dpi` it
+was given), so step 4's count and `scored=true` can only come from
 the program having run.
 
 # Falsified

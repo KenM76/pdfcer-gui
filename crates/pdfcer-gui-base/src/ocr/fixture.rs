@@ -605,6 +605,8 @@ mod tests {
             // guard, and it keeps the test honest if the fixture ever grows a
             // caption.
             skip_pages_with_text: false,
+            dictionaries: pdfcer_ocr_host::Dictionaries::builtin(),
+            by_layout: false,
             // Unread, because the guard above is off. The default rather than a
             // configured set, because there is no `Settings` on this thread and
             // nothing here depends on one.

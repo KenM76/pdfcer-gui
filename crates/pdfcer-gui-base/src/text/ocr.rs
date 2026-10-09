@@ -152,6 +152,72 @@ pub fn skip_pages_with_text_tooltip() -> &'static str {
     "Recognising a page whose text came from another program adds a second invisible copy of it, so Find matches and copied text come out doubled. Text pdfcer recognised earlier is replaced instead. Turn this off only if you know a page's existing text is wrong, or to redo pdfcer's own recognition."
 }
 
+/// The heading over the word-list choices.
+#[must_use]
+pub fn word_lists_heading() -> &'static str {
+    "Word lists"
+}
+
+/// Recognise with the engine's own word lists.
+#[must_use]
+pub fn word_lists_builtin() -> &'static str {
+    "Use the built-in word lists"
+}
+
+/// Its tooltip.
+#[must_use]
+pub fn word_lists_builtin_tooltip() -> &'static str {
+    "The recogniser prefers dictionary words when a word is hard to read. Best for ordinary prose."
+}
+
+/// Recognise without them.
+#[must_use]
+pub fn word_lists_none() -> &'static str {
+    "Read exactly what is printed (no built-in word lists)"
+}
+
+/// Its tooltip.
+#[must_use]
+pub fn word_lists_none_tooltip() -> &'static str {
+    "For drawings and schedules: part numbers, grid labels and codes are not \"corrected\" into dictionary words. Some recognisers cannot turn their lists off; they say so when you press Recognise."
+}
+
+/// Adds a file of the operator's own words.
+#[must_use]
+pub fn add_word_file() -> &'static str {
+    "Add a word file…"
+}
+
+/// Its tooltip.
+#[must_use]
+pub fn add_word_file_tooltip() -> &'static str {
+    "A plain text file, one word per line — project names, part numbers, terms the recogniser should expect. Not every recogniser takes one; it says so when you press Recognise."
+}
+
+/// Removes one added word file.
+#[must_use]
+pub fn remove_word_file() -> &'static str {
+    "Remove"
+}
+
+/// The read-by-layout toggle.
+#[must_use]
+pub fn by_layout() -> &'static str {
+    "Read by layout (tables, titles, captions…)"
+}
+
+/// Its tooltip.
+#[must_use]
+pub fn by_layout_tooltip() -> &'static str {
+    "Finds the page's regions first and reads each as what it is. Tables, titles, captions, headers and footers each get their own layer in the Layers panel, inside the recognised-text layer. Slower."
+}
+
+/// The disclosure naming the word lists a run used, in the engine's words.
+#[must_use]
+pub fn word_lists_used(note: &str) -> String {
+    format!("Word lists: {note}.")
+}
+
 /// Its tooltip.
 #[must_use]
 pub fn run_tooltip() -> &'static str {
@@ -412,6 +478,50 @@ pub fn layers_removed(layers: usize, pages: usize) -> String {
 #[must_use]
 pub fn group_name() -> &'static str {
     "Recognised text"
+}
+
+/// The layer one kind of layout region is written on, nested in
+/// [`group_name`]'s, so it can be hidden on its own.
+#[must_use]
+pub fn region_group_name(region: pdfcer_core::ocr::layout::RegionGroup) -> String {
+    use pdfcer_core::ocr::layout::RegionGroup as G;
+    let what = match region {
+        G::Text => "body text",
+        G::Title => "titles",
+        G::Caption => "captions",
+        G::Table => "tables",
+        G::Figure => "figures",
+        G::Formula => "formulas",
+        G::Chart => "charts",
+        G::Seal => "seals and stamps",
+        G::Header => "headers",
+        G::Footer => "footers",
+        // A group added to the engine after this catalog: its own name.
+        _ => region.as_str(),
+    };
+    format!("{}: {what}", group_name())
+}
+
+/// Whether `name` is a [`region_group_name`]: the recognised-text layer's name
+/// and a colon, whatever the region.
+#[must_use]
+pub fn is_region_group_name(name: &str) -> bool {
+    name.strip_prefix(group_name())
+        .is_some_and(|rest| rest.starts_with(": "))
+}
+
+/// Added after a write that read by layout: the region layers its words went on.
+#[must_use]
+pub fn regions_layered(names: &[String]) -> String {
+    format!(
+        "Text read from tables, titles and other page regions is also on its own layer inside \"{}\": {}.",
+        group_name(),
+        names
+            .iter()
+            .map(|n| format!("\"{n}\""))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
 }
 
 /// Added after a write that made the layer.

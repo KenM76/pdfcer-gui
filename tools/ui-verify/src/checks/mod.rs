@@ -415,6 +415,7 @@ pub mod new_document;
 pub mod new_document_size;
 
 pub mod ocr;
+pub mod ocr_by_layout;
 
 /// A Settings OCR folder reaching the model drop-down.
 pub mod ocr_extra_folder;
@@ -1303,6 +1304,7 @@ pub mod draft_selection;
 pub mod marquee_table;
 
 pub mod ocr_text_select;
+pub mod ocr_word_lists;
 
 pub mod save_after_edit;
 

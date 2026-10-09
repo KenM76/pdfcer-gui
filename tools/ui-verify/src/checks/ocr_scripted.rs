@@ -204,6 +204,19 @@ pub(crate) fn recognise(
     tag: &str,
     save: bool,
 ) -> Result<(Trace, String)> {
+    recognise_choosing(ctx, report, pdf, engine, tag, save, &[])
+}
+
+/// [`recognise`], clicking each of `choices` (dialog regions) before Run.
+pub(crate) fn recognise_choosing(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    pdf: &Path,
+    engine: &str,
+    tag: &str,
+    save: bool,
+    choices: &[&str],
+) -> Result<(Trace, String)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -287,6 +300,9 @@ pub(crate) fn recognise(
              at a packaged build.",
             exe.display()
         )));
+    }
+    for choice in choices {
+        click(choice)?;
     }
     click(RUN)?;
     let mut waited = 0;

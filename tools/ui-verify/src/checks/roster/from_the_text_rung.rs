@@ -86,6 +86,8 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         }),
         Box::new(ocr_reading_order::RecognisedTextReadsColumnByColumn),
         Box::new(ocr_layer_group::RecognisedTextIsALayersRow),
+        Box::new(ocr_by_layout::ReadingByLayoutLayersEachRegionApart),
+        Box::new(ocr_word_lists::WordListsReachTheProgramThatReadsThem),
         Box::new(ocr_fetch_models::OcrModelsDownload),
         Box::new(labels_scripted::PageLabelsWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),

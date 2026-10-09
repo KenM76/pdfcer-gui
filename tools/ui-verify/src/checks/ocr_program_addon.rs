@@ -5,8 +5,9 @@
 //! is chosen in its place.
 //!
 //! The program is the engine's stand-in, `pdfcer-ocr-test-engine.exe`, copied
-//! in as `tesseract.exe`: it speaks Tesseract's protocol and answers with four
-//! fixed words, so the check needs no Tesseract install.
+//! in as `tesseract.exe`: it speaks Tesseract's protocol and answers with five
+//! words naming how it was run (the last is the `--dpi` it was given), so the
+//! check needs no Tesseract install.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/ocr_program_addon.md`.
 
@@ -28,14 +29,15 @@ const FIXTURE: &str = "fixtures/synthetic-image-only.pdf";
 const STAND_IN_VAR: &str = "UI_VERIFY_OCR_TEST_ENGINE";
 const STAND_IN: &str = "pdfcer-ocr-test-engine.exe";
 /// The add-on the check plants.
-const ADDON: &str = "ui-verify-tess";
+pub(crate) const ADDON: &str = "ui-verify-tess";
 const PROGRAM: &str = "tesseract.exe";
 const DATA: &str = "tessdata/eng.traineddata";
 /// Regions.
 const COMMAND: &str = "ribbon.item.file.ocr";
 const RUN: &str = "ocr-run";
-/// The stand-in answers with exactly this many words.
-const STAND_IN_WORDS: usize = 4;
+/// The stand-in answers with exactly this many words when run with the
+/// built-in word lists and no word file.
+pub(crate) const STAND_IN_WORDS: usize = 5;
 /// How many 20-frame waits recognition gets.
 const RECOGNITION_POLLS: u32 = 40;
 
@@ -72,20 +74,20 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>
     report.note(format!("planted {}", root.join(ADDON).display()));
 
     let allowed = format!("ocr_folder = {}\nocr_model = {ADDON}\n", root.display());
-    let session = launch(ctx, &exe, &allowed, "allowed", report)?;
+    let session = launch(ctx, &exe, &allowed, "allowed", &[], report)?;
     if let Some(failure) = run_it(&session.0, &session.1, ctx, report)? {
         return Ok(Some(failure));
     }
     drop(session);
 
     let refused = format!("{allowed}ocr_program_addons = refuse\n");
-    let session = launch(ctx, &exe, &refused, "refused", report)?;
+    let session = launch(ctx, &exe, &refused, "refused", &[], report)?;
     refused_listing(&session.0, &session.1, ctx, report)
 }
 
 /// The stand-in program: [`STAND_IN_VAR`], else beside the profile's built
 /// binary (the driven copy lives in a per-check directory without it).
-fn stand_in(ctx: &CheckContext) -> Result<PathBuf> {
+pub(crate) fn stand_in(ctx: &CheckContext) -> Result<PathBuf> {
     let built = Path::new(ctx.profile.default_exe).with_file_name(STAND_IN);
     let path = std::env::var_os(STAND_IN_VAR).map_or(built, PathBuf::from);
     if path.is_file() {
@@ -100,7 +102,7 @@ fn stand_in(ctx: &CheckContext) -> Result<PathBuf> {
 
 /// Plant `root/ui-verify-tess`: the stand-in as `tesseract.exe`, one
 /// language file, and a program manifest hashing both.
-fn plant(root: &Path, program: &Path) -> Result<()> {
+pub(crate) fn plant(root: &Path, program: &Path) -> Result<()> {
     let _ = std::fs::remove_dir_all(root);
     let dir = root.join(ADDON);
     let io = |what: &str, e: std::io::Error| Error::new(format!("cannot {what}: {e}"));
@@ -131,12 +133,13 @@ fn sha256(path: &Path) -> Result<String> {
         .ok_or_else(|| Error::new(format!("certutil gave no SHA-256 for {}", path.display())))
 }
 
-/// Seed the preferences and open the fixture.
-fn launch(
+/// Seed the preferences and open the fixture, with `env` set as well.
+pub(crate) fn launch(
     ctx: &CheckContext,
     exe: &Path,
     prefs: &str,
     tag: &str,
+    env: &[(&str, &str)],
     report: &mut CheckReport,
 ) -> Result<(Session, ScriptedPointer)> {
     let viewport_env = ctx
@@ -158,7 +161,10 @@ fn launch(
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         (SHELL_DIAG_ENV.0, SHELL_DIAG_ENV.1),
         (viewport_env, OFFSCREEN),
-    ] {
+    ]
+    .into_iter()
+    .chain(env.iter().copied())
+    {
         spec.env.push((k.to_owned(), v.to_owned()));
     }
     spec.place = false;
@@ -176,7 +182,7 @@ fn launch(
 }
 
 /// Open Recognise text and return the add-on's `ocr-model` line.
-fn open_dialog(
+pub(crate) fn open_dialog(
     session: &Session,
     pointer: &ScriptedPointer,
     ctx: &CheckContext,

@@ -85,7 +85,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 2..4: the row, its removal and the undo, on the saved file ---------
-    let (session, pointer, ui_rect) = launch(ctx, &copy)?;
+    let (session, pointer, ui_rect) = launch(ctx, &copy, "ocr-layer-group")?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
     session.settle(45);
@@ -96,9 +96,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     Ok(outcome)
 }
 
-fn launch(
+/// Launch the binary on `pdf`, off the desktop, with the scripted pointer.
+pub(crate) fn launch(
     ctx: &CheckContext,
     pdf: &std::path::Path,
+    tag: &str,
 ) -> Result<(Session, ScriptedPointer, &'static str)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -114,7 +116,7 @@ fn launch(
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("ocr-layer-group.panel.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{tag}.panel.trace.txt")));
     spec.pdf = Some(pdf.to_path_buf());
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -127,7 +129,7 @@ fn launch(
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("ocr-layer-group.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{tag}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     Ok((session, pointer, ui_rect))
 }
@@ -156,29 +158,7 @@ fn row_remove_undo(
         )));
     }
     report.note("the saved file lists the layer in the Layers panel");
-
-    let click = |region: &str| -> Result<()> {
-        let trace = session.trace()?;
-        let (rect, viewport) = declared_in(&trace, ui_rect, region).ok_or_else(|| {
-            Error::new(format!(
-                "no `{region}` region. Declared under `ribbon.item.file`: {}.",
-                list(&declared_names(&trace, ui_rect, "ribbon.item.file"))
-            ))
-        })?;
-        pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
-        session.settle(15);
-        Ok(())
-    };
-    click(TAB)?;
-    if declared(&session.trace()?, ui_rect, ITEM).is_none()
-        && declared(&session.trace()?, ui_rect, COLLAPSED).is_some()
-    {
-        click(COLLAPSED)?;
-    }
-    click(ITEM)?;
-    session.settle(20);
-    click(COMMIT)?;
-    session.settle(30);
+    remove_all(session, pointer, ui_rect)?;
     let trace = session.trace()?;
     let Some(applied) = trace.last(APPLIED) else {
         return Ok(Some(format!(
@@ -226,4 +206,35 @@ fn row_remove_undo(
     }
     report.note("one Ctrl+Z put the words and the layer back");
     Ok(None)
+}
+
+/// File ▸ Remove OCR text, every page and engine, committed.
+pub(crate) fn remove_all(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<()> {
+    let click = |region: &str| -> Result<()> {
+        let trace = session.trace()?;
+        let (rect, viewport) = declared_in(&trace, ui_rect, region).ok_or_else(|| {
+            Error::new(format!(
+                "no `{region}` region. Declared under `ribbon.item.file`: {}.",
+                list(&declared_names(&trace, ui_rect, "ribbon.item.file"))
+            ))
+        })?;
+        pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
+        session.settle(15);
+        Ok(())
+    };
+    click(TAB)?;
+    if declared(&session.trace()?, ui_rect, ITEM).is_none()
+        && declared(&session.trace()?, ui_rect, COLLAPSED).is_some()
+    {
+        click(COLLAPSED)?;
+    }
+    click(ITEM)?;
+    session.settle(20);
+    click(COMMIT)?;
+    session.settle(30);
+    Ok(())
 }

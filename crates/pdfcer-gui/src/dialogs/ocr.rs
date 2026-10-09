@@ -88,6 +88,8 @@ enum Phase {
         disclosure: Option<String>,
         /// The separate program that read the pages, when one did.
         program: Option<ProgramRun>,
+        /// The word lists the run used, in the engine's words.
+        word_lists: String,
     },
     /// **The operator pressed Cancel.** Nothing was kept and nothing written.
     ///
@@ -121,6 +123,8 @@ pub struct OcrDialog {
     skip_pages_with_text: bool,
     /// The models on offer and the one chosen.
     models: super::ocr_model::ModelPicker,
+    /// Word lists and read-by-layout.
+    reading: super::ocr_reading::Reading,
     /// The engine token of the run this dialog started, for the preference.
     engine: String,
     /// The model a run just started with; [`Self::show`] stores it and its
@@ -178,6 +182,7 @@ impl OcrDialog {
             scope: PageScope::new(doc.view.page_index, picked),
             skip_pages_with_text: true,
             models,
+            reading: super::ocr_reading::Reading::default(),
             engine,
             remember: None,
             traced_progress: usize::MAX,
@@ -304,6 +309,7 @@ impl OcrDialog {
                     confidence: recognised.confidence,
                     disclosure: recognised.disclosure.clone(),
                     program: recognised.program.clone(),
+                    word_lists: recognised.dictionary_note.clone(),
                     // Carried into the outcome so the sentence the operator
                     // reads afterwards can say the run ended early. A partial
                     // layer reported as a whole one is the failure this whole
@@ -469,6 +475,7 @@ impl OcrDialog {
                 confidence,
                 disclosure,
                 program,
+                word_lists,
             } => {
                 // **What this says now, and what it no longer has to.**
                 //
@@ -510,6 +517,7 @@ impl OcrDialog {
                     .iter()
                     .cloned()
                     .chain(program.as_ref().map(program_sentence))
+                    .chain(std::iter::once(t::word_lists_used(word_lists)))
                     .collect();
                 Self::answered(ui, &theme, confidence_sentence(scored), &disclosures);
                 let ran = program
@@ -566,6 +574,8 @@ impl OcrDialog {
             return;
         }
         self.models.show(ui);
+        self.reading
+            .show(ui, self.models.chosen().map(|c| &c.model));
         let count = doc.pages.len();
         self.scope_group(ui, count);
         ui.add_space(10.0);
@@ -633,10 +643,13 @@ impl OcrDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "ocr-started engine={} page={} models={} source={source} model={name}",
+                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={}",
                 model.engine,
                 self.scope.page_index,
                 folder.display(),
+                self.reading.dictionaries(&model).uses_builtin(),
+                self.reading.dictionaries(&model).user_words().len(),
+                self.reading.by_layout(&model),
             )
         });
         self.phase = Phase::Working(Job::spawn(Request {
@@ -649,6 +662,8 @@ impl OcrDialog {
                 doc.settings.extract_options()
             },
             policy: self.models.policy(),
+            dictionaries: self.reading.dictionaries(&model),
+            by_layout: self.reading.by_layout(&model),
             model,
         }));
         self.remember = Some(name);

@@ -45,6 +45,7 @@ pub mod fetch;
 mod engines;
 pub use engines::{EngineId, OCRCER_MODEL_FILE, available};
 
+pub use pdfcer_ocr_host::Dictionaries;
 use pdfcer_ocr_host::{OcrRunner, ProgramPolicy, ProgramSource, RunOptions};
 
 use std::path::{Path, PathBuf};
@@ -159,6 +160,9 @@ pub struct Recognised {
     /// The engine's own disclosure of what it inferred (PaddleOCR's
     /// dictionary, PaddleOCR-VL's reading), verbatim.
     pub disclosure: Option<String>,
+    /// Which word lists the run used, in the engine's words
+    /// (`OcrRunner::dictionary_note`).
+    pub dictionary_note: String,
     /// The separate program that read the pages, for a program add-on.
     pub program: Option<ProgramRun>,
     /// The resolution the page was actually rasterized at.
@@ -361,6 +365,48 @@ pub struct Request {
     pub model: pdfcer_core::ocr::addons::OcrModel,
     /// Whether a program add-on may run.
     pub policy: ProgramPolicy,
+    /// The word lists recognition may use. An engine that cannot honour the
+    /// choice refuses the run before loading anything, in its own sentence.
+    pub dictionaries: Dictionaries,
+    /// Read each page region by region with the layout model, so blocks carry
+    /// the region they came from (see [`reads_by_layout`]).
+    pub by_layout: bool,
+}
+
+/// Whether `model` takes the operator's word files: only Tesseract does, and
+/// every program add-on is Tesseract. Restates the engine's rule (G170).
+#[must_use]
+pub fn takes_word_files(model: &pdfcer_core::ocr::addons::OcrModel) -> bool {
+    model.kind() == pdfcer_core::ocr::addon_manifest::AddonKind::Program
+}
+
+/// Whether `model` can read with its built-in word lists off: all but
+/// PaddleOCR-VL, whose language model cannot be turned off. Restates the
+/// engine's rule (G170).
+#[must_use]
+pub fn can_drop_word_lists(model: &pdfcer_core::ocr::addons::OcrModel) -> bool {
+    // ui-text-exempt: an engine token, never displayed.
+    model.engine != "paddle-vl"
+}
+
+/// Whether `model` can read by layout: `paddle-vl` with the layout model in
+/// its folder. Restates the engine's rule until it can be asked (G170).
+#[must_use]
+pub fn reads_by_layout(model: &pdfcer_core::ocr::addons::OcrModel) -> bool {
+    #[cfg(feature = "ocr-vl")]
+    {
+        // ui-text-exempt: an engine token, never displayed.
+        model.engine == "paddle-vl"
+            && model
+                .folder
+                .join(pdfcer_core::ocr::engine_layout::LAYOUT_MODEL)
+                .is_file()
+    }
+    #[cfg(not(feature = "ocr-vl"))]
+    {
+        let _ = model;
+        false
+    }
 }
 
 /// The worker body. Runs on the spawned thread; touches no GUI type.
@@ -477,6 +523,7 @@ pub(in crate::ocr) fn recognise(
         engine: request.model.engine.clone(),
         confidence: recogniser.reports_confidence(),
         disclosure: recogniser.disclosure(),
+        dictionary_note: recogniser.dictionary_note(),
         program: ProgramRun::of(&recogniser),
         effective_dpi: dpi,
         words_recognised: total_words,
@@ -494,7 +541,9 @@ fn load(request: &Request) -> Result<OcrRunner, Refusal> {
         .first()
         .and_then(|&i| pages_of(request).ok()?.get(i).map(|p| p.crop_box))
         .map_or(MAX_DPI, |b| fitted_dpi(b.urx - b.llx, b.ury - b.lly));
-    let mut options = RunOptions::new(languages(&request.model), first_dpi);
+    let mut options = RunOptions::new(languages(&request.model), first_dpi)
+        .with_dictionaries(request.dictionaries.clone())
+        .with_layout(request.by_layout);
     options.policy = request.policy;
     OcrRunner::load(&request.model, &options).map_err(|e| Refusal::Engine(e.to_string()))
 }
@@ -579,9 +628,13 @@ fn recognise_one(
 
     // A program add-on re-checks its pinned files before each page; a file
     // changed mid-run fails here, and the run stops with the engine's sentence.
-    let words = recogniser
-        .recognize(w, h, &grey)
+    // The whole page rather than its words: an engine that reports lines,
+    // paragraphs or layout regions keeps them, and the word mapping below
+    // keeps word order, so their indices stay valid.
+    let read = recogniser
+        .recognize_page(w, h, &grey, Some(dpi))
         .map_err(|e| Refusal::Engine(e.to_string()))?;
+    let words = &read.words;
     let words_recognised = words.len();
     // The flip, and the ONLY place it happens. See the module header.
     //
@@ -603,7 +656,7 @@ fn recognise_one(
     // re-imaging the pixels, so a rotated scan is the norm rather than the
     // exception.
     let placed = pdfcer_core::ocr::words_to_page_space_on(
-        &words,
+        words,
         w,
         h,
         pdfcer_core::ocr::PagePlacement::new(
@@ -631,12 +684,9 @@ fn recognise_one(
     Ok(OnePage {
         recognised: OcrPage {
             words: placed,
-            // Empty: the layer writer infers lines and blocks from the boxes.
-            lines: Vec::new(),
-            blocks: Vec::new(),
-            // Asked of the loaded engine rather than assumed: `ocrs` scores
-            // nothing, the others score every word.
-            confidence_available: recogniser.reports_confidence(),
+            // Empty when the engine reports none: the layer writer then infers
+            // lines and blocks from the boxes.
+            ..read
         },
         words: words_recognised,
         chars: chars_recognised,

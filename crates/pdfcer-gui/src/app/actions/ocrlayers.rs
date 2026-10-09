@@ -16,7 +16,10 @@
 //!   pdfcer inferred it from the word boxes.
 //! - [`apply`] is [`super::Action::ApplyOcr`]: the words written on the layer
 //!   (optional-content group) named [`t::group_name`], so they are a Layers
-//!   panel row; the layer is reused, or made in the same undo step.
+//!   panel row; the layer is reused, or made in the same undo step. Blocks a
+//!   layout model read from a region (`OcrBlock::region`) other than body
+//!   text go on a layer per region group, [`t::region_group_name`], nested in
+//!   it, reused or made the same way.
 //! - [`remove`] is [`super::Action::RemoveOcrLayers`]: every marked layer the
 //!   page and engine filters name comes off, and each layer (group) that
 //!   leaves with nothing on it is deleted, as ONE undo entry
@@ -30,11 +33,13 @@ use pdfcer_core::edit::{
 };
 use pdfcer_core::object::ObjId;
 use pdfcer_core::ocr::layer::{ExistingLayers, OcrLayerError, OcrLayerOptions, OcrLayerReport};
+use pdfcer_core::ocr::layout::{LayoutClass, RegionGroup};
 use pdfcer_core::ocr::{OcrPage, OcrStructureSource};
 
 use crate::app::state::OpenDoc;
 use crate::app::status::decline;
 use crate::text::ocr::{self as t, OcrLayerRefusal};
+use pdfcer_gui_base::layerorder as order;
 
 /// The options a recognition by `engine` is applied with.
 pub(super) fn options(engine: &str) -> OcrLayerOptions {
@@ -88,59 +93,175 @@ fn write(
             recognised,
         })
         .collect();
-    let mut made = false;
-    let mut group = match find_group(session) {
-        Some(id) => id,
-        None => make_group(session, &mut made)?,
+    // Every group this write made is one undo entry, folded with the write.
+    let mut made = 0;
+    let mut main_made = find_group(session, t::group_name()).is_none();
+    let mut group = group_named(session, t::group_name(), &mut made)?;
+    let (regions, fresh) = region_groups(session, pages, &mut made)?;
+    let with = |group| {
+        regions
+            .iter()
+            .fold(options(engine).on_layer(group), |o, (r, id)| {
+                o.on_region_layer(*r, *id)
+            })
     };
-    let mut written = session.add_ocr_layer(&layers, &options(engine).on_layer(group));
+    let mut written = session.add_ocr_layer(&layers, &with(group));
     // A same-named group outside `/OCGs` is not a layer the writer accepts.
-    if !made && matches!(written, Err(OcrLayerError::NotALayerGroup { .. })) {
-        group = make_group(session, &mut made)?;
-        written = session.add_ocr_layer(&layers, &options(engine).on_layer(group));
+    if !main_made && matches!(written, Err(OcrLayerError::NotALayerGroup { .. })) {
+        group = make_group(session, t::group_name(), &mut made)?;
+        main_made = true;
+        written = session.add_ocr_layer(&layers, &with(group));
     }
     let reports = match written {
         Ok(reports) => reports,
         Err(e) => {
-            if made {
+            for _ in 0..made {
                 session.undo();
             }
             word_refusal(&e);
             return Err(WriteError::Layer(e));
         }
     };
-    if made && !session.coalesce_last(2, CommandKind::AddOcrLayer) {
+    let nested = nest(session, group, &fresh);
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace(|| format!("ocr-layer-nested n={nested} of={}", fresh.len()));
+    let folded = made + 1 + nested;
+    if folded > 1 && !session.coalesce_last(folded, CommandKind::AddOcrLayer) {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        crate::diag::trace(|| "ocr-layer-unfolded n=2".to_owned());
+        crate::diag::trace(|| format!("ocr-layer-unfolded n={folded}"));
     }
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!(
-            "ocr-layer-group id={}_{} made={made}",
-            group.num, group.generation
-        )
-    });
+    trace_groups(group, main_made, made, &regions);
     let mut out = recognised_disclosures(&reports);
-    if made {
+    if !regions.is_empty() {
+        let names: Vec<String> = regions
+            .iter()
+            .map(|(r, _)| t::region_group_name(*r))
+            .collect();
+        out.insert(0, t::regions_layered(&names));
+    }
+    if main_made {
         out.insert(0, t::group_made());
     }
     Ok(out)
 }
 
-/// The first layer named [`t::group_name`], if any.
-fn find_group(session: &EditSession) -> Option<ObjId> {
+/// `ocr-layer-group id= made=<bool> groups-made=<n>` (whether the
+/// recognised-text layer was made; how many layers this write made) and
+/// `ocr-layer-regions groups=<group:id,…>`.
+fn trace_groups(group: ObjId, main_made: bool, made: usize, regions: &[(RegionGroup, ObjId)]) {
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace(|| {
+        format!(
+            "ocr-layer-group id={}_{} made={main_made} groups-made={made}",
+            group.num, group.generation
+        )
+    });
+    let listed: Vec<String> = regions
+        .iter()
+        .map(|(r, id)| format!("{}:{}_{}", r.as_str(), id.num, id.generation))
+        .collect();
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace(|| format!("ocr-layer-regions groups={}", listed.join(",")));
+}
+
+/// Puts each layer in `fresh` under `main` in the Layers panel, last among its
+/// sublayers; returns how many moved (one undo entry each). A layer the
+/// operator already has is left where he put it. A move the engine declines
+/// leaves that layer at the top level, traced `ocr-layer-unnested`.
+fn nest(session: &mut EditSession, main: ObjId, fresh: &[ObjId]) -> usize {
+    let mut moved = 0;
+    for id in fresh {
+        let tree = order::tree(&pdfcer_core::layers::read_layers(&session.view()).order);
+        let (Some(from), Some(parent)) = (
+            order::path_of_layer(&tree, *id),
+            order::path_of_layer(&tree, main),
+        ) else {
+            continue;
+        };
+        let index = order::node_at(&tree, &parent).map_or(0, |n| n.children.len());
+        let m = order::Move {
+            from,
+            parent,
+            index,
+        };
+        let order::Resolved::Engine { parent, index } = order::engine_move(&tree, &m) else {
+            continue;
+        };
+        match session.move_layer_node(&m.from, &parent, index) {
+            Ok(_) => moved += 1,
+            Err(e) => {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                crate::diag::trace(|| {
+                    format!("ocr-layer-unnested id={}_{} why={e}", id.num, id.generation)
+                });
+            }
+        }
+    }
+    moved
+}
+
+/// Each region group's layer.
+type RegionLayers = Vec<(RegionGroup, ObjId)>;
+
+/// The layer for every region group other than body text that any block of
+/// the run was read from, found by [`t::region_group_name`] or made; and the
+/// ones this call made.
+fn region_groups(
+    session: &mut EditSession,
+    pages: &[(usize, OcrPage)],
+    made: &mut usize,
+) -> Result<(RegionLayers, Vec<ObjId>), WriteError> {
+    let mut present: Vec<RegionGroup> = pages
+        .iter()
+        .flat_map(|(_, page)| page.blocks.iter())
+        .filter_map(|b| b.region.map(LayoutClass::group))
+        .filter(|g| *g != RegionGroup::Text)
+        .collect();
+    present.sort_unstable();
+    present.dedup();
+    let mut groups = Vec::new();
+    let mut fresh = Vec::new();
+    for r in present {
+        let before = *made;
+        let id = group_named(session, &t::region_group_name(r), made)?;
+        if *made > before {
+            fresh.push(id);
+        }
+        groups.push((r, id));
+    }
+    Ok((groups, fresh))
+}
+
+/// The first layer named `name`, if any.
+fn find_group(session: &EditSession, name: &str) -> Option<ObjId> {
     pdfcer_core::layers::read_layers(&session.view())
         .layers
         .into_iter()
-        .find(|l| l.name == t::group_name())
+        .find(|l| l.name == name)
         .map(|l| l.id)
 }
 
-fn make_group(session: &mut EditSession, made: &mut bool) -> Result<ObjId, WriteError> {
+/// The layer named `name`, made (and counted in `made`) when there is none.
+fn group_named(
+    session: &mut EditSession,
+    name: &str,
+    made: &mut usize,
+) -> Result<ObjId, WriteError> {
+    match find_group(session, name) {
+        Some(id) => Ok(id),
+        None => make_group(session, name, made),
+    }
+}
+
+fn make_group(
+    session: &mut EditSession,
+    name: &str,
+    made: &mut usize,
+) -> Result<ObjId, WriteError> {
     let id = session
-        .add_layer(t::group_name(), &LayerEdit::new())
+        .add_layer(name, &LayerEdit::new())
         .map_err(WriteError::Group)?;
-    *made = true;
+    *made += 1;
     Ok(id)
 }
 
@@ -271,7 +392,8 @@ fn remove_in(
             }
         }
     }
-    let groups = delete_groups(session, &emptied);
+    let mut groups = delete_groups(session, &emptied);
+    groups.extend(delete_empty_regions(session));
     // Committed commands must reach the epoch bump, so a partial run is an
     // `Ok` that says what stayed. The fold is checked; a `false` leaves the
     // removals applied as separate undo steps.
@@ -310,6 +432,36 @@ fn remove_in(
 
 /// Delete each layer the removal left with nothing on it, returning the names
 /// of those deleted. A refusal leaves that layer, traced.
+/// Deletes every region layer ([`t::is_region_group_name`]) the removal left
+/// with no content, returning their names. The engine's removal outcome names
+/// only the main group (G173), so each is deleted on trial: a deletion that
+/// had to unwrap a section, an annotation or an XObject was not empty and is
+/// undone. Content the engine cannot decode refuses the deletion outright.
+fn delete_empty_regions(session: &mut EditSession) -> Vec<String> {
+    let regions: Vec<_> = pdfcer_core::layers::read_layers(&session.view())
+        .layers
+        .into_iter()
+        .filter(|l| t::is_region_group_name(&l.name))
+        .collect();
+    let mut deleted = Vec::new();
+    for layer in regions {
+        match session.delete_layer(layer.id, LayerContentPolicy::KeepUnlayered) {
+            Ok(o) if o.sections + o.annotations + o.xobjects == 0 => {
+                if o.changed {
+                    deleted.push(layer.name);
+                }
+            }
+            Ok(o) => {
+                if o.changed {
+                    session.undo();
+                }
+            }
+            Err(_) => {}
+        }
+    }
+    deleted
+}
+
 fn delete_groups(session: &mut EditSession, emptied: &[ObjId]) -> Vec<String> {
     let names = pdfcer_core::layers::read_layers(&session.view()).layers;
     let mut deleted = Vec::new();
