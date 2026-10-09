@@ -153,6 +153,7 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
         | Icon::RecogniseText
         | Icon::SaveCompacted
         | Icon::ExportImage
+        | Icon::ReplaceImage
         | Icon::ResetLayout => (Hue::Primary, &[2, 3]),
         Icon::CopyPageText | Icon::CopyAsVector => (Hue::Primary, &[2, 3, 4]),
         Icon::Sign | Icon::PickFormXObject => (Hue::Primary, &[3]),

@@ -150,6 +150,7 @@ fn all() -> Vec<CommandText> {
         format_node_symmetric(),
         format_segment_line(),
         format_segment_curve(),
+        format_replace_image(),
         mode_read(),
         mode_review(),
         mode_edit(),

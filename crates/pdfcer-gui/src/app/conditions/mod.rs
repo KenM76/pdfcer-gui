@@ -595,6 +595,12 @@ impl PdfcerApp {
             {
                 set.set(crate::shell::menus::NODES_SHAPEABLE);
             }
+            // Format ▸ Replace image, on the same test the dispatcher routes on.
+            if self.capabilities().edit_content
+                && crate::app::dispatch::replaceimage::replaceable_image(doc).is_some()
+            {
+                set.set(crate::shell::menus::IMAGE_REPLACEABLE);
+            }
             // `selection.bounds` is NOT `selection.any`, and the gap
             // between them is a real state rather than a defensive check.
             //

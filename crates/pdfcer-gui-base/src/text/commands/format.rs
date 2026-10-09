@@ -296,3 +296,14 @@ pub const fn format_font_colour() -> CommandText {
          Sweeping text with the Text tool (T) chooses what it applies to.",
     )
 }
+
+/// `format.replace_image`
+#[must_use]
+pub const fn format_replace_image() -> CommandText {
+    CommandText::new(
+        "Replace image…",
+        "Choose a picture file to draw in place of the selected image. The new picture keeps \
+         the old one's position, size, rotation and stacking, and keeps its own shape inside \
+         that box.",
+    )
+}

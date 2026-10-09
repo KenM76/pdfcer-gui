@@ -826,6 +826,9 @@ pub(super) const ENCRYPT: &str = include_str!("assets/encrypt.svg");
 /// `export-image.svg` — the art for [`super::Icon::ExportImage`].
 pub(super) const EXPORT_IMAGE: &str = include_str!("assets/export-image.svg");
 
+/// `replace-image.svg` — the art for [`super::Icon::ReplaceImage`].
+pub(super) const REPLACE_IMAGE: &str = include_str!("assets/replace-image.svg");
+
 /// `open-in-acrobat.svg` — the art for [`super::Icon::OpenInAcrobat`].
 pub(super) const OPEN_IN_ACROBAT: &str = include_str!("assets/open-in-acrobat.svg");
 

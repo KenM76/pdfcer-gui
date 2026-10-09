@@ -143,6 +143,11 @@ pub const OBJECTS_RESTACKABLE: &str = "selection.objects_restackable";
 /// its icon column half empty.
 pub const NODES_SHAPEABLE: &str = "selection.nodes_shapeable";
 
+/// **One image object is selected that Format ▸ Replace image can replace**,
+/// in a mode that edits content — the command's `enabled_when` and its
+/// Format-group and canvas-menu `shown_when`.
+pub const IMAGE_REPLACEABLE: &str = "selection.image_replaceable";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.
@@ -345,6 +350,7 @@ pub fn built_in() -> Menus {
             Item::command("format.unshare_form"),
             Item::command("format.merge_text_runs").shown_when(TEXT_MERGE_OFFERED),
             Item::command("format.split_text_lines").shown_when(TEXT_SPLIT_OFFERED),
+            Item::command("format.replace_image").shown_when(IMAGE_REPLACEABLE),
             Item::command("edit.bring_to_front").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.bring_forward").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.send_backward").shown_when(OBJECTS_RESTACKABLE),

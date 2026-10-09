@@ -754,4 +754,16 @@ pub enum VectorAction {
         /// What each node gets.
         shape: super::NodeShape,
     },
+    /// **Format ▸ Replace image** — draw `image` in place of the image
+    /// object at `object` (`EditSession::replace_image`, `ImageFit::Contain`).
+    /// One undo entry, `CommandKind::ReplaceImage`; the object keeps its
+    /// index, so the selection stands.
+    ReplaceImage {
+        /// The 0-based page.
+        page: usize,
+        /// The page object index of the image.
+        object: usize,
+        /// The imported raster, shared rather than copied through the queue.
+        image: std::sync::Arc<pdfcer_core::image_import::ImportedImage>,
+    },
 }

@@ -402,6 +402,31 @@ pub fn drawing_disclosures(distorted: bool, notes: Option<&str>) -> Vec<String> 
     out
 }
 
+/// Format ▸ Replace image refused a drawing: the engine replaces an image with
+/// an image, and an SVG or EMF is placed as vector content instead.
+#[must_use]
+pub fn replace_needs_raster(kind: &str) -> String {
+    format!(
+        "A {} drawing cannot replace an image. Choose a PNG, JPEG, BMP, GIF or TIFF file.",
+        kind.to_uppercase()
+    )
+}
+
+/// The replacement kept its shape inside the old picture's box.
+#[must_use]
+pub const fn replace_letterboxed() -> &'static str {
+    "The new picture kept its shape, so it does not fill the old picture's box."
+}
+
+/// Replacing changes what this placement draws and leaves the old image data
+/// in the file: other placements keep drawing it, and an incremental save
+/// keeps its bytes.
+#[must_use]
+pub const fn replace_old_data_kept() -> &'static str {
+    "The old picture is no longer drawn here, but its data can remain in the file. Redact \
+     removes content from a file."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

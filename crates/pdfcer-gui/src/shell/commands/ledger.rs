@@ -409,12 +409,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 217 → 218: `file.deskew`, File ▸ Recognise.
     // 218 → 222: the four Edit ▸ Arrange commands on page objects.
     // 222 → 228: the six Format ▸ Nodes commands.
+    // 228 → 229: `format.replace_image`, Format ▸ Image.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        228 + 2 * usize::from(cfg!(feature = "signing"))
+        229 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "model-download"))
     );

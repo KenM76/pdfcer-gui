@@ -441,6 +441,11 @@ pub(super) fn band() -> Vec<Command> {
         command("format.node_symmetric", t::format_node_symmetric(), 843).enabled_when(NODES),
         command("format.segment_line", t::format_segment_line(), 844).enabled_when(NODES),
         command("format.segment_curve", t::format_segment_curve(), 845).enabled_when(NODES),
+        // Format ▸ Image and the canvas object menu, routed by
+        // `app::dispatch::replaceimage`.
+        command("format.replace_image", t::format_replace_image(), 846)
+            .with_icon("replace-image")
+            .enabled_when(crate::shell::menus::IMAGE_REPLACEABLE),
     ]
 }
 

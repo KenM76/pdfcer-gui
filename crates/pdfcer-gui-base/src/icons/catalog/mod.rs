@@ -1074,6 +1074,11 @@ pub enum Icon {
     /// where that escapes a corner GAP diagonally.
     ExportImage,
 
+    /// Draw another picture in place of the selected image object: a picture
+    /// tile with a looping arrow over its corner. Distinct from
+    /// [`Icon::ExportImage`] by the arrow, a loop where that one leaves straight.
+    ReplaceImage,
+
     /// Hand this file to the system's PDF viewer. An application WINDOW — a frame
     /// with a title bar — with a document sheet overlapping its lower-left corner
     /// and breaking its outline. No command names it yet.

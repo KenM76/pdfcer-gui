@@ -186,6 +186,7 @@ impl Icon {
         Icon::CopyAsVector,
         Icon::Encrypt,
         Icon::ExportImage,
+        Icon::ReplaceImage,
         Icon::OpenInAcrobat,
         Icon::Permissions,
         Icon::Bold,
@@ -286,6 +287,7 @@ impl Icon {
             Icon::CopyAsVector => assets::COPY_AS_VECTOR,
             Icon::Encrypt => assets::ENCRYPT,
             Icon::ExportImage => assets::EXPORT_IMAGE,
+            Icon::ReplaceImage => assets::REPLACE_IMAGE,
             Icon::OpenInAcrobat => assets::OPEN_IN_ACROBAT,
             Icon::Permissions => assets::PERMISSIONS,
             Icon::Open | Icon::FontFolders => assets::FOLDER,
@@ -488,6 +490,7 @@ impl Icon {
             Icon::CopyAsVector => "copy-as-vector",
             Icon::Encrypt => "encrypt",
             Icon::ExportImage => "export-image",
+            Icon::ReplaceImage => "replace-image",
             // ui-text-exempt: icon key, never displayed. The vendor name is the
             // COMMAND's label, not this string, and the art carries no mark.
             Icon::OpenInAcrobat => "open-in-acrobat",

@@ -226,6 +226,7 @@ fn every_predicate_names_a_documented_condition() {
         // edits content. `app::dispatch::arrange::restackable_objects`.
         "selection.objects_restackable",
         "selection.nodes_shapeable",
+        "selection.image_replaceable",
         //
         // Both are corrected **per right-click** by `canvas::menus`, through
         // `MenuHost::with_conditions`, and the reason they cannot live in the

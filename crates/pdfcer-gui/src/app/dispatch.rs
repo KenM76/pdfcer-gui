@@ -77,6 +77,8 @@ pub(crate) mod nodeshape;
 /// operand problem (a command id is a verb with no noun) and the
 /// park-and-drain shape that answers it.
 pub(crate) mod panels;
+/// Format ▸ Replace image.
+pub(crate) mod replaceimage;
 mod replacetext;
 pub(crate) mod routes;
 pub(crate) mod security;
@@ -913,6 +915,7 @@ impl PdfcerApp {
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             id if nodeshape::claims(id) => nodeshape::dispatch(self, id, actions),
+            replaceimage::ID => replaceimage::dispatch(self, actions),
             "edit.align_left"
             | "edit.align_right"
             | "edit.align_top"

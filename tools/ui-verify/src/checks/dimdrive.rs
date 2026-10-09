@@ -7,6 +7,7 @@ use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
+use crate::input::Click;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
@@ -53,8 +54,22 @@ pub(super) fn run_on(
     stem: &str,
     body: Body,
 ) -> CheckReport {
+    run_on_with(check, ctx, fixture, invoke, stem, &[], body)
+}
+
+/// [`run_on`], with `env` added to the launch's environment.
+pub(super) fn run_on_with(
+    check: &dyn Check,
+    ctx: &CheckContext,
+    fixture: &Fixture,
+    invoke: &str,
+    stem: &str,
+    env: &[(&str, String)],
+    body: Body,
+) -> CheckReport {
     let mut report = CheckReport::new(check.name(), check.defect());
-    let driven = launch(ctx, &mut report, fixture, invoke, stem).and_then(|(session, pointer)| {
+    let launched = launch_with(ctx, &mut report, fixture, invoke, stem, env);
+    let driven = launched.and_then(|(session, pointer)| {
         let outcome = body(ctx, &mut report, &session, &pointer);
         let parked = pointer.gone(&session);
         match outcome? {
@@ -69,12 +84,15 @@ pub(super) fn run_on(
     }
 }
 
-pub(super) fn launch(
+/// Copy `fixture` to the scratch folder and launch it off-screen with the
+/// ribbon `invoke`, the diagnostic trace, and `env`.
+pub(super) fn launch_with(
     ctx: &CheckContext,
     report: &mut CheckReport,
     fixture: &Fixture,
     invoke: &str,
     stem: &str,
+    env: &[(&str, String)],
 ) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -97,6 +115,9 @@ pub(super) fn launch(
         ("PDFCER_DIAG_INVOKE", invoke),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
+    }
+    for (k, v) in env {
+        spec.env.push(((*k).to_owned(), v.clone()));
     }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
@@ -177,5 +198,28 @@ pub(super) fn click_on(
     session.settle(10);
     pointer.click(session, point)?;
     session.settle(20);
+    Ok(())
+}
+
+/// Open ribbon tab `tab` if `item` is not drawn, then click `item`, on the
+/// tab or in its overflow.
+pub(super) fn press_on_tab(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    item: &str,
+    tab: &str,
+) -> Result<()> {
+    let ui_rect = ui_rect_event(ctx)?;
+    reveal(ctx, session, pointer, item, tab)?;
+    let found = crate::checks::driving::declared_or_in_overflow(session, pointer, ui_rect, item)?
+        .ok_or_else(|| {
+        Error::new(format!(
+            "no `{item}` on `{tab}` or in its overflow. Trace: {}.",
+            session.trace_path().display()
+        ))
+    })?;
+    pointer.click_rect(session, found)?;
+    session.settle(40);
     Ok(())
 }

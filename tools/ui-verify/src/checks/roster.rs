@@ -469,6 +469,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(form_style::APartOfAPlacedDrawingCanBeRecoloured),
         Box::new(restack::AnObjectCanBeBroughtForwardAndSentToBack),
         Box::new(nodeshape::ANodesSegmentCanBeCurvedAndANodeInserted),
+        Box::new(replaceimage::ReplaceImageSwapsThePictureInPlace),
         Box::new(form_part_copy::CopyingAPartOfAPlacedDrawingSaysWhyNothingWasCopied),
         Box::new(form_part_delete::ASubpathInsideAPlacedDrawingCanBeDeleted),
         Box::new(form_part_delete::AnAnchorInsideAPlacedDrawingCanBeDeleted),

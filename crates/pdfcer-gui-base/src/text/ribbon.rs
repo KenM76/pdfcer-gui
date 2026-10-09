@@ -418,6 +418,12 @@ pub fn group_format_nodes() -> &'static str {
     "Nodes"
 }
 
+/// Format ▸ Image.
+#[must_use]
+pub fn group_format_image() -> &'static str {
+    "Image"
+}
+
 /// Format ▸ Selection.
 #[must_use]
 pub fn group_format_selection() -> &'static str {

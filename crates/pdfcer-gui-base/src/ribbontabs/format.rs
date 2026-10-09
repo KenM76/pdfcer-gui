@@ -25,6 +25,10 @@ const MARKUP_VISIBLE_WHEN: &str = "selection.markup_restylable"; // ui-text-exem
 /// withheld where nothing is authored.
 const NODES_VISIBLE_WHEN: &str = "selection.nodes_shapeable"; // ui-text-exempt: a condition name, never displayed
 
+/// The condition under which the **Image** group is drawn: one replaceable
+/// image object is selected, in a mode that edits content.
+const IMAGE_VISIBLE_WHEN: &str = "selection.image_replaceable"; // ui-text-exempt: a condition name, never displayed
+
 /// The Format tab.
 pub fn tab() -> Tab {
     Tab::new("format", ribbon::tab_format())
@@ -189,6 +193,11 @@ pub fn tab() -> Tab {
                 ],
             ),
             group(
+                "image",
+                ribbon::group_format_image(),
+                [command("format.replace_image").shown_when(IMAGE_VISIBLE_WHEN)],
+            ),
+            group(
                 "selection",
                 ribbon::group_format_selection(),
                 [
@@ -299,6 +308,7 @@ mod tests {
         "format.node_symmetric",
         "format.segment_line",
         "format.segment_curve",
+        "format.replace_image",
     ];
 
     /// Read on this tab: describe what is selected, and delete it where the
@@ -334,7 +344,7 @@ mod tests {
             assert!(
                 matches!(
                     visible_when.as_deref(),
-                    Some(FONT_VISIBLE_WHEN | NODES_VISIBLE_WHEN)
+                    Some(FONT_VISIBLE_WHEN | NODES_VISIBLE_WHEN | IMAGE_VISIBLE_WHEN)
                 ),
                 "`{id}` writes to the document but is shown in every mode. R9: an unavailable \
                  capability renders NOTHING. Greying is for something temporarily unavailable and \

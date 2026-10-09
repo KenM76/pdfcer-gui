@@ -627,6 +627,16 @@
                     ],
                 ),
                 (
+                    id: "image",
+                    caption: "Image",
+                    items: [
+                        Command(
+                            id: "format.replace_image",
+                            visible_when: "selection.image_replaceable",
+                        ),
+                    ],
+                ),
+                (
                     id: "selection",
                     caption: "Selection",
                     items: [
@@ -762,6 +772,7 @@
                     id: "format.split_text_lines",
                     visible_when: "selection.text_split_offered",
                 ),
+                Command(id: "format.replace_image", visible_when: "selection.image_replaceable"),
                 Command(id: "edit.bring_to_front", visible_when: "selection.objects_restackable"),
                 Command(id: "edit.bring_forward", visible_when: "selection.objects_restackable"),
                 Command(id: "edit.send_backward", visible_when: "selection.objects_restackable"),

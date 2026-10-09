@@ -527,6 +527,12 @@ Segment to line · Segment to curve. Each acts on every selected node, as one
 undo step. It is not on the canvas object menu: none of the six has a glyph,
 and the menu's icon column would be left mostly blank.
 
+**Image** shows when one image object is selected at the Object rung (an image
+XObject or an inline image, never a placed drawing): Replace image…, which asks
+for a picture file and draws it in the old one's place, kept in its own shape.
+The same command is on the canvas object menu, before the Arrange rows, and as
+a button in the Properties panel's line-and-opacity section.
+
 This tab is what makes selection *mean* something: without it, selecting an
 object gives an object-tree row and no way to act on it.
 

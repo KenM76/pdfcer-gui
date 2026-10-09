@@ -26,6 +26,7 @@ const REGION_DASH: &str = "properties.stroke.dash"; // ui-text-exempt: a trace r
 const REGION_LINE_ALPHA: &str = "properties.stroke.line-opacity"; // ui-text-exempt: a trace region name
 const REGION_FILL_ALPHA: &str = "properties.stroke.fill-opacity"; // ui-text-exempt: a trace region name
 const REGION_PICTURE_ALPHA: &str = "properties.stroke.picture-opacity"; // ui-text-exempt: a trace region name
+const REGION_REPLACE: &str = "properties.stroke.replace-image"; // ui-text-exempt: a trace region name
 
 /// The widest line the field offers, in points.
 const MAX_WIDTH_PT: f64 = 144.0;
@@ -128,7 +129,23 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
             style,
         });
     }
+    replace_row(ui, doc, actions);
     true
+}
+
+/// Format ▸ Replace image's panel twin, drawn on the dispatcher's own test.
+fn replace_row(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
+    use crate::app::dispatch::replaceimage::{ID, replaceable_image};
+    if !crate::canvas::tool::capabilities(ui.ctx()).edit_content || replaceable_image(doc).is_none()
+    {
+        return;
+    }
+    let words = crate::text::commands::format_replace_image();
+    let button = ui.button(words.label).on_hover_text(words.tooltip);
+    crate::diag::ui_rect_visible(REGION_REPLACE, button.rect, ui.clip_rect());
+    if button.clicked() {
+        actions.push(Action::Command(ID.to_owned()));
+    }
 }
 
 /// The four path rows; `send` takes the one edit a frame can raise.

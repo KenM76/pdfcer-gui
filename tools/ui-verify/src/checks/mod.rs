@@ -232,6 +232,7 @@ pub mod form_part_delete;
 pub mod form_style;
 pub mod group_unit_converts;
 pub mod nodeshape;
+pub mod replaceimage;
 pub mod restack;
 pub mod stroke_style;
 

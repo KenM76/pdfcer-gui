@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **36 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **35 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -95,7 +95,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **wanted, at the pin since v0.81.0; request G147.** A click on text inside a placed drawing will pick the run through it. |
 | **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **wanted, at the pin since v0.81.0; request G140.** It shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **wanted, at the pin since v0.81.0; request G138.** Every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. The canvas still box-tests an image. Owed: call `hit_test_point_deep_with` with one `DocumentImageAlpha` kept per edit epoch, and a driven click through a clear pixel onto ink beneath. Its module is `pdfcer_core::vector::image_hit`; the canvas's point queries move to `hit_test_point_with` and `hit_test_point_all_with`. |
-| **A placed image's pixels can be replaced in place** — `pdfcer_core::edit::image_replace` | **wanted, at the pin since v0.81.0; request G156.** An image's right-click menu gains Replace image… through it, one `CommandKind::ReplaceImage`; `EditError::ReplaceImageOnOther` is a refusal to word. |
 
 ### ce dimensions
 
@@ -212,7 +211,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **290 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **291 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -327,6 +326,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **shipped — Properties ▸ Line and opacity; G143, G155, G142.** Width and dash typed in points, converted per CTM scale in `app::actions::strokestyle`, folded by `EditSession::coalesce_last` (workaround G174). A part of a placed drawing goes through `EditSession::set_object_stroke_style_in_form` and `EditSession::set_object_paint_in_form` (`FormPaintOutcome`). Driven: `a_line_width_is_typed_in_points`, `a_pictures_opacity_can_be_set`, `a_part_of_a_placed_drawing_takes_a_width_in_points`, `a_part_of_a_placed_drawing_can_be_recoloured`. Modules `pdfcer_core::edit::stroke_style`, `pdfcer_core::vector::stroke_style`, `pdfcer_core::edit::form_paint`; `CommandKind::SetObjectStrokeStyle`. Read back: `PathObject::fill_alpha`, `PathObject::stroke_alpha`, `ImageObject::fill_alpha`, `ImageObject::stroke_alpha`, `ExtGStateParams::dash`. Refusals: `VectorEditError::InvalidStrokeStyle`, `EditError::FormInheritsResources`. |
 | **Restack page objects** — `EditSession::restack_objects` | **shipped — Edit ▸ Arrange and the canvas object menu; G157.** Bring to front, Bring forward, Send backward, Send to back in `app::actions::restack`; the Arrange chords route here when page objects are selected. Driven: `an_object_can_be_brought_forward_and_sent_to_back`. Modules `pdfcer_core::edit::restack`, `pdfcer_core::vector::restack`; one `CommandKind::RestackObjects` per press. Disclosed: `RestackOutcome`, `RestackLimitReason::Scope`, `RestackLimitReason::Entangled`. |
 | **Add a node to a path; convert a node (corner / smooth / symmetric) or a segment (line / curve)** — `pdfcer_core::edit::node_shape`, `pdfcer_core::vector::edit::node_shape` | **shipped — Format ▸ Nodes; G154.** Insert node, Corner, Smooth, Symmetric, Segment to line and Segment to curve in `app::actions::vector::nodeshape`, shown when nodes of a page path or of a path inside a placed drawing are selected. One press visits every selected node, one `CommandKind::InsertNode`, `CommandKind::ConvertNode` or `CommandKind::ConvertSegment` each, folded into one undo step. `VectorEditError::NoSegmentHere` and `VectorEditError::NodeHasOneSide` skip a node with a status-line count; `VectorEditError::InvalidSegmentParameter` cannot arise, the insert is at t = 0.5. An insert selects the new nodes. Driven: `a_nodes_segment_can_be_curved_and_a_node_inserted`. |
+| **A placed image's pixels can be replaced in place** — `pdfcer_core::edit::image_replace` | **shipped — Format ▸ Image ▸ Replace image…; G156.** `EditSession::replace_image` with `ImageFit::Contain` in `app::actions::vector::replaceimage`, one `CommandKind::ReplaceImage`, reached from the Format tab, the canvas object menu and the Properties panel when one image XObject or inline image is selected. A form XObject is never offered, so `EditError::ReplaceImageOnOther` cannot arise; an SVG or EMF file is refused by the shell. The `ImageAuthorDisclosures` are worded in the status notes, with the old data kept. Driven: `replace_image_swaps_the_picture_in_place`. |
 
 ### ce dimensions
 
@@ -599,7 +599,7 @@ Each verified absent in the pin and on engine main before filing.
 - **G153** — `set_markup_style` drops `interior` on a Line, so closed arrowheads cannot be filled.
 - **G154** — no verb adds a node to a page path or converts a node or segment kind. Answered as `EditSession::insert_node`, `convert_node` and `convert_segment` with in-form twins; wired as Format ▸ Nodes.
 - **G155** — an image cannot be made translucent. Answered by the same verb's alphas; wired as Picture opacity.
-- **G156** — an image cannot be replaced in place.
+- **G156** — an image cannot be replaced in place. Answered as `EditSession::replace_image`; wired as Format ▸ Image ▸ Replace image….
 - **G157** — page objects cannot be restacked; only annotations can. Answered as `EditSession::restack_objects`; wired in Edit ▸ Arrange.
 - **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`.
 - **G159** — `StyleOverrides` has no dash or opacity for a ce dimension.

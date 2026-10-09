@@ -4,12 +4,11 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/nodeshape.md`.
 
-use super::dimdrive::{Fixture, click_on, reveal, run_on, ui_rect_event};
-use crate::checks::driving::{declared, declared_or_in_overflow};
+use super::dimdrive::{Fixture, click_on, press_on_tab, run_on, ui_rect_event};
+use crate::checks::driving::declared;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Click;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
@@ -72,7 +71,7 @@ fn drive(
     ));
 
     let mark = session.trace()?.mark();
-    press_format(ctx, session, pointer, TO_CURVE)?;
+    press_on_tab(ctx, session, pointer, TO_CURVE, FORMAT_TAB)?;
     if let Some(failure) = applied(session, report, mark, "curve")? {
         return Ok(Some(failure));
     }
@@ -87,7 +86,7 @@ fn drive(
 
     let total_before = last_usize(session, ANCHORS, "total", 0)?;
     let mark = session.trace()?.mark();
-    press_format(ctx, session, pointer, INSERT)?;
+    press_on_tab(ctx, session, pointer, INSERT, FORMAT_TAB)?;
     if let Some(failure) = applied(session, report, mark, "insert")? {
         return Ok(Some(failure));
     }
@@ -215,23 +214,4 @@ fn last_usize(session: &Session, event: &str, key: &str, mark: usize) -> Result<
                 session.trace_path().display()
             ))
         })
-}
-
-fn press_format(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-    item: &str,
-) -> Result<()> {
-    let ui_rect = ui_rect_event(ctx)?;
-    reveal(ctx, session, pointer, item, FORMAT_TAB)?;
-    let found = declared_or_in_overflow(session, pointer, ui_rect, item)?.ok_or_else(|| {
-        Error::new(format!(
-            "no `{item}` on the Format tab or in its overflow. Trace: {}.",
-            session.trace_path().display()
-        ))
-    })?;
-    pointer.click_rect(session, found)?;
-    session.settle(40);
-    Ok(())
 }

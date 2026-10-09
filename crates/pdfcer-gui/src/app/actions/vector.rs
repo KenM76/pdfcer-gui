@@ -14,6 +14,7 @@ use pdfcer_core::edit::{CommandKind, EditSession};
 
 mod inform_delete;
 mod nodeshape;
+mod replaceimage;
 
 pub use pdfcer_gui_base::subactions::VectorAction;
 
@@ -729,6 +730,11 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             nodes,
             shape,
         } => nodeshape::apply(doc, page, host, &nodes, shape),
+        VectorAction::ReplaceImage {
+            page,
+            object,
+            image,
+        } => replaceimage::apply(doc, page, object, &image),
     }
     // A delete or a split renumbers what follows it, so a surviving selection would name
     // objects the operator never picked, and a second Delete would remove them.

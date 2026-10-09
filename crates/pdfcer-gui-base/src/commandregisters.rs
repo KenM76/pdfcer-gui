@@ -431,11 +431,6 @@ pub const PLANNED: &[(&str, &str)] = &[
     // ui-text-exempt: developer note about an ABSENT command; never rendered.
     ("format.crop", "N — cropping a placed image; panel first."),
     (
-        "format.replace_image",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — swap the image behind a placed image object; panel first.",
-    ),
-    (
         "format.stroke",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — a vector object's stroke; panel first.",
