@@ -7,19 +7,10 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/ocrlayer.md`.
 
-use egui::{Color32, CornerRadius, FontId, Painter, Rect};
+use egui::{Color32, CornerRadius, Painter, Rect};
 
 use crate::app::state::OpenDoc;
 use crate::canvas::strip::PageView;
-
-/// The smallest size this will ask egui to lay out text at.
-pub const MIN_FONT_PX: f32 = 5.0;
-
-/// The largest size this will ask egui to lay out text at.
-pub const MAX_FONT_PX: f32 = 160.0;
-
-/// Font sizes are rounded to this, in points.
-pub const FONT_SIZE_QUANTUM_PX: f32 = 0.5;
 
 pub use pdfcer_gui_base::ocrlayerpref::DEFAULT_COLOUR;
 
@@ -86,16 +77,6 @@ pub fn text_alpha(strength: f32) -> u8 {
     veil_alpha(strength)
 }
 
-/// Clamp a wanted font size into what the atlas will bear, and round it.
-#[must_use]
-pub fn quantise_font_size(raw: f32) -> f32 {
-    if !raw.is_finite() {
-        return MIN_FONT_PX;
-    }
-    let clamped = raw.clamp(MIN_FONT_PX, MAX_FONT_PX);
-    (clamped / FONT_SIZE_QUANTUM_PX).round() * FONT_SIZE_QUANTUM_PX
-}
-
 /// The colour a fully-drawn veil leaves behind.
 fn paper() -> Color32 {
     super::shapes::paper()
@@ -116,26 +97,14 @@ pub(super) fn draw_veil(painter: &Painter, pages: &[PageView], strength: f32) {
     }
 }
 
-/// **Draw the recognised text**, in the operator's colour.
-pub(super) fn draw_text(
-    painter: &Painter,
-    doc: &OpenDoc,
-    pages: &[PageView],
-    clip: Rect,
-    strength: f32,
-) {
+/// **Draw the recognised text**, in the operator's colour, through
+/// `canvas::ocrink`'s engine render.
+pub(super) fn draw_text(painter: &Painter, doc: &OpenDoc, pages: &[PageView], strength: f32) {
     let alpha = text_alpha(strength);
     if alpha == 0 {
         return;
     }
-    let colour = colour32(painter.ctx());
-    let ink = super::overlay::at_alpha(colour, alpha);
     let Some(page_index) = doc.page_text().map(|text| text.page_index) else {
-        return;
-    };
-    // The provenance-bearing extraction, because the edit in progress and
-    // `ocrink` both name runs by its indices.
-    let Some(text) = doc.provenance_page_text(page_index) else {
         return;
     };
     // The page the CACHE describes, found among the pages drawn — never
@@ -143,97 +112,33 @@ pub(super) fn draw_text(
     let Some(view) = pages.iter().find(|view| view.page == page_index) else {
         return;
     };
-    let Some(page) = doc.pages.get(page_index) else {
-        return;
-    };
-    let edited = edited_run(painter.ctx(), page_index);
-    let laid = super::ocrink::step(painter.ctx(), doc, &text);
-    super::ocrink::paint(painter, doc, view, &laid, edited, colour, alpha);
-    let mut held = 0;
-    for (i, run) in text.runs.iter().enumerate() {
-        if !is_ocr_run(run) {
-            continue;
-        }
-        if edited == Some(i) {
-            held += 1;
-            continue;
-        }
-        if laid.drawn(i) {
-            continue;
-        }
-        // A run with no geometry — derived whitespace, or an `/ActualText`
-        // replacement that covered no glyphs — has nowhere to be drawn. It
-        // carries no letters an operator could be looking for either.
-        let Some(bbox) = run.bbox else {
-            continue;
-        };
-        let Some(canvas) =
-            super::geometry::pdf_rect_to_canvas((bbox.llx, bbox.lly, bbox.urx, bbox.ury), page)
-        else {
-            continue;
-        };
-        let screen = view.map.rect_to_screen(canvas);
-        if !screen.intersects(clip) {
-            continue;
-        }
-        draw_run(painter, screen, run.text.trim(), ink);
-    }
+    let held = edited_rect(painter.ctx(), doc, page_index);
     crate::diag::trace_changed("ocr-layer-held", || {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!("ocr-layer-held runs={held}")
+        format!("ocr-layer-held runs={}", usize::from(held.is_some()))
     });
+    super::ocrink::paint(painter, doc, view, held, colour(painter.ctx()), alpha);
 }
 
-/// The invisible run an open text edit is rewriting on `page`, which
-/// `textedit::shaped` draws instead. `None` while that preview has fallen
-/// back to the editor box.
-fn edited_run(ctx: &egui::Context, page: usize) -> Option<usize> {
+/// The canvas rectangle of the invisible run an open text edit is rewriting on
+/// `page`, which `textedit::shaped` draws instead. `None` while that preview
+/// has fallen back to the editor box.
+fn edited_rect(ctx: &egui::Context, doc: &OpenDoc, page: usize) -> Option<Rect> {
     let draft = super::textedit::read(ctx)?;
     let super::textedit::Anchor::Run { run, .. } = draft.anchor else {
         return None;
     };
-    (draft.page == page && super::textedit::shaped::read(ctx, &draft)?.invisible()).then_some(run)
-}
-
-/// One run, fitted to its own box.
-fn draw_run(painter: &Painter, screen: Rect, text: &str, ink: Color32) {
-    if text.is_empty() || screen.width() <= 0.0 || screen.height() <= 0.0 {
-        return;
+    if draft.page != page || !super::textedit::shaped::read(ctx, &draft)?.invisible() {
+        return None;
     }
-    let wanted = screen.height();
-    if !wanted.is_finite() || wanted < MIN_FONT_PX {
-        painter.rect_filled(screen, CornerRadius::ZERO, ink);
-        return;
-    }
-    let first = quantise_font_size(wanted);
-    let galley = painter.layout_no_wrap(text.to_owned(), FontId::proportional(first), ink);
-    let measured = galley.rect.width();
-    let (size, galley) = if measured > screen.width() && measured > 0.0 {
-        let fitted = quantise_font_size(first * (screen.width() / measured));
-        if fitted < first {
-            (
-                fitted,
-                painter.layout_no_wrap(text.to_owned(), FontId::proportional(fitted), ink),
-            )
-        } else {
-            (first, galley)
-        }
-    } else {
-        (first, galley)
-    };
-    if size < MIN_FONT_PX {
-        painter.rect_filled(screen, CornerRadius::ZERO, ink);
-        return;
-    }
-    // Left-aligned and vertically centred. The box is the run's own extent, so
-    // its left edge is where the first glyph starts; centring on the other
-    // axis is what keeps a line sitting on its marks when the fitted face's
-    // ascent does not match the one the producer measured the box from.
-    let at = egui::pos2(
-        screen.left(),
-        screen.center().y - galley.rect.height() * 0.5,
-    );
-    painter.galley(at, galley, ink);
+    // The provenance-bearing extraction, because the editor names runs by its
+    // indices.
+    let text = doc.provenance_page_text(page)?;
+    let bbox = text.runs.get(run)?.bbox?;
+    super::geometry::pdf_rect_to_canvas(
+        (bbox.llx, bbox.lly, bbox.urx, bbox.ury),
+        doc.pages.get(page)?,
+    )
 }
 
 #[cfg(test)]
@@ -270,30 +175,5 @@ mod tests {
             (120..=135).contains(&mid),
             "half the slider should be about half the paint, got {mid}"
         );
-    }
-
-    /// The quantum is applied and both ends of the atlas guard hold.
-    #[test]
-    fn a_font_size_is_rounded_and_bounded() {
-        assert_eq!(quantise_font_size(12.3), 12.5);
-        assert_eq!(quantise_font_size(12.1), 12.0);
-        assert_eq!(quantise_font_size(0.001), MIN_FONT_PX);
-        assert_eq!(quantise_font_size(9_000.0), MAX_FONT_PX);
-        assert_eq!(quantise_font_size(f32::NAN), MIN_FONT_PX);
-    }
-
-    /// Every size this yields is a multiple of the quantum.
-    #[test]
-    fn every_size_is_a_multiple_of_the_quantum() {
-        let mut raw = 0.0_f32;
-        while raw < 200.0 {
-            let size = quantise_font_size(raw);
-            let steps = size / FONT_SIZE_QUANTUM_PX;
-            assert!(
-                (steps - steps.round()).abs() < 1e-3,
-                "{raw} quantised to {size}, which is not a multiple of the quantum"
-            );
-            raw += 0.17;
-        }
     }
 }

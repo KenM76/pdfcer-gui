@@ -207,7 +207,7 @@ pub(super) fn draw(
     // at two places in this order because they have two subjects. See
     // `ocrlayer`'s header.
     if let Some(strength) = doc.view.ocr_overlay {
-        ocrlayer::draw_text(&painter, doc, pages, clip, strength);
+        ocrlayer::draw_text(&painter, doc, pages, strength);
     }
     // The find highlights go on FIRST, under everything else.
     //

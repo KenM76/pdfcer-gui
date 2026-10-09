@@ -1,65 +1,59 @@
-# `canvas::ocrink` — the OCR layer, drawn in its own fonts
+# `canvas::ocrink` — the OCR layer, rendered by the engine
 
-The OCR text layer is drawn in the font, size, horizontal scale and position
-each word is stored in, by the same two engine calls that draw a text edit
-while it is typed (`canvas::textedit::shaped`):
+The OCR text layer is a render: the visible part of the page through
+`pdfcer_render::render_page_region` with
+`RenderOptions::with_invisible_text(Some(InvisibleTextPaint::new(rgb).with_only(true)))`.
+In only-mode the renderer paints the page's invisible (mode 3 and 7) text in
+the layer's colour on a transparent backdrop and paints nothing else — no
+images, no paths, no visible text, no annotations. Clips still apply, and the
+canvas's layer visibility (`OpenDoc::layer_visibility`) is passed, so a hidden
+optional-content group hides its recognised text here as it does on the page.
 
-1. `EditSession::edit_text_preview` of an unchanged edit — each show
-   operator's own text replacing that whole operator, pinned as the editor
-   pins it;
-2. `pdfcer_render::edit_preview::preview_outlines` of that preview, which
-   answers each glyph's outline in page space.
+So each word is drawn in its own font, size, horizontal scaling and position by
+the same renderer that draws the page and a text edit's preview, and a word
+does not change shape when an edit opens on it or commits
+(`OPERATOR_REQUESTS.md` O289 item 15).
 
-So the layer, an edit in progress and the committed result are one drawing,
-and a word does not change shape when an edit opens on it or commits
-(`OPERATOR_REQUESTS.md` O289). A fitted stand-in in the interface font
-(`canvas::ocrlayer`) could not promise that: a recogniser writes each word at
-its own size and `Tz`, which no box-fitting reproduces.
+## Contract
 
-## Cost, and why nothing waits on it
+- **Off the UI thread.** A region render interprets the whole content stream,
+  which is too slow for a frame on a dense sheet. One render is in flight at a
+  time; a new one cancels it (`RenderCancel`). The result is handed back
+  through a shared slot and uploaded on the next frame.
+- **What a raster is of** (`Want`): session, edit epoch, page, colour, layer
+  generation, region and density. Any edit moves the epoch, so a committed
+  edit is rendered again.
+- **Region and density.** The region is the visible part of the page,
+  quantised by `render::region::page_region` so a small pan reuses the raster
+  already made. The density is the screen's pixels per page point, rounded up
+  to a quarter octave so a small zoom change reuses it too.
+- **Settling.** A render starts once the view has held still for
+  `SETTLE_SECS` (0.15 s), so a wheel flick does not start one per notch — except
+  when nothing of the current document state is on screen, which starts at once.
+- **Never blanks.** The previous raster stays on screen, drawn at its own page
+  region through the current page mapping (`render::region::region_on_screen`),
+  until its replacement arrives.
+- **The edited run.** The run an open edit is rewriting (its canvas rectangle,
+  from `ocrlayer::edited_rect`) is cut out of the raster: the texture is drawn
+  as up to four pieces around it, so no pixels are re-uploaded. The editor's
+  preview (`textedit::shaped`) draws that run at the layer's opacity. After the
+  edit commits, the cut stays while the raster on screen predates the commit,
+  so the old word does not reappear for the length of one render.
+- **Trace.** `ocr-ink-built page= epoch= px=WxH ms=` when a raster arrives;
+  `ocr-ink-refused page= why=` when the engine refuses one, which leaves the
+  previous raster up. The texture is counted in the texture census as
+  `Surface::OcrLayer`.
 
-One preview per run loads the run's font and plans a rewrite, so a page is laid
-out over several frames: [`step`] spends at most [`BUDGET`] per frame, keeps
-what it has in egui's temporary memory keyed by (session, edit epoch, page),
-and asks for another frame while runs remain. Runs not reached yet are drawn
-by the stand-in, so the layer never blanks while it builds. Any edit moves the
-epoch and the page is laid out again. `ocr-ink-built page= runs= laid= ms=`
-traces each finished page with the wall time it took.
+## Limits
 
-## Which runs it draws
-
-A run gets outlines here only when all of these hold; otherwise
-`ocrlayer` draws it with the stand-in:
-
-- it is OCR text (`ocrlayer::is_ocr_run`);
-- for each of its show operators (`textedit::pin::operators_in_run`), the
-  engine plans the unchanged edit in place (no `rewritten` fallback) with one
-  glyph per character, so the outlines are the run's own. A run is laid out
-  operator by operator because a word typed longer can join its neighbour
-  into one run while each stays its own operator;
-- `preview_outlines` skips nothing (a font with no outlines is skipped).
-
-The run an edit is open on is left out of [`paint`]; the editor's preview
-draws it, at the same opacity (`shaped::paint` scales an invisible run's
-preview by `ocrlayer::painted_fraction`).
-
-## Painting
-
-[`paint`] fills the outlines of every drawn run into one texture covering the
-visible part of their extent, in the layer's colour, through the page-to-screen
-affine `shaped::page_to_screen`, and draws it tinted to the layer's opacity.
-The texture is kept while its tag — page, epoch, runs laid, the held run,
-colour and screen rectangle — is unchanged, and recorded with the texture
-census as `Surface::OcrLayer`.
+- One page: the page `OpenDoc::page_text` caches, as `canvas::ocrlayer`
+  documents.
+- Deep zoom: the visible region is derived through the `f32` page mapping, so
+  past the deep-position tier the region is placed with that mapping's error.
+  At such a zoom one glyph fills the window.
 
 ## R8b
 
 This draws text the file holds, in a view the operator turned on; with the
-layer off it draws nothing. The fonts are the file's own, so the layer shows
-the words as the saved file's text is laid out, not as a marking.
-
-## When the engine can paint invisible text
-
-`ENGINE_BACKLOG.md` G169 asks the renderer for an option to paint text in
-rendering mode 3. Once it lands, the layer is a render and this module is
-deleted.
+layer off it draws nothing. The pixels are the renderer's own, so the layer
+shows the words as the saved file lays them out.

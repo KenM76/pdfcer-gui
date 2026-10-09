@@ -1,274 +1,338 @@
-//! # `canvas::ocrink` — the OCR layer, drawn in its own fonts
+//! # `canvas::ocrink` — the OCR layer, rendered by the engine
 //!
-//! Each invisible run of the page the layer shows is laid out by the same two
-//! calls that draw a text edit while it is typed (`textedit::shaped`):
-//! `EditSession::edit_text_preview` of each of its show operators, unchanged,
-//! then `pdfcer_render::edit_preview::preview_outlines`. The layer,
-//! an edit in progress and the text once committed are therefore one drawing,
-//! in the run's font, size, horizontal scaling and position.
+//! The page's invisible text is drawn by `pdfcer_render` itself: the visible
+//! part of the page, rendered with `RenderOptions::with_invisible_text` in
+//! only-mode, which paints the invisible runs in the layer's colour on a
+//! transparent backdrop and nothing else. The layer, a text edit's preview and
+//! the committed text are therefore one renderer's drawing.
 //!
 //! Contract:
-//! - [`step`] lays out runs for at most [`BUDGET`] of each frame and caches
-//!   the outlines per (session, edit epoch, page); while runs remain it asks
-//!   for another frame. Nothing waits on it.
-//! - A run with no outlines here — not reached yet, refused by the engine for
-//!   any of its show operators, in a font with no outlines, or laid out with a
-//!   different glyph count from its text — is drawn by
-//!   `ocrlayer`'s fitted stand-in; [`Ink::drawn`] says which.
-//! - [`paint`] rasterises the outlines to one texture covering the visible
-//!   part of the page, in the layer's colour, and draws it at the layer's
-//!   opacity. The run being edited is left out; `textedit::shaped` draws it.
+//! - [`paint`] asks for the visible region at the screen's density and draws
+//!   whatever raster it holds at that raster's own page region, at the layer's
+//!   opacity. Nothing waits: the render runs on a thread, is cancelled when
+//!   superseded, and starts once the view has held still for [`SETTLE_SECS`].
+//! - The previous raster stays on screen until its replacement arrives.
+//! - The run an open edit is rewriting is cut out of the raster
+//!   (`textedit::shaped` draws it), and stays cut out after the edit commits
+//!   until a raster of the committed document arrives.
+//! - Layer visibility and the canvas's own render options apply, so a hidden
+//!   optional-content group hides its text here as on the page.
 //!
-//! The engine's renderer cannot paint invisible text; once it can, this module
-//! is replaced by a render of the layer. Design: `docs/modules/pdfcer-gui/canvas/ocrink.md`.
+//! Design: `docs/modules/pdfcer-gui/canvas/ocrink.md`.
 
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::sync::{Arc, Mutex};
 
 use egui::{Color32, Painter, Pos2, Rect};
-use pdfcer_core::text_edit::{
-    BlockRecognitionOptions, EditOptions, EditRequest, EditableTextModel,
-};
-use pdfcer_core::text_extract::PageText;
-use pdfcer_render::tiny_skia::Path;
+use pdfcer_core::page_tree::Rect as PdfRect;
+use pdfcer_render::InvisibleTextPaint;
+use pdfcer_render::cancel::RenderCancel;
 
 use crate::app::settings::SettingsExt;
 use crate::app::state::OpenDoc;
 use crate::canvas::strip::PageView;
-use crate::canvas::textedit::{pin, shaped};
+use crate::render::region::{PageFrame, page_region, region_on_screen};
 
 const KEY: &str = "ocr-ink"; // ui-text-exempt: a memory key, never displayed.
 const TEXTURE: &str = "ocr-ink-texture"; // ui-text-exempt: a texture name, never displayed.
 
-/// The wall time one frame may spend laying runs out.
-pub(super) const BUDGET: Duration = Duration::from_millis(6);
+/// How long the view must hold still before a render starts, seconds.
+const SETTLE_SECS: f64 = 0.15;
 
-/// What a layout is of.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-struct Key {
+/// Scale steps per doubling; the wanted density is rounded up onto this grid
+/// so a small zoom change reuses the raster already made.
+const STEPS_PER_OCTAVE: f32 = 4.0;
+
+/// What a raster is of.
+#[derive(Clone, Copy, PartialEq, Debug)]
+struct Want {
     /// The session's address: a document replaced in its tab is a new one.
     session: usize,
     epoch: u64,
     page: usize,
+    rgb: [u8; 3],
+    layers: u64,
+    /// PDF user space, y-up.
+    region: PdfRect,
+    /// Pixels per page point.
+    scale: f32,
 }
 
-/// The page's invisible runs, laid out so far. Indexed as the page's
-/// provenance-bearing extraction (`OpenDoc::provenance_page_text`) indexes
-/// its runs.
-#[derive(Clone)]
-pub(super) struct Ink {
-    key: Key,
-    /// One entry per run reached: the run's glyph outlines in page space, or
-    /// `None` when it is drawn by the stand-in.
-    runs: Arc<Vec<Option<Vec<Path>>>>,
-    /// How many runs the page has.
-    total: usize,
-    /// Wall time spent laying out, summed over frames.
-    spent: Duration,
-}
-
-impl Ink {
-    /// Whether run `i` is drawn here rather than by the stand-in.
-    #[must_use]
-    pub fn drawn(&self, i: usize) -> bool {
-        self.runs.get(i).is_some_and(Option::is_some)
-    }
-
-    fn done(&self) -> bool {
-        self.runs.len() >= self.total
+impl Want {
+    /// The same document state, whatever the region and density.
+    fn same_content(&self, other: &Self) -> bool {
+        (self.session, self.epoch, self.page, self.rgb, self.layers)
+            == (
+                other.session,
+                other.epoch,
+                other.page,
+                other.rgb,
+                other.layers,
+            )
     }
 }
 
-/// Lay out the next runs of `page` and answer everything laid out so far.
-pub(super) fn step(ctx: &egui::Context, doc: &OpenDoc, text: &PageText) -> Ink {
-    let id = egui::Id::new(KEY);
-    let key = Key {
-        session: Arc::as_ptr(&doc.session) as usize,
-        epoch: doc.edit_epoch,
-        page: text.page_index,
-    };
-    let held = ctx.data_mut(|d| {
-        let held = d.get_temp::<Ink>(id);
-        d.remove::<Ink>(id);
-        held
-    });
-    let mut ink = held.filter(|i| i.key == key).unwrap_or_else(|| Ink {
-        key,
-        runs: Arc::new(Vec::new()),
-        total: text.runs.len(),
-        spent: Duration::ZERO,
-    });
-    if !ink.done() {
-        extend(doc, text, &mut ink);
-        if ink.done() {
-            trace_built(&ink);
-        } else {
-            ctx.request_repaint();
-        }
-    }
-    ctx.data_mut(|d| d.insert_temp(id, ink.clone()));
-    ink
+/// A finished render, still as bytes.
+struct Done {
+    want: Want,
+    size: [usize; 2],
+    rgba: Vec<u8>,
+    ms: u128,
 }
 
-/// Lay out runs from where the last frame stopped until the budget is spent.
-fn extend(doc: &OpenDoc, text: &PageText, ink: &mut Ink) {
-    let started = Instant::now();
-    let model = EditableTextModel::recognize(text, &BlockRecognitionOptions::default());
-    let runs = Arc::make_mut(&mut ink.runs);
-    while runs.len() < ink.total && started.elapsed() < BUDGET {
-        let i = runs.len();
-        let run = &text.runs[i];
-        runs.push(
-            super::ocrlayer::is_ocr_run(run)
-                .then(|| lay(doc, &model, text, i))
-                .flatten(),
-        );
-    }
-    ink.spent += started.elapsed();
+type Slot = Arc<Mutex<Option<Result<Done, String>>>>;
+
+/// The layer's raster, held across frames.
+#[derive(Default)]
+struct State {
+    /// The view last asked for, and when it was first asked for.
+    asked: Option<(Want, f64)>,
+    /// The render in flight.
+    pending: Option<(Want, RenderCancel, Slot)>,
+    /// The raster on screen.
+    shown: Option<(Want, egui::TextureHandle)>,
+    /// The last edited run's canvas rectangle and the epoch it was edited at.
+    hole: Option<(u64, Rect)>,
 }
 
-/// Run `i`'s outlines: each of its show operators laid out as an unchanged
-/// edit of that operator lays it out. `None` when any one cannot be.
-fn lay(
-    doc: &OpenDoc,
-    model: &EditableTextModel<'_>,
-    text: &PageText,
-    i: usize,
-) -> Option<Vec<Path>> {
-    let run = &text.runs[i].text;
-    let mut paths = Vec::new();
-    for op in pin::operators_in_run(model, text, i) {
-        paths.extend(lay_operator(
-            doc,
-            text.page_index,
-            op.pin,
-            run.get(op.text)?,
-        )?);
-    }
-    (!paths.is_empty()).then_some(paths)
-}
+type Shared = Arc<Mutex<State>>;
 
-/// One show operator's outlines, through the text editor's preview.
-fn lay_operator(doc: &OpenDoc, page: usize, pinned: pin::Pinned, text: &str) -> Option<Vec<Path>> {
-    let mut request = EditRequest::find_replace(page, "", text);
-    request.pinned_span = Some(pinned.span);
-    request.target = pinned.target;
-    let preview = doc
-        .session
-        .edit_text_preview(&request, &EditOptions::default())
-        .ok()?;
-    if preview.rewritten.is_some() || preview.glyphs.len() != text.chars().count() {
-        return None;
-    }
-    let outlines = pdfcer_render::edit_preview::preview_outlines(
-        &doc.session.view(),
-        &preview,
-        &doc.settings.render_options().fonts,
-    );
-    if outlines.skipped.is_some() {
-        return None;
-    }
-    Some(outlines.glyphs.into_iter().flatten().collect())
-}
-
-fn trace_built(ink: &Ink) {
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        let laid = ink.runs.iter().filter(|r| r.is_some()).count();
-        format!(
-            "ocr-ink-built page={} runs={} laid={laid} ms={}",
-            ink.key.page,
-            ink.total,
-            ink.spent.as_millis()
-        )
-    });
-}
-
-/// **Draw the laid-out runs** of `ink` on `view`, all but `held`, in `colour`
-/// at opacity `alpha`, within the painter's clip.
-#[allow(clippy::cast_possible_truncation)]
+/// **Draw the OCR layer** of `view`'s page in `rgb` at opacity `alpha`, the
+/// run whose canvas rectangle is `held` cut out.
 pub(super) fn paint(
     painter: &Painter,
     doc: &OpenDoc,
     view: &PageView,
-    ink: &Ink,
-    held: Option<usize>,
-    colour: Color32,
+    held: Option<Rect>,
+    rgb: [u8; 3],
     alpha: u8,
 ) {
-    let Some(page) = doc.pages.get(ink.key.page) else {
+    let Some(page) = doc.pages.get(view.page) else {
         return;
     };
-    let Some(m) = shaped::page_to_screen(&view.map, page) else {
+    let ctx = painter.ctx();
+    let shared = ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Shared>(egui::Id::new(KEY))
+            .clone()
+    });
+    let Ok(mut state) = shared.lock() else {
         return;
     };
-    let paths = || {
-        ink.runs
-            .iter()
-            .enumerate()
-            .filter(move |(i, _)| Some(*i) != held)
-            .filter_map(|(_, r)| r.as_ref())
-            .flatten()
-    };
-    let Some(extent) = paths().map(Path::bounds).reduce(|a, b| {
-        let (l, t) = (a.left().min(b.left()), a.top().min(b.top()));
-        let (r, bt) = (a.right().max(b.right()), a.bottom().max(b.bottom()));
-        pdfcer_render::tiny_skia::Rect::from_ltrb(l, t, r, bt).unwrap_or(a)
-    }) else {
+    collect(ctx, &mut state);
+    let now = ctx.input(|i| i.time);
+    if let Some(want) = wanted(painter, doc, view, rgb) {
+        schedule(ctx, doc, &mut state, want, now);
+    }
+    if let Some(rect) = held {
+        state.hole = Some((doc.edit_epoch, rect));
+    }
+    let Some((shown, texture)) = &state.shown else {
         return;
     };
-    let corners = [
-        (extent.left(), extent.top()),
-        (extent.right(), extent.top()),
-        (extent.left(), extent.bottom()),
-        (extent.right(), extent.bottom()),
-    ]
-    .map(|(x, y)| shaped::apply(&m, Pos2::new(x, y)));
-    let body = Rect::from_points(&corners)
-        .expand(1.0)
-        .intersect(painter.clip_rect());
-    if !body.is_positive() {
+    let current = (Arc::as_ptr(&doc.session) as usize, view.page);
+    if (shown.session, shown.page) != current {
         return;
     }
-    let ctx = painter.ctx();
-    let ppp = ctx.pixels_per_point();
-    let tag = (
-        ink.key,
-        ink.runs.len(),
-        held,
-        colour.to_array(),
-        [body.min.x, body.min.y, body.max.x, body.max.y, ppp].map(|v| (v * 8.0).round() as i64),
+    let at = region_on_screen(
+        shown.region,
+        crate::viewer::page_extent_pts(page),
+        PageFrame::of(page),
+        view.map.image_rect(),
     );
-    let id = egui::Id::new(TEXTURE);
-    let cached = ctx
-        .data(|d| d.get_temp::<(Tag, egui::TextureHandle)>(id))
-        .filter(|(t, _)| *t == tag)
-        .map(|(_, t)| t);
-    let texture = match cached {
-        Some(t) => t,
-        None => {
-            let Some(image) = shaped::fill_paths(paths(), &m, body, ppp, colour) else {
-                return;
-            };
-            let [w, h] = image.size;
-            crate::render::pressure::record_other(
-                ctx,
-                crate::render::pressure::Surface::OcrLayer,
-                w as u32,
-                h as u32,
-            );
-            let t = ctx.load_texture(TEXTURE, image, egui::TextureOptions::LINEAR);
-            ctx.data_mut(|d| d.insert_temp(id, (tag, t.clone())));
-            t
-        }
-    };
-    painter.image(
-        texture.id(),
-        body,
-        Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)),
-        // NOT A THEME COLOUR: the identity tint, scaled to the layer's opacity.
-        Color32::WHITE.gamma_multiply(f32::from(alpha) / 255.0),
-    );
+    // The edited run stays cut out until a raster of what it committed to
+    // arrives; once one has, the raster draws it.
+    let hole = held.or_else(|| {
+        state
+            .hole
+            .filter(|(epoch, _)| *epoch == shown.epoch && doc.edit_epoch != shown.epoch)
+            .map(|(_, r)| r)
+    });
+    let hole = hole.map(|r| view.map.rect_to_screen(r));
+    // NOT A THEME COLOUR: the identity tint, scaled to the layer's opacity.
+    let tint = Color32::WHITE.gamma_multiply(f32::from(alpha) / 255.0);
+    draw_holed(painter, texture.id(), at, hole, tint);
 }
 
-type Tag = (Key, usize, Option<usize>, [u8; 4], [i64; 5]);
+/// The region and density the view needs now. `None` when nothing of the
+/// page is visible.
+fn wanted(painter: &Painter, doc: &OpenDoc, view: &PageView, rgb: [u8; 3]) -> Option<Want> {
+    let page = doc.pages.get(view.page)?;
+    let visible = view.map.image_rect().intersect(painter.clip_rect());
+    if !visible.is_positive() {
+        return None;
+    }
+    let (w, h) = crate::viewer::page_extent_pts(page);
+    let c = view.map.rect_to_page(visible);
+    let canvas = (
+        f64::from(c.min.x.max(0.0)),
+        f64::from(c.min.y.max(0.0)),
+        f64::from(c.max.x.min(w)),
+        f64::from(c.max.y.min(h)),
+    );
+    if canvas.2 <= canvas.0 || canvas.3 <= canvas.1 {
+        return None;
+    }
+    let zoom = view.map.page_vec_to_screen(egui::vec2(1.0, 0.0)).x;
+    let density = zoom * painter.ctx().pixels_per_point();
+    if !density.is_finite() || density <= 0.0 {
+        return None;
+    }
+    let scale = (density.log2() * STEPS_PER_OCTAVE).ceil() / STEPS_PER_OCTAVE;
+    Some(Want {
+        session: Arc::as_ptr(&doc.session) as usize,
+        epoch: doc.edit_epoch,
+        page: view.page,
+        rgb,
+        layers: doc.layers.generation,
+        region: page_region(canvas, PageFrame::of(page)),
+        scale: scale.exp2(),
+    })
+}
+
+/// Start a render of `want` once the view has settled on it, unless the
+/// raster shown or the one in flight is already of it.
+fn schedule(ctx: &egui::Context, doc: &OpenDoc, state: &mut State, want: Want, now: f64) {
+    let held = |w: &Want| *w == want;
+    if state.shown.as_ref().is_some_and(|(w, _)| held(w))
+        || state.pending.as_ref().is_some_and(|(w, _, _)| held(w))
+    {
+        state.asked = None;
+        return;
+    }
+    let since = match state.asked {
+        Some((asked, at)) if asked == want => at,
+        _ => {
+            state.asked = Some((want, now));
+            now
+        }
+    };
+    // Nothing of this document state on screen: start at once rather than
+    // leave the layer empty for the settle time.
+    let empty = !state
+        .shown
+        .as_ref()
+        .is_some_and(|(w, _)| w.same_content(&want));
+    if !empty && now - since < SETTLE_SECS {
+        ctx.request_repaint_after(std::time::Duration::from_secs_f64(SETTLE_SECS));
+        return;
+    }
+    start(ctx, doc, state, want);
+}
+
+/// Render `want` on a thread, cancelling any render in flight.
+fn start(ctx: &egui::Context, doc: &OpenDoc, state: &mut State, want: Want) {
+    if let Some((_, cancel, _)) = state.pending.take() {
+        cancel.cancel();
+    }
+    let Some(page) = doc.pages.get(want.page).cloned() else {
+        return;
+    };
+    let cancel = RenderCancel::new();
+    let mut options = doc
+        .settings
+        .render_options()
+        .with_invisible_text(Some(InvisibleTextPaint::new(want.rgb).with_only(true)));
+    options.layers = doc.layer_visibility();
+    options.cancel = Some(cancel.clone());
+    let session = Arc::clone(&doc.session);
+    let slot: Slot = Arc::default();
+    let out = Arc::clone(&slot);
+    let repaint = ctx.clone();
+    let spawned = std::thread::Builder::new()
+        .name("ocr-layer".into())
+        .spawn(move || {
+            let began = std::time::Instant::now();
+            let view = session.view();
+            let done =
+                pdfcer_render::render_page_region(&view, &page, want.scale, want.region, &options)
+                    .map(|r| Done {
+                        size: [r.pixmap.width() as usize, r.pixmap.height() as usize],
+                        rgba: r.pixmap.data().to_vec(),
+                        want,
+                        ms: began.elapsed().as_millis(),
+                    })
+                    .map_err(|e| e.to_string());
+            if let Ok(mut slot) = out.lock() {
+                *slot = Some(done);
+            }
+            repaint.request_repaint();
+        });
+    if spawned.is_ok() {
+        state.asked = None;
+        state.pending = Some((want, cancel, slot));
+    }
+}
+
+/// Take a finished render, if one has arrived, and upload it.
+#[allow(clippy::cast_possible_truncation)]
+fn collect(ctx: &egui::Context, state: &mut State) {
+    let Some((want, _, slot)) = &state.pending else {
+        return;
+    };
+    let want = *want;
+    let Some(done) = slot.lock().ok().and_then(|mut s| s.take()) else {
+        return;
+    };
+    state.pending = None;
+    let done = match done {
+        Ok(done) => done,
+        Err(why) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("ocr-ink-refused page={} why={why}", want.page)
+            });
+            return;
+        }
+    };
+    let [w, h] = done.size;
+    crate::render::pressure::record_other(
+        ctx,
+        crate::render::pressure::Surface::OcrLayer,
+        w as u32,
+        h as u32,
+    );
+    let image = egui::ColorImage::from_rgba_premultiplied(done.size, &done.rgba);
+    let texture = ctx.load_texture(TEXTURE, image, egui::TextureOptions::LINEAR);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "ocr-ink-built page={} epoch={} px={w}x{h} ms={}",
+            done.want.page, done.want.epoch, done.ms
+        )
+    });
+    state.shown = Some((done.want, texture));
+}
+
+/// Draw `texture` over `at`, all but the part under `hole`.
+fn draw_holed(
+    painter: &Painter,
+    texture: egui::TextureId,
+    at: Rect,
+    hole: Option<Rect>,
+    tint: Color32,
+) {
+    let full = Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0));
+    let Some(hole) = hole.map(|h| h.intersect(at)).filter(|h| h.is_positive()) else {
+        painter.image(texture, at, full, tint);
+        return;
+    };
+    let pieces = [
+        Rect::from_x_y_ranges(at.x_range(), at.min.y..=hole.min.y),
+        Rect::from_x_y_ranges(at.x_range(), hole.max.y..=at.max.y),
+        Rect::from_x_y_ranges(at.min.x..=hole.min.x, hole.y_range()),
+        Rect::from_x_y_ranges(hole.max.x..=at.max.x, hole.y_range()),
+    ];
+    let uv = |p: Pos2| {
+        Pos2::new(
+            (p.x - at.min.x) / at.width(),
+            (p.y - at.min.y) / at.height(),
+        )
+    };
+    for piece in pieces.into_iter().filter(|r| r.is_positive()) {
+        painter.image(
+            texture,
+            piece,
+            Rect::from_min_max(uv(piece.min), uv(piece.max)),
+            tint,
+        );
+    }
+}

@@ -23,11 +23,9 @@ screen. Re-rasterizing per slider position would put a render request
 behind a drag, and `OPERATOR_REQUESTS.md` O24 is this shell's record of
 what that costs.
 
-The text's half is drawn by [`draw_text`] in each word's own font through
-`canvas::ocrink`, which lays the page out with the text editor's preview, so
-the layer and an edit of it are one drawing. A run `ocrink` has not laid out
-yet, or cannot, is drawn by the stand-in here: the run's text in the interface
-font, fitted to its box, laid out every frame.
+The text's half is drawn by [`draw_text`] through `canvas::ocrink`, which
+renders the page's invisible text with the engine's renderer in the layer's
+colour, so the layer and an edit of it are one drawing.
 
 The two sit at different places in `painting`'s layer order — the veil
 under the grid, because it is about the *paper*; the text above the grid
@@ -48,38 +46,25 @@ because this is a *reading instrument* rather than a rendering of the page:
 the text has to be told apart from the scan underneath it, and which colour
 does that depends on the scan.
 
-## Why there is no cap and nothing is skipped
+## Nothing is skipped
 
-`canvas::chunks` bounds its work with `MAX_CHUNK_BOXES` and draws nothing
-past it. That is right for a *selection* — the operator can select less —
-and wrong here, because this is a **view** and the pages it exists for are
-exactly the dense ones. A cap would blank the feature on its own subject.
-
-The cost is bounded instead, in two ways that omit nothing visible:
-
-* **Runs outside the clip are not laid out.** They are not on screen, so
-  nothing is lost by not drawing them.
-* **A run too small to resolve into glyphs is drawn as a filled box** at
-  the run's own rectangle — see [`MIN_FONT_PX`]. That is not an omission
-  and not a placeholder: it is the same content at a scale where letters
-  do not survive, and it says *there is recognised text here* truthfully.
-  It also costs no layout, which is what makes a whole dense sheet at
-  fit-page zoom affordable.
-
-So this module owes no "some were not shown" disclosure, because there is
-no state in which it does not show one.
+This is a **view**, and the pages it exists for are the dense ones, so it has
+no cap: the engine renders every invisible run in the visible region, at the
+screen's density. A run too small to resolve into letters renders as the
+renderer renders any text that small. This module therefore owes no "some were
+not shown" disclosure.
 
 ## The run being edited is left to the editor
 
 While a text edit is open on an invisible run and `textedit::shaped` has laid
 it out, that preview draws the run in its own font, in this layer's colour
-(`colour32`) and at its opacity, and this module skips the run
-(`edited_run`): drawing both would show the old and the new text on top of
-each other. The layer reads the provenance-bearing extraction
-(`OpenDoc::provenance_page_text`), whose run indices the editor uses, so the
-run is matched by index. When the preview has fallen back to the stand-in
-box, nothing is skipped. `ocr-layer-held runs=` traces how many runs were left
-to the editor.
+(`colour32`) and at its opacity, and the layer's raster is drawn with that
+run's rectangle cut out (`edited_rect`): drawing both would show the old and
+the new text on top of each other. The rectangle comes from the
+provenance-bearing extraction (`OpenDoc::provenance_page_text`), whose run
+indices the editor uses. When the preview has fallen back to the stand-in box,
+nothing is cut out. `ocr-layer-held runs=` traces whether a run is left to the
+editor.
 
 ## One page
 
@@ -109,54 +94,11 @@ backdrop per §11.4.7. Fading the raster towards anything else would fade it
 towards a colour the renderer never used, and the page would change hue on
 its way to blank.
 
-### `fn draw_run`
-
-The size is taken from the box's **height** and then corrected by a
-measurement of the laid-out width, which is at most two layouts and usually
-one. Taking it from the glyph metrics instead would mean reproducing the
-text matrix here; taking it from the width alone would make a two-word run
-and a twenty-word run in equal boxes render at wildly different sizes.
-
 ### `fn the_slider_stops_are_no_paint_and_full_paint`
 
 A build that inverted the slider satisfies neither: it would paint the
 veil at the left stop, which is the position that means *show me the
 scan*.
-
-### `fn every_size_is_a_multiple_of_the_quantum`
-
-The property the atlas argument rests on, asserted over a walk rather
-than at two chosen points: a rounding that worked at 12.3 and failed
-near the clamps would pass the test above.
-
-### `const MIN_FONT_PX`
-
-Below it a run is drawn as a filled box instead — see the header. The value
-is where a proportional face stops resolving into distinguishable letters
-on a 96 dpi display; under it the glyphs are a smudge that costs a layout
-and reads as noise, and a solid bar reads as *text, too small*, which is
-what is true.
-
-### `const MAX_FONT_PX`
-
-⚠ A ceiling on the **font atlas**, not on the design. A run's box grows
-without bound as the operator zooms, and egui rasterizes a glyph per
-(face, size): asking for a 4,000 pt face once is a multi-megabyte atlas
-upload in the middle of a zoom gesture.
-
-The visible consequence is that past roughly this size the overlay text
-stops growing with the page while the scan under it keeps growing. That is
-a real divergence and it is stated here rather than hidden: it begins at a
-zoom where one run fills the window, which is far past any zoom at which
-two layers are being compared.
-
-### `const FONT_SIZE_QUANTUM_PX`
-
-Not cosmetic. Every distinct size is a separate set of rasterized glyphs
-in egui's atlas, and a page of OCR runs has as many distinct box heights as
-it has runs. Rounding collapses a sheet's worth of near-identical sizes
-onto a few dozen shared ones, so the atlas holds a face-sized set rather
-than a page-sized one, and a zoom re-uses what the last frame uploaded.
 
 ### `const DEFAULT_COLOUR`
 
@@ -219,8 +161,6 @@ veiling nothing would put a white rectangle over whatever the strip is
 showing in its place.
 
 ### `fn draw_text`
-
-`clip` culls: a run whose screen rectangle misses it is never laid out.
 
 The colour is read from the painter's own context rather than passed in, so
 the `NOT A THEME COLOUR:` argument stays beside the value it is about and

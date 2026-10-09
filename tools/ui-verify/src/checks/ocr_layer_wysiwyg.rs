@@ -26,12 +26,14 @@ const INVOKE: &str = "mode.edit,view.ocr_layer,edit.text"; // ui-text-exempt: co
 const CLICK: (f64, f64) = (115.5, 340.0);
 /// Letters typed at the end of the word; none of them is in the fixture.
 const TYPED: &str = "XQ";
-/// Fewest runs the layer must lay out in their own fonts. The page has 96.
-const MIN_LAID: usize = 90;
 /// Fewest layer-coloured pixels that count as a drawn word.
 const MIN_INK: usize = 20;
-/// A pixel differs when a channel moves by more than this.
+/// A pixel differs when a channel of its 3 × 3 mean ([`blurred`]) moves by
+/// more than this.
 const CHANNEL: i32 = 48;
+/// The fewer of the two pictures' layer-coloured pixel counts, over the more,
+/// may not fall below this: a word drawn fainter or smaller loses its hue first.
+const MIN_INK_RATIO: f64 = 0.75;
 /// The largest share of a word's layer-coloured pixels that may differ.
 const MAX_DIFFERENT: f64 = 0.15;
 /// Logical points trimmed off the editor box: its accent edge on every side,
@@ -127,11 +129,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     Ok(None)
 }
 
-/// Wait for an `ocr-ink-built` line after `mark`; its `laid=`.
-fn built_after(session: &Session, mark: usize) -> Result<Option<usize>> {
+/// Wait for an `ocr-ink-built` line after `mark`; the line.
+fn built_after(session: &Session, mark: usize) -> Result<Option<String>> {
     for _ in 0..30 {
         if let Some(line) = session.trace()?.last_after(BUILT, mark) {
-            return Ok(line.get_usize("laid"));
+            return Ok(Some(line.raw.clone()));
         }
         session.settle(10);
     }
@@ -173,16 +175,10 @@ fn edit(
     pointer: &ScriptedPointer,
     doc: &std::path::Path,
 ) -> Result<std::result::Result<Vec<Pair>, String>> {
-    let Some(laid) = built_after(session, 0)? else {
+    let Some(built) = built_after(session, 0)? else {
         return Ok(Err(format!("★ the layer traced no `{BUILT}` line.")));
     };
-    report.note(format!("★ {laid} runs laid out in their own fonts"));
-    if laid < MIN_LAID {
-        return Ok(Err(format!(
-            "★ the layer laid out {laid} runs in their own fonts, fewer than {MIN_LAID}: the \
-             rest are drawn in a stand-in."
-        )));
-    }
+    report.note(format!("★ layer: `{built}`"));
     let layer = shot(ctx, report, session, pointer, "layer")?;
     let page = crate::fixture::page_geometry(doc)
         .ok_or_else(|| Error::new("could not read a page size from the fixture."))?;
@@ -234,16 +230,50 @@ fn layer_hued(p: crate::image::Rgb) -> bool {
     r - g > 60 && b - g > 40 && r > b
 }
 
-fn judge(report: &mut CheckReport, pair: &Pair) -> Option<String> {
-    let (mut ink_a, mut ink_b, mut different) = (0_usize, 0_usize, 0_usize);
-    for (pa, pb) in pair.a.pixels_in(pair.band).zip(pair.b.pixels_in(pair.band)) {
-        ink_a += usize::from(layer_hued(pa));
-        ink_b += usize::from(layer_hued(pb));
-        let moved = [(pa.r, pb.r), (pa.g, pb.g), (pa.b, pb.b)]
-            .iter()
-            .any(|(x, y)| (i32::from(*x) - i32::from(*y)).abs() > CHANNEL);
-        different += usize::from(moved);
+/// The mean of the 3 × 3 pixels around `(x, y)`, per channel. The layer is
+/// the engine's raster and the edit is egui's, so the two antialias a glyph
+/// differently; at this blur their pictures of one word agree, and a word
+/// moved by one pixel still differs over a quarter of its ink.
+fn blurred(image: &crate::image::Image, x: u32, y: u32) -> [i32; 3] {
+    let mut sum = [0_i32; 3];
+    let mut n = 0;
+    for dy in 0..3 {
+        for dx in 0..3 {
+            let Some(p) = (x + dx)
+                .checked_sub(1)
+                .zip((y + dy).checked_sub(1))
+                .and_then(|(px, py)| image.pixel(px, py))
+            else {
+                continue;
+            };
+            for (s, v) in sum.iter_mut().zip([p.r, p.g, p.b]) {
+                *s += i32::from(v);
+            }
+            n += 1;
+        }
     }
+    sum.map(|s| s / n.max(1))
+}
+
+fn judge(report: &mut CheckReport, pair: &Pair) -> Option<String> {
+    let ink_a = pair
+        .a
+        .pixels_in(pair.band)
+        .filter(|p| layer_hued(*p))
+        .count();
+    let ink_b = pair
+        .b
+        .pixels_in(pair.band)
+        .filter(|p| layer_hued(*p))
+        .count();
+    let band = pair.band;
+    let different = (band.y..band.y + band.h)
+        .flat_map(|y| (band.x..band.x + band.w).map(move |x| (x, y)))
+        .filter(|&(x, y)| {
+            let (a, b) = (blurred(&pair.a, x, y), blurred(&pair.b, x, y));
+            a.iter().zip(&b).any(|(x, y)| (x - y).abs() > CHANNEL)
+        })
+        .count();
     let share = different as f64 / ink_a.max(ink_b).max(1) as f64;
     report.note(format!(
         "{}: {ink_a} and {ink_b} layer-coloured pixels, {different} different ({:.0}%)",
@@ -254,6 +284,13 @@ fn judge(report: &mut CheckReport, pair: &Pair) -> Option<String> {
         return Some(format!(
             "★★★★ {}: the word's band holds {ink_a} and {ink_b} layer-coloured pixels; one \
              picture has no word in it.",
+            pair.what
+        ));
+    }
+    let ratio = ink_a.min(ink_b) as f64 / ink_a.max(ink_b) as f64;
+    if ratio < MIN_INK_RATIO {
+        return Some(format!(
+            "★★★★ {}: {ink_a} and {ink_b} layer-coloured pixels; one picture draws the word fainter or smaller than the other.",
             pair.what
         ));
     }

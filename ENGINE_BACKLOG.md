@@ -141,7 +141,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **wanted, at the pin since v0.81.0; request G169.** The OCR layer (O289 item 15) paints each word itself in `canvas::ocrink`; a render with `RenderPolicy::invisible_text` set and `only` true, composited over the page (`RenderOptions::effective_backdrop` is transparent then), replaces it. |
+| **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **shipped — View ▸ Display ▸ OCR text; request G169.** `canvas::ocrink` renders the visible region through `pdfcer_render::render_page_region` with `RenderOptions::with_invisible_text` in only-mode, on a background thread, and composites the raster over the page; driven by `the_ocr_layer_draws_a_word_as_its_edit_does`. |
 
 ---
 
@@ -627,7 +627,7 @@ Filed in the request channel for O289's items. G164 to G169 are answered and at 
 - **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; wired.
 - **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; wired.
 - **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; wired through `set_3d_views`.
-- **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Answered as `RenderOptions::with_invisible_text`; `canvas::ocrink` still lays each run out through `edit_text_preview` until the render replaces it.
+- **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Answered as `RenderOptions::with_invisible_text`, which `canvas::ocrink` now renders the layer with.
 - **G173** — removing an OCR layer does not say which region layers it emptied (item 17). Open; the GUI deletes them by trial delete meanwhile.
 
 ## Filed requests for pasting in from other programs — not verdict rows
