@@ -144,7 +144,14 @@ pub fn action(
     // shell will not send those to a verb that rewrites bytes.
     let _ = provider.ok_or(Refusal::NoObjectModel)?;
     let objects = selection.object_indices_on(page);
-    if objects.is_empty() {
+    // A selection made inside a placed drawing has leaves and no page objects;
+    // its verb is the form-scoped twin, which takes the same page-space matrix.
+    let leaves = if objects.is_empty() {
+        selection.leaf_indices_on(page)
+    } else {
+        Vec::new()
+    };
+    if objects.is_empty() && leaves.is_empty() {
         return Err(Refusal::NothingSelected);
     }
     // The computed scale, on the trace channel, from the ONE place that
@@ -160,10 +167,11 @@ pub fn action(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "resize-scale sx={sx:.4} sy={sy:.4} ax={:.2} ay={:.2} objects={}",
+            "resize-scale sx={sx:.4} sy={sy:.4} ax={:.2} ay={:.2} objects={} leaves={}",
             anchor.x,
             anchor.y,
-            objects.len()
+            objects.len(),
+            leaves.len()
         )
     });
     // `scale(...).about(anchor)` — the whole arithmetic, in the engine's own
@@ -179,6 +187,14 @@ pub fn action(
     // conjugates by each object's own CTM, and a caller that "helpfully"
     // pre-multiplied would be right only where that CTM is the identity.
     let matrix = pdfcer_core::vector::Matrix::scale(f64::from(sx), f64::from(sy)).about(anchor);
+    if objects.is_empty() {
+        return Ok(VectorAction::TransformLeavesInForm {
+            page,
+            leaves,
+            matrix,
+        }
+        .into());
+    }
     Ok(VectorAction::TransformObjects {
         page,
         objects,

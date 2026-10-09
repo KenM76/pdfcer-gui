@@ -203,18 +203,19 @@ pub fn drag(
     // for the **content** verb, which the annotation branch returns before ever
     // reaching.
     //
-    // ## And it now SPEAKS, which the old guard did not
+    // ## A selection inside a placed drawing turns by the form-scoped twin
     //
-    // A leaf-only selection is the reachable case: `object_indices_on` keeps
-    // entries with a `page_object_index` and drops the ones with only a
-    // `leaf_index`, so an operator who has clicked *into* a form XObject has an
-    // outline, a grip box, a painted rotate handle — and no operand. Before
-    // this, that drag returned silently. `SelectionState::leaf_indices_on`'s
-    // own header states the distinction it exists to let a caller word: *"you
-    // selected nothing"* versus *"you selected something this verb cannot
-    // reach"*. This is the second, and it is now a sentence.
+    // `object_indices_on` drops entries that carry only a `leaf_index`, so a
+    // selection made by going inside a form XObject has no page objects; its
+    // leaves take `transform_objects_in_form` with the same page-space matrix.
+    // Only a selection with neither is declined, and it says so.
     let objects = selection.object_indices_on(page_index);
-    if objects.is_empty() {
+    let leaves = if objects.is_empty() {
+        selection.leaf_indices_on(page_index)
+    } else {
+        Vec::new()
+    };
+    if objects.is_empty() && leaves.is_empty() {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //
@@ -243,23 +244,31 @@ pub fn drag(
         // pivoted about a corner instead of the centre, and one that snapped
         // when it should not are all `rotate-commit` otherwise.
         format!(
-            "rotate-commit deg={:.2} px={:.2} py={:.2} objects={} constrained={}",
+            "rotate-commit deg={:.2} px={:.2} py={:.2} objects={} leaves={} constrained={}",
             (-theta).to_degrees(),
             pivot.x,
             pivot.y,
             objects.len(),
+            leaves.len(),
             u8::from(constrain),
         )
     });
-    actions.push(
+    // NEGATED here, and nowhere else. See this function's header.
+    let matrix = pdfcer_core::vector::Matrix::rotate(f64::from(-theta)).about(pivot);
+    let action = if objects.is_empty() {
+        crate::app::actions::VectorAction::TransformLeavesInForm {
+            page: page_index,
+            leaves,
+            matrix,
+        }
+    } else {
         crate::app::actions::VectorAction::TransformObjects {
             page: page_index,
             objects,
-            // NEGATED here, and nowhere else. See this function's header.
-            matrix: pdfcer_core::vector::Matrix::rotate(f64::from(-theta)).about(pivot),
+            matrix,
         }
-        .into(),
-    );
+    };
+    actions.push(action.into());
     None
 }
 

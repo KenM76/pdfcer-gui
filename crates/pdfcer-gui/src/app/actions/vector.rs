@@ -13,6 +13,7 @@
 use pdfcer_core::edit::{CommandKind, EditSession};
 
 mod inform_delete;
+mod leaftransform;
 mod nodeshape;
 mod replaceimage;
 
@@ -379,6 +380,11 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 });
             }
         }
+        VectorAction::TransformLeavesInForm {
+            page,
+            leaves,
+            matrix,
+        } => leaftransform::apply(doc, page, &leaves, matrix),
         VectorAction::MoveSubpath {
             page,
             object,
@@ -641,7 +647,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             objects,
             matrix,
         } => {
-            let mut transformed = 0_u64;
+            let mut transformed = None;
             vector_edit_on_page(doc, "transform-objects", page, objects.len(), |session| {
                 session
                     .transform_objects(
@@ -651,34 +657,38 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                         pdfcer_core::vector::TransformOptions::default(),
                     )
                     .map(|outcome| {
-                        transformed = outcome.objects_transformed;
+                        transformed = Some(outcome.objects_transformed);
                         outcome.disclosures
                     })
             });
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                //
-                // It carries the MATRIX, and it has to. A line saying only
-                // "a transform committed" would be identical for a build
-                // that translated when it meant to scale, scaled about the
-                // wrong pivot, or applied the transform in the object's
-                // local space instead of the page's — which is the one error
-                // here that lands the object at a plausible wrong distance
-                // with nothing erroring. `resize-commit`'s own note makes
-                // the same argument: a trace line must carry the number a
-                // wrong build would get wrong.
-                format!(
-                    "transform-objects-applied page={page} asked={} \
-                     transformed={transformed} m=[{:.4} {:.4} {:.4} {:.4} {:.2} {:.2}]",
-                    objects.len(),
-                    matrix.a,
-                    matrix.b,
-                    matrix.c,
-                    matrix.d,
-                    matrix.e,
-                    matrix.f,
-                )
-            });
+            // Written only when the engine applied it; a refusal is the
+            // funnel's `transform-objects-refused` line.
+            if let Some(transformed) = transformed {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    //
+                    // It carries the MATRIX, and it has to. A line saying only
+                    // "a transform committed" would be identical for a build
+                    // that translated when it meant to scale, scaled about the
+                    // wrong pivot, or applied the transform in the object's
+                    // local space instead of the page's — which is the one error
+                    // here that lands the object at a plausible wrong distance
+                    // with nothing erroring. `resize-commit`'s own note makes
+                    // the same argument: a trace line must carry the number a
+                    // wrong build would get wrong.
+                    format!(
+                        "transform-objects-applied page={page} asked={} \
+                         transformed={transformed} m=[{:.4} {:.4} {:.4} {:.4} {:.2} {:.2}]",
+                        objects.len(),
+                        matrix.a,
+                        matrix.b,
+                        matrix.c,
+                        matrix.d,
+                        matrix.e,
+                        matrix.f,
+                    )
+                });
+            }
         }
         VectorAction::MergeTextRuns { page, object, runs } => {
             vector_edit_on_page(doc, "merge-text-runs", page, runs.len(), |session| {

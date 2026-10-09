@@ -361,6 +361,19 @@ pub enum VectorAction {
         /// Vertical displacement, PDF user-space points (Y is up).
         dy: f64,
     },
+    /// Scale or rotate every selected object **inside a form XObject** —
+    /// `EditSession::transform_objects_in_form`, one undo entry. The leaves
+    /// must name one placement of one form; the engine refuses a list that
+    /// spans two (`FormLeafSelectionSpansForms`).
+    TransformLeavesInForm {
+        /// The 0-based page.
+        page: usize,
+        /// Leaf indices, ascending and unique.
+        leaves: Vec<usize>,
+        /// The transform, **in PAGE space**, as [`Self::TransformObjects`]
+        /// takes it; the engine maps it through the form's placement.
+        matrix: Matrix,
+    },
     /// Displace **one subpath** of one path object by a page-space delta, as
     /// one undoable command — the Part rung's move verb.
     ///
