@@ -103,10 +103,9 @@ impl ObjectModelProvider {
     /// [`Self::text_line_hits`], for either index space.
     ///
     /// A page object asks the engine's `hit_test_text_runs`, which takes a
-    /// page-list index. A form leaf has no index in that list, so its runs are
-    /// tested here by the same rule: the run box inflated by the tolerance,
-    /// nearest first by distance to the box. The engine has no object-taking
-    /// form of that test (requested as G147); this arm goes when it lands.
+    /// page-list index; a form leaf has no index in that list, so it asks
+    /// `hit_test_text_runs_of` with the leaf's text object in hand. Same rule
+    /// and ordering either way.
     #[must_use]
     pub fn text_line_hits_of(&self, target: TargetId, point: Pos2, tolerance: f64) -> Vec<usize> {
         if let Some(object) = target.page_object_index() {
@@ -115,23 +114,10 @@ impl ObjectModelProvider {
         let (Some(text), Some(pdf)) = (self.text_of(target), self.canvas_to_pdf(point)) else {
             return Vec::new();
         };
-        let tolerance = super::resolve(tolerance);
-        let mut runs: Vec<(f64, usize)> = text
-            .runs
-            .iter()
-            .enumerate()
-            .filter(|(_, run)| run.bounds.inflate(tolerance).contains(pdf))
-            .map(|(i, run)| {
-                let b = run.bounds;
-                let dx = (b.min.x - pdf.x).max(pdf.x - b.max.x).max(0.0);
-                let dy = (b.min.y - pdf.y).max(pdf.y - b.max.y).max(0.0);
-                (dx.hypot(dy), i)
-            })
-            .collect();
-        runs.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let runs = pdfcer_core::vector::hit_test_text_runs_of(text, pdf, super::resolve(tolerance));
         let lines = lines_of(text);
         let mut out: Vec<usize> = Vec::new();
-        for (_, run) in runs {
+        for run in runs {
             if let Some(line) = lines.iter().position(|r| r.contains(&run))
                 && !out.contains(&line)
             {

@@ -138,12 +138,10 @@ Page objects only; [`Self::text_line_hits_of`] answers for a form leaf.
 ### `fn text_line_hits_of`
 
 A page object goes through [`Self::text_line_hits`]. A leaf has no index in
-the page's list, which is all `hit_test_text_runs` takes, so its runs are
-tested here by the engine's rule: run box inflated by the tolerance, nearest
-first by distance to the box. That copy of the rule is a workaround (G147
-asks for an object-taking form, as `hit_test_subpaths_of` is for paths); the
-leaf arm goes when it lands. The unit test holds the two arms to the same
-answer on the same text.
+the page's list, which is all `hit_test_text_runs` takes, so it asks
+`hit_test_text_runs_of` with the leaf's text object in hand, as
+`hit_test_subpaths_of` is asked for paths. The unit test holds the two arms
+to the same answer on the same text.
 
 ### `fn text_line_bounds_canvas_of`
 
