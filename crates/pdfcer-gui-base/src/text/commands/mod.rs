@@ -300,6 +300,16 @@ pub const fn file_remove_ocr() -> CommandText {
     )
 }
 
+/// File ▸ Recognise ▸ Straighten scans…. Says what turns and what does not,
+/// and that pages with text are skipped by default.
+#[must_use]
+pub const fn file_deskew() -> CommandText {
+    CommandText::new(
+        "Straighten scans…",
+        "Measure how far each scanned page is tilted and turn the scan back level. Pages that already have text are skipped unless you say otherwise, because that text would not turn with the picture. One Ctrl+Z undoes the run. Greyed while no document is open.",
+    )
+}
+
 // ===========================================================================
 // PAGES TAB
 //

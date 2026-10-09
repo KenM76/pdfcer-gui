@@ -173,6 +173,9 @@ pub enum Action {
         /// inside is a layer that recorded none); `None` is every engine.
         engines: Option<Vec<Option<String>>>,
     },
+    /// File ▸ Straighten scans: one page's turn of a run, paced one per
+    /// frame. See `crate::deskewstep`.
+    Deskew(crate::deskewstep::DeskewStep),
     /// Edit ▸ Forms ▸ Repair fonts: every inline `/DR` font becomes an object
     /// of its own, as one undo entry. See `super::formfonts`.
     RepairFormFonts,
@@ -1366,21 +1369,6 @@ pub enum Action {
     /// **Everything whose subject is a REDACTION** — mark by search, mark
     /// a whole page, mark what is selected, take one mark off, and arm or
     /// disarm the removal that happens at the next save.
-    ///
-    /// Moved into [`super::redact::RedactAction`] under **R2** on 2026-09-06,
-    /// when document signing needed a variant this file could not afford. This
-    /// file's own header named the rule in advance — *"the next family of
-    /// variants to **grow** is the one that will have to become a sub-enum
-    /// beside `PageAction` and `DimensionAction`"* — and `super`'s declaration
-    /// of that module nominated **markup** as the candidate on a 2026-08-20
-    /// measurement. Redaction was taken instead, and the reason is worth
-    /// recording rather than quietly departing from a written plan: markup is
-    /// 370 lines across **48 call sites**, redaction is 114 lines across
-    /// **19**, and the module that would receive it — `super::redact` — already
-    /// holds every one of the bodies, which is precisely
-    /// [`super::pages::PageAction`]'s third argument (*"the destination already
-    /// existed"*). Markup remains the next candidate and its measurement
-    /// stands.
     ///
     /// Its header carries the two things a reader must not have to rediscover:
     ///

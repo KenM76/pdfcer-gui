@@ -36,6 +36,7 @@ fn all() -> Vec<CommandText> {
         file_about(),
         file_ocr(),
         file_remove_ocr(),
+        file_deskew(),
         view_page_single(),
         view_page_continuous(),
         view_page_facing(),

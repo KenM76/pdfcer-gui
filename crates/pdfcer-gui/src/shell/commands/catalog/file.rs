@@ -997,6 +997,10 @@ pub(super) fn band() -> Vec<Command> {
         // exists. `doc.open`, not `doc.pages`: a document without a layer is
         // told so on the status bar rather than shown a greyed control.
         command("file.remove_ocr", t::file_remove_ocr(), 162).enabled_when("doc.open"),
+        // `EditSession::detect_image_skew` + `deskew_image`, paced a page per
+        // frame. No icon: `rotate-cw` is `pages.rotate_right`'s, a whole-page
+        // quarter turn, which this is not.
+        command("file.deskew", t::file_deskew(), 164).enabled_when("doc.pages"),
         // `pdfcer_core::ocr::models::FETCHABLE_MODELS` through `pdfcer_fetch`. Needs no
         // document: it repairs the models folder, not a file. No icon:
         // `download.svg` is `export`'s, "out of this document", which this is not.

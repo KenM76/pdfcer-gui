@@ -72,6 +72,8 @@ pub mod split_pages;
 /// window actually buys, how it degrades on the web target, and the two rows
 /// (G3 ownership, G5 focus trapping) that eframe 0.35 cannot express.
 pub use pdfcer_gui_base::dialoghost as host;
+/// File ▸ Straighten scans: which pages, and the run's report.
+pub mod deskew;
 /// A PDF dropped alone on an open document: open, insert or place it.
 pub mod drop_pdf;
 /// **A text file becomes pages** — the return journey. Its header records
@@ -204,6 +206,9 @@ pub struct DialogsState {
     /// The Remove-OCR-text window. Document-scoped: it lists the layers the
     /// open document held when it opened.
     remove_ocr: Option<remove_ocr::RemoveOcrDialog>,
+    /// The Straighten-scans window. Document-scoped: its run belongs to the
+    /// document it was opened on, and waits while another is on screen.
+    deskew: Option<deskew::DeskewDialog>,
     /// The Remove-metadata window. Document-scoped: it lists the entries the
     /// open document held when it opened.
     remove_metadata: Option<remove_metadata::RemoveMetadataDialog>,
@@ -865,6 +870,14 @@ impl DialogsState {
         if self.remove_ocr.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.remove_ocr = None;
         }
+        if self
+            .deskew
+            .as_mut()
+            .map(|d| d.show(ctx, doc.serial, actions))
+            == Some(false)
+        {
+            self.deskew = None;
+        }
         if self.remove_metadata.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.remove_metadata = None;
         }
@@ -1223,6 +1236,7 @@ impl DialogsState {
         self.offpage = None;
         self.compact = None;
         self.remove_ocr = None;
+        self.deskew = None;
         self.remove_metadata = None;
         self.hand_sign = None;
         #[cfg(feature = "timestamp")]

@@ -61,6 +61,7 @@
                     items: [
                         Command(id: "file.ocr", size: Large),
                         Command(id: "file.remove_ocr"),
+                        Command(id: "file.deskew"),
                         Command(id: "file.fetch_ocr_models", capability: "model-download"),
                     ],
                     collapse: 4,

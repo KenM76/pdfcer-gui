@@ -183,6 +183,8 @@ pub mod vector;
 /// Security ▸ Add archive time-stamp….
 #[cfg(feature = "timestamp")]
 mod archive;
+/// File ▸ Straighten scans, one page per turn: `Action::Deskew`.
+pub(crate) mod deskew;
 mod drawlayer;
 /// Security ▸ Add validation evidence….
 #[cfg(feature = "signing")]

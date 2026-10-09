@@ -68,6 +68,9 @@ pub mod commands;
 /// a revision history, possibly every signature, and the original file's role
 /// as the canonical one.
 pub mod compact;
+/// Every word File ▸ Straighten scans says. Consumed by
+/// `pdfcer_gui::dialogs::deskew`.
+pub mod deskew;
 /// Every word the Render-diagnostics dialog adds around the findings — the
 /// title, the three measurements of the render itself, and the two states in
 /// which there is nothing to report. The findings themselves stay in

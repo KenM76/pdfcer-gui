@@ -406,12 +406,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 213 → 214: `file.unlock`, File ▸ Security.
     // 214 → 215: `file.remove_metadata`, Security ▸ Protect.
     // 215 → 217: `view.move_to_new_window` and `view.move_to_window`, View ▸ Window.
+    // 217 → 218: `file.deskew`, File ▸ Recognise.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        217 + 2 * usize::from(cfg!(feature = "signing"))
+        218 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "model-download"))
     );
@@ -1111,10 +1112,13 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         //
         // 17 → 18 — `file.remove_ocr`: a supply refusal. `recognise-text`
         // says "add a layer"; no glyph for taking one off exists yet.
+        //
+        // 18 → 19 — `file.deskew`: a supply refusal. `rotate-cw` is a whole-page
+        // quarter turn; no glyph for a small straightening exists yet.
         // +1 with model-download — `file.fetch_ocr_models`: the download
         // glyph is spent on `export`.
         refused,
-        18 + usize::from(cfg!(feature = "model-download")),
+        19 + usize::from(cfg!(feature = "model-download")),
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

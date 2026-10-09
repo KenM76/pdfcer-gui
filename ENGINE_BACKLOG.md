@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **44 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `wanted` — a real gap — **43 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -144,12 +144,11 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
 | **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **wanted, at the pin since v0.81.0; request G169.** The OCR layer (O289 item 15) paints each word itself in `canvas::ocrink`; a render with `RenderPolicy::invisible_text` set and `only` true, composited over the page (`RenderOptions::effective_backdrop` is transparent then), replaces it. |
-| **Skew detection and deskew of a scanned image** — `detect_skew`, `pdfcer_core::deskew`, `pdfcer_core::edit::deskew` | **wanted, at the pin since v0.81.0; request G165.** File ▸ Straighten scans (O289 item 13) is drafted against it, one `CommandKind::DeskewImage` per page; `EditError::DeskewUnsupported` is a refusal to word. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `blocked` — waiting on something named — **2 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -167,7 +166,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -178,7 +177,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `declined` — deliberately no surface — **16 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -220,7 +219,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **282 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-08; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **283 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -317,6 +316,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Every in-process OCR engine, including PaddleOCR-VL add-ons, runs through `pdfcer-ocr-host`'s `OcrRunner`, not a separate route per shell** — `ocr-vl` on `pdfcer-ocr-host`, `OcrRunner::check_runnable` accepting `engine = paddle-vl`, `OcrRunner::disclosure()` (our `G102`, Pass 442.5) | **shipped.** Every recogniser — ocrs, OCRcer, PaddleOCR, PaddleOCR-VL and program add-ons — loads through `OcrRunner::load` and recognises through `OcrRunner::recognize`; the shell's per-engine model tables are deleted. Confidence is `OcrRunner::reports_confidence()` of the loaded runner. |
 | **Layout-aware OCR (PaddleOCR-VL)** — finds the page's regions: `pdfcer_core::ocr::layout`, `pdfcer_core::ocr::engine_layout`, `pdfcer_core::ocr::otsl`, `pdfcer_core::ocr::vl_page` | **shipped — File ▸ Recognise text… *Read by layout*.** Drawn for PaddleOCR-VL when its folder holds `layout.onnx` (`ocr::reads_by_layout`, restating the engine's rule until G170). The run sets `RunOptions::with_layout`; `app::actions::ocrlayers::write` puts each region's words on its own layer with `OcrLayerOptions::on_region_layer` (filling `OcrLayerOptions::region_layers`), nests each under *Recognised text* with `EditSession::move_layer_node`, all in one undo step. Remove OCR text deletes the region layers it empties by trial delete until G173. The shipped paddle-vl add-on lacks `layout.onnx`, so no checkbox is drawn there until it is added. Driven by `reading_by_layout_layers_each_region_apart`. |
 | **OCR word-list choice** — `RunOptions::with_dictionaries` | **shipped — File ▸ Recognise text… *No word lists* and *Add word file…*.** `dialogs::ocr_reading` builds the `Dictionaries` sent with the run; *No word lists* is drawn only where the engine accepts it (`ocr::can_drop_word_lists`) and word files only for a program add-on (`ocr::takes_word_files`), restating the engine's private `check_dictionaries` until G170. Driven by `word_lists_reach_the_program_that_reads_them` against the engine's stand-in Tesseract. |
+| **Skew detection and deskew of a scanned image** — `detect_skew`, `pdfcer_core::deskew`, `pdfcer_core::edit::deskew` | **shipped — File ▸ Recognise ▸ Straighten scans… (O289 item 13).** `app::actions::deskew` measures each chosen page's scan (`EditSession::page_scan_image`, `detect_image_skew`) or each selected picture, straightens it with `deskew_image` through the edit funnel when the confidence and angle clear the engine's floors, and folds the run into one `CommandKind::DeskewImage` undo entry. Pages that already draw text are skipped by default; a refusal such as `EditError::DeskewUnsupported` is listed in the engine's own sentence. Paced a page per frame because the measure needs the session exclusively (G171, answered on engine main). Driven by `straighten_scans_turns_tilted_pages_and_leaves_the_rest`. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -623,7 +623,7 @@ channel. They join a verdict section when the engine answers.
 Filed in the request channel for O289's items. G164 to G169 are answered and at the pin since v0.81.0; G173 is open.
 
 - **G164** — no inventory of a file's metadata and no verb to remove it (item 21). Answered as `EditSession::metadata_inventory` and `remove_metadata`; not yet wired.
-- **G165** — no skew detection or straightening for scanned pages and images (item 13). Answered as `detect_image_skew` and `deskew_image`; not yet wired.
+- **G165** — no skew detection or straightening for scanned pages and images (item 13). Answered as `detect_image_skew` and `deskew_image`; wired.
 - **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; wired.
 - **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; wired.
 - **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; the viewer computes the directions itself until it is wired.

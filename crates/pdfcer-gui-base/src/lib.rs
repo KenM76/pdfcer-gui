@@ -25,6 +25,9 @@ pub mod clock;
 /// Where the view is, when the scroll offset can no longer say.
 pub mod deepanchor;
 
+/// One page's turn in a Straighten-scans run.
+pub mod deskewstep;
+
 /// The opt-in trace of what the shell actually received.
 pub mod diag;
 

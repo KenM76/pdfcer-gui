@@ -48,6 +48,13 @@ impl DialogsState {
         }
     }
 
+    /// Open File ▸ Straighten scans for the document in `status`.
+    pub fn open_deskew(&mut self, status: &Status, picked: Vec<usize>) {
+        if self.deskew.is_none() {
+            self.deskew = super::deskew::open_for(status, picked);
+        }
+    }
+
     /// Open File ▸ Remove OCR text. `false` when the document holds no pdfcer
     /// OCR layer, so the caller sends the unfiltered removal whose refusal
     /// says so.
