@@ -483,6 +483,51 @@ pub fn view_use_on_page_tooltip() -> &'static str {
     "Show the model on the page, and in print, as you see it here. The model itself is not changed; Undo puts the old picture back."
 }
 
+/// The 3D viewer's button that writes its views into the file.
+#[must_use]
+pub fn view_save_views() -> &'static str {
+    "Save views in the file"
+}
+
+/// Its tip.
+#[must_use]
+pub fn view_save_views_tooltip() -> &'static str {
+    "Write Isometric, Front, Right, Top and Back, turned about the axes chosen here, into the file, and this view too when it is none of them, so a PDF reader lists them and opens the model on this one. They replace any views the model saves now; Undo puts those back."
+}
+
+/// The name a reader lists for a view that is none of the named ones.
+#[must_use]
+pub fn view_custom() -> &'static str {
+    "Custom view"
+}
+
+/// The views could not be formed.
+#[must_use]
+pub fn views_not_built() -> &'static str {
+    "The views could not be worked out for this model, so nothing was written."
+}
+
+/// The views were written.
+#[must_use]
+pub fn views_set(page_index: usize, after: usize, before: usize) -> String {
+    let replaced = match before {
+        0 => String::new(),
+        1 => ", in place of the one it had".to_owned(),
+        n => format!(", in place of the {n} it had"),
+    };
+    format!(
+        "The 3D model on page {} now saves {after} views{replaced}, and a PDF reader opens it on \
+         the one you chose.",
+        page_index + 1
+    )
+}
+
+/// The model moved before the views were written.
+#[must_use]
+pub fn views_not_set() -> &'static str {
+    "The model's saved views were not changed: the model has moved or been removed since the viewer opened."
+}
+
 /// The page now shows the viewer's picture.
 #[must_use]
 pub fn poster_set(page_index: usize) -> String {

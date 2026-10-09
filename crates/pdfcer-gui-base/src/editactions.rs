@@ -1011,7 +1011,9 @@ pub enum RedactAction {
 ///
 /// See the module header for what makes them a family, and [`AttachmentRef`]
 /// for why the operand is neither an index nor an object id.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// `PartialEq` only: a 3D view's camera is floating point.
+#[derive(Debug, Clone, PartialEq)]
 pub enum AttachmentAction {
     /// **Embed a file in this document** (ISO 32000-1 §7.11.4.1, inclusion
     /// route 2).
@@ -1188,6 +1190,17 @@ pub enum AttachmentAction {
         /// The picture's samples, unpremultiplied RGBA, row-major from the
         /// top, `width × height × 4` bytes, for `ImportedImage::from_rgba8`.
         rgba: Vec<u8>,
+    },
+    /// **Write the 3D viewer's named views into the model's file**, so a
+    /// reader lists them and opens on `default`; one undo entry. They
+    /// replace the views the model held.
+    SetModelViews {
+        /// The row the viewer was opened on.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+        /// The views, in the order a reader lists them.
+        views: Vec<pdfcer_core::threed::ThreeDSavedView>,
+        /// The index in `views` a reader opens on.
+        default: usize,
     },
     /// **Pick a picture file and make it the page picture of a 3D model**,
     /// one undo entry. The picker runs in the apply arm, as it does for

@@ -47,6 +47,8 @@ pub const REGION_CLOSE: &str = "model3d.close"; // ui-text-exempt: trace region 
 pub const REGION_USE_ON_PAGE: &str = "model3d.use_on_page"; // ui-text-exempt: trace region name, never displayed
 /// The *Save picture…* button.
 pub const REGION_SAVE_PICTURE: &str = "model3d.save_picture"; // ui-text-exempt: trace region name, never displayed
+/// *Save views in the file*'s published region.
+pub const REGION_SAVE_VIEWS: &str = "model3d.save_views"; // ui-text-exempt: trace region name, never displayed
 
 /// A picture of the current view: unpremultiplied RGBA, row-major from the
 /// top.
@@ -114,6 +116,9 @@ pub(crate) struct ModelView {
     native: bool,
     /// A picture of this view, waiting for the action queue.
     picture: Option<(PictureFor, Drawn)>,
+    /// Views to write into the file and the one to open on, waiting for
+    /// the action queue.
+    views: Option<(Vec<ThreeDSavedView>, usize)>,
 }
 
 impl ModelView {
@@ -169,6 +174,7 @@ impl ModelView {
             escape_left_full_screen: false,
             native: false,
             picture: None,
+            views: None,
         }
     }
 
@@ -187,6 +193,13 @@ impl ModelView {
         self.native = frame.class == egui::ViewportClass::Immediate;
         if let Some((purpose, drawn)) = self.picture.take() {
             self.queue(purpose, drawn, actions);
+        }
+        if let Some((views, default)) = self.views.take() {
+            actions.push(Action::Attachment(AttachmentAction::SetModelViews {
+                artwork: self.artwork.clone(),
+                views,
+                default,
+            }));
         }
         let closed = frame.closed && !std::mem::take(&mut self.escape_left_full_screen);
         let button = std::mem::take(&mut self.close_requested);
@@ -453,6 +466,7 @@ impl ModelView {
             }
             if crate::panels::attachments::models::has_own_poster(&self.artwork) {
                 self.picture_control(ui, PictureFor::Page);
+                self.views_control(ui);
             }
             self.picture_control(ui, PictureFor::File);
         });
@@ -482,6 +496,65 @@ impl ModelView {
             Ok(drawn) => self.picture = Some((purpose, drawn)),
             Err(said) => self.failed = Some(t::poster_not_drawn(&said)),
         }
+    }
+
+    /// *Save views in the file*: the named views about the chosen axes, and
+    /// this view when it is none of them, written into the model's file so a
+    /// PDF reader lists them and opens the model on this one.
+    fn views_control(&mut self, ui: &mut Ui) {
+        let button = ui
+            .button(t::view_save_views())
+            .on_hover_text(t::view_save_views_tooltip());
+        crate::diag::ui_rect_visible(REGION_SAVE_VIEWS, button.rect, ui.clip_rect());
+        if !button.clicked() {
+            return;
+        }
+        let views = self.file_views();
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            match &views {
+                Some((list, default)) => {
+                    format!("model-view-views count={} default={default}", list.len())
+                }
+                None => "model-view-views count=0 default=none".to_owned(),
+            }
+        });
+        match views {
+            Some(views) => self.views = Some(views),
+            None => self.failed = Some(t::views_not_built().to_owned()),
+        }
+    }
+
+    /// Each named view fitted to the model as the page frames it, then this
+    /// view when it is not the named one last chosen; with the index of
+    /// this view. `None` when a view cannot be formed.
+    fn file_views(&self) -> Option<(Vec<ThreeDSavedView>, usize)> {
+        let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
+        let aspect = self
+            .model
+            .aspect
+            .unwrap_or_else(|| f64::from(w.max(1)) / f64::from(h.max(1)));
+        let perspective = self.orbit.perspective;
+        let mut views = Vec::new();
+        for (i, name) in t::view_names().into_iter().enumerate() {
+            let orbit = Orbit::named(i, perspective, self.upright);
+            let camera = orbit.camera(&self.bounds, aspect, None).ok()?;
+            views.push(ThreeDSavedView::from_camera(name, &camera, aspect)?);
+        }
+        if self.orbit == Orbit::named(self.named, perspective, self.upright) {
+            return Some((views, self.named));
+        }
+        let camera = self
+            .orbit
+            .camera(&self.bounds, aspect, self.opening.as_ref())
+            .ok()?;
+        views.push(ThreeDSavedView::from_camera(
+            t::view_custom(),
+            &camera,
+            aspect,
+        )?);
+        let custom = views.len() - 1;
+        Some((views, custom))
     }
 
     /// Queue `drawn` for `purpose`: the page's picture takes the samples as

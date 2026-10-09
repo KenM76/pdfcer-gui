@@ -4,8 +4,8 @@ use pdfcer_core::edit::MarkupOptions;
 use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::threed::{
-    PlaceholderReason, ThreeDArtwork, ThreeDFormat, ThreeDPoster, ThreeDSpec, extract_3d,
-    list_3d_with_notes,
+    PlaceholderReason, ThreeDArtwork, ThreeDFormat, ThreeDPoster, ThreeDSavedView, ThreeDSpec,
+    extract_3d, list_3d_with_notes,
 };
 
 use crate::app::state::OpenDoc;
@@ -108,6 +108,9 @@ pub(crate) struct Assembled {
     /// `false` when the assembly tree could not be read and each mesh is
     /// where its file stores it.
     pub placed: bool,
+    /// The annotation's width over height, the aspect a view written into
+    /// the file is framed for; set by [`load_view`].
+    pub aspect: Option<f64>,
     /// The file's opening view (`default_3d_view`), set by [`load_view`].
     pub opening: Option<pdfcer_core::threed::ThreeDSavedView>,
     /// The assembly tree (`PrcFile::model_tree`), set by [`load_view`].
@@ -161,6 +164,7 @@ pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
         placed: model.unplaced.is_none(),
         triangles: model.triangles,
         drawn: model,
+        aspect: None,
         opening: None,
         tree: Vec::new(),
         tree_error: None,
@@ -208,11 +212,25 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
         Unassembled::Empty { compressed } => t::view_empty(compressed),
     })?;
     model.opening = pdfcer_core::threed::default_3d_view(&view, artwork);
+    model.aspect = annot_aspect(doc, artwork);
     match pdfcer_3d::PrcFile::parse(&data).and_then(|prc| prc.model_tree()) {
         Ok(tree) => model.tree = tree,
         Err(why) => model.tree_error = Some(why.to_string()),
     }
     Ok(model)
+}
+
+/// The annotation's width over height, when its `/Rect` has an area.
+#[cfg(feature = "3d")]
+fn annot_aspect(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Option<f64> {
+    let page_id = doc.pages.get(artwork.page_index)?.id;
+    let id = artwork.annot_id?;
+    let rect = pdfcer_core::annot::page_annotations(&doc.session.graph(), page_id)
+        .into_iter()
+        .find(|a| a.id == Some(id))?
+        .rect?;
+    let aspect = rect.width() / rect.height();
+    (aspect.is_finite() && aspect > 0.0).then_some(aspect)
 }
 
 /// Decode `artwork` and write its triangles as STL or OBJ, chosen by the
@@ -431,6 +449,72 @@ pub(super) fn set_poster(
             .set_3d_poster(page, annot, &image)
             .map(|_| vec![t::poster_set(page)])
     });
+}
+
+/// Write `views` into `artwork`'s 3D stream, opening on `default`: one undo
+/// entry, replacing the views it held. Refused, with a sentence, when the
+/// model moved since the viewer opened.
+pub(super) fn set_views(
+    doc: &mut OpenDoc,
+    artwork: &ThreeDArtwork,
+    views: &[ThreeDSavedView],
+    default: usize,
+) {
+    let page = artwork.page_index;
+    let Some(annot) = artwork.annot_id.filter(|_| still_listed(doc, artwork)) else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("model-views-declined page={page} reason=moved")
+        });
+        super::record_note(doc.edit_epoch, t::views_not_set().to_owned());
+        return;
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "model-views-requested page={page} annot={} views={} default={default} before={}",
+            annot.num,
+            views.len(),
+            artwork.view_count
+        )
+    });
+    super::apply::vector_edit(doc, "set-3d-views", page, 1, |session| {
+        session
+            .set_3d_views(page, annot, views, Some(default))
+            .map(|outcome| {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "model-views-set page={page} before={} after={} default={} shared={}",
+                        outcome.views_before,
+                        outcome.views_after,
+                        outcome
+                            .default
+                            .map_or_else(|| "none".to_owned(), |d| d.to_string()),
+                        u8::from(outcome.shared_stream)
+                    )
+                });
+                let mut notes = vec![t::views_set(
+                    page,
+                    outcome.views_after,
+                    outcome.views_before,
+                )];
+                notes.extend(outcome.disclosures);
+                notes
+            })
+    });
+}
+
+/// `artwork` is still listed as the same model in the same place. Its view
+/// count and poster are not compared: the viewer's own writes change them,
+/// and a second write from the same viewer is the same model.
+fn still_listed(doc: &OpenDoc, artwork: &ThreeDArtwork) -> bool {
+    list_3d_with_notes(&*doc.session).0.iter().any(|row| {
+        row.page_index == artwork.page_index
+            && row.annot_id == artwork.annot_id
+            && row.stream_id == artwork.stream_id
+            && row.source == artwork.source
+    })
 }
 
 /// Pick a U3D or PRC file and place it, centred, on `page`: one undo entry.

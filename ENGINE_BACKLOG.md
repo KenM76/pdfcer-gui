@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **42 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **41 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -135,7 +135,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Embed a supplied U3D/PRC model as a `/3D` annotation, with a poster … | **wired — Edit ▸ Insert ▸ 3D model…, driven (`a_3d_model_is_placed_listed_and_saved_back`); no poster yet, the engine's placeholder shows.** `EditSession::add_3d_annotation` takes the model bytes and a poster; the shell owes a file picker and a placement rectangle, reached from Insert. The engine renders no 3D scene (refused on scope), so the canvas shows the poster, which is what saved content shows too. Its refusals arrive as `EditError::ThreeD`, and the annotation it writes lists as `AnnotKind::ThreeD`. |
 | Page labels — read and set (Acrobat's Number Pages) … | **wanted — the label-keeping page verbs only.** Reading labels and the Number pages window shipped (the page-labels row under `shipped`). `pdfcer_core::page_labels` (`page_labels`, `label_ranges`, `LabelFormat`, `LabelStyle`) reads what each page shows; `EditSession::set_page_labels` / `clear_page_labels` write it as one undo entry, refusing with `EditError::InvertedPageRange`. `pageops::extract_with_labels` is offered by Pages ▸ Extract…'s *Keep the page labels*. Still wanted: the label-keeping page verbs (`reorder_pages_with_labels`, `delete_pages_with_labels`, `insert_pages_with`) matter only where Acrobat offers the choice: extract, split and page paste already keep labels by default. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
-| **Named 3D views and up-axis public; write 3D views with a default view into a 3D annotation** — `pdfcer_core::edit::threed_views` | **wanted, at the pin since v0.81.0; request G168.** The 3D viewer's *Save views in the file* (O289 item 12) is drafted against it, one `CommandKind::SetThreeDViews`; the viewer keeps its own view table and writes its cameras through `ThreeDSavedView::from_camera`. |
 
 ### Fonts & rendering
 
@@ -218,7 +217,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **284 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **285 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -386,6 +385,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A `/Text` sticky note or `/Stamp` naming a standard icon is painted from pdfcer's own artwork** instead of left blank when the annotation carries no `/AP`; new counter `annots_icon_painted` | **Reached by a pin bump, and the counter it shipped with is the load-bearing part.** The artwork needed no shell code — the fix is inside `pdfcer-render`'s shared annotation-paint loop, which this canvas already calls, so the correct contribution was to change nothing. `annotations_icon_painted` is a subset of `annotations_without_ap`, so `without_ap − icon_painted` is at last *how many annotations the operator is shown nothing for* — a stamp with no `/AP` renders as clean paper, with no symptom. Built as a tenth entry in `app::status::notes::findings`, suppressed when `annotations_out_of_scope` is non-zero. R43's refusal to synthesise appearances is unchanged for `/Square`, `/Circle`, `/Line`, `/Ink` and `/Caret`; `/FileAttachment` and `/Sound` belong in the request channel. |
 | `pdfcer_core::edit::VertexEditKind::as_str` | **Consumed.** `app::actions::annots::reshape`'s trace prints `edit={}` through it rather than `{:?}`, so the shell's line spells a reshape `move`/`insert`/`remove` exactly as `pdfcer annotation-vertex` does. The `Debug` spelling would have been `Moved`/`Inserted`/`Removed` — two vocabularies for one fact, across a boundary a driven check reads. |
 | Read `/RC` rich content and `/DS` default style on a markup annotation, any subtype — `Annotation::rich_contents`/`default_style`, `annot::rich_text_in`, `RichText::Inline`/`RichText::Stream` | **shipped.** <!--namesake:default_style--> the forms panel's `default_style` is a form field's, not this annotation accessor. `commentmodel::collect` resolves each row's `/RC` through `annot::rich_text_in` (string or stream) into `CommentRow::rich`; `panels::comments::rich::line` parses it with `richtext::parse` and draws one line under the note naming the formatting, each formatted part on hover, and that editing keeps the words and drops the formatting — or that the formatted copy could not be read. Driven by `a_formatted_comment_says_it_is_formatted` on `fixtures/rich-comment.pdf`. Rendering the runs themselves, and the Properties panel's note field, are not built. |
+| **Named 3D views and up-axis public; write 3D views with a default view into a 3D annotation** — `pdfcer_core::edit::threed_views` | **shipped — the 3D viewer's *Save views in the file* (O289 item 12).** Writes the five named views about the window's axes, and the view on screen, through `ThreeDSavedView::from_camera` and `EditSession::set_3d_views`, one `CommandKind::SetThreeDViews`, the view on screen the default; request G168. The viewer keeps its own named-view table (`Orbit::named`) rather than `pdfcer_3d::NamedView`: its views turn about any signed up axis and a chosen front, where `pdfcer_3d::UpAxis` offers +x, +y or +z up with a fixed front. |
 
 ### Forms (AcroForm)
 
@@ -626,7 +626,7 @@ Filed in the request channel for O289's items. G164 to G169 are answered and at 
 - **G165** — no skew detection or straightening for scanned pages and images (item 13). Answered as `detect_image_skew` and `deskew_image`; wired.
 - **G166** — recognition cannot be given, or denied, a dictionary (item 16). Answered as `pdfcer_ocr_host::Dictionaries`; wired.
 - **G167** — the vision recogniser finds no tables, figures or formulas to layer apart (item 17). Answered as `RunOptions::with_layout` and `OcrLayerOptions::on_region_layer`; wired.
-- **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; the viewer computes the directions itself until it is wired.
+- **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; wired through `set_3d_views`.
 - **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Answered as `RenderOptions::with_invisible_text`; `canvas::ocrink` still lays each run out through `edit_text_preview` until the render replaces it.
 - **G173** — removing an OCR layer does not say which region layers it emptied (item 17). Open; the GUI deletes them by trial delete meanwhile.
 

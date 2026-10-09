@@ -290,6 +290,24 @@ mod tests {
     }
 
     #[test]
+    fn a_named_view_written_into_the_file_reads_back_looking_the_same_way() {
+        let upright = Upright::default().with_up(super::super::axes::Axis::PosY);
+        for (i, perspective) in [(0, true), (1, false), (3, true), (4, false)] {
+            let orbit = Orbit::named(i, perspective, upright);
+            let camera = orbit.camera(&cube(), 1.5, None).expect("a view forms");
+            let view = ThreeDSavedView::from_camera("v", &camera, 1.5).expect("a view writes");
+            let back = Orbit::saved(&view).expect("the written view has a camera");
+            assert!(
+                parallel(back.direction(), orbit.direction()),
+                "view {i}: {:?} read back as {:?}",
+                orbit.direction(),
+                back.direction()
+            );
+            assert_eq!(back.perspective, perspective, "view {i}");
+        }
+    }
+
+    #[test]
     fn a_view_without_a_camera_or_with_up_along_its_look_is_not_offered() {
         assert!(Orbit::saved(&ThreeDSavedView::default()).is_none());
         let mut view = corner();

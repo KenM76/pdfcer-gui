@@ -1221,6 +1221,8 @@ pub mod model_saved_view;
 pub mod model_view;
 /// The 3D viewer zooms about the pointer, fills the screen and comes back.
 pub mod model_view_window;
+/// The 3D viewer saves its named views into the file.
+pub mod model_views_saved;
 /// A picture another program copied pastes at the pointer; the newer copy wins.
 pub mod os_image_paste;
 /// Ctrl+V pastes another program's picture when the clipboard holds no text.

@@ -94,6 +94,18 @@ entry. A render failure replaces the picture with its sentence and queues
 nothing. Both buttons draw the same picture (`poster`); `PictureFor` says
 where it goes, and *Save picture…* alone encodes it as PNG (`png`).
 
+## Save views in the file
+
+Below the picture. Builds Isometric, Front, Right, Top and Back about the
+window's *Up* and *Front looks along* (`Orbit::named`), each fitted to the
+model through `Camera::fit` at the annotation's aspect (`Assembled::aspect`,
+from its `/Rect`; the last picture's shape when the rectangle has no area),
+and converts each with `ThreeDSavedView::from_camera`. When the view on screen
+is not the named view last chosen it is added as *Custom view*. The view on
+screen is the default. Queues `AttachmentAction::SetModelViews`, applied by
+`app::actions::models::set_views`; traces `model-view-views count= default=`.
+A view that cannot be formed queues nothing and shows its sentence.
+
 ## Lifetime
 
 `DialogsState::model3d`, one at a time; opening another model replaces it,

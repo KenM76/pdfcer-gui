@@ -718,6 +718,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(models::AModelIsPlacedListedAndSavedBack),
         Box::new(model_view::AModelTurnsUnderThePointer),
         Box::new(model_saved_view::TheViewerOpensOnTheFilesView),
+        Box::new(model_views_saved::TheViewerSavesItsViewsIntoTheFile),
         Box::new(model_view_window::TheModelViewerZoomsAtThePointerAndFillsTheScreen),
         Box::new(model_poster::AnInsertedModelShowsItsPicture),
         Box::new(model_colours::AColouredModelDrawsInItsColours),

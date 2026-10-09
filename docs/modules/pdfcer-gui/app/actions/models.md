@@ -92,6 +92,23 @@ cannot be read).
 Driven by `ui-verify` checks `the_3d_viewers_view_becomes_the_page_picture`
 and `a_picture_file_becomes_a_3d_models_page_picture`.
 
+## `set_views(doc, artwork, views, default)` — the viewer's Save views in the file
+
+`views` are `ThreeDSavedView`s the viewer built; `default` indexes the one a
+reader opens on. The row is re-listed by page, annotation, stream and source
+(`still_listed`) — not compared whole, because the first write changes the
+row's view count and a second press from the same window must still apply —
+and when it is gone nothing changes and a sentence is noted
+(`model-views-declined page= reason=moved`). Then
+`model-views-requested page= annot= views= default= before=` and the vector
+funnel under the label `set-3d-views`: `EditSession::set_3d_views` replaces
+the stream's `/VA` and sets `/DV`. One undo entry. The receipt counts the views
+written and replaced (`model-views-set page= before= after= default= shared=`)
+and adds the engine's disclosures, among them a stream shared with another
+annotation.
+
+Driven by `ui-verify` check `the_3d_viewer_saves_its_views_into_the_file`.
+
 ## `save_picture(doc, artwork, png)` — the viewer's Save picture…
 
 Asks `files::pick_picture_target` (PNG filter; `PDFCER_DIAG_PICTURE_SAVE_PATH`
