@@ -158,3 +158,16 @@ table. A gate whose skip branches `exit 0` is asserting nothing and claiming
 success, and it reads identically to a gate that measured. Related:
 [[a-detectors-scope-is-a-claim]] and
 [[a-gate-comparing-generated-bytes-to-a-committed-file-measures-who-wrote-it-last]].
+
+## 2026-10-09 — a trace event written only when non-zero turns the plant into a SKIP
+
+The nodeshape check read `canvas-handles n=` after the press through a helper
+that errors (SKIP) when no line exists. `draw_handles` returns before tracing
+when there are no handles, so the planted defect (no curve, no handle) produced
+**no line**, and the plant SKIPped instead of FAILing. The green run never
+showed it: the healthy path always draws a handle.
+
+**How to apply:** before reading a census event in a check, find whether its
+emitter writes on zero. If it is silent on zero, absence after the mark IS the
+zero reading and must be the FAIL input, never the SKIP branch. Only a plant
+reveals this, which is one more reason to plant before quoting green.

@@ -3,7 +3,7 @@
 - [Not at the keyboard unless he says so](user_keyboard_unless_says.md) — assume the PC is free; he texts and will TELL you.
 - [ui-verify competes for the machine](feedback_ui_verify_competes.md) — ask in one line with the cost.
 - [A driven check reached the real printer](feedback_driven_check_reached_printer.md) — 42 sheets; pause the queue around print-dialog drives.
-- [Update the engine before every build](feedback_update_engine_before.md) — `cargo update` core/render/print first.
+- [Update the engine before every build](feedback_update_engine_before.md) — SUPERSEDED while tag-only: package with `--no-update`.
 - [No pdfcer specialist agents on this roster](project_pdfcer_agent_roster.md) — dispatching them fails; go general-purpose.
 - [Scope a request to the whole behaviour](feedback_scope_request_whole.md) — he expects what surrounds it too.
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.

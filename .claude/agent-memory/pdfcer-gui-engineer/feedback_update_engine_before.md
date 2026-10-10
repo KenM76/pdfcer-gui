@@ -52,3 +52,10 @@ mid-package and undoes the hold.
 
 Related: [[ui-verify-competes-for-the-machine]],
 [[the-engine-session-runs-in-parallel-and-answers-within-the-hour]].
+
+**Superseded while the pin is tag-only (2026-10-09).** The current standing
+instruction is "pin the engine only to tags". The dependency is still a
+branch, so the packager's own first-step `cargo update` moves the lock to
+untagged engine main (it moved v0.81.0 → 33e8620d, 17 commits on). Package
+with `--no-update` and restore `Cargo.lock` from HEAD content
+(`git show HEAD:Cargo.lock > Cargo.lock`) if a run already moved it.
