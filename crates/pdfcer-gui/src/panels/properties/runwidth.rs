@@ -1,6 +1,7 @@
 //! **Fit to width** — one text run's width, typed in points (`G038`).
 //!
-//! Draws at the Part rung when one line of one page text object is selected.
+//! Draws at the Part rung when one line of one text object is selected, on
+//! the page or inside a placed drawing.
 //! The engine's verb addresses a single show operator, so a line written in
 //! several is shown greyed with the reason on hover, as is a run
 //! `text_run_width_refusal` turns down. What only the plan can see (kerning,
@@ -23,9 +24,9 @@ pub const REGION: &str = "properties.text.run-width";
 
 /// What the section can address this frame.
 enum Subject {
-    /// One run of a page text object, with its current ink width.
+    /// One run of a text object, with its current ink width.
     Run {
-        object: usize,
+        target: TargetId,
         run: usize,
         width: f64,
     },
@@ -49,10 +50,10 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
                 let response = ui.add_enabled(false, field).on_disabled_hover_text(why);
                 crate::diag::ui_rect_visible(REGION, response.rect, ui.clip_rect());
             }
-            Subject::Run { object, run, width } => {
+            Subject::Run { target, run, width } => {
                 let id = ui
                     .id()
-                    .with(("run-width", page, object, run, doc.edit_epoch));
+                    .with(("run-width", page, target, run, doc.edit_epoch));
                 let mut typed = ui.data(|d| d.get_temp::<f64>(id)).unwrap_or(width);
                 let (widget, refusal) = entry::drag_value(
                     ui,
@@ -71,7 +72,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
                         page,
                         runs: Vec::new(),
                         change: StyleChange::RunWidth {
-                            object,
+                            target,
                             run,
                             width: typed,
                         },
@@ -101,10 +102,6 @@ fn subject(doc: &OpenDoc, page: usize) -> Option<Subject> {
     let [line] = lines.as_slice() else {
         return Some(Subject::Greyed(t::run_width_needs_one_run()));
     };
-    let TargetId::Object(object) = entered.object else {
-        return Some(Subject::Greyed(t::run_width_inside_form()));
-    };
-    let object = usize::try_from(object).ok()?;
     let runs = provider.text_line_runs_of(entered.object, *line)?;
     if runs.len() != 1 {
         return Some(Subject::Greyed(t::run_width_needs_one_run()));
@@ -119,7 +116,7 @@ fn subject(doc: &OpenDoc, page: usize) -> Option<Subject> {
     let bounds = text.runs.get(run)?.bounds;
     let width = bounds.max.x - bounds.min.x;
     Some(Subject::Run {
-        object,
+        target: entered.object,
         run,
         width: if width.is_finite() { width } else { 0.0 },
     })

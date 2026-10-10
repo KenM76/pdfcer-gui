@@ -132,6 +132,7 @@ pub(super) fn launch(
     report: &mut CheckReport,
     fixture: &str,
     stem: &str,
+    invoke: Option<&str>,
 ) -> Result<(Session, ScriptedPointer, PageGeometry)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -159,6 +160,10 @@ pub(super) fn launch(
         (viewport_env, OFFSCREEN),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
+    }
+    if let Some(invoke) = invoke {
+        spec.env
+            .push(("PDFCER_DIAG_INVOKE".to_owned(), invoke.to_owned()));
     }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
@@ -197,7 +202,20 @@ pub(super) fn run_body(
     stem: &str,
     body: Body,
 ) -> Result<Option<String>> {
-    let (session, pointer, page) = launch(ctx, report, fixture, stem)?;
+    run_body_with(ctx, report, fixture, stem, None, body)
+}
+
+/// [`run_body`], with `invoke` rung through `PDFCER_DIAG_INVOKE` at launch
+/// (for example `file.properties`, to open the Properties panel).
+pub(super) fn run_body_with(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixture: &str,
+    stem: &str,
+    invoke: Option<&str>,
+    body: Body,
+) -> Result<Option<String>> {
+    let (session, pointer, page) = launch(ctx, report, fixture, stem, invoke)?;
     let outcome = body(ctx, report, &session, &pointer, page);
     let parked = pointer.gone(&session);
     let found = outcome?;

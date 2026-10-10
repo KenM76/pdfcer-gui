@@ -16,6 +16,7 @@ mod inform_delete;
 mod leaftransform;
 mod nodeshape;
 mod replaceimage;
+mod textmerge;
 
 pub use pdfcer_gui_base::subactions::VectorAction;
 
@@ -690,40 +691,11 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 });
             }
         }
-        VectorAction::MergeTextRuns { page, object, runs } => {
-            vector_edit_on_page(doc, "merge-text-runs", page, runs.len(), |session| {
-                session
-                    .merge_text_runs(
-                        page,
-                        object,
-                        &runs,
-                        &pdfcer_core::text_edit::merge::MergeOptions::default(),
-                    )
-                    .inspect_err(|e| {
-                        crate::app::status::decline::record_run_merge(
-                            crate::text::runmerge::RunMergeRefusal::of_format(e),
-                        );
-                    })
-                    .map(|report| {
-                        crate::diag::trace(|| {
-                            // ui-text-exempt: diagnostic trace, never displayed.
-                            format!(
-                                "merge-text-runs-applied page={page} object={object} merged={} scale={:?}",
-                                report.runs_merged, report.h_scale_change,
-                            )
-                        });
-                        let mut said = report.disclosures;
-                        if let (Some((before, after)), true) =
-                            (report.h_scale_change, said.is_empty())
-                        {
-                            said.push(crate::text::runmerge::width_changed(before, after));
-                        }
-                        said
-                    })
-            });
+        VectorAction::MergeTextRuns { page, target, runs } => {
+            textmerge::apply(doc, page, target, &runs);
         }
-        VectorAction::SplitTextLines { page, object } => {
-            super::runsplit::apply(doc, page, object);
+        VectorAction::SplitTextLines { page, target } => {
+            super::runsplit::apply(doc, page, target);
         }
         VectorAction::PlacePageContent {
             page,

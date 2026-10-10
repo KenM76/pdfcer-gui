@@ -59,13 +59,6 @@ pub const fn run_width_needs_one_run() -> &'static str {
     "Select one line of a text object that is a single piece of text to set its width. A line made of several pieces, or several lines, cannot be fitted as one."
 }
 
-/// Hover text: the text sits inside a form or container, which this verb does
-/// not reach.
-#[must_use]
-pub const fn run_width_inside_form() -> &'static str {
-    "Text inside a form or group cannot be fitted to a width yet."
-}
-
 /// Hover text: the run has no length along its line on the page.
 #[must_use]
 pub const fn run_width_no_baseline() -> &'static str {

@@ -329,6 +329,13 @@ pub fn shared_content_remedy() -> String {
         .to_owned()
 }
 
+/// [`shared_content_remedy`] when an edit to a placed drawing showed at more
+/// than one place: `invocations` draws of it on `pages` pages.
+#[must_use]
+pub fn remedy_if_shared(invocations: usize, pages: usize) -> Option<String> {
+    (invocations > 1 || pages > 1).then(shared_content_remedy)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,6 +1,6 @@
-//! The operand of `format.split_text_lines`: one selected page text object
-//! whose runs the engine would cut into two or more lines, and whether the
-//! engine would refuse the cut.
+//! The operand of `format.split_text_lines`: one selected text object, on the
+//! page or inside a placed drawing, whose runs the engine would cut into two
+//! or more lines, and whether the engine would refuse the cut.
 //!
 //! The cuts come from `pdfcer_core::vector::text_object_split_points` with
 //! `SplitGranularity::Line`, the function `EditSession::text_object_split_plan`
@@ -10,7 +10,8 @@
 //! back from `OpenDoc::split_preflight`. Until that answer exists (the render
 //! worker holds the session) only the refusal the object model can see, an
 //! inherited-position run at a cut, greys the row; the press still words any
-//! other refusal on the status line.
+//! other refusal on the status line. The engine's preflight takes a page
+//! object index, so a form leaf is greyed only by what the model can see.
 
 use pdfcer_core::vector::{
     RunPositioning, SplitGranularity, VectorEditError, VectorObject, text_object_split_points,
@@ -20,15 +21,15 @@ use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::canvas::runmerge::{MenuRow, park_at, parked_at};
 use crate::canvas::selection::{SelectionLevel, SelectionState};
-use crate::panels::objects::provider::ObjectModelProvider;
+use crate::panels::objects::provider::{ObjectModelProvider, TargetId};
 use crate::text::runsplit::RunSplitRefusal;
 use pdfcer_gui_base::opendoc::splitpreflight::SplitPreflight;
 
-/// One page text object and where the engine would cut it.
+/// One text object and where the engine would cut it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SplitOperand {
-    /// The page object index.
-    pub object: usize,
+    /// The text object: a page object or a form leaf.
+    pub target: TargetId,
     /// The run indices a new object would start at; never empty.
     pub cuts: Vec<usize>,
     /// The first cut the object model already knows the engine refuses.
@@ -44,7 +45,7 @@ impl SplitOperand {
 }
 
 /// The split operand of `selection` on `page`, or `None` unless the selection
-/// is exactly one page text object the engine would cut at least once.
+/// is exactly one text object the engine would cut at least once.
 #[must_use]
 pub fn operand(
     targets: Option<&ObjectModelProvider>,
@@ -61,8 +62,8 @@ pub fn operand(
     if only.page != page || only.subpath.is_some() {
         return None;
     }
-    let object = only.object.page_object_index()?;
-    let VectorObject::Text(text) = targets.page_objects().objects.get(object)? else {
+    let target = only.object;
+    let VectorObject::Text(text) = targets.object_for(target)? else {
         return None;
     };
     let cuts = text_object_split_points(text, SplitGranularity::Line);
@@ -75,7 +76,7 @@ pub fn operand(
             .then_some(VectorEditError::SplitRunInheritsPosition { index })
     });
     Some(SplitOperand {
-        object,
+        target,
         cuts,
         refusal,
     })
@@ -91,11 +92,11 @@ pub fn operand_of(doc: &OpenDoc) -> Option<SplitOperand> {
         let targets = doc.page_objects();
         operand(targets.as_deref(), &doc.selection, page)?
     };
-    if split.refusal.is_none() {
+    if let (None, Some(object)) = (&split.refusal, split.target.page_object_index()) {
         let answer = doc
             .split_preflight
             .as_ref()
-            .and_then(|p| p.answer((page, split.object), &split.cuts, doc.edit_epoch));
+            .and_then(|p| p.answer((page, object), &split.cuts, doc.edit_epoch));
         split.refusal = answer.flatten().cloned();
     }
     Some(split)
@@ -129,12 +130,15 @@ pub fn refresh(doc: &mut OpenDoc) {
     let Some(split) = operand_of(doc) else {
         return;
     };
+    let Some(object) = split.target.page_object_index() else {
+        return;
+    };
     let page = doc.view.page_index;
     let epoch = doc.edit_epoch;
     if doc
         .split_preflight
         .as_ref()
-        .is_some_and(|p| p.answer((page, split.object), &split.cuts, epoch).is_some())
+        .is_some_and(|p| p.answer((page, object), &split.cuts, epoch).is_some())
     {
         return;
     }
@@ -143,7 +147,7 @@ pub fn refresh(doc: &mut OpenDoc) {
     };
     // An `Err` is a document- or page-level refusal the press words itself;
     // it greys nothing here.
-    let answer = session.text_object_split_refusal(page, split.object, &split.cuts);
+    let answer = session.text_object_split_refusal(page, object, &split.cuts);
     let token = match &answer {
         Ok(refusal) => refusal.as_ref().map_or("none", refusal_token),
         Err(_) => "error",
@@ -152,15 +156,14 @@ pub fn refresh(doc: &mut OpenDoc) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI.
-            "split-preflight page={page} object={} cuts={} refusal={}",
-            split.object,
+            "split-preflight page={page} object={object} cuts={} refusal={}",
             split.cuts.len(),
             token,
         )
     });
     doc.split_preflight = Some(SplitPreflight {
         page,
-        object: split.object,
+        object,
         edit_epoch: epoch,
         cuts: split.cuts,
         refusal,
@@ -189,11 +192,11 @@ pub fn press(doc: &OpenDoc) -> Result<Action, RunSplitRefusal> {
     let split = operand_of(doc);
     match split {
         Some(SplitOperand {
-            object,
+            target,
             refusal: None,
             ..
         }) => Ok(Action::Vector(
-            crate::app::actions::VectorAction::SplitTextLines { page, object },
+            crate::app::actions::VectorAction::SplitTextLines { page, target },
         )),
         Some(SplitOperand {
             refusal: Some(why), ..

@@ -709,26 +709,29 @@ pub enum VectorAction {
         /// The transform, **in PAGE space**. See the variant's docs.
         matrix: Matrix,
     },
-    /// Join consecutive text runs of one page text object into one run
-    /// (`EditSession::merge_text_runs`, default `MergeOptions`). One undo entry,
+    /// Join consecutive text runs of one text object into one run
+    /// (`EditSession::merge_text_runs`, or `merge_text_runs_in_form` for a
+    /// form leaf; default `MergeOptions`). One undo entry,
     /// `CommandKind::MergeTextRuns`; later runs renumber down by `runs.len() - 1`.
     MergeTextRuns {
         /// The 0-based page.
         page: usize,
-        /// The page object index of the text object.
-        object: usize,
+        /// The text object: a page object or a form leaf.
+        target: crate::objectprovider::TargetId,
         /// Ascending, consecutive run indices; at least two.
         runs: Vec<usize>,
     },
-    /// Cut one page text object into one object per inferred line
+    /// Cut one text object into one object per inferred line
     /// (`EditSession::text_object_split_plan` with `SplitGranularity::Line`,
-    /// then `EditSession::split_text_object`). One undo entry,
-    /// `CommandKind::SplitTextObject`; later objects renumber up by the cut count.
+    /// then `EditSession::split_text_object`; for a form leaf,
+    /// `text_object_split_points` then `split_text_object_in_form`). One undo
+    /// entry, `CommandKind::SplitTextObject`; later objects renumber up by the
+    /// cut count.
     SplitTextLines {
         /// The 0-based page.
         page: usize,
-        /// The page object index of the text object.
-        object: usize,
+        /// The text object: a page object or a form leaf.
+        target: crate::objectprovider::TargetId,
     },
     /// Draw page `source_page` of the PDF at `file` into `page`'s content,
     /// filling `rect` (`EditSession::place_page_content`). One undo entry,

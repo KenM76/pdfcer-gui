@@ -230,6 +230,7 @@ pub mod form_node_move;
 pub mod form_part_copy;
 pub mod form_part_delete;
 pub mod form_style;
+pub mod form_text_reshape;
 pub mod group_unit_converts;
 pub mod leaftransform;
 pub mod nodeshape;

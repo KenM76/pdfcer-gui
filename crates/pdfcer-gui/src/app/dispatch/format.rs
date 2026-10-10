@@ -517,7 +517,7 @@ pub(crate) fn dispatch(
                         None => actions.push(Action::Vector(
                             crate::app::actions::VectorAction::MergeTextRuns {
                                 page,
-                                object: merge.object,
+                                target: merge.target,
                                 runs: merge.runs,
                             },
                         )),

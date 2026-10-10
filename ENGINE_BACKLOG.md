@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **31 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **30 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -82,7 +82,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Rewriting a paragraph with its own text keeps its line count** — the wrap tolerance `linebreak::FIT_TOLERANCE` | **wanted, at the pin since v0.81.0; request G162.** The shell's paragraph rewrite (`canvas::textedit::promote`) calls `edit_block_text` and inherits it with no change here; owed: a driven check that a paragraph retyped unchanged keeps its line count. |
 | **Exact break marker for pdfcer's own block text** — `pdfcer_core::text_edit::model::line_marks`, `LineEndSource::Marked` | **wanted, at the pin since v0.81.0; request G163.** `edit_block_text` writes the markers with no change here. The shell's paragraph join (`canvas::textedit::promote::joint`) still infers a break from whether the next word would have fitted; reading `EditableTextModel::line_ends` makes a pdfcer-written break exact. |
 | **Per-line break-vs-wrap on recognised text blocks** — `pdfcer_core::text_edit::model::line_ends`, `block_text_with_breaks` | **wanted, at the pin since v0.81.0; request G163.** The inference `canvas::textedit::promote::joint` makes, from the engine; calling it deletes `joint`, the workaround the request was filed against. |
-| **Text-run width, merge and split inside a form XObject** — `pdfcer_core::edit::text_form_reshape` | **wanted, at the pin since v0.81.0; request G158.** A text line inside a placed drawing gains width, merge and split through it, as its page-content twins already do; `FormatError::FormLeafOutOfRange` is a refusal to word. |
 
 ### Vector objects (Inkscape-style editing)
 
@@ -207,7 +206,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **295 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **296 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -316,6 +315,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Edit geometry INSIDE a form XObject — `move_node_in_form` … | **Reachable — `app::actions::vector` calls `move_node_in_form`** and its siblings, which is the whole point of the deep hit test: click a line inside a title block and drag *that line*. The engine's disclosure data (`FormSurgeryOutcome { invocations, pages }`) is what the shell reports back, deliberately as two numbers rather than one. |
 | **Delete a subpath, a node or a text run INSIDE a form XObject** — `delete_subpath_in_form`, `delete_node_in_form`, `delete_text_run_in_form` | **shipped.** `canvas::deleting` addresses the entered part by its leaf, so Delete on a subpath, an anchor or a text line inside a placed drawing reaches the in-form verb; a text line runs `delete_text_run_in_form` once per show operator, last first, as one undo step. A text leaf's line is picked by `vector::hit_test_text_runs_of`. Driven: `a_subpath_inside_a_placed_drawing_can_be_deleted`, `an_anchor_inside_a_placed_drawing_can_be_deleted`, `a_text_line_inside_a_placed_drawing_can_be_deleted`. |
 | **Hit-test the text runs of any text object, including one inside a form** — `vector::hit_test_text_runs_of` | **shipped — a click on a text line inside a placed drawing picks it by the engine's rule; G147.** `ObjectModelProvider::text_line_hits_of` calls it for a leaf with the leaf's text object in hand. Driven by `a_text_line_inside_a_placed_drawing_can_be_deleted`, whose click resolves the line through it. |
+| **Text-run width, merge and split inside a form XObject** — `set_text_run_width_in_form`, `merge_text_runs_in_form`, `split_text_object_in_form` | **shipped — a text line inside a placed drawing takes a typed width, merges its runs and splits into lines; G158.** `StyleChange::RunWidth`, `VectorAction::MergeTextRuns` and `VectorAction::SplitTextLines` carry a `TargetId`; a leaf goes to the in-form verb and the shared-content remedy is added when the form is drawn more than once. The split's cut points come from `text_object_split_points` on the leaf's text object, and the shell words the line-inference disclosure itself (G175). Driven: `a_text_line_inside_a_placed_drawing_can_be_merged`, `a_text_inside_a_placed_drawing_can_be_split_into_lines`, `a_text_line_inside_a_placed_drawing_takes_a_typed_width`. |
 | Edit an image, text run or pasted object added in THIS session … | **Reachable by linking the fix, which is the whole of it.** Every content-editing verb resolves a page through the session overlay, and this shell's call sites are unchanged by design. This is the one row here whose evidence is a **revision** rather than a surface: there is no new control to point at and no driven check of this project asserts it. If a reader wants to overturn one verdict in this file, overturn this one. |
 | Ask whether a page's model has changed — `EditSession::page_content_generation(page_index) -> u64` … | **Consumed — `app::cache` calls `page_content_generation`** to decide whether a cached decomposition still describes the page. It is the verb the engine's row says was asked for by name by `pdfcer-gui`, and it is in use. |
 | **Adopt the engine's deep marquee and delete ours** — `hit_test_rect_deep` / `FormMarquee` (`pdfcer-core/src/vector/hit.rs`) … | **Reachable, not driven — our extension is deleted.** `provider::hit_test_rect` is one call to `hit_test_rect_deep` plus a `HitTarget` → `TargetId` mapping; the hand-written leaf loop is gone, and `FormMarquee` is a parameter of `canvas::TargetProvider::hit_test_rect` rather than a constant in one impl. This shell passes `Include` where the engine defaults to `Exclude`, on purpose: here a form LEAF is not an edit operand (`canvas::moving::Refusal::InsideForm`) and the CONTAINER is, so `Exclude` would hand the operator a selection every verb refuses. Safe only because `canvas::marquee::without_page_wrappers` (O88) drops a page-sized wrapper from a crossing band. The result SET is unchanged; only the ORDER moved, to the engine's `paint_order` interleave, which all three consumers ignore. The both-policies assertion was falsified by planting a hard-coded `Include`. |
@@ -601,11 +601,12 @@ Each verified absent in the pin and on engine main before filing.
 - **G155** — an image cannot be made translucent. Answered by the same verb's alphas; wired as Picture opacity.
 - **G156** — an image cannot be replaced in place. Answered as `EditSession::replace_image`; wired as Format ▸ Image ▸ Replace image….
 - **G157** — page objects cannot be restacked; only annotations can. Answered as `EditSession::restack_objects`; wired in Edit ▸ Arrange.
-- **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`.
+- **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`. Answered as `set_text_run_width_in_form`, `merge_text_runs_in_form` and `split_text_object_in_form`; wired through the same width field, Merge text runs and Split into lines.
 - **G159** — `StyleOverrides` has no dash or opacity for a ce dimension.
 - **G160** — `rotate_widget` takes quarter turns only; `WidgetEdit` has no opacity.
 - **G161** — a link cannot be created, re-targeted or re-bordered.
 - **G174** — `set_object_stroke_style` takes lengths in each path's user space, so "5 pt" on a selection at two scales needs a call per scale. Workaround report; the shell groups and folds meanwhile.
+- **G175** — no in-form split plan: `text_object_split_points` returns cuts without the line-inference disclosure, so the shell words it (`text::runsplit::lines_inferred`). Workaround report.
 
 ## Filed requests for Word-like text editing — not verdict rows
 

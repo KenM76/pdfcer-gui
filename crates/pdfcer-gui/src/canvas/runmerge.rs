@@ -1,21 +1,21 @@
 //! The operand of `format.merge_text_runs`: the runs the selection covers in
-//! one page text object, and the engine's preflight answer for them.
+//! one text object, and the engine's preflight answer for them.
 //!
 //! At the Part rung the unit is a line, so the runs are the union of the
 //! selected lines' runs. At the Object rung a single selected text object that
-//! is one line offers all of its runs. Form leaves are not offered: the engine
-//! merges page objects only.
+//! is one line offers all of its runs. The text object may be a page object or
+//! a leaf inside a placed drawing; the engine has a merge for each.
 
 use pdfcer_core::vector::{VectorEditError, VectorObject};
 
 use crate::canvas::selection::{SelectionLevel, SelectionState};
-use crate::panels::objects::provider::ObjectModelProvider;
+use crate::panels::objects::provider::{ObjectModelProvider, TargetId};
 
-/// Two or more runs of one page text object, and whether the engine would merge them.
+/// Two or more runs of one text object, and whether the engine would merge them.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MergeOperand {
-    /// The page object index.
-    pub object: usize,
+    /// The text object: a page object or a form leaf.
+    pub target: TargetId,
     /// Ascending, deduplicated run indices.
     pub runs: Vec<usize>,
     /// `text_merge_refusal`'s answer; `None` means the merge may proceed.
@@ -31,7 +31,7 @@ impl MergeOperand {
 }
 
 /// The merge operand of `selection` on `page`, or `None` when the selection is
-/// not two or more runs of one page text object.
+/// not two or more runs of one text object.
 #[must_use]
 pub fn operand(
     targets: Option<&ObjectModelProvider>,
@@ -42,18 +42,18 @@ pub fn operand(
     if targets.page_index() != page {
         return None;
     }
-    let (object, mut runs) = match selection.level() {
+    let (target, mut runs) = match selection.level() {
         SelectionLevel::Part => {
             let entered = selection.entered_object()?;
             if entered.page != page {
                 return None;
             }
-            let object = entered.object.page_object_index()?;
+            let target = entered.object;
             let mut runs = Vec::new();
-            for line in selection.selected_parts_on(page, entered.object) {
-                runs.extend(targets.text_line_runs(object, line)?);
+            for line in selection.selected_parts_on(page, target) {
+                runs.extend(targets.text_line_runs_of(target, line)?);
             }
-            (object, runs)
+            (target, runs)
         }
         SelectionLevel::Object => {
             let [only] = selection.entries() else {
@@ -62,11 +62,11 @@ pub fn operand(
             if only.page != page || only.subpath.is_some() {
                 return None;
             }
-            let object = only.object.page_object_index()?;
-            if targets.text_line_count(object) != 1 {
+            let target = only.object;
+            if targets.text_line_count_of(target) != 1 {
                 return None;
             }
-            (object, targets.text_line_runs(object, 0)?.collect())
+            (target, targets.text_line_runs_of(target, 0)?.collect())
         }
         _ => return None,
     };
@@ -75,12 +75,12 @@ pub fn operand(
     if runs.len() < 2 {
         return None;
     }
-    let VectorObject::Text(text) = targets.page_objects().objects.get(object)? else {
+    let VectorObject::Text(text) = targets.object_for(target)? else {
         return None;
     };
     let refusal = pdfcer_core::vector::text_merge_refusal(text, &runs);
     Some(MergeOperand {
-        object,
+        target,
         runs,
         refusal,
     })

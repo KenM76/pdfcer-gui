@@ -25,8 +25,8 @@ fn request(page: usize, pinned: crate::canvas::textedit::pin::Pinned) -> FormatR
 
 /// Restyle every run the selection covers.
 pub(super) fn apply(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange) {
-    if let StyleChange::RunWidth { object, run, width } = *change {
-        runwidth::apply(doc, page, object, run, width);
+    if let StyleChange::RunWidth { target, run, width } = *change {
+        runwidth::apply(doc, page, target, run, width);
         resweep(doc, page);
         return;
     }
@@ -565,7 +565,9 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
         FormatError::BadTargetWidth(_) => t::TextStyleRefusal::WidthNotPositive,
         FormatError::NoAdvanceWidth { .. } => t::TextStyleRefusal::WidthNoMetrics,
         FormatError::WidthFitKerned => t::TextStyleRefusal::WidthKerned,
-        FormatError::NoMatch(_) => t::TextStyleRefusal::SpanNotFound,
+        FormatError::NoMatch(_) | FormatError::FormLeafOutOfRange { .. } => {
+            t::TextStyleRefusal::SpanNotFound
+        }
         FormatError::DecorationOnInvisibleText { .. } => t::TextStyleRefusal::DecorationInvisible,
         FormatError::TextRun(VectorEditError::TextRunHasNoWidth { .. }) => {
             t::TextStyleRefusal::WidthNoBaseline

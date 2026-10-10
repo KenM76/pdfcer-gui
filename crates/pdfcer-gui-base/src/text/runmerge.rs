@@ -58,7 +58,7 @@ impl RunMergeRefusal {
             FormatError::MergeRunsOutOfOrder | FormatError::MergePositionUnknown => {
                 Self::NoWidthToSpan
             }
-            FormatError::PageIndex(_) => Self::Stale,
+            FormatError::PageIndex(_) | FormatError::FormLeafOutOfRange { .. } => Self::Stale,
             _ => Self::Other,
         }
     }

@@ -43,14 +43,15 @@ pub enum StyleChange {
     /// A text render mode (`Tr`, 0..=7), as the engine's `TextRenderMode`
     /// byte. `3` is invisible (the OCR layer's mode).
     RenderMode(u8),
-    /// Fit one run to a page-point width (`EditSession::set_text_run_width`).
+    /// Fit one run to a page-point width (`EditSession::set_text_run_width`,
+    /// or `set_text_run_width_in_form` for a text object inside a placed
+    /// drawing).
     ///
-    /// Addressed by paint-order object and run, not by the extraction runs the
-    /// other variants use, so `apply` routes it before `restyle` and ignores
-    /// `runs`.
+    /// Addressed by object and run, not by the extraction runs the other
+    /// variants use, so `apply` routes it before `restyle` and ignores `runs`.
     RunWidth {
-        /// Paint-order index of the text object on the page.
-        object: usize,
+        /// The text object: a page object or a form leaf.
+        target: crate::objectprovider::TargetId,
         /// Index into that object's `runs`.
         run: usize,
         /// The width wanted, in PDF points.
