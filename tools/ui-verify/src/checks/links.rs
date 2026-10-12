@@ -62,7 +62,7 @@ const PROPS_SECTION: &str = "properties.link";
 /// Whether a `ui-rect` named `region` was traced after `mark`. The feature's
 /// own surface missing is a FAIL; [`press`] alone would report it as a
 /// harness error, which the runner files as a SKIP.
-fn drew_after(session: &Session, region: &str, mark: usize) -> Result<bool> {
+pub(super) fn drew_after(session: &Session, region: &str, mark: usize) -> Result<bool> {
     let trace = session.trace()?;
     Ok(trace
         .events(RECT)

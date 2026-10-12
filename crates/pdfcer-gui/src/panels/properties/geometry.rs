@@ -5,7 +5,7 @@
 
 use egui::Ui;
 use pdfcer_core::object::ObjId;
-use pdfcer_core::vector::Point;
+use pdfcer_core::vector::{Matrix, Point};
 
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
@@ -28,6 +28,9 @@ pub const WIDTH_REGION: &str = "properties.geometry.width"; // ui-text-exempt: d
 
 /// The **X** field's own region.
 pub const X_REGION: &str = "properties.geometry.x"; // ui-text-exempt: diagnostic region name
+
+/// The **Rotate by** field's own region.
+pub const TURN_REGION: &str = "properties.geometry.turn"; // ui-text-exempt: diagnostic region name
 
 /// The **Apply** button's own region.
 pub const APPLY_REGION: &str = "properties.geometry.apply"; // ui-text-exempt: diagnostic region name
@@ -89,6 +92,10 @@ pub struct GeometryDraft {
     /// stores every other seed: *"the operator touched this field"* has to be a
     /// fact, not an inference from the current document.
     seed_angle: Option<f64>,
+    /// **A turn to apply**, degrees anticlockwise about the box's centre, for
+    /// page content and parts of a placed drawing. Relative and reset to 0 on
+    /// every seed: content stores no angle to show.
+    pub turn: f64,
 }
 
 /// **What a draft is a draft OF.**
@@ -181,6 +188,7 @@ impl GeometryDraft {
         // door.
         self.angle = angle;
         self.seed_angle = angle;
+        self.turn = 0.0;
     }
 
     /// Whether anything was typed — i.e. whether Apply has work to do.
@@ -194,6 +202,13 @@ impl GeometryDraft {
             || !near(self.w, bounds.w())
             || !near(self.h, bounds.h())
             || self.angle_delta().is_some()
+            || self.turns()
+    }
+
+    /// Whether a turn was typed.
+    #[must_use]
+    pub fn turns(&self) -> bool {
+        self.turn.abs() > MIN_ANGLE_DEG
     }
 
     /// **How far the operator turned the mark**, in degrees, or `None` when
@@ -460,6 +475,15 @@ pub fn section(
         POINTS,
     );
     field(ui, t::geometry_h(), &mut draft.h, None, None, POINTS);
+    field(
+        ui,
+        t::geometry_turn(),
+        &mut draft.turn,
+        Some(TURN_REGION),
+        None,
+        DEGREES,
+    );
+    ui.label(egui::RichText::new(t::geometry_turn_note()).small().weak());
 
     let changed = draft.differs_from(bounds);
     let usable = draft.is_usable();
@@ -473,13 +497,14 @@ pub fn section(
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
             "geometry-draft x={:.2} y={:.2} w={:.2} h={:.2} bw={:.2} bh={:.2} \
-             changed={changed} usable={usable}",
+             changed={changed} usable={usable} turn={:.2}",
             draft.x,
             draft.y,
             draft.w,
             draft.h,
             bounds.w(),
-            bounds.h()
+            bounds.h(),
+            draft.turn
         )
     });
 
@@ -526,6 +551,9 @@ pub fn section(
                 Err(refusal) => resizing::decline(refusal),
             }
         }
+        if draft.turns() {
+            actions.push(turn(page, target, draft));
+        }
     }
 
     ui.separator();
@@ -564,6 +592,29 @@ fn translate(page: usize, target: TargetId, dx: f64, dy: f64) -> Action {
             objects: target.page_object_index().into_iter().collect(),
             dx,
             dy,
+        },
+    }
+    .into()
+}
+
+/// The typed turn, about the centre of the box the draft describes: a move or
+/// resize raised before it by the same Apply has already put the box there.
+fn turn(page: usize, target: TargetId, draft: &GeometryDraft) -> Action {
+    let centre = Point {
+        x: draft.x + draft.w / 2.0,
+        y: draft.y + draft.h / 2.0,
+    };
+    let matrix = Matrix::rotate(draft.turn.to_radians()).about(centre);
+    match target {
+        TargetId::Leaf(_) => VectorAction::TransformLeavesInForm {
+            page,
+            leaves: target.leaf_index().into_iter().collect(),
+            matrix,
+        },
+        TargetId::Object(_) => VectorAction::TransformObjects {
+            page,
+            objects: target.page_object_index().into_iter().collect(),
+            matrix,
         },
     }
     .into()
@@ -628,6 +679,49 @@ mod tests {
     #[test]
     fn no_anchors_means_no_bounds() {
         assert!(Bounds::of(&[]).is_none());
+    }
+
+    /// A typed turn is a change, and a new seed puts it back to 0.
+    #[test]
+    fn a_typed_turn_is_a_change_until_the_next_seed() {
+        let b = Bounds {
+            x0: 10.0,
+            y0: 20.0,
+            x1: 50.0,
+            y1: 80.0,
+        };
+        let mut d = GeometryDraft::default();
+        d.sync(0, Subject::Object(3), 7, b, None);
+        d.turn = 90.0;
+        assert!(d.differs_from(b));
+        d.sync(0, Subject::Object(3), 8, b, None);
+        assert!(!d.turns());
+        assert!(!d.differs_from(b));
+    }
+
+    /// The turn pivots on the box's centre and counts anticlockwise.
+    #[test]
+    fn a_turn_pivots_on_the_centre_anticlockwise() {
+        let mut d = GeometryDraft::default();
+        let b = Bounds {
+            x0: 60.0,
+            y0: 60.0,
+            x1: 220.0,
+            y1: 180.0,
+        };
+        d.sync(0, Subject::Object(0), 1, b, None);
+        d.turn = 90.0;
+        let Action::Vector(VectorAction::TransformObjects {
+            matrix, objects, ..
+        }) = turn(0, TargetId::Object(0), &d)
+        else {
+            panic!("a page object turns by transform_objects");
+        };
+        assert_eq!(objects, vec![0]);
+        let centre = matrix.map_point(Point { x: 140.0, y: 120.0 });
+        assert!((centre.x - 140.0).abs() < 1e-9 && (centre.y - 120.0).abs() < 1e-9);
+        let right = matrix.map_point(Point { x: 220.0, y: 120.0 });
+        assert!((right.x - 140.0).abs() < 1e-9 && (right.y - 200.0).abs() < 1e-9);
     }
 
     /// **Selecting an object and pressing Apply raises nothing.**

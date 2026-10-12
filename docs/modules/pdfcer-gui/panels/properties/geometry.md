@@ -140,12 +140,18 @@ edits the drawing everywhere it is placed) and `MoveSelection` for a page
 object. A size change is unchanged — `resizing::action` already sends a part
 to `transform_objects_in_form`. Driven: `typed_x_moves_a_part_of_a_placed_drawing`.
 
+## Rotate by
+
+A relative angle, not an absolute one: a page object has no stored rotation
+to show, only a box. Apply turns the target by the typed degrees,
+anticlockwise as PDF angles run, about the centre of the box as it stands
+after any move or resize in the same press, and the next seed puts the field
+back at 0. A page object commits through `transform_objects`, one part of a
+placed drawing through `transform_objects_in_form`; both are one undo step.
+Turning several parts each about its own centre waits on G180.
+
 ## What this deliberately does NOT offer
 
-- **Rotation.** `EditSession` has no rotate verb, and expressing one as
-  `move_nodes` is not the same edit: it would rotate the anchors and leave
-  every glyph, dash pattern and line cap in the original orientation. That
-  is a shear of the outline, not a rotation of the object.
 - **A units picker.** Every number here is in **PDF user-space points**,
   which is what `move_objects` and `move_nodes` take and what the rest of
   this panel already shows. A millimetre field would be a conversion this

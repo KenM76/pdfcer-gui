@@ -473,6 +473,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(leafplace::TypedXMovesAPartOfAPlacedDrawing),
         Box::new(leafplace::PartsOfAPlacedDrawingAlignToEachOther),
         Box::new(leafplace::PageObjectsAlignToEachOther),
+        Box::new(typedturn::ATypedTurnRotatesAnObjectAboutItsCentre),
         Box::new(nodeshape::ANodesSegmentCanBeCurvedAndANodeInserted),
         Box::new(leaftransform::APartOfAPlacedDrawingCanBeResizedAndRotated),
         Box::new(replaceimage::ReplaceImageSwapsThePictureInPlace),

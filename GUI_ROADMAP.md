@@ -36,7 +36,6 @@ verb in the pin and no route yet:
 
 - **Links:** select, move and resize are built and driven. Delete and copy
   are not driven; check that `/QuadPoints` follow `/Rect` on a resize.
-- **A typed rotation angle** for page objects (`transform_objects`).
 
 ---
 

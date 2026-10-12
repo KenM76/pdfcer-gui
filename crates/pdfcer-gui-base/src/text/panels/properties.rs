@@ -291,6 +291,19 @@ pub const fn geometry_angle_note() -> &'static str {
     "Degrees anticlockwise. 0 is the orientation the mark was drawn in."
 }
 
+/// The **Rotate by** field's label, for page content and parts of a placed
+/// drawing.
+#[must_use]
+pub const fn geometry_turn() -> &'static str {
+    "Rotate by"
+}
+
+/// What the Rotate by field counts.
+#[must_use]
+pub const fn geometry_turn_note() -> &'static str {
+    "Degrees anticlockwise about the box's centre. Back to 0 after Apply."
+}
+
 /// The commit button.
 #[must_use]
 pub const fn geometry_apply() -> &'static str {

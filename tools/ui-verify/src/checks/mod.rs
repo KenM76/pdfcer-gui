@@ -241,6 +241,7 @@ pub mod nudgecontent;
 pub mod replaceimage;
 pub mod restack;
 pub mod stroke_style;
+pub mod typedturn;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the
 /// three checks that author a field and then try to select it.
