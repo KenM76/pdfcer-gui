@@ -171,3 +171,4 @@
 - [Git Bash ps cannot see a sibling call](feedback_ps_blind_sibling.md) — "no process" lied; check via Win32_Process before re-running gates.
 - [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
 - [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — paragraph widening ate the OCR preview for 3 releases; re-drive neighbours.
+- [A missing feature surface SKIPs, not FAILs](feedback_harness_skip_masks_feature.md) — `press` on an absent region is a harness error; assert the surface drew first.
