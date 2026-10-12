@@ -597,6 +597,7 @@ fn no_node_refusal_calls_a_markup_shape_a_measurement() {
         R::WouldLeaveNothing,
         R::Unplaceable,
         R::Locked,
+        R::NoTextThere,
         R::Refused,
         R::ShapeHasNoNodes { subtype: W::Ink },
         R::ShapeHasNoNodes {

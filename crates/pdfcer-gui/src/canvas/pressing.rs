@@ -543,7 +543,12 @@ pub fn look(
     // are one per point of every stroke.
     // The hit test itself is one distance per anchor in screen space, so a
     // dense freehand mark costs a few hundred subtractions per press.
-    let markup_node = origin.and_then(|p| annotnodes::node_at(doc, map, selection, p));
+    // A text markup's end grips are answered second; they never coexist with
+    // node anchors (`canvas::respan`'s header).
+    let markup_node = origin.and_then(|p| {
+        annotnodes::node_at(doc, map, selection, p)
+            .or_else(|| crate::canvas::respan::grip_at(doc, map, selection, p))
+    });
 
     // Whether the press landed inside a selected MARKUP annotation's own box.
     //

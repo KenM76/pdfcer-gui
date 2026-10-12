@@ -194,6 +194,13 @@ pub fn nodes(doc: &OpenDoc, selection: &SelectionState) -> Vec<egui::Pos2> {
         .collect()
 }
 
+/// How far from an anchor's centre a press still takes it, in screen points.
+/// Shared with `canvas::respan`'s end grips, which are drawn as the same square.
+#[must_use]
+pub fn grab_tolerance() -> f32 {
+    crate::canvas::dimdrag::VERTEX_HANDLE_PT / 2.0 + NODE_GRAB_SLACK_PT
+}
+
 /// **Which node a press at `screen` landed on**, if any.
 #[must_use]
 pub fn node_at(
@@ -202,7 +209,7 @@ pub fn node_at(
     selection: &SelectionState,
     screen: egui::Pos2,
 ) -> Option<usize> {
-    let tolerance = crate::canvas::dimdrag::VERTEX_HANDLE_PT / 2.0 + NODE_GRAB_SLACK_PT;
+    let tolerance = grab_tolerance();
     nodes(doc, selection)
         .into_iter()
         .enumerate()
@@ -759,7 +766,7 @@ pub fn explain_unreshapable(
     // Asked of [`geometry`] rather than of the subtype directly, so the
     // sentence and the anchors can never disagree: if this answers `Some` the
     // painter drew handles, and there is nothing to explain.
-    if geometry(doc, selection).is_some() {
+    if geometry(doc, selection).is_some() || crate::canvas::respan::ends(doc, selection).is_some() {
         return false;
     }
     let word = shape_word(&subtype);

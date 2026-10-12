@@ -119,6 +119,22 @@ pub fn dragged(frame: Frame<'_>, actions: &mut Vec<Action>) -> Previews {
             // point it described for four days.
             out.snap = dragged.snap;
         }
+        // A text markup's end grips ride the same gesture; `respan::ends`
+        // answers only for a text markup, which has no node geometry, so at
+        // most one of the two branches can own a selection.
+        Subject::Markup if crate::canvas::respan::ends(doc, selection).is_some() => {
+            out.markup = crate::canvas::respan::drag(
+                crate::canvas::respan::Frame {
+                    index,
+                    from,
+                    at,
+                    phase,
+                    doc,
+                    selection,
+                },
+                actions,
+            );
+        }
         Subject::Markup => {
             let dragged = crate::canvas::annotnodes::drag(
                 crate::canvas::annotnodes::NodeFrame {

@@ -234,6 +234,7 @@ pub mod form_style;
 pub mod form_text_reshape;
 pub mod group_unit_converts;
 pub mod leaftransform;
+pub mod markup_reshape;
 pub mod nodeshape;
 pub mod replaceimage;
 pub mod restack;

@@ -454,6 +454,12 @@ pub(super) fn draw(
                 .map(|(index, c)| (crate::canvas::annotnodes::NODE_REGION, index, c)),
         )
         .chain(
+            crate::canvas::respan::grips(doc, selection)
+                .into_iter()
+                .enumerate()
+                .map(|(index, c)| (crate::canvas::respan::END_REGION, index, c)),
+        )
+        .chain(
             crate::canvas::dimext::grips_drawn(ui.ctx(), doc, selection)
                 .into_iter()
                 .map(|(end, c)| (crate::canvas::dimext::GRIP_REGION, end.index(), c)),

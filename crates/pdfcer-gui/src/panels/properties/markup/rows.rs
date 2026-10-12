@@ -13,6 +13,33 @@ use crate::text::panels::properties as t;
 
 use super::{Current, DASH_WIDTH, MAX_WIDTH_PT, MIN_WIDTH_PT};
 
+/// The region the Colour swatch publishes, and its picker `…colour.picker`.
+pub(super) const COLOUR_REGION: &str = "properties.markup.colour"; // ui-text-exempt: trace region name, never displayed
+/// The region the Fill swatch publishes, and its picker `…fill.picker`.
+pub(super) const FILL_REGION: &str = "properties.markup.fill"; // ui-text-exempt: trace region name, never displayed
+
+/// A swatch value as a device RGB colour.
+fn colour_of(rgb: [u8; 3]) -> Color {
+    Color::Rgb(
+        f64::from(rgb[0]) / 255.0,
+        f64::from(rgb[1]) / 255.0,
+        f64::from(rgb[2]) / 255.0,
+    )
+}
+
+/// One swatch; `Some` once, on the frame its picker closed changed — so a
+/// drag across the picker is one edit, not one per frame.
+fn swatch(ui: &mut Ui, salt: &str, rgb: [u8; 3], region: &str) -> Option<Color> {
+    crate::panels::properties::swatch::show(
+        ui,
+        salt,
+        crate::panels::properties::swatch::Value::Agreed(rgb),
+        region,
+        "",
+    )
+    .map(colour_of)
+}
+
 /// The border colour.
 pub(super) fn colour_row(
     ui: &mut Ui,
@@ -21,19 +48,15 @@ pub(super) fn colour_row(
     actions: &mut Vec<Action>,
 ) {
     let existing = current.colour.rgb;
-    let mut rgb = existing.unwrap_or([0, 0, 0]);
     ui.horizontal(|ui| {
         ui.label(t::markup_colour_label());
-        if ui.color_edit_button_srgb(&mut rgb).changed() {
+        let rgb = existing.unwrap_or([0, 0, 0]);
+        if let Some(colour) = swatch(ui, "properties-markup-colour", rgb, COLOUR_REGION) {
             actions.push(Action::SetMarkupStyle {
                 page: target.page,
                 id: target.id,
                 style: MarkupStyle {
-                    stroke: Some(StyleEdit::Set(Color::Rgb(
-                        f64::from(rgb[0]) / 255.0,
-                        f64::from(rgb[1]) / 255.0,
-                        f64::from(rgb[2]) / 255.0,
-                    ))),
+                    stroke: Some(StyleEdit::Set(colour)),
                     ..MarkupStyle::default()
                 },
             });
@@ -65,19 +88,15 @@ pub(super) fn fill_row(
         return;
     }
     let existing = current.interior.rgb;
-    let mut rgb = existing.unwrap_or([0, 0, 0]);
     ui.horizontal(|ui| {
         ui.label(t::markup_fill_label());
-        if ui.color_edit_button_srgb(&mut rgb).changed() {
+        let rgb = existing.unwrap_or([0, 0, 0]);
+        if let Some(colour) = swatch(ui, "properties-markup-fill", rgb, FILL_REGION) {
             actions.push(Action::SetMarkupStyle {
                 page: target.page,
                 id: target.id,
                 style: MarkupStyle {
-                    interior: Some(StyleEdit::Set(Color::Rgb(
-                        f64::from(rgb[0]) / 255.0,
-                        f64::from(rgb[1]) / 255.0,
-                        f64::from(rgb[2]) / 255.0,
-                    ))),
+                    interior: Some(StyleEdit::Set(colour)),
                     ..MarkupStyle::default()
                 },
             });

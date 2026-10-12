@@ -806,6 +806,7 @@ impl PdfcerApp {
             Action::SetMarkupStyle { page, id, style } => {
                 vector_edit(doc, "set-markup-style", page, 1, |session| {
                     session.set_markup_style(id, &style).map(|report| {
+                        super::annots::styleread::trace_applied(session, id);
                         report
                             .dropped
                             .iter()

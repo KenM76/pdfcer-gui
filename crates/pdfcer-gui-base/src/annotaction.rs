@@ -651,6 +651,17 @@ pub enum AnnotAction {
         /// out of the string catalog.
         why: crate::text::markup::NodeEditRefusal,
     },
+    /// **Re-span a text markup** — replace a `/Highlight`, `/Underline`,
+    /// `/StrikeOut` or `/Squiggly`'s `/QuadPoints` with the words a text
+    /// selection now covers. `EditSession::respan_text_markup`, one undo
+    /// entry. Raised by `pdfcer_gui::canvas::respan` on the release of an
+    /// end-grip drag.
+    RespanTextMarkup {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// One quad per covered line, page space, in reading order.
+        quads: Vec<pdfcer_core::annot_author::Quad>,
+    },
     /// **Restyle a text-BEARING annotation** — a sticky note's icon and
     /// colour, a stamp's colour. `EditSession::set_text_annot_style`, raised by
     /// `crate::panels::properties::markup::textannot` and by nothing else.

@@ -247,6 +247,8 @@ mod painting;
 /// filter, and the eleven classes it switches.
 pub use pdfcer_gui_base::pick;
 pub mod resizing;
+/// **A text markup's two end grips**, and re-spanning it over other words.
+pub mod respan;
 pub mod rightclick;
 /// **The ninth grip** — the rotate handle above the selection box, and the
 /// one gesture the eight could never express. `ui-conventions/handles.md` H2,

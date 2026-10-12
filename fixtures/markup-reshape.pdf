@@ -1,0 +1,52 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 400] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Courier >> >> >> /Contents 4 0 R /Annots [5 0 R 7 0 R] >>
+endobj
+4 0 obj
+<<  /Length 108 >>
+stream
+BT /F1 12 Tf 40 300 Td (alpha beta gamma delta) Tj ET
+BT /F1 12 Tf 40 280 Td (epsilon zeta eta theta) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [83.2 298 112 308] /P 3 0 R /F 4 /C [1 1 0] /QuadPoints [83.2 308 112 308 83.2 298 112 298] /AP << /N 6 0 R >> >>
+endobj
+6 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 28.8 10] /Resources << /ExtGState << /GS0 << /BM /Multiply >> >> >> /Length 34 >>
+stream
+/GS0 gs 1 1 0 rg 0 0 28.8 10 re f
+endstream
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Line /Rect [50 110 310 130] /P 3 0 R /F 4 /L [60 120 300 120] /LE [/ClosedArrow /ClosedArrow] /C [0 0 1] /BS << /W 2 >> /AP << /N 8 0 R >> >>
+endobj
+8 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 260 20] /Resources << >> /Length 89 >>
+stream
+0 0 1 RG 2 w 10 10 m 250 10 l S 10 10 m 22 16 l 22 4 l h S 250 10 m 238 16 l 238 4 l h S
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000316 00000 n 
+0000000475 00000 n 
+0000000646 00000 n 
+0000000838 00000 n 
+0000001021 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+1225
+%%EOF

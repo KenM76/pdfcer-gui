@@ -329,6 +329,10 @@ pub enum NodeEditRefusal {
     /// worded anyway, because an unreachable refusal that becomes reachable
     /// silently is how a grip comes to do nothing.
     Locked,
+    /// A text mark's end was dragged where the text selection found no text,
+    /// so there is nothing for the mark to cover. Raised by
+    /// `pdfcer_gui::canvas::respan` before any verb is reached.
+    NoTextThere,
     /// Everything else the engine can say no with: an annotation that is no
     /// longer there, a ce dimension arriving at the wrong verb, an index that
     /// names nothing, an encrypted document, an enforced certification, a
@@ -371,6 +375,9 @@ impl NodeEditRefusal {
             Self::Locked => {
                 "The file marks this as locked, so its shape cannot be changed \
                  here. Unlock it in the program that made it."
+            }
+            Self::NoTextThere => {
+                "There is no text there for the mark to cover. Drag its end onto a word."
             }
             Self::Refused => "The corner could not be changed. The drawing is unchanged.",
         }

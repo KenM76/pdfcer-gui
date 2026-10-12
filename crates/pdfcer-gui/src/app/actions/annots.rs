@@ -41,6 +41,10 @@ mod flags;
 mod flatten;
 pub(crate) use flatten::refusal as flatten_refusal;
 mod inknodes;
+/// Re-span a text markup over other words.
+mod respan;
+/// The `set-markup-style-applied` read-back, for `apply`'s style arm.
+pub(super) mod styleread;
 /// **The text-annotation restyle verb** — `set_text_annot_style` and the
 /// stamp-label disclosure it owes. Its header says why this one verb is a
 /// module and its neighbours are arms.
@@ -802,6 +806,7 @@ pub(super) fn apply_action(
         A::DeclineNodeEdit { why } => {
             crate::app::status::decline::record_markup_node_refused(why);
         }
+        A::RespanTextMarkup { id, quads } => respan::respan(doc, id, &quads),
         // The SECOND style verb, and the one arm here that answers a
         // different engine function from its neighbours. `set_markup_style`
         // reads through `spec_from_dict`, which has no `/Text` arm;
