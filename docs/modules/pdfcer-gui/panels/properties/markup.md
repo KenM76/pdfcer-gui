@@ -62,8 +62,10 @@ a subtype grows this panel with it and no shell change.
 A `/Text`'s icon and colour and a `/Stamp`'s colour are changeable, but
 through a **second engine verb with a second reader and a second style
 struct** — `set_text_annot_style`. [`textannot`] is that route and its
-header carries the account, including why `/FreeText` is refused and on what
-grounds.
+header carries the account. A `/FreeText` routes there too and is drawn by
+[`textbox`]; [`anyannot`] adds opacity for every mark outside
+`set_markup_style`'s family, the icon colour of a caret, attachment, sound or
+screen mark, and the redraw offer a refused restyle leaves.
 
 ⇒ Nothing here goes through `set_markup_style` on their behalf. The two are
 separated by [`Reach`], an enum whose arms the compiler makes exhaustive,

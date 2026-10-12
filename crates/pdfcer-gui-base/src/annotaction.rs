@@ -705,6 +705,25 @@ pub enum AnnotAction {
         /// Boxed: the engine's override set outweighs every other variant.
         style: Box<pdfcer_core::edit::TextAnnotStyle>,
     },
+    /// **Set or remove any annotation's `/CA`** through
+    /// `EditSession::set_annot_opacity`, which writes the dictionary only.
+    SetOpacity {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// The new opacity in 0..=1, or `Clear` to remove `/CA`.
+        opacity: pdfcer_core::edit::StyleEdit<f64>,
+    },
+    /// **Recolour a caret, attachment, sound or screen mark's icon** through
+    /// `EditSession::set_marker_style`. `redraw_as_plain` replaces an icon
+    /// another program drew; it is set only by the redraw offer's retry.
+    SetMarkerColour {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// The icon colour.
+        color: pdfcer_core::annot_author::Color,
+        /// Whether a foreign icon may be replaced with pdfcer's.
+        redraw_as_plain: bool,
+    },
     /// **Turn one of the annotation-flag switches on or off**, resolved
     /// against the document's `/F` when applied; see
     /// [`crate::annotflagswitch`]. Never raised for a widget, whose

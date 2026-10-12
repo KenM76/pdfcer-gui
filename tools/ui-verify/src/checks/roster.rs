@@ -478,6 +478,9 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(form_text_reshape::ATextLineInsideAPlacedDrawingCanBeMerged),
         Box::new(form_text_reshape::ATextInsideAPlacedDrawingCanBeSplitIntoLines),
         Box::new(form_text_reshape::ATextLineInsideAPlacedDrawingTakesATypedWidth),
+        Box::new(annot_restyle::ATextBoxAnotherProgramDrewIsRestyledOnRequest),
+        Box::new(annot_restyle::AStampsOpacityAndWordsChange),
+        Box::new(annot_restyle::AMarkersIconIsRecolouredOnRequest),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

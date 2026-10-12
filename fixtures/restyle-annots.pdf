@@ -1,0 +1,62 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 400] /Resources << >> /Contents 4 0 R /Annots [5 0 R 7 0 R 9 0 R] >>
+endobj
+4 0 obj
+<<  /Length 29 >>
+stream
+0.5 G 1 w 10 10 380 380 re S
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /FreeText /Rect [40 300 240 340] /P 3 0 R /F 4 /Contents (Hand drawn) /DA (0 g /Helv 12 Tf) /Q 0 /C [0 0 0] /BS << /W 1 /S /S >> /IC [1 1 0.8] /AP << /N 6 0 R >> >>
+endobj
+6 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 40] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Length 99 >>
+stream
+1 1 0.8 rg 0 0 200 40 re f 0 G 1 w 0.5 0.5 199 39 re S BT 0 g /F1 12 Tf 4 24 Td (Hand drawn) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Stamp /Rect [40 180 200 240] /P 3 0 R /F 4 /Name /Draft /C [1 0 0] /AP << /N 8 0 R >> >>
+endobj
+8 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 160 60] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Length 74 >>
+stream
+1 0 0 RG 3 w 2 2 156 56 re S BT 1 0 0 rg /F1 28 Tf 30 18 Td (DRAFT) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Caret /Rect [280 300 300 320] /P 3 0 R /F 4 /C [1 0 0] /AP << /N 10 0 R >> >>
+endobj
+10 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 20 20] /Resources << >> /Length 32 >>
+stream
+1 0 0 rg 0 0 m 20 0 l 10 20 l f
+endstream
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000253 00000 n 
+0000000332 00000 n 
+0000000537 00000 n 
+0000000822 00000 n 
+0000000952 00000 n 
+0000001212 00000 n 
+0000001331 00000 n 
+trailer
+<< /Size 11 /Root 1 0 R >>
+startxref
+1478
+%%EOF

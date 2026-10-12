@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **30 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `wanted` — a real gap — **25 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -104,11 +104,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
 | **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **wanted, at the pin since v0.81.0; request G153.** A line's Fill swatch appears in Properties and on the Format band because `MarkupStyleSupport::for_subtype(b"Line")` now answers `takes_interior`, and both read the line's `/IC` back; owed: a driven fill of a closed arrowhead. |
-| **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **wanted, at the pin since v0.81.0; request G150.** Properties of a note, stamp or media mark gain Opacity through it. Its module is `pdfcer_core::edit::annot_restyle`; one `CommandKind::SetAnnotOpacity` per change. |
-| **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **wanted, at the pin since v0.81.0; request G150.** Properties of a marker gain Colour through it. One `CommandKind::SetMarkerStyle` per change; `EditError::MarkerAppearanceForeign` is a refusal to word. |
-| **A text box's fill, border width** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is its new fields) | **wanted, at the pin since v0.81.0; request G149.** A text box's Properties gain fill, border, dash, opacity and text styling through it. The report gains `TextAnnotStyleChange::frame_written`, `TextAnnotStyleChange::opacity_written` and `TextAnnotStyleChange::text_style_written`. |
-| **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.81.0; request G148.** Text box styling re-tests against it. It refuses with `EditError::FreeTextAppearanceForeign` and `EditError::FreeTextIsRichText`, and reports `TextAnnotStyleChange::rich_text_dropped`; the shell words neither refusal yet, because it withholds colour and size for a FreeText. |
-| **A placed stamp's words can be changed** — `set_stamp_label` | **wanted, at the pin since v0.81.0; request G151.** A stamp's Properties gain its words through it; the report's `TextAnnotStyleChange::label_written` confirms the write, and `EditError::StampLabelEmpty` is a refusal to word. |
 | **A text markup can be re-spanned** — `respan_text_markup`, `pdfcer_core::edit::markup_respan` | **wanted, at the pin since v0.81.0; request G152.** Dragging a highlight's end grips re-spans it through it, one `CommandKind::RespanTextMarkup`; `EditError::TextMarkupVerbOnOther` is a refusal to word. |
 | **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **wanted, at the pin since v0.81.0; request G161.** Insert gains Link, and a link's Properties gain its target and border, through it: `CommandKind::SetLinkTarget` and `CommandKind::SetLinkBorder`, with `AnnotKind::Link` in the undo labels. Refusals to word: `EditError::LinkBorderWidthInvalid`, `EditError::LinkUriInvalid`, `EditError::LinkVerbOnOther`. |
 
@@ -135,7 +130,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `blocked` — waiting on something named — **2 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -153,7 +148,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -164,7 +159,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `declined` — deliberately no surface — **16 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -206,7 +201,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **296 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **301 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -385,6 +380,11 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | `pdfcer_core::edit::VertexEditKind::as_str` | **Consumed.** `app::actions::annots::reshape`'s trace prints `edit={}` through it rather than `{:?}`, so the shell's line spells a reshape `move`/`insert`/`remove` exactly as `pdfcer annotation-vertex` does. The `Debug` spelling would have been `Moved`/`Inserted`/`Removed` — two vocabularies for one fact, across a boundary a driven check reads. |
 | Read `/RC` rich content and `/DS` default style on a markup annotation, any subtype — `Annotation::rich_contents`/`default_style`, `annot::rich_text_in`, `RichText::Inline`/`RichText::Stream` | **shipped.** <!--namesake:default_style--> the forms panel's `default_style` is a form field's, not this annotation accessor. `commentmodel::collect` resolves each row's `/RC` through `annot::rich_text_in` (string or stream) into `CommentRow::rich`; `panels::comments::rich::line` parses it with `richtext::parse` and draws one line under the note naming the formatting, each formatted part on hover, and that editing keeps the words and drops the formatting — or that the formatted copy could not be read. Driven by `a_formatted_comment_says_it_is_formatted` on `fixtures/rich-comment.pdf`. Rendering the runs themselves, and the Properties panel's note field, are not built. |
 | **Named 3D views and up-axis public; write 3D views with a default view into a 3D annotation** — `pdfcer_core::edit::threed_views` | **shipped — the 3D viewer's *Save views in the file* (O289 item 12).** Writes the five named views about the window's axes, and the view on screen, through `ThreeDSavedView::from_camera` and `EditSession::set_3d_views`, one `CommandKind::SetThreeDViews`, the view on screen the default; request G168. The viewer keeps its own named-view table (`Orbit::named`) rather than `pdfcer_3d::NamedView`: its views turn about any signed up axis and a chosen front, where `pdfcer_3d::UpAxis` offers +x, +y or +z up with a fixed front. |
+| **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **shipped — every annotation that is not a markup has Opacity in Properties; G150.** `panels::properties::markup::anyannot::opacity_row` → `AnnotAction::SetOpacity`; one `CommandKind::SetAnnotOpacity` per change. Driven by `a_stamps_opacity_and_words_change`. |
+| **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **shipped — a caret, attachment, sound or media mark has Icon colour in Properties; G150.** `AnnotAction::SetMarkerColour`; one `CommandKind::SetMarkerStyle` per change. The verbs, `set_annot_opacity` and `set_marker_style` alike, live in `pdfcer_core::edit::annot_restyle`, which this row and the one above account for. `EditError::MarkerAppearanceForeign` becomes a `RedrawOffer`, and *Redraw with pdfcer's icon* retries with `MarkerStyle::redraw_as_plain`. Driven by `a_markers_icon_is_recoloured_on_request`. The current colour comes from the shell's own `/C` reader (G176). |
+| **A text box's fill, border width** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is its new fields) | **shipped — a text box's Properties carry border colour and width, background, text colour, font and size; G149.** `panels::properties::markup::textbox`. The width row carries the box's dash through unchanged. Driven by `a_text_box_another_program_drew_is_restyled_on_request`. |
+| **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **shipped — a text box is restyled in place; G148.** Both refusals become a `RedrawOffer`, and *Redraw as plain text* retries with `TextAnnotStyle::redraw_as_plain`; `rich_text_dropped` and `appearance_was_foreign` are disclosed on the status line. The foreign-look refusal is driven; the rich-text one is built and not driven. |
+| **A placed stamp's words can be changed** — `set_stamp_label` | **shipped — a stamp's Properties carry its words and a Default words button; G151.** The shell calls `set_text_annot_style` with `TextAnnotStyle::label`, which `set_stamp_label` is shorthand for. An empty field is not sent, so `EditError::StampLabelEmpty` cannot arise from this route. Driven by `a_stamps_opacity_and_words_change`. |
 
 ### Forms (AcroForm)
 
@@ -591,10 +591,10 @@ The engine verbs a shape made part of the page (O288 item 2) still lacks.
 
 Each verified absent in the pin and on engine main before filing.
 
-- **G148** — `set_text_annot_style` on a FreeText un-wraps a foreign box, draws plain `/Contents` over `/RC`, and ignores `font_size`. The shell withholds colour and size for a FreeText.
-- **G149** — a text box's fill, border width, dash, opacity, text colour and face have no verb.
-- **G150** — opacity for a note or stamp, and any restyle of caret, attachment, sound and media marks: no verb.
-- **G151** — a stamp's label cannot be changed after placement.
+- **G148** — `set_text_annot_style` on a FreeText un-wraps a foreign box, draws plain `/Contents` over `/RC`, and ignores `font_size`. Answered by the refusals `FreeTextAppearanceForeign` and `FreeTextIsRichText` and by `redraw_as_plain`; wired as the text box rows and the redraw offer.
+- **G149** — a text box's fill, border width, dash, opacity, text colour and face have no verb. Answered as new `TextAnnotStyle` fields; wired as the text box rows.
+- **G150** — opacity for a note or stamp, and any restyle of caret, attachment, sound and media marks: no verb. Answered as `set_annot_opacity` and `set_marker_style`; wired as Opacity and Icon colour in Properties.
+- **G151** — a stamp's label cannot be changed after placement. Answered as `TextAnnotStyle::label` and `set_stamp_label`; wired as the stamp's Words row.
 - **G152** — a text markup's `/QuadPoints` cannot be re-spanned.
 - **G153** — `set_markup_style` drops `interior` on a Line, so closed arrowheads cannot be filled.
 - **G154** — no verb adds a node to a page path or converts a node or segment kind. Answered as `EditSession::insert_node`, `convert_node` and `convert_segment` with in-form twins; wired as Format ▸ Nodes.

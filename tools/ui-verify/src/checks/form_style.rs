@@ -4,14 +4,12 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/form_style.md`.
 
-use super::dimdrive::{press, ui_rect_event};
+use super::dimdrive::pick_colour;
 use super::form_node_move::{enter_leaf_at, run_body};
-use super::stroke_style::{into_view, shown_since, type_into};
-use crate::checks::driving::declared_in;
+use super::stroke_style::{shown_since, type_into};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{PageGeometry, WindowPoint};
+use crate::coords::PageGeometry;
 use crate::error::Result;
-use crate::geom::{LRect, Pt};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
@@ -156,22 +154,9 @@ fn colour(
         )));
     }
     let mark = session.trace()?.mark();
-    into_view(ctx, session, pointer, FILL_SWATCH)?;
-    press(ctx, session, pointer, FILL_SWATCH)?;
-    let ui_rect = ui_rect_event(ctx)?;
-    let Some((picker, vp)) = declared_in(&session.trace()?, ui_rect, FILL_PICKER) else {
-        return Ok(Some(format!(
-            "the fill swatch was pressed and no picker opened (`{FILL_PICKER}`). Trace: {}.",
-            session.trace_path().display()
-        )));
-    };
-    // The lower part of the picker is its saturation/value square; the top
-    // holds the preview button, which opens a nested popup.
-    pointer.click_in(session, vp.as_deref(), at_fraction(picker, 0.35, 0.80))?;
-    session.settle(16);
-    // The close is the commit: `swatch::show` answers on the frame it closes.
-    pointer.key(session, vp.as_deref(), "Escape", None)?;
-    session.settle(40);
+    if let Some(failure) = pick_colour(ctx, session, pointer, FILL_SWATCH, FILL_PICKER)? {
+        return Ok(Some(failure));
+    }
     let trace = session.trace()?;
     if trace.last_after(APPLIED, mark).is_none() {
         return Ok(Some(format!(
@@ -191,15 +176,6 @@ fn colour(
             )
         }),
     )
-}
-
-/// The point `(fx, fy)` of the way across `r`.
-fn at_fraction(r: LRect, fx: f32, fy: f32) -> WindowPoint {
-    let p = Pt {
-        x: r.min.x + (r.max.x - r.min.x) * fx,
-        y: r.min.y + (r.max.y - r.min.y) * fy,
-    };
-    WindowPoint::centre_of(LRect { min: p, max: p })
 }
 
 /// The last `paint-shown` line after trace line `mark`, or a token every

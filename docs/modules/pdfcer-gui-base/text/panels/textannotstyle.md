@@ -15,84 +15,43 @@ reaches and `properties::markup::textannot` draws what the other does, and
 the copy follows the code rather than the file it happened to start in.
 `text::panels::annotgeometry` is the precedent for a sibling here.
 
+## What each mark is offered
 
-That function's own doc keeps the superseded sentence verbatim. What
-belongs here is why it went wrong and what replaced it, because both are
-about the words in this file.
-
-It said *"pdfcer does not redraw this kind of mark, so its colour, line
-width and opacity cannot be changed here"*, and it was shown for the three
-subtypes `set_markup_style` refuses: `/Text`, `/FreeText`, `/Stamp`. Every
-word was true **of the only annotation-style verb that existed when it was
-written**. `pdfcer-core` shipped a second one the same afternoon —
-`set_text_annot_style`, a different reader, a different style struct — and
-it restyles a sticky note's icon and colour and a stamp's colour.
-
-⇒ From that moment the sentence made a **false claim about two of the three
-subtypes it was shown for**, and false in the direction that matters: it
-told the operator a capability did not exist on the very day it did, over a
-row open since 2026-09-05 carrying his own *"check that these are fully
-editable while you are at it."* That is the `set_button_action` shape
-`check-verb-coverage.sh` exists because of — *"if your surface tells the
-operator that pdfcer never authors an action, it is now saying something
-untrue in the direction that matters."*
-
-**The fix was not a reworded sentence. It was fewer marks reaching one.**
-
-| subtype | before | now |
-|---|---|---|
-| `/Text` | the refusal sentence | the icon and colour rows |
-| `/Stamp` | the refusal sentence | the colour row |
-| `/FreeText` | the refusal sentence | [`markup_text_box_not_restylable`] — a narrower claim, and still true |
-| anything else | the refusal sentence | the refusal sentence, reworded to stop implying a family |
-
-Note which row is the interesting one. The `/FreeText` sentence is not
-the old refusal kept for one subtype: the old one claimed the capability
-was **missing**, and the new one says this shell **declines** to use a
-capability that exists, for a measured reason. Reusing the string would
-have kept a false premise alive under a true-looking conclusion.
+| subtype | rows |
+|---|---|
+| `/Text` | icon, colour, opacity |
+| `/Stamp` | colour, text size and fit, words, opacity |
+| `/FreeText` | border colour, width and line style, background, text colour, font, size, opacity |
+| `/Caret`, `/FileAttachment`, `/Sound`, `/Screen` | icon colour, opacity |
+| anything else `set_markup_style` cannot reach | opacity, and [`markup_not_restylable`] |
 
 ## Item notes
 
-### `fn markup_text_box_not_restylable`
-
-* `annot_author::text_spec_from_dict` reports `multiline: false` for every
-  `/FreeText` there is, because §12.5.6.6 gives the subtype no such key, and
-  its own doc says a caller who needs the true value must **measure** it.
-* `set_text_annot_style` re-bakes from that spec **without measuring**,
-  unlike `set_markup_note`, which bakes both ways and compares bytes.
-* `crate::canvas::textannot::spec` authors `multiline: true` on every text
-  box this shell has ever placed.
-
-⇒ Changing the colour would silently re-lay the operator's callout as one
-unwrapped line and push their second sentence off the box. **Visible
-control, silently destructive** — one worse than the *visible control,
-silently inert* case this panel already fixed once.
-
-The copy does not say *"pdfcer cannot"*, because it can and the claim
-would be false the moment the engine measures the value. It says what would
-happen, which stays true either way and is the thing the operator would
-actually care about. Claim-bearing copy is verified, not softened.
-
-It names the note as still editable for [`markup_not_restylable`]'s
-reason and on the same check: `set_markup_note` refuses a ce dimension and a
-widget and nothing else, and on a `/FreeText` it is the verb that **does**
-measure `multiline`, so the words can be corrected without the box being
-re-laid.
-
 ### `fn markup_text_annot_note`
 
-It names the **two** things absent from those rows that are present a
-few pixels away on every other mark — no way back to no colour, and no
-opacity — because an operator who has just restyled a rectangle and then
-selects a note will read their absence as a bug rather than as a limit. R9
-makes them absent; this makes the absence legible.
+Says that a note or stamp's colour cannot be removed: each `TextAnnotSpec`
+variant carries a required colour, so no-colour is not a state the mark can
+be in. Told as a fact about the file, not about this panel's buttons.
 
-*"the colour cannot be taken away again"* rather than *"there is no Clear
-button"*: the operator is being told about the **file**, not about this
-panel's furniture. `TextAnnotSpec`'s variants each carry a required colour,
-so no-colour is not a state a sticky note can be in — which is a fact about
-the format they would meet in any editor.
+### `fn text_box_text_colour_cmyk`
+
+A `/DA` colour in CMYK has no faithful sRGB swatch; the sentence replaces
+the swatch's silent narrowing with a statement of what a pick will do.
+
+### `fn redraw_offer_text_box_foreign`, `fn redraw_offer_text_box_rich`, `fn redraw_offer_marker_foreign`
+
+The three refusals `pdfcer_gui_base::redrawoffer::Why` answers with a
+retry: `EditError::FreeTextAppearanceForeign`, `FreeTextIsRichText` and
+`MarkerAppearanceForeign`. Each says the mark was left unchanged, why, and
+what the redraw will cost, because the redraw is lossy and the operator
+must choose it.
+
+### `fn appearance_replaced`, `fn rich_text_dropped`
+
+The disclosures after a restyle that replaced a look pdfcer did not draw
+(`appearance_was_foreign`) or dropped `/RC` formatting
+(`rich_text_dropped`, which names the keys removed). Off-canvas, per the
+"fuzzy, never sneaky" rule.
 
 ### `fn markup_icon_foreign`
 

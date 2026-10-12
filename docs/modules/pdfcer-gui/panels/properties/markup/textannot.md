@@ -28,56 +28,31 @@ operator live controls whose every press is refused, and the fix for a
 mis-route is not a better string comparison — it is making the wrong turn
 fail to compile.
 
-## The three things this module does NOT offer, each for its own reason
+## What this module does NOT offer
 
-Every one of these is **absent**, not greyed. R9 reserves greying for a
-capability that is *temporarily* unavailable and can explain itself on
-hover, and none of these three can ever become available by anything the
+Absent, not greyed (R9): neither can become available by anything the
 operator does.
 
 1. **No Clear beside the colour swatch.** `TextAnnotStyle::color` cannot
-   clear, and the engine explains that rather than merely lacking it: each
-   `TextAnnotSpec` variant carries a **required** `Color` — a sticky's icon,
-   a stamp's face and a free text's frame are each drawn in one — so *"no
-   colour"* is not a state the authoring type can express, and a Clear here
-   would have to invent a fallback, silently picking yellow for a note whose
-   colour an operator asked to remove. [`super::colour_row`]'s Clear belongs
-   to `MarkupStyle::stroke` and does not generalise.
+   clear: each `TextAnnotSpec` variant carries a **required** `Color`, so
+   *"no colour"* is not a state the authoring type can express, and a Clear
+   would have to invent a fallback.
 
-2. **No opacity row.** `/CA` is `set_markup_style`'s, and that verb cannot
-   reach these subtypes at all. So it is not that this verb declines the
-   property — there is no route to it for a `/Text` or a `/Stamp` from any
-   verb the engine publishes. Recorded here because the parent's
-   [`super::opacity_row`] is right above and its absence would otherwise
-   read as an oversight.
-
-3. **No width, fill, dash or endings.** Same reason, one level up: they are
+2. **No width, fill, dash or endings on a note or stamp.** They are
    `MarkupStyleSupport`'s properties, asked of a verb that has no arm for
-   these subtypes.
+   these subtypes. A text box's border and background are
+   `TextAnnotStyle`'s and live in `super::textbox`.
 
-## ⚠ AND A FOURTH: a `/FreeText` is not routed here, though the verb takes one
+Opacity is not here: `super::anyannot::opacity_row` offers it for every
+mark outside `set_markup_style`'s family, through `set_annot_opacity`.
 
-`set_text_annot_style` accepts a `/FreeText` and will restyle its frame
-colour. **This shell does not send it one.** [`Reach::TextBoxWithheld`]
-carries that refusal, so a selected text box gets
-[`crate::text::panels::textannotstyle::markup_text_box_not_restylable`]
-rather than a live control.
+## A `/FreeText` is routed here and drawn by `super::textbox`
 
-The hazard the refusal was written against: `annot_author::
-text_spec_from_dict` returns `multiline: false` for **every** `/FreeText`,
-always — §12.5.6.6 gives the subtype no multiline key, `/Ff` is a form-field
-entry and a `/FreeText` is not a field — so a verb that re-baked straight
-from that spec would publish every wrapped callout as a single unwrapped
-line. `crate::canvas::textannot::spec` authors `multiline: true` on every
-text box this shell places, so that is not an edge case: it is every pdfcer
-callout, and the operator's second sentence would be pushed off the page
-with nothing on screen to say so.
-
-⚠ **The engine now measures it.** `set_text_annot_style` calls
-`EditSession::measure_free_text_multiline` against the original spec before
-amending it, exactly as `set_markup_note` does, so the unwrapping described
-above no longer happens. The withholding here has not been re-examined
-against that: treat it as an open question, not as a settled limit.
+[`Face::TextBox`] carries a [`super::textbox::TextBox`] on the
+[`Reading`], and [`rows`] hands it to `super::textbox::rows`: border colour,
+width and line style, background, text colour, font and size. The engine
+measures the box's wrapping (`EditSession::measure_free_text_multiline`)
+before it re-bakes, so a wrapped callout stays wrapped.
 
 ⚠ **Do not quote this module as a source about the engine.** Everything
 above is a claim about verbs in another crate at a moving pin. Re-read the
@@ -241,14 +216,6 @@ are disjoint by construction (`spec_from_dict` has no `/Text`, `/Stamp` or
 disjointness is a fact about the engine — and encoding it in a type is the
 difference between a fact that holds and a fact that is relied upon.
 
-# ⚠ [`Self::TextBoxWithheld`] is this SHELL's decision, not the engine's
-
-Every other arm reports what an engine function answered.
-This one reports a refusal of our own, and it is labelled so nobody reads it
-as a capability gap and files it: `set_text_annot_style` restyles a
-`/FreeText` perfectly well. The module header carries what the refusal was
-written against, and why that reasoning now wants re-checking.
-
 ⚠ **`Clone`, not `Copy`** — [`Self::TextAnnot`] carries a [`Reading`], which
 carries a [`StickyIcon`], whose `Other(Vec<u8>)` variant owns its bytes. The
 `match` in `super::section` binds it by reference.
@@ -260,12 +227,7 @@ this face take?* is answered by a `match` the compiler checks. A `bool` pair
 (`takes_icon`, `takes_colour`) would let a third face arrive and be given
 both by whichever default the author typed first.
 
-⚠ **`/FreeText` is deliberately not a variant.** The engine's verb accepts
-one; this shell declines to send it, and the module header carries the
-measurement. Modelling it here as a face that takes only a colour would put
-a live control in front of the operator whose press unwraps their callout —
-which is the *visible control, silently destructive* case, one worse than
-the *visible control, silently inert* case this panel already fixed once.
+[`Face::TextBox`] takes no icon; its properties live in `super::textbox`.
 
 ### `fn takes_icon`
 
@@ -284,18 +246,12 @@ functions take `&Reading`.
 
 ### `fn of`
 
-`None` covers three different situations and they are worth telling
-apart in the head even though the answer is the same:
+`None` covers two situations:
 
 1. a `/Subtype` outside `/Text`, `/Stamp` and `/FreeText` —
    `text_spec_from_dict` refuses it and so does the verb;
-2. a `/FreeText` — the verb accepts it and **this shell declines**, per
-   the module header's multiline finding;
-3. a `/Text` or `/Stamp` whose `/Rect` is missing or unreadable —
+2. a mark whose `/Rect` is missing or unreadable —
    `SpecReadError::BadGeometry`, the same refusal the verb would make.
-
-[`Reach`] separates (2) from the other two, because
-only (2) has a sentence of its own to show.
 
 It takes the spec the caller already read and **nothing else**, which
 is what lets a test build a `Reading` in one expression. There is

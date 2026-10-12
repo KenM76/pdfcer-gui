@@ -101,7 +101,6 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // |---|---|---|
     // | `Markup` | `set_markup_style` | `annot_author::spec_from_dict` |
     // | `TextAnnot` | `set_text_annot_style` | `annot_author::text_spec_from_dict` |
-    // | `TextBoxWithheld` | — | this shell declines; see [`Reach`] |
     // | `Neither` | — | both readers refused |
     //
     // A `match` rather than two `if`s, and that is a correctness requirement
@@ -118,25 +117,6 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     match &current.reach {
         Reach::Markup => markup_rows(ui, &current, &target, actions),
         Reach::TextAnnot(reading) => textannot::rows(ui, reading, &target, actions),
-        // A `/FreeText`. `set_text_annot_style` would take it and this
-        // shell will not send it — `textannot`'s header carries the
-        // measurement, and the short form is that the engine's reader always
-        // reports `multiline: false` and this verb, unlike `set_markup_note`,
-        // does not measure the true value before re-baking. Every text box this
-        // shell places is `multiline: true`, so a colour change would unwrap
-        // the operator's callout with nothing on screen to say so.
-        //
-        // ⇒ A sentence of its own rather than the generic one, because the
-        // claim is different: the capability is not missing, it is declined.
-        Reach::TextBoxWithheld => {
-            ui.label(
-                egui::RichText::new(
-                    crate::text::panels::textannotstyle::markup_text_box_not_restylable(),
-                )
-                .small()
-                .weak(),
-            );
-        }
         Reach::Neither => {
             ui.label(
                 egui::RichText::new(t::markup_not_restylable())
@@ -145,6 +125,15 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
             );
         }
     }
+    // What every annotation outside `set_markup_style`'s family takes: its
+    // opacity, a marker's icon colour, and the redraw a refusal left behind.
+    if !matches!(current.reach, Reach::Markup) {
+        if let Some(marker) = current.marker {
+            anyannot::marker_row(ui, marker, &target, actions);
+        }
+        anyannot::opacity_row(ui, current.alpha, &target, actions);
+    }
+    anyannot::offer_row(ui, doc.redraw_offer.as_ref(), &target, actions);
     ui.separator();
     true
 }
@@ -278,6 +267,9 @@ struct Current {
     endings_key_present: bool,
     /// `/BE` intensity, `0..=2`, when the border is cloudy; `None` when straight.
     cloud: Option<f64>,
+    /// `/C` of a mark `set_marker_style` takes (`MARKER_SUBTYPES`); `None`
+    /// for every other subtype.
+    marker: Option<Swatch>,
 }
 
 /// A colour a swatch can show, and the honesty that goes with it.
@@ -308,6 +300,7 @@ impl Default for Current {
             endings: None,
             endings_key_present: false,
             cloud: None,
+            marker: None,
         }
     }
 }
@@ -412,48 +405,40 @@ impl Current {
         // has nothing different to say about them.
         let stamp_label = doc.session.stamp_label_parameters(id).ok().flatten();
 
-        Self::from_spec(
+        let mut current = Self::from_spec(
             markup.as_ref(),
             text.as_ref()
-                .map(|spec| textannot::Reading::of(spec).map(|r| r.with_stamp_label(stamp_label))),
+                .and_then(textannot::Reading::of)
+                .map(|r| r.with_stamp_label(stamp_label)),
             support,
             alpha,
             dash,
             endings_key_present,
-        )
+        );
+        // The engine reads a marker's `/C` with a crate-private reader, so the
+        // shell reads it itself (request channel: marker colour readback).
+        if pdfcer_core::edit::MARKER_SUBTYPES.contains(&subtype.as_slice()) {
+            current.marker = Some(swatch_of(read_colour(&graph, dict).as_ref()));
+        }
+        current
     }
 
     /// The pure half: everything this section shows, derived from the spec the
     /// engine read (or from its absence).
     fn from_spec(
         spec: Option<&MarkupSpec>,
-        text: Option<Option<textannot::Reading>>,
+        text: Option<textannot::Reading>,
         support: MarkupStyleSupport,
         alpha: Option<f64>,
         dash: crate::canvas::markup::linestyle::DashReading,
         endings_key_present: bool,
     ) -> Self {
         let Some(spec) = spec else {
-            // Note what is NOT carried across: `alpha`. `/CA` reads fine off
-            // any annotation dictionary, so it would be easy to keep — and it
-            // would be a value shown under a heading whose every control is
-            // about to be withheld. Neither style verb writes `/CA` for a mark
-            // `set_markup_style` refuses, so the value it would display is
-            // decoration.
+            // `alpha` is carried: `set_annot_opacity` writes `/CA` on any
+            // annotation, so the opacity row is offered for these too.
             return Self {
-                // The three-way answer the second reader gives, and the
-                // nesting is load-bearing rather than awkward: the OUTER
-                // `Option` is *"did `text_spec_from_dict` produce a spec?"* and
-                // the INNER is *"does this shell serve that face?"*. Collapsing
-                // them to one `Option` would merge a `/FreeText` — which the
-                // engine reads perfectly and this shell declines — with a
-                // `/Link`, which neither reader touches, and the two owe the
-                // operator different sentences.
-                reach: match text {
-                    Some(Some(reading)) => Reach::TextAnnot(reading),
-                    Some(None) => Reach::TextBoxWithheld,
-                    None => Reach::Neither,
-                },
+                reach: text.map_or(Reach::Neither, Reach::TextAnnot),
+                alpha,
                 ..Self::default()
             };
         };
@@ -539,6 +524,8 @@ impl Current {
                 MarkupSpec::Cloud { intensity, .. } => Some(*intensity),
                 _ => None,
             },
+            // A markup subtype is never a marker; `read` fills this for one.
+            marker: None,
         }
     }
 
@@ -620,12 +607,36 @@ fn swatch_of(color: Option<&Color>) -> Swatch {
     // unnoticed.
 }
 
+/// A `/C` array as a colour: 1, 3 or 4 numbers are gray, RGB or CMYK
+/// (§12.5.2 Table 164); anything else is no colour.
+fn read_colour(
+    graph: &impl pdfcer_core::graph::ObjectGraph,
+    dict: &pdfcer_core::object::Dict,
+) -> Option<Color> {
+    use pdfcer_core::object::Object;
+    let Object::Array(items) = graph.resolve(dict.get(b"C")?) else {
+        return None;
+    };
+    let n: Vec<f64> = items
+        .iter()
+        .map(|o| graph.resolve(o).as_number())
+        .collect::<Option<_>>()?;
+    match n.as_slice() {
+        [g] => Some(Color::Gray(*g)),
+        [r, g, b] => Some(Color::Rgb(*r, *g, *b)),
+        [c, m, y, k] => Some(Color::Cmyk(*c, *m, *y, *k)),
+        _ => None,
+    }
+}
+
 // The seven per-property rows. `rows.rs`'s header carries the seam and the
 // contract; the short version is that a row knows its own control and nothing
 // else, and everything that decides WHICH rows exist lives here.
 mod rows;
 
+mod anyannot;
 mod textannot;
+mod textbox;
 
 #[cfg(test)]
 mod tests;

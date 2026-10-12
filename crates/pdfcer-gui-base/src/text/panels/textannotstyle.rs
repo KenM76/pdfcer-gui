@@ -3,20 +3,10 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/panels/textannotstyle.md`.
 
-/// **Why a text box's appearance is not changed here — and it is NOT
-/// because no verb exists.**
-#[must_use]
-pub const fn markup_text_box_not_restylable() -> &'static str {
-    "pdfcer does not change a text box's colour here: redrawing it would lay the words out as \
-     one line and push anything past the first sentence outside the box. You can still move it, \
-     resize it, delete it, and edit the words it carries."
-}
-
 /// The sentence under the sticky-note and stamp style rows.
 #[must_use]
 pub const fn markup_text_annot_note() -> &'static str {
-    "A note or stamp always has a colour, so it can be changed but not taken away again. \
-     Transparency is not offered for these two."
+    "A note or stamp always has a colour, so it can be changed but not taken away again."
 }
 
 /// What the icon chooser shows for a note whose `/Name` pdfcer does not model.
@@ -134,4 +124,133 @@ pub fn stamp_label_box_grown(width: f64) -> String {
 pub const fn stamp_label_fit_unknown() -> &'static str {
     "pdfcer had to adjust this stamp's words to fit its box, in a way this version cannot \
      describe. Check the stamp."
+}
+
+/// The colour row's label on a text box, where `/C` is the border.
+#[must_use]
+pub const fn text_box_border_colour_label() -> &'static str {
+    "Border colour"
+}
+
+/// The border width row on a text box.
+#[must_use]
+pub const fn text_box_border_width_label() -> &'static str {
+    "Border width"
+}
+
+/// The background row on a text box.
+#[must_use]
+pub const fn text_box_fill_label() -> &'static str {
+    "Background"
+}
+
+/// Beside the background swatch when the box has none.
+#[must_use]
+pub const fn text_box_fill_none() -> &'static str {
+    "none (see-through)"
+}
+
+/// The text colour row on a text box.
+#[must_use]
+pub const fn text_box_text_colour_label() -> &'static str {
+    "Text colour"
+}
+
+/// Shown instead of the text colour swatch when the file's colour is CMYK.
+#[must_use]
+pub const fn text_box_text_colour_cmyk() -> &'static str {
+    "The text is coloured in CMYK, which this swatch cannot show; picking a colour here \
+     replaces it with an RGB one."
+}
+
+/// The font row on a text box.
+#[must_use]
+pub const fn text_box_font_label() -> &'static str {
+    "Font"
+}
+
+/// The text size row on a text box.
+#[must_use]
+pub const fn text_box_size_label() -> &'static str {
+    "Text size"
+}
+
+/// The sentence under the text box rows.
+#[must_use]
+pub const fn text_box_note() -> &'static str {
+    "Each change redraws the box with pdfcer's own text layout, keeping its wrapping."
+}
+
+/// The stamp's words row.
+#[must_use]
+pub const fn stamp_label_label() -> &'static str {
+    "Words"
+}
+
+/// The button that returns a stamp to its default words.
+#[must_use]
+pub const fn stamp_label_reset() -> &'static str {
+    "Default words"
+}
+
+/// Hover on [`stamp_label_reset`].
+#[must_use]
+pub const fn stamp_label_reset_hover() -> &'static str {
+    "Show the words that go with this stamp's kind (Draft, Approved, …) instead of custom ones."
+}
+
+/// The colour row on a caret, attachment, sound or screen mark.
+#[must_use]
+pub const fn marker_colour_label() -> &'static str {
+    "Icon colour"
+}
+
+/// The refused restyle a text box whose look another program drew.
+#[must_use]
+pub const fn redraw_offer_text_box_foreign() -> &'static str {
+    "This box was left unchanged: another program drew its current look, and pdfcer cannot \
+     redraw that look faithfully. Redrawing it as plain text replaces the look with pdfcer's \
+     own and wraps the words inside the box."
+}
+
+/// The refused restyle of a text box holding rich (formatted) text.
+#[must_use]
+pub const fn redraw_offer_text_box_rich() -> &'static str {
+    "This box was left unchanged: its words carry formatting (rich text) that pdfcer cannot \
+     redraw. Redrawing it as plain text keeps the words and drops their formatting."
+}
+
+/// The refused recolour of a marker whose icon another program drew.
+#[must_use]
+pub const fn redraw_offer_marker_foreign() -> &'static str {
+    "This mark was left unchanged: another program drew its icon. Redrawing replaces that icon \
+     with pdfcer's own in the new colour."
+}
+
+/// The button that retries a refused text box restyle as plain text.
+#[must_use]
+pub const fn redraw_as_plain_button() -> &'static str {
+    "Redraw as plain text"
+}
+
+/// The button that retries a refused marker recolour with pdfcer's icon.
+#[must_use]
+pub const fn redraw_marker_button() -> &'static str {
+    "Redraw with pdfcer's icon"
+}
+
+/// After a restyle replaced a look pdfcer did not draw (a text box redrawn as
+/// plain text, or a stamp whose picture was another program's).
+#[must_use]
+pub const fn appearance_replaced() -> &'static str {
+    "The mark's previous look was not pdfcer's drawing; it was replaced with pdfcer's own."
+}
+
+/// After a rich-text box was redrawn as plain text.
+#[must_use]
+pub fn rich_text_dropped(keys: &[String]) -> String {
+    format!(
+        "The box's text formatting was removed ({}); its words are kept as plain text.",
+        keys.join(", ")
+    )
 }

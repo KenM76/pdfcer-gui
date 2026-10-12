@@ -194,6 +194,9 @@ pub mod commandregisters;
 /// One colour control with three honest states: set, mixed, and none.
 pub mod swatch;
 
+/// A restyle refused for a look pdfcer did not draw, held for the redraw offer.
+pub mod redrawoffer;
+
 /// The seven tolerance forms of a ce dimension and their editors.
 pub mod tolerance;
 

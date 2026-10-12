@@ -1006,6 +1006,9 @@ pub struct OpenDoc {
     pub draw_layer: Option<pdfcer_core::object::ObjId>,
     /// The View ▸ Snapshot box, if one is laid. View state; never saved.
     pub snapshot: Option<crate::snapshotbox::SnapshotBox>,
+    /// The last restyle the engine refused for a look pdfcer did not draw,
+    /// for the Properties panel's redraw offer. View state; never saved.
+    pub redraw_offer: Option<crate::redrawoffer::RedrawOffer>,
 }
 
 /// A fresh [`OpenDoc::serial`].
@@ -1150,6 +1153,7 @@ impl OpenDoc {
             layers: LayerOverride::default(),
             draw_layer: None,
             snapshot: None,
+            redraw_offer: None,
         }
     }
 

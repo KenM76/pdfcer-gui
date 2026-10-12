@@ -51,20 +51,31 @@ label for this command, pushed by the verb itself rather than by the funnel,
 so an undo of a restyle is one entry and names the act rather than the
 appearance rewrite underneath it.
 
-# It has a disclosure list, and what is in it
+# Its disclosures
 
-Nothing is quietly *lost* here: unlike `set_markup_style` this verb
-re-bakes from a spec the same reader hands the authoring path, so there is
-no `dropped` catalogue to render.
+`disclosures` turns a `TextAnnotStyleChange` into the funnel's sentences: a
+stamp-label fit the engine chose (`StampLabelFit::is_inference`), a look
+another program drew that the restyle replaced (`appearance_was_foreign`),
+and `/RC` keys a plain redraw dropped (`rich_text_dropped`). Each is an
+inference a screenshot cannot show, so it is reported off-canvas.
 
-What it can do instead is **decide**. Changing a stamp's label size means a
-re-bake at a new size, and that can widen the box, shrink the words, or cut
-characters off the ends. Every one of those is an inference, and the ones a
-screenshot cannot show owe a sentence off-canvas under R8b rule 4. So the
-funnel's `Vec<String>` is not empty, and what goes in it is decided below
-on `TextAnnotStyleChange::stamp_label_fit`.
+### `fn set_annot_opacity`
 
-**A "the engine cannot do this" sentence in a shell comment is a claim with
-a shelf life and no gate.** Nothing in this build fails when the engine
-grows the capability, so every such sentence here is re-checked against the
-engine rather than trusted.
+`EditSession::set_annot_opacity`: any subtype, dictionary only, so it never
+re-bakes and never refuses for a foreign look. The trace carries the
+engine's `previous`, `current` and `clamped`.
+
+### `fn set_marker_colour`
+
+`EditSession::set_marker_style` for a `/Caret`, `/FileAttachment`, `/Sound`
+or `/Screen`. `redraw_as_plain` is false on the first attempt; the retry
+from the redraw offer sets it.
+
+### `fn settle_offer`
+
+A refusal `RedrawOffer::of` recognises (foreign text box, rich text box,
+foreign marker) becomes `OpenDoc::redraw_offer`, carrying the refused style
+so the retry repeats the same change with the redraw allowed. A later
+success on the same annotation clears it. One offer per document: a refusal
+on another mark replaces it, and the panel shows it only while its
+annotation is selected.

@@ -116,7 +116,7 @@ pub const fn markup_note() -> &'static str {
 /// Why the controls are greyed on a locked annotation.
 #[must_use]
 pub const fn markup_locked() -> &'static str {
-    "This mark is locked by the document, so its appearance cannot be changed here. You can \
+    "This mark is locked by the document, so only the settings below change it here. You can \
      still delete it."
 }
 
@@ -124,7 +124,7 @@ pub const fn markup_locked() -> &'static str {
 /// that stands where live controls that could not commit would otherwise be.
 #[must_use]
 pub const fn markup_not_restylable() -> &'static str {
-    "pdfcer cannot read this mark's shape back, so its appearance cannot be changed here. You \
+    "pdfcer cannot read this mark's shape back, so only the settings below change it here. You \
      can still move it, resize it, delete it, and edit the note it carries."
 }
 

@@ -6,7 +6,7 @@
 use egui::Ui;
 use pdfcer_core::annot::{StampLabelParameters, StampSizeSource};
 use pdfcer_core::annot_author::{Color, StickyIcon, TextAnnotSpec};
-use pdfcer_core::edit::TextAnnotStyle;
+use pdfcer_core::edit::{StyleEdit, TextAnnotStyle};
 use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
@@ -56,12 +56,11 @@ pub(super) enum Reach {
     /// `EditSession::set_markup_style` — the geometric family and the four text
     /// markups. `annot_author::spec_from_dict` read a spec.
     Markup,
-    /// `EditSession::set_text_annot_style` — a `/Text` or a `/Stamp`.
+    /// `EditSession::set_text_annot_style` — a `/Text`, a `/Stamp` or a
+    /// `/FreeText`.
     /// `annot_author::text_spec_from_dict` read a spec and
     /// [`Reading::of`] accepted the face.
     TextAnnot(Reading),
-    /// A `/FreeText`. Reachable by the second verb and **declined here**.
-    TextBoxWithheld,
     /// Neither reader could produce a spec: a `/Subtype` outside both families,
     /// or geometry pdfcer does not model.
     Neither,
@@ -78,6 +77,9 @@ pub(super) enum Face {
     /// refuses a `StickyIcon` on one **by name** rather than swallowing it
     /// (`EditError::StylePropertyNotApplicable`).
     Stamp,
+    /// `/FreeText` — a text box. Border, background, text colour, font and
+    /// size; the rows are [`super::textbox`]'s.
+    TextBox,
 }
 
 impl Face {
@@ -85,7 +87,7 @@ impl Face {
     pub(super) const fn takes_icon(self) -> bool {
         match self {
             Self::Sticky => true,
-            Self::Stamp => false,
+            Self::Stamp | Self::TextBox => false,
         }
     }
 }
@@ -161,6 +163,8 @@ pub(super) struct Reading {
     /// row is **absent** rather than wrong. A test that means to assert the row
     /// appears must call `with_stamp_label`.
     pub(super) label: Option<StampLabelParameters>,
+    /// The text box's properties; `Some` exactly for [`Face::TextBox`].
+    pub(super) text_box: Option<super::textbox::TextBox>,
 }
 
 impl Reading {
@@ -183,6 +187,7 @@ impl Reading {
                 // size"), so this is not "we did not read it" — there is
                 // nothing to read.
                 label: None,
+                text_box: None,
             }),
             TextAnnotSpec::Stamp { color, .. } => Some(Self {
                 face: Face::Stamp,
@@ -192,15 +197,20 @@ impl Reading {
                 // Filled by [`Self::with_stamp_label`] from the session; see the
                 // field's own note on why `of` cannot.
                 label: None,
+                text_box: None,
             }),
-            // (2) above. The verb would take it; this shell will not send it.
-            TextAnnotSpec::FreeText { .. } => None,
-            // `TextAnnotSpec` is `#[non_exhaustive]`. A fourth text-bearing
-            // face this build does not know the shape of gets no rows and the
-            // withheld sentence — the same answer a `/FreeText` gets, and for a
-            // compatible reason: this shell cannot say what a control over it
-            // would do. R9 in the conservative direction, which is also
-            // `MarkupStyleSupport::for_subtype`'s own stated posture.
+            // `/C` on a text box is its border colour.
+            TextAnnotSpec::FreeText { border, .. } => Some(Self {
+                face: Face::TextBox,
+                colour: super::swatch_of(border.as_ref()),
+                icon: None,
+                foreign_icon: false,
+                label: None,
+                text_box: super::textbox::TextBox::of(spec),
+            }),
+            // `TextAnnotSpec` is `#[non_exhaustive]`. A face this build does
+            // not know the shape of gets no rows: this shell cannot say what a
+            // control over it would do.
             _ => None,
         }
     }
@@ -249,6 +259,10 @@ pub(super) fn rows(
             u8::from(current.foreign_icon),
         )
     });
+    if let Some(tb) = current.text_box.as_ref() {
+        super::textbox::rows(ui, current.colour, tb, target, actions);
+        return;
+    }
     colour_row(ui, current, target, actions);
     // The narrowing disclosure sits directly under the swatch it qualifies,
     // which is also the parent's placement. A caveat placed after the NEXT
@@ -268,12 +282,107 @@ pub(super) fn rows(
     // face's own property is — rather than the icon jumping above the size on
     // one selection and below it on the next.
     size_row(ui, current, target, actions);
+    words_row(ui, current, target, actions);
     icon_row(ui, current, target, actions);
     ui.label(
         egui::RichText::new(ts::markup_text_annot_note())
             .small()
             .weak(),
     );
+}
+
+/// **A restyle naming no property.** Every row spreads this and names its
+/// own field, so a field the engine adds breaks the build here — once — rather
+/// than defaulting silently to "leave alone" at every row.
+pub(super) fn untouched() -> TextAnnotStyle {
+    TextAnnotStyle {
+        icon: None,
+        color: None,
+        font_size: None,
+        stamp_fit: None,
+        redraw_as_plain: false,
+        opacity: None,
+        fill: None,
+        border_width: None,
+        dash: None,
+        text_color: None,
+        font: None,
+        label: None,
+    }
+}
+
+/// The words field's region.
+pub(super) const WORDS_REGION: &str = "properties.markup.textannot.words"; // ui-text-exempt: trace region name, never displayed
+
+/// **The stamp's words** (G151): typed in place, committed when the field
+/// loses focus with different text; "Default words" returns the stamp to its
+/// `/Name`'s own.
+fn words_row(
+    ui: &mut Ui,
+    current: &Reading,
+    target: &crate::canvas::selection::annot::AnnotTarget,
+    actions: &mut Vec<Action>,
+) {
+    if current.face != Face::Stamp {
+        return;
+    }
+    let Some(label) = current.label.as_ref() else {
+        return;
+    };
+    // The draft lives in egui's temp memory, keyed by the annotation, so a
+    // half-typed edit survives the frames between keystrokes and a different
+    // stamp opens on its own words.
+    let key = egui::Id::new(("stamp-words-draft", target.id.num)); // ui-text-exempt: memory key, never displayed
+    let mut draft = ui
+        .ctx()
+        .data_mut(|d| d.get_temp::<String>(key))
+        .unwrap_or_else(|| label.label.clone());
+    ui.horizontal(|ui| {
+        ui.label(ts::stamp_label_label());
+        // An explicit id: an auto id shifts when a row above appears, and
+        // egui then drops focus without a `lost_focus` on this field.
+        // escape-disposition: commits — the words are sent on `lost_focus`,
+        // which Escape triggers.
+        let response = ui.add(egui::TextEdit::singleline(&mut draft).id(key.with("field")));
+        crate::diag::ui_rect_visible(WORDS_REGION, response.rect, ui.clip_rect());
+        if response.lost_focus() {
+            ui.ctx().data_mut(|d| d.remove::<String>(key));
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "stamp-words-blur id={} changed={}",
+                    target.id.num,
+                    draft.trim() != label.label.trim()
+                )
+            });
+            if draft.trim() != label.label.trim() && !draft.trim().is_empty() {
+                actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
+                    id: target.id,
+                    style: Box::new(TextAnnotStyle {
+                        label: Some(StyleEdit::Set(draft.trim().to_owned())),
+                        ..untouched()
+                    }),
+                }));
+            }
+        // Memory's focus, not `Response::has_focus`, which is also false
+        // while the window lacks OS focus and would drop the draft then.
+        } else if ui.ctx().memory(|m| m.has_focus(response.id)) {
+            ui.ctx().data_mut(|d| d.insert_temp(key, draft.clone()));
+        }
+        if ui
+            .button(ts::stamp_label_reset())
+            .on_hover_text(ts::stamp_label_reset_hover())
+            .clicked()
+        {
+            actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
+                id: target.id,
+                style: Box::new(TextAnnotStyle {
+                    label: Some(StyleEdit::Clear),
+                    ..untouched()
+                }),
+            }));
+        }
+    });
 }
 
 /// The smallest and largest label size the spinner offers, in points.

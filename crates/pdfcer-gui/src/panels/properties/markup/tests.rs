@@ -136,8 +136,7 @@ fn a_subtype_the_style_verb_refuses_offers_no_controls() {
     let refused = Current::from_spec(
         None,
         // Also `None` from the second reader, which is what makes this a
-        // `Reach::Neither` rather than a `/FreeText`'s own `TextBoxWithheld`.
-        // The `/FreeText` case has its own test below.
+        // `Reach::Neither`.
         None,
         MarkupStyleSupport::for_subtype(b"FreeText"),
         Some(0.5),
@@ -150,8 +149,9 @@ fn a_subtype_the_style_verb_refuses_offers_no_controls() {
     assert!(!refused.offers_fill());
     assert_eq!(refused.endings, None);
     assert_eq!(
-        refused.alpha, None,
-        "an opacity under a heading whose controls are all withheld is decoration"
+        refused.alpha,
+        Some(0.5),
+        "set_annot_opacity takes any annotation, so its /CA is shown and offered"
     );
 }
 
@@ -280,6 +280,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
             endings: Some((LineEnding::None, LineEnding::OpenArrow)),
             endings_key_present: true,
             cloud: Some(1.0),
+            marker: None,
         }
     }
 
@@ -433,7 +434,7 @@ fn stamp() -> pdfcer_core::annot_author::TextAnnotSpec {
 fn text_current(reading: Option<Option<Reading>>, subtype: &[u8]) -> Current {
     Current::from_spec(
         None,
-        reading,
+        reading.flatten(),
         MarkupStyleSupport::for_subtype(subtype),
         None,
         crate::canvas::markup::linestyle::DashReading::Solid,
@@ -493,37 +494,45 @@ fn the_icon_chooser_belongs_to_a_sticky_note_alone() {
     );
 }
 
-/// **A text box is withheld, and it is NOT the same answer as an
-/// unreadable mark.**
+/// **A text box routes to the text-annotation verb with its own rows'
+/// values, and an unreadable mark is a different case.**
 #[test]
-fn a_text_box_is_withheld_and_an_unreadable_mark_is_not_the_same_case() {
+fn a_text_box_routes_with_its_properties_and_an_unreadable_mark_does_not() {
     let spec = pdfcer_core::annot_author::TextAnnotSpec::FreeText {
         rect: Rect::from_corners(0.0, 0.0, 100.0, 40.0),
         text: "a callout that wraps".to_owned(),
-        font: pdfcer_core::fontdata::Std14::Helvetica,
+        font: pdfcer_core::fontdata::Std14::TimesRoman,
         font_size: 11.0,
-        color: pdfcer_core::vartext::TextColor::Rgb(0.0, 0.0, 0.0),
+        color: pdfcer_core::vartext::TextColor::Rgb(0.0, 0.0, 1.0),
         quadding: pdfcer_core::vartext::Quadding::Left,
-        // The value the reader ALWAYS reports, which is the whole hazard:
-        // this is what the verb would re-bake from, whatever the file draws.
-        multiline: false,
+        multiline: true,
         border: Some(Color::Rgb(1.0, 0.0, 0.0)),
-        border_width: 1.0,
+        border_width: 2.0,
         frame: pdfcer_core::annot_author::FreeTextFrame::default(),
     };
     let boxed = text_current(Some(Reading::of(&spec)), b"FreeText");
-    assert!(
-        matches!(boxed.reach, Reach::TextBoxWithheld),
-        "a text box must be withheld, not routed"
+    let Reach::TextAnnot(reading) = boxed.reach else {
+        panic!("a text box must reach the text-annotation verb");
+    };
+    assert_eq!(reading.face, Face::TextBox);
+    assert!(!reading.face.takes_icon());
+    assert_eq!(
+        reading.colour.rgb,
+        Some([255, 0, 0]),
+        "/C is the border colour"
     );
+    let tb = reading
+        .text_box
+        .expect("a text box carries its rows' values");
+    assert!((tb.border_width - 2.0).abs() < f64::EPSILON);
+    assert!(tb.bordered);
+    assert_eq!(tb.text_rgb, Some([0, 0, 255]));
+    assert_eq!(tb.font, pdfcer_core::fontdata::Std14::TimesRoman);
+    assert_eq!(tb.fill.rgb, None, "no background was set");
 
     // A `/Link`: neither reader produces a spec, so neither verb reaches it.
     let unreadable = text_current(None, b"Link");
     assert!(matches!(unreadable.reach, Reach::Neither));
-    assert!(
-        !matches!(boxed.reach, Reach::Neither),
-        "the two owe the operator different sentences and must not collapse"
-    );
 }
 
 /// **A note whose `/Name` pdfcer does not model is CARRIED, and reported

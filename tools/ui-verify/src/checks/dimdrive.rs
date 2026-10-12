@@ -1,12 +1,14 @@
 //! Shared off-screen driving: launch a fixture with a ribbon invoke, press a
-//! declared region, click a page point. The ce dimension checks use
+//! declared region, click a page point, pick a colour in a swatch's picker. The ce dimension checks use
 //! `fixtures/dimension-scaled.pdf` through [`run`]; others name theirs through
 //! [`run_on`].
 
+use super::stroke_style::into_view;
 use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
+use crate::geom::{LRect, Pt};
 use crate::input::Click;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -222,4 +224,39 @@ pub(super) fn press_on_tab(
     pointer.click_rect(session, found)?;
     session.settle(40);
     Ok(())
+}
+
+/// Open the swatch at `region`, pick inside its picker, close it.
+pub(super) fn pick_colour(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    region: &str,
+    picker: &str,
+) -> Result<Option<String>> {
+    into_view(ctx, session, pointer, region)?;
+    press(ctx, session, pointer, region)?;
+    let Some((rect, vp)) = declared_in(&session.trace()?, ui_rect_event(ctx)?, picker) else {
+        return Ok(Some(format!(
+            "`{region}` was pressed and no picker opened (`{picker}`). Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    // The lower part is the saturation/value square; the top holds the
+    // preview button, which opens a nested popup.
+    pointer.click_in(session, vp.as_deref(), at_fraction(rect, 0.35, 0.80))?;
+    session.settle(16);
+    // The close is the commit: `swatch::show` answers on the frame it closes.
+    pointer.key(session, vp.as_deref(), "Escape", None)?;
+    session.settle(40);
+    Ok(None)
+}
+
+/// The point `(fx, fy)` of the way across `r`.
+fn at_fraction(r: LRect, fx: f32, fy: f32) -> WindowPoint {
+    let p = Pt {
+        x: r.min.x + (r.max.x - r.min.x) * fx,
+        y: r.min.y + (r.max.y - r.min.y) * fy,
+    };
+    WindowPoint::centre_of(LRect { min: p, max: p })
 }

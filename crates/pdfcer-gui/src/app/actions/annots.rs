@@ -50,7 +50,7 @@ mod textannotstyle;
 // the AUTHORING verb in `actions::textannot`, and drives this one through the
 // shell rather than the engine so the undo entry and the texture drop are
 // exercised with it.
-pub(super) use textannotstyle::set_text_annot_style;
+pub(super) use textannotstyle::{set_annot_opacity, set_marker_colour, set_text_annot_style};
 /// **The polygon/polyline node verbs** - `move_node`, `insert_node`, `remove_node`
 /// over `reshape_annotation`.
 mod vertexnodes;
@@ -809,6 +809,12 @@ pub(super) fn apply_action(
         // between them is a `match` in the panel that raises this, not a
         // subtype string compared here.
         A::SetTextAnnotStyle { id, style } => set_text_annot_style(doc, id, &style),
+        A::SetOpacity { id, opacity } => set_annot_opacity(doc, id, opacity),
+        A::SetMarkerColour {
+            id,
+            color,
+            redraw_as_plain,
+        } => set_marker_colour(doc, id, color, redraw_as_plain),
     }
 }
 
