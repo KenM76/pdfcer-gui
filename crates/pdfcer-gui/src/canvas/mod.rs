@@ -348,6 +348,8 @@ pub mod tool;
 // corner or a markup shape's node. The R2 seam that kept `interact` under its
 // ceiling when markup node editing landed.
 pub mod vertexroute;
+// A selected form field's box turned by its rotate grip.
+pub mod widgetturn;
 // The anchor rule, the two-frame handshake it rides on, and the five zoom
 // paths that route through it.
 pub mod zoom;

@@ -141,7 +141,7 @@ pub fn draw_selection(
     // |---|---|---|
     // | markup | eight squares **and** the circle | `GripSet::all()` |
     // | ce dimension | the circle **only** | `GripSet::rotate_only()` |
-    // | form field | eight squares only | `GripSet::scale_only()` |
+    // | form field | all nine upright; the rotate handle alone while turned | `widgetturn::offer` |
     //
     // Spelling that table out locally would be a second copy of it, and the day
     // two copies disagree the symptom is either a handle nobody can grab or —
@@ -492,6 +492,29 @@ pub fn draw_rotate_ghost(
     }
     for (_, page_rect) in selection.outlines() {
         quad(mapping.rect_to_screen(*page_rect));
+    }
+}
+
+/// Paint a form field's rotate ghost: its unturned box `(size, base)` —
+/// screen extent and the screen angle it already stands at — turned a further
+/// `radians` about `centre`.
+pub fn draw_widget_turn_ghost(
+    painter: &Painter,
+    (size, base): &(egui::Vec2, f32),
+    centre: egui::Pos2,
+    radians: f32,
+) {
+    let stroke = Stroke::new(1.5, ghost(ink(painter)));
+    let r = Rect::from_center_size(centre, *size);
+    let corners = [
+        r.left_top(),
+        r.right_top(),
+        r.right_bottom(),
+        r.left_bottom(),
+    ]
+    .map(|p| crate::canvas::rotating::rotate_about(centre, p, base + radians));
+    for i in 0..4 {
+        painter.line_segment([corners[i], corners[(i + 1) % 4]], stroke);
     }
 }
 

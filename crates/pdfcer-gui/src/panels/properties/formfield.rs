@@ -155,7 +155,12 @@ pub fn section(
         ui,
         field,
         &selected,
-        widget_dash(field, selected.widget),
+        super::widgetturn::WidgetFacts::read(
+            doc,
+            field,
+            selected.widget,
+            widget_dash(field, selected.widget),
+        ),
         state,
         epoch,
         actions,

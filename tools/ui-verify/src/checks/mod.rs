@@ -1443,6 +1443,7 @@ pub mod typo_refusal;
 pub mod ui_scale;
 
 pub mod undo_redo;
+pub mod widget_turn;
 
 // `crate::checks::CheckReport` — most check modules spell the report
 // type as a sibling of the trait they implement, which reads correctly and

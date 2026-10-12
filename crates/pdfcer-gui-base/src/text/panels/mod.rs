@@ -83,6 +83,9 @@ pub mod textannotstyle;
 /// route.
 pub mod textobject;
 
+/// Tilting a form field's box, and its opacity.
+pub mod widgetturn;
+
 // ---------------------------------------------------------------------------
 // Shared
 // ---------------------------------------------------------------------------

@@ -483,6 +483,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_restyle::AMarkersIconIsRecolouredOnRequest),
         Box::new(markup_reshape::AHighlightsEndDragsOntoTheNextLine),
         Box::new(markup_reshape::ALinesFillColoursItsClosedArrowheads),
+        Box::new(widget_turn::AFieldsBoxTiltsByItsRotateGrip),
+        Box::new(widget_turn::AFieldsOpacityRowWritesIt),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

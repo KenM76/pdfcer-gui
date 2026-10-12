@@ -399,13 +399,16 @@ pub(super) fn draw(
     if let Some(radians) = f.rotate_ghost
         && let Some(bounds) = offer.bounds
     {
-        overlay::draw_rotate_ghost(
-            &painter,
-            map,
-            selection,
-            bounds.pivot(crate::canvas::handles::Grip::Rotate),
-            radians,
-        );
+        let centre = bounds.pivot(crate::canvas::handles::Grip::Rotate);
+        match widget_ghost.and(crate::canvas::widgetturn::target(&ctx, doc)) {
+            Some(target) => overlay::draw_widget_turn_ghost(
+                &painter,
+                &crate::canvas::widgetturn::ghost_box(&target, map, bounds.bounds()),
+                centre,
+                radians,
+            ),
+            None => overlay::draw_rotate_ghost(&painter, map, selection, centre, radians),
+        }
     }
     // THE PERIMETER'S VERTEX HANDLES.
     //

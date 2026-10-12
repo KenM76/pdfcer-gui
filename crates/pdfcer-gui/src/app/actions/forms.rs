@@ -48,6 +48,11 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
             widget,
             degrees,
         } => widget::rotate(doc, &field, widget, degrees),
+        FieldAction::TurnWidget {
+            field,
+            widget,
+            degrees,
+        } => widget::turn(doc, &field, widget, degrees),
         FieldAction::Paste {
             page,
             rect,
@@ -251,7 +256,8 @@ pub(super) fn edit_widget(
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     "edit-widget-applied field={field} widget={widget} touched={touched:?} \
-                     geometry={} resized={} redrawn={} foreign_replaced={} appearance={:?}",
+                     geometry={} resized={} redrawn={} foreign_replaced={} appearance={:?} \
+                     opacity={}",
                     outcome.rect_after.is_some(),
                     outcome.resized,
                     if matches!(
@@ -264,6 +270,11 @@ pub(super) fn edit_widget(
                     },
                     u8::from(outcome.foreign_appearance_replaced),
                     outcome.appearance,
+                    match edit.opacity {
+                        None => "unchanged".to_owned(),
+                        Some(None) => "cleared".to_owned(),
+                        Some(Some(v)) => v.to_string(),
+                    },
                 )
             });
             let mut lines = Vec::new();
@@ -304,6 +315,9 @@ pub(super) fn edit_widget(
                     touched,
                     outcome.appearance_regenerated,
                 ));
+            }
+            if outcome.opacity_disclosure.is_some() {
+                lines.push(crate::text::panels::widgetturn::opacity_disclosed().to_owned());
             }
             if outcome.foreign_appearance_replaced {
                 lines.push(crate::text::forms::field_foreign_appearance_replaced().to_owned());

@@ -264,25 +264,12 @@ pub(super) fn selection_overlay(
     // uses, so a driven check aiming at a grip reads one name whatever is
     // selected. `handles::grip_rects` derives all eight from this box.
     crate::diag::ui_rect(crate::canvas::overlay::SELECTION_OUTLINE_REGION, screen);
-    // `scale_only()`, spelled here as the same value `pressing::grabbable`
-    // hands the hit test for this selection — H7, and the field is the one
-    // selection where the two flags differ in the direction that would be
-    // easiest to get wrong by inheritance.
-    //
-    // **A widget scales and does not turn**, and the asymmetry is
-    // §12.5.6.19 Table 189's rather than a gap in pdfcer: a widget's rotation is
-    // `/MK /R`, a quantised 0/90/180/270 *declaration* the field's appearance
-    // generator reads, not a free-angle transform. `rotate_annotation` refuses
-    // a widget by name and points at a verb that is not built.
-    //
-    // ⇒ So no ninth handle is painted here and none is hit-tested. **R9**:
-    // rendering nothing is the honest answer for a capability that does not
-    // exist — a circle on a stem that declined on release would be the
-    // "visible control, silently inert" defect wearing the costume of a fix.
+    // The same set `pressing::grabbable` hands the hit test (H7):
+    // `widgetturn::offer` decides it for both.
     crate::canvas::overlay::draw_grips(
         &painter,
         visuals,
         screen,
-        crate::canvas::handles::GripSet::scale_only(),
+        crate::canvas::widgetturn::offer(ctx, doc),
     );
 }

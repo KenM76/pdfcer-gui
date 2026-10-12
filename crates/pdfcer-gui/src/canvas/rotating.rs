@@ -119,6 +119,7 @@ pub fn drag(
         map,
         page,
         dimension,
+        widget,
     } = frame;
     let bounds = bounds?;
     // The pivot is the CENTRE, taken from `Grip::pivot` rather than from
@@ -143,6 +144,10 @@ pub fn drag(
         // `drag-moves` D7. Silent: a release at the bearing it began at is an
         // operator who thought better of it, and a sentence about it would be
         // reporting their change of mind back to them.
+        return None;
+    }
+    if let Some(w) = widget {
+        crate::canvas::widgetturn::commit(w, f64::from((-theta).to_degrees()), actions);
         return None;
     }
     let page = page?;
@@ -315,6 +320,9 @@ pub struct Frame<'a> {
     /// `None` for a markup annotation, for page content, and for a ce dimension
     /// whose record could not be resolved. The first two never read it.
     pub dimension: Option<pdfcer_core::dimension::DimensionId>,
+    /// The selected form-field widget, when the selection is one. Its turn is
+    /// an absolute angle on the widget, not a pivot-and-delta on content.
+    pub widget: Option<&'a crate::canvas::widgetturn::Target>,
 }
 
 /// **Raise the right rotation verb for a selected annotation.**

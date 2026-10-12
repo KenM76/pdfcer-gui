@@ -109,6 +109,16 @@ pub enum FieldAction {
         /// The new angle, counterclockwise, already in `0..360`.
         degrees: i64,
     },
+    /// **Tilt a field's box** to a free angle on top of its quarter turn —
+    /// `EditSession::turn_widget`. Absolute: `0.0` stands it upright.
+    TurnWidget {
+        /// The field's fully-qualified name.
+        field: String,
+        /// Which of its boxes.
+        widget: usize,
+        /// Counterclockwise degrees; the engine normalises into (-180, 180].
+        degrees: f64,
+    },
     /// **Change one property of the BOX a field is drawn in.**
     ///
     /// Reaches `EditSession::edit_widget`, the widget-scoped twin of

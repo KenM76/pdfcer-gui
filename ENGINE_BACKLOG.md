@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **23 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
+## `wanted` — a real gap — **22 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -104,12 +104,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
 | **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **wanted, at the pin since v0.81.0; request G161.** Insert gains Link, and a link's Properties gain its target and border, through it: `CommandKind::SetLinkTarget` and `CommandKind::SetLinkBorder`, with `AnnotKind::Link` in the undo labels. Refusals to word: `EditError::LinkBorderWidthInvalid`, `EditError::LinkUriInvalid`, `EditError::LinkVerbOnOther`. |
-
-### Forms (AcroForm)
-
-| Row (`FEATURES.md`, wanted) | Why |
-|---|---|
-| **Turn a form widget to any angle, and set its opacity** — `pdfcer_core::edit::widget_angle` | **wanted, at the pin since v0.81.0; request G160.** A field's rotate grip turns it to any angle through it (one `CommandKind::TurnWidget`), and its Properties gain Opacity, disclosed through `WidgetEditOutcome::opacity_disclosure`. Refusals to word: `EditError::WidgetTurnIsQuarterTurn`, `EditError::WidgetTurnNeedsAppearance`, `EditError::WidgetTurnSharedAppearance`, `EditError::WidgetTurned`, `EditError::WidgetOpacityOutOfRange`. |
 
 ### Redaction & security
 
@@ -199,7 +193,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **303 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **304 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -421,6 +415,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Two more `/Ff` field flags and the mapping name — `FieldEdit::with_no_scroll`, `with_file_select`, `with_mapping_name` / `clearing_mapping_name` | **shipped.** A text field's Properties carry *Scroll long text* (`with_no_scroll`), *Check spelling* (`with_no_spell_check`, the `/Tx` row `panels::properties::choiceopts` lacked) and *Sends a file* (`with_file_select`), with a sentence under it while set saying a submit sends a local file's contents; every field carries an *Export name* box for `/TM` (`with_mapping_name`, empty → `clearing_mapping_name`). All go through `edit_field` as one undo entry each (`panels::properties::fieldextras`). Driven: `a_text_fields_extras_reach_the_file`, the values read back from the field after each edit. The `/Ch` spell-check and commit-on-select rows in `choiceopts` stay undriven. |
 | **Compute a page's tab-VISIT order for every `/Tabs` state — `EditSession::page_tab_sequence(page_index) -> TabSequence`, CLI `tab-order`** … | **shipped.** `canvas::forms::ring` asks `page_tab_sequence` for the visit order and its notes, so Tab inside a form moves between fields, not through the ribbon (O204). Driven: `tab_moves_between_form_fields`. |
 | **Paint `/MK` `/BG`/`/BC` into the baked `/AP` the widget builders draw.** … | **shipped, after placement.** `panels::properties::widgetedit` offers background and border swatches through `WidgetEdit::with_background` / `with_border_color`; `RecordedNotPainted` goes to the status line, never into the swatch. The border is driven by `every_field_kind_can_lose_its_border`; the background swatch is not driven. The before-placement half waits on the engine's Pass 308.1 (colour at field creation). |
+| **Turn a form widget to any angle, and set its opacity** — `EditSession::turn_widget`, `WidgetEdit::with_opacity` | **shipped — our G160.** `canvas::widgetturn` commits the field's rotate-grip drag through `FieldAction::TurnWidget` (`app::actions::forms::widget::turn`), routing a quarter-turn landing to `rotate_widget`; Properties' **Stand upright** and **Opacity** rows (`panels::properties::widgetturn`) raise `turn_widget(…, 0.0)` and `edit_widget` with `with_opacity`. `opacity_disclosure` reaches the status line. The module is `pdfcer_core::edit::widget_angle`. `EditError::WidgetTurnIsQuarterTurn`, `WidgetTurnNeedsAppearance`, `WidgetTurnSharedAppearance` and `WidgetTurned` are worded; `EditError::WidgetOpacityOutOfRange` is unreachable because the row clamps to 0–100 %, and the funnel's Display covers it; `CommandKind::TurnWidget` is traced by its Debug name like every undo kind. Reading the current angle and `/CA` is a workaround, G177. Driven: `a_fields_box_tilts_by_its_rotate_grip`, `a_fields_opacity_row_writes_it`. |
 
 ### Redaction & security
 
@@ -603,8 +598,9 @@ Each verified absent in the pin and on engine main before filing.
 - **G157** — page objects cannot be restacked; only annotations can. Answered as `EditSession::restack_objects`; wired in Edit ▸ Arrange.
 - **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`. Answered as `set_text_run_width_in_form`, `merge_text_runs_in_form` and `split_text_object_in_form`; wired through the same width field, Merge text runs and Split into lines.
 - **G159** — `StyleOverrides` has no dash or opacity for a ce dimension.
-- **G160** — `rotate_widget` takes quarter turns only; `WidgetEdit` has no opacity.
+- **G160** — `rotate_widget` takes quarter turns only; `WidgetEdit` has no opacity. Answered as `turn_widget` and `WidgetEdit::with_opacity`; wired as a field's rotate grip, Stand upright and Opacity.
 - **G161** — a link cannot be created, re-targeted or re-bordered.
+- **G177** — a widget's free angle and `/CA` cannot be read: `EditSession::free_turn` is private and `forms::Widget` carries neither. Workaround report; `pdfcer_gui_base::widgetread` parses the appearance `/Matrix` and the widget dictionary.
 - **G174** — `set_object_stroke_style` takes lengths in each path's user space, so "5 pt" on a selection at two scales needs a call per scale. Workaround report; the shell groups and folds meanwhile.
 - **G175** — no in-form split plan: `text_object_split_points` returns cuts without the line-inference disclosure, so the shell words it (`text::runsplit::lines_inferred`). Workaround report.
 

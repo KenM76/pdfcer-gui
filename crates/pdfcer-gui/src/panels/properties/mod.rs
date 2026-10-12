@@ -99,6 +99,8 @@ pub mod tooldim;
 /// scopes; see its header.
 pub mod widgetdash;
 pub mod widgetedit;
+/// A form field box's quarter turns, free tilt and opacity rows.
+pub mod widgetturn;
 /// The offer to make a refused text edit another way.
 pub mod workaround;
 

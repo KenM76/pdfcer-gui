@@ -70,7 +70,7 @@ pub fn section(
     ui: &mut Ui,
     field: &Field,
     selected: &pdfcer_gui_base::docidentity::SelectedField,
-    dash: DashReading,
+    facts: super::widgetturn::WidgetFacts,
     state: &mut PanelsState,
     epoch: u64,
     actions: &mut Vec<Action>,
@@ -113,14 +113,15 @@ pub fn section(
     // scrolls, so it was not lost the way the bookmarks controls were — but a
     // control an operator has to scroll past four unrelated sections to reach is
     // one they will not find, and a driven check could not reach it either.
-    rotation_row(ui, widget, fqn, widget_index, actions);
+    super::widgetturn::rotation_row(ui, widget, facts.turn, (fqn, widget_index), actions);
     ui.add_space(4.0);
-    border_rows(ui, field, widget, dash, (fqn, widget_index), actions);
+    border_rows(ui, field, widget, facts.dash, (fqn, widget_index), actions);
     ui.add_space(4.0);
     // Directly under the border STYLE and WIDTH, because the three are one
     // thought and `/BC` is the ink the style is stroked in. Above
     // visibility, which is a different subject.
     chrome_rows(ui, field, widget, fqn, widget_index, actions);
+    super::widgetturn::opacity_row(ui, facts.opacity, (fqn, widget_index), actions);
     ui.add_space(4.0);
     visibility_row(ui, widget, fqn, widget_index, actions);
     ui.add_space(4.0);
@@ -133,71 +134,6 @@ pub fn section(
 
     crate::diag::ui_rect(REGION, ui.min_rect());
     true
-}
-
-/// **Turn the box**, in ninety-degree steps.
-fn rotation_row(
-    ui: &mut Ui,
-    widget: &pdfcer_core::forms::Widget,
-    fqn: &str,
-    index: usize,
-    actions: &mut Vec<Action>,
-) {
-    let current = widget.rotation.unwrap_or(0);
-    ui.label(t::widget_rotation_label(widget.rotation));
-
-    let mut turn = |ui: &mut Ui, label: &str, region: &str, delta: i64| {
-        let response = ui.button(label);
-        //
-        // This module's own header states the rule two hundred lines above:
-        // *"the per-control regions below take the gated form, because a check
-        // clicks those."* `rotation_row` used the plain one, so the trace
-        // published a rect at the button's **content** position — y = 1,253 in
-        // a 758-point window — and the driven check aimed the real pointer at a
-        // coordinate outside the window, pressed nothing, and reported the
-        // feature as inert.
-        //
-        // ⇒ A harness limitation reporting as an application defect, which is
-        // the failure mode `tools/ui-verify` exists to remove rather than
-        // produce. Gated, an off-screen button is **absent** from the trace,
-        // which is a fact a check can act on: scroll to it, or say it cannot be
-        // reached.
-        crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
-        if response.clicked() {
-            // Normalised HERE as well as by the engine, so the number in the
-            // trace is the one the file will carry. `rotate_widget` accepts any
-            // multiple of 90 and normalises into 0..360 itself — this is not
-            // guarding against it, it is making the two agree so a driven check
-            // reading either sees the same value.
-            let next = (current + delta).rem_euclid(360);
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed.
-                format!(
-                    "widget-rotate-requested field={fqn:?} widget={index} was={current} now={next}"
-                )
-            });
-            actions.push(Action::Field(FieldAction::RotateWidget {
-                field: fqn.to_owned(),
-                widget: index,
-                degrees: next,
-            }));
-        }
-    };
-
-    let response = ui
-        .horizontal(|ui| {
-            // LEFT is +90 counterclockwise and RIGHT is -90, and that is the
-            // negation the engine asked for. It happens on this line and
-            // nowhere else.
-            turn(ui, t::widget_rotate_left(), ROTATE_LEFT_REGION, 90);
-            turn(ui, t::widget_rotate_right(), ROTATE_RIGHT_REGION, -90);
-        })
-        .response;
-    // Gated for the reason the two buttons above are: a check reads this row to
-    // learn the current angle, and a readout published where nobody can see it
-    // is a readout that answers a question about a different screen.
-    crate::diag::ui_rect_visible(ROTATION_REGION, response.rect, ui.clip_rect());
-    ui.small(t::widget_rotation_hint());
 }
 
 /// The four typed numbers and the button that commits them.

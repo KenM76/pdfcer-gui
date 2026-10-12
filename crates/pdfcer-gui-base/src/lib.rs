@@ -167,6 +167,9 @@ pub mod pushbutton;
 /// The three markup kinds that carry words: text box, sticky note, stamp.
 pub mod wordmarkup;
 
+/// A form widget's free turn and opacity, read from the file.
+pub mod widgetread;
+
 /// Where and when the dock layout is written to disk.
 pub mod dockpersist;
 

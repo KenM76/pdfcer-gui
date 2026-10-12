@@ -386,8 +386,8 @@ pub(super) fn overlay(
             // that depends on it is unreachable however well it works.
             //
             // The grips come with it, which is H7: `pressing::grabbable`
-            // hands `GripSet::scale_only()` for this selection, so the eight
-            // squares are hit-tested whether or not they are painted -- and an
+            // hands `widgetturn::offer`'s set for this selection, so the grips
+            // are hit-tested whether or not they are painted -- and an
             // invisible target that steals a press is worse than a visible
             // control that does nothing.
             selecting::selection_overlay(&ctx, ui.visuals(), doc, pages, &placed.targets);

@@ -683,6 +683,11 @@ pub(super) fn interact(
         // `DimensionVertex`'s note in `needs_targets` applies to it too, and it
         // is in that list.
         GestureOutcome::Rotate { from, at, phase } => {
+            let widget = selection
+                .annot()
+                .is_none()
+                .then(|| crate::canvas::widgetturn::target(&ctx, doc))
+                .flatten();
             pv.rotate_ghost = crate::canvas::rotating::drag(
                 &ctx,
                 crate::canvas::rotating::Frame {
@@ -702,6 +707,7 @@ pub(super) fn interact(
                     // Resolved HERE so a dimension with no sidecar record
                     // declines in words rather than in silence.
                     dimension: dimdrag::selected(doc, &selection).map(|(id, _)| id),
+                    widget: widget.as_deref(),
                 },
                 &selection,
                 actions,
