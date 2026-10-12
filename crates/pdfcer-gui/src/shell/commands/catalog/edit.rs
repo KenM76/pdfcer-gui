@@ -184,6 +184,11 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.insert_image", t::edit_insert_image(), 410)
             .with_icon("insert-image")
             .enabled_when("doc.pages"),
+        // The chain-link glyph the pick filter's Link row already wears: the
+        // operator meets the same picture for "a link" in both places.
+        command("edit.insert_link", t::edit_insert_link(), 413)
+            .with_icon("pick-link")
+            .enabled_when("doc.pages"),
         command("edit.insert_3d", t::edit_insert_3d(), 412)
             .with_icon("model-3d")
             .enabled_when("doc.pages"),

@@ -170,6 +170,15 @@ pub mod wordmarkup;
 /// A form widget's free turn and opacity, read from the file.
 pub mod widgetread;
 
+/// A link's target and border, read from the file.
+pub mod linkread;
+
+/// The link verbs as actions.
+pub mod linkaction;
+
+/// The controls a link is made and changed with.
+pub mod linkform;
+
 /// Where and when the dock layout is written to disk.
 pub mod dockpersist;
 

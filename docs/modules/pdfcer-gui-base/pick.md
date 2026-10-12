@@ -136,29 +136,26 @@ one list: *"text, points, lines, etc"*. Splitting them across two popups to
 honour an internal distinction would be the shell explaining its own
 architecture to somebody who is trying to click a corner.
 
-### One class is OFF by default, and it is not an oversight
+### Links are picked in Edit only
 
-[`PickClass::Link`]. `annot::selectable_on` excludes `/Link` from selection
-today, so there is no path by which a link can be picked, and a filter row
-defaulting to ON would claim a capability that does not exist. It has a row
-because links are a thing on the page the operator can see and will
-eventually want to reach; it defaults OFF because subtractiveness means the
-default must describe what the shell *does*, not what it should.
+[`PickClass::Link`] is on by default like every class. An Edit click selects
+a link; Read and Review follow it, and the row has no say there
+(`canvas::clicking` tries `link_hit` before the annotation hit outside Edit).
 
-When link picking lands, the default flips here and nowhere else.
+A filter saved while links could not be picked recorded Link as off, and a
+persisted default never migrates. [`PickFilter::to_tokens`] therefore writes
+[`LINK_ROW_LIVE`], and [`PickFilter::from_tokens`] turns Link on when that
+marker is absent and the saved line is not `none`. A Link switched off after
+that stays off.
 
-### Four more classes are INERT, and their tooltips do not say so
+### Where the annotation rows are read
 
-[`PickClass::Markup`], [`PickClass::CeDimension`], [`PickClass::FormField`]
-and [`PickClass::Characters`] are read by nothing on the pick path, so
-switching one off changes no click. [`PickFilter::allows`] is consulted at
-exactly three points — the `Part` rung, the `Node` rung, and the object
-class of the topmost hit, all in [`crate::canvas::input`]. The annotation
-pick (`selection::annot::under_pointer`) is called with no filter argument
-at all, and the character sweep's gate (`canvas::textsel::gate`) is decided
-by the armed tool and the mode's capabilities alone. Unlike
-[`PickClass::Link`], whose tooltip is honest about being inert, these four
-promise that clicks will pass through. `DEFECTS.md` D49.
+`canvas::clicking` filters the annotation hit through
+[`PickClass::of_annot_subtype`], so Markup, Dimensions and Links each let a
+click pass through when off. [`PickClass::FormField`] and
+[`PickClass::Characters`] are still read by nothing on the pick path: the
+character sweep's gate (`canvas::textsel::gate`) is decided by the armed tool
+and the mode's capabilities alone. `DEFECTS.md` D49.
 
 The rule: **a row is inert until an `allows` call reads it.** Wire the
 consumer in the same change that adds the row, or the popup becomes the

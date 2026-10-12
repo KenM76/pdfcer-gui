@@ -1010,23 +1010,18 @@ The wider point is the register's: **a rationale that names its own expiry
 condition needs something that fires when the condition is met.** Two files
 carried this one for the life of the selection model without noticing.
 
-### D49 — OPEN: four Select-filter rows are inert, and their tooltips promise otherwise
+### D49 — OPEN: two Select-filter rows are inert, and their tooltips promise otherwise
 
 `PickFilter` (`crates/pdfcer-gui-base/src/pick.rs`) carries eleven classes and
-the popup writes all eleven. The pick path reads three:
-`crates/pdfcer-gui/src/canvas/input.rs:131` (`Part`), `:137` (`Node`) and `:218`
-(`filter.allows(class)`), where `class` comes from `PickClass::of_object`, which
-can only ever return `Path`, `Text`, `Image` or `FormXObject`.
+the popup writes all eleven. The page-object pick reads `Part`, `Node` and the
+class of the topmost hit (`canvas::input`); the annotation pick reads Markup,
+Dimensions and Links through `PickClass::of_annot_subtype`
+(`canvas::clicking::annot_hit`).
 
-**Markup, Dimensions, Form fields and Characters can therefore never reach a
-read.** The annotation pick (`canvas::selection::annot::under_pointer`) takes no
-filter at all, and `canvas::textsel` contains no `allows` call.
-
-Their tooltips say the opposite — *"Off: clicks pass through notes, shapes and
-stamps."*, *"Off: clicks pass through form fields, and none can be filled in."*
-(`crates/pdfcer-gui-base/src/text/pick.rs`). `PickClass::Link` is inert too and its
-tooltip **says so**, which is the shape the other four need until they are
-wired.
+**Form fields and Characters still reach no read.** Widgets are excluded from
+annotation selection before any filter, and `canvas::textsel` contains no
+`allows` call. Their tooltips say the opposite — *"Off: clicks pass through
+form fields, and none can be filled in."* (`crates/pdfcer-gui-base/src/text/pick.rs`).
 
 ### D50 — OPEN: the resize and rotate grips vanish below the Object rung
 

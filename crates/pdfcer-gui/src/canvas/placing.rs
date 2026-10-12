@@ -25,6 +25,9 @@ pub enum PlaceKind {
     /// [`crate::dialogs::insert_image`] — the only numeric-position dialog in
     /// the crate, and the one the operator was looking at.
     Image,
+    /// `edit.insert_link`: the box is drawn first, then
+    /// [`crate::dialogs::link`] asks where it goes.
+    Link,
 }
 
 impl PlaceKind {
@@ -32,7 +35,7 @@ impl PlaceKind {
     #[must_use]
     pub const fn capability(self, caps: Capabilities) -> bool {
         match self {
-            Self::Image => caps.edit_content,
+            Self::Image | Self::Link => caps.edit_content,
         }
     }
 }

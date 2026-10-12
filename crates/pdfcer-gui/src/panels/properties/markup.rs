@@ -41,7 +41,9 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     // routing one to the wrong verb is a compile error. Restyling a ce
     // dimension through `set_markup_style` regenerates it as a bare line with
     // its label and witness lines gone.
-    if selection.target.kind != AnnotKind::Markup {
+    // A link is `Markup` by kind and has no markup style; its section is
+    // `super::link`.
+    if selection.target.kind != AnnotKind::Markup || selection.target.subtype == "Link" {
         return false;
     }
     // Cloned rather than borrowed: `AnnotTarget` carries the `/Subtype` as an

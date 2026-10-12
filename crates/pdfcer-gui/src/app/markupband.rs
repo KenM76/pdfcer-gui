@@ -244,6 +244,8 @@ fn resolved(doc: Option<&OpenDoc>) -> Operand {
         return Operand::Absent;
     };
     match selection.target.kind {
+        // A link has no markup style; `set_markup_style` refuses it.
+        AnnotKind::Markup if selection.target.subtype == "Link" => return Operand::Absent,
         AnnotKind::Markup => {}
         // A ce dimension. `set_dimension_style` is its verb; see this module's
         // header, Rule 15.

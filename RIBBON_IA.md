@@ -329,7 +329,7 @@ selection is correct.
 | Group | Commands |
 |---|---|
 | **Content** | Select all · Edit text · Add text · Reflow block |
-| **Insert** | Image… · Attachments · Shape ⌄ |
+| **Insert** | Image… · Link… · Attachments · Shape ⌄ |
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
 | **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
 | **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten · Repair fonts |

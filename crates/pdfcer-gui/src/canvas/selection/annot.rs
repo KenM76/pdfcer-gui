@@ -91,10 +91,7 @@ pub fn selectable_on(
             continue;
         }
         let subtype = String::from_utf8_lossy(&annot.subtype).into_owned();
-        if matches!(
-            subtype.as_str(),
-            "Link" | "Movie" | "PrinterMark" | "TrapNet"
-        ) {
+        if matches!(subtype.as_str(), "Movie" | "PrinterMark" | "TrapNet") {
             continue;
         }
         // No id means no verb can name it, so selecting it could only ever

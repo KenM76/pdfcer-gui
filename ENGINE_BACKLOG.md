@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **22 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
+## `wanted` — a real gap — **21 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -103,7 +103,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
-| **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **wanted, at the pin since v0.81.0; request G161.** Insert gains Link, and a link's Properties gain its target and border, through it: `CommandKind::SetLinkTarget` and `CommandKind::SetLinkBorder`, with `AnnotKind::Link` in the undo labels. Refusals to word: `EditError::LinkBorderWidthInvalid`, `EditError::LinkUriInvalid`, `EditError::LinkVerbOnOther`. |
 
 ### Redaction & security
 
@@ -193,7 +192,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **304 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **305 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -379,6 +378,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A placed stamp's words can be changed** — `set_stamp_label` | **shipped — a stamp's Properties carry its words and a Default words button; G151.** The shell calls `set_text_annot_style` with `TextAnnotStyle::label`, which `set_stamp_label` is shorthand for. An empty field is not sent, so `EditError::StampLabelEmpty` cannot arise from this route. Driven by `a_stamps_opacity_and_words_change`. |
 | **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **shipped — a line's Fill swatch fills its closed arrowheads; G153.** `MarkupStyleSupport::for_subtype(b"Line")` answers `takes_interior`, so Properties and the Format band both draw Fill and read `/IC` back. One pick of the swatch is one `set_markup_style`, traced as `set-markup-style-applied` with the interior and both endings read back from the file. Driven by `a_lines_fill_colours_its_closed_arrowheads`. |
 | **A text markup can be re-spanned** — `respan_text_markup`, `pdfcer_core::edit::markup_respan` | **shipped — a text mark's end grips re-span it; G152.** `canvas::respan` draws a grip at each end of a selected `/Highlight`, `/Underline`, `/StrikeOut` or `/Squiggly`; the release re-runs the text selection and raises `AnnotAction::RespanTextMarkup`, applied as one `CommandKind::RespanTextMarkup`. A release over no text is declined before the verb. `EditError::TextMarkupVerbOnOther` cannot arise from this route: the grips are drawn only on the four subtypes. Driven by `a_highlights_end_drags_onto_the_next_line`. |
+| **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **shipped — Edit ▸ Insert ▸ Link, and a selected link's Properties; G161.** `edit.insert_link` arms `PlaceKind::Link` and `dialogs::link` raises `add_link`; in Edit a click selects a link (Links pick row live), its grips resize it, and `panels::properties::link` raises `set_link_target` and `set_link_border`. Read and Review still follow it. `replaced_action` and `appearance_replaced` reach the status line; `EditError::LinkUriInvalid`, `LinkBorderWidthInvalid`, `NamedDestinationNotFound` and `EmptyGeometry` are worded, `EditError::LinkVerbOnOther` is unreachable (the verbs are raised on a selected link only). `CommandKind::SetLinkTarget`, `CommandKind::SetLinkBorder` and `AnnotKind::Link` are the engine's undo labels; nothing here reads them. Reading a link back is a workaround, G178 (`linkread`); named destinations cannot be listed, G179. Driven: `a_link_is_drawn_and_given_an_address`, `a_selected_link_is_repointed_from_properties`, `a_review_click_follows_a_link_and_does_not_select_it`. |
 
 ### Forms (AcroForm)
 
@@ -599,7 +599,9 @@ Each verified absent in the pin and on engine main before filing.
 - **G158** — no in-form twins of `set_text_run_width`, `merge_text_runs`, `split_text_object`. Answered as `set_text_run_width_in_form`, `merge_text_runs_in_form` and `split_text_object_in_form`; wired through the same width field, Merge text runs and Split into lines.
 - **G159** — `StyleOverrides` has no dash or opacity for a ce dimension.
 - **G160** — `rotate_widget` takes quarter turns only; `WidgetEdit` has no opacity. Answered as `turn_widget` and `WidgetEdit::with_opacity`; wired as a field's rotate grip, Stand upright and Opacity.
-- **G161** — a link cannot be created, re-targeted or re-bordered.
+- **G161** — a link cannot be created, re-targeted or re-bordered. Answered as `EditSession::add_link`, `set_link_target` and `set_link_border`; wired as Edit ▸ Insert ▸ Link and a link's Properties.
+- **G178** — a link's target and border cannot be read back in the form the verbs take. Workaround report; `pdfcer_gui_base::linkread` parses the link dictionary.
+- **G179** — named destinations can be counted but not listed, so the shell types a name rather than offering a list.
 - **G177** — a widget's free angle and `/CA` cannot be read: `EditSession::free_turn` is private and `forms::Widget` carries neither. Workaround report; `pdfcer_gui_base::widgetread` parses the appearance `/Matrix` and the widget dictionary.
 - **G174** — `set_object_stroke_style` takes lengths in each path's user space, so "5 pt" on a selection at two scales needs a call per scale. Workaround report; the shell groups and folds meanwhile.
 - **G175** — no in-form split plan: `text_object_split_points` returns cuts without the line-inference disclosure, so the shell words it (`text::runsplit::lines_inferred`). Workaround report.

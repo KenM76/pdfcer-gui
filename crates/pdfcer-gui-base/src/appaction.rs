@@ -686,6 +686,9 @@ pub enum Action {
     ///   open-or-closed** (§12.3.3), which is why no verb in the family
     ///   describes itself by diffing a count.
     Bookmark(crate::subactions::BookmarkAction),
+    /// **Add a `/Link`, re-point one, or change its border.** One
+    /// `EditSession` link verb each.
+    Link(crate::linkaction::LinkAction),
     /// **Everything whose subject is a whole FILE living inside the
     /// document** — attach, remove, and save one out (§7.11.4.1).
     ///

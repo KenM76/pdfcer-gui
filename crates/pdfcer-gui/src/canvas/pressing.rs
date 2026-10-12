@@ -109,12 +109,17 @@ pub struct Grabbable {
 
 /// **Which handles a markup annotation of this `/Subtype` offers.**
 pub fn markup_grips(subtype: &str) -> handles::GripSet {
-    if subtype == STICKY_SUBTYPE {
-        handles::GripSet::move_only()
-    } else {
-        handles::GripSet::all()
+    match subtype {
+        STICKY_SUBTYPE => handles::GripSet::move_only(),
+        // A link is a clickable area: it moves and takes a new size, and a
+        // turned one would still be clicked through its upright `/Rect`.
+        LINK_SUBTYPE => handles::GripSet::scale_only(),
+        _ => handles::GripSet::all(),
     }
 }
+
+/// The `/Subtype` of a link.
+const LINK_SUBTYPE: &str = "Link"; // ui-text-exempt: a PDF /Subtype name, never displayed
 
 /// The `/Subtype` of a sticky note, whose marker is a fixed size.
 const STICKY_SUBTYPE: &str = "Text"; // ui-text-exempt: a PDF /Subtype name, never displayed

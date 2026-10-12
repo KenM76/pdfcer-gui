@@ -84,6 +84,7 @@ fn all() -> Vec<CommandText> {
         edit_text(),
         edit_add_text(),
         edit_insert_image(),
+        edit_insert_link(),
         edit_insert_3d(),
         edit_attachments(),
         edit_form_create_field(),

@@ -134,7 +134,18 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
         ),
         // O66 — the ONLY surface that states this gesture and its way out,
         // because the window that asked for the placement has hidden itself.
-        CanvasTool::Place(_) => (crate::text::placing::armed_instruction().to_owned(), None),
+        CanvasTool::Place(kind) => (
+            match kind {
+                crate::canvas::placing::PlaceKind::Image => {
+                    crate::text::placing::armed_instruction()
+                }
+                crate::canvas::placing::PlaceKind::Link => {
+                    crate::text::linkedit::armed_instruction()
+                }
+            }
+            .to_owned(),
+            None,
+        ),
         CanvasTool::Snapshot => (
             t::snapshot_instruction().to_owned(),
             Some(t::snapshot_stays().to_owned()),

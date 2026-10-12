@@ -68,11 +68,8 @@ pub enum PickClass {
     /// fills forms), so this row is the only control over whether a click
     /// reaches a field at all.
     FormField,
-    /// A `/Link` annotation.
-    ///
-    /// **Defaults OFF**, alone among these, because nothing can pick a link
-    /// today — see the header. The row exists so the eventual capability has
-    /// somewhere to appear rather than needing a popup redesign.
+    /// A `/Link` annotation. Selected in Edit only; Read and Review follow a
+    /// link instead of selecting it.
     Link,
     /// The character sweep — dragging across text to copy it.
     ///
@@ -167,13 +164,10 @@ impl PickClass {
     /// preference saved.
     #[must_use]
     pub const fn on_by_default(self) -> bool {
-        match self {
-            // Nothing can pick a `/Link` today — `annot::selectable_on`
-            // excludes the subtype outright. A row defaulting to ON would
-            // promise a capability that does not exist.
-            PickClass::Link => false,
-            _ => true,
-        }
+        // Every class. A function rather than a constant so that a class which
+        // cannot yet be picked has one place to say so.
+        let _ = self;
+        true
     }
 
     /// The class a decomposed page object belongs to.
@@ -195,7 +189,25 @@ impl PickClass {
             AnnotKind::CeDimension => PickClass::CeDimension,
         }
     }
+
+    /// The class of a selectable annotation, given its `/Subtype` too: a
+    /// `/Link` is its own row although its [`AnnotKind`] is `Markup`.
+    #[must_use]
+    pub fn of_annot_subtype(kind: AnnotKind, subtype: &str) -> PickClass {
+        if subtype == "Link" {
+            PickClass::Link
+        } else {
+            Self::of_annot(kind)
+        }
+    }
 }
+
+/// Written after the class tokens by every save made since the Links row
+/// could pick something. Its absence marks a line saved before then, whose
+/// Links-off is a default rather than a choice. Not a class token, so
+/// [`PickClass::from_token`] never matches it.
+// ui-text-exempt: a persistence marker, never displayed.
+pub const LINK_ROW_LIVE: &str = "link-row-live";
 
 /// Which classes of thing a click may currently land on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -296,12 +308,14 @@ impl PickFilter {
             .collect()
     }
 
-    /// Serialise to a space-separated list of the tokens that are **on**.
+    /// Serialise to a space-separated list of the tokens that are **on**,
+    /// followed by [`LINK_ROW_LIVE`].
     #[must_use]
     pub fn to_tokens(&self) -> String {
         self.enabled()
             .into_iter()
             .map(PickClass::token)
+            .chain(std::iter::once(LINK_ROW_LIVE))
             .collect::<Vec<_>>()
             // ui-text-exempt: the separator of an on-disk persistence format,
             // never displayed. `from_tokens` splits on any whitespace.
@@ -310,12 +324,22 @@ impl PickFilter {
 
     /// Parse what [`PickFilter::to_tokens`] wrote.
     #[must_use]
+    ///
+    /// A line without [`LINK_ROW_LIVE`] was written while the Links row could
+    /// pick nothing and so was saved off by every operator; it is read with
+    /// Links on, unless the line names no class at all (everything off).
     pub fn from_tokens(text: &str) -> Self {
         let mut filter = Self::none();
+        let mut marked = false;
         for token in text.split_whitespace() {
-            if let Some(class) = PickClass::from_token(token) {
+            if token == LINK_ROW_LIVE {
+                marked = true;
+            } else if let Some(class) = PickClass::from_token(token) {
                 filter.set(class, true);
             }
+        }
+        if !marked && !filter.is_none() {
+            filter.set(PickClass::Link, true);
         }
         filter
     }
@@ -342,22 +366,53 @@ mod tests {
         assert!(filter.allows(PickClass::Characters));
     }
 
-    /// The one class that is off by default, and the reason is that nothing can
-    /// pick it. If link picking lands and this test is not updated, the failure
-    /// is loud and points at the right paragraph.
     #[test]
-    fn links_are_off_by_default_because_nothing_can_pick_one_yet() {
-        assert!(!PickFilter::default().allows(PickClass::Link));
-        assert!(!PickClass::Link.on_by_default());
+    fn links_are_on_by_default() {
+        assert!(PickFilter::default().allows(PickClass::Link));
+        assert!(PickClass::Link.on_by_default());
     }
 
-    /// `all()` and `default()` are different kinds of claim and must not
-    /// silently converge — see `PickFilter::all`'s doc comment.
     #[test]
-    fn all_is_not_the_same_as_default() {
-        assert_ne!(PickFilter::all(), PickFilter::default());
+    fn a_link_annotation_is_the_link_row_and_nothing_else_is() {
+        assert_eq!(
+            PickClass::of_annot_subtype(AnnotKind::Markup, "Link"),
+            PickClass::Link
+        );
+        assert_eq!(
+            PickClass::of_annot_subtype(AnnotKind::Markup, "Square"),
+            PickClass::Markup
+        );
+        assert_eq!(
+            PickClass::of_annot_subtype(AnnotKind::CeDimension, "Line"),
+            PickClass::CeDimension
+        );
+    }
+
+    /// A line saved while Links could pick nothing never names `link`; reading
+    /// it as Links-off would keep the new capability switched off for every
+    /// operator who ever saved a filter.
+    #[test]
+    fn a_line_saved_before_links_could_be_picked_reads_with_links_on() {
+        // ui-text-exempt: persistence tokens under test, never displayed.
+        let old = PickFilter::from_tokens("text path markup");
+        assert!(old.allows(PickClass::Link));
+        assert!(old.allows(PickClass::Text));
+        assert!(!old.allows(PickClass::Image));
+    }
+
+    /// Links switched off after the row went live stays off.
+    #[test]
+    fn links_switched_off_now_stays_off() {
+        let saved = PickFilter::default().with(PickClass::Link, false);
+        let back = PickFilter::from_tokens(&saved.to_tokens());
+        assert!(!back.allows(PickClass::Link));
+        assert_eq!(back, saved);
+    }
+
+    #[test]
+    fn all_is_every_class() {
         assert!(PickFilter::all().is_all());
-        assert!(!PickFilter::default().is_all());
+        assert_eq!(PickFilter::all().count(), PickClass::COUNT);
     }
 
     /// Every class has a distinct slot. A duplicated index would make two rows
@@ -424,7 +479,8 @@ mod tests {
     #[test]
     fn an_unknown_token_is_skipped_and_the_rest_of_the_line_survives() {
         // ui-text-exempt: persistence tokens under test, never displayed.
-        let filter = PickFilter::from_tokens("text something-from-a-newer-build path");
+        let filter =
+            PickFilter::from_tokens("text something-from-a-newer-build path link-row-live");
         assert!(filter.allows(PickClass::Text));
         assert!(filter.allows(PickClass::Path));
         assert!(!filter.allows(PickClass::Image));
@@ -437,7 +493,7 @@ mod tests {
     #[test]
     fn an_unmentioned_class_is_off_rather_than_defaulted() {
         // ui-text-exempt: persistence token under test, never displayed.
-        let filter = PickFilter::from_tokens("text");
+        let filter = PickFilter::from_tokens("text link-row-live");
         assert!(filter.allows(PickClass::Text));
         for class in PickClass::ALL {
             if class != PickClass::Text {
@@ -470,7 +526,7 @@ mod tests {
     fn count_and_enabled_agree_with_allows() {
         let filter = PickFilter::default();
         assert_eq!(filter.count(), filter.enabled().len());
-        assert_eq!(filter.count(), PickClass::COUNT - 1); // every class but Link
+        assert_eq!(filter.count(), PickClass::COUNT);
         for class in filter.enabled() {
             assert!(filter.allows(class));
         }

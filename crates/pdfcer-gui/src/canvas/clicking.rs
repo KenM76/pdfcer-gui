@@ -211,12 +211,23 @@ pub fn click(
     // an annotation's geometry is its `/Rect`, four numbers in a
     // dictionary. A click on the 129,758-object benchmark sheet costs
     // the same as a click on a blank page.
-    let annot_hit =
-        if matches!(active_tool, crate::canvas::tool::CanvasTool::Select) && caps.author_markup {
-            crate::canvas::selection::annot::under_pointer(doc, page_index, point, map)
-        } else {
-            None
-        };
+    //
+    // **The pick filter's annotation rows**, and the mode once more for a link:
+    // a link is selected only in Edit, where it is not followed.
+    let annot_hit = if matches!(active_tool, crate::canvas::tool::CanvasTool::Select)
+        && caps.author_markup
+    {
+        crate::canvas::selection::annot::under_pointer(doc, page_index, point, map).filter(|hit| {
+            let class = pdfcer_gui_base::pick::PickClass::of_annot_subtype(
+                hit.target.kind,
+                &hit.target.subtype,
+            );
+            pick.allows(class)
+                && (class != pdfcer_gui_base::pick::PickClass::Link || caps.edit_content)
+        })
+    } else {
+        None
+    };
     //
     // The operator: *"I could add a yellow sticky note but even in read mode I
     // don't think I could figure out how to read it."*

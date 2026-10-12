@@ -34,8 +34,8 @@ around them.
 The engine gaps it found are G148–G161 in `ENGINE_BACKLOG.md`. These have a
 verb in the pin and no route yet:
 
-- **Links:** select, move, resize, delete and copy. `canvas::selection::annot`'s
-  `selectable_on` skips `Link`; check that `/QuadPoints` follow `/Rect`.
+- **Links:** select, move and resize are built and driven. Delete and copy
+  are not driven; check that `/QuadPoints` follow `/Rect` on a resize.
 - **Arrow-key nudge** for page objects and leaves inside a placed drawing
   (`move_objects`, `move_objects_in_form`); `canvas::moving::nudge` refuses
   them as not a markup.

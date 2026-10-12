@@ -1442,6 +1442,8 @@ pub mod typo_refusal;
 /// every count is already correct. Its header carries the argument.
 pub mod ui_scale;
 
+/// Drawing a link and repointing a selected one.
+pub mod links;
 pub mod undo_redo;
 pub mod widget_turn;
 

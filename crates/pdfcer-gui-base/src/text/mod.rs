@@ -128,6 +128,8 @@ pub mod inkpick;
 /// Pages ▸ Stamp ▸ Number pages…: its window and its receipts.
 /// Consumed by `pdfcer_gui::dialogs::labels`.
 pub mod labels;
+/// Every word of adding and editing a link.
+pub mod linkedit;
 /// Every word the Recognise-text surface says — the dialog that runs OCR and
 /// discloses what it inferred, and the offer the Find bar makes on a page with
 /// no text on it. Consumed by `pdfcer_gui::dialogs::ocr` and `find::bar`.

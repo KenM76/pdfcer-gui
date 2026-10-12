@@ -80,6 +80,7 @@ pub fn tab() -> Tab {
                 ribbon::group_edit_insert(),
                 [
                     large("edit.insert_image"),
+                    large("edit.insert_link"),
                     large("edit.insert_3d"),
                     large("edit.attachments"),
                 ],

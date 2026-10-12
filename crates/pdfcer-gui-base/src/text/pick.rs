@@ -108,8 +108,8 @@ pub fn class_tooltip(class: PickClass) -> &'static str {
         }
         PickClass::FormField => "Off: clicks pass through form fields, and none can be filled in.",
         PickClass::Link => {
-            "Links cannot be selected in this build. Clicking one in Read or Review \r
-             follows it instead. The row is here for when they can be selected."
+            "Off: clicks pass through links in Edit. Read and Review follow a link \
+             whatever this row says."
         }
         PickClass::Characters => {
             "Off: dragging across text no longer selects letters to copy. Clicking the \
@@ -145,14 +145,10 @@ mod tests {
         }
     }
 
-    /// The Links row must not promise what the build cannot do.
+    /// The Links row says the one thing it does not govern: following.
     #[test]
-    fn the_links_row_says_it_does_nothing_yet() {
-        assert!(
-            !PickClass::Link.on_by_default(),
-            "Link became pickable: rewrite class_tooltip(Link), which still says it cannot be"
-        );
-        assert!(class_tooltip(PickClass::Link).contains("cannot be selected"));
+    fn the_links_row_says_following_is_not_its_business() {
+        assert!(class_tooltip(PickClass::Link).contains("follow"));
     }
 
     /// The Dimensions row's tooltip must keep naming the distinction Rule 15

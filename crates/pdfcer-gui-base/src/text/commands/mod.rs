@@ -485,6 +485,15 @@ pub const fn edit_insert_image() -> CommandText {
     CommandText::new("Image…", "Place an image file on this page.")
 }
 
+/// `edit.insert_link`
+#[must_use]
+pub const fn edit_insert_link() -> CommandText {
+    CommandText::new(
+        "Link…",
+        "Draw a box on this page that goes to a page, a web address or a named destination.",
+    )
+}
+
 /// `edit.insert_3d`
 #[must_use]
 pub const fn edit_insert_3d() -> CommandText {

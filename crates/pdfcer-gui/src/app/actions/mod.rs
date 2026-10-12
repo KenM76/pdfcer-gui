@@ -51,6 +51,7 @@ pub mod bookmarks;
 /// A push button's picture: the picker, then `edit_widget`.
 mod buttonicon;
 mod caretannot;
+mod links;
 /// Where a Review mark lands: an annotation, or the page's own content.
 mod markupdest;
 /// Saving an embedded 3D model out to a file.

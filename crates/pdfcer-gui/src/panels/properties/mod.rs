@@ -59,6 +59,8 @@ pub mod geometry;
 // this panel keeps because of it.
 /// The selection's layer, and the Move to layer window.
 pub mod layer;
+/// A selected link's target and border.
+pub mod link;
 /// Restyling a markup that is already on the page — colour, line width and
 /// opacity, through `EditSession::set_markup_style`.
 mod markup;
@@ -249,6 +251,7 @@ fn body_sections(
     // meets in the source rather than which the operator sees. Markup is first
     // because it is the one that WRITES: the other two describe.
     let drew_markup = markup::section(ui, doc, actions);
+    let drew_link = link::section(ui, doc, actions);
     let drew_dimension = dimension::section(ui, doc, actions);
     // Directly under the two sections that restyle the selected annotation,
     // and above everything that describes a *content* object — because this is
@@ -327,6 +330,7 @@ fn body_sections(
     let something_drew = drew_dimension
         || drew_layer
         || drew_markup
+        || drew_link
         || drew_annot_delete
         || drew_annot_flags
         || drew_geometry

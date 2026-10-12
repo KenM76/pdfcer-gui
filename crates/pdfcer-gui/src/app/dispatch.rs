@@ -709,6 +709,20 @@ impl PdfcerApp {
                 }
                 images::insert(&mut self.dialogs, &self.status);
             }
+            // Insert ▸ Link: the box is drawn first, then the window asks where
+            // it goes.
+            "edit.insert_link" => {
+                if !self.capabilities().edit_content {
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed.
+                        format!("command-declined id={id} reason=mode-cannot-edit-content")
+                    });
+                    return;
+                }
+                if let Status::Open(doc) = &self.status {
+                    self.dialogs.link.request(doc.pages.len());
+                }
+            }
             // Insert ▸ 3D model: the picker runs in the apply arm, as Attach's does.
             "edit.insert_3d" => {
                 if !self.capabilities().edit_content {

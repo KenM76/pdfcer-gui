@@ -83,6 +83,7 @@ pub mod drop_pdf;
 pub mod import_text;
 pub mod insert_image;
 pub mod insert_pages;
+pub mod link;
 pub mod new_document;
 pub mod ocr;
 /// Recognise text's model list.
@@ -405,6 +406,10 @@ pub struct DialogsState {
     /// applied to an operand instead of to a result.
     insert_image: Option<insert_image::InsertImageDialog>,
 
+    /// The Add-link round trip. Document-scoped: it places a link on a page
+    /// of the open file.
+    pub link: link::LinkSlot,
+
     /// The Embed-fonts window, when one is open.
     ///
     /// **Document-scoped**: its whole content is a plan computed against the
@@ -644,6 +649,9 @@ impl DialogsState {
         &mut self,
         page: usize,
     ) -> Option<(crate::canvas::placing::PlaceKind, usize)> {
+        if self.link.take_request() {
+            return Some((crate::canvas::placing::PlaceKind::Link, page));
+        }
         let d = self.insert_image.as_mut()?;
         d.take_place_request()
             .then_some((crate::canvas::placing::PlaceKind::Image, page))
@@ -654,6 +662,7 @@ impl DialogsState {
         &mut self,
         kind: crate::canvas::placing::PlaceKind,
         rect: pdfcer_core::page_tree::Rect,
+        page: usize,
     ) {
         match kind {
             crate::canvas::placing::PlaceKind::Image => {
@@ -661,6 +670,7 @@ impl DialogsState {
                     d.place(rect);
                 }
             }
+            crate::canvas::placing::PlaceKind::Link => self.link.deliver(page, rect),
         }
     }
 
@@ -669,6 +679,7 @@ impl DialogsState {
     pub fn has_requester(&self, kind: crate::canvas::placing::PlaceKind) -> bool {
         match kind {
             crate::canvas::placing::PlaceKind::Image => self.insert_image.is_some(),
+            crate::canvas::placing::PlaceKind::Link => self.link.waiting(),
         }
     }
 
@@ -806,6 +817,7 @@ impl DialogsState {
         if self.insert_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_image = None;
         }
+        self.link.show(ctx, actions);
         // `prefs` on all three export windows — O196, *"the export windows
         // forget everything. every time I export a dxf I have to set it up
         // again."* Each writes its own group at its own Export press; the
@@ -1215,6 +1227,7 @@ impl DialogsState {
             self.model3d = None;
         }
         self.insert_image = None;
+        self.link.reset();
         self.drop_pdf = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built

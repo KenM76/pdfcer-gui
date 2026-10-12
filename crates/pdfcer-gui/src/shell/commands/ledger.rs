@@ -410,12 +410,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 218 → 222: the four Edit ▸ Arrange commands on page objects.
     // 222 → 228: the six Format ▸ Nodes commands.
     // 228 → 229: `format.replace_image`, Format ▸ Image.
+    // 229 → 230: `edit.insert_link`, Edit ▸ Insert.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        229 + 2 * usize::from(cfg!(feature = "signing"))
+        230 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "model-download"))
     );
@@ -837,10 +838,12 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 197 → 199: `view.move_to_new_window` and `view.move_to_window` name
     // `window-new` and `window-move`, drawn for them.
     // 199 → 200: `format.replace_image` names `replace-image`, drawn for it.
+    // 200 → 201: `edit.insert_link` names `pick-link`, shared with the pick
+    // filter's Link row.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        200 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        201 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

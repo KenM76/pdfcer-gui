@@ -575,10 +575,12 @@ impl PdfcerApp {
             // frame a stray click is most likely.
             if self.capabilities().author_markup
                 && doc.selection.annot().is_some_and(|annot| {
+                    // A link is `Markup` by kind and has no markup style;
+                    // `set_markup_style` refuses it by subtype.
                     matches!(
                         annot.target.kind,
                         crate::canvas::selection::annot::AnnotKind::Markup
-                    )
+                    ) && annot.target.subtype != "Link"
                 })
             {
                 set.set("selection.markup_restylable");

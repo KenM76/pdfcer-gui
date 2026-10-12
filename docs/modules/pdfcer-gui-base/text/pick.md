@@ -71,12 +71,11 @@ always off.
 
 ## Item notes
 
-### `fn the_links_row_says_it_does_nothing_yet`
+### `fn the_links_row_says_following_is_not_its_business`
 
-`PickClass::Link` is off by default because nothing can pick a link, and
-its tooltip is the only place the operator is told that. If link picking
-lands and this tooltip is not rewritten, the shell starts lying in the
-helpful direction — which is the direction nobody reports.
+The Links row decides only whether an Edit click selects a link. Read and
+Review follow a link whatever the row says, so the tooltip says so; without
+it, switching the row off reads as "links stop working".
 
 ### `fn filter_button`
 

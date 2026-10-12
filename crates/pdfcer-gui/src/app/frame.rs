@@ -1087,11 +1087,14 @@ impl eframe::App for PdfcerApp {
                 crate::canvas::placing::arm(&ctx, kind, page);
             }
             if let Some((kind, rect)) = crate::canvas::placing::take_result(&ctx) {
-                self.dialogs.deliver_placement(kind, rect);
+                self.dialogs.deliver_placement(kind, rect, page);
             }
             if let Some(kind) = crate::canvas::placing::take_cancelled(&ctx) {
-                // Deliberately nothing. See above.
-                let _ = kind;
+                // Nothing for a window that un-hides itself. The Add-link round
+                // trip has no window until the box is drawn, so its wait ends.
+                if kind == crate::canvas::placing::PlaceKind::Link {
+                    self.dialogs.link.cancelled();
+                }
             }
             // …and the invariant that closes every route nobody enumerated:
             // a placement pending for a window that has gone. Closing the

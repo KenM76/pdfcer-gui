@@ -1088,6 +1088,7 @@ impl PdfcerApp {
             // The bookmark family — add, rename, delete-with-its-subtree.
             //
             Action::Bookmark(action) => super::bookmarks::apply(doc, action),
+            Action::Link(action) => super::links::apply(doc, action),
             // The attachment family — attach, remove, save one out.
             //
             // One line, like its neighbours. What its module carries and this
