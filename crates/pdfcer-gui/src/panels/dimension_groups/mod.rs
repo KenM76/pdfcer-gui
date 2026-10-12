@@ -355,18 +355,8 @@ impl DimensionGroupsUi {
 
             // --- unit -------------------------------------------------------
             //
-            // Through `set_group_scale`, because a unit lives inside the group's
-            // `NumberFormat` and there is no narrower verb. That is a
-            // discoverability problem rather than a missing capability, and the
-            // engine deliberately carries no sugar for it: the path works, it is
-            // just not obvious, and making it obvious is a surface's job rather
-            // than an API's.
-            //
-            // The scale is **re-expressed in the new unit**, never carried over:
-            // a `Calibrated` scale is real units per point *in the group's unit*,
-            // so 5 mm/pt kept as-is under feet reads 1000 mm as "1000 ft". The
-            // real length every member measures must not move when only the unit
-            // does (`units::scale_in_unit`).
+            // `set_group_unit` re-expresses the calibration in the new unit, so
+            // every member keeps its real length (1000 mm reads 3.28 ft).
             ui.horizontal_wrapped(|ui| {
                 ui.label(t::unit_label());
                 let mut unit = group.format.unit;
@@ -388,21 +378,9 @@ impl DimensionGroupsUi {
                     });
                 crate::diag::ui_rect(REGION_UNIT_COMBO, combo.response.rect);
                 if unit != group.format.unit {
-                    actions.push(Action::Dimension(DimensionAction::SetGroupScale {
+                    actions.push(Action::Dimension(DimensionAction::SetGroupUnit {
                         group: group.id,
-                        scale: crate::units::scale_in_unit(group.scale, group.format.unit, unit),
-                        // `default_format` rather than mutating the group's own
-                        // `unit` field in place, because a `NumberFormat` is a unit
-                        // AND how its fractional part is written — and those travel
-                        // together for a reason. Millimetres in eighths, or inches
-                        // to six decimal places, are formats nobody's drawing uses;
-                        // carrying the old fraction mode across a unit change is
-                        // how an operator gets one.
-                        //
-                        // The precision is per-ce-dimension overridable from the
-                        // properties panel for the drawing that genuinely wants it,
-                        // which is where that decision belongs.
-                        format: unit.default_format(),
+                        unit,
                     }));
                 }
             });

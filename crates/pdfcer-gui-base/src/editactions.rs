@@ -220,6 +220,17 @@ pub enum DimensionAction {
         format: NumberFormat,
     },
 
+    /// **Show a group's ce dimensions in another unit**, keeping what they
+    /// measure: `EditSession::set_group_unit` re-expresses the calibration
+    /// and takes the unit's default format with the decimal marker kept.
+    /// One undo entry; every member regenerates.
+    SetGroupUnit {
+        /// The group whose unit changes.
+        group: GroupId,
+        /// The new display unit.
+        unit: Unit,
+    },
+
     /// **Create a dimension group** — a second answer to *"what scale is
     /// this drawn at?"* in one document.
     ///
@@ -806,6 +817,7 @@ impl DimensionAction {
         matches!(
             self,
             Self::SetGroupScale { .. }
+                | Self::SetGroupUnit { .. }
                 | Self::SetGroupStandard { .. }
                 | Self::SetGroupStyle { .. }
                 | Self::ToggleLayer { .. }

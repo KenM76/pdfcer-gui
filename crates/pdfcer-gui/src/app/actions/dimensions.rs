@@ -65,7 +65,7 @@ fn add_group(
             .dimension_model()
             .group(id)
             .map_or_else(|| unit.default_format(), |g| g.format);
-        let scale = crate::units::scale_in_unit(scale, from, unit);
+        let scale = scale.in_unit(from, unit);
         session.set_group_scale(id, scale, format)?;
         let folded = session.coalesce_last(2, pdfcer_core::edit::CommandKind::AddDimension);
         crate::diag::trace(|| {
@@ -134,6 +134,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
                 session
                     .set_group_scale(group, scale, format)
                     .map(|_| Vec::new())
+            });
+            trace_members_shown(doc, group);
+        }
+        DimensionAction::SetGroupUnit { group, unit } => {
+            super::apply::vector_edit(doc, "set-group-unit", 0, 1, |session| {
+                session.set_group_unit(group, unit).map(|_| Vec::new())
             });
             trace_members_shown(doc, group);
         }

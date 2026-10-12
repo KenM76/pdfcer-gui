@@ -153,7 +153,7 @@ oracle for a unit conversion.
 ### `fn add_group`
 
 `AddGroup` with a `scale_from` source adds the group, then sets its scale to
-the source's re-expressed in the new unit (`units::scale_in_unit`), and
+the source's re-expressed in the new unit (`ScaleState::in_unit`), and
 folds both into one undo entry with `coalesce_last(2, AddDimension)`. A fold
 the engine refuses leaves two undo steps and says so
 (`new_group_two_undos`); it is never silent. `author_into` queues the new

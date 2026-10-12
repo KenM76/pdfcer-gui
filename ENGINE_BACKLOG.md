@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **21 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
+## `wanted` — a real gap — **20 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -96,7 +96,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **ce dimension dash and opacity** — two more cascaded style properties, at the group tier: — `StyleDefaults::dash` and `StyleDefaults::opacity` are new; the per-dimension tier is drawn | **wanted, at the pin since v0.81.0; request G159.** A ce dimension's Properties override block draws Line style and Opacity rows (`dimensionoverrides::stroke_rows`), because `StyleProvenance::each()` grew to thirteen and the panel's completeness test requires a row per property. Owed: the same two at the group tier (`StyleDefaults::dash`, `StyleDefaults::opacity`) and a driven check. Its module is `pdfcer_core::dimension::dash`. |
-| **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **wanted, at the pin since v0.81.0; request G146.** The shell converts a group's scale on a unit change itself, in `units::scale_in_unit` (O288 item 3); a single ce dimension's own unit override now converts inside `resolve_style`. Owed: call `set_group_unit` and delete the helper. Its module is `pdfcer_core::edit::group_unit`. |
 
 ### Annotations & markup
 
@@ -192,7 +191,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **305 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **306 of 344** <!-- counted by tools/walk-engine-backlog.py, 2026-10-12; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -326,6 +325,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Move, insert or remove a vertex on a placed perimeter/path ce … | **Reachable — all three verbs are wired.** `app::actions::dimensions` calls `move_dimension_vertex`, `insert_dimension_vertex` and `remove_dimension_vertex`, raised by `canvas::dimdrag::count_edit` on a Ctrl-drag and a Ctrl+Shift-drag from a corner handle with the Points tool armed. `vertex_edit_preview` is asked on every frame — the engine's advice to *grey the menu item from `vertex_edit_preview` rather than catch the error*, applied to a gesture rather than to a menu — so the preview never promises a shape the release would refuse, and a refusal is a sentence (`Declined::VertexEditRefused`) rather than a silence. Still missing: the DISCOVERABLE form. The engine describes both verbs as what a right-click on a segment or vertex offers, and `canvas::menus` has no such items (`OPERATOR_REQUESTS.md` O132). |
 | **Author an Area ce dimension** — flag a closed Perimeter ce dimension to report its area, `vector::polygon_area`, the module `pdfcer_core::dimension::area`, `DimensionKind::is_area`, refusals `EditError::AreaNeedsClosedOutline` and `EditError::AreaNeedsThreeVertices` | **Reachable — Measure ▸ ce dimension ▸ Area (O280). `canvas::measure::perimeter::author_area` authors `DimensionKind::Perimeter { closed: true, area: true }`; the running area beside the pointer and in the status line is `vector::polygon_area` formatted by `dimension::format_area_measurement`, the label's own functions. The tool closes the ring before it authors, so neither refusal is reachable from it; a refusal from the switch below reaches the status line in the engine's words. |
 | **Switch a closed ce dimension between Perimeter and Area display** — `EditSession::set_dimension_area`, undo kind `CommandKind::SetDimensionArea` | **Reachable — `format.dimension_area` / `format.dimension_perimeter` on a closed perimeter ce dimension's right-click menu, and the Perimeter / Area choice in Properties, both raising `DimensionAction::SetArea`, one undo entry each. |
+| **A unit change keeps the calibration** — changing a ce dimension group's unit, `set_group_unit` | **Reachable — Manage groups' unit combo (G146).** `EditSession::set_group_unit` (the module `pdfcer_core::edit::group_unit`) from `app::actions::dimensions`; a group started from another's scale converts through `ScaleState::in_unit`. A single ce dimension's own unit override converts inside `resolve_style`. |
 
 ### Annotations & markup
 
@@ -579,7 +579,7 @@ The engine verbs a shape made part of the page (O288 item 2) still lacks.
 - **G143** — `set_object_paint` is colour only: a page path's width, dash and opacity cannot be set. Answered as `EditSession::set_object_stroke_style` with `vector::StrokeStyle`; wired in Properties ▸ Line and opacity.
 - **G144** — no `transform_objects_in_form`: a leaf inside a form cannot be resized or rotated. Answered as `EditSession::transform_objects_in_form`; wired to the resize grips and the rotate handle.
 - **G145** — no `copy_objects_in_form`: a leaf inside a form cannot be copied by itself. Answered as `EditSession::copy_objects_in_form`; wired to Copy and Cut.
-- **G146** — a unit change carried the scale number, not the calibration. Answered as `ScaleState::in_unit`, `EditSession::set_group_unit` and `resolve_style` converting a per-dimension override, at the pin since v0.81.0. The shell still converts in `units::scale_in_unit`; calling `set_group_unit` deletes the helper.
+- **G146** — a unit change carried the scale number, not the calibration. Answered as `ScaleState::in_unit`, `EditSession::set_group_unit` and `resolve_style` converting a per-dimension override, at the pin since v0.81.0. Wired to Manage groups' unit combo; the shell's own conversion is deleted.
 - **G147** — no object-taking text-run hit test: a text line inside a form was picked by a shell copy of the rule. Answered as `vector::hit_test_text_runs_of`; wired in `ObjectModelProvider::text_line_hits_of`.
 
 ## Filed requests from the O288 item 2 tool audit — not verdict rows

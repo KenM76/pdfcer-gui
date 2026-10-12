@@ -15,11 +15,12 @@ PASS when a `dimension-member-shown` line reads a value within 0.01 of
 
 ## Falsified
 
-With the panel sending `scale: group.scale` (the number carried over), the
-check FAILs with `text="1000.00 ft"`, Ken's defect. With the source restored
-it PASSes with `text="3.28 ft"`.
+With `SetGroupUnit` planted to call `set_group_scale` with the group's scale
+unchanged (the number carried over), the check FAILs with
+`text="1000.00 ft"`, Ken's defect. With the source restored it PASSes with
+`text="3.28 ft"` after a `set-group-unit` edit.
 
 ## What it does not prove
 
-A per-dimension unit override: the engine's `resolve_style` ignores the
-group calibration for one until the pin carries the G146 fix.
+A per-dimension unit override, which converts inside the engine's
+`resolve_style` and is not driven here.

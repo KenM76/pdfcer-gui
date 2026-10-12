@@ -322,8 +322,8 @@ answered once for all panels rather than eleven times.
 
 ### The unit combo converts the scale
 
-Choosing a unit sends `SetGroupScale` with the scale re-expressed through
-`units::scale_in_unit`, so every member keeps its real length (1000 mm reads
+Choosing a unit sends `SetGroupUnit`, which calls `set_group_unit`: the
+engine re-expresses the scale, so every member keeps its real length (1000 mm reads
 3.28 ft, not 1000.00 ft). The combo declares `dimension-groups.unit.combo`
 and each option `dimension-groups.unit.option.<token>`, which is how
 `changing_a_groups_unit_keeps_its_real_lengths` reaches them.
