@@ -236,6 +236,7 @@ pub mod group_unit_converts;
 pub mod leaftransform;
 pub mod markup_reshape;
 pub mod nodeshape;
+pub mod nudgecontent;
 pub mod replaceimage;
 pub mod restack;
 pub mod stroke_style;

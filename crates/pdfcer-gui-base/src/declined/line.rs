@@ -180,14 +180,6 @@ impl Declined {
             // page that did not move** — which is that catalog's whole
             // definition, and was widened from *a mark* to *something on the
             // page* by this very sentence.
-            //
-            // It lands two screens below `arrange::not_a_markup`, which
-            // tells an operator whose ARROW KEY did nothing to *drag this with
-            // the pointer instead* — false for exactly the selection this
-            // sentence refuses. That contradiction is written down in
-            // `text::arrange`'s header rather than papered over, and the two
-            // sentences being adjacent is the point: whoever reworks either
-            // one has to read it.
             Self::TextRunHasNoPositionOfItsOwn => {
                 crate::text::arrange::run_has_no_position_of_its_own()
             }

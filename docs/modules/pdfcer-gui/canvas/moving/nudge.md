@@ -1,20 +1,28 @@
 # `canvas::moving::nudge` — the arrow keys, and the one point they move
 
-Every drawing program moves a selected thing with the arrow keys, and until
-today this one did not: an operator who had placed a revision cloud two
-points too far left had to grab it with the pointer and drag, at whatever
-precision the zoom happened to give them. At 100 % that is a two-pixel drag
-nobody can make reliably, and the correction is the one edit an operator
-makes most often.
+A selected annotation moves by `AnnotAction::Move`. Anything else selected on
+the page — an object, a part, an anchor, a leaf of a placed drawing — moves by
+the action a pointer drag of the same displacement commits
+([`super::drag`] at `Phase::Complete`), with that drag's gate
+(`edit_content`), its eligibility and its refusals.
+
+## Page content takes the drag's commit, not a copy of it
+
+The drag's release already chooses the verb per rung (`MoveObjects`,
+`MovePart`, `MoveLeavesInForm`, ...), checks eligibility and words each
+refusal. A nudge that chose for itself would be a second table of the same
+decisions. So `nudge_content` hands the canvas-space step to `super::drag`
+and counts a press as moved when anything other than a
+`DeclineOnCanvas` was raised.
+
+The decomposition that call needs is built lazily. `canvas::modelneed`
+wants it on a frame carrying an arrow with page content selected
+(`Need::arrow_on_page_content`); an annotation nudge does not need it.
 
 ## Why this is small, and why it is in `canvas::moving` rather than in
 `canvas::keys`
 
 **Because the verb already exists and is already called.** A nudge is a
-⚠ **Annotations only.** `MANUAL.md` tells the operator the arrow keys nudge
-*"what is selected"*, and with a content object selected they do nothing and
-say nothing. `DEFECTS.md` D43.
-
 **delta**, and `EditSession::move_annotation` takes a delta —
 [`crate::app::actions::annot::AnnotAction::Move`] is raised by
 [`crate::canvas::annotdrag`] on the release of a pointer drag and this raises
@@ -165,7 +173,7 @@ would compile.
 
 ### `fn keys`
 
-Returns the number of `AnnotAction::Move`s raised, which is zero on every
+Returns the number of moves raised, which is zero on every
 frame that carries no arrow — the overwhelmingly common case, and it costs
 one modifier read and four event scans.
 

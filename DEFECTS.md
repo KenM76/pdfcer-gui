@@ -660,6 +660,17 @@ and nothing goes red.
 Two of the four sites were `detects:` lines, which print the stale figure in
 **every sweep report**: a wrong number gains readership as it ages.
 
+### D43 — RULE: an arrow key moves what a drag of the same distance would move
+
+`canvas::moving::nudge` moves an annotation by `AnnotAction::Move` and hands
+any other selection to `moving::drag` at `Phase::Complete`, so a nudge and a
+drag share one verb choice, one eligibility test and one set of refusals.
+`canvas::modelneed::Need::arrow_on_page_content` asks for the decomposition on
+an arrow's frame; without it the commit declines `NoObjectModel`. Enforced by
+`an_arrow_on_page_content_asks_for_the_object_model` and the driven
+`arrow_keys_move_a_selected_object_on_the_page` and
+`an_arrow_key_moves_a_part_of_a_placed_drawing`.
+
 ---
 
 ## Constraints
@@ -942,17 +953,6 @@ so a paste lands unselected and the next gesture starts from nothing.
 Every application in the class selects what it just pasted. The engine returns
 `PasteOutcome::objects_pasted`, and the paste appends, so the indices are
 derivable the same way the place path derives its one.
-
-### D43 — OPEN: arrow-key nudge moves annotations only, and `MANUAL.md` says otherwise
-
-`crates/pdfcer-gui/src/canvas/moving/nudge.rs` is built entirely on
-`EditSession::move_annotation`. `MANUAL.md:836` tells the operator the arrow
-keys *"Nudge what is selected one point — a quarter point with Ctrl"*.
-
-With a content object selected the keys do nothing and say nothing, which reads
-as a dead keyboard rather than an unsupported operand. Either the manual row
-names annotations, or the nudge routes a content selection through the transform
-verb the drag path already uses.
 
 ### D44 — OPEN: a resize grip is offered on objects the engine refuses to transform
 

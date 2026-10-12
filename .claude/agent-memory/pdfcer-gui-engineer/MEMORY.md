@@ -172,3 +172,4 @@
 - [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
 - [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — paragraph widening ate the OCR preview for 3 releases; re-drive neighbours.
 - [A missing feature surface SKIPs, not FAILs](feedback_harness_skip_masks_feature.md) — `press` on an absent region is a harness error; assert the surface drew first.
+- [Park drafts in D:\scratch](feedback_park_drafts_scratch.md) — never D:/temp; apply scripts and control exes live there too.

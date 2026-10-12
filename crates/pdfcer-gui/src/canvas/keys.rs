@@ -287,8 +287,7 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // **The arrow keys nudge the selected markup** — the gesture every
-    // drawing program has and this one did not.
+    // **The arrow keys nudge the selection.**
     //
     // It is read here rather than in `app::keyboard` for the reason Delete and
     // Escape are: a nudge acts on the **canvas selection**, and the keymap's
@@ -309,6 +308,8 @@ pub(super) fn canvas_keys(
         ctx,
         &crate::canvas::moving::nudge::Frame {
             page,
+            page_index,
+            targets,
             caps,
             edit_epoch,
         },

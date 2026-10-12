@@ -314,11 +314,22 @@ pub(super) fn interact(
         ctx.input(|i| i.key_pressed(Key::Delete) || i.key_pressed(Key::Backspace)),
         response.secondary_clicked(),
     );
+    let arrow_pressed = ctx.input(|i| {
+        [
+            Key::ArrowUp,
+            Key::ArrowDown,
+            Key::ArrowLeft,
+            Key::ArrowRight,
+        ]
+        .into_iter()
+        .any(|key| i.key_pressed(key))
+    });
     let needs_targets = crate::canvas::modelneed::Need {
         outcome: &outcome,
         secondary_clicked,
         measure_armed: active_tool.measure_kind().is_some(),
         delete_pressed,
+        arrow_pressed,
         selection: &selection,
     }
     .wanted();

@@ -136,6 +136,8 @@ fn nudged(
                 page,
                 caps,
                 edit_epoch: 0,
+                page_index: 0,
+                targets: None,
             },
             selection,
             &mut out,
@@ -371,6 +373,8 @@ fn a_real_focused_text_field_keeps_its_arrow_keys() {
                 page: Some(&page),
                 caps: Capabilities::FULL,
                 edit_epoch: 0,
+                page_index: 0,
+                targets: None,
             },
             &selection,
             &mut actions,
@@ -431,6 +435,8 @@ fn a_canvas_draft_keeps_its_arrow_keys() {
                 page: Some(&page),
                 caps: Capabilities::FULL,
                 edit_epoch: 0,
+                page_index: 0,
+                targets: None,
             },
             &selection,
             &mut actions,
@@ -540,9 +546,9 @@ fn a_mode_that_cannot_author_markup_nudges_nothing() {
     );
 }
 
-/// **Nothing selected is silent; page content selected is told.**
+/// **Nothing selected is silent; page content goes to the drag's commit.**
 #[test]
-fn an_empty_selection_says_nothing_and_page_content_says_something() {
+fn an_empty_selection_says_nothing_and_page_content_takes_the_drag_path() {
     let ctx = egui::Context::default();
     let page = test_page(612.0, 792.0, 0);
 
@@ -560,6 +566,8 @@ fn an_empty_selection_says_nothing_and_page_content_says_something() {
         "a stray arrow with nothing selected must not narrate"
     );
 
+    // No decomposition on this frame: the drag's commit declines it as
+    // `NoObjectModel` and raises no move.
     let actions = nudged(
         &ctx,
         arrows(Key::ArrowUp, Modifiers::NONE, 1),
@@ -567,15 +575,11 @@ fn an_empty_selection_says_nothing_and_page_content_says_something() {
         Capabilities::FULL,
         &object_selection(),
     );
-    assert!(actions.is_empty(), "{actions:?}");
-    let said = crate::app::actions::last_edit_disclosure(0)
-        .expect("a selected object and a pressed arrow is a question");
     assert!(
-        said.notes
+        actions
             .iter()
-            .any(|n| n == crate::text::arrange::not_a_markup()),
-        "it must say what DOES work — dragging: {:?}",
-        said.notes
+            .all(|a| matches!(a, Action::DeclineOnCanvas(_))),
+        "{actions:?}"
     );
 }
 

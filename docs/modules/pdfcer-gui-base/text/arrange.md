@@ -60,34 +60,6 @@ nothing relevant before the press, and silence after it is the shape this
 project keeps finding — a key that works everywhere else doing nothing here,
 with no way on screen to learn why.
 
-## The one contradiction inside this file, named rather than left
-for an operator to find
-
-[`not_a_markup`] answers an arrow key pressed on page content, and it says:
-
-> *“The arrow keys nudge a selected markup. **Drag this with the pointer
-> instead.**”*
-
-[`run_has_no_position_of_its_own`] and [`run_would_drag_the_next_line`]
-answer a drag on **one line inside a block of text** that this particular
-file will not let pdfcer move. So there is exactly one selection — a text
-run entered at the Part rung, in a document written that way — for which
-the first sentence sends the operator straight into the second. Press an
-arrow, be told to drag, drag, be told to press Escape.
-
-
-**It is recorded and not “fixed”, deliberately.** The obvious repair is to
-widen `not_a_markup` with an *unless it is one line of text* clause, and that
-would make the common case — a whole object, a whole annotation, anything the
-pointer really does move — read like a legal notice in order to pre-empt a
-case the very next gesture explains properly. Widening a true sentence is
-writing a new sentence, and the new one would be worse for everybody who is
-not in the narrow case.
-
-⇒ What the two owe each other is that they stay **findable together**, which
-is what this file is for. Whoever reworks either one now has to read this
-paragraph first.
-
 ## The rule every sentence follows
 
 [`crate::text::rotating`]'s, inherited verbatim: **name the thing the

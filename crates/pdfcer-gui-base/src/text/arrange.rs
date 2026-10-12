@@ -17,12 +17,6 @@ pub enum NudgeRefusal {
     /// refuse — the same ruling `pdfcer_gui::canvas::annotdrag` makes for the
     /// pointer, so a key and a drag cannot disagree about what locked means.
     Locked,
-    /// Something is selected on the page and it is **not a markup annotation** —
-    /// a line of the drawing, a text run, an image.
-    ///
-    /// See [`not_a_markup`] for why this is worded as a limit of today's build
-    /// rather than as a rule of the program.
-    NotAMarkup,
     /// A **ce dimension** is selected (rule 15). It is markup, it is selected,
     /// and it is refused — because moving one has to re-measure it, which is a
     /// different verb.
@@ -45,7 +39,6 @@ pub enum NudgeRefusal {
 pub const fn nudge_refusal(why: NudgeRefusal) -> Option<&'static str> {
     Some(match why {
         NudgeRefusal::Locked => locked_cannot_move(),
-        NudgeRefusal::NotAMarkup => not_a_markup(),
         NudgeRefusal::Dimension => dimension_use_the_pointer(),
         NudgeRefusal::DegeneratePage => degenerate_page(),
     })
@@ -56,26 +49,6 @@ pub const fn nudge_refusal(why: NudgeRefusal) -> Option<&'static str> {
 pub const fn locked_cannot_move() -> &'static str {
     "This mark is locked by the document, so it cannot be moved — by the arrow keys or by \
      dragging it."
-}
-
-/// **The arrow keys move a mark, and what is selected is not one.**
-///
-/// # Worded as *today*, and the reason is that it is true and will change
-///
-/// `pdfcer_gui::canvas::moving` moves page content on a drag through five verbs, and
-/// none of them is out of reach of a keystroke in principle. What is missing is
-/// `pdfcer_gui::canvas::modelneed`: the deeper rungs need the page's
-/// decomposition, a frame only builds one when something has said it needs one,
-/// and *"an arrow key was pressed"* is not yet one of the terms. A nudge that
-/// reached those rungs without that term would be the `NoObjectModel` defect
-/// this project has now shipped four times — a working verb, silently
-/// unreachable, reported as a limit of the document.
-///
-/// ⇒ So this says *"drag it"*, which works today on everything the arrow keys
-/// do not, rather than *"that cannot be moved"*, which would be false.
-#[must_use]
-pub const fn not_a_markup() -> &'static str {
-    "The arrow keys nudge a selected markup. Drag this with the pointer instead."
 }
 
 /// **A ce dimension is selected**, and the arrow keys will not move it.
@@ -250,7 +223,6 @@ mod tests {
     fn every_nudge_refusal_has_its_own_sentence() {
         let all = [
             NudgeRefusal::Locked,
-            NudgeRefusal::NotAMarkup,
             NudgeRefusal::Dimension,
             NudgeRefusal::DegeneratePage,
         ];
@@ -274,7 +246,6 @@ mod tests {
     fn no_sentence_speaks_in_the_file_formats_vocabulary() {
         let sentences = [
             locked_cannot_move(),
-            not_a_markup(),
             dimension_use_the_pointer(),
             degenerate_page(),
             already_there(true),

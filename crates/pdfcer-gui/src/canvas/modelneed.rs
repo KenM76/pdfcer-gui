@@ -36,6 +36,10 @@ pub struct Need<'a> {
     /// `canvas::keys` still reads the same key a few hundred lines later and
     /// this term cannot swallow the keystroke it is asking about.
     pub delete_pressed: bool,
+    /// Whether an arrow key is pressed on this frame, read with `key_pressed`
+    /// for `delete_pressed`'s reason. A page-content nudge commits through the
+    /// drag's release, which needs the model.
+    pub arrow_pressed: bool,
     /// The canvas selection, for the rung it is on.
     pub selection: &'a SelectionState,
 }
@@ -47,6 +51,7 @@ impl Need<'_> {
         self.secondary_clicked
             || self.measure_armed
             || self.delete_at_a_deeper_rung()
+            || self.arrow_on_page_content()
             || gesture_needs_model(self.outcome)
     }
 
@@ -54,6 +59,12 @@ impl Need<'_> {
     #[must_use]
     pub fn delete_at_a_deeper_rung(&self) -> bool {
         self.delete_pressed && self.selection.level() != SelectionLevel::Object
+    }
+
+    /// An arrow with page content selected. An annotation nudge needs no model.
+    #[must_use]
+    pub fn arrow_on_page_content(&self) -> bool {
+        self.arrow_pressed && !self.selection.is_empty() && self.selection.annot().is_none()
     }
 }
 

@@ -95,6 +95,7 @@ fn quiet<'a>(selection: &'a SelectionState, idle: &'a GestureOutcome) -> Need<'a
         secondary_clicked: false,
         measure_armed: false,
         delete_pressed: false,
+        arrow_pressed: false,
         selection,
     }
 }
@@ -149,6 +150,28 @@ fn a_delete_at_the_object_rung_pays_for_nothing() {
          filter over four integers, and a page that will not decompose must stay deletable \
          at the rung where deletion needs no decomposition at all"
     );
+}
+
+/// An arrow with page content selected asks for the model at every rung: the
+/// nudge commits through the drag's release, which declines `NoObjectModel`
+/// without it. An arrow with nothing selected pays for nothing.
+#[test]
+fn an_arrow_on_page_content_asks_for_the_object_model() {
+    let idle = GestureOutcome::Idle;
+    for selection in [at_object_rung(), at_part_rung(), at_node_rung()] {
+        let need = Need {
+            arrow_pressed: true,
+            ..quiet(&selection, &idle)
+        };
+        assert!(need.arrow_on_page_content());
+        assert!(need.wanted());
+    }
+    let empty = SelectionState::default();
+    let need = Need {
+        arrow_pressed: true,
+        ..quiet(&empty, &idle)
+    };
+    assert!(!need.wanted(), "a stray arrow must not decompose the page");
 }
 
 /// A deeper rung on its own — with no key pressed — asks for nothing.

@@ -1,11 +1,9 @@
 //! # `canvas::moving::nudge` — the arrow keys, and the one point they move
 //!
-//! Every drawing program moves a selected thing with the arrow keys, and until
-//! today this one did not: an operator who had placed a revision cloud two
-//! points too far left had to grab it with the pointer and drag, at whatever
-//! precision the zoom happened to give them. At 100 % that is a two-pixel drag
-//! nobody can make reliably, and the correction is the one edit an operator
-//! makes most often.
+//! A selected annotation moves by `AnnotAction::Move`; anything else selected
+//! on the page — objects, parts, anchors, leaves of a placed drawing — moves by
+//! the action a pointer drag of the same displacement commits
+//! ([`super::drag`] at [`Phase::Complete`]), with that drag's refusals.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/moving/nudge.md`.
 //!
@@ -27,9 +25,8 @@
 //!   cancel. Escape's six claimants are listed in [`crate::canvas::keys`] and a
 //!   nudge is not among them; the way back is `Ctrl+Z`, which is what every
 //!   editor offers for a completed edit.
-//! - D4 one-gesture-one-undo: satisfied. One press raises exactly one
-//!   `AnnotAction::Move`, which `EditSession::move_annotation` records as one
-//!   command. See the section above on auto-repeat, which is the one place this
+//! - D4 one-gesture-one-undo: satisfied. One press raises exactly one move
+//!   action, which the engine records as one command. See the section above on auto-repeat, which is the one place this
 //!   row needed a decision rather than an observation.
 //! - D5 modifiers-constrain: **satisfied by having nothing to constrain.** An
 //!   arrow is one axis by construction, so Shift is deliberately unbound here
@@ -58,7 +55,9 @@ use pdfcer_core::page_tree::Page;
 use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
 use crate::app::modes::Capabilities;
+use crate::canvas::gesture::Phase;
 use crate::canvas::selection::{AnnotKind, SelectionState};
+use crate::panels::objects::provider::ObjectModelProvider;
 use crate::text::arrange::NudgeRefusal;
 
 /// **The bare-arrow step, in PDF points.**
@@ -108,8 +107,14 @@ pub(crate) struct Frame<'a> {
     /// The page the selection is on, for the coordinate crossing. `None` for a
     /// frame with no page, which declines rather than guessing.
     pub page: Option<&'a Page>,
-    /// What the mode permits. `author_markup` is the gate, matching where the
-    /// pointer drag's gate is and where the Delete key's is.
+    /// The index of [`Self::page`], for a page-content move.
+    pub page_index: usize,
+    /// The page's decomposition, which a page-content move needs exactly as a
+    /// drag does. `canvas::modelneed` asks for it on a frame carrying an arrow
+    /// with page content selected; `None` declines as `NoObjectModel`.
+    pub targets: Option<&'a ObjectModelProvider>,
+    /// What the mode permits: `author_markup` for an annotation, `edit_content`
+    /// for page content, matching the pointer drag's gates.
     pub caps: Capabilities,
     /// The revision on screen, for stamping a refusal's sentence. See
     /// [`crate::app::actions::record_note`] on why the *current* epoch is the
@@ -187,25 +192,16 @@ fn nudge_once(
     actions: &mut Vec<Action>,
 ) -> bool {
     let Some(annot) = selection.annot() else {
-        // Two states share this branch and only one of them is silent, which
-        // is the split `crate::text::arrange::NudgeRefusal`'s own doc argues:
-        //
-        // * **nothing selected** — silent. The arrow keys are pressed
-        //   constantly for reasons that are not about a selection, and a bar
-        //   that said "select something first" on every stray press would stop
-        //   being read.
-        // * **page content selected** — a sentence. The operator picked an
-        //   object out of the drawing and pressed a key every drawing program
-        //   binds; silence there is the shape this project keeps finding.
+        // Nothing selected is silent: the arrow keys are pressed constantly
+        // for reasons that are not about a selection.
         if selection.is_empty() {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("{TRACE}-declined reason=nothing-selected")
             });
-        } else {
-            refuse(frame, selection, NudgeRefusal::NotAMarkup);
+            return false;
         }
-        return false;
+        return nudge_content(frame, selection, canvas, actions);
     };
 
     // Rule 15, guarded by the `AnnotKind` match the compiler checks rather
@@ -275,6 +271,37 @@ fn nudge_once(
         dy: delta.dy,
     }));
     true
+}
+
+/// Page content: the move a drag of `canvas` would commit, and its refusals.
+fn nudge_content(
+    frame: &Frame<'_>,
+    selection: &SelectionState,
+    canvas: egui::Vec2,
+    actions: &mut Vec<Action>,
+) -> bool {
+    if !frame.caps.edit_content {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("{TRACE}-declined reason=mode-cannot-edit-content")
+        });
+        return false;
+    }
+    let before = actions.len();
+    // The hold preview is dropped: a one-point step needs no ghost while the
+    // raster catches up, and `keys` has no document to hand it to.
+    let _ = super::drag(
+        canvas,
+        Phase::Complete,
+        selection,
+        frame.page_index,
+        frame.targets,
+        frame.page,
+        actions,
+    );
+    actions[before..]
+        .iter()
+        .any(|action| !matches!(action, Action::DeclineOnCanvas(_)))
 }
 
 /// Say why a nudge did nothing — on the status row **and** on the trace.

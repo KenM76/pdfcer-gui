@@ -36,9 +36,6 @@ verb in the pin and no route yet:
 
 - **Links:** select, move and resize are built and driven. Delete and copy
   are not driven; check that `/QuadPoints` follow `/Rect` on a resize.
-- **Arrow-key nudge** for page objects and leaves inside a placed drawing
-  (`move_objects`, `move_objects_in_form`); `canvas::moving::nudge` refuses
-  them as not a markup.
 - **Typed X and Y** for a leaf inside a placed drawing (`move_objects_in_form`)
   in Properties ▸ geometry.
 - **Align and Distribute** for leaves inside a placed drawing
