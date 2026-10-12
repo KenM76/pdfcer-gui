@@ -128,6 +128,18 @@ of `/Subtype` strings. `pdfcer-core` refuses both verbs by name for one —
 route a measurement into a verb that scales its rectangle and leaves the
 number it displays saying something else.
 
+## A part of a placed drawing
+
+`single_target` picks the subject: the one selected page object, or, when no
+page object is selected, the one selected part of a placed drawing
+(`TargetId::Leaf`). Both read their anchors through
+`object_node_points_of`, which already reports a part in page space, so the
+fields mean the same thing for both. Apply routes a position change through
+`translate`: `MoveLeavesInForm` for a part (`move_objects_in_form`, which
+edits the drawing everywhere it is placed) and `MoveSelection` for a page
+object. A size change is unchanged — `resizing::action` already sends a part
+to `transform_objects_in_form`. Driven: `typed_x_moves_a_part_of_a_placed_drawing`.
+
 ## What this deliberately does NOT offer
 
 - **Rotation.** `EditSession` has no rotate verb, and expressing one as

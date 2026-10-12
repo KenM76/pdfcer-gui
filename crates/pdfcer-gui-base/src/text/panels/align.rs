@@ -362,6 +362,13 @@ pub const fn circle_coords_note() -> &'static str {
     "Points from the sheet's top-left corner, y down; 0° points right, 90° down."
 }
 
+/// Circular with *Rotate objects* on parts of a placed drawing.
+#[must_use]
+pub const fn rotate_in_form() -> &'static str {
+    "Parts of a placed drawing cannot each be turned yet. Clear Rotate objects to arrange \
+     them without turning, or select the whole drawing."
+}
+
 /// Said off-canvas when the reference circle/ellipse is not one.
 #[must_use]
 pub const fn not_an_ellipse(first: bool) -> &'static str {

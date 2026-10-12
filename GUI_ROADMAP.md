@@ -36,10 +36,6 @@ verb in the pin and no route yet:
 
 - **Links:** select, move and resize are built and driven. Delete and copy
   are not driven; check that `/QuadPoints` follow `/Rect` on a resize.
-- **Typed X and Y** for a leaf inside a placed drawing (`move_objects_in_form`)
-  in Properties ▸ geometry.
-- **Align and Distribute** for leaves inside a placed drawing
-  (`move_objects_each_in_form`).
 - **A typed rotation angle** for page objects (`transform_objects`).
 
 ---

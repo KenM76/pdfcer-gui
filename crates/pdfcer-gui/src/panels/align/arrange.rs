@@ -135,6 +135,9 @@ pub enum CircleRefusal {
     NotAnEllipse,
     /// Nothing would move.
     NothingMoves,
+    /// *Rotate objects* on parts of a placed drawing: the engine has no
+    /// per-part transform inside a form.
+    RotateInForm,
 }
 
 /// Circular's action.
@@ -160,7 +163,7 @@ pub fn circular_plan(
             let object = m
                 .objects
                 .get(pos)
-                .and_then(|&i| provider.page_objects().objects.get(i))
+                .and_then(|&i| super::object_in(provider.page_objects(), m.in_form, i))
                 .ok_or(CircleRefusal::NotAnEllipse)?;
             let points = ellipse_chain(object, sheet).ok_or(CircleRefusal::NotAnEllipse)?;
             let found = arrange::ellipse_from_points(&points).ok_or(CircleRefusal::NotAnEllipse)?;
@@ -171,6 +174,9 @@ pub fn circular_plan(
     if !circle.rotate {
         let deltas = placements.iter().map(|p| (p.dx, p.dy)).collect();
         return moves_action(doc, m, deltas, "circular").ok_or(CircleRefusal::NothingMoves);
+    }
+    if m.in_form {
+        return Err(CircleRefusal::RotateInForm);
     }
     let to_canvas = canvas_map(sheet).ok_or(CircleRefusal::NothingMoves)?;
     let to_page = to_canvas.inverse().ok_or(CircleRefusal::NothingMoves)?;
@@ -413,6 +419,9 @@ pub fn circular_tab(
             ),
             Err(CircleRefusal::NothingMoves) => {
                 decline(doc, "Circular", "nothing-moves", t::already_aligned());
+            }
+            Err(CircleRefusal::RotateInForm) => {
+                decline(doc, "Circular", "rotate-in-form", t::rotate_in_form());
             }
         }
     }

@@ -98,6 +98,17 @@ pub enum VectorAction {
         /// The gesture, for the trace: `align`, `distribute`, `rearrange`.
         gesture: &'static str,
     },
+    /// [`Self::MoveEach`] for parts of one placed drawing —
+    /// `EditSession::move_objects_each_in_form`. Indices are leaf indices;
+    /// deltas are page space, as the leaves' geometry is.
+    MoveEachInForm {
+        /// The 0-based page.
+        page: usize,
+        /// `(leaf, dx, dy)` per part; zero moves are dropped before this.
+        moves: Vec<(usize, f64, f64)>,
+        /// The gesture, for the trace.
+        gesture: &'static str,
+    },
     /// Transform several page objects, **each by its own PAGE-space
     /// matrix**, as one undo step, all-or-nothing — what Circular arrange
     /// with *Rotate objects* commits.

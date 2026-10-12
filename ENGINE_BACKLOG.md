@@ -602,6 +602,7 @@ Each verified absent in the pin and on engine main before filing.
 - **G161** — a link cannot be created, re-targeted or re-bordered. Answered as `EditSession::add_link`, `set_link_target` and `set_link_border`; wired as Edit ▸ Insert ▸ Link and a link's Properties.
 - **G178** — a link's target and border cannot be read back in the form the verbs take. Workaround report; `pdfcer_gui_base::linkread` parses the link dictionary.
 - **G179** — named destinations can be counted but not listed, so the shell types a name rather than offering a list.
+- **G180** — no `transform_objects_each_in_form`, so Circular with *Rotate objects* on parts of a placed drawing is declined; without rotation it commits through `move_objects_each_in_form`.
 - **G177** — a widget's free angle and `/CA` cannot be read: `EditSession::free_turn` is private and `forms::Widget` carries neither. Workaround report; `pdfcer_gui_base::widgetread` parses the appearance `/Matrix` and the widget dictionary.
 - **G174** — `set_object_stroke_style` takes lengths in each path's user space, so "5 pt" on a selection at two scales needs a call per scale. Workaround report; the shell groups and folds meanwhile.
 - **G175** — no in-form split plan: `text_object_split_points` returns cuts without the line-inference disclosure, so the shell words it (`text::runsplit::lines_inferred`). Workaround report.

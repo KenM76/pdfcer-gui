@@ -233,6 +233,7 @@ pub mod form_part_delete;
 pub mod form_style;
 pub mod form_text_reshape;
 pub mod group_unit_converts;
+pub mod leafplace;
 pub mod leaftransform;
 pub mod markup_reshape;
 pub mod nodeshape;

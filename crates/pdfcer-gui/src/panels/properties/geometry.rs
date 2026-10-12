@@ -10,6 +10,7 @@ use pdfcer_core::vector::Point;
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
 use crate::canvas::resizing;
+use crate::canvas::target::TargetId;
 use crate::text::panels::properties as t;
 use pdfcer_gui_base::entry;
 
@@ -24,6 +25,9 @@ pub const REGION: &str = "properties.geometry"; // ui-text-exempt: diagnostic re
 
 /// The **Width** field's own region.
 pub const WIDTH_REGION: &str = "properties.geometry.width"; // ui-text-exempt: diagnostic region name
+
+/// The **X** field's own region.
+pub const X_REGION: &str = "properties.geometry.x"; // ui-text-exempt: diagnostic region name
 
 /// The **Apply** button's own region.
 pub const APPLY_REGION: &str = "properties.geometry.apply"; // ui-text-exempt: diagnostic region name
@@ -99,6 +103,8 @@ pub enum Subject {
     /// draft stamped with a position would survive a delete somewhere else on
     /// the page and then describe a different comment.
     Annot(ObjId),
+    /// A part of a placed drawing, by index into the page's leaf list.
+    Leaf(usize),
 }
 
 /// The axis-aligned bounds of a path object, in PDF user space.
@@ -379,15 +385,14 @@ pub fn section(
         return annot::section(ui, doc, &annot.target, draft, actions);
     }
     let page = doc.view.page_index;
-    let objects = doc.selection.object_indices_on(page);
-    let [object] = objects.as_slice() else {
+    let Some((target, subject)) = single_target(doc, page) else {
         return false;
     };
-    let object = *object;
     let Some(provider) = doc.page_objects() else {
         return false;
     };
-    let points = provider.object_node_points(object);
+    // A leaf's anchors are already in page space, as a page object's are.
+    let points = provider.object_node_points_of(target);
     let Some(bounds) = Bounds::of(&points) else {
         return false;
     };
@@ -399,7 +404,7 @@ pub fn section(
     // `None`: a page-content object has no angle. It is turned by moving its
     // anchors, not by an appearance matrix, so there is no single number that
     // describes its orientation and this panel does not invent one.
-    draft.sync(page, Subject::Object(object), doc.edit_epoch, bounds, None);
+    draft.sync(page, subject, doc.edit_epoch, bounds, None);
 
     //
     // The Properties panel is a `ScrollArea`, and in an ordinary dock layout
@@ -437,7 +442,14 @@ pub fn section(
     // per-object lock. `/F` bit 8 is an ANNOTATION flag (§12.5.3 Table 165) and
     // has no counterpart in a content stream, so there is no state in which
     // these four are drawn and dead.
-    field(ui, t::geometry_x(), &mut draft.x, None, None, POINTS);
+    field(
+        ui,
+        t::geometry_x(),
+        &mut draft.x,
+        Some(X_REGION),
+        None,
+        POINTS,
+    );
     field(ui, t::geometry_y(), &mut draft.y, None, None, POINTS);
     field(
         ui,
@@ -489,15 +501,7 @@ pub fn section(
     if response.clicked() {
         let plan = plan(draft, bounds);
         if let Some((dx, dy)) = plan.translate {
-            actions.push(
-                VectorAction::MoveSelection {
-                    page,
-                    objects: vec![object],
-                    dx,
-                    dy,
-                }
-                .into(),
-            );
+            actions.push(translate(page, target, dx, dy));
         }
         if let Some((pivot, factors)) = plan.scale {
             // Routed through `resizing::action` rather than assembled here,
@@ -529,6 +533,40 @@ pub fn section(
     //
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     true
+}
+
+/// The one page object the fields describe, or, with no page object
+/// selected, the one part of a placed drawing.
+fn single_target(doc: &OpenDoc, page: usize) -> Option<(TargetId, Subject)> {
+    let objects = doc.selection.object_indices_on(page);
+    match objects.as_slice() {
+        [object] => Some((TargetId::Object(*object as u64), Subject::Object(*object))),
+        [] => match doc.selection.leaf_indices_on(page).as_slice() {
+            [leaf] => Some((TargetId::Leaf(*leaf as u64), Subject::Leaf(*leaf))),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// The typed move: `move_objects` for a page object, `move_objects_in_form`
+/// for a part, both taking a page-space displacement.
+fn translate(page: usize, target: TargetId, dx: f64, dy: f64) -> Action {
+    match target {
+        TargetId::Leaf(_) => VectorAction::MoveLeavesInForm {
+            page,
+            leaves: target.leaf_index().into_iter().collect(),
+            dx,
+            dy,
+        },
+        TargetId::Object(_) => VectorAction::MoveSelection {
+            page,
+            objects: target.page_object_index().into_iter().collect(),
+            dx,
+            dy,
+        },
+    }
+    .into()
 }
 
 /// One labelled numeric field.

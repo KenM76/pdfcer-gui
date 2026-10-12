@@ -187,6 +187,15 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 move_each(doc, page, &moves, gesture);
             }
         }
+        VectorAction::MoveEachInForm {
+            page,
+            moves,
+            gesture,
+        } => {
+            if !moves.is_empty() {
+                move_each_in_form(doc, page, &moves, gesture);
+            }
+        }
         VectorAction::TransformEach {
             page,
             transforms,
@@ -752,6 +761,27 @@ fn move_each(
             "move-each-applied gesture={gesture} page={page} moved={moved} of={n} moves={}",
             asked.join(";")
         )
+    });
+}
+
+/// Commit [`VectorAction::MoveEachInForm`]: one `move_objects_each_in_form`
+/// call, one undo step, all-or-nothing.
+fn move_each_in_form(
+    doc: &mut crate::app::state::OpenDoc,
+    page: usize,
+    moves: &[(usize, f64, f64)],
+    gesture: &'static str,
+) {
+    let n = moves.len();
+    let mut moved = 0_usize;
+    super::apply::vector_edit_on_page(doc, "move-each-in-form", page, n, |session| {
+        let outcome = session.move_objects_each_in_form(page, moves)?;
+        moved = n;
+        Ok::<_, pdfcer_core::edit::EditError>(outcome.disclosures)
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("move-each-in-form-applied gesture={gesture} page={page} moved={moved} of={n}")
     });
 }
 

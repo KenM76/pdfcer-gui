@@ -15,7 +15,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const INVOKE: &str = "mode.edit,file.properties";
+pub(super) const INVOKE: &str = "mode.edit,file.properties";
 const MOVED: &str = "canvas-move"; // ui-text-exempt: a trace event name, never displayed
 const DECLINED: &str = "canvas-move-declined"; // ui-text-exempt: a trace event name, never displayed
 const SHELL_DECLINED: &str = "canvas-decline"; // ui-text-exempt: a trace event name, never displayed
@@ -24,7 +24,7 @@ const FORM_FIXTURE: &str = "../../fixtures/half-scale-form.pdf";
 /// On the line inside the half-scale drawing, page space.
 const ON_THE_LINE: (f64, f64) = (120.0, 95.0);
 const GEOMETRY: &str = "geometry-draft"; // ui-text-exempt: a trace event name, never displayed
-const BOXES: Fixture = Fixture {
+pub(super) const BOXES: Fixture = Fixture {
     file: "overlapping-boxes.pdf",
     method: "Rebuild it with `python fixtures/overlapping-boxes.PROVENANCE.py`.",
     page: PageGeometry {
@@ -33,7 +33,7 @@ const BOXES: Fixture = Fixture {
     },
 };
 /// Inside the red box only, page space.
-const RED_ONLY: (f64, f64) = (80.0, 80.0);
+pub(super) const RED_ONLY: (f64, f64) = (80.0, 80.0);
 /// The red box's origin as Properties shows it, before any press.
 const RED_ORIGIN: &str = "x=60.00 y=60.00";
 
@@ -131,7 +131,7 @@ fn drive(
     Ok(None)
 }
 
-fn last_geometry(session: &Session, mark: usize) -> Result<String> {
+pub(super) fn last_geometry(session: &Session, mark: usize) -> Result<String> {
     Ok(session
         .trace()?
         .last_after(GEOMETRY, mark)

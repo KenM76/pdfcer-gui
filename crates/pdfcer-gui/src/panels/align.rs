@@ -4,12 +4,15 @@
 //! Boxes are measured in canvas space (what the operator sees, `/Rotate`
 //! applied), handed to `pdfcer_gui_base::alignlayout`, and the per-object
 //! canvas deltas come back as page-space moves in one
-//! [`VectorAction::MoveEach`]. `ALIGN_AND_DISTRIBUTE.md` maps each Inkscape
+//! [`VectorAction::MoveEach`] — or, when every selected item is a part of
+//! one placed drawing, [`VectorAction::MoveEachInForm`]. Circular with
+//! *Rotate objects* on parts is declined: no per-part transform verb (G180).
+//! `ALIGN_AND_DISTRIBUTE.md` maps each Inkscape
 //! control; `docs/reference/inkscape-align-and-distribute.md` is the spec.
 
 use egui::{Pos2, Ui, Vec2};
 use pdfcer_core::page_tree::Page;
-use pdfcer_core::vector::{Bounds, Point, VectorObject};
+use pdfcer_core::vector::{Bounds, PageObjects, Point, VectorObject};
 use pdfcer_gui_base::alignlayout::{
     self as layout, Axis, Bx, Edge, Frame, RelativeTo, Spacing, rearrange,
 };
@@ -233,7 +236,10 @@ impl Op {
 /// boxes, text baseline origins, and the page and drawing frames.
 pub struct Measured {
     pub page: usize,
+    /// Paint-order indices, or leaf indices when [`Self::in_form`].
     pub objects: Vec<usize>,
+    /// The selection is parts of a placed drawing and no page object.
+    pub in_form: bool,
     pub boxes: Vec<Bx>,
     pub anchors: Vec<Option<(f64, f64)>>,
     pub frame: Frame,
@@ -274,20 +280,43 @@ fn text_anchor(object: &VectorObject, page: &Page) -> Option<(f64, f64)> {
     Some((p.x.into(), p.y.into()))
 }
 
+/// Object `i` of the selection's own list: a part's object when `in_form`.
+#[must_use]
+pub fn object_in(objects: &PageObjects, in_form: bool, i: usize) -> Option<&VectorObject> {
+    if in_form {
+        objects.leaves.get(i).map(|leaf| &leaf.object)
+    } else {
+        objects.objects.get(i)
+    }
+}
+
 /// Measure what the panel acts on, or `None` when nothing on the current
-/// page is selected at the Object rung.
+/// page is selected at the Object rung. A selection of parts of a placed
+/// drawing and no page object is measured from the parts, whose geometry is
+/// already in page space.
 #[must_use]
 pub fn measure(doc: &OpenDoc) -> Option<Measured> {
     let page = doc.view.page_index;
     if doc.selection.level() != SelectionLevel::Object {
         return None;
     }
-    let order: Vec<usize> = doc
+    let picked: Vec<_> = doc
         .selection
         .in_selection_order()
         .into_iter()
         .filter(|e| e.page == page)
-        .filter_map(|e| e.object.page_object_index())
+        .map(|e| e.object)
+        .collect();
+    let in_form = !picked.is_empty() && picked.iter().all(|t| t.is_leaf());
+    let order: Vec<usize> = picked
+        .iter()
+        .filter_map(|t| {
+            if in_form {
+                t.leaf_index()
+            } else {
+                t.page_object_index()
+            }
+        })
         .collect();
     if order.is_empty() {
         return None;
@@ -307,7 +336,9 @@ pub fn measure(doc: &OpenDoc) -> Option<Measured> {
     let mut boxes = Vec::with_capacity(order.len());
     let mut anchors = Vec::with_capacity(order.len());
     for i in order {
-        let Some(object) = all.get(i) else { continue };
+        let Some(object) = object_in(provider.page_objects(), in_form, i) else {
+            continue;
+        };
         let Some(b) = canvas_box(object.page_bbox(), sheet) else {
             continue;
         };
@@ -318,6 +349,7 @@ pub fn measure(doc: &OpenDoc) -> Option<Measured> {
     Some(Measured {
         page,
         objects,
+        in_form,
         boxes,
         anchors,
         frame: Frame {
@@ -388,10 +420,18 @@ fn moves_action(
         })
         .collect();
     (!moves.is_empty()).then(|| {
-        VectorAction::MoveEach {
-            page: m.page,
-            moves,
-            gesture,
+        if m.in_form {
+            VectorAction::MoveEachInForm {
+                page: m.page,
+                moves,
+                gesture,
+            }
+        } else {
+            VectorAction::MoveEach {
+                page: m.page,
+                moves,
+                gesture,
+            }
         }
         .into()
     })
