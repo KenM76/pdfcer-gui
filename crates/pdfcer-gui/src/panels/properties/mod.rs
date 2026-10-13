@@ -52,6 +52,8 @@ pub mod fieldextras;
 pub mod fieldscripts;
 pub mod formfield;
 pub mod geometry;
+/// A radio button's group, and moving it into another.
+pub mod radiogroup;
 // The document's own properties are `crate::panels::docprops`, a panel of
 // its own, and never a section here: a block that draws with no reference to
 // the selection is on screen whenever nothing else has anything to say. See

@@ -381,6 +381,9 @@ pub mod fonts;
 /// is selectable. Consumed by `crate::app::status` and driven by
 /// `crate::canvas::pick`.
 pub mod pick;
+/// The words for putting a radio button into a group: the paste
+/// confirmation and the Properties row.
+pub mod radiogroup;
 /// The sentence a document that reaches outside itself earns — a submit
 /// button, a launch action, a script that runs on open. Its header carries the
 /// two opposite ways to word it wrongly.

@@ -301,6 +301,20 @@ pub enum FieldAction {
         /// move them somewhere unstated.
         order: Vec<pdfcer_core::object::ObjId>,
     },
+    /// **Move one radio button into the radio group `to`** — another field's
+    /// member, or the first of a new group when no field is named `to`. The
+    /// button keeps its place and look and takes an export value no member of
+    /// `to` uses; the old widget goes in the same undo step.
+    JoinRadioGroup {
+        /// The radio field the button belongs to now.
+        field: String,
+        /// Which of its widgets.
+        widget: usize,
+        /// The page the widget is on, 0-based.
+        page: usize,
+        /// The group to move it into.
+        to: String,
+    },
     /// **Delete one widget of the selected field**, leaving the field itself.
     DeleteWidget {
         /// The field's fully-qualified name.

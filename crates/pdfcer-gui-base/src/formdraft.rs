@@ -194,6 +194,20 @@ impl Remembered {
     /// placed on a document that already has `existing` field names.
     #[must_use]
     pub fn next(&self, kind: FormFieldKind, existing: &[String]) -> Draft {
+        self.next_in(kind, existing, |_| Vec::new())
+    }
+
+    /// [`Self::next`], with `group_exports` naming the export values a radio
+    /// group already uses in the document, so a radio joining the remembered
+    /// group takes one no member carries rather than one the last draft did
+    /// not.
+    #[must_use]
+    pub fn next_in(
+        &self,
+        kind: FormFieldKind,
+        existing: &[String],
+        group_exports: impl Fn(&str) -> Vec<String>,
+    ) -> Draft {
         let mut draft = match &self.last {
             // Same kind: everything carries, name aside.
             Some(prev) if prev.kind == kind => prev.clone(),
@@ -217,7 +231,9 @@ impl Remembered {
             // The group persists and the EXPORT VALUE advances — the
             // inverse of every other kind. Three radios in one group are three
             // widgets sharing `/T` with distinct export names.
-            draft.export_value = next_free(&draft.export_value, &collected_exports(&self.last));
+            let mut taken = collected_exports(&self.last);
+            taken.extend(group_exports(draft.name.trim()));
+            draft.export_value = next_free(&draft.export_value, &taken);
             draft.checked = false;
         } else {
             draft.name = next_free(kind.name_prefix(), existing);
@@ -287,6 +303,25 @@ mod tests {
             second.export_value, first.export_value,
             "…and are told apart by their export value"
         );
+    }
+
+    /// **A third radio takes an export no member uses**, not merely one the
+    /// last draft did not: the engine refuses a member repeating an export.
+    #[test]
+    fn a_third_radio_skips_every_export_the_group_uses() {
+        let mut mem = Remembered::default();
+        let mut second = mem.next(FormFieldKind::Radio, &[]);
+        second.export_value = "Choice2".to_owned();
+        mem.remember(&second);
+        let group = second.name.clone();
+        let third = mem.next_in(FormFieldKind::Radio, std::slice::from_ref(&group), |g| {
+            if g == group {
+                vec!["Choice1".to_owned(), "Choice2".to_owned()]
+            } else {
+                Vec::new()
+            }
+        });
+        assert_eq!(third.export_value, "Choice3");
     }
 
     /// **The shared settings carry across kinds**, which is the operator's ask.

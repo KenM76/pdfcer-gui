@@ -562,7 +562,9 @@ impl PdfcerApp {
             // parsing an `/AcroForm`.
             Action::Field(FieldAction::Begin { page, kind, rect }) => {
                 let existing = super::forms::field_names(doc);
-                let draft = self.form_defaults.next(kind, &existing);
+                let draft = self.form_defaults.next_in(kind, &existing, |group| {
+                    super::forms::radiogroup::exports(doc, group)
+                });
                 self.dialogs
                     .open_form_field(&self.status, page, rect, draft);
             }

@@ -96,6 +96,21 @@ pub(super) fn launch_with(
     stem: &str,
     env: &[(&str, String)],
 ) -> Result<(Session, ScriptedPointer)> {
+    let doc = ctx.out(&format!("{stem}.pdf"));
+    std::fs::copy(repo_fixture(fixture.file, fixture.method)?, &doc)
+        .map_err(|e| Error::new(format!("copying {}: {e}", fixture.file)))?;
+    launch_path(ctx, report, doc, invoke, stem, env)
+}
+
+/// [`launch_with`] on the file at `doc` itself, which the session may write.
+pub(super) fn launch_path(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    doc: std::path::PathBuf,
+    invoke: &str,
+    stem: &str,
+    env: &[(&str, String)],
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -105,9 +120,6 @@ pub(super) fn launch_with(
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let doc = ctx.out(&format!("{stem}.pdf"));
-    std::fs::copy(repo_fixture(fixture.file, fixture.method)?, &doc)
-        .map_err(|e| Error::new(format!("copying {}: {e}", fixture.file)))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [

@@ -18,6 +18,7 @@ pub mod groups;
 /// **Putting a copied form field back** — `EditSession::paste_field`. Its
 /// header carries why the shell does almost nothing in it any more.
 mod paste;
+pub mod radiogroup;
 /// **A field's format, validate and calculate scripts.**
 mod scripts;
 /// **Verbs about the BOX rather than the field** — rotation today, and the
@@ -87,6 +88,20 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
             dy,
         } => move_widget(doc, &field, widget, dx, dy),
         FieldAction::DeleteWidget { field, widget } => delete::widget(doc, &field, widget),
+        FieldAction::JoinRadioGroup {
+            field,
+            widget,
+            page,
+            to,
+        } => radiogroup::move_to(
+            doc,
+            &crate::app::state::SelectedField {
+                field,
+                widget,
+                page,
+            },
+            &to,
+        ),
         FieldAction::ReorderAnnotations { page, order } => {
             super::reorder::reorder_annotations(doc, page, &order);
         }

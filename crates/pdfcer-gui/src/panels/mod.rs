@@ -177,6 +177,10 @@ pub struct PanelsState {
     field_rename: String,
     /// The fully-qualified name [`Self::field_rename`] was seeded from.
     field_rename_key: Option<String>,
+    /// The radio-group draft for the selected radio button, and the
+    /// `field#widget` it was seeded for.
+    radio_group: String,
+    radio_group_key: Option<String>,
     /// The two TYPED properties of the selected form field — its tooltip and
     /// its maximum length — and the `(name, epoch)` they were read at.
     ///
@@ -512,6 +516,16 @@ impl PanelsState {
             self.field_rename = for_field.rsplit('.').next().unwrap_or(for_field).to_owned();
         }
         &mut self.field_rename
+    }
+
+    /// **The radio-group draft for the selected radio button**, seeded with
+    /// `group` and re-seeded whenever `key` (the `field#widget`) changes.
+    pub fn radio_group_mut(&mut self, key: &str, group: &str) -> &mut String {
+        if self.radio_group_key.as_deref() != Some(key) {
+            self.radio_group_key = Some(key.to_owned());
+            self.radio_group = group.to_owned();
+        }
+        &mut self.radio_group
     }
 
     /// The Properties panel's geometry draft.

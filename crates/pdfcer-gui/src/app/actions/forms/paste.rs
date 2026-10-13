@@ -42,6 +42,16 @@ pub(super) fn paste(
 ) {
     use pdfcer_core::formclip::{FieldClip, FieldPastePolicy};
 
+    // A copied RADIO button pasted into its own group: `paste_field` would
+    // re-add the copied export value, which the engine refuses as
+    // `RadioExportValueTaken` every time. `radiogroup` authors a member with a
+    // free one instead.
+    if let FieldPastePolicy::AdditionalWidget { existing } = policy
+        && super::radiogroup::is_radio(doc, existing)
+    {
+        super::radiogroup::add_member(doc, existing, page, rect);
+        return;
+    }
     let clip = match FieldClip::from_bytes(clip) {
         Ok(c) => c,
         Err(e) => {

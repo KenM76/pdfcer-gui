@@ -16,6 +16,8 @@ use pdfcer_core::object::Object;
 const REGION: &str = "properties.form_field";
 /// The **Rename** control's rect, published only when the control is drawn.
 const REGION_RENAME: &str = "properties.form_field.rename";
+/// The rename box's rect, published with [`REGION_RENAME`].
+const REGION_RENAME_NAME: &str = "properties.form_field.rename_name";
 /// The **Delete field** control's rect, published only when the control is
 /// drawn. See [`REGION_RENAME`].
 const REGION_DELETE: &str = "properties.form_field.delete";
@@ -130,7 +132,15 @@ pub fn section(
     ui.add_space(6.0);
     ui.separator();
     ui.add_space(6.0);
-    rename_row(ui, state, &selected, rename_refusal.is_some(), actions);
+    rename_row(
+        ui,
+        &form,
+        state,
+        &selected,
+        rename_refusal.is_some(),
+        actions,
+    );
+    super::radiogroup::row(ui, &form, field, &selected, state, actions);
     ui.add_space(6.0);
     ui.separator();
     ui.add_space(6.0);
@@ -264,6 +274,7 @@ fn row(ui: &mut Ui, label: &str, value: &str) {
 /// The rename draft and its button.
 fn rename_row(
     ui: &mut Ui,
+    form: &pdfcer_core::forms::AcroForm,
     state: &mut PanelsState,
     selected: &crate::app::state::SelectedField,
     refused: bool,
@@ -325,6 +336,7 @@ fn rename_row(
     // usable name yet" is exactly the temporary, operator-fixable condition R9
     // reserves greying for, and it is explained on hover two lines down.
     crate::diag::ui_rect(REGION_RENAME, commit.rect);
+    crate::diag::ui_rect(REGION_RENAME_NAME, response.rect);
     let pressed = commit.clicked();
     // `if let` rather than `if !ready`: the two are the same condition, and
     // binding the refusal is what makes it impossible to word a hover for a
@@ -336,13 +348,15 @@ fn rename_row(
     // beside it is the one place an operator always tries Enter first.
     let entered = response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
     if ready && (pressed || entered) {
-        actions.push(
+        // A radio renamed to another radio group's name joins that group,
+        // as in Acrobat; `rename_field` would refuse the name as taken.
+        let action = super::radiogroup::rename_joins(form, selected, &typed).unwrap_or(
             FieldAction::Rename {
                 from: selected.field.clone(),
                 to: typed,
-            }
-            .into(),
+            },
         );
+        actions.push(action.into());
     }
 }
 

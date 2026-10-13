@@ -650,6 +650,9 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G185** — `insert_pages` given a page index twice lists one copied page object twice, a tree the reader rejects as a cycle. Worked around in `app::actions::insertruns` (one call per repeat-free run, folded into one undo). Open.
 - **G186** — `paste_objects_on_layer` moves a carried raw annotation's `/Rect` and leaves `/QuadPoints`, `/L`, `/Vertices`, `/CL` and `/InkList` at the source position, so a pasted link answers clicks where the original was. Worked around in `app::actions::pastegeometry` (the clip's raw dictionaries are translated before the paste, with `move_annotation`'s key list). Open.
 
+- **G187** — `paste_field` with `AdditionalWidget` keeps the copied radio member's on-state, so every radio paste is refused `RadioExportValueTaken`. Worked around in `app::actions::forms::radiogroup::add_member` (`add_radio_button` into the group with a free export). Open.
+- **G188** — no verb moves a radio widget into another radio group; `rename_field` onto one is `RenameCollision`. Worked around in `app::actions::forms::radiogroup::move_to` (add, `delete_widget`, `coalesce_last`). Open.
+
 ## Snapshot box
 
 The request O272's vector copy waits on.

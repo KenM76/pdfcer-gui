@@ -1466,6 +1466,8 @@ pub mod link_quads;
 pub mod links;
 /// Nudging, duplicating, re-stacking and typing the size of a markup shape.
 pub mod markup_place;
+/// A radio button joining a group by paste, by its group row and by rename.
+pub mod radio_group;
 pub mod undo_redo;
 pub mod widget_turn;
 
