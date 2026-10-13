@@ -533,6 +533,7 @@
                     caption: "Batch",
                     items: [
                         Command(id: "tools.merge_files", size: Large),
+                        Command(id: "tools.bates_files", size: Large),
                     ],
                     collapse: 3,
                 ),

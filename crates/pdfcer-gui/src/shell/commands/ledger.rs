@@ -412,12 +412,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 228 → 229: `format.replace_image`, Format ▸ Image.
     // 229 → 230: `edit.insert_link`, Edit ▸ Insert.
     // 230 → 231: `pages.insert_blank`, Pages ▸ Insert.
+    // 231 → 232: `tools.bates_files`, Tools ▸ Batch.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // +1 with model-download: `file.fetch_ocr_models`, File ▸ Recognise.
     assert_eq!(
         registry().len(),
-        231 + 2 * usize::from(cfg!(feature = "signing"))
+        232 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "model-download"))
     );
@@ -842,10 +843,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 200 → 201: `edit.insert_link` names `pick-link`, shared with the pick
     // filter's Link row.
     // 201 → 202: `pages.insert_blank` names `new-document`, shared with `file.new`.
+    // 202 → 203: `tools.bates_files` names `stamp`, shared with Pages ▸ Stamp.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        202 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        203 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

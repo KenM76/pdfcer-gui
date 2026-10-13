@@ -120,6 +120,7 @@ pub mod remove_ocr;
 /// which is the one place it deliberately departs from [`unsaved`]'s shape.
 pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
 pub mod bates;
+pub mod bates_batch;
 pub mod labels;
 #[cfg(feature = "3d")]
 pub mod model3d;
@@ -265,6 +266,9 @@ pub struct DialogsState {
     /// The Bates form the last window left, kept across documents so a
     /// batch continues its numbering.
     bates_form: Option<bates::BatesForm>,
+    /// The Bates-number-files window. **Application-scoped**: it works on
+    /// files, not the open document, and a run in progress must outlive one.
+    bates_batch: Option<bates_batch::BatesBatchDialog>,
     /// The open Number pages window; it holds the document's label ranges,
     /// so it closes with the document.
     labels: Option<labels::LabelsDialog>,
@@ -753,6 +757,9 @@ impl DialogsState {
         // it was needed.
         if self.new_document.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.new_document = None;
+        }
+        if self.bates_batch.as_mut().map(|d| d.show(ctx)) == Some(false) {
+            self.bates_form = self.bates_batch.take().map(|d| d.remembered());
         }
         // Beside them, and ABOVE the no-document guard, for the sharpest
         // version of the same reason in this function: the document this window

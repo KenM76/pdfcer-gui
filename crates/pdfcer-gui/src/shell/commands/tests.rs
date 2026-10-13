@@ -340,6 +340,7 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         "mode.review",
         "tools.font_folders",
         "tools.merge_files",
+        "tools.bates_files",
         "view.fullscreen",
         // The three panel-layout verbs need no document, and that is
         // deliberate rather than an omission. A panel arrangement is

@@ -1,10 +1,12 @@
 # `app::dispatch::batch` — the Tools ▸ Batch band's arms
 
-One command today, `tools.merge_files`, and it is here rather than inline in
-[`crate::app::dispatch`] under **R2**: that file is at 1,400 of the 1,500
-ceiling and this codebase's comment density means an inline arm carrying its
-own argument would consume most of the remaining headroom. It is the seventh
-such split and the reasoning is the one the six before it recorded.
+`tools.merge_files` and `tools.bates_files`, kept out of
+[`crate::app::dispatch`] under **R2**.
+
+`tools.bates_files` asks for the files and opens
+[`crate::dialogs::bates_batch`] on them with a clone of the settings; an empty
+pick opens nothing and traces `bates-batch-cancelled
+reason=no-sources-chosen`.
 
 ## What this closes, and what it says about the check that missed it
 

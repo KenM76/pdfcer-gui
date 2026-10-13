@@ -665,6 +665,14 @@ Blocks while the dialog is open, exactly as its siblings do, and carries the
 same frame-timing requirement: the caller runs it after its frame's layout
 closure has returned.
 
+### `fn pick_bates_sources`, `fn pick_bates_folder`
+
+Tools ▸ Batch ▸ Bates number files…'s pickers, seams
+`PDFCER_DIAG_BATES_SOURCES` (`;`-separated, as above) and
+`PDFCER_DIAG_BATES_FOLDER`. `pick_bates_sources` and `pick_merge_sources` share
+`pick_pdfs_traced`, which differs per caller only in seam, title and trace
+event (`merge-picked`, `bates-batch-picked`).
+
 ### `fn pick_save_path`
 
 `suggested` is pre-filled into the dialog as the file name and the starting

@@ -4,7 +4,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/open.md`.
 
 use super::{
-    DialogsState, about, bates, compact, diagnostics, embed, export_dxf, export_image,
+    DialogsState, about, bates, bates_batch, compact, diagnostics, embed, export_dxf, export_image,
     export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_blank,
     insert_image, insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print,
     protect, redact, scale, shortcuts, split_pages, stamp_collection, textannot, unembed,
@@ -395,6 +395,23 @@ impl DialogsState {
             return;
         }
         self.bates = bates::BatesDialog::open(picked, of, self.bates_form.as_ref());
+    }
+
+    /// **Open the Bates-number-files window** on `sources`, continuing the
+    /// numbering the last Bates window left.
+    pub fn open_bates_batch(
+        &mut self,
+        sources: Vec<std::path::PathBuf>,
+        settings: pdfcer_core::settings::Settings,
+    ) {
+        if self.bates_batch.is_some() {
+            return;
+        }
+        self.bates_batch = Some(bates_batch::BatesBatchDialog::open(
+            sources,
+            self.bates_form.as_ref(),
+            settings,
+        ));
     }
 
     /// **Open the Number pages window** on `doc`, offering the rail's

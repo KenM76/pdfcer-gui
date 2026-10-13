@@ -57,6 +57,8 @@ pub mod attachclip;
 /// Pages ▸ Stamp ▸ Bates numbering…: its window and its receipt.
 /// Consumed by `pdfcer_gui::dialogs::bates`.
 pub mod bates;
+/// Tools ▸ Batch ▸ Bates number files…: its window.
+pub mod bates_batch;
 pub mod commands;
 /// The words form-data export says — `file.export_form_data`, wired
 /// 2026-08-27. Its one load-bearing sentence is the CSV neutralisation

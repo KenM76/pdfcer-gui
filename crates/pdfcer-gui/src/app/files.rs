@@ -79,6 +79,12 @@ pub const DIAG_SAVE_PATH: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an 
 /// **The seam for the MULTI-file picker** — `OPERATOR_REQUESTS.md` O68.
 pub const DIAG_MERGE_SOURCES: &str = "PDFCER_DIAG_MERGE_SOURCES"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The multi-file picker seam for Tools ▸ Batch ▸ Bates numbering…, `;`-separated.
+pub const DIAG_BATES_SOURCES: &str = "PDFCER_DIAG_BATES_SOURCES"; // ui-text-exempt: an environment variable name, never displayed
+
+/// The folder picker seam for the Bates batch's copies.
+pub const DIAG_BATES_FOLDER: &str = "PDFCER_DIAG_BATES_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
+
 /// What asking for a document produced.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Picked {
@@ -820,34 +826,56 @@ pub fn pick_validation_evidence() -> Vec<PathBuf> {
 /// `OPERATOR_REQUESTS.md` O68.
 #[must_use]
 pub fn pick_merge_sources() -> Vec<PathBuf> {
-    if let Some(raw) = std::env::var_os(DIAG_MERGE_SOURCES) {
+    pick_pdfs_traced(
+        DIAG_MERGE_SOURCES,
+        crate::text::files::merge_dialog_title(),
+        "merge-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// Ask for the PDFs Tools ▸ Batch ▸ Bates numbering… numbers.
+#[must_use]
+pub fn pick_bates_sources() -> Vec<PathBuf> {
+    pick_pdfs_traced(
+        DIAG_BATES_SOURCES,
+        crate::text::bates_batch::pick_title(),
+        "bates-batch-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// Ask for the folder the Bates batch writes its copies to.
+#[must_use]
+pub fn pick_bates_folder() -> Picked {
+    pick_folder_traced(
+        DIAG_BATES_FOLDER,
+        crate::text::bates_batch::folder_title(),
+        "bates-batch-folder-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// A several-PDF picker answered by `env` (`;`-separated) when it is set, else
+/// the native dialog, tracing `<event> source=<env|native> n=<count>`.
+fn pick_pdfs_traced(env: &str, title: &str, event: &str) -> Vec<PathBuf> {
+    let (answer, source) = if let Some(raw) = std::env::var_os(env) {
         let text = raw.to_string_lossy().into_owned();
         let answer: Vec<PathBuf> = text
             .split(';')
             .filter(|part| !part.is_empty())
             .map(PathBuf::from)
             .collect();
-        crate::diag::trace(|| {
-            format!(
-                // ui-text-exempt: diagnostic trace, never displayed.
-                "merge-picked source=env n={}",
-                answer.len()
-            )
-        });
-        return answer;
-    }
-    let answer = rfd::FileDialog::new()
-        .set_title(crate::text::files::merge_dialog_title())
-        .add_filter(crate::text::files::filter_pdf(), &["pdf"])
-        .add_filter(crate::text::files::filter_all(), &["*"])
-        .pick_files()
-        .unwrap_or_default();
+        (answer, "env") // ui-text-exempt: trace token
+    } else {
+        let answer = rfd::FileDialog::new()
+            .set_title(title)
+            .add_filter(crate::text::files::filter_pdf(), &["pdf"])
+            .add_filter(crate::text::files::filter_all(), &["*"])
+            .pick_files()
+            .unwrap_or_default();
+        (answer, "native") // ui-text-exempt: trace token
+    };
     crate::diag::trace(|| {
-        format!(
-            // ui-text-exempt: diagnostic trace, never displayed.
-            "merge-picked source=native n={}",
-            answer.len()
-        )
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("{event} source={source} n={}", answer.len())
     });
     answer
 }

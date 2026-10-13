@@ -38,6 +38,10 @@ does for every page edit.
 - from the action: `bates-applied n first_label last_label next`
 - from the funnel: `bates-stamped`
 
+The numbering controls are `BatesForm::controls`, which
+[`bates_batch`](bates_batch.md) draws too under its own region prefix;
+`BatesForm::batch` numbers several files from one form.
+
 Regions: `bates.body`, `bates.prefix`, `bates.start`,
 `bates.position.{0..5}` (index in `BatesPosition::ALL`),
 `bates.scope.{all,picked}`, `bates.stamp`.

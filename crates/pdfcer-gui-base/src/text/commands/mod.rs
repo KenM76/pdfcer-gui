@@ -811,6 +811,15 @@ pub const fn tools_merge_files() -> CommandText {
     )
 }
 
+/// `tools.bates_files`
+#[must_use]
+pub const fn tools_bates_files() -> CommandText {
+    CommandText::new(
+        "Bates number files…",
+        "Number every page of several PDFs in order, carrying the count from file to file, and write each as a numbered copy. The originals are not changed.",
+    )
+}
+
 /// `tools.split_files`
 #[must_use]
 pub const fn tools_split_files() -> CommandText {

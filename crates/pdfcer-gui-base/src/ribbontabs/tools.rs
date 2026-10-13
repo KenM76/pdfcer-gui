@@ -17,19 +17,10 @@ pub fn tab() -> Tab {
             group(
                 "batch",
                 ribbon::group_tools_batch(),
-                // One item, and that is correct rather than unfinished.
+                // Commands over files on disk, not the open document.
                 // `tools.split_files` is unregistered until the split window
-                // takes files from disk (R9, O68); merge is wired and stays.
-                //
-                // The band is NOT deleted for being short. The rule that
-                // deletes a band is emptiness — an empty captioned band is a
-                // caption offering nothing — and a band of one is a band of
-                // one.
-                //
-                // Large, per the mockup's big `Merge files…`, and free here
-                // because a one-item group is the case the `large` helper
-                // always allowed.
-                [large("tools.merge_files")],
+                // takes files from disk (R9, O68).
+                [large("tools.merge_files"), large("tools.bates_files")],
             ),
             // ---------------------------------------------------------------
             // Fonts — configured once, rarely touched.

@@ -175,3 +175,4 @@
 - [Park drafts in D:\scratch](feedback_park_drafts_scratch.md) — never D:/temp; apply scripts and control exes live there too.
 - [Overshooting a band passes on the defect](feedback_overshoot_window.md) — picture at the first wall; SKIP if the trace shows the far tier.
 - [Neighbour checks can encode the defect](feedback_neighbour_checks_encode_defect.md) — a funnel fix reddened 2 green checks; re-drive all readers of its trace line.
+- [Python 'w' writes CRLF on Windows](feedback_python_write_crlf.md) — pass newline=''; git diff --stat hides the conversion.

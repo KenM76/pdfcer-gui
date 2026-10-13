@@ -1,10 +1,7 @@
 //! # `app::dispatch::batch` — the Tools ▸ Batch band's arms
 //!
-//! One command today, `tools.merge_files`, and it is here rather than inline in
-//! [`crate::app::dispatch`] under **R2**: that file is at 1,400 of the 1,500
-//! ceiling and this codebase's comment density means an inline arm carrying its
-//! own argument would consume most of the remaining headroom. It is the seventh
-//! such split and the reasoning is the one the six before it recorded.
+//! `tools.merge_files` and `tools.bates_files`, kept out of
+//! [`crate::app::dispatch`] under **R2**.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/batch.md`.
 
@@ -14,13 +11,14 @@ use crate::app::actions::Action;
 /// Whether this module owns `id`.
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
-    matches!(id, "tools.merge_files")
+    matches!(id, "tools.merge_files" | "tools.bates_files")
 }
 
 /// Do whatever this build does about a Batch command.
 pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, _actions: &mut [Action]) {
     match id {
         "tools.merge_files" => merge_files(app),
+        "tools.bates_files" => bates_files(app),
         // See `handles`: loud in a developer build, and never reached in a
         // release one because the guard and this match state the same set.
         other => unreachable!(
@@ -28,6 +26,20 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, _actions: &mut [Action]) {
             "batch::dispatch reached with an id it does not handle: {other}"
         ),
     }
+}
+
+/// `tools.bates_files` — ask for the files, then open the window that numbers
+/// them. An empty pick opens nothing.
+fn bates_files(app: &mut PdfcerApp) {
+    let sources = crate::app::files::pick_bates_sources();
+    if sources.is_empty() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "bates-batch-cancelled reason=no-sources-chosen".to_owned()
+        });
+        return;
+    }
+    app.dialogs.open_bates_batch(sources, app.settings.clone());
 }
 
 /// `tools.merge_files` — ask for the sources, ask where it goes, write it.

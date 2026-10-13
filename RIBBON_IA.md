@@ -485,7 +485,7 @@ inferred.
 
 | Group | Commands |
 |---|---|
-| **Batch** | Merge files… · Split files… · Batch print… |
+| **Batch** | Merge files… · Bates number files… · Split files… · Batch print… |
 | **Compare** | Compare documents… |
 | **Fonts** | Font folders… · Embed fonts · Unembed fonts |
 | **Validate** | PDF/A validate & convert… · Optimise… |

@@ -18,12 +18,9 @@ use crate::text::bates as t;
 
 /// The dialog body's published region, for `ui-verify`.
 const REGION_BODY: &str = "bates.body";
-/// The prefix box.
-const REGION_PREFIX: &str = "bates.prefix";
-/// The start-number box.
-const REGION_START: &str = "bates.start";
-/// One position choice; the suffix is its index in `BatesPosition::ALL`.
-const REGION_POSITION_PREFIX: &str = "bates.position.";
+/// The prefix the numbering controls publish under: `bates.prefix`,
+/// `bates.start` and `bates.position.<i>`, `<i>` indexing `BatesPosition::ALL`.
+const REGION_FORM: &str = "bates";
 /// The commit button.
 const REGION_STAMP: &str = "bates.stamp";
 /// The two scope choices.
@@ -59,6 +56,112 @@ impl Default for BatesForm {
 }
 
 impl BatesForm {
+    /// The number on the first stamped page.
+    #[must_use]
+    pub const fn start(&self) -> u64 {
+        self.start
+    }
+
+    /// Continue the run at `start`.
+    pub const fn set_start(&mut self, start: u64) {
+        self.start = start;
+    }
+
+    /// The numbering controls, publishing their regions under `region`.
+    pub fn controls(&mut self, ui: &mut Ui, region: &str) {
+        egui::Grid::new((region, "grid")) // ui-text-exempt: widget id
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label(t::prefix());
+                let r = ui.text_edit_singleline(&mut self.prefix);
+                crate::diag::ui_rect(&format!("{region}.prefix"), r.rect);
+                ui.end_row();
+
+                ui.label(t::digits());
+                let (w, refusal) = entry::drag_value(ui, &mut self.digits, entry::Kind::Count);
+                refusal
+                    .show(ui.add(w.range(1..=pdfcer_core::bates::MAX_DIGITS)))
+                    .on_hover_text(t::digits_tooltip());
+                ui.end_row();
+
+                ui.label(t::suffix());
+                ui.text_edit_singleline(&mut self.suffix);
+                ui.end_row();
+
+                ui.label(t::start());
+                let (w, refusal) = entry::drag_value(ui, &mut self.start, entry::Kind::Count);
+                let r = refusal
+                    .show(ui.add(w.range(0..=u64::MAX)))
+                    .on_hover_text(t::start_tooltip());
+                crate::diag::ui_rect(&format!("{region}.start"), r.rect);
+                ui.end_row();
+
+                ui.label(t::margin());
+                let (w, refusal) = entry::drag_value(
+                    ui,
+                    &mut self.margin_mm,
+                    entry::Kind::Length(entry::LengthUnit::Of(
+                        pdfcer_core::dimension::Unit::Millimeter,
+                    )),
+                );
+                refusal.show(ui.add(w.range(0.0..=500.0)));
+                ui.end_row();
+
+                ui.label(t::font_size());
+                let (w, refusal) =
+                    entry::drag_value(ui, &mut self.font_size, entry::Kind::Number(&["pt"]));
+                refusal.show(ui.add(w.range(1.0..=144.0)));
+                ui.end_row();
+            });
+
+        ui.add_space(6.0);
+        ui.label(t::position_heading());
+        egui::Grid::new((region, "positions")) // ui-text-exempt: widget id
+            .num_columns(3)
+            .show(ui, |ui| {
+                for (i, p) in BatesPosition::ALL.iter().enumerate() {
+                    let r = ui.radio_value(&mut self.position, *p, t::position(*p));
+                    crate::diag::ui_rect(&format!("{region}.position.{i}"), r.rect);
+                    if i % 3 == 2 {
+                        ui.end_row();
+                    }
+                }
+            });
+    }
+
+    /// One stamp over every page and each file's numbers, for files of
+    /// `counts` pages numbered in order from [`Self::start`].
+    ///
+    /// # Errors
+    ///
+    /// The first file whose numbering cannot be made, worded as
+    /// [`Self::stamp`] words it.
+    pub fn batch(&self, counts: &[usize]) -> Result<(BatesStamp, Vec<Span>), String> {
+        let mut spans = Vec::with_capacity(counts.len());
+        let mut stamp = None;
+        let mut first = self.start;
+        for &n in counts {
+            let form = Self {
+                start: first,
+                ..self.clone()
+            };
+            let (one, first_label, last_label) = form.stamp(&(0..n).collect::<Vec<_>>())?;
+            let next = first.saturating_add(u64::try_from(n).unwrap_or(u64::MAX));
+            spans.push(Span {
+                first,
+                first_label,
+                last_label,
+                next,
+            });
+            stamp.get_or_insert(one);
+            first = next;
+        }
+        let mut stamp =
+            stamp.ok_or_else(|| t::problem(&pdfcer_core::bates::BatesError::NoPages))?;
+        stamp.pages = None;
+        Ok((stamp, spans))
+    }
+
     /// The numbering the prefix, digits and suffix describe.
     fn numbering(&self) -> BatesNumbering {
         BatesNumbering::new(self.prefix.clone(), self.digits, self.suffix.clone())
@@ -90,6 +193,17 @@ impl BatesForm {
         stamp.pages = Some(pages.to_vec());
         Ok((stamp, first_label, last_label))
     }
+}
+
+/// One file's numbers within a batch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Span {
+    /// The number on its first page.
+    pub first: u64,
+    pub first_label: String,
+    pub last_label: String,
+    /// The number the following file starts at.
+    pub next: u64,
 }
 
 /// The Bates window's state.
@@ -224,64 +338,7 @@ impl BatesDialog {
         }
         ui.add_space(8.0);
 
-        egui::Grid::new("bates.grid") // ui-text-exempt: widget id
-            .num_columns(2)
-            .show(ui, |ui| {
-                ui.label(t::prefix());
-                let r = ui.text_edit_singleline(&mut self.form.prefix);
-                crate::diag::ui_rect(REGION_PREFIX, r.rect);
-                ui.end_row();
-
-                ui.label(t::digits());
-                let (w, refusal) = entry::drag_value(ui, &mut self.form.digits, entry::Kind::Count);
-                refusal
-                    .show(ui.add(w.range(1..=pdfcer_core::bates::MAX_DIGITS)))
-                    .on_hover_text(t::digits_tooltip());
-                ui.end_row();
-
-                ui.label(t::suffix());
-                ui.text_edit_singleline(&mut self.form.suffix);
-                ui.end_row();
-
-                ui.label(t::start());
-                let (w, refusal) = entry::drag_value(ui, &mut self.form.start, entry::Kind::Count);
-                let r = refusal
-                    .show(ui.add(w.range(0..=u64::MAX)))
-                    .on_hover_text(t::start_tooltip());
-                crate::diag::ui_rect(REGION_START, r.rect);
-                ui.end_row();
-
-                ui.label(t::margin());
-                let (w, refusal) = entry::drag_value(
-                    ui,
-                    &mut self.form.margin_mm,
-                    entry::Kind::Length(entry::LengthUnit::Of(
-                        pdfcer_core::dimension::Unit::Millimeter,
-                    )),
-                );
-                refusal.show(ui.add(w.range(0.0..=500.0)));
-                ui.end_row();
-
-                ui.label(t::font_size());
-                let (w, refusal) =
-                    entry::drag_value(ui, &mut self.form.font_size, entry::Kind::Number(&["pt"]));
-                refusal.show(ui.add(w.range(1.0..=144.0)));
-                ui.end_row();
-            });
-
-        ui.add_space(6.0);
-        ui.label(t::position_heading());
-        egui::Grid::new("bates.positions") // ui-text-exempt: widget id
-            .num_columns(3)
-            .show(ui, |ui| {
-                for (i, p) in BatesPosition::ALL.iter().enumerate() {
-                    let r = ui.radio_value(&mut self.form.position, *p, t::position(*p));
-                    crate::diag::ui_rect(&format!("{REGION_POSITION_PREFIX}{i}"), r.rect);
-                    if i % 3 == 2 {
-                        ui.end_row();
-                    }
-                }
-            });
+        self.form.controls(ui, REGION_FORM);
 
         ui.add_space(6.0);
         let verdict = self.form.stamp(&self.pages());
@@ -339,6 +396,34 @@ mod tests {
     fn a_run_past_the_digit_count_is_refused() {
         let why = form("", 2, 98).stamp(&[0, 1, 2]).unwrap_err();
         assert!(why.contains("100"), "{why}");
+    }
+
+    /// A batch carries the count from file to file, and refuses the run as a
+    /// whole when its last file outgrows the digits.
+    #[test]
+    fn a_batch_numbers_each_file_after_the_last() {
+        let (stamp, spans) = form("B", 3, 5).batch(&[2, 4, 1]).unwrap();
+        assert_eq!(stamp.pages, None);
+        let got: Vec<_> = spans
+            .iter()
+            .map(|s| {
+                (
+                    s.first,
+                    s.first_label.as_str(),
+                    s.last_label.as_str(),
+                    s.next,
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (5, "B005", "B006", 7),
+                (7, "B007", "B010", 11),
+                (11, "B011", "B011", 12)
+            ]
+        );
+        assert!(form("", 2, 95).batch(&[3, 3]).unwrap_err().contains("100"));
     }
 
     /// After a stamp the next window continues the run.
