@@ -7,21 +7,30 @@
 //!   directory. Windows of one installation therefore see each other, and a
 //!   copy of the program in another folder — a test sandbox — sees nothing of
 //!   them.
-//! * A request is one line, `open\t<absolute path>[\t<page index>]\n`, answered
-//!   `ok\n` or `no\t<reason>\n`. The page is zero-based; a Windows file name
-//!   cannot hold a tab, so the fields split unambiguously. `ok` means the path was handed to the receiving
-//!   window's frame; the open itself happens there and reports its own
-//!   failures.
+//! * A request is one line,
+//!   `open\t<absolute path>[\t<page index>|-[\t<name>=<value>]...]\n`,
+//!   answered `ok\n` or `no\t<reason>\n`. The page is zero-based; a Windows
+//!   file name cannot hold a tab, so the fields split unambiguously. The
+//!   named fields are `carry=<absolute path>` (a copy holding unsaved edits,
+//!   read in place of the file and deleted by the receiver), `edits=<n>` (how
+//!   many it holds) and `key=<hex>` (the password the document was opened
+//!   with). `ok` is answered only once the receiving frame has the document
+//!   open; a refusal, or no answer within [`ANSWER_WAIT`], leaves the
+//!   sender's copy where it is.
 //! * `paste\t<x>\t<y>\n` asks the window to paste the clip on the clipboard
 //!   at the desktop pixel `(x, y)`, answered the same way.
-//! * The pipe admits the current user only (`native_pipe`'s DACL).
+//! * The pipe admits the current user only (`native_pipe`'s DACL), which is
+//!   what makes it a place a password may travel. A key is never traced.
 //! * The discovery file also carries the window's client area in desktop
 //!   pixels, `rect=<left>,<top>,<right>,<bottom>`, so a tab dropped on another
 //!   window can be matched to it.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Sender, SyncSender, sync_channel};
+use std::time::Duration;
+
+use crate::secret::Secret;
 
 /// The pipe-name prefix; the process id follows.
 const PIPE_PREFIX: &str = "pdfcer-gui-window-"; // ui-text-exempt: a pipe name, never displayed
@@ -40,6 +49,11 @@ const OK: &str = "ok"; // ui-text-exempt: a protocol word, never displayed
 
 /// The refusal reply's verb.
 const NO: &str = "no"; // ui-text-exempt: a protocol word, never displayed
+
+/// How long an open waits for the receiving frame. A large drawing takes
+/// seconds to load; a window that has not answered by then is treated as
+/// having refused, so the sender keeps its copy.
+const ANSWER_WAIT: Duration = Duration::from_secs(30);
 
 /// The longest request line accepted. A path is far shorter; this bounds what
 /// a misbehaving client can make the server hold.
@@ -81,6 +95,29 @@ pub struct Arrival {
     pub path: PathBuf,
     /// The zero-based page index to show, when the sender named one.
     pub page: Option<usize>,
+    /// The copy holding unsaved edits, when the document had any.
+    pub carry: Option<Carry>,
+    /// The password the sender opened the document with.
+    pub key: Option<Secret>,
+}
+
+/// A written copy of a document with unsaved edits, read in place of
+/// [`Arrival::path`] and bound to it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Carry {
+    /// The copy, absolute; the receiver deletes it once read.
+    pub file: PathBuf,
+    /// How many unsaved edits it holds, for the receiver's unsaved count.
+    pub edits: u64,
+}
+
+/// A request, and for an open the channel the frame answers on.
+#[derive(Debug)]
+pub struct Incoming {
+    /// What was asked.
+    pub request: Request,
+    /// Where an open's outcome goes; `None` for a paste, answered at once.
+    pub answer: Option<SyncSender<Result<(), String>>>,
 }
 
 /// One request another window sent.
@@ -100,7 +137,13 @@ pub enum Request {
 /// This window's pipe name.
 #[must_use]
 pub fn own_pipe() -> String {
-    format!("{PIPE_PREFIX}{}", std::process::id())
+    pipe_of(std::process::id())
+}
+
+/// The pipe the window with process id `pid` listens on.
+#[must_use]
+pub fn pipe_of(pid: u32) -> String {
+    format!("{PIPE_PREFIX}{pid}")
 }
 
 /// The discovery directory, or `None` when there is no writable settings
@@ -225,7 +268,7 @@ fn parse_rect(v: &str) -> Option<[i32; 4]> {
 /// and calling `wake` so the frame that acts on it runs.
 pub fn serve(
     pipe: String,
-    inbox: Sender<Request>,
+    inbox: Sender<Incoming>,
     wake: impl Fn() + Send + 'static,
 ) -> std::io::Result<()> {
     std::thread::Builder::new()
@@ -242,12 +285,21 @@ pub fn serve(
                     }
                 };
                 let reply = match request(&mut connection) {
-                    Some(arrival) => {
-                        if inbox.send(arrival).is_err() {
+                    Some(request) => {
+                        let opens = matches!(request, Request::Open(_));
+                        let (tx, rx) = sync_channel(1);
+                        let answer = opens.then_some(tx);
+                        if inbox.send(Incoming { request, answer }).is_err() {
                             return;
                         }
                         wake();
-                        format!("{OK}\n")
+                        match opens.then(|| rx.recv_timeout(ANSWER_WAIT)) {
+                            None | Some(Ok(Ok(()))) => format!("{OK}\n"),
+                            Some(Ok(Err(why))) => format!("{NO}\t{why}\n"),
+                            Some(Err(_)) => {
+                                format!("{NO}\t{}\n", crate::text::siblings::no_answer())
+                            }
+                        }
                     }
                     None => format!("{NO}\t{}\n", crate::text::siblings::unreadable_request()),
                 };
@@ -269,11 +321,28 @@ fn request(connection: &mut impl Read) -> Option<Request> {
         OPEN => {
             let path = PathBuf::from(fields.next()?);
             let page = match fields.next() {
+                Some("-") | None => None,
                 Some(p) => Some(p.parse().ok()?),
-                None => None,
             };
-            path.is_absolute()
-                .then_some(Request::Open(Arrival { path, page }))?
+            let (mut carry, mut edits, mut key) = (None, 0, None);
+            for field in fields.by_ref() {
+                match field.split_once('=')? {
+                    ("carry", v) => carry = Some(PathBuf::from(v)).filter(|p| p.is_absolute()),
+                    ("edits", v) => edits = v.parse().ok()?,
+                    ("key", v) => key = Some(Secret::new(unhex(v)?)),
+                    _ => return None,
+                }
+                if field.starts_with("carry=") && carry.is_none() {
+                    return None;
+                }
+            }
+            let carry = carry.map(|file| Carry { file, edits });
+            path.is_absolute().then_some(Request::Open(Arrival {
+                path,
+                page,
+                carry,
+                key,
+            }))?
         }
         PASTE => {
             let mut coordinate = || fields.next()?.parse::<f32>().ok().filter(|v| v.is_finite());
@@ -285,19 +354,55 @@ fn request(connection: &mut impl Read) -> Option<Request> {
     fields.next().is_none().then_some(request)
 }
 
-/// Ask the window listening on `pipe` to open `path` at `page`. Blocks until
-/// it answers, so callers run it off the frame thread.
-pub fn send_open(pipe: &str, path: &Path, page: Option<usize>) -> Result<(), String> {
-    let text = path
-        .to_str()
-        .ok_or_else(|| crate::text::siblings::unsendable_name().to_owned())?;
-    exchange(
-        pipe,
-        &match page {
-            Some(p) => format!("{OPEN}\t{text}\t{p}\n"),
-            None => format!("{OPEN}\t{text}\n"),
-        },
-    )
+/// Ask the window listening on `pipe` to open `arrival`. Blocks until it
+/// answers, so callers run it off the frame thread.
+pub fn send_open(pipe: &str, arrival: &Arrival) -> Result<(), String> {
+    exchange(pipe, &open_line(arrival)?)
+}
+
+/// The request line for `arrival`.
+fn open_line(arrival: &Arrival) -> Result<String, String> {
+    let name = |p: &Path| {
+        p.to_str()
+            .map(str::to_owned)
+            .ok_or_else(|| crate::text::siblings::unsendable_name().to_owned())
+    };
+    let mut line = format!("{OPEN}\t{}", name(&arrival.path)?);
+    match arrival.page {
+        Some(p) => line.push_str(&format!("\t{p}")),
+        None if arrival.carry.is_some() || arrival.key.is_some() => line.push_str("\t-"),
+        None => {}
+    }
+    if let Some(carry) = &arrival.carry {
+        line.push_str(&format!(
+            "\tcarry={}\tedits={}",
+            name(&carry.file)?,
+            carry.edits
+        ));
+    }
+    if let Some(key) = &arrival.key {
+        line.push_str(&format!("\tkey={}", hex(key.expose())));
+    }
+    line.push('\n');
+    Ok(line)
+}
+
+/// `bytes` as lower-case hexadecimal, so a password holding a tab or a
+/// newline cannot split the request line.
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// The text [`hex`] encoded, or `None` when `text` is not such an encoding.
+fn unhex(text: &str) -> Option<String> {
+    if !text.len().is_multiple_of(2) {
+        return None;
+    }
+    let bytes = (0..text.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(text.get(i..i + 2)?, 16).ok())
+        .collect::<Option<Vec<u8>>>()?;
+    String::from_utf8(bytes).ok()
 }
 
 /// Ask the window listening on `pipe` to paste its clipboard at the desktop
@@ -374,6 +479,8 @@ mod tests {
             Some(Request::Open(Arrival {
                 path: PathBuf::from(absolute),
                 page,
+                carry: None,
+                key: None,
             }))
         };
         let good = format!("open\t{absolute}\r\n");
@@ -388,6 +495,32 @@ mod tests {
             None
         );
         assert_eq!(request(&mut "open\n".as_bytes()), None);
+    }
+
+    /// What a carried open sends is what the receiver reads back, including
+    /// a password holding the line's own separators; a relative carry, an
+    /// unknown field and a malformed key each refuse the request.
+    #[test]
+    fn a_carried_open_round_trips() {
+        let root = if cfg!(windows) { "C:\\" } else { "/" };
+        let sent = Arrival {
+            path: PathBuf::from(format!("{root}a b.pdf")),
+            page: None,
+            carry: Some(Carry {
+                file: PathBuf::from(format!("{root}carry 1.pdf")),
+                edits: 4,
+            }),
+            key: Some(Secret::new("p\tw\n\u{e9}".to_owned())),
+        };
+        let line = open_line(&sent).unwrap();
+        assert!(!line.contains("p\tw"), "the key travels encoded");
+        assert_eq!(request(&mut line.as_bytes()), Some(Request::Open(sent)));
+        let relative = line.replace(&format!("carry={root}"), "carry=");
+        assert_eq!(request(&mut relative.as_bytes()), None);
+        let unknown = line.replace("edits=", "colour=");
+        assert_eq!(request(&mut unknown.as_bytes()), None);
+        let odd = line.replace("\tkey=", "\tkey=0");
+        assert_eq!(request(&mut odd.as_bytes()), None);
     }
 
     #[test]

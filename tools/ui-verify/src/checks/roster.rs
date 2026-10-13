@@ -349,6 +349,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(thumbnail_zoom::ThumbnailsZoomWithoutBlanking),
         Box::new(cross_window_paste::ASelectionCopiedInOneWindowPastesInAnother),
         Box::new(window_move::ADocumentMovesBetweenWindows),
+        Box::new(window_carry::ADocumentMovesWithItsEditsAndPassword),
         Box::new(tab_drag::ATabDraggedOutMovesItsDocument),
         Box::new(selection_drop::ASelectionDroppedOnAnotherWindowIsCopiedThere),
         Box::new(remove_metadata::RemoveMetadataWritesACopyWithoutTheItemsTicked),

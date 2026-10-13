@@ -41,7 +41,7 @@ impl PdfcerApp {
         // Measured from the last SAVE rather than from zero, for
         // `dialogs::unsaved::ask_for`'s reason: *"you have 12 unsaved changes"*
         // after saving eleven of them is a true count of the wrong thing.
-        let edits = doc.edit_epoch.saturating_sub(doc.saved_epoch);
+        let edits = crate::app::save::unsaved_edit_count(doc);
         // The file NAME, not the path — see the dialog's `file` field.
         let file = doc.path.file_name().map_or_else(
             || doc.path.display().to_string(),

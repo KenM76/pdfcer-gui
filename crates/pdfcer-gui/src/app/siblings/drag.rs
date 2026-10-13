@@ -13,7 +13,6 @@
 use eframe::egui;
 
 use super::PdfcerApp;
-use crate::text::siblings::WindowMoveRefusal;
 
 /// This window's client area in desktop pixels, `[left, top, right, bottom]`.
 pub(super) fn client_rect_px(ctx: &egui::Context) -> Option<[i32; 4]> {
@@ -60,13 +59,9 @@ impl PdfcerApp {
             )
         });
         if let Some(peer) = target {
-            let Some(path) = self.movable(slot) else {
-                crate::app::status::decline::record_window_move(WindowMoveRefusal::Unsaved);
-                return;
-            };
-            self.siblings.send(ctx, &peer, &path, self.page_of(slot));
+            self.send_to(ctx, &peer, slot);
         } else if self.document_count() > 1 {
-            self.move_to_new_window(slot);
+            self.move_to_new_window(ctx, slot);
         }
     }
 }

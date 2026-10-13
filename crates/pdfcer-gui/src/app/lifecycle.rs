@@ -6,7 +6,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/lifecycle.md`.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use pdfcer_core::document::{DocError, Document, LoadOptions};
 use pdfcer_core::xref::XrefErrorKind;
@@ -41,7 +41,19 @@ impl PdfcerApp {
         // See `Self::reread_active_document` for the one caller that passes
         // something else, and `crate::app::state::OpenDoc::load_options` for
         // why the value is then remembered.
-        self.open_path_inner(path, None, LoadOptions::new());
+        self.open_path_inner(path, None, None, LoadOptions::new());
+    }
+
+    /// Open a document another window sent. `source`, when given, is a copy
+    /// holding its unsaved edits, read in place of `path` and bound to it;
+    /// `key` is the password it was opened with there.
+    pub(crate) fn open_arrival(
+        &mut self,
+        path: PathBuf,
+        source: Option<&Path>,
+        key: Option<&crate::secret::Secret>,
+    ) {
+        self.open_path_inner(path, source, key, LoadOptions::new());
     }
 
     /// **Open a document that needs a password, with one** — `Action::OpenWithPassword`.
@@ -78,7 +90,7 @@ impl PdfcerApp {
             }
             None => LoadOptions::new(),
         };
-        self.open_path_inner(path, Some(password), options)
+        self.open_path_inner(path, None, Some(password), options)
     }
 
     /// **Read the open document's bytes again under a different reading** —
@@ -108,7 +120,7 @@ impl PdfcerApp {
         if let Some(slot) = self.slot_of_path(&path) {
             self.close_slot(slot);
         }
-        self.open_path_inner(path, None, options);
+        self.open_path_inner(path, None, None, options);
         true
     }
 
@@ -147,9 +159,12 @@ impl PdfcerApp {
     }
 
     /// The shared body of [`Self::open_path`] and [`Self::open_path_with_password`].
+    /// `source`, when given, is read in place of `path`; the document is bound
+    /// to `path` either way.
     fn open_path_inner(
         &mut self,
         path: PathBuf,
+        source: Option<&Path>,
         password: Option<&crate::secret::Secret>,
         options: LoadOptions,
     ) -> Option<crate::dialogs::password::Rejection> {
@@ -161,7 +176,7 @@ impl PdfcerApp {
         // existing caller reaches exactly the bytes it reached before, because
         // `open_path` supplies exactly the defaults those two verbs supplied.
         let loaded = Document::load_with_options(
-            &path,
+            source.unwrap_or(&path),
             password.map(crate::secret::Secret::expose),
             options,
         );
@@ -187,6 +202,7 @@ impl PdfcerApp {
                     // site that knows, and it is one line from the load that
                     // used the value.
                     open.load_options = options;
+                    open.opened_with = password.cloned();
                     Status::Open(Box::new(open))
                 }
                 // The header and cross-reference table were fine and the
@@ -726,6 +742,7 @@ impl PdfcerApp {
             crate::app::state::Status::Open(doc) => {
                 if crate::app::save::save_in_place(doc) {
                     doc.saved_epoch = doc.edit_epoch;
+                    doc.carried_edits = 0;
                     crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed
                         format!("save-epoch-recorded epoch={}", doc.saved_epoch)
@@ -782,6 +799,7 @@ impl PdfcerApp {
         if let crate::app::state::Status::Open(doc) = &mut self.status {
             doc.path = target.clone();
             doc.saved_epoch = doc.edit_epoch;
+            doc.carried_edits = 0;
             let epoch = doc.edit_epoch;
             crate::app::actions::record_note(epoch, crate::text::files::save_as_receipt(&name));
         }

@@ -927,6 +927,12 @@ pub struct OpenDoc {
     /// Save-a-copy does not touch it, for the reason above — the copy is not
     /// this document.
     pub saved_epoch: u64,
+    /// Unsaved edits this document arrived with from another window, which
+    /// its own session did not make and cannot undo. Zero once it is saved.
+    pub carried_edits: u64,
+    /// The password the document was opened with, kept so it can move to
+    /// another window without asking again.
+    pub opened_with: Option<crate::secret::Secret>,
     pub selected_field: Option<SelectedField>,
     /// **The operator's guide lines**, per page, in canvas space.
     ///
@@ -1132,6 +1138,8 @@ impl OpenDoc {
             ink_asked: std::collections::HashSet::new(),
             ink_source: std::collections::HashMap::new(),
             saved_epoch: 0,
+            carried_edits: 0,
+            opened_with: None,
             // Read above, before `path` was moved into the struct.
             guides,
             page_objects: PageObjectCache::default(),

@@ -143,7 +143,7 @@ fn launch(
 }
 
 /// The `name` line after the first `after` of them, waiting up to 30 settles.
-fn await_new(session: &Session, name: &str, after: usize) -> Result<Option<TraceLine>> {
+pub(super) fn await_new(session: &Session, name: &str, after: usize) -> Result<Option<TraceLine>> {
     for _ in 0..30 {
         if let Some(line) = session.trace()?.events(name).nth(after) {
             return Ok(Some(line.clone()));
@@ -154,7 +154,7 @@ fn await_new(session: &Session, name: &str, after: usize) -> Result<Option<Trace
 }
 
 /// Click a declared region, waiting up to 30 settles for it.
-fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<bool> {
+pub(super) fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<bool> {
     for _ in 0..30 {
         if let Some((rect, vp)) = declared_in(&session.trace()?, UI_RECT, region) {
             pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
@@ -167,7 +167,11 @@ fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<b
 }
 
 /// Answer the password prompt with `password`.
-fn answer(session: &Session, pointer: &ScriptedPointer, password: &str) -> Result<Option<String>> {
+pub(super) fn answer(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    password: &str,
+) -> Result<Option<String>> {
     if !press(session, pointer, FIELD)? {
         return Ok(Some(format!(
             "no `{PROMPT}` prompt with a `{FIELD}` was declared."

@@ -1152,6 +1152,8 @@ pub mod text_tool_click_types;
 pub mod tied_underline;
 /// Text holding a letter its font draws two ways still edits around it.
 pub mod two_codes;
+/// A document moves to another window with its unsaved edits and password.
+pub mod window_carry;
 /// A document moves to another window, or tears off into its own.
 pub mod window_move;
 pub mod word_line_edit;

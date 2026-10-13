@@ -630,6 +630,7 @@ Filed in the request channel for O289's items. G164 to G169 are answered and at 
 - **G168** — no named 3D views or up-axis choice outside the CLI (item 12). Answered as `pdfcer_3d::NamedView` and `set_3d_views`; wired through `set_3d_views`.
 - **G169** — the renderer cannot paint invisible (mode 3) text (item 15). Answered as `RenderOptions::with_invisible_text`, which `canvas::ocrink` now renders the layer with.
 - **G173** — removing an OCR layer does not say which region layers it emptied (item 17). Open; the GUI deletes them by trial delete meanwhile.
+- **G184** — a document's undo history cannot leave its process, so a document moved to another window arrives with its edits and password but no undo (item 19). Asks for `EditSession::export_history` and `import_history`. Open; the move command's hover text says the history stays behind.
 
 ## Filed requests for pasting in from other programs — not verdict rows
 

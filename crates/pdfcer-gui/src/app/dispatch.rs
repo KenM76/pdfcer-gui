@@ -274,7 +274,7 @@ impl PdfcerApp {
                 actions.push(Action::CloseOtherDocuments(keep));
             }
             "view.move_to_new_window" => {
-                self.move_to_new_window(self.tab_menu_target.unwrap_or(self.active_slot));
+                self.move_to_new_window(ctx, self.tab_menu_target.unwrap_or(self.active_slot));
             }
             "view.move_to_window" => {
                 self.move_to_window(ctx, self.tab_menu_target.unwrap_or(self.active_slot));

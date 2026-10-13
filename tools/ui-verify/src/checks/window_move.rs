@@ -15,13 +15,13 @@ use crate::launch::{LaunchSpec, Session};
 use crate::trace::TraceLine;
 
 pub(super) const OFFSCREEN: &str = "-4200,-4200,1400,900";
-const TAB: &str = "view"; // ui-text-exempt: a ribbon tab id
-const TO_OTHER: &str = "ribbon.item.view.move_to_window"; // ui-text-exempt: a trace region name
-const TO_NEW: &str = "ribbon.item.view.move_to_new_window"; // ui-text-exempt: a trace region name
+pub(super) const TAB: &str = "view"; // ui-text-exempt: a ribbon tab id
+pub(super) const TO_OTHER: &str = "ribbon.item.view.move_to_window"; // ui-text-exempt: a trace region name
+pub(super) const TO_NEW: &str = "ribbon.item.view.move_to_new_window"; // ui-text-exempt: a trace region name
 const PICK_PREFIX: &str = "window-pick."; // ui-text-exempt: a trace region name
 const PEERS: &str = "window-peers"; // ui-text-exempt: a trace event name
 pub(super) const RECEIVED: &str = "window-move-received"; // ui-text-exempt: a trace event name
-const SENT: &str = "window-move-sent"; // ui-text-exempt: a trace event name
+pub(super) const SENT: &str = "window-move-sent"; // ui-text-exempt: a trace event name
 pub(super) const EMPTIED: &str = "window-emptied"; // ui-text-exempt: a trace event name
 pub(super) const TORN_OFF: &str = "window-torn-off"; // ui-text-exempt: a trace event name
 pub(super) const TABS: &str = "doc-tabs"; // ui-text-exempt: a trace event name
@@ -290,7 +290,7 @@ pub(super) fn await_line(
     Ok(None)
 }
 
-fn click(w: &Window, ui_rect: &str, name: &str) -> Result<()> {
+pub(super) fn click(w: &Window, ui_rect: &str, name: &str) -> Result<()> {
     let Some(item) = driving::declared_or_in_overflow(&w.session, &w.pointer, ui_rect, name)?
     else {
         return Err(Error::new(format!(

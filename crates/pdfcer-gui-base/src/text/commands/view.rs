@@ -541,9 +541,9 @@ pub const fn view_close_other_documents() -> CommandText {
 pub const fn view_move_to_new_window() -> CommandText {
     CommandText::new(
         "Move to new window",
-        "Close this document here and open it in a new pdfcer window of its own. \
-         Available when more than one document is open here and this one is saved: \
-         the new window opens it from the file.",
+        "Close this document here and open it in a new pdfcer window of its own, \
+         unsaved edits and password included; its undo history stays here. \
+         Available when more than one document is open here and it has a file.",
     )
 }
 
@@ -552,9 +552,10 @@ pub const fn view_move_to_new_window() -> CommandText {
 pub const fn view_move_to_window() -> CommandText {
     CommandText::new(
         "Move to other window",
-        "Close this document here and open it in another pdfcer window; with several \
-         open, you pick which. Available when another pdfcer window is open and this \
-         document is saved: the other window opens it from the file.",
+        "Close this document here and open it in another pdfcer window, unsaved \
+         edits and password included; its undo history stays here. With several \
+         open, you pick which. Available when another pdfcer window is open and \
+         this document has a file.",
     )
 }
 

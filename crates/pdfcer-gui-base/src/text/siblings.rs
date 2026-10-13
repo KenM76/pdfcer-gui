@@ -1,16 +1,22 @@
 //! The words for moving a document to another pdfcer-gui window.
 //!
-//! A move hands the receiving window the file's path and it opens the file
-//! from disk, so every sentence here that can be about edits says the edits
-//! must be saved first: that is the one limit the operator can act on.
+//! A document moves with its unsaved edits and the password it was opened
+//! with, so the refusals here are the few things that cannot travel: a
+//! document with no file behind it, and a staged redaction.
 
 use std::borrow::Cow;
 
 /// Why a document, or a selection dropped on another window, did not move.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum WindowMoveRefusal {
-    /// The document has edits that are not on disk, or was never saved.
-    Unsaved,
+    /// The document has no file behind it: it was made here and never
+    /// saved, or its file is gone.
+    NoFile,
+    /// A redaction is staged and not yet saved.
+    RedactionStaged,
+    /// The copy carrying the unsaved edits could not be written; the field
+    /// is the reason.
+    NotCarried(String),
     /// The other window did not take it; the field is the reason.
     NotSent(String),
     /// No new window could be started; the field is the reason.
@@ -25,10 +31,18 @@ impl WindowMoveRefusal {
     #[must_use]
     pub fn line(&self) -> Cow<'static, str> {
         match self {
-            Self::Unsaved => Cow::Borrowed(
-                "Save this document first. Another window opens it from the saved file, so \
-                 unsaved edits would be left behind. Nothing was moved.",
+            Self::NoFile => Cow::Borrowed(
+                "Save this document first: it has no file another window could open. Nothing \
+                 was moved.",
             ),
+            Self::RedactionStaged => Cow::Borrowed(
+                "Save or cancel the staged redaction first: the content it removes must not \
+                 leave this window. Nothing was moved.",
+            ),
+            Self::NotCarried(why) => Cow::Owned(format!(
+                "pdfcer could not hand over the unsaved edits: {why}. The document is still \
+                 open here."
+            )),
             Self::NotSent(why) => Cow::Owned(format!(
                 "The other window did not take the document: {why}. It is still open here."
             )),
@@ -95,4 +109,42 @@ pub const fn unsendable_name() -> &'static str {
 #[must_use]
 pub const fn no_other_window() -> &'static str {
     "no other pdfcer window is open"
+}
+
+/// The receiving window's reason when it did not answer in time; shown by
+/// the sending window.
+#[must_use]
+pub const fn no_answer() -> &'static str {
+    "it did not answer in time"
+}
+
+/// The receiving window's reason when it already has the file open: a second
+/// copy carrying other edits would make two documents of one file.
+#[must_use]
+pub const fn already_open() -> &'static str {
+    "it already has this file open"
+}
+
+/// The receiving window's reason when the document did not open there.
+#[must_use]
+pub const fn not_opened() -> &'static str {
+    "the document did not open there"
+}
+
+/// Said in the window a document arrived in with unsaved edits: the edits
+/// came along, and the steps that made them stayed behind.
+#[must_use]
+pub fn arrived_with_edits(edits: u64) -> String {
+    format!(
+        "Moved here with {edits} unsaved edit{}. They are kept and saved with the document, but \
+         cannot be undone in this window.",
+        if edits == 1 { "" } else { "s" }
+    )
+}
+
+/// Why unsaved edits could not travel: there is no settings folder to write
+/// their copy in.
+#[must_use]
+pub const fn no_carry_folder() -> &'static str {
+    "there is no settings folder to write them to"
 }

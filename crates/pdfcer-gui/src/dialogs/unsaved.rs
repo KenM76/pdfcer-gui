@@ -387,7 +387,7 @@ pub fn ask_for(status: &Status, intent: PendingIntent) -> Option<UnsavedDialog> 
     // wrong thing.
     Some(UnsavedDialog::new(
         intent,
-        doc.edit_epoch.saturating_sub(doc.saved_epoch),
+        crate::app::save::unsaved_edit_count(doc),
         // Whether a Save button is drawn at all — O65. `has_a_file` is the
         // same predicate `file.save` itself consults before deciding between
         // an overwrite and a picker, so the button offered here and the verb

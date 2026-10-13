@@ -304,7 +304,11 @@ fn no_two_declines_share_a_sentence() {
         Declined::OsPaste(crate::text::ospaste::OsPasteRefusal::Unplaceable(
             "x".to_owned(),
         )),
-        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::Unsaved),
+        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::NoFile),
+        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::RedactionStaged),
+        Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::NotCarried(
+            "x".to_owned(),
+        )),
         Declined::WindowMove(crate::text::siblings::WindowMoveRefusal::NotSent(
             "x".to_owned(),
         )),

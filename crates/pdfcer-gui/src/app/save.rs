@@ -83,11 +83,34 @@ pub fn has_a_file(doc: &OpenDoc) -> bool {
 }
 
 /// **Does this document have edits that are not on disk?** — the one
-/// question, in the one place.
+/// question, in the one place. Edits that arrived from another window count
+/// until the document is saved, though the session here never made them.
 #[must_use]
 pub fn has_unsaved_edits(doc: &OpenDoc) -> bool {
-    (doc.session.is_modified() || doc.session.has_pending_redaction())
-        && doc.edit_epoch != doc.saved_epoch
+    doc.carried_edits > 0
+        || ((doc.session.is_modified() || doc.session.has_pending_redaction())
+            && doc.edit_epoch != doc.saved_epoch)
+}
+
+/// How many edits are not on disk: those made here since the last save, and
+/// those that arrived from another window.
+#[must_use]
+pub fn unsaved_edit_count(doc: &OpenDoc) -> u64 {
+    doc.edit_epoch
+        .saturating_sub(doc.saved_epoch)
+        .saturating_add(doc.carried_edits)
+}
+
+/// Write the document, unsaved edits included, to `target` through the same
+/// funnel as every save, for another window to read in its place.
+///
+/// # Errors
+///
+/// The save's own failure, as a sentence.
+pub fn carry_copy(doc: &OpenDoc, target: &Path) -> Result<(), String> {
+    write_copy(doc, target)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 /// **Save. In place. The one every other program has.**
