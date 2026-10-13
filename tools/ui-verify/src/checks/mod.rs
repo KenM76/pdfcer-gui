@@ -245,6 +245,8 @@ pub mod nodeshape;
 pub mod nudgecontent;
 pub mod replaceimage;
 pub mod restack;
+/// The annotations a saved file finally lists on its pages.
+mod savedannots;
 pub mod stroke_style;
 pub mod typedturn;
 
@@ -1462,6 +1464,8 @@ pub mod ui_scale;
 pub mod link_quads;
 /// Drawing a link and repointing a selected one.
 pub mod links;
+/// Nudging, duplicating, re-stacking and typing the size of a markup shape.
+pub mod markup_place;
 pub mod undo_redo;
 pub mod widget_turn;
 

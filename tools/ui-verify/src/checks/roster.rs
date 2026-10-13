@@ -501,6 +501,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(links::ASelectedLinkIsRepointedFromProperties),
         Box::new(links::AReviewClickFollowsALinkAndDoesNotSelectIt),
         Box::new(link_quads::ALinkIsMovedResizedCopiedAndDeleted),
+        Box::new(markup_place::AMarkupIsNudgedDuplicatedRestackedAndTypedToSize),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

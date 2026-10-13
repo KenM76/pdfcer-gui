@@ -5,6 +5,7 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/link_quads.md`.
 
 use super::dimdrive::{Fixture, click_on, launch_with, press_on_tab};
+use super::savedannots::{listed_annots, numbers_after};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
@@ -325,78 +326,16 @@ fn quad_off_its_box(link: &Link) -> Option<String> {
     })
 }
 
-/// Every live `/Link` in `bytes`: the last definition of each object number,
-/// as an appended save leaves them, kept when a page's last definition lists
-/// it in `/Annots`. A deleted annotation's original body stays in an appended
-/// file, so being defined is not being on the page. Objects inside object
-/// streams are not seen; the save writes its appended objects plainly.
+/// Every live `/Link` in `bytes` (see `savedannots`).
 fn links_in(bytes: &[u8]) -> Vec<Link> {
-    let text = String::from_utf8_lossy(bytes);
-    let mut last: std::collections::BTreeMap<u32, &str> = std::collections::BTreeMap::new();
-    let mut rest = text.as_ref();
-    while let Some(at) = rest.find(" 0 obj") {
-        let head = &rest[..at];
-        let digits = head.len() - head.trim_end_matches(|c: char| c.is_ascii_digit()).len();
-        let body_start = at + " 0 obj".len();
-        let Some(end) = rest[body_start..].find("endobj") else {
-            break;
-        };
-        if digits > 0
-            && let Ok(num) = head[head.len() - digits..].parse::<u32>()
-        {
-            last.insert(num, &rest[body_start..body_start + end]);
-        }
-        rest = &rest[body_start + end..];
-    }
-    let listed: std::collections::BTreeSet<u32> = last
-        .values()
-        .filter(|body| is_page(body))
-        .filter_map(|body| references_after(body, "/Annots"))
-        .flatten()
-        .collect();
-    last.into_iter()
-        .filter(|(num, _)| listed.contains(num))
-        .filter(|(_, body)| body.contains("/Subtype /Link") || body.contains("/Subtype/Link"))
-        .filter_map(|(num, body)| {
-            let rect = numbers_after(body, "/Rect")?;
-            let rect: [f64; 4] = rect.try_into().ok()?;
-            let quads = numbers_after(body, "/QuadPoints").unwrap_or_default();
-            Some(Link { num, rect, quads })
+    listed_annots(bytes)
+        .into_iter()
+        .filter(|a| a.subtype == "Link")
+        .map(|a| Link {
+            num: a.num,
+            rect: a.rect,
+            quads: numbers_after(&a.body, "/QuadPoints").unwrap_or_default(),
         })
-        .collect()
-}
-
-/// Whether `body` is a `/Page` dictionary (not `/Pages`).
-fn is_page(body: &str) -> bool {
-    ["/Type /Page", "/Type/Page"].iter().any(|t| {
-        body.match_indices(t)
-            .any(|(i, _)| !body[i + t.len()..].starts_with('s'))
-    })
-}
-
-/// The object numbers referenced (`n g R`) in the array following `key`.
-fn references_after(body: &str, key: &str) -> Option<Vec<u32>> {
-    let from = body.find(key)? + key.len();
-    let open = body[from..].find('[')? + from + 1;
-    let close = body[open..].find(']')? + open;
-    let words: Vec<&str> = body[open..close].split_whitespace().collect();
-    Some(
-        words
-            .windows(3)
-            .filter(|w| w[2] == "R")
-            .filter_map(|w| w[0].parse().ok())
-            .collect(),
-    )
-}
-
-/// The numbers in the array following `key` in `body`.
-fn numbers_after(body: &str, key: &str) -> Option<Vec<f64>> {
-    let from = body.find(key)? + key.len();
-    let open = body[from..].find('[')? + from + 1;
-    let close = body[open..].find(']')? + open;
-    body[open..close]
-        .split_whitespace()
-        .map(|n| n.parse::<f64>().ok())
         .collect()
 }
 
@@ -425,26 +364,5 @@ mod tests {
             quads: vec![120.0, 215.0, 280.0, 215.0, 120.0, 185.0, 280.0, 185.0],
         };
         assert!(quad_off_its_box(&link).is_some());
-    }
-
-    #[test]
-    fn the_last_definition_of_an_object_wins() {
-        let bytes = b"3 0 obj << /Type /Page /Annots [5 0 R] >> endobj\n\
-                      5 0 obj << /Subtype /Link /Rect [0 0 1 1] >> endobj\n\
-                      5 0 obj << /Subtype /Link /Rect [0 0 2 2] >> endobj\n";
-        let links = links_in(bytes);
-        assert_eq!(links.len(), 1);
-        assert_eq!(links[0].rect, [0.0, 0.0, 2.0, 2.0]);
-    }
-
-    #[test]
-    fn a_link_the_page_no_longer_lists_is_gone() {
-        let bytes = b"3 0 obj << /Type /Page /Annots [5 0 R] >> endobj\n\
-                      5 0 obj << /Subtype /Link /Rect [0 0 1 1] >> endobj\n\
-                      6 0 obj << /Subtype /Link /Rect [0 0 2 2] >> endobj\n\
-                      3 0 obj << /Type /Page /Annots [6 0 R] >> endobj\n";
-        let links = links_in(bytes);
-        assert_eq!(links.len(), 1);
-        assert_eq!(links[0].num, 6);
     }
 }
