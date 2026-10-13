@@ -363,9 +363,10 @@ versioned home). `OcrRunner::reports_confidence()` is an R8 capability (`ocrs` a
    1,677,721,600 %. ⚠ **The eight-rung separate-process ladder recorded under
    O221 measured a real zero of the wrong variable** — every rung ran in Read
    mode with off-page display off, which is the branch the defect never
-   touched. ⚠ **And a new R8b gap is now owed:** above the halo's own wall the
-   off-page content silently stops being drawn, with no off-canvas report
-   (`GUI_ROADMAP.md`, rendering section).
+   touched. Above the halo's own wall the canvas takes the visible-region tier
+   (`render::halo::walled`, traced `tier=walled`), so off-page content stays
+   drawn there; driven by
+   `ui-verify::an_object_off_the_page_is_drawn_past_its_halo_wall`.
    **Built.** O218 — every ceiling the shell derived was
    `RenderQuality::multiplier` too high, so it offered a zoom the engine then
    refused; `viewer::raster_density` is now the single factor and

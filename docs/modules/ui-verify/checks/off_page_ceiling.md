@@ -63,8 +63,9 @@ controls are **relational**, read from the application's own trace:
    `crop=` the same run publishes. That is the whole premise — if the halo
    were the smaller rectangle there would be no defect to check.
 2. **The application abandoned the halo tier while off-page display was
-   still on.** A `tier=halo` line followed by a `tier=whole` one is the
-   application *saying* it crossed the halo's own wall. That is the point
+   still on.** A `tier=halo` line followed by any other tier (`walled`, or
+   `whole` on a build without the walled tier) is the application *saying* it
+   crossed the halo's own wall. That is the point
    the pre-fix build died at, so a run that never reaches it has not
    entered the window where the defect lives and this check would be inert.
 

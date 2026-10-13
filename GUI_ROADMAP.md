@@ -373,26 +373,6 @@ cargo run --release -q -p ui-verify -- --list
    anchor today, so a dense stroke makes node-grab the hot spot. It resurfaces
    as selection gets richer.
 
-### ⚠ An R8b disclosure gap on the off-page halo, owed and not built
-
-The off-page halo union is a box fixed in **page** coordinates, so it grows with
-zoom and strikes `MAX_PIXMAP_EDGE` well before the sheet does — on
-`fixtures/off-page-object.pdf` at raster scale ≈ 45.5, on a dense site plan at
-≈ 6.87. Above that wall `app::settle` correctly declines the halo region and
-falls back, the page keeps zooming, and **the off-page content silently stops
-being drawn**.
-
-That is the right rendering behaviour and the wrong disclosure behaviour.
-Content the operator could see one step ago is gone, nothing says so, and under
-**R8b** the canvas may not be marked — so the report has to be off-canvas: a
-status-line or results-panel line naming that off-page content is not being
-drawn at this zoom, and what zoom restores it.
-
-The number is already known at the decision point: `render::strategy::region_raster_fits`
-returns `false` on exactly this case. What is missing is a channel from there to
-a disclosure surface, and a driven `ui-verify` assertion that the disclosure
-appears at the wall and clears below it.
-
 Two controls that were once proposed here now exist as preferences: a
 raster-scale quality multiplier, and the zoom settle delay. Three others do not
 exist and are not merely unbuilt — a render-strategy radio has no tiled path to

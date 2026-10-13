@@ -509,6 +509,8 @@ pub mod off_page_toggle;
 /// uniformly-dark capture cannot pass.
 pub mod off_page_visible;
 
+pub mod off_page_wall;
+
 pub mod off_page_zoom;
 
 /// **O186 stage one** — Ctrl+wheeling in with the pointer just off the

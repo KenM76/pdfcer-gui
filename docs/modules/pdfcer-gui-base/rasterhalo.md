@@ -127,7 +127,17 @@ facts about the page rather than three spellings of "no":
    [`OVERHANG_TOLERANCE_PTS`]. The overwhelming majority of pages, and the
    reason this whole module costs a normal document nothing.
 3. **it would not fit** — see the module header; O24's visible-region tier
-   takes over.
+   takes over, because [`walled`] tells `canvas::tier::decide` to take it.
+
+### `fn walled`
+
+`true` exactly when [`region`] declines for reason 3: content hangs past the
+sheet and the union does not fit a pixmap at this scale. Without it the canvas
+would fall back to the whole-page raster whenever the sheet alone still fits —
+and that raster has no pixels off the sheet, so between the halo's wall and the
+sheet's the off-page content vanished. The canvas traces the forced choice as
+`canvas-halo tier=walled`; `ui-verify`'s
+`an_object_off_the_page_is_drawn_past_its_halo_wall` drives it.
 
 ### `fn reach`
 

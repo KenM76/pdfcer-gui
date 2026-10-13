@@ -182,7 +182,8 @@ struct Wall {
     halo_pts: f64,
     /// The sheet's longest edge, in page points.
     sheet_pts: f64,
-    /// Where the `tier=whole` line that follows the halo sits in the capture.
+    /// Where the first non-`halo` tier line that follows the halo sits in the
+    /// capture.
     lineno: usize,
     /// The last zoom the application published at or before that line.
     zoom: f32,
@@ -249,14 +250,14 @@ fn controls(trace: &Trace, report: &mut CheckReport) -> Result<Wall> {
     }
 
     // Control 2. The application saying, in its own trace, that the halo
-    // stopped fitting: it went back to the whole sheet while off-page display
-    // was still on. A run that never reaches this line never entered the
+    // stopped fitting: it left the halo tier (for `walled`, or `whole` on a
+    // build that has no walled tier) while off-page display was still on. A run that never reaches this line never entered the
     // window the defect lives in.
     let abandoned = trace
         .events(HALO)
         .find(|l| {
             l.lineno > halo.lineno
-                && l.get("tier") == Some("whole")
+                && l.get("tier") != Some("halo")
                 && l.get("offpage") == Some("on")
         })
         .ok_or_else(|| {

@@ -19,6 +19,55 @@ pub const OVERHANG_TOLERANCE_PTS: f64 = 1.0;
 /// [`None`] if this page does not need one.
 #[must_use]
 pub fn region(crop: Rect, content: Option<Rect>, raster_scale: f32) -> Option<Rect> {
+    let union = overhanging_union(crop, content)?;
+
+    // The same ceiling `strategy::for_page` applies to the whole-page tier,
+    // asked of the bigger box. Rotation is irrelevant to it — a quarter turn
+    // swaps the two edges and does not change which is longest — which is why
+    // this function needs no `PageFrame` and the one below does.
+    //
+    // Through `strategy::region_raster_fits` and not spelled here. The
+    // order that reaches the worker is guarded by that same predicate, one
+    // frame later and at a scale this call could not see — and a halo box
+    // validated here at one scale was rasterized at the next one up, refused,
+    // and turned into the document's zoom ceiling. Two spellings of one wall
+    // is how that happened; one spelling is why it cannot happen again.
+    //
+    // ⚠ The scale guard stays HERE and is not delegated, because the two
+    // functions answer bad input in opposite directions on purpose:
+    // `region_raster_fits` answers `true` so that a caller never withholds an
+    // order over a number it could not reason about, while this function
+    // answers `None` so that a nonsense rectangle is never sent to the
+    // renderer. Both are right for their own caller; only spelling the second
+    // one keeps it that way. The union's own edges need no such guard — it
+    // contains the crop box, which was checked finite and non-degenerate
+    // in `overhanging_union`.
+    if !raster_scale.is_finite() || raster_scale <= 0.0 {
+        return None;
+    }
+    if !crate::rasterstrategy::region_raster_fits(union, raster_scale) {
+        return None;
+    }
+    Some(union)
+}
+
+/// **Whether this page's halo is declined only because it would not fit**:
+/// content hangs past the sheet and the union of the two is larger than a
+/// pixmap at `raster_scale`. A whole-page raster has no pixels off the sheet,
+/// so the caller must take the visible-region tier, whose request [`reach`]
+/// widens past it.
+#[must_use]
+pub fn walled(crop: Rect, content: Option<Rect>, raster_scale: f32) -> bool {
+    raster_scale.is_finite()
+        && raster_scale > 0.0
+        && overhanging_union(crop, content)
+            .is_some_and(|union| !crate::rasterstrategy::region_raster_fits(union, raster_scale))
+}
+
+/// The crop box unioned with `content`, when `content` hangs past it by more
+/// than [`OVERHANG_TOLERANCE_PTS`]; [`None`] for no content, content on the
+/// sheet, or input that cannot be reasoned about.
+fn overhanging_union(crop: Rect, content: Option<Rect>) -> Option<Rect> {
     let content = content?;
     if !finite(crop) || !finite(content) {
         return None;
@@ -47,34 +96,6 @@ pub fn region(crop: Rect, content: Option<Rect>, raster_scale: f32) -> Option<Re
         .max(union.urx - crop.urx)
         .max(union.ury - crop.ury);
     if overhang <= OVERHANG_TOLERANCE_PTS {
-        return None;
-    }
-
-    // The same ceiling `strategy::for_page` applies to the whole-page tier,
-    // asked of the bigger box. Rotation is irrelevant to it — a quarter turn
-    // swaps the two edges and does not change which is longest — which is why
-    // this function needs no `PageFrame` and the one below does.
-    //
-    // Through `strategy::region_raster_fits` and not spelled here. The
-    // order that reaches the worker is guarded by that same predicate, one
-    // frame later and at a scale this call could not see — and a halo box
-    // validated here at one scale was rasterized at the next one up, refused,
-    // and turned into the document's zoom ceiling. Two spellings of one wall
-    // is how that happened; one spelling is why it cannot happen again.
-    //
-    // ⚠ The scale guard stays HERE and is not delegated, because the two
-    // functions answer bad input in opposite directions on purpose:
-    // `region_raster_fits` answers `true` so that a caller never withholds an
-    // order over a number it could not reason about, while this function
-    // answers `None` so that a nonsense rectangle is never sent to the
-    // renderer. Both are right for their own caller; only spelling the second
-    // one keeps it that way. The union's own edges need no such guard — it
-    // contains the crop box, which was checked finite and non-degenerate
-    // above.
-    if !raster_scale.is_finite() || raster_scale <= 0.0 {
-        return None;
-    }
-    if !crate::rasterstrategy::region_raster_fits(union, raster_scale) {
         return None;
     }
     Some(union)
@@ -172,7 +193,7 @@ pub fn overhang(extent: (f32, f32), frame: PageFrame, content: Option<Rect>) -> 
 
 #[cfg(test)]
 mod tests {
-    use super::{OVERHANG_TOLERANCE_PTS, overhang, reach, region};
+    use super::{OVERHANG_TOLERANCE_PTS, overhang, reach, region, walled};
     use crate::rasterregion::PageFrame;
     use pdfcer_core::page_tree::Rect;
 
@@ -252,6 +273,20 @@ mod tests {
         assert!(region(CROP, content, 1.0).is_some());
         // At 8× it is 41,600 px against a 16,383 ceiling.
         assert_eq!(region(CROP, content, 8.0), None);
+    }
+
+    /// [`walled`] is true exactly where [`region`] declines for size: never on
+    /// a page with nothing off the sheet, never where the halo fits.
+    #[test]
+    fn walled_names_only_the_halo_that_would_not_fit() {
+        let off = Some(r(-160.0, 100.0, -40.0, 140.0));
+        // 360 pt across: fits at 45, not at 46 (16,383 px ceiling).
+        assert!(!walled(CROP, off, 45.0));
+        assert!(walled(CROP, off, 46.0));
+        assert!(!walled(CROP, Some(r(10.0, 10.0, 190.0, 190.0)), 1_000.0));
+        assert!(!walled(CROP, None, 1_000.0));
+        assert!(!walled(CROP, off, f32::NAN));
+        assert!(!walled(CROP, off, 0.0));
     }
 
     /// A degenerate scale or crop box is never answered, for the reason

@@ -63,11 +63,14 @@ pub(super) fn decide(
             None
         };
         doc.learn_ink(current);
-        if crate::render::strategy::for_page(extent, raster_scale, doc.ink_at(current))
-            == crate::render::strategy::Strategy::Region
-            && place.width() > 0.0
-            && place.height() > 0.0
-        {
+        // Between the halo's wall and the sheet's, the whole-page raster still
+        // fits but has no pixels off the sheet; the region tier, whose request
+        // `halo::reach` widens, is the one that can draw what hangs over.
+        let walled = crate::render::halo::walled(frame.crop(), content, raster_scale);
+        let sheet_region =
+            crate::render::strategy::for_page(extent, raster_scale, doc.ink_at(current))
+                == crate::render::strategy::Strategy::Region;
+        if (sheet_region || walled) && place.width() > 0.0 && place.height() > 0.0 {
             // What is visible OF THIS PAGE, in strip space, then in the
             // page's own points. The two scales are derived from the
             // placement rather than from the zoom, so a page whose
@@ -120,7 +123,7 @@ pub(super) fn decide(
                 ));
             }
             trace::halo(
-                "region",
+                if sheet_region { "region" } else { "walled" },
                 content.is_some(),
                 doc.view.off_page,
                 doc.region_for(current),
@@ -139,12 +142,8 @@ pub(super) fn decide(
             // safety argument: a halo is never smaller than the crop box,
             // so if the whole page does not fit, the halo certainly does
             // not. Reaching this branch at all means the whole-page
-            // raster fits; `halo::region` then asks the same ceiling
-            // question of the bigger box and answers `None` if the answer
-            // changed — in which case this page stays on the whole-page
-            // tier and the off-page object is simply not visible until the
-            // operator zooms out, which is the honest failure and the one
-            // a clamp would have hidden.
+            // raster fits and the halo is not `walled`, so `halo::region`
+            // answers `None` here only for a page with nothing off its sheet.
             let halo = crate::render::halo::region(frame.crop(), content, raster_scale);
             if let Some(halo) = halo {
                 doc.raster_region = Some((current, halo));

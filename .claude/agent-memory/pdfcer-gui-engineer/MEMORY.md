@@ -173,3 +173,4 @@
 - [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — paragraph widening ate the OCR preview for 3 releases; re-drive neighbours.
 - [A missing feature surface SKIPs, not FAILs](feedback_harness_skip_masks_feature.md) — `press` on an absent region is a harness error; assert the surface drew first.
 - [Park drafts in D:\scratch](feedback_park_drafts_scratch.md) — never D:/temp; apply scripts and control exes live there too.
+- [Overshooting a band passes on the defect](feedback_overshoot_window.md) — picture at the first wall; SKIP if the trace shows the far tier.
