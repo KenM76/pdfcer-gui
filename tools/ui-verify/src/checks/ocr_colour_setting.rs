@@ -1,25 +1,22 @@
 //! `ocr_colour_setting` — **the recognised text is drawn in the colour the
 //! preferences file names, and Settings ▸ Display's Reset writes the default
-//! back.**
+//! back.** Driven with the scripted pointer in windows placed off the desktop.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/ocr_colour_setting.md`.
 
 use std::path::Path;
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, frame_of, list};
-use crate::checks::ocr_layer_view::{OCR_BAND, Scene};
+use super::dimdrive::{launch_with, press, ui_rect_event};
+use crate::checks::driving::{declared, declared_in, declared_names, list};
+use crate::checks::ocr_layer_view::{FIXTURE, OCR_BAND, Scene};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, PageGeometry};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
-use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-const FIXTURE: &str = "ocr-layers.pdf";
 /// Read mode with the OCR layer painted.
 const SHOW_LAYER: &str = "mode.read,view.ocr_layer";
 const OPEN_SETTINGS: &str = "file.settings";
-const VIEWPORT: &str = "canvas-viewport"; // ui-text-exempt: a trace region name
 const DIALOG: &str = "dialog:settings";
 const DISPLAY_HEADING: &str = "settings.heading.display";
 const RESET: &str = "settings.display.ocr_colour.reset";
@@ -68,54 +65,12 @@ struct Tint {
     magenta: usize,
 }
 
-fn launch(ctx: &CheckContext, exe: &Path, tag: &str, invoke: &str, pdf: bool) -> Result<Session> {
-    let mut spec = LaunchSpec::new(exe, ctx.out(&format!("ocr_colour_setting.{tag}.trace.txt")));
-    if pdf {
-        spec.pdf = Some(
-            crate::fixture::workspace_root()
-                .join("fixtures")
-                .join(FIXTURE),
-        );
-    }
-    spec.env.push((
-        ctx.profile.diag_env.0.to_owned(),
-        ctx.profile.diag_env.1.to_owned(),
-    ));
-    spec.env
-        .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    spec.env
-        .push(("PDFCER_DIAG_INVOKE".to_owned(), invoke.to_owned()));
-    spec.allow_stale = ctx.allow_stale;
-    spec.source_root = ctx.source_root.clone();
-    Session::launch(&spec, ctx.profile.trace_prefix)
-}
-
 /// Launch with the layer painted and classify the recognised line's pixels.
-fn tint(ctx: &CheckContext, report: &mut CheckReport, exe: &Path, tag: &str) -> Result<Tint> {
-    let ui_rect = ui_rect(ctx)?;
-    let pdf = crate::fixture::workspace_root()
-        .join("fixtures")
-        .join(FIXTURE);
-    let page: PageGeometry = crate::fixture::page_geometry(&pdf)
-        .ok_or_else(|| Error::new("could not read a page size from the fixture."))?;
-    let session = launch(ctx, exe, tag, SHOW_LAYER, true)?;
-    report.artifact(session.trace_path().to_path_buf());
-    session.settle(60);
-    let trace = session.trace()?;
-    let frame = session.frame()?;
-    let canvas = frame.logical_to_capture_pixels(
-        declared(&trace, ui_rect, VIEWPORT)
-            .ok_or_else(|| Error::new(format!("no `{VIEWPORT}` region. SKIPPED.")))?,
-    );
-    let scene = Scene {
-        session: &session,
-        frame,
-        mapping: CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, 0)?,
-        canvas,
-    };
-    let path = ctx.out(&format!("ocr_colour_setting.{tag}.png"));
-    let img = crate::capture::window_to_png(&session, &path)?;
-    report.artifact(path);
+fn tint(ctx: &CheckContext, report: &mut CheckReport, tag: &str) -> Result<Tint> {
+    let stem = format!("ocr_colour_setting.{tag}");
+    let (session, pointer) = launch_with(ctx, report, &FIXTURE, SHOW_LAYER, &stem, &[])?;
+    let scene = Scene::now(ctx, &session, &pointer)?;
+    let img = scene.shot(ctx, report, "ocr_colour_setting", tag)?;
     let mut tint = Tint::default();
     for p in img.pixels_in(scene.band(OCR_BAND)?) {
         let (r, g, b) = (i32::from(p.r), i32::from(p.g), i32::from(p.b));
@@ -125,18 +80,12 @@ fn tint(ctx: &CheckContext, report: &mut CheckReport, exe: &Path, tag: &str) -> 
             tint.magenta += 1;
         }
     }
+    let _ = pointer.gone(&session);
     report.note(format!(
         "{tag}: the recognised line holds {} green-leaning and {} magenta-leaning pixels",
         tint.green, tint.magenta
     ));
     Ok(tint)
-}
-
-fn ui_rect(ctx: &CheckContext) -> Result<&'static str> {
-    ctx.profile
-        .vocab
-        .ui_rect_event
-        .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))
 }
 
 /// The colour line of the sandbox's preferences file, if any.
@@ -163,12 +112,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks the Settings window.",
-        ));
-    }
-    let ui_rect = ui_rect(ctx)?;
     let userdata = exe
         .parent()
         .ok_or_else(|| Error::new("the binary has no parent directory"))?
@@ -177,7 +120,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .map_err(|e| Error::new(format!("could not plant the preference: {e}")))?;
 
     // --- 1: the planted colour is the one drawn ------------------------------
-    let planted = tint(ctx, report, &exe, "planted")?;
+    let planted = tint(ctx, report, "planted")?;
     if planted.green + planted.magenta == 0 {
         return Err(Error::new(
             "the recognised line shows no coloured pixels at all, so the layer did not paint. \
@@ -192,51 +135,81 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     // --- 2: Reset, Save, and the file ---------------------------------------
-    let session = launch(ctx, &exe, "settings", OPEN_SETTINGS, false)?;
-    report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    let driver = Driver::new(session.window());
+    if let Some(failure) = reset_and_save(ctx, report)? {
+        return Ok(Some(failure));
+    }
+    let line = written(&userdata)?;
+    report.note(format!(
+        "after Reset and Save the file reads {KEY} = {line:?}"
+    ));
+    if !line
+        .as_deref()
+        .is_some_and(|v| v.eq_ignore_ascii_case(DEFAULT_WRITTEN))
+    {
+        return Ok(Some(format!(
+            "Reset and Save left {KEY} = {line:?} in the preferences file, not {DEFAULT_WRITTEN}."
+        )));
+    }
+
+    // --- 3: the next run reads the default back ------------------------------
+    let reset = tint(ctx, report, "reset")?;
+    if reset.magenta == 0 || reset.green != 0 {
+        return Ok(Some(format!(
+            "the file says {DEFAULT_WRITTEN} and the next run drew {reset:?}: the saved colour \
+             is not the one read back."
+        )));
+    }
+    report.note("the planted colour is drawn, Reset writes the default, and the next run draws it");
+    Ok(None)
+}
+
+/// Open Settings, roll Display down to the colour's Reset, press it, Save.
+/// The window is closed (dropped) before this returns, so the file is final.
+fn reset_and_save(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+    let ui_rect = ui_rect_event(ctx)?;
+    let (session, pointer) = launch_with(
+        ctx,
+        report,
+        &FIXTURE,
+        OPEN_SETTINGS,
+        "ocr_colour_setting.settings",
+        &[],
+    )?;
     let trace = session.trace()?;
-    if declared(&trace, ui_rect, DIALOG).is_none() {
+    let Some((_, dialog_vp)) = declared_in(&trace, ui_rect, DIALOG) else {
         return Err(Error::new(format!(
             "`{OPEN_SETTINGS}` was invoked and no `{DIALOG}` appeared."
         )));
-    }
-    let Some(heading) = declared(&trace, ui_rect, DISPLAY_HEADING) else {
+    };
+    if declared_in(&trace, ui_rect, DISPLAY_HEADING).is_none() {
         return Ok(Some(format!(
             "the Settings window declares no `{DISPLAY_HEADING}`. Headings: {}.",
             list(&declared_names(&trace, ui_rect, "settings.heading."))
         )));
-    };
-    driver
-        .click_at(frame_of(&session, &trace, ui_rect, DISPLAY_HEADING)?.declared_center(heading))?;
-    session.settle(20);
+    }
+    press(ctx, &session, &pointer, DISPLAY_HEADING)?;
     // The colour sits low on a long page: roll the page body until Reset is
     // in view, as the operator would.
     for _ in 0..MAX_SCROLLS {
         let trace = session.trace()?;
-        if declared(&trace, ui_rect, RESET).is_some() {
+        if declared_in(&trace, ui_rect, RESET).is_some() {
             break;
         }
-        let Some(body) = declared(&trace, ui_rect, PAGE_BODY) else {
+        let Some((body, vp)) = declared_in(&trace, ui_rect, PAGE_BODY) else {
             break;
         };
-        driver.scroll_at(
-            frame_of(&session, &trace, ui_rect, PAGE_BODY)?.declared_center(body),
-            -3,
-        )?;
+        pointer.wheel_in(&session, vp.as_deref(), WindowPoint::centre_of(body), -3.0)?;
         session.settle(10);
     }
     let trace = session.trace()?;
-    let Some(reset) = declared(&trace, ui_rect, RESET) else {
+    if declared_in(&trace, ui_rect, RESET).is_none() {
         return Ok(Some(format!(
             "the Display page is open with a non-default colour and declares no `{RESET}`: \
              Reset is not offered, or is scrolled out of view. Regions: {}.",
             list(&declared_names(&trace, ui_rect, "settings.display."))
         )));
-    };
-    driver.click_at(frame_of(&session, &trace, ui_rect, RESET)?.declared_center(reset))?;
-    session.settle(20);
+    }
+    press(ctx, &session, &pointer, RESET)?;
     let trace = session.trace()?;
     if declared(&trace, ui_rect, RESET).is_some() {
         return Ok(Some(
@@ -244,9 +217,17 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 .to_owned(),
         ));
     }
+    // The picture is evidence for a reader, not an oracle: an immediate
+    // viewport never answers a screenshot, so a refusal is noted and passed.
     let shot = ctx.out("ocr_colour_setting.settings.png");
-    crate::capture::window_to_png(&session, &shot)?;
-    report.artifact(shot);
+    match pointer.screenshot_in(&session, dialog_vp.as_deref(), &shot) {
+        Ok(()) => {
+            report.artifact(shot);
+        }
+        Err(why) => {
+            report.note(format!("no picture of the Settings window: {why}"));
+        }
+    }
     let Some(save) = declared(&trace, ui_rect, SAVE) else {
         return Ok(Some(format!("the Settings window declares no `{SAVE}`.")));
     };
@@ -265,35 +246,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     let saves = trace.events(PREFS_SAVED).count();
-    driver.click_at(frame_of(&session, &trace, ui_rect, SAVE)?.declared_center(save))?;
-    session.settle(30);
+    press(ctx, &session, &pointer, SAVE)?;
     if session.trace()?.events(PREFS_SAVED).count() == saves {
         return Ok(Some(format!(
             "Save was pressed after Reset and no `{PREFS_SAVED}` line followed."
         )));
     }
+    let _ = pointer.gone(&session);
     drop(session);
-    let line = written(&userdata)?;
-    report.note(format!(
-        "after Reset and Save the file reads {KEY} = {line:?}"
-    ));
-    if !line
-        .as_deref()
-        .is_some_and(|v| v.eq_ignore_ascii_case(DEFAULT_WRITTEN))
-    {
-        return Ok(Some(format!(
-            "Reset and Save left {KEY} = {line:?} in the preferences file, not {DEFAULT_WRITTEN}."
-        )));
-    }
-
-    // --- 3: the next run reads the default back ------------------------------
-    let reset = tint(ctx, report, &exe, "reset")?;
-    if reset.magenta == 0 || reset.green != 0 {
-        return Ok(Some(format!(
-            "the file says {DEFAULT_WRITTEN} and the next run drew {reset:?}: the saved colour \
-             is not the one read back."
-        )));
-    }
-    report.note("the planted colour is drawn, Reset writes the default, and the next run draws it");
     Ok(None)
 }

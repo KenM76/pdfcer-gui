@@ -42,6 +42,6 @@ Three launches of the check's sandboxed binary, all against its own
 ## Falsification
 
 - Passing `DEFAULT_COLOUR` to `ocrlayer::sync` in place of the preference
-  fails step 1: 0 green, 116 magenta.
+  fails step 1: 0 green, 227 magenta.
 - Removing the row cap in `settings::nav::show` fails step 2 on
   `dialog-fit-runaway … at=860x770 wanted=860x808`.
