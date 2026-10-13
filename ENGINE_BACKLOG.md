@@ -648,6 +648,7 @@ authoring is not among them: `EditSession::add_text_annotation` with
 ## Filed requests for page assembly — not verdict rows
 
 - **G185** — `insert_pages` given a page index twice lists one copied page object twice, a tree the reader rejects as a cycle. Worked around in `app::actions::insertruns` (one call per repeat-free run, folded into one undo). Open.
+- **G186** — `paste_objects_on_layer` moves a carried raw annotation's `/Rect` and leaves `/QuadPoints`, `/L`, `/Vertices`, `/CL` and `/InkList` at the source position, so a pasted link answers clicks where the original was. Worked around in `app::actions::pastegeometry` (the clip's raw dictionaries are translated before the paste, with `move_annotation`'s key list). Open.
 
 ## Snapshot box
 

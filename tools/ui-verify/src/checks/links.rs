@@ -290,6 +290,10 @@ fn repoint(
         CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, FIXTURE.page, 0)?;
     let grip = mapping.doc_to_window(DocPoint::new(0, LINK_CORNER.0, LINK_CORNER.1))?;
     let landing = mapping.doc_to_window(DocPoint::new(0, CORNER_TO.0, CORNER_TO.1))?;
+    // Hover first, as the other grip drags do. Straight from a click in
+    // Properties, a drag has been seen to miss the grip with no trace line.
+    pointer.hover(session, grip)?;
+    session.settle(10);
     let mark = session.trace()?.mark();
     pointer.drag(session, grip, landing, 10)?;
     session.settle(30);

@@ -1,0 +1,33 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 400] /Resources << /Font << /Helv << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 4 0 R /Annots [5 0 R] >>
+endobj
+4 0 obj
+<<  /Length 49 >>
+stream
+BT /Helv 12 Tf 0 g 110 195 Td (See page 2) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Link /Rect [100 180 300 220] /QuadPoints [120 215 280 215 120 185 280 185] /P 3 0 R /F 4 /A << /S /URI /URI (https://example.com/) >> /Border [0 0 1] /C [0 0 1] >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000314 00000 n 
+0000000413 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+618
+%%EOF

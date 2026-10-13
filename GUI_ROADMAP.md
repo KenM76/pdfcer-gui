@@ -31,11 +31,9 @@ around them.
 
 ### O288 item 2's tool audit: what the shell can still build
 
-The engine gaps it found are G148–G161 in `ENGINE_BACKLOG.md`. These have a
-verb in the pin and no route yet:
-
-- **Links:** select, move and resize are built and driven. Delete and copy
-  are not driven; check that `/QuadPoints` follow `/Rect` on a resize.
+The engine gaps it found are G148–G161 in `ENGINE_BACKLOG.md`. Every verb
+the pin has for them has a route and a driven check. A pasted link's
+`/QuadPoints` follow its `/Rect` through a shell workaround, filed as G186.
 
 ---
 
