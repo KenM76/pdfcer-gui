@@ -11,6 +11,9 @@ pub enum DraftNote {
     LinesJoined,
     /// Tab was typed as this many spaces.
     TabAsSpaces(usize),
+    /// A paragraph opened as one draft whose typed breaks were judged from
+    /// its layout, not read from marks pdfcer wrote.
+    BreaksInferred,
 }
 
 impl DraftNote {
@@ -20,6 +23,7 @@ impl DraftNote {
         match self {
             Self::LinesJoined => "lines-joined", // ui-text-exempt: a trace token, never displayed
             Self::TabAsSpaces(_) => "tab-as-spaces", // ui-text-exempt: a trace token, never displayed
+            Self::BreaksInferred => "breaks-inferred", // ui-text-exempt: a trace token, never displayed
         }
     }
 }
@@ -38,6 +42,10 @@ pub fn line(note: DraftNote) -> String {
             "Tab was typed as {n} spaces to the next half-inch stop: text in a PDF has no tab \
              stops."
         ),
+        DraftNote::BreaksInferred => "Where this paragraph's lines were broken by hand was \
+                                      judged from its layout: a break after a nearly full line \
+                                      reads as a wrap and joins the next line."
+            .to_owned(),
     }
 }
 
@@ -51,9 +59,10 @@ mod tests {
             DraftNote::LinesJoined,
             DraftNote::TabAsSpaces(1),
             DraftNote::TabAsSpaces(4),
+            DraftNote::BreaksInferred,
         ];
         let lines: std::collections::HashSet<String> = all.iter().map(|n| line(*n)).collect();
-        assert_eq!(lines.len(), 3);
+        assert_eq!(lines.len(), 4);
         assert!(line(DraftNote::TabAsSpaces(4)).contains("4 spaces"));
         assert_ne!(
             DraftNote::LinesJoined.token(),

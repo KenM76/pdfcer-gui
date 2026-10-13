@@ -1017,9 +1017,8 @@ impl PdfcerApp {
                 page,
                 run,
                 block,
-                wrap,
                 text,
-            }) => super::blocktext::commit(doc, page, (run, block), wrap, &text),
+            }) => super::blocktext::commit(doc, page, (run, block), &text),
             // The second arm here that changes no document, and for the same
             // reason: a keystroke handler in `canvas::` cannot reach the
             // decline store, which is `pub(super)` of `crate::app` on purpose.

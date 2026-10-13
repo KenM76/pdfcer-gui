@@ -24,7 +24,9 @@ the paper is blank.
   two lines, the Enter kept as a break. `Notes` is short enough for `second`
   to fit after it, so only a kept break holds them apart on rewrite.
 - Step 5: `lines=2 breaks=1` again. An edit that re-wrapped the paragraph
-  would merge the lines, or split the widest (G162).
+  would merge the lines, or split the widest. The shell passes no wrap width;
+  the widest line stays whole by the engine's `FIT_TOLERANCE` (G162), which
+  this repository cannot mutate.
 - Step 6: `lines>=2 breaks=0 len=45` — the wraps the engine made read back
   as spaces.
 
@@ -33,15 +35,13 @@ the paper is blank.
 Each mutation run alone against the passing build:
 
 - `widen` not called → FAIL at step 3: the click opened a one-line draft.
-- `joint` always a space → FAIL at step 3: `breaks=0`.
-- The commit given no wrap width → FAIL at step 5: the edit split the
-  paragraph's widest line, and it re-opened as `lines=3 breaks=0`.
+- Every line end joined with a space → FAIL at step 3: `breaks=0`.
 - `begin_box` back to kind `Add` → FAIL at step 6: the box closed the next
   frame and Ctrl+Enter wrote nothing.
 
 ## What it does not prove
 
-A paragraph from a foreign producer, where the break inference (G163) meets
-lines it did not write; a paragraph in a table cell; mixed looks, which
+A paragraph from a foreign producer, whose breaks are always inferred
+(`hand_breaks` covers the disclosure); a paragraph in a table cell; mixed looks, which
 decline as before. The cost of `widen` on a dense sheet is unmeasured; it is
 1–2 ms here.

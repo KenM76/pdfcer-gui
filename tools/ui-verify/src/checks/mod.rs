@@ -1113,6 +1113,8 @@ pub mod draft_keys;
 pub mod draft_paragraph;
 /// Enter in a paragraph on the page breaks it.
 pub mod enter_paragraph;
+/// A paragraph's hand breaks are read from pdfcer's marks, or the guess is disclosed.
+pub mod hand_breaks;
 pub mod ime;
 /// A letter no page font has is typed in a face from the font folders.
 pub mod installed_letter;

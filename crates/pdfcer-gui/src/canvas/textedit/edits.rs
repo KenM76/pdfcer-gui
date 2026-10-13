@@ -458,7 +458,12 @@ impl Keys<'_> {
             // A line cannot hold a break; its paragraph can. Open the
             // paragraph, then break it like any other multi-line draft.
             EnterMeans::CannotSplit => match super::promote::open(self.ctx, self.doc, self.draft) {
-                Ok(()) => self.new_line(),
+                Ok(source) => {
+                    self.new_line();
+                    if source == pdfcer_core::text_edit::LineEndSource::Inferred {
+                        note::raise(self.ctx, DraftNote::BreaksInferred);
+                    }
+                }
                 Err(why) => self.actions.push(Action::Text(
                     crate::app::actions::text::TextAction::EnterCannotSplit(why),
                 )),

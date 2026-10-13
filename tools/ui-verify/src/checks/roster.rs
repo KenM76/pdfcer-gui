@@ -271,6 +271,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(dimension_text_select::ClickingADimensionsTextSelectsIt),
         Box::new(draft_arrows::ArrowsInATextDraftStayWithTheCaret),
         Box::new(draft_paragraph::AParagraphReopensAsOneDraft),
+        Box::new(hand_breaks::HandBreaksAreReadFromMarks),
         // Immediately after the check whose gesture it extends, and the order
         // is a dependency: this one drives the same two-point calibration and
         // then asks what the window did with it. If the pick itself is broken,

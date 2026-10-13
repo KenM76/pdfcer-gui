@@ -12,14 +12,8 @@ use pdfcer_core::text_edit::BlockEditError;
 use crate::app::state::OpenDoc;
 
 /// Replace paragraph `block` on `page` with `text`, opened from line `run`.
-pub(super) fn commit(
-    doc: &mut OpenDoc,
-    page: usize,
-    (run, block): (usize, usize),
-    wrap: Option<f64>,
-    text: &str,
-) {
-    let options = crate::canvas::textedit::promote::options(doc, wrap);
+pub(super) fn commit(doc: &mut OpenDoc, page: usize, (run, block): (usize, usize), text: &str) {
+    let options = crate::canvas::textedit::promote::options(doc);
     super::apply::vector_edit(doc, "edit-block-text", page, 1, |session| {
         session
             .edit_block_text(page, block, text, &options)

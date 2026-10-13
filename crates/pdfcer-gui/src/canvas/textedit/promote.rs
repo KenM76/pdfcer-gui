@@ -12,9 +12,10 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/promote.md`.
 
+use pdfcer_core::content::ContentStream;
 use pdfcer_core::text_edit::{
-    BlockEditOptions, EditableTextModel, GlyphRef, Line, TextPosition, detect_cell_regions,
-    reflow_recognition_options,
+    BlockEditOptions, EditableTextModel, GlyphRef, Line, LineEnd, LineEndSource, LineMarks,
+    TextPosition, detect_cell_regions, reflow_recognition_options,
 };
 use pdfcer_gui_base::text::textedit::EnterRefusal;
 
@@ -23,27 +24,13 @@ use crate::app::state::OpenDoc;
 
 /// The options a paragraph draft is previewed and committed under: the
 /// caret's typing disposition and the installed faces, no fallback face, and
-/// `wrap` when the paragraph names one.
+/// the engine's own wrap width (the box's, or a table cell's inner width).
 #[must_use]
-pub fn options(doc: &OpenDoc, wrap: Option<f64>) -> BlockEditOptions {
-    BlockEditOptions::new()
-        .with_edit_options(super::installed::augmented(
-            doc,
-            pdfcer_gui_base::editmodel::disposition::typing(),
-        ))
-        .with_wrap_width_opt(wrap)
-}
-
-/// Points added to a paragraph's width to wrap it at. The engine's default
-/// wrap is the box width, against which the box's own widest line is
-/// measured with no tolerance, so an unchanged line can fail to fit and
-/// split.
-const WRAP_SLACK: f64 = 0.5;
-
-/// The width to rewrite a paragraph of box width `width` at: `None` in a
-/// table cell, whose inner width the engine wraps at when given none.
-fn wrap_for(width: f64, in_cell: bool) -> Option<f64> {
-    (!in_cell).then_some(width + WRAP_SLACK)
+pub fn options(doc: &OpenDoc) -> BlockEditOptions {
+    BlockEditOptions::new().with_edit_options(super::installed::augmented(
+        doc,
+        pdfcer_gui_base::editmodel::disposition::typing(),
+    ))
 }
 
 /// A run's paragraph: its engine index, its box (PDF user space,
@@ -52,10 +39,10 @@ struct Paragraph {
     block: usize,
     run: usize,
     bbox: (f64, f64, f64, f64),
-    /// The wrap width it is rewritten at; see [`wrap_for`].
-    wrap: Option<f64>,
     lines: usize,
     breaks: usize,
+    /// Whether its line ends were read from pdfcer's marks or inferred.
+    source: LineEndSource,
     before: String,
     after: String,
 }
@@ -76,19 +63,24 @@ impl Declined {
 }
 
 /// **Re-anchor `draft` (an `Anchor::Run`) on its paragraph**, ready for the
-/// line break Enter is about to insert. `Err` leaves `draft` untouched.
+/// line break Enter is about to insert, and say where its line ends were
+/// read from. `Err` leaves `draft` untouched.
 ///
 /// # Errors
 ///
 /// The refusal Enter reports.
-pub fn open(ctx: &egui::Context, doc: &OpenDoc, draft: &mut Draft) -> Result<(), EnterRefusal> {
+pub fn open(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    draft: &mut Draft,
+) -> Result<LineEndSource, EnterRefusal> {
     let Anchor::Run { run, original } = &draft.anchor else {
         return Err(EnterRefusal::NoParagraph);
     };
     let run = *run;
     let result = paragraph(doc, draft.page, run, original).and_then(|p| {
         let promoted = promoted(draft, &p);
-        preflight(doc, draft.page, p.block, p.wrap, &promoted)?;
+        preflight(doc, draft.page, p.block, &promoted)?;
         Ok((p, promoted))
     });
     match result {
@@ -98,14 +90,15 @@ pub fn open(ctx: &egui::Context, doc: &OpenDoc, draft: &mut Draft) -> Result<(),
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "text-edit-promoted page={} run={run} block={} len={} caret={}",
+                    "text-edit-promoted page={} run={run} block={} len={} caret={} source={}",
                     draft.page,
                     p.block,
                     draft.text.chars().count(),
-                    draft.caret
+                    draft.caret,
+                    p.source.as_str()
                 )
             });
-            Ok(())
+            Ok(p.source)
         }
         Err(d) => {
             crate::diag::trace(|| {
@@ -121,12 +114,13 @@ pub fn open(ctx: &egui::Context, doc: &OpenDoc, draft: &mut Draft) -> Result<(),
 }
 
 /// **Re-anchor a clicked run draft on its paragraph when the paragraph has
-/// two or more lines**, its text unchanged. Leaves `draft` as it was when the
-/// run is a paragraph of its own or the engine would not rewrite the
-/// paragraph as it stands.
-pub fn widen(doc: &OpenDoc, draft: &mut Draft) {
+/// two or more lines**, its text unchanged, and say where its line ends were
+/// read from. Leaves `draft` as it was, and returns `None`, when the run is a
+/// paragraph of its own or the engine would not rewrite the paragraph as it
+/// stands.
+pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Option<LineEndSource> {
     let Anchor::Run { run, original } = &draft.anchor else {
-        return;
+        return None;
     };
     let run = *run;
     let started = std::time::Instant::now();
@@ -137,7 +131,7 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) {
                 return Err(Declined::no_paragraph("one-line"));
             }
             let promoted = promoted(draft, &p);
-            rewrite(doc, draft.page, p.block, p.wrap, &promoted.text)?;
+            rewrite(doc, draft.page, p.block, &promoted.text)?;
             Ok((p, promoted))
         });
     let ms = started.elapsed().as_millis();
@@ -148,22 +142,27 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
                     "text-edit-widened page={} run={run} block={} lines={} breaks={} len={} \
-                     ms={ms}",
+                     source={} ms={ms}",
                     draft.page,
                     p.block,
                     p.lines,
                     p.breaks,
-                    draft.text.chars().count()
+                    draft.text.chars().count(),
+                    p.source.as_str()
                 )
             });
+            Some(p.source)
         }
-        Err(d) => crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            format!(
-                "text-edit-widen-declined page={} run={run} reason={} ms={ms}",
-                draft.page, d.token
-            )
-        }),
+        Err(d) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "text-edit-widen-declined page={} run={run} reason={} ms={ms}",
+                    draft.page, d.token
+                )
+            });
+            None
+        }
     }
 }
 
@@ -196,7 +195,6 @@ fn promoted(draft: &Draft, p: &Paragraph) -> Draft {
             lly,
             urx,
             ury,
-            wrap: p.wrap,
             original: format!("{}{}{}", p.before, original_of(draft), p.after),
         },
         text,
@@ -215,29 +213,17 @@ fn original_of(draft: &Draft) -> &str {
 
 /// The engine's own answer to the rewrite Enter would make: the promoted text
 /// with the line break inserted, previewed.
-fn preflight(
-    doc: &OpenDoc,
-    page: usize,
-    block: usize,
-    wrap: Option<f64>,
-    promoted: &Draft,
-) -> Result<(), Declined> {
+fn preflight(doc: &OpenDoc, page: usize, block: usize, promoted: &Draft) -> Result<(), Declined> {
     let mut probe = promoted.clone();
     let at = super::keys::take_selection(&mut probe);
     super::caret::newline(&mut probe.text, at);
-    rewrite(doc, page, block, wrap, &probe.text)
+    rewrite(doc, page, block, &probe.text)
 }
 
 /// Whether the engine would rewrite paragraph `block` as `text`.
-fn rewrite(
-    doc: &OpenDoc,
-    page: usize,
-    block: usize,
-    wrap: Option<f64>,
-    text: &str,
-) -> Result<(), Declined> {
+fn rewrite(doc: &OpenDoc, page: usize, block: usize, text: &str) -> Result<(), Declined> {
     doc.session
-        .edit_block_text_preview(page, block, text, &options(doc, wrap))
+        .edit_block_text_preview(page, block, text, &options(doc))
         .map(|_| ())
         .map_err(|e| Declined {
             why: EnterRefusal::Unrewritable {
@@ -248,7 +234,8 @@ fn rewrite(
 }
 
 /// The paragraph `run` sits in, numbered as `edit_block_text` reads it, and
-/// the text either side of the run, its lines joined as [`joint`] decides.
+/// the text either side of the run, its lines joined as the engine's
+/// `line_ends` reads them: a break as `\n`, a wrap as a space.
 fn paragraph(
     doc: &OpenDoc,
     page: usize,
@@ -258,10 +245,11 @@ fn paragraph(
     let text = doc
         .provenance_page_text(page)
         .ok_or(Declined::no_paragraph("no-text"))?;
-    let cells = detect_cell_regions(&doc.session.view(), page)
-        .map_err(|_| Declined::no_paragraph("no-cells"))?;
+    let view = doc.session.view();
+    let cells = detect_cell_regions(&view, page).map_err(|_| Declined::no_paragraph("no-cells"))?;
     let model =
-        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells);
+        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells)
+            .with_line_marks(marks(&view, page));
     let block = model
         .block_at(TextPosition::new(run, 0))
         .ok_or(Declined::no_paragraph("no-paragraph"))?;
@@ -286,9 +274,9 @@ fn paragraph(
         block,
         run,
         bbox: (b.bbox.llx, b.bbox.lly, b.bbox.urx, b.bbox.ury),
-        wrap: walk.wrap,
         lines: b.line_indices.len(),
         breaks: walk.breaks,
+        source: model.line_end_source(b),
         before: walk.joined[..start].to_owned(),
         after: walk.joined[end..].to_owned(),
     })
@@ -300,10 +288,18 @@ struct Walk {
     joined: String,
     span: Option<(usize, usize)>,
     looks: usize,
-    /// Line breaks kept by [`joint`].
+    /// Line ends read as typed breaks.
     breaks: usize,
-    /// The wrap width [`joint`] measured against.
-    wrap: Option<f64>,
+}
+
+/// The page's line-end marks, so a paragraph pdfcer wrote reads its breaks
+/// exactly; empty when the page's content cannot be read.
+fn marks(view: &pdfcer_core::view::DocumentView<'_>, page: usize) -> LineMarks {
+    pdfcer_core::page_tree::pages_in(view)
+        .ok()
+        .and_then(|pages| ContentStream::from_page(view, pages.get(page)?).ok())
+        .map(|content| LineMarks::scan(&content))
+        .unwrap_or_default()
 }
 
 /// A glyph's text, or `""` when the reference is stale.
@@ -320,31 +316,6 @@ fn glyph_text<'m>(model: &'m EditableTextModel<'_>, g: GlyphRef) -> &'m str {
                 .get(s..s + x.text_len as usize)
         })
         .unwrap_or("")
-}
-
-/// **What joins line `a` to the next line `b`.** A line break when `b`'s
-/// first word would have fitted on `a` within `width`, the wrap the rewrite
-/// is given: `edit_block_text` packs greedily at it, so a space there would pull the
-/// word up and merge two lines broken by hand. Otherwise a space, the wrap
-/// the engine makes again.
-///
-/// `space` is the widest space glyph in the paragraph, `0` when it has none,
-/// which errs towards keeping a break. Horizontal text: widths are advances.
-fn joint(model: &EditableTextModel<'_>, a: &Line, b: &Line, width: f64, space: f64) -> char {
-    let word: f64 = b
-        .glyphs
-        .iter()
-        .map_while(|&g| {
-            let x = model.glyph(g)?;
-            (!glyph_text(model, g).trim().is_empty()).then_some(f64::from(x.advance))
-        })
-        .sum();
-    let used = a.bbox.urx - a.bbox.llx;
-    if used + space + word <= width {
-        '\n'
-    } else {
-        ' '
-    }
 }
 
 /// A glyph's look as the shell can read it from provenance: the font
@@ -367,15 +338,7 @@ impl Walk {
             .iter()
             .filter_map(|&li| model.lines().get(li))
             .collect();
-        let space = lines
-            .iter()
-            .flat_map(|l| l.glyphs.iter())
-            .filter(|&&g| glyph_text(model, g) == " ") // ui-text-exempt: a space glyph, never displayed
-            .filter_map(|&g| model.glyph(g).map(|x| f64::from(x.advance)))
-            .fold(0.0, f64::max);
-        let wrap = wrap_for(b.bbox.urx - b.bbox.llx, b.cell_rect.is_some());
-        // A cell wraps at its inner width, which is at least the text's.
-        let width = wrap.unwrap_or_else(|| b.cell_rect.map_or(0.0, |c| c.urx - c.llx));
+        let ends = model.line_ends(b);
         let mut joined = String::new();
         let mut span: Option<(usize, usize)> = None;
         let mut closed = false;
@@ -383,9 +346,9 @@ impl Walk {
         let mut breaks = 0;
         for (i, line) in lines.iter().enumerate() {
             if i > 0 {
-                let joint = joint(model, lines[i - 1], line, width, space);
-                breaks += usize::from(joint == '\n');
-                joined.push(joint);
+                let typed = ends.get(i - 1) == Some(&LineEnd::Break);
+                breaks += usize::from(typed);
+                joined.push(if typed { '\n' } else { ' ' });
                 closed |= span.is_some();
             }
             for &g in &line.glyphs {
@@ -414,7 +377,6 @@ impl Walk {
             span,
             looks: looks.len(),
             breaks,
-            wrap,
         })
     }
 }
