@@ -205,6 +205,16 @@ impl PdfcerApp {
                     ));
                 }
             }
+            "pages.insert_blank" => {
+                if !self.capabilities().edit_content {
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed.
+                        format!("command-declined id={id} reason=mode-cannot-edit-content")
+                    });
+                } else if let Status::Open(doc) = &self.status {
+                    self.dialogs.open_insert_blank(doc);
+                }
+            }
             "pages.insert_from_file" => {
                 if !self.capabilities().edit_content {
                     crate::diag::trace(|| {

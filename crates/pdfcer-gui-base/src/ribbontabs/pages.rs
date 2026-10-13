@@ -14,12 +14,13 @@ pub fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Insert — new pages arriving from somewhere.
             //
-            // `Insert blank` is **C** and `Insert scan` is **N**.
+            // `Insert scan` is **N**.
             // ---------------------------------------------------------------
             group(
                 "insert",
                 ribbon::group_pages_insert(),
                 [
+                    large("pages.insert_blank"),
                     large("pages.insert_from_file"),
                     large("pages.insert_from_clipboard"),
                 ],

@@ -21,7 +21,7 @@ feed.
 | step | requires |
 |---|---|
 | 1 | a new `insert-pages page=1 n=1` line whose receipt reads "Inserted 1 page after page 1." |
-| 2 | a new `import-text-applied pages=2 first=1` line |
+| 2 | a new `import-text-applied pages=2 first=2` line — after page 1, where step 1's insert left the view |
 | 3 | a new `pages-from-clipboard kind=image pages=1`, `w` and `h` 48×24 within 0.5, read from the new document's pages |
 | 4 | a new `pages-from-clipboard kind=text pages=2` |
 

@@ -50,3 +50,10 @@ a python line holding a doubled backslash in quotes died with "unexpected
 character after line continuation"). Two were caught by `check-string-gaps`
 in the full gate run, three by reading the check's own SKIP output. Rust text
 with a wrap goes in through Edit, always.
+
+**2026-10-13, again: two literals lost their wrap** before I had read this file: a check's
+failure message and a command's hover text, which is the operator's own copy. Repairing one
+through a heredoc with a tripled backslash put a literal `\n` into the file.
+`chr(92)+chr(10)` inside python is the one heredoc spelling that survived. The gap gate caught
+the hover text, and a grep for `[a-z]   +[a-z]` inside quotes over the new files catches it
+before the 90-minute gate run.

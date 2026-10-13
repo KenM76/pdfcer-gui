@@ -22,6 +22,10 @@ pub(super) fn band() -> Vec<Command> {
         // rather than of availability: with no selection they act on the
         // current page, which is a defined answer and not a disabled state.
         // ===================================================================
+        // `new-document` is the blank-sheet glyph `file.new` draws.
+        command("pages.insert_blank", t::pages_insert_blank(), 302)
+            .with_icon("new-document")
+            .enabled_when("doc.pages"),
         command("pages.insert_from_file", t::pages_insert_from_file(), 300)
             .with_icon("insert-pages")
             .enabled_when("doc.pages"),

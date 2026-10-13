@@ -320,6 +320,15 @@ pub const fn file_deskew() -> CommandText {
 // get wrong — `pages.merge_into` against `tools.merge_files` especially.
 // ===========================================================================
 
+/// `pages.insert_blank`
+#[must_use]
+pub const fn pages_insert_blank() -> CommandText {
+    CommandText::new(
+        "Insert blank…",
+        "Insert one or more blank pages, the size of the current page or a standard sheet, before or after it.",
+    )
+}
+
 /// `pages.insert_from_file`
 #[must_use]
 pub const fn pages_insert_from_file() -> CommandText {

@@ -9,8 +9,9 @@
 //! by a form feed, which Import text as pages sets as two pages.
 //!
 //! Oracles: Insert from clipboard traces `insert-pages page=1 n=1`, receipt "Inserted 1 page after page 1.", for the
-//! picture and `import-text-applied pages=2 first=1` for the text, both after
-//! page 0, the page on screen; New from clipboard traces
+//! picture, after page 0, and `import-text-applied pages=2 first=2` for the
+//! text, after page 1 — the page on screen, since an insert shows what it
+//! inserted; New from clipboard traces
 //! `pages-from-clipboard to=new` with `kind=image pages=1 w=48.00 h=24.00` for
 //! the picture and `kind=text pages=2` for the text, read from the new
 //! document's own pages.
@@ -150,7 +151,8 @@ fn insert_picture(
 /// The status receipt for one page inserted after the first.
 const RECEIPT: &str = "Inserted 1 page after page 1.";
 
-/// Text inserted from the clipboard is set as pages, after page 0.
+/// Text inserted from the clipboard is set as pages, after page 1: the
+/// picture's insert left the view on the page it added.
 fn insert_text(
     session: &Session,
     pointer: &ScriptedPointer,
@@ -163,9 +165,9 @@ fn insert_text(
         )));
     };
     let (pages, first) = (line.get("pages"), line.get("first"));
-    Ok((pages != Some("2") || first != Some("1")).then(|| {
+    Ok((pages != Some("2") || first != Some("2")).then(|| {
         format!(
-            "the text went in as pages={} first={}, not two pages after page 0.",
+            "the text went in as pages={} first={}, not two pages after page 1.",
             pages.unwrap_or("-"),
             first.unwrap_or("-")
         )

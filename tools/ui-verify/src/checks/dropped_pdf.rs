@@ -205,7 +205,12 @@ fn inserts(
             n.unwrap_or("-")
         )));
     }
-    undoes(session, pointer, "the inserted pages")
+    let failure = undoes(session, pointer, "the inserted pages")?;
+    // The insert showed the pages it added and the undo left the view on
+    // page index 1; Place drops on page 0, so go back to it.
+    pointer.key(session, None, "Home", None)?;
+    session.settle(20);
+    Ok(failure)
 }
 
 /// Place puts the first page at its natural size, centred on the drop.

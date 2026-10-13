@@ -127,6 +127,10 @@ pub mod foreign_icon_name;
 /// records why a dialog needs `frame_of` rather than `session.frame()`.
 pub mod import_text;
 
+/// **Insert blank pages** — several sheets land as separate page objects, of
+/// the chosen size, and one undo removes them.
+pub mod insert_blank_pages;
+
 /// **The CAD "line weights off" display mode** — `OPERATOR_REQUESTS.md`
 /// O137, asked for by name. The pixel assertion is SIGNED (strictly LESS ink),
 /// because the convention he asked for and the one it is confused with are

@@ -162,11 +162,6 @@ pub const PLANNED: &[(&str, &str)] = &[
     ),
     // -- Pages -- `RIBBON_IA.md` §5.3 ---------------------------------------
     (
-        "pages.insert_blank",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "C — pdfcer-core inserts blank pages already. Needs a size-and-count dialog only.",
-    ),
-    (
         "pages.insert_scan",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — there is no scanner acquisition path of any kind.",

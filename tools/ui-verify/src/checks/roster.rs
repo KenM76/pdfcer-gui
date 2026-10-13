@@ -143,6 +143,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         // either gesture.
         Box::new(annot_rotate::RotatingAMarkupTurnsIt),
         Box::new(import_text::ATextFileBecomesPages),
+        Box::new(insert_blank_pages::BlankPagesAreInsertedAsOneStep),
         Box::new(annot_angle_typed::TheTypedAngleTurnsAMark),
         Box::new(foreign_icon_name::AForeignIconNameReachesThePanel),
         Box::new(widget_move::DraggingAFormFieldMovesIt),

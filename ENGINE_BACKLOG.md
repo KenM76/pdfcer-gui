@@ -645,6 +645,10 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G096** — GIF is recognised and refused, never decoded. A dropped `.gif` is refused with the engine's sentence; a GIF copied in a browser pastes through the PNG the browser also puts on the clipboard.
 - **G097** — a push button's icon cannot be set from an image. No icon row is offered.
 
+## Filed requests for page assembly — not verdict rows
+
+- **G185** — `insert_pages` given a page index twice lists one copied page object twice, a tree the reader rejects as a cycle. Worked around in `app::actions::insertruns` (one call per repeat-free run, folded into one undo). Open.
+
 ## Snapshot box
 
 The request O272's vector copy waits on.

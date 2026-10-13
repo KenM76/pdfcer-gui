@@ -81,8 +81,12 @@ pub mod drop_pdf;
 /// CREATE a page, not only to copy one) and why it is a CHOOSER where its
 /// export sibling is a warning.
 pub mod import_text;
+/// Pages ▸ Insert blank pages… — size, count and position.
+pub mod insert_blank;
 pub mod insert_image;
 pub mod insert_pages;
+/// The four "where do the pages land" radios both insert dialogs share.
+pub(crate) mod insert_where;
 pub mod link;
 pub mod new_document;
 pub mod ocr;
@@ -380,6 +384,10 @@ pub struct DialogsState {
     /// the reason the group exists — a dialog configuring an edit to a file
     /// that is no longer open is configuring nothing.
     insert_pages: Option<insert_pages::InsertPagesDialog>,
+
+    /// The Insert-blank-pages dialog, when one is open. **Document-scoped**,
+    /// and it holds a snapshot: the current page's size.
+    insert_blank: Option<insert_blank::InsertBlankDialog>,
 
     /// The dropped-PDF question, when one is open. **Document-scoped**: two
     /// of its answers edit the open document.
@@ -811,6 +819,9 @@ impl DialogsState {
         if self.insert_pages.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_pages = None;
         }
+        if self.insert_blank.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.insert_blank = None;
+        }
         if self.drop_pdf.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.drop_pdf = None;
         }
@@ -1227,6 +1238,9 @@ impl DialogsState {
             self.model3d = None;
         }
         self.insert_image = None;
+        self.insert_pages = None;
+        self.insert_blank = None;
+        self.import_text = None;
         self.link.reset();
         self.drop_pdf = None;
         self.export_dxf = None;

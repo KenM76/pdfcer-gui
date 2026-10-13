@@ -5,9 +5,9 @@
 
 use super::{
     DialogsState, about, bates, compact, diagnostics, embed, export_dxf, export_image,
-    export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_image,
-    insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print, protect, redact,
-    scale, shortcuts, split_pages, stamp_collection, textannot, unembed,
+    export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_blank,
+    insert_image, insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print,
+    protect, redact, scale, shortcuts, split_pages, stamp_collection, textannot, unembed,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -346,6 +346,22 @@ impl DialogsState {
             path,
             count,
             current_page,
+        ));
+    }
+
+    /// **The dispatch target for `pages.insert_blank`**, opened on the page
+    /// the operator is looking at.
+    pub fn open_insert_blank(&mut self, doc: &crate::app::state::OpenDoc) {
+        if self.insert_blank.is_some() {
+            return;
+        }
+        let current = doc.view.page_index;
+        let Some(page) = doc.pages.get(current) else {
+            return;
+        };
+        self.insert_blank = Some(insert_blank::InsertBlankDialog::open(
+            current,
+            insert_blank::displayed_size(page),
         ));
     }
 

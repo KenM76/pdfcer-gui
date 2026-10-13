@@ -17,7 +17,8 @@ since Edit offers both.
 
 - **Insert** (clicking `drop-pdf.insert`) must trace `insert-pages page=1 n=2`
   — both pages, landing at index 1 after page 0 where the document opened —
-  and Ctrl+Z must trace `undo-applied`.
+  and Ctrl+Z must trace `undo-applied`. The insert shows what it added, so
+  the check presses Home before Place to drop on page 0 again.
 - **Place** (clicking `drop-pdf.place`) must trace
   `drop-pdf-chosen choice=place` with a 144×72 pt rectangle centred on the
   drop point, then `page-content-placed` (Edit draws the sheet into the

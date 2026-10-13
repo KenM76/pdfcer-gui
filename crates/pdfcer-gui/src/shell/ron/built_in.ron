@@ -238,6 +238,7 @@
                     id: "insert",
                     caption: "Insert",
                     items: [
+                        Command(id: "pages.insert_blank", size: Large),
                         Command(id: "pages.insert_from_file", size: Large),
                         Command(id: "pages.insert_from_clipboard", size: Large),
                     ],

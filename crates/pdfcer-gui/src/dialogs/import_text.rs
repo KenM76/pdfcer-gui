@@ -8,6 +8,7 @@ use egui::Ui;
 use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
+use crate::dialogs::insert_where::Where;
 use crate::text::import_text as t;
 use crate::text::new_document as sheets;
 
@@ -36,19 +37,6 @@ const SIZE_RANGE: std::ops::RangeInclusive<f64> = 6.0..=72.0;
 
 /// The margin spinner's range, in points.
 const MARGIN_RANGE: std::ops::RangeInclusive<f64> = 0.0..=150.0;
-
-/// Where the pages land, as the four radios offer it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Where {
-    /// Before the page the operator is looking at.
-    BeforeCurrent,
-    /// After it. **The default** — `insert_pages`' reasoning, unchanged.
-    AfterCurrent,
-    /// Before every existing page.
-    Start,
-    /// After every existing page.
-    End,
-}
 
 /// The import window's state.
 pub struct ImportTextDialog {
@@ -128,13 +116,7 @@ impl ImportTextDialog {
 
     /// The engine's position for the selected radio.
     const fn insert_position(&self) -> pdfcer_core::pageops::InsertPosition {
-        use pdfcer_core::pageops::InsertPosition;
-        match self.position {
-            Where::BeforeCurrent => InsertPosition::Before(self.current_page),
-            Where::AfterCurrent => InsertPosition::After(self.current_page),
-            Where::Start => InsertPosition::Start,
-            Where::End => InsertPosition::End,
-        }
+        self.position.position(self.current_page)
     }
 
     /// The template the chosen controls describe.

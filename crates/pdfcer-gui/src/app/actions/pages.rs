@@ -306,9 +306,9 @@ pub(super) fn insert_from_view(
     };
     let before = doc.pages.len();
 
+    let page_count = doc.pages.len();
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
-        session
-            .insert_pages(view, pages, position)
+        super::insertruns::insert(session, view, pages, position, page_count)
             // `InsertOutcome`, not a `usize`, and the second field is the
             // one this shell needs. `orphaned_widgets`
             // is EXACT rather than an upper bound (the engine's reply: no field
@@ -324,8 +324,9 @@ pub(super) fn insert_from_view(
             // plainly that the old undifferentiated sentence *"is true of both
             // and useful for only one"*, because it describes a chore for the
             // 11 and a permanent loss for the 2, in the milder wording.
-            .map(|outcome| {
-                vec![crate::text::pages::inserted(
+            .map(|done| {
+                let outcome = done.outcome;
+                let mut notes = vec![crate::text::pages::inserted(
                     outcome.pages_inserted,
                     outcome.orphaned_widgets,
                     outcome.orphaned_widgets_unrecoverable,
@@ -335,7 +336,18 @@ pub(super) fn insert_from_view(
                         labels_stale: outcome.page_labels_stale,
                     },
                     landing.checked_sub(1),
-                )]
+                )];
+                if let Some(refusal) = done.stopped {
+                    notes.push(crate::text::insertblank::insert_stopped(
+                        outcome.pages_inserted,
+                        count,
+                        &refusal.to_string(),
+                    ));
+                }
+                if !done.folded {
+                    notes.push(pdfcer_gui_base::text::reface::undo_split(done.calls));
+                }
+                notes
             })
     });
 
@@ -355,7 +367,10 @@ pub(super) fn insert_from_view(
     if doc.pages.len() > before {
         let target = landing.min(doc.pages.len().saturating_sub(1));
         doc.view.go_to_page(target, doc.pages.len());
-        doc.tracked_page = doc.view.page_index;
+        // `tracked_page` is deliberately left behind: under a continuous display
+        // the canvas reads `page_index != tracked_page` as a navigation and
+        // scrolls the strip to it. Matching them here would make the next
+        // frame's scroll tracking put `page_index` back where the view sits.
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -712,6 +727,12 @@ pub(super) fn apply(
             pages,
             position,
         } => insert_from_file(doc, &path, &pages, position),
+        PageAction::InsertBlankPages {
+            width_pt,
+            height_pt,
+            count,
+            position,
+        } => super::insertruns::insert_blank(doc, (width_pt, height_pt), count, position),
         PageAction::ExtractPages {
             pages,
             labels,

@@ -9,6 +9,7 @@ use egui::Ui;
 
 use crate::app::actions::Action;
 use crate::app::actions::pages::PageAction;
+use crate::dialogs::insert_where::Where;
 use crate::text::pages as t;
 
 /// The dialog body's published region, for `ui-verify`.
@@ -16,20 +17,6 @@ const REGION_BODY: &str = "insert-pages.body";
 
 /// The commit button's region.
 const REGION_INSERT: &str = "insert-pages.insert";
-
-/// Where the pages land, as the four radios offer it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Where {
-    /// Before the page the operator is looking at.
-    BeforeCurrent,
-    /// After it. **The default**, because it is what "insert here" means to
-    /// somebody who navigated to a sheet first.
-    AfterCurrent,
-    /// Before every existing page.
-    Start,
-    /// After every existing page.
-    End,
-}
 
 /// The insert dialog's state.
 pub struct InsertPagesDialog {
@@ -107,13 +94,7 @@ impl InsertPagesDialog {
 
     /// The engine's position for the selected radio.
     const fn position(&self) -> pdfcer_core::pageops::InsertPosition {
-        use pdfcer_core::pageops::InsertPosition;
-        match self.position {
-            Where::BeforeCurrent => InsertPosition::Before(self.current_page),
-            Where::AfterCurrent => InsertPosition::After(self.current_page),
-            Where::Start => InsertPosition::Start,
-            Where::End => InsertPosition::End,
-        }
+        self.position.position(self.current_page)
     }
 
     /// Draw it. Returns `false` when it should close.
@@ -191,21 +172,7 @@ impl InsertPagesDialog {
         }
 
         ui.add_space(8.0);
-        ui.label(t::insert_where_heading());
-        // The current page is named in the label rather than left as "here",
-        // because the dialog is centred over a document the operator may have
-        // scrolled: the number is what makes the choice checkable.
-        let page = self.current_page.saturating_add(1);
-        for (option, label) in [
-            (Where::AfterCurrent, t::insert_after_page(page)),
-            (Where::BeforeCurrent, t::insert_before_page(page)),
-            (Where::Start, t::insert_at_start().to_owned()),
-            (Where::End, t::insert_at_end().to_owned()),
-        ] {
-            if ui.radio(self.position == option, label).clicked() {
-                self.position = option;
-            }
-        }
+        self.position.radios(ui, self.current_page, "insert-pages"); // ui-text-exempt: a region prefix, never displayed.
 
         ui.add_space(8.0);
         let chosen = self.chosen();

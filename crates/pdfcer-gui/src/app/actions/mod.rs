@@ -121,6 +121,8 @@ mod handsign;
 /// per-direction answers, and `history_step`.
 mod history;
 pub use chrome::ViewChrome;
+/// Inserting a page list that repeats a source page, as one undo step.
+mod insertruns;
 /// The four page verbs' bodies, and the structural resync every edit owes.
 pub mod pages;
 /// **Changing the paper an open drawing sits on** — `set_media_boxes`, and

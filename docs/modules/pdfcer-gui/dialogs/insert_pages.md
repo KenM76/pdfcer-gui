@@ -55,12 +55,12 @@ guess — the same posture the print dialog takes with the same parser.
 
 ## Item notes
 
-### `enum Where`
+### Where the pages land
 
-A local enum **only** for the radio state, converted to
-`pdfcer_core::pageops::InsertPosition` at the point of use — because two of
-the four need the current page index, which the radio does not carry and the
-dialog does.
+`dialogs::insert_where::Where`, shared with Import text and Insert blank
+pages: a radio state converted to `InsertPosition` at the point of use,
+because two of the four need the current page index, which the radio does
+not carry and the dialog does.
 
 ### `fn chosen`
 
@@ -94,5 +94,6 @@ reading.
 Order is preserved and duplicates are kept, because the text is a
 SEQUENCE the operator wrote. Here that is not a quirk to tolerate — it
 is how an operator inserts pages in a different order, or twice, in one
-gesture. Asserted so that a later "tidy-up" into a sorted set has to
+gesture. A repeat needs one engine call per copy; `app::actions::insertruns`
+makes them and folds them into one undo step. Asserted so that a later "tidy-up" into a sorted set has to
 argue with a test rather than with nothing.

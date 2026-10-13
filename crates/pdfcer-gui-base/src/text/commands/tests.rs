@@ -70,6 +70,7 @@ fn all() -> Vec<CommandText> {
         view_panel_dock(),
         view_panel_close(),
         view_dock_all_panels(),
+        pages_insert_blank(),
         pages_insert_from_file(),
         pages_insert_from_clipboard(),
         file_new_from_clipboard(),

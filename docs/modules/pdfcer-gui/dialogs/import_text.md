@@ -91,20 +91,12 @@ narrower than the margins around it and `PageTooShort` becomes likely. The
 engine refuses that case by name and this range makes reaching it a
 deliberate act rather than an accident of a scrub.
 
-### `enum Where`
+### Where the pages land
 
-A local enum **only** for the radio state, converted to
-`pdfcer_core::pageops::InsertPosition` at the point of use — copied
-deliberately from `dialogs::insert_pages`, whose own note gives the reason:
-two of the four need the current page index, which the radio does not carry
-and the dialog does.
-
-⇒ It is a *copy* rather than a shared type, and that is worth defending:
-the four variants are a fact about **this program's vocabulary for
-inserting**, and both dialogs converting the same four into the same engine
-enum at the same place is the property that matters. A shared enum would add
-a module for four unit variants and would not make the two windows any more
-alike than reading them side by side already does.
+`dialogs::insert_where::Where`, shared with Insert from file and Insert
+blank pages, so "before" and "after" mean the same in all three. This window
+keeps its own radio labels (`text::import_text`), published as
+`import-text.where.N`.
 
 ### `fn template`
 

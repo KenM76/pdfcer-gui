@@ -319,6 +319,14 @@ insert command wearing a different label.
 
 ### `fn insert_from_view`
 
+The engine call goes through `insertruns::insert`, which splits a list that
+repeats a source page into runs (see `insertruns.md`). After a landed insert
+the view goes to the first new page and `tracked_page` is left behind on
+purpose: under a continuous display the canvas reads
+`page_index != tracked_page` as a navigation and scrolls to it, and setting
+them equal here would let the next frame's scroll tracking put the view back
+where it was.
+
 Sharing it is not merely tidy. `crate::text::pages::inserted` reports six
 facts about what did and did not come across (orphaned widgets, of which
 some are unrecoverable; a dropped outline; dropped page labels; stale page

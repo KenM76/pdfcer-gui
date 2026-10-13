@@ -391,6 +391,21 @@ pub enum PageAction {
         /// silent because both compile and both insert *somewhere*.
         position: pdfcer_core::pageops::InsertPosition,
     },
+    /// **Insert `count` blank pages of one size**, as one undo step.
+    ///
+    /// Raised by `pages.insert_blank`'s dialog. Sizes are in points, after
+    /// orientation; the apply arm makes a one-page blank of that size and
+    /// inserts it `count` times.
+    InsertBlankPages {
+        /// Sheet width, in points.
+        width_pt: f64,
+        /// Sheet height, in points.
+        height_pt: f64,
+        /// How many sheets; at least 1.
+        count: usize,
+        /// Where they land, as [`Self::InsertPagesFromFile`]'s field.
+        position: pdfcer_core::pageops::InsertPosition,
+    },
     /// **Turn the operand pages by `delta` degrees**, as one undoable command.
     ///
     /// Raised by `pages.rotate_left` (−90) and `pages.rotate_right` (+90).
