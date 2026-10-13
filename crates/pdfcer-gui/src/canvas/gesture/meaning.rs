@@ -416,6 +416,9 @@ pub struct Press {
     pub widget_grip: bool,
     /// Whether a one-shot region zoom is armed.
     pub zoom_armed: bool,
+    /// Whether the pick filter's Characters row is on. Off, no press becomes
+    /// a text sweep, whatever the tool.
+    pub sweeps_text: bool,
 }
 
 #[must_use]
@@ -432,6 +435,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
         widget_body,
         widget_grip,
         zoom_armed,
+        sweeps_text,
     } = press;
     // A measure tool takes the click and leaves the drag alone.
     //
@@ -633,7 +637,7 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // `canvas::interact` when it routes the click — through the same function,
     // so the drag's meaning and the click's routing cannot drift apart. See
     // this function's section on the text row.
-    let text = crate::canvas::textsel::takes_the_press(tool, caps);
+    let text = sweeps_text && crate::canvas::textsel::takes_the_press(tool, caps);
     // The two worlds, split on the one flag that separates them, rather than
     // one `match` with a capability test on every arm.
     //
@@ -680,11 +684,11 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // loss of its drag would be a mark that was never made, while a text sweep
     // loses nothing an operator cannot re-make with one more drag.
     } else if tool.is_text() {
-        Some(if zoom_armed {
-            DragKind::Marquee(MarqueeIntent::Zoom)
+        if zoom_armed {
+            Some(DragKind::Marquee(MarqueeIntent::Zoom))
         } else {
-            DragKind::TextSelect
-        })
+            sweeps_text.then_some(DragKind::TextSelect)
+        }
     //
     // ## Why it is a rung of its own rather than an arm of the two below
     //

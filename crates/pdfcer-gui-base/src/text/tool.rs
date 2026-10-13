@@ -35,6 +35,13 @@ pub const fn pointer_reading() -> &'static str {
      move the paper."
 }
 
+/// What a press means while the Select filter's Characters row is off: no
+/// tool sweeps text.
+#[must_use]
+pub const fn pointer_no_text() -> &'static str {
+    "Characters is off in the Select filter, so a drag selects no text. Hold Space to move the paper."
+}
+
 // ===========================================================================
 // Block B — the tools this mode has
 // ===========================================================================

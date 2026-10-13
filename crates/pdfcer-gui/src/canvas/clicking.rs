@@ -184,6 +184,9 @@ pub fn click(
     // carries the argument for why the pick helpers take a value rather than
     // reading the context themselves.
     let scope = crate::canvas::smart::scope(ctx, page_index);
+    // The pick filter's Characters row: off, a click never sweeps, and in
+    // Read a picture under text takes the click.
+    let sweeps = pick.allows(crate::canvas::pick::PickClass::Characters);
 
     // The annotation under the pointer, resolved BEFORE the ladder.
     //
@@ -369,6 +372,7 @@ pub fn click(
             targets,
             on_note: note_hit.is_some(),
             via: "",
+            fields: pick.allows(crate::canvas::pick::PickClass::FormField),
         };
         // A caret placed by the Text tool arms the caret tool, as a
         // double-click does: only that tool paints and types into a draft,
@@ -535,7 +539,7 @@ pub fn click(
     // opinion computed differently would produce a click that selects the image
     // and a drag that selects text, from one pixel.
     } else if !caps.edit_content
-        && !text_under(doc, page_index, point)
+        && (!sweeps || !text_under(doc, page_index, point))
         && let Some(t) = targets
         && let Some(image) = crate::canvas::input::topmost(
             t,
@@ -554,7 +558,7 @@ pub fn click(
         // be of the words rather than of the image they just clicked.
         *text_selection = None;
         selection.select_only(page_index, image, "read-image");
-    } else if super::textsel::takes_the_press(active_tool, caps) {
+    } else if sweeps && super::textsel::takes_the_press(active_tool, caps) {
         if let (Some(page_text), Some(page)) = (doc.page_text(), doc.pages.get(page_index)) {
             // The SAME options the extraction ran with, through the funnel —
             // `textsel::PageContext::opts` documents why a bare
@@ -883,6 +887,7 @@ pub fn click(
                 targets,
                 on_note: false,
                 via: " via=double-click", // ui-text-exempt: trace suffix, never displayed
+                fields: pick.allows(crate::canvas::pick::PickClass::FormField),
             };
             if crate::canvas::textedit::route::click(&routed, actions) {
                 crate::diag::trace(|| {

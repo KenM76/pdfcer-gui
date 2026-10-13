@@ -302,6 +302,18 @@ pub fn escape_spent(ctx: &egui::Context) -> bool {
 // The frame
 // ===========================================================================
 
+/// What the frame lets [`overlay`] do.
+#[derive(Clone, Copy)]
+pub(super) struct Gates {
+    /// The armed tool.
+    pub tool: CanvasTool,
+    /// The mode edits content (Edit): a click selects a field rather than
+    /// filling it.
+    pub authoring: bool,
+    /// The pick filter's Form fields row is on.
+    pub fields: bool,
+}
+
 /// **The one entry point.** Read the click, draw the focused field's editor,
 /// and raise whatever the operator asked for.
 pub(super) fn overlay(
@@ -309,8 +321,7 @@ pub(super) fn overlay(
     doc: &OpenDoc,
     pages: &[PageView],
     drawn: &[DrawnPage],
-    tool: CanvasTool,
-    authoring: bool,
+    gates: Gates,
     actions: &mut Vec<Action>,
 ) {
     // Cleared FIRST, before any early return, so a flag set on a frame where
@@ -319,6 +330,22 @@ pub(super) fn overlay(
     // on exactly the frames nobody reads it.
     let ctx = ui.ctx().clone();
     ctx.data_mut(|d| d.remove::<bool>(Id::new(ESCAPE_KEY)));
+    let Gates {
+        tool,
+        authoring,
+        fields,
+    } = gates;
+
+    // The pick filter's Form fields row off: no field is selected, filled or
+    // drawn as a target, and a selected one is let go so no grip stays inert.
+    if !fields {
+        settle(&ctx, doc, actions);
+        if doc.selected_field.is_some() {
+            crate::diag::trace(|| "form-field-selected none".to_owned());
+            actions.push(FieldAction::Select(None).into());
+        }
+        return;
+    }
 
     // **IN EDIT MODE A CLICK SELECTS THE FIELD; ELSEWHERE IT FILLS IT.**
     //

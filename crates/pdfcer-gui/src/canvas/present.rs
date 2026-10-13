@@ -894,8 +894,11 @@ fn show_in(
         doc,
         &page_views,
         &drawn,
-        active_tool,
-        caps.edit_content,
+        forms::Gates {
+            tool: active_tool,
+            authoring: caps.edit_content,
+            fields: pick.allows(crate::canvas::pick::PickClass::FormField),
+        },
         actions,
     );
 

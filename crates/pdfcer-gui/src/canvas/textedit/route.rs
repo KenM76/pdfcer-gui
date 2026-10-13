@@ -42,6 +42,8 @@ pub struct Routed<'a> {
     pub on_note: bool,
     /// Appended to the refusal's trace line: empty or ` via=double-click`.
     pub via: &'static str,
+    /// The pick filter's Form fields row; off, a field never owns the click.
+    pub fields: bool,
 }
 
 /// Route the click; `true` when a caret was placed or moved.
@@ -84,7 +86,8 @@ fn elsewhere(r: &Routed<'_>) -> Option<&'static str> {
     if r.on_note {
         return Some("note"); // ui-text-exempt: trace token, never displayed
     }
-    let field = crate::canvas::forms::offer(r.doc, r.tool)
+    let field = r.fields
+        && crate::canvas::forms::offer(r.doc, r.tool)
         && crate::canvas::forms::boxes::hit(
             &crate::canvas::forms::placed(r.ctx, r.doc).boxes,
             r.page_index,

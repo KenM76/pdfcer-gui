@@ -44,6 +44,7 @@ fn probe(tool: CanvasTool) -> Press {
         widget_body: false,
         widget_grip: false,
         zoom_armed: false,
+        sweeps_text: true,
     }
 }
 
@@ -80,6 +81,7 @@ fn the_caret_tool_clicks_for_a_caret_and_drags_for_a_box_on_edit_content_alone()
                 let zoomed = press_kind(
                     Press {
                         zoom_armed: true,
+                        sweeps_text: true,
                         ..probe(CanvasTool::TextEdit(TextEditKind::Edit))
                     },
                     caps,
@@ -113,7 +115,8 @@ fn an_armed_markup_tool_outranks_the_grips_and_the_region_zoom() {
                         markup_grip: false,
                         widget_body: false,
                         widget_grip: false,
-                        zoom_armed: zoom
+                        zoom_armed: zoom,
+                        sweeps_text: true,
                     },
                     Capabilities::FULL
                 ),
@@ -144,7 +147,8 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             full
         ),
@@ -163,7 +167,8 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             full
         ),
@@ -182,7 +187,8 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: true
+                zoom_armed: true,
+                sweeps_text: true,
             },
             full
         ),
@@ -201,7 +207,8 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             full
         ),
@@ -221,7 +228,8 @@ fn without_a_markup_tool_the_press_precedence_is_unchanged() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: true
+                zoom_armed: true,
+                sweeps_text: true,
             },
             full
         ),
@@ -270,6 +278,7 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 widget_body: false,
                 widget_grip: false,
                 zoom_armed: false,
+                sweeps_text: true,
             },
             read,
         );
@@ -299,7 +308,8 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             read
         ),
@@ -322,7 +332,8 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             read
         ),
@@ -343,7 +354,8 @@ fn read_mode_gives_a_content_press_no_meaning_but_keeps_the_region_zoom() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: true
+                zoom_armed: true,
+                sweeps_text: true,
             },
             read
         ),
@@ -381,7 +393,8 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
                     markup_grip: false,
                     widget_body: false,
                     widget_grip: false,
-                    zoom_armed: false
+                    zoom_armed: false,
+                    sweeps_text: true,
                 },
                 caps
             )
@@ -401,7 +414,8 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
                     markup_grip: false,
                     widget_body: false,
                     widget_grip: false,
-                    zoom_armed: false
+                    zoom_armed: false,
+                    sweeps_text: true,
                 },
                 caps
             )
@@ -428,7 +442,8 @@ fn no_press_offers_both_a_text_sweep_and_a_content_marquee() {
                         markup_grip: false,
                         widget_body: false,
                         widget_grip: false,
-                        zoom_armed: false
+                        zoom_armed: false,
+                        sweeps_text: true,
                     },
                     caps
                 ),
@@ -460,7 +475,8 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             edit
         ),
@@ -483,7 +499,8 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             edit
         ),
@@ -505,7 +522,8 @@ fn the_text_tool_sweeps_in_edit_and_retiring_it_gives_the_marquee_back() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             edit
         ),
@@ -531,7 +549,8 @@ fn a_region_zoom_outranks_the_text_tool_but_not_a_pen() {
                     markup_grip: false,
                     widget_body: false,
                     widget_grip: false,
-                    zoom_armed: true
+                    zoom_armed: true,
+                    sweeps_text: true,
                 },
                 caps
             ),
@@ -556,7 +575,8 @@ fn a_region_zoom_outranks_the_text_tool_but_not_a_pen() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: true
+                zoom_armed: true,
+                sweeps_text: true,
             },
             Capabilities::FULL
         ),
@@ -593,7 +613,8 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
                                 markup_grip: false,
                                 widget_body: false,
                                 widget_grip: false,
-                                zoom_armed: zoom
+                                zoom_armed: zoom,
+                                sweeps_text: true,
                             },
                             caps
                         ),
@@ -618,7 +639,8 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
                     markup_grip: false,
                     widget_body: false,
                     widget_grip: false,
-                    zoom_armed: false
+                    zoom_armed: false,
+                    sweeps_text: true,
                 },
                 Capabilities::NONE
             ),
@@ -643,7 +665,8 @@ fn a_vertex_markup_tool_takes_the_click_and_offers_no_drag() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             Capabilities::FULL
         ),
@@ -675,7 +698,8 @@ fn review_mode_places_markup_but_refuses_content() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             review
         ),
@@ -699,7 +723,8 @@ fn review_mode_places_markup_but_refuses_content() {
                     markup_grip: false,
                     widget_body: false,
                     widget_grip: false,
-                    zoom_armed: false
+                    zoom_armed: false,
+                    sweeps_text: true,
                 },
                 review
             )
@@ -721,7 +746,8 @@ fn review_mode_places_markup_but_refuses_content() {
                 markup_grip: false,
                 widget_body: false,
                 widget_grip: false,
-                zoom_armed: false
+                zoom_armed: false,
+                sweeps_text: true,
             },
             review
         ),

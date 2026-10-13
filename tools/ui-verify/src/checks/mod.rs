@@ -1113,6 +1113,8 @@ pub mod draft_keys;
 pub mod draft_paragraph;
 /// Enter in a paragraph on the page breaks it.
 pub mod enter_paragraph;
+/// The Select filter's Form fields and Characters rows change what a click reaches.
+pub mod filter_rows;
 /// A paragraph's hand breaks are read from pdfcer's marks, or the guess is disclosed.
 pub mod hand_breaks;
 pub mod ime;

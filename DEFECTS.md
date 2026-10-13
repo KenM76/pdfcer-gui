@@ -1010,19 +1010,6 @@ The wider point is the register's: **a rationale that names its own expiry
 condition needs something that fires when the condition is met.** Two files
 carried this one for the life of the selection model without noticing.
 
-### D49 — OPEN: two Select-filter rows are inert, and their tooltips promise otherwise
-
-`PickFilter` (`crates/pdfcer-gui-base/src/pick.rs`) carries eleven classes and
-the popup writes all eleven. The page-object pick reads `Part`, `Node` and the
-class of the topmost hit (`canvas::input`); the annotation pick reads Markup,
-Dimensions and Links through `PickClass::of_annot_subtype`
-(`canvas::clicking::annot_hit`).
-
-**Form fields and Characters still reach no read.** Widgets are excluded from
-annotation selection before any filter, and `canvas::textsel` contains no
-`allows` call. Their tooltips say the opposite — *"Off: clicks pass through
-form fields, and none can be filled in."* (`crates/pdfcer-gui-base/src/text/pick.rs`).
-
 ### D50 — OPEN: the resize and rotate grips vanish below the Object rung
 
 `crates/pdfcer-gui/src/canvas/pressing.rs` binds `at_object_rung` and offers

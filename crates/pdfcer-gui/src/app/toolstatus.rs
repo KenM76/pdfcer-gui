@@ -21,14 +21,15 @@ pub const REGION: &str = "toolstatus"; // ui-text-exempt: trace region name, nev
 /// The region the *Put this tool down* button publishes.
 pub const REGION_PUT_DOWN: &str = "toolstatus.put_down"; // ui-text-exempt: trace region name, never displayed
 
-/// Draw the strip into the banner `Ui` the dock reserved.
-pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
+/// Draw the strip into the banner `Ui` the dock reserved. `sweeps_text` is
+/// whether the Select filter's Characters row is on.
+pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>, sweeps_text: bool) {
     let Some(doc) = doc else {
         return;
     };
     let ctx = ui.ctx().clone();
     let armed = crate::canvas::tool::selected(&ctx);
-    let (primary, secondary) = sentence(&ctx, doc, armed);
+    let (primary, secondary) = sentence(&ctx, doc, armed, sweeps_text);
     let line = match name_of(armed, host) {
         Some(name) => ts::status_line(name, &primary),
         None => primary.clone(),
@@ -39,6 +40,10 @@ pub fn banner(ui: &mut Ui, doc: Option<&OpenDoc>, host: Option<&MenuHost<'_>>) {
         Some(extra) => format!("{line}\n\n{extra}"),
         None => line.clone(),
     };
+    crate::diag::trace_changed("tool-status", || {
+        // ui-text-exempt: diagnostic trace of the displayed sentence.
+        format!("tool-status text={line}")
+    });
 
     // **The button is allocated BEFORE the sentence, and that order is the
     // whole of the layout.**
@@ -93,7 +98,12 @@ fn name_of<'a>(tool: CanvasTool, host: Option<&'a MenuHost<'_>>) -> Option<&'a s
 }
 
 /// The one sentence, plus whatever the old stage said on a **second** line.
-fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Option<String>) {
+fn sentence(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    tool: CanvasTool,
+    sweeps_text: bool,
+) -> (String, Option<String>) {
     match tool {
         // The resting state, and the one sentence in the application that says
         // what a plain drag MEANS in this mode — it marquees objects in Edit
@@ -104,8 +114,10 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
             let caps = crate::canvas::tool::capabilities(ctx);
             let line = if caps.edit_content {
                 t::pointer_edit()
-            } else {
+            } else if sweeps_text {
                 t::pointer_reading()
+            } else {
+                t::pointer_no_text()
             };
             (line.to_owned(), None)
         }
@@ -117,6 +129,7 @@ fn sentence(ctx: &egui::Context, doc: &OpenDoc, tool: CanvasTool) -> (String, Op
             t::hand_instruction().to_owned(),
             Some(t::hand_borrow().to_owned()),
         ),
+        CanvasTool::Text if !sweeps_text => (t::pointer_no_text().to_owned(), None),
         CanvasTool::Text => {
             // The second sentence is rendered only where it is TRUE. In Read
             // and Review the select tool already swept text, so arming this

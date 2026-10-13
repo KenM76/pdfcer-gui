@@ -42,6 +42,8 @@ pub struct Click<'a> {
     pub page_index: usize,
     /// Whether this frame carries a secondary click **that the mode allows**.
     pub secondary_clicked: bool,
+    /// The pick filter; its Form fields row decides whether a field is hit.
+    pub pick: crate::canvas::pick::PickFilter,
     /// `None` when the built-in manifest failed to validate, in which case
     /// nothing happens at all — including no selection change.
     pub host: Option<&'a MenuHost<'a>>,
@@ -61,6 +63,9 @@ impl Click<'_> {
         // rule is tolerable here because the second is the function's own
         // contract rather than a copy of this one.
         if !self.secondary_clicked {
+            return false;
+        }
+        if !self.pick.allows(crate::canvas::pick::PickClass::FormField) {
             return false;
         }
         self.doc.selected_field.is_some()

@@ -459,8 +459,11 @@ impl PdfcerApp {
         // handler returned early would keep the first and lose the second,
         // which is exactly the distinction three unreachable panels shipped
         // without.
+        let sweeps_text = self
+            .pick_filter
+            .allows(crate::canvas::pick::PickClass::Characters);
         let mut tool_banner = |ui: &mut egui::Ui| {
-            crate::app::toolstatus::banner(ui, doc, host.as_ref());
+            crate::app::toolstatus::banner(ui, doc, host.as_ref(), sweeps_text);
         };
         // **The left rail** — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
         //

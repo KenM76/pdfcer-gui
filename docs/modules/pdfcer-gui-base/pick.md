@@ -152,10 +152,19 @@ that stays off.
 
 `canvas::clicking` filters the annotation hit through
 [`PickClass::of_annot_subtype`], so Markup, Dimensions and Links each let a
-click pass through when off. [`PickClass::FormField`] and
-[`PickClass::Characters`] are still read by nothing on the pick path: the
-character sweep's gate (`canvas::textsel::gate`) is decided by the armed tool
-and the mode's capabilities alone. `DEFECTS.md` D49.
+click pass through when off.
+
+[`PickClass::FormField`] off: `canvas::forms::overlay` neither selects (Edit)
+nor focuses (Read, Review) a field and drops a field selection;
+`canvas::pressing::look` grants no widget body or grip; right-click and
+text-edit routing skip the field hit.
+
+[`PickClass::Characters`] off: no press becomes a text sweep, whatever the
+tool (`canvas::gesture::meaning::Press::sweeps_text`, and the click-side
+`sweeps` in `canvas::clicking::click`), a picture under text takes a Read
+click, and the tool status line says a drag selects no text. Driven by
+`form_fields_row_lets_clicks_through_fields` and
+`characters_row_stops_text_sweeps`.
 
 The rule: **a row is inert until an `allows` call reads it.** Wire the
 consumer in the same change that adds the row, or the popup becomes the

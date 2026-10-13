@@ -252,6 +252,7 @@ pub(super) fn interact(
         screen_pos,
         active_tool,
         caps,
+        *pick,
     );
     let hovered_grip = press.grip;
     let press_kind = press.meaning;
@@ -940,6 +941,7 @@ pub(super) fn interact(
         page_index,
         secondary_clicked,
         host,
+        pick: *pick,
     });
 
     // ---- 6. keys, BEFORE the resolve -----------------------------------

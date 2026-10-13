@@ -326,6 +326,7 @@ pub fn look(
     screen_pos: Option<Pos2>,
     active_tool: CanvasTool,
     caps: Capabilities,
+    pick: crate::canvas::pick::PickFilter,
 ) -> Press {
     // At an inner rung the move-hit box is INFLATED by an anchor mark's
     // width, and without it the outermost anchors of every path are undraggable.
@@ -568,8 +569,12 @@ pub fn look(
     // still present in the form, so no gesture is started that could not
     // commit. The target list it consults is cached on `(path, edit_epoch)`,
     // so asking every frame costs a map lookup rather than a form walk.
-    let widget_body =
-        origin.is_some_and(|p| widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p)));
+    // The pick filter's Form fields row off leaves a selected field's box
+    // and grips to the press beneath them.
+    let fields = pick.allows(crate::canvas::pick::PickClass::FormField);
+    let widget_body = fields
+        && origin
+            .is_some_and(|p| widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p)));
 
     // **A RESIZE GRIP IS NOT INSIDE THE BOX IT RESIZES.**
     //
@@ -602,7 +607,8 @@ pub fn look(
     // cannot be attributed to a box that is not the one `grabbable` measured.
     let markup_grip =
         grip.is_some_and(handles::Grip::is_resize) && annotdrag::grab_box(map, selection).is_some();
-    let widget_grip = grip.is_some_and(handles::Grip::is_resize)
+    let widget_grip = fields
+        && grip.is_some_and(handles::Grip::is_resize)
         && annotdrag::grab_box(map, selection).is_none()
         && widgetdrag::grab_box(ctx, doc, map).is_some();
 
@@ -619,6 +625,7 @@ pub fn look(
             widget_body,
             widget_grip,
             zoom_armed: zoom::region_zoom_armed(ctx),
+            sweeps_text: pick.allows(crate::canvas::pick::PickClass::Characters),
         },
         caps,
     );
