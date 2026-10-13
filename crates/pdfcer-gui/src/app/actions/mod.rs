@@ -143,6 +143,8 @@ pub(crate) use disclosure::{record_edit_disclosure, record_note, record_notes};
 /// changes a document passes through. Its header carries why a router and a
 /// protocol are two subjects.
 mod funnel;
+/// Content and form-field widgets moved as one undo step.
+mod movemixed;
 /// The three arms that mark content for removal. Its header carries the seam
 /// argument and names the one thing deliberately absent from it.
 mod redact;

@@ -36,6 +36,17 @@ pub enum FieldAction {
     /// for the same reason that one is, and for the same reason neither is
     /// saved.
     Select(Option<crate::docidentity::SelectedField>),
+    /// **Shift/Ctrl-click on a field: add it to the selection, or take it
+    /// out.** View state, like [`Self::Select`]; see `crate::fieldset`.
+    Toggle(crate::docidentity::SelectedField),
+    /// **A marquee's fields, combined with the selection by `merge`.** View
+    /// state, like [`Self::Select`].
+    Band {
+        /// The fields the band caught, on the band's page.
+        fields: Vec<crate::docidentity::SelectedField>,
+        /// Replace, add to or subtract from the current selection.
+        merge: crate::fieldset::BandMerge,
+    },
     /// **Change one property of a field that is already on the page.**
     ///
     /// Reaches `EditSession::edit_field`, which takes the fully-qualified name

@@ -109,6 +109,25 @@ pub enum VectorAction {
         /// The gesture, for the trace.
         gesture: &'static str,
     },
+    /// [`Self::MoveEach`] (or [`Self::MoveEachInForm`]) **plus form-field
+    /// widgets**, as one undo step — what Align and Distribute commit when
+    /// the selection holds form fields.
+    ///
+    /// The engine has no batch widget move (G189), so the commit is one
+    /// `move_objects_each` plus one `move_widget` per widget, folded with
+    /// `coalesce_last`. Deltas are page space, Y up.
+    MoveMixed {
+        /// The 0-based page.
+        page: usize,
+        /// `(index, dx, dy)` per content object; may be empty.
+        objects: Vec<(usize, f64, f64)>,
+        /// The object indices are leaf indices of one placed drawing.
+        in_form: bool,
+        /// `(field, widget, dx, dy)` per widget, never empty.
+        widgets: Vec<(crate::docidentity::SelectedField, f64, f64)>,
+        /// The gesture, for the trace.
+        gesture: &'static str,
+    },
     /// Transform several page objects, **each by its own PAGE-space
     /// matrix**, as one undo step, all-or-nothing — what Circular arrange
     /// with *Rotate objects* commits.

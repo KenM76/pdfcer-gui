@@ -504,6 +504,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(markup_place::AMarkupIsNudgedDuplicatedRestackedAndTypedToSize),
         Box::new(radio_group::ACopiedRadioPastesIntoItsGroupAndStaysExclusive),
         Box::new(radio_group::ARadioButtonJoinsAGroupFromProperties),
+        Box::new(field_multiselect::SeveralFormFieldsAlignAsOneUndoStep),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

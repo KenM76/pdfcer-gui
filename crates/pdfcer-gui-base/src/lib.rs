@@ -551,6 +551,8 @@ pub mod formedit;
 pub mod fieldaction;
 /// A form field's format, validate and calculate scripts, as drafts.
 pub mod fieldscript;
+/// The form fields selected beside the primary one.
+pub mod fieldset;
 
 /// The verbs that author a layer.
 pub mod layeraction;

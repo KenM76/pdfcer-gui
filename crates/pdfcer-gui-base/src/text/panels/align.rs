@@ -169,14 +169,34 @@ pub const fn remove_overlaps_button() -> (&'static str, &'static str) {
 /// Shown when nothing on this page is selected at the object level.
 #[must_use]
 pub const fn nothing_selected() -> &'static str {
-    "Select objects on the page to align them. Click one, Shift-click the rest."
+    "Select objects or form fields on the page to align them. Click one, Shift-click the rest."
 }
 
-/// Shown when a markup or form field is selected instead of page content.
+/// Shown when a markup is selected instead of page content.
 #[must_use]
 pub const fn not_content() -> &'static str {
-    "Align and Distribute moves page content. A markup or form field is \
-     selected — there is nothing to align it against."
+    "Align and Distribute moves page content and form fields. A markup is \
+     selected, and markups are not moved from here."
+}
+
+/// Said when some form fields of an Align or Distribute moved and others were
+/// refused; what moved is still one undo step.
+#[must_use]
+pub fn fields_partly_moved(moved: usize, of: usize, reason: &str) -> String {
+    format!("{moved} of {of} form fields moved; the rest were refused: {reason}")
+}
+
+/// Said when an Align or Distribute applied but could not be grouped.
+#[must_use]
+pub const fn not_one_undo() -> &'static str {
+    "Moved, but it will take more than one Undo to take this back."
+}
+
+/// Circular arrange with *Rotate objects* and form fields selected.
+#[must_use]
+pub const fn rotate_fields() -> &'static str {
+    "Form fields can be placed around the circle but not rotated with it: \
+     untick Rotate objects, or leave the fields out of the selection."
 }
 
 /// Hover on a greyed button: it needs more objects.

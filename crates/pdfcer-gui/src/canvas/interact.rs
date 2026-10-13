@@ -409,18 +409,32 @@ pub(super) fn interact(
             shift,
             intent: MarqueeIntent::Select,
             phase: Phase::Complete,
-        } => crate::canvas::marquee::on_release(
-            &ctx,
-            doc,
-            targets.as_deref().map(|t| t as &dyn CanvasTargetProvider),
-            page_index,
-            crate::canvas::marquee::Band {
-                rect,
-                crossing,
-                combine: crate::canvas::marquee::mode(shift, ctrl),
-            },
-            &mut selection,
-        ),
+        } => {
+            let combine = crate::canvas::marquee::mode(shift, ctrl);
+            crate::canvas::marquee::on_release(
+                &ctx,
+                doc,
+                targets.as_deref().map(|t| t as &dyn CanvasTargetProvider),
+                page_index,
+                crate::canvas::marquee::Band {
+                    rect,
+                    crossing,
+                    combine,
+                },
+                &mut selection,
+            );
+            crate::canvas::forms::band_select(
+                &ctx,
+                doc,
+                &caps,
+                pick.allows(crate::canvas::pick::PickClass::FormField),
+                active_tool,
+                page_index,
+                (rect, crossing),
+                combine,
+                actions,
+            );
+        }
         // The same rubber band, released with the other intent. **The
         // selection is not touched** — not cleared, not replaced, not even
         // read: a navigation gesture that rearranged the selection would break

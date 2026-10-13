@@ -41,7 +41,7 @@ use pdfcer_gui_base::formtextbox as textbox;
 /// Re-exported so the path `canvas::forms::right_click_hits_a_field` — which
 /// `canvas::rightclick` and `panels::properties::formfield` both cite by name
 /// — survived the R2 split unchanged.
-pub use selecting::right_click_hits_a_field;
+pub use selecting::{band_select, right_click_hits_a_field};
 
 use crate::app::actions::forms::FieldAction;
 use std::path::PathBuf;

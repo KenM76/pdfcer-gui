@@ -243,6 +243,9 @@ pub struct Measured {
     pub boxes: Vec<Bx>,
     pub anchors: Vec<Option<(f64, f64)>>,
     pub frame: Frame,
+    /// Selected form-field widgets on the page. Their boxes follow the
+    /// objects' in [`Self::boxes`], with no text anchor.
+    pub widgets: Vec<pdfcer_gui_base::docidentity::SelectedField>,
 }
 
 /// A page-space bounds as a canvas-space box.
@@ -291,22 +294,22 @@ pub fn object_in(objects: &PageObjects, in_form: bool, i: usize) -> Option<&Vect
 }
 
 /// Measure what the panel acts on, or `None` when nothing on the current
-/// page is selected at the Object rung. A selection of parts of a placed
-/// drawing and no page object is measured from the parts, whose geometry is
-/// already in page space.
+/// page is selected at the Object rung and no form field is selected there.
+/// A selection of parts of a placed drawing and no page object is measured
+/// from the parts, whose geometry is already in page space.
 #[must_use]
-pub fn measure(doc: &OpenDoc) -> Option<Measured> {
+pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
     let page = doc.view.page_index;
-    if doc.selection.level() != SelectionLevel::Object {
-        return None;
-    }
-    let picked: Vec<_> = doc
-        .selection
-        .in_selection_order()
-        .into_iter()
-        .filter(|e| e.page == page)
-        .map(|e| e.object)
-        .collect();
+    let picked: Vec<_> = if doc.selection.level() == SelectionLevel::Object {
+        doc.selection
+            .in_selection_order()
+            .into_iter()
+            .filter(|e| e.page == page)
+            .map(|e| e.object)
+            .collect()
+    } else {
+        Vec::new()
+    };
     let in_form = !picked.is_empty() && picked.iter().all(|t| t.is_leaf());
     let order: Vec<usize> = picked
         .iter()
@@ -318,7 +321,8 @@ pub fn measure(doc: &OpenDoc) -> Option<Measured> {
             }
         })
         .collect();
-    if order.is_empty() {
+    let fields = field_boxes(ctx, doc, page);
+    if order.is_empty() && fields.is_empty() {
         return None;
     }
     let sheet = doc.pages.get(page)?;
@@ -346,17 +350,57 @@ pub fn measure(doc: &OpenDoc) -> Option<Measured> {
         boxes.push(b);
         anchors.push(text_anchor(object, sheet));
     }
+    let mut widgets = Vec::with_capacity(fields.len());
+    for (field, b) in fields {
+        widgets.push(field);
+        boxes.push(b);
+        anchors.push(None);
+    }
     Some(Measured {
         page,
         objects,
         in_form,
         boxes,
         anchors,
+        widgets,
         frame: Frame {
             page: page_box,
             drawing,
         },
     })
+}
+
+/// The selected form fields' widget boxes on `page`, in canvas space, in
+/// selection order. Read from the same placement census the canvas hit-tests,
+/// so a field is measured exactly where it is drawn.
+fn field_boxes(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    page: usize,
+) -> Vec<(pdfcer_gui_base::docidentity::SelectedField, Bx)> {
+    let selected = doc.field_set.all(doc.selected_field.as_ref());
+    if selected.is_empty() || !doc.annotations_visible() {
+        return Vec::new();
+    }
+    let placed = crate::canvas::forms::placed(ctx, doc);
+    selected
+        .into_iter()
+        .filter(|f| f.page == page)
+        .filter_map(|f| {
+            let t = placed
+                .targets
+                .iter()
+                .find(|t| t.page == f.page && t.field == f.field && t.widget == f.widget)?;
+            let r = t.rect;
+            let b = Bx::new(
+                r.min.x.into(),
+                r.min.y.into(),
+                r.max.x.into(),
+                r.max.y.into(),
+            );
+            Some((f, b))
+        })
+        .collect()
 }
 
 /// One button's canvas deltas, per measured object.
@@ -372,7 +416,12 @@ fn deltas(m: &Measured, op: Op, settings: AlignUi) -> Vec<(f64, f64)> {
         Op::Exchange(order) => {
             let order: Vec<usize> = match order {
                 ExchangeOrder::Selection => (0..m.boxes.len()).collect(),
-                ExchangeOrder::Stacking => rearrange::stacking_order(&m.objects),
+                // Widgets are drawn over all content, so they stack last.
+                ExchangeOrder::Stacking => {
+                    let mut order = rearrange::stacking_order(&m.objects);
+                    order.extend(m.objects.len()..m.boxes.len());
+                    order
+                }
                 ExchangeOrder::Clockwise => rearrange::clockwise_order(&m.boxes),
             };
             rearrange::exchange(&m.boxes, &order)
@@ -409,16 +458,38 @@ fn moves_action(
     let sheet = doc.pages.get(m.page)?;
     // Canvas space is f32.
     #[allow(clippy::cast_possible_truncation)]
+    let to_page = |(dx, dy): (f64, f64)| {
+        if layout::negligible((dx, dy)) {
+            return None;
+        }
+        let d = crate::canvas::moving::page_delta(Vec2::new(dx as f32, dy as f32), sheet)?;
+        Some((d.dx, d.dy))
+    };
+    let (object_deltas, widget_deltas) = deltas.split_at(m.objects.len().min(deltas.len()));
     let moves: Vec<(usize, f64, f64)> = m
         .objects
         .iter()
-        .zip(deltas)
-        .filter(|(_, d)| !layout::negligible(*d))
-        .filter_map(|(&i, (dx, dy))| {
-            let d = crate::canvas::moving::page_delta(Vec2::new(dx as f32, dy as f32), sheet)?;
-            Some((i, d.dx, d.dy))
-        })
+        .zip(object_deltas)
+        .filter_map(|(&i, &d)| to_page(d).map(|(dx, dy)| (i, dx, dy)))
         .collect();
+    let widgets: Vec<_> = m
+        .widgets
+        .iter()
+        .zip(widget_deltas)
+        .filter_map(|(f, &d)| to_page(d).map(|(dx, dy)| (f.clone(), dx, dy)))
+        .collect();
+    if !widgets.is_empty() {
+        return Some(
+            VectorAction::MoveMixed {
+                page: m.page,
+                objects: moves,
+                in_form: m.in_form,
+                widgets,
+                gesture,
+            }
+            .into(),
+        );
+    }
     (!moves.is_empty()).then(|| {
         if m.in_form {
             VectorAction::MoveEachInForm {
@@ -439,8 +510,14 @@ fn moves_action(
 
 /// Run `ops` against the current selection as one step: push the action, or
 /// say why nothing moved.
-pub fn run(doc: &OpenDoc, ops: &[Op], settings: AlignUi, actions: &mut Vec<Action>) {
-    let Some(m) = measure(doc) else {
+pub fn run(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    ops: &[Op],
+    settings: AlignUi,
+    actions: &mut Vec<Action>,
+) {
+    let Some(m) = measure(ctx, doc) else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("align-declined op={ops:?} reason=nothing-selected")
@@ -455,7 +532,7 @@ pub fn run(doc: &OpenDoc, ops: &[Op], settings: AlignUi, actions: &mut Vec<Actio
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
                     "align-declined op={ops:?} reason=nothing-moves n={}",
-                    m.objects.len()
+                    m.boxes.len()
                 )
             });
             crate::app::actions::record_note(doc.edit_epoch, t::already_aligned().to_owned());
@@ -480,11 +557,11 @@ fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
         nodes::body(ui, doc, &mut settings.node_rel, actions);
         return;
     }
-    if doc.selection.annot().is_some() || doc.selected_field.is_some() {
+    if doc.selection.annot().is_some() {
         ui.label(t::not_content());
     }
-    let measured = measure(doc);
-    let n = measured.as_ref().map_or(0, |m| m.objects.len());
+    let measured = measure(ui.ctx(), doc);
+    let n = measured.as_ref().map_or(0, |m| m.boxes.len());
     ui.label(if n == 0 {
         t::nothing_selected().to_owned()
     } else {
@@ -650,7 +727,7 @@ fn align_tab(
                 settings.as_group
             )
         });
-        run(doc, &[op], *settings, actions);
+        run(ui.ctx(), doc, &[op], *settings, actions);
     }
 }
 

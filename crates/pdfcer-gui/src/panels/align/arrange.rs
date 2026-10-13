@@ -138,6 +138,9 @@ pub enum CircleRefusal {
     /// *Rotate objects* on parts of a placed drawing: the engine has no
     /// per-part transform inside a form.
     RotateInForm,
+    /// *Rotate objects* with form fields selected: a widget turns only in
+    /// quarter turns.
+    RotateFields,
 }
 
 /// Circular's action.
@@ -177,6 +180,9 @@ pub fn circular_plan(
     }
     if m.in_form {
         return Err(CircleRefusal::RotateInForm);
+    }
+    if !m.widgets.is_empty() {
+        return Err(CircleRefusal::RotateFields);
     }
     let to_canvas = canvas_map(sheet).ok_or(CircleRefusal::NothingMoves)?;
     let to_page = to_canvas.inverse().ok_or(CircleRefusal::NothingMoves)?;
@@ -326,7 +332,9 @@ pub fn grid_tab(
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("align-pressed op=Grid n={n} rows={rows} cols={cols} grid={grid:?}")
         });
-        let Some(m) = measure(doc) else { return };
+        let Some(m) = measure(ui.ctx(), doc) else {
+            return;
+        };
         match grid_plan(doc, &m, *grid) {
             Some(action) => actions.push(action),
             None => decline(doc, "Grid", "nothing-moves", t::already_aligned()),
@@ -408,7 +416,9 @@ pub fn circular_tab(
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("align-pressed op=Circular n={n} circle={circle:?}")
         });
-        let Some(m) = measure(doc) else { return };
+        let Some(m) = measure(ui.ctx(), doc) else {
+            return;
+        };
         match circular_plan(doc, &m, *circle) {
             Ok(action) => actions.push(action),
             Err(CircleRefusal::NotAnEllipse) => decline(
@@ -422,6 +432,9 @@ pub fn circular_tab(
             }
             Err(CircleRefusal::RotateInForm) => {
                 decline(doc, "Circular", "rotate-in-form", t::rotate_in_form());
+            }
+            Err(CircleRefusal::RotateFields) => {
+                decline(doc, "Circular", "rotate-fields", t::rotate_fields());
             }
         }
     }

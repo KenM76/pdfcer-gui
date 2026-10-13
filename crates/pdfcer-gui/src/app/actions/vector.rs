@@ -196,6 +196,13 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 move_each_in_form(doc, page, &moves, gesture);
             }
         }
+        VectorAction::MoveMixed {
+            page,
+            objects,
+            in_form,
+            widgets,
+            gesture,
+        } => super::movemixed::apply(doc, page, &objects, in_form, &widgets, gesture),
         VectorAction::TransformEach {
             page,
             transforms,

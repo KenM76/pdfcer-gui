@@ -39,7 +39,18 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
     match action {
         // Selection is VIEW STATE. It changes no document, bumps no epoch and
         // invalidates no page — which is why it does not go near the funnel.
-        FieldAction::Select(selected) => doc.selected_field = selected,
+        FieldAction::Select(selected) => {
+            doc.field_set.clear();
+            doc.selected_field = selected;
+        }
+        FieldAction::Toggle(field) => {
+            doc.selected_field = doc.field_set.toggle(doc.selected_field.as_ref(), field);
+        }
+        FieldAction::Band { fields, merge } => {
+            doc.selected_field = doc
+                .field_set
+                .band(doc.selected_field.as_ref(), fields, merge);
+        }
         // One line: the panel already resolved left/right into a
         // counterclockwise angle, and `rotate_widget` owns the rest -- the
         // multiple-of-90 refusal, the normalisation and the appearance

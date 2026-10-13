@@ -947,7 +947,7 @@ impl PdfcerApp {
             | "edit.align_centre_x"
             | "edit.align_centre_y"
             | "edit.align_centre" => {
-                aligning::dispatch(self, id, actions);
+                aligning::dispatch(ctx, self, id, actions);
             }
             "markup.flatten" => flatten::dispatch(self, actions),
             id if dimdisplay::claims(id) => dimdisplay::dispatch(self, id, actions),

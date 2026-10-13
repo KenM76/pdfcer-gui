@@ -934,6 +934,8 @@ pub struct OpenDoc {
     /// another window without asking again.
     pub opened_with: Option<crate::secret::Secret>,
     pub selected_field: Option<SelectedField>,
+    /// The other fields of a multi-field selection; see `crate::fieldset`.
+    pub field_set: crate::fieldset::FieldSet,
     /// **The operator's guide lines**, per page, in canvas space.
     ///
     /// View state, not document content — a guide changes nothing a save would
@@ -1132,6 +1134,7 @@ impl OpenDoc {
             // file. See the field's own docs.
             selection: SelectionState::default(),
             selected_field: None,
+            field_set: crate::fieldset::FieldSet::default(),
             base_texture: None,
             base_texture_epoch: 0,
             ink_pages: std::collections::HashSet::new(),

@@ -152,6 +152,25 @@ pub(super) fn select_click(
             page: t.page,
         });
 
+    // **Shift or Ctrl with a primary click adds the field or takes it out**,
+    // the convention every drawing program shares. Over paper it does
+    // nothing: a modified click that missed is not a "deselect all".
+    let (shift, command) = ctx.input(|i| (i.modifiers.shift, i.modifiers.command));
+    if clearing && (shift || command) {
+        if let Some(field) = picked {
+            let n = doc.field_set.all(doc.selected_field.as_ref()).len();
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!(
+                    "form-field-toggled page={} field={} widget={} before={n}",
+                    field.page, field.field, field.widget
+                )
+            });
+            actions.push(FieldAction::Toggle(field).into());
+        }
+        return;
+    }
+
     // Raised only on a CHANGE. A click that re-selects what is already
     // selected, or that clears an empty selection, is not an event — and this
     // surface is asked on every frame the pointer is down, so raising
@@ -178,6 +197,70 @@ pub(super) fn select_click(
         }
     });
     actions.push(FieldAction::Select(picked).into());
+}
+
+/// **A completed select-band over form fields**, in Edit mode.
+///
+/// `rect` is the band in canvas space, the space `boxes::FieldTarget::rect`
+/// is in. A window band takes the fields it contains, a crossing band the ones
+/// it touches; `combine` is the same Shift/Ctrl reading the content marquee
+/// uses, so one band selects content and fields alike.
+#[allow(clippy::too_many_arguments)]
+pub fn band_select(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    caps: &crate::app::modes::Capabilities,
+    fields_allowed: bool,
+    tool: CanvasTool,
+    page: usize,
+    band: (egui::Rect, bool),
+    combine: crate::canvas::marquee::Combine,
+    actions: &mut Vec<Action>,
+) {
+    use crate::canvas::marquee::Combine;
+    use pdfcer_gui_base::fieldset::BandMerge;
+    let (rect, crossing) = band;
+    if !caps.edit_content
+        || !fields_allowed
+        || !doc.annotations_visible()
+        || boxes::types_into_fields(tool)
+    {
+        return;
+    }
+    let placed = placed(ctx, doc);
+    let fields: Vec<_> = placed
+        .targets
+        .iter()
+        .filter(|t| t.page == page)
+        .filter(|t| {
+            if crossing {
+                rect.intersects(t.rect)
+            } else {
+                rect.contains_rect(t.rect)
+            }
+        })
+        .map(|t| crate::app::state::SelectedField {
+            field: t.field.clone(),
+            widget: t.widget,
+            page: t.page,
+        })
+        .collect();
+    if fields.is_empty() && (combine != Combine::Replace || doc.selected_field.is_none()) {
+        return;
+    }
+    let (merge, said) = match combine {
+        Combine::Replace => (BandMerge::Replace, "replace"),
+        Combine::Add => (BandMerge::Add, "add"),
+        Combine::Subtract => (BandMerge::Subtract, "subtract"),
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "form-field-band page={page} caught={} merge={said} crossing={crossing}",
+            fields.len()
+        )
+    });
+    actions.push(FieldAction::Band { fields, merge }.into());
 }
 
 /// **Is a right-click at `point` about a form field?**
@@ -227,19 +310,32 @@ pub(super) fn selection_overlay(
     let Some(selected) = doc.selected_field.as_ref() else {
         return;
     };
-    let Some(target) = targets.iter().find(|t| {
-        t.page == selected.page && t.field == selected.field && t.widget == selected.widget
-    }) else {
-        return;
-    };
-    let Some(view) = pages.iter().find(|v| v.page == target.page) else {
-        return;
-    };
-    let screen = view.map.rect_to_screen(target.rect);
     let painter = ctx.layer_painter(egui::LayerId::new(
         egui::Order::Foreground,
         egui::Id::new("form-field-selection"), // ui-text-exempt: a layer id.
     ));
+    let screen_of = |f: &crate::app::state::SelectedField| {
+        let target = targets
+            .iter()
+            .find(|t| t.page == f.page && t.field == f.field && t.widget == f.widget)?;
+        let view = pages.iter().find(|v| v.page == target.page)?;
+        Some(view.map.rect_to_screen(target.rect))
+    };
+    let all = doc.field_set.all(Some(selected));
+    // The other members get the outline without grips: grips resize ONE box.
+    for other in &all[..all.len() - 1] {
+        if let Some(screen) = screen_of(other) {
+            painter.rect_stroke(
+                screen,
+                egui::CornerRadius::ZERO,
+                egui::Stroke::new(1.5, egui_shell::theme::Theme::canvas_selection_ink(ctx)),
+                egui::StrokeKind::Middle,
+            );
+        }
+    }
+    let Some(screen) = screen_of(selected) else {
+        return;
+    };
     // The LIVE theme, read from the caller's own `Context`, never a colour
     // resolved somewhere else and carried here: `Theme::of` returns the
     // operator's current preset, so a painter that guessed would draw a

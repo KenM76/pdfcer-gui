@@ -88,7 +88,9 @@ pub fn show(ctx: &Context, doc: &OpenDoc, settings: AlignUi, actions: &mut Vec<A
     let Some((rect, pass)) = ctx.data(|d| d.get_temp::<(Rect, u64)>(key())) else {
         return;
     };
-    if pass != ctx.cumulative_pass_nr() || super::measure(doc).is_none_or(|m| m.objects.len() < 2) {
+    if pass != ctx.cumulative_pass_nr()
+        || super::measure(ctx, doc).is_none_or(|m| m.boxes.len() < 2)
+    {
         return;
     }
     let xs = stops(rect.min.x, rect.max.x);
@@ -136,7 +138,7 @@ pub fn show(ctx: &Context, doc: &OpenDoc, settings: AlignUi, actions: &mut Vec<A
                             as_group: false,
                             ..settings
                         };
-                        super::run(doc, &ops, at, actions);
+                        super::run(ctx, doc, &ops, at, actions);
                     }
                 }
             }

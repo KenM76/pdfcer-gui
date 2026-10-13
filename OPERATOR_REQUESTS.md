@@ -499,7 +499,7 @@ His words: *"I can't seem to select multiple form items at once. Not being able 
 2. Align and Distribute act on several form fields as one undo step.
 3. Every selectable kind is audited for the same three things (click-add, marquee, Align and Distribute as one undo step); mixed selections are accepted where they make sense and the status line says why where they do not. The audit table is kept in the status file.
 
-**Where it stands.** Not started; queued behind the O291 hotfix.
+**Where it stands.** Items 1 and 2 are built and driven for form fields; item 3's other kinds (markups, links, ce dimensions) are next. Shift- or Ctrl-click on a field adds or removes it, and a marquee from empty page catches every field inside it (crossing catches what it touches). Align and Distribute move every selected field, with any selected content, as one undo step; rotate refuses fields on the status line. The engine moves one widget per command, so the shell folds them (G189); if a field is refused, the others stay moved and the status line says how many moved and why. Driven by `several_form_fields_align_as_one_undo_step`: three fields aligned, one Undo restores both moved ones in the saved file, and a marquee's three widgets are what the next Align reads. Falsified three times (no fold, a Shift-click that replaces, a marquee that selects nothing).
 
 ## O291 — **BUILT AND DRIVEN — awaiting your verdict** — radio buttons can be put in the same group again
 

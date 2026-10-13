@@ -31,7 +31,7 @@ fn ops(id: &str) -> Option<&'static [Op]> {
 }
 
 /// Dispatch one of the seven.
-pub(super) fn dispatch(app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
+pub(super) fn dispatch(ctx: &egui::Context, app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let (Some(ops), Status::Open(doc)) = (ops(id), &app.status) else {
         return;
     };
@@ -39,5 +39,5 @@ pub(super) fn dispatch(app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("align-chord id={id} ops={ops:?}")
     });
-    align::run(doc, ops, app.panels.align, actions);
+    align::run(ctx, doc, ops, app.panels.align, actions);
 }
