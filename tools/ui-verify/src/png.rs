@@ -83,7 +83,7 @@ fn adler32(data: &[u8]) -> u32 {
 ///
 /// Table-free because the table would be a 1 KiB static that only this
 /// function uses, and a screenshot's three chunks are not a hot path.
-fn crc32(data: &[u8]) -> u32 {
+pub(crate) fn crc32(data: &[u8]) -> u32 {
     let mut crc = 0xFFFF_FFFFu32;
     for &byte in data {
         crc ^= u32::from(byte);

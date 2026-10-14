@@ -1,6 +1,7 @@
-//! `ocr_models_download_into_the_models_folder` — File ▸ Recognise ▸ Download
-//! OCR models… fetches the engine's pinned `ocrs` files into `models/ocrs`
-//! beside the program, and the window then shows the licence line. Runs a
+//! `ocr_models_download_into_the_models_folder` — File > Recognise > Manage
+//! OCR models… offers Download for `ocrs` when it is not installed, fetches
+//! the engine's pinned files into `models/ocrs` beside the program, and the
+//! window then shows the licence line. Runs a
 //! copy of the binary in the check's output folder, so the download lands
 //! there; needs the network.
 //!
@@ -18,10 +19,10 @@ use crate::report::CheckReport;
 
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name, never displayed
-const ITEM: &str = "ribbon.item.file.fetch_ocr_models"; // ui-text-exempt: a trace region name, never displayed
+const ITEM: &str = "ribbon.item.file.ocr_models"; // ui-text-exempt: a trace region name, never displayed
 const COLLAPSED: &str = "ribbon.group.file.recognise.collapsed"; // ui-text-exempt: a trace region name, never displayed
-const DOWNLOAD: &str = "fetch-models.download.ocrs"; // ui-text-exempt: a trace region name, never displayed
-const RESULT: &str = "fetch-models.result"; // ui-text-exempt: a trace region name, never displayed
+const DOWNLOAD: &str = "ocr-models.download.ocrs"; // ui-text-exempt: a trace region name, never displayed
+const RESULT: &str = "ocr-models.result"; // ui-text-exempt: a trace region name, never displayed
 const DONE: &str = "fetch-models-done"; // ui-text-exempt: a trace event name, never displayed
 const FAILED: &str = "fetch-models-failed"; // ui-text-exempt: a trace event name, never displayed
 /// The engine's pinned `ocrs` file names, which the build's own
@@ -37,7 +38,7 @@ impl Check for OcrModelsDownload {
     }
 
     fn defect(&self) -> &'static str {
-        "Download OCR models… is missing, writes nowhere Recognise text looks, or \
+        "Manage OCR models… offers no Download for a missing ocrs, or its download is missing, writes nowhere Recognise text looks, or \
          writes files that differ from the pinned ones"
     }
 
