@@ -246,6 +246,9 @@ pub struct Measured {
     /// Selected form-field widgets on the page. Their boxes follow the
     /// objects' in [`Self::boxes`], with no text anchor.
     pub widgets: Vec<pdfcer_gui_base::docidentity::SelectedField>,
+    /// Selected markups, links and ce dimensions on the page. Their boxes
+    /// follow the widgets' in [`Self::boxes`], with no text anchor.
+    pub annots: Vec<pdfcer_gui_base::annotselection::AnnotTarget>,
 }
 
 /// A page-space bounds as a canvas-space box.
@@ -294,7 +297,8 @@ pub fn object_in(objects: &PageObjects, in_form: bool, i: usize) -> Option<&Vect
 }
 
 /// Measure what the panel acts on, or `None` when nothing on the current
-/// page is selected at the Object rung and no form field is selected there.
+/// page is selected at the Object rung and no form field or annotation is
+/// selected there.
 /// A selection of parts of a placed drawing and no page object is measured
 /// from the parts, whose geometry is already in page space.
 #[must_use]
@@ -322,7 +326,8 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
         })
         .collect();
     let fields = field_boxes(ctx, doc, page);
-    if order.is_empty() && fields.is_empty() {
+    let marks = annot_boxes(doc, page);
+    if order.is_empty() && fields.is_empty() && marks.is_empty() {
         return None;
     }
     let sheet = doc.pages.get(page)?;
@@ -356,6 +361,12 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
         boxes.push(b);
         anchors.push(None);
     }
+    let mut annots = Vec::with_capacity(marks.len());
+    for (target, b) in marks {
+        annots.push(target);
+        boxes.push(b);
+        anchors.push(None);
+    }
     Some(Measured {
         page,
         objects,
@@ -363,6 +374,7 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
         boxes,
         anchors,
         widgets,
+        annots,
         frame: Frame {
             page: page_box,
             drawing,
@@ -399,6 +411,32 @@ fn field_boxes(
                 r.max.y.into(),
             );
             Some((f, b))
+        })
+        .collect()
+}
+
+/// The selected annotations' outlines on `page`, in canvas space, in
+/// selection order.
+fn annot_boxes(
+    doc: &OpenDoc,
+    page: usize,
+) -> Vec<(pdfcer_gui_base::annotselection::AnnotTarget, Bx)> {
+    if !doc.annotations_visible() {
+        return Vec::new();
+    }
+    doc.selection
+        .annots()
+        .into_iter()
+        .filter(|a| a.target.page == page)
+        .map(|a| {
+            let r = a.outline;
+            let b = Bx::new(
+                r.min.x.into(),
+                r.min.y.into(),
+                r.max.x.into(),
+                r.max.y.into(),
+            );
+            (a.target.clone(), b)
         })
         .collect()
 }
@@ -465,7 +503,8 @@ fn moves_action(
         let d = crate::canvas::moving::page_delta(Vec2::new(dx as f32, dy as f32), sheet)?;
         Some((d.dx, d.dy))
     };
-    let (object_deltas, widget_deltas) = deltas.split_at(m.objects.len().min(deltas.len()));
+    let (object_deltas, rest) = deltas.split_at(m.objects.len().min(deltas.len()));
+    let (widget_deltas, annot_deltas) = rest.split_at(m.widgets.len().min(rest.len()));
     let moves: Vec<(usize, f64, f64)> = m
         .objects
         .iter()
@@ -478,13 +517,20 @@ fn moves_action(
         .zip(widget_deltas)
         .filter_map(|(f, &d)| to_page(d).map(|(dx, dy)| (f.clone(), dx, dy)))
         .collect();
-    if !widgets.is_empty() {
+    let annots: Vec<_> = m
+        .annots
+        .iter()
+        .zip(annot_deltas)
+        .filter_map(|(a, &d)| to_page(d).map(|(dx, dy)| (a.clone(), dx, dy)))
+        .collect();
+    if !widgets.is_empty() || !annots.is_empty() {
         return Some(
             VectorAction::MoveMixed {
                 page: m.page,
                 objects: moves,
                 in_form: m.in_form,
                 widgets,
+                annots,
                 gesture,
             }
             .into(),
@@ -556,9 +602,6 @@ fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
         ui.label(t::nodes_heading());
         nodes::body(ui, doc, &mut settings.node_rel, actions);
         return;
-    }
-    if doc.selection.annot().is_some() {
-        ui.label(t::not_content());
     }
     let measured = measure(ui.ctx(), doc);
     let n = measured.as_ref().map_or(0, |m| m.boxes.len());

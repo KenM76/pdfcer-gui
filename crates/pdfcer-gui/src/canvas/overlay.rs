@@ -152,6 +152,26 @@ pub fn draw_selection(
     //
     // ⇒ One value, one decision, two consumers. `canvas::painting` asks
     // `pressing::grabbable` once and hands the answer to both.
+    // The other selected annotations: outlined at their own angle, no grips,
+    // as the other selected form fields are.
+    let all = selection.annots();
+    for other in &all[..all.len().saturating_sub(1)] {
+        match other.oriented {
+            Some(quad) => {
+                let c = quad.map(|p| mapping.to_screen(p));
+                for i in 0..4 {
+                    painter.line_segment([c[i], c[(i + 1) % 4]], stroke);
+                }
+            }
+            None => {
+                let r = visible_outline_rect(
+                    mapping.rect_to_screen(other.outline),
+                    MIN_OUTLINE_EXTENT_PX,
+                );
+                painter.rect_stroke(r, CornerRadius::ZERO, stroke, StrokeKind::Middle);
+            }
+        }
+    }
     if let Some(annot) = selection.annot() {
         let screen =
             visible_outline_rect(mapping.rect_to_screen(annot.outline), MIN_OUTLINE_EXTENT_PX);

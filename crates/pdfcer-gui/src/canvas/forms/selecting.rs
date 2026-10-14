@@ -218,7 +218,6 @@ pub fn band_select(
     actions: &mut Vec<Action>,
 ) {
     use crate::canvas::marquee::Combine;
-    use pdfcer_gui_base::fieldset::BandMerge;
     let (rect, crossing) = band;
     if !caps.edit_content
         || !fields_allowed
@@ -248,11 +247,7 @@ pub fn band_select(
     if fields.is_empty() && (combine != Combine::Replace || doc.selected_field.is_none()) {
         return;
     }
-    let (merge, said) = match combine {
-        Combine::Replace => (BandMerge::Replace, "replace"),
-        Combine::Add => (BandMerge::Add, "add"),
-        Combine::Subtract => (BandMerge::Subtract, "subtract"),
-    };
+    let (merge, said) = (crate::canvas::marquee::merge(combine), combine.label());
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(

@@ -423,6 +423,15 @@ pub(super) fn interact(
                 },
                 &mut selection,
             );
+            crate::canvas::annotband::band_select(
+                doc,
+                &caps,
+                pick,
+                page_index,
+                (rect, crossing),
+                combine,
+                &mut selection,
+            );
             crate::canvas::forms::band_select(
                 &ctx,
                 doc,

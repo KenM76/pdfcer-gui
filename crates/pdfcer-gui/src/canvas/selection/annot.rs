@@ -226,6 +226,51 @@ fn distance_to_segment(p: Pos2, a: Pos2, b: Pos2) -> f32 {
     p.distance(Pos2::new(abx.mul_add(t, a.x), aby.mul_add(t, a.y)))
 }
 
+/// Every selectable annotation a select band catches on `page_index`, in
+/// paint order: a window band takes those whose outline it contains, a
+/// crossing band those it touches. `rect` is in canvas space.
+#[must_use]
+pub fn in_band(
+    doc: &crate::app::state::OpenDoc,
+    page_index: usize,
+    rect: Rect,
+    crossing: bool,
+) -> Vec<AnnotSelection> {
+    let Some(page) = doc.pages.get(page_index) else {
+        return Vec::new();
+    };
+    let ce = crate::panels::comments::model::ce_dimension_annots(&doc.session);
+    let view = doc.session.view();
+    selectable_on(&view, page, page_index, &ce, &BTreeMap::new())
+        .into_iter()
+        .filter(|c| {
+            if crossing {
+                rect.intersects(c.outline)
+            } else {
+                rect.contains_rect(c.outline)
+            }
+        })
+        .map(|c| AnnotSelection {
+            target: c.target,
+            outline: c.outline,
+            oriented: c.oriented,
+        })
+        .collect()
+}
+
+/// Whether the pick filter and the mode let `target` be selected: its
+/// class's row, and for a link Edit, where a link is not followed.
+#[must_use]
+pub fn pickable(
+    pick: &crate::canvas::pick::PickFilter,
+    caps: &crate::app::modes::Capabilities,
+    target: &AnnotTarget,
+) -> bool {
+    use crate::canvas::pick::PickClass;
+    let class = PickClass::of_annot_subtype(target.kind, &target.subtype);
+    pick.allows(class) && (class != PickClass::Link || caps.edit_content)
+}
+
 /// **Which annotation is under `point`** — the whole question, in one call.
 #[must_use]
 pub fn under_pointer(

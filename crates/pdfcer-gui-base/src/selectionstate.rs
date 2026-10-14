@@ -8,6 +8,8 @@ use crate::annotselection::AnnotSelection;
 use crate::canvastarget::{CanvasTargetProvider, TargetId};
 use crate::selectionidentity::{ClickHit, EscapeOutcome, Selection, SelectionLevel};
 
+mod annotset;
+
 /// The whole of the canvas's selection state.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct SelectionState {
@@ -68,6 +70,9 @@ pub struct SelectionState {
     /// `/Annots` walk — and a shared key would make an undecodable page stop
     /// refreshing the annotation outline as well.
     annot_resolved_for: Option<(usize, u64)>,
+    /// The other selected annotations, on [`Self::annot`]'s page; see
+    /// `annotset`.
+    annot_others: Vec<AnnotSelection>,
 }
 impl SelectionState {
     /// The selected entries, in document order.
@@ -124,10 +129,12 @@ impl SelectionState {
         self.annot_resolved_for = None;
         self.level = SelectionLevel::Object;
         self.annot = Some(selection);
+        self.annot_others.clear();
     }
 
     /// Drop an annotation selection, reporting whether there was one.
     pub fn clear_annot(&mut self) -> bool {
+        self.annot_others.clear();
         self.annot.take().is_some()
     }
 
@@ -279,6 +286,7 @@ impl SelectionState {
         // selection while a stamp is selected still means the stamp is no
         // longer what is selected.
         self.annot = None;
+        self.annot_others.clear();
         if double {
             self.descend(page, hit);
             return;
@@ -296,6 +304,7 @@ impl SelectionState {
         // comment gives: an invariant a caller maintains is one the next caller
         // will not.
         self.annot = None;
+        self.annot_others.clear();
 
         let Some(object) = hit.object else {
             // Shift over empty paper clears too, and that is deliberate.
@@ -382,6 +391,10 @@ impl SelectionState {
             .iter()
             .map(|&object| Selection::object(page, object))
             .collect();
+        if !found.is_empty() {
+            self.annot = None;
+            self.annot_others.clear();
+        }
         if shift {
             self.entries.extend(found);
         } else {
@@ -641,29 +654,12 @@ impl SelectionState {
             // about it — the same rule `resolve` states at length for content.
             return;
         }
-        let Some(found) = pdfcer_core::annot::page_annotations(view, page.id)
-            .into_iter()
-            .find(|a| a.id == Some(selected.target.id))
-        else {
-            return;
-        };
-        let Some(rect) = found.rect else {
-            return;
-        };
-        let Some(outline) =
-            crate::canvasmapping::annot_canvas_rect([rect.llx, rect.lly, rect.urx, rect.ury], page)
-        else {
-            return;
-        };
-        selected.outline = outline;
-        // The `/F` bit 8 flag is re-read too. A lock applied while the mark
-        // is selected must take the grips away on the next frame, not on the
-        // next click — `Grabbable`'s annotation arm reads `target.locked` and
-        // would otherwise go on offering nine handles the file forbids.
-        selected.target.locked = found.flags.locked();
-        selected.oriented = crate::annotquad::oriented(view, &found)
-            .filter(|q| !q.is_upright())
-            .and_then(|q| crate::canvasmapping::oriented_canvas_quad(q.corners, page));
+        let found = pdfcer_core::annot::page_annotations(view, page.id);
+        // A primary that is gone stays selected until the next click, as it
+        // always has; another that is gone is dropped.
+        annotset::refresh(view, page, &found, selected);
+        self.annot_others
+            .retain_mut(|o| annotset::refresh(view, page, &found, o));
     }
 
     /// Whether [`Self::resolve`] would do any work for `(page, epoch)`.

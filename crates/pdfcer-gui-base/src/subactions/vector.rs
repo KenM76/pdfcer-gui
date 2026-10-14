@@ -123,8 +123,11 @@ pub enum VectorAction {
         objects: Vec<(usize, f64, f64)>,
         /// The object indices are leaf indices of one placed drawing.
         in_form: bool,
-        /// `(field, widget, dx, dy)` per widget, never empty.
+        /// `(field, widget, dx, dy)` per widget; may be empty.
         widgets: Vec<(crate::docidentity::SelectedField, f64, f64)>,
+        /// `(annotation, dx, dy)` per markup, link or ce dimension; may be
+        /// empty, but not together with `widgets`.
+        annots: Vec<(crate::annotselection::AnnotTarget, f64, f64)>,
         /// The gesture, for the trace.
         gesture: &'static str,
     },

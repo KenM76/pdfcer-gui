@@ -45,6 +45,8 @@ pub mod gesture;
 mod viewpos;
 // Draggable alignment lines: what a guide belongs to, where it lives on disk,
 // and why grabbing one cannot also start a marquee.
+/// A select marquee over markups, links and ce dimensions.
+pub mod annotband;
 /// **The annotation half of the canvas clipboard** — split out of
 /// `clipboard` on 2026-09-05 under R2, along the annotation-versus-content
 /// seam. Its header carries the finding that made the split worth making:

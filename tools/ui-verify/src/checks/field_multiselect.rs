@@ -4,15 +4,14 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/field_multiselect.md`.
 
-use super::dimdrive::{Fixture, click_on, launch_with, press_on_tab};
-use super::savedannots::listed_annots;
+use super::dimdrive::{Fixture, click_on, launch_with};
+use super::multiselect::{after, band, save, shift_click, step, tops};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
-use crate::error::{Error, Result};
+use crate::coords::PageGeometry;
+use crate::error::Result;
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
-use crate::trace::TraceLine;
 
 const FIXTURE: Fixture = Fixture {
     file: "all-field-kinds.pdf",
@@ -24,24 +23,21 @@ const FIXTURE: Fixture = Fixture {
 };
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 
-/// `[170 520 370 542]`, `[170 486 186 502]`, `[170 412 370 434]`.
-const TEXT: (&str, (f64, f64)) = ("TextOne", (270.0, 531.0)); // ui-text-exempt: a fixture field name
-const CHECK: (&str, (f64, f64)) = ("CheckOne", (178.0, 494.0)); // ui-text-exempt: a fixture field name
-const COMBO: (&str, (f64, f64)) = ("ComboOne", (270.0, 423.0)); // ui-text-exempt: a fixture field name
+/// Each field's name, the key that finds it in a saved copy, and a point on
+/// it: `[170 520 370 542]`, `[170 486 186 502]`, `[170 412 370 434]`.
+const TEXT: (&str, &str, (f64, f64)) = ("TextOne", "/T (TextOne)", (270.0, 531.0)); // ui-text-exempt: a fixture field name
+const CHECK: (&str, &str, (f64, f64)) = ("CheckOne", "/T (CheckOne)", (178.0, 494.0)); // ui-text-exempt: a fixture field name
+const COMBO: (&str, &str, (f64, f64)) = ("ComboOne", "/T (ComboOne)", (270.0, 423.0)); // ui-text-exempt: a fixture field name
 /// TextOne's top edge, where Align top puts the other two.
 const TOP: f64 = 542.0;
 /// A window band from empty page that holds CheckOne and both radio members
 /// (`[170 452 186 468]`, `[260 452 276 468]`) and nothing else.
 const BAND: ((f64, f64), (f64, f64)) = ((160.0, 510.0), (290.0, 444.0));
 
-const FILE_TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name
-const SAVE_COPY: &str = "ribbon.item.file.save_copy"; // ui-text-exempt: a trace region name
-
 const SELECTED: &str = "form-field-selected"; // ui-text-exempt: a trace event name
 const TOGGLED: &str = "form-field-toggled"; // ui-text-exempt: a trace event name
 const BANDED: &str = "form-field-band"; // ui-text-exempt: a trace event name
 const APPLIED: &str = "move-mixed-applied"; // ui-text-exempt: a trace event name
-const SAVED: &str = "save-copy"; // ui-text-exempt: a trace event name
 
 /// See the module documentation.
 pub struct SeveralFormFieldsAlignAsOneUndoStep;
@@ -92,54 +88,6 @@ impl Check for SeveralFormFieldsAlignAsOneUndoStep {
     }
 }
 
-/// The last line named `event` after `mark`, or the failure sentence.
-fn after(
-    session: &Session,
-    event: &str,
-    mark: usize,
-    what: &str,
-) -> Result<std::result::Result<TraceLine, String>> {
-    let trace = session.trace()?;
-    Ok(trace.last_after(event, mark).cloned().ok_or_else(|| {
-        format!(
-            "{what} and no `{event}` followed. Trace: {}.",
-            session.trace_path().display()
-        )
-    }))
-}
-
-macro_rules! step {
-    ($e:expr) => {
-        match $e? {
-            Ok(line) => line,
-            Err(why) => return Ok(Some(why)),
-        }
-    };
-}
-
-fn window_at(ctx: &CheckContext, session: &Session, at: (f64, f64)) -> Result<WindowPoint> {
-    let mapping =
-        CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, FIXTURE.page, 0)?;
-    mapping.doc_to_window(DocPoint::new(0, at.0, at.1))
-}
-
-fn shift_click(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-    at: (f64, f64),
-) -> Result<()> {
-    let p = window_at(ctx, session, at)?;
-    pointer.hover(session, p)?;
-    session.settle(10);
-    pointer.send(
-        session,
-        &format!("click {:.1} {:.1} mods=shift", p.x(), p.y()),
-    )?;
-    session.settle(20);
-    Ok(())
-}
-
 fn drive(
     ctx: &CheckContext,
     report: &mut CheckReport,
@@ -150,7 +98,7 @@ fn drive(
 ) -> Result<Option<String>> {
     // --- one field by a plain click, two more by Shift-click ---------------
     let mark = session.trace()?.mark();
-    click_on(ctx, session, pointer, &FIXTURE, 0, TEXT.1)?;
+    click_on(ctx, session, pointer, &FIXTURE, 0, TEXT.2)?;
     let selected = step!(after(session, SELECTED, mark, "TextOne was clicked"));
     if selected.get("field") != Some(TEXT.0) {
         return Ok(Some(format!(
@@ -158,9 +106,9 @@ fn drive(
             selected.raw
         )));
     }
-    for (n, (name, at)) in [CHECK, COMBO].into_iter().enumerate() {
+    for (n, (name, _, at)) in [CHECK, COMBO].into_iter().enumerate() {
         let mark = session.trace()?.mark();
-        shift_click(ctx, session, pointer, at)?;
+        shift_click(ctx, session, pointer, &FIXTURE, at)?;
         let toggled = step!(after(
             session,
             TOGGLED,
@@ -198,7 +146,7 @@ fn drive(
     if let Some(why) = save(ctx, session, pointer)? {
         return Ok(Some(why));
     }
-    if let Some(why) = tops(aligned, &[(TEXT.0, TOP), (CHECK.0, TOP), (COMBO.0, TOP)])? {
+    if let Some(why) = tops(aligned, &[(TEXT.1, TOP), (CHECK.1, TOP), (COMBO.1, TOP)])? {
         return Ok(Some(format!("after Align top, {why}")));
     }
 
@@ -208,7 +156,7 @@ fn drive(
     if let Some(why) = save(ctx, session, pointer)? {
         return Ok(Some(why));
     }
-    if let Some(why) = tops(undone, &[(TEXT.0, TOP), (CHECK.0, 502.0), (COMBO.0, 434.0)])? {
+    if let Some(why) = tops(undone, &[(TEXT.1, TOP), (CHECK.1, 502.0), (COMBO.1, 434.0)])? {
         return Ok(Some(format!(
             "after ONE Undo of the alignment, {why} The moves were not one undo step."
         )));
@@ -216,12 +164,7 @@ fn drive(
 
     // --- a marquee from empty page catches three widgets -------------------
     let mark = session.trace()?.mark();
-    let (from, to) = (
-        window_at(ctx, session, BAND.0)?,
-        window_at(ctx, session, BAND.1)?,
-    );
-    pointer.drag(session, from, to, 8)?;
-    session.settle(30);
+    band(ctx, session, pointer, &FIXTURE, BAND)?;
     let banded = step!(after(
         session,
         BANDED,
@@ -254,37 +197,6 @@ fn drive(
              traced `{}`.",
             applied.raw
         )));
-    }
-    Ok(None)
-}
-
-fn save(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-) -> Result<Option<String>> {
-    let mark = session.trace()?.mark();
-    press_on_tab(ctx, session, pointer, SAVE_COPY, FILE_TAB)?;
-    session.settle(40);
-    Ok(after(session, SAVED, mark, "Save a copy was pressed")?.err())
-}
-
-/// The failure sentence when a named field's saved top edge is not as wanted.
-fn tops(path: &std::path::Path, want: &[(&str, f64)]) -> Result<Option<String>> {
-    let bytes = std::fs::read(path)
-        .map_err(|e| Error::new(format!("cannot read {}: {e}", path.display())))?;
-    let annots = listed_annots(&bytes);
-    for (name, top) in want {
-        let key = format!("/T ({name})");
-        let Some(a) = annots.iter().find(|a| a.body.contains(&key)) else {
-            return Ok(Some(format!("{} lists no widget {name}.", path.display())));
-        };
-        if (a.rect[3] - top).abs() > 0.5 {
-            return Ok(Some(format!(
-                "{name}'s saved /Rect is {:?}; its top should be {top}.",
-                a.rect
-            )));
-        }
     }
     Ok(None)
 }

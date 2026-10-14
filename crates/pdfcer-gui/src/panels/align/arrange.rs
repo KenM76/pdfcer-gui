@@ -181,7 +181,7 @@ pub fn circular_plan(
     if m.in_form {
         return Err(CircleRefusal::RotateInForm);
     }
-    if !m.widgets.is_empty() {
+    if !m.widgets.is_empty() || !m.annots.is_empty() {
         return Err(CircleRefusal::RotateFields);
     }
     let to_canvas = canvas_map(sheet).ok_or(CircleRefusal::NothingMoves)?;

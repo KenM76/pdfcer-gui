@@ -1,0 +1,120 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 300] /Resources << >> /Contents 4 0 R /Annots [5 0 R 7 0 R 9 0 R] >>
+endobj
+4 0 obj
+<<  /Length 24 >>
+stream
+0.3 g 330 20 40 40 re f
+endstream
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Square /NM (SQ) /Rect [40 200 100 240] /P 3 0 R /F 4 /C [0 0 1] /BS << /W 2 >> /AP << /N 6 0 R >> >>
+endobj
+6 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 60 40] /Resources << >> /Length 28 >>
+stream
+0 0 1 RG 2 w 1 1 58 38 re S
+endstream
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Circle /NM (CI) /Rect [140 180 200 220] /P 3 0 R /F 4 /C [1 0 0] /BS << /W 2 >> /AP << /N 8 0 R >> >>
+endobj
+8 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 60 40] /Resources << >> /Length 96 >>
+stream
+1 0 0 RG 2 w 30 1 m 47 1 59 10 59 20 c 59 30 47 39 30 39 c 13 39 1 30 1 20 c 1 10 13 1 30 1 c S
+endstream
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Link /NM (LK) /Rect [240 160 300 180] /P 3 0 R /Border [0 0 0] /Dest [3 0 R /XYZ 0 300 0] >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000253 00000 n 
+0000000327 00000 n 
+0000000469 00000 n 
+0000000611 00000 n 
+0000000754 00000 n 
+0000000964 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1098
+%%EOF
+1 0 obj
+<</Type /Catalog/Pages 2 0 R/PieceInfo <</pdfcer <</LastModified (D:20260801000000Z)/Private <</Version 3/Groups [<</Id 0/Name (Default)/Scale /never/Unit (mm)/Frac /decimal/Places 2/Visible true/Ocg 10 0 R>>]/Dimensions [<</Id 0/Group 0/Kind /linear/A [60.0 80.0]/B [200.0 80.0]/Constraint /aligned/Offset 20.0/Annot 12 0 R/Ap 11 0 R>>]>>>>>>/OCProperties <</OCGs [10 0 R]/D <</Name (pdfcer dimensions)/Order [10 0 R]>>>>>>
+endobj
+3 0 obj
+<</Type /Page/Parent 2 0 R/MediaBox [0 0 400 300]/Resources <<>>/Contents 4 0 R/Annots [5 0 R 7 0 R 9 0 R 12 0 R]>>
+endobj
+10 0 obj
+<</Type /OCG/Name (Default)>>
+endobj
+11 0 obj
+<</Type /XObject/Subtype /Form/BBox [58.0 82.0 202.0 108.5]/Resources <</Font <</Helv <</Type /Font/Subtype /Type1/BaseFont /Helvetica/Encoding /WinAnsiEncoding>>>>>>/Length 240>>
+stream
+0 G
+0 g
+0.75 w
+0 J
+0 j
+60 100 m
+104.5 100 l
+S
+155.5 100 m
+200 100 l
+S
+60 84 m
+60 103 l
+S
+200 84 m
+200 103 l
+S
+60 100 m
+67 97.55 l
+67 102.45 l
+h
+f
+200 100 m
+193 102.45 l
+193 97.55 l
+h
+f
+BT
+/Helv 10 Tf
+1 0 0 1 107.5 96.5 Tm
+(140.00 pt) Tj
+ET
+
+endstream
+endobj
+12 0 obj
+<</Type /Annot/Rect [58.0 82.0 202.0 108.5]/Subtype /Line/IT /LineDimension/L [60.0 100.0 200.0 100.0]/C [0.0 0.0 0.0]/Contents (140.00 pt)/AP <</N 11 0 R>>/P 3 0 R/F 4/OC 10 0 R>>
+endobj
+xref
+0 2
+0000000000 65535 f 
+0000001364 00000 n 
+3 1
+0000001804 00000 n 
+10 3
+0000001935 00000 n 
+0000001981 00000 n 
+0000002435 00000 n 
+trailer
+<</Size 13/Root 1 0 R/Prev 1098>>
+startxref
+2632
+%%EOF

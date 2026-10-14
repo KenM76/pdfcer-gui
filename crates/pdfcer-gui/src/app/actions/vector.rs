@@ -201,8 +201,19 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             objects,
             in_form,
             widgets,
+            annots,
             gesture,
-        } => super::movemixed::apply(doc, page, &objects, in_form, &widgets, gesture),
+        } => super::movemixed::apply(
+            doc,
+            page,
+            &super::movemixed::Moves {
+                objects: &objects,
+                in_form,
+                widgets: &widgets,
+                annots: &annots,
+            },
+            gesture,
+        ),
         VectorAction::TransformEach {
             page,
             transforms,

@@ -217,20 +217,13 @@ pub fn click(
     //
     // **The pick filter's annotation rows**, and the mode once more for a link:
     // a link is selected only in Edit, where it is not followed.
-    let annot_hit = if matches!(active_tool, crate::canvas::tool::CanvasTool::Select)
-        && caps.author_markup
-    {
-        crate::canvas::selection::annot::under_pointer(doc, page_index, point, map).filter(|hit| {
-            let class = pdfcer_gui_base::pick::PickClass::of_annot_subtype(
-                hit.target.kind,
-                &hit.target.subtype,
-            );
-            pick.allows(class)
-                && (class != pdfcer_gui_base::pick::PickClass::Link || caps.edit_content)
-        })
-    } else {
-        None
-    };
+    let annot_hit =
+        if matches!(active_tool, crate::canvas::tool::CanvasTool::Select) && caps.author_markup {
+            crate::canvas::selection::annot::under_pointer(doc, page_index, point, map)
+                .filter(|hit| crate::canvas::selection::annot::pickable(&pick, &caps, &hit.target))
+        } else {
+            None
+        };
     //
     // The operator: *"I could add a yellow sticky note but even in read mode I
     // don't think I could figure out how to read it."*
@@ -290,7 +283,8 @@ pub fn click(
     // operator tries first, and without this the outline would survive
     // a click on blank paper — which reads as the selection being
     // stuck rather than as the click having missed.
-    if annot_hit.is_none() && caps.author_markup {
+    // A Shift-click that misses keeps them: it extends, it does not replace.
+    if annot_hit.is_none() && caps.author_markup && !shift {
         selection.clear_annot();
     }
     // A click is a measure pick, a **text** gesture, or a content
@@ -473,6 +467,18 @@ pub fn click(
         ));
     } else if let Some(link) = link_hit.as_ref() {
         crate::canvas::links::follow(link, doc, actions);
+    } else if let Some(hit) = annot_hit.as_ref().filter(|_| shift) {
+        let before = selection.annots().len();
+        selection.toggle_annot(hit.clone());
+        crate::diag::trace(|| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "annot-toggled page={} id={} before={before} after={}",
+                hit.target.page,
+                hit.target.id.num,
+                selection.annots().len()
+            )
+        });
     } else if let Some(hit) = annot_hit {
         selection.select_annot(hit.clone());
         crate::diag::trace(|| {

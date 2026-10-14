@@ -169,14 +169,8 @@ pub const fn remove_overlaps_button() -> (&'static str, &'static str) {
 /// Shown when nothing on this page is selected at the object level.
 #[must_use]
 pub const fn nothing_selected() -> &'static str {
-    "Select objects or form fields on the page to align them. Click one, Shift-click the rest."
-}
-
-/// Shown when a markup is selected instead of page content.
-#[must_use]
-pub const fn not_content() -> &'static str {
-    "Align and Distribute moves page content and form fields. A markup is \
-     selected, and markups are not moved from here."
+    "Select objects, form fields or markups on the page to align them. Click one, \
+     Shift-click the rest."
 }
 
 /// Said when some form fields of an Align or Distribute moved and others were
@@ -186,17 +180,43 @@ pub fn fields_partly_moved(moved: usize, of: usize, reason: &str) -> String {
     format!("{moved} of {of} form fields moved; the rest were refused: {reason}")
 }
 
+/// Said when some markups, links or dimensions of an Align or Distribute
+/// moved and others were refused; what moved is still one undo step.
+#[must_use]
+pub fn annots_partly_moved(moved: usize, of: usize, reason: &str) -> String {
+    format!("{moved} of {of} markups, links and dimensions moved; the rest were refused: {reason}")
+}
+
+/// Said when an Align or Distribute moved a dimension you placed.
+#[must_use]
+pub const fn dimensions_stay_attached() -> &'static str {
+    "Dimensions moved the way dragging them does: each stays on what it measures, so its \
+     line and value moved and its extension lines stretched."
+}
+
+/// A selected dimension has no measurement record to move it by.
+#[must_use]
+pub const fn dimension_not_found() -> &'static str {
+    "A dimension's measurement could not be found, so it was left where it is."
+}
+
+/// A selected dimension is of a kind that cannot be moved as a whole.
+#[must_use]
+pub const fn dimension_not_placeable() -> &'static str {
+    "This kind of dimension cannot be moved as a whole, so it was left where it is."
+}
+
 /// Said when an Align or Distribute applied but could not be grouped.
 #[must_use]
 pub const fn not_one_undo() -> &'static str {
     "Moved, but it will take more than one Undo to take this back."
 }
 
-/// Circular arrange with *Rotate objects* and form fields selected.
+/// Circular arrange with *Rotate objects* and form fields or markups selected.
 #[must_use]
 pub const fn rotate_fields() -> &'static str {
-    "Form fields can be placed around the circle but not rotated with it: \
-     untick Rotate objects, or leave the fields out of the selection."
+    "Form fields and markups can be placed around the circle but not rotated with it: \
+     untick Rotate objects, or leave them out of the selection."
 }
 
 /// Hover on a greyed button: it needs more objects.

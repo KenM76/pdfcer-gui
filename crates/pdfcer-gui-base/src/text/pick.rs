@@ -118,6 +118,26 @@ pub fn class_tooltip(class: PickClass) -> &'static str {
     }
 }
 
+// ===========================================================================
+// Block C — what a marquee could not select
+// ===========================================================================
+
+/// Said when a marquee caught page content and annotations together and kept
+/// the content: the two cannot be selected at once.
+#[must_use]
+pub fn annotations_left_out(n: usize) -> String {
+    let what = if n == 1 {
+        "1 annotation".to_owned()
+    } else {
+        format!("{n} annotations")
+    };
+    format!(
+        "The band caught page content and {what}. Page content and annotations can't be \
+         selected together, so the band kept the content. To band annotations only, untick \
+         the content kinds under Select on the status bar."
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

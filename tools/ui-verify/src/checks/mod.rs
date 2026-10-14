@@ -1460,6 +1460,8 @@ pub mod typo_refusal;
 /// every count is already correct. Its header carries the argument.
 pub mod ui_scale;
 
+/// Several markups, a link and a ce dimension selected and aligned as one undo step.
+pub mod annot_multiselect;
 /// Several form fields selected by Shift-click and marquee, aligned as one undo step.
 pub mod field_multiselect;
 /// Moving, resizing, copying and deleting a link, its quads following its box.
@@ -1468,6 +1470,8 @@ pub mod link_quads;
 pub mod links;
 /// Nudging, duplicating, re-stacking and typing the size of a markup shape.
 pub mod markup_place;
+/// Shift-click, marquee, save and saved-edge steps shared by the multi-select checks.
+pub mod multiselect;
 /// A radio button joining a group by paste, by its group row and by rename.
 pub mod radio_group;
 pub mod undo_redo;

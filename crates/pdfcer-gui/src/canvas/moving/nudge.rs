@@ -226,9 +226,10 @@ fn nudge_once(
         }
     }
 
-    // §12.5.3 Table 165 bit 8. Honoured HERE rather than left to the engine —
-    // which does not check it for a move at all — for `annotdrag::eligible`'s
-    // stated reason: a key and a drag must not disagree about what locked means.
+    // §12.5.3 Table 165 bit 8. `move_annotation` refuses a locked mark too;
+    // it is checked HERE first so the refusal is the shell's own sentence,
+    // for `annotdrag::eligible`'s stated reason: a key and a drag must not
+    // disagree about what locked means.
     if annot.target.locked {
         refuse(frame, selection, NudgeRefusal::Locked);
         return false;

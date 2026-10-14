@@ -79,6 +79,17 @@ impl Combine {
     }
 }
 
+/// The merge a field or annotation band applies for `combine`.
+#[must_use]
+pub const fn merge(combine: Combine) -> pdfcer_gui_base::fieldset::BandMerge {
+    use pdfcer_gui_base::fieldset::BandMerge;
+    match combine {
+        Combine::Replace => BandMerge::Replace,
+        Combine::Add => BandMerge::Add,
+        Combine::Subtract => BandMerge::Subtract,
+    }
+}
+
 /// Which [`Combine`] a pair of modifiers asks for.
 #[must_use]
 pub const fn mode(shift: bool, ctrl: bool) -> Combine {
