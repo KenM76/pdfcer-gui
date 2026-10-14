@@ -1434,6 +1434,8 @@ pub mod annot_delete_many;
 pub mod annot_group_drag;
 /// Several markups, a link and a ce dimension selected and aligned as one undo step.
 pub mod annot_multiselect;
+/// Several form fields duplicated, cut and pasted, each as one undo step.
+pub mod field_clip_many;
 /// Several form fields deleted by one Delete as one undo step.
 pub mod field_delete_many;
 /// Several form fields dragged together by any member, as one undo step.

@@ -510,6 +510,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_group_drag::SeveralAnnotationsDragAsOneUndoStep),
         Box::new(field_delete_many::SeveralFormFieldsDeleteAsOneUndoStep),
         Box::new(field_group_drag::SeveralFormFieldsDragAsOneUndoStep),
+        Box::new(field_clip_many::SeveralFormFieldsCopyCutDuplicateAsOneUndoStep),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),
