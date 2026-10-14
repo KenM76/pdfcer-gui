@@ -633,7 +633,7 @@ whatever holds the file, not retrying.
 | | |
 |---|---|
 | **R1** | A UI change is done when it has been asserted in `tools/ui-verify` against the running binary — not when a test passes. |
-| **R2** | No source file over 1,500 lines. `check-file-size.sh` enforces it. When a file approaches the limit, find the seam; do not raise the limit. |
+| **R2** | No source file over 1,500 lines. `check-file-size.sh` enforces it. When a file approaches the limit, find the seam; do not raise the limit. `check-code-structure.py` holds tighter limits as debt that only shrinks: a function at most 80 lines, a file at most 800 production lines, no private helper pasted into a second file of its crate. A new violation fails; a fixed one must leave `code-structure-baseline.txt`; never regenerate the baseline to admit one. |
 | **R3** | Salvaged code is re-verified, never assumed. |
 | **R4** | The gates apply from every commit, not at fold-in. |
 | **R5** | The documentation is the logic: a reader should be able to reconstruct the program's behaviour from it. See §5 for the form that takes. |

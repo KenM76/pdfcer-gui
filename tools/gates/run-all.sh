@@ -340,6 +340,10 @@ run "check-custom-kind-drawn" bash "$HERE/check-custom-kind-drawn.sh"
 run "check-escape-disposition --self-test" bash "$HERE/check-escape-disposition.sh" --self-test
 run "check-escape-disposition" bash "$HERE/check-escape-disposition.sh"
 run "check-file-size"    bash "$HERE/check-file-size.sh"
+# `check-code-structure` holds functions to 80 lines, files to 800 production
+# lines and private helpers to one copy per crate; its baseline only shrinks.
+run "check-code-structure --self-test" python "$HERE/check-code-structure.py" --self-test
+run "check-code-structure" python "$HERE/check-code-structure.py"
 run "check-shell-purity" bash "$HERE/check-shell-purity.sh"
 run "check-shell-purity command-remote" bash "$HERE/check-shell-purity.sh" crates/command-remote
 run "check-shell-purity native-pipe" bash "$HERE/check-shell-purity.sh" crates/native-pipe
