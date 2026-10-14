@@ -93,6 +93,7 @@ pub mod ocr;
 mod ocr_model;
 /// Recognise text's word lists and read-by-layout choice.
 mod ocr_reading;
+mod ocr_upscale;
 /// How a window offers to step aside so the operator can point at the page —
 /// `OPERATOR_REQUESTS.md` O66. The dialog half of `canvas::placing`.
 /// The box that lets an encrypted document be opened. Its header records the

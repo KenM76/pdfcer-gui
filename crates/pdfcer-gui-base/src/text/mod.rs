@@ -160,6 +160,8 @@ pub mod ocr;
 pub mod ocrfetch;
 pub mod ocrmanage;
 pub mod ocrmodels;
+/// Recognise text's enlarge-before-reading option and its disclosure.
+pub mod ocrupscale;
 /// The words for **content that is in the file but not on the
 /// sheet** — the census window's copy. Its header carries the sentence the
 /// whole module exists for: off-page marks do not render and are still

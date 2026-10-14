@@ -178,3 +178,5 @@
 - [Python 'w' writes CRLF on Windows](feedback_python_write_crlf.md) — pass newline=''; git diff --stat hides the conversion.
 - [Defined is not on the page](feedback_defined_not_on_page.md) — an appended save keeps a deleted body; scan the page's /Annots.
 - [No `timeout` around run-all](feedback_gate_run_no_timeout.md) — rc=124 at 58 min threw away 48 green gates; background, no wrapper.
+- [`open('w')` truncates before a crash](feedback_open_truncates_before_crash.md) — a failed encode left a check at 0 bytes; build text first, utf-8.
+- [A backlog row's key is the engine's words](feedback_backlog_key_matches_engine.md) — a full path where the engine wrote `ocr::upscale` is unaccounted.

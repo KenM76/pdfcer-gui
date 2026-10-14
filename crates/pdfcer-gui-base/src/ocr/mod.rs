@@ -51,6 +51,10 @@ pub mod fetch;
 mod engines;
 pub use engines::{EngineId, OCRCER_MODEL_FILE, available};
 
+/// The raster a recogniser reads: its render options, size and enlargement.
+pub mod raster;
+pub use raster::{Enlarged, can_upscale, magnify, raster_options, raster_size};
+
 pub use pdfcer_ocr_host::Dictionaries;
 use pdfcer_ocr_host::{OcrRunner, ProgramPolicy, ProgramSource, RunOptions};
 
@@ -179,6 +183,9 @@ pub struct Recognised {
     /// that read badly at a resolution nobody was told about would be blamed on
     /// the engine.
     pub effective_dpi: f32,
+    /// The enlargement the engine read the last page through, when one was
+    /// asked for.
+    pub enlarged: Option<Enlarged>,
     /// How many words the recogniser produced before the layer writer filtered
     /// them.
     ///
@@ -377,6 +384,11 @@ pub struct Request {
     /// Read each page region by region with the layout model, so blocks carry
     /// the region they came from (see [`reads_by_layout`]).
     pub by_layout: bool,
+    /// Enlarge each page raster before reading; `None` reads it as rendered.
+    pub upscale: Option<pdfcer_core::ocr::upscale::Upscale>,
+    /// The render options each page is rasterised with: the settings funnel's,
+    /// through [`raster_options`].
+    pub render_options: pdfcer_render::RenderOptions,
 }
 
 /// Whether `model` takes the operator's word files: only Tesseract does, and
@@ -435,6 +447,7 @@ pub(in crate::ocr) fn recognise(
     let mut total_words = 0usize;
     let mut pages_skipped = 0usize;
     let mut dpi = 0.0f32;
+    let mut raster = (0u32, 0u32);
     // Counted separately from `pages_skipped`, and only so that a run which
     // produced nothing can say WHY. See the refusal below.
     let mut already_had_text = 0usize;
@@ -463,6 +476,7 @@ pub(in crate::ocr) fn recognise(
             Ok(one) => {
                 total_words += one.words;
                 dpi = one.dpi;
+                raster = one.raster;
                 // Sent BEFORE the page is pushed, so the count the operator
                 // reads is the count of pages ATTEMPTED rather than kept. A
                 // progress line that stalled on a run of skipped pages would
@@ -532,6 +546,7 @@ pub(in crate::ocr) fn recognise(
         dictionary_note: recogniser.dictionary_note(),
         program: ProgramRun::of(&recogniser),
         effective_dpi: dpi,
+        enlarged: Enlarged::of(recogniser.upscale(), raster),
         words_recognised: total_words,
         pages_skipped,
         stopped_after,
@@ -549,7 +564,8 @@ fn load(request: &Request) -> Result<OcrRunner, Refusal> {
         .map_or(MAX_DPI, |b| fitted_dpi(b.urx - b.llx, b.ury - b.lly));
     let mut options = RunOptions::new(languages(&request.model), first_dpi)
         .with_dictionaries(request.dictionaries.clone())
-        .with_layout(request.by_layout);
+        .with_layout(request.by_layout)
+        .with_upscale(request.upscale);
     options.policy = request.policy;
     OcrRunner::load(&request.model, &options).map_err(|e| Refusal::Engine(e.to_string()))
 }
@@ -565,6 +581,8 @@ struct OnePage {
     chars: usize,
     /// What it was rasterized at.
     dpi: f32,
+    /// The raster's pixel size, before any enlargement.
+    raster: (u32, u32),
 }
 
 /// One page: rasterize it, read it, and put the words in page space.
@@ -627,8 +645,13 @@ fn recognise_one(
     }
 
     let dpi = fitted_dpi(width_pt, height_pt);
-    let rendered = pdfcer_render::render_page_view(&view, page, raster_scale(dpi))
-        .map_err(|e| Refusal::Engine(e.to_string()))?;
+    let rendered = pdfcer_render::render_page_with_view(
+        &view,
+        page,
+        raster_scale(dpi),
+        &request.render_options,
+    )
+    .map_err(|e| Refusal::Engine(e.to_string()))?;
     let (w, h) = (rendered.pixmap.width(), rendered.pixmap.height());
     let grey = greyscale(rendered.pixmap.data(), w, h);
 
@@ -697,6 +720,7 @@ fn recognise_one(
         words: words_recognised,
         chars: chars_recognised,
         dpi,
+        raster: (w, h),
     })
 }
 

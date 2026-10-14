@@ -596,6 +596,15 @@ mod tests {
             pdfcer_core::document::Document::from_bytes(bytes.clone()).unwrap(),
         ));
         let started = std::time::Instant::now();
+        let model = pdfcer_core::ocr::addons::OcrModel {
+            name: engine.to_owned(),
+            engine: engine.to_owned(),
+            folder: models.clone(),
+            root: models,
+            manifest: None,
+        };
+        let render_options =
+            super::super::raster_options(pdfcer_render::RenderOptions::default(), &model);
         let out = super::super::Job::spawn(super::super::Request {
             session,
             pages: vec![0],
@@ -607,17 +616,13 @@ mod tests {
             skip_pages_with_text: false,
             dictionaries: pdfcer_ocr_host::Dictionaries::builtin(),
             by_layout: false,
+            upscale: None,
+            render_options,
             // Unread, because the guard above is off. The default rather than a
             // configured set, because there is no `Settings` on this thread and
             // nothing here depends on one.
             extract_options: pdfcer_core::text_extract::ExtractOptions::default(),
-            model: pdfcer_core::ocr::addons::OcrModel {
-                name: engine.to_owned(),
-                engine: engine.to_owned(),
-                folder: models.clone(),
-                root: models,
-                manifest: None,
-            },
+            model,
             policy: pdfcer_ocr_host::ProgramPolicy::Allow,
         });
         let mut job = out;

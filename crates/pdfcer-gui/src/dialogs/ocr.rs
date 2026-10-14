@@ -97,6 +97,8 @@ enum Phase {
         program: Option<ProgramRun>,
         /// The word lists the run used, in the engine's words.
         word_lists: String,
+        /// The enlargement the pages were read through, when one was asked.
+        enlarged: Option<crate::ocr::Enlarged>,
     },
     /// **The operator pressed Cancel.** Nothing was kept and nothing written.
     ///
@@ -132,6 +134,8 @@ pub struct OcrDialog {
     models: super::ocr_model::ModelPicker,
     /// Word lists and read-by-layout.
     reading: super::ocr_reading::Reading,
+    /// Enlarge before reading.
+    enlarge: super::ocr_upscale::Enlarge,
     /// The engine token of the run this dialog started, for the preference.
     engine: String,
     /// The model a run just started with; [`Self::show`] stores it and its
@@ -196,6 +200,7 @@ impl OcrDialog {
             skip_pages_with_text: true,
             models,
             reading: super::ocr_reading::Reading::default(),
+            enlarge: super::ocr_upscale::Enlarge::default(),
             engine,
             remember: None,
             traced_progress: usize::MAX,
@@ -322,11 +327,15 @@ impl OcrDialog {
                         // alone. What was WRITTEN is reported separately by
                         // the edit itself — see `Action::ApplyOcr` — because
                         // that is now a different subsystem's answer.
-                        "ocr-recognised pages={} skipped={} recognised={} dpi={:.0}",
+                        "ocr-recognised pages={} skipped={} recognised={} dpi={:.0} enlarged={}",
                         recognised.pages_written,
                         recognised.pages_skipped,
                         recognised.words_recognised,
                         recognised.effective_dpi,
+                        recognised.enlarged.map_or_else(
+                            || "none".to_owned(),
+                            |e| format!("{}x{}->{}x{}", e.from.0, e.from.1, e.to.0, e.to.1),
+                        ),
                     )
                 });
                 let phase = Phase::Applied {
@@ -337,6 +346,7 @@ impl OcrDialog {
                     disclosure: recognised.disclosure.clone(),
                     program: recognised.program.clone(),
                     word_lists: recognised.dictionary_note.clone(),
+                    enlarged: recognised.enlarged,
                     // Carried into the outcome so the sentence the operator
                     // reads afterwards can say the run ended early. A partial
                     // layer reported as a whole one is the failure this whole
@@ -503,6 +513,7 @@ impl OcrDialog {
                 disclosure,
                 program,
                 word_lists,
+                enlarged,
             } => {
                 // **What this says now, and what it no longer has to.**
                 //
@@ -545,6 +556,14 @@ impl OcrDialog {
                     .cloned()
                     .chain(program.as_ref().map(program_sentence))
                     .chain(std::iter::once(t::word_lists_used(word_lists)))
+                    .chain(enlarged.map(|e| {
+                        crate::text::ocrupscale::enlarged(
+                            e.upscale.factor(),
+                            e.upscale.filter().as_str(),
+                            e.from,
+                            e.to,
+                        )
+                    }))
                     .collect();
                 Self::answered(ui, &theme, confidence_sentence(scored), &disclosures);
                 let ran = program
@@ -633,6 +652,12 @@ impl OcrDialog {
             .show(ui, self.models.chosen().map(|c| &c.model));
         let count = doc.pages.len();
         self.scope_group(ui, count);
+        let first = self.scope.pages(count).and_then(|p| p.first().copied());
+        self.enlarge.show(
+            ui,
+            self.models.chosen().map(|c| &c.model),
+            first.and_then(|i| crate::ocr::raster_size(&doc.pages[i])),
+        );
         ui.add_space(10.0);
 
         // **The button is unavailable when the scope names no page** —
@@ -695,16 +720,19 @@ impl OcrDialog {
         } else {
             "extra-folder" // ui-text-exempt: trace token
         };
+        let upscale = self.enlarge.upscale(&model);
+        let (factor, filter) = super::ocr_upscale::trace_tokens(upscale);
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={}",
+                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={} upscale={factor} filter={filter} magnify={}",
                 model.engine,
                 self.scope.page_index,
                 folder.display(),
                 self.reading.dictionaries(&model).uses_builtin(),
                 self.reading.dictionaries(&model).user_words().len(),
                 self.reading.by_layout(&model),
+                crate::ocr::magnify(&model).token(),
             )
         });
         self.phase = Phase::Working(Job::spawn(Request {
@@ -719,6 +747,12 @@ impl OcrDialog {
             policy: self.models.policy(),
             dictionaries: self.reading.dictionaries(&model),
             by_layout: self.reading.by_layout(&model),
+            upscale,
+            // Through the funnel, then smoothed: see `ocr::raster`.
+            render_options: {
+                use crate::app::settings::SettingsExt as _;
+                crate::ocr::raster_options(doc.settings.render_options(), &model)
+            },
             model,
         }));
         self.remember = Some(name);
