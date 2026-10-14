@@ -1,6 +1,6 @@
 ---
 name: later-feature-captures-an-earlier-gesture
-description: A new feature that intercepts a gesture (a click widening a run to its paragraph) silently broke an earlier feature's driven check; three releases shipped it. Re-drive the neighbours' checks, not just the new one.
+description: A new feature that intercepts a gesture (a click widening a run to its paragraph) silently broke an earlier feature's driven check; three releases shipped it; a second victim, the refused-edit offer, too. Re-drive the neighbours' checks, not just the new one.
 metadata:
   type: feedback
 ---
@@ -24,3 +24,9 @@ lines that gesture emits (`text-edit-shaped`, `text-edit-caret`, ...) and put
 every check that waits on them into the regression set of the falsify script.
 Run the control (the last published exe) alongside, so a red neighbour is
 attributed to the right commit.
+
+**A second victim of the same widening:** `a_refused_edit_offers_its_workaround`
+(O285 item 6). Typing in `quote-operator.pdf`'s line now widens to a block
+rewrite, which the engine accepts, so the `'`-operator refusal its offer hangs
+on never happens. It was found by the O293 neighbour sweep on 2026-10-14 and
+was confirmed red on the published build as the control.
