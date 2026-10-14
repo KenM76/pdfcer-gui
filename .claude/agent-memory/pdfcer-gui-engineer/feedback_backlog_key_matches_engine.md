@@ -15,4 +15,4 @@ there. Renaming the opening to the engine's own words fixed it.
 the engine's `docs/FEATURES.md` at the pin, then add the full path later in the
 row if the drift gate needs it. After moving a row between sections, re-run
 `tools/walk-engine-backlog.py --write <date>` — it reports rows whose verdict
-contradicts their section. See [[type-reached-field]].
+contradicts their section. See [[feedback_type_reached_field]].

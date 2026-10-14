@@ -180,3 +180,4 @@
 - [No `timeout` around run-all](feedback_gate_run_no_timeout.md) — rc=124 at 58 min threw away 48 green gates; background, no wrapper.
 - [`open('w')` truncates before a crash](feedback_open_truncates_before_crash.md) — a failed encode left a check at 0 bytes; build text first, utf-8.
 - [A backlog row's key is the engine's words](feedback_backlog_key_matches_engine.md) — a full path where the engine wrote `ocr::upscale` is unaccounted.
+- [A sed-redirected dry run was not dry](feedback_dry_run_redirect.md) — no-match sed; script hit the real tree mid-gates. Take the root as an argument.

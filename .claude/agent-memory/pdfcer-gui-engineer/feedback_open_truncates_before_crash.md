@@ -13,4 +13,4 @@ check became 0 bytes, recoverable only because a draft sat in D:\scratch.
 
 **How to apply:** always pass `encoding='utf-8', newline=''`; compute the full
 text into a variable BEFORE opening the target; keep a copy of any file a
-script rewrites in D:\scratch first. See [[python-write-crlf]], [[write-python-file]].
+script rewrites in D:\scratch first. See [[python-write-crlf]], [[feedback_write_python_file]].
