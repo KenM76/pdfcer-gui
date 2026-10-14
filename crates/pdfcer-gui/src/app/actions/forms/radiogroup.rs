@@ -58,7 +58,30 @@ struct Look {
 /// **Add another button to the radio group `group`** at `rect` on `page`,
 /// drawn like the group's widget whose size matches `rect` (the one copied).
 pub(super) fn add_member(doc: &mut OpenDoc, group: &str, page: usize, rect: Rect) {
-    let Some(look) = with_field(doc, group, |f| {
+    let Some((spec, export)) = member(doc, group, page, rect, &[]) else {
+        return;
+    };
+    let before = doc.edit_epoch;
+    crate::app::actions::apply::vector_edit(doc, "radio-paste", page, 1, |session| {
+        session.add_radio_button(&spec).map(|_| {
+            trace_join("radio-paste", group, &export, page);
+            vec![crate::text::radiogroup::joined(group, &export)]
+        })
+    });
+    select_last(doc, before, group, page);
+}
+
+/// The spec and export value for a new member of `group` at `rect`, drawn
+/// like the group's widget of the same size. `pending` names exports a batch
+/// has already claimed and not yet written.
+pub(super) fn member(
+    doc: &OpenDoc,
+    group: &str,
+    page: usize,
+    rect: Rect,
+    pending: &[String],
+) -> Option<(NewRadioButton, String)> {
+    let look = with_field(doc, group, |f| {
         let w = f
             .widgets
             .iter()
@@ -66,20 +89,11 @@ pub(super) fn add_member(doc: &mut OpenDoc, group: &str, page: usize, rect: Rect
             .or_else(|| f.widgets.first())?;
         Some(look_of(f, w))
     })
-    .flatten() else {
-        return;
-    };
-    let export = free_export(&look.export, &exports(doc, group));
-    let before = doc.edit_epoch;
-    crate::app::actions::apply::vector_edit(doc, "radio-paste", page, 1, |session| {
-        session
-            .add_radio_button(&spec(page, group, rect, &look, &export))
-            .map(|_| {
-                trace_join("radio-paste", group, &export, page);
-                vec![crate::text::radiogroup::joined(group, &export)]
-            })
-    });
-    select_last(doc, before, group, page);
+    .flatten()?;
+    let mut taken = exports(doc, group);
+    taken.extend_from_slice(pending);
+    let export = free_export(&look.export, &taken);
+    Some((spec(page, group, rect, &look, &export), export))
 }
 
 /// **Move the button `from`'s widget `widget` into the radio group `to`**,

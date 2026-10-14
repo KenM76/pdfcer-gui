@@ -54,3 +54,14 @@ the grips are already there and the next drag is already live. Widget 0 for a
 new field, because that is the one the engine placed first; for a duplicate
 the operator's own widget index is unknown until the outcome comes back, so
 the **last** widget of the field is the one that just arrived.
+
+### `fn many`
+
+Several fields as one undo step: each clip is decoded before the session is
+taken, each step runs in order, and the pushed commands are folded with
+`coalesce_last(n, PasteFormField)`. A radio group's another-box step goes
+through `radiogroup::member` and `add_radio_button`, as [`paste`] does, with
+the export values the batch has already claimed passed as `pending` so two
+new buttons of one group never share an on-state. A refusal part-way keeps
+what was placed and says how many of how many; a fold the engine declines is
+said too. Traced `paste-fields-applied pasted=N/M one_step=…`.

@@ -71,6 +71,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
             clip,
             policy,
         } => paste::paste(doc, page, rect, &clip, &policy),
+        FieldAction::PasteMany { items } => paste::many(doc, &items),
         FieldAction::EditProperties {
             field,
             edit,

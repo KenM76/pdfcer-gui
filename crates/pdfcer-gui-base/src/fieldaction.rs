@@ -521,6 +521,13 @@ pub enum FieldAction {
         /// variants that would all grow to match.
         policy: Box<pdfcer_core::formclip::FieldPastePolicy>,
     },
+    /// **Paste or duplicate several copied fields as one undo step.** The
+    /// engine pastes one field per command (G193), so each item goes by
+    /// `paste_field` and the commands are folded by `coalesce_last`.
+    PasteMany {
+        /// One per copied field, in the order they were selected.
+        items: Vec<FieldPaste>,
+    },
     /// **Register a form control the document draws but no field claims.**
     ///
     /// Raised by `crate::panels::forms::tab_order` and by nothing else — the
@@ -561,6 +568,20 @@ pub enum FieldAction {
         /// Trimmed and non-empty by the time it gets here.
         name: Option<String>,
     },
+}
+
+/// One field of a [`FieldAction::PasteMany`]: [`FieldAction::Paste`]'s
+/// operands.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FieldPaste {
+    /// The 0-based page it lands on.
+    pub page: usize,
+    /// Where, in PDF user space, already placed.
+    pub rect: pdfcer_core::page_tree::Rect,
+    /// `FieldClip::to_bytes`.
+    pub clip: Vec<u8>,
+    /// New independent field, or another widget of the existing one.
+    pub policy: Box<pdfcer_core::formclip::FieldPastePolicy>,
 }
 
 impl FieldAction {

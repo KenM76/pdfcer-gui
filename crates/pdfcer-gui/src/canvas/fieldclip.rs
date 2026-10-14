@@ -63,13 +63,15 @@ pub struct ClippedField {
     pub carries_actions: bool,
 }
 
-/// **Copy the selected form field**, writing it to the shared clipboard.
+/// **Copy the selected form fields**, writing them to the shared clipboard.
+/// Returns the primary's clip.
 pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<ClippedField, Refusal> {
-    let clipped = read_selected(doc)?;
-    crate::canvas::clipboard::store(
-        ctx,
-        crate::canvas::clipboard::Clipped::FormField(Box::new(clipped.clone())),
-    );
+    let all = read_selected(doc)?;
+    let fields = all.len();
+    let Some(clipped) = all.last().cloned() else {
+        return Err(Refusal::NothingSelected);
+    };
+    crate::canvas::clipboard::store(ctx, crate::canvas::clipboard::Clipped::FormField(all));
     // AND THE OS CLIPBOARD, WITHOUT WHICH CTRL+V DOES NOT ARRIVE AT ALL.
     //
     // Not a courtesy to other applications: `egui-winit` pushes `Event::Paste`
@@ -80,11 +82,15 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<ClippedField, Refusal>
     // ⇒ Found by driving on the day this module was written, with the trap
     // already documented in the RAG and already handled one function away in
     // `clipboard::copy_content`. See `text::fieldclip::os_marker`.
-    ctx.copy_text(crate::text::fieldclip::os_marker(&clipped.name));
+    ctx.copy_text(if fields > 1 {
+        crate::text::fieldclip::os_marker_many(fields)
+    } else {
+        crate::text::fieldclip::os_marker(&clipped.name)
+    });
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "fieldclip-copy name={} page={} widgets={} actions={} bytes={}",
+            "fieldclip-copy name={} page={} widgets={} actions={} bytes={} fields={fields}",
             clipped.name,
             clipped.page,
             clipped.widgets,
@@ -95,20 +101,17 @@ pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<ClippedField, Refusal>
     Ok(clipped)
 }
 
-/// **Cut the selected form field** — copy it, then raise the delete.
+/// **Cut the selected form fields** — copy them, then raise the delete of
+/// every selected box.
 pub fn cut(
     ctx: &egui::Context,
     doc: &OpenDoc,
     actions: &mut Vec<Action>,
 ) -> Result<ClippedField, Refusal> {
     let clipped = copy(ctx, doc)?;
-    if let Some(selected) = doc.selected_field.as_ref() {
-        actions.push(Action::Field(
-            crate::app::actions::forms::FieldAction::DeleteWidget {
-                field: selected.field.clone(),
-                widget: selected.widget,
-            },
-        ));
+    let boxes = doc.field_set.all(doc.selected_field.as_ref());
+    if let Some(delete) = crate::app::actions::forms::FieldAction::delete_selected(boxes) {
+        actions.push(Action::Field(delete));
     }
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
@@ -130,16 +133,148 @@ pub fn paste(
     target: Option<egui::Pos2>,
     actions: &mut Vec<Action>,
 ) -> Result<(), Refusal> {
-    let Some(crate::canvas::clipboard::Clipped::FormField(clipped)) =
+    let Some(crate::canvas::clipboard::Clipped::FormField(mut all)) =
         crate::canvas::clipboard::read(ctx)
     else {
         return Err(Refusal::NothingCopied);
     };
+    if all.len() > 1 {
+        // Several fields keep their layout: the union of their boxes is
+        // placed by the one-field rule and every box moves with it.
+        let from = all.last().map_or(page, |c| c.page);
+        let (dx, dy) = shift(union(&all), from, page, target);
+        let items = items(doc, &all, mode, |_| (page, dx, dy));
+        trace_many("paste", mode, page, items.len());
+        actions.push(Action::Field(
+            crate::app::actions::forms::FieldAction::PasteMany { items },
+        ));
+        return Ok(());
+    }
+    let Some(clipped) = all.pop() else {
+        return Err(Refusal::NothingCopied);
+    };
 
     let rect = placed_rect(clipped.rect, clipped.page, page, target);
-    let policy = match mode {
+    let policy = policy_for(doc, &clipped, mode, &[]);
+
+    actions.push(Action::Field(
+        crate::app::actions::forms::FieldAction::Paste {
+            page,
+            rect,
+            clip: clipped.bytes.clone(),
+            policy: Box::new(policy),
+        },
+    ));
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "fieldclip-paste mode={mode:?} page={page} from_page={} widgets={}",
+            clipped.page, clipped.widgets
+        )
+    });
+    Ok(())
+}
+
+/// **Duplicate the selected form fields** — `edit.duplicate` — as new
+/// fields offset on their own pages, without touching the clipboard.
+pub fn duplicate(doc: &OpenDoc, actions: &mut Vec<Action>) -> Result<(), Refusal> {
+    let all = read_selected(doc)?;
+    let d = crate::canvas::clipboard::PASTE_OFFSET_PT;
+    let mut items = items(doc, &all, PasteAs::NewField, |c| (c.page, d, -d));
+    let page = items.first().map_or(0, |i| i.page);
+    trace_many("duplicate", PasteAs::NewField, page, items.len());
+    let action = match (items.pop(), items.is_empty()) {
+        (Some(one), true) => crate::app::actions::forms::FieldAction::Paste {
+            page: one.page,
+            rect: one.rect,
+            clip: one.clip,
+            policy: one.policy,
+        },
+        (Some(last), false) => {
+            items.push(last);
+            crate::app::actions::forms::FieldAction::PasteMany { items }
+        }
+        (None, _) => return Err(Refusal::NothingSelected),
+    };
+    actions.push(Action::Field(action));
+    Ok(())
+}
+
+/// One `FieldPaste` per clip, placed by `at`'s page and displacement, new
+/// names unique across the batch as well as the document.
+fn items(
+    doc: &OpenDoc,
+    all: &[ClippedField],
+    mode: PasteAs,
+    at: impl Fn(&ClippedField) -> (usize, f64, f64),
+) -> Vec<pdfcer_gui_base::fieldaction::FieldPaste> {
+    let mut named: Vec<String> = Vec::new();
+    all.iter()
+        .map(|c| {
+            let policy = policy_for(doc, c, mode, &named);
+            if let FieldPastePolicy::NewField { name, .. } = &policy {
+                named.push(name.clone());
+            }
+            let (page, dx, dy) = at(c);
+            pdfcer_gui_base::fieldaction::FieldPaste {
+                page,
+                rect: moved(c.rect, dx, dy),
+                clip: c.bytes.clone(),
+                policy: Box::new(policy),
+            }
+        })
+        .collect()
+}
+
+fn trace_many(verb: &str, mode: PasteAs, page: usize, fields: usize) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("fieldclip-{verb}-many mode={mode:?} page={page} fields={fields}")
+    });
+}
+
+/// The smallest rect holding every clip's.
+fn union(all: &[ClippedField]) -> Rect {
+    let start = Rect {
+        llx: f64::MAX,
+        lly: f64::MAX,
+        urx: f64::MIN,
+        ury: f64::MIN,
+    };
+    all.iter().map(|c| c.rect).fold(start, |u, r| Rect {
+        llx: u.llx.min(r.llx),
+        lly: u.lly.min(r.lly),
+        urx: u.urx.max(r.urx),
+        ury: u.ury.max(r.ury),
+    })
+}
+
+/// The displacement [`placed_rect`] gives `source`.
+fn shift(source: Rect, from: usize, to: usize, target: Option<egui::Pos2>) -> (f64, f64) {
+    let p = placed_rect(source, from, to, target);
+    (p.llx - source.llx, p.lly - source.lly)
+}
+
+fn moved(r: Rect, dx: f64, dy: f64) -> Rect {
+    Rect {
+        llx: r.llx + dx,
+        lly: r.lly + dy,
+        urx: r.urx + dx,
+        ury: r.ury + dy,
+    }
+}
+
+/// The engine policy for pasting `clipped` as `mode`. A new field's name
+/// avoids the document's names and `pending`.
+fn policy_for(
+    doc: &OpenDoc,
+    clipped: &ClippedField,
+    mode: PasteAs,
+    pending: &[String],
+) -> FieldPastePolicy {
+    match mode {
         PasteAs::NewField => FieldPastePolicy::NewField {
-            name: unique_name(doc, &clipped.name),
+            name: unique_name(doc, &clipped.name, pending),
             // `Carry` — reuse the source's `/TU`, which R105 accepts as an
             // explicit decision because it is the operator's own field rather
             // than an invented name. The engine refuses `Undecided` outright
@@ -179,34 +314,20 @@ pub fn paste(
         PasteAs::Duplicate => FieldPastePolicy::AdditionalWidget {
             existing: clipped.name.clone(),
         },
-    };
-
-    actions.push(Action::Field(
-        crate::app::actions::forms::FieldAction::Paste {
-            page,
-            rect,
-            clip: clipped.bytes.clone(),
-            policy: Box::new(policy),
-        },
-    ));
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        format!(
-            "fieldclip-paste mode={mode:?} page={page} from_page={} widgets={}",
-            clipped.page, clipped.widgets
-        )
-    });
-    Ok(())
+    }
 }
 
-/// Whether the clipboard's field brings a script, for the pre-press sentence.
+/// Whether any of the clipboard's fields brings a script, for the pre-press
+/// sentence.
 ///
 /// `None` when the clipboard holds no field. Split out so a status surface can
 /// ask without knowing the clip's shape.
 #[must_use]
 pub fn carries_actions(ctx: &egui::Context) -> Option<bool> {
     match crate::canvas::clipboard::read(ctx)? {
-        crate::canvas::clipboard::Clipped::FormField(c) => Some(c.carries_actions),
+        crate::canvas::clipboard::Clipped::FormField(all) => {
+            Some(all.iter().any(|c| c.carries_actions))
+        }
         _ => None,
     }
 }
@@ -244,13 +365,16 @@ fn placed_rect(source: Rect, from_page: usize, to_page: usize, target: Option<eg
     }
 }
 
-/// A field name this document does not use, derived from `base`.
-fn unique_name(doc: &OpenDoc, base: &str) -> String {
+/// A field name neither this document nor `pending` uses, derived from
+/// `base`.
+fn unique_name(doc: &OpenDoc, base: &str, pending: &[String]) -> String {
     let view = doc.session.view();
     let Some(form) = pdfcer_core::forms::parse_acroform(&view) else {
         return base.to_owned();
     };
-    let taken = |candidate: &str| form.fields_named(candidate).next().is_some();
+    let taken = |candidate: &str| {
+        pending.iter().any(|p| p == candidate) || form.fields_named(candidate).next().is_some()
+    };
     if !taken(base) {
         return base.to_owned();
     }
@@ -288,14 +412,28 @@ fn split_trailing_number(base: &str) -> (&str, u32) {
     }
 }
 
-/// Read `doc.selected_field` into a clip, without touching the clipboard.
-///
-fn read_selected(doc: &OpenDoc) -> Result<ClippedField, Refusal> {
-    let selected = doc
-        .selected_field
-        .as_ref()
-        .ok_or(Refusal::NothingSelected)?;
+/// Read every selected field into a clip, one per field with the primary
+/// last, without touching the clipboard.
+fn read_selected(doc: &OpenDoc) -> Result<Vec<ClippedField>, Refusal> {
+    let mut all = doc.field_set.all(doc.selected_field.as_ref());
+    if all.is_empty() {
+        return Err(Refusal::NothingSelected);
+    }
+    // One clip per FIELD: a clip carries every widget, so two selected boxes
+    // of one radio group are one copy. Each field's last box is kept, so the
+    // primary stays last.
+    let mut seen = std::collections::HashSet::new();
+    all.reverse();
+    all.retain(|f| seen.insert(f.field.clone()));
+    all.reverse();
+    all.iter().map(|f| read_one(doc, f)).collect()
+}
 
+/// Read one selected box's field into a clip.
+fn read_one(
+    doc: &OpenDoc,
+    selected: &crate::app::state::SelectedField,
+) -> Result<ClippedField, Refusal> {
     // The rect comes from the widget the operator actually clicked, which the
     // clip does not know: a radio group's clip carries every widget, and the
     // paste is measured from where the pointer was.
@@ -415,5 +553,58 @@ mod tests {
                 "{label}: pointing at a spot does not ask for the field to be resized"
             );
         }
+    }
+
+    fn clipped(name: &str, llx: f64, lly: f64) -> ClippedField {
+        ClippedField {
+            bytes: Vec::new(),
+            name: name.to_owned(),
+            page: 0,
+            rect: Rect {
+                llx,
+                lly,
+                urx: llx + 50.0,
+                ury: lly + 20.0,
+            },
+            widgets: 1,
+            carries_actions: false,
+        }
+    }
+
+    /// Two copies of one field pasted in one batch get two different names;
+    /// the engine refuses a taken name, so a repeat would lose a field.
+    #[test]
+    fn a_batch_of_new_fields_never_repeats_a_name() {
+        let doc = crate::app::state::open_local_fixture("all-field-kinds.pdf");
+        let all = [
+            clipped("TextOne", 10.0, 10.0),
+            clipped("TextOne", 10.0, 40.0),
+        ];
+        let names: Vec<String> = items(&doc, &all, PasteAs::NewField, |_| (0, 0.0, 0.0))
+            .into_iter()
+            .map(|i| match *i.policy {
+                FieldPastePolicy::NewField { name, .. } => name,
+                other => panic!("{other:?}"),
+            })
+            .collect();
+        assert_eq!(names, ["TextOne2", "TextOne3"]);
+    }
+
+    /// The batch moves as one: every field gets the union's displacement, so
+    /// the fields keep their layout relative to each other.
+    #[test]
+    fn several_fields_paste_with_their_layout_kept() {
+        let all = [clipped("A", 100.0, 100.0), clipped("B", 300.0, 160.0)];
+        let u = union(&all);
+        assert_eq!((u.llx, u.lly, u.urx, u.ury), (100.0, 100.0, 350.0, 180.0));
+        let (dx, dy) = shift(u, 0, 0, Some(egui::pos2(500.0, 500.0)));
+        assert_eq!(
+            (dx, dy),
+            (275.0, 360.0),
+            "the union is centred on the pointer"
+        );
+        let a = moved(all[0].rect, dx, dy);
+        let b = moved(all[1].rect, dx, dy);
+        assert_eq!((b.llx - a.llx, b.lly - a.lly), (200.0, 60.0));
     }
 }

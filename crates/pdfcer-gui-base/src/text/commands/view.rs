@@ -162,15 +162,15 @@ pub const fn edit_paste_duplicate() -> CommandText {
     )
 }
 
-/// `edit.duplicate` — a second copy of the selected comment, **without using
+/// `edit.duplicate` — a second copy of the selected comment or fields, **without using
 /// the clipboard**.
 #[must_use]
 pub const fn edit_duplicate() -> CommandText {
     CommandText::new(
         "Duplicate",
-        "Put a second copy of the selected comment on the page, slightly offset so you \
-         can see it \u{2014} WITHOUT using the clipboard, so whatever you had copied is \
-         still there. Press it again for another.",
+        "Put a second copy of the selected comment, or of each selected form field, on the \
+         page, slightly offset so you can see it \u{2014} WITHOUT using the clipboard, so \
+         whatever you had copied is still there. Press it again for another.",
     )
 }
 

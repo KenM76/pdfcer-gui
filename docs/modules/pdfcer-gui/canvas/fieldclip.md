@@ -109,6 +109,19 @@ On `AdditionalWidget` exactly **one** widget is placed even from a
 multi-widget clip, because adding all N would give one field several views
 with duplicate export values — radio buttons that select together.
 
+## Several fields
+
+Copy, cut, paste and duplicate act on every selected field
+(`FieldSet::all`), one clip per field with each field's last-selected box,
+the primary last. The engine has no several-field verb (`ENGINE_BACKLOG.md`
+G193), so a paste of several is one `FieldAction::PasteMany`: one
+`paste_field` (or `add_radio_button`) per field, folded by `coalesce_last`
+into one undo step. The batch keeps its layout: the union of the copied
+boxes is placed by the one-field rule and every box moves by the same
+displacement. New names are unique across the batch as well as the
+document, because the engine refuses a taken name rather than suffixing it.
+The pasted fields are left selected.
+
 ## Item notes
 
 ### `fn unique_name`
@@ -230,7 +243,8 @@ this function borrows `doc` immutably and because every other destructive
 gesture in this shell goes through the queue. `DeleteWidget` rather than
 `DeleteField` is deliberate: the operator pointed at **a box**, and on a
 field with three boxes removing all three is not what they asked for. The
-engine collapses the field when its last widget goes.
+engine collapses the field when its last widget goes. With several fields
+selected, every selected box is deleted as one step (`DeleteWidgets`).
 
 # Errors
 
@@ -255,3 +269,10 @@ and the fact that they share a value does not make them one box.
 
 [`Refusal::NothingCopied`] when the clipboard holds no field. The engine's
 own refusals arrive when the action drains, not here.
+
+### `fn duplicate`
+
+`edit.duplicate` (`Ctrl+D`): every selected field as a new field, offset by
+[`crate::canvas::clipboard::PASTE_OFFSET_PT`] on its own page, without
+touching the clipboard. Refused in Read and Review by the dispatcher, with
+`ModeRefusal::DuplicateField`.

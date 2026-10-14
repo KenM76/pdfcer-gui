@@ -61,14 +61,29 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
     }
 }
 
-/// **`edit.duplicate`** — a second copy of the selected comment, offset,
-/// **without using the clipboard**. `Ctrl+D`.
+/// **`edit.duplicate`** — a second copy of the selected comment, or of each
+/// selected form field, offset, **without using the clipboard**. `Ctrl+D`.
 fn duplicate(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let caps = app.capabilities();
     let Status::Open(doc) = &app.status else {
         return;
     };
     let epoch = doc.edit_epoch;
+    // A field is page content, so it takes the content gate, as its paste does.
+    if doc.selected_field.is_some() {
+        if !caps.edit_content {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("command-declined id={id} reason=mode-cannot-add-field")
+            });
+            crate::app::status::decline::record_mode_refusal(
+                crate::text::clipboard::ModeRefusal::DuplicateField,
+            );
+        } else if let Err(refusal) = crate::canvas::fieldclip::duplicate(doc, actions) {
+            crate::app::actions::record_note(epoch, crate::text::fieldclip::refusal(&refusal));
+        }
+        return;
+    }
     if !caps.author_markup {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.

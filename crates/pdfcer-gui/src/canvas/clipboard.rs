@@ -167,11 +167,9 @@ pub enum Clipped {
     /// # Why it is a variant here and not a second clipboard
     ///
     ///
-    /// Boxed because `ClippedField` carries a whole `Draft` and this enum is
-    /// cloned on every read; the other two variants are a `Box` and a `Vec`
-    /// respectively, so boxing keeps the variants the same order of size and
-    /// stops `clippy::large_enum_variant` from being right.
-    FormField(Box<crate::canvas::fieldclip::ClippedField>),
+    /// One entry per copied field, never empty, the primary last. A `Vec`
+    /// keeps the variant the size of its neighbours' boxes.
+    FormField(Vec<crate::canvas::fieldclip::ClippedField>),
     /// **An embedded file** — its name, its decoded bytes and its description.
     ///
     ///

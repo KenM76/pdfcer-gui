@@ -364,6 +364,9 @@ pub enum ModeRefusal {
     /// sentences, because the first half of each sentence is what tells the
     /// operator pdfcer understood the gesture.
     DuplicateMarkup,
+    /// `edit.duplicate` over a **form field**, in a mode that does not change
+    /// page content.
+    DuplicateField,
 }
 
 impl ModeRefusal {
@@ -408,6 +411,9 @@ impl ModeRefusal {
             // rule 4 puts the disclosure where the doubt is.
             Self::DuplicateMarkup => {
                 "This mode does not add comments or markup to a document. Nothing has been added — switch to Review to duplicate this, or to Edit."
+            }
+            Self::DuplicateField => {
+                "That is a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Nothing has been added — switch to Edit to duplicate it."
             }
         }
     }
@@ -527,6 +533,7 @@ mod tests {
             (ModeRefusal::CutMarkup, review),
             (ModeRefusal::CutField, edit),
             (ModeRefusal::DuplicateMarkup, review),
+            (ModeRefusal::DuplicateField, edit),
         ] {
             let line = why.line();
             assert!(
@@ -552,6 +559,7 @@ mod tests {
             ModeRefusal::CutMarkup,
             ModeRefusal::CutField,
             ModeRefusal::DuplicateMarkup,
+            ModeRefusal::DuplicateField,
         ];
         let mut lines: Vec<&str> = all.iter().map(|w| w.line()).collect();
         lines.sort_unstable();

@@ -138,6 +138,33 @@ pub fn os_marker(field: &str) -> String {
     )
 }
 
+/// [`os_marker`] for a copy of several fields.
+#[must_use]
+pub fn os_marker_many(fields: usize) -> String {
+    format!(
+        "{fields} form fields were copied from pdfcer. Paste them back into pdfcer \
+         with Ctrl+V for new fields, or Ctrl+Shift+V for another box of each."
+    )
+}
+
+/// **Several fields were pasted or duplicated**, as one undo step.
+#[must_use]
+pub fn fields_pasted(fields: usize) -> String {
+    format!("Placed {fields} form fields. One Undo removes them all.")
+}
+
+/// **A paste of several fields stopped part-way**, and why.
+#[must_use]
+pub fn fields_partly_pasted(placed: usize, of: usize, reason: &str) -> String {
+    format!("Only {placed} of the {of} fields were placed: {reason}")
+}
+
+/// The fold of a several-field paste failed.
+#[must_use]
+pub const fn fields_pasted_not_one_undo() -> &'static str {
+    "Placed, but it will take more than one Undo to remove them all."
+}
+
 /// **A candidate name for a pasted field** — `Text` + `2` -> `Text2`.
 ///
 /// # NO SEPARATOR, and above all NO DOT

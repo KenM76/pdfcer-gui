@@ -161,3 +161,268 @@ fn widget_index_after_paste(doc: &OpenDoc, fqn: &str) -> usize {
         })
         .unwrap_or(0)
 }
+
+/// One field of a several-field paste, decoded before the session is taken.
+enum Step {
+    /// `paste_field`.
+    Field {
+        page: usize,
+        rect: pdfcer_core::page_tree::Rect,
+        clip: pdfcer_core::formclip::FieldClip,
+        policy: pdfcer_core::formclip::FieldPastePolicy,
+    },
+    /// Another button of a radio group, which `paste_field` refuses; see
+    /// [`paste`].
+    Radio(pdfcer_core::edit::NewRadioButton),
+}
+
+/// **Paste several copied fields as one undo step**, leaving them selected.
+pub(super) fn many(doc: &mut OpenDoc, items: &[pdfcer_gui_base::fieldaction::FieldPaste]) {
+    let Some(page) = items.first().map(|i| i.page) else {
+        return;
+    };
+    let Some((steps, names)) = decode(doc, items) else {
+        return;
+    };
+    let before = doc.edit_epoch;
+    let mut report = (0_usize, false);
+    crate::app::actions::apply::vector_edit(doc, "paste-fields", page, steps.len(), |session| {
+        commit(session, &steps, &mut report)
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "paste-fields-applied pasted={}/{} one_step={}",
+            report.0,
+            steps.len(),
+            report.1
+        )
+    });
+    if doc.edit_epoch == before {
+        return;
+    }
+    let placed: Vec<crate::app::state::SelectedField> = names
+        .into_iter()
+        .take(report.0)
+        .map(|(field, page)| crate::app::state::SelectedField {
+            widget: widget_index_after_paste(doc, &field),
+            field,
+            page,
+        })
+        .collect();
+    doc.selected_field =
+        doc.field_set
+            .band(None, placed, pdfcer_gui_base::fieldset::BandMerge::Replace);
+}
+
+/// A pasted field's name and page.
+type Placed = (String, usize);
+
+/// The steps, and the field each one leaves to select with its page. `None`
+/// when a clip cannot be read back, which is said.
+fn decode(
+    doc: &OpenDoc,
+    items: &[pdfcer_gui_base::fieldaction::FieldPaste],
+) -> Option<(Vec<Step>, Vec<Placed>)> {
+    use pdfcer_core::formclip::{FieldClip, FieldPastePolicy};
+    let (mut steps, mut names, mut claimed) = (Vec::new(), Vec::new(), Vec::<String>::new());
+    for item in items {
+        let name = match item.policy.as_ref() {
+            FieldPastePolicy::NewField { name, .. } => name.clone(),
+            FieldPastePolicy::AdditionalWidget { existing } => existing.clone(),
+            _ => String::new(),
+        };
+        // A radio group with no widget to copy the look of falls through to
+        // `paste_field`, whose refusal is then said rather than lost.
+        let radio = matches!(
+            item.policy.as_ref(),
+            FieldPastePolicy::AdditionalWidget { .. }
+        ) && super::radiogroup::is_radio(doc, &name);
+        if let Some((spec, export)) = radio
+            .then(|| super::radiogroup::member(doc, &name, item.page, item.rect, &claimed))
+            .flatten()
+        {
+            claimed.push(export);
+            steps.push(Step::Radio(spec));
+        } else {
+            let clip = match FieldClip::from_bytes(&item.clip) {
+                Ok(c) => c,
+                Err(e) => {
+                    crate::app::actions::record_note(
+                        doc.edit_epoch,
+                        crate::text::fieldclip::refusal(
+                            &crate::canvas::fieldclip::Refusal::EngineRefused(e.to_string()),
+                        ),
+                    );
+                    return None;
+                }
+            };
+            steps.push(Step::Field {
+                page: item.page,
+                rect: item.rect,
+                clip,
+                policy: (*item.policy).clone(),
+            });
+        }
+        names.push((name, item.page));
+    }
+    Some((steps, names))
+}
+
+/// Run each step, then fold. `report` is (placed, folded), set even when a
+/// verb refuses part-way, since what was placed stays placed.
+fn commit(
+    session: &mut pdfcer_core::edit::EditSession,
+    steps: &[Step],
+    report: &mut (usize, bool),
+) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
+    use pdfcer_core::edit::{CommandKind, EditError, MAX_UNDO_DEPTH};
+    if steps.len() > MAX_UNDO_DEPTH {
+        return Err(EditError::SelectionTooLargeForOneUndo {
+            targets: steps.len(),
+            limit: MAX_UNDO_DEPTH,
+        });
+    }
+    let (mut pushed, mut told, mut failure) = (0_usize, Vec::<String>::new(), None);
+    for step in steps {
+        let outcome = match step {
+            Step::Field {
+                page,
+                rect,
+                clip,
+                policy,
+            } => session
+                .paste_field(clip, *page, *rect, policy)
+                .map(|o| o.disclosures),
+            Step::Radio(spec) => session.add_radio_button(spec).map(|_| Vec::new()),
+        };
+        match outcome {
+            Ok(lines) => {
+                pushed += 1;
+                for line in lines {
+                    if !told.contains(&line) {
+                        told.push(line);
+                    }
+                }
+            }
+            Err(e) => {
+                failure = Some(e);
+                break;
+            }
+        }
+    }
+    if pushed == 0 {
+        return failure.map_or(Ok(Vec::new()), Err);
+    }
+    let folded = session.coalesce_last(pushed, CommandKind::PasteFormField);
+    *report = (pushed, folded);
+    let mut said = vec![crate::text::fieldclip::fields_pasted(pushed)];
+    said.extend(told);
+    if let Some(e) = failure {
+        said.push(crate::text::fieldclip::fields_partly_pasted(
+            pushed,
+            steps.len(),
+            &e.to_string(),
+        ));
+    }
+    if !folded {
+        said.push(crate::text::fieldclip::fields_pasted_not_one_undo().to_owned());
+    }
+    Ok(said)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::state::open_local_fixture;
+    use pdfcer_core::formclip::{FieldPastePolicy, PasteTooltip};
+    use pdfcer_core::page_tree::Rect;
+    use pdfcer_gui_base::fieldaction::FieldPaste;
+
+    fn item(doc: &OpenDoc, source: &str, lly: f64, policy: FieldPastePolicy) -> FieldPaste {
+        FieldPaste {
+            page: 0,
+            rect: Rect {
+                llx: 300.0,
+                lly,
+                urx: 400.0,
+                ury: lly + 20.0,
+            },
+            clip: doc.session.copy_field(source).expect("copy").to_bytes(),
+            policy: Box::new(policy),
+        }
+    }
+
+    fn new_field(name: &str) -> FieldPastePolicy {
+        FieldPastePolicy::NewField {
+            name: name.to_owned(),
+            tooltip: PasteTooltip::Carry,
+            copy_value: false,
+            copy_actions: true,
+        }
+    }
+
+    fn widgets(doc: &OpenDoc) -> Vec<(String, usize)> {
+        pdfcer_core::forms::parse_acroform(&doc.session.view())
+            .expect("a form")
+            .fields
+            .iter()
+            .map(|f| (f.fully_qualified_name.clone(), f.widgets.len()))
+            .collect()
+    }
+
+    fn undo(doc: &mut OpenDoc) {
+        std::sync::Arc::get_mut(&mut doc.session)
+            .expect("sole owner in a test")
+            .undo()
+            .expect("one undo");
+    }
+
+    /// Two new fields land, both end up selected, and one Undo removes both.
+    #[test]
+    fn several_new_fields_paste_as_one_undo_step_and_stay_selected() {
+        let mut doc = open_local_fixture("all-field-kinds.pdf");
+        let before = widgets(&doc);
+        let items = [
+            item(&doc, "TextOne", 100.0, new_field("TextOne2")),
+            item(&doc, "CheckOne", 140.0, new_field("CheckOne2")),
+        ];
+        many(&mut doc, &items);
+        let after = widgets(&doc);
+        assert_eq!(after.len(), before.len() + 2, "{after:?}");
+        let selected: Vec<String> = doc
+            .field_set
+            .all(doc.selected_field.as_ref())
+            .into_iter()
+            .map(|f| f.field)
+            .collect();
+        assert_eq!(selected, ["TextOne2", "CheckOne2"]);
+        undo(&mut doc);
+        assert_eq!(widgets(&doc), before, "one Undo did not remove both");
+    }
+
+    /// Another box of a radio group and of a text field, in one step: the
+    /// radio goes by `add_radio_button`, which `paste_field` would refuse.
+    #[test]
+    fn another_box_of_a_radio_and_a_text_field_is_one_undo_step() {
+        let mut doc = open_local_fixture("all-field-kinds.pdf");
+        let before = widgets(&doc);
+        let again = |name: &str| FieldPastePolicy::AdditionalWidget {
+            existing: name.to_owned(),
+        };
+        let items = [
+            item(&doc, "RadioGroup", 100.0, again("RadioGroup")),
+            item(&doc, "TextOne", 140.0, again("TextOne")),
+        ];
+        many(&mut doc, &items);
+        let grew: Vec<_> = widgets(&doc)
+            .into_iter()
+            .zip(&before)
+            .filter(|(a, b)| a.1 == b.1 + 1)
+            .map(|(a, _)| a.0)
+            .collect();
+        assert_eq!(grew.len(), 2, "both fields gain a box: {grew:?}");
+        undo(&mut doc);
+        assert_eq!(widgets(&doc), before, "one Undo did not remove both boxes");
+    }
+}
