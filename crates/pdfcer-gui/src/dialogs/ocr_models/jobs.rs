@@ -26,7 +26,7 @@ pub(super) enum Finished {
     Installed(Box<Result<Installed, InstallError>>),
     #[cfg(feature = "model-download")]
     Downloaded {
-        engine: &'static str,
+        set: &'static pdfcer_core::ocr::models::FetchableModels,
         outcome: crate::ocr::fetch::Outcome,
         attribution: String,
     },
@@ -105,7 +105,7 @@ impl Job {
                 std::thread::sleep(std::time::Duration::from_millis(100));
             };
             Finished::Downloaded {
-                engine: set.engine,
+                set,
                 outcome,
                 attribution: set.attribution(),
             }
@@ -188,7 +188,7 @@ fn installed(result: &Result<Installed, InstallError>, after: &Listing) -> Strin
 #[cfg(feature = "model-download")]
 fn downloaded(finished: &Finished) -> String {
     let Finished::Downloaded {
-        engine,
+        set,
         outcome,
         attribution,
     } = finished
@@ -198,12 +198,22 @@ fn downloaded(finished: &Finished) -> String {
     match outcome {
         crate::ocr::fetch::Outcome::Done { files } => {
             // ui-text-exempt: diagnostic trace, never displayed
-            crate::diag::trace(|| format!("fetch-models-done engine={engine} files={files}"));
-            crate::text::ocrfetch::done(*files, attribution)
+            crate::diag::trace(|| {
+                format!(
+                    "fetch-models-done engine={} name={} files={files}",
+                    set.engine, set.name
+                )
+            });
+            crate::text::ocrfetch::done(set.label, *files, attribution)
         }
         crate::ocr::fetch::Outcome::Failed(why) => {
             // ui-text-exempt: diagnostic trace, never displayed
-            crate::diag::trace(|| format!("fetch-models-failed engine={engine} why={why}"));
+            crate::diag::trace(|| {
+                format!(
+                    "fetch-models-failed engine={} name={} why={why}",
+                    set.engine, set.name
+                )
+            });
             crate::text::ocrfetch::failed(why)
         }
     }

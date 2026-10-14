@@ -743,6 +743,8 @@ mod tests {
                 // `None` means the file states no `/MK /R`, which is what every
                 // fixture in this shell wants.
                 rotation: None,
+                free_angle: None,
+                opacity: None,
                 has_off_appearance: false,
                 // THE POINT OF THIS FIXTURE.
                 page: None,

@@ -97,6 +97,8 @@ fn drawn_widget() -> Widget {
         // `None` means the file states no `/MK /R`, which is what every
         // fixture in this shell wants: an unrotated widget.
         rotation: None,
+        free_angle: None,
+        opacity: None,
         has_off_appearance: false,
         page: None,
         caption: None,

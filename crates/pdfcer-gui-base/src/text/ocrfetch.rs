@@ -12,12 +12,22 @@ pub const fn download_button() -> &'static str {
     "Download"
 }
 
+/// A pinned set not installed: its label and, when stated, its languages.
+#[must_use]
+pub fn available(label: &str, languages: &str) -> String {
+    if languages.is_empty() {
+        format!("Available to download: {label}.")
+    } else {
+        format!("Available to download: {label}, languages {languages}.")
+    }
+}
+
 /// After every file is saved; `attribution` is the licence's required line.
 #[must_use]
-pub fn done(files: usize, attribution: &str) -> String {
+pub fn done(label: &str, files: usize, attribution: &str) -> String {
     format!(
-        "Downloaded and checked {files} file(s). Recognise text uses them from now on. \
-         These model files are under {attribution}."
+        "Downloaded and checked {label} ({files} file(s)). Recognise text can use it from \
+         now on. These model files are under {attribution}."
     )
 }
 

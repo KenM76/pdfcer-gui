@@ -1196,12 +1196,19 @@ impl PdfcerApp {
                     } else {
                         (s.set_object_paint(page, &objects, fill, stroke)?, None)
                     };
-                    let (changed, refused) = (paint.changed.len(), paint.refused.len());
+                    let pdfcer_core::edit::PaintOutcome {
+                        changed,
+                        refused,
+                        disclosures,
+                        ..
+                    } = paint;
+                    let (changed, refused) = (changed.len(), refused.len());
                     let mut notes = vec![if refused == 0 {
                         crate::text::paint::recoloured(changed)
                     } else {
                         crate::text::paint::recoloured_partly(changed, refused)
                     }];
+                    notes.extend(disclosures);
                     notes.extend(reach.into_iter().flatten());
                     Ok::<_, pdfcer_core::edit::EditError>(notes)
                 });

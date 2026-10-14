@@ -9,9 +9,13 @@ no use for OCR can reclaim the space (O293).
 A group per recogniser in `ocr::manage::SUPPORTED` order. Each installed
 model is a row: name, version, size, folder, and — when the engine refuses to
 run it — the refusal's own sentence. A recogniser with nothing installed
-says *not installed*, then, in order of preference: a Download button
-(`FETCHABLE_MODELS` has pinned files and the build has `model-download`),
-*not in this build*, or how to install it from an add-on. Models discovered
+says *not installed*, then *not in this build* or how to install it from
+an add-on. Under every recogniser in the build, each of its
+`FETCHABLE_MODELS` sets that is not installed gets an *Available to
+download* row (label and languages) with a Download button, when the build
+has `model-download`. A set counts as installed when a discovered model
+carries its `name`; the bundled `paddle` matches no pinned set by bytes, so
+names are the only honest test. Models discovered
 under an engine token outside `SUPPORTED` are listed after the groups, so
 nothing installed is ever hidden. Footer: the count and total size, Remove
 all, Install from file…, Install from folder…, Close.
@@ -51,8 +55,7 @@ From a pdfcer OCR add-on zip or a folder, through `ocr::manage::install`:
 staged beside `models/`, discovered, verified against its manifest's
 `sha256` lines by the engine, then renamed in. A bare folder such as the
 bundled `paddle` has no manifest and installs with `checked=0`; it is the
-only way to put a removed `paddle` back until the engine pins a download for
-it (G194).
+way to put back a model no pinned set covers (`paddle-vl`, `tesseract`).
 
 # Work off the UI thread
 
@@ -71,11 +74,17 @@ open Recognise text dialog rediscovers on its next frame.
   `ocr-models-removed names= freed= default=<new|none|unchanged> failed=`;
 - `ocr-models-installed name= checked= bytes= folder=`,
   `ocr-models-install-failed why=<zip|io|no-model|several|verify|exists>`;
-- `fetch-models-done` / `fetch-models-failed` for a download.
+- `fetch-models-started engine= name= dir=`, then
+  `fetch-models-done engine= name= files=` or
+  `fetch-models-failed engine= name= why=` for a download.
+
+A download writes the set's files into `models/<folder>`, then the set's
+`FetchableModels::manifest` as the add-on manifest, so the model lists with
+its version and is checked by the engine like an installed add-on.
 
 Regions: `ocr-models.row.<name>`, `ocr-models.missing.<token>`,
 `ocr-models.default.<name>`, `ocr-models.is-default.<name>`, `ocr-models.remove.<name>`,
-`ocr-models.download.<token>`, `ocr-models.confirm`, `ocr-models.keep`,
+`ocr-models.download.<set name>`, `ocr-models.confirm`, `ocr-models.keep`,
 `ocr-models.remove-all`, `ocr-models.install-file`,
 `ocr-models.install-folder`, `ocr-models.result`, `ocr-models.unwritable`,
 `ocr-models.close`.

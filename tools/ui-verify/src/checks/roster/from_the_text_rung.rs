@@ -91,6 +91,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(ocr_by_layout::ReadingByLayoutLayersEachRegionApart),
         Box::new(ocr_word_lists::WordListsReachTheProgramThatReadsThem),
         Box::new(ocr_fetch_models::OcrModelsDownload),
+        Box::new(ocr_fetch_models::PaddleModelsDownload),
         Box::new(ocr_models_manage::OcrModelsSetDefaultAndRemove),
         Box::new(ocr_models_install::OcrModelsInstall),
         Box::new(ocr_models_unwritable::OcrModelsUnwritable),

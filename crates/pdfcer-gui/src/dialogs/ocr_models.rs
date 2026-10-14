@@ -3,8 +3,10 @@
 //! Every supported recogniser, each with its installed models or "not
 //! installed": size, version, location, whether it can run, a Default mark or
 //! Set as default, and Remove. Below: the total, Remove all, Install from
-//! file or folder. A recogniser with pinned files (`FETCHABLE_MODELS`) has a
-//! Download button when the build has `model-download`.
+//! file or folder. With `model-download`, each pinned set (`FETCHABLE_MODELS`)
+//! not installed has its own Download row; a set is installed when a
+//! discovered model carries its name, which the manifest written on download
+//! gives it.
 //!
 //! The default is the `ocr_model` preference Recognise text starts from
 //! (`catalog::start`); there is no second one. Removing the default clears
@@ -64,6 +66,8 @@ pub struct OcrModelsDialog {
     confirm: Option<Confirm>,
     /// The sentence the last action ended with.
     result: Option<String>,
+    /// The result last scrolled into view, so a new one is scrolled to once.
+    revealed: Option<String>,
     /// The listing no longer matches the preferences; discover again.
     stale: bool,
     close_requested: bool,
@@ -155,40 +159,47 @@ impl OcrModelsDialog {
         ui.strong(engine_label(token));
         let installed: Vec<usize> = listing.of_engine(token).map(|(i, _)| i).collect();
         if installed.is_empty() {
-            self.missing_row(ui, listing, token);
+            missing_row(ui, token);
         }
         for i in installed {
             self.model_row(ui, prefs, listing, i);
         }
+        if manage::in_build(token) {
+            self.download_rows(ui, listing, token);
+        }
         ui.add_space(8.0);
     }
 
-    fn missing_row(&mut self, ui: &mut Ui, listing: &Listing, token: &'static str) {
-        let row = ui.horizontal_wrapped(|ui| {
-            ui.label(t::not_installed());
-            if !manage::in_build(token) {
-                ui.small(t::not_in_build());
-            } else if !self.download_button(ui, listing, token) {
-                ui.small(t::install_how());
-            }
-        });
-        crate::diag::ui_rect_visible(
-            &format!("ocr-models.missing.{token}"),
-            row.response.rect,
-            ui.clip_rect(),
-        );
+    /// A Download row for each of `token`'s pinned sets not installed; a set
+    /// counts as installed when a discovered model carries its name.
+    #[cfg(feature = "model-download")]
+    fn download_rows(&mut self, ui: &mut Ui, listing: &Listing, token: &str) {
+        let sets = pdfcer_core::ocr::models::FETCHABLE_MODELS
+            .iter()
+            .filter(|s| s.engine == token)
+            .filter(|s| !listing.catalog.choices.iter().any(|c| c.name == s.name));
+        for set in sets {
+            let Some(dir) = listing.models_dir.as_ref().map(|d| d.join(set.folder)) else {
+                return;
+            };
+            ui.horizontal_wrapped(|ui| {
+                ui.label(crate::text::ocrfetch::available(set.label, set.languages));
+                self.download_button(ui, listing, set, dir);
+            });
+        }
     }
 
-    /// The Download button for `token`, if it has pinned files; whether one
-    /// was drawn.
+    #[cfg(not(feature = "model-download"))]
+    fn download_rows(&mut self, _: &mut Ui, _: &Listing, _: &str) {}
+
     #[cfg(feature = "model-download")]
-    fn download_button(&mut self, ui: &mut Ui, listing: &Listing, token: &str) -> bool {
-        let Some(set) = pdfcer_core::ocr::models::fetchable_models(token) else {
-            return false;
-        };
-        let Some(dir) = listing.models_dir.as_ref().map(|d| d.join(set.folder)) else {
-            return false;
-        };
+    fn download_button(
+        &mut self,
+        ui: &mut Ui,
+        listing: &Listing,
+        set: &'static pdfcer_core::ocr::models::FetchableModels,
+        dir: std::path::PathBuf,
+    ) {
         let button = self.gated(
             ui,
             listing,
@@ -200,7 +211,7 @@ impl OcrModelsDialog {
             set.licence,
         ));
         crate::diag::ui_rect_visible(
-            &format!("ocr-models.download.{token}"),
+            &format!("ocr-models.download.{}", set.name),
             button.rect,
             ui.clip_rect(),
         );
@@ -208,17 +219,14 @@ impl OcrModelsDialog {
             let shown = dir.display().to_string();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
-                format!("fetch-models-started engine={} dir={shown}", set.engine)
+                format!(
+                    "fetch-models-started engine={} name={} dir={shown}",
+                    set.engine, set.name
+                )
             });
             self.result = None;
             self.job = Some(Job::download(set, dir));
         }
-        true
-    }
-
-    #[cfg(not(feature = "model-download"))]
-    fn download_button(&mut self, _: &mut Ui, _: &Listing, _: &str) -> bool {
-        false
     }
 
     fn model_row(&mut self, ui: &mut Ui, prefs: &mut Prefs, listing: &Listing, i: usize) {
@@ -402,6 +410,10 @@ impl OcrModelsDialog {
         }
         if let Some(result) = &self.result {
             let shown = ui.label(result);
+            if self.revealed.as_ref() != Some(result) {
+                shown.scroll_to_me(Some(egui::Align::BOTTOM));
+                self.revealed = Some(result.clone());
+            }
             crate::diag::ui_rect_visible(REGION_RESULT, shown.rect, ui.clip_rect());
         }
         ui.add_space(8.0);
@@ -445,6 +457,31 @@ fn set_default(prefs: &mut Prefs, choice: &Choice) {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("ocr-models-default name={} saved={saved}", choice.name)
     });
+}
+
+/// "Not installed", and what to do about it when there is no Download.
+fn missing_row(ui: &mut Ui, token: &'static str) {
+    let row = ui.horizontal_wrapped(|ui| {
+        ui.label(t::not_installed());
+        if !manage::in_build(token) {
+            ui.small(t::not_in_build());
+        } else if !has_pinned_sets(token) {
+            ui.small(t::install_how());
+        }
+    });
+    crate::diag::ui_rect_visible(
+        &format!("ocr-models.missing.{token}"),
+        row.response.rect,
+        ui.clip_rect(),
+    );
+}
+
+/// Whether `token` has files this build can download.
+fn has_pinned_sets(token: &str) -> bool {
+    cfg!(feature = "model-download")
+        && pdfcer_core::ocr::models::FETCHABLE_MODELS
+            .iter()
+            .any(|s| s.engine == token)
 }
 
 /// The heading for a recogniser.

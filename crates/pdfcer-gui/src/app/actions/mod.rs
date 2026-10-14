@@ -129,7 +129,6 @@ pub mod pages;
 /// the pre-commit survey that tells the operator whether he is about to crop
 /// his drawing or leave it alone.
 pub mod pagesize;
-mod pastegeometry;
 
 pub use disclosure::{EditDisclosure, last_edit_disclosure};
 // Crate-visible rather than `pub`, and re-exported here rather than reached

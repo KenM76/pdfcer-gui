@@ -645,16 +645,12 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             // Replies whose `/IRT` link the clip stripped; the engine's own
             // disclosure line carries the sentence to the operator.
             let mut unthreaded = 0_u64;
-            // Raw annotations whose geometry keys the shell carried (G186).
-            let mut carried = 0_usize;
             let Ok(layer) = super::drawlayer::for_add(doc, "paste-objects") else {
                 return;
             };
             let on = super::drawlayer::id(layer.as_ref());
             vector_edit_on_page(doc, "paste-objects", page, clip.len(), |session| {
-                let mut clip = pdfcer_core::vector::ObjectClip::from_bytes(&clip)?;
-                // G186: the engine moves a raw annotation's /Rect only.
-                carried = super::pastegeometry::carry(&mut clip, at);
+                let clip = pdfcer_core::vector::ObjectClip::from_bytes(&clip)?;
                 session
                     .paste_objects_on_layer(page, &clip, at, on)
                     .map(|outcome| {
@@ -671,7 +667,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
                     "paste-objects-applied page={page} pasted={pasted} annots={annots} unthreaded={unthreaded} \
-                     carried={carried} resources_added={added} at=[{:.4} {:.4} {:.4} {:.4} {:.2} {:.2}]",
+                     resources_added={added} at=[{:.4} {:.4} {:.4} {:.4} {:.2} {:.2}]",
                     at.a, at.b, at.c, at.d, at.e, at.f,
                 )
             });

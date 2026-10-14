@@ -11,6 +11,9 @@
 //!   Recognise text with no setting changed.
 //! - [`Download::poll`] answers once, with every file written or the first
 //!   failure; files fetched before a failure stay (each is verified).
+//! - After the last file the set's `FetchableModels::manifest` is written as
+//!   `pdfcer-ocr-model.txt`, so discovery names the folder after the set and
+//!   `OcrModel::verify` re-checks it as it does an installed add-on.
 //! - Present only with the `model-download` feature; the command that opens
 //!   the window is registered under the same feature.
 
@@ -84,6 +87,10 @@ fn run(set: &FetchableModels, dir: &Path) -> Outcome {
         if let Err(e) = fetch_verified(&art, dir) {
             return Outcome::Failed(e.to_string());
         }
+    }
+    let manifest = dir.join(pdfcer_core::ocr::addon_manifest::MANIFEST_FILE);
+    if let Err(e) = std::fs::write(&manifest, set.manifest()) {
+        return Outcome::Failed(format!("{}: {e}", manifest.display())); // ui-text-exempt: the engine-words slot of text::ocrfetch::failed
     }
     Outcome::Done {
         files: set.files.len(),

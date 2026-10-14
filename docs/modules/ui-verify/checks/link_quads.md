@@ -35,8 +35,9 @@ the page.
 
 ## Falsified
 
-- Built without `app::actions::pastegeometry`, the check fails at step 5 on
-  the pasted link. Its `/QuadPoints` are the source link's (engine G186).
+- With the shell also translating the clip's geometry keys before the
+  engine's paste (which moves them itself), the check fails at step 5: the
+  pasted link's `/QuadPoints` moved twice.
 - With delete turned into a successful do-nothing edit, the check fails at
   step 6: the trace says `delete-annotation` and the file still holds two
   links.
