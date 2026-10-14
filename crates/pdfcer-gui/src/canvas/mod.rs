@@ -67,6 +67,8 @@ pub mod annotclip;
 pub mod annotdrag;
 /// Dragging several selected annotations together as one undo step.
 pub mod annotgroup;
+/// Dragging several selected form fields together as one undo step.
+pub mod fieldgroup;
 pub mod guides;
 // The nodes of a markup shape a `/Polygon`, `/PolyLine` or `/Line` and the
 // drag that moves, adds or removes one. The operator's *"I also can't edit or

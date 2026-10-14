@@ -574,8 +574,10 @@ pub fn look(
     // and grips to the press beneath them.
     let fields = pick.allows(crate::canvas::pick::PickClass::FormField);
     let widget_body = fields
-        && origin
-            .is_some_and(|p| widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p)));
+        && origin.is_some_and(|p| {
+            widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p))
+                || crate::canvas::fieldgroup::body_at(ctx, doc, map, p)
+        });
 
     // **A RESIZE GRIP IS NOT INSIDE THE BOX IT RESIZES.**
     //

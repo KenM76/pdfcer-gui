@@ -23,7 +23,8 @@ pub struct Previews {
     pub ghost: Option<Vec2>,
     /// Where a dragged markup would land, in canvas space.
     pub annot: Option<egui::Rect>,
-    pub annot_group: Vec<egui::Rect>,
+    /// Where every member of a several-item drag would land, in canvas space.
+    pub group: Vec<egui::Rect>,
     /// Where a dragged form-field box would land, in canvas space.
     ///
     /// A fourth field rather than sharing [`Self::annot`], even though the
@@ -126,7 +127,7 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     if let Some(ghosts) =
         crate::canvas::annotgroup::drag(delta, phase, doc.current_page(), selection, actions)
     {
-        out.annot_group = ghosts;
+        out.group = ghosts;
     } else if selection.annot().is_some() {
         if let Some(placed) = dimdrag::drag(
             dimdrag::Frame {
@@ -171,12 +172,16 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     // same defect the annotation branch had for ten days and is why it was
     // looked for here.
     } else if doc.selected_field.is_some() {
-        out.widget = crate::canvas::widgetdrag::drag(
-            &crate::canvas::widgetdrag::Frame { delta, phase },
-            ctx,
-            doc,
-            actions,
-        );
+        if let Some(ghosts) = crate::canvas::fieldgroup::drag(delta, phase, ctx, doc, actions) {
+            out.group = ghosts;
+        } else {
+            out.widget = crate::canvas::widgetdrag::drag(
+                &crate::canvas::widgetdrag::Frame { delta, phase },
+                ctx,
+                doc,
+                actions,
+            );
+        }
     } else {
         let preview = moving::drag(
             delta,

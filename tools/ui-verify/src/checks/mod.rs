@@ -1436,6 +1436,8 @@ pub mod annot_group_drag;
 pub mod annot_multiselect;
 /// Several form fields deleted by one Delete as one undo step.
 pub mod field_delete_many;
+/// Several form fields dragged together by any member, as one undo step.
+pub mod field_group_drag;
 /// Several form fields selected by Shift-click and marquee, aligned as one undo step.
 pub mod field_multiselect;
 /// Moving, resizing, copying and deleting a link, its quads following its box.

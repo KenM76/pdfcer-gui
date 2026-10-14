@@ -518,7 +518,7 @@ pub(super) fn interact(
             // has to survive frames — that is the entire point of it.
             hold_after_drop = previews.hold;
             pv.annot_ghost = previews.annot.or(previews.widget);
-            pv.annot_group = previews.annot_group;
+            pv.group = previews.group;
             pv.dimension = previews.dimension;
             pv.dimension_baked = previews.dimension_baked;
         }
@@ -1140,7 +1140,7 @@ pub(super) fn interact(
             ghost: pv.ghost,
             shape_preview: pv.shape.as_ref(),
             annot_ghost: pv.annot_ghost,
-            annot_group: &pv.annot_group,
+            group: &pv.group,
             resize_ghost: pv.resize_ghost,
             handle_drag: pv.handle,
             dimension_preview: pv.dimension.as_deref(),
