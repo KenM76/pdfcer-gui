@@ -226,6 +226,7 @@ pub mod form_groups;
 
 pub mod form_leaf_descend;
 
+pub mod alignmixed;
 pub mod annot_restyle;
 /// Shared driving for the ce dimension checks on `dimension-scaled.pdf`.
 mod dimdrive;
