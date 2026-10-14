@@ -565,10 +565,9 @@ impl DialogsState {
         Some(crate::text::embed::nothing_missing().to_owned())
     }
 
-    /// Open the Download OCR models window. Needs no document.
-    #[cfg(feature = "model-download")]
-    pub fn open_fetch_models(&mut self) {
-        self.fetch_models.get_or_insert_with(Default::default);
+    /// Open the Manage OCR models window. Needs no document.
+    pub fn open_ocr_models(&mut self) {
+        self.ocr_models.get_or_insert_with(Default::default);
     }
 
     /// Open the Add archive time-stamp window on the open document.

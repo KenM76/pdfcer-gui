@@ -1001,13 +1001,14 @@ pub(super) fn band() -> Vec<Command> {
         // frame. No icon: `rotate-cw` is `pages.rotate_right`'s, a whole-page
         // quarter turn, which this is not.
         command("file.deskew", t::file_deskew(), 164).enabled_when("doc.pages"),
-        // `pdfcer_core::ocr::models::FETCHABLE_MODELS` through `pdfcer_fetch`. Needs no
-        // document: it repairs the models folder, not a file. No icon:
+        // `ocr::manage` and, with `model-download`, `FETCHABLE_MODELS`. Needs no
+        // document: it changes the models folder, not a file. No icon:
         // `download.svg` is `export`'s, "out of this document", which this is not.
-        #[cfg(feature = "model-download")]
+        // No `#[cfg]`: removing models to free space, and installing a tesseract
+        // add-on that runs through the host, need no compiled-in recogniser.
         command(
-            "file.fetch_ocr_models",
-            crate::text::ocrfetch::file_fetch_ocr_models(),
+            "file.ocr_models",
+            crate::text::ocrmanage::file_ocr_models(),
             163,
         ),
     ]

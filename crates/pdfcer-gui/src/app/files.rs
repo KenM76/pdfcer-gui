@@ -50,6 +50,10 @@ pub const DIAG_FONT_FOLDER_PATH: &str = "PDFCER_DIAG_FONT_FOLDER"; // ui-text-ex
 
 /// The harness seam for [`pick_ocr_folder`].
 pub const DIAG_OCR_FOLDER_PATH: &str = "PDFCER_DIAG_OCR_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
+/// Answers Manage OCR models' Install from file… picker when set.
+pub const DIAG_OCR_ADDON_ZIP: &str = "PDFCER_DIAG_OCR_ADDON_ZIP"; // ui-text-exempt: an environment variable name, never displayed
+/// Answers Manage OCR models' Install from folder… picker when set.
+pub const DIAG_OCR_ADDON_FOLDER: &str = "PDFCER_DIAG_OCR_ADDON_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
 /// The harness seam for [`pick_split_folder`].
 pub const DIAG_SPLIT_FOLDER_PATH: &str = "PDFCER_DIAG_SPLIT_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
@@ -577,6 +581,35 @@ pub fn pick_ocr_folder() -> Picked {
         DIAG_OCR_FOLDER_PATH,
         crate::text::settings::ocrmodels::dialog_title(),
         "ocr-folder-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// Ask for a pdfcer OCR add-on zip to install.
+#[must_use]
+pub fn pick_ocr_addon_zip() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_OCR_ADDON_ZIP)) {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        crate::diag::trace(|| format!("ocr-addon-zip-picked source=env answer={answer:?}"));
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::ocrmanage::pick_zip_title())
+        .add_filter(crate::text::ocrmanage::zip_filter(), &["zip"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    // ui-text-exempt: diagnostic trace, never displayed.
+    crate::diag::trace(|| format!("ocr-addon-zip-picked source=native answer={answer:?}"));
+    answer
+}
+
+/// Ask for an unpacked pdfcer OCR add-on folder to install.
+#[must_use]
+pub fn pick_ocr_addon_folder() -> Picked {
+    pick_folder_traced(
+        DIAG_OCR_ADDON_FOLDER,
+        crate::text::ocrmanage::pick_folder_title(),
+        "ocr-addon-folder-picked", // ui-text-exempt: a trace event name, never displayed
     )
 }
 

@@ -158,6 +158,7 @@ pub mod new_document;
 pub mod nodeshape;
 pub mod ocr;
 pub mod ocrfetch;
+pub mod ocrmanage;
 pub mod ocrmodels;
 /// The words for **content that is in the file but not on the
 /// sheet** — the census window's copy. Its header carries the sentence the

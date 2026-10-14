@@ -88,7 +88,7 @@ pub fn tab() -> Tab {
                     large("file.ocr"),
                     command("file.remove_ocr"),
                     command("file.deskew"),
-                    command("file.fetch_ocr_models").provided_by("model-download"),
+                    command("file.ocr_models"),
                 ],
             ),
             group(

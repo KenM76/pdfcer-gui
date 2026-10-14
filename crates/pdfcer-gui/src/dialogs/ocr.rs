@@ -42,6 +42,11 @@ const REGION_SCOPE: &str = "ocr-scope"; // ui-text-exempt: trace region name, ne
 /// The skip-existing-text toggle.
 const REGION_SKIP: &str = "ocr-skip"; // ui-text-exempt: trace region name, never displayed
 
+/// The no-engine sentence and the button that opens the manager.
+const REGION_NO_ENGINE: &str = "ocr-no-engine"; // ui-text-exempt: trace region name, never displayed
+const REGION_OPEN_MANAGER: &str = "ocr-open-manager"; // ui-text-exempt: trace region name, never displayed
+/// The command the no-engine button runs.
+const MANAGER_COMMAND: &str = "file.ocr_models"; // ui-text-exempt: a command id, never displayed
 /// The control that starts recognition.
 const REGION_RUN: &str = "ocr-run"; // ui-text-exempt: trace region name, never displayed
 /// The live progress line, drawn once a page has finished.
@@ -50,6 +55,8 @@ const REGION_PROGRESS: &str = "ocr-progress"; // ui-text-exempt: trace region na
 const REGION_STOP: &str = "ocr-stop"; // ui-text-exempt: trace region name
 /// The control that abandons the run.
 const REGION_CANCEL: &str = "ocr-cancel"; // ui-text-exempt: trace region name
+/// Close on the refusal, where there is nothing to run.
+const REGION_CLOSE: &str = "ocr-close"; // ui-text-exempt: trace region name
 
 /// Where one Recognise-text transaction has got to.
 #[derive(Debug, Default)]
@@ -161,6 +168,12 @@ pub struct OcrDialog {
     /// cannot drop the state it is being drawn from, so it records the request
     /// and the caller acts after the closure returns.
     close_requested: bool,
+    /// Set by the Manage OCR models button, consumed by [`Self::show`],
+    /// which owns the action queue.
+    open_manager: bool,
+    /// Whether the current model list's refusal has been traced, so the
+    /// line is written once per list rather than once per frame.
+    traced_refusal: bool,
 }
 
 impl OcrDialog {
@@ -188,6 +201,8 @@ impl OcrDialog {
             traced_progress: usize::MAX,
             phase: Phase::Ready,
             close_requested: false,
+            open_manager: false,
+            traced_refusal: false,
         }
     }
 
@@ -200,6 +215,11 @@ impl OcrDialog {
         prefs: &mut crate::app::prefs::Prefs,
     ) -> bool {
         self.poll_worker(actions);
+        // The manager added or removed a model while this window was open.
+        if matches!(self.phase, Phase::Ready) && self.models.is_stale() {
+            self.models = super::ocr_model::ModelPicker::open(prefs);
+            self.traced_refusal = false;
+        }
 
         // ITS OWN OS WINDOW. OCR is the longest-running thing in this program
         // — a job an operator starts and then goes back to work while it runs —
@@ -224,6 +244,13 @@ impl OcrDialog {
             crate::diag::ui_rect(REGION_DIALOG, ui.max_rect());
             self.body(ui, doc);
         });
+        if std::mem::take(&mut self.open_manager) {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            crate::diag::trace(|| "ocr-open-manager".to_owned());
+            actions.push(crate::app::actions::Action::Command(
+                MANAGER_COMMAND.to_owned(),
+            ));
+        }
         let open = !frame.closed;
         let engine = EngineId::from_key(&self.engine).or(prefs.ocr_engine);
         if let Some(model) = self.remember.take()
@@ -569,8 +596,36 @@ impl OcrDialog {
     /// without running anything.
     fn ready(&mut self, ui: &mut egui::Ui, doc: &OpenDoc) {
         if let Some(refusal) = self.preflight() {
-            ui.label(sentence(&refusal));
-            self.models.show(ui);
+            // Nothing discovered at all is the operator having removed every
+            // model, or a build shipped without them: say that, not where
+            // the search looked.
+            let none = self.models.is_empty() && matches!(refusal, Refusal::ModelsMissing(_));
+            let line = ui.label(if none {
+                crate::text::ocrmanage::no_engine_installed().to_owned()
+            } else {
+                sentence(&refusal)
+            });
+            crate::diag::ui_rect(REGION_NO_ENGINE, line.rect);
+            if !std::mem::replace(&mut self.traced_refusal, true) {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                crate::diag::trace(|| format!("ocr-no-engine none-installed={none}"));
+            }
+            let manage = ui
+                .button(crate::text::ocrmanage::open_manager_button())
+                .on_hover_text(crate::text::ocrmanage::open_manager_hover());
+            crate::diag::ui_rect(REGION_OPEN_MANAGER, manage.rect);
+            if manage.clicked() {
+                self.open_manager = true;
+            }
+            if !self.models.is_empty() {
+                self.models.show(ui);
+            }
+            ui.separator();
+            let close = ui.button(t::close());
+            crate::diag::ui_rect(REGION_CLOSE, close.rect);
+            if close.clicked() {
+                self.close_requested = true;
+            }
             return;
         }
         self.models.show(ui);
@@ -859,6 +914,17 @@ mod tests {
                 &crate::app::prefs::Prefs::default()
             )
             .is_none()
+        );
+    }
+
+    /// The no-engine button raises the command the ribbon registers.
+    #[test]
+    fn the_manager_button_raises_a_registered_command() {
+        let mut registry = egui_shell::commands::CommandRegistry::new();
+        crate::shell::commands::register(&mut registry);
+        assert!(
+            registry.get(MANAGER_COMMAND).is_some(),
+            "`{MANAGER_COMMAND}` is not registered, so the button would do nothing"
         );
     }
 }

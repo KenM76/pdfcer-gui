@@ -23,12 +23,16 @@ pub(super) struct ModelPicker {
     notice: Option<String>,
     /// Whether program add-ons may run; discovery and the run both obey it.
     policy: catalog::ProgramPolicy,
+    /// `manage::generation` when discovery ran; a later one means a model
+    /// was added or removed since.
+    generation: u64,
 }
 
 impl ModelPicker {
     /// Discover the models under the bundled folder and `prefs`' extra
     /// folders, and pick the starting choice.
     pub(super) fn open(prefs: &Prefs) -> Self {
+        let generation = crate::ocr::manage::generation();
         let exe = crate::ocr::exe_dir();
         let roots = catalog::roots(exe.as_deref(), prefs.ocr_models.folders());
         let bundled = exe.map(|d| d.join(catalog::BUNDLED_DIR));
@@ -73,7 +77,18 @@ impl ModelPicker {
             chosen,
             notice,
             policy,
+            generation,
         }
+    }
+
+    /// Whether the models folder changed since this list was made.
+    pub(super) fn is_stale(&self) -> bool {
+        self.generation != crate::ocr::manage::generation()
+    }
+
+    /// Whether discovery found no model at all, runnable or not.
+    pub(super) fn is_empty(&self) -> bool {
+        self.catalog.choices.is_empty()
     }
 
     /// The program policy discovery ran under, for the run to obey.

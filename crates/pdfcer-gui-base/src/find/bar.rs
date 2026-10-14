@@ -52,6 +52,8 @@ const REGION_OPTIONS: &str = "find-options"; // ui-text-exempt: trace region nam
 
 /// The OCR offer's second row, when it is drawn.
 const REGION_OCR_OFFER: &str = "find-ocr-offer"; // ui-text-exempt: trace region name, never displayed
+/// The offer's button alone, so a driven check presses it rather than the row.
+const REGION_OCR_OFFER_ACCEPT: &str = "find-ocr-offer.accept"; // ui-text-exempt: trace region name, never displayed
 
 /// Trace slot for the bar's steady state, de-duplicated on the rendered line.
 const FIND_SLOT: &str = "find-bar"; // ui-text-exempt: trace slot name, never displayed
@@ -402,11 +404,11 @@ fn ocr_offer(ui: &mut egui::Ui, actions: &mut Vec<Action>) {
                         egui::RichText::new(crate::text::ocr::offer())
                             .color(theme.palette.text_muted),
                     );
-                    if ui
+                    let accept = ui
                         .button(crate::text::ocr::offer_action())
-                        .on_hover_text(crate::text::ocr::offer_tooltip())
-                        .clicked()
-                    {
+                        .on_hover_text(crate::text::ocr::offer_tooltip());
+                    crate::diag::ui_rect(REGION_OCR_OFFER_ACCEPT, accept.rect);
+                    if accept.clicked() {
                         // Raised as a COMMAND, not as a new action variant.
                         //
                         // The offer is a second route to `file.ocr` and must

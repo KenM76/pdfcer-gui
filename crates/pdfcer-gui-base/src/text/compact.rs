@@ -40,9 +40,11 @@ pub fn size_change(before: u64, after: u64) -> String {
 }
 
 /// A byte count in the units an operator thinks in.
-fn bytes(n: u64) -> String {
+pub(crate) fn bytes(n: u64) -> String {
     let mib = n as f64 / (1024.0 * 1024.0);
-    if mib >= 0.1 {
+    if mib >= 1024.0 {
+        format!("{:.1} GB", mib / 1024.0)
+    } else if mib >= 0.1 {
         format!("{mib:.1} MB")
     } else {
         format!("{:.0} KB", n as f64 / 1024.0)

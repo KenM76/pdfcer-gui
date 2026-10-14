@@ -120,10 +120,10 @@ signing = ["pdfcer-core/signing", "pdfcer-gui-base/signing"]
 # Its TLS root store brings CDLA-Permissive-2.0 (see `about.toml`).
 timestamp = ["signing", "pdfcer-gui-base/timestamp"]
 
-# `model-download` — File ▸ Recognise ▸ Download OCR models…, which fetches the
-# engine's pinned model files into `models/` beside the program. Off, the
-# command is not registered and the item is absent. Network code, like
-# `timestamp`.
+# `model-download` — the Download buttons in File ▸ Recognise ▸ Manage OCR
+# models…, which fetch the engine's pinned model files into `models/` beside
+# the program. Off, the manager still lists, installs and removes; it offers
+# no Download. Network code, like `timestamp`.
 model-download = ["pdfcer-gui-base/model-download"]
 
 # ---------------------------------------------------------------------------
