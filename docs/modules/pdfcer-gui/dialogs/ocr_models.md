@@ -17,8 +17,12 @@ has `model-download`. A set counts as installed when a discovered model
 carries its `name`; the bundled `paddle` matches no pinned set by bytes, so
 names are the only honest test. Models discovered
 under an engine token outside `SUPPORTED` are listed after the groups, so
-nothing installed is ever hidden. Footer: the count and total size, Remove
-all, Install from file…, Install from folder…, Close.
+nothing installed is ever hidden. The list scrolls; below it, pinned
+(`Host::scrolled`), are the count and total size, Remove all, Install from
+file…, Install from folder…, the pending removal's question, the result and
+Close. Every list holds more rows than the window at its opening size, so a
+question or result drawn after the list would land below the fold, and a
+Remove pressed would look like a button that did nothing.
 
 The models folder's path is printed at the top; when the program may not
 write there (`manage::writable`) a sentence says so in words, and every

@@ -28,6 +28,22 @@ pub(super) const TAB: &str = "ribbon.tab.file";
 pub(super) const ITEM: &str = "ribbon.item.file.ocr_models";
 pub(super) const COLLAPSED: &str = "ribbon.group.file.recognise.collapsed";
 pub(super) const LISTED: &str = "ocr-models-listed";
+/// The manager's whole window; the wheel aimed at its centre scrolls the list.
+const BODY: &str = "ocr-models.body";
+/// The list's per-model regions, the only ones scrolled to. The question, the
+/// result and the buttons acting on the whole list are pinned below it, so a
+/// check reaching one of those by scrolling would pass on a window that hid it.
+const ROWS: [&str; 6] = [
+    "ocr-models.row.",
+    "ocr-models.missing.",
+    "ocr-models.download.",
+    "ocr-models.default.",
+    "ocr-models.is-default.",
+    "ocr-models.remove.",
+];
+/// Wheel notches tried, from the top of the list down, before a region is
+/// called absent.
+const REVEAL_NOTCHES: usize = 12;
 
 /// A program folder: `exe` beside `models/` and `userdata/`.
 pub(super) struct Program {
@@ -182,13 +198,44 @@ impl Drive {
         })
     }
 
-    /// Whether `region` has been declared.
+    /// Whether `region` has been declared, scrolling the manager's list to
+    /// find it when it is one of the list's rows.
     pub(super) fn has(&self, region: &str) -> Result<bool> {
+        self.reveal(region)?;
         Ok(declared(&self.session.trace()?, self.ui_rect, region).is_some())
+    }
+
+    /// Scrolls the manager's list until the row region `region` is in view:
+    /// to the top, then a notch at a time down. The list is longer than the
+    /// window, so a row can be above or below it. Anything not in [`ROWS`] is
+    /// left alone.
+    fn reveal(&self, region: &str) -> Result<()> {
+        if !ROWS.iter().any(|p| region.starts_with(p)) {
+            return Ok(());
+        }
+        for notch in 0..=REVEAL_NOTCHES {
+            let trace = self.session.trace()?;
+            if declared(&trace, self.ui_rect, region).is_some() {
+                return Ok(());
+            }
+            let Some((body, viewport)) = declared_in(&trace, self.ui_rect, BODY) else {
+                return Ok(());
+            };
+            let dy = if notch == 0 { 100.0 } else { -2.0 };
+            self.pointer.wheel_in(
+                &self.session,
+                viewport.as_deref(),
+                WindowPoint::centre_of(body),
+                dy,
+            )?;
+            self.session.settle(12);
+        }
+        Ok(())
     }
 
     /// Click the centre of `region`, in whichever window declared it.
     pub(super) fn click(&self, region: &str) -> Result<()> {
+        self.reveal(region)?;
         let trace = self.session.trace()?;
         let (rect, viewport) = declared_in(&trace, self.ui_rect, region).ok_or_else(|| {
             let prefix = region.rsplit_once('.').map_or(region, |(p, _)| p);

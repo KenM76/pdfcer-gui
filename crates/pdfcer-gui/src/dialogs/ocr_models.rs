@@ -2,8 +2,8 @@
 //!
 //! Every supported recogniser, each with its installed models or "not
 //! installed": size, version, location, whether it can run, a Default mark or
-//! Set as default, and Remove. Below: the total, Remove all, Install from
-//! file or folder. With `model-download`, each pinned set (`FETCHABLE_MODELS`)
+//! Set as default, and Remove. Pinned below the list: the total, Remove all,
+//! Install from file or folder, Remove's question, the result, Close. With `model-download`, each pinned set (`FETCHABLE_MODELS`)
 //! not installed has its own Download row; a set is installed when a
 //! discovered model carries its name, which the manifest written on download
 //! gives it.
@@ -66,8 +66,6 @@ pub struct OcrModelsDialog {
     confirm: Option<Confirm>,
     /// The sentence the last action ended with.
     result: Option<String>,
-    /// The result last scrolled into view, so a new one is scrolled to once.
-    revealed: Option<String>,
     /// The listing no longer matches the preferences; discover again.
     stale: bool,
     close_requested: bool,
@@ -93,7 +91,12 @@ impl OcrModelsDialog {
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-            egui::ScrollArea::vertical().show(ui, |ui| self.body(ui, prefs));
+            crate::dialogs::host::Host::scrolled(
+                ui,
+                self,
+                |ui, me| me.body(ui, prefs),
+                |ui, me| me.pinned(ui),
+            );
         });
         !frame.closed && !std::mem::take(&mut self.close_requested)
     }
@@ -142,8 +145,6 @@ impl OcrModelsDialog {
         for i in others {
             self.model_row(ui, prefs, &listing, i);
         }
-        ui.separator();
-        self.footer(ui, &listing);
         if !std::mem::take(&mut self.stale) {
             self.listing = Some(listing);
         }
@@ -261,17 +262,6 @@ impl OcrModelsDialog {
             row.response.rect,
             ui.clip_rect(),
         );
-        if self.confirm == Some(Confirm::One(i)) {
-            self.confirm_strip(
-                ui,
-                listing,
-                &t::confirm_remove(
-                    &crate::text::ocrmodels::label(choice),
-                    &choice.folder,
-                    bytes,
-                ),
-            );
-        }
     }
 
     fn default_control(&mut self, ui: &mut Ui, prefs: &mut Prefs, listing: &Listing, i: usize) {
@@ -327,6 +317,24 @@ impl OcrModelsDialog {
         crate::diag::trace(|| format!("ocr-models-remove-asked name={name} bytes={bytes}"));
         self.confirm = Some(what);
         self.result = None;
+    }
+
+    /// The pending removal's question, from whichever control asked it.
+    fn question(&self, listing: &Listing) -> Option<String> {
+        match self.confirm? {
+            Confirm::One(i) => {
+                let choice = &listing.catalog.choices[i];
+                Some(t::confirm_remove(
+                    &crate::text::ocrmodels::label(choice),
+                    &choice.folder,
+                    listing.sizes[i],
+                ))
+            }
+            Confirm::All => {
+                let bytes = listing.removable().map(|(i, _)| listing.sizes[i]).sum();
+                Some(t::confirm_remove_all(listing.removable().count(), bytes))
+            }
+        }
     }
 
     fn confirm_strip(&mut self, ui: &mut Ui, listing: &Listing, question: &str) {
@@ -394,13 +402,8 @@ impl OcrModelsDialog {
                 self.install(listing, manage::Source::Folder(dir));
             }
         });
-        if self.confirm == Some(Confirm::All) {
-            let bytes = listing.removable().map(|(i, _)| listing.sizes[i]).sum();
-            self.confirm_strip(
-                ui,
-                listing,
-                &t::confirm_remove_all(listing.removable().count(), bytes),
-            );
+        if let Some(question) = self.question(listing) {
+            self.confirm_strip(ui, listing, &question);
         }
         if self.job.is_some() {
             ui.horizontal(|ui| {
@@ -410,13 +413,18 @@ impl OcrModelsDialog {
         }
         if let Some(result) = &self.result {
             let shown = ui.label(result);
-            if self.revealed.as_ref() != Some(result) {
-                shown.scroll_to_me(Some(egui::Align::BOTTOM));
-                self.revealed = Some(result.clone());
-            }
             crate::diag::ui_rect_visible(REGION_RESULT, shown.rect, ui.clip_rect());
         }
-        ui.add_space(8.0);
+    }
+
+    /// Everything that acts on the list, pinned below it so the question a
+    /// Remove asks, the result and the buttons are in view however long the
+    /// list grows.
+    fn pinned(&mut self, ui: &mut Ui) {
+        if let Some(listing) = self.listing.take() {
+            self.footer(ui, &listing);
+            self.listing = Some(listing);
+        }
         let close = ui.button(t::close_button());
         crate::diag::ui_rect_visible(REGION_CLOSE, close.rect, ui.clip_rect());
         if close.clicked() {
