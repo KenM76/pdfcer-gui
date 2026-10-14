@@ -36,6 +36,12 @@ pub use job::{Job, Tally};
 /// of them this build can run.
 pub mod catalog;
 
+/// Unpacking a pdfcer OCR add-on zip.
+pub mod addonzip;
+
+/// Installing and removing models in a models folder.
+pub mod manage;
+
 /// Downloading an engine's pinned model files.
 #[cfg(feature = "model-download")]
 pub mod fetch;
