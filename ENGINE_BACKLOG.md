@@ -655,6 +655,7 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G189** — `move_widget` moves one widget, so aligning N form fields is N commands. Worked around in `app::actions::movemixed` (`move_objects_each`, `move_widget` per widget, `coalesce_last`; a refused widget leaves the others moved and disclosed). Open.
 - **G190** — `move_annotation` and `place_dimension` take one annotation each, so aligning N markups, links or ce dimensions is N commands; `place_dimension` also ignores the lock flag, and nothing maps an annotation `ObjId` to its `DimensionId`. Worked around in `app::actions::movemixed`, for Align, Distribute and a group drag (`move_annotation` per markup or link, `place_dimension` per ce dimension by the drag's rule, the shell refusing a locked ce dimension, one `coalesce_last` over everything). Open.
 - **G191** — `delete_annotation` takes one id; `cut_selection` batches but refuses with `CutWouldNotSurvive` what a paste could not restore, which Delete must not. Worked around in `app::actions::annots::deletemany` with `cut_selection`'s recipe (pre-flight each with `annotation_deletion_preview`, delete each a cascade has not taken, one `coalesce_last`); the shell leaves locked annotations out. Open.
+- **G192** — `delete_widget` takes one box and renumbers the later boxes of its field, and has no preview. Worked around in `app::actions::forms::delete::widgets`: sorted by field, highest index first, one `delete_widget` each, one `coalesce_last`; a refusal part-way folds and discloses what went. Open.
 
 ## Snapshot box
 

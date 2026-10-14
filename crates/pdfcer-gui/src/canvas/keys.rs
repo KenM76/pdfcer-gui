@@ -41,6 +41,9 @@ pub(super) struct Keys<'a> {
     /// and why Delete could not reach one until it did: the ladder below never
     /// had the fact in front of it.
     pub selected_field: Option<&'a crate::app::state::SelectedField>,
+    /// The fields selected beside [`Self::selected_field`]; Delete takes them
+    /// all.
+    pub field_set: &'a pdfcer_gui_base::fieldset::FieldSet,
     /// **Whether deleting the selected annotation would be refused** —
     /// `crate::panels::properties::annotdelete::refuses`, computed by the
     /// caller.
@@ -214,6 +217,7 @@ pub(super) fn canvas_keys(
         pick,
         caps,
         selected_field,
+        field_set,
         annot_delete_refused,
         field_delete_refused,
         escape_consumed,
@@ -712,12 +716,11 @@ pub(super) fn canvas_keys(
             });
             return;
         }
-        actions.push(Action::Field(
-            crate::app::actions::forms::FieldAction::DeleteWidget {
-                field: field.field.clone(),
-                widget: field.widget,
-            },
-        ));
+        if let Some(delete) =
+            crate::app::actions::forms::FieldAction::delete_selected(field_set.all(Some(field)))
+        {
+            actions.push(Action::Field(delete));
+        }
         return;
     }
 

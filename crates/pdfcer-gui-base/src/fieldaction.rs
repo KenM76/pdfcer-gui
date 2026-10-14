@@ -333,6 +333,12 @@ pub enum FieldAction {
         /// Which of its widgets.
         widget: usize,
     },
+    /// **Delete every box of a multi-field selection** as one undo step,
+    /// each field left in place unless its last box went.
+    DeleteWidgets {
+        /// The selected boxes, as `FieldSet::all` lists them.
+        widgets: Vec<crate::docidentity::SelectedField>,
+    },
     /// **Ask what deleting a grouping node would remove**, or forget the
     /// answer.
     ///
@@ -555,4 +561,52 @@ pub enum FieldAction {
         /// Trimmed and non-empty by the time it gets here.
         name: Option<String>,
     },
+}
+
+impl FieldAction {
+    /// The delete for the selected boxes: `None` for none, [`Self::DeleteWidget`]
+    /// for one, [`Self::DeleteWidgets`] for several.
+    #[must_use]
+    pub fn delete_selected(mut widgets: Vec<crate::docidentity::SelectedField>) -> Option<Self> {
+        match widgets.len() {
+            0 => None,
+            1 => widgets.pop().map(|w| Self::DeleteWidget {
+                field: w.field,
+                widget: w.widget,
+            }),
+            _ => Some(Self::DeleteWidgets { widgets }),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FieldAction;
+    use crate::docidentity::SelectedField;
+
+    fn pick(widget: usize) -> SelectedField {
+        SelectedField {
+            field: "F".to_owned(),
+            widget,
+            page: 0,
+        }
+    }
+
+    #[test]
+    fn delete_selected_picks_the_verb_by_count() {
+        assert_eq!(FieldAction::delete_selected(Vec::new()), None);
+        assert_eq!(
+            FieldAction::delete_selected(vec![pick(2)]),
+            Some(FieldAction::DeleteWidget {
+                field: "F".to_owned(),
+                widget: 2
+            })
+        );
+        assert_eq!(
+            FieldAction::delete_selected(vec![pick(0), pick(1)]),
+            Some(FieldAction::DeleteWidgets {
+                widgets: vec![pick(0), pick(1)]
+            })
+        );
+    }
 }

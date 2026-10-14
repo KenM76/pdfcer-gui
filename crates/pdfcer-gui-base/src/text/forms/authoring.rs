@@ -158,6 +158,29 @@ pub fn form_widget_deleted_last() -> String {
     "That was the field's last box, so the field was removed from the form too.".to_owned()
 }
 
+/// **Several boxes were deleted**, and how many fields lost their last box
+/// and went from the form with it.
+#[must_use]
+pub fn form_widgets_deleted(boxes: usize, fields_removed: usize) -> String {
+    match fields_removed {
+        0 => format!("Deleted {boxes} boxes. Their fields are still in the form, drawn elsewhere."),
+        1 => format!(
+            "Deleted {boxes} boxes. One was its field's last, so that field was removed from \
+             the form too."
+        ),
+        n => format!(
+            "Deleted {boxes} boxes. {n} were their fields' last, so those fields were removed \
+             from the form too."
+        ),
+    }
+}
+
+/// **A delete of several boxes stopped part-way**, and why.
+#[must_use]
+pub fn form_widgets_partly_deleted(deleted: usize, of: usize, reason: &str) -> String {
+    format!("Only {deleted} of the {of} boxes were deleted: {reason}")
+}
+
 /// **The `Sort` flag was set over a list nobody has sorted.**
 #[must_use]
 pub const fn field_sort_claim_unmet() -> &'static str {
@@ -459,5 +482,13 @@ mod tests {
             !line.contains("3 button"),
             "…and specifically must not read as a count of buttons: {line}"
         );
+    }
+
+    #[test]
+    fn several_box_sentences_are_single_spaced() {
+        for n in 0..3 {
+            let said = form_widgets_deleted(4, n);
+            assert!(!said.contains("  "), "{said}");
+        }
     }
 }

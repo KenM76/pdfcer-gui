@@ -183,12 +183,11 @@ pub(crate) fn dispatch(
                         });
                         return;
                     }
-                    actions.push(Action::Field(
-                        crate::app::actions::forms::FieldAction::DeleteWidget {
-                            field: field.field.clone(),
-                            widget: field.widget,
-                        },
-                    ));
+                    if let Some(delete) = crate::app::actions::forms::FieldAction::delete_selected(
+                        doc.field_set.all(Some(field)),
+                    ) {
+                        actions.push(Action::Field(delete));
+                    }
                     return;
                 }
                 // An ANNOTATION first — not a tie-break: `SelectionState`

@@ -21,7 +21,8 @@ pub use authoring::{
     form_field_actions_retargeted, form_field_added, form_field_deleted, form_field_merged,
     form_field_no_options, form_field_no_tooltip, form_field_renamed, form_field_tagged_document,
     form_noun_check_box, form_noun_choice, form_noun_push_button, form_noun_radio, form_noun_text,
-    form_widget_deleted, form_widget_deleted_last,
+    form_widget_deleted, form_widget_deleted_last, form_widgets_deleted,
+    form_widgets_partly_deleted,
 };
 
 pub use groups::*;

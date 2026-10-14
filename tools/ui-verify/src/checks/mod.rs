@@ -459,20 +459,7 @@ pub mod ocr_progress;
 pub mod ocr_reading_order;
 pub mod ocr_scripted;
 
-/// **A band dragged into the grey margin reaches an object off the page** —
-/// `OPERATOR_REQUESTS.md` O92, asked by driving it rather than reasoned about.
-/// Its fixture has exactly two squares and the band is aimed to miss the
-/// on-page one, so `hits == 1` alone proves the marquee left the sheet — no
-/// index, no ordering assumption. Its header carries why the band must touch
-/// the off-page square without being able to enclose it.
-/// **The operator can FIND OUT a sheet has content beside it** — the
-/// third verb of his off-page question, and the only one that scales. Its three
-/// siblings all answer *"I know something is over there"*; on a drawing set
-/// nobody knows that, and scrolling every sheet out to its pasteboard is not a
-/// procedure a person performs. Its header carries why the oracle is the object
-/// COUNT rather than the dirty-page count, and why the applied line is matched
-/// on its `epoch` field rather than on its name — the edit funnel's refusal
-/// branch shares the success line's first token.
+/// **The operator can FIND OUT a sheet has content beside it** — the off-page census.
 pub mod off_page_census;
 
 /// **Off-page content cost the operator his zoom** — O218/O221's
@@ -486,6 +473,7 @@ pub mod off_page_census;
 /// number. Edit mode is load-bearing: off-page display is off in Read.
 pub mod off_page_ceiling;
 
+/// **A band dragged into the grey margin reaches an object off the page** (O92).
 pub mod off_page_marquee;
 
 /// **A press that BEGINS in the grey margin** — O23's second half, and
@@ -880,19 +868,7 @@ pub mod font_group;
 /// names** — his SolidWorks drawing rather than a committed fixture.
 pub mod font_group_real;
 
-/// **Redaction** — the one operation in this program that cannot be undone,
-/// and the only check in the suite whose verdict is a **byte scan of a file on
-/// disk** rather than a trace field or a pixel. The application's own absence
-/// proof reports `verified=true` from inside the process that performed the
-/// removal; this asks the same question from outside it, three times, over two
-/// strings, in two processes — and it says which of the three answers is the
-/// verdict and which two exist to stop the verdict passing vacuously. Its
-/// header carries the falsification table.
 /// The **typed** route to a resize — the Properties panel's X/Y/W/H fields.
-/// Shares only its last link with `resize`: the four in between are a panel
-/// drawing, a draft surviving frames, and a button un-greying, and the third of
-/// those is invisible to every unit test because it is a property of the
-/// SEQUENCE of frames rather than of a function.
 pub mod geometry_fields;
 
 /// **The zoom readout is a button now, and buttons must be proved to do
@@ -974,6 +950,7 @@ pub mod redact_plural;
 
 pub mod redact_selection;
 
+/// **Redaction** — the removed text is proved gone by a byte scan of the saved file.
 pub mod redaction;
 
 /// **The reach setting, driven twice.** `redaction` above proves a removal
@@ -1178,17 +1155,6 @@ pub mod zoom_keeps_place;
 
 pub mod zoom_out_keeps_place;
 
-/// Marking a text selection — underline, strikeout, squiggly. The first
-/// commands in this shell whose operand is **not the pointer**, and therefore
-/// the first check that asserts a control is *correctly disabled* as well as
-/// that it works. Its header carries the argument.
-/// **The text-editing round trip** — `DEFECTS.md` D4b, driven: a chord arms the
-/// caret tool, a click resolves a run, a commit plans the follower disposition,
-/// a save writes it, and a second process reads it back. Its verdict is a byte
-/// scan for an operator the operator did NOT touch.
-/// The three markup kinds that carry WORDS, and the one property that
-/// separates them from the seven geometric ones: the RELEASE MUST NOT AUTHOR.
-/// Its header carries why no unit test can see that.
 /// **Opening a second PDF adds a tab, and the tab switches to it** — the
 /// registration half of multi-document, which no unit test can observe.
 pub mod document_tabs;
@@ -1418,14 +1384,16 @@ pub mod chunk_ghost_pixels;
 /// and how each keystroke is calibrated from a line the shell already emits.
 pub mod chunk_empty;
 
-/// The operator's own report, driven: Edit text on a REAL CAD sheet, aimed at a
-/// point the ENGINE says carries text. Its header carries why two passing text
-/// checks were not enough — both drive fixtures this repository generated to
-/// verify itself.
+/// **The text-editing round trip** — `DEFECTS.md` D4b: the edit reaches the
+/// bytes and the text the operator did not touch does not move.
 pub mod text_edit;
 
+/// The operator's own report, driven: Edit text on a real CAD sheet, aimed
+/// where the engine says text is.
 pub mod text_edit_real;
 
+/// Marking a text selection — underline, strikeout, squiggly — and the
+/// control correctly disabled without one.
 pub mod text_markup;
 
 /// The canvas text-selection sweep: the one feature whose entire behaviour is a
@@ -1466,6 +1434,8 @@ pub mod annot_delete_many;
 pub mod annot_group_drag;
 /// Several markups, a link and a ce dimension selected and aligned as one undo step.
 pub mod annot_multiselect;
+/// Several form fields deleted by one Delete as one undo step.
+pub mod field_delete_many;
 /// Several form fields selected by Shift-click and marquee, aligned as one undo step.
 pub mod field_multiselect;
 /// Moving, resizing, copying and deleting a link, its quads following its box.

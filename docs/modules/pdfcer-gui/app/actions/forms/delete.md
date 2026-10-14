@@ -1,4 +1,4 @@
-# `app::actions::forms::delete` — the two structural delete verbs, and the
+# `app::actions::forms::delete` — the structural delete verbs, and the
 gate that is the last door to them
 
 `EditSession` has two verbs for removing part of a form and they are
@@ -237,3 +237,25 @@ field as well. That is the right behaviour and it is **not** what the
 operator pressed, so it is said out loud.
 **The selection is cleared ON SUCCESS, never ahead of the call** — see
 [`clear_selection_if_edited`], which carries the whole argument.
+
+### `fn widgets` — several boxes as one undo step
+
+What Delete raises when `FieldSet::all` holds more than one box
+(`FieldAction::delete_selected` picks `DeleteWidget` for one). The engine
+deletes one box per command (G192), so each box goes by `delete_widget` and the
+commands pushed are folded with `coalesce_last(n, CommandKind::DeleteFormField)`.
+
+**Order is load-bearing.** `delete_widget` renumbers the later boxes of the same
+field, so the selection's indices are valid only if each field's boxes go
+highest index first; the list is sorted by field name, then by descending
+widget index, and deduplicated. Deleting lowest first deletes the first radio
+button and then refuses the second with `WidgetIndexOutOfRange`.
+
+A refusal part-way breaks the loop: what was deleted is folded and stays, and
+the status line says how many of how many went (nothing is rolled back, for
+G189's reason). A refusal before any delete is the funnel's ordinary `Err`.
+Over `MAX_UNDO_DEPTH` boxes it refuses with `SelectionTooLargeForOneUndo`
+before deleting anything. The selection clears only if the epoch moved,
+like [`widget`]; clearing the primary invalidates the `FieldSet` with it.
+
+Trace: `delete-widgets-applied deleted=k/n one_step=`.

@@ -1,4 +1,4 @@
-//! # `app::actions::forms::delete` — the two structural delete verbs, and the
+//! # `app::actions::forms::delete` — the structural delete verbs, and the
 //! gate that is the last door to them
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/forms/delete.md`.
@@ -56,6 +56,99 @@ pub(in crate::app::actions) fn widget(doc: &mut OpenDoc, field: &str, widget: us
         })
     });
     clear_selection_if_edited(doc, before);
+}
+
+/// **Delete several boxes as one undo step** — the selected fields of a
+/// multi-field selection. The engine deletes one widget per command (G192),
+/// so each goes by `delete_widget` and the commands pushed are folded by
+/// `coalesce_last`.
+///
+/// A field's later boxes are renumbered when an earlier one goes, so the
+/// boxes are deleted highest index first within each field.
+pub(in crate::app::actions) fn widgets(
+    doc: &mut OpenDoc,
+    widgets: &[crate::app::state::SelectedField],
+) {
+    let Some(first) = widgets.first() else {
+        return;
+    };
+    if refused(doc, "delete-widgets", &first.field) {
+        return;
+    }
+    let mut order: Vec<(&str, usize)> = widgets
+        .iter()
+        .map(|w| (w.field.as_str(), w.widget))
+        .collect();
+    order.sort_by(|a, b| a.0.cmp(b.0).then(b.1.cmp(&a.1)));
+    order.dedup();
+    let before = doc.edit_epoch;
+    let mut report = (0_usize, false);
+    crate::app::actions::apply::vector_edit(
+        doc,
+        "delete-widgets",
+        first.page,
+        order.len(),
+        |session| commit(session, &order, &mut report),
+    );
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "delete-widgets-applied deleted={}/{} one_step={}",
+            report.0,
+            order.len(),
+            report.1
+        )
+    });
+    clear_selection_if_edited(doc, before);
+}
+
+/// Delete each box in `order`, then fold. `report` is (deleted, folded), set
+/// even when a verb refuses part-way, since what was deleted stays deleted.
+fn commit(
+    session: &mut pdfcer_core::edit::EditSession,
+    order: &[(&str, usize)],
+    report: &mut (usize, bool),
+) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
+    use pdfcer_core::edit::{CommandKind, EditError, MAX_UNDO_DEPTH};
+    if order.len() > MAX_UNDO_DEPTH {
+        return Err(EditError::SelectionTooLargeForOneUndo {
+            targets: order.len(),
+            limit: MAX_UNDO_DEPTH,
+        });
+    }
+    let (mut pushed, mut fields_removed, mut failure) = (0_usize, 0_usize, None);
+    for &(field, widget) in order {
+        match session.delete_widget(field, widget) {
+            Ok(gone) => {
+                pushed += 1;
+                fields_removed += usize::from(gone.field_removed);
+            }
+            Err(e) => {
+                failure = Some(e);
+                break;
+            }
+        }
+    }
+    let folded = session.coalesce_last(pushed, CommandKind::DeleteFormField);
+    *report = (pushed, folded);
+    let mut said = vec![crate::text::forms::form_widgets_deleted(
+        pushed,
+        fields_removed,
+    )];
+    if let Some(e) = failure {
+        if pushed == 0 {
+            return Err(e);
+        }
+        said.push(crate::text::forms::form_widgets_partly_deleted(
+            pushed,
+            order.len(),
+            &e.to_string(),
+        ));
+    }
+    if !folded {
+        said.push(crate::text::markup::deleted_not_one_undo().to_owned());
+    }
+    Ok(said)
 }
 
 /// **Decline a structural form delete in WORDS, and keep the selection.**
@@ -240,6 +333,48 @@ mod tests {
         assert!(
             doc.selected_field.is_none(),
             "on success the selection must go: the widget it names no longer exists"
+        );
+    }
+
+    /// Both boxes of one radio group plus a text field go in one undo step:
+    /// the second radio box is found after the first renumbers it, and one
+    /// Undo brings all three back.
+    #[test]
+    fn several_boxes_delete_as_one_undo_step() {
+        let mut doc = open_local_fixture("all-field-kinds.pdf");
+        let pick = |field: &str, widget| SelectedField {
+            field: field.to_owned(),
+            widget,
+            page: 0,
+        };
+        let names = |doc: &OpenDoc| -> Vec<String> {
+            pdfcer_core::forms::parse_acroform(&doc.session.view())
+                .expect("a form")
+                .fields
+                .iter()
+                .map(|f| f.fully_qualified_name.clone())
+                .collect()
+        };
+        let before = names(&doc);
+        widgets(
+            &mut doc,
+            &[
+                pick("RadioGroup", 0),
+                pick("TextOne", 0),
+                pick("RadioGroup", 1),
+            ],
+        );
+        let after = names(&doc);
+        assert_eq!(after.len() + 2, before.len(), "{after:?}");
+        assert!(!after.iter().any(|n| n == "RadioGroup" || n == "TextOne"));
+        std::sync::Arc::get_mut(&mut doc.session)
+            .expect("sole owner in a test")
+            .undo()
+            .expect("one undo");
+        assert_eq!(
+            names(&doc),
+            before,
+            "one Undo did not restore all three boxes"
         );
     }
 }

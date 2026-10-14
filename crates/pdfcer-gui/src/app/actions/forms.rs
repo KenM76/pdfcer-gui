@@ -99,6 +99,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
             dy,
         } => move_widget(doc, &field, widget, dx, dy),
         FieldAction::DeleteWidget { field, widget } => delete::widget(doc, &field, widget),
+        FieldAction::DeleteWidgets { widgets } => delete::widgets(doc, &widgets),
         FieldAction::JoinRadioGroup {
             field,
             widget,
