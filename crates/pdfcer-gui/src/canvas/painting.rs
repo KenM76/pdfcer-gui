@@ -57,6 +57,8 @@ pub(super) struct Frame<'a> {
     /// sharing the field would make the painter's question — *which kind of
     /// thing is this about?* — answerable only by re-inspecting the selection.
     pub annot_ghost: Option<egui::Rect>,
+    /// One ghost per member of a group annotation drag, in canvas space.
+    pub annot_group: &'a [egui::Rect],
     /// The resize ghost's grip and factors, if a resize would commit.
     pub resize_ghost: Option<(handles::Grip, (f32, f32))>,
     /// A ce dimension being dragged to a new placement, as the **page-space**
@@ -154,6 +156,7 @@ pub(super) fn draw(
         marquee,
         ghost,
         annot_ghost,
+        annot_group,
         resize_ghost,
         handle_drag,
         active_tool,
@@ -344,6 +347,9 @@ pub(super) fn draw(
     // `annotdrag::drag` returns `Some` only for a selection whose release will
     // commit, so a locked annotation or a ce dimension draws none.
     if let Some(rect) = annot_ghost {
+        overlay::draw_annot_ghost(&painter, map, *rect);
+    }
+    for rect in *annot_group {
         overlay::draw_annot_ghost(&painter, map, *rect);
     }
     //

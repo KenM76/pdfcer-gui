@@ -65,6 +65,8 @@ pub mod annotclip;
 /// DELTA and not a rectangle: a move has two halves and a renderer can only
 /// see one of them.
 pub mod annotdrag;
+/// Dragging several selected annotations together as one undo step.
+pub mod annotgroup;
 pub mod guides;
 // The nodes of a markup shape a `/Polygon`, `/PolyLine` or `/Line` and the
 // drag that moves, adds or removes one. The operator's *"I also can't edit or

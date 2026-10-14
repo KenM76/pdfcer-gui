@@ -1462,6 +1462,8 @@ pub mod ui_scale;
 
 /// Several annotations, one locked, deleted by one Delete and restored by one Undo.
 pub mod annot_delete_many;
+/// Several annotations, one locked, dragged together and restored by one Undo.
+pub mod annot_group_drag;
 /// Several markups, a link and a ce dimension selected and aligned as one undo step.
 pub mod annot_multiselect;
 /// Several form fields selected by Shift-click and marquee, aligned as one undo step.

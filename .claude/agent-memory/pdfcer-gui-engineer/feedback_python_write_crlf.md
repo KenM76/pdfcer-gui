@@ -17,3 +17,9 @@ any later byte-level comparison, see a different file than git shows.
 **How to apply:** read and write with `newline=''` in every edit script, or run a
 bytes check (count `\r` in HEAD vs working copy) before committing. Related:
 [[feedback_write_python_file]].
+
+**Second cost, measured 2026-10-13:** a CRLF file committed (git normalised the
+blob to LF) and then converted to LF in place stays `M` in `git status` with an
+empty `git diff` — a stale index entry — and the packager stamped the release
+`-dirty`. `git add <file>` re-stages identical bytes and clears it; then
+re-package. Check `git status --short` is empty immediately before packaging.

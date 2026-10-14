@@ -23,6 +23,7 @@ pub struct Previews {
     pub ghost: Option<Vec2>,
     /// Where a dragged markup would land, in canvas space.
     pub annot: Option<egui::Rect>,
+    pub annot_group: Vec<egui::Rect>,
     /// Where a dragged form-field box would land, in canvas space.
     ///
     /// A fourth field rather than sharing [`Self::annot`], even though the
@@ -122,7 +123,11 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     // days, and no test could see it -- every assertion about
     // annotations asked whether one could be selected, restyled or
     // deleted, and all three were true.
-    if selection.annot().is_some() {
+    if let Some(ghosts) =
+        crate::canvas::annotgroup::drag(delta, phase, doc.current_page(), selection, actions)
+    {
+        out.annot_group = ghosts;
+    } else if selection.annot().is_some() {
         if let Some(placed) = dimdrag::drag(
             dimdrag::Frame {
                 delta,

@@ -560,6 +560,7 @@ pub fn look(
         // turned mark harder to pick up than an upright one. The eight
         // squares moved into the turned frame; the body did not.
         annotdrag::grab_box(map, selection).is_some_and(|f| f.bounds().contains(p))
+            || crate::canvas::annotgroup::body_at(map, selection, p)
     });
 
     // Whether the press landed inside the selected FORM FIELD's box.

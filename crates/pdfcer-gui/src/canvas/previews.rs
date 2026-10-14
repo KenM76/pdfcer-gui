@@ -90,6 +90,9 @@ pub struct Slots {
     /// painter's question *"which kind of thing is this rectangle about?"*
     /// answerable only by looking at the selection.
     pub annot_ghost: Option<egui::Rect>,
+    /// Several annotations being dragged together, one canvas-space
+    /// rectangle per member that will move (`canvas::annotgroup`).
+    pub annot_group: Vec<egui::Rect>,
     /// The quads a text-following highlight would cover, in canvas space.
     ///
     /// A **list** of rectangles — one per line the drag crosses — where a band
