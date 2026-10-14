@@ -178,7 +178,7 @@ pub fn circular_plan(
         let deltas = placements.iter().map(|p| (p.dx, p.dy)).collect();
         return moves_action(doc, m, deltas, "circular").ok_or(CircleRefusal::NothingMoves);
     }
-    if m.in_form {
+    if m.in_form || !m.leaves.is_empty() {
         return Err(CircleRefusal::RotateInForm);
     }
     if !m.widgets.is_empty() || !m.annots.is_empty() {

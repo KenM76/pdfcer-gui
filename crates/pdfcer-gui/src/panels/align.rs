@@ -25,11 +25,13 @@ use crate::text::panels::align as t;
 
 mod arrange;
 mod handles;
+mod leftout;
 /// The *On-canvas alignment* toggle.
 pub const ON_CANVAS_REGION: &str = "align.on_canvas"; // ui-text-exempt: diagnostic region name
 mod nodes;
 pub use arrange::{CircleSource, CircleUi, GridUi};
 pub use handles::{HANDLE_REGIONS, publish_box, show as show_handles};
+pub use leftout::LeftOut;
 pub use nodes::NODE_REGIONS;
 
 /// The panel's whole extent.
@@ -240,11 +242,16 @@ pub struct Measured {
     pub objects: Vec<usize>,
     /// The selection is parts of a placed drawing and no page object.
     pub in_form: bool,
+    /// Parts of placed drawings selected beside page objects (never set when
+    /// [`Self::in_form`]). Their boxes follow the objects' in [`Self::boxes`].
+    pub leaves: Vec<usize>,
     pub boxes: Vec<Bx>,
     pub anchors: Vec<Option<(f64, f64)>>,
     pub frame: Frame,
+    /// What the selection holds that this measure does not move.
+    pub left_out: LeftOut,
     /// Selected form-field widgets on the page. Their boxes follow the
-    /// objects' in [`Self::boxes`], with no text anchor.
+    /// leaves' in [`Self::boxes`], with no text anchor.
     pub widgets: Vec<pdfcer_gui_base::docidentity::SelectedField>,
     /// Selected markups, links and ce dimensions on the page. Their boxes
     /// follow the widgets' in [`Self::boxes`], with no text anchor.
@@ -327,11 +334,17 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
         .collect();
     let fields = field_boxes(ctx, doc, page);
     let marks = annot_boxes(doc, page);
-    if order.is_empty() && fields.is_empty() && marks.is_empty() {
+    let provider = doc.page_objects()?;
+    let (beside, carried) = if in_form {
+        (Vec::new(), 0)
+    } else {
+        let leaf_order: Vec<usize> = picked.iter().filter_map(|t| t.leaf_index()).collect();
+        leftout::uncarried(provider.page_objects(), &order, leaf_order)
+    };
+    if order.is_empty() && beside.is_empty() && fields.is_empty() && marks.is_empty() {
         return None;
     }
     let sheet = doc.pages.get(page)?;
-    let provider = doc.page_objects()?;
     let all = &provider.page_objects().objects;
     // The sheet as the canvas draws it: its device box at scale 1.
     let (w, h, _) = pdfcer_render::page_device_geometry(sheet, 1.0);
@@ -355,6 +368,18 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
         boxes.push(b);
         anchors.push(text_anchor(object, sheet));
     }
+    let mut leaves = Vec::with_capacity(beside.len());
+    for i in beside {
+        let Some(object) = object_in(provider.page_objects(), true, i) else {
+            continue;
+        };
+        let Some(b) = canvas_box(object.page_bbox(), sheet) else {
+            continue;
+        };
+        leaves.push(i);
+        boxes.push(b);
+        anchors.push(text_anchor(object, sheet));
+    }
     let mut widgets = Vec::with_capacity(fields.len());
     for (field, b) in fields {
         widgets.push(field);
@@ -371,8 +396,13 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
         page,
         objects,
         in_form,
+        leaves,
         boxes,
         anchors,
+        left_out: LeftOut {
+            carried,
+            elsewhere: leftout::elsewhere(doc, page),
+        },
         widgets,
         annots,
         frame: Frame {
@@ -485,8 +515,10 @@ pub fn plan(doc: &OpenDoc, m: &Measured, ops: &[Op], settings: AlignUi) -> Optio
     moves_action(doc, m, sum, first.gesture())
 }
 
-/// Canvas `deltas`, one per measured object, as one page-space
-/// [`VectorAction::MoveEach`], or `None` when every delta is negligible.
+/// Canvas `deltas`, one per measured box, as page-space moves: one
+/// [`VectorAction::MoveEach`] or [`VectorAction::MoveEachInForm`] when one
+/// engine verb covers them and nothing was left out, else one
+/// [`VectorAction::MoveMixed`]. `None` when every delta is negligible.
 fn moves_action(
     doc: &OpenDoc,
     m: &Measured,
@@ -504,11 +536,18 @@ fn moves_action(
         Some((d.dx, d.dy))
     };
     let (object_deltas, rest) = deltas.split_at(m.objects.len().min(deltas.len()));
+    let (leaf_deltas, rest) = rest.split_at(m.leaves.len().min(rest.len()));
     let (widget_deltas, annot_deltas) = rest.split_at(m.widgets.len().min(rest.len()));
     let moves: Vec<(usize, f64, f64)> = m
         .objects
         .iter()
         .zip(object_deltas)
+        .filter_map(|(&i, &d)| to_page(d).map(|(dx, dy)| (i, dx, dy)))
+        .collect();
+    let leaf_moves: Vec<(usize, f64, f64)> = m
+        .leaves
+        .iter()
+        .zip(leaf_deltas)
         .filter_map(|(&i, &d)| to_page(d).map(|(dx, dy)| (i, dx, dy)))
         .collect();
     let widgets: Vec<_> = m
@@ -523,35 +562,52 @@ fn moves_action(
         .zip(annot_deltas)
         .filter_map(|(a, &d)| to_page(d).map(|(dx, dy)| (a.clone(), dx, dy)))
         .collect();
-    if !widgets.is_empty() || !annots.is_empty() {
+    let (objects, leaves) = if m.in_form {
+        (Vec::new(), moves)
+    } else {
+        (moves, leaf_moves)
+    };
+    let provider = doc.page_objects()?;
+    let mut leaves = leftout::by_drawing(provider.page_objects(), leaves);
+    let notes = m.left_out.notes();
+    // One engine verb covers page objects, or the parts of ONE drawing; any
+    // other mix, or a sentence to say, goes through the folding commit.
+    let verbs = usize::from(!objects.is_empty())
+        + leaves.len()
+        + usize::from(!widgets.is_empty())
+        + usize::from(!annots.is_empty());
+    if verbs == 0 {
+        return None;
+    }
+    if verbs > 1 || !widgets.is_empty() || !annots.is_empty() || !notes.is_empty() {
         return Some(
             VectorAction::MoveMixed {
                 page: m.page,
-                objects: moves,
-                in_form: m.in_form,
+                objects,
+                leaves,
                 widgets,
                 annots,
+                notes,
                 gesture,
             }
             .into(),
         );
     }
-    (!moves.is_empty()).then(|| {
-        if m.in_form {
-            VectorAction::MoveEachInForm {
+    Some(
+        match leaves.pop() {
+            Some(moves) => VectorAction::MoveEachInForm {
                 page: m.page,
                 moves,
                 gesture,
-            }
-        } else {
-            VectorAction::MoveEach {
+            },
+            None => VectorAction::MoveEach {
                 page: m.page,
-                moves,
+                moves: objects,
                 gesture,
-            }
+            },
         }
-        .into()
-    })
+        .into(),
+    )
 }
 
 /// Run `ops` against the current selection as one step: push the action, or
@@ -564,11 +620,12 @@ pub fn run(
     actions: &mut Vec<Action>,
 ) {
     let Some(m) = measure(ctx, doc) else {
+        let (reason, said) = leftout::unmeasured(doc);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
-            format!("align-declined op={ops:?} reason=nothing-selected")
+            format!("align-declined op={ops:?} reason={reason}")
         });
-        crate::app::actions::record_note(doc.edit_epoch, t::nothing_selected().to_owned());
+        crate::app::actions::record_note(doc.edit_epoch, said);
         return;
     };
     match plan(doc, &m, ops, settings) {
@@ -581,7 +638,9 @@ pub fn run(
                     m.boxes.len()
                 )
             });
-            crate::app::actions::record_note(doc.edit_epoch, t::already_aligned().to_owned());
+            let mut said = vec![t::already_aligned().to_owned()];
+            said.extend(m.left_out.notes());
+            crate::app::actions::record_notes(doc.edit_epoch, said);
         }
     }
 }
@@ -606,10 +665,13 @@ fn contents(ui: &mut Ui, doc: &OpenDoc, settings: &mut AlignUi, actions: &mut Ve
     let measured = measure(ui.ctx(), doc);
     let n = measured.as_ref().map_or(0, |m| m.boxes.len());
     ui.label(if n == 0 {
-        t::nothing_selected().to_owned()
+        leftout::unmeasured(doc).1
     } else {
         t::selected_count(n)
     });
+    for line in measured.iter().flat_map(|m| m.left_out.notes()) {
+        ui.label(line);
+    }
     ui.horizontal(|ui| {
         for (index, tab) in Tab::ALL.into_iter().enumerate() {
             let response = egui_shell::tabshape::underline(ui, settings.tab == tab, t::tab(index));

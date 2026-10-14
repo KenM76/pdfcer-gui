@@ -2,9 +2,12 @@
 //!
 //! Commits [`VectorAction::MoveMixed`](super::VectorAction::MoveMixed): what
 //! Align and Distribute raise when the selection holds form fields or
-//! annotations. The engine moves several objects in one command but a widget
-//! or an annotation only one at a time, so this is one `move_objects_each`
-//! (when there is content), one `move_widget` per widget, one
+//! annotations, parts of several placed drawings, or parts beside page
+//! objects, or leaves something selected out. The engine moves several objects
+//! in one command, the parts of one drawing in another, but a widget or an
+//! annotation only one at a time, so this is one `move_objects_each` (when
+//! there is content), one `move_objects_each_in_form` per drawing, one
+//! `move_widget` per widget, one
 //! `move_annotation` per markup or link and one `place_dimension` per ce
 //! dimension, then `coalesce_last` over every command pushed. Filed as G189
 //! (widgets) and G190 (annotations); batch verbs retire it.
@@ -32,14 +35,18 @@ use crate::text::panels::align as t;
 /// What one Align or Distribute moves, each with its page-space delta.
 pub(super) struct Moves<'a> {
     pub objects: &'a [(usize, f64, f64)],
-    pub in_form: bool,
+    /// One list per placed drawing.
+    pub leaves: &'a [Vec<(usize, f64, f64)>],
+    /// Said first, whatever moves.
+    pub notes: &'a [String],
     pub widgets: &'a [(SelectedField, f64, f64)],
     pub annots: &'a [(AnnotTarget, f64, f64)],
 }
 
 /// Apply one [`VectorAction::MoveMixed`](super::VectorAction::MoveMixed).
 pub(super) fn apply(doc: &mut OpenDoc, page: usize, moves: &Moves<'_>, gesture: &'static str) {
-    let n = moves.objects.len() + moves.widgets.len() + moves.annots.len();
+    let parts: usize = moves.leaves.iter().map(Vec::len).sum();
+    let n = moves.objects.len() + parts + moves.widgets.len() + moves.annots.len();
     let mut report = Report::default();
     super::apply::vector_edit_on_page(doc, "move-mixed", page, n, |session| {
         let (said, done) = commit(session, page, moves)?;
@@ -60,15 +67,20 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, moves: &Moves<'_>, gesture: 
             )
             .collect();
         format!(
-            "move-mixed-applied gesture={gesture} page={page} objects={}/{} widgets={}/{} \
-             annots={}/{} one_step={} moves={}",
+            "move-mixed-applied gesture={gesture} page={page} objects={}/{} parts={}/{} \
+             drawings={}/{} widgets={}/{} annots={}/{} one_step={} notes={} moves={}",
             report.objects,
             moves.objects.len(),
+            report.parts,
+            parts,
+            report.drawings,
+            moves.leaves.len(),
             report.widgets,
             moves.widgets.len(),
             report.annots,
             moves.annots.len(),
             report.folded,
+            moves.notes.len(),
             asked.join(";")
         )
     });
@@ -78,6 +90,8 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, moves: &Moves<'_>, gesture: 
 #[derive(Default)]
 struct Report {
     objects: usize,
+    parts: usize,
+    drawings: usize,
     widgets: usize,
     annots: usize,
     folded: bool,
@@ -116,21 +130,29 @@ fn commit(
     page: usize,
     moves: &Moves<'_>,
 ) -> Result<(Vec<String>, Report), Refused> {
-    let mut said = Vec::new();
+    let mut said = moves.notes.to_vec();
     let mut pushed = 0_usize;
     if !moves.objects.is_empty() {
-        if moves.in_form {
-            said.extend(
-                session
-                    .move_objects_each_in_form(page, moves.objects)?
-                    .disclosures,
-            );
-        } else {
-            said.extend(session.move_objects_each(page, moves.objects)?);
-        }
+        said.extend(session.move_objects_each(page, moves.objects)?);
         pushed += 1;
     }
     let mut first_refusal: Option<Refused> = None;
+    let mut drawing_refusal: Option<String> = None;
+    let (mut drawings, mut parts) = (0_usize, 0_usize);
+    for group in moves.leaves {
+        match session.move_objects_each_in_form(page, group) {
+            Ok(outcome) => {
+                drawings += 1;
+                parts += group.len();
+                pushed += 1;
+                said.extend(outcome.disclosures);
+            }
+            Err(e) => {
+                drawing_refusal.get_or_insert_with(|| e.to_string());
+                first_refusal.get_or_insert(Refused::Engine(e));
+            }
+        }
+    }
     let mut widget_refusal: Option<String> = None;
     let mut moved_widgets = 0_usize;
     for (field, dx, dy) in moves.widgets {
@@ -174,7 +196,7 @@ fn commit(
     {
         return Err(e);
     }
-    let kind = if !moves.objects.is_empty() {
+    let kind = if !moves.objects.is_empty() || drawings > 0 {
         CommandKind::MoveObject
     } else if moved_widgets > 0 {
         CommandKind::MoveWidget
@@ -182,6 +204,13 @@ fn commit(
         CommandKind::MoveAnnotation
     };
     let folded = session.coalesce_last(pushed, kind);
+    if let Some(reason) = drawing_refusal {
+        said.push(t::drawings_partly_moved(
+            drawings,
+            moves.leaves.len(),
+            &reason,
+        ));
+    }
     if let Some(reason) = widget_refusal {
         said.push(t::fields_partly_moved(
             moved_widgets,
@@ -206,6 +235,8 @@ fn commit(
         said,
         Report {
             objects: moves.objects.len(),
+            parts,
+            drawings,
             widgets: moved_widgets,
             annots: moved_annots,
             folded,

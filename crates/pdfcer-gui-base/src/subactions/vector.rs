@@ -109,25 +109,30 @@ pub enum VectorAction {
         /// The gesture, for the trace.
         gesture: &'static str,
     },
-    /// [`Self::MoveEach`] (or [`Self::MoveEachInForm`]) **plus form-field
-    /// widgets**, as one undo step — what Align and Distribute commit when
-    /// the selection holds form fields.
+    /// Page objects, parts of placed drawings, form-field widgets and
+    /// annotations moved as one undo step — what Align and Distribute commit
+    /// when one engine verb cannot cover the selection or something selected
+    /// is left out, and what a group drag of fields or annotations commits.
     ///
-    /// The engine has no batch widget move (G189), so the commit is one
-    /// `move_objects_each` plus one `move_widget` per widget, folded with
+    /// The engine has no batch widget or annotation move (G189, G190), so the
+    /// commit is one `move_objects_each`, one `move_objects_each_in_form` per
+    /// drawing, one verb per widget or annotation, folded with
     /// `coalesce_last`. Deltas are page space, Y up.
     MoveMixed {
         /// The 0-based page.
         page: usize,
-        /// `(index, dx, dy)` per content object; may be empty.
+        /// `(index, dx, dy)` per page object; may be empty.
         objects: Vec<(usize, f64, f64)>,
-        /// The object indices are leaf indices of one placed drawing.
-        in_form: bool,
+        /// `(leaf, dx, dy)` per part, one list per placed drawing; may be empty.
+        leaves: Vec<Vec<(usize, f64, f64)>>,
         /// `(field, widget, dx, dy)` per widget; may be empty.
         widgets: Vec<(crate::docidentity::SelectedField, f64, f64)>,
         /// `(annotation, dx, dy)` per markup, link or ce dimension; may be
         /// empty, but not together with `widgets`.
         annots: Vec<(crate::annotselection::AnnotTarget, f64, f64)>,
+        /// Sentences said with the outcome: what the selection held that
+        /// does not move.
+        notes: Vec<String>,
         /// The gesture, for the trace.
         gesture: &'static str,
     },

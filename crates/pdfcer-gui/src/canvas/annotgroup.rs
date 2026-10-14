@@ -72,9 +72,10 @@ pub fn drag(
         VectorAction::MoveMixed {
             page: page_index,
             objects: Vec::new(),
-            in_form: false,
+            leaves: Vec::new(),
             widgets: Vec::new(),
             annots,
+            notes: Vec::new(),
             // ui-text-exempt: diagnostic gesture name, never displayed
             gesture: "drag",
         }

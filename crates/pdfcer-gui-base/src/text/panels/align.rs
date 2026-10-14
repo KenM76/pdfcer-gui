@@ -173,6 +173,60 @@ pub const fn nothing_selected() -> &'static str {
      Shift-click the rest."
 }
 
+/// Parts of a placed drawing selected together with the drawing itself.
+#[must_use]
+pub fn parts_ride_with_drawing(n: usize) -> String {
+    if n == 1 {
+        "1 part of a placed drawing moves with its drawing, which is also selected.".to_owned()
+    } else {
+        format!("{n} parts of placed drawings move with their drawings, which are also selected.")
+    }
+}
+
+/// Things selected on pages other than the one in view, beside some on it.
+#[must_use]
+pub fn left_on_other_pages(n: usize) -> String {
+    if n == 1 {
+        "1 thing selected on another page stays where it is: Align and Distribute act on the \
+         page you are viewing."
+            .to_owned()
+    } else {
+        format!(
+            "{n} things selected on other pages stay where they are: Align and Distribute act \
+             on the page you are viewing."
+        )
+    }
+}
+
+/// Everything selected is on pages other than the one in view.
+#[must_use]
+pub fn all_on_other_pages(n: usize) -> String {
+    if n == 1 {
+        "What is selected is on another page. Align and Distribute act on the page you are \
+         viewing: go to that page, or select there."
+            .to_owned()
+    } else {
+        format!(
+            "The {n} things selected are on other pages. Align and Distribute act on the page \
+             you are viewing: go to that page, or select there."
+        )
+    }
+}
+
+/// The selection is parts inside one object.
+#[must_use]
+pub const fn parts_rung() -> &'static str {
+    "Align and Distribute move whole objects, and you are selecting parts inside one. Press \
+     Esc to go back to whole objects."
+}
+
+/// Said when the parts of some placed drawings moved and others were refused;
+/// what moved is still one undo step.
+#[must_use]
+pub fn drawings_partly_moved(moved: usize, of: usize, reason: &str) -> String {
+    format!("Parts of {moved} of {of} placed drawings moved; the rest were refused: {reason}")
+}
+
 /// Said when some form fields of an Align or Distribute moved and others were
 /// refused; what moved is still one undo step.
 #[must_use]
