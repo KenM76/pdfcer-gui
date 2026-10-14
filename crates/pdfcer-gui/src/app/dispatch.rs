@@ -111,6 +111,33 @@ impl PdfcerApp {
         self.dispatch_command(ctx, &id, actions);
     }
 
+    /// Dispatch every `Action::Command` in `actions`, in order, through
+    /// [`Self::dispatch_command`]; any actions the dispatches raise are
+    /// pushed onto the same vector.
+    ///
+    /// Called twice a frame: after the surfaces that draw before the dialogs
+    /// (so a dialog a command opens draws this frame), and after the dialogs
+    /// and floating panels (so a command a dialog raises is not left for the
+    /// apply phase, which has no `egui::Context` and traces it undrained).
+    pub(super) fn drain_commands(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) {
+        if !actions.iter().any(|a| matches!(a, Action::Command(_))) {
+            return;
+        }
+        let mut invoked: Vec<String> = Vec::new();
+        actions.retain(|a| match a {
+            Action::Command(id) => {
+                invoked.push(id.clone());
+                false
+            }
+            _ => true,
+        });
+        for id in invoked {
+            self.dispatch_command(ctx, &id, actions);
+        }
+        // What a late dispatch opens draws next frame; ask for one.
+        ctx.request_repaint();
+    }
+
     /// Do whatever this build does about the command named `id`.
     pub(super) fn dispatch_command(
         &mut self,

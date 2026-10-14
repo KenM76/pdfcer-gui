@@ -7,6 +7,17 @@
 Consumed on the first frame that reads it and `None` for ever after, so a
 scripted invocation happens exactly once rather than sixty times a second.
 
+# Commands are drained twice a frame
+
+`Action::Command` needs `dispatch_command`, which needs the `egui::Context`
+the apply phase never gets. `PdfcerApp::drain_commands` therefore runs once
+before the dialogs draw, so a ribbon or keyboard command opens its dialog on
+the same frame, and once after the dialogs and floating panels, so a button
+inside one (Recognise text's *Manage OCR models…*, Find's OCR offer) is
+dispatched too. A command that reaches the apply phase is traced
+`command-action-undrained`. The second drain asks for a repaint, since what
+it opens draws on the next frame.
+
 # Why this seam exists, and it is R1 rather than convenience
 
 R1 says a phase is not done until its behaviour is asserted by **driving the

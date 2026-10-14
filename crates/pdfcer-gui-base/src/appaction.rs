@@ -1469,9 +1469,10 @@ pub enum Action {
     /// **Drained during the frame, never in [`PdfcerApp::apply_actions`]**, for
     /// two reasons that are hard rather than stylistic: `dispatch_command`
     /// needs an `&egui::Context` and the apply phase is deliberately given
-    /// none, and a dialog it opens must be drawn by `DialogsState::show` on the
-    /// same frame. The drain and its full argument are at the call site in
-    /// `crate::app`; the arm below exists only to notice if it is ever removed.
+    /// none. `PdfcerApp::drain_commands` runs before the dialogs draw and again
+    /// after them and the floating panels, so a command a dialog raises is
+    /// dispatched too; what it opens then draws on the next frame. The arm
+    /// below exists only to notice if a drain is ever removed.
     Command(String),
 }
 

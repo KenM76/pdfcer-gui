@@ -26,7 +26,6 @@
 
 use eframe::egui;
 
-use super::actions::Action;
 use super::state::Status;
 use super::{PdfcerApp, REGION_CENTRAL_PANEL, keyboard, modes, window};
 
@@ -905,23 +904,9 @@ impl eframe::App for PdfcerApp {
         // a dialog opened by the dispatch must be drawn by `DialogsState::show`
         // three lines below — on this frame, not the next one.
         //
-        // The drain is unconditional and cheap: on the overwhelming majority of
-        // frames `actions` is empty and this is one `iter().any`. Dispatched
-        // commands may themselves raise actions, which is why the loop pushes
-        // into the same vector the apply phase will read.
-        if actions.iter().any(|a| matches!(a, Action::Command(_))) {
-            let mut invoked: Vec<String> = Vec::new();
-            actions.retain(|a| match a {
-                Action::Command(id) => {
-                    invoked.push(id.clone());
-                    false
-                }
-                _ => true,
-            });
-            for id in invoked {
-                self.dispatch_command(&ctx, &id, &mut actions);
-            }
-        }
+        // A command a dialog or a floating panel raises is drained again after
+        // they draw, below; what it opens draws on the next frame.
+        self.drain_commands(&ctx, &mut actions);
 
         crate::diag::frame_phase("find");
         // Step 2b — modal dialogs, LAST among the surfaces.
@@ -996,6 +981,7 @@ impl eframe::App for PdfcerApp {
         // the window that raised it.
         //
         self.floating_panels(&ctx, &mut actions);
+        self.drain_commands(&ctx, &mut actions);
         if let Status::Open(doc) = &self.status {
             crate::panels::align::show_handles(&ctx, doc, self.panels.align, &mut actions);
             crate::panels::properties::layer::window(&ctx, doc, &mut actions);
