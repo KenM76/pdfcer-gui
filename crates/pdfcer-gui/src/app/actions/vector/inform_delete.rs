@@ -8,8 +8,8 @@
 //! part on every one of them; that is the engine's `FormSurgeryOutcome`, and
 //! the funnel line carries its disclosures.
 
-use super::fold_undo;
 use crate::app::actions::apply::vector_edit_on_page;
+use crate::app::actions::foldeach::fold_or_say;
 use crate::app::state::OpenDoc;
 use crate::canvas::target::TargetId;
 use pdfcer_core::edit::{CommandKind, EditError};
@@ -53,7 +53,7 @@ pub(super) fn text_line(doc: &mut OpenDoc, page: usize, leaf: usize, line: usize
                     .disclosures,
             );
         }
-        fold_undo(
+        fold_or_say(
             session,
             pieces,
             CommandKind::DeleteTextRun,

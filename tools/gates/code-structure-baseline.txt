@@ -238,7 +238,6 @@ fn crates/pdfcer-gui/src/app/actions/handsign.rs::place_typed
 fn crates/pdfcer-gui/src/app/actions/importtext.rs::import
 fn crates/pdfcer-gui/src/app/actions/merge.rs::write_merge
 fn crates/pdfcer-gui/src/app/actions/models.rs::save_mesh
-fn crates/pdfcer-gui/src/app/actions/movemixed.rs::commit
 fn crates/pdfcer-gui/src/app/actions/newcomment.rs::apply
 fn crates/pdfcer-gui/src/app/actions/pages.rs::apply
 fn crates/pdfcer-gui/src/app/actions/pages.rs::insert_from_view

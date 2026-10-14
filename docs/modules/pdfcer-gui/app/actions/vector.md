@@ -92,20 +92,6 @@ The `Ref` is dropped at the end of the statement, before `vector_edit`
 takes `&mut doc` — the same ordering `DeleteSelection`'s erase preview has
 to observe, and for the same reason.
 
-### `fn fold_undo`
-
-A visual line is however many show operators its producer wrote it as, so
-one drag or one Delete is `pieces` engine commands. `coalesce_last` answers
-`false` **only** when the undo stack was shorter than `pieces`; every change
-is applied and only the grouping failed, so the contract's instruction is to
-disclose and neither retry nor ignore.
-
-The de-duplication is not cosmetic. `plan_move_text_run` emits one identical
-inserted-`Td` sentence per run it had to place an operator for, and a line
-of nine pieces would otherwise report the same fact nine times — which
-reads as nine separate things having happened. First-seen order is kept, so
-the sentences still arrive in the order the engine produced them.
-
 ### `fn apply`
 
 Routed here from `super::apply` rather than living there, which is the shape

@@ -152,8 +152,8 @@ with its own row, in [`crate::checks::chunk_multi_move`].
 ### `const EXPECTED_DEPTH`
 
 **One**, and that is the assertion: the plural move issues one
-`move_text_run` per run of every selected line and `fold_undo` coalesces
-them into a single entry. A build that skipped the fold moves three lines
+`move_text_runs` per selected line, coalesced into a single entry. A build
+that skipped the fold moves three lines
 and then needs one press of undo per line, which the operator experiences as
 undo not working.
 

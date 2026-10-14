@@ -18,10 +18,8 @@
 //!
 //! ## A refusal does not roll the others back
 //!
-//! The only public way to take a command back is `EditSession::undo`, which
-//! leaves it on the Redo stack, where Redo would re-apply a partial move the
-//! operator never saw. So what was applied stays applied, is still folded into
-//! one undo step, and the status line says how many moved and why the rest
+//! What was applied stays applied and is folded into one undo step (see
+//! [`super::foldeach`]); the status line says how many moved and why the rest
 //! did not.
 
 use pdfcer_core::edit::{CommandKind, EditError, EditSession};
@@ -29,6 +27,7 @@ use pdfcer_gui_base::annotkind::AnnotKind;
 use pdfcer_gui_base::annotselection::AnnotTarget;
 use pdfcer_gui_base::docidentity::SelectedField;
 
+use super::foldeach::{OnRefusal, Run, each};
 use crate::app::state::OpenDoc;
 use crate::text::panels::align as t;
 
@@ -124,6 +123,15 @@ impl crate::app::unlock::Refusal for Refused {
     }
 }
 
+/// Each kind's run, in the order they were applied.
+struct Runs {
+    drawings: Run<EditError>,
+    parts: usize,
+    widgets: Run<EditError>,
+    annots: Run<Refused>,
+    placed_dimension: bool,
+}
+
 /// Run the verbs and fold them. `Err` only when nothing at all was applied.
 fn commit(
     session: &mut EditSession,
@@ -131,117 +139,126 @@ fn commit(
     moves: &Moves<'_>,
 ) -> Result<(Vec<String>, Report), Refused> {
     let mut said = moves.notes.to_vec();
-    let mut pushed = 0_usize;
     if !moves.objects.is_empty() {
         said.extend(session.move_objects_each(page, moves.objects)?);
-        pushed += 1;
     }
-    let mut first_refusal: Option<Refused> = None;
-    let mut drawing_refusal: Option<String> = None;
-    let (mut drawings, mut parts) = (0_usize, 0_usize);
-    for group in moves.leaves {
-        match session.move_objects_each_in_form(page, group) {
-            Ok(outcome) => {
-                drawings += 1;
-                parts += group.len();
-                pushed += 1;
-                said.extend(outcome.disclosures);
-            }
-            Err(e) => {
-                drawing_refusal.get_or_insert_with(|| e.to_string());
-                first_refusal.get_or_insert(Refused::Engine(e));
-            }
+    let mut runs = run_each(session, page, moves);
+    let pushed = usize::from(!moves.objects.is_empty())
+        + runs.drawings.pushed
+        + runs.widgets.pushed
+        + runs.annots.pushed;
+    if pushed == 0 {
+        let first = (runs.drawings.failure.take().map(Refused::Engine))
+            .or_else(|| runs.widgets.failure.take().map(Refused::Engine))
+            .or_else(|| runs.annots.failure.take());
+        if let Some(e) = first {
+            return Err(e);
         }
     }
-    let mut widget_refusal: Option<String> = None;
-    let mut moved_widgets = 0_usize;
-    for (field, dx, dy) in moves.widgets {
-        match session.move_widget(&field.field, field.widget, *dx, *dy) {
-            Ok(outcome) => {
-                moved_widgets += 1;
-                pushed += 1;
-                if outcome.siblings_left_behind > 0 {
-                    said.push(crate::text::forms::widget_siblings_unmoved(
-                        outcome.siblings_left_behind,
-                    ));
-                }
-            }
-            Err(e) => {
-                widget_refusal.get_or_insert_with(|| e.to_string());
-                first_refusal.get_or_insert(Refused::Engine(e));
-            }
-        }
-    }
-    let mut annot_refusal: Option<String> = None;
-    let mut moved_annots = 0_usize;
-    let mut placed_dimension = false;
-    for (target, dx, dy) in moves.annots {
-        match move_annot(session, target, *dx, *dy) {
-            Ok(popup_left) => {
-                moved_annots += 1;
-                pushed += 1;
-                placed_dimension |= target.kind == AnnotKind::CeDimension;
-                if popup_left {
-                    said.push(crate::text::markup::popup_left_behind());
-                }
-            }
-            Err(e) => {
-                annot_refusal.get_or_insert_with(|| e.to_string());
-                first_refusal.get_or_insert(e);
-            }
-        }
-    }
-    if pushed == 0
-        && let Some(e) = first_refusal
-    {
-        return Err(e);
-    }
-    let kind = if !moves.objects.is_empty() || drawings > 0 {
+    let kind = if !moves.objects.is_empty() || runs.drawings.pushed > 0 {
         CommandKind::MoveObject
-    } else if moved_widgets > 0 {
+    } else if runs.widgets.pushed > 0 {
         CommandKind::MoveWidget
     } else {
         CommandKind::MoveAnnotation
     };
     let folded = session.coalesce_last(pushed, kind);
-    if let Some(reason) = drawing_refusal {
+    for told in [&runs.drawings.told, &runs.widgets.told, &runs.annots.told] {
+        said.extend(told.iter().cloned());
+    }
+    said.extend(words(&runs, moves, folded));
+    let report = Report {
+        objects: moves.objects.len(),
+        parts: runs.parts,
+        drawings: runs.drawings.pushed,
+        widgets: runs.widgets.pushed,
+        annots: runs.annots.pushed,
+        folded,
+    };
+    Ok((said, report))
+}
+
+/// One command per drawing, per widget and per annotation, each kind tried
+/// to the end whatever the others refuse.
+fn run_each(session: &mut EditSession, page: usize, moves: &Moves<'_>) -> Runs {
+    let mut parts = 0_usize;
+    let drawings = each(session, moves.leaves, OnRefusal::Continue, |s, group| {
+        let outcome = s.move_objects_each_in_form(page, group)?;
+        parts += group.len();
+        Ok::<_, EditError>(Some(outcome.disclosures))
+    });
+    let widgets = each(
+        session,
+        moves.widgets,
+        OnRefusal::Continue,
+        |s, (field, dx, dy)| {
+            let outcome = s.move_widget(&field.field, field.widget, *dx, *dy)?;
+            let left = outcome.siblings_left_behind;
+            Ok::<_, EditError>(Some(
+                (left > 0)
+                    .then(|| crate::text::forms::widget_siblings_unmoved(left))
+                    .into_iter()
+                    .collect(),
+            ))
+        },
+    );
+    let mut placed_dimension = false;
+    let annots = each(
+        session,
+        moves.annots,
+        OnRefusal::Continue,
+        |s, (target, dx, dy)| {
+            let popup_left = move_annot(s, target, *dx, *dy)?;
+            placed_dimension |= target.kind == AnnotKind::CeDimension;
+            Ok::<_, Refused>(Some(
+                popup_left
+                    .then(crate::text::markup::popup_left_behind)
+                    .into_iter()
+                    .collect(),
+            ))
+        },
+    );
+    Runs {
+        drawings,
+        parts,
+        widgets,
+        annots,
+        placed_dimension,
+    }
+}
+
+/// What the status line adds after the verbs' own disclosures: each kind
+/// that moved only partly, ce dimensions staying attached, an unfolded step.
+fn words(runs: &Runs, moves: &Moves<'_>, folded: bool) -> Vec<String> {
+    let mut said = Vec::new();
+    if let Some(e) = &runs.drawings.failure {
         said.push(t::drawings_partly_moved(
-            drawings,
+            runs.drawings.pushed,
             moves.leaves.len(),
-            &reason,
+            &e.to_string(),
         ));
     }
-    if let Some(reason) = widget_refusal {
+    if let Some(e) = &runs.widgets.failure {
         said.push(t::fields_partly_moved(
-            moved_widgets,
+            runs.widgets.pushed,
             moves.widgets.len(),
-            &reason,
+            &e.to_string(),
         ));
     }
-    if let Some(reason) = annot_refusal {
+    if let Some(e) = &runs.annots.failure {
         said.push(t::annots_partly_moved(
-            moved_annots,
+            runs.annots.pushed,
             moves.annots.len(),
-            &reason,
+            &e.to_string(),
         ));
     }
-    if placed_dimension {
+    if runs.placed_dimension {
         said.push(t::dimensions_stay_attached().to_owned());
     }
     if !folded {
         said.push(t::not_one_undo().to_owned());
     }
-    Ok((
-        said,
-        Report {
-            objects: moves.objects.len(),
-            parts,
-            drawings,
-            widgets: moved_widgets,
-            annots: moved_annots,
-            folded,
-        },
-    ))
+    said
 }
 
 /// Move one markup or link, or place one ce dimension. `Ok(true)` when a

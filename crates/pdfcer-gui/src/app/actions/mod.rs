@@ -138,6 +138,8 @@ pub use disclosure::{EditDisclosure, last_edit_disclosure};
 // path part of the crate's surface as a side effect of a file split.
 pub(crate) use disclosure::{record_edit_disclosure, record_note, record_notes};
 
+/// One engine verb per item, folded into one undo step.
+mod foldeach;
 /// **The edit funnel** — `vector_edit`, the four-step protocol every verb that
 /// changes a document passes through. Its header carries why a router and a
 /// protocol are two subjects.

@@ -109,27 +109,21 @@ fn commit(
     order: &[(&str, usize)],
     report: &mut (usize, bool),
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    use pdfcer_core::edit::{CommandKind, EditError, MAX_UNDO_DEPTH};
-    if order.len() > MAX_UNDO_DEPTH {
-        return Err(EditError::SelectionTooLargeForOneUndo {
-            targets: order.len(),
-            limit: MAX_UNDO_DEPTH,
-        });
-    }
-    let (mut pushed, mut fields_removed, mut failure) = (0_usize, 0_usize, None);
-    for &(field, widget) in order {
-        match session.delete_widget(field, widget) {
-            Ok(gone) => {
-                pushed += 1;
-                fields_removed += usize::from(gone.field_removed);
-            }
-            Err(e) => {
-                failure = Some(e);
-                break;
-            }
-        }
-    }
-    let folded = session.coalesce_last(pushed, CommandKind::DeleteFormField);
+    use crate::app::actions::foldeach::{OnRefusal, fold_each};
+    use pdfcer_core::edit::{CommandKind, EditError};
+    let mut fields_removed = 0_usize;
+    let done = fold_each(
+        session,
+        order.iter().copied(),
+        CommandKind::DeleteFormField,
+        OnRefusal::Stop,
+        |session, (field, widget)| {
+            let gone = session.delete_widget(field, widget)?;
+            fields_removed += usize::from(gone.field_removed);
+            Ok::<_, EditError>(Some(Vec::new()))
+        },
+    )?;
+    let (pushed, folded, failure) = (done.run.pushed, done.folded, done.run.failure);
     *report = (pushed, folded);
     let mut said = vec![crate::text::forms::form_widgets_deleted(
         pushed,

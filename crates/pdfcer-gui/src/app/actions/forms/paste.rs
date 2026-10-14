@@ -276,45 +276,37 @@ fn commit(
     steps: &[Step],
     report: &mut (usize, bool),
 ) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
-    use pdfcer_core::edit::{CommandKind, EditError, MAX_UNDO_DEPTH};
-    if steps.len() > MAX_UNDO_DEPTH {
-        return Err(EditError::SelectionTooLargeForOneUndo {
-            targets: steps.len(),
-            limit: MAX_UNDO_DEPTH,
-        });
-    }
-    let (mut pushed, mut told, mut failure) = (0_usize, Vec::<String>::new(), None);
-    for step in steps {
-        let outcome = match step {
-            Step::Field {
-                page,
-                rect,
-                clip,
-                policy,
-            } => session
-                .paste_field(clip, *page, *rect, policy)
-                .map(|o| o.disclosures),
-            Step::Radio(spec) => session.add_radio_button(spec).map(|_| Vec::new()),
-        };
-        match outcome {
-            Ok(lines) => {
-                pushed += 1;
-                for line in lines {
-                    if !told.contains(&line) {
-                        told.push(line);
-                    }
-                }
-            }
-            Err(e) => {
-                failure = Some(e);
-                break;
-            }
-        }
-    }
+    use crate::app::actions::foldeach::{OnRefusal, fold_each};
+    use pdfcer_core::edit::CommandKind;
+    let done = fold_each(
+        session,
+        steps.iter(),
+        CommandKind::PasteFormField,
+        OnRefusal::Stop,
+        |session, step| {
+            let lines = match step {
+                Step::Field {
+                    page,
+                    rect,
+                    clip,
+                    policy,
+                } => session
+                    .paste_field(clip, *page, *rect, policy)
+                    .map(|o| o.disclosures),
+                Step::Radio(spec) => session.add_radio_button(spec).map(|_| Vec::new()),
+            };
+            lines.map(Some)
+        },
+    )?;
+    let (pushed, folded, told, failure) = (
+        done.run.pushed,
+        done.folded,
+        done.run.told,
+        done.run.failure,
+    );
     if pushed == 0 {
         return failure.map_or(Ok(Vec::new()), Err);
     }
-    let folded = session.coalesce_last(pushed, CommandKind::PasteFormField);
     *report = (pushed, folded);
     let mut said = vec![crate::text::fieldclip::fields_pasted(pushed)];
     said.extend(told);

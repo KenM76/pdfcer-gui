@@ -170,8 +170,8 @@ and small enough that the pointer stays well inside the canvas on a
 ### `const EXPECTED_DEPTH`
 
 **One**, and that is the assertion, not a bookkeeping detail: the plural
-move issues one `move_text_run` per run of every selected line, and
-`fold_undo` coalesces them into a single entry. A build that skipped the
+move issues one `move_text_runs` per selected line, coalesced into a
+single entry. A build that skipped the
 fold moves both lines and then needs one press of undo per line — which the
 operator experiences as undo not working.
 

@@ -9,9 +9,10 @@
 //! refusal deletes nothing, delete each id a cascade has not already taken,
 //! then `coalesce_last` over the commands pushed.
 
-use pdfcer_core::edit::{CommandKind, EditError, EditSession, MAX_UNDO_DEPTH};
+use pdfcer_core::edit::{CommandKind, EditError, EditSession};
 use pdfcer_core::object::ObjId;
 
+use crate::app::actions::foldeach::{OnRefusal, fold_each, within_undo_depth};
 use crate::app::state::OpenDoc;
 use crate::text::markup as t;
 
@@ -58,43 +59,35 @@ fn commit(
     kept_locked: usize,
     report: &mut Report,
 ) -> Result<Vec<String>, EditError> {
-    if ids.len() > MAX_UNDO_DEPTH {
-        return Err(EditError::SelectionTooLargeForOneUndo {
-            targets: ids.len(),
-            limit: MAX_UNDO_DEPTH,
-        });
-    }
+    within_undo_depth(ids.len())?;
     for &id in ids {
         session.annotation_deletion_preview(id)?;
     }
     let (mut popup, mut cleared, mut orphaned, mut promoted) = (false, false, 0, 0);
-    let mut pushed = 0_usize;
-    let mut failure = None;
-    for &id in ids {
-        // A cascade (a pop-up going with its parent) may already have taken it.
-        if session.value(id).is_none() {
-            continue;
-        }
-        match session.delete_annotation(id) {
-            Ok(gone) => {
-                pushed += 1;
-                popup |= gone.popup_removed;
-                cleared |= gone.parent_popup_cleared;
-                orphaned += gone.replies_orphaned;
-                promoted += gone.group_members_promoted;
+    let done = fold_each(
+        session,
+        ids.iter().copied(),
+        CommandKind::DeleteAnnotation,
+        OnRefusal::Stop,
+        |session, id| {
+            // A cascade (a pop-up going with its parent) may already have taken it.
+            if session.value(id).is_none() {
+                return Ok(None);
             }
-            Err(e) => {
-                failure = Some(e);
-                break;
-            }
-        }
-    }
-    let folded = session.coalesce_last(pushed, CommandKind::DeleteAnnotation);
+            let gone = session.delete_annotation(id)?;
+            popup |= gone.popup_removed;
+            cleared |= gone.parent_popup_cleared;
+            orphaned += gone.replies_orphaned;
+            promoted += gone.group_members_promoted;
+            Ok::<_, EditError>(Some(Vec::new()))
+        },
+    )?;
+    let (pushed, folded) = (done.run.pushed, done.folded);
     *report = Report {
         deleted: pushed,
         folded,
     };
-    if let Some(e) = failure {
+    if let Some(e) = done.run.failure {
         return Err(e);
     }
     let mut said: Vec<String> = t::deleted_collateral(popup, cleared, orphaned, promoted)

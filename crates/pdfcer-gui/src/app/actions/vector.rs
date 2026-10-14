@@ -10,7 +10,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/vector.md`.
 
-use pdfcer_core::edit::{CommandKind, EditSession};
+use pdfcer_core::edit::CommandKind;
 
 mod inform_delete;
 mod leaftransform;
@@ -63,28 +63,6 @@ fn trace_part_delete(
             before.0, after.0, before.1, after.1,
         )
     });
-}
-
-/// Fold this gesture's `pieces` engine commands into one undo entry, and say so
-/// when the fold does not happen.
-fn fold_undo(
-    session: &mut EditSession,
-    pieces: usize,
-    kind: CommandKind,
-    disclosures: &mut Vec<String>,
-) {
-    let mut seen: Vec<String> = Vec::new();
-    for sentence in disclosures.drain(..) {
-        if !seen.contains(&sentence) {
-            seen.push(sentence);
-        }
-    }
-    *disclosures = seen;
-    if !session.coalesce_last(pieces, kind) {
-        disclosures.push(crate::text::arrange::line_takes_several_undo_presses(
-            pieces,
-        ));
-    }
 }
 
 /// **Apply one geometry verb**, as one undoable command.
@@ -284,21 +262,27 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 let pieces = runs.len();
                 let before = census(doc, object, |p, o| p.text_line_count(o));
                 vector_edit_on_page(doc, "delete-text-line", page, pieces, |session| {
-                    let mut disclosures = Vec::new();
                     // DESCENDING. `plan_delete_text_run` excises
                     // `TextRun::bytes`, so removing an earlier run shifts every
                     // later one in the same object. Walking backwards means no
                     // index this loop still holds has moved.
-                    for run in runs.clone().rev() {
-                        disclosures.extend(session.delete_text_run(page, object, run)?);
+                    let done = super::foldeach::each(
+                        session,
+                        runs.clone().rev(),
+                        super::foldeach::OnRefusal::Stop,
+                        |session, run| session.delete_text_run(page, object, run).map(Some),
+                    );
+                    if let Some(e) = done.failure {
+                        return Err(e);
                     }
-                    fold_undo(
+                    let mut said = done.told;
+                    super::foldeach::fold_or_say(
                         session,
                         pieces,
                         CommandKind::DeleteTextRun,
-                        &mut disclosures,
+                        &mut said,
                     );
-                    Ok::<_, pdfcer_core::edit::EditError>(disclosures)
+                    Ok(said)
                 });
                 let after = census(doc, object, |p, o| p.text_line_count(o));
                 trace_part_delete(

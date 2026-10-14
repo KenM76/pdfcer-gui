@@ -17,7 +17,7 @@ One press acts on every selected node of one path, through
   renumbers a node still to visit.
 - **Partial success:** a node the engine refuses is skipped and the rest are
   changed. When at least one changed, the entries are folded into one undo
-  step (`fold_undo`) and the status line says how many were skipped and why
+  step (`foldeach::fold_or_say`) and the status line says how many were skipped and why
   (`text::nodeshape::nodes_skipped`). When none changed, the first refusal is
   the funnel's error, as for any refused edit.
 - **Selection after an insert:** each new node is selected

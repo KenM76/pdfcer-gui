@@ -6,8 +6,8 @@
 use pdfcer_core::edit::{CommandKind, EditError, EditSession};
 use pdfcer_core::vector::{NodeKind, SegmentKind, VectorEditError};
 
-use super::fold_undo;
 use crate::app::actions::apply::vector_edit_on_page;
+use crate::app::actions::foldeach::fold_or_say;
 use crate::app::state::OpenDoc;
 use crate::canvas::target::TargetId;
 use crate::diag::index_list as list;
@@ -58,7 +58,7 @@ pub(super) fn apply(
             return Err(refusals.swap_remove(0));
         }
         if done.len() > 1 {
-            fold_undo(session, done.len(), kind(shape), &mut said);
+            fold_or_say(session, done.len(), kind(shape), &mut said);
         }
         if let Some(why) = refusals.first() {
             said.push(words::nodes_skipped(refusals.len(), reason(why)));
