@@ -1460,6 +1460,8 @@ pub mod typo_refusal;
 /// every count is already correct. Its header carries the argument.
 pub mod ui_scale;
 
+/// Several annotations, one locked, deleted by one Delete and restored by one Undo.
+pub mod annot_delete_many;
 /// Several markups, a link and a ce dimension selected and aligned as one undo step.
 pub mod annot_multiselect;
 /// Several form fields selected by Shift-click and marquee, aligned as one undo step.

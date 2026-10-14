@@ -15,7 +15,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "annots-align.pdf",
     method: "Rebuild it with `python fixtures/annots-align.PROVENANCE.py`.",
     page: PageGeometry {
@@ -27,9 +27,9 @@ const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an envir
 
 /// Each annotation: the substring that finds it in a saved copy, a point on
 /// it, and its top edge in the fixture.
-const SQUARE: (&str, (f64, f64), f64) = ("/NM (SQ)", (70.0, 220.0), 240.0); // ui-text-exempt: a PDF key
-const CIRCLE: (&str, (f64, f64), f64) = ("/NM (CI)", (170.0, 200.0), 220.0); // ui-text-exempt: a PDF key
-const LINK: (&str, (f64, f64), f64) = ("/NM (LK)", (270.0, 170.0), 180.0); // ui-text-exempt: a PDF key
+pub(super) const SQUARE: (&str, (f64, f64), f64) = ("/NM (SQ)", (70.0, 220.0), 240.0); // ui-text-exempt: a PDF key
+pub(super) const CIRCLE: (&str, (f64, f64), f64) = ("/NM (CI)", (170.0, 200.0), 220.0); // ui-text-exempt: a PDF key
+pub(super) const LINK: (&str, (f64, f64), f64) = ("/NM (LK)", (270.0, 170.0), 180.0); // ui-text-exempt: a PDF key
 const DIMENSION: (&str, (f64, f64), f64) = ("/LineDimension", (130.0, 100.0), 108.5); // ui-text-exempt: a PDF key
 /// A crossing band, dragged right to left, over the link and the content
 /// square and nothing else.

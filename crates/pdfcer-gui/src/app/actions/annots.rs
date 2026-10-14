@@ -35,6 +35,8 @@ use pdfcer_core::object::ObjId;
 
 use crate::app::state::OpenDoc;
 
+/// Delete several annotations as one undo step.
+mod deletemany;
 /// One annotation-flag switch.
 mod flags;
 /// Make one markup part of the page.
@@ -735,6 +737,11 @@ pub(super) fn apply_action(
             degrees,
         } => rotate_dimension(doc, dimension, annot, pivot, degrees),
         A::Delete { page, id } => delete(doc, page, id),
+        A::DeleteMany {
+            page,
+            ids,
+            kept_locked,
+        } => deletemany::delete_many(doc, page, &ids, kept_locked),
         A::Flatten { page, id } => flatten::flatten(doc, page, id),
         A::FlattenPage { page } => flatten::flatten_page(doc, page),
         A::SetNote {

@@ -765,12 +765,10 @@ pub(super) fn canvas_keys(
             });
             return;
         }
-        actions.push(Action::Annot(
-            crate::app::actions::annot::AnnotAction::Delete {
-                page: annot.target.page,
-                id: annot.target.id,
-            },
-        ));
+        // One selected is a `Delete`; several a `DeleteMany` of the unlocked.
+        if let Some(verb) = pdfcer_gui_base::annotaction::delete_selected(&selection.annots()) {
+            actions.push(Action::Annot(verb));
+        }
         return;
     }
 

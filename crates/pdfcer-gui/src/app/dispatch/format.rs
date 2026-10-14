@@ -234,19 +234,19 @@ pub(crate) fn dispatch(
                     // a frame. The sentence for both is already on screen in the
                     // Properties panel, which is why this declines silently to
                     // the trace rather than inventing a second wording.
-                    match crate::panels::properties::annotdelete::gate(doc, &annot.target) {
-                        Some(refusal) => crate::diag::trace(|| {
+                    let verb =
+                        pdfcer_gui_base::annotaction::delete_selected(&doc.selection.annots());
+                    match verb.filter(|_| {
+                        !crate::panels::properties::annotdelete::refuses(doc, &doc.selection)
+                    }) {
+                        Some(verb) => actions.push(Action::Annot(verb)),
+                        None => crate::diag::trace(|| {
                             // ui-text-exempt: diagnostic trace, never displayed.
                             format!(
-                                "command-declined id={id} reason=annot-delete-refused why={refusal:?}"
+                                "command-declined id={id} reason=annot-delete-refused primary={}",
+                                annot.target.id.num
                             )
                         }),
-                        None => actions.push(Action::Annot(
-                            crate::app::actions::annot::AnnotAction::Delete {
-                                page: annot.target.page,
-                                id: annot.target.id,
-                            },
-                        )),
                     }
                 } else if !app.capabilities().edit_content {
                     // THE MODE, ASKED HERE, BECAUSE WITHOUT IT THE RIBBON

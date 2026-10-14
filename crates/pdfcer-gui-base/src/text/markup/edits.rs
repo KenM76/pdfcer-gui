@@ -47,6 +47,27 @@ pub fn deleted_collateral(
     Some(format!("Deleted — {}.", parts.join("; ")))
 }
 
+/// Several annotations deleted, some of the selection kept because it is
+/// locked.
+#[must_use]
+pub fn deleted_kept_locked(deleted: usize, kept: usize) -> String {
+    let kept_words = if kept == 1 {
+        "1 is locked and was kept".to_owned()
+    } else {
+        format!("{kept} are locked and were kept")
+    };
+    format!(
+        "Deleted {deleted} of {} annotations; {kept_words}.",
+        deleted + kept
+    )
+}
+
+/// Several annotations deleted, but not as one undo step.
+#[must_use]
+pub const fn deleted_not_one_undo() -> &'static str {
+    "Deleted, but it will take more than one Undo to bring them all back."
+}
+
 /// Disclosure: the annotation moved and its pop-up note did not.
 #[must_use]
 pub fn popup_left_behind() -> String {

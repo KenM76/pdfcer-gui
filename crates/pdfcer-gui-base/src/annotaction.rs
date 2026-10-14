@@ -272,6 +272,17 @@ pub enum AnnotAction {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
     },
+    /// **Remove several annotations on one page**, as one undoable command:
+    /// Delete with more than one selected. Built by [`delete_selected`].
+    DeleteMany {
+        /// The page they are on, for the trace.
+        page: usize,
+        /// The annotations, by stable object id; locked ones are not here.
+        ids: Vec<pdfcer_core::object::ObjId>,
+        /// How many selected annotations were left out because they are
+        /// locked, for the status line.
+        kept_locked: usize,
+    },
     /// **Burn a markup into its page's content and remove it**, as one
     /// undoable command. `EditSession::flatten_annotations`, asked for this one
     /// annotation; it looks the same afterwards and is no longer a markup.
@@ -749,4 +760,31 @@ pub enum AnnotAction {
         /// Its new state.
         on: bool,
     },
+}
+
+/// The delete a selection of annotations earns: [`AnnotAction::Delete`] for
+/// one, [`AnnotAction::DeleteMany`] of the unlocked ones for several. `None`
+/// when nothing is selected or every one of several is locked; a single
+/// locked annotation is refused by the caller's gate, which names the reason.
+#[must_use]
+pub fn delete_selected(annots: &[&crate::annotselection::AnnotSelection]) -> Option<AnnotAction> {
+    match annots {
+        [] => None,
+        [one] => Some(AnnotAction::Delete {
+            page: one.target.page,
+            id: one.target.id,
+        }),
+        several => {
+            let ids: Vec<_> = several
+                .iter()
+                .filter(|a| !a.target.locked)
+                .map(|a| a.target.id)
+                .collect();
+            (!ids.is_empty()).then(|| AnnotAction::DeleteMany {
+                page: several[0].target.page,
+                kept_locked: several.len() - ids.len(),
+                ids,
+            })
+        }
+    }
 }
