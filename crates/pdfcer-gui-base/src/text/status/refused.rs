@@ -17,3 +17,14 @@ pub const fn session_busy() -> &'static str {
     "Not changed: pdfcer was still finishing background work on this document. Try again \
      in a moment."
 }
+
+/// A gesture over more items than one undo step can take back, refused
+/// before anything changed. `changes` counts engine commands, which is why
+/// the sentence does not call them items.
+#[must_use]
+pub fn too_many_for_one_undo(changes: usize, limit: usize) -> String {
+    format!(
+        "Not changed: this would make {changes} separate changes, and one Undo can take \
+         back at most {limit}. Select fewer and try again."
+    )
+}

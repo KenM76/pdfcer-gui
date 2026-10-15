@@ -40,9 +40,10 @@ pub(super) struct Folded<E> {
 }
 
 /// Refuses a gesture of `commands` engine commands that the undo stack
-/// cannot hold, so cannot fold.
+/// cannot hold, so cannot fold, and puts the reason on the status line.
 pub(super) fn within_undo_depth(commands: usize) -> Result<(), EditError> {
     if commands > MAX_UNDO_DEPTH {
+        crate::app::status::decline::record_too_many_for_one_undo(commands, MAX_UNDO_DEPTH);
         return Err(EditError::SelectionTooLargeForOneUndo {
             targets: commands,
             limit: MAX_UNDO_DEPTH,

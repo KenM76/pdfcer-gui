@@ -1048,4 +1048,11 @@ pub enum Declined {
     /// An edit refused because background work still held the document.
     /// Worded in [`crate::text::status::session_busy`].
     SessionBusy,
+    /// A gesture refused before anything changed because it would push more
+    /// engine commands than one undo step can fold. Worded in
+    /// [`crate::text::status::too_many_for_one_undo`].
+    TooManyForOneUndo {
+        changes: usize,
+        limit: usize,
+    },
 }

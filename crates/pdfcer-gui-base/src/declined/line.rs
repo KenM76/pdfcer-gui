@@ -196,6 +196,9 @@ impl Declined {
             Self::Rc4Refused => crate::text::rc4::refused(),
             Self::PasswordRefused => crate::text::unlock::refused(),
             Self::SessionBusy => crate::text::status::session_busy(),
+            Self::TooManyForOneUndo { changes, limit } => {
+                return std::borrow::Cow::Owned(t::too_many_for_one_undo(*changes, *limit));
+            }
         };
         std::borrow::Cow::Borrowed(fixed)
     }

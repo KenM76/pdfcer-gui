@@ -20,14 +20,15 @@
 //!
 //! What was applied stays applied and is folded into one undo step (see
 //! [`super::foldeach`]); the status line says how many moved and why the rest
-//! did not.
+//! did not. A move of more commands than one undo step folds is refused
+//! before anything moves.
 
 use pdfcer_core::edit::{CommandKind, EditError, EditSession};
 use pdfcer_gui_base::annotkind::AnnotKind;
 use pdfcer_gui_base::annotselection::AnnotTarget;
 use pdfcer_gui_base::docidentity::SelectedField;
 
-use super::foldeach::{OnRefusal, Run, each};
+use super::foldeach::{OnRefusal, Run, each, within_undo_depth};
 use crate::app::state::OpenDoc;
 use crate::text::panels::align as t;
 
@@ -138,6 +139,12 @@ fn commit(
     page: usize,
     moves: &Moves<'_>,
 ) -> Result<(Vec<String>, Report), Refused> {
+    within_undo_depth(
+        usize::from(!moves.objects.is_empty())
+            + moves.leaves.len()
+            + moves.widgets.len()
+            + moves.annots.len(),
+    )?;
     let mut said = moves.notes.to_vec();
     if !moves.objects.is_empty() {
         said.extend(session.move_objects_each(page, moves.objects)?);

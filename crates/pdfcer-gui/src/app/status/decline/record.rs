@@ -108,6 +108,16 @@ pub(crate) fn record_session_busy() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::SessionBusy));
 }
 
+/// Record that a gesture was refused for needing more than one undo step,
+/// and trace it.
+pub(crate) fn record_too_many_for_one_undo(changes: usize, limit: usize) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("undo-depth-declined changes={changes} limit={limit}")
+    });
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::TooManyForOneUndo { changes, limit }));
+}
+
 /// Record why a document did not move to another window.
 pub(crate) fn record_window_move(why: crate::text::siblings::WindowMoveRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::WindowMove(why)));

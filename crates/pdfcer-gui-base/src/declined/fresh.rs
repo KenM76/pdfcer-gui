@@ -271,7 +271,8 @@ impl Declined {
             | Self::WindowMove(_)
             | Self::Rc4Refused
             | Self::PasswordRefused
-            | Self::SessionBusy => true,
+            | Self::SessionBusy
+            | Self::TooManyForOneUndo { .. } => true,
         }
     }
 }
