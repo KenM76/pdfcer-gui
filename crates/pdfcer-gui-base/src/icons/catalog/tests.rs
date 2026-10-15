@@ -60,9 +60,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // control destroys nothing until a separate, second press. Borrowing it
     // would have put the strongest cue in the set on the one command in the
     // group that does not earn it.
+    // 196 → 197: `paragraphs`, the pilcrow, drawn for `edit.paragraphs`.
     assert_eq!(
         Icon::ALL.len(),
-        196,
+        197,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

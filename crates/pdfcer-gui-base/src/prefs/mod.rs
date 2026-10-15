@@ -401,6 +401,12 @@ pub struct Prefs {
     /// boxes can be turned OFF, and an operator who has to find a checkbox
     /// before the thing he asked for appears has not been given it.
     pub text_chunks: bool,
+    /// **Does a click in page text open its whole paragraph?** On, a click
+    /// in a line of a paragraph opens the paragraph, which re-wraps as it is
+    /// edited (`OPERATOR_REQUESTS.md` O295). Off, a click opens the one line
+    /// and an edit stays on its line. Untouched paragraphs never move either
+    /// way. `true` by default: it is what every editor does.
+    pub open_paragraphs: bool,
     /// **Is going to a search hit allowed to change the zoom?** —
     /// `OPERATOR_REQUESTS.md` **O163**, 2026-09-09, his words: *"add a
     /// checkbox option to our search bar called zoom - when I unchecked just
@@ -850,6 +856,7 @@ impl Default for Prefs {
             default_page_display: None,
             smart_select: true,
             text_chunks: true,
+            open_paragraphs: true,
             find_zoom_on_jump: true,
             find_trim_query: true,
             // True = what every build has done, deliberately. See the

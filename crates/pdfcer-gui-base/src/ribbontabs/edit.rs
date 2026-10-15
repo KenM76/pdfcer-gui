@@ -34,6 +34,7 @@ pub fn tab() -> Tab {
                     // retyped a sentence in it, so it follows the tool that
                     // does the retyping.
                     command("edit.reflow_block"),
+                    command("edit.paragraphs"),
                 ],
             ),
             // ---------------------------------------------------------------

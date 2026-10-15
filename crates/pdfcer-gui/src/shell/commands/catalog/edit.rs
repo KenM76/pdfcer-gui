@@ -63,6 +63,11 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.reflow_block", t::edit_reflow_block(), 406)
             .with_icon("reflow")
             .enabled_when("doc.pages"),
+        // A switch, pressed while on (`app::conditions::armed`): whether a
+        // click in a line opens its whole paragraph. O295.
+        command("edit.paragraphs", t::edit_paragraphs(), 414)
+            .with_icon("paragraphs")
+            .enabled_when("mode.edit_content"),
         // ═══════════════════════════════════════════════════════════════════
         // `edit.copy_as_vector` — the clipboard's copy-OUT.
         //

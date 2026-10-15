@@ -328,6 +328,7 @@ impl eframe::App for PdfcerApp {
         // reason stated immediately above; `crate::canvas::chunks` carries why
         // that switch has two homes at all.
         crate::canvas::chunks::sync(&ctx, self.prefs.text_chunks);
+        crate::canvas::textedit::promote::sync(&ctx, self.prefs.open_paragraphs);
 
         // Step 0b⁴ — **the same mirror for the recognised-text colour** —
         // `OPERATOR_REQUESTS.md` O229. One direction, every frame, for the

@@ -657,7 +657,10 @@ pub fn built_in() -> Menus {
             Item::command("format.move_to_layer").shown_when(LAYER_ASSIGNABLE),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))
-        .with(Menu::new(CANVAS_TEXT).with_items([Item::command("edit.reflow_block")]))
+        .with(Menu::new(CANVAS_TEXT).with_items([
+            Item::command("edit.reflow_block"),
+            Item::command("edit.paragraphs"),
+        ]))
         // -------------------------------------------------------------------
         // dock.tab — a panel tab.
         //

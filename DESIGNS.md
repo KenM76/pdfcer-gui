@@ -62,10 +62,13 @@ conflicts with R75 and goes back to him.
 3. **Select tool** (four clicks built). A fourth click of a burst selects
    the paragraph, a triple click the line, both across runs. Not built: a
    click on the paragraph's box; OCR words wait on G201.
-4. **Settings where the text is.** A *Paragraphs* group on the text ribbon
-   and in Settings ▸ Text: *Re-wrap paragraphs as I edit* (on), its per-page
-   and per-paragraph override, and the word-gap slider with what it really
-   does.
+4. **Settings where the text is** (the switch built). *Paragraphs* on
+   Edit ▸ Content, on the canvas text menu and in Settings ▸ Text, one
+   preference (`open_paragraphs`, on): off, a click opens one line and an edit
+   stays on it. It applies to the next click, so a section is edited line by
+   line by switching it off, editing, and switching it back. Not built: a
+   per-page or per-paragraph override, and the word-gap slider beside the
+   switch.
 5. **Engine (requests).** Derived word spaces as break points; mixed
    font/size/colour in `edit_block_text` and `reflow_block` (G079); OCR
    structure readable after writing (space glyphs or line marks), and an

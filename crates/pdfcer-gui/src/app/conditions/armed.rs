@@ -136,6 +136,9 @@ impl crate::app::PdfcerApp {
         if crate::canvas::chunks::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("view.text_chunks"));
         }
+        if crate::canvas::textedit::promote::enabled(ctx) {
+            set.set(egui_shell::ribbon::selected_condition("edit.paragraphs"));
+        }
         // The armed markup tool, published the same way and outside the
         // `Status::Open` arm for the same reason as the two above.
         //

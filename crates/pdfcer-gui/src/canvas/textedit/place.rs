@@ -182,8 +182,13 @@ pub fn click(
         mark: None,
         seeded: false,
     };
-    // A line of a paragraph opens as the whole paragraph.
-    let widened = super::promote::widen(click.doc, &mut draft);
+    // A line of a paragraph opens as the whole paragraph, unless the
+    // operator has switched Paragraphs off.
+    let widened = if super::promote::enabled(ctx) {
+        super::promote::widen(click.doc, &mut draft)
+    } else {
+        Err(None)
+    };
     store(ctx, draft);
     match widened {
         Ok(pdfcer_core::text_edit::LineEndSource::Inferred) => super::note::raise(

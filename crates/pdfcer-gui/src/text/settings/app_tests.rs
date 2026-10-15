@@ -77,8 +77,9 @@ mod tests {
     // the appearance of a mode the operator switches on deliberately.
     //
     // The coloured-icons switch (O232) is a shell preference beside the UI
-    // scale in the Appearance group.
-    const SETTINGS_COUNT: usize = 45;
+    // scale in the Appearance group. Whether a click opens a whole paragraph
+    // (O295) is a shell preference in the Text group.
+    const SETTINGS_COUNT: usize = 46;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -152,6 +153,11 @@ mod tests {
             // SETTINGS_COUNT. Beside `word_gap` because both are about what
             // comes out of the page as text.
             (find_trim_title(), find_trim_silence(), find_trim_radius()),
+            (
+                open_paragraphs_title(),
+                open_paragraphs_silence(),
+                open_paragraphs_radius(),
+            ),
             (parallel_title(), parallel_silence(), parallel_radius()),
             (
                 unmappable_title(),
@@ -517,6 +523,7 @@ mod tests {
             minify_radius(),
             word_gap_radius(),
             find_trim_radius(),
+            open_paragraphs_radius(),
             parallel_radius(),
             unmappable_radius(),
             actual_text_radius(),

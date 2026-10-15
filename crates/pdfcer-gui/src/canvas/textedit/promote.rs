@@ -34,6 +34,33 @@ pub fn options(doc: &OpenDoc) -> BlockEditOptions {
     ))
 }
 
+/// The live copy of `Prefs::open_paragraphs`, which gates [`widen`] on a
+/// click. Memory key; application-scoped, like the chunk boxes.
+const ENABLED_KEY: &str = "pdfcer.open-paragraphs.enabled"; // ui-text-exempt: a memory key, never displayed
+
+/// Does a click in a line of a paragraph open the paragraph? On by default.
+#[must_use]
+pub fn enabled(ctx: &egui::Context) -> bool {
+    ctx.data(|d| d.get_temp::<bool>(egui::Id::new(ENABLED_KEY)))
+        .unwrap_or(true)
+}
+
+/// Turn paragraph opening on or off for the next click.
+pub fn set_enabled(ctx: &egui::Context, on: bool) {
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(ENABLED_KEY), on));
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!("open-paragraphs enabled={on}")
+    });
+}
+
+/// Mirror the persisted answer into the live one, once per frame.
+pub fn sync(ctx: &egui::Context, on: bool) {
+    if enabled(ctx) != on {
+        ctx.data_mut(|d| d.insert_temp(egui::Id::new(ENABLED_KEY), on));
+    }
+}
+
 /// A run's paragraph: its engine index, its box (PDF user space,
 /// `llx, lly, urx, ury`) and its text either side of the run.
 struct Paragraph {

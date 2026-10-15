@@ -274,6 +274,8 @@ fn page_body(
             text::actual_text(ui, draft);
             ui.add_space(10.0);
             text::find_trim(ui, &mut draft.working_prefs);
+            ui.add_space(10.0);
+            text::open_paragraphs(ui, &mut draft.working_prefs);
         }
         "ocr" => ocr::folders(ui, &mut draft.working_prefs),
         "measuring" => measuring::parallel(ui, draft),

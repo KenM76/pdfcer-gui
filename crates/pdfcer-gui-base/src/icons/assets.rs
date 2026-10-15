@@ -675,6 +675,9 @@ pub(super) const OFF_PAGE: &str = include_str!("assets/off-page.svg");
 /// selected — a shape, an image, a piece of text — to be removed.
 pub(super) const REDACT_SELECTION: &str = include_str!("assets/redact-selection.svg");
 
+/// `paragraphs.svg` — the art for [`super::Icon::Paragraphs`].
+pub(super) const PARAGRAPHS: &str = include_str!("assets/paragraphs.svg");
+
 /// `reflow.svg` — the art for [`super::Icon::Reflow`].
 ///
 /// Reflow paragraph (`edit.reflow_block`) — re-wrap the paragraph the caret

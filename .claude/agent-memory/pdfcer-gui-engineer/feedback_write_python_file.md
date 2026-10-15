@@ -208,3 +208,9 @@ warning on an unrelated `git diff`. Sweep before staging:
 `git status --porcelain | awk '{print $2}' | while read f; do tr -cd '\r' < "$f" | wc -c; done`
 against `git show HEAD:$f` for the same count; repair with `sed -i 's/\r$//'`.
 Default every patch script to `newline=''` on both open calls, no exceptions.
+
+**2026-10-15: the unquoted delimiter.** `cat > f.py <<EOF` (no quotes) lets
+bash eat one backslash of every `\`, so `'\n'` in the script became a real
+`'\n'` newline and the anchor counted 0 against a file that visibly held it.
+Twice in one session before the cause was found by `od -c` on the script. Always
+`<<'EOF'`; for a single anchored edit, use `Edit`, which also keeps CRLF.

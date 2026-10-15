@@ -361,6 +361,14 @@ impl Prefs {
                         line,
                     }),
                 },
+                "open_paragraphs" => match opening::bool_from_key(value) {
+                    Some(on) => prefs.open_paragraphs = on,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "find_zoom_on_jump" => match opening::bool_from_key(value) {
                     Some(on) => prefs.find_zoom_on_jump = on,
                     None => notes.push(PrefNote::BadValue {
@@ -819,6 +827,16 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("text_chunks = ");
         out.push_str(opening::bool_key(self.text_chunks));
+        out.push('\n');
+        out.push_str(
+            "\n\
+             # open_paragraphs: true | false. With this on, a click in a\n\
+             # line of a paragraph opens the whole paragraph, and it\n\
+             # re-wraps as you edit it. Off, a click opens one line.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("open_paragraphs = ");
+        out.push_str(opening::bool_key(self.open_paragraphs));
         out.push('\n');
         out.push_str(
             "\n\

@@ -300,6 +300,7 @@
                         Command(id: "edit.text"),
                         Command(id: "edit.add_text"),
                         Command(id: "edit.reflow_block"),
+                        Command(id: "edit.paragraphs"),
                     ],
                 ),
                 (
@@ -856,6 +857,7 @@
             context: "canvas.text",
             items: [
                 Command(id: "edit.reflow_block"),
+                Command(id: "edit.paragraphs"),
             ],
         ),
         (

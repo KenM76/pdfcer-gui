@@ -53,6 +53,7 @@ fn every_preference_round_trips_through_the_file() {
                     // constant would otherwise pass.
                     smart_select: false,
                     text_chunks: false,
+                    open_paragraphs: false,
                     // Non-default, identically. O163 ships `true`, so a
                     // writer emitting a constant would round-trip a preference
                     // the operator had turned OFF without this test noticing.
@@ -607,6 +608,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         },
         // Non-default, for this test's stated reason. O70.
         text_chunks: false,
+        open_paragraphs: false,
         smart_select: false,
         // …and O163, which also ships `true`.
         find_zoom_on_jump: false,

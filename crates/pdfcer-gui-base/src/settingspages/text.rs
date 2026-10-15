@@ -127,3 +127,20 @@ pub fn find_trim(ui: &mut Ui, prefs: &mut Prefs) {
         Some(t::find_trim_note()),
     );
 }
+
+/// Whether a click in a line opens its whole paragraph (O295). The same
+/// switch as Edit ▸ Content ▸ Paragraphs.
+pub fn open_paragraphs(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::open_paragraphs_title(),
+        t::open_paragraphs_silence(),
+        t::open_paragraphs_radius(),
+    );
+    widgets::toggle(
+        ui,
+        &mut prefs.open_paragraphs,
+        t::open_paragraphs_label(),
+        Some(t::open_paragraphs_note()),
+    );
+}

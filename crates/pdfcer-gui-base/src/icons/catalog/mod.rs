@@ -953,6 +953,10 @@ pub enum Icon {
     /// is the wrong place for the shared-glyph convention.
     RedactSelection,
 
+    /// Paragraphs (`edit.paragraphs`) — whether a click in a line opens its
+    /// whole paragraph. The pilcrow, as on every word processor's toggle.
+    Paragraphs,
+
     /// Reflow paragraph (`edit.reflow_block`) — re-wrap the paragraph the caret
     /// is in so its lines fill their box again.
     ///

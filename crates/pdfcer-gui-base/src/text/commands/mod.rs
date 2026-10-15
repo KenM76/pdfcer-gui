@@ -149,6 +149,17 @@ pub const fn edit_reflow_block() -> CommandText {
     )
 }
 
+/// `edit.paragraphs`
+#[must_use]
+pub const fn edit_paragraphs() -> CommandText {
+    CommandText::new(
+        "Paragraphs",
+        "When this is on, clicking in a line of a paragraph opens the whole paragraph, and it \
+         re-wraps as you type. Turn it off to edit one line at a time, for a table cell or a \
+         label that only looks like a paragraph. It applies to your next click.",
+    )
+}
+
 /// `file.export_dxf`
 #[must_use]
 pub const fn file_export_dxf() -> CommandText {

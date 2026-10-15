@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Paragraphs switch — the pilcrow, the mark every word processor puts on
+       its paragraph toggle. Drawn for pdfcer; primitives only, no trademark risk.
+       Distinct from reflow.svg, which is the verb (re-wrap): this is the mode
+       (a click opens the paragraph). The bowl is path 0, the accented part. -->
+  <path d="M25 10h-6a7.5 7.5 0 0 0 0 15h6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M25 10v28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M33 10v28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M25 10h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

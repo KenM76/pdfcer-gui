@@ -108,6 +108,40 @@ pub const fn find_trim_note() -> &'static str {
 }
 
 // ===========================================================================
+// Editing text — whether a click opens a paragraph
+// ===========================================================================
+
+/// Paragraphs: what it is.
+#[must_use]
+pub const fn open_paragraphs_title() -> &'static str {
+    "Clicking in a paragraph"
+}
+
+/// What happens if you never touch it.
+#[must_use]
+pub const fn open_paragraphs_silence() -> &'static str {
+    "A click with Edit text in a line of a paragraph opens the whole paragraph, and it re-wraps as you type, the way a word processor does. A paragraph you do not edit never moves."
+}
+
+/// What changing it costs.
+#[must_use]
+pub const fn open_paragraphs_radius() -> &'static str {
+    "Off, a click opens one line, and an edit stays on that line. Affects only what your next click opens. Does not change the file. The Paragraphs button on the Edit tab is the same switch."
+}
+
+/// The toggle's own label.
+#[must_use]
+pub const fn open_paragraphs_label() -> &'static str {
+    "A click opens the whole paragraph"
+}
+
+/// The note under the toggle.
+#[must_use]
+pub const fn open_paragraphs_note() -> &'static str {
+    "Turn this off for a table cell or a label that only looks like a paragraph, then turn it back on."
+}
+
+// ===========================================================================
 // Copying and extracting text — unmappable codes
 // ===========================================================================
 

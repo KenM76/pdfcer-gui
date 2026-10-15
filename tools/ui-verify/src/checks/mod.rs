@@ -976,6 +976,9 @@ pub mod reflow_width;
 /// A four-click burst on a line takes its paragraph.
 pub mod paragraph_select;
 
+/// Paragraphs switched off: a click in a paragraph opens one line.
+pub mod paragraphs_off;
+
 /// The eight resize grips, driven all the way to a committed edit — being
 /// cursored, hit-tested and drag-consuming proves none of that.
 ///

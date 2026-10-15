@@ -6,6 +6,7 @@
 //! |---|---|
 //! | `edit.text`, `edit.add_text` | **arm** the caret |
 //! | `edit.reflow_block` | **act** on the paragraph the caret is in |
+//! | `edit.paragraphs` | **switch** whether a click opens a whole paragraph |
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/text.md`.
 
@@ -17,7 +18,10 @@ use crate::app::state::Status;
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
-    matches!(id, "edit.text" | "edit.add_text" | "edit.reflow_block")
+    matches!(
+        id,
+        "edit.text" | "edit.add_text" | "edit.reflow_block" | "edit.paragraphs"
+    )
 }
 
 /// Route one caret command.
@@ -30,8 +34,17 @@ pub(crate) fn dispatch(
     match id {
         // ui-text-exempt: registered command id, never displayed.
         "edit.reflow_block" => reflow(ctx, &app.status, actions),
+        "edit.paragraphs" => paragraphs(app, ctx),
         _ => arm(app, ctx, id),
     }
+}
+
+/// Flip whether a click opens a whole paragraph, live and persisted.
+fn paragraphs(app: &mut crate::app::PdfcerApp, ctx: &egui::Context) {
+    let on = !crate::canvas::textedit::promote::enabled(ctx);
+    crate::canvas::textedit::promote::set_enabled(ctx, on);
+    app.prefs.open_paragraphs = on;
+    let _ = app.prefs.save();
 }
 
 /// Arm the caret, or decline because this stance cannot author content.

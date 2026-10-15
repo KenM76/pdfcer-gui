@@ -155,6 +155,7 @@ impl Icon {
         Icon::RecogniseText,
         Icon::RedactSelection,
         Icon::OffPage,
+        Icon::Paragraphs,
         Icon::Reflow,
         Icon::RenderDiagnostics,
         Icon::SaveAs,
@@ -277,6 +278,7 @@ impl Icon {
             Icon::RecogniseText => assets::RECOGNISE_TEXT,
             Icon::RedactSelection => assets::REDACT_SELECTION,
             Icon::OffPage => assets::OFF_PAGE,
+            Icon::Paragraphs => assets::PARAGRAPHS,
             Icon::Reflow => assets::REFLOW,
             Icon::RenderDiagnostics => assets::RENDER_DIAGNOSTICS,
             Icon::SaveAs => assets::SAVE_AS,
@@ -480,6 +482,7 @@ impl Icon {
             Icon::RedactSelection => "redact-selection",
             // ui-text-exempt: icon key, never displayed.
             Icon::OffPage => "off-page",
+            Icon::Paragraphs => "paragraphs",
             Icon::Reflow => "reflow",
             Icon::RenderDiagnostics => "render-diagnostics",
             Icon::SaveAs => "save-as",
