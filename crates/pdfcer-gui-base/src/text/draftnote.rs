@@ -20,8 +20,8 @@ pub enum DraftNote {
     /// A line of a paragraph opened alone because the engine would not
     /// re-write the paragraph as it stands.
     LineOnlyRefused,
-    /// A recognised (OCR) word opened alone: the text layer stores each word
-    /// separately.
+    /// A recognised (OCR) run opened alone rather than its paragraph: a line,
+    /// or a word on a page an older pdfcer recognised word by word.
     RecognisedWordOnly,
 }
 
@@ -65,8 +65,11 @@ pub fn line(note: DraftNote) -> String {
         DraftNote::LineOnlyRefused => "Only this line opened: pdfcer cannot re-write its \
                                        paragraph as a whole."
             .to_owned(),
-        DraftNote::RecognisedWordOnly => "Recognised text opens one word at a time: the text \
-                                          layer stores each word on its own."
+        DraftNote::RecognisedWordOnly => "Recognised text opens one line at a time, so the edit \
+                                          stays over the scan's words. If only a word opened, the \
+                                          page was recognised by an older pdfcer, which stored \
+                                          each word on its own; recognise the page again to edit \
+                                          whole lines."
             .to_owned(),
     }
 }

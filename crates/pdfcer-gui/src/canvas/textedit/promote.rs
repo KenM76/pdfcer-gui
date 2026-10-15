@@ -211,9 +211,10 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Result<LineEndSource, Option<D
     }
 }
 
-/// Declines a recognised (invisible) word: it stays a run draft, so the edit is
-/// previewed in the word's own size and scale, as the OCR layer renders it
-/// (`canvas::ocrink`), which a paragraph rewrite would flatten.
+/// Declines a recognised (invisible) run — a line, or a word on a page an older
+/// pdfcer recognised: it stays a run draft, so the edit is previewed in the
+/// run's own size and scale, as the OCR layer renders it (`canvas::ocrink`),
+/// which a paragraph rewrite would flatten.
 fn recognised(doc: &OpenDoc, page: usize, run: usize) -> Result<(), Declined> {
     let ocr = doc.provenance_page_text(page).is_some_and(|text| {
         text.runs

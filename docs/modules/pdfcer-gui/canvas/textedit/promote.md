@@ -63,8 +63,9 @@ Each decline traces `text-edit-enter-declined page= run= reason=` with one of
 
 `widen` declines the same way, plus `one-line` for a paragraph of one line
 and `recognised-word` for an invisible (OCR) run, and leaves the run draft. A
-recognised word is edited as its own run so its preview keeps the word's size
-and scale, as the OCR layer (`canvas::ocrink`) renders it. It traces `text-edit-widened page= run= block=
+recognised run (a line, or a word on a page an older pdfcer recognised) is
+edited as its own run so its preview keeps the run's size and scale, as the
+OCR layer (`canvas::ocrink`) renders it. It traces `text-edit-widened page= run= block=
 lines= breaks= len= source= ms=` or `text-edit-widen-declined page= run= reason= ms=`.
 
 ## Options

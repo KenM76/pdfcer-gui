@@ -169,6 +169,11 @@ cargo run --release -q -p ui-verify -- \
 cargo run --release -q -p ui-verify -- --list      # the registered checks
 ```
 
+**Falsifying against the previous release needs `--allow-stale`.** A control
+build (`--exe <copy of the published exe>`) is older than every source file,
+so the stale-binary guard SKIPs it, `STALE BINARY — refusing to run`, and a
+SKIP there is not the expected red.
+
 **`--doc-point` is a calibration, and there are two of them.** `0,300,500`
 is the default and lands on plain geometry. `0,1211,1021` aims at a BOM row,
 which makes it the right point for the text checks and the wrong one for

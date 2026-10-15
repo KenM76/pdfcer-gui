@@ -14,9 +14,10 @@ use pdfcer_render::RenderOptions;
 
 /// The magnification filter `model`'s rasters are drawn with: smooth, except
 /// for PaddleOCR-VL, which reads the display's point sampling. On a smoothed
-/// scan VL did not finish a one-page fixture in ten minutes that it reads in
-/// seconds point-sampled; it resizes every region itself, so smoothing first
-/// buys it nothing.
+/// scan VL falls into repeating one line and the engine's loop stop ends the
+/// page minutes later with part of it read; point-sampled it reads the page in
+/// seconds. It resizes every region itself, so smoothing first buys it
+/// nothing.
 #[must_use]
 pub fn magnify(model: &pdfcer_core::ocr::addons::OcrModel) -> MagnifyFilter {
     // ui-text-exempt: an engine token, never displayed.
