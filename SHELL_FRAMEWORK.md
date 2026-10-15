@@ -126,6 +126,14 @@ expected to; the merged result is required to. One type, two roles and a checked
 boundary between them, rather than a second `ShellPatch` type that would have to
 be kept in step field by field forever.
 
+A tab's optional `icon` is an icon key, drawn before its label through the
+same painter the ribbon's buttons use; an overlay that names one replaces it.
+Dock panels carry theirs on the registration instead —
+`PanelInfo::with_icon`, painted by the painter handed to
+`Dock::with_icon_painter` — so the application can give a panel's tab its
+command's glyph. With no key, or no painter, a tab is text alone and measures
+as it did.
+
 A tab with no `groups` key is a layer's *reference* to a tab. A deliberately
 empty tab is written `groups: []`. Hiding a tab (`hidden: true`) keeps its
 definition; deleting it from a customization file gets the built-in one back at
@@ -175,7 +183,7 @@ Shell(
         Mode(id: "review", label: "Review", tabs: ["file", "view", "pages", "markup", "measure"]),
     ],
     tabs: [
-        Tab(id: "file", label: "File", groups: [
+        Tab(id: "file", label: "File", icon: "document", groups: [
             Group(id: "security", caption: "Security", items: [
                 Command(id: "file.encrypt", size: Large),
                 Command(id: "file.sign", size: Large, capability: "signing"),

@@ -516,8 +516,10 @@ impl PdfcerApp {
         // The rail's own auto-hide, from the preference, for the ribbon's
         // reason above.
         dock.sync_rail_auto_hide(crate::app::prefs::auto_hide(rail_auto_hide));
+        let mut tab_icons = crate::icons::paint_ribbon_icon;
         let report = egui_shell::dock::Dock::new()
             .with_registry(panel_registry)
+            .with_icon_painter(&mut tab_icons)
             .with_rail_reach(&mut rail_reach)
             .with_tab_menu(&mut tab_menu)
             .with_side_banner(

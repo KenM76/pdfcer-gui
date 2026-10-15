@@ -9,6 +9,7 @@ use egui_shell::manifest::Tab;
 /// The Pages tab.
 pub fn tab() -> Tab {
     Tab::new("pages", ribbon::tab_pages())
+        .with_icon("pages")
         .with_question(ribbon::question_pages())
         .with_groups([
             // ---------------------------------------------------------------

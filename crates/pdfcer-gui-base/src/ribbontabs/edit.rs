@@ -10,6 +10,7 @@ use egui_shell::manifest::Tab;
 /// The Edit tab.
 pub fn tab() -> Tab {
     Tab::new("edit", ribbon::tab_edit())
+        .with_icon("edit")
         .with_question(ribbon::question_edit())
         .with_groups([
             // ---------------------------------------------------------------

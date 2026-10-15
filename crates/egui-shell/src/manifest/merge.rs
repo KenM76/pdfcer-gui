@@ -391,6 +391,9 @@ fn merge_tab(
     if overlay.label.is_some() {
         base.label.clone_from(&overlay.label);
     }
+    if overlay.icon.is_some() {
+        base.icon.clone_from(&overlay.icon);
+    }
     if overlay.question.is_some() {
         base.question.clone_from(&overlay.question);
     }

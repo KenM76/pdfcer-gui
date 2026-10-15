@@ -128,8 +128,6 @@ fn crates/egui-shell/src/dock/floatwin.rs::show_floating
 fn crates/egui-shell/src/dock/rail.rs::build
 fn crates/egui-shell/src/dock/rail.rs::draw
 fn crates/egui-shell/src/dock/stack.rs::draw_stack
-fn crates/egui-shell/src/dock/tabs.rs::draw_tab
-fn crates/egui-shell/src/dock/tabs.rs::tab_bar
 fn crates/egui-shell/src/layout/mod.rs::sanitize
 fn crates/egui-shell/src/manifest/mod.rs::tidy
 fn crates/egui-shell/src/menu/render.rs::body

@@ -105,10 +105,11 @@ use egui::{Align, Layout, Rect, RichText, TextStyle, UiBuilder, Vec2};
 use super::ctx::{Ctx, Intent};
 use super::drag;
 use super::geometry::StackAddr;
-use super::model::{DockSide, PanelAddress, Stack};
+use super::model::{DockSide, PanelAddress, PanelId, Stack};
 use super::plan::{self, TabPlan};
 use super::report;
 use super::tab_menu::TabMenu;
+use super::tabicon;
 
 /// What one tab bar did this frame.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -135,24 +136,17 @@ pub(crate) fn tab_bar(
     }
 
     let addr = StackAddr::new(side, column, stack_index);
-    ui.painter()
-        .rect_filled(rect, 0.0, ctx.theme.palette.surface);
-    ui.painter().hline(
-        rect.x_range(),
-        rect.bottom() - 0.5,
-        egui::Stroke::new(1.0, ctx.theme.palette.outline),
-    );
-    ctx.reporter
-        .report(ui, rect, || report::tab_bar(side, column, stack_index));
-    ctx.geometry.push_strip(addr, rect);
+    paint_bar(ui, ctx, addr, rect);
 
     // 1. Measure. `egui` memoizes layout jobs, so asking for the width of
     //    a label that is about to be drawn costs a hash lookup rather
-    //    than a second text layout.
+    //    than a second text layout. A tab's icon is part of its width.
     let labels: Vec<String> = stack.tabs.iter().map(|p| ctx.describe(p).0).collect();
-    let widths: Vec<f32> = labels
+    let widths: Vec<f32> = stack
+        .tabs
         .iter()
-        .map(|l| plan::tab_width(text_width(ui, l)))
+        .zip(&labels)
+        .map(|(p, l)| plan::tab_width(text_width(ui, l)) + tabicon::extra_width(ui, ctx, p))
         .collect();
 
     // 2 & 3. The reservation, and the budget it is subtracted from.
@@ -177,17 +171,7 @@ pub(crate) fn tab_bar(
         }
         let tab_rect =
             Rect::from_min_size(egui::pos2(x, rect.top()), Vec2::new(width, rect.height()));
-        draw_tab(
-            ui,
-            ctx,
-            side,
-            column,
-            stack_index,
-            stack,
-            i,
-            &labels[i],
-            tab_rect,
-        );
+        draw_tab(ui, ctx, addr, stack, i, &labels[i], tab_rect);
         // Recorded from the LAYOUT's rect, not from the button's response.
         // This is the rectangle the reservation arithmetic decided on, and it
         // is the one a caret and a drop test must agree with.
@@ -218,14 +202,26 @@ pub(crate) fn tab_bar(
     outcome
 }
 
+/// The bar's backdrop and bottom rule, and its rect published and recorded.
+fn paint_bar(ui: &egui::Ui, ctx: &mut Ctx<'_>, addr: StackAddr, rect: Rect) {
+    ui.painter()
+        .rect_filled(rect, 0.0, ctx.theme.palette.surface);
+    ui.painter().hline(
+        rect.x_range(),
+        rect.bottom() - 0.5,
+        egui::Stroke::new(1.0, ctx.theme.palette.outline),
+    );
+    ctx.reporter.report(ui, rect, || {
+        report::tab_bar(addr.side, addr.column, addr.stack)
+    });
+    ctx.geometry.push_strip(addr, rect);
+}
+
 /// Draw one tab: the selected one joins the panel below it, the rest sit flat on the bar.
-#[allow(clippy::too_many_arguments)]
 fn draw_tab(
     ui: &mut egui::Ui,
     ctx: &mut Ctx<'_>,
-    side: DockSide,
-    column: usize,
-    stack_index: usize,
+    addr: StackAddr,
     stack: &Stack,
     index: usize,
     label: &str,
@@ -233,7 +229,6 @@ fn draw_tab(
 ) {
     let panel = &stack.tabs[index];
     let selected = index == stack.active;
-    let (_, announced) = ctx.describe(panel);
 
     // R84: the joined outline and the accent rule (`crate::tabshape`) carry
     // selection; the label colour is only a third cue.
@@ -244,10 +239,12 @@ fn draw_tab(
     };
 
     let id = ctx
-        .id("tab", side, column, stack_index)
+        .id("tab", addr.side, addr.column, addr.stack)
         .with(panel.as_str());
+    let slot = tabicon::slot(ctx, panel, id);
+    let atoms = tabicon::atoms(ctx, slot.as_ref(), text);
     let backdrop = ui.painter().add(egui::Shape::Noop);
-    let response = ui
+    let laid_out = ui
         .scope_builder(
             UiBuilder::new()
                 .id_salt(id)
@@ -260,16 +257,18 @@ fn draw_tab(
                 // shape is painted into `backdrop` once hover is known.
                 // `click_and_drag` still reports `clicked()`; `Sense::drag()`
                 // alone would swallow the click.
-                let button = egui::Button::new(text)
+                egui::Button::new(atoms)
                     .frame(false)
                     .min_size(rect.size())
                     .truncate()
                     .sense(egui::Sense::click_and_drag())
-                    .selected(selected);
-                ui.add(button)
+                    .selected(selected)
+                    .atom_ui(ui)
             },
         )
         .inner;
+    tabicon::paint(ui, ctx, panel, slot, &laid_out, selected);
+    let response = laid_out.response;
     ui.painter().set(
         backdrop,
         crate::tabshape::body(
@@ -282,6 +281,22 @@ fn draw_tab(
         ),
     );
 
+    press(ui, ctx, panel, addr.tab(index), &response);
+    let response = announce(ctx, panel, response, selected);
+    secondary_click(ctx, panel, &response);
+
+    ctx.reporter
+        .report(ui, response.rect, || report::tab(panel));
+}
+
+/// A click activates the tab; a primary drag begins a reorder.
+fn press(
+    ui: &egui::Ui,
+    ctx: &mut Ctx<'_>,
+    panel: &PanelId,
+    address: PanelAddress,
+    response: &egui::Response,
+) {
     if response.clicked() {
         ctx.intents.push(Intent::Activate(panel.clone()));
     }
@@ -290,29 +305,25 @@ fn draw_tab(
     // before releasing would start a reorder the operator meant as a context
     // menu, and a middle-press one they meant as nothing at all.
     if response.drag_started_by(egui::PointerButton::Primary) {
-        drag::begin(
-            ui,
-            ctx,
-            panel,
-            PanelAddress {
-                side,
-                column,
-                stack: stack_index,
-                tab: index,
-            },
-        );
+        drag::begin(ui, ctx, panel, address);
     }
+}
 
-    // The accessible name is published BEFORE anything else is allowed
-    // to touch this response.
-    //
-    // Both of the next two things — the built-in menu and, more to the
-    // point, an application's handler — receive this response, and the
-    // handler is arbitrary code the dock knows nothing about. Announcing
-    // first means a tab announces itself correctly whatever the handler
-    // does or fails to do: the seam can only *add* to the tab, never
-    // silently subtract its name from the accessibility tree. See
-    // `super::tab_menu`'s accessibility section.
+/// Publish the tab's accessible name and tooltip.
+///
+/// Done BEFORE anything else is allowed to touch the response: the
+/// built-in menu and an application's handler both receive it, and the
+/// handler is arbitrary code the dock knows nothing about. Announcing first
+/// means the seam can only *add* to the tab, never silently subtract its
+/// name from the accessibility tree. See `super::tab_menu`'s accessibility
+/// section.
+fn announce(
+    ctx: &Ctx<'_>,
+    panel: &PanelId,
+    response: egui::Response,
+    selected: bool,
+) -> egui::Response {
+    let (_, announced) = ctx.describe(panel);
     let response = response.on_hover_text(announced.clone());
     response.widget_info(|| {
         egui::WidgetInfo::selected(
@@ -322,30 +333,27 @@ fn draw_tab(
             announced.clone(),
         )
     });
+    response
+}
 
-    // ONE owner for the secondary click, chosen once.
-    //
-    // Right-click to close, rather than an ✕ on every tab: a per-tab close
-    // glyph would have to be inside the tab's width, so the tab-width
-    // arithmetic — and therefore the reservation the whole module turns on
-    // — would depend on whether a tab is closable. That is a coupling with
-    // no benefit at this stage: closing a panel is an occasional act, and
-    // a context menu is where a desktop operator already looks for
-    // occasional acts on an object.
-    //
-    // But *what* a right-click offers is the application's business, not
-    // the dock's, so an application may take the click instead. It cannot
-    // take it *as well*: a context menu's popup id is
-    // `response.id.with("popup")`, and two menus on one response are two
-    // writers of one flag in `egui`'s memory. Whichever party owns it, the
-    // close it produces is recorded as an `Intent` — never applied here —
-    // so a menu-driven close and the built-in one are the same event
-    // downstream, and `DockFrameReport::closed` is true for both.
+/// The tab's secondary click: the application's handler when it took one,
+/// the built-in Close menu otherwise.
+///
+/// Right-click to close, rather than an ✕ on every tab: a per-tab close
+/// glyph would have to be inside the tab's width, so the reservation the
+/// whole module turns on would depend on whether a tab is closable.
+///
+/// One owner only: a context menu's popup id is `response.id.with("popup")`,
+/// and two menus on one response are two writers of one flag in `egui`'s
+/// memory. Whichever party owns it, the close it produces is recorded as an
+/// `Intent` — never applied here — so a menu-driven close and the built-in
+/// one are the same event downstream.
+fn secondary_click(ctx: &mut Ctx<'_>, panel: &PanelId, response: &egui::Response) {
     let mut close_requested = false;
     let mut float_requested = false;
     let mut dock_requested = false;
     if let Some(handler) = ctx.tab_menu.as_deref_mut() {
-        let mut tab = TabMenu::new(panel, &response);
+        let mut tab = TabMenu::new(panel, response);
         handler(&mut tab);
         close_requested = tab.close_requested();
         float_requested = tab.float_requested();
@@ -358,21 +366,11 @@ fn draw_tab(
             }
         });
     }
-    // The ORDER these are tested in is the answer to "what if a handler
-    // asked for two of them in one frame", and it is documented rather than
-    // left to whichever `if` happened to be written first.
-    //
-    // **Close outranks everything**, because it is the most emphatic thing
-    // an operator can ask of a surface and the only one that is not
-    // reversible by another click. Float outranks dock, because a tab is a
-    // docked panel: `dock_back` on it is a no-op anyway, and honouring the
-    // no-op over the real verb would make the pair silently order-dependent.
-    //
-    // A tab is only ever one of the two states, so a correctly-written
-    // handler cannot reach this. It is decided here so that an
-    // *incorrectly*-written one has a defined outcome rather than one that
-    // depends on the phase of the layout — the same posture
-    // `DockLayout::mount` takes towards an out-of-range address.
+    // The order decides a handler that asked for two in one frame. Close
+    // outranks everything: it is the most emphatic request and the only one
+    // another click cannot reverse. Float outranks dock, because a tab is a
+    // docked panel and `dock_back` on it is a no-op. A correct handler
+    // cannot ask for two; an incorrect one still gets a defined outcome.
     if close_requested {
         ctx.intents.push(Intent::Close(panel.clone()));
     } else if float_requested {
@@ -383,9 +381,6 @@ fn draw_tab(
     } else if dock_requested {
         ctx.intents.push(Intent::Dock(panel.clone()));
     }
-
-    ctx.reporter
-        .report(ui, response.rect, || report::tab(panel));
 }
 
 /// Draw the "⏷ N more" affordance and the menu behind it.

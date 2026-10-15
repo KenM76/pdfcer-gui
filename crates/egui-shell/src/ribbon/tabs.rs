@@ -105,13 +105,13 @@
 //!
 //! Design and rationale: `docs/modules/egui-shell/ribbon/tabs.md`.
 
-use egui::{RichText, Stroke, TextStyle, vec2};
+use egui::{Atoms, RichText, Stroke, TextStyle, Vec2, vec2};
 
 use crate::commands::ConditionSet;
 use crate::manifest::{Shell, Tab};
 
 use super::a11y;
-use super::ctx::{Ctx, condition_holds};
+use super::ctx::{Ctx, IconRequest, condition_holds};
 use super::measure;
 use super::plan::ItemWidths;
 use super::report;
@@ -245,11 +245,20 @@ pub(crate) fn tab_label(tab: &Tab) -> &str {
 }
 
 /// The width one tab will occupy, before the row's budget is applied.
-pub(crate) fn measure_tab(ui: &egui::Ui, tab: &Tab) -> f32 {
+pub(crate) fn measure_tab(ui: &egui::Ui, ctx: &Ctx<'_>, tab: &Tab) -> f32 {
+    let has_icon = icon_slot(ctx, tab).is_some();
     ItemWidths {
-        icon: 0.0,
+        icon: if has_icon {
+            ctx.theme.metrics.icon_pts
+        } else {
+            0.0
+        },
         text: measure::text_width(ui, tab_label(tab), &TextStyle::Button),
-        gap: 0.0,
+        gap: if has_icon {
+            ui.spacing().icon_spacing
+        } else {
+            0.0
+        },
         padding: measure::button_padding(ui),
     }
     .total()
@@ -272,6 +281,56 @@ pub(crate) fn render_tabs(
     clicked
 }
 
+/// The tab's icon key and slot id, when it names an icon and the
+/// application installed a painter; otherwise the tab is text alone.
+fn icon_slot(ctx: &Ctx<'_>, tab: &Tab) -> Option<(String, egui::Id)> {
+    let key = tab.icon.as_ref().filter(|k| !k.trim().is_empty())?;
+    ctx.icons.as_ref()?;
+    Some((key.clone(), ctx.id("tab-icon", &tab.id)))
+}
+
+/// The tab's content: the icon slot, then the label.
+fn tab_atoms<'t>(ctx: &Ctx<'_>, slot: Option<&(String, egui::Id)>, text: RichText) -> Atoms<'t> {
+    let mut atoms = Atoms::default();
+    if let Some((_, slot_id)) = slot {
+        let size = ctx.theme.metrics.icon_pts;
+        atoms.push_right(egui::Atom::custom(*slot_id, Vec2::splat(size)));
+    }
+    atoms.push_right(text);
+    atoms
+}
+
+/// Paint the icon into the slot egui laid out, and publish its rect as
+/// `tabicon.ribbon.<tab>` so a driven check can find the glyph inside the tab.
+fn paint_tab_icon(
+    ui: &egui::Ui,
+    ctx: &mut Ctx<'_>,
+    tab: &Tab,
+    slot: Option<(String, egui::Id)>,
+    laid_out: &egui::AtomLayoutResponse,
+    is_active: bool,
+) {
+    let Some((key, slot_id)) = slot else { return };
+    let Some(rect) = laid_out.rect(slot_id) else {
+        return;
+    };
+    if let Some(painter) = ctx.icons.take() {
+        let visuals = ui.style().interact(&laid_out.response);
+        painter(
+            ui.painter(),
+            &IconRequest {
+                key: &key,
+                rect,
+                tint: visuals.fg_stroke.color,
+                enabled: true,
+                selected: is_active,
+            },
+        );
+        ctx.icons = Some(painter);
+    }
+    ctx.reporter.report(rect, || report::tab_icon(&tab.id));
+}
+
 /// Draw one tab button, wherever it is. Returns whether it was clicked.
 fn draw_tab(
     ui: &mut egui::Ui,
@@ -290,20 +349,27 @@ fn draw_tab(
         RichText::new(label).color(palette.text_muted)
     };
 
+    let slot = icon_slot(ctx, tab);
+    let atoms = tab_atoms(ctx, slot.as_ref(), text);
     let response = if in_menu {
-        ui.add(egui::Button::selectable(is_active, text).truncate())
+        let laid_out = egui::Button::selectable(is_active, atoms)
+            .truncate()
+            .atom_ui(ui);
+        paint_tab_icon(ui, ctx, tab, slot, &laid_out, is_active);
+        laid_out.response
     } else {
         // Frameless, at the width `measure_tab` planned for (or what is left
         // of the row); the tab's shape is painted into `body` once hover is known.
-        let width = measure_tab(ui, tab).min(ui.available_width());
+        let width = measure_tab(ui, ctx, tab).min(ui.available_width());
         let body = ui.painter().add(egui::Shape::Noop);
-        let response = ui.add(
-            egui::Button::new(text)
-                .frame(false)
-                .truncate()
-                .min_size(vec2(width, strip_height(ctx)))
-                .selected(is_active),
-        );
+        let laid_out = egui::Button::new(atoms)
+            .frame(false)
+            .truncate()
+            .min_size(vec2(width, strip_height(ctx)))
+            .selected(is_active)
+            .atom_ui(ui);
+        paint_tab_icon(ui, ctx, tab, slot, &laid_out, is_active);
+        let response = laid_out.response;
         ui.painter().set(
             body,
             crate::tabshape::body(

@@ -12,6 +12,7 @@ use crate::modecapability::EDIT_CONTENT_CONDITION as EDIT_CONTENT;
 /// The Security tab.
 pub fn tab() -> Tab {
     Tab::new("security", crate::text::security::tab_security())
+        .with_icon("lock")
         .with_question(ribbon::question_security())
         .with_groups([
             // ---------------------------------------------------------------

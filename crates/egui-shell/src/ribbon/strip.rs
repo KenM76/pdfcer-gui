@@ -194,7 +194,10 @@ pub(crate) fn render(
     let (_, selector_wanted) = mode_selector::measure_track(ui, shell.modes());
     let trailing_wanted = trailing::measure(ui, ctx, shell.trailing.as_ref());
     let trailing_floor = trailing::min_width(ui, ctx, shell.trailing.as_ref());
-    let tab_widths: Vec<f32> = visible.iter().map(|t| tabs::measure_tab(ui, t)).collect();
+    let tab_widths: Vec<f32> = visible
+        .iter()
+        .map(|t| tabs::measure_tab(ui, ctx, t))
+        .collect();
     let affordance_wanted = plan::overflow_width(visible.len(), measure::button_padding(ui), |s| {
         measure::text_width(ui, s, &egui::TextStyle::Button)
     });

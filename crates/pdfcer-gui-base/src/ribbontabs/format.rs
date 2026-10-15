@@ -32,6 +32,7 @@ const IMAGE_VISIBLE_WHEN: &str = "selection.image_replaceable"; // ui-text-exemp
 /// The Format tab.
 pub fn tab() -> Tab {
     Tab::new("format", ribbon::tab_format())
+        .with_icon("properties")
         .with_question(ribbon::question_format())
         .with_visible_when(VISIBLE_WHEN)
         .with_groups([

@@ -178,6 +178,14 @@ pub fn tab(panel: &PanelId) -> String {
     format!("{PREFIX}.tab.{panel}")
 }
 
+/// The glyph drawn inside one panel tab, when the panel has an icon.
+/// Outside the `dock.` namespace on purpose: a reader listing `dock.tab.*`
+/// as tabs must not collect glyphs with them.
+#[must_use]
+pub fn tab_icon(panel: &PanelId) -> String {
+    format!("tabicon.{PREFIX}.{panel}")
+}
+
 /// **The insertion caret drawn while a tab is being dragged.**
 #[must_use]
 pub fn tab_caret(side: DockSide, column: usize, stack: usize) -> String {

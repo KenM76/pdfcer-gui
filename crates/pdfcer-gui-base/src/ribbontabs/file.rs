@@ -10,6 +10,7 @@ use egui_shell::manifest::{Item, Tab};
 /// The File tab.
 pub fn tab() -> Tab {
     Tab::new("file", ribbon::tab_file())
+        .with_icon("document")
         .with_question(ribbon::question_file())
         .with_groups([
             // ---------------------------------------------------------------

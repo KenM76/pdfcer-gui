@@ -747,6 +747,9 @@ pub struct PanelInfo {
     /// [`PanelRegistry::thin_tooltips`] is the check, and the application
     /// calls it in *its* suite because it owns the strings.
     pub tooltip: String,
+    /// The icon key drawn before the tab's label, resolved by the painter
+    /// given to [`super::Dock::with_icon_painter`].
+    pub icon: Option<String>,
 }
 
 impl PanelInfo {
@@ -757,7 +760,15 @@ impl PanelInfo {
             id: id.into(),
             label: label.into(),
             tooltip: String::new(),
+            icon: None,
         }
+    }
+
+    /// Add the tab's icon key; `None` leaves the tab text alone.
+    #[must_use]
+    pub fn with_icon(mut self, key: Option<String>) -> Self {
+        self.icon = key;
+        self
     }
 
     /// Add the purpose tooltip.

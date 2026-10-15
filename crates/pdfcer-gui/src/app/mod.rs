@@ -816,7 +816,8 @@ impl PdfcerApp {
         for panel in crate::panels::Panel::ALL {
             let id = panel.command_id();
             if let Some(command) = commands.get(id) {
-                let mut info = egui_shell::dock::PanelInfo::new(id, command.label.clone());
+                let mut info = egui_shell::dock::PanelInfo::new(id, command.label.clone())
+                    .with_icon(command.icon.clone());
                 if let Some(tooltip) = &command.tooltip {
                     info = info.with_tooltip(tooltip.clone());
                 }

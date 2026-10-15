@@ -428,6 +428,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(export_dxf_pages::ExportDxfWritesOneFilePerPage),
         Box::new(export_image_standard::ExportImageDrawsTheChosenBackgroundAndStandard),
         Box::new(tabs_look::TabsReadAsTabs),
+        Box::new(tab_glyphs::EveryTabDrawsItsGlyph),
         Box::new(system_theme::SystemThemeFollowsTheHost),
         Box::new(small_first_page::ASmallFirstPageIsTheCurrentPage),
         Box::new(export_image_emf::ExportImageWritesAMetafile),

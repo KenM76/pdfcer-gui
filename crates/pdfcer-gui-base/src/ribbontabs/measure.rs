@@ -9,6 +9,7 @@ use egui_shell::manifest::Tab;
 /// The Measure tab.
 pub fn tab() -> Tab {
     Tab::new("measure", ribbon::tab_measure())
+        .with_icon("measure-length")
         .with_question(ribbon::question_measure())
         .with_groups([
             // ---------------------------------------------------------------

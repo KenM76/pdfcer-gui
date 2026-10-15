@@ -10,6 +10,7 @@ use egui_shell::manifest::Tab;
 /// The View tab.
 pub(super) fn tab() -> Tab {
     Tab::new("view", ribbon::tab_view())
+        .with_icon("screen")
         .with_question(ribbon::question_view())
         .with_groups([
             // ---------------------------------------------------------------

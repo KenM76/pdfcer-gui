@@ -168,7 +168,9 @@ item is — the galley `egui` will lay out, plus the padding `egui` will
 add — and the estimate is floored at
 [`super::plan::MIN_ITEM_WIDTH`] by [`ItemWidths::total`].
 
-A tab has no icon slot and no gap, so this is text plus padding. The
+A tab is text plus padding, and, when it names an icon and a painter is
+installed, the icon's width and `icon_spacing` too — the same slot the
+button lays out, so the estimate and the drawing cannot disagree. The
 active tab is *not* measured wider even though it is drawn with a
 stroke and `RichText::strong()`: an `egui` stroke is painted inside the
 button's own rect, and `strong()` in `egui` 0.35 changes the colour and

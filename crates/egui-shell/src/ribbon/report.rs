@@ -77,6 +77,14 @@ pub fn tab(tab_id: &str) -> String {
     format!("{PREFIX}.tab.{tab_id}")
 }
 
+/// The name under which one ribbon tab's **icon** is published, inside the
+/// tab's own rect. Outside the `ribbon.` namespace on purpose: a reader
+/// listing `ribbon.tab.*` as tabs must not collect glyphs with them.
+#[must_use]
+pub fn tab_icon(tab_id: &str) -> String {
+    format!("tabicon.{PREFIX}.{tab_id}")
+}
+
 /// The name under which one **group** — controls and caption together —
 /// is published.
 #[must_use]

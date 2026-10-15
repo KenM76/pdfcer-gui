@@ -9,6 +9,7 @@ use egui_shell::manifest::{Item, Tab};
 /// The Markup tab.
 pub fn tab() -> Tab {
     Tab::new("markup", ribbon::tab_markup())
+        .with_icon("markup")
         .with_question(ribbon::question_markup())
         .with_groups([
             // ---------------------------------------------------------------

@@ -223,6 +223,7 @@ mod stack;
 /// and the geometry a drop is resolved against.
 pub mod state;
 pub mod tab_menu;
+mod tabicon;
 pub mod tabs;
 mod tear;
 
@@ -318,6 +319,9 @@ pub struct Dock<'a> {
     /// **Which panels the rail can raise.** Built by
     /// [`Dock::with_rail_reach`]; see [`Dock::tabs_suppressed`].
     rail_reach: Option<&'a mut RailReach<'a>>,
+    /// The tab glyph painter. Built by [`Dock::with_icon_painter`]; see
+    /// [`tabicon`].
+    icons: Option<&'a mut crate::ribbon::IconPainter<'a>>,
 }
 
 impl<'a> Dock<'a> {
@@ -566,6 +570,7 @@ impl<'a> Dock<'a> {
             // pre-existing quirk the sink has, and the same answer:
             // build one per frame, which every caller does.
             tab_menu: self.tab_menu.take(),
+            icons: self.icons.take(),
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,

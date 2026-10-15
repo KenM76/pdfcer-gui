@@ -531,6 +531,11 @@ pub struct Tab {
     /// The operator-visible label. Required in a complete manifest.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+
+    /// The icon key drawn before the label, resolved by the application's
+    /// icon painter. Absent, or with no painter installed, the tab is text.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
     /// The one-line question this tab exists to answer. Optional; a
     /// renderer may show it as a hint, and a reviewer should read it as a
     /// test of whether the tab is coherent.
@@ -585,6 +590,13 @@ impl Tab {
     #[must_use]
     pub fn with_groups(mut self, groups: impl IntoIterator<Item = Group>) -> Self {
         self.groups = Some(groups.into_iter().collect());
+        self
+    }
+
+    /// Set the icon key drawn before the label.
+    #[must_use]
+    pub fn with_icon(mut self, key: impl Into<String>) -> Self {
+        self.icon = Some(key.into());
         self
     }
 

@@ -110,6 +110,7 @@ pub mod export_dxf_pages;
 pub mod export_image_standard;
 pub mod small_first_page;
 pub mod system_theme;
+pub mod tab_glyphs;
 pub mod tabs_look;
 
 /// **Press Export form data and a file appears on disk with the form's

@@ -41,6 +41,7 @@
         (
             id: "file",
             label: "File",
+            icon: "document",
             question: "What do I do with the file as a whole, or with pdfcer itself?",
             groups: [
                 (
@@ -129,6 +130,7 @@
         (
             id: "view",
             label: "View",
+            icon: "screen",
             question: "What is on my screen, and how is the page laid out?",
             groups: [
                 (
@@ -233,6 +235,7 @@
         (
             id: "pages",
             label: "Pages",
+            icon: "pages",
             question: "What am I doing to the set of pages?",
             groups: [
                 (
@@ -291,6 +294,7 @@
         (
             id: "edit",
             label: "Edit",
+            icon: "edit",
             question: "What am I changing about content that is already there?",
             groups: [
                 (
@@ -366,6 +370,7 @@
         (
             id: "markup",
             label: "Markup",
+            icon: "markup",
             question: "What am I adding for someone else to read?",
             groups: [
                 (
@@ -442,6 +447,7 @@
         (
             id: "measure",
             label: "Measure",
+            icon: "measure-length",
             question: "What am I measuring, and in what units?",
             groups: [
                 (
@@ -471,6 +477,7 @@
         (
             id: "security",
             label: "Security",
+            icon: "lock",
             question: "Who may open, change or trust this file, and what must never leave it?",
             groups: [
                 (
@@ -528,6 +535,7 @@
         (
             id: "tools",
             label: "Tools",
+            icon: "tool",
             question: "What do I run across files, or configure once?",
             groups: [
                 (
@@ -565,6 +573,7 @@
         (
             id: "format",
             label: "Format",
+            icon: "properties",
             question: "What am I changing about the thing I have selected?",
             visible_when: "selection.formattable",
             groups: [

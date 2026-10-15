@@ -540,6 +540,14 @@ Straighten scans' window has a setting for the least confidence at which a measu
 
 **Where it stands.** Built: the Straighten scans window has *Turn only when at least this sure*, a slider and a number box from 0 % to 100 %, starting at 20 % and remembered between runs. At 0 % every page whose tilt could be measured is turned. A page left alone says what it measured, how sure it was and the setting it fell under. Driven off-screen at 100 %: both tilted test pages (measured at 71 %) are left alone and the setting is saved; the check fails when the slider is ignored.
 
+## O298 — **BUILT AND DRIVEN — awaiting your verdict** — every tab carries a glyph
+
+His words: *"Also make glyphs for the tabs."*
+
+Each ribbon tab (File, View, Pages, Edit, Markup, Measure, Security, Tools, and Format when it shows) and each dock panel tab draws an icon before its name, from the same icon set as the ribbon's buttons. A panel's tab uses its command's icon, so a panel and the button that opens it look alike.
+
+**Where it stands.** Built and driven (`every_tab_draws_its_glyph`). Ribbon tabs: File (document), View (screen), Pages, Edit, Markup, Measure (ruler), Security (lock), Tools, Format (properties). Panel tabs in the main dock use the glyph of the command that opens them. Not yet given glyphs: tabs listed inside a "N more" menu, and tabs on a floating panel.
+
 ## O292 — **OPEN, after O291** — form fields multi-select, and Align and Distribute on several
 
 His words: *"I can't seem to select multiple form items at once. Not being able to do this makes it impossible to use the align and distribute tool with them."*
