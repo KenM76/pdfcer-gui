@@ -986,8 +986,8 @@ impl PdfcerApp {
             // `super::write::WriteAction` for why they are a family: they are
             // `Action`s only because a native dialog must not open inside a
             // layout pass, and none of them changes the open document.
-            Action::Text(super::text::TextAction::Reflow { page, block }) => {
-                super::textstyle::reflow(doc, page, block, None);
+            Action::Text(super::text::TextAction::Reflow { page, block, width }) => {
+                super::textstyle::reflow(doc, page, block, None, width);
             }
             Action::Text(super::text::TextAction::Align {
                 page,

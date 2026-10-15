@@ -136,7 +136,7 @@ fn drive(
 }
 
 /// `A->B` from the trace's `lines=` field.
-fn parse_lines(field: &str) -> Option<(u32, u32)> {
+pub(super) fn parse_lines(field: &str) -> Option<(u32, u32)> {
     let (before, after) = field.split_once("->")?;
     Some((before.trim().parse().ok()?, after.trim().parse().ok()?))
 }

@@ -885,6 +885,10 @@ fn show_in(
     // See `guides`' header §3. Registers nothing when the toggle is off or the
     // document has no guides.
     guides::canvas_drag(ui, doc, &page_views, actions);
+    // An open paragraph's width handle, in the same layer for the same reason.
+    if active_tool.text_edit_kind().is_some() {
+        crate::canvas::textedit::widthgrip::offer(ui, doc, &page_views, actions);
+    }
 
     // Form filling on the page, registered in that same layer and for the
     // same reason: the focused field's editor must be topmost, and nothing is

@@ -970,6 +970,9 @@ pub mod redaction_reach;
 /// no other instrument that can see the handover.
 pub mod reflow;
 
+/// An open paragraph's width handle, dragged in: the paragraph gains lines.
+pub mod reflow_width;
+
 /// The eight resize grips, driven all the way to a committed edit — being
 /// cursored, hit-tested and drag-consuming proves none of that.
 ///

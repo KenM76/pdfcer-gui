@@ -51,12 +51,12 @@ conflicts with R75 and goes back to him.
 
 **Slices.**
 
-1. **Reflow is honest.** Accept `Anchor::Block` (commit the draft first; an
+1. **Reflow is honest** (built). Accept `Anchor::Block` (commit the draft first; an
    edited paragraph is re-wrapped by its commit). Judge *already fits* by line
    count, not by an empty note list. Put each widen refusal in the status
    line in plain words (*mixed fonts in this paragraph*, *set in a composite
    font*). Fix the word-gap description.
-2. **Width handle.** A paragraph open for editing has a right-edge handle;
+2. **Width handle** (built). A paragraph open for editing has a right-edge handle;
    dragging it re-wraps at that width (`ReflowRequest::with_wrap_width`).
    This is the visible half of reflow and needs nothing from the engine.
 3. **Select tool.** A fourth click, or a click on the paragraph's box,

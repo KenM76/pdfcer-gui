@@ -27,6 +27,8 @@ pub enum TextAction {
         page: usize,
         /// Which paragraph on it.
         block: usize,
+        /// The column to wrap to, in points; `None` keeps the block's own.
+        width: Option<f64>,
     },
     /// **Enter was pressed where a line break cannot go**, and why —
     /// `OPERATOR_REQUESTS.md` **O127**, defect 2.

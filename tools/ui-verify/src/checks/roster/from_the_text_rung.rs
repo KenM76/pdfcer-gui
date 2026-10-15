@@ -649,6 +649,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // `text_edit` and `redaction` above: its verdict is a LINE COUNT that
         // only `fixtures/paragraph.pdf` produces, so it takes no `--pdf`.
         Box::new(reflow::ReflowingAParagraphRewrapsIt),
+        Box::new(reflow_width::DraggingAParagraphsEdgeRewrapsIt),
         // O127 defect 2 — and registered WITHOUT having been run, on the
         // precedent `left_rail`, `properties_tool` and `protect` above set: a
         // check that exists and is not registered is a check nobody will ever

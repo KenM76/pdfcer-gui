@@ -120,7 +120,11 @@ fn push(actions: &mut Vec<Action>, page: usize, block: usize, from: &str) {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!("reflow-resolved page={page} block={block} from={from}")
     });
-    actions.push(Action::Text(TextAction::Reflow { page, block }));
+    actions.push(Action::Text(TextAction::Reflow {
+        page,
+        block,
+        width: None,
+    }));
 }
 
 /// Say why, in the status line and in the trace, and change nothing.

@@ -23,7 +23,7 @@ pub(in crate::app::actions) fn align(
     let total = ordered.len();
     let mut done = 0_usize;
     for block in ordered.into_iter().rev() {
-        if !super::reflow(doc, page, block, Some(alignment)) {
+        if !super::reflow(doc, page, block, Some(alignment), None) {
             break;
         }
         done += 1;

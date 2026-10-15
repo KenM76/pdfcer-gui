@@ -138,6 +138,8 @@ pub mod tier;
 pub mod typing;
 /// Whether the text at a position is bold or italic, and by face or synthesis.
 pub mod weight;
+/// The right-edge handle that re-wraps an open paragraph at a dragged width.
+pub mod widthgrip;
 pub use plan::{Plan, plan};
 // O142 — a typo in a run written one glyph per show operator, which only
 // a spanning match can reach, and the guard that keeps the spanning match

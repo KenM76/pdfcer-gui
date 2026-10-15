@@ -699,6 +699,7 @@ pub(super) fn reflow(
     page: usize,
     block: usize,
     alignment: Option<pdfcer_core::text_edit::BlockAlignment>,
+    width: Option<f64>,
 ) -> bool {
     let mut applied = false;
     // ⚠ **There is no pre-flight gate here, and adding one is a mistake.**
@@ -740,7 +741,9 @@ pub(super) fn reflow(
     // the same shape as every other one this shell forwards: render normally,
     // report separately. The report arrives in `report.disclosures` and goes to
     // the status line verbatim.
-    let request = pdfcer_core::text_edit::ReflowRequest::new().with_alignment_opt(alignment);
+    let request = pdfcer_core::text_edit::ReflowRequest::new()
+        .with_alignment_opt(alignment)
+        .with_wrap_width_opt(width);
     let request = match doc.pages.get(page) {
         Some(page_ref) => request.with_page_cropbox(page_ref.crop_box),
         // A page index this document does not have. The reflow below will
@@ -781,7 +784,7 @@ pub(super) fn reflow(
                         // records: the funnel writes its own bare-named line for
                         // the same edit and `.last()` would read that one.
                         "reflow-block-applied page={page} block={block} lines={}->{} \
-                         justified={} height_delta={:.2} alignment={alignment:?}",
+                         justified={} height_delta={:.2} alignment={alignment:?} width={width:?}",
                         report.lines_before,
                         report.lines_after,
                         report.justified_lines,
