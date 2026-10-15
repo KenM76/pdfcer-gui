@@ -510,7 +510,7 @@ His words: *"When I tried using the PP-OCRv5 Latin (English, French) and enlarge
 
 The recognised words read along the printed words, at their size, whatever model and enlargement read them. The edit preview opens at the word's size in the layer's look and stays the way it opened.
 
-**Where it stands.** Found, and it is the engine's: the saved file itself has every word turned 90° (Acrobat's I-beam turns too, as you saw). It happens on any page turned a quarter in the file — every page of the TH83 manual — with any model, enlarged or not; the words' boxes are right, the writing inside them is not. Asked of the engine as G197, first priority. pdfcer cannot correct it from outside. Once it lands, re-running Recognise text on those pages replaces the sideways text, since a re-run replaces pdfcer's own earlier recognition.
+**Where it stands.** Fixed in the engine (G197) and taken: on a page turned a quarter in the file, recognised text is now written along the words, one run per line (G201). Driven on a sideways scan with `/Rotate 90`: every line of the saved layer lies along the printed words; the previous release writes them across. Re-running Recognise text on pages read before replaces the sideways text. Not yet re-driven on the TH83 manual with PaddleOCR Latin.
 
 ## O295 — **OPEN** — a paragraph or a line behaves as one, in page text and in the OCR layer, with reflow that just works
 
@@ -530,7 +530,7 @@ His words: *"it would be nice to have the option to upscale the images on the pa
 
 A File-menu command beside Straighten scans that enlarges each scanned picture's pixels in place (factor and filter as Recognise text's *Enlarge each page before reading* offers them), on chosen pages or the selected pictures, with the page looking the same size afterwards, as one undo step, saying what each picture went from and to and what it costs in file size.
 
-**Where it stands.** Filed. The engine has no verb that resamples a placed picture keeping its colour space and bit depth; asked as G198.
+**Where it stands.** The engine's verb landed (G198); the command is being built.
 
 ## O297 — **OPEN** — Straighten scans takes an acceptance confidence, down to 0 %
 

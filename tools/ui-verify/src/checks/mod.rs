@@ -1317,6 +1317,7 @@ pub mod draft_selection;
 pub mod marquee_table;
 
 pub mod ocr_text_select;
+pub mod ocr_turned_page;
 pub mod ocr_upscale;
 pub mod ocr_word_lists;
 
