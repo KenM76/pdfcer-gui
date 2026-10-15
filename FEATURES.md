@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.82.0, a git dependency on the local engine repository, pinned at **`8856ee03`** (engine main after v0.82.0, untagged: carries G196 to G201) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.83.0, a git dependency on the local engine repository, pinned at **`5e4404ec`** (the v0.83.0 tag: carries G196 to G201) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** File ▸ Recognise ▸ *Manage OCR models…* lists every recogniser pdfcer runs (PaddleOCR, ocrs, OCRcer, PaddleOCR-VL, Tesseract), with what is installed, its size and the default. Choose the default there. Install a model from a pdfcer OCR add-on zip or folder; its files are checked against the add-on's fingerprints first, and nothing is left behind if they fail. Download ocrs. Remove any model, every one if you never use OCR: it asks first, says how much space comes back and which model becomes the default. With no model installed, Recognise text and Find's offer to recognise say so and open the manager. A models folder the program cannot change is said plainly. Align over a mix of parts of a placed drawing and whole objects moves them together, and says what it left out and why.
 
@@ -84,7 +84,7 @@ than the number it produced last.
 | **Gates** | `bash tools/gates/run-all.sh` — exit 0 pass, 1 fail, 3 skipped. A skip is not a pass. Every grep-over-source gate carries a `--self-test` that plants a violation |
 | **Source** | `git ls-files '*.rs'` through `xargs` with a newline delimiter, then `cat`, then `wc -l`. The `cat` matters: without it `xargs` splits into two `wc` invocations and emits two `total` lines. A `find crates -name '*.rs'` count answers a different question |
 | **Commands** | read from the build's own trace line `pdfcer-diag shell commands=… planned=… directed=…` on an off-screen smoke launch under `PDFCER_DIAG_VIEWPORT` |
-| **Engine** | `pdfcer-core` v0.82.0, pinned as above |
+| **Engine** | `pdfcer-core` v0.83.0, pinned as above |
 | **Panels** | 14 — `Panel::ALL` is `[Self; 14]` in `crates/pdfcer-gui-base/src/panelid.rs`, pinned by `tests::the_panel_catalog_is_complete` |
 | **Ribbon surface** | 42 captioned groups — `grep -c 'caption:' crates/pdfcer-gui/src/shell/ron/built_in.ron` |
 

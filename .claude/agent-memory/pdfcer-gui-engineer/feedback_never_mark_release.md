@@ -42,3 +42,10 @@ See [[publish-the-portable-zip-to-github-every-release]] — the same act, and
 this is the second failure mode found in it in one day (the first was packaging
 from a dirty tree). Both were invisible in the step that did the publishing and
 visible only from the operator's side.
+
+**It recurred through a hand-off, 2026-10-12 to 10-15.** A job prompt written
+for a dispatched builder spelled the command out with `--prerelease`, and
+fifteen releases followed it; `releases/latest` stayed on
+`v0.5.0-dev.20261009.3` for six days. A recipe copied into a prompt outranks a
+memory the recipient never reads — **when writing a release command into a
+hand-off, write `--latest`, and check `releases/latest` after every publish.**

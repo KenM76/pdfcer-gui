@@ -8,7 +8,7 @@
 - [Scope a request to the whole behaviour](feedback_scope_request_whole.md) — he expects what surrounds it too.
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.
 - [Always publish the build to OneDrive](feedback_always_publish_latest.md) — finishing work is itself the trigger.
-- [Never mark a release --prerelease](feedback_never_mark_release.md) — it vanishes from `releases/latest`.
+- [Never mark a release --prerelease](feedback_never_mark_release.md) — hides it from `releases/latest`; a hand-off prompt did it 15 times.
 - [Publish the zip to GitHub every release](feedback_publish_portable_zip.md) — both places, every time, CLEAN tree.
 - [Refresh FEATURES.md before every release](feedback_refresh_features_md.md) — re-measure, then package.
 - [Never defer on an external blocker](feedback_never_defer_external.md) — three "blockers" were never real.
