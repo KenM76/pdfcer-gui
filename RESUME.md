@@ -114,8 +114,9 @@ Underlining part of a tagged
 paragraph says on the status line that the structure tree does not record it
 (`underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded`, on
 `fixtures/tagged-paragraph.pdf`; `tagged-report.pdf` has no `/ParentTree`, so
-the engine finds no elements there). `v0.5.0-dev.20261008.3` is published from `d35d5c30` and sits in
-`pdfcer-gui1`; the next release replaces `pdfcer-gui2`. The pin is v0.83.0: v0.82.0's downloads, OCR upscale, smooth OCR magnify and G186 are wired; G170 to G173 are not.
+the engine finds no elements there). `v0.5.0-dev.20261015.3` (Enlarge scans, engine v0.83.0) is published from `804a08e0` and sits in
+`pdfcer-gui2`, marked latest; the next release replaces `pdfcer-gui1`. The default-app prompt's two buttons
+draw 58 % inside their row (`ui-rect-clipped name=defaultapp.action`, floor 0.60) in this build and in v0.82.0's: fix next. The pin is v0.83.0: v0.82.0's downloads, OCR upscale, smooth OCR magnify and G186 are wired; G170 to G173 are not.
 Releases go out when the main session judges them appropriate, and the main
 session pushes and publishes; this role commits locally and never pushes. The
 pin moves to engine tags only. In order:
