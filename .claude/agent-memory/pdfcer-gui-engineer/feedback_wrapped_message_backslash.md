@@ -61,3 +61,5 @@ before the 90-minute gate run.
 **2026-10-15, again, two literals in one check's judge**, written through a python heredoc
 with the lesson unread. Run `check-string-gaps.sh` straight after any scripted Rust write; it
 takes seconds.
+
+A third time: a Rust `\`-continued literal passed through a bash heredoc into a python `replace()` came out joined with a run of spaces. `check-string-gaps` caught it; the falsifying run had shown the message cut short by `sed -n`. Put Rust literals in with the Edit tool, never through a python string.

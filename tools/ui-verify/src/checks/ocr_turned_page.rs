@@ -89,7 +89,7 @@ fn judge(matrices: &[[f64; 6]]) -> Option<String> {
 }
 
 /// The six operands before every `Tm` in a content stream.
-fn text_matrices(body: &[u8]) -> Vec<[f64; 6]> {
+pub(super) fn text_matrices(body: &[u8]) -> Vec<[f64; 6]> {
     let text = String::from_utf8_lossy(body);
     let tokens: Vec<&str> = text.split_ascii_whitespace().collect();
     tokens
@@ -106,7 +106,7 @@ fn text_matrices(body: &[u8]) -> Vec<[f64; 6]> {
         .collect()
 }
 
-fn contains(hay: &[u8], needle: &[u8]) -> bool {
+pub(super) fn contains(hay: &[u8], needle: &[u8]) -> bool {
     hay.windows(needle.len()).any(|w| w == needle)
 }
 

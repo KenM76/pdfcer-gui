@@ -181,7 +181,7 @@ fn edit(
 /// A pixel of the layer's default colour, `[204, 0, 153]`, at any coverage
 /// over white paper: red and blue well above green. Not black stand-in ink,
 /// and not the accent-blue caret or outline.
-fn layer_hued(image: &Image, region: PixRect) -> usize {
+pub(super) fn layer_hued(image: &Image, region: PixRect) -> usize {
     image
         .pixels_in(region)
         .filter(|p| {

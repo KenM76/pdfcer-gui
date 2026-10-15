@@ -92,6 +92,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(ocr_word_lists::WordListsReachTheProgramThatReadsThem),
         Box::new(ocr_upscale::EnlargingPagesReachesTheRecogniser),
         Box::new(ocr_turned_page::OcrOnATurnedPageLiesAlongTheWords),
+        Box::new(ocr_turned_edit::ARecognisedLineOnATurnedPageEditsUpright),
         Box::new(ocr_fetch_models::OcrModelsDownload),
         Box::new(ocr_fetch_models::PaddleModelsDownload),
         Box::new(ocr_models_manage::OcrModelsSetDefaultAndRemove),
