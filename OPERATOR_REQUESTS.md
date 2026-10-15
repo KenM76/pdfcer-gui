@@ -524,13 +524,13 @@ His words: *"we are very very far behind on our handling of paragraphs and reflo
 
 **Where it stands.** Design in `DESIGNS.md`. Slice 1 built and driven: Reflow now works on the paragraph a click opens (it refused it before, with a wrong sentence) and says *already fitted* first when nothing changed; a click that opens only the line or one recognised word says why in the status line; the word-gap setting's description now says it decides how much of a line one click opens. Bold, Italic, Underline and Align work in a paragraph a click opens. Slice 2 built and driven: an open paragraph has a handle on its right edge, and dragging it re-wraps the paragraph at that width (six lines became nine at half width). Slice 3 built and driven: four quick clicks select the whole paragraph, as in Acrobat; three still select the line. Slice 4 built and driven: a *Paragraphs* switch on the Edit tab, the text right-click menu and Settings ▸ Text; off, a click opens one line. Not built: a per-page or per-paragraph override. On his manual the OCR words are written sideways (G197) and stored one per word (G201), so items 1 and 2 cannot work there until both land; mixed looks and spacing by position are G199 and G200.
 
-## O296 — **OPEN** — enlarge the scanned pictures on the page, as Straighten scans straightens them
+## O296 — **BUILT AND DRIVEN — awaiting your verdict** — enlarge the scanned pictures on the page, as Straighten scans straightens them
 
 His words: *"it would be nice to have the option to upscale the images on the page like we have the option to straighten scans."*
 
 A File-menu command beside Straighten scans that enlarges each scanned picture's pixels in place (factor and filter as Recognise text's *Enlarge each page before reading* offers them), on chosen pages or the selected pictures, with the page looking the same size afterwards, as one undo step, saying what each picture went from and to and what it costs in file size.
 
-**Where it stands.** The engine's verb landed (G198); the command is being built.
+**Where it stands.** Built: File ▸ Recognise ▸ Enlarge scans… opens Straighten scans' window set to enlarge, with the same page choices (every page, this page, the thumbnails' pick, a range, or the selected pictures) and the factor (1.5× to 4×, 2× by default) and smoothing (bicubic or Lanczos) Recognise text offers. Each page's line says the picture's size before and after and what it costs in file size; one Ctrl+Z undoes the run. Driven off-screen on a four-page scan: every page doubled from 1275×1650 to 2550×3300 as one undo step. The previous release fails the same check (no item).
 
 ## O297 — **OPEN** — Straighten scans takes an acceptance confidence, down to 0 %
 

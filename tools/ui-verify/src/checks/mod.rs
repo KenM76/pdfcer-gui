@@ -100,6 +100,7 @@ pub mod drop_onto_thumbnails;
 pub mod embed_bundled;
 
 pub mod embed_fonts;
+pub mod enlarge_scans;
 
 /// Export to DXF: the file reaches disk, and its contents agree with the
 /// counts the shell reported.

@@ -22,6 +22,12 @@ It is for a scan whose text is smaller than the recogniser reads well.
   it, so there is no disabled stub, and `Enlarge::upscale` returns `None` for
   that model even when the box was ticked under another model.
 
+## Shared with Enlarge scans
+
+`factor_and_filter` draws the factor slider and the kernel choice. File ▸
+Enlarge scans (`dialogs::deskew`, `ScanKind::Enlarge`) draws the same pair,
+so both offer the same factors, the same default and the same words.
+
 ## Disclosure
 
 When a run enlarged its pages, the result's notes add

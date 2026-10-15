@@ -415,11 +415,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 231 → 232: `tools.bates_files`, Tools ▸ Batch.
     // 232 → 233: `file.ocr_models`, File ▸ Recognise.
     // 233 → 234: `edit.paragraphs`, Edit ▸ Content.
+    // 234 → 235: `file.enlarge_scans`, File ▸ Recognise.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        234 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        235 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -1133,8 +1134,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // node-kind glyph exists.
         // 29 → 30 — `file.ocr_models`: the download glyph is spent on
         // `export`.
+        // 30 → 31 — `file.enlarge_scans`: `zoom-in` would say the view
+        // grows; no glyph for more pixels at the same size exists.
         refused,
-        30,
+        31,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

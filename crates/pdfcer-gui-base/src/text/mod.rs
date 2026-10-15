@@ -84,6 +84,9 @@ pub mod dimension_groups;
 /// says, and what a drag says it is about to do.
 pub mod doctabs;
 pub mod dropped;
+/// Every word File ▸ Enlarge scans says that Straighten does not. Consumed by
+/// `pdfcer_gui::dialogs::deskew`.
+pub mod enlarge;
 /// What a value box says when it cannot read what was typed.
 pub mod entry;
 /// What the measure tools say about what they INFERRED — the two-line

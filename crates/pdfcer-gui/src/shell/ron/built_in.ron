@@ -62,6 +62,7 @@
                         Command(id: "file.ocr", size: Large),
                         Command(id: "file.remove_ocr"),
                         Command(id: "file.deskew"),
+                        Command(id: "file.enlarge_scans"),
                         Command(id: "file.ocr_models"),
                     ],
                     collapse: 4,

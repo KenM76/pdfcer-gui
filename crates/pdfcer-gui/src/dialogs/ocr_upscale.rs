@@ -22,9 +22,9 @@ const REGION_LANCZOS: &str = "ocr-upscale-lanczos"; // ui-text-exempt: trace reg
 const REGION_SIZES: &str = "ocr-upscale-sizes"; // ui-text-exempt: trace region name
 
 /// The smallest factor offered: anything less is not worth a pass.
-const MIN_FACTOR: f32 = 1.5;
+pub(super) const MIN_FACTOR: f32 = 1.5;
 /// The factor first offered.
-const DEFAULT_FACTOR: f32 = 2.0;
+pub(super) const DEFAULT_FACTOR: f32 = 2.0;
 
 /// The operator's enlargement choice for one Recognise-text transaction.
 #[derive(Debug, Clone, Copy)]
@@ -73,17 +73,7 @@ impl Enlarge {
             return;
         }
         ui.indent(REGION_ENLARGE, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(t::factor());
-                ui.add(
-                    egui::Slider::new(&mut self.factor, MIN_FACTOR..=MAX_FACTOR)
-                        .step_by(0.5)
-                        .suffix(t::times()),
-                );
-            });
-            ui.radio_value(&mut self.filter, UpscaleFilter::Bicubic, t::bicubic());
-            let lanczos = ui.radio_value(&mut self.filter, UpscaleFilter::Lanczos, t::lanczos());
-            crate::diag::ui_rect(REGION_LANCZOS, lanczos.rect);
+            factor_and_filter(ui, &mut self.factor, &mut self.filter, REGION_LANCZOS);
             if let (Some(from), Some(up)) = (raster, self.upscale(model)) {
                 let to = up.output_size(from.0, from.1);
                 let sizes = ui.label(t::sizes(from, to));
@@ -94,6 +84,27 @@ impl Enlarge {
             }
         });
     }
+}
+
+/// The factor slider and the kernel choice, also File ▸ Enlarge scans'.
+/// `lanczos_region` names the Lanczos choice in the trace.
+pub(super) fn factor_and_filter(
+    ui: &mut egui::Ui,
+    factor: &mut f32,
+    filter: &mut UpscaleFilter,
+    lanczos_region: &str,
+) {
+    ui.horizontal(|ui| {
+        ui.label(t::factor());
+        ui.add(
+            egui::Slider::new(factor, MIN_FACTOR..=MAX_FACTOR)
+                .step_by(0.5)
+                .suffix(t::times()),
+        );
+    });
+    ui.radio_value(filter, UpscaleFilter::Bicubic, t::bicubic());
+    let lanczos = ui.radio_value(filter, UpscaleFilter::Lanczos, t::lanczos());
+    crate::diag::ui_rect(lanczos_region, lanczos.rect);
 }
 
 /// The trace tokens for the run's `ocr-started` line: `factor filter`, or

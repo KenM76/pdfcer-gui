@@ -349,6 +349,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(remove_ocr_pages::RemoveOcrTextTakesThePagesChosen),
         Box::new(straighten_scans::StraightenScansTurnsTiltedPages),
         Box::new(straighten_confidence::StraightenScansHonoursLeastConfidence),
+        Box::new(enlarge_scans::EnlargeScansDoublesEveryPicture),
         Box::new(thumbnail_zoom::ThumbnailsZoomWithoutBlanking),
         Box::new(cross_window_paste::ASelectionCopiedInOneWindowPastesInAnother),
         Box::new(window_move::ADocumentMovesBetweenWindows),

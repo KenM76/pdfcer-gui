@@ -321,6 +321,15 @@ pub const fn file_deskew() -> CommandText {
     )
 }
 
+/// File ▸ Recognise ▸ Enlarge scans.
+#[must_use]
+pub const fn file_enlarge_scans() -> CommandText {
+    CommandText::new(
+        "Enlarge scans…",
+        "Give each scanned page's picture more pixels, smoothed between the ones it has, at the same place and size on the page. It adds no detail; it helps OCR read small print and makes a coarse scan less blocky when zoomed in. The file grows. One Ctrl+Z undoes the run. Greyed while no document is open.",
+    )
+}
+
 // ===========================================================================
 // PAGES TAB
 //

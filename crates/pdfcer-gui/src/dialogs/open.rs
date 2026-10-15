@@ -48,10 +48,17 @@ impl DialogsState {
         }
     }
 
-    /// Open File ▸ Straighten scans for the document in `status`.
-    pub fn open_deskew(&mut self, status: &Status, picked: Vec<usize>, min_confidence: u8) {
+    /// Open File ▸ Straighten scans or Enlarge scans for the document in
+    /// `status`. One window runs either; while one is open the other waits.
+    pub fn open_deskew(
+        &mut self,
+        status: &Status,
+        picked: Vec<usize>,
+        min_confidence: u8,
+        kind: super::deskew::ScanKind,
+    ) {
         if self.deskew.is_none() {
-            self.deskew = super::deskew::open_for(status, picked, min_confidence);
+            self.deskew = super::deskew::open_for(status, picked, min_confidence, kind);
         }
     }
 

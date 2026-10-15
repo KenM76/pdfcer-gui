@@ -88,6 +88,7 @@ pub fn tab() -> Tab {
                     large("file.ocr"),
                     command("file.remove_ocr"),
                     command("file.deskew"),
+                    command("file.enlarge_scans"),
                     command("file.ocr_models"),
                 ],
             ),

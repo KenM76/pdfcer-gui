@@ -500,10 +500,19 @@ impl PdfcerApp {
                 }
             }
             // The same rail selection as `file.ocr`.
-            "file.deskew" => {
+            "file.deskew" | "file.enlarge_scans" => {
+                let kind = if id == "file.deskew" {
+                    crate::dialogs::deskew::ScanKind::Straighten
+                } else {
+                    crate::dialogs::deskew::ScanKind::Enlarge
+                };
                 let picked: Vec<usize> = self.panels.selected_pages().iter().copied().collect();
-                self.dialogs
-                    .open_deskew(&self.status, picked, self.prefs.deskew_min_confidence);
+                self.dialogs.open_deskew(
+                    &self.status,
+                    picked,
+                    self.prefs.deskew_min_confidence,
+                    kind,
+                );
             }
             "file.ocr_models" => self.dialogs.open_ocr_models(),
             // **Apply redactions.** A dialog, in `file.ocr`'s shape one arm

@@ -1,24 +1,28 @@
-//! # `dialogs::deskew` — File ▸ Straighten scans
+//! # `dialogs::deskew` — File ▸ Straighten scans and File ▸ Enlarge scans
 //!
-//! Contract: the operator picks pages with Recognise text's [`PageScope`],
-//! or — when pictures are selected on the current page — only those
-//! pictures, and whether pages that already have text are skipped (on by
-//! default: text does not turn with its picture). Straighten queues one
+//! Contract: one window runs either [`ScanKind`] over the pictures the
+//! operator picks with Recognise text's [`PageScope`], or — when pictures are
+//! selected on the current page — only those pictures. Straighten also asks
+//! whether pages that already have text are skipped (on by default: text
+//! does not turn with its picture) and how sure a tilt must be; Enlarge asks
+//! the factor and kernel, with Recognise text's controls. The run queues one
 //! [`DeskewStep::Page`] per page or picture and raises the next only once the
 //! previous one's outcome is logged, so each frame does at most one page and
 //! the window keeps painting; Stop ends the queue after the page in hand.
 //! The run ends with [`DeskewStep::Finish`], which folds it into one undo
-//! entry. The window then lists what each page measured and what was done.
+//! entry. The window then lists what was done to each page.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use pdfcer_core::ocr::upscale::UpscaleFilter;
 use pdfcer_core::vector::{ImageSource, VectorObject};
 
 use crate::app::actions::Action;
 use crate::app::actions::deskew::{self as step, Folded, Logged, Outcome};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::deskew as t;
-use pdfcer_gui_base::deskewstep::DeskewStep;
+use crate::text::enlarge as e;
+use pdfcer_gui_base::deskewstep::{DeskewStep, ScanJob};
 use pdfcer_gui_base::prefs::Prefs;
 
 use super::page_scope::PageScope;
@@ -31,12 +35,23 @@ pub const REGION_SCOPE: &str = "deskew.scope"; // ui-text-exempt: trace region n
 pub const REGION_SKIP_TEXT: &str = "deskew.skip-text"; // ui-text-exempt: trace region name, never displayed
 /// The least-confidence slider.
 pub const REGION_MIN_CONFIDENCE: &str = "deskew.min-confidence"; // ui-text-exempt: trace region name, never displayed
+/// Enlarge's Lanczos choice.
+pub const REGION_LANCZOS: &str = "deskew.lanczos"; // ui-text-exempt: trace region name, never displayed
 /// The only-the-selected-pictures checkbox.
 pub const REGION_SELECTED: &str = "deskew.selected"; // ui-text-exempt: trace region name, never displayed
 /// The button that starts the run.
 pub const REGION_COMMIT: &str = "deskew.commit"; // ui-text-exempt: trace region name, never displayed
 /// The Stop button.
 pub const REGION_STOP: &str = "deskew.stop"; // ui-text-exempt: trace region name, never displayed
+
+/// Which command opened the window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScanKind {
+    /// File ▸ Straighten scans.
+    Straighten,
+    /// File ▸ Enlarge scans.
+    Enlarge,
+}
 
 /// Run ids, unique for the process so two windows' logs never mix.
 static NEXT_RUN: AtomicU64 = AtomicU64::new(1);
@@ -59,6 +74,7 @@ enum Phase {
 /// The window.
 #[derive(Debug)]
 pub struct DeskewDialog {
+    kind: ScanKind,
     /// `OpenDoc::serial` of the document it was opened on.
     doc: u64,
     scope: PageScope,
@@ -70,15 +86,19 @@ pub struct DeskewDialog {
     /// Least confidence to turn, percent; seeded from and saved to
     /// `Prefs::deskew_min_confidence`.
     min_confidence: u8,
+    /// Enlarge's factor and kernel.
+    factor: f32,
+    filter: UpscaleFilter,
     phase: Phase,
     close_requested: bool,
 }
 
 impl DeskewDialog {
-    fn open(doc: &OpenDoc, picked: Vec<usize>, min_confidence: u8) -> Self {
+    fn open(doc: &OpenDoc, picked: Vec<usize>, min_confidence: u8, kind: ScanKind) -> Self {
         let page = doc.view.page_index;
         let selected = selected_images(doc, page);
         Self {
+            kind,
             doc: doc.serial,
             scope: PageScope::new(page, picked),
             page_count: doc.pages.len(),
@@ -86,15 +106,30 @@ impl DeskewDialog {
             selected: (page, selected),
             skip_text: true,
             min_confidence,
+            factor: super::ocr_upscale::DEFAULT_FACTOR,
+            filter: UpscaleFilter::default(),
             phase: Phase::Choosing,
             close_requested: false,
         }
     }
 
+    /// What each turn does, as the window is set.
+    fn job(&self) -> ScanJob {
+        match self.kind {
+            ScanKind::Straighten => ScanJob::Straighten {
+                skip_text: self.skip_text,
+                min_confidence_percent: self.min_confidence,
+            },
+            ScanKind::Enlarge => ScanJob::Enlarge {
+                factor_halves: halves(self.factor),
+                filter: self.filter,
+            },
+        }
+    }
+
     /// The turns the current answer names.
     fn queue(&self, run: u64) -> Vec<DeskewStep> {
-        let skip_text = self.skip_text;
-        let min_confidence_percent = self.min_confidence;
+        let job = self.job();
         if self.only_selected && !self.selected.1.is_empty() {
             let page = self.selected.0;
             return self
@@ -106,8 +141,7 @@ impl DeskewDialog {
                     doc: self.doc,
                     page,
                     object: Some(i),
-                    skip_text,
-                    min_confidence_percent,
+                    job,
                 })
                 .collect();
         }
@@ -120,8 +154,7 @@ impl DeskewDialog {
                 doc: self.doc,
                 page,
                 object: None,
-                skip_text,
-                min_confidence_percent,
+                job,
             })
             .collect()
     }
@@ -141,7 +174,10 @@ impl DeskewDialog {
         }
         let (frame, ()) = crate::dialogs::host::Host::new(
             "deskew", // ui-text-exempt: a viewport key, never displayed.
-            t::title(),
+            match self.kind {
+                ScanKind::Straighten => t::title(),
+                ScanKind::Enlarge => e::title(),
+            },
             egui::vec2(480.0, 440.0),
             egui::vec2(360.0, 300.0),
         )
@@ -201,7 +237,10 @@ impl DeskewDialog {
     }
 
     fn choosing(&mut self, ui: &mut egui::Ui, prefs: &mut Prefs) {
-        ui.label(t::intro());
+        ui.label(match self.kind {
+            ScanKind::Straighten => t::intro(),
+            ScanKind::Enlarge => e::intro(),
+        });
         ui.add_space(8.0);
         if !self.selected.1.is_empty() {
             let r = ui.checkbox(
@@ -214,6 +253,39 @@ impl DeskewDialog {
             self.scope
                 .show(ui, self.page_count, REGION_SCOPE, "deskew-scope");
         }
+        match self.kind {
+            ScanKind::Straighten => self.straighten_choices(ui),
+            ScanKind::Enlarge => super::ocr_upscale::factor_and_filter(
+                ui,
+                &mut self.factor,
+                &mut self.filter,
+                REGION_LANCZOS,
+            ),
+        }
+        ui.add_space(10.0);
+        ui.separator();
+        let named = self.queue(0).len();
+        let run = match self.kind {
+            ScanKind::Straighten => t::run_button(),
+            ScanKind::Enlarge => e::run_button(),
+        };
+        ui.horizontal(|ui| {
+            let go = ui
+                .add_enabled(named > 0, egui::Button::new(run))
+                .on_disabled_hover_text(t::names_nothing());
+            crate::diag::ui_rect_visible(REGION_COMMIT, go.rect, ui.clip_rect());
+            if go.clicked() {
+                self.remember(prefs);
+                self.start();
+            }
+            if ui.button(t::cancel_button()).clicked() {
+                self.close_requested = true;
+            }
+        });
+    }
+
+    /// Straighten's own choices: skip pages with text, least confidence.
+    fn straighten_choices(&mut self, ui: &mut egui::Ui) {
         let r = ui
             .checkbox(&mut self.skip_text, t::skip_text())
             .on_hover_text(t::skip_text_tooltip());
@@ -233,27 +305,11 @@ impl DeskewDialog {
                     .suffix("%"),
             );
         });
-        ui.add_space(10.0);
-        ui.separator();
-        let named = self.queue(0).len();
-        ui.horizontal(|ui| {
-            let go = ui
-                .add_enabled(named > 0, egui::Button::new(t::run_button()))
-                .on_disabled_hover_text(t::names_nothing());
-            crate::diag::ui_rect_visible(REGION_COMMIT, go.rect, ui.clip_rect());
-            if go.clicked() {
-                self.remember(prefs);
-                self.start();
-            }
-            if ui.button(t::cancel_button()).clicked() {
-                self.close_requested = true;
-            }
-        });
     }
 
     /// Keep the least confidence for the next run, when it changed.
     fn remember(&self, prefs: &mut Prefs) {
-        if prefs.deskew_min_confidence == self.min_confidence {
+        if self.kind != ScanKind::Straighten || prefs.deskew_min_confidence == self.min_confidence {
             return;
         }
         prefs.deskew_min_confidence = self.min_confidence;
@@ -273,7 +329,8 @@ impl DeskewDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "deskew-started run={run} turns={} skip-text={} min-confidence={} selected={}",
+                "deskew-started run={run} job={} turns={} skip-text={} min-confidence={} selected={}",
+                job_token(self.job()),
                 queue.len(),
                 self.skip_text,
                 self.min_confidence,
@@ -299,7 +356,11 @@ impl DeskewDialog {
             return;
         };
         let landed = step::outcomes(run).len();
-        ui.label(t::progress((landed + 1).min(queue.len()), queue.len()));
+        let at = (landed + 1).min(queue.len());
+        ui.label(match self.kind {
+            ScanKind::Straighten => t::progress(at, queue.len()),
+            ScanKind::Enlarge => e::progress(at, queue.len()),
+        });
         ui.add(egui::ProgressBar::new(fraction(landed, queue.len())));
         if !here {
             ui.label(t::paused());
@@ -314,22 +375,23 @@ impl DeskewDialog {
 
     fn finished(&mut self, ui: &mut egui::Ui, run: u64, of: usize) {
         let log = step::outcomes(run);
-        let corrected = log
-            .iter()
-            .filter(|e| matches!(e.outcome, Outcome::Straightened { .. }))
-            .count();
+        let changed = log.iter().filter(|l| bytes(&l.outcome).is_some()).count();
+        let (stopped, done): (Counted, Counted) = match self.kind {
+            ScanKind::Straighten => (t::stopped, t::done),
+            ScanKind::Enlarge => (e::stopped, e::done),
+        };
         if log.len() < of {
-            ui.label(t::stopped(log.len(), of));
+            ui.label(stopped(log.len(), of));
         }
-        ui.strong(t::done(corrected, log.len()));
-        for line in summary(&log, step::folded(run)) {
+        ui.strong(done(changed, log.len()));
+        for line in summary(self.kind, &log, step::folded(run)) {
             ui.label(line);
         }
         egui::ScrollArea::vertical()
             .max_height(220.0)
             .show(ui, |ui| {
                 for entry in &log {
-                    for line in describe(entry, self.min_confidence) {
+                    for line in describe(self.kind, entry, self.min_confidence) {
                         ui.label(line);
                     }
                 }
@@ -348,25 +410,68 @@ fn fraction(done: usize, of: usize) -> f32 {
     f.clamp(0.0, 1.0)
 }
 
+/// The factor slider's value in the halves `ScanJob::Enlarge` carries.
+fn halves(factor: f32) -> u8 {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let h = (factor * 2.0).round().clamp(2.0, 255.0) as u8;
+    h
+}
+
+/// The trace's word for a job.
+/// A sentence about `n` of `of` pages.
+type Counted = fn(usize, usize) -> String;
+
+fn job_token(job: ScanJob) -> String {
+    // ui-text-exempt: diagnostic trace vocabulary, never displayed
+    match job {
+        ScanJob::Straighten { .. } => "straighten".to_owned(),
+        ScanJob::Enlarge {
+            factor_halves,
+            filter,
+        } => format!(
+            "enlarge factor-halves={factor_halves} filter={}", // ui-text-exempt: diagnostic trace, never displayed
+            filter.as_str()
+        ),
+    }
+}
+
+/// A changed picture's stream before and after; `None` when nothing changed.
+fn bytes(outcome: &Outcome) -> Option<(usize, usize)> {
+    match *outcome {
+        Outcome::Straightened { bytes, .. } | Outcome::Enlarged { bytes, .. } => Some(bytes),
+        _ => None,
+    }
+}
+
 /// The run-wide disclosures: growth, and whether it is one undo step.
-fn summary(log: &[Logged], folded: Option<Folded>) -> Vec<String> {
-    let (old, new) = log.iter().fold((0, 0), |acc, e| match e.outcome {
-        Outcome::Straightened { bytes, .. } => (acc.0 + bytes.0, acc.1 + bytes.1),
-        _ => acc,
-    });
+fn summary(kind: ScanKind, log: &[Logged], folded: Option<Folded>) -> Vec<String> {
+    let (old, new) = log
+        .iter()
+        .filter_map(|l| bytes(&l.outcome))
+        .fold((0, 0), |acc, b| (acc.0 + b.0, acc.1 + b.1));
     let mut lines = Vec::new();
     if new > old {
-        lines.push(t::growth(old, new));
+        lines.push(match kind {
+            ScanKind::Straighten => t::growth(old, new),
+            ScanKind::Enlarge => e::growth(old, new),
+        });
     }
     if folded == Some(Folded::Unfolded) {
-        lines.push(t::unfolded().to_owned());
+        lines.push(
+            match kind {
+                ScanKind::Straighten => t::unfolded(),
+                ScanKind::Enlarge => e::unfolded(),
+            }
+            .to_owned(),
+        );
     }
     lines
 }
 
 /// One page's lines. Pages are shown 1-based.
-fn describe(entry: &Logged, least: u8) -> Vec<String> {
+fn describe(kind: ScanKind, entry: &Logged, least: u8) -> Vec<String> {
     let page = entry.page + 1;
+    let enlarge = kind == ScanKind::Enlarge;
     match &entry.outcome {
         Outcome::Straightened {
             degrees,
@@ -388,9 +493,13 @@ fn describe(entry: &Logged, least: u8) -> Vec<String> {
         Outcome::Unmeasurable => vec![t::unmeasurable(page)],
         Outcome::NoPicture => vec![t::no_picture(page)],
         Outcome::HasText => vec![t::has_text(page)],
+        Outcome::Busy if enlarge => vec![e::busy(page)],
         Outcome::Busy => vec![t::busy(page)],
+        Outcome::Elsewhere if enlarge => vec![e::elsewhere(page)],
         Outcome::Elsewhere => vec![t::elsewhere(page)],
+        Outcome::Refused(reason) if enlarge => vec![e::refused(page, reason)],
         Outcome::Refused(reason) => vec![t::refused(page, reason)],
+        Outcome::Enlarged { from, to, bytes } => vec![e::enlarged(page, *from, *to, *bytes)],
     }
 }
 
@@ -413,11 +522,16 @@ fn selected_images(doc: &OpenDoc, page: usize) -> Vec<usize> {
 }
 
 /// Build it for the current document. `None` when there is none.
-pub fn open_for(status: &Status, picked: Vec<usize>, min_confidence: u8) -> Option<DeskewDialog> {
+pub fn open_for(
+    status: &Status,
+    picked: Vec<usize>,
+    min_confidence: u8,
+    kind: ScanKind,
+) -> Option<DeskewDialog> {
     let Status::Open(doc) = status else {
         return None;
     };
-    Some(DeskewDialog::open(doc, picked, min_confidence))
+    Some(DeskewDialog::open(doc, picked, min_confidence, kind))
 }
 
 #[cfg(test)]
@@ -435,7 +549,7 @@ mod tests {
                 had_text: true,
             },
         };
-        let lines = describe(&entry, 20);
+        let lines = describe(ScanKind::Straighten, &entry, 20);
         assert_eq!(lines.len(), 2);
         assert!(lines[0].starts_with("Page 3:"), "{lines:?}");
     }
@@ -451,12 +565,43 @@ mod tests {
                 had_text: false,
             },
         };
-        assert_eq!(summary(&[grew], Some(Folded::Nothing)).len(), 1);
+        assert_eq!(
+            summary(ScanKind::Straighten, &[grew], Some(Folded::Nothing)).len(),
+            1
+        );
         let level = Logged {
             page: 0,
             outcome: Outcome::Level { degrees: 0.01 },
         };
-        assert!(summary(&[level], Some(Folded::Nothing)).is_empty());
+        assert!(summary(ScanKind::Straighten, &[level], Some(Folded::Nothing)).is_empty());
         assert!((fraction(1, 0) - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn an_enlarged_page_says_its_sizes_and_what_it_cost() {
+        let entry = Logged {
+            page: 0,
+            outcome: Outcome::Enlarged {
+                from: (100, 200),
+                to: (200, 400),
+                bytes: (1000, 3000),
+            },
+        };
+        let lines = describe(ScanKind::Enlarge, &entry, 20);
+        assert_eq!(lines.len(), 1);
+        assert!(
+            lines[0].contains("100 × 200") && lines[0].contains("200 × 400"),
+            "{lines:?}"
+        );
+        assert_eq!(summary(ScanKind::Enlarge, &[entry], None).len(), 1);
+    }
+
+    #[test]
+    fn every_offered_factor_reaches_the_engine_unchanged() {
+        let mut f = super::super::ocr_upscale::MIN_FACTOR;
+        while f <= pdfcer_core::ocr::upscale::MAX_FACTOR {
+            assert!((f32::from(halves(f)) / 2.0 - f).abs() < f32::EPSILON, "{f}");
+            f += 0.5;
+        }
     }
 }

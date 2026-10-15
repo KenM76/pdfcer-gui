@@ -1001,6 +1001,10 @@ pub(super) fn band() -> Vec<Command> {
         // frame. No icon: `rotate-cw` is `pages.rotate_right`'s, a whole-page
         // quarter turn, which this is not.
         command("file.deskew", t::file_deskew(), 164).enabled_when("doc.pages"),
+        // `EditSession::upscale_image`, run by Straighten's window and pacing.
+        // No icon: `zoom-in` would say the view grows, and nothing on screen
+        // changes size.
+        command("file.enlarge_scans", t::file_enlarge_scans(), 165).enabled_when("doc.pages"),
         // `ocr::manage` and, with `model-download`, `FETCHABLE_MODELS`. Needs no
         // document: it changes the models folder, not a file. No icon:
         // `download.svg` is `export`'s, "out of this document", which this is not.

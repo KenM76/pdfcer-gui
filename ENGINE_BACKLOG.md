@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 363** <!-- counted by tools/walk-engine-backlog.py, 2026-10-14; do not retype -->
+## `wanted` — a real gap — **33 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -138,7 +138,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 363** <!-- counted by tools/walk-engine-backlog.py, 2026-10-14; do not retype -->
+## `blocked` — waiting on something named — **2 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +156,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 363** <!-- counted by tools/walk-engine-backlog.py, 2026-10-14; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +167,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 363** <!-- counted by tools/walk-engine-backlog.py, 2026-10-14; do not retype -->
+## `declined` — deliberately no surface — **16 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -209,7 +209,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **312 of 363** <!-- counted by tools/walk-engine-backlog.py, 2026-10-14; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **313 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -313,7 +313,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **OCR at a dpi above the scan's own resolution reads smoothed pixels, not square blocks** — `pdfcer_core::settings::MagnifyFilter`, `RenderOptions::image_magnify` | **shipped (engine Pass 580.0).** Every OCR raster is drawn through `ocr::raster_options`, which takes the settings funnel's options and sets `RenderOptions::with_image_magnify(ocr::magnify(model))`: `MagnifyFilter::Smooth`, as the engine CLI's OCR does, except PaddleOCR-VL, which reads `MagnifyFilter::PointSample` because its whole-page read of a smoothed scan does not finish (request G196; the exception keys on the `paddle-vl` token and goes when the engine answers); the canvas keeps the funnel's `MagnifyFilter::PointSample`. `UnknownMagnifyFilter` is the engine's error for a mistyped token; this shell holds the enum, never a token. The run's `ocr-started` line carries `magnify=` from `ocr::magnify`, asserted `smooth` by `enlarging_pages_reaches_the_recogniser`; `paddle_vl_text_is_in_the_saved_file` fails with VL smoothed; the pixels of a smoothed raster are the engine's and are not measured here. |
 | **Upscale a poor scan before recognition** — `ocr::upscale`, `RunOptions::with_upscale`, `OcrRunner::set_upscale` | **shipped (engine Pass 566.0, an operator request with no G number).** File ▸ Recognise text… *Enlarge each page before reading*, off by default: factor 1.5 to `MAX_FACTOR` in steps of 0.5 and bicubic or Lanczos (`Upscale::new`, `UpscaleFilter`), sent with the run through `RunOptions::with_upscale`; the words come back in page space through the engine. The window shows the first page's size before and after (`Upscale::output_size`) and warns above `MAX_OUTPUT_PIXELS`; the result's notes give the factor, kernel and sizes from `OcrRunner::upscale`. Not drawn for PaddleOCR-VL (`RunnerError::UpscaleUnsupported`). A refusal is the engine's `RunnerError::Upscale` sentence. Driven by `enlarging_pages_reaches_the_recogniser`. |
 | **Skew detection and deskew of a scanned image** — `detect_skew`, `pdfcer_core::deskew`, `pdfcer_core::edit::deskew` | **shipped — File ▸ Recognise ▸ Straighten scans… (O289 item 13).** `app::actions::deskew` measures each chosen page's scan (`EditSession::page_scan_image`, `detect_image_skew`) or each selected picture, straightens it with `deskew_image` through the edit funnel when the confidence and angle clear the engine's floors, and folds the run into one `CommandKind::DeskewImage` undo entry. Pages that already draw text are skipped by default; a refusal such as `EditError::DeskewUnsupported` is listed in the engine's own sentence. Paced a page per frame because the measure needs the session exclusively (G171; answered at the pin since v0.82.0 by the free functions `edit::deskew::page_scan_image` and `detect_image_skew` over a `DocumentView`, and `EditSession::coalesce_last_same` in `pdfcer_core::edit::undo_fold`; not yet wired). Driven by `straighten_scans_turns_tilted_pages_and_leaves_the_rest`. |
-| **Upscale a placed image** — `EditSession::upscale_image`, `pdfcer_core::edit::upscale_image` | **wanted, being built as File ▸ Recognise ▸ Enlarge scans… (O296).** The verb replaces one picture with a larger FlateDecode image at the same place and size, one `CommandKind::UpscaleImage` undo entry, and refuses what it cannot resample with `EditError::ImageUpscaleUnsupported` and a sentence. The shell runs it through the Straighten scans window and its page-per-frame pacing, at the OCR upscale's factor and filter choices, and folds the run into one undo entry (G198). |
+| **Upscale a placed image** — `EditSession::upscale_image`, `pdfcer_core::edit::upscale_image` | **shipped — File ▸ Recognise ▸ Enlarge scans… (O296).** The verb replaces one picture with a larger FlateDecode image at the same place and size, one `CommandKind::UpscaleImage` undo entry, and refuses what it cannot resample with `EditError::ImageUpscaleUnsupported` and a sentence. The shell runs it through the Straighten scans window and its page-per-frame pacing, at the OCR upscale's factor and filter choices, and folds the run into one undo entry (G198). Driven by `enlarge_scans_doubles_every_pages_picture_as_one_undo_step`. |
 
 ### Vector objects (Inkscape-style editing)
 
