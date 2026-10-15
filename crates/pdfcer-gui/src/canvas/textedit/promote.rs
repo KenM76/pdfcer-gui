@@ -6,7 +6,8 @@
 //! run draft on the run's paragraph: the paragraph's text with the run's slice
 //! replaced by the draft, the caret, selection and draft history shifted to
 //! match. It declines, and leaves the draft as it was, when the engine would
-//! refuse the rewrite or the paragraph mixes looks the rewrite would flatten.
+//! refuse the rewrite. A paragraph of several looks opens like any other: the
+//! engine's rewrite keeps each character's look and discloses a fallback.
 //! [`widen`] does the same for a click on any line of a paragraph of two or
 //! more lines, so the paragraph re-opens as one draft.
 //!
@@ -17,6 +18,7 @@ use pdfcer_core::text_edit::{
     BlockEditOptions, EditableTextModel, GlyphRef, Line, LineEnd, LineEndSource, LineMarks,
     TextPosition, detect_cell_regions, reflow_recognition_options,
 };
+use pdfcer_core::text_extract::TextColor;
 use pdfcer_gui_base::text::draftnote::DraftNote;
 use pdfcer_gui_base::text::textedit::EnterRefusal;
 
@@ -68,6 +70,9 @@ struct Paragraph {
     run: usize,
     bbox: (f64, f64, f64, f64),
     lines: usize,
+    /// Distinct looks among its glyphs, traced so a driven check can tell a
+    /// mixed paragraph from a uniform one.
+    looks: usize,
     breaks: usize,
     /// Whether its line ends were read from pdfcer's marks or inferred.
     source: LineEndSource,
@@ -87,10 +92,18 @@ impl Declined {
     /// `None` where the run is all there is (one line, no paragraph).
     fn note(&self) -> Option<DraftNote> {
         match self.token {
-            "mixed-looks" => Some(DraftNote::LineOnlyMixedLooks),
             "engine-refuses" => Some(DraftNote::LineOnlyRefused),
             "recognised-word" => Some(DraftNote::RecognisedWordOnly),
             _ => None,
+        }
+    }
+
+    /// The engine's sentence as a trailing ` detail=` trace field, when it
+    /// refused; empty otherwise. Last on the line because it holds spaces.
+    fn detail(&self) -> String {
+        match &self.why {
+            EnterRefusal::Unrewritable { detail } => format!(" detail={detail}"), // ui-text-exempt: a trace field, never displayed
+            _ => String::new(),
         }
     }
 
@@ -130,12 +143,14 @@ pub fn open(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "text-edit-promoted page={} run={run} block={} len={} caret={} source={}",
+                    "text-edit-promoted page={} run={run} block={} len={} caret={} source={} \
+                     looks={}",
                     draft.page,
                     p.block,
                     draft.text.chars().count(),
                     draft.caret,
-                    p.source.as_str()
+                    p.source.as_str(),
+                    p.looks
                 )
             });
             Ok(p.source)
@@ -144,8 +159,10 @@ pub fn open(
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "text-edit-enter-declined page={} run={run} reason={}",
-                    draft.page, d.token
+                    "text-edit-enter-declined page={} run={run} reason={}{}",
+                    draft.page,
+                    d.token,
+                    d.detail()
                 )
             });
             Err(d.why)
@@ -187,13 +204,14 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Result<LineEndSource, Option<D
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
                     "text-edit-widened page={} run={run} block={} lines={} breaks={} len={} \
-                     source={} ms={ms}",
+                     source={} ms={ms} looks={}",
                     draft.page,
                     p.block,
                     p.lines,
                     p.breaks,
                     draft.text.chars().count(),
-                    p.source.as_str()
+                    p.source.as_str(),
+                    p.looks
                 )
             });
             Ok(p.source)
@@ -202,8 +220,10 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Result<LineEndSource, Option<D
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
                 format!(
-                    "text-edit-widen-declined page={} run={run} reason={} ms={ms}",
-                    draft.page, d.token
+                    "text-edit-widen-declined page={} run={run} reason={} ms={ms}{}",
+                    draft.page,
+                    d.token,
+                    d.detail()
                 )
             });
             Err(d.note())
@@ -311,17 +331,12 @@ fn paragraph(
     if walk.joined.get(start..end) != Some(original) {
         return Err(Declined::no_paragraph("run-text-differs"));
     }
-    if walk.looks > 1 {
-        return Err(Declined {
-            why: EnterRefusal::MixedLooks,
-            token: "mixed-looks",
-        });
-    }
     Ok(Paragraph {
         block,
         run,
         bbox: (b.bbox.llx, b.bbox.lly, b.bbox.urx, b.bbox.ury),
         lines: b.line_indices.len(),
+        looks: walk.looks,
         breaks: walk.breaks,
         source: model.line_end_source(b),
         before: walk.joined[..start].to_owned(),
@@ -392,12 +407,10 @@ fn glyph_text<'m>(model: &'m EditableTextModel<'_>, g: GlyphRef) -> &'m str {
 
 /// A glyph's look as the shell can read it from provenance: the font
 /// resource, the size and the fill. A subset of the engine's own
-/// `SpanStyle::same_look`, which is not public.
-type Look = (
-    Option<Vec<u8>>,
-    u32,
-    Option<pdfcer_core::text_extract::TextColor>,
-);
+/// `SpanStyle::same_look`, which is not public. An unset fill is the default
+/// black `DeviceGray 0` it renders as: the engine's rewrite sets a colour only
+/// where the inherited one differs, so the same black reads both ways.
+type Look = (Option<Vec<u8>>, u32, TextColor);
 
 impl Walk {
     fn of(
@@ -445,7 +458,8 @@ impl Walk {
                     joined.push_str(slice);
                 }
                 if let Some(p) = model.provenance(g) {
-                    let look = (p.font_resource.clone(), p.tf_size.to_bits(), p.fill_color);
+                    let fill = p.fill_color.unwrap_or(TextColor::Gray(0.0));
+                    let look = (p.font_resource.clone(), p.tf_size.to_bits(), fill);
                     if !looks.contains(&look) {
                         looks.push(look);
                     }

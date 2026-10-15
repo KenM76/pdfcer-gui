@@ -231,9 +231,8 @@ them is the **channel**, not the words.
 Why Enter in a line of existing text did not open its paragraph, worded by
 `line`. Enter there re-anchors the draft on the paragraph
 (`canvas::textedit::promote`), which `EditSession::edit_block_text` rewrites
-and re-wraps; it declines when there is no paragraph to open (`NoParagraph`),
-when the paragraph mixes looks the rewrite would flatten to the first run's
-(`MixedLooks`), or when the engine's preview refuses the rewrite
+and re-wraps; it declines when there is no paragraph to open (`NoParagraph`)
+or when the engine's preview refuses the rewrite
 (`Unrewritable`, carrying its sentence). Every sentence names Ctrl+Enter,
 which still finishes the line edit; `NoParagraph` also names a dragged box,
 where Enter always breaks the line.

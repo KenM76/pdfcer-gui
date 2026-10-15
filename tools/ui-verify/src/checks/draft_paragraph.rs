@@ -63,7 +63,7 @@ impl Check for AParagraphReopensAsOneDraft {
 }
 
 /// Wait for `event` after `mark`, or say what was being committed.
-fn applied(session: &Session, event: &str, mark: usize, what: &str) -> Result<()> {
+pub(super) fn applied(session: &Session, event: &str, mark: usize, what: &str) -> Result<()> {
     session.settle(40);
     if session.trace()?.last_after(event, mark).is_none() {
         return Err(Error::new(format!(
@@ -76,14 +76,15 @@ fn applied(session: &Session, event: &str, mark: usize, what: &str) -> Result<()
 
 /// Click `at` and return the `text-edit-widened` line it traced, or the
 /// failure naming what it traced instead.
-fn reopen(
+pub(super) fn reopen(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
+    fixture: &Fixture,
     at: (f64, f64),
 ) -> Result<std::result::Result<crate::trace::TraceLine, String>> {
     let mark = session.trace()?.mark();
-    click_on(ctx, session, pointer, &FIXTURE, 0, at)?;
+    click_on(ctx, session, pointer, fixture, 0, at)?;
     let trace = session.trace()?;
     if let Some(line) = trace.last_after(WIDENED, mark) {
         return Ok(Ok(line.clone()));
@@ -93,7 +94,7 @@ fn reopen(
         .or_else(|| trace.last_after("text-edit-caret", mark))
         .map_or_else(|| "nothing".to_owned(), |l| format!("`{}`", l.raw));
     Ok(Err(format!(
-        "a click on ({:.0}, {:.0}), on a paragraph of two lines, opened no paragraph draft; it \
+        "a click on ({:.0}, {:.0}), on a paragraph of two or more lines, opened no paragraph draft; it \
          traced {instead}. Trace: {}.",
         at.0,
         at.1,
@@ -101,7 +102,7 @@ fn reopen(
     )))
 }
 
-fn field(line: &crate::trace::TraceLine, key: &str) -> usize {
+pub(super) fn field(line: &crate::trace::TraceLine, key: &str) -> usize {
     line.get_usize(key).unwrap_or(usize::MAX)
 }
 
@@ -119,7 +120,7 @@ fn drive(
     let mark = session.trace()?.mark();
     pointer.key(session, None, "Enter", Some("ctrl"))?;
     applied(session, ADDED, mark, "Ctrl+Enter on two typed lines")?;
-    let line = match reopen(ctx, session, pointer, ON_TYPED)? {
+    let line = match reopen(ctx, session, pointer, &FIXTURE, ON_TYPED)? {
         Ok(line) => line,
         Err(failure) => return Ok(Some(failure)),
     };
@@ -143,7 +144,7 @@ fn drive(
         mark,
         "Ctrl+Enter on the re-opened paragraph",
     )?;
-    let again = match reopen(ctx, session, pointer, ON_TYPED)? {
+    let again = match reopen(ctx, session, pointer, &FIXTURE, ON_TYPED)? {
         Ok(line) => line,
         Err(failure) => return Ok(Some(format!("after an edit, {failure}"))),
     };
@@ -189,7 +190,7 @@ fn wrapped(
     ) {
         return Ok(Some(e.to_string()));
     }
-    let line = match reopen(ctx, session, pointer, ON_WRAPPED)? {
+    let line = match reopen(ctx, session, pointer, &FIXTURE, ON_WRAPPED)? {
         Ok(line) => line,
         Err(failure) => return Ok(Some(format!("for a wrapped box, {failure}"))),
     };

@@ -63,15 +63,7 @@ pub mod dimension_groups;
 
 pub mod bates_batch;
 pub mod bates_scripted;
-/// **The second half of the descent** — something inside a wrapped drawing
-/// can be DRAGGED, not merely selected (`OPERATOR_REQUESTS.md` O70). Reads the
-/// funnel's own applied line, which the engine's `Ok` is what produces.
-/// **The ladder goes as deep inside a container as outside one** — the
-/// second double-click, the Part rung and a drag that commits
-/// (`OPERATOR_REQUESTS.md` O70).
-/// **Double-clicking a text box edits the text** — the last rung of the
-/// Smart-Selector chain, and the one where "deeper" means the words rather
-/// than a smaller shape (`OPERATOR_REQUESTS.md` O70).
+/// Double-clicking a text box edits the text (O70).
 pub mod double_click_text;
 pub mod double_click_text_scripted;
 pub mod evidence_scripted;
@@ -293,14 +285,7 @@ pub mod markup_band;
 
 pub mod markup_move;
 
-/// **The colour a comment shape comes out**, measured off the glass rather
-/// than asserted against the table it was written from. `palette::tests` divides
-/// each byte by 255 and compares it against Acrobat's own registry float, sixteen
-/// ways, and every one of them passes on a build whose rectangles draw black:
-/// there are six links between `MARKUP_RED` and a red line on a page and no test
-/// in the workspace observes more than one. It also carries the only reading in
-/// the suite that takes the *darkest* pixels rather than the dominant bucket, and
-/// its header says why a legibility oracle cannot answer *"what colour is this"*.
+/// A new markup is drawn in Acrobat's red, measured off the screen.
 pub mod markup_palette;
 
 pub mod markup_rectangle;
@@ -348,14 +333,7 @@ pub mod widget_move;
 
 pub mod widget_rotate;
 
-/// `ocr_recognises_a_page_and_the_document_keeps_it` — the whole Recognise-text
-/// chain against a genuinely image-only document, ending in the one assertion
-/// no unit test can make: **the file that was opened is byte-identical
-/// afterwards.**
-/// `a_click_inside_a_form_selects_what_is_drawn_there` — the driven proof of the
-/// operator's headline complaint: a click inside a form XObject must select
-/// what is drawn there, and a click on blank paper inside one must select
-/// nothing.
+/// A bookmark subtree can be copied and pasted (O59).
 pub mod bookmark_clipboard;
 
 pub mod cut_gate;
@@ -469,15 +447,7 @@ pub mod ocr_scripted;
 /// **The operator can FIND OUT a sheet has content beside it** — the off-page census.
 pub mod off_page_census;
 
-/// **Off-page content cost the operator his zoom** — O218/O221's
-/// mechanism, driven headless. The halo box is by construction BIGGER than the
-/// sheet, so it crosses the rasterizer's pixmap limit first; an order placed
-/// for it past that limit was refused, and the shell absorbed the refusal as
-/// the document's permanent ceiling. Its header carries why both controls are
-/// relational — the harness has one dependency and cannot import
-/// `pdfcer_render::MAX_PIXMAP_EDGE`, so the run proves it crossed the wall by
-/// reading the application ABANDONING the halo tier rather than by naming a
-/// number. Edit mode is load-bearing: off-page display is off in Read.
+/// Off-page content never costs the operator his zoom (O218, O221).
 pub mod off_page_ceiling;
 
 /// **A band dragged into the grey margin reaches an object off the page** (O92).
@@ -1112,6 +1082,8 @@ pub mod augment_subset;
 pub mod draft_arrows;
 /// Undo, redo, word delete, Tab, paste, select-all and save inside a draft.
 pub mod draft_keys;
+/// A paragraph of two looks opens whole and keeps both through an edit.
+pub mod draft_mixed;
 /// A paragraph re-opens as one draft and keeps its hand breaks.
 pub mod draft_paragraph;
 /// Enter in a paragraph on the page breaks it.

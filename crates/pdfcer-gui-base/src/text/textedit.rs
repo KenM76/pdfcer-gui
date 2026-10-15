@@ -416,9 +416,6 @@ impl ReflowRefusal {
 pub enum EnterRefusal {
     /// The line is not part of a paragraph pdfcer recognises.
     NoParagraph,
-    /// The paragraph mixes fonts, sizes or colours, which a re-write would
-    /// flatten into its first line's look.
-    MixedLooks,
     /// The engine will not re-write the paragraph; `detail` is its reason.
     Unrewritable { detail: String },
 }
@@ -431,10 +428,6 @@ impl EnterRefusal {
             Self::NoParagraph => "pdfcer does not recognise a paragraph around this line, so it \
                                   cannot start a new line in it. Press Ctrl+Enter to finish this \
                                   edit, or use Add text and drag a box for text that wraps."
-                .into(),
-            Self::MixedLooks => "This paragraph mixes fonts, sizes or colours, and starting a new \
-                                 line would set all of it in its first line's look, so it was \
-                                 left as it is. Press Ctrl+Enter to finish this edit."
                 .into(),
             Self::Unrewritable { detail } => format!(
                 "pdfcer cannot re-write this paragraph, so it cannot start a new line in it: \
@@ -551,7 +544,6 @@ mod tests {
     fn the_enter_refusal_offers_a_keyboard_route_and_a_gesture_route() {
         for why in [
             EnterRefusal::NoParagraph,
-            EnterRefusal::MixedLooks,
             EnterRefusal::Unrewritable {
                 detail: "x".to_owned(),
             },

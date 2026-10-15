@@ -183,3 +183,4 @@
 - [A sed-redirected dry run was not dry](feedback_dry_run_redirect.md) — no-match sed; script hit the real tree mid-gates. Take the root as an argument.
 - [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.
 - [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.
+- [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.

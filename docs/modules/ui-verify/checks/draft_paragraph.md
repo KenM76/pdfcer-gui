@@ -42,6 +42,6 @@ Each mutation run alone against the passing build:
 ## What it does not prove
 
 A paragraph from a foreign producer, whose breaks are always inferred
-(`hand_breaks` covers the disclosure); a paragraph in a table cell; mixed looks, which
+(`hand_breaks` covers the disclosure); a paragraph in a table cell; mixed looks (`draft_mixed`), which
 decline as before. The cost of `widen` on a dense sheet is unmeasured; it is
 1–2 ms here.

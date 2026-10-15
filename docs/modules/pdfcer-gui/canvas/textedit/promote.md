@@ -47,26 +47,31 @@ a line-only text inside a paragraph draft.
 - **`NoParagraph`** — no text, unreadable cells, no paragraph at the run, the
   run's characters split across lines or interleaved with another run's, or
   the slice no longer matches the run's original text.
-- **`MixedLooks`** — the paragraph's glyphs carry more than one look. The
-  rewrite sets every character in the first run's font, size and colour, which
-  would silently flatten the others. The look compared is (font resource, `Tf`
-  size, fill colour) from provenance, a subset of the engine's own `same_look`,
-  which is not public. This is a workaround, reported to the engine.
 - **`Unrewritable`** — `edit_block_text_preview` refuses the text the break
   would produce (the same refusals the commit would raise); the engine's
   sentence is carried.
 
 Each decline traces `text-edit-enter-declined page= run= reason=` with one of
 `no-text`, `no-cells`, `no-paragraph`, `run-not-in-paragraph`, `run-split`,
-`run-text-differs`, `mixed-looks`, `engine-refuses`. A promotion traces
-`text-edit-promoted page= run= block= len= caret= source=`.
+`run-text-differs`, `engine-refuses`. A promotion traces
+`text-edit-promoted page= run= block= len= caret= source= looks=`.
+
+A paragraph of several looks opens like any other. `edit_block_text` keeps
+each surviving character's look, gives an inserted one its neighbour's, and
+discloses when it fell back to the first run's; that disclosure reaches the
+status row through `app::actions::blocktext`. `looks=` counts (font resource,
+`Tf` size, fill colour) from provenance, an unset fill read as the black
+`DeviceGray 0` it renders as (the rewrite writes a colour only where the
+inherited one differs), a subset of the engine's
+`BlockEditReport::looks`, so a driven check can tell a mixed paragraph from a
+uniform one.
 
 `widen` declines the same way, plus `one-line` for a paragraph of one line
 and `recognised-word` for an invisible (OCR) run, and leaves the run draft. A
 recognised run (a line, or a word on a page an older pdfcer recognised) is
 edited as its own run so its preview keeps the run's size and scale, as the
 OCR layer (`canvas::ocrink`) renders it. It traces `text-edit-widened page= run= block=
-lines= breaks= len= source= ms=` or `text-edit-widen-declined page= run= reason= ms=`.
+lines= breaks= len= source= ms= looks=` or `text-edit-widen-declined page= run= reason= ms=`.
 
 ## Options
 
