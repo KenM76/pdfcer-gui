@@ -61,11 +61,11 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
     }
 }
 
-/// **`edit.duplicate`** — a second copy of the selected comment, or of each
-/// selected form field, offset, **without using the clipboard**. `Ctrl+D`.
+/// **`edit.duplicate`** — a second copy of everything selected, offset,
+/// **without using the clipboard**. `Ctrl+D`.
 fn duplicate(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     let caps = app.capabilities();
-    let Status::Open(doc) = &app.status else {
+    let Status::Open(doc) = &mut app.status else {
         return;
     };
     let epoch = doc.edit_epoch;
@@ -84,19 +84,32 @@ fn duplicate(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>) {
         }
         return;
     }
-    if !caps.author_markup {
+    // Each half of the selection takes its own mode gate, as its paste does.
+    let markup = doc.selection.annot().is_some();
+    let content = !doc.selection.entries().is_empty();
+    let refusal = if markup && !caps.author_markup {
+        Some((
+            "markup",
+            crate::text::clipboard::ModeRefusal::DuplicateMarkup,
+        ))
+    } else if content && !caps.edit_content {
+        Some((
+            "content",
+            crate::text::clipboard::ModeRefusal::DuplicateContent,
+        ))
+    } else {
+        None
+    };
+    if let Some((what, why)) = refusal {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
-            format!("command-declined id={id} reason=mode-cannot-author-markup")
+            format!("command-declined id={id} reason=mode-cannot-add-{what}")
         });
-        crate::app::status::decline::record_mode_refusal(
-            crate::text::clipboard::ModeRefusal::DuplicateMarkup,
-        );
+        crate::app::status::decline::record_mode_refusal(why);
         return;
     }
-    if let Err(refusal) = crate::canvas::annotclip::duplicate(doc, actions) {
-        crate::app::actions::record_note(epoch, crate::text::clipboard::refusal(refusal));
-    }
+    let outcome = crate::canvas::duplicate::duplicate(doc, actions);
+    report_take(doc, crate::text::clipboard::Took::Duplicated, outcome);
 }
 
 /// `Ctrl+C` and `Ctrl+X`, through the three-rung fork.
@@ -212,6 +225,16 @@ pub(crate) fn report_copy(
     doc: &crate::app::state::OpenDoc,
     outcome: Result<crate::canvas::clipboard::Clipped, crate::canvas::clipboard::Refusal>,
 ) -> bool {
+    report_take(doc, crate::text::clipboard::Took::Copied, outcome)
+}
+
+/// Say what a lift of the selection did not take, led by the gesture `took`,
+/// and whether it took anything.
+fn report_take(
+    doc: &crate::app::state::OpenDoc,
+    took: crate::text::clipboard::Took,
+    outcome: Result<crate::canvas::clipboard::Clipped, crate::canvas::clipboard::Refusal>,
+) -> bool {
     match outcome {
         Err(refusal) => {
             crate::app::actions::record_note(
@@ -247,7 +270,7 @@ pub(crate) fn report_copy(
         }) if !left_behind.is_empty() || thin > 0 || in_form_left > 0 => {
             crate::app::actions::record_note(
                 doc.edit_epoch,
-                crate::text::clipboard::partial_copy(&left_behind, thin, in_form_left),
+                crate::text::clipboard::partial(took, &left_behind, thin, in_form_left),
             );
             true
         }

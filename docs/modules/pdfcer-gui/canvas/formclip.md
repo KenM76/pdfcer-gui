@@ -17,8 +17,8 @@ large as it was drawn. The pasted part is no longer inside the drawing.
 The engine verb takes `&mut EditSession` because it reads the cached page
 model; it commits nothing and makes no undo entry. The shell reaches the
 session with `Arc::get_mut`, as the edit funnel does. When something else
-holds the session the copy is refused (`clipboard-copy-refused
-reason=session-borrowed`) rather than waiting.
+holds the session the copy is refused (`selection-take-refused
+reason=session-borrowed`, from `canvas::take::leaves_of`) rather than waiting.
 
 ## Cut
 

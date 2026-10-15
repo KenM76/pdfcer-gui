@@ -13,21 +13,6 @@ A reader asking *"why did my sticky note's author survive and my cloud's
 not?"* finds the whole answer here, in one file, rather than interleaved
 with the paste offset and the OS-clipboard marker.
 
-## [`duplicate`] lives here, and the carrier question is why
-
-`edit.duplicate` (`Ctrl+D`) puts a second copy of the selected comment on
-the page **without touching the clipboard**, which is the whole point of it:
-doing the same with `Ctrl+C`/`Ctrl+V` destroys whatever the operator was
-carrying, once per mark on a row of revision marks.
-
-It is in *this* module rather than beside the dispatcher because a duplicate
-faces the identical carrier question a copy does, and the obvious
-implementation — straight onto `paste_objects` with a translate matrix —
-gets it wrong in the same invisible way: it hands back an **anonymous,
-undated, opaque** copy of a signed revision cloud, which looks correct on
-the page. So it runs the same `copy_selection` and asks the same
-[`Plan::of`]. **No subtype list, in either verb.**
-
 ## THE RULE THIS MODULE EXISTS TO HOLD
 
 **Which carrier an annotation lands on is the engine's answer to read, never
@@ -148,28 +133,16 @@ is the property whose absence renders a sticky note as nothing at all.
 
 The `/Text` sticky note at index 1 is not modelled by `spec_from_dict`,
 so the engine carries its whole dictionary and baked `/AP`, and the
-duplicate must travel as that clip. The assertion is on the *action
+duplicate (`canvas::duplicate`) must travel as that clip. The assertion is on the *action
 kind*, so any second route added beside the clip — one that re-authors
 from a spec, say — has to pass it too.
 
-### `fn duplicating_nothing_refuses_and_raises_nothing`
+### `fn a_stale_selection_refuses`
 
-The `actions` emptiness is half the assertion. A verb that refuses and
-still pushes is worse than one that does neither, because the refusal
-sentence then contradicts the undo entry beside it.
-
-### `fn the_duplicate_cannot_reach_the_clipboard`
-
-Asserted **structurally** rather than by reading `egui` memory: this
-function takes no `&egui::Context`, so it *cannot* read or write the
-clipboard — `canvas::clipboard::store` and `read` both require one. A
-test that opened a context and compared before/after would pass equally
-well against a signature that could reach it, and would stop being
-evidence the day somebody threaded a context through "for the trace".
-
-⇒ So what is pinned here is the signature. If this stops compiling
-because `duplicate` grew a `ctx` parameter, that is the review this note
-is asking for, not a test to update.
+A selection naming an annotation no longer on its page refuses with
+`Unreadable` rather than resolving to whichever annotation now sits at
+that `/Annots` position. Copy, Cut and Duplicate all lift through
+`selected`, so this one guard covers the three.
 
 ### `struct Selected`
 
@@ -262,97 +235,3 @@ annotation rects. One number from the payload rather than a second reading
 of the document is what makes a clip pasted after the source document was
 closed still land where the operator pointed.
 
-### `fn duplicate`
-
-# Why this is a verb and not "copy then paste"
-
-Because the two are different acts and the difference is the clipboard.
-
-Reaching a second revision cloud through `Ctrl+C` then `Ctrl+V` works, and
-**destroys whatever the operator had copied**. An operator laying out a row
-of identical revision marks is very often carrying something else on the
-clipboard (a title-block string, a part number, a cell from a spreadsheet),
-and every duplicate would cost them that. Every application in this class
-separates the two for exactly that reason, and Acrobat has had `Ctrl+D` on a
-comment for as long as it has had comments.
-
-`mockups/app.html`'s approved canvas context menu already draws
-*"Duplicate — Ctrl+D"*; this is the verb behind that line.
-
-# Why it is NOT an extension of `edit.paste_duplicate`, which was checked
-first
-
-`app::dispatch::clipboard`'s header names `edit.paste_duplicate` as *"the
-second sense of a form-field paste"* — `Ctrl+V` plants a copied field as a
-**new** field, `Ctrl+Shift+V` plants it as **another widget of the same
-field**. Its own header records what it does over a markup: *"falls through
-to the ordinary paste … a markup has no second sense to duplicate into"*.
-
-So it does already route by selection kind, and the route it takes for a
-markup is *the plain paste*. Making it duplicate the **selection** instead
-would be a paste verb that acts when the clipboard is empty and ignores the
-clipboard when it is not — two unrelated behaviours behind one id, reachable
-by a chord named for the one it would stop doing. This is a sibling command
-instead, which is what a shell that registers, binds, places and mode-gates
-per id can express and a modifier read inside a handler cannot (R8).
-
-# The route is decided by the ENGINE, exactly as the copy's is
-
-This runs the same `copy_selection` the copy runs and asks [`Plan::of`]
-which carrier each annotation landed on, so a refusal is disclosed by name
-exactly as a copy's is. It does **not** re-implement the classification,
-and it does not hard-code a subtype list.
-
-⇒ That is the whole reason this function lives in this module rather than
-beside the dispatcher. The module header's rule — which carrier an
-annotation lands on is the engine's answer to read, never this shell's to
-predict — applies to a duplicate identically. A duplicate written the
-obvious way, straight onto `paste_objects` with a translate matrix, is one
-engine change away from an **anonymous, undated, opaque** copy of a signed
-revision cloud, silently, and it would look right on the page.
-
-# The clip is assembled before the refusal check, and that is the point
-
-`copy_selection` takes `&self` and commits nothing, so the cost is one walk
-and one allocation. Asking the engine first is deliberate: the alternative
-is this shell deciding which carrier an annotation *would* land on, which is
-the hard-coded subtype list the module header spends a section refusing.
-
-# The offset
-
-[`crate::canvas::clipboard::PASTE_OFFSET_PT`] down and to the right — the
-**same** constant and the same signs a same-page paste uses, because a
-duplicate is a same-page paste in everything but where the payload came
-from. Down the page is **negative** in PDF user space; getting it
-backwards produces a copy that goes up-and-right, which looks deliberate
-and is the kind of thing nobody reports as a defect.
-
-There is deliberately **no cursor rule** here, where a paste has one
-(`OPERATOR_REQUESTS.md` O73). A paste is invoked with the pointer over the
-place the operator wants the thing; a duplicate is invoked from a chord, a
-menu row or a ribbon button while they are looking at the original, and
-dropping the copy under a pointer that is resting on a ribbon icon would
-put it wherever the mouse happened to be. The offset is the whole rule, and
-it is what makes `Ctrl+D Ctrl+D Ctrl+D` walk a diagonal row of marks —
-which is the gesture the feature exists for.
-
-# One undo entry
-
-Whichever route it takes, exactly one action is raised, and each of the two
-goes through `app::actions::apply::vector_edit` as a single `EditSession`
-command. `Ctrl+Z` after a duplicate takes back the duplicate.
-
-# Errors
-
-* [`Refusal::NothingSelected`] — no annotation is selected. Page content is
-  *also* nothing to this verb today: the selection model makes the two
-  mutually exclusive, and a content duplicate is a different feature with a
-  different name for what "the same place" means.
-* [`Refusal::Unreadable`] — the selection names an annotation that is no
-  longer on its page, or whose dictionary will not read. Reachable after an
-  undo.
-* [`Refusal::EngineRefused`] — `copy_selection` would not assemble a clip.
-* [`Refusal::CannotCarry`] — `/Widget`, `/Popup` or `/Redact`, refused by
-  the engine **by name** and by this verb for the same three reasons the
-  copy refuses them. A redaction in particular: duplicating one arms a
-  second destructive operation nobody reviewed.

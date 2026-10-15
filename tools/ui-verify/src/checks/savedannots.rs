@@ -9,6 +9,12 @@
 
 use std::collections::BTreeMap;
 
+/// A saved file's bytes, or the error naming it.
+pub(super) fn read(path: &std::path::Path) -> crate::error::Result<Vec<u8>> {
+    std::fs::read(path)
+        .map_err(|e| crate::error::Error::new(format!("cannot read {}: {e}", path.display())))
+}
+
 /// One annotation as the saved file finally states it.
 #[derive(Debug, Clone)]
 pub(super) struct SavedAnnot {
@@ -23,21 +29,36 @@ pub(super) struct SavedAnnot {
 /// Every annotation listed on a page, in `/Annots` order (front-most last),
 /// pages taken in object-number order.
 pub(super) fn listed_annots(bytes: &[u8]) -> Vec<SavedAnnot> {
+    pages_annots(bytes).into_iter().flatten().collect()
+}
+
+/// The annotations listed on the `nth` page, pages taken in object-number
+/// order; empty when there is no such page.
+pub(super) fn listed_on_page(bytes: &[u8], nth: usize) -> Vec<SavedAnnot> {
+    pages_annots(bytes).into_iter().nth(nth).unwrap_or_default()
+}
+
+/// Each page's listed annotations, pages in object-number order.
+fn pages_annots(bytes: &[u8]) -> Vec<Vec<SavedAnnot>> {
     let text = String::from_utf8_lossy(bytes);
     let last = last_definitions(&text);
     last.values()
         .filter(|body| is_page(body))
-        .filter_map(|body| references_after(body, "/Annots"))
-        .flatten()
-        .filter_map(|num| {
-            let body = last.get(&num)?;
-            let rect: [f64; 4] = numbers_after(body, "/Rect")?.try_into().ok()?;
-            Some(SavedAnnot {
-                num,
-                subtype: subtype_of(body)?,
-                rect,
-                body: (*body).to_owned(),
-            })
+        .map(|page| {
+            references_after(page, "/Annots")
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|num| {
+                    let body = last.get(&num)?;
+                    let rect: [f64; 4] = numbers_after(body, "/Rect")?.try_into().ok()?;
+                    Some(SavedAnnot {
+                        num,
+                        subtype: subtype_of(body)?,
+                        rect,
+                        body: (*body).to_owned(),
+                    })
+                })
+                .collect()
         })
         .collect()
 }

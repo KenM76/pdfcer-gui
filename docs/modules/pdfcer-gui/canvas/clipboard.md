@@ -209,10 +209,11 @@ them in **one call** rather than two, so that:
 `copy_selection` addresses page objects only. A selection of only parts of a
 placed drawing is copied by `canvas::formclip`, which the dispatcher routes to
 before this module. A mixed selection copies its page objects here and counts
-the parts in `Clipped::Selection::in_form_left` for `partial_copy`. A
-leaf-only selection that still reaches `copy` (from a window drag) is
-[`Refusal::InsideForm`], traced `clipboard-copy-refused reason=inside-form`,
-never `NothingSelected`.
+the parts in `Clipped::Selection::in_form_left` for `text::clipboard::partial`.
+A leaf-only selection that still reaches `copy` (from a window drag) is
+[`Refusal::InsideForm`], traced `selection-take-refused reason=inside-form`,
+never `NothingSelected`. The lift itself is `canvas::take`, shared with
+Duplicate.
 
 ⇒ **The fork is read off the payload, never off a subtype list here.** A
 list would be a fourth copy of a taxonomy `pdfcer-core` owns, and would be

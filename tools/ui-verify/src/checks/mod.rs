@@ -1462,6 +1462,8 @@ pub mod markup_place;
 pub mod multiselect;
 /// A radio button joining a group by paste, by its group row and by rename.
 pub mod radio_group;
+/// Copy, Cut and Duplicate over several annotations, a page object, a drawing part.
+pub mod selection_clip;
 pub mod undo_redo;
 pub mod widget_turn;
 

@@ -107,7 +107,8 @@ pub(super) fn band() -> Vec<Command> {
             .with_icon("copy-as-vector")
             .enabled_when("doc.pages"),
         // ═══════════════════════════════════════════════════════════════════
-        // `edit.duplicate` — Ctrl+D over a selected comment.
+        // `edit.duplicate` — Ctrl+D over what is selected: page objects, parts
+        // of a placed drawing, comments, form fields.
         //
         // **What it closes.** A markup could be duplicated only by `Ctrl+C`
         // then `Ctrl+V`, which works and **destroys whatever was on the

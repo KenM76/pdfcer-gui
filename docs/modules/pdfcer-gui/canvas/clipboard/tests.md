@@ -75,6 +75,17 @@ after the copy: two walks of `/Annots` with an edit between them can
 disagree, and the window between them is exactly where a cut removes the
 neighbour of the thing it copied.
 
+### `fn copying_several_annotations_takes_them_all`
+
+Three annotations selected, three on the clip. A copy that read only the
+primary selection still parks a clip and still traces a copy; the count is
+what differs.
+
+### `fn cutting_several_annotations_is_one_delete`
+
+One `DeleteMany` carrying exactly the clip's ids, so the cut is one undo
+step and removes what it copied, nothing beside it.
+
 ### `fn the_annotation_survives_the_clips_own_serialisation`
 
 A build whose serialiser dropped the annotation payload would still park a

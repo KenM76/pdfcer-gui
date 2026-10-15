@@ -15,7 +15,7 @@ needed.
 1. Click (220, 630) and require `annot-select subtype=Square`.
 2. Press ArrowRight. Require `annot-nudge` and `move-annotation-applied`.
    The moved object's number is the original.
-3. Press `Ctrl+D`. Require `annot-duplicate` and `paste-objects-applied
+3. Press `Ctrl+D`. Require `selection-duplicate` and `paste-objects-applied
    annots=1`. The duplicate lands 10 pt right and 10 pt down
    (`PASTE_OFFSET_PT`), on top.
 4. Click (220, 630) again. The point is inside both squares, so the click

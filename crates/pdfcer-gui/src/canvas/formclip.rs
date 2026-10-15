@@ -4,8 +4,6 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/formclip.md`.
 
-use std::sync::Arc;
-
 use super::clipboard::{Clipped, Refusal};
 use crate::app::actions::{Action, VectorAction};
 use crate::app::state::OpenDoc;
@@ -25,53 +23,25 @@ pub fn leaves_only(doc: &OpenDoc) -> Option<(usize, Vec<usize>)> {
     (!leaves.is_empty()).then_some((page, leaves))
 }
 
-/// Copy `leaves` on `page` to the clipboard. The engine bakes the drawing's
-/// placement into each item, so the clip pastes as page content where and as
-/// large as it was drawn.
+/// Copy `leaves` on `page` to the clipboard, lifted by
+/// [`super::take::leaves_of`].
 pub fn copy(
     ctx: &egui::Context,
     doc: &mut OpenDoc,
     page: usize,
     leaves: &[usize],
 ) -> Result<Clipped, Refusal> {
-    // `&mut` only because the engine reads its cached page model; a holder of
-    // the session elsewhere refuses the copy rather than waiting.
-    let Some(session) = Arc::get_mut(&mut doc.session) else {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "clipboard-copy-refused reason=session-borrowed".to_owned()
-        });
-        return Err(Refusal::EngineRefused);
-    };
-    let clip = session
-        .copy_objects_in_form(page, leaves)
-        .map_err(|error| {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!("clipboard-copy-refused reason=engine detail={error}")
-            });
-            Refusal::EngineRefused
-        })?;
-    let clipped = Clipped::Selection {
-        count: clip.len(),
-        annotations: 0,
-        annot_ids: Vec::new(),
-        left_behind: Vec::new(),
-        thin: 0,
-        in_form_left: 0,
-        bytes: clip.to_bytes(),
-        page,
-        anchor: super::clipboard::anchor_of(&clip),
-    };
+    let taken = super::take::leaves_of(doc, page, leaves)?;
+    let clipped = taken.clipped();
     super::clipboard::store(ctx, clipped.clone());
-    super::clipboard::publish(ctx, &clip, leaves.len(), 0);
+    super::clipboard::publish(ctx, &taken.clip, leaves.len(), 0);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
             "clipboard-copy kind=form-leaves page={page} leaves={} items={} bytes={}",
             crate::diag::index_list(leaves),
-            clip.len(),
-            clip.to_bytes().len()
+            taken.clip.len(),
+            taken.clip.to_bytes().len()
         )
     });
     Ok(clipped)

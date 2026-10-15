@@ -50,9 +50,20 @@ pub(super) fn select_four(
     session: &Session,
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
+    select_members(ctx, session, pointer, &[CIRCLE, LINK, LOCKED])
+}
+
+/// Select the square by a click, then each of `others` by Shift-click; the
+/// last one is the primary.
+pub(super) fn select_members(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    others: &[(&str, (f64, f64), f64)],
+) -> Result<Option<String>> {
     click_on(ctx, session, pointer, &FIXTURE, 0, SQUARE.1)?;
     session.settle(20);
-    for (n, (key, at, _)) in [CIRCLE, LINK, LOCKED].into_iter().enumerate() {
+    for (n, &(key, at, _)) in others.iter().enumerate() {
         let mark = session.trace()?.mark();
         shift_click(ctx, session, pointer, &FIXTURE, at)?;
         let toggled = step!(after(

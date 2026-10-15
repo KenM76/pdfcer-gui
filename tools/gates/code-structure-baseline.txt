@@ -288,7 +288,6 @@ fn crates/pdfcer-gui/src/app/toolstatus.rs::sentence
 fn crates/pdfcer-gui/src/canvas/annotnodes.rs::resolved
 fn crates/pdfcer-gui/src/canvas/backdrop.rs::publish_coverage
 fn crates/pdfcer-gui/src/canvas/clicking.rs::click
-fn crates/pdfcer-gui/src/canvas/clipboard.rs::copy
 fn crates/pdfcer-gui/src/canvas/clipboard.rs::cut
 fn crates/pdfcer-gui/src/canvas/deep.rs::track
 fn crates/pdfcer-gui/src/canvas/destination.rs::arrive

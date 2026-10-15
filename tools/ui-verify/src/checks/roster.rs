@@ -520,6 +520,9 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(groupnudge::SeveralFormFieldsNudgeAsOneStep),
         Box::new(groupnudge::ACeDimensionIsNudged),
         Box::new(field_clip_many::SeveralFormFieldsCopyCutDuplicateAsOneUndoStep),
+        Box::new(selection_clip::SeveralAnnotationsCopyCutDuplicateAsOneStep),
+        Box::new(selection_clip::CtrlDDuplicatesAPageObject),
+        Box::new(selection_clip::CtrlDDuplicatesAPartOfAPlacedDrawing),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.
         Box::new(form_leaf_descend::TheLadderGoesAsDeepInsideAContainer),

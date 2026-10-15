@@ -169,10 +169,19 @@ fn cannot_carry(subtypes: &[String]) -> String {
     )
 }
 
-/// **What a copy took, and what it did not** — the one sentence a partial copy
-/// owes before the operator finds out by pasting.
+/// Which gesture lifted the selection; it leads [`partial`]'s sentence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Took {
+    /// Copy or Cut.
+    Copied,
+    /// Duplicate.
+    Duplicated,
+}
+
+/// **What a copy or duplicate took, and what it did not** — the one sentence a
+/// partial lift owes before the operator finds out by pasting.
 #[must_use]
-pub fn partial_copy(left_behind: &[String], thin: usize, in_form: usize) -> String {
+pub fn partial(took: Took, left_behind: &[String], thin: usize, in_form: usize) -> String {
     let mut parts = Vec::new();
     if in_form > 0 {
         parts.push(format!(
@@ -197,7 +206,11 @@ pub fn partial_copy(left_behind: &[String], thin: usize, in_form: usize) -> Stri
              of its shape."
         ));
     }
-    format!("Copied, but not all of it. {}", parts.join(" "))
+    let lead = match took {
+        Took::Copied => "Copied",
+        Took::Duplicated => "Duplicated",
+    };
+    format!("{lead}, but not all of it. {}", parts.join(" "))
 }
 
 /// "A part of a placed drawing" or "N parts of placed drawings".
@@ -367,6 +380,9 @@ pub enum ModeRefusal {
     /// `edit.duplicate` over a **form field**, in a mode that does not change
     /// page content.
     DuplicateField,
+    /// `edit.duplicate` over **page content or a part of a placed drawing**,
+    /// in a mode that does not change what is on the page.
+    DuplicateContent,
 }
 
 impl ModeRefusal {
@@ -415,6 +431,9 @@ impl ModeRefusal {
             Self::DuplicateField => {
                 "That is a form field, which is part of the document rather than a comment on it, and this mode does not change what is on the page. Nothing has been added — switch to Edit to duplicate it."
             }
+            Self::DuplicateContent => {
+                "That is page content, and this mode does not change what is on the page. Nothing has been added — switch to Edit to duplicate it."
+            }
         }
     }
 }
@@ -459,7 +478,7 @@ mod tests {
     /// arrived thin**, and never claims the copy failed.
     #[test]
     fn a_partial_copy_says_what_arrived_and_what_did_not() {
-        let both = partial_copy(&["Redact".to_owned()], 2, 0);
+        let both = partial(Took::Copied, &["Redact".to_owned()], 2, 0);
         assert!(
             both.starts_with("Copied, but not all of it."),
             "★ it must say the copy HAPPENED first — an operator who reads a failure retries a \
@@ -473,7 +492,7 @@ mod tests {
             both.contains("2 comments"),
             "and so must the count that will paste thin: {both:?}"
         );
-        let thin_only = partial_copy(&[], 1, 0);
+        let thin_only = partial(Took::Copied, &[], 1, 0);
         assert!(
             thin_only.contains("One comment") && !thin_only.contains("left behind"),
             "★ with nothing refused it must not invent a second clause: {thin_only:?}"
@@ -483,9 +502,17 @@ mod tests {
     /// Parts of a placed drawing that rode along with page content are named.
     #[test]
     fn a_copy_that_left_form_parts_behind_says_so() {
-        let s = partial_copy(&[], 0, 2);
+        let s = partial(Took::Copied, &[], 0, 2);
         assert!(s.starts_with("Copied, but not all of it."), "{s:?}");
         assert!(s.contains("2 parts of placed drawings"), "{s:?}");
+    }
+
+    /// A partial duplicate leads with the gesture that happened, not a copy.
+    #[test]
+    fn a_partial_duplicate_says_it_duplicated() {
+        let s = partial(Took::Duplicated, &["Redact".to_owned()], 0, 0);
+        assert!(s.starts_with("Duplicated, but not all of it."), "{s:?}");
+        assert!(s.contains("redaction mark"), "{s:?}");
     }
 
     /// The OS marker names comments as comments, and a mixed copy as both.
@@ -534,6 +561,7 @@ mod tests {
             (ModeRefusal::CutField, edit),
             (ModeRefusal::DuplicateMarkup, review),
             (ModeRefusal::DuplicateField, edit),
+            (ModeRefusal::DuplicateContent, edit),
         ] {
             let line = why.line();
             assert!(
@@ -560,6 +588,7 @@ mod tests {
             ModeRefusal::CutField,
             ModeRefusal::DuplicateMarkup,
             ModeRefusal::DuplicateField,
+            ModeRefusal::DuplicateContent,
         ];
         let mut lines: Vec<&str> = all.iter().map(|w| w.line()).collect();
         lines.sort_unstable();

@@ -81,6 +81,11 @@ copied"* over a copy that mostly worked sends the operator back to
 press `Ctrl+C` again, which changes nothing and costs them the
 afternoon. It has to open by saying the copy happened.
 
+### `fn a_partial_duplicate_says_it_duplicated`
+
+The same sentence for Duplicate must open with *"Duplicated"*: a duplicate
+reported as a copy tells the operator his clipboard changed when it did not.
+
 ### `fn the_os_marker_counts_objects_and_comments_separately`
 
 `os_marker(0, 1)` was the case that did not exist before 2026-09-05
@@ -138,7 +143,11 @@ protecting them from arming a destructive operation somewhere they did not
 review — so the sentence says what it is *for*, and offers Delete, which is
 almost certainly what they wanted.
 
-### `fn partial_copy`
+### `fn partial`
+
+Led by the gesture that happened (`Took::Copied` or `Took::Duplicated`), so a
+partial duplicate is never reported as a copy.
+
 
 Rule 4, *"fuzzy never sneaky"*: a copy that quietly took three of four
 selected things, or took a comment without its author and its opacity, looks

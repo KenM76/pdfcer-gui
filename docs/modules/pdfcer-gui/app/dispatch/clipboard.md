@@ -129,11 +129,13 @@ carrying — a part number, a title-block string — which `Ctrl+C`/`Ctrl+V`
 destroyed once per mark. `crate::text::commands::edit_duplicate`'s tooltip
 leads with that clause for the same reason.
 
-# The mode gate is `author_markup`, and the sentence is its own
+# The mode gates follow the selection, and each sentence is its own
 
-A duplicate authors an annotation, so Review — the mode whose whole purpose
-is marking up somebody else's drawing — must be able to do it, and Read must
-not. That is the same gate `paste` applies to a markup clip.
+Selected annotations take `author_markup`, so Review — the mode whose whole
+purpose is marking up somebody else's drawing — can duplicate them and Read
+cannot; selected page content or drawing parts take `edit_content`
+(`ModeRefusal::DuplicateContent`). Those are the gates `paste` applies to the
+same clips.
 
 The **sentence** is not the same: `ModeRefusal::PasteMarkup` says *"switch
 to Review to paste this"*, and nothing was pasted. A seventh variant —

@@ -277,3 +277,58 @@ fn the_annotation_survives_the_clips_own_serialisation() {
          regressed there pastes the content half perfectly and silently loses every comment."
     );
 }
+
+/// Open the fixture with every annotation at `indices` selected, as Shift+clicks
+/// would leave them.
+fn with_annots_selected(indices: &[usize]) -> crate::app::state::OpenDoc {
+    let (first, rest) = indices.split_first().expect("at least one index");
+    let mut doc = with_annot_selected(*first);
+    for &index in rest {
+        let other = with_annot_selected(index);
+        let hit = other.selection.annot().expect("selected").clone();
+        doc.selection.toggle_annot(hit);
+    }
+    doc
+}
+
+/// **A copy of several annotations takes every one**, not only the primary.
+#[test]
+fn copying_several_annotations_takes_them_all() {
+    let ctx = egui::Context::default();
+    let doc = with_annots_selected(&[0, 1, 2]);
+    let clipped = copy(&ctx, &doc).expect("three annotations copy");
+    let Clipped::Selection {
+        annotations,
+        annot_ids,
+        ..
+    } = clipped
+    else {
+        panic!("an annotation copy is a selection clip: {clipped:?}");
+    };
+    assert_eq!(annotations, 3, "every selected annotation reaches the clip");
+    assert_eq!(annot_ids.len(), 3);
+}
+
+/// **A cut of several annotations is ONE `DeleteMany`**, one undo entry,
+/// naming every annotation it copied.
+#[test]
+fn cutting_several_annotations_is_one_delete() {
+    let ctx = egui::Context::default();
+    let doc = with_annots_selected(&[0, 1, 2]);
+    let mut wanted: Vec<_> = doc.selection.annots().iter().map(|a| a.target.id).collect();
+    let mut actions = Vec::new();
+    cut(&ctx, &doc, &mut actions).expect("three annotations cut");
+    let [
+        Action::Annot(crate::app::actions::annot::AnnotAction::DeleteMany {
+            ids, kept_locked, ..
+        }),
+    ] = actions.as_slice()
+    else {
+        panic!("★ one DeleteMany, so one Ctrl+Z puts all three back: {actions:?}");
+    };
+    let mut ids = ids.clone();
+    ids.sort_unstable();
+    wanted.sort_unstable();
+    assert_eq!(ids, wanted);
+    assert_eq!(*kept_locked, 0);
+}

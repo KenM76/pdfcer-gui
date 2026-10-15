@@ -10,8 +10,9 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/bates_batch.md`.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use super::savedannots::read;
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_in, declared_names, list};
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
@@ -88,10 +89,6 @@ fn stage(ctx: &CheckContext) -> Result<PathBuf> {
             .map_err(|e| Error::new(format!("cannot stage {name}: {e}")))?;
     }
     Ok(folder)
-}
-
-fn read(path: &Path) -> Result<Vec<u8>> {
-    std::fs::read(path).map_err(|e| Error::new(format!("cannot read {}: {e}", path.display())))
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {

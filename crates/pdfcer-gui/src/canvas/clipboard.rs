@@ -343,142 +343,49 @@ pub fn store(ctx: &egui::Context, clipped: Clipped) {
     crate::canvas::clipseq::mark(ctx);
 }
 
-/// **Copy what is selected** — page content, an annotation, or both — and say
+/// **Copy what is selected** — page content, annotations, or both — and say
 /// what reached the clipboard.
 pub fn copy(ctx: &egui::Context, doc: &OpenDoc) -> Result<Clipped, Refusal> {
-    use crate::canvas::annotclip;
-
-    // The annotation's OWN page wins where there is one. A selected
-    // annotation and `view.page_index` can differ — the view can be scrolled
-    // onto the next sheet with a comment still selected on this one — and the
-    // clip must describe the page the thing is actually on, because that is the
-    // page `copy_selection` will index into.
-    let annots = annotclip::selected(doc)?;
-    let page = annots.first().map_or(doc.view.page_index, |a| a.page);
-    let objects = doc.selection.object_indices_on(page);
-    let in_form = doc.selection.leaf_indices_on(page).len();
-    if objects.is_empty() && annots.is_empty() {
-        if in_form > 0 {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!("clipboard-copy-refused reason=inside-form n={in_form}")
-            });
-            return Err(Refusal::InsideForm(in_form));
-        }
-        return Err(Refusal::NothingSelected);
-    }
-    let indices: Vec<usize> = annots.iter().map(|a| a.index).collect();
-    // `&self`, and it commits nothing — which is what makes `cut` below one
-    // undo entry without a `cut_selection` call: only the deletion is an edit.
-    //
-    // `copy_selection`, not `copy_objects` and not `copy_annotations`. The
-    // two narrow verbs are one-line wrappers over this one body, so calling it
-    // directly costs nothing and removes the
-    // branch that would otherwise have to decide which wrapper to use — a
-    // branch whose wrong answer is a silently half-copied selection.
-    let clip = doc
-        .session
-        .copy_selection(page, &objects, &indices)
-        .map_err(|_| Refusal::EngineRefused)?;
-    let plan = annotclip::Plan::of(&clip);
-
-    if plan.nothing_to_carry(objects.len()) {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            format!(
-                "clipboard-copy-refused reason=cannot-carry what={:?}",
-                plan.refused
-            )
-        });
-        return Err(Refusal::CannotCarry(plan.refused));
-    }
-
-    // The clip's OWN bbox, unioned by the engine over both content items
-    // and annotation `/Rect`s, converted to a centre.
-    //
-    let anchor = anchor_of(&clip);
-    let clipped = Clipped::Selection {
-        count: clip.len(),
-        annotations: plan.carried(),
-        annot_ids: annots.iter().map(|a| a.id).collect(),
-        left_behind: plan.refused.clone(),
-        thin: plan.thin,
-        in_form_left: in_form,
-        bytes: clip.to_bytes(),
-        page,
-        anchor,
-    };
+    let taken = super::take::selection(doc)?;
+    let clipped = taken.clipped();
     store(ctx, clipped.clone());
-    publish(ctx, &clip, objects.len(), plan.carried());
+    publish(ctx, &taken.clip, taken.objects, taken.plan.carried());
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         //
-        // The COUNT and the BYTE LENGTH, because those are what a wrong build
-        // gets wrong: a clip that copied the operators and dropped the
-        // resources is a plausible-looking clip that pastes the right glyphs in
-        // the wrong typeface, and it is several hundred bytes shorter.
-        //
-        // And `annots=` and `thin=` beside them, because a wrong build gets
-        // THOSE wrong: `annots=0` on a copy of a sticky note is the whole
-        // failure, and `thin=1` is the build that took the engine's model
-        // carrier where the faithful route was available. Neither is visible in
-        // `objects=` or in `bytes=`.
-        let bytes = match &clipped {
-            Clipped::Selection { bytes, .. } => bytes.len(),
-            Clipped::FormField(_)
-            | Clipped::Pages { .. }
-            | Clipped::Outline { .. }
-            | Clipped::Attachment(_) => 0,
-        };
+        // The count and the byte length are what a wrong build gets wrong: a
+        // clip that dropped the resources is several hundred bytes shorter.
+        // `annots=` and `thin=` beside them, because `annots=0` on a copy of a
+        // sticky note is the whole failure and neither shows in `bytes=`.
         format!(
-            "clipboard-copy kind=selection page={page} objects={} annots={} thin={} \
-             left_behind={} in_form_left={in_form} bytes={bytes}",
-            objects.len(),
-            plan.carried(),
-            plan.thin,
-            plan.refused.len(),
+            "clipboard-copy kind=selection page={} objects={} annots={} thin={} \
+             left_behind={} in_form_left={} bytes={}",
+            taken.page,
+            taken.objects,
+            taken.plan.carried(),
+            taken.plan.thin,
+            taken.plan.refused.len(),
+            taken.in_form_left,
+            taken.clip.to_bytes().len(),
         )
     });
     Ok(clipped)
 }
 
-/// Copy, then delete — cut.
+/// Copy, then delete — cut. One undo entry: the copy is not an edit.
+///
+/// Every question that could stop the delete is asked before the copy, so a
+/// cut is never left half-done with a copy on the clipboard and the original
+/// still on the page — the next paste would double it. A selection one of
+/// whose annotations cannot be deleted refuses the whole cut, rather than
+/// cutting the rest and leaving that one copied as well as kept.
 pub fn cut(
     ctx: &egui::Context,
     doc: &OpenDoc,
     actions: &mut Vec<Action>,
 ) -> Result<Clipped, Refusal> {
-    // **ASK WHETHER THE DELETE CAN HAPPEN BEFORE THE COPY DOES.**
-    //
-    //
-    // On a certified or encrypted document, `Ctrl+X` over a markup **copied it
-    // to the clipboard**, raised the Delete, watched the engine refuse into
-    // `vector_edit`'s `Err` arm — one trace line, nothing said — and then
-    // `annots::delete` cleared the selection anyway, because it clears after
-    // the funnel rather than on success.
-    //
-    // ⇒ So the operator was left with the annotation still on the page, no
-    // selection, no explanation, **and a clipboard holding a copy of it**. The
-    // next `Ctrl+V` duplicates the thing they were trying to move. That is a
-    // half-executed cut, which is the one outcome the ordering note below
-    // exists to prevent — stated there for the copy half and never asked for
-    // the delete half.
-    //
-    // The whole gesture is refused rather than degraded to a copy. A cut
-    // that silently becomes a copy is a different verb wearing the operator's
-    // chord, and they would find out by pasting.
-    //
-    //
-    // First, before the delete gate below and before the copy, because it is
-    // the cheaper question and because the two refusals are about different
-    // things: that one is *"this document forbids removing it"*, this one is
-    // *"pdfcer could not put it back"*. An operator meeting the wrong one of the
-    // two goes looking in the wrong place.
-    //
-    // `edit.cut` is already greyed on this predicate (`selection.cut_permitted`),
-    // so a pointer never reaches here. A CHORD does: `Ctrl+X` is dispatched
-    // through the keymap without consulting command enablement. Greying removes
-    // the invitation; this removes the silence.
+    // `edit.cut` is greyed on these predicates, but `Ctrl+X` is dispatched
+    // without consulting enablement; this is what the chord meets.
     if let Some(blocker) = crate::canvas::cutgate::blocker(doc) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -489,61 +396,23 @@ pub fn cut(
         });
         return Err(Refusal::CutWouldNotSurvive(blocker.subtype));
     }
-    if let Some(selected) = doc.selection.annot()
-        && let Some(why) = crate::panels::properties::annotdelete::gate(doc, &selected.target)
-    {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            format!("clipboard-cut-refused reason=delete-gated why={why:?}")
-        });
-        // The REASON travels out; the sentence is written where every other
-        // clipboard refusal's is. This module changes no document and words no
-        // decline — its own header's contract — and `crate::app::status::decline`
-        // is `pub(super)` inside `crate::app` and deliberately out of reach from
-        // the canvas. `crate::text::clipboard` already maps every other variant
-        // to a sentence, and this one reuses `annotdelete`'s catalog rather than
-        // writing a second wording for one fact.
-        return Err(Refusal::DeleteRefused(why));
+    for selected in doc.selection.annots() {
+        if let Some(why) = crate::panels::properties::annotdelete::gate(doc, &selected.target) {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("clipboard-cut-refused reason=delete-gated why={why:?}")
+            });
+            return Err(Refusal::DeleteRefused(why));
+        }
     }
     let clipped = copy(ctx, doc)?;
-    // COPY RUNS FIRST, and the engine makes the same point about its own
-    // `cut_objects`: *"a selection that cannot be copied is refused with
-    // nothing deleted. Reversed, a cut whose copy half failed would take the
-    // objects away with nothing on the clipboard — the one outcome the operator
-    // cannot recover from by pasting."* The `?` above is that ordering.
-    //
-    // And this is deliberately NOT `EditSession::cut_objects`, though that
-    // verb exists and would work. `cut_objects` is copy-then-delete inside the
-    // engine; doing it here as copy-then-`DeleteSelection` keeps the delete
-    // going through the funnel like every other edit, so it lands one
-    // `EditSession` command and one undo entry by the same mechanism as
-    // everything else — and this module goes on changing no document, which is
-    // what lets its refusals be unit-tested without one.
-    //
-    // The undo property is unchanged either way: only one half of a cut is an
-    // edit.
-    // The delete is raised through the funnel like every other edit, rather
-    // than performed here: this module changes no document.
-    match (&clipped, doc.selection.annot()) {
-        //
-        // SO A MIXED CUT IS TWO UNDO ENTRIES, and that is stated rather
-        // than hidden. It is not reachable today (the selection model holds
-        // content or an annotation, never both), and when it becomes reachable
-        // the honest fix is a `cut_selection` on the engine side rather than a
-        // second delete funnel here — filed on the clipboard row of
-        // `ENGINE_BACKLOG.md`. A pure-content cut and a pure-annotation cut are
-        // each ONE entry, which is every cut an operator can make today.
-        //
-        // The ids come off the CLIP, not from a fresh read of the selection.
-        // Re-deriving them here would be a second walk of the page between the
-        // copy and the delete, and the window between two walks is exactly
-        // where a cut removes the annotation next to the one it copied.
-        (
-            Clipped::Selection {
-                page, annot_ids, ..
-            },
-            _,
-        ) => {
+    // Copy then `DeleteSelection`, not the engine's `cut_objects`: the delete
+    // goes through the edit funnel like every other edit, and this module
+    // changes no document.
+    match &clipped {
+        Clipped::Selection {
+            page, annot_ids, ..
+        } => {
             let objects = doc.selection.object_indices_on(*page);
             if !objects.is_empty() {
                 actions.push(
@@ -554,13 +423,12 @@ pub fn cut(
                     .into(),
                 );
             }
-            for id in annot_ids {
-                actions.push(Action::Annot(
-                    crate::app::actions::annot::AnnotAction::Delete {
-                        page: *page,
-                        id: *id,
-                    },
-                ));
+            // One `Delete`, or one `DeleteMany` for several: one undo entry.
+            // Every one passed the gate above, so none is kept as locked.
+            let annots = doc.selection.annots();
+            debug_assert_eq!(annots.len(), annot_ids.len());
+            if let Some(delete) = pdfcer_gui_base::annotaction::delete_selected(&annots) {
+                actions.push(Action::Annot(delete));
             }
         }
         // A form field's cut is `canvas::fieldclip::cut`, which raises
@@ -577,21 +445,21 @@ pub fn cut(
         // `BookmarkAction::Delete` -- an outline item is addressed by `ObjId`
         // in a document-level tree, not by a page and an index, so this arm's
         // vocabulary cannot express one either. Third tripwire, same shape.
-        (Clipped::Outline { .. }, _) => {
+        Clipped::Outline { .. } => {
             debug_assert!(
                 false,
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
                 "a bookmark cut must route to panels::bookmarks::clip; the canvas clipboard has no outline vocabulary"
             );
         }
-        (Clipped::Pages { .. }, _) => {
+        Clipped::Pages { .. } => {
             debug_assert!(
                 false,
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
                 "a page cut must route to app::dispatch::pageclip; the canvas clipboard has no page vocabulary"
             );
         }
-        (Clipped::FormField(_), _) => {
+        Clipped::FormField(_) => {
             debug_assert!(
                 false,
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.
@@ -604,7 +472,7 @@ pub fn cut(
         // `ObjId` on one, so this arm's vocabulary cannot express it. Fourth
         // tripwire, same shape as the three above, and they have collectively
         // fired twice during development.
-        (Clipped::Attachment(_), _) => {
+        Clipped::Attachment(_) => {
             debug_assert!(
                 false,
                 // ui-text-exempt: a debug_assert message for a developer; never rendered.

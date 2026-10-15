@@ -9,7 +9,7 @@ Arrow keys over a multi-item selection, driven under `--no-input` with
 
 `several_annotations_nudge_as_one_step`, on `fixtures/annots-align.pdf`:
 
-1. `annot_group_drag::select_four`: the square by a click, then the circle,
+1. `annot_group_drag::select_four` (over `select_members`): the square by a click, then the circle,
    the link and the locked square by Shift-click. The locked one is the
    primary, so a nudge that reads only the primary refuses with the lock
    sentence and nothing moves.

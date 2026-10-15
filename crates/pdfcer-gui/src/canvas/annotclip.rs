@@ -9,7 +9,6 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::vector::{ClipAnnotation, ObjectClip};
 
 use super::clipboard::Refusal;
-use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 
 /// **One selected annotation, resolved into the address space
@@ -25,24 +24,32 @@ pub struct Selected {
 }
 
 /// **The annotations the current selection names**, resolved onto the page
-/// they live on.
+/// they live on, in `/Annots` order. Any one no longer on its page refuses
+/// the lot rather than lifting whatever now sits at its old position.
 pub fn selected(doc: &OpenDoc) -> Result<Vec<Selected>, Refusal> {
-    let Some(selection) = doc.selection.annot() else {
+    let chosen = doc.selection.annots();
+    let Some(first) = chosen.first() else {
         return Ok(Vec::new());
     };
-    let page = selection.target.page;
+    // The annotation selection holds one page, by its own invariant.
+    let page = first.target.page;
     let Some(page_ref) = doc.pages.get(page) else {
         return Err(Refusal::Unreadable);
     };
     let all = pdfcer_core::annot::page_annotations(&doc.session.graph(), page_ref.id);
-    let Some(index) = all.iter().position(|a| a.id == Some(selection.target.id)) else {
-        return Err(Refusal::Unreadable);
-    };
-    Ok(vec![Selected {
-        page,
-        index,
-        id: selection.target.id,
-    }])
+    let mut found = Vec::with_capacity(chosen.len());
+    for a in chosen {
+        let Some(index) = all.iter().position(|p| p.id == Some(a.target.id)) else {
+            return Err(Refusal::Unreadable);
+        };
+        found.push(Selected {
+            page,
+            index,
+            id: a.target.id,
+        });
+    }
+    found.sort_by_key(|s| s.index);
+    Ok(found)
 }
 
 /// **What the engine decided to do with each annotation on a clip.**
@@ -141,67 +148,6 @@ pub fn rect_centre_of(dict: &pdfcer_core::object::Dict) -> Option<(f64, f64)> {
     // lower-left first, and averaging the pair gives the same centre either
     // way — so no `min`/`max` pass is needed to get this right.
     Some(((n(0)? + n(2)?) / 2.0, (n(1)? + n(3)?) / 2.0))
-}
-
-// ===========================================================================
-// DUPLICATE — `edit.duplicate`, Ctrl+D
-// ===========================================================================
-
-/// **Place a second copy of the selected annotation on the same page**, offset
-/// so it is visible, as one undoable command — **without touching the
-/// clipboard**.
-pub fn duplicate(doc: &OpenDoc, actions: &mut Vec<Action>) -> Result<(), Refusal> {
-    let annots = selected(doc)?;
-    let Some(target) = annots.first() else {
-        return Err(Refusal::NothingSelected);
-    };
-    let page = target.page;
-    // No content indices. A duplicate's subject is the selected annotation,
-    // and `SelectionState` cannot hold both — passing `object_indices_on(page)`
-    // here would be asking a question whose answer is always the empty list,
-    // and would read as though a mixed duplicate were supported.
-    let clip = doc
-        .session
-        .copy_selection(page, &[], &[target.index])
-        .map_err(|_| Refusal::EngineRefused)?;
-    let plan = Plan::of(&clip);
-
-    if plan.nothing_to_carry(0) {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed.
-            format!(
-                "annot-duplicate-refused reason=cannot-carry what={:?}",
-                plan.refused
-            )
-        });
-        return Err(Refusal::CannotCarry(plan.refused));
-    }
-
-    let (dx, dy) = (
-        crate::canvas::clipboard::PASTE_OFFSET_PT,
-        -crate::canvas::clipboard::PASTE_OFFSET_PT,
-    );
-
-    // The whole-carrier route: a raw dictionary with its baked `/AP`, or a ce
-    // dimension with its group. `paste_objects` takes a page-space MATRIX
-    // rather than a displacement, which is why the offset cannot simply be
-    // shared with the branch above even though the rule that decides it is.
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        format!(
-            "annot-duplicate id={} page={page} carrier=clip whole={} thin={} dx={dx:.1} dy={dy:.1}",
-            target.id.num, plan.whole, plan.thin
-        )
-    });
-    actions.push(
-        crate::app::actions::VectorAction::PasteObjects {
-            page,
-            clip: clip.to_bytes(),
-            at: pdfcer_core::vector::Matrix::translate(dx, dy),
-        }
-        .into(),
-    );
-    Ok(())
 }
 
 #[cfg(test)]
@@ -374,16 +320,19 @@ mod tests {
     /// route**, with its baked appearance.
     #[test]
     fn duplicating_an_unmodelled_annotation_takes_the_whole_carrier() {
-        let doc = with_annot_selected(1);
+        let mut doc = with_annot_selected(1);
         let mut actions = Vec::new();
-        duplicate(&doc, &mut actions).expect("a sticky note duplicates");
+        crate::canvas::duplicate::duplicate(&mut doc, &mut actions)
+            .expect("a sticky note duplicates");
         let [action] = actions.as_slice() else {
             panic!("★ exactly one action: {actions:?}");
         };
         assert!(
             matches!(
                 action,
-                Action::Vector(crate::app::actions::VectorAction::PasteObjects { .. })
+                crate::app::actions::Action::Vector(
+                    crate::app::actions::VectorAction::PasteObjects { .. }
+                )
             ),
             "★ an annotation the engine carries whole must travel as a CLIP — any route that \
              re-authors it from a spec drops its baked /AP and renders a sticky note as \
@@ -391,20 +340,10 @@ mod tests {
         );
     }
 
-    /// Nothing selected refuses by name and raises nothing.
+    /// **A selection that has outlived its annotation refuses**, rather than
+    /// lifting whichever annotation now sits at that `/Annots` position.
     #[test]
-    fn duplicating_nothing_refuses_and_raises_nothing() {
-        let doc = crate::app::state::open_local_fixture(FIXTURE);
-        let mut actions = Vec::new();
-        assert_eq!(duplicate(&doc, &mut actions), Err(Refusal::NothingSelected));
-        assert!(actions.is_empty(), "a refusal raises nothing: {actions:?}");
-    }
-
-    /// **A selection that has outlived its annotation refuses**, through the
-    /// same [`selected`] guard the copy uses, rather than duplicating whichever
-    /// annotation now sits at that `/Annots` position.
-    #[test]
-    fn duplicating_a_stale_selection_refuses() {
+    fn a_stale_selection_refuses() {
         use crate::canvas::selection::annot::{AnnotKind, AnnotSelection, AnnotTarget};
 
         let mut doc = crate::app::state::open_local_fixture(FIXTURE);
@@ -419,15 +358,6 @@ mod tests {
             outline: egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0)),
             oriented: None,
         });
-        let mut actions = Vec::new();
-        assert_eq!(duplicate(&doc, &mut actions), Err(Refusal::Unreadable));
-        assert!(actions.is_empty());
-    }
-
-    /// **The duplicate does not touch the clipboard**, which is the whole
-    /// reason the command exists.
-    #[test]
-    fn the_duplicate_cannot_reach_the_clipboard() {
-        let _: fn(&crate::app::state::OpenDoc, &mut Vec<Action>) -> Result<(), Refusal> = duplicate;
+        assert_eq!(selected(&doc), Err(Refusal::Unreadable));
     }
 }
