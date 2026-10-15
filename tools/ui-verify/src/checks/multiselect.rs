@@ -1,18 +1,20 @@
 //! Steps shared by the multi-select checks: Shift-click, marquee, save a copy,
 //! and read the saved top edges.
 
-use super::dimdrive::{Fixture, press_on_tab};
+use super::dimdrive::{Fixture, launch_with, press_on_tab};
 use super::savedannots::listed_annots;
-use crate::checks::CheckContext;
+use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
+use crate::report::CheckReport;
 use crate::trace::TraceLine;
 
 const FILE_TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name
 const SAVE_COPY: &str = "ribbon.item.file.save_copy"; // ui-text-exempt: a trace region name
 const SAVED: &str = "save-copy"; // ui-text-exempt: a trace event name
+const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 
 /// The last line named `event` after `mark`, or the failure sentence.
 pub(super) fn after(
@@ -125,4 +127,76 @@ pub(super) fn tops(path: &std::path::Path, want: &[(&str, f64)]) -> Result<Optio
         }
     }
     Ok(None)
+}
+
+/// The two saved copies a move-then-Undo check judges: after the move, and
+/// after one Undo.
+pub(super) struct Saves {
+    pub moved: std::path::PathBuf,
+    pub undone: std::path::PathBuf,
+}
+
+/// A body driven between launch and park, writing [`Saves`] by Save a copy.
+pub(super) type SavingBody = fn(
+    &CheckContext,
+    &mut CheckReport,
+    &Session,
+    &ScriptedPointer,
+    &Saves,
+) -> Result<Option<String>>;
+
+/// Launch `fixture` off-screen in `invoke` with `PDFCER_DIAG_SAVE_PATH`
+/// pointing its first two saves at `<stem>.moved.pdf` and `<stem>.undone.pdf`,
+/// drive `body`, park the pointer, and report.
+pub(super) fn run_saving(
+    check: &dyn Check,
+    ctx: &CheckContext,
+    fixture: &Fixture,
+    invoke: &str,
+    stem: &str,
+    body: SavingBody,
+) -> CheckReport {
+    let mut report = CheckReport::new(check.name(), check.defect());
+    let saves = Saves {
+        moved: ctx.out(&format!("{stem}.moved.pdf")),
+        undone: ctx.out(&format!("{stem}.undone.pdf")),
+    };
+    for p in [&saves.moved, &saves.undone] {
+        let _ = std::fs::remove_file(p);
+    }
+    let env = [(
+        SAVE_PATH_ENV,
+        format!("{};{}", saves.moved.display(), saves.undone.display()),
+    )];
+    let outcome = launch_with(ctx, &mut report, fixture, invoke, stem, &env).and_then(
+        |(session, pointer)| {
+            let outcome = body(ctx, &mut report, &session, &pointer, &saves);
+            let parked = pointer.gone(&session);
+            match outcome? {
+                Some(failure) => Ok(Some(failure)),
+                None => parked.map(|_| None),
+            }
+        },
+    );
+    match outcome {
+        Ok(Some(failure)) => report.fail(failure),
+        Ok(None) => report.pass(),
+        Err(why) => report.from_error(&why),
+    }
+}
+
+/// Save a copy, then compare its saved top edges with `want`; the failure
+/// sentence names `when`.
+pub(super) fn saved_tops(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    path: &std::path::Path,
+    want: &[(&str, f64)],
+    when: &str,
+) -> Result<Option<String>> {
+    if let Some(why) = save(ctx, session, pointer)? {
+        return Ok(Some(why));
+    }
+    Ok(tops(path, want)?.map(|why| format!("{when}, {why}")))
 }

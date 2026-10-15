@@ -51,7 +51,11 @@ fn selected_after(session: &Session, mark: usize) -> Result<Option<String>> {
 }
 
 /// Select the dimension by its line; the window y of the line click.
-fn select_by_line(ctx: &CheckContext, session: &Session, pointer: &ScriptedPointer) -> Result<f32> {
+pub(super) fn select_by_line(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<f32> {
     for at in LINE_CANDIDATES {
         let mark = session.trace()?.mark();
         click_page(ctx, session, pointer, at)?;

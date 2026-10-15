@@ -238,6 +238,7 @@ pub use pdfcer_gui_base::appaction::Action;
 // `VectorAction` is, so a call site writes `actions::RedactAction` rather than
 // reaching through the module that happens to hold the bodies. See its own
 // header for why this family became a sub-enum before markup did.
+pub(crate) use movemixed::move_items;
 pub use redact::RedactAction;
 pub use vector::VectorAction;
 // The third payload type, and the only one whose bodies live outside

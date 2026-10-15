@@ -37,6 +37,7 @@
 #![cfg(test)]
 
 use super::*;
+use crate::app::actions::VectorAction;
 use crate::canvas::selection::{AnnotSelection, AnnotTarget, ClickHit};
 use crate::canvas::{target::TargetId, targetstub::StubTargets};
 use egui::{Event, Key, Modifiers, RawInput};
@@ -138,6 +139,7 @@ fn nudged(
                 edit_epoch: 0,
                 page_index: 0,
                 targets: None,
+                fields: None,
             },
             selection,
             &mut out,
@@ -375,6 +377,7 @@ fn a_real_focused_text_field_keeps_its_arrow_keys() {
                 edit_epoch: 0,
                 page_index: 0,
                 targets: None,
+                fields: None,
             },
             &selection,
             &mut actions,
@@ -437,6 +440,7 @@ fn a_canvas_draft_keeps_its_arrow_keys() {
                 edit_epoch: 0,
                 page_index: 0,
                 targets: None,
+                fields: None,
             },
             &selection,
             &mut actions,
@@ -483,10 +487,10 @@ fn a_locked_mark_refuses_and_says_why() {
     );
 }
 
-/// **A ce dimension refuses** — rule 15, guarded by the `AnnotKind` match rather
-/// than by a `/Subtype` string.
+/// **A ce dimension is nudged by its placement**, through the group move that
+/// places it as its pointer drag does, not by the markup verb.
 #[test]
-fn a_ce_dimension_is_not_nudged_by_this_verb() {
+fn a_ce_dimension_is_nudged_through_its_placement() {
     let ctx = egui::Context::default();
     let page = test_page(612.0, 792.0, 0);
     let selection = annot_selection(AnnotKind::CeDimension, false);
@@ -497,17 +501,142 @@ fn a_ce_dimension_is_not_nudged_by_this_verb() {
         Capabilities::FULL,
         &selection,
     );
-    assert!(
-        actions.is_empty(),
-        "a measurement moves through its own verb: {actions:?}"
+    let [
+        Action::Vector(VectorAction::MoveMixed {
+            annots, gesture, ..
+        }),
+    ] = actions.as_slice()
+    else {
+        panic!("one group move was wanted: {actions:?}");
+    };
+    assert_eq!((annots.len(), *gesture), (1, "nudge"));
+    assert!(annots[0].1 > 0.0 && annots[0].2 == 0.0, "{annots:?}");
+}
+
+/// A second annotation beside [`MARK`], locked when `locked`.
+fn beside(state: &mut SelectionState, locked: bool) {
+    state.toggle_annot(AnnotSelection {
+        target: AnnotTarget {
+            page: 0,
+            id: ObjId::new(8, 0),
+            kind: AnnotKind::Markup,
+            // ui-text-exempt: a PDF /Subtype name in a test fixture.
+            subtype: "Circle".to_owned(),
+            locked,
+        },
+        outline: egui::Rect::from_min_size(egui::pos2(60.0, 20.0), egui::vec2(40.0, 30.0)),
+        oriented: None,
+    });
+}
+
+/// **Several annotations move as one action**, a locked member included so
+/// the engine refuses it by name and the status line counts it.
+#[test]
+fn several_annotations_nudge_as_one_move() {
+    let ctx = egui::Context::default();
+    let page = test_page(612.0, 792.0, 0);
+    let mut selection = annot_selection(AnnotKind::Markup, true);
+    beside(&mut selection, false);
+    let actions = nudged(
+        &ctx,
+        arrows(Key::ArrowUp, Modifiers::NONE, 1),
+        Some(&page),
+        Capabilities::FULL,
+        &selection,
     );
-    let said = crate::app::actions::last_edit_disclosure(0).expect("a refusal owes a sentence");
+    let [
+        Action::Vector(VectorAction::MoveMixed {
+            annots, gesture, ..
+        }),
+    ] = actions.as_slice()
+    else {
+        panic!("one group move was wanted: {actions:?}");
+    };
+    assert_eq!((annots.len(), *gesture), (2, "nudge"));
+    assert!(annots.iter().all(|a| a.1 == 0.0 && a.2 > 0.0), "{annots:?}");
+}
+
+/// **Every selected annotation locked refuses**, with the lock sentence.
+#[test]
+fn several_locked_annotations_refuse() {
+    let ctx = egui::Context::default();
+    let page = test_page(612.0, 792.0, 0);
+    let mut selection = annot_selection(AnnotKind::Markup, true);
+    beside(&mut selection, true);
+    let actions = nudged(
+        &ctx,
+        arrows(Key::ArrowUp, Modifiers::NONE, 1),
+        Some(&page),
+        Capabilities::FULL,
+        &selection,
+    );
+    assert!(actions.is_empty(), "{actions:?}");
+}
+
+/// A field named `name` on page 0.
+fn field(name: &str) -> SelectedField {
+    SelectedField {
+        field: name.to_owned(),
+        widget: 0,
+        page: 0,
+    }
+}
+
+/// **Selected form fields move as one action**, before any annotation, and
+/// only where content may be edited.
+#[test]
+fn selected_fields_nudge_as_one_move() {
+    let page = test_page(612.0, 792.0, 0);
+    let primary = field("A");
+    let mut set = pdfcer_gui_base::fieldset::FieldSet::default();
+    let primary = set.toggle(Some(&primary), field("B")).expect("a primary");
+    let selection = annot_selection(AnnotKind::Markup, false);
+    let run = |caps: Capabilities| {
+        let mut out = Vec::new();
+        let _ = egui::Context::default().run_ui(arrows(Key::ArrowDown, Modifiers::NONE, 1), |ui| {
+            let frame = Frame {
+                page: Some(&page),
+                caps,
+                edit_epoch: 0,
+                page_index: 0,
+                targets: None,
+                fields: Some(Fields {
+                    primary: &primary,
+                    set: &set,
+                    page: Some(&page),
+                }),
+            };
+            keys(ui.ctx(), &frame, &selection, &mut out);
+        });
+        out
+    };
+    let actions = run(Capabilities::FULL);
+    let [
+        Action::Vector(VectorAction::MoveMixed {
+            widgets,
+            annots,
+            gesture,
+            ..
+        }),
+    ] = actions.as_slice()
+    else {
+        panic!("one group move was wanted: {actions:?}");
+    };
+    assert_eq!((widgets.len(), annots.len(), *gesture), (2, 0, "nudge"));
     assert!(
-        said.notes
-            .iter()
-            .any(|n| n == crate::text::arrange::dimension_use_the_pointer()),
-        "the sentence must name the re-measure, not the verb: {:?}",
-        said.notes
+        widgets.iter().all(|w| w.1 == 0.0 && w.2 < 0.0),
+        "{widgets:?}"
+    );
+    let review = Capabilities {
+        edit_content: false,
+        ..Capabilities::FULL
+    };
+    assert!(
+        matches!(
+            run(review).as_slice(),
+            [Action::Annot(AnnotAction::Move { .. })]
+        ),
+        "without edit_content the selected markup moves instead"
     );
 }
 

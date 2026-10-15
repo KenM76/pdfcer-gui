@@ -43,6 +43,27 @@ pub(super) struct Moves<'a> {
     pub annots: &'a [(AnnotTarget, f64, f64)],
 }
 
+/// A [`VectorAction::MoveMixed`](super::VectorAction::MoveMixed) of form fields
+/// and annotations alone, each moved by `(dx, dy)` in page space.
+pub(crate) fn move_items(
+    page: usize,
+    widgets: impl IntoIterator<Item = SelectedField>,
+    annots: impl IntoIterator<Item = AnnotTarget>,
+    (dx, dy): (f64, f64),
+    gesture: &'static str,
+) -> super::Action {
+    super::VectorAction::MoveMixed {
+        page,
+        objects: Vec::new(),
+        leaves: Vec::new(),
+        widgets: widgets.into_iter().map(|w| (w, dx, dy)).collect(),
+        annots: annots.into_iter().map(|a| (a, dx, dy)).collect(),
+        notes: Vec::new(),
+        gesture,
+    }
+    .into()
+}
+
 /// Apply one [`VectorAction::MoveMixed`](super::VectorAction::MoveMixed).
 pub(super) fn apply(doc: &mut OpenDoc, page: usize, moves: &Moves<'_>, gesture: &'static str) {
     let parts: usize = moves.leaves.iter().map(Vec::len).sum();

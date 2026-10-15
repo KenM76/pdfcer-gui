@@ -1,9 +1,12 @@
 //! # `canvas::moving::nudge` — the arrow keys, and the one point they move
 //!
-//! A selected annotation moves by `AnnotAction::Move`; anything else selected
-//! on the page — objects, parts, anchors, leaves of a placed drawing — moves by
-//! the action a pointer drag of the same displacement commits
-//! ([`super::drag`] at [`Phase::Complete`]), with that drag's refusals.
+//! Precedence is Delete's (`canvas::deleting::route`): selected form fields,
+//! then selected annotations, then page content. One unlocked markup moves by
+//! `AnnotAction::Move`; several annotations, a ce dimension, or form fields
+//! move by one `VectorAction::MoveMixed` with gesture `nudge`, as a group drag
+//! does; page content moves by the action a pointer drag of the same
+//! displacement commits ([`super::drag`] at [`Phase::Complete`]), with that
+//! drag's refusals.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/moving/nudge.md`.
 //!
@@ -45,18 +48,19 @@
 //! - D9 disclosure: **satisfied, and it is the row this module adds to.** A
 //!   translation changes no measured value and the operator can see where the
 //!   mark went, exactly as [`super`] argues for a drag — but a *refused* nudge
-//!   shows nothing at all, so all four refusals put a sentence on the status row
+//!   shows nothing at all, so every refusal puts a sentence on the status row
 //!   through [`crate::text::arrange`]. A drag that refuses has a pointer the
 //!   operator can see not working; a key that refuses has nothing.
 
 use egui::Key;
 use pdfcer_core::page_tree::Page;
 
-use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
+use crate::app::actions::{Action, move_items};
 use crate::app::modes::Capabilities;
+use crate::app::state::SelectedField;
 use crate::canvas::gesture::Phase;
-use crate::canvas::selection::{AnnotKind, SelectionState};
+use crate::canvas::selection::{AnnotKind, AnnotSelection, SelectionState};
 use crate::panels::objects::provider::ObjectModelProvider;
 use crate::text::arrange::NudgeRefusal;
 
@@ -66,13 +70,16 @@ pub(crate) const STEP_PT: f32 = 1.0;
 /// **The Ctrl-arrow step, in PDF points.**
 pub(crate) const FINE_STEP_PT: f32 = 0.25;
 
-/// The trace line a nudge writes.
+/// The trace line an annotation nudge writes.
 ///
 /// Suffixed rather than bare, per `tools/gates/check-trace-names.py`: the edit
 /// funnel writes `move-annotation …` for the same edit, and two lines sharing a
 /// first token means `ui-verify`'s `last(name)` returns the wrong one.
 // ui-text-exempt: diagnostic trace name, never displayed
 const TRACE: &str = "annot-nudge";
+
+// ui-text-exempt: diagnostic gesture name, never displayed
+const GESTURE: &str = "nudge";
 
 /// **Which step this frame's modifiers ask for**, or `None` for a modifier
 /// shape this module does not claim.
@@ -120,6 +127,19 @@ pub(crate) struct Frame<'a> {
     /// [`crate::app::actions::record_note`] on why the *current* epoch is the
     /// right one for a non-edit.
     pub edit_epoch: u64,
+    /// The selected form fields, when there are any.
+    pub fields: Option<Fields<'a>>,
+}
+
+/// The selected form fields a nudge moves: the primary and those selected
+/// beside it on the primary's page, as a group drag moves them.
+pub(crate) struct Fields<'a> {
+    /// The primary field.
+    pub primary: &'a SelectedField,
+    /// The fields selected beside it.
+    pub set: &'a pdfcer_gui_base::fieldset::FieldSet,
+    /// The primary's page, for the coordinate crossing.
+    pub page: Option<&'a Page>,
 }
 
 /// **Read this frame's arrow keys and nudge the selected markup.**
@@ -191,7 +211,13 @@ fn nudge_once(
     canvas: egui::Vec2,
     actions: &mut Vec<Action>,
 ) -> bool {
-    let Some(annot) = selection.annot() else {
+    if frame.caps.edit_content
+        && let Some(fields) = &frame.fields
+    {
+        return nudge_fields(frame, fields, selection, canvas, actions);
+    }
+    let annots = selection.annots();
+    if annots.is_empty() {
         // Nothing selected is silent: the arrow keys are pressed constantly
         // for reasons that are not about a selection.
         if selection.is_empty() {
@@ -202,46 +228,29 @@ fn nudge_once(
             return false;
         }
         return nudge_content(frame, selection, canvas, actions);
-    };
-
-    // Rule 15, guarded by the `AnnotKind` match the compiler checks rather
-    // than by a `/Subtype` string. A **ce dimension** is pdfcer-authored, it is
-    // a `/Line` carrying `/IT /LineDimension` with a record in `/PieceInfo`, and
-    // moving one may have to RE-MEASURE it — which `move_annotation` does not do
-    // and refuses by name (`AnnotationMoveWrongVerb`, naming `move_dimension`).
-    // A **pdf dimension** is CAD-exported page content and is not an annotation
-    // at all, so it cannot reach this branch: it has no `AnnotTarget`.
-    //
-    // The pointer's fork makes the same distinction one module over —
-    // `canvas::dimdrag` claims a ce dimension and `canvas::annotdrag` claims
-    // everything else — so this is that fork restated for the keyboard rather
-    // than a new rule. Routing a ce dimension here instead would be the
-    // "silently does less under this name" defect the engine's own comment
-    // refuses.
-    match annot.target.kind {
-        AnnotKind::Markup => {}
-        AnnotKind::CeDimension => {
-            refuse(frame, selection, NudgeRefusal::Dimension);
-            return false;
-        }
     }
+    nudge_annots(frame, selection, &annots, canvas, actions)
+}
 
-    // §12.5.3 Table 165 bit 8. `move_annotation` refuses a locked mark too;
-    // it is checked HERE first so the refusal is the shell's own sentence,
-    // for `annotdrag::eligible`'s stated reason: a key and a drag must not
-    // disagree about what locked means.
-    if annot.target.locked {
+/// The selected annotations. A locked one stays in a group's action so the
+/// engine refuses it by name and the status line counts it, as a group drag
+/// does; a selection with nothing unlocked refuses here, so a key and a drag
+/// agree on what locked means (§12.5.3 Table 165 bit 8).
+///
+/// The gate is `author_markup`, not `edit_content`: Review is the markup
+/// stance, and Delete's rung learned that an `edit_content` gate leaves Review
+/// unable to touch a comment.
+fn nudge_annots(
+    frame: &Frame<'_>,
+    selection: &SelectionState,
+    annots: &[&AnnotSelection],
+    canvas: egui::Vec2,
+    actions: &mut Vec<Action>,
+) -> bool {
+    if annots.iter().all(|a| a.target.locked) {
         refuse(frame, selection, NudgeRefusal::Locked);
         return false;
     }
-
-    // The mode gate, and it is `author_markup` rather than `edit_content`.
-    //
-    // **Review** is the markup stance — `edit_content: false, author_markup:
-    // true` — and it is the mode an operator is in *because* they are working on
-    // comments. `canvas::keys`' Delete rung learned this the hard way: it sat
-    // below an `edit_content` gate and Review was the one mode in which Delete
-    // could not remove a comment. One predicate per capability.
     if !frame.caps.author_markup {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -249,28 +258,82 @@ fn nudge_once(
         });
         return false;
     }
-
-    // The coordinate crossing, through the one function that owns it. See the
-    // module header on the Y sign: everything about the flip and the page's
-    // `/Rotate` is inside `page_delta`, and a page whose transform will not
-    // invert declines here exactly as a drag on it declines.
+    // Everything about the flip and the page's `/Rotate` is inside
+    // `page_delta`; a page whose transform will not invert declines.
     let Some(delta) = frame.page.and_then(|page| super::page_delta(canvas, page)) else {
         refuse(frame, selection, NudgeRefusal::DegeneratePage);
         return false;
     };
-
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "{TRACE} id={} dx={:.3} dy={:.3}",
-            annot.target.id.num, delta.dx, delta.dy
+            "{TRACE} id={} n={} dx={:.3} dy={:.3}",
+            annots[0].target.id.num,
+            annots.len(),
+            delta.dx,
+            delta.dy
         )
     });
-    actions.push(Action::Annot(AnnotAction::Move {
-        id: annot.target.id,
-        dx: delta.dx,
-        dy: delta.dy,
-    }));
+    // One markup keeps the single verb. A ce dimension is placed by
+    // `dimdrag::placed`, as its pointer drag is, which `MoveMixed` does.
+    if let [one] = annots
+        && matches!(one.target.kind, AnnotKind::Markup)
+    {
+        actions.push(Action::Annot(AnnotAction::Move {
+            id: one.target.id,
+            dx: delta.dx,
+            dy: delta.dy,
+        }));
+        return true;
+    }
+    let page = annots[0].target.page;
+    let targets = annots.iter().map(|a| a.target.clone());
+    actions.push(move_items(
+        page,
+        Vec::new(),
+        targets,
+        (delta.dx, delta.dy),
+        GESTURE,
+    ));
+    true
+}
+
+/// The selected form fields on the primary's page; the gate is
+/// `edit_content`, Delete's for fields.
+fn nudge_fields(
+    frame: &Frame<'_>,
+    fields: &Fields<'_>,
+    selection: &SelectionState,
+    canvas: egui::Vec2,
+    actions: &mut Vec<Action>,
+) -> bool {
+    let Some(delta) = fields.page.and_then(|page| super::page_delta(canvas, page)) else {
+        refuse(frame, selection, NudgeRefusal::DegeneratePage);
+        return false;
+    };
+    let page = fields.primary.page;
+    let widgets: Vec<SelectedField> = fields
+        .set
+        .all(Some(fields.primary))
+        .into_iter()
+        .filter(|f| f.page == page)
+        .collect();
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "field-nudge page={page} n={} dx={:.3} dy={:.3}",
+            widgets.len(),
+            delta.dx,
+            delta.dy
+        )
+    });
+    actions.push(move_items(
+        page,
+        widgets,
+        Vec::new(),
+        (delta.dx, delta.dy),
+        GESTURE,
+    ));
     true
 }
 

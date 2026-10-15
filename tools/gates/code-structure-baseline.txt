@@ -317,7 +317,6 @@ fn crates/pdfcer-gui/src/canvas/measure/mod.rs::click
 fn crates/pdfcer-gui/src/canvas/measure/perimeter.rs::click
 fn crates/pdfcer-gui/src/canvas/menus.rs::attach
 fn crates/pdfcer-gui/src/canvas/moving/mod.rs::drag
-fn crates/pdfcer-gui/src/canvas/moving/nudge.rs::nudge_once
 fn crates/pdfcer-gui/src/canvas/notepopup/mod.rs::body
 fn crates/pdfcer-gui/src/canvas/offset.rs::decide
 fn crates/pdfcer-gui/src/canvas/overlay.rs::draw_selection
@@ -466,7 +465,6 @@ fn tools/ui-verify/src/checks/annot_angle_typed.rs::drive
 fn tools/ui-verify/src/checks/annot_delete_gate.rs::drive
 fn tools/ui-verify/src/checks/annot_delete_gate.rs::open_and_select
 fn tools/ui-verify/src/checks/annot_delete_many.rs::drive
-fn tools/ui-verify/src/checks/annot_group_drag.rs::drive
 fn tools/ui-verify/src/checks/annot_multiselect.rs::drive
 fn tools/ui-verify/src/checks/annot_restyle.rs::text_box
 fn tools/ui-verify/src/checks/annot_rotate.rs::drive

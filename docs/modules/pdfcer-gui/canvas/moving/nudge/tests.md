@@ -76,12 +76,22 @@ Properties panel's standing sentence for a locked mark is about its
 *appearance*, so an operator pressing an arrow has been told nothing relevant
 and silence would be the standing cross-cutting defect.
 
-### `fn a_ce_dimension_is_not_nudged_by_this_verb`
+### `fn a_ce_dimension_is_nudged_through_its_placement`
 
-Moving one has to re-measure it, which `move_annotation` does not do and
-refuses by name. The pointer makes the same fork one module over
-(`dimdrag` claims it, `annotdrag` does not), so this is that fork restated
-for the keyboard.
+A ce dimension cannot take `move_annotation`, which refuses it by name. It
+goes through `MoveMixed`, whose commit places it by `dimdrag::placed` as the
+pointer drag does.
+
+### `fn several_annotations_nudge_as_one_move` / `fn several_locked_annotations_refuse`
+
+The whole annotation set moves, a locked member included so the engine
+refuses it by name; only a set with nothing unlocked refuses here.
+
+### `fn selected_fields_nudge_as_one_move`
+
+Fields take precedence over annotations where content may be edited, as
+Delete's route does; without `edit_content` the selected markup moves
+instead.
 
 ### `fn a_mode_that_cannot_author_markup_nudges_nothing`
 

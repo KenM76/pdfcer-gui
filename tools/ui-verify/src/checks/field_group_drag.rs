@@ -4,8 +4,8 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/field_group_drag.md`.
 
-use super::dimdrive::{Fixture, click_on, launch_with};
-use super::multiselect::{after, save, shift_click, step, tops, window_at};
+use super::dimdrive::{Fixture, click_on};
+use super::multiselect::{Saves, after, run_saving, save, shift_click, step, tops, window_at};
 use crate::checks::{Check, CheckContext};
 use crate::coords::PageGeometry;
 use crate::error::Result;
@@ -13,7 +13,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "all-field-kinds.pdf",
     method: "Rebuild it with `python fixtures/all-field-kinds.PROVENANCE.py`.",
     page: PageGeometry {
@@ -22,13 +22,12 @@ const FIXTURE: Fixture = Fixture {
     },
 };
 /// Each field's key in a saved copy, a point on it and its top edge.
-type Spot = (&'static str, (f64, f64), f64);
-const TEXT: Spot = ("/T (TextOne)", (270.0, 531.0), 542.0); // ui-text-exempt: a PDF key
-const CHECK: Spot = ("/T (CheckOne)", (178.0, 494.0), 502.0); // ui-text-exempt: a PDF key
-const COMBO: Spot = ("/T (ComboOne)", (270.0, 423.0), 434.0); // ui-text-exempt: a PDF key
+pub(super) type Spot = (&'static str, (f64, f64), f64);
+pub(super) const TEXT: Spot = ("/T (TextOne)", (270.0, 531.0), 542.0); // ui-text-exempt: a PDF key
+pub(super) const CHECK: Spot = ("/T (CheckOne)", (178.0, 494.0), 502.0); // ui-text-exempt: a PDF key
+pub(super) const COMBO: Spot = ("/T (ComboOne)", (270.0, 423.0), 434.0); // ui-text-exempt: a PDF key
 /// How far down the drag goes, in page points.
 const DROP: f64 = 30.0;
-const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 const TOGGLED: &str = "form-field-toggled"; // ui-text-exempt: a trace event name
 const APPLIED: &str = "move-mixed-applied"; // ui-text-exempt: a trace event name
 /// The single-box drag's line, which a group drag never writes.
@@ -48,49 +47,16 @@ impl Check for SeveralFormFieldsDragAsOneUndoStep {
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
-        let mut report = CheckReport::new(self.name(), self.defect());
-        let dragged = ctx.out("field-group-drag.dragged.pdf");
-        let undone = ctx.out("field-group-drag.undone.pdf");
-        for p in [&dragged, &undone] {
-            let _ = std::fs::remove_file(p);
-        }
-        let env = [(
-            SAVE_PATH_ENV,
-            format!("{};{}", dragged.display(), undone.display()),
-        )];
-        let outcome = launch_with(
-            ctx,
-            &mut report,
-            &FIXTURE,
-            "mode.edit",
-            "field-group-drag",
-            &env,
-        )
-        .and_then(|(session, pointer)| {
-            let outcome = drive(ctx, &mut report, &session, &pointer, &dragged, &undone);
-            let parked = pointer.gone(&session);
-            match outcome? {
-                Some(failure) => Ok(Some(failure)),
-                None => parked.map(|_| None),
-            }
-        });
-        match outcome {
-            Ok(Some(failure)) => report.fail(failure),
-            Ok(None) => report.pass(),
-            Err(why) => report.from_error(&why),
-        }
+        run_saving(self, ctx, &FIXTURE, "mode.edit", "field-group-drag", drive)
     }
 }
 
-fn drive(
+/// Select TextOne by a click, then CheckOne and ComboOne by Shift-click.
+pub(super) fn select_three(
     ctx: &CheckContext,
-    report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
-    dragged: &std::path::Path,
-    undone: &std::path::Path,
 ) -> Result<Option<String>> {
-    // --- TextOne by a click; CheckOne and ComboOne by Shift-click ----------
     click_on(ctx, session, pointer, &FIXTURE, 0, TEXT.1)?;
     session.settle(20);
     for (n, (key, at, _)) in [CHECK, COMBO].into_iter().enumerate() {
@@ -109,6 +75,20 @@ fn drive(
                 toggled.raw
             )));
         }
+    }
+    Ok(None)
+}
+
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    saves: &Saves,
+) -> Result<Option<String>> {
+    let (dragged, undone) = (saves.moved.as_path(), saves.undone.as_path());
+    if let Some(why) = select_three(ctx, session, pointer)? {
+        return Ok(Some(why));
     }
 
     // --- one drag on CheckOne, which is not the primary: all three move ----

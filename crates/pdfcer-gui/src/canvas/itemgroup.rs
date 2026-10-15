@@ -15,12 +15,14 @@
 use egui::Rect;
 use pdfcer_core::page_tree::Page;
 
-use crate::app::actions::Action;
-use crate::app::actions::vector::VectorAction;
+use crate::app::actions::{Action, move_items};
 use crate::app::state::{OpenDoc, SelectedField};
 use crate::canvas::gesture::Phase;
 use crate::canvas::itembounds;
 use crate::canvas::selection::{AnnotTarget, SelectionState};
+
+// ui-text-exempt: diagnostic gesture name, never displayed
+const GESTURE: &str = "drag";
 
 /// One member of a group.
 enum Member {
@@ -116,23 +118,17 @@ impl Group {
         let (mut widgets, mut annots) = (Vec::new(), Vec::new());
         for (m, _) in self.members {
             match m {
-                Member::Widget(f) => widgets.push((f, d.dx, d.dy)),
-                Member::Annot(t) => annots.push((t, d.dx, d.dy)),
+                Member::Widget(f) => widgets.push(f),
+                Member::Annot(t) => annots.push(t),
             }
         }
-        actions.push(
-            VectorAction::MoveMixed {
-                page: self.page,
-                objects: Vec::new(),
-                leaves: Vec::new(),
-                widgets,
-                annots,
-                notes: Vec::new(),
-                // ui-text-exempt: diagnostic gesture name, never displayed
-                gesture: "drag",
-            }
-            .into(),
-        );
+        actions.push(move_items(
+            self.page,
+            widgets,
+            annots,
+            (d.dx, d.dy),
+            GESTURE,
+        ));
         Some(Vec::new())
     }
 }

@@ -17,10 +17,6 @@ pub enum NudgeRefusal {
     /// refuse — the same ruling `pdfcer_gui::canvas::annotdrag` makes for the
     /// pointer, so a key and a drag cannot disagree about what locked means.
     Locked,
-    /// A **ce dimension** is selected (rule 15). It is markup, it is selected,
-    /// and it is refused — because moving one has to re-measure it, which is a
-    /// different verb.
-    Dimension,
     /// The page's device transform will not invert, so there is no honest way
     /// to turn a keystroke into a displacement in the page's own units.
     ///
@@ -39,7 +35,6 @@ pub enum NudgeRefusal {
 pub const fn nudge_refusal(why: NudgeRefusal) -> Option<&'static str> {
     Some(match why {
         NudgeRefusal::Locked => locked_cannot_move(),
-        NudgeRefusal::Dimension => dimension_use_the_pointer(),
         NudgeRefusal::DegeneratePage => degenerate_page(),
     })
 }
@@ -49,13 +44,6 @@ pub const fn nudge_refusal(why: NudgeRefusal) -> Option<&'static str> {
 pub const fn locked_cannot_move() -> &'static str {
     "This mark is locked by the document, so it cannot be moved — by the arrow keys or by \
      dragging it."
-}
-
-/// **A ce dimension is selected**, and the arrow keys will not move it.
-#[must_use]
-pub const fn dimension_use_the_pointer() -> &'static str {
-    "This is a measurement, and moving one re-measures it. Drag it with the pointer so the \
-     value keeps up."
 }
 
 /// **The page's geometry will not invert.**
@@ -221,11 +209,7 @@ mod tests {
     /// **Every refusal has a sentence, and no two of them are the same one.**
     #[test]
     fn every_nudge_refusal_has_its_own_sentence() {
-        let all = [
-            NudgeRefusal::Locked,
-            NudgeRefusal::Dimension,
-            NudgeRefusal::DegeneratePage,
-        ];
+        let all = [NudgeRefusal::Locked, NudgeRefusal::DegeneratePage];
         let mut sentences: Vec<&str> = all
             .iter()
             .map(|why| nudge_refusal(*why).expect("every variant speaks today"))
@@ -246,7 +230,6 @@ mod tests {
     fn no_sentence_speaks_in_the_file_formats_vocabulary() {
         let sentences = [
             locked_cannot_move(),
-            dimension_use_the_pointer(),
             degenerate_page(),
             already_there(true),
             already_there(false),

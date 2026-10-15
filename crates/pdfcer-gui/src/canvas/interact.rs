@@ -1024,6 +1024,10 @@ pub(super) fn interact(
             // `annotdrag::drag` takes and for its stated reason. See
             // `keys::Keys::page`.
             page: doc.pages.get(page_index),
+            field_page: doc
+                .selected_field
+                .as_ref()
+                .and_then(|f| doc.pages.get(f.page)),
         },
         &mut selection,
         &mut text_selection,

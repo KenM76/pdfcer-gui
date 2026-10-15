@@ -1,10 +1,25 @@
 # `canvas::moving::nudge` — the arrow keys, and the one point they move
 
-A selected annotation moves by `AnnotAction::Move`. Anything else selected on
-the page — an object, a part, an anchor, a leaf of a placed drawing — moves by
-the action a pointer drag of the same displacement commits
-([`super::drag`] at `Phase::Complete`), with that drag's gate
-(`edit_content`), its eligibility and its refusals.
+The precedence is Delete's (`canvas::deleting::route`): selected form
+fields when content may be edited, then selected annotations, then page
+content.
+
+- **Form fields**: every field selected on the primary's page, by one
+  `VectorAction::MoveMixed` with gesture `nudge`, crossing into PDF space
+  through the primary's page (`Fields::page`). Gate `edit_content`.
+- **Annotations**: one unlocked markup by `AnnotAction::Move`. Several, or a
+  ce dimension, by one `MoveMixed` with gesture `nudge`, which places a ce
+  dimension by `dimdrag::placed` exactly as its pointer drag does. A locked
+  member stays in the action so the engine refuses it by name and the status
+  line counts it, as `canvas::itemgroup`'s drag does; a selection with nothing
+  unlocked refuses with the lock sentence. Gate `author_markup`.
+- **Page content** — an object, a part, an anchor, a leaf of a placed
+  drawing — by the action a pointer drag of the same displacement commits
+  ([`super::drag`] at `Phase::Complete`), with that drag's gate
+  (`edit_content`), its eligibility and its refusals.
+
+One press is one action, and `app::actions::movemixed` folds a group's
+per-item commands into one undo step.
 
 ## Page content takes the drag's commit, not a copy of it
 

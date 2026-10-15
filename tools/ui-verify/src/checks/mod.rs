@@ -1450,6 +1450,8 @@ pub mod field_delete_many;
 pub mod field_group_drag;
 /// Several form fields selected by Shift-click and marquee, aligned as one undo step.
 pub mod field_multiselect;
+/// Arrow keys over several annotations, several form fields, or a ce dimension.
+pub mod groupnudge;
 /// Moving, resizing, copying and deleting a link, its quads following its box.
 pub mod link_quads;
 /// Drawing a link and repointing a selected one.

@@ -204,6 +204,9 @@ pub(super) struct Keys<'a> {
     /// `None` for a frame with no page on screen, in which case the nudge
     /// declines with a sentence rather than fabricating a delta.
     pub page: Option<&'a pdfcer_core::page_tree::Page>,
+    /// The page [`Self::selected_field`] is on, for a field nudge's crossing
+    /// into PDF space.
+    pub field_page: Option<&'a pdfcer_core::page_tree::Page>,
 }
 
 pub(super) fn canvas_keys(
@@ -226,6 +229,7 @@ pub(super) fn canvas_keys(
         edit_epoch,
         model_attempted,
         page,
+        field_page,
     } = keys;
     // Claimant 0, and it is read BEFORE the D1 guard rather than after it.
     //
@@ -308,7 +312,7 @@ pub(super) fn canvas_keys(
     // exclusivity that this function would then rely on without checking.
     //
     // Everything about the step, the modifiers it refuses, the Y sign and the
-    // four refusals is `canvas::moving::nudge`. This line is routing.
+    // refusals is `canvas::moving::nudge`. This line is routing.
     crate::canvas::moving::nudge::keys(
         ctx,
         &crate::canvas::moving::nudge::Frame {
@@ -317,6 +321,11 @@ pub(super) fn canvas_keys(
             targets,
             caps,
             edit_epoch,
+            fields: selected_field.map(|primary| crate::canvas::moving::nudge::Fields {
+                primary,
+                set: field_set,
+                page: field_page,
+            }),
         },
         selection,
         actions,

@@ -155,17 +155,6 @@ Says **arrow keys or the pointer**, because the operator's next move is to
 try dragging it, and finding out that fails too is a second discovery of one
 fact.
 
-### `fn dimension_use_the_pointer`
-
-Rule 15 in one sentence of operator copy: a ce dimension is a *measurement*,
-and moving one may change what it reads, so it travels through
-`move_dimension` rather than `move_annotation`. `crate::canvas::dimdrag`
-already owns that gesture for the pointer.
-
-The word "measurement" does the work. It says why this one thing behaves
-differently without naming a verb, an `/IT` entry or a subtype — the rule
-this file's header sets.
-
 ### `fn degenerate_page`
 
 Deliberately does not say *"matrix"*, *"transform"* or *"invert"*. What the

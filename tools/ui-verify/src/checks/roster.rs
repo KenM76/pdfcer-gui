@@ -516,6 +516,9 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_too_many::AnAlignTooLargeForOneUndoIsRefused),
         Box::new(field_delete_many::SeveralFormFieldsDeleteAsOneUndoStep),
         Box::new(field_group_drag::SeveralFormFieldsDragAsOneUndoStep),
+        Box::new(groupnudge::SeveralAnnotationsNudgeAsOneStep),
+        Box::new(groupnudge::SeveralFormFieldsNudgeAsOneStep),
+        Box::new(groupnudge::ACeDimensionIsNudged),
         Box::new(field_clip_many::SeveralFormFieldsCopyCutDuplicateAsOneUndoStep),
         // …and one rung deeper again. Third of the three, in the order an
         // operator meets them: reach it, edit it, go inside it.

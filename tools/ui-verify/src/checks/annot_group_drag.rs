@@ -7,9 +7,9 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/annot_group_drag.md`.
 
 use super::annot_multiselect::{CIRCLE, FIXTURE, LINK, SQUARE};
-use super::dimdrive::{click_on, launch_with};
+use super::dimdrive::click_on;
 use super::driving;
-use super::multiselect::{after, save, shift_click, step, tops, window_at};
+use super::multiselect::{Saves, after, run_saving, save, shift_click, step, tops, window_at};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
@@ -17,10 +17,9 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 /// The locked square: its key, a point on it and its top edge.
-const LOCKED: (&str, (f64, f64), f64) = ("/NM (LO)", (50.0, 35.0), 50.0); // ui-text-exempt: a PDF key
+pub(super) const LOCKED: (&str, (f64, f64), f64) = ("/NM (LO)", (50.0, 35.0), 50.0); // ui-text-exempt: a PDF key
 /// How far down the drag goes, in page points.
 const DROP: f64 = 30.0;
-const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 const TOGGLED: &str = "annot-toggled"; // ui-text-exempt: a trace event name
 const APPLIED: &str = "move-mixed-applied"; // ui-text-exempt: a trace event name
 const DISCLOSURE: &str = "status-group:edit-disclosure"; // ui-text-exempt: a trace region name
@@ -40,62 +39,17 @@ impl Check for SeveralAnnotationsDragAsOneUndoStep {
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
-        let mut report = CheckReport::new(self.name(), self.defect());
-        let dragged = ctx.out("annot-group-drag.dragged.pdf");
-        let undone = ctx.out("annot-group-drag.undone.pdf");
-        for p in [&dragged, &undone] {
-            let _ = std::fs::remove_file(p);
-        }
-        let env = [(
-            SAVE_PATH_ENV,
-            format!("{};{}", dragged.display(), undone.display()),
-        )];
-        let outcome = launch_with(
-            ctx,
-            &mut report,
-            &FIXTURE,
-            "mode.edit",
-            "annot-group-drag",
-            &env,
-        )
-        .and_then(|(session, pointer)| {
-            let outcome = drive(ctx, &mut report, &session, &pointer, &dragged, &undone);
-            let parked = pointer.gone(&session);
-            match outcome? {
-                Some(failure) => Ok(Some(failure)),
-                None => parked.map(|_| None),
-            }
-        });
-        match outcome {
-            Ok(Some(failure)) => report.fail(failure),
-            Ok(None) => report.pass(),
-            Err(why) => report.from_error(&why),
-        }
+        run_saving(self, ctx, &FIXTURE, "mode.edit", "annot-group-drag", drive)
     }
 }
 
-fn drive(
+/// Select the square by a click, then the circle, the link and the locked
+/// square by Shift-click, so the locked one is the primary.
+pub(super) fn select_four(
     ctx: &CheckContext,
-    report: &mut CheckReport,
     session: &Session,
     pointer: &ScriptedPointer,
-    dragged: &std::path::Path,
-    undone: &std::path::Path,
 ) -> Result<Option<String>> {
-    let ui_rect = ctx
-        .profile
-        .vocab
-        .ui_rect_event
-        .ok_or_else(|| Error::new("no ui-rect event in this profile"))?;
-    if driving::declared(&session.trace()?, ui_rect, DISCLOSURE).is_some() {
-        return Ok(Some(format!(
-            "`{DISCLOSURE}` was on screen before anything was done, so the drag's own \
-             sentence could not be told from it."
-        )));
-    }
-
-    // --- the square by a click; the circle, the link and the locked square
-    //     by Shift-click, so the locked one is the primary ------------------
     click_on(ctx, session, pointer, &FIXTURE, 0, SQUARE.1)?;
     session.settle(20);
     for (n, (key, at, _)) in [CIRCLE, LINK, LOCKED].into_iter().enumerate() {
@@ -114,6 +68,32 @@ fn drive(
                 toggled.raw
             )));
         }
+    }
+    Ok(None)
+}
+
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    saves: &Saves,
+) -> Result<Option<String>> {
+    let (dragged, undone) = (saves.moved.as_path(), saves.undone.as_path());
+    let ui_rect = ctx
+        .profile
+        .vocab
+        .ui_rect_event
+        .ok_or_else(|| Error::new("no ui-rect event in this profile"))?;
+    if driving::declared(&session.trace()?, ui_rect, DISCLOSURE).is_some() {
+        return Ok(Some(format!(
+            "`{DISCLOSURE}` was on screen before anything was done, so the drag's own \
+             sentence could not be told from it."
+        )));
+    }
+
+    if let Some(why) = select_four(ctx, session, pointer)? {
+        return Ok(Some(why));
     }
 
     // --- one drag on the circle: three move, the locked one stays, said ---
