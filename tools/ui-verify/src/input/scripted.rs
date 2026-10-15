@@ -106,6 +106,11 @@ impl ScriptedPointer {
         self.send(session, &format!("tclick {}", xy(at)))
     }
 
+    /// Four primary clicks, one frame apart.
+    pub fn quadruple_click(&self, session: &Session, at: WindowPoint) -> Result<TraceLine> {
+        self.send(session, &format!("qclick {}", xy(at)))
+    }
+
     /// Press at `from`, move in `steps` frames, release at `to`.
     pub fn drag(
         &self,

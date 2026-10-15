@@ -576,7 +576,7 @@ pub fn click(
                 index: page_index,
                 epoch: doc.edit_epoch,
             };
-            *text_selection = super::textsel::click(
+            let (taken, via) = super::textsel::click(
                 &text_ctx,
                 text_selection.as_ref(),
                 point,
@@ -584,18 +584,10 @@ pub fn click(
                 double,
                 triple,
             );
+            *text_selection = taken;
             // `via=` names the gesture rather than the result, so a
             // harness can tell a double-click that happened to cover
             // one word from a sweep that did.
-            let via = if triple {
-                "line"
-            } else if double {
-                "word"
-            } else if shift {
-                "extend"
-            } else {
-                "clear"
-            };
             super::trace::text_selection(page_index, text_selection.as_ref(), via);
         }
     // A **vertex markup** click — PolyLine and Polygon, whose whole

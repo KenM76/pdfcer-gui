@@ -59,9 +59,9 @@ conflicts with R75 and goes back to him.
 2. **Width handle** (built). A paragraph open for editing has a right-edge handle;
    dragging it re-wraps at that width (`ReflowRequest::with_wrap_width`).
    This is the visible half of reflow and needs nothing from the engine.
-3. **Select tool.** A fourth click, or a click on the paragraph's box,
-   selects the paragraph; triple click the line; both across runs, OCR words
-   included.
+3. **Select tool** (four clicks built). A fourth click of a burst selects
+   the paragraph, a triple click the line, both across runs. Not built: a
+   click on the paragraph's box; OCR words wait on G201.
 4. **Settings where the text is.** A *Paragraphs* group on the text ribbon
    and in Settings ▸ Text: *Re-wrap paragraphs as I edit* (on), its per-page
    and per-paragraph override, and the word-gap slider with what it really

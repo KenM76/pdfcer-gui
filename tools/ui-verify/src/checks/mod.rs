@@ -973,6 +973,9 @@ pub mod reflow;
 /// An open paragraph's width handle, dragged in: the paragraph gains lines.
 pub mod reflow_width;
 
+/// A four-click burst on a line takes its paragraph.
+pub mod paragraph_select;
+
 /// The eight resize grips, driven all the way to a committed edit — being
 /// cursored, hit-tested and drag-consuming proves none of that.
 ///

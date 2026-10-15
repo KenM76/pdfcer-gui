@@ -10,6 +10,7 @@
 //! <seq> move X Y [vp=V]
 //! <seq> click X Y [btn=l|r|m] [mods=ctrl+shift+alt] [vp=V]
 //! <seq> dclick X Y [mods=…] [vp=V]         <seq> tclick X Y [mods=…] [vp=V]
+//! <seq> qclick X Y [mods=…] [vp=V]
 //! <seq> down X Y [btn=…] [mods=…] [vp=V]      <seq> up X Y [btn=…] [mods=…] [vp=V]
 //! <seq> drag X0 Y0 X1 Y1 [steps=N] [btn=…] [mods=…] [vp=V]
 //! <seq> wheel X Y DY [mods=…] [vp=V]
@@ -366,10 +367,14 @@ fn expand(
                 vec![press(p, false)],
             ]
         }
-        "dclick" | "tclick" => {
+        "dclick" | "tclick" | "qclick" => {
             want(2)?;
             let p = at(0)?;
-            let presses = if verb == "dclick" { 2 } else { 3 };
+            let presses = match verb {
+                "dclick" => 2,
+                "tclick" => 3,
+                _ => 4,
+            };
             let mut out = vec![vec![Event::PointerMoved(p)]];
             for _ in 0..presses {
                 out.push(vec![press(p, true)]);

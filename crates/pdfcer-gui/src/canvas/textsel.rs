@@ -231,7 +231,8 @@ fn clamp_to_text(
     Some(best)
 }
 
-/// **Update the selection from a click.**
+/// **Update the selection from a click**, and name the gesture it took:
+/// `word`, `line`, `paragraph`, `extend` or `clear`.
 #[must_use]
 pub fn click(
     ctx: &PageContext<'_>,
@@ -240,30 +241,55 @@ pub fn click(
     shift: bool,
     double: bool,
     triple: bool,
-) -> Option<TextSelection> {
+) -> (Option<TextSelection>, &'static str) {
     let model = model(ctx);
-    let at = hit(&model, ctx, point)?;
+    let Some(at) = hit(&model, ctx, point) else {
+        return (None, gesture(double, triple, shift));
+    };
     if triple {
         // `line_range_at` answers `None` for a position on a run carrying no
         // clustered glyph, which `hit_test` does not produce — but a `None`
         // here must clear rather than fall through to the word case, or an
         // emphatic gesture would quietly become a weaker one.
-        let (start, end) = model.line_range_at(at)?;
-        return resolve(&model, ctx, start, end);
+        let Some((start, end)) = model.line_range_at(at) else {
+            return (None, "line");
+        };
+        // A triple click on the line already held is the fourth click: it
+        // takes the paragraph, across every run its lines draw from.
+        let held = current
+            .filter(|c| c.page == ctx.index && c.live(ctx.epoch))
+            .is_some_and(|c| ordered(c.anchor(), c.focus()) == (start, end));
+        if held && let Some((first, last)) = block_range_at(&model, at) {
+            return (resolve(&model, ctx, first, last), "paragraph");
+        }
+        return (resolve(&model, ctx, start, end), "line");
     }
     if double {
         let (start, end) = model.word_range_at(at);
-        return resolve(&model, ctx, start, end);
+        return (resolve(&model, ctx, start, end), "word");
     }
     if shift && let Some(current) = current.filter(|c| c.page == ctx.index && c.live(ctx.epoch)) {
-        return resolve(&model, ctx, current.anchor(), at);
+        return (resolve(&model, ctx, current.anchor(), at), "extend");
     }
     // A plain click collapses the range onto one caret slot, which covers no
     // glyphs, so `resolve` answers `None` and the caller clears. Expressed as a
     // degenerate range rather than as an early `return None` on purpose: there
     // is one rule for what a range means, and "a click is an empty range" is a
     // statement in that rule rather than an exception beside it.
-    resolve(&model, ctx, at, at)
+    (resolve(&model, ctx, at, at), gesture(false, false, shift))
+}
+
+/// The gesture a click's flags name, for a click that took nothing more.
+const fn gesture(double: bool, triple: bool, shift: bool) -> &'static str {
+    if triple {
+        "line"
+    } else if double {
+        "word"
+    } else if shift {
+        "extend"
+    } else {
+        "clear"
+    }
 }
 
 /// **Select every character on the page** — Ctrl+A. Module header §1.3.
@@ -281,6 +307,22 @@ pub fn select_all(ctx: &PageContext<'_>) -> Option<TextSelection> {
 }
 
 /// Build the derived line/column/block structure over `ctx.text`.
+/// The first and last caret positions of the paragraph holding `pos`.
+fn block_range_at(
+    model: &EditableTextModel<'_>,
+    pos: TextPosition,
+) -> Option<(TextPosition, TextPosition)> {
+    let block = model.blocks().get(model.block_at(pos)?)?;
+    let lines = model.lines();
+    let first = lines.get(*block.line_indices.first()?)?.glyphs.first()?;
+    let last = lines.get(*block.line_indices.last()?)?.glyphs.last()?;
+    let (fg, lg) = (model.glyph(*first)?, model.glyph(*last)?);
+    Some((
+        TextPosition::new(first.run, fg.text_start as usize),
+        TextPosition::new(last.run, (lg.text_start + lg.text_len) as usize),
+    ))
+}
+
 fn model<'a>(ctx: &PageContext<'a>) -> EditableTextModel<'a> {
     EditableTextModel::recognize(ctx.text, &BlockRecognitionOptions::default())
 }

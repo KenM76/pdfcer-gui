@@ -401,8 +401,10 @@ fn a_double_click_takes_a_word_and_a_triple_click_takes_at_least_the_line() {
     on_page(|ctx| {
         let at = first_glyph_centre(ctx);
         let word = click(ctx, None, at, false, true, false)
+            .0
             .expect("a double-click on a glyph selects its word");
         let line = click(ctx, None, at, false, false, true)
+            .0
             .expect("a triple-click on a glyph selects its line");
         assert!(!word.text.is_empty());
         assert!(
@@ -419,13 +421,36 @@ fn a_double_click_takes_a_word_and_a_triple_click_takes_at_least_the_line() {
     });
 }
 
+/// **A triple click on the line already held takes its paragraph** — the
+/// fourth click of a burst, as Acrobat does — and each gesture names itself.
+#[test]
+fn a_triple_click_on_the_held_line_takes_the_paragraph() {
+    on_page(|ctx| {
+        let at = first_glyph_centre(ctx);
+        let (line, via) = click(ctx, None, at, false, false, true);
+        let line = line.expect("a triple-click on a glyph selects its line");
+        assert_eq!(via, "line");
+        let (paragraph, via) = click(ctx, Some(&line), at, false, false, true);
+        let paragraph = paragraph.expect("the paragraph holding a glyph is not empty");
+        assert_eq!(via, "paragraph");
+        assert!(
+            paragraph.text.len() >= line.text.len(),
+            "a paragraph ({:?}) cannot be shorter than its line ({:?})",
+            paragraph.text,
+            line.text
+        );
+        assert_eq!(click(ctx, None, at, false, true, false).1, "word");
+        assert_eq!(click(ctx, None, at, false, false, false).1, "clear");
+    });
+}
+
 /// **A plain click clears** — Acrobat, Inkscape and SolidWorks alike.
 #[test]
 fn a_plain_click_clears_the_selection() {
     on_page(|ctx| {
         let at = first_glyph_centre(ctx);
         assert!(
-            click(ctx, None, at, false, false, false).is_none(),
+            click(ctx, None, at, false, false, false).0.is_none(),
             "a click collapses the range, and an empty range is no selection"
         );
     });
@@ -468,6 +493,7 @@ fn shift_click_extends_from_the_anchor_and_needs_one() {
         let quarter = egui::pos2(box_.min.x + box_.width() / 4.0, box_.center().y);
         let seed = drag(ctx, start, quarter).expect("a quarter-line sweep selects glyphs");
         let extended = click(ctx, Some(&seed), end, true, false, false)
+            .0
             .expect("shift+click extends to the pointer");
         assert!(
             extended.text.len() > seed.text.len(),
@@ -477,7 +503,7 @@ fn shift_click_extends_from_the_anchor_and_needs_one() {
         );
 
         assert!(
-            click(ctx, None, end, true, false, false).is_none(),
+            click(ctx, None, end, true, false, false).0.is_none(),
             "shift+click with nothing selected has no anchor, so it clears like a plain click"
         );
     });

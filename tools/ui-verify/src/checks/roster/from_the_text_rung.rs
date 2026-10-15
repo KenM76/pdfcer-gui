@@ -650,6 +650,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // only `fixtures/paragraph.pdf` produces, so it takes no `--pdf`.
         Box::new(reflow::ReflowingAParagraphRewrapsIt),
         Box::new(reflow_width::DraggingAParagraphsEdgeRewrapsIt),
+        Box::new(paragraph_select::AFourthClickSelectsTheParagraph),
         // O127 defect 2 — and registered WITHOUT having been run, on the
         // precedent `left_rail`, `properties_tool` and `protect` above set: a
         // check that exists and is not registered is a check nobody will ever
