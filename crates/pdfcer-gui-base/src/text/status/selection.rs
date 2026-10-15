@@ -270,6 +270,12 @@ pub enum TextStyleRefusal {
     NoPlainFace(&'static str),
     /// The caret is in new text, which takes its style from the pen.
     NewText,
+    /// The caret is in an opened paragraph whose text has been changed, so
+    /// its characters are not yet on the page to restyle.
+    ParagraphEdited,
+    /// The caret is in an opened paragraph between words, with nothing
+    /// selected: a paragraph keeps no style for text still to be typed.
+    ParagraphNeedsRange,
 }
 
 impl TextStyleRefusal {
@@ -370,6 +376,12 @@ impl TextStyleRefusal {
             }
             Self::NewText => {
                 "New text takes its style from the text pen. Finish it with Enter, then select it to style part of it."
+            }
+            Self::ParagraphEdited => {
+                "Click outside the paragraph to put your changes on the page, then select the text to style. Nothing changed."
+            }
+            Self::ParagraphNeedsRange => {
+                "Put the caret inside a word or select some text to style it. Nothing changed."
             }
         };
         std::borrow::Cow::Borrowed(fixed)

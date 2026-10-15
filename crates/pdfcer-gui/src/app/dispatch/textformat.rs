@@ -171,8 +171,12 @@ pub(crate) fn dispatch(
 /// The characters, word, caret or runs a press acts on.
 fn target(ctx: &egui::Context, doc: &OpenDoc) -> Result<Target, TextStyleRefusal> {
     if let Some(draft) = textedit::read(ctx) {
-        let Anchor::Run { run, .. } = draft.anchor else {
-            return Err(TextStyleRefusal::NewText);
+        let run = match &draft.anchor {
+            Anchor::Run { run, .. } => *run,
+            Anchor::Block {
+                original, places, ..
+            } => return paragraph_target(doc, &draft, original, places),
+            _ => return Err(TextStyleRefusal::NewText),
         };
         let chosen = textedit::caret::range(draft.mark, draft.caret)
             .or_else(|| word_around(&draft.text, draft.caret));
@@ -209,6 +213,34 @@ fn target(ctx: &egui::Context, doc: &OpenDoc) -> Result<Target, TextStyleRefusal
             runs: operand.runs,
         })
         .ok_or(TextStyleRefusal::NoRun)
+}
+
+/// The range or word at the caret of an opened paragraph, mapped from the
+/// paragraph's text to the page; refused once its text has been changed,
+/// since the changed characters are not on the page yet.
+fn paragraph_target(
+    doc: &OpenDoc,
+    draft: &Draft,
+    original: &str,
+    places: &[textedit::promote::Place],
+) -> Result<Target, TextStyleRefusal> {
+    if draft.text != original {
+        return Err(TextStyleRefusal::ParagraphEdited);
+    }
+    let (a, b) = textedit::caret::range(draft.mark, draft.caret)
+        .or_else(|| word_around(&draft.text, draft.caret))
+        .ok_or(TextStyleRefusal::ParagraphNeedsRange)?;
+    let (ba, bb) = (byte_of(&draft.text, a), byte_of(&draft.text, b));
+    let from = textedit::promote::position(places, ba, false).ok_or(TextStyleRefusal::NoRun)?;
+    let to = textedit::promote::position(places, bb, true).ok_or(TextStyleRefusal::NoRun)?;
+    let expected = span_text(doc, draft.page, from, to).ok_or(TextStyleRefusal::NoRun)?;
+    Ok(Target::Range {
+        page: draft.page,
+        from,
+        to,
+        expected,
+        draft: true,
+    })
 }
 
 /// The word the caret is strictly inside, as character indices.
@@ -281,18 +313,22 @@ fn whole_runs(
     runs: &[usize],
 ) -> Option<(TextPosition, TextPosition, String)> {
     let (first, last) = (*runs.iter().min()?, *runs.iter().max()?);
+    let end = doc.provenance_page_text(page)?.runs.get(last)?.text.len();
+    let from = TextPosition::new(first, 0);
+    let to = TextPosition::new(last, end);
+    Some((from, to, span_text(doc, page, from, to)?))
+}
+
+/// The page's text from `from` to `to`, as a selection there would read it.
+fn span_text(doc: &OpenDoc, page: usize, from: TextPosition, to: TextPosition) -> Option<String> {
     let text = doc.provenance_page_text(page)?;
-    let end = text.runs.get(last)?.text.len();
     let ctx = crate::canvas::textsel::PageContext {
         text: &text,
         page: doc.pages.get(page)?,
         index: page,
         epoch: doc.edit_epoch,
     };
-    let from = TextPosition::new(first, 0);
-    let to = TextPosition::new(last, end);
-    let read = crate::canvas::textsel::span(&ctx, from, to)?;
-    Some((from, to, read.text))
+    Some(crate::canvas::textsel::span(&ctx, from, to)?.text)
 }
 
 /// Align the caret's paragraph, or every paragraph the selection touches.
@@ -300,7 +336,7 @@ fn align(ctx: &egui::Context, doc: &OpenDoc, alignment: BlockAlignment, actions:
     use crate::text::textedit::ReflowRefusal;
     let (page, runs, draft) = match textedit::read(ctx) {
         Some(Draft {
-            anchor: Anchor::Run { run, .. },
+            anchor: Anchor::Run { run, .. } | Anchor::Block { run, .. },
             page,
             ..
         }) => (page, vec![run], true),

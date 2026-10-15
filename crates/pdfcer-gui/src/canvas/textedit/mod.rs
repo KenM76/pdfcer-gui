@@ -236,6 +236,9 @@ pub enum Anchor {
         ury: f64,
         /// The paragraph's text when it was opened.
         original: String,
+        /// Where each glyph of `original` lies on the page, in `original`'s
+        /// order; valid only while the draft's text equals `original`.
+        places: Vec<promote::Place>,
     },
 }
 

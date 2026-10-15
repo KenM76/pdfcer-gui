@@ -46,6 +46,7 @@ struct Paragraph {
     source: LineEndSource,
     before: String,
     after: String,
+    places: Vec<Place>,
 }
 
 /// Why a run did not open into its paragraph, with the trace token.
@@ -213,6 +214,7 @@ fn promoted(draft: &Draft, p: &Paragraph) -> Draft {
             urx,
             ury,
             original: format!("{}{}{}", p.before, original_of(draft), p.after),
+            places: p.places.clone(),
         },
         text,
         caret: draft.caret + shift,
@@ -296,6 +298,7 @@ fn paragraph(
         source: model.line_end_source(b),
         before: walk.joined[..start].to_owned(),
         after: walk.joined[end..].to_owned(),
+        places: walk.places,
     })
 }
 
@@ -307,6 +310,30 @@ struct Walk {
     looks: usize,
     /// Line ends read as typed breaks.
     breaks: usize,
+    places: Vec<Place>,
+}
+
+/// One glyph of an opened paragraph: `len` bytes at byte `at` of its text,
+/// and where they start on the page.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Place {
+    at: usize,
+    len: usize,
+    pos: TextPosition,
+}
+
+/// The page position of byte `byte` of an opened paragraph's text, on a glyph
+/// boundary: a range's `end` rounds forward past the glyph it falls in or
+/// after, a start rounds back to the glyph it falls in or before. `None` past
+/// either end of the paragraph.
+#[must_use]
+pub fn position(places: &[Place], byte: usize, end: bool) -> Option<TextPosition> {
+    if end {
+        let p = places.iter().rev().find(|p| p.at < byte)?;
+        Some(TextPosition::new(p.pos.run, p.pos.byte_offset + p.len))
+    } else {
+        places.iter().find(|p| p.at + p.len > byte).map(|p| p.pos)
+    }
 }
 
 /// The page's line-end marks, so a paragraph pdfcer wrote reads its breaks
@@ -361,6 +388,7 @@ impl Walk {
         let mut closed = false;
         let mut looks: Vec<Look> = Vec::new();
         let mut breaks = 0;
+        let mut places = Vec::new();
         for (i, line) in lines.iter().enumerate() {
             if i > 0 {
                 let typed = ends.get(i - 1) == Some(&LineEnd::Break);
@@ -370,6 +398,13 @@ impl Walk {
             }
             for &g in &line.glyphs {
                 let slice = glyph_text(model, g);
+                if let Some(x) = model.glyph(g) {
+                    places.push(Place {
+                        at: joined.len(),
+                        len: slice.len(),
+                        pos: TextPosition::new(g.run, x.text_start as usize),
+                    });
+                }
                 if g.run == run {
                     if closed {
                         return Err(Declined::no_paragraph("run-split"));
@@ -394,6 +429,40 @@ impl Walk {
             span,
             looks: looks.len(),
             breaks,
+            places,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Place, position};
+    use pdfcer_core::text_edit::TextPosition;
+
+    /// "ab cd": `ab` is run 4 from byte 10, the wrap space has no glyph, `cd`
+    /// is run 7 from byte 0.
+    fn places() -> Vec<Place> {
+        let p = |at, run, byte| Place {
+            at,
+            len: 1,
+            pos: TextPosition::new(run, byte),
+        };
+        vec![p(0, 4, 10), p(1, 4, 11), p(3, 7, 0), p(4, 7, 1)]
+    }
+
+    #[test]
+    fn a_range_maps_onto_the_runs_either_side_of_a_wrap() {
+        let p = places();
+        assert_eq!(position(&p, 0, false), Some(TextPosition::new(4, 10)));
+        assert_eq!(position(&p, 2, true), Some(TextPosition::new(4, 12)));
+        assert_eq!(position(&p, 2, false), Some(TextPosition::new(7, 0)));
+        assert_eq!(position(&p, 5, true), Some(TextPosition::new(7, 2)));
+    }
+
+    #[test]
+    fn nothing_lies_past_either_end() {
+        let p = places();
+        assert_eq!(position(&p, 5, false), None);
+        assert_eq!(position(&p, 0, true), None);
     }
 }

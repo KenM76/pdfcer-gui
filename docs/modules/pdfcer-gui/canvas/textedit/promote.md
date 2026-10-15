@@ -75,3 +75,16 @@ use: the typing disposition with the installed faces
 `edit_block_text` forbids, and the engine's own wrap width. The engine fits a
 line within `FIT_TOLERANCE`, so a paragraph rewritten with its own text keeps
 its widest line whole (G162); in a table cell it keeps the cell's inner width.
+
+## Glyph places
+
+The walk records, for each glyph of the opened paragraph, its byte span in
+the paragraph's text and its `TextPosition` on the page; they ride on
+`Anchor::Block` as `places`. `position(places, byte, end)` maps a byte of the
+paragraph's text to the page on a glyph boundary — a start rounds back into
+the glyph it falls in or the next one, an end forward past the glyph it falls
+in or the previous one — so a range crossing a wrapped line ends on one run
+and starts on the next. The line separators have no glyph. The map describes
+the text as opened; once the draft's text differs from `original` it no longer
+holds, and the Format tab's restyle refuses with `ParagraphEdited` rather than
+guess.

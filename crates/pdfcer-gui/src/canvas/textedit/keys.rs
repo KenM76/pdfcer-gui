@@ -829,6 +829,7 @@ mod tests {
                 urx: 100.0,
                 ury: 50.0,
                 original: "a paragraph".to_owned(), // ui-text-exempt: test fixture text
+                places: Vec::new(),
             },
         ] {
             assert_eq!(

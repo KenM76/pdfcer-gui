@@ -35,11 +35,6 @@ impl crate::app::PdfcerApp {
         let draft = textedit::read(ctx);
         let (page, at, caret) = match &draft {
             Some(d) => {
-                let Anchor::Run { run, .. } = d.anchor else {
-                    return;
-                };
-                set.set("selection.text_runs");
-                set.set("selection.formattable");
                 let first = textedit::caret::range(d.mark, d.caret)
                     .map_or(d.caret.saturating_sub(1), |(a, _)| a);
                 let byte = d
@@ -47,7 +42,24 @@ impl crate::app::PdfcerApp {
                     .char_indices()
                     .nth(first)
                     .map_or(d.text.len(), |(b, _)| b);
-                (d.page, TextPosition::new(run, byte), Some(d.caret))
+                let at = match &d.anchor {
+                    Anchor::Run { run, .. } => TextPosition::new(*run, byte),
+                    // An edited paragraph reads the look it was opened in;
+                    // a press says why it cannot restyle it yet.
+                    Anchor::Block {
+                        places, original, ..
+                    } => {
+                        let byte = if d.text == *original { byte } else { 0 };
+                        let Some(at) = textedit::promote::position(places, byte, false) else {
+                            return;
+                        };
+                        at
+                    }
+                    _ => return,
+                };
+                set.set("selection.text_runs");
+                set.set("selection.formattable");
+                (d.page, at, Some(d.caret))
             }
             None => match doc
                 .text_selection
