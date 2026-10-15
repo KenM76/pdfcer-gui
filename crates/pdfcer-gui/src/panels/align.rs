@@ -25,7 +25,7 @@ use crate::text::panels::align as t;
 
 mod arrange;
 mod handles;
-mod leftout;
+pub(crate) mod leftout;
 /// The *On-canvas alignment* toggle.
 pub const ON_CANVAS_REGION: &str = "align.on_canvas"; // ui-text-exempt: diagnostic region name
 mod nodes;
@@ -553,7 +553,7 @@ fn moves_action(
         (moves, leaf_moves)
     };
     let provider = doc.page_objects()?;
-    let mut leaves = leftout::by_drawing(provider.page_objects(), leaves);
+    let mut leaves = leftout::by_drawing(provider.page_objects(), leaves, |m| m.0);
     let notes = m.left_out.notes();
     // One engine verb covers page objects, or the parts of ONE drawing; any
     // other mix, or a sentence to say, goes through the folding commit.

@@ -1,7 +1,7 @@
 # `ui-verify/checks/alignmixed`
 
-Align with a selection that mixes parts of placed drawings with page objects,
-on `fixtures/parts-beside-objects.pdf` (built by its `.PROVENANCE.py`): a green
+Align and drag with a selection that mixes parts of placed drawings with page
+objects, on `fixtures/parts-beside-objects.pdf` (built by its `.PROVENANCE.py`): a green
 page rectangle at (300,220)..(360,260), drawing Fm0 holding a red part
 (60,60)..(120,100) and a blue part (60,140)..(100,170), and drawing Fm1
 holding an orange part.
@@ -39,6 +39,19 @@ this click resolves to the whole of Fm0. PASS needs:
 double-clicked again, which stands at the Part rung (`level=Part`). Ctrl+Alt+6
 must produce no `move-mixed-applied`, and must produce an `align-declined`
 with `reason=part-rung`.
+
+`a_part_and_a_page_object_drag_together`: the red part and green, selected as
+above, then green is dragged by (20,-15) page units in 8 steps. PASS needs a
+`move-mixed-applied` after the drag holding `gesture=drag`, `objects=1/1`,
+`parts=1/1`, `drawings=1/1` and `one_step=true`. Without it the check quotes
+the drag's `canvas-move` line, which names the verb that ran instead.
+
+`a_part_inside_a_dragged_drawing_rides_with_it`: as above, then the blue part
+is shift-clicked (`sel=3`, the whole of Fm0 added) and green is dragged. PASS
+needs no `move-mixed-applied` and a `canvas-move` whose action names
+`objects: [0, 1]`: the drawing carries its part, so the part must not be moved
+a second time. The verb is `TransformObjects`, since a placed drawing has no
+coordinate operands; the check reads the operands, not the verb.
 
 ## Falsified
 

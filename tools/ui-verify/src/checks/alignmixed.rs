@@ -1,7 +1,7 @@
-//! Align with a selection that mixes parts of placed drawings with page
-//! objects, driven on `parts-beside-objects.pdf`: a part and a page object move
-//! together as one step; a part whose own drawing is selected rides with it and
-//! is said so; Align at the Part rung says why it does nothing.
+//! Align and drag with a selection that mixes parts of placed drawings with
+//! page objects, driven on `parts-beside-objects.pdf`: a part and a page object
+//! move together as one step; a part whose own drawing is selected rides with
+//! it (and Align says so); Align at the Part rung says why it does nothing.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/alignmixed.md`.
 
@@ -25,6 +25,9 @@ const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event nam
 const MIXED: &str = "move-mixed-applied"; // ui-text-exempt: a trace event name, never displayed
 const FUNNEL: &str = "move-mixed"; // ui-text-exempt: a trace event name, never displayed
 const DECLINED: &str = "align-declined"; // ui-text-exempt: a trace event name, never displayed
+const MOVED: &str = "canvas-move"; // ui-text-exempt: a trace event name, never displayed
+/// How far the drag checks move the green rectangle, page space.
+const DRAG_BY: (f64, f64) = (20.0, -15.0);
 
 /// See the module documentation.
 pub struct APartAndAPageObjectAlignTogether;
@@ -212,6 +215,155 @@ fn part_rung(
             &declined,
         )
     }))
+}
+
+/// See the module documentation.
+pub struct APartAndAPageObjectDragTogether;
+
+impl Check for APartAndAPageObjectDragTogether {
+    fn name(&self) -> &'static str {
+        "a_part_and_a_page_object_drag_together"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Dragging a selection of a part of a placed drawing and a page object moves only the page \
+         object, or takes two undo steps"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match run_body(ctx, &mut report, FIXTURE, "dragmixed", drag_together) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn drag_together(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<Option<String>> {
+    if let Some(failure) = red_and_green(ctx, report, session, pointer, page)? {
+        return Ok(Some(failure));
+    }
+    let mark = session.trace()?.mark();
+    drag_green(ctx, session, pointer, page)?;
+    let trace = session.trace()?;
+    let Some(applied) = trace.last_after(MIXED, mark) else {
+        let moved = trace
+            .last_after(MOVED, mark)
+            .map_or("nothing", |l| l.raw.as_str());
+        return Ok(Some(fail(
+            session,
+            &format!("the drag must commit `{MIXED}`"),
+            moved,
+        )));
+    };
+    report.note(format!("drag: `{}`", applied.raw));
+    let wanted = [
+        "gesture=drag",
+        "objects=1/1",
+        "parts=1/1",
+        "drawings=1/1",
+        "one_step=true",
+    ];
+    Ok(missing(&applied.raw, &wanted).map(|w| {
+        fail(
+            session,
+            &format!("the part and the page object must both move as one step (`{w}`)"),
+            &applied.raw,
+        )
+    }))
+}
+
+/// See the module documentation.
+pub struct APartInsideADraggedDrawingRidesWithIt;
+
+impl Check for APartInsideADraggedDrawingRidesWithIt {
+    fn name(&self) -> &'static str {
+        "a_part_inside_a_dragged_drawing_rides_with_it"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Dragging a part together with its own drawing moves the part twice"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match run_body(ctx, &mut report, FIXTURE, "dragcarried", drag_carried) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn drag_carried(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<Option<String>> {
+    if let Some(failure) = red_and_green(ctx, report, session, pointer, page)? {
+        return Ok(Some(failure));
+    }
+    let selected = shift_click(ctx, session, pointer, page, ON_BLUE)?;
+    report.note(format!("after Shift+click on the blue part: `{selected}`"));
+    if !selected.contains(" sel=3 ") {
+        return Ok(Some(fail(
+            session,
+            "Shift+click on the drawing must add it whole, three entries selected",
+            &selected,
+        )));
+    }
+    let mark = session.trace()?.mark();
+    drag_green(ctx, session, pointer, page)?;
+    let trace = session.trace()?;
+    if let Some(mixed) = trace.last_after(MIXED, mark) {
+        return Ok(Some(fail(
+            session,
+            "the drawing carries its part, so the drag is a plain page move",
+            &mixed.raw,
+        )));
+    }
+    let moved = trace
+        .last_after(MOVED, mark)
+        .map(|l| l.raw.clone())
+        .unwrap_or_default();
+    report.note(format!("drag: `{moved}`"));
+    // The drawing has no coordinate operands, so the pair moves through
+    // `TransformObjects`; either page verb is right, so the operands are asserted.
+    Ok((!moved.contains("objects: [0, 1]")).then(|| {
+        fail(
+            session,
+            "the drag must move the two page objects, and only them, in one page action",
+            &moved,
+        )
+    }))
+}
+
+/// Drag the green rectangle by `DRAG_BY` page units.
+fn drag_green(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<()> {
+    let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
+    let from = mapping.doc_to_window(DocPoint::new(0, ON_GREEN.0, ON_GREEN.1))?;
+    let to = mapping.doc_to_window(DocPoint::new(
+        0,
+        ON_GREEN.0 + DRAG_BY.0,
+        ON_GREEN.1 + DRAG_BY.1,
+    ))?;
+    pointer.drag(session, from, to, 8)?;
+    session.settle(40);
+    Ok(())
 }
 
 /// Enter the red part, then Shift+click the green page rectangle: one leaf

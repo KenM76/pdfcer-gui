@@ -27,7 +27,7 @@
 #![cfg(test)]
 
 use super::*;
-use crate::app::actions::CanvasDecline;
+use crate::app::actions::{CanvasDecline, VectorAction};
 use crate::canvas::selection::ClickHit;
 use crate::canvas::{target::TargetId, targetstub::StubTargets};
 use egui::{Rect, vec2};
@@ -115,6 +115,7 @@ fn paths() -> MoveContext {
         non_path: None,
         part_kind: Some(PartKind::Subpath),
         run_move: None,
+        beside: Vec::new(),
     }
 }
 
@@ -339,6 +340,53 @@ fn a_multi_select_moves_as_one_command() {
     );
 }
 
+/// Parts of placed drawings selected beside page objects make the move a
+/// mixed one, every item carried with the same delta in one action.
+#[test]
+fn parts_beside_page_objects_move_together() {
+    let sel = two_objects_selected();
+    let ctx = MoveContext {
+        beside: vec![vec![4, 6], vec![9]],
+        ..paths()
+    };
+    let subject = eligible(&sel, 0, ctx).expect("eligible");
+    assert_eq!(
+        subject,
+        MoveSubject::Mixed {
+            page: 0,
+            objects: vec![0, 1],
+            leaves: vec![vec![4, 6], vec![9]],
+        }
+    );
+    let Ok(Action::Vector(VectorAction::MoveMixed {
+        objects,
+        leaves,
+        widgets,
+        annots,
+        ..
+    })) = action(subject, PageDelta { dx: 5.0, dy: -2.0 }, None, &[])
+    else {
+        panic!("a mixed subject raises MoveMixed");
+    };
+    assert_eq!(objects, vec![(0, 5.0, -2.0), (1, 5.0, -2.0)]);
+    assert_eq!(
+        leaves,
+        vec![vec![(4, 5.0, -2.0), (6, 5.0, -2.0)], vec![(9, 5.0, -2.0)]]
+    );
+    assert!(widgets.is_empty() && annots.is_empty());
+}
+
+/// With no part beside them, page objects keep the single `move_objects`
+/// command.
+#[test]
+fn page_objects_alone_are_not_a_mixed_move() {
+    let subject = eligible(&two_objects_selected(), 0, paths()).expect("eligible");
+    assert!(
+        matches!(subject, MoveSubject::Objects { .. }),
+        "{subject:?}"
+    );
+}
+
 /// Nothing selected raises nothing rather than an empty batch the engine
 /// would have to refuse.
 #[test]
@@ -461,6 +509,7 @@ fn a_line_of_text_at_the_part_rung_moves_that_line() {
         non_path: None,
         part_kind: Some(PartKind::TextLine),
         run_move: None,
+        beside: Vec::new(),
     };
     assert_eq!(
         eligible(&sel, 0, ctx),
@@ -524,6 +573,7 @@ fn several_selected_chunks_move_as_one_command() {
         non_path: None,
         part_kind: Some(PartKind::TextLine),
         run_move: None,
+        beside: Vec::new(),
     };
     assert_eq!(
         eligible(&sel, 0, ctx),
@@ -577,6 +627,7 @@ fn one_selected_chunk_still_takes_the_singular_verb() {
         non_path: None,
         part_kind: Some(PartKind::TextLine),
         run_move: None,
+        beside: Vec::new(),
     };
     assert_eq!(
         eligible(&sel, 0, ctx),
@@ -601,6 +652,7 @@ fn a_run_the_engine_would_refuse_declines_before_the_ghost_is_drawn() {
             non_path: None,
             part_kind: Some(PartKind::TextLine),
             run_move: Some(block),
+            beside: Vec::new(),
         };
         assert_eq!(
             eligible(&sel, 0, ctx),
@@ -902,6 +954,7 @@ fn several_selected_anchors_move_as_one_command() {
             non_path: None,
             part_kind: Some(PartKind::Subpath),
             run_move: None,
+            beside: Vec::new(),
         },
     )
     .expect("a multi-node selection on a path has a move subject");
@@ -969,6 +1022,7 @@ fn one_selected_anchor_still_takes_the_singular_verb() {
             non_path: None,
             part_kind: Some(PartKind::Subpath),
             run_move: None,
+            beside: Vec::new(),
         },
     )
     .expect("one anchor on a path has a move subject");

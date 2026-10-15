@@ -157,75 +157,40 @@ pub fn for_move_subject(
                 .collect();
             transformed(provider, &targets, Matrix::translate(dx, dy))
         }
+        MoveSubject::Mixed {
+            objects, leaves, ..
+        } => {
+            let targets: Vec<TargetId> = objects
+                .iter()
+                .map(|&i| TargetId::Object(i as u64))
+                .chain(leaves.iter().flatten().map(|&i| TargetId::Leaf(i as u64)))
+                .collect();
+            transformed(provider, &targets, Matrix::translate(dx, dy))
+        }
         MoveSubject::LeavesInForm { leaves, .. } => {
             let targets: Vec<TargetId> = leaves.iter().map(|&i| TargetId::Leaf(i as u64)).collect();
             transformed(provider, &targets, Matrix::translate(dx, dy))
         }
-        // A subpath move is every anchor in that subpath, and the anchor list
-        // comes from the PROVIDER rather than from a walk here — it already
-        // reports the object-scoped indices for one subpath, offsets included,
-        // and re-deriving that arithmetic is the hazard `with_nodes_moved`'s
-        // header describes.
-        // **A text run gets the bounding ghost and NOTHING else, and that
-        // is the honest preview rather than a gap.**
-        //
-        // `ShapePreview` is path geometry — anchors and segments moved by a
-        // delta — and a show operator has none. There is nothing to draw
-        // that would be more informative than the outline `MovePreview::ghost`
-        // already carries, and drawing a rectangle here and calling it a shape
-        // would be the same rectangle twice.
-        //
-        // On a rung the shape preview cannot serve — a line of text, an
-        // image, a form XObject — the outline is the whole answer.
-        //
-        // The plural pair joins them for the same reason and gets the same
-        // answer, which is better than it sounds: the ghost is a displacement
-        // the canvas applies to the SELECTION OUTLINES, and a multi-chunk
-        // selection already draws one box per chunk. So four selected chunks
-        // preview as four boxes travelling together, which is what the gesture
-        // is about to do.
-        //
-        // That last sentence is load-bearing on `overlay::draw_move_ghost`
-        // actually drawing at this rung. It withholds the ghost only where the
-        // real geometry is already travelling, which for a text line it never
-        // is; a gate that withheld on the RUNG instead would leave every
-        // sentence above describing feedback nobody receives.
-        // `dragging_a_chunk_shows_where_it_is_going` is what keeps the two in
-        // step.
+        // No path geometry: the bounding ghost is the whole preview, and
+        // `dragging_a_chunk_shows_where_it_is_going` keeps it drawn.
         MoveSubject::TextLine { .. }
         | MoveSubject::TextLineInForm { .. }
         | MoveSubject::TextLines { .. }
         | MoveSubject::TextLinesInForm { .. } => None,
         MoveSubject::Subpath {
             object, subpath, ..
-        } => {
-            let target = TargetId::Object(*object as u64);
-            let nodes: std::collections::BTreeSet<usize> = provider
-                .subpath_node_points_of(target, *subpath)
-                .into_iter()
-                .map(|(index, _)| index)
-                .collect();
-            with_nodes_moved(provider, target, &nodes, dx, dy)
-        }
+        } => subpath_moved(provider, TargetId::Object(*object as u64), *subpath, dx, dy),
         MoveSubject::SubpathInForm { leaf, subpath, .. } => {
-            let target = TargetId::Leaf(*leaf as u64);
-            let nodes: std::collections::BTreeSet<usize> = provider
-                .subpath_node_points_of(target, *subpath)
-                .into_iter()
-                .map(|(index, _)| index)
-                .collect();
-            with_nodes_moved(provider, target, &nodes, dx, dy)
+            subpath_moved(provider, TargetId::Leaf(*leaf as u64), *subpath, dx, dy)
         }
         // THE ONE THE OPERATOR NAMED: *"if I moved the end of a line, it
         // didn't show me the shape change of the line."*
         MoveSubject::Node { object, node, .. } => {
-            let mut only = std::collections::BTreeSet::new();
-            only.insert(*node);
+            let only = std::collections::BTreeSet::from([*node]);
             with_nodes_moved(provider, TargetId::Object(*object as u64), &only, dx, dy)
         }
         MoveSubject::NodeInForm { leaf, node, .. } => {
-            let mut only = std::collections::BTreeSet::new();
-            only.insert(*node);
+            let only = std::collections::BTreeSet::from([*node]);
             with_nodes_moved(provider, TargetId::Leaf(*leaf as u64), &only, dx, dy)
         }
         MoveSubject::Nodes { object, nodes, .. } => with_nodes_moved(
@@ -243,6 +208,24 @@ pub fn for_move_subject(
             dy,
         ),
     }
+}
+
+/// Every anchor of `subpath` on `target`, moved by `(dx, dy)`. The anchor
+/// list comes from the provider, which already reports object-scoped
+/// indices with offsets applied.
+fn subpath_moved(
+    provider: &ObjectModelProvider,
+    target: TargetId,
+    subpath: usize,
+    dx: f64,
+    dy: f64,
+) -> Option<ShapePreview> {
+    let nodes: std::collections::BTreeSet<usize> = provider
+        .subpath_node_points_of(target, subpath)
+        .into_iter()
+        .map(|(index, _)| index)
+        .collect();
+    with_nodes_moved(provider, target, &nodes, dx, dy)
 }
 
 /// **The footprint of objects that are about to stop existing.**

@@ -93,7 +93,6 @@ file crates/pdfcer-gui/src/canvas/clicking.rs
 file crates/pdfcer-gui/src/canvas/forms.rs
 file crates/pdfcer-gui/src/canvas/gesture/meaning.rs
 file crates/pdfcer-gui/src/canvas/interact.rs
-file crates/pdfcer-gui/src/canvas/moving/mod.rs
 file crates/pdfcer-gui/src/canvas/painting.rs
 file crates/pdfcer-gui/src/canvas/present.rs
 file crates/pdfcer-gui/src/dialogs/mod.rs
@@ -317,9 +316,7 @@ fn crates/pdfcer-gui/src/canvas/keys.rs::canvas_keys
 fn crates/pdfcer-gui/src/canvas/measure/mod.rs::click
 fn crates/pdfcer-gui/src/canvas/measure/perimeter.rs::click
 fn crates/pdfcer-gui/src/canvas/menus.rs::attach
-fn crates/pdfcer-gui/src/canvas/moving/mod.rs::action
 fn crates/pdfcer-gui/src/canvas/moving/mod.rs::drag
-fn crates/pdfcer-gui/src/canvas/moving/mod.rs::eligible
 fn crates/pdfcer-gui/src/canvas/moving/nudge.rs::nudge_once
 fn crates/pdfcer-gui/src/canvas/notepopup/mod.rs::body
 fn crates/pdfcer-gui/src/canvas/offset.rs::decide
@@ -335,7 +332,6 @@ fn crates/pdfcer-gui/src/canvas/resizing.rs::drag
 fn crates/pdfcer-gui/src/canvas/rotating.rs::commit_annotation
 fn crates/pdfcer-gui/src/canvas/rotating.rs::drag
 fn crates/pdfcer-gui/src/canvas/selection/annot.rs::selectable_on
-fn crates/pdfcer-gui/src/canvas/shapes.rs::for_move_subject
 fn crates/pdfcer-gui/src/canvas/strip.rs::track_current_page
 fn crates/pdfcer-gui/src/canvas/textedit/paint.rs::preview
 fn crates/pdfcer-gui/src/canvas/textedit/place.rs::click

@@ -41,7 +41,7 @@ use egui::{Pos2, Vec2};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::Point;
 
-use crate::app::actions::{Action, VectorAction};
+use crate::app::actions::Action;
 use crate::canvas::gesture::Phase;
 use crate::canvas::selection::{SelectionLevel, SelectionState};
 use crate::panels::objects::provider::{ObjectModelProvider, PartKind, RunMoveBlock};
@@ -91,6 +91,17 @@ pub enum MoveSubject {
         /// Paint-order indices, ascending and unique — the clean operand list
         /// `move_objects` needs in order to succeed rather than refuse.
         objects: Vec<usize>,
+    },
+    /// Page objects and parts of placed drawings selected together, every
+    /// one moved by `VectorAction::MoveMixed` as one undo step.
+    Mixed {
+        /// The 0-based page.
+        page: usize,
+        /// Paint-order indices, ascending and unique.
+        objects: Vec<usize>,
+        /// Leaf indices grouped by the drawing each is directly inside,
+        /// none inside one of `objects` (moving the drawing moves them).
+        leaves: Vec<Vec<usize>>,
     },
     /// **The Object rung for things painted INSIDE a form XObject**:
     /// `move_objects_in_form`.
@@ -295,7 +306,7 @@ pub enum MoveSubject {
 }
 
 /// What the object model says about the entries a move would act on.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MoveContext {
     /// The paint-order index of the first selected object `move_objects`
     /// refuses on its kind — an image — asked of the engine's own guard,
@@ -332,6 +343,10 @@ pub struct MoveContext {
     /// the argument in full, and for the one place this crate still keeps a
     /// hand-rolled copy of a rule like this.
     pub run_move: Option<RunMoveBlock>,
+    /// Selected parts of placed drawings beside selected page objects, not
+    /// inside any of them, grouped by drawing; empty at a deeper rung or
+    /// when no page object is selected.
+    pub beside: Vec<Vec<usize>>,
 }
 
 /// Convert a **canvas-space** drag delta into a **PDF page-space** one.
@@ -379,390 +394,6 @@ pub fn page_delta(canvas: Vec2, page: &Page) -> Option<PageDelta> {
     })
 }
 
-/// Which verb a move drag on this selection would reach, or why it reaches
-/// none.
-pub fn eligible(
-    selection: &SelectionState,
-    page: usize,
-    ctx: MoveContext,
-) -> Result<MoveSubject, Refusal> {
-    match selection.level() {
-        SelectionLevel::Object => {
-            // The same clean, ascending, de-duplicated operand list Delete
-            // uses, and for the identical reason: `move_objects` resolves
-            // EVERY index before planning anything, so one duplicate or stale
-            // entry refuses the whole batch.
-            let objects = selection.object_indices_on(page);
-            if objects.is_empty() {
-                // **An empty operand list is not the same as an empty
-                // selection**, and saying so was a flat contradiction of what
-                // was on screen.
-                //
-                // `object_indices_on` answers about the page's own paint order
-                // and drops every target drawn inside a form XObject —
-                // correctly, because no paint-order verb can address one. Since
-                // 2026-08-27 an ordinary click can produce a selection made
-                // entirely of those, and this arm reported it as *"nothing
-                // selected"* while the operator was looking at an outline round
-                // the thing they were dragging.
-                // **A pure form-interior selection MOVES, as of
-                // 2026-09-01** — O70's second slice.
-                //
-                // This arm returned `Refusal::InsideForm` for the life of the
-                // shell, and the refusal was honest: no geometry verb could
-                // address a leaf. `pdfcer-core` Pass 188.0 shipped six that can,
-                // and this is the first of them to be wired.
-                //
-                // The refusal is KEPT for the case it is still true of — an
-                // empty selection is still nothing selected, and a leaf list
-                // the engine later declines still produces a worded decline
-                // from the apply arm rather than silence.
-                let leaves = selection.leaf_indices_on(page);
-                return if leaves.is_empty() {
-                    Err(Refusal::NothingSelected)
-                } else {
-                    Ok(MoveSubject::LeavesInForm { page, leaves })
-                };
-            }
-            // THE REFUSAL BECAME A FORK — 2026-08-20, and it is the
-            // operator's *"can I please please please have the capability to
-            // move the text after?"*
-            //
-            // This read:
-            //
-            //     if let Some(index) = ctx.non_path {
-            //         return Err(Refusal::NotAPath(index));
-            //     }
-            //
-            // and it was right: `move_objects` rewrites numeric **operands**,
-            // and a text run and an image carry no coordinate operands at all.
-            // `Pass 113.0`'s `transform_objects` wraps the object's operator run
-            // in `q <cm> … Q`, which never looks at an operand — so it moves
-            // anything.
-            //
-            // WHY THIS IS A FORK AND NOT A REPLACEMENT, which is the part a
-            // reader will want to argue with.
-            //
-            // Both verbs move things and both are one command and one undo
-            // entry, so the obvious tidy is to route everything through the
-            // transform. That would be worse, and the reason is the FILE rather
-            // than the API: `move_objects` rewrites coordinates in place and
-            // adds nothing, while a transform adds a `q`, a `cm` and a `Q` per
-            // object per gesture. On this operator's drawings a nudge is
-            // something he does dozens of times to hundreds of objects, and the
-            // wrapping accumulates in a file he then sends to somebody.
-            //
-            match ctx.non_path {
-                None => Ok(MoveSubject::Objects { page, objects }),
-                Some(_) => Ok(MoveSubject::Transform { page, objects }),
-            }
-        }
-        SelectionLevel::Part => {
-            let entry = entered_entry(selection, page)?;
-            let subpath = entry.subpath.ok_or(Refusal::NoPartEntered)?;
-            // Ascending, unique, and never empty — `subpath` above is one of
-            // them. Only the text arms consume it: a path's subpaths have no
-            // plural move verb, so a multi-subpath selection still moves the
-            // entered one, which is what shipped before and is not this
-            // change's business to alter silently.
-            let lines = selection.selected_parts_on(page, entry.object);
-            if let Some(leaf) = entry.object.leaf_index() {
-                return match ctx.part_kind {
-                    Some(PartKind::Subpath) => Ok(MoveSubject::SubpathInForm {
-                        page,
-                        leaf,
-                        subpath,
-                    }),
-                    //
-                    // The pre-check is the same one the page arm runs and
-                    // it was asked of the same `TargetId`, so a leaf and a page
-                    // object cannot come to disagree about whether a run moves.
-                    Some(PartKind::TextLine) => match ctx.run_move {
-                        Some(block) => Err(Refusal::TextRunCannotMove(block)),
-                        None if lines.len() > 1 => {
-                            Ok(MoveSubject::TextLinesInForm { page, leaf, lines })
-                        }
-                        None => Ok(MoveSubject::TextLineInForm {
-                            page,
-                            leaf,
-                            line: subpath,
-                        }),
-                    },
-                    None => Err(Refusal::InsideForm),
-                };
-            }
-            let object = entry
-                .object
-                .page_object_index()
-                .ok_or(Refusal::UnaddressableObject)?;
-            match ctx.part_kind {
-                Some(PartKind::Subpath) => Ok(MoveSubject::Subpath {
-                    page,
-                    object,
-                    subpath,
-                }),
-                //
-                // `ctx.run_move` is
-                // `ObjectModelProvider::text_line_move_refusal_of`, which asks
-                // `pdfcer_core::vector::edit::text_run_move_refusal` — the
-                // function `plan_move_text_run` runs first — of every run in
-                // the line, rather than re-deriving the rule here. So
-                // obligation 3 holds by construction: this cannot promise a
-                // move the planner will refuse, because it is asking the
-                // planner.
-                Some(PartKind::TextLine) => match ctx.run_move {
-                    Some(block) => Err(Refusal::TextRunCannotMove(block)),
-                    // **Every selected chunk, not just the entered one** — the
-                    // Node rung's lesson one rung up. `pick_within` has always
-                    // pushed a Shift-clicked part in as its own entry, so the
-                    // model could hold a multi-chunk selection from the day the
-                    // Part rung landed, and this function read `entered_object`,
-                    // which is the FIRST entry. An operator could Shift-click
-                    // four chunks, watch four outline, drag, and move one.
-                    None if lines.len() > 1 => Ok(MoveSubject::TextLines {
-                        page,
-                        object,
-                        lines,
-                    }),
-                    None => Ok(MoveSubject::TextLine {
-                        page,
-                        object,
-                        line: subpath,
-                    }),
-                },
-                None => Err(Refusal::NotAPath(object)),
-            }
-        }
-        SelectionLevel::Node => {
-            let entry = entered_entry(selection, page)?;
-            let node = entry.node.ok_or(Refusal::NoNodeEntered)?;
-            // …and the Node rung, for the Part rung's reason.
-            if let Some(leaf) = entry.object.leaf_index() {
-                let nodes = selection.selected_nodes_on(page, entry.object);
-                return match ctx.part_kind {
-                    Some(PartKind::Subpath) if nodes.len() > 1 => {
-                        Ok(MoveSubject::NodesInForm { page, leaf, nodes })
-                    }
-                    Some(PartKind::Subpath) => Ok(MoveSubject::NodeInForm { page, leaf, node }),
-                    Some(other) => Err(Refusal::NoVerbForPart(other)),
-                    None => Err(Refusal::InsideForm),
-                };
-            }
-            let object = entry
-                .object
-                .page_object_index()
-                .ok_or(Refusal::UnaddressableObject)?;
-            // **Every selected anchor on the entered object, not just the
-            // entered one.** `SelectionState::pick_within` has always added a
-            // Shift-clicked anchor as its own entry — the model could hold a
-            // multi-node selection from the day the Node rung landed — and this
-            // function read `entered_object()`, which is the FIRST entry. So an
-            // operator could Shift-click four anchors, watch four highlight,
-            // drag, and move one.
-            //
-            let nodes = selection.selected_nodes_on(page, entry.object);
-            match ctx.part_kind {
-                Some(PartKind::Subpath) if nodes.len() > 1 => Ok(MoveSubject::Nodes {
-                    page,
-                    object,
-                    nodes,
-                }),
-                Some(PartKind::Subpath) => Ok(MoveSubject::Node { page, object, node }),
-                Some(other) => Err(Refusal::NoVerbForPart(other)),
-                None => Err(Refusal::NotAPath(object)),
-            }
-        }
-    }
-}
-
-/// The entered entry of a deeper rung, **whichever index space it names**.
-fn entered_entry(
-    selection: &SelectionState,
-    page: usize,
-) -> Result<crate::canvas::selection::Selection, Refusal> {
-    let entry = selection
-        .entered_object()
-        .ok_or(Refusal::NothingSelected)
-        .and_then(|e| {
-            (e.page == page)
-                .then_some(e)
-                .ok_or(Refusal::NothingSelected)
-        })?;
-    Ok(entry)
-}
-
-/// The ONE action a completed move drag becomes.
-pub fn action(
-    subject: MoveSubject,
-    delta: PageDelta,
-    node_at: Option<Point>,
-    points: &[(usize, Point)],
-) -> Result<Action, Refusal> {
-    if !delta.is_travel() {
-        return Err(Refusal::NoTravel);
-    }
-    match subject {
-        // `translate` in PAGE space, which is what `PageDelta` already is —
-        // `page_delta` did the one canvas → page conversion and this is the
-        // same pair of numbers `MoveSelection` below hands to `move_objects`.
-        // Two rungs, one displacement, no second derivation.
-        MoveSubject::Transform { page, objects } => Ok(VectorAction::TransformObjects {
-            page,
-            objects,
-            matrix: pdfcer_core::vector::Matrix::translate(delta.dx, delta.dy),
-        }
-        .into()),
-        MoveSubject::Objects { page, objects } => Ok(VectorAction::MoveSelection {
-            page,
-            objects,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        MoveSubject::SubpathInForm {
-            page,
-            leaf,
-            subpath,
-        } => Ok(VectorAction::MoveSubpathInForm {
-            page,
-            leaf,
-            subpath,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        MoveSubject::NodeInForm { page, leaf, node } => {
-            // Absolute, exactly as the page-level arm below: the verb takes
-            // where the point IS GOING, not how far it moved, because the
-            // operand it rewrites is a coordinate pair. `node_at` is the
-            // anchor's current page-space position and comes from the same
-            // provider the ghost was drawn from.
-            let from = node_at.ok_or(Refusal::NodeNotFound(node))?;
-            Ok(VectorAction::MoveNodeInForm {
-                page,
-                leaf,
-                node,
-                to: Point::new(from.x + delta.dx, from.y + delta.dy),
-            }
-            .into())
-        }
-        MoveSubject::NodesInForm { page, leaf, nodes } => {
-            // A selected anchor the current decomposition does not have
-            // refuses the WHOLE drag, for the page-level arm's reason: a
-            // partial application reads as a rendering fault rather than as a
-            // refusal, and the operator cannot tell which anchor was dropped.
-            let mut moves = Vec::with_capacity(nodes.len());
-            for node in nodes {
-                let from = points
-                    .iter()
-                    .find_map(|(i, p)| (*i == node).then_some(*p))
-                    .ok_or(Refusal::NodeNotFound(node))?;
-                moves.push((node, Point::new(from.x + delta.dx, from.y + delta.dy)));
-            }
-            Ok(VectorAction::MoveNodesInForm { page, leaf, moves }.into())
-        }
-        MoveSubject::LeavesInForm { page, leaves } => Ok(VectorAction::MoveLeavesInForm {
-            page,
-            leaves,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        // A displacement, not a destination, and that is the engine's
-        // signature rather than this shell's preference: `move_text_run`
-        // rewrites the operands of a positioning operator (or inserts one), so
-        // the natural operand is how far, exactly as it is for `move_subpath`
-        // two arms below. The Node rung is the family that takes a destination,
-        // and it takes one because the thing it rewrites IS a coordinate pair.
-        MoveSubject::TextLine { page, object, line } => Ok(VectorAction::MoveTextLine {
-            page,
-            object,
-            line,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        MoveSubject::TextLineInForm { page, leaf, line } => Ok(VectorAction::MoveTextLineInForm {
-            page,
-            leaf,
-            line,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        MoveSubject::TextLines {
-            page,
-            object,
-            lines,
-        } => Ok(VectorAction::MoveTextLines {
-            page,
-            object,
-            lines,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        MoveSubject::TextLinesInForm { page, leaf, lines } => {
-            Ok(VectorAction::MoveTextLinesInForm {
-                page,
-                leaf,
-                lines,
-                dx: delta.dx,
-                dy: delta.dy,
-            }
-            .into())
-        }
-        MoveSubject::Subpath {
-            page,
-            object,
-            subpath,
-        } => Ok(VectorAction::MoveSubpath {
-            page,
-            object,
-            subpath,
-            dx: delta.dx,
-            dy: delta.dy,
-        }
-        .into()),
-        MoveSubject::Node { page, object, node } => {
-            let from = node_at.ok_or(Refusal::NodeNotFound(node))?;
-            Ok(VectorAction::MoveNode {
-                page,
-                object,
-                node,
-                to: Point::new(from.x + delta.dx, from.y + delta.dy),
-            }
-            .into())
-        }
-        MoveSubject::Nodes {
-            page,
-            object,
-            nodes,
-        } => {
-            // A selected anchor that the current decomposition does not have
-            // refuses the WHOLE drag rather than moving the ones it recognises.
-            // The same call `move_objects` makes over a non-path member, and
-            // for the same reason: a partial application reads as a rendering
-            // fault, not as a refusal, and the operator has no way to tell
-            // which of their four anchors was silently dropped.
-            let mut moves = Vec::with_capacity(nodes.len());
-            for node in nodes {
-                let from = points
-                    .iter()
-                    .find_map(|(i, p)| (*i == node).then_some(*p))
-                    .ok_or(Refusal::NodeNotFound(node))?;
-                moves.push((node, Point::new(from.x + delta.dx, from.y + delta.dy)));
-            }
-            Ok(VectorAction::MoveNodes {
-                page,
-                object,
-                moves,
-            }
-            .into())
-        }
-    }
-}
-
 /// Gather what the object model says about the selection a move would act on.
 fn context(
     selection: &SelectionState,
@@ -795,7 +426,26 @@ fn context(
         }),
         part_kind: entered.and_then(|target| provider.part_kind_of(target)),
         run_move: run_move(selection, page, provider),
+        beside: beside(selection, page, provider),
     })
+}
+
+/// [`MoveContext::beside`]: the selected parts not carried by a selected
+/// drawing, one group per drawing because the engine moves one drawing's
+/// parts per call.
+fn beside(
+    selection: &SelectionState,
+    page: usize,
+    provider: &ObjectModelProvider,
+) -> Vec<Vec<usize>> {
+    let objects = selection.object_indices_on(page);
+    let leaves = selection.leaf_indices_on(page);
+    if selection.level() != SelectionLevel::Object || objects.is_empty() || leaves.is_empty() {
+        return Vec::new();
+    }
+    let model = provider.page_objects();
+    let (kept, _) = crate::panels::align::leftout::uncarried(model, &objects, leaves);
+    crate::panels::align::leftout::by_drawing(model, kept, |&leaf| leaf)
 }
 
 /// **The engine's set move guard, asked of every run of every selected
@@ -1050,8 +700,10 @@ fn decline(selection: &SelectionState, reason: Refusal, actions: &mut Vec<Action
 /// **The keyboard's way of asking for the same move** — the arrow keys.
 pub(crate) mod nudge;
 mod refusal;
+mod subject;
 
 pub use refusal::Refusal;
+pub use subject::{action, eligible};
 
 #[cfg(test)]
 mod tests;

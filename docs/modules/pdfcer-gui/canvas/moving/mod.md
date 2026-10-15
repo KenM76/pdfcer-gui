@@ -74,8 +74,8 @@ invariant, and it is a separate change for the day the verb exists.
 
 ## The split between the pure rules and the wiring
 
-[`eligible`], [`action`] and [`page_delta`] are pure functions of plain
-data, so every rule above is testable with no window, no document and no
+[`eligible`] and [`action`] (both in `subject`) and [`page_delta`] are pure
+functions of plain data, so every rule above is testable with no window, no document and no
 decomposition — the same discipline that makes
 [`crate::canvas::selection::SelectionState::click`] a pure function of a
 [`ClickHit`](crate::canvas::selection::ClickHit). [`drag`] is the one
@@ -83,13 +83,6 @@ function that touches the live provider, and it does nothing except gather
 those inputs, call the pure functions in order, and trace what happened.
 
 ## Item notes
-
-### `fn entered_entry`
-
-Refuses an entry that belongs to a different page rather than addressing
-page A's index space with page B's number — the same class of error the
-[`TargetId`](crate::canvas::target::TargetId) newtype exists to prevent,
-and one comparison to rule out.
 
 ### `fn context`
 
@@ -182,31 +175,6 @@ as plain data — the same shape, and for the same reason, as
 [`ClickHit`](crate::canvas::selection::ClickHit): every rule below is then
 a pure function of "what is selected" and "what kind of thing is it", with
 no decomposition anywhere near the test that proves it.
-
-### `fn eligible`
-
-Consulted **twice per drag**: once per frame while the drag is in flight,
-to decide whether a ghost may be drawn at all, and once on release, to
-build the command. Asking the same question both times is the mechanism
-behind obligation 3 in the module docs — a ghost is drawn if and only if
-the release would commit, so the preview cannot promise a move the engine
-is going to refuse.
-
-Deliberately says nothing about the *distance* dragged: a zero-travel drag
-is eligible (it names a real verb on real operands), it simply has nothing
-to commit, and that is [`action`]'s call. Splitting it this way is what
-keeps the ghost visible during the frames where the pointer happens to pass
-back over the press point.
-
-### `fn action`
-
-`node_at` is the entered anchor's **current** page-space position, and is
-consulted only by [`MoveSubject::Node`]. It is needed because `move_node`
-takes an absolute destination rather than a displacement — the operand it
-rewrites is a coordinate pair, and expressing the drag as "where the point
-ends up" is what lets the planner map one point through the object's CTM
-inverse instead of decomposing a translation into a space it would have to
-re-derive.
 
 ### `struct MovePreview`
 

@@ -58,19 +58,21 @@ pub fn uncarried(
     (kept, carried)
 }
 
-/// Leaf `moves` grouped by the placed drawing each leaf is directly inside,
-/// in first-seen order: the engine moves the parts of one drawing per call.
+/// `items` grouped by the placed drawing the leaf `leaf` names is directly
+/// inside, in first-seen order: the engine moves the parts of one drawing per
+/// call.
 #[must_use]
-pub fn by_drawing(
+pub fn by_drawing<T>(
     objects: &PageObjects,
-    moves: Vec<(usize, f64, f64)>,
-) -> Vec<Vec<(usize, f64, f64)>> {
+    items: Vec<T>,
+    leaf: impl Fn(&T) -> usize,
+) -> Vec<Vec<T>> {
     let mut keys = Vec::new();
-    let mut groups: Vec<Vec<(usize, f64, f64)>> = Vec::new();
-    for m in moves {
+    let mut groups: Vec<Vec<T>> = Vec::new();
+    for m in items {
         let key = objects
             .leaves
-            .get(m.0)
+            .get(leaf(&m))
             .map(|l| (l.paint_order, l.containment.clone()));
         if let Some(at) = keys.iter().position(|k| *k == key) {
             groups[at].push(m);
@@ -157,7 +159,7 @@ mod tests {
     fn parts_of_two_drawings_are_two_groups_in_first_seen_order() {
         let objects = fixture();
         let moves: Vec<(usize, f64, f64)> = (0..3).rev().map(|i| (i, 1.0, 0.0)).collect();
-        let groups = by_drawing(&objects, moves);
+        let groups = by_drawing(&objects, moves, |m| m.0);
         assert_eq!(groups.len(), 2, "{groups:?}");
         assert_eq!(groups[0][0].0, 2, "the first-seen part leads");
         for group in &groups {
