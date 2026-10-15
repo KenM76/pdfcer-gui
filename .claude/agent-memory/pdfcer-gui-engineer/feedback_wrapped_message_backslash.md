@@ -57,3 +57,7 @@ through a heredoc with a tripled backslash put a literal `\n` into the file.
 `chr(92)+chr(10)` inside python is the one heredoc spelling that survived. The gap gate caught
 the hover text, and a grep for `[a-z]   +[a-z]` inside quotes over the new files catches it
 before the 90-minute gate run.
+
+**2026-10-15, again, two literals in one check's judge**, written through a python heredoc
+with the lesson unread. Run `check-string-gaps.sh` straight after any scripted Rust write; it
+takes seconds.
