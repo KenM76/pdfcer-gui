@@ -124,8 +124,8 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     // days, and no test could see it -- every assertion about
     // annotations asked whether one could be selected, restyled or
     // deleted, and all three were true.
-    if let Some(ghosts) =
-        crate::canvas::annotgroup::drag(delta, phase, doc.current_page(), selection, actions)
+    if let Some(ghosts) = crate::canvas::itemgroup::Group::annots(selection)
+        .and_then(|g| g.drag(delta, phase, doc.current_page(), actions))
     {
         out.group = ghosts;
     } else if selection.annot().is_some() {
@@ -172,7 +172,10 @@ pub fn moved(frame: &Frame<'_>, delta: Vec2, phase: Phase, actions: &mut Vec<Act
     // same defect the annotation branch had for ten days and is why it was
     // looked for here.
     } else if doc.selected_field.is_some() {
-        if let Some(ghosts) = crate::canvas::fieldgroup::drag(delta, phase, ctx, doc, actions) {
+        if let Some(ghosts) = crate::canvas::itemgroup::Group::fields(ctx, doc).and_then(|g| {
+            let sheet = doc.pages.get(g.page);
+            g.drag(delta, phase, sheet, actions)
+        }) {
             out.group = ghosts;
         } else {
             out.widget = crate::canvas::widgetdrag::drag(

@@ -560,7 +560,7 @@ pub fn look(
         // turned mark harder to pick up than an upright one. The eight
         // squares moved into the turned frame; the body did not.
         annotdrag::grab_box(map, selection).is_some_and(|f| f.bounds().contains(p))
-            || crate::canvas::annotgroup::body_at(map, selection, p)
+            || crate::canvas::itemgroup::Group::annots(selection).is_some_and(|g| g.body_at(map, p))
     });
 
     // Whether the press landed inside the selected FORM FIELD's box.
@@ -576,7 +576,8 @@ pub fn look(
     let widget_body = fields
         && origin.is_some_and(|p| {
             widgetdrag::grab_box(ctx, doc, map).is_some_and(|b| b.contains(p))
-                || crate::canvas::fieldgroup::body_at(ctx, doc, map, p)
+                || crate::canvas::itemgroup::Group::fields(ctx, doc)
+                    .is_some_and(|g| g.body_at(map, p))
         });
 
     // **A RESIZE GRIP IS NOT INSIDE THE BOX IT RESIZES.**

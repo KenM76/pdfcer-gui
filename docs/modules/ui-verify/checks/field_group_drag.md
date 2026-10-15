@@ -8,7 +8,7 @@ two-entry `PDFCER_DIAG_SAVE_PATH` queue. It has no SKIP arm.
    `form-field-toggled before=1`, `2`.
 2. Press on CheckOne, which is not the primary, and drag it down. Require
    `move-mixed-applied gesture=drag widgets=3/3 one_step=true`. With
-   `fieldgroup::body_at` off, or with `dragroute` not asking `fieldgroup`,
+   `Group::body_at` off for fields, or with `dragroute` not asking `Group::fields`,
    no `move-mixed-applied` follows.
 3. Save a copy; require each box's `/Rect` top lowered by the drop.
 4. One `Ctrl+Z`; save a copy; require every top back. An unfolded move that

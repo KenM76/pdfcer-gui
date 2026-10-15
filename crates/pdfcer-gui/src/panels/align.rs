@@ -420,28 +420,14 @@ fn field_boxes(
     doc: &OpenDoc,
     page: usize,
 ) -> Vec<(pdfcer_gui_base::docidentity::SelectedField, Bx)> {
-    let selected = doc.field_set.all(doc.selected_field.as_ref());
-    if selected.is_empty() || !doc.annotations_visible() {
+    if !doc.annotations_visible() {
         return Vec::new();
     }
-    let placed = crate::canvas::forms::placed(ctx, doc);
-    selected
+    let selected = doc.field_set.all(doc.selected_field.as_ref());
+    let on_page = selected.into_iter().filter(|f| f.page == page);
+    crate::canvas::itembounds::fields(ctx, doc, on_page)
         .into_iter()
-        .filter(|f| f.page == page)
-        .filter_map(|f| {
-            let t = placed
-                .targets
-                .iter()
-                .find(|t| t.page == f.page && t.field == f.field && t.widget == f.widget)?;
-            let r = t.rect;
-            let b = Bx::new(
-                r.min.x.into(),
-                r.min.y.into(),
-                r.max.x.into(),
-                r.max.y.into(),
-            );
-            Some((f, b))
-        })
+        .map(|(f, r)| (f, rect_box(r)))
         .collect()
 }
 
@@ -454,21 +440,20 @@ fn annot_boxes(
     if !doc.annotations_visible() {
         return Vec::new();
     }
-    doc.selection
-        .annots()
+    crate::canvas::itembounds::annots(&doc.selection, Some(page))
         .into_iter()
-        .filter(|a| a.target.page == page)
-        .map(|a| {
-            let r = a.outline;
-            let b = Bx::new(
-                r.min.x.into(),
-                r.min.y.into(),
-                r.max.x.into(),
-                r.max.y.into(),
-            );
-            (a.target.clone(), b)
-        })
+        .map(|(t, r)| (t, rect_box(r)))
         .collect()
+}
+
+/// A canvas-space rectangle as a layout box.
+fn rect_box(r: egui::Rect) -> Bx {
+    Bx::new(
+        r.min.x.into(),
+        r.min.y.into(),
+        r.max.x.into(),
+        r.max.y.into(),
+    )
 }
 
 /// One button's canvas deltas, per measured object.

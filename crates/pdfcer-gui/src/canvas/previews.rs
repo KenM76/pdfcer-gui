@@ -92,7 +92,7 @@ pub struct Slots {
     pub annot_ghost: Option<egui::Rect>,
     /// Several annotations or several form fields being dragged together,
     /// one canvas-space rectangle per member that will move
-    /// (`canvas::annotgroup`, `canvas::fieldgroup`).
+    /// (`canvas::itemgroup`).
     pub group: Vec<egui::Rect>,
     /// The quads a text-following highlight would cover, in canvas space.
     ///

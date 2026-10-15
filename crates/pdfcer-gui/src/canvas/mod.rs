@@ -65,11 +65,11 @@ pub mod annotclip;
 /// DELTA and not a rectangle: a move has two halves and a renderer can only
 /// see one of them.
 pub mod annotdrag;
-/// Dragging several selected annotations together as one undo step.
-pub mod annotgroup;
-/// Dragging several selected form fields together as one undo step.
-pub mod fieldgroup;
 pub mod guides;
+/// Where each selected form field and annotation is drawn, in canvas space.
+pub mod itembounds;
+/// Dragging several selected fields or annotations together as one undo step.
+pub mod itemgroup;
 // The nodes of a markup shape a `/Polygon`, `/PolyLine` or `/Line` and the
 // drag that moves, adds or removes one. The operator's *"I also can't edit or
 // delete nodes of a markup shape once it is drawn."*
