@@ -24,7 +24,7 @@ project keeps shipping broken with a green suite:
 | 1 | `edit.reflow_block` is registered and drawn on the Edit tab | yes — a registry test |
 | 2 | a click on it reaches `dispatch_command` | **no** |
 | 3 | the arm finds the **caret's draft** in egui memory | **no** — the draft is frame state |
-| 4 | the draft's `Anchor::Run` resolves to a **block index** | partly |
+| 4 | the draft — the paragraph the click opened (`Anchor::Block`), or a run in it — resolves to a **block index** | partly |
 | 5 | the action reaches `reflow_block` and the engine re-wraps | yes |
 
 Link 3 is the one with no other instrument. The operand is not a
@@ -34,11 +34,14 @@ a real one there.
 
 ## The oracle is the LINE COUNT, and it is a real one
 
-`reflow-block-applied … lines=6->5`. The fixture is built so a correct
-reflow **must** change that number: six deliberately short ragged lines,
-wrapping to the widest of them, packs to five. A build that raised the
+`reflow-block-applied … lines=6->N`, N below 6. The fixture is built so a
+correct reflow **must** change that number: six deliberately short ragged
+lines, wrapped to the block's width, pack into fewer. A build that raised the
 action, reached the engine and re-wrapped nothing would report `6->6`, and
 that is asserted as a **failure** rather than accepted as "it ran".
+
+The click opens the whole paragraph, so the check also proves Reflow accepts
+an opened paragraph; it is driven with the scripted pointer off the desktop.
 
 ⇒ `tools/gen-reflow-fixture.py` and this file are one instrument. Its header
 records why no existing fixture would do: a CAD title block has no
@@ -50,7 +53,7 @@ either would report the feature broken about a build whose reflow works.**
 
 ## Item notes
 
-### `const INVOKE`
+### The `mode.edit,edit.text` invoke
 
 `edit.text` is rung here rather than clicked because arming the caret is
 **not what this check is about**, and it already has its own driven check.
@@ -59,7 +62,7 @@ route fails for reasons that are not its subject.
 
 ### `const REFLOW_ITEM`
 
-The pair is written once so the region and the id cannot drift apart: a
+The region is written once so the click and the assertion cannot drift apart: a
 check that clicked one control and asserted about another would pass or fail
 for reasons unrelated to either.
 

@@ -48,8 +48,9 @@ pub const fn word_gap_silence() -> &'static str {
 /// Word gap: what changing it costs.
 #[must_use]
 pub const fn word_gap_radius() -> &'static str {
-    "Affects copied and extracted text, and therefore which text a redaction \
-     pattern matches. Does not change the file."
+    "Affects copied and extracted text, which text a redaction pattern matches, \
+     and how much of a line one click opens for editing: a gap wider than this \
+     splits the line into pieces edited separately. Does not change the file."
 }
 
 /// The slider's own label.

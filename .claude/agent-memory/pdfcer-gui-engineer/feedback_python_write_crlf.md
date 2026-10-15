@@ -23,3 +23,9 @@ blob to LF) and then converted to LF in place stays `M` in `git status` with an
 empty `git diff` — a stale index entry — and the packager stamped the release
 `-dirty`. `git add <file>` re-stages identical bytes and clears it; then
 re-package. Check `git status --short` is empty immediately before packaging.
+
+**Third shape, 2026-10-15:** working-tree endings are mixed per file (prefs/file.rs
+CRLF, promote.rs and extract.rs LF), so an anchor containing a newline matches in
+one file and not its neighbour. Detect per file (`'\r\n' in s`), normalise to `\n`,
+edit, write back in the file's own ending. A multi-line `\`-continued string
+literal is easiest with the Edit tool; a `sed` on a CRLF file needs `\r$`.

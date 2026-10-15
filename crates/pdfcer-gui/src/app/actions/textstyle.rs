@@ -789,15 +789,14 @@ pub(super) fn reflow(
                     )
                 });
                 let mut notes = report.disclosures;
-                // The line count, added because the engine's own list does
-                // not always carry one and it is the fact the operator can
-                // check by looking. A reflow that changed nothing is a correct
-                // outcome — the paragraph already fitted — and reads as a
-                // failure without a sentence.
+                // A reflow that changed nothing is a correct outcome — the
+                // paragraph already fitted — and reads as a failure without a
+                // sentence. It leads, because the engine's own notes are
+                // always present and would otherwise be all he reads.
                 if alignment.is_some() && report.lines_before == 1 {
-                    notes.push(crate::text::textedit::align_single_line().to_owned());
-                } else if report.lines_before == report.lines_after && notes.is_empty() {
-                    notes.push(crate::text::textedit::reflow_unchanged().to_owned());
+                    notes.insert(0, crate::text::textedit::align_single_line().to_owned());
+                } else if alignment.is_none() && report.lines_before == report.lines_after {
+                    notes.insert(0, crate::text::textedit::reflow_unchanged().to_owned());
                 }
                 notes
             })

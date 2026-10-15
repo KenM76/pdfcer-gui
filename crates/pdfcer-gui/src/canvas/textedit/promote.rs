@@ -17,6 +17,7 @@ use pdfcer_core::text_edit::{
     BlockEditOptions, EditableTextModel, GlyphRef, Line, LineEnd, LineEndSource, LineMarks,
     TextPosition, detect_cell_regions, reflow_recognition_options,
 };
+use pdfcer_gui_base::text::draftnote::DraftNote;
 use pdfcer_gui_base::text::textedit::EnterRefusal;
 
 use super::{Anchor, Draft};
@@ -54,6 +55,17 @@ struct Declined {
 }
 
 impl Declined {
+    /// What the operator is told when a click opened less than the paragraph;
+    /// `None` where the run is all there is (one line, no paragraph).
+    fn note(&self) -> Option<DraftNote> {
+        match self.token {
+            "mixed-looks" => Some(DraftNote::LineOnlyMixedLooks),
+            "engine-refuses" => Some(DraftNote::LineOnlyRefused),
+            "recognised-word" => Some(DraftNote::RecognisedWordOnly),
+            _ => None,
+        }
+    }
+
     const fn no_paragraph(token: &'static str) -> Self {
         Self {
             why: EnterRefusal::NoParagraph,
@@ -118,9 +130,14 @@ pub fn open(
 /// read from. Leaves `draft` as it was, and returns `None`, when the run is a
 /// paragraph of its own or the engine would not rewrite the paragraph as it
 /// stands.
-pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Option<LineEndSource> {
+///
+/// # Errors
+///
+/// The note owed to the operator when the paragraph exists and could not be
+/// opened whole; `Err(None)` when the run is all there is.
+pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Result<LineEndSource, Option<DraftNote>> {
     let Anchor::Run { run, original } = &draft.anchor else {
-        return None;
+        return Err(None);
     };
     let run = *run;
     let started = std::time::Instant::now();
@@ -151,7 +168,7 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Option<LineEndSource> {
                     p.source.as_str()
                 )
             });
-            Some(p.source)
+            Ok(p.source)
         }
         Err(d) => {
             crate::diag::trace(|| {
@@ -161,7 +178,7 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Option<LineEndSource> {
                     draft.page, d.token
                 )
             });
-            None
+            Err(d.note())
         }
     }
 }

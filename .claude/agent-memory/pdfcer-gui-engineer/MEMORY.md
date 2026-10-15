@@ -182,3 +182,4 @@
 - [A backlog row's key is the engine's words](feedback_backlog_key_matches_engine.md) — a full path where the engine wrote `ocr::upscale` is unaccounted.
 - [A sed-redirected dry run was not dry](feedback_dry_run_redirect.md) — no-match sed; script hit the real tree mid-gates. Take the root as an argument.
 - [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.
+- [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.

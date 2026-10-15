@@ -80,25 +80,47 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
         decline("no-caret", ReflowRefusal::NeedsCaret);
         return;
     };
-    let crate::canvas::textedit::Anchor::Run { run, .. } = draft.anchor else {
-        decline("caret-not-on-a-run", ReflowRefusal::NeedsExistingText);
-        return;
+    let run = match draft.anchor {
+        crate::canvas::textedit::Anchor::Run { run, .. } => run,
+        // The paragraph itself is open. An edited one is re-wrapped by its own
+        // commit (`edit_block_text` sets it to its box), so committing it IS
+        // the reflow; an unedited one is reflowed by number.
+        crate::canvas::textedit::Anchor::Block {
+            block,
+            ref original,
+            ..
+        } => {
+            if draft.text == *original {
+                crate::canvas::textedit::abandon(ctx);
+                push(actions, draft.page, block, "paragraph");
+            } else {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed.
+                    format!("reflow-by-commit page={} block={block}", draft.page)
+                });
+                crate::canvas::textedit::settle(ctx, actions);
+            }
+            return;
+        }
+        _ => {
+            decline("caret-not-on-a-run", ReflowRefusal::NeedsExistingText);
+            return;
+        }
     };
     let Some(block) = crate::canvas::textedit::reflow::block_of_run(doc, draft.page, run) else {
         decline("run-not-in-a-block", ReflowRefusal::NoBlock);
         return;
     };
+    push(actions, draft.page, block, "run");
+}
+
+/// Queue the re-wrap of `block`, recording what the caret was on.
+fn push(actions: &mut Vec<Action>, page: usize, block: usize, from: &str) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
-        format!(
-            "reflow-resolved page={} run={run} block={block}",
-            draft.page
-        )
+        format!("reflow-resolved page={page} block={block} from={from}")
     });
-    actions.push(Action::Text(TextAction::Reflow {
-        page: draft.page,
-        block,
-    }));
+    actions.push(Action::Text(TextAction::Reflow { page, block }));
 }
 
 /// Say why, in the status line and in the trace, and change nothing.

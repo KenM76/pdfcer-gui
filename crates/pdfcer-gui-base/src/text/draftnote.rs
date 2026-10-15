@@ -14,6 +14,15 @@ pub enum DraftNote {
     /// A paragraph opened as one draft whose typed breaks were judged from
     /// its layout, not read from marks pdfcer wrote.
     BreaksInferred,
+    /// A line of a paragraph opened alone because the paragraph mixes fonts,
+    /// sizes or colours.
+    LineOnlyMixedLooks,
+    /// A line of a paragraph opened alone because the engine would not
+    /// re-write the paragraph as it stands.
+    LineOnlyRefused,
+    /// A recognised (OCR) word opened alone: the text layer stores each word
+    /// separately.
+    RecognisedWordOnly,
 }
 
 impl DraftNote {
@@ -24,6 +33,9 @@ impl DraftNote {
             Self::LinesJoined => "lines-joined", // ui-text-exempt: a trace token, never displayed
             Self::TabAsSpaces(_) => "tab-as-spaces", // ui-text-exempt: a trace token, never displayed
             Self::BreaksInferred => "breaks-inferred", // ui-text-exempt: a trace token, never displayed
+            Self::LineOnlyMixedLooks => "line-only-mixed-looks", // ui-text-exempt: a trace token, never displayed
+            Self::LineOnlyRefused => "line-only-refused", // ui-text-exempt: a trace token, never displayed
+            Self::RecognisedWordOnly => "recognised-word-only", // ui-text-exempt: a trace token, never displayed
         }
     }
 }
@@ -46,6 +58,16 @@ pub fn line(note: DraftNote) -> String {
                                       judged from its layout: a break after a nearly full line \
                                       reads as a wrap and joins the next line."
             .to_owned(),
+        DraftNote::LineOnlyMixedLooks => "Only this line opened: its paragraph mixes fonts, \
+                                          sizes or colours, and editing it as one would set all \
+                                          of it in the first line's look."
+            .to_owned(),
+        DraftNote::LineOnlyRefused => "Only this line opened: pdfcer cannot re-write its \
+                                       paragraph as a whole."
+            .to_owned(),
+        DraftNote::RecognisedWordOnly => "Recognised text opens one word at a time: the text \
+                                          layer stores each word on its own."
+            .to_owned(),
     }
 }
 
@@ -60,9 +82,12 @@ mod tests {
             DraftNote::TabAsSpaces(1),
             DraftNote::TabAsSpaces(4),
             DraftNote::BreaksInferred,
+            DraftNote::LineOnlyMixedLooks,
+            DraftNote::LineOnlyRefused,
+            DraftNote::RecognisedWordOnly,
         ];
         let lines: std::collections::HashSet<String> = all.iter().map(|n| line(*n)).collect();
-        assert_eq!(lines.len(), 4);
+        assert_eq!(lines.len(), all.len());
         assert!(line(DraftNote::TabAsSpaces(4)).contains("4 spaces"));
         assert_ne!(
             DraftNote::LinesJoined.token(),

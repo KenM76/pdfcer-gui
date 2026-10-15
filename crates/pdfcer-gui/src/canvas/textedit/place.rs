@@ -183,13 +183,15 @@ pub fn click(
         seeded: false,
     };
     // A line of a paragraph opens as the whole paragraph.
-    let source = super::promote::widen(click.doc, &mut draft);
+    let widened = super::promote::widen(click.doc, &mut draft);
     store(ctx, draft);
-    if source == Some(pdfcer_core::text_edit::LineEndSource::Inferred) {
-        super::note::raise(
+    match widened {
+        Ok(pdfcer_core::text_edit::LineEndSource::Inferred) => super::note::raise(
             ctx,
             pdfcer_gui_base::text::draftnote::DraftNote::BreaksInferred,
-        );
+        ),
+        Err(Some(note)) => super::note::raise(ctx, note),
+        _ => {}
     }
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.

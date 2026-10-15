@@ -704,7 +704,6 @@ fn tools/ui-verify/src/checks/redact_selection.rs::drive
 fn tools/ui-verify/src/checks/redaction.rs::drive
 fn tools/ui-verify/src/checks/redaction_reach.rs::drive
 fn tools/ui-verify/src/checks/redaction_reach.rs::run_once
-fn tools/ui-verify/src/checks/reflow.rs::drive
 fn tools/ui-verify/src/checks/refused_character_face.rs::drive
 fn tools/ui-verify/src/checks/remove_ocr.rs::drive
 fn tools/ui-verify/src/checks/render_diagnostics.rs::assess

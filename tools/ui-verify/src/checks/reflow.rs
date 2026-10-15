@@ -1,39 +1,43 @@
-//! `reflowing_a_paragraph_rewraps_it` — **put the caret in a paragraph, press
+//! `reflowing_a_paragraph_rewraps_it` — **click into a paragraph, press
 //! Reflow, and the block loses a line.**
+//!
+//! Driven with the scripted pointer off the desktop on a copy of
+//! `fixtures/paragraph.pdf`: six short ragged lines that a re-wrap to the
+//! block's own width packs into fewer. The click opens the whole paragraph
+//! (`Anchor::Block`), so this also proves Reflow accepts an opened paragraph.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/reflow.md`.
 
-use crate::checks::driving::{self, SHELL_DIAG_ENV, declared, declared_names, list};
-use crate::checks::text_selection::aim;
+use super::dimdrive::{Fixture, click_on, press_on_tab, run_on};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{DocPoint, PageGeometry};
+use crate::coords::PageGeometry;
 use crate::error::{Error, Result};
-use crate::geom::LRect;
-use crate::input::Driver;
-use crate::launch::{LaunchSpec, Session};
+use crate::input::scripted::ScriptedPointer;
+use crate::launch::Session;
 use crate::report::CheckReport;
 
-/// Edit mode, then arm the caret — both through the harness seam.
-const INVOKE: &str = "mode.edit,edit.text";
-/// `text-edit-caret page=… run=… len=…` — a click resolved a run.
-const CARET_EVENT: &str = "text-edit-caret";
+const FIXTURE: Fixture = Fixture {
+    file: "paragraph.pdf",
+    method: "Regenerate it: python tools/gen-reflow-fixture.py.",
+    page: PageGeometry {
+        width_pt: 612.0,
+        height_pt: 792.0,
+    },
+};
+/// `text-edit-caret page=… run=… len=…` — a click resolved text.
+const CARET_EVENT: &str = "text-edit-caret"; // ui-text-exempt: a trace event name, never displayed
 /// `text-edit-declined reason=…` — a click did not.
-const DECLINED_EVENT: &str = "text-edit-declined";
-/// The Reflow control, as (region, command id).
-const REFLOW_ITEM: (&str, &str) = ("ribbon.item.edit.reflow_block", "edit.reflow_block");
-/// The ribbon tab that carries [`REFLOW_ITEM`]. A mode is not a tab — see the
-/// click in [`drive`].
-const EDIT_TAB: &str = "ribbon.tab.edit";
-/// `reflow-resolved page=… run=… block=…` — the caret became a block index.
-const RESOLVED_EVENT: &str = "reflow-resolved";
+const DECLINED_EVENT: &str = "text-edit-declined"; // ui-text-exempt: a trace event name, never displayed
+const REFLOW_ITEM: &str = "ribbon.item.edit.reflow_block"; // ui-text-exempt: a trace region name, never displayed
+const EDIT_TAB: &str = "ribbon.tab.edit"; // ui-text-exempt: a trace region name, never displayed
+/// `reflow-resolved page=… block=… from=…` — the caret became a block index.
+const RESOLVED_EVENT: &str = "reflow-resolved"; // ui-text-exempt: a trace event name, never displayed
 /// `reflow-declined reason=…` — it did not, and the shell said which way.
-const DECLINE_EVENT: &str = "reflow-declined";
+const DECLINE_EVENT: &str = "reflow-declined"; // ui-text-exempt: a trace event name, never displayed
 /// `reflow-block-applied page=… block=… lines=A->B …` — the engine re-wrapped.
-const APPLIED_EVENT: &str = "reflow-block-applied";
-/// The page's own region, so a failure can say whether a sheet was drawn.
-const PAGE_REGION: &str = "page";
+const APPLIED_EVENT: &str = "reflow-block-applied"; // ui-text-exempt: a trace event name, never displayed
 
-/// Where to put the caret, in PDF user space on the fixture.
+/// Where to put the caret, in PDF user space: inside line 2.
 const CARET_AT: (f64, f64) = (120.0, 668.0);
 /// The line count the fixture starts with.
 const LINES_BEFORE: u32 = 6;
@@ -47,278 +51,87 @@ impl Check for ReflowingAParagraphRewrapsIt {
     }
 
     fn defect(&self) -> &'static str {
-        "paragraph reflow shipped in the engine and no control in the shell raised it — the \
-         operator asked for a capability he already owned, which is what an unreachable verb \
-         looks like from outside"
+        "pressing Reflow in a paragraph does not re-wrap it — refused for the paragraph the \
+         click opened, or run at a width that changes nothing"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
-        let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
-            Ok(Some(failure)) => report.fail(failure),
-            Ok(None) => report.pass(),
-            Err(why) => report.from_error(&why),
-        }
+        run_on(self, ctx, &FIXTURE, "mode.edit,edit.text", "reflow", drive)
     }
 }
 
-#[allow(clippy::too_many_lines)]
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks into a paragraph and then clicks \
-             a ribbon control. Both are real pointer gestures, and the caret it needs exists \
-             only because a click put it there.",
-        ));
-    }
-    let exe = ctx.resolve_exe().ok_or_else(|| {
-        Error::new(format!(
-            "no binary to drive. Pass --exe, or build the profile's default at {}.",
-            ctx.profile.default_exe
-        ))
-    })?;
-    // The fixture is NOT overridable by `--pdf`, and that is deliberate
-    // where every neighbouring check accepts one. The oracle is a line count
-    // this specific document produces; run against another file the check
-    // would still report `6->5` as its expectation and would fail on a healthy
-    // build. A check whose expectation is bound to its fixture must own it.
-    let pdf =
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/paragraph.pdf");
-    if !pdf.exists() {
-        return Err(Error::new(format!(
-            "the fixture is missing at {}. Regenerate it: python tools/gen-reflow-fixture.py \
-             — the oracle here is a line count only that document produces.",
-            pdf.display()
-        )));
-    }
-    let page = PageGeometry {
-        // The fixture is US Letter by construction — see its generator. Read
-        // from the file rather than assumed, so a regenerated fixture with a
-        // different size fails loudly instead of aiming at blank paper.
-        width_pt: 612.0,
-        height_pt: 792.0,
-    };
-    let measured = crate::fixture::page_geometry(&pdf);
-    if let Some(actual) = measured
-        && (actual.width_pt - page.width_pt).abs() > 1.0
-    {
-        return Err(Error::new(format!(
-            "fixtures/paragraph.pdf measures {}x{} pt and this check's caret point is quoted in \
-             the US Letter geometry its generator prints. Regenerate the fixture or update \
-             CARET_AT — aiming the old point at a new sheet lands on blank paper, which is \
-             symptom-identical to a broken hit test.",
-            actual.width_pt, actual.height_pt
-        )));
-    }
-    let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
-        Error::new(format!(
-            "the `{}` profile declares no ui-rect trace event, so the application cannot say \
-             where its controls are.",
-            ctx.profile.name
-        ))
-    })?;
-
-    let mut spec = LaunchSpec::new(&exe, ctx.out("reflow.trace.txt"));
-    spec.pdf = Some(pdf.clone());
-    spec.env.push((
-        ctx.profile.diag_env.0.to_owned(),
-        ctx.profile.diag_env.1.to_owned(),
-    ));
-    spec.env
-        .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
-    spec.env
-        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
-    spec.allow_stale = ctx.allow_stale;
-    spec.source_root = ctx.source_root.clone();
-
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    report.artifact(session.trace_path().to_path_buf());
-    report.note(format!(
-        "launched {} on fixtures/paragraph.pdf as pid {} with PDFCER_DIAG_INVOKE={INVOKE}",
-        exe.display(),
-        session.pid()
-    ));
-    session.settle(40);
-    let driver = Driver::new(session.window());
-
-    //
-    // `PDFCER_DIAG_INVOKE=mode.edit,edit.text` sets the MODE and arms the tool,
-    // and neither of those selects a ribbon TAB. The band was still showing
-    // File, so `ribbon.item.edit.reflow_block` was not declared and this check
-    // SKIPPED with *"the Reflow control is not on the Edit tab"* — a sentence
-    // about a control that is on the Edit tab, from a run that was looking at
-    // the File one. Its own reason listed what it saw and every entry began
-    // `ribbon.item.file.`, which is the tell.
-    //
-    // ⇒ A mode is not a tab. Same seam `add_text` and `adopt_widget` already
-    // click through; this check was written without it.
+fn drive(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    let mark = session.trace()?.mark();
+    click_on(ctx, session, pointer, &FIXTURE, 0, CARET_AT)?;
     let trace = session.trace()?;
-    let tab = declared(&trace, ui_rect, EDIT_TAB).ok_or_else(|| {
-        Error::new(format!(
-            "no `{EDIT_TAB}` region, so the ribbon cannot be put on the tab that carries Reflow. Tabs declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
-    session.settle(20);
-
-    if declared(&session.trace()?, ui_rect, PAGE_REGION).is_none() {
-        return Err(Error::new(format!(
-            "the application declared no `{PAGE_REGION}` region, so no sheet is on screen and \
-             there is no paragraph to click into. Regions beginning `page`: {}.",
-            list(&declared_names(&session.trace()?, ui_rect, "page"))
-        )));
-    }
-
-    // --- 1: put the caret in the middle line of the paragraph --------------
-    let at = aim(
-        ctx,
-        &session,
-        page,
-        DocPoint::new(0, CARET_AT.0, CARET_AT.1),
-    )?;
-    driver.click_at(at)?;
-    session.settle(24);
-
-    let trace = session.trace()?;
-    let Some(caret) = trace.events(CARET_EVENT).last() else {
-        let declined = trace
-            .events(DECLINED_EVENT)
-            .filter_map(|l| l.get("reason").map(str::to_owned))
-            .last();
-        return Ok(Some(match declined {
-            Some(reason) => format!(
-                "THE CARET WAS REFUSED WITH reason={reason} on a plain left-aligned paragraph. \
-                 This is the step BEFORE the one under test and there is nothing about this \
-                 fixture that should refuse — it is upright, single-font, one text object. \
-                 Trace: {}.",
-                session.trace_path().display()
-            ),
-            None => format!(
-                "THE CLICK PRODUCED NEITHER A CARET NOR A DECLINE: no `{CARET_EVENT}`, no \
-                 `{DECLINED_EVENT}`. Either `edit.text` did not arm — check for \
-                 `command-declined id=edit.text` — or the click missed the paragraph. It aimed \
-                 at ({}, {}) in page points, which `tools/gen-reflow-fixture.py` prints as \
-                 inside line 2. Trace: {}.",
-                CARET_AT.0,
-                CARET_AT.1,
-                session.trace_path().display()
-            ),
-        }));
-    };
-    report.note(format!(
-        "★ the caret landed in the paragraph: `{}`",
-        caret.raw
-    ));
-
-    // --- 2: press Reflow ---------------------------------------------------
-    let rect = control(&session.trace()?, ui_rect, REFLOW_ITEM.0)?;
-    driver.click_at(session.frame()?.declared_center(rect))?;
-    session.settle(40);
-
-    let trace = session.trace()?;
-    let Some(resolved) = trace.events(RESOLVED_EVENT).last() else {
-        // The three-way message, because the three ways this fails are
-        // three different repairs and a single "it did not work" would send
-        // somebody to the wrong one.
-        let declined = trace
-            .events(DECLINE_EVENT)
-            .filter_map(|l| l.get("reason").map(str::to_owned))
-            .last();
-        return Ok(Some(match declined.as_deref() {
-            Some("no-caret") => format!(
-                "★★★ THE COMMAND COULD NOT SEE THE CARET: `{DECLINE_EVENT} reason=no-caret`, \
-                 while `{}` says one exists.\n\
-                 The draft lives in egui's temporary memory and the dispatch reads it with \
-                 `canvas::textedit::read`. If a ribbon click CLEARS the draft before the \
-                 command runs — a focus change, an Escape rung by the tool row — the operand \
-                 is gone by the time it is asked for, and this is the only instrument that can \
-                 see that. Trace: {}.",
-                caret.raw,
-                session.trace_path().display()
-            ),
-            Some("run-not-in-a-block") => format!(
-                "★★ THE RUN IS NOT IN A RECOGNISED BLOCK: `{DECLINE_EVENT} \
-                 reason=run-not-in-a-block` on a six-line left-aligned paragraph, which is the \
-                 shape block recognition is FOR.\n\
-                 `canvas::textedit::reflow::block_of_run` recognises with the ENGINE's \
-                 `reflow_recognition_options()` — the numbering `reflow_block` reads its \
-                 argument in — and asks `block_at`. A recogniser that no longer groups 16 \
-                 pt-leaded 12 pt lines would produce exactly this. Check the engine's \
-                 recogniser before the shell's lookup. Trace: {}.",
-                session.trace_path().display()
-            ),
-            Some(other) => format!(
-                "THE COMMAND DECLINED WITH reason={other}, which cannot be right here: this \
-                 session has typed nothing and the caret is on existing page text. Trace: {}.",
-                session.trace_path().display()
-            ),
-            None => format!(
-                "★★★ THE CONTROL WAS PRESSED AND NOTHING HAPPENED: no `{RESOLVED_EVENT}`, no \
-                 `{DECLINE_EVENT}`.\n\
-                 **This is the exact state the feature was in before 2026-08-28** — the verb \
-                 existed in the engine and no control raised it. The dispatch arm lives in \
-                 `app::dispatch::text`; if `handles` no longer names `{}`, the command falls \
-                 through to `command-unimplemented` and traces nothing else. Trace: {}.",
-                REFLOW_ITEM.1,
-                session.trace_path().display()
-            ),
-        }));
-    };
-    report.note(format!(
-        "★★ the caret resolved to a block: `{}`",
-        resolved.raw
-    ));
-
-    let Some(applied) = trace.events(APPLIED_EVENT).last() else {
+    let Some(caret) = trace.last_after(CARET_EVENT, mark) else {
+        let instead = trace
+            .last_after(DECLINED_EVENT, mark)
+            .map_or_else(|| "nothing".to_owned(), |l| format!("`{}`", l.raw));
         return Ok(Some(format!(
-            "★★ THE BLOCK WAS RESOLVED AND NOTHING REACHED THE DOCUMENT: `{}` and no \
-             `{APPLIED_EVENT}` line.\n\
-             The action was raised and its apply arm never ran, or `reflow_block` refused. It \
-             refuses a composite (Type0) block, a rotated or skewed one, and a block sharing a \
-             text object with other content — this fixture is none of those by construction, so \
-             a refusal here is itself the finding. A refused `vector_edit` traces \
-             `reflow-block-refused`. Trace: {}.",
+            "a click at ({}, {}), inside line 2 of an upright single-font paragraph, placed no \
+             caret; it traced {instead}. Trace: {}.",
+            CARET_AT.0,
+            CARET_AT.1,
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("caret: `{}`", caret.raw));
+
+    let mark = session.trace()?.mark();
+    press_on_tab(ctx, session, pointer, REFLOW_ITEM, EDIT_TAB)?;
+    session.settle(40);
+    let trace = session.trace()?;
+    let Some(resolved) = trace.last_after(RESOLVED_EVENT, mark) else {
+        let declined = trace
+            .last_after(DECLINE_EVENT, mark)
+            .map_or_else(|| "nothing".to_owned(), |l| format!("`{}`", l.raw));
+        return Ok(Some(format!(
+            "Reflow was pressed with the caret in a six-line paragraph and resolved no block; \
+             it traced {declined}. `reason=no-caret` means the ribbon click cleared the draft; \
+             `caret-not-on-a-run` means the opened paragraph was refused. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("resolved: `{}`", resolved.raw));
+
+    let Some(applied) = trace.last_after(APPLIED_EVENT, mark) else {
+        return Ok(Some(format!(
+            "`{}` and nothing reached the document: no `{APPLIED_EVENT}`. The fixture is \
+             upright, simple-font and one text object, so an engine refusal is itself the \
+             finding. Trace: {}.",
             resolved.raw,
             session.trace_path().display()
         )));
     };
-    report.note(format!("★★★ the engine re-wrapped it: `{}`", applied.raw));
-
-    // --- the oracle: the block actually lost a line ------------------------
+    report.note(format!("applied: `{}`", applied.raw));
     let lines = applied.get("lines").unwrap_or_default();
     let (before, after) = parse_lines(lines).ok_or_else(|| {
         Error::new(format!(
-            "`{APPLIED_EVENT}` reported lines={lines:?}, which this check cannot read. It \
-             expects `A->B`. Reported as SKIPPED rather than failed: a check that cannot read \
-             its own oracle has learned nothing about the build."
+            "`{APPLIED_EVENT}` reported lines={lines:?}, which this check cannot read; it \
+             expects `A->B`."
         ))
     })?;
     if before != LINES_BEFORE {
         return Err(Error::new(format!(
             "the block was recognised as {before} lines and the fixture is written with \
-             {LINES_BEFORE}. The recogniser and the generator disagree about what one paragraph \
-             is, so the line-count oracle below would be measuring something other than the \
-             re-wrap. Regenerate with `python tools/gen-reflow-fixture.py` and re-read its \
-             printed geometry."
+             {LINES_BEFORE}, so the line-count oracle would measure something other than the \
+             re-wrap. Regenerate with `python tools/gen-reflow-fixture.py`."
         )));
     }
     if after >= before {
         return Ok(Some(format!(
-            "★★★ THE REFLOW RAN AND CHANGED NOTHING: `{}` reports lines={before}->{after}.\n\
-             This fixture's six lines are deliberately short and ragged and wrap to the widest \
-             of them, so a correct re-wrap MUST pack them into fewer — `pdfcer reflow --page \
-             1 --block 0` on this file reports 6->5. Equal counts mean the wrap width was taken \
-             as something other than the block box, or the request reached the engine with an \
-             override this shell does not set. Trace: {}.",
+            "the reflow ran and changed nothing: `{}`. The six ragged lines pack into fewer at \
+             the block's own width. Trace: {}.",
             applied.raw,
             session.trace_path().display()
         )));
     }
-    report.note(format!(
-        "★ the paragraph packed from {before} lines to {after}, height_delta={}",
-        applied.get("height_delta").unwrap_or("?")
-    ));
     Ok(None)
 }
 
@@ -326,22 +139,4 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 fn parse_lines(field: &str) -> Option<(u32, u32)> {
     let (before, after) = field.split_once("->")?;
     Some((before.trim().parse().ok()?, after.trim().parse().ok()?))
-}
-
-/// One declared control rect, or a SKIP naming what was declared instead.
-fn control(trace: &crate::trace::Trace, ui_rect: &str, region: &str) -> Result<LRect> {
-    let rect = declared(trace, ui_rect, region).ok_or_else(|| {
-        Error::new(format!(
-            "the application declared no `{region}` region, so the Reflow control is not on the \
-             Edit tab and there is nothing to press. Band controls it did declare: {}.",
-            list(&declared_names(trace, ui_rect, driving::ITEM_PREFIX))
-        ))
-    })?;
-    if rect.is_substantial() {
-        Ok(rect)
-    } else {
-        Err(Error::new(format!(
-            "`{region}` was declared at {rect:?}, which has no usable area to click."
-        )))
-    }
 }

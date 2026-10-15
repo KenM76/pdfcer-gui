@@ -22,7 +22,13 @@ and *find* its operand, and the answer is a chain:
 
 ```text
 the draft in egui memory  →  page + Anchor::Run { run }  →  block index
+                          →  page + Anchor::Block { block }
 ```
+
+A click on a line of a paragraph usually opens the whole paragraph
+(`Anchor::Block`), which already names its block. Unedited, it is reflowed by
+number; edited, its commit is the reflow, because `edit_block_text` sets the
+new text to the paragraph's box.
 
 ⇒ Every link can fail, and **each failure means something different to the
 operator**. That is the whole content of this module: a refusal per link,
