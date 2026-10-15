@@ -14,6 +14,68 @@ load-bearing: do not build past it. Rulings are recorded in
 
 ---
 
+## O295 — a paragraph or a line behaves as one, and reflow just works
+
+**Why each complaint happens.**
+
+- **"Always one line."** A click opens one engine `TextRun`. `promote::widen`
+  turns it into the paragraph (`Anchor::Block`) only when six conditions all
+  hold: not OCR, run inside one paragraph, run text equals paragraph text, one
+  font/size/colour, two or more lines, `edit_block_text_preview` accepts. Real
+  files fail one of them, usually *mixed looks*. Every refusal goes to the
+  trace only (`text-edit-widen-declined`), so he sees a line and no reason.
+- **"OCR words only."** The engine's OCR writer gives every word its own
+  `Tm`, size and `Tz`, with no space glyphs, so each word reads back as its
+  own run. `promote::recognised` declines OCR runs outright. On his manual the
+  words are also written sideways (G197), so no line grouping can work until
+  that lands.
+- **"Reflow does nothing."** It re-wraps at the paragraph's own width, which
+  changes nothing for an unedited paragraph. The *already fits* sentence is
+  hidden behind engine notes that are always present. When the click did open
+  the paragraph, `dispatch::text::reflow` refuses it with a sentence that says
+  the caret is placing new text, which is false.
+- **"Settings I don't understand."** There is no reflow setting. The word-gap
+  slider on the Text page decides where runs split, and so what a click opens,
+  but its description says it affects only copied text.
+
+**Ruling read from the request.**
+
+R75 says the engine never re-wraps text the operator did not ask to re-wrap.
+His ask 4 (automatic by default) is read as: **the paragraph he is editing
+re-wraps as he types or resizes it**, which is what every editor he has used
+does and is an explicit act on that paragraph. Untouched paragraphs never
+move. A switch, globally and per page or per paragraph, keeps the old
+behaviour (edits stay on their own lines). No operator ruling is needed for
+that reading; if he means re-wrapping paragraphs he has not touched, it
+conflicts with R75 and goes back to him.
+
+**Slices.**
+
+1. **Reflow is honest.** Accept `Anchor::Block` (commit the draft first; an
+   edited paragraph is re-wrapped by its commit). Judge *already fits* by line
+   count, not by an empty note list. Put each widen refusal in the status
+   line in plain words (*mixed fonts in this paragraph*, *set in a composite
+   font*). Fix the word-gap description.
+2. **Width handle.** A paragraph open for editing has a right-edge handle;
+   dragging it re-wraps at that width (`ReflowRequest::with_wrap_width`).
+   This is the visible half of reflow and needs nothing from the engine.
+3. **Select tool.** A fourth click, or a click on the paragraph's box,
+   selects the paragraph; triple click the line; both across runs, OCR words
+   included.
+4. **Settings where the text is.** A *Paragraphs* group on the text ribbon
+   and in Settings ▸ Text: *Re-wrap paragraphs as I edit* (on), its per-page
+   and per-paragraph override, and the word-gap slider with what it really
+   does.
+5. **Engine (requests).** Derived word spaces as break points; mixed
+   font/size/colour in `edit_block_text` and `reflow_block` (G079); OCR
+   structure readable after writing (space glyphs or line marks), and an
+   OCR-aware `block_at_point`; G133's paragraph splitting.
+
+Test only on pages 1–5 and 34 of the TH83 copy (`D:\scratch\o294\th83.pdf`)
+plus generated fixtures with mixed looks, positional word spacing and an OCR
+paragraph. `reflowing_a_paragraph_rewraps_it` predates widening and must be
+re-driven first.
+
 ## O258 — the assistant remote: an LLM drives the open window, with the operator's say-so
 
 **What it is.** A local channel through which an assistant sends the same
