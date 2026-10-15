@@ -32,7 +32,7 @@ Pinned is what `Cargo.lock` resolved; published is `MAJOR.MINOR` from
 
 | crate | pinned | published | status |
 |---|---|---|---|
-| `egui` | 0.35.0 | 0.36 | deliberately behind — see the 0.36 migration below |
+| `egui` | 0.35.0 | 0.37 | deliberately behind — see the 0.36 migration below; 0.37 measured published, not yet verified by driving the binary, and has no matching `eframe` yet |
 | `eframe` | 0.35.0 | 0.36 | deliberately behind — one decision with `egui`, never bumped apart |
 | `egui_tiles` | 0.16.0 | 0.17 | pinned but unused — no consumer, absent from `Cargo.lock` |
 
