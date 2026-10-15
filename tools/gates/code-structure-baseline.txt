@@ -93,7 +93,6 @@ file crates/pdfcer-gui/src/canvas/clicking.rs
 file crates/pdfcer-gui/src/canvas/forms.rs
 file crates/pdfcer-gui/src/canvas/gesture/meaning.rs
 file crates/pdfcer-gui/src/canvas/interact.rs
-file crates/pdfcer-gui/src/canvas/keys.rs
 file crates/pdfcer-gui/src/canvas/moving/mod.rs
 file crates/pdfcer-gui/src/canvas/painting.rs
 file crates/pdfcer-gui/src/canvas/present.rs

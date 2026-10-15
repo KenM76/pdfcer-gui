@@ -199,3 +199,12 @@ So the flag travels onto the trace as `asked=`. A `debug_assert` at
 is the half that survives into a release build, where a driven check reads
 it. **It is not shown to the operator** — from their chair both causes are
 the same event and both are answered by the same sentence.
+
+## `route` — the channel before the rung
+
+`deleting::route` decides the channel ahead of `subject`: a selected form field,
+then a selected annotation, then page content. The Delete key and `format.delete`
+both ask it, so a field or markup Delete cannot reach different things by the two
+routes. Each channel is gated on its own capability (`edit_content` for fields and
+content, `author_markup` for annotations, so Review keeps Delete for markup), and
+each caller words its own trace for the refusals it returns.

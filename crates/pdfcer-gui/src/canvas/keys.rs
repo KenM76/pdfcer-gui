@@ -10,6 +10,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/keys.md`.
 
+use crate::canvas::deleting::Route;
 use egui::Key;
 
 use crate::app::actions::Action;
@@ -629,84 +630,23 @@ pub(super) fn canvas_keys(
         return;
     }
 
-    // An ANNOTATION takes the key, on its OWN capability, above the
-    // content gate.
-    //
-    // # Why it is above, and what being below it cost
-    //
-    // The gate below is `!caps.edit_content`. With the annotation branch
-    // beneath that gate rather than above it, **Review** — `edit_content:
-    // false`, `author_markup: true` — returns before ever reaching the
-    // annotation verb. Review is the markup stance: it is the mode an operator
-    // is in *because* they are working on stamps and dimensions, so it would be
-    // the one mode where Delete cannot remove one.
-    //
-    // That is a predicate answering a question wider than the one it is written
-    // for, and the failure is invisible in the worst way: the mechanism below
-    // works perfectly and never runs. **One predicate per capability** —
-    // `author_markup` guards the annotation verb, `edit_content` guards the
-    // content verb, and neither stands in for the other.
-    //
-    // The `caps` check is belt and braces here for the reason the comment
-    // below gives about its own: entering a mode without `author_markup`
-    // already clears the annotation selection (`app::gating`), so this is
-    // unreachable in practice. It is written anyway, because *"Delete is safe
-    // because nothing can be selected"* holds only for as long as its other
-    // half does, and the other half is in a different file.
-    //
-    // Locked (§12.5.3 bit 8) declines and **says which silence it is**: a
-    // reader of the trace is entitled to tell "the file forbids it" from
-    // "nothing was selected", because only one of those is something the
-    // operator can act on.
-    // A FORM FIELD, and it is checked FIRST of the three Delete claimants.
-    //
-    // `OPERATOR_REQUESTS.md` **O53**: *"if the engine is capable, I should be
-    // able to select the object and do all of the ordinary editing one would
-    // expect a GUI editor to be able to do."* Delete is the most ordinary of
-    // them and it did not reach a selected field at all -- this ladder never
-    // had `doc.selected_field` in front of it, because a widget is deliberately
-    // not an annotation selection.
-    //
-    // First rather than last, and the order is not arbitrary: a form
-    // selection and an annotation selection are mutually exclusive by
-    // construction (the form surface owns `/Widget` presses and
-    // `selection::annot` excludes them), so this is a statement of that rather
-    // than a precedence. Putting it first means a reader meets the narrowest
-    // claim before the general ones.
-    //
-    // `edit_content` guards it, matching where the SELECTION is offered:
-    // `canvas::forms` gives the selection surface to Edit and the fill surface
-    // to Read and Review, because *"the same click cannot both type a value and
-    // select the box to rename it."* One predicate per capability -- the same
-    // rule the annotation branch below had to learn the hard way.
-    if caps.edit_content
-        && let Some(field) = selected_field
-    {
-        // **The gate, asked through the one function that also withholds
-        // the menu item and draws the sentence** —
-        // `panels::properties::formfield::refuses_delete`, arriving as
-        // [`Keys::field_delete_refused`] because this function takes no
-        // `&OpenDoc` and must not start.
-        //
-        // Ungated, this rung pushes the action on `caps.edit_content` alone
-        // and returns six lines above the annotation branch that does ask one,
-        // so a review of that branch reads straight past this one — a rung
-        // that asks nothing looks like a rung with nothing to ask.
-        //
-        // Declines to the TRACE, not to `app::status::decline`, and that is
-        // the same ruling the annotation rung below makes for the same reason:
-        // a key cannot be undrawn, so R9's remedy for a permanently
-        // unavailable capability has nowhere to render — but the sentence is
-        // **already on screen**, in the Properties panel's delete row, from the
-        // moment the field was selected. The operator was told before the
-        // press rather than after it, which is what R83 asks for, and the
-        // press no longer erases the telling.
-        //
-        // ⇒ Deliberately NOT `decline`: a decline reports *a gesture just
-        // failed* and must be repeatable, whereas this is a **standing property
-        // of the open document** — true from the moment it was opened, true
-        // whether or not anything was pressed.
-        if field_delete_refused {
+    // A field, then an annotation, then page content: `canvas::deleting::route`
+    // decides, and the ribbon's `format.delete` asks it too.
+    let ask = crate::canvas::deleting::Ask {
+        edit_content: caps.edit_content,
+        author_markup: caps.author_markup,
+        selected_field,
+        field_set,
+        field_refused: field_delete_refused,
+        annot_refused: annot_delete_refused,
+        selection: &*selection,
+    };
+    match crate::canvas::deleting::route(&ask) {
+        Route::Fields(delete) | Route::Annots(delete) => {
+            actions.extend(delete);
+            return;
+        }
+        Route::FieldRefused(field) => {
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -716,87 +656,21 @@ pub(super) fn canvas_keys(
             });
             return;
         }
-        if let Some(delete) =
-            crate::app::actions::forms::FieldAction::delete_selected(field_set.all(Some(field)))
-        {
-            actions.push(Action::Field(delete));
-        }
-        return;
-    }
-
-    if caps.author_markup
-        && let Some(annot) = selection.annot()
-    {
-        // **The gate, asked through the one function that also withholds the
-        // control** — `panels::properties::annotdelete::gate`.
-        //
-        // This was `if annot.target.locked` and nothing else, which is one of
-        // three refusals. §12.5.3 Table 165 bit 8 was caught; `/Encrypt` and a
-        // certification signature were not, so on a certified drawing the key
-        // raised the action, `delete_annotation` refused, and
-        // `actions::apply::vector_edit`'s `Err` arm wrote a line to the trace
-        // and — by that arm's own recorded decision — said nothing at all to the
-        // operator. Discovery by pressing, on a press the program already knew
-        // would fail: R83's whole subject.
-        //
-        // Why the key declines to the TRACE while the ribbon's Delete is
-        // withheld outright, and why that is not two policies
-        //
-        // Because a key cannot be undrawn. R9's remedy for a permanently
-        // unavailable capability is *render nothing, or say where the thing
-        // lives*; a keystroke renders nothing by nature, so the only thing left
-        // to decide is where the sentence goes — and it is already on screen,
-        // in the Properties panel's `annotdelete` section, which draws it the
-        // moment the annotation is selected and keeps it there. The operator has
-        // been told **before** the press rather than after it, which is the
-        // outcome R83 asks for and a strictly better one than a status line that
-        // arrives with the failure and retires on the next command.
-        //
-        // ⇒ Deliberately NOT `app::status::decline`. That module's own header
-        // draws the line this sits on: a decline reports *a gesture just failed*
-        // and must be repeatable, whereas this is a **standing property of the
-        // open document** — true from the moment it was opened, true whether or
-        // not anything was pressed. A sentence that only appears after a press
-        // delivers that fact at the one moment R83 exists to get ahead of.
-        if annot_delete_refused {
+        Route::AnnotRefused(id) => {
             crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "canvas-delete-declined id={:?} reason=annot-delete-refused",
-                    annot.target.id
-                )
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("canvas-delete-declined id={id:?} reason=annot-delete-refused")
             });
             return;
         }
-        // One selected is a `Delete`; several a `DeleteMany` of the unlocked.
-        if let Some(verb) = pdfcer_gui_base::annotaction::delete_selected(&selection.annots()) {
-            actions.push(Action::Annot(verb));
+        Route::ModeCannotEditContent => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "canvas-delete-declined reason=mode-cannot-edit-content".to_owned()
+            });
+            return;
         }
-        return;
-    }
-
-    // A mode that cannot edit CONTENT has no Delete for content.
-    //
-    // Escape is deliberately **above** this line and ungated: every one of its
-    // claimants — a form draft, a guide drag, an armed region zoom — is
-    // reachable in Read, and a mode that swallowed Escape would trap the
-    // operator inside the gesture it had just let them start.
-    //
-    // In practice this is unreachable, because entering such a mode clears the
-    // selection (`PdfcerApp`'s mode-change arm) and no gesture can build a new
-    // one, so `deletable_objects_on` would return an empty list two lines
-    // below and refuse anyway. It is written explicitly regardless: *"a test
-    // that checks a relation rather than a magnitude is satisfied by any
-    // absurdity in the right direction"*, and "Delete is safe because nothing
-    // can be selected" is exactly that shape of argument
-    // — it holds only for as long as the other half does, and the other half
-    // is in a different file.
-    if !caps.edit_content {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "canvas-delete-declined reason=mode-cannot-edit-content".to_owned()
-        });
-        return;
+        Route::Content => {}
     }
 
     // **DELETE REACHES THE RUNG THE OPERATOR IS ON.**

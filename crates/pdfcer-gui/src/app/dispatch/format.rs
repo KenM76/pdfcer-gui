@@ -13,6 +13,7 @@
 use crate::app::PdfcerApp;
 use crate::app::actions::Action;
 use crate::app::state::Status;
+use crate::canvas::deleting::Route;
 
 /// Whether this file owns `id`.
 #[must_use]
@@ -113,180 +114,47 @@ pub(crate) fn dispatch(
         // at a rung whose delete verb does not exist yet.
         "format.delete" => {
             if let Status::Open(doc) = &app.status {
-                // **A FORM FIELD FIRST, and this arm must stay in step
-                // with the Delete KEY.**
-                //
-                // `canvas::keys`' Delete ladder reaches a selected widget at
-                // its first rung. An arm here that did not would make
-                // Delete-the-key and Delete-the-command act on different
-                // things, which is precisely what `app::keyboard`'s header
-                // calls the defect the single dispatcher exists to make
-                // impossible.
-                //
-                // ⇒ Nothing surfaces such a divergence while the only route to
-                // the command is the Format tab, because the Format tab is not
-                // drawn for a form selection. The `canvas.field` right-click is
-                // the second door, and it is where the divergence shows up as
-                // *"the menu's Delete does nothing"*.
-                //
-                // The guard is `edit_content`, matching `canvas::keys` and
-                // matching where the selection is offered at all: `canvas::forms`
-                // gives the selection surface to Edit and the fill surface to
-                // Read and Review. One predicate per capability.
-                //
-                // `DeleteWidget`, not `DeleteField` — this box, not every box
-                // the field owns. A field with two widgets on two pages is one
-                // field the operator can select from either place, and deleting
-                // the whole field because they pointed at one of its boxes
-                // would destroy work on a page they are not looking at. The
-                // Properties panel offers both, labelled, which is the right
-                // place for a choice.
-                if app.capabilities().edit_content
-                    && let Some(field) = &doc.selected_field
-                {
-                    // R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
-                    // WITHHOLDS THE MENU ITEM AND DRAWS THE SENTENCE.
-                    //
-                    // Without it — and without a `visible_when` on the
-                    // `canvas.field` menu that is this arm's only pointer
-                    // route — an ordinary certified fillable form draws the
-                    // item live and undimmed, the press reaches
-                    // `delete_widget`, and the refusal lands in
-                    // `actions::apply::vector_edit`'s `Err` arm and says
-                    // nothing to the operator.
-                    //
-                    // `panels::properties::formfield::refuses_delete` is the
-                    // one derivation, asked here so that this arm, the
-                    // `canvas.field` menu (via
-                    // `app::conditions`' `selection.delete_permitted`),
-                    // `canvas::keys`' rung 0 and the Properties panel's
-                    // sentence are **one question with four readers**. A
-                    // control withheld by one rule while a panel explains a
-                    // different one is the shape the forms audit found.
-                    //
-                    // ⇒ Reaching this branch refused means one of the two
-                    // things the annotation arm below lists: a **chord** bound
-                    // to `format.delete` (a chord consults no `visible_when`),
-                    // or the condition having gone stale within a frame. The
-                    // sentence for both is already on screen in the Properties
-                    // panel — and, since the verb no longer clears the
-                    // selection ahead of the engine, it stays there — so this
-                    // declines silently to the trace rather than inventing a
-                    // second wording.
-                    if crate::panels::properties::formfield::refuses_delete(doc) {
-                        crate::diag::trace(|| {
-                            // ui-text-exempt: diagnostic trace, never displayed.
-                            format!(
-                                "command-declined id={id} reason=field-delete-refused field={}",
-                                field.field
-                            )
-                        });
-                        return;
+                // A field, then an annotation, then page content, decided by
+                // `canvas::deleting::route` exactly as for the Delete key.
+                let caps = app.capabilities();
+                let ask = crate::canvas::deleting::Ask {
+                    edit_content: caps.edit_content,
+                    author_markup: caps.author_markup,
+                    selected_field: doc.selected_field.as_ref(),
+                    field_set: &doc.field_set,
+                    field_refused: crate::panels::properties::formfield::refuses_delete(doc),
+                    annot_refused: crate::panels::properties::annotdelete::refuses(
+                        doc,
+                        &doc.selection,
+                    ),
+                    selection: &doc.selection,
+                };
+                match crate::canvas::deleting::route(&ask) {
+                    Route::Fields(delete) => actions.extend(delete),
+                    Route::FieldRefused(field) => crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed.
+                        format!(
+                            "command-declined id={id} reason=field-delete-refused field={}",
+                            field.field
+                        )
+                    }),
+                    Route::Annots(Some(verb)) => actions.push(verb),
+                    Route::Annots(None) | Route::AnnotRefused(_) => {
+                        if let Some(annot) = doc.selection.annot() {
+                            crate::diag::trace(|| {
+                                // ui-text-exempt: diagnostic trace, never displayed.
+                                format!(
+                                    "command-declined id={id} reason=annot-delete-refused primary={}",
+                                    annot.target.id.num
+                                )
+                            });
+                        }
                     }
-                    if let Some(delete) = crate::app::actions::forms::FieldAction::delete_selected(
-                        doc.field_set.all(Some(field)),
-                    ) {
-                        actions.push(Action::Field(delete));
-                    }
-                    return;
-                }
-                // An ANNOTATION first — not a tie-break: `SelectionState`
-                // cannot hold both, so these are the two cases of one
-                // question. Locked (§12.5.3 bit 8) does nothing rather than
-                // raising an action the engine would refuse; the control
-                // itself should be absent, which is the Format tab's work.
-                if let Some(annot) = doc.selection.annot().filter(|_| {
-                    // `author_markup`, NOT `edit_content` — one predicate per
-                    // capability, the rule `canvas::keys` states beside its own
-                    // pair. **Review must keep this**: deleting a markup is
-                    // exactly what Review is for, and a guard that reached for
-                    // `edit_content` here would take the working verb away from
-                    // the mode that owns it while leaving the broken one in
-                    // Read. The two capabilities are separate questions and
-                    // neither stands in for the other.
-                    app.capabilities().author_markup
-                }) {
-                    // R83 — ASKED HERE, THROUGH THE SAME FUNCTION THAT
-                    // WITHHELD THE CONTROL.
-                    //
-                    // ⚠ §12.5.3 Table 165's `Locked` bit is only part of the
-                    // answer: `/Encrypt` and a certification signature refuse a
-                    // deletion too. A guard reading `locked` alone pushes the
-                    // action on a certified drawing, `delete_annotation`
-                    // refuses, and `actions::apply::vector_edit`'s `Err` arm
-                    // writes one line to the trace and says **nothing to the
-                    // operator**.
-                    //
-                    // `annotation_deletion_refusal` is the third part, and it
-                    // is asked through `annotdelete::gate` rather than directly
-                    // so that this arm, `canvas::keys`' Delete ladder,
-                    // `app::conditions`' `selection.delete_permitted` and the
-                    // Properties panel's sentence are **one derivation with four
-                    // readers**. A control withheld by one rule while a panel
-                    // explains a different one is the shape the forms audit
-                    // found.
-                    //
-                    // ⇒ Reaching this branch at all now means one of two things,
-                    // and neither is a state the operator can see: a **chord**
-                    // bound to `format.delete` (a chord consults no
-                    // `visible_when`), or the condition having gone stale within
-                    // a frame. The sentence for both is already on screen in the
-                    // Properties panel, which is why this declines silently to
-                    // the trace rather than inventing a second wording.
-                    let verb =
-                        pdfcer_gui_base::annotaction::delete_selected(&doc.selection.annots());
-                    match verb.filter(|_| {
-                        !crate::panels::properties::annotdelete::refuses(doc, &doc.selection)
-                    }) {
-                        Some(verb) => actions.push(Action::Annot(verb)),
-                        None => crate::diag::trace(|| {
-                            // ui-text-exempt: diagnostic trace, never displayed.
-                            format!(
-                                "command-declined id={id} reason=annot-delete-refused primary={}",
-                                annot.target.id.num
-                            )
-                        }),
-                    }
-                } else if !app.capabilities().edit_content {
-                    // THE MODE, ASKED HERE, BECAUSE WITHOUT IT THE RIBBON
-                    // DELETES PAGE CONTENT IN READ.
-                    //
-                    // `canvas::keys`' Delete-key path carries this guard and
-                    // argues it at length. An arm here without it gives:
-                    //
-                    //   Read mode › click a picture › Format ▸ Delete
-                    //     → `VectorAction::DeleteSelection`
-                    //
-                    // in the mode whose entire promise is that it authors
-                    // nothing — the keyboard refusing and the button doing it.
-                    //
-                    // **A content selection IS reachable in Read**, so
-                    // *"entering a mode without the capability clears the
-                    // selection, and no gesture can build a new one"* is not a
-                    // guard. `canvas::clicking`'s image arm runs precisely when
-                    // `!caps.edit_content` — it exists so a reader can click a
-                    // picture and copy it (O71) — so every condition built on
-                    // `selection.any` can be set in Read. The control is not
-                    // greyed there; it is **enabled**.
-                    //
-                    // The compound is what makes this a data-loss defect
-                    // rather than an untidy one: `format.select_form` re-aims
-                    // the selection from one picture to the whole form
-                    // XObject, and `format.delete` then takes the lot. Click a
-                    // logo inside a title block in Read, and the title block
-                    // goes.
-                    //
-                    // ⇒ The rule, which is why this comment is long: **a
-                    // guard justified as "unreachable in practice" is a claim
-                    // about a different file, and it decays without either
-                    // file changing.** Write it anyway, in every route, and
-                    // say why.
-                    crate::diag::trace(|| {
+                    Route::ModeCannotEditContent => crate::diag::trace(|| {
                         // ui-text-exempt: diagnostic trace, never displayed in the UI
                         "format-delete-declined reason=mode-cannot-edit-content".to_owned()
-                    });
-                } else {
-                    delete_the_selection(doc, actions);
+                    }),
+                    Route::Content => delete_the_selection(doc, actions),
                 }
             }
         }

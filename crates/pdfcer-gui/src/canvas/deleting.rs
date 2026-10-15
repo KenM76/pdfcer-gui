@@ -10,6 +10,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/deleting.md`.
 
+mod route;
+pub(crate) use route::{Ask, Route, route};
+
 use crate::canvas::selection::{Selection, SelectionLevel, SelectionState};
 use crate::panels::objects::provider::{ObjectModelProvider, PartKind};
 
