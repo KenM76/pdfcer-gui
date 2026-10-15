@@ -108,6 +108,11 @@ fn format_percent(value: f32) -> String {
 // ui-text-exempt: a file name, never displayed.
 pub const PREFS_FILE: &str = "preferences.txt";
 
+/// [`Prefs::deskew_min_confidence`]'s default: under 20 % the engine's
+/// skew estimate (`pdfcer_core::deskew::SkewEstimate::confidence`) is
+/// usually noise.
+pub const DEFAULT_DESKEW_MIN_CONFIDENCE: u8 = 20;
+
 /// **A stored `bool` as the shell's own auto-hide setting.**
 #[must_use]
 pub fn auto_hide(on: bool) -> egui_shell::peek::AutoHide {
@@ -289,6 +294,9 @@ pub struct Prefs {
     /// reason `crate::canvas::chunks` has two: the painter is handed a context
     /// and nothing else.
     pub ocr_layer_colour: [u8; 3],
+    /// File ▸ Straighten scans' least confidence to turn a page, percent
+    /// (0–100). 0 applies every measured tilt.
+    pub deskew_min_confidence: u8,
     /// The recogniser Recognise text last ran with; `None` until one has run.
     ///
     /// Kept when this build lacks the engine named: the dialog then offers
@@ -834,6 +842,7 @@ impl Default for Prefs {
             // on the painter's constant, and a second copy here is a number
             // that drifts away from the sentence justifying it.
             ocr_layer_colour: crate::ocrlayerpref::DEFAULT_COLOUR,
+            deskew_min_confidence: DEFAULT_DESKEW_MIN_CONFIDENCE,
             ocr_engine: None,
             sign_timestamp_server: None,
             // `None` — "he has not said" — so a fresh profile keeps

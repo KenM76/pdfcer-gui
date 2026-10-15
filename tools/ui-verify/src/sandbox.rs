@@ -125,7 +125,7 @@ impl Drop for Sandbox {
 }
 
 /// The name `pdfcer-gui` reads its preferences from.
-const PREFS_FILE: &str = "preferences.txt";
+pub const PREFS_FILE: &str = "preferences.txt";
 
 /// **The one thing this sandbox deliberately DOES seed**, and the reason is
 /// worth reading before deleting it.

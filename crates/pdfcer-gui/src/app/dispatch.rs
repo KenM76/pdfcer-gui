@@ -502,7 +502,8 @@ impl PdfcerApp {
             // The same rail selection as `file.ocr`.
             "file.deskew" => {
                 let picked: Vec<usize> = self.panels.selected_pages().iter().copied().collect();
-                self.dialogs.open_deskew(&self.status, picked);
+                self.dialogs
+                    .open_deskew(&self.status, picked, self.prefs.deskew_min_confidence);
             }
             "file.ocr_models" => self.dialogs.open_ocr_models(),
             // **Apply redactions.** A dialog, in `file.ocr`'s shape one arm

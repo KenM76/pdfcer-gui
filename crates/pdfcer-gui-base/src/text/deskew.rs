@@ -28,6 +28,18 @@ pub fn skip_text_tooltip() -> &'static str {
     "Text on a page, typed or recognised by OCR, does not turn with the picture. Straightening the picture under it would leave the two out of line, so such pages are left alone unless you clear this."
 }
 
+/// The least-confidence slider's label.
+#[must_use]
+pub fn min_confidence() -> &'static str {
+    "Turn only when at least this sure"
+}
+
+/// What the least confidence decides.
+#[must_use]
+pub fn min_confidence_tooltip() -> &'static str {
+    "How sure the measurement must be before a page is turned. Lower it to straighten pages that were left alone as unsure; at 0% every measured tilt is applied, right or not. Each page's result says how sure it was, and Undo reverses the whole run."
+}
+
 /// Narrow the run to the pictures selected on the current page.
 #[must_use]
 pub fn selected_only(count: usize) -> String {
@@ -91,9 +103,9 @@ pub fn already_level(page: usize, degrees: f64) -> String {
 
 /// A page whose measurement was not trusted.
 #[must_use]
-pub fn unsure(page: usize, degrees: f64, confidence: f64) -> String {
+pub fn unsure(page: usize, degrees: f64, confidence: f64, least: u8) -> String {
     format!(
-        "Page {page}: left alone. It measured {:.2}°, but with only {:.0}% confidence.",
+        "Page {page}: left alone. It measured {:.2}°, but with only {:.0}% confidence, under the {least}% asked for.",
         degrees.abs(),
         confidence * 100.0
     )

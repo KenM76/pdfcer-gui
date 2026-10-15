@@ -78,6 +78,8 @@ fn every_preference_round_trips_through_the_file() {
                     // a nibble instead of doubling it, both round-trip
                     // `#CC0099` and neither round-trips this.
                     ocr_layer_colour: [1, 130, 255],
+                    // Non-default, and not 0 or 100, which a clamp would produce.
+                    deskew_min_confidence: 37,
                     // Non-default, and OPTIONAL: a writer that omitted it fails here.
                     ocr_engine: Some(crate::ocr::EngineId::Ocrcer),
                     sign_timestamp_server: Some("http://tsa.example/rfc3161".to_owned()),
@@ -620,6 +622,8 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         shade_form_fields: false,
         // Non-default, for this test's stated reason. O229.
         ocr_layer_colour: [1, 130, 255],
+        // Non-default, and not 0 or 100, which a clamp would produce.
+        deskew_min_confidence: 37,
         ocr_engine: Some(crate::ocr::EngineId::Ocrcer),
         sign_timestamp_server: Some("http://tsa.example/rfc3161".to_owned()),
         // Non-default, and the only OPTIONAL key in the file. O80.

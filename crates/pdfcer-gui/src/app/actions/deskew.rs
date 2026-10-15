@@ -22,9 +22,6 @@ use pdfcer_core::edit::CommandKind;
 use crate::app::state::OpenDoc;
 use pdfcer_gui_base::deskewstep::DeskewStep;
 
-/// Below this the engine says an angle is not to be trusted
-/// (`pdfcer_core::deskew::SkewEstimate::confidence`).
-pub const MIN_CONFIDENCE: f64 = 0.2;
 /// The detector's finest search step in `pdfcer_core::deskew`; a smaller
 /// angle is inside its resolution.
 pub const MIN_DEGREES: f64 = 0.05;
@@ -45,7 +42,7 @@ pub enum Outcome {
     },
     /// Measured with confidence, but under [`MIN_DEGREES`].
     Level { degrees: f64 },
-    /// Measured under [`MIN_CONFIDENCE`].
+    /// Measured under the run's least confidence.
     Unsure { degrees: f64, confidence: f64 },
     /// Too little ink to measure.
     Unmeasurable,
@@ -155,9 +152,11 @@ pub(super) fn apply(doc: &mut OpenDoc, step: &DeskewStep) {
             page,
             object,
             skip_text,
+            min_confidence_percent,
         } => {
+            let least = f64::from(min_confidence_percent) / 100.0;
             let outcome = if serial == doc.serial {
-                page_turn(doc, page, object, skip_text)
+                page_turn(doc, page, object, skip_text, least)
             } else {
                 Outcome::Elsewhere
             };
@@ -174,7 +173,13 @@ pub(super) fn apply(doc: &mut OpenDoc, step: &DeskewStep) {
 }
 
 /// Measure, then straighten when the measurement says to.
-fn page_turn(doc: &mut OpenDoc, page: usize, object: Option<usize>, skip_text: bool) -> Outcome {
+fn page_turn(
+    doc: &mut OpenDoc,
+    page: usize,
+    object: Option<usize>,
+    skip_text: bool,
+    least: f64,
+) -> Outcome {
     let had_text = page_has_text(doc, page);
     if had_text && skip_text {
         return Outcome::HasText;
@@ -185,7 +190,7 @@ fn page_turn(doc: &mut OpenDoc, page: usize, object: Option<usize>, skip_text: b
     };
     let degrees = estimate.angle_degrees;
     let confidence = estimate.confidence;
-    if confidence < MIN_CONFIDENCE {
+    if confidence < least {
         return Outcome::Unsure {
             degrees,
             confidence,

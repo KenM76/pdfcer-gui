@@ -21,6 +21,9 @@ pub enum DeskewStep {
         object: Option<usize>,
         /// Leave the page alone when it already draws text.
         skip_text: bool,
+        /// The least confidence, in percent, at which a measured tilt is
+        /// applied; 0 applies every measured tilt.
+        min_confidence_percent: u8,
     },
     /// The run ended, finished or stopped: fold its corrections into one
     /// undo entry.

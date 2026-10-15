@@ -49,9 +49,9 @@ impl DialogsState {
     }
 
     /// Open File ▸ Straighten scans for the document in `status`.
-    pub fn open_deskew(&mut self, status: &Status, picked: Vec<usize>) {
+    pub fn open_deskew(&mut self, status: &Status, picked: Vec<usize>, min_confidence: u8) {
         if self.deskew.is_none() {
-            self.deskew = super::deskew::open_for(status, picked);
+            self.deskew = super::deskew::open_for(status, picked, min_confidence);
         }
     }
 

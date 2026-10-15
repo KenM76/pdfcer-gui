@@ -55,13 +55,14 @@ impl Check for StraightenScansTurnsTiltedPages {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        let outcome = launch(ctx, &mut report).and_then(|(session, pointer)| {
-            let outcome = drive(&mut report, &session, &pointer);
-            let parked = pointer.gone(&session);
-            let outcome = outcome?;
-            parked?;
-            Ok(outcome)
-        });
+        let outcome =
+            launch(ctx, &mut report, "straighten-scans").and_then(|(session, pointer)| {
+                let outcome = drive(&mut report, &session, &pointer);
+                let parked = pointer.gone(&session);
+                let outcome = outcome?;
+                parked?;
+                Ok(outcome)
+            });
         match outcome {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
@@ -76,13 +77,7 @@ fn drive(
     session: &Session,
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
-    click(session, pointer, TAB)?;
-    let trace = session.trace()?;
-    if declared(&trace, UI_RECT, ITEM).is_none() && declared(&trace, UI_RECT, COLLAPSED).is_some() {
-        click(session, pointer, COLLAPSED)?;
-    }
-    click(session, pointer, ITEM)?;
-    session.settle(20);
+    open_dialog(session, pointer)?;
     click(session, pointer, COMMIT)?;
     let Some(finished) = await_finished(session)? else {
         return Ok(Some(format!(
@@ -107,6 +102,18 @@ fn drive(
         )));
     }
     Ok(None)
+}
+
+/// File ▸ Straighten scans, through a collapsed group when the ribbon is narrow.
+pub(super) fn open_dialog(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
+    click(session, pointer, TAB)?;
+    let trace = session.trace()?;
+    if declared(&trace, UI_RECT, ITEM).is_none() && declared(&trace, UI_RECT, COLLAPSED).is_some() {
+        click(session, pointer, COLLAPSED)?;
+    }
+    click(session, pointer, ITEM)?;
+    session.settle(20);
+    Ok(())
 }
 
 /// Each page's line against [`EXPECTED`]; the first disagreement, worded.
@@ -142,7 +149,7 @@ fn judge_pages(pages: &[TraceLine]) -> Option<String> {
 }
 
 /// Wait for the run's end: four pages of most of a second each.
-fn await_finished(session: &Session) -> Result<Option<TraceLine>> {
+pub(super) fn await_finished(session: &Session) -> Result<Option<TraceLine>> {
     for _ in 0..120 {
         if let Some(line) = session.trace()?.events(FINISHED).last() {
             return Ok(Some(line.clone()));
@@ -152,7 +159,12 @@ fn await_finished(session: &Session) -> Result<Option<TraceLine>> {
     Ok(None)
 }
 
-fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {
+/// Launch on a copy of the fixture, its outputs named after `stem`.
+pub(super) fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -163,9 +175,9 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
     let source = repo_fixture(FIXTURE, METHOD)?;
-    let doc = ctx.out("straighten-scans.pdf");
+    let doc = ctx.out(&format!("{stem}.pdf"));
     std::fs::copy(&source, &doc).map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("straighten-scans.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
@@ -177,7 +189,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("straighten-scans.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!("launched as pid {}", session.pid()));
@@ -186,7 +198,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
 }
 
 /// Click `name` in whichever viewport declared it.
-fn click(session: &Session, pointer: &ScriptedPointer, name: &str) -> Result<()> {
+pub(super) fn click(session: &Session, pointer: &ScriptedPointer, name: &str) -> Result<()> {
     let trace = session.trace()?;
     let (rect, viewport) = declared_in(&trace, UI_RECT, name).ok_or_else(|| {
         let prefix = name.rsplit_once('.').map_or(name, |(head, _)| head);

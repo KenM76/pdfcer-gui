@@ -504,6 +504,42 @@ His words: *"the download ocr models menu option should be able to add or remove
 
 **Where it stands.** Items 1 to 4 and 6 are built and driven; item 5 is built for every set the engine pins: ocrs, PaddleOCR Latin, PaddleOCR Chinese–English and ocrcer. File ▸ Recognise ▸ *Manage OCR models…* replaces *Download OCR models…*. It lists the five recognisers, marks the default and offers *Set as default* on every other runnable model (the same setting Recognise text remembers), and Remove on each model and Remove all, each asked first with the space it frees; after a removal it says what went, the space freed and what Recognise text now starts with, or that no model is left. Install from file takes a pdfcer OCR add-on zip, Install from folder an add-on folder; both are checked against the add-on's fingerprints by the engine before being moved in, and a second copy of an installed model is refused. Each pinned set not installed has its own Download row; a downloaded set is listed by name and not offered again. PaddleOCR-VL and Tesseract go back from a folder holding their files, as nothing pins them. With nothing installed, Recognise text says *no OCR engine is installed* and has a *Manage OCR models…* button, and Find's offer on a page with no text reaches the same sentence. A models folder pdfcer cannot write in is said in the window and the changing buttons are greyed with the reason. Driven: `ocr_models_set_default_and_remove_down_to_none` (the list, set default, remove one, remove all, then Recognise text from the ribbon and from Find), `ocr_models_install_from_a_zip_and_a_folder` (a tampered zip refused with nothing left behind, a good one installed byte for byte, a second copy refused, PaddleOCR put back from a folder), `ocr_models_unwritable_folder_is_stated`, and `ocr_models_download_into_the_models_folder` and `a_paddle_set_downloads_and_is_listed_by_name` over the network. Falsified eight times: Remove deleting before the question is answered, the no-engine sentence off, Find's offer not reaching Recognise text, the manager button's command left undispatched, the fingerprint check ignored, the write probe answering yes, a downloaded set's manifest written empty, and the download's result left below the window's fold. Add-on zips for each recogniser are not yet made by the package; that waits on a licence decision.
 
+## O294 — **OPEN, first** — enlarged OCR on PaddleOCR Latin lands its words turned 90° from the page
+
+His words: *"When I tried using the PP-OCRv5 Latin (English, French) and enlarge pages before reading, the ocr text when viewed shows it out 90 degrees to the words on the page. Clicking to edit them they flashed up very oversized in black text in the right orientation, but then rotated 90 degrees and squeezed into the box that correctly surrounds the words."*
+
+The recognised words read along the printed words, at their size, whatever model and enlargement read them. The edit preview opens at the word's size in the layer's look and stays the way it opened.
+
+**Where it stands.** Found, and it is the engine's: the saved file itself has every word turned 90° (Acrobat's I-beam turns too, as you saw). It happens on any page turned a quarter in the file — every page of the TH83 manual — with any model, enlarged or not; the words' boxes are right, the writing inside them is not. Asked of the engine as G197, first priority. pdfcer cannot correct it from outside. Once it lands, re-running Recognise text on those pages replaces the sideways text, since a re-run replaces pdfcer's own earlier recognition.
+
+## O295 — **OPEN** — a paragraph or a line behaves as one, in page text and in the OCR layer, with reflow that just works
+
+His words: *"we are very very far behind on our handling of paragraphs and reflow of text especially on the OCR. I've never once seen a paragraph handled as a paragraph - they always show as one line, and in OCR layers each word is only selectable. When I click the Reflow paragraph option in the menu I've never seen it actually do anything or indicate that pressing it does do anything. I see we have a few Settings for reflow buried in our settings, but I have no idea how they actually operate [...] The user expects that when they click on a paragraph or line, it just works like it is a paragraph or line, regardless of how the actual text is chunked together. We need an automation method for reflow that just works, and options to tweak it for sections or disable it if we need to."*
+
+1. Clicking in a paragraph selects and edits the paragraph, however its text is chunked in the file; a line likewise.
+2. In an OCR layer, a click reaches the line or paragraph, not only the word.
+3. Reflow paragraph visibly does something, or says why it did nothing.
+4. Paragraph detection and reflow are automatic by default.
+5. The reflow settings are reachable where the text is edited, say what they do, and can be tuned or turned off for a section (a paragraph, a page) as well as globally.
+
+**Where it stands.** Filed; not started.
+
+## O296 — **OPEN** — enlarge the scanned pictures on the page, as Straighten scans straightens them
+
+His words: *"it would be nice to have the option to upscale the images on the page like we have the option to straighten scans."*
+
+A File-menu command beside Straighten scans that enlarges each scanned picture's pixels in place (factor and filter as Recognise text's *Enlarge each page before reading* offers them), on chosen pages or the selected pictures, with the page looking the same size afterwards, as one undo step, saying what each picture went from and to and what it costs in file size.
+
+**Where it stands.** Filed. The engine has no verb that resamples a placed picture keeping its colour space and bit depth; asked as G198.
+
+## O297 — **OPEN** — Straighten scans takes an acceptance confidence, down to 0 %
+
+His words: *"the straighten scans needs an option to adjust what confidence level is acceptable to accept the rotation, even if confidence is 0%."*
+
+Straighten scans' window has a setting for the least confidence at which a measured skew is applied, from 0 % up, remembered between runs; at 0 % every measured skew is applied. Pages left alone for being under it still say so, with what was measured.
+
+**Where it stands.** Built: the Straighten scans window has *Turn only when at least this sure*, a slider and a number box from 0 % to 100 %, starting at 20 % and remembered between runs. At 0 % every page whose tilt could be measured is turned. A page left alone says what it measured, how sure it was and the setting it fell under. Driven off-screen at 100 %: both tilted test pages (measured at 71 %) are left alone and the setting is saved; the check fails when the slider is ignored.
+
 ## O292 — **OPEN, after O291** — form fields multi-select, and Align and Distribute on several
 
 His words: *"I can't seem to select multiple form items at once. Not being able to do this makes it impossible to use the align and distribute tool with them."*

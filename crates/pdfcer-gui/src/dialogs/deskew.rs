@@ -19,6 +19,7 @@ use crate::app::actions::deskew::{self as step, Folded, Logged, Outcome};
 use crate::app::state::{OpenDoc, Status};
 use crate::text::deskew as t;
 use pdfcer_gui_base::deskewstep::DeskewStep;
+use pdfcer_gui_base::prefs::Prefs;
 
 use super::page_scope::PageScope;
 
@@ -28,6 +29,8 @@ pub const REGION_BODY: &str = "deskew.body"; // ui-text-exempt: trace region nam
 pub const REGION_SCOPE: &str = "deskew.scope"; // ui-text-exempt: trace region name, never displayed
 /// The skip-pages-with-text checkbox.
 pub const REGION_SKIP_TEXT: &str = "deskew.skip-text"; // ui-text-exempt: trace region name, never displayed
+/// The least-confidence slider.
+pub const REGION_MIN_CONFIDENCE: &str = "deskew.min-confidence"; // ui-text-exempt: trace region name, never displayed
 /// The only-the-selected-pictures checkbox.
 pub const REGION_SELECTED: &str = "deskew.selected"; // ui-text-exempt: trace region name, never displayed
 /// The button that starts the run.
@@ -64,12 +67,15 @@ pub struct DeskewDialog {
     selected: (usize, Vec<usize>),
     only_selected: bool,
     skip_text: bool,
+    /// Least confidence to turn, percent; seeded from and saved to
+    /// `Prefs::deskew_min_confidence`.
+    min_confidence: u8,
     phase: Phase,
     close_requested: bool,
 }
 
 impl DeskewDialog {
-    fn open(doc: &OpenDoc, picked: Vec<usize>) -> Self {
+    fn open(doc: &OpenDoc, picked: Vec<usize>, min_confidence: u8) -> Self {
         let page = doc.view.page_index;
         let selected = selected_images(doc, page);
         Self {
@@ -79,6 +85,7 @@ impl DeskewDialog {
             only_selected: !selected.is_empty(),
             selected: (page, selected),
             skip_text: true,
+            min_confidence,
             phase: Phase::Choosing,
             close_requested: false,
         }
@@ -87,6 +94,7 @@ impl DeskewDialog {
     /// The turns the current answer names.
     fn queue(&self, run: u64) -> Vec<DeskewStep> {
         let skip_text = self.skip_text;
+        let min_confidence_percent = self.min_confidence;
         if self.only_selected && !self.selected.1.is_empty() {
             let page = self.selected.0;
             return self
@@ -99,6 +107,7 @@ impl DeskewDialog {
                     page,
                     object: Some(i),
                     skip_text,
+                    min_confidence_percent,
                 })
                 .collect();
         }
@@ -112,13 +121,20 @@ impl DeskewDialog {
                 page,
                 object: None,
                 skip_text,
+                min_confidence_percent,
             })
             .collect()
     }
 
     /// Draw it. `active` is the `OpenDoc::serial` on screen; the run waits
     /// while it is not this window's document. Returns whether it stays open.
-    pub fn show(&mut self, ctx: &egui::Context, active: u64, actions: &mut Vec<Action>) -> bool {
+    pub fn show(
+        &mut self,
+        ctx: &egui::Context,
+        active: u64,
+        actions: &mut Vec<Action>,
+        prefs: &mut Prefs,
+    ) -> bool {
         let here = active == self.doc;
         if here {
             self.advance(actions);
@@ -132,7 +148,7 @@ impl DeskewDialog {
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
             match self.phase {
-                Phase::Choosing => self.choosing(ui),
+                Phase::Choosing => self.choosing(ui, prefs),
                 Phase::Running { .. } => self.running(ui, here),
                 Phase::Finished { run, of } => self.finished(ui, run, of),
             }
@@ -184,7 +200,7 @@ impl DeskewDialog {
         }
     }
 
-    fn choosing(&mut self, ui: &mut egui::Ui) {
+    fn choosing(&mut self, ui: &mut egui::Ui, prefs: &mut Prefs) {
         ui.label(t::intro());
         ui.add_space(8.0);
         if !self.selected.1.is_empty() {
@@ -202,6 +218,21 @@ impl DeskewDialog {
             .checkbox(&mut self.skip_text, t::skip_text())
             .on_hover_text(t::skip_text_tooltip());
         crate::diag::ui_rect(REGION_SKIP_TEXT, r.rect);
+        ui.horizontal(|ui| {
+            ui.label(t::min_confidence())
+                .on_hover_text(t::min_confidence_tooltip());
+            // The rail alone carries the region, so its ends are 0 and 100;
+            // the number box beside it takes a typed value.
+            let r = ui
+                .add(egui::Slider::new(&mut self.min_confidence, 0..=100).show_value(false))
+                .on_hover_text(t::min_confidence_tooltip());
+            crate::diag::ui_rect(REGION_MIN_CONFIDENCE, r.rect);
+            ui.add(
+                egui::DragValue::new(&mut self.min_confidence)
+                    .range(0..=100)
+                    .suffix("%"),
+            );
+        });
         ui.add_space(10.0);
         ui.separator();
         let named = self.queue(0).len();
@@ -211,11 +242,28 @@ impl DeskewDialog {
                 .on_disabled_hover_text(t::names_nothing());
             crate::diag::ui_rect_visible(REGION_COMMIT, go.rect, ui.clip_rect());
             if go.clicked() {
+                self.remember(prefs);
                 self.start();
             }
             if ui.button(t::cancel_button()).clicked() {
                 self.close_requested = true;
             }
+        });
+    }
+
+    /// Keep the least confidence for the next run, when it changed.
+    fn remember(&self, prefs: &mut Prefs) {
+        if prefs.deskew_min_confidence == self.min_confidence {
+            return;
+        }
+        prefs.deskew_min_confidence = self.min_confidence;
+        let saved = prefs.save().is_ok();
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "deskew-min-confidence-saved value={} saved={saved}",
+                self.min_confidence
+            )
         });
     }
 
@@ -225,9 +273,10 @@ impl DeskewDialog {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "deskew-started run={run} turns={} skip-text={} selected={}",
+                "deskew-started run={run} turns={} skip-text={} min-confidence={} selected={}",
                 queue.len(),
                 self.skip_text,
+                self.min_confidence,
                 self.only_selected && !self.selected.1.is_empty()
             )
         });
@@ -280,7 +329,7 @@ impl DeskewDialog {
             .max_height(220.0)
             .show(ui, |ui| {
                 for entry in &log {
-                    for line in describe(entry) {
+                    for line in describe(entry, self.min_confidence) {
                         ui.label(line);
                     }
                 }
@@ -316,7 +365,7 @@ fn summary(log: &[Logged], folded: Option<Folded>) -> Vec<String> {
 }
 
 /// One page's lines. Pages are shown 1-based.
-fn describe(entry: &Logged) -> Vec<String> {
+fn describe(entry: &Logged, least: u8) -> Vec<String> {
     let page = entry.page + 1;
     match &entry.outcome {
         Outcome::Straightened {
@@ -335,7 +384,7 @@ fn describe(entry: &Logged) -> Vec<String> {
         Outcome::Unsure {
             degrees,
             confidence,
-        } => vec![t::unsure(page, *degrees, *confidence)],
+        } => vec![t::unsure(page, *degrees, *confidence, least)],
         Outcome::Unmeasurable => vec![t::unmeasurable(page)],
         Outcome::NoPicture => vec![t::no_picture(page)],
         Outcome::HasText => vec![t::has_text(page)],
@@ -364,11 +413,11 @@ fn selected_images(doc: &OpenDoc, page: usize) -> Vec<usize> {
 }
 
 /// Build it for the current document. `None` when there is none.
-pub fn open_for(status: &Status, picked: Vec<usize>) -> Option<DeskewDialog> {
+pub fn open_for(status: &Status, picked: Vec<usize>, min_confidence: u8) -> Option<DeskewDialog> {
     let Status::Open(doc) = status else {
         return None;
     };
-    Some(DeskewDialog::open(doc, picked))
+    Some(DeskewDialog::open(doc, picked, min_confidence))
 }
 
 #[cfg(test)]
@@ -386,7 +435,7 @@ mod tests {
                 had_text: true,
             },
         };
-        let lines = describe(&entry);
+        let lines = describe(&entry, 20);
         assert_eq!(lines.len(), 2);
         assert!(lines[0].starts_with("Page 3:"), "{lines:?}");
     }

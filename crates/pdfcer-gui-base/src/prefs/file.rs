@@ -192,6 +192,14 @@ impl Prefs {
                         line,
                     }),
                 },
+                "deskew_min_confidence" => match value.parse::<u8>() {
+                    Ok(v) if v <= 100 => prefs.deskew_min_confidence = v,
+                    _ => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "zoom_settle_ms" => match value.parse::<u64>() {
                     Ok(ms) => {
                         let clamped = ms.clamp(MIN_SETTLE_MS, MAX_SETTLE_MS);
@@ -718,6 +726,17 @@ impl Prefs {
         // ui-text-exempt: a file KEY, as above.
         out.push_str("ocr_layer_colour = ");
         out.push_str(&ocrlayer::format(self.ocr_layer_colour));
+        out.push('\n');
+        // ui-text-exempt: settings-file COMMENT text, as above.
+        out.push_str(
+            "\n\
+             # deskew_min_confidence: File > Straighten scans turns a page only\n\
+             # when its tilt was measured at least this sure, in percent\n\
+             # (0-100). 0 turns every page whose tilt could be measured.\n",
+        );
+        // ui-text-exempt: a file KEY, as above.
+        out.push_str("deskew_min_confidence = ");
+        out.push_str(&self.deskew_min_confidence.to_string());
         out.push('\n');
         // ui-text-exempt: a file KEY, as above.
         out.push_str("wheel_paging = ");

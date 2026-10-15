@@ -901,7 +901,7 @@ impl DialogsState {
         if self
             .deskew
             .as_mut()
-            .map(|d| d.show(ctx, doc.serial, actions))
+            .map(|d| d.show(ctx, doc.serial, actions, prefs))
             == Some(false)
         {
             self.deskew = None;
