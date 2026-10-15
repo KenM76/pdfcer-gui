@@ -532,7 +532,7 @@ A File-menu command beside Straighten scans that enlarges each scanned picture's
 
 **Where it stands.** Built: File ▸ Recognise ▸ Enlarge scans… opens Straighten scans' window set to enlarge, with the same page choices (every page, this page, the thumbnails' pick, a range, or the selected pictures) and the factor (1.5× to 4×, 2× by default) and smoothing (bicubic or Lanczos) Recognise text offers. Each page's line says the picture's size before and after and what it costs in file size; one Ctrl+Z undoes the run. Driven off-screen on a four-page scan: every page doubled from 1275×1650 to 2550×3300 as one undo step. The previous release fails the same check (no item).
 
-## O297 — **OPEN** — Straighten scans takes an acceptance confidence, down to 0 %
+## O297 — **BUILT AND DRIVEN — awaiting your verdict** — Straighten scans takes an acceptance confidence, down to 0 %
 
 His words: *"the straighten scans needs an option to adjust what confidence level is acceptable to accept the rotation, even if confidence is 0%."*
 
