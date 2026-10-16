@@ -11,7 +11,7 @@ use pdfcer_core::view::DocumentView;
 
 use super::SelectionState;
 use crate::annotselection::AnnotSelection;
-use crate::fieldset::BandMerge;
+use crate::multiset::{self, BandMerge};
 
 impl SelectionState {
     /// Every selected annotation: the others in the order they joined, then
@@ -33,11 +33,7 @@ impl SelectionState {
         if all.iter().any(|a| a.target.page != hit.target.page) {
             all.clear();
         }
-        if let Some(at) = all.iter().position(|a| a.target.id == hit.target.id) {
-            all.remove(at);
-        } else {
-            all.push(hit);
-        }
+        multiset::toggle(&mut all, hit, same);
         self.set_annots(all);
     }
 
@@ -45,28 +41,13 @@ impl SelectionState {
     /// selection.
     pub fn band_annots(&mut self, hits: Vec<AnnotSelection>, merge: BandMerge) {
         let page = hits.first().map(|h| h.target.page);
-        let mut all: Vec<AnnotSelection> = match merge {
-            BandMerge::Replace => Vec::new(),
-            BandMerge::Add | BandMerge::Subtract => self
-                .annots()
-                .into_iter()
-                .filter(|a| page.is_none_or(|p| a.target.page == p))
-                .cloned()
-                .collect(),
-        };
-        match merge {
-            BandMerge::Subtract => {
-                all.retain(|a| !hits.iter().any(|h| h.target.id == a.target.id));
-            }
-            BandMerge::Replace | BandMerge::Add => {
-                for h in hits {
-                    if !all.iter().any(|a| a.target.id == h.target.id) {
-                        all.push(h);
-                    }
-                }
-            }
-        }
-        self.set_annots(all);
+        let kept: Vec<AnnotSelection> = self
+            .annots()
+            .into_iter()
+            .filter(|a| page.is_none_or(|p| a.target.page == p))
+            .cloned()
+            .collect();
+        self.set_annots(multiset::band(kept, hits, merge, same));
     }
 
     /// Make the last of `all` the primary and the rest the others; an empty
@@ -82,6 +63,12 @@ impl SelectionState {
             }
         }
     }
+}
+
+/// One annotation is the same selection as another when it names the same
+/// annotation.
+fn same(a: &AnnotSelection, b: &AnnotSelection) -> bool {
+    a.target.id == b.target.id
 }
 
 /// Re-read `selected`'s outline, lock flag and angle from `found`, the

@@ -13,7 +13,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "all-field-kinds.pdf",
     method: "Rebuild it with `python fixtures/all-field-kinds.PROVENANCE.py`.",
     page: PageGeometry {
@@ -25,18 +25,18 @@ const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an envir
 
 /// Each field's name, the key that finds it in a saved copy, and a point on
 /// it: `[170 520 370 542]`, `[170 486 186 502]`, `[170 412 370 434]`.
-const TEXT: (&str, &str, (f64, f64)) = ("TextOne", "/T (TextOne)", (270.0, 531.0)); // ui-text-exempt: a fixture field name
+pub(super) const TEXT: (&str, &str, (f64, f64)) = ("TextOne", "/T (TextOne)", (270.0, 531.0)); // ui-text-exempt: a fixture field name
 const CHECK: (&str, &str, (f64, f64)) = ("CheckOne", "/T (CheckOne)", (178.0, 494.0)); // ui-text-exempt: a fixture field name
-const COMBO: (&str, &str, (f64, f64)) = ("ComboOne", "/T (ComboOne)", (270.0, 423.0)); // ui-text-exempt: a fixture field name
+pub(super) const COMBO: (&str, &str, (f64, f64)) = ("ComboOne", "/T (ComboOne)", (270.0, 423.0)); // ui-text-exempt: a fixture field name
 /// TextOne's top edge, where Align top puts the other two.
 const TOP: f64 = 542.0;
 /// A window band from empty page that holds CheckOne and both radio members
 /// (`[170 452 186 468]`, `[260 452 276 468]`) and nothing else.
-const BAND: ((f64, f64), (f64, f64)) = ((160.0, 510.0), (290.0, 444.0));
+pub(super) const BAND: ((f64, f64), (f64, f64)) = ((160.0, 510.0), (290.0, 444.0));
 
-const SELECTED: &str = "form-field-selected"; // ui-text-exempt: a trace event name
-const TOGGLED: &str = "form-field-toggled"; // ui-text-exempt: a trace event name
-const BANDED: &str = "form-field-band"; // ui-text-exempt: a trace event name
+pub(super) const SELECTED: &str = "form-field-selected"; // ui-text-exempt: a trace event name
+pub(super) const TOGGLED: &str = "form-field-toggled"; // ui-text-exempt: a trace event name
+pub(super) const BANDED: &str = "form-field-band"; // ui-text-exempt: a trace event name
 const APPLIED: &str = "move-mixed-applied"; // ui-text-exempt: a trace event name
 
 /// See the module documentation.

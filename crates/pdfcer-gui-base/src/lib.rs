@@ -556,6 +556,8 @@ pub mod fieldaction;
 pub mod fieldscript;
 /// The form fields selected beside the primary one.
 pub mod fieldset;
+/// The toggle and marquee merge rules every multi-selection shares.
+pub mod multiset;
 
 /// The verbs that author a layer.
 pub mod layeraction;

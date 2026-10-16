@@ -81,13 +81,41 @@ pub(super) fn band(
     session: &Session,
     pointer: &ScriptedPointer,
     fixture: &Fixture,
+    corners: ((f64, f64), (f64, f64)),
+) -> Result<()> {
+    band_with(ctx, session, pointer, fixture, corners, None)
+}
+
+/// [`band`] with `mods` (`shift` adds, `ctrl` subtracts) held through it.
+pub(super) fn band_with(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    fixture: &Fixture,
     (from, to): ((f64, f64), (f64, f64)),
+    mods: Option<&str>,
 ) -> Result<()> {
     let (from, to) = (
         window_at(ctx, session, fixture, from)?,
         window_at(ctx, session, fixture, to)?,
     );
-    pointer.drag(session, from, to, 8)?;
+    match mods {
+        None => {
+            pointer.drag(session, from, to, 8)?;
+        }
+        Some(m) => {
+            pointer.send(
+                session,
+                &format!(
+                    "drag {:.1} {:.1} {:.1} {:.1} steps=8 mods={m}",
+                    from.x(),
+                    from.y(),
+                    to.x(),
+                    to.y()
+                ),
+            )?;
+        }
+    }
     session.settle(30);
     Ok(())
 }

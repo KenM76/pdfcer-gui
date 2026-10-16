@@ -8,6 +8,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/fieldset.md`.
 
 use crate::docidentity::SelectedField;
+pub use crate::multiset::BandMerge;
 
 /// **The extra fields of a multi-field selection.**
 ///
@@ -23,17 +24,6 @@ pub struct FieldSet {
     /// The other selected fields, in the order they were added. Never holds
     /// the anchor.
     others: Vec<SelectedField>,
-}
-
-/// How a marquee's fields combine with what is already selected.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BandMerge {
-    /// The band's fields become the selection.
-    Replace,
-    /// The band's fields join it.
-    Add,
-    /// The band's fields leave it.
-    Subtract,
 }
 
 impl FieldSet {
@@ -70,11 +60,7 @@ impl FieldSet {
         field: SelectedField,
     ) -> Option<SelectedField> {
         let mut all = self.all(primary);
-        if let Some(at) = all.iter().position(|f| *f == field) {
-            all.remove(at);
-        } else {
-            all.push(field);
-        }
+        crate::multiset::toggle(&mut all, field, PartialEq::eq);
         self.rebuild(all)
     }
 
@@ -86,20 +72,7 @@ impl FieldSet {
         fields: Vec<SelectedField>,
         merge: BandMerge,
     ) -> Option<SelectedField> {
-        let mut all = match merge {
-            BandMerge::Replace => Vec::new(),
-            BandMerge::Add | BandMerge::Subtract => self.all(primary),
-        };
-        match merge {
-            BandMerge::Subtract => all.retain(|f| !fields.contains(f)),
-            BandMerge::Replace | BandMerge::Add => {
-                for f in fields {
-                    if !all.contains(&f) {
-                        all.push(f);
-                    }
-                }
-            }
-        }
+        let all = crate::multiset::band(self.all(primary), fields, merge, PartialEq::eq);
         self.rebuild(all)
     }
 
