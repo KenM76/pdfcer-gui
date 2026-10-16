@@ -170,7 +170,7 @@
 - [A missing-asset SKIP is the scratch folder](feedback_skip_on_missing_asset.md) — paddle "unrunnable" was 3 unlinked files.
 - [Git Bash ps cannot see a sibling call](feedback_ps_blind_sibling.md) — "no process" lied; check via Win32_Process before re-running gates.
 - [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
-- [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — paragraph widening ate the OCR preview for 3 releases; re-drive neighbours.
+- [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — widening ate the OCR word preview three times (G203 too); drive the OCR neighbours first.
 - [A missing feature surface SKIPs, not FAILs](feedback_harness_skip_masks_feature.md) — `press` on an absent region is a harness error; assert the surface drew first.
 - [Park drafts in D:\scratch](feedback_park_drafts_scratch.md) — never D:/temp; apply scripts and control exes live there too.
 - [Overshooting a band passes on the defect](feedback_overshoot_window.md) — picture at the first wall; SKIP if the trace shows the far tier.

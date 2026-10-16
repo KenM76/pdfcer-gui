@@ -30,3 +30,12 @@ attributed to the right commit.
 rewrite, which the engine accepts, so the `'`-operator refusal its offer hangs
 on never happens. It was found by the O293 neighbour sweep on 2026-10-14 and
 was confirmed red on the published build as the control.
+
+**A third occurrence, same victim (2026-10-16):** G203 widened a click on
+recognised text to the recognised paragraph. That paragraph has no engine
+layout preview, so the OCR word's in-place preview was lost again. Two OCR
+preview checks went red, and v0.5.0-dev.20261016.1 shipped that way because
+the release was made before the neighbour sweep. The fix: a feature with no
+preview never takes the click; it opens on an explicit command (*This
+paragraph*). When a release is rushed ahead of testing, drive the OCR-preview
+neighbours FIRST, since this gesture has been captured three times.

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
+## `wanted` — a real gap — **33 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -106,8 +106,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
-| **Resize or rotate several annotations in one command** — `resize_annotations`, `rotate_annotations` | **wanted, consumed past the v0.83.0 tag; request G202.** `app::actions::annots::many` calls each once for a grip or rotate drag over several markups (module `pdfcer_core::edit::batch_transform`; the `_preview` twins are not called, because the drag's own outline is the preview); the engine folds the applied members into one undo entry, and the status line counts a partial result. Driven by `several_annotations_resize_and_turn_as_one_step`. |
-| **Edit a recognised (OCR) paragraph word by word in place** — `recognised_block_at_point`, `edit_recognised_block_text`, `edit_recognised_block_text_preview` | **wanted, consumed past the v0.83.0 tag; request G203.** *This paragraph* on a recognised word opens the paragraph (`canvas::textedit::promote::recognised`; a click opens the word alone, which keeps its in-place preview) and its commit is `edit_recognised_block_text` (`app::actions::blocktext::commit_recognised`). The `_preview` twin is not called: it returns counts, not a layout, so the open paragraph shows its editor box; that is why a click does not open it. Modules `pdfcer_core::edit::recognised_block` and `pdfcer_core::text_edit::recognised_block`. `pdfcer_core::edit::CommandKind::EditRecognisedText` reaches the operator as the engine's own undo label; `pdfcer_core::text_edit::cause::UnsupportedCause::EditSpansStreams` arrives as a text refusal and is worded by `record_edit_text_refusal` from the engine's own `refusal_kind`, like every other cause. Driven by `a_recognised_paragraph_edits_word_by_word`. |
 | **Move or delete several annotations in one command** — `move_annotations_each`, `delete_annotations`, `dimension_for_annotation` | **wanted, at the pin since v0.82.0; requests G190 and G191.** `app::actions::movemixed` calls `move_annotations_each` once instead of `move_annotation` and `place_dimension` per mark with a `coalesce_last`, and `app::actions::annots::deletemany` calls `delete_annotations` instead of `cut_selection`'s recipe; `dimension_for_annotation` finds a ce dimension from its annotation. Both live in `pdfcer_core::edit::batch`. Reports: `AnnotationBatchMove`, `AnnotationDeletion`. Refusal to word: `EditError::AnnotationLocked`, which replaces the shell's own locked check. |
 | **Read a marker's colour** — `EditSession::marker_color`, `MarkerColor`, `ColorEntry` | **wanted, at the pin since v0.82.0; request G176.** A marker's Icon colour row reads it instead of `panels::properties::markup::read_colour`; `ColorEntry::Absent`, `ColorEntry::Empty` and `ColorEntry::Malformed` separate no colour from a bad one, and `ColorEntry::Device` carries the colour; the free function `color_entry` reads the same from a dictionary. |
 | **Read a link's as-written target and border** — `EditSession::link`, `LinkReading` | **wanted, at the pin since v0.82.0; request G178.** `panels::properties::link` reads a link through it, `LinkReading::border_color` as a `ColorEntry`; calling it deletes `pdfcer_gui_base::linkread`. |
@@ -140,7 +138,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
+## `blocked` — waiting on something named — **2 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -158,7 +156,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -169,7 +167,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
+## `declined` — deliberately no surface — **16 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -211,7 +209,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **313 of 364** <!-- counted by tools/walk-engine-backlog.py, 2026-10-15; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **315 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -262,6 +260,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Edit a recognised (OCR) paragraph word by word in place** — `recognised_block_at_point`, `edit_recognised_block_text`, `edit_recognised_block_text_preview` | **shipped, past the v0.83.0 tag; request G203.** *This paragraph* on a recognised word opens the paragraph (`canvas::textedit::promote::recognised`; a click opens the word alone, which keeps its in-place preview) and its commit is `edit_recognised_block_text` (`app::actions::blocktext::commit_recognised`). The `_preview` twin is not called: it returns counts, not a layout, so the open paragraph shows its editor box; that is why a click does not open it. Modules `pdfcer_core::edit::recognised_block` and `pdfcer_core::text_edit::recognised_block`. `pdfcer_core::edit::CommandKind::EditRecognisedText` reaches the operator as the engine's own undo label; `pdfcer_core::text_edit::cause::UnsupportedCause::EditSpansStreams` arrives as a text refusal and is worded by `record_edit_text_refusal` from the engine's own `refusal_kind`, like every other cause. Driven by `a_recognised_paragraph_edits_word_by_word`. |
 | **Rewriting a paragraph with its own text keeps its line count** — the wrap tolerance `linebreak::FIT_TOLERANCE` | **Reachable — every paragraph rewrite (G162).** `canvas::textedit::promote::options` passes no wrap width, so `edit_block_text` keeps a paragraph's widest line whole by its own tolerance; `a_paragraph_reopens_as_one_draft` step 5 re-opens an edited paragraph at its line count. |
 | **Exact break marker for pdfcer's own block text** — `pdfcer_core::text_edit::model::line_marks`, `LineEndSource::Marked` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` builds the model `with_line_marks(LineMarks::scan(..))`; `hand_breaks_are_read_from_marks` re-opens a pdfcer-rewritten paragraph as `source=marked` with a break after its longest line kept. Add text's marks are answered at the pin since v0.82.0 (G182); see the wanted row. |
 | **Per-line break-vs-wrap on recognised text blocks** — `pdfcer_core::text_edit::model::line_ends`, `block_text_with_breaks` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` joins each line end as `line_ends` says, and an `Inferred` source raises the `breaks-inferred` draft note (`hand_breaks_are_read_from_marks`). A marked blank line re-opens as one break until `line_gaps` is read (G183, at the pin since v0.82.0; see the wanted row). |
@@ -357,6 +356,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Resize or rotate several annotations in one command** — `resize_annotations`, `rotate_annotations` | **shipped, past the v0.83.0 tag; request G202.** `app::actions::annots::many` calls each once for a grip or rotate drag over several markups (module `pdfcer_core::edit::batch_transform`; the `_preview` twins are not called, because the drag's own outline is the preview); the engine folds the applied members into one undo entry, and the status line counts a partial result. Driven by `several_annotations_resize_and_turn_as_one_step`. |
 | **Write an annotation's whole `/F` flag word** — `set_annotation_flags` | **shipped — Properties' *Visibility and lock* section** (`panels::properties::annotflags`): Show on screen, Print and Locked for any selected annotation, each one `AnnotAction::SetFlag` through `app::actions::annots::flags::set_flag`, which reads the current word and writes it whole. `LockedContents` is not offered, so no control clears a contents lock the operator was never told about; a note edit on such a mark is refused by `set_markup_note`. A hidden mark is not canvas-selectable, so its Comments row carries *Show on screen* (`panels::comments::shown`). Widgets get no section (the verb refuses them). Driven: `an_annotation_can_be_hidden_and_shown_again`. |
 | `pdfcer_core::edit::EditSession::set_annotation_flags` | **shipped** — the call site is `app::actions::annots::flags::set_flag`, reached from Properties' *Visibility and lock* switches and the Comments row's *Show on screen*. `LockedContents` is not written, so the sequencing concern (an unlock offered before the lock is disclosed) does not arise. Full row: *Write an annotation's whole `/F` flag word*. |
 | `pdfcer_core::edit::AnnotationFlagsChange` (with `::before`, `::after`, `::subtype`) | **shipped into the trace, not the status line.** `before`, `after` and `subtype` are all written by `set-annotation-flag-applied`, which `an_annotation_can_be_hidden_and_shown_again` judges. No status sentence: each switch moves one visible state and the Properties switches re-read the file, so the operator sees every bit the edit moved, including Print going off when a Hidden mark is shown on screen only. |
