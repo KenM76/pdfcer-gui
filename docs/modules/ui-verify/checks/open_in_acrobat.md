@@ -18,11 +18,16 @@ check ends, on every path out.
    discovery would otherwise launch the machine's real Acrobat on the desktop
    the check runs on. After proceed it requires `acrobat-launched`, then
    `close`, and the stub's recorded argument must canonicalise to the
-   document's own file.
+   document's own file. This run has no edits, so the question must be
+   `prompt=ConfirmClose` and the file must not gain `/Rotate 90`.
+3. **Save first.** The same steps, launched with `pages.rotate_right`. The
+   question must be `prompt=SaveFirst`, and the file the stub is given must
+   carry `/Rotate 90`: the save happened before the hand-over.
 
-Falsified with two planted defects:
+Falsified with three planted defects:
 
 - Cancel closing the document fails step 1.
 - Proceed dropping the close fails step 2.
+- Proceed skipping the save fails step 3.
 
 No `rustc` on the PATH is an error (SKIP), not a failure.

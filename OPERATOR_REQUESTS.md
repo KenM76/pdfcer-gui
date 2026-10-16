@@ -4270,7 +4270,7 @@ ruling in this row is **not** what was built: the deferral itself was.
 
 Checks: `the_armed_tools_settings_are_in_properties`, `the_first_frame_names_the_armed_tool`, `the_inspector_is_one_master_detail_column`.
 
-## O122 — ◑ **OPEN** — an "Open in Acrobat" button beside Read / Review / Edit
+## O122 — ✅ **CLOSED by Ken** — an "Open in Acrobat" button beside Read / Review / Edit
 
 **Ken, verbatim:**
 
@@ -4285,14 +4285,14 @@ Checks: `the_armed_tools_settings_are_in_properties`, `the_first_frame_names_the
 
 ### Status
 
+**Ken, 2026-10-16:** *"I use the open in Acrobat button all the time. It works great."*
+
 **Built, and driven** (`open_in_acrobat_hands_the_file_over`). With a viewer
 configured, the File tab's *Open in Acrobat* asks first. Cancel leaves the
 document open, and the proceed button launches the configured viewer on the
 document's own file and then closes the document. The check uses a stand-in
-viewer, so it never opens a real Acrobat on your desktop. Two planted defects
-turned it red.
-
-**Not yet driven:** the *save first* question, shown when there are unsaved edits.
+viewer, so it never opens a real Acrobat on your desktop. With a rotated page the question offers to save first, and the file handed
+over carries the rotation. Three planted defects turned the check red.
 
 ## O121 — ◑ **OPEN** — the test harness took your screen twice after you said you were back, and the fix is a lock rather than an apology
 
