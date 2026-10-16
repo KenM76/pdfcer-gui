@@ -186,3 +186,4 @@
 - [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.
 - [Drive only what changed between releases](feedback_drive_only_affected.md) — O305: select checks from the diff since the last tag; full sweep only if framework-wide.
 - [One gate run at a time](feedback_one_gate_run_at_a_time.md) — two runs on one log: no verdict; check for a live run first.
+- [An inactive window starves focus gates](feedback_inactive_window_starves_gate.md) — no-steal scripted dialogs never typed; route gates via window_takes_keys.
