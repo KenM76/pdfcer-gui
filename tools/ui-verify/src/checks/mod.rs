@@ -719,6 +719,7 @@ pub mod mid_line_preview;
 pub mod paragraph_joins;
 /// A stand-in preview is the text's size, and the status bar says why.
 pub mod preview_fallback;
+pub mod recognised_paragraph;
 pub mod reface_commit;
 /// Every refused key is named, with one click to a face that has them.
 pub mod refused_keys;
