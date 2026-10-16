@@ -17,7 +17,7 @@
 //! acknowledgement, so a failed key with a close line is that defect, not a
 //! harness fault.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared_in};
+use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, declared_or_in_overflow};
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
@@ -163,10 +163,17 @@ pub(crate) fn press_insert(
         session.settle(15);
         trace = session.trace()?;
     }
-    let Some((item, vp)) = declared_in(&trace, ui_rect, RIBBON_ITEM) else {
+    if let Some((item, vp)) = declared_in(&trace, ui_rect, RIBBON_ITEM) {
+        pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(item))?;
+        session.settle(30);
+        return Ok(true);
+    }
+    // At this check's width the Edit tab's Insert group folds into the
+    // ribbon's overflow, where the operator finds it behind "more".
+    let Some(item) = declared_or_in_overflow(session, pointer, ui_rect, RIBBON_ITEM)? else {
         return Ok(false);
     };
-    pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(item))?;
+    pointer.click(session, WindowPoint::centre_of(item))?;
     session.settle(30);
     Ok(true)
 }

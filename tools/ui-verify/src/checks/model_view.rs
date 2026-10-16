@@ -26,7 +26,6 @@ use crate::report::CheckReport;
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// Edit mode with the Attachments panel showing.
 const INVOKE: &str = "mode.edit,edit.attachments";
-const RIBBON_TAB: &str = "ribbon.tab.edit";
 const RIBBON_ITEM: &str = "ribbon.item.edit.insert_3d";
 const VIEW_REGION: &str = "models.view";
 const IMAGE_REGION: &str = "model3d.image";
@@ -142,21 +141,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     report.artifact(pointer.path().to_path_buf());
     session.settle(45);
 
-    let mut trace = session.trace()?;
-    if declared_in(&trace, ui_rect, RIBBON_ITEM).is_none()
-        && let Some((tab, vp)) = declared_in(&trace, ui_rect, RIBBON_TAB)
-    {
-        pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(tab))?;
-        session.settle(15);
-        trace = session.trace()?;
-    }
-    let Some((item, vp)) = declared_in(&trace, ui_rect, RIBBON_ITEM) else {
+    if !crate::checks::model_view_window::press_insert(ctx, &session, &pointer)? {
         return Ok(Some(format!(
-            "no `{RIBBON_ITEM}` region: the 3D model button is not on the Edit tab."
+            "no `{RIBBON_ITEM}` region: the 3D model button is on neither the Edit tab \
+             nor its overflow."
         )));
-    };
-    pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(item))?;
-    session.settle(30);
+    }
 
     let trace = session.trace()?;
     let Some((view, vp)) = declared_in(&trace, ui_rect, VIEW_REGION) else {

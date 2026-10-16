@@ -16,7 +16,6 @@ use crate::report::CheckReport;
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// Edit mode with the Attachments panel showing, to place the model.
 const INVOKE: &str = "mode.edit,edit.attachments";
-const RIBBON_TAB: &str = "ribbon.tab.edit";
 const RIBBON_ITEM: &str = "ribbon.item.edit.insert_3d";
 const FRONT: &str = "model3d.view.1";
 const TOP: &str = "model3d.view.3";
@@ -124,21 +123,12 @@ fn opened_from_page(
     pointer: &ScriptedPointer,
     ui_rect: &str,
 ) -> Result<Option<String>> {
-    let mut trace = session.trace()?;
-    if declared_in(&trace, ui_rect, RIBBON_ITEM).is_none()
-        && let Some((tab, vp)) = declared_in(&trace, ui_rect, RIBBON_TAB)
-    {
-        pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(tab))?;
-        session.settle(15);
-        trace = session.trace()?;
-    }
-    let Some((item, vp)) = declared_in(&trace, ui_rect, RIBBON_ITEM) else {
+    if !crate::checks::model_view_window::press_insert(ctx, session, pointer)? {
         return Ok(Some(format!(
-            "no `{RIBBON_ITEM}` region: the 3D model button is not on the Edit tab."
+            "no `{RIBBON_ITEM}` region: the 3D model button is on neither the Edit tab \
+             nor its overflow."
         )));
-    };
-    pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(item))?;
-    session.settle(30);
+    }
     if session
         .trace()?
         .events("model-insert-requested")
