@@ -11,8 +11,11 @@ engine's exact surgery refuses that run and names
 `Workaround::RewriteQuoteOperator`, which is exact.
 
 The window is placed off the desktop and driven only through
-`ScriptedPointer`, with `PDFCER_DIAG_INVOKE=mode.edit,edit.text` arming the
-Edit Text tool, so the check runs under `--no-input`.
+`ScriptedPointer`, with `PDFCER_DIAG_INVOKE=mode.edit,edit.paragraphs,edit.text`
+switching Paragraphs off and arming the Edit Text tool, so the check runs
+under `--no-input`. Paragraphs must be off: `Quoted line` is the second line
+of a two-line paragraph, and with them on the click opens the paragraph,
+whose rewrite takes the `'` line without a refusal.
 
 ## Steps
 
@@ -28,6 +31,9 @@ Edit Text tool, so the check runs under `--no-input`.
    exact=1` and a new `edit-text-left-edge … committed=yes`.
 
 ## Falsification
+
+With Paragraphs left on, the click traces `text-edit-widened`, the edit
+commits through the paragraph and no offer is drawn: FAIL at step 2.
 
 With the panel's button pushing `workarounds: false`, the retry is refused
 again, no `edit-text-workaround` line is written, and the check fails at

@@ -25,6 +25,7 @@ const SEAM: Offer = Offer {
     at: (80.0, 704.0),
     typed: "\u{3A9}",
     label: "retype",
+    invoke: "mode.edit,edit.text",
     env: &[("PDFCER_DIAG_FONT_DIR", r"C:\Windows\Fonts")],
 };
 const PROPERTIES_PANEL: &str = "file.properties";

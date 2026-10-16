@@ -20,7 +20,6 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
-const INVOKE: &str = "mode.edit,edit.text";
 const PROPERTIES_PANEL: &str = "file.properties";
 const OFFER: &str = "workaround-offer"; // ui-text-exempt: a trace event name, never displayed
 const APPLIED: &str = "edit-text-workaround"; // ui-text-exempt: a trace event name, never displayed
@@ -39,6 +38,9 @@ pub(super) struct Offer {
     pub typed: &'static str,
     /// The `Workaround::label` the offer must name.
     pub label: &'static str,
+    /// Commands invoked at start: Edit mode and the Edit Text tool, and any
+    /// switch the edit needs.
+    pub invoke: &'static str,
     /// Environment the launch adds, after the harness's own.
     pub env: &'static [(&'static str, &'static str)],
 }
@@ -75,13 +77,16 @@ impl Check for ARefusedEditOffersItsWorkaround {
     }
 }
 
-/// Inside `Quoted line`, whose baseline is y=680 at 12 pt.
+/// Inside `Quoted line`, whose baseline is y=680 at 12 pt. Paragraphs are
+/// switched off: the line is the second of a two-line paragraph, and the
+/// paragraph rewrite takes a `'` line without refusing.
 const QUOTED: Offer = Offer {
     fixture: "quote-operator.pdf",
     stem: "workaround",
     at: (100.0, 684.0),
     typed: "s",
     label: "rewrite-quote-operator",
+    invoke: "mode.edit,edit.paragraphs,edit.text",
     env: &[],
 };
 
@@ -141,7 +146,7 @@ pub(super) fn launch(
     spec.env
         .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
     spec.env
-        .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+        .push(("PDFCER_DIAG_INVOKE".to_owned(), offer.invoke.to_owned()));
     for (k, v) in offer.env {
         spec.env.push(((*k).to_owned(), (*v).to_owned()));
     }
