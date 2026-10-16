@@ -1191,6 +1191,19 @@ versioned home). `OcrRunner::reports_confidence()` is an R8 capability (`ocrs` a
 
 ## Traps
 
+- **33 request rows were cut to three lines or fewer by a documentation trim,
+  and about 21 of them are still open** (among them O9, O10, O15, O19, O33,
+  O48, O49, O68, O72, O73, O104, O106, O121, O133, O156, O160, O171, O181,
+  O182, O189, O195). A short row may have lost its cause, its fix and what is
+  still open. Before working one, read its full text with
+  `git show 7ad3ec1d:OPERATOR_REQUESTS.md` and restore what is still true, in
+  the present tense. O174 has been restored.
+
+- **A window raster that lands in the wrong place passes a pixel check.** The
+  canvas keeps the older whole-page picture under the window, so the right
+  content still shows at the probe. Read the landed window from `canvas-pos
+  region=` and check it covers the probe, as `turned_region` does.
+
 - **Nothing may keep a `Weak` to the session.** Every edit, Find and
   recognition reaches `OpenDoc::session` through `Arc::get_mut`, which fails
   while any other `Arc` OR `Weak` exists, and the refusal is traced as

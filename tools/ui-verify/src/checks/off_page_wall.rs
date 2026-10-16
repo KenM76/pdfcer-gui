@@ -50,7 +50,7 @@ const MAX_NOTCHES: usize = 90;
 const SHEET_REGION: &str = "region";
 
 /// A pixel at or below this in every channel is ink; the fixture fills black.
-const INK: u8 = 96;
+pub(crate) const INK: u8 = 96;
 
 /// At least this fraction of the patch inside the square must be ink.
 const INK_FRACTION: f64 = 0.90;
@@ -82,16 +82,21 @@ impl Check for AnObjectOffThePageIsDrawnPastItsHaloWall {
     }
 }
 
-/// The point `(x, y)` of the page, in window points, wherever the canvas puts
-/// it now — off the sheet included.
-fn locate(ctx: &CheckContext, session: &Session, x: f64, y: f64) -> Result<(WindowPoint, LRect)> {
+/// The user-space point `(x, y)` of page 0, in window points, wherever the
+/// canvas puts it now — off the sheet included — and the canvas viewport.
+pub(crate) fn locate_on(
+    ctx: &CheckContext,
+    session: &Session,
+    page: PageGeometry,
+    (x, y): (f64, f64),
+) -> Result<(WindowPoint, LRect)> {
     let trace = session.trace()?;
     let canvas = declared(&trace, ui_rect_event(ctx)?, CANVAS_REGION).ok_or_else(|| {
         Error::new(format!(
             "no `{CANVAS_REGION}` region was declared. SKIPPED."
         ))
     })?;
-    let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, FIXTURE.page, 0)?;
+    let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, 0)?;
     Ok((
         mapping.doc_to_window_off_page(DocPoint::new(0, x, y), canvas)?,
         canvas,
@@ -99,7 +104,7 @@ fn locate(ctx: &CheckContext, session: &Session, x: f64, y: f64) -> Result<(Wind
 }
 
 /// The fraction of `patch` that is ink.
-fn ink_fraction(image: &Image, patch: PixRect) -> Option<f64> {
+pub(crate) fn ink_fraction(image: &Image, patch: PixRect) -> Option<f64> {
     let total = u64::from(patch.w) * u64::from(patch.h);
     if total == 0 {
         return None;
@@ -153,7 +158,7 @@ fn drive(
     let mut wall: Option<(String, f64)> = None;
     let mut zoom = 0.0_f64;
     for notch in 0..MAX_NOTCHES {
-        let (at, canvas) = locate(ctx, session, cx, cy).map_err(|why| {
+        let (at, canvas) = locate_on(ctx, session, FIXTURE.page, (cx, cy)).map_err(|why| {
             Error::new(format!(
                 "the off-page square's bottom edge is not on the canvas after {notch} notch(es): \
                  {why}. That is `off_page_zoom`'s property, not this check's. SKIPPED."
@@ -207,7 +212,7 @@ fn drive(
         )));
     }
     report.note(format!("the picture's tier decision: `{}`", decided.1));
-    let (edge, _) = locate(ctx, session, cx, cy)?;
+    let (edge, _) = locate_on(ctx, session, FIXTURE.page, (cx, cy))?;
     let frame = session.frame()?;
     // Screen y grows down, so the patch above the edge is inside the square.
     let patch = |dy: f32| {

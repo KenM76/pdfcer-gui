@@ -324,6 +324,8 @@ pub mod off_page_zoom;
 
 pub mod off_sheet;
 
+pub mod turned_region;
+
 pub mod os_fonts_setting;
 
 pub mod page_cache;

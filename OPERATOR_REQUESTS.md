@@ -3502,7 +3502,7 @@ same reason.
 
 Checks: `the_off_page_toggle_is_per_mode_and_remembered`.
 
-## O174 — ◑ **MEASURED AND FIXED, NOT YET DRIVEN BY A CHECK** — "this pdf `A-591.pdf` causes problems zooming past about 1600% - the view appears to jump to another location and when I pan back to where something is visible it appears to be distorted."
+## O174 — ◑ **BUILT AND DRIVEN — NOT CLOSED, that is yours** — "this pdf `A-591.pdf` causes problems zooming past about 1600% - the view appears to jump to another location and when I pan back to where something is visible it appears to be distorted."
 
 **They are filed as one row because you saw them together, and separated in
 the analysis because they fail in different places.** This project has a standing
@@ -3512,6 +3512,34 @@ to be seven distinct causes. Nothing here may be called closed because the first
 of the two reproduces and gets fixed.
 
 ### Status
+
+**Cause.** Past about 1340 % on `A-591.pdf` — not 1600 % — a whole-page
+raster would exceed 16,382 px on its longest side, so the canvas rasterizes
+only the visible window. That window was handed to the engine in canvas space
+(y down, turned) instead of PDF user space (y up, unturned). `A-591.pdf` is
+`/Rotate 270`, so the window was asked for somewhere else on the sheet (the
+jump) with width and height swapped (the distortion). The harness carried the
+same one-flip error, which is why nothing caught it.
+
+**Fix.** The shell converts the window through the page's crop box and
+rotation (`rasterregion::PageFrame`); the harness does the same in
+`coords::PageFrame`. Both carry four-quadrant tables, written independently.
+
+### Driven
+
+`a_turned_page_draws_the_right_place_past_the_region_wall`, on a generated
+`/Rotate 270` letter sheet with one black square: zoom climbs at the square's
+edge until only the window is rasterized (about 2,400 %), then the check
+requires the landed window to cover the spot under the pointer and the
+pixels to show ink inside the square and paper outside it. PASS.
+
+Falsified: putting the upright formula back in the `/Rotate 270` arm ordered
+a window about 300 pt away from the pointer, and the check FAILED. Pixels alone
+passed that broken build, because the older whole-page picture stays under the
+window — so the check reads the landed window, not just the screen.
+
+Not covered: `/Rotate 90` and `/Rotate 180` are not driven (the unit tables
+cover all four), and `A-591.pdf` itself has not been driven.
 
 ## O173 — ◑ **BUILT AND DRIVEN** — "we should have an easy way to make pdfce-gui our default opener for pdfs. Ask once with a don't show me again check box option. Then it should be in the top of our settings as a button to execute the changeover." <!-- old-name-exempt: HIS words, quoted verbatim. He typed `pdfce-gui`; correcting an operator's own sentence inside the row that records it would stop the row being a quotation. -->
 
