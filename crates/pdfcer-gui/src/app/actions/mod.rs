@@ -138,13 +138,14 @@ pub use disclosure::{EditDisclosure, last_edit_disclosure};
 // path part of the crate's surface as a side effect of a file split.
 pub(crate) use disclosure::{record_edit_disclosure, record_note, record_notes};
 
+/// Content and form-field widgets moved as one undo step.
+mod deleteparts;
 /// One engine verb per item, folded into one undo step.
 mod foldeach;
 /// **The edit funnel** — `vector_edit`, the four-step protocol every verb that
 /// changes a document passes through. Its header carries why a router and a
 /// protocol are two subjects.
 mod funnel;
-/// Content and form-field widgets moved as one undo step.
 mod movemixed;
 /// The three arms that mark content for removal. Its header carries the seam
 /// argument and names the one thing deliberately absent from it.

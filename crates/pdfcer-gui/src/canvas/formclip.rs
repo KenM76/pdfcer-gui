@@ -57,8 +57,9 @@ pub fn cut(
     actions: &mut Vec<Action>,
 ) -> Result<Clipped, Refusal> {
     let clipped = copy(ctx, doc, page, &leaves)?;
-    actions.push(Action::Vector(VectorAction::DeleteLeavesInForm {
+    actions.push(Action::Vector(VectorAction::DeleteParts {
         page,
+        objects: Vec::new(),
         leaves,
     }));
     Ok(clipped)

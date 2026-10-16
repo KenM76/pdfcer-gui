@@ -81,7 +81,6 @@ file crates/pdfcer-gui-base/src/viewgeometry.rs
 file crates/pdfcer-gui/src/app/actions/annots.rs
 file crates/pdfcer-gui/src/app/actions/apply.rs
 file crates/pdfcer-gui/src/app/actions/export.rs
-file crates/pdfcer-gui/src/app/actions/vector.rs
 file crates/pdfcer-gui/src/app/dispatch.rs
 file crates/pdfcer-gui/src/app/files.rs
 file crates/pdfcer-gui/src/app/frame.rs

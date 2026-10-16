@@ -343,6 +343,32 @@ fn a_form_interior_selection_still_reaches_the_form_delete() {
     );
 }
 
+/// A page object and a part of a placed drawing selected together reach one
+/// delete holding both, not the page object alone.
+#[test]
+fn a_page_object_and_a_part_delete_together() {
+    let mut selection = SelectionState::default();
+    for (id, shift) in [(TargetId::Object(2), false), (TargetId::Leaf(7), true)] {
+        selection.click(
+            0,
+            ClickHit {
+                object: Some(id),
+                ..ClickHit::default()
+            },
+            shift,
+            false,
+        );
+    }
+    assert_eq!(
+        subject(&selection, 0, None),
+        Ok(DeleteSubject::ObjectsAndParts {
+            page: 0,
+            objects: vec![2],
+            leaves: vec![7],
+        })
+    );
+}
+
 /// **A LINE inside a form is addressed by its leaf, never refused for being
 /// inside one.** With the leaf absent from the model the answer is the
 /// model's, not the address space's.

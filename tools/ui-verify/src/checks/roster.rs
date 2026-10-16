@@ -488,6 +488,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(alignmixed::AlignAtThePartRungSaysWhy),
         Box::new(alignmixed::APartAndAPageObjectDragTogether),
         Box::new(alignmixed::APartInsideADraggedDrawingRidesWithIt),
+        Box::new(alignmixed::APartAndAPageObjectDeleteTogether),
+        Box::new(alignmixed::APartInsideADeletedDrawingGoesWithIt),
         Box::new(typedturn::ATypedTurnRotatesAnObjectAboutItsCentre),
         Box::new(nodeshape::ANodesSegmentCanBeCurvedAndANodeInserted),
         Box::new(leaftransform::APartOfAPlacedDrawingCanBeResizedAndRotated),

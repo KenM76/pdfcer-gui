@@ -239,7 +239,7 @@ fn delete_on_a_form_interior_selection_removes_it_exactly_as_the_key_does() {
         matches!(
             actions.first(),
             Some(crate::app::actions::Action::Vector(
-                crate::app::actions::VectorAction::DeleteLeavesInForm { .. }
+                crate::app::actions::VectorAction::DeleteParts { .. }
             ))
         ),
         "the LEAF verb, not the paint-order one: a leaf's token range indexes the \

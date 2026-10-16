@@ -37,6 +37,10 @@ operator's drawings are *pdf dimensions*: page content pdfcer reads and must
 not silently alter. The word on screen is **label**, which is what he calls
 them and what he can see.
 
+`partly_deleted` is the one sentence about a delete that did something: a
+mixed delete whose later verb was refused after an earlier one applied. The
+operator sees part of the selection gone and must be told why the rest stayed.
+
 ## Where they are shown
 
 The status bar's disclosure row, through

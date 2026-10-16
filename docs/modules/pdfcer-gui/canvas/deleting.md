@@ -112,6 +112,9 @@ to save four lines.
 One variant per `EditSession` delete verb this shell can address, and no
 variant without one — R9, applied to a routing enum: a case that renders
 nothing must not be representable as though it did something.
+`ObjectsAndParts` is the one variant naming two verbs: page objects and parts
+of placed drawings selected together are deleted as one undo step through
+`delete_objects` and `delete_objects_in_form`, never the page objects alone.
 
 ### `enum Refusal`
 

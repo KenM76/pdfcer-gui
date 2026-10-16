@@ -7,6 +7,12 @@
 
 use crate::refusals::delete::Refusal;
 
+/// A delete over several verbs where some were applied and one refused.
+#[must_use]
+pub fn partly_deleted(reason: &str) -> String {
+    format!("Some of the selection was deleted; the rest was refused: {reason}")
+}
+
 /// The sentence for a refusal to delete, or `None` when the state is one the
 /// operator can already see.
 ///

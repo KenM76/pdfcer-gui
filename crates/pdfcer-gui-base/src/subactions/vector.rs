@@ -147,16 +147,14 @@ pub enum VectorAction {
         /// The gesture, for the trace.
         gesture: &'static str,
     },
-    /// Delete every selected object **inside a form XObject** —
-    /// `EditSession::delete_objects_in_form`, `OPERATOR_REQUESTS.md` O70.
-    ///
-    /// Beside [`Self::MoveLeavesInForm`] and for its reason: the indices are a
-    /// different address space from `DeleteSelection`'s, and the variant is
-    /// what says which. One command however many leaves, exactly as its
-    /// page-level twin.
-    DeleteLeavesInForm {
+    /// Delete parts of placed drawings, with any page objects selected beside
+    /// them, as one undo step: `delete_objects`, then
+    /// `delete_objects_in_form` once per form.
+    DeleteParts {
         /// The 0-based page.
         page: usize,
+        /// Paint-order indices, ascending and unique; may be empty.
+        objects: Vec<usize>,
         /// Leaf indices, ascending and unique.
         leaves: Vec<usize>,
     },

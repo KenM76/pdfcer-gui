@@ -1,6 +1,6 @@
 # `ui-verify/checks/alignmixed`
 
-Align and drag with a selection that mixes parts of placed drawings with page
+Align, drag and delete with a selection that mixes parts of placed drawings with page
 objects, on `fixtures/parts-beside-objects.pdf` (built by its `.PROVENANCE.py`): a green
 page rectangle at (300,220)..(360,260), drawing Fm0 holding a red part
 (60,60)..(120,100) and a blue part (60,140)..(100,170), and drawing Fm1
@@ -53,6 +53,16 @@ needs no `move-mixed-applied` and a `canvas-move` whose action names
 a second time. The verb is `TransformObjects`, since a placed drawing has no
 coordinate operands; the check reads the operands, not the verb.
 
+`a_part_and_a_page_object_delete_together`: red part and green selected as
+above, then Delete. PASS needs `delete-parts-applied` with `objects=1/1
+parts=1/1 forms=1/1 one_step=true`, and the next Ctrl+Z tracing
+`undo_depth=1`: `undo` traces the depth before it steps, so 1 is the whole
+delete as one command.
+
+`a_part_inside_a_deleted_drawing_goes_with_it`: as above plus a Shift+click
+on blue (`sel=3`, Fm0 whole), then Delete. PASS needs `objects=2/2 parts=0/0
+forms=0/0 carried=1`: the drawing takes its part, which is not deleted again.
+
 ## Falsified
 
 - `align::moves_action` planted to drop every part move: the first two checks
@@ -61,6 +71,11 @@ coordinate operands; the check reads the operands, not the verb.
 - `leftout::uncarried` planted to keep every part: the carried check FAILs on
   `parts=0/0`, reading `parts=1/1 drawings=1/1 notes=0`. This is the
   double-move the check exists for.
+- `canvas::deleting::object_rung` planted to return the page objects alone:
+  both delete checks FAIL with no `delete-parts-applied`.
+- `uncarried` planted to keep every part in `deleteparts::commit`: the
+  carried delete FAILs reading `parts=0/1 forms=0/1 carried=0`, the part's
+  delete refused because its drawing was already gone.
 - `leftout::unmeasured`'s Part-rung arm planted off: the third check FAILs,
   reading `reason=nothing-selected`.
 

@@ -88,7 +88,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
     let deletes = matches!(
         action,
         VectorAction::DeleteSelection { .. }
-            | VectorAction::DeleteLeavesInForm { .. }
+            | VectorAction::DeleteParts { .. }
             | VectorAction::DeleteSubpath { .. }
             | VectorAction::DeleteTextLine { .. }
             | VectorAction::DeleteNode { .. }
@@ -101,44 +101,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
     match action {
         VectorAction::DeleteSelection { page, objects } => {
             if !objects.is_empty() {
-                // THE FOOTPRINT, TAKEN BEFORE THE COMMIT DESTROYS IT.
-                //
-                // `OPERATOR_REQUESTS.md` O63. A deleted object stays on screen
-                // until the page redraws — one to two seconds on a dense
-                // drawing — with no gesture in flight to explain the wait. What
-                // the operator sees is a delete that did nothing, and the
-                // natural response is to press Delete again, which deletes
-                // something else.
-                //
-                // The order is load-bearing. `page_objects` is keyed on
-                // `(page, edit_epoch)` and `vector_edit` bumps the epoch, so the
-                // geometry is thrown away by the very edit it describes. Built
-                // here, and the `Ref` dropped before `vector_edit` takes
-                // `&mut doc`.
-                let preview = doc
-                    .page_objects()
-                    .and_then(|provider| crate::canvas::shapes::erased(&provider, &objects));
-                // HELD BEFORE THE COMMIT, and getting this backwards is a
-                // silent quarter-second bug.
-                //
-                // `hold_preview` stamps `edit_epoch` AS IT IS WHEN CALLED, and
-                // `held_preview_to_draw` reads "the epoch has not moved" as
-                // "the commit has not landed yet" — a state it allows for only
-                // 250 ms, because past that it means the engine REFUSED.
-                //
-                // So a hold taken after the bump looks permanently un-committed
-                // and expires in a quarter of a second, which on the drawings
-                // this exists for is a fifth of the wait. Taken before, the
-                // bump moves the epoch past it and the normal rule applies:
-                // draw until the raster carries the edit.
-                //
-                // ⇒ And the refusal case comes out right for free. If
-                // `delete_objects` fails the epoch never moves, the grace
-                // expires, and the operator does not spend four seconds looking
-                // at a hole where their object still is.
-                if let Some(preview) = preview {
-                    doc.hold_preview(preview);
-                }
+                super::deleteparts::hold_erased(doc, &objects);
                 vector_edit_on_page(doc, "delete-objects", page, objects.len(), |session| {
                     session.delete_objects(page, &objects)
                 });
@@ -203,25 +166,22 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
                 transform_each(doc, page, &transforms, gesture);
             }
         }
-        VectorAction::DeleteLeavesInForm { page, leaves } => {
-            if !leaves.is_empty() {
-                // No shell-side invalidation here either — see
-                // `MoveLeavesInForm`'s arm for the counter that stood in both
-                // places for four hours and the engine commit that removed the
-                // need for it.
-                vector_edit_on_page(
-                    doc,
-                    "delete-leaves-in-form",
-                    page,
-                    leaves.len(),
-                    |session| {
-                        session
-                            .delete_objects_in_form(page, &leaves)
-                            .map(|outcome| outcome.disclosures)
-                    },
-                );
-            }
-        }
+        // `delete-leaves-in-form` for parts alone: `form_leaf_move` reads it.
+        VectorAction::DeleteParts {
+            page,
+            objects,
+            leaves,
+        } => super::deleteparts::apply(
+            doc,
+            if objects.is_empty() {
+                "delete-leaves-in-form"
+            } else {
+                "delete-parts"
+            },
+            page,
+            &objects,
+            &leaves,
+        ),
         // The three deeper-rung deletes, and the census line each writes.
         //
         // `-applied` suffixes, per `tools/gates/check-trace-names.py`: the

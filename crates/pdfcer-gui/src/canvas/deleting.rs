@@ -39,6 +39,16 @@ pub enum DeleteSubject {
         /// Leaf indices, ascending and unique.
         leaves: Vec<usize>,
     },
+    /// Page objects and parts of placed drawings selected together: one
+    /// undo step through both verbs.
+    ObjectsAndParts {
+        /// The 0-based page.
+        page: usize,
+        /// Paint-order indices, ascending and unique.
+        objects: Vec<usize>,
+        /// Leaf indices, ascending and unique.
+        leaves: Vec<usize>,
+    },
     /// One **subpath** of one path object — `delete_subpath`.
     Subpath {
         /// The 0-based page.
@@ -178,14 +188,16 @@ pub fn subject(
 /// selection is made of.
 fn object_rung(selection: &SelectionState, page: usize) -> Result<DeleteSubject, Refusal> {
     let objects = selection.object_indices_on(page);
-    if !objects.is_empty() {
-        return Ok(DeleteSubject::Objects { page, objects });
-    }
     let leaves = selection.leaf_indices_on(page);
-    if leaves.is_empty() {
-        Err(Refusal::NothingSelected)
-    } else {
-        Ok(DeleteSubject::LeavesInForm { page, leaves })
+    match (objects.is_empty(), leaves.is_empty()) {
+        (true, true) => Err(Refusal::NothingSelected),
+        (false, true) => Ok(DeleteSubject::Objects { page, objects }),
+        (true, false) => Ok(DeleteSubject::LeavesInForm { page, leaves }),
+        (false, false) => Ok(DeleteSubject::ObjectsAndParts {
+            page,
+            objects,
+            leaves,
+        }),
     }
 }
 
@@ -266,9 +278,20 @@ pub fn action(subject: DeleteSubject) -> crate::app::actions::VectorAction {
     use crate::app::actions::VectorAction;
     match subject {
         DeleteSubject::Objects { page, objects } => VectorAction::DeleteSelection { page, objects },
-        DeleteSubject::LeavesInForm { page, leaves } => {
-            VectorAction::DeleteLeavesInForm { page, leaves }
-        }
+        DeleteSubject::LeavesInForm { page, leaves } => VectorAction::DeleteParts {
+            page,
+            objects: Vec::new(),
+            leaves,
+        },
+        DeleteSubject::ObjectsAndParts {
+            page,
+            objects,
+            leaves,
+        } => VectorAction::DeleteParts {
+            page,
+            objects,
+            leaves,
+        },
         DeleteSubject::Subpath {
             page,
             object,

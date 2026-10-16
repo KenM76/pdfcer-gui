@@ -27,6 +27,9 @@ const FUNNEL: &str = "move-mixed"; // ui-text-exempt: a trace event name, never 
 const DECLINED: &str = "align-declined"; // ui-text-exempt: a trace event name, never displayed
 const MOVED: &str = "canvas-move"; // ui-text-exempt: a trace event name, never displayed
 /// How far the drag checks move the green rectangle, page space.
+const DELETED: &str = "delete-parts-applied"; // ui-text-exempt: a trace event name, never displayed
+const DELETED_OBJECTS: &str = "delete-objects"; // ui-text-exempt: a trace event name, never displayed
+const UNDO: &str = "undo"; // ui-text-exempt: a trace event name, never displayed
 const DRAG_BY: (f64, f64) = (20.0, -15.0);
 
 /// See the module documentation.
@@ -345,6 +348,148 @@ fn drag_carried(
             &moved,
         )
     }))
+}
+
+/// See the module documentation.
+pub struct APartAndAPageObjectDeleteTogether;
+
+impl Check for APartAndAPageObjectDeleteTogether {
+    fn name(&self) -> &'static str {
+        "a_part_and_a_page_object_delete_together"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Delete with a part of a placed drawing and a page object selected removes only the page \
+         object, or takes two undo steps"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match run_body(ctx, &mut report, FIXTURE, "deletemixed", delete_together) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn delete_together(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<Option<String>> {
+    if let Some(failure) = red_and_green(ctx, report, session, pointer, page)? {
+        return Ok(Some(failure));
+    }
+    let applied = match press_delete(report, session, pointer)? {
+        Ok(line) => line,
+        Err(failure) => return Ok(Some(failure)),
+    };
+    let wanted = ["objects=1/1", "parts=1/1", "forms=1/1", "one_step=true"];
+    if let Some(w) = missing(&applied.raw, &wanted) {
+        return Ok(Some(fail(
+            session,
+            &format!("the part and the page object must both be deleted as one step (`{w}`)"),
+            &applied.raw,
+        )));
+    }
+    let mark = session.trace()?.mark();
+    pointer.key(session, None, "Z", Some("ctrl"))?;
+    session.settle(40);
+    let trace = session.trace()?;
+    let undo = trace.last_after(UNDO, mark);
+    let raw = undo.map_or("nothing", |l| l.raw.as_str());
+    report.note(format!("Ctrl+Z: `{raw}`"));
+    // `undo` traces the depth before it steps: the delete alone is on the stack.
+    if undo.and_then(|l| l.get_usize("undo_depth")) == Some(1) {
+        return Ok(None);
+    }
+    Ok(Some(fail(
+        session,
+        "the whole delete must be one command on the undo stack (`undo_depth=1`)",
+        raw,
+    )))
+}
+
+/// See the module documentation.
+pub struct APartInsideADeletedDrawingGoesWithIt;
+
+impl Check for APartInsideADeletedDrawingGoesWithIt {
+    fn name(&self) -> &'static str {
+        "a_part_inside_a_deleted_drawing_goes_with_it"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Delete with a part and its own drawing both selected deletes the part a second time"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match run_body(ctx, &mut report, FIXTURE, "deletecarried", delete_carried) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+fn delete_carried(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    page: PageGeometry,
+) -> Result<Option<String>> {
+    if let Some(failure) = red_and_green(ctx, report, session, pointer, page)? {
+        return Ok(Some(failure));
+    }
+    let selected = shift_click(ctx, session, pointer, page, ON_BLUE)?;
+    report.note(format!("after Shift+click on the blue part: `{selected}`"));
+    if !selected.contains(" sel=3 ") {
+        return Ok(Some(fail(
+            session,
+            "Shift+click on the drawing must add it whole, three entries selected",
+            &selected,
+        )));
+    }
+    let applied = match press_delete(report, session, pointer)? {
+        Ok(line) => line,
+        Err(failure) => return Ok(Some(failure)),
+    };
+    let wanted = ["objects=2/2", "parts=0/0", "forms=0/0", "carried=1"];
+    Ok(missing(&applied.raw, &wanted).map(|w| {
+        fail(
+            session,
+            &format!("the drawing must take its part with it, in one command (`{w}`)"),
+            &applied.raw,
+        )
+    }))
+}
+
+/// Press Delete; the `delete-parts-applied` line, or the FAIL sentence.
+fn press_delete(
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<std::result::Result<TraceLine, String>> {
+    let mark = session.trace()?.mark();
+    pointer.key(session, None, "Delete", None)?;
+    session.settle(40);
+    let trace = session.trace()?;
+    let Some(applied) = trace.last_after(DELETED, mark) else {
+        let other = trace
+            .last_after(DELETED_OBJECTS, mark)
+            .map_or("nothing", |l| l.raw.as_str());
+        return Ok(Err(fail(
+            session,
+            &format!("the Delete must commit `{DELETED}`"),
+            other,
+        )));
+    };
+    report.note(format!("Delete: `{}`", applied.raw));
+    Ok(Ok(applied.clone()))
 }
 
 /// Drag the green rectangle by `DRAG_BY` page units.

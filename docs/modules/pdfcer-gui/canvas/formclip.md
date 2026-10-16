@@ -22,7 +22,7 @@ reason=session-borrowed`, from `canvas::take::leaves_of`) rather than waiting.
 
 ## Cut
 
-Copy first, then `VectorAction::DeleteLeavesInForm` — one undo entry for the
+Copy first, then `VectorAction::DeleteParts` with no page objects — one undo entry for the
 deletion. A refused copy deletes nothing. The engine has no cut twin.
 
 ## Mixed selections
