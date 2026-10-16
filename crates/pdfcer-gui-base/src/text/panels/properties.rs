@@ -249,6 +249,12 @@ pub const fn geometry_heading() -> &'static str {
     "Position and size"
 }
 
+/// Under the heading when several items are selected.
+#[must_use]
+pub fn geometry_several(n: usize) -> String {
+    format!("{n} selected items, moved together as one box.")
+}
+
 /// The units line under the heading.
 #[must_use]
 pub const fn geometry_units_note() -> &'static str {

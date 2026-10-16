@@ -542,6 +542,8 @@ fn leaf_section(ui: &mut egui::Ui, doc: &OpenDoc) -> bool {
     }) else {
         return false;
     };
+    // The section's own rect: `min_rect` alone spans every section above it.
+    let top = ui.cursor().top();
     ui.label(egui::RichText::new(t::properties_leaf_heading()));
     ui.label(egui::RichText::new(t::properties_leaf_note()).small());
     ui.separator();
@@ -557,7 +559,9 @@ fn leaf_section(ui: &mut egui::Ui, doc: &OpenDoc) -> bool {
             ui.label(value);
         });
     }
-    crate::diag::ui_rect_visible(REGION_LEAF, ui.min_rect(), ui.clip_rect());
+    let mut own = ui.min_rect();
+    own.min.y = own.min.y.max(top);
+    crate::diag::ui_rect_visible(REGION_LEAF, own, ui.clip_rect());
     crate::diag::trace(|| format!("properties-panel leaf={leaf} kind={:?}", described.kind));
     true
 }

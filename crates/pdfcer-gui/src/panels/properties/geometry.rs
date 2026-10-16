@@ -20,6 +20,7 @@ use pdfcer_gui_base::entry;
 /// engine verbs behind them. Split out under R2 on 2026-09-07; its header says
 /// where the seam was drawn and why the arithmetic did not move with it.
 mod annot;
+mod several;
 
 pub const REGION: &str = "properties.geometry"; // ui-text-exempt: diagnostic region name
 
@@ -112,6 +113,8 @@ pub enum Subject {
     Annot(ObjId),
     /// A part of a placed drawing, by index into the page's leaf list.
     Leaf(usize),
+    /// Several items moved as one box, keyed by their count and canvas union.
+    Several(u64),
 }
 
 /// The axis-aligned bounds of a path object, in PDF user space.
@@ -361,30 +364,9 @@ pub fn annot_plan(draft: &GeometryDraft, bounds: Bounds) -> AnnotPlan {
 
 /// Draw the section, returning whether it drew anything.
 ///
-/// Returns `false` — and draws **nothing**, per R9 — whenever the selection has
-/// no subject this section can act on. That covers no selection, several
-/// objects, a text run, an image, and a **ce dimension** (whose geometry has
-/// its own verbs and its own section). In every one of those cases the correct
-/// surface is silence rather than four greyed spinners: the fields are not
-/// *temporarily* unavailable, they have no subject.
-///
-///
-///
-/// ```text
-/// // An annotation's geometry is its `/Rect`, which no verb in this build
-/// // rewrites — see `FEATURES.md`'s Format-tab row. Showing editable X/Y/W/H
-/// // over one would be a control that accepts a value and discards it.
-/// if doc.selection.annot().is_some() {
-///     return false;
-/// }
-/// ```
-///
-/// **The premise expired.** `EditSession::move_annotation` and
-/// `EditSession::resize_annotation` both ship and this shell already calls
-/// both, from `canvas::annotdrag` and `canvas::resizing`. The module header
-/// carries the full account of the correction and of why it is recorded rather
-/// than quietly removed. What replaced the `return false` is a fork to
-/// [`annot_section`], which raises those same two verbs.
+/// Several measured items take [`several::section`]; one annotation the
+/// annotation arm; one page object or part the fields below. Anything else
+/// draws nothing (R9): the fields have no subject, not a temporary refusal.
 pub fn section(
     ui: &mut Ui,
     doc: &OpenDoc,
@@ -396,6 +378,11 @@ pub fn section(
     // (`canvas::selection::SelectionState` — *"one canvas, one selection"*), so
     // falling through to the content arm after an annotation arm that declined
     // could only ever read a stale content selection.
+    if let Some(measured) = crate::panels::align::measure(ui.ctx(), doc)
+        && measured.boxes.len() > 1
+    {
+        return several::section(ui, doc, &measured, draft, actions);
+    }
     if let Some(annot) = doc.selection.annot() {
         return annot::section(ui, doc, &annot.target, draft, actions);
     }
@@ -421,34 +408,6 @@ pub fn section(
     // describes its orientation and this panel does not invent one.
     draft.sync(page, subject, doc.edit_epoch, bounds, None);
 
-    //
-    // The Properties panel is a `ScrollArea`, and in an ordinary dock layout
-    // this section is taller than the slot it gets. A rect published for a
-    // control that is scrolled out of sight does not merely mislead a reader:
-    // a driven check **clicks** it, and the click lands on whatever is
-    // genuinely at those coordinates.
-    //
-    // That is not hypothetical. `ui-verify geometry_fields_resize_a_shape`
-    // reported *"THE WIDTH FIELD WAS SCRUBBED BY 80 PIXELS AND APPLY COMMITTED
-    // NOTHING AND DECLINED NOTHING"* — a report that reads as a dead button and
-    // was filed as one. The trace said otherwise:
-    //
-    //     properties.geometry        [[786.0 591.7] - [1100.0 762.0]]
-    //     properties.geometry.apply  [[786.0 776.7] - [ 835.0 804.7]]
-    //
-    // Apply was **14 points below the panel's viewport**, the click went to
-    // empty canvas, and nothing was pressed. The button was never broken.
-    //
-    // Publishing only what is visible turns that false failure into an honest
-    // SKIP naming the real condition — the panel is shorter than its content.
-    // An absent region is a much better lie-free answer than a present one that
-    // cannot be clicked.
-    //
-    // And it is the section's REAL extent, not `ui.max_rect()`. That was the
-    // available space when the section started drawing — which in a scroll area
-    // is the remaining viewport — so it published a rect ending at 762 while
-    // its own Apply button laid out at 776. A region that does not contain its
-    // own controls is not a region.
     // No `.strong()` — R84 / DEFECTS.md D11.
     ui.label(t::geometry_heading());
     ui.label(egui::RichText::new(t::geometry_units_note()).small().weak());

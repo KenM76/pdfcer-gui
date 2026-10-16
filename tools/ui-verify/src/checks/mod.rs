@@ -245,6 +245,8 @@ mod savedannots;
 pub mod stroke_style;
 /// A typed move and turn applied together are one Undo.
 pub mod typedonestep;
+/// A typed X over several selected objects moves them together, as one Undo.
+pub mod typedseveral;
 pub mod typedturn;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the

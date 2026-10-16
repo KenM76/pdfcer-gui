@@ -25,6 +25,5 @@ PASS needs, in order:
 - A typed resize in the same Apply. That step goes through
   `resizing::action`; the resize checks that drive it need OS input and SKIP
   under `--no-input`.
-- Several selected objects: Properties' X/Y over a multi-selection is not
-  built.
+- Several selected objects: that is `typedseveral.md`.
 - The full-stack branch (`MAX_UNDO_DEPTH`), which counts by edit epoch.

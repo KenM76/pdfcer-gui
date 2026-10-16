@@ -537,7 +537,7 @@ fn red_and_green(
 }
 
 /// Shift+click at page point `on`; the last `canvas-selection` line after it.
-fn shift_click(
+pub(super) fn shift_click(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,

@@ -595,6 +595,18 @@ fn moves_action(
     )
 }
 
+/// Every measured item moved by the same canvas delta: one undo step, or
+/// `None` when the delta is negligible.
+#[must_use]
+pub fn shift(
+    doc: &OpenDoc,
+    m: &Measured,
+    canvas: (f64, f64),
+    gesture: &'static str,
+) -> Option<Action> {
+    moves_action(doc, m, vec![canvas; m.boxes.len()], gesture)
+}
+
 /// Run `ops` against the current selection as one step: push the action, or
 /// say why nothing moved.
 pub fn run(

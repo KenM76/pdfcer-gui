@@ -492,6 +492,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(alignmixed::APartInsideADeletedDrawingGoesWithIt),
         Box::new(typedturn::ATypedTurnRotatesAnObjectAboutItsCentre),
         Box::new(typedonestep::ATypedEditIsOneUndo),
+        Box::new(typedseveral::TypedXMovesSeveral),
         Box::new(nodeshape::ANodesSegmentCanBeCurvedAndANodeInserted),
         Box::new(leaftransform::APartOfAPlacedDrawingCanBeResizedAndRotated),
         Box::new(replaceimage::ReplaceImageSwapsThePictureInPlace),

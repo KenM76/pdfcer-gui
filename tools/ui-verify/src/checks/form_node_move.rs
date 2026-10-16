@@ -114,10 +114,13 @@ fn enter_and_read_properties(
             session.trace_path().display()
         )));
     }
+    // Properties scrolls; reachable is the bar, not drawn above the fold.
+    super::stroke_style::into_view(ctx, session, pointer, LEAF_REGION)?;
+    let trace = session.trace()?;
     if driving::declared(&trace, ui_rect, LEAF_REGION).is_none() {
         return Ok(Some(format!(
             "the leaf was described and `{LEAF_REGION}` was never on screen: the section drew \
-             outside the panel's visible area. Trace: {}.",
+             outside the panel's visible area, even scrolled. Trace: {}.",
             session.trace_path().display()
         )));
     }
