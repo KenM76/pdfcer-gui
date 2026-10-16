@@ -35,7 +35,7 @@ impl Check for EnterInARecognisedLineIsDeclined {
     }
 
     fn defect(&self) -> &'static str {
-        "Enter in a line of recognised text re-spaces its whole paragraph, moving the words off          the scan they sit over"
+        "Enter in a line of recognised text re-spaces its whole paragraph, off the scan"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -77,7 +77,8 @@ fn drive_recognised(
         .is_some_and(|d| d.contains("reason=recognised-word"));
     Ok((!named || promoted.is_some()).then(|| {
         format!(
-            "Enter in a recognised line traced {declined:?} and {promoted:?}; want it declined              with reason=recognised-word and no paragraph opened. Trace: {}.",
+            "Enter in a recognised line traced {declined:?} and {promoted:?}; want \
+             reason=recognised-word and no paragraph opened. Trace: {}.",
             session.trace_path().display()
         )
     }))
