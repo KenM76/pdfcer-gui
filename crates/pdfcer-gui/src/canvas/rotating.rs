@@ -170,6 +170,13 @@ pub fn drag(
     // anchor+factors shape as move and resize, so your grip code needs no third
     // convention."* This branch is therefore a **routing decision** rather than
     // a second arithmetic, exactly as the resize's is.
+    let degrees = f64::from((-theta).to_degrees());
+    if let Some(group) =
+        crate::canvas::annotgroup::rotate(selection, page_index, (pivot.x, pivot.y), degrees)
+    {
+        actions.push(group);
+        return None;
+    }
     if let Some(annot) = selection.annot() {
         commit_annotation(annot, dimension, pivot, theta, actions);
         return None;

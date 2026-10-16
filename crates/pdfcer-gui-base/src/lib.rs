@@ -535,6 +535,9 @@ pub mod navdest;
 /// The verbs whose subject is an annotation.
 pub mod annotaction;
 
+/// Several annotations resized or turned by one grip drag.
+pub mod annotmany;
+
 /// The annotation-flag switches and what each does to the `/F` word.
 pub mod annotflagswitch;
 

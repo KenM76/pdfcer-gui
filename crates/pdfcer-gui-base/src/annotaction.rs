@@ -102,6 +102,10 @@ pub enum AnnotAction {
         /// apply time** — `OPERATOR_REQUESTS.md` O51.
         modifiers: crate::scaling::Modifiers,
     },
+    /// Several markups scaled by one grip drag, each about its own corner.
+    ResizeMany(crate::annotmany::ResizeMany),
+    /// Several markups turned by one rotate drag, each about its own centre.
+    RotateMany(crate::annotmany::RotateMany),
     /// **Turn a markup annotation about a pivot**, as one undoable command.
     ///
     /// Raised by `crate::canvas::rotating` on the release of a rotate-handle

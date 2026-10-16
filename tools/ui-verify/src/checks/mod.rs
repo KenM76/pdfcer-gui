@@ -1428,6 +1428,8 @@ pub mod ui_scale;
 pub mod annot_delete_many;
 /// Several annotations, one locked, dragged together and restored by one Undo.
 pub mod annot_group_drag;
+/// Two markups resized and turned by one grip drag each, one undo step each.
+pub mod annot_group_scale;
 /// Several markups, a link and a ce dimension selected and aligned as one undo step.
 pub mod annot_multiselect;
 /// An Align over more annotations than one undo step holds, refused with a reason.

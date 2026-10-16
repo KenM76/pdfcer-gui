@@ -43,6 +43,8 @@ mod flags;
 mod flatten;
 pub(crate) use flatten::refusal as flatten_refusal;
 mod inknodes;
+/// Several markups resized or turned by one grip drag, as one undo step.
+mod many;
 /// Re-span a text markup over other words.
 mod respan;
 /// The `set-markup-style-applied` read-back, for `apply`'s style arm.
@@ -192,48 +194,7 @@ pub(super) fn resize(
     super::apply::vector_edit(doc, "resize-annotation", 0, 1, |session| {
         session
             .resize_annotation(id, anchor, sx, sy, &opts)
-            .inspect_err(|error| {
-                // **The refusal is caught here and worded**, rather than
-                // being left to `vector_edit`'s generic arm, which traces the
-                // engine's reason and, per O116, words only *"That change was
-                // refused, and the document is unchanged."* That floor ends
-                // the silence; it cannot name a remedy, and naming one is the
-                // whole value of catching the refusal here.
-                //
-                // A resize that silently does nothing is this project's
-                // founding failure: the operator drags a grip, lets go, the
-                // shape snaps back, and no surface anywhere says why.
-                //
-                // Recorded from INSIDE the closure because the condition is
-                // not knowable before the call — whether an appearance is
-                // pdfcer's own is a property of the file. `record_save_failure`
-                // is called from the apply phase for the identical reason;
-                // `record_flatten_certified` is not, because its refusal is a
-                // query.
-                //
-                // Only this one variant. Every other `EditError` stays
-                // trace-only, which is honest: wording a
-                // decline is catalog work per refusal, and a `format!` of an
-                // `EditError`'s `Display` would route diagnostic prose into the
-                // UI — the thing `check-ui-strings`' exclusion 3 names in as
-                // many words.
-                if let pdfcer_core::edit::EditError::ResizeAppearanceNotRebuildable {
-                    uniform: was_uniform,
-                    ..
-                } = error
-                {
-                    crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
-                }
-                // And its sibling: a `/Text` sticky or a `NoZoom` annotation
-                // has no size to scale. Worded because the Properties panel's
-                // geometry fields can raise this resize even though the
-                // sticky's canvas grips are move-only. `subtype == "Text"` is
-                // the engine's own test for which of `resize_annotation`'s two
-                // `why` sentences it chose.
-                if let pdfcer_core::edit::EditError::ResizeFixedSizeMarker { subtype, .. } = error {
-                    crate::app::status::decline::record_resize_fixed_size_marker(subtype != "Text");
-                }
-            })
+            .inspect_err(record_resize_refusal)
             .map(|outcome| {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
@@ -246,19 +207,68 @@ pub(super) fn resize(
                         outcome.stroke_width.is_some()
                     )
                 });
-                let mut notes = Vec::new();
-                if outcome.stroke_width.is_none() {
-                    notes.push(crate::text::markup::stroke_width_unchanged());
-                }
-                if matches!(
-                    outcome.appearance,
-                    pdfcer_core::edit::ResizedAppearance::CarriedDistorted
-                ) {
-                    notes.push(crate::text::markup::appearance_distorted());
-                }
-                notes
+                resize_notes(&outcome)
             })
     });
+}
+
+/// Word a resize refusal that has a remedy; the rest stay trace-only.
+pub(super) fn record_resize_refusal(error: &pdfcer_core::edit::EditError) {
+    // **The refusal is caught here and worded**, rather than
+    // being left to `vector_edit`'s generic arm, which traces the
+    // engine's reason and, per O116, words only *"That change was
+    // refused, and the document is unchanged."* That floor ends
+    // the silence; it cannot name a remedy, and naming one is the
+    // whole value of catching the refusal here.
+    //
+    // A resize that silently does nothing is this project's
+    // founding failure: the operator drags a grip, lets go, the
+    // shape snaps back, and no surface anywhere says why.
+    //
+    // Recorded from INSIDE the closure because the condition is
+    // not knowable before the call — whether an appearance is
+    // pdfcer's own is a property of the file. `record_save_failure`
+    // is called from the apply phase for the identical reason;
+    // `record_flatten_certified` is not, because its refusal is a
+    // query.
+    //
+    // Only this one variant. Every other `EditError` stays
+    // trace-only, which is honest: wording a
+    // decline is catalog work per refusal, and a `format!` of an
+    // `EditError`'s `Display` would route diagnostic prose into the
+    // UI — the thing `check-ui-strings`' exclusion 3 names in as
+    // many words.
+    if let pdfcer_core::edit::EditError::ResizeAppearanceNotRebuildable {
+        uniform: was_uniform,
+        ..
+    } = error
+    {
+        crate::app::status::decline::record_resize_not_rebuildable(*was_uniform);
+    }
+    // And its sibling: a `/Text` sticky or a `NoZoom` annotation
+    // has no size to scale. Worded because the Properties panel's
+    // geometry fields can raise this resize even though the
+    // sticky's canvas grips are move-only. `subtype == "Text"` is
+    // the engine's own test for which of `resize_annotation`'s two
+    // `why` sentences it chose.
+    if let pdfcer_core::edit::EditError::ResizeFixedSizeMarker { subtype, .. } = error {
+        crate::app::status::decline::record_resize_fixed_size_marker(subtype != "Text");
+    }
+}
+
+/// What a resize owes the status line besides itself.
+pub(super) fn resize_notes(outcome: &pdfcer_core::edit::AnnotationResize) -> Vec<String> {
+    let mut notes = Vec::new();
+    if outcome.stroke_width.is_none() {
+        notes.push(crate::text::markup::stroke_width_unchanged());
+    }
+    if matches!(
+        outcome.appearance,
+        pdfcer_core::edit::ResizedAppearance::CarriedDistorted
+    ) {
+        notes.push(crate::text::markup::appearance_distorted());
+    }
+    notes
 }
 
 /// **Turn a markup annotation about a pivot.**
@@ -438,7 +448,9 @@ pub(super) fn rotate_dimension(
 }
 
 /// Which worded refusal an `EditError` from either rotation verb becomes.
-fn refusal_for(error: &pdfcer_core::edit::EditError) -> crate::text::rotating::RotateRefusal {
+pub(super) fn refusal_for(
+    error: &pdfcer_core::edit::EditError,
+) -> crate::text::rotating::RotateRefusal {
     use crate::text::rotating::RotateRefusal;
     match error {
         // The routing backstop. Unreachable while `canvas::rotating`'s
@@ -729,6 +741,8 @@ pub(super) fn apply_action(
         // ce dimension from the annotation verb by name. See
         // [`rotate_dimension`].
         A::Rotate { id, pivot, degrees } => rotate(doc, id, pivot, degrees),
+        A::ResizeMany(m) => many::resize_many(doc, &m),
+        A::RotateMany(m) => many::rotate_many(doc, &m),
         A::SetRotation { id, pivot, degrees } => set_rotation(doc, id, pivot, degrees),
         A::RotateDimension {
             dimension,

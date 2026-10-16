@@ -391,6 +391,16 @@ pub fn drag(
     // encoding our affordance in your crate."* So the two transform verbs
     // consume the identical pair and this branch is a routing decision rather
     // than a second arithmetic.
+    if let Some(group) = crate::canvas::annotgroup::resize(
+        selection,
+        page_index,
+        (anchor.x, anchor.y),
+        (sx, sy),
+        modifiers,
+    ) {
+        actions.push(group);
+        return Some((sx, sy));
+    }
     if let Some(annot) = selection.annot() {
         if annot.target.kind != crate::canvas::selection::AnnotKind::Markup || annot.target.locked {
             // No scale verb for a ce dimension -- its extent IS its

@@ -114,7 +114,8 @@ fn drive(
     Ok(None)
 }
 
-fn point(x: f32, y: f32) -> WindowPoint {
+/// The window point at `x`, `y`.
+pub(crate) fn point(x: f32, y: f32) -> WindowPoint {
     WindowPoint::centre_of(LRect::new(Pt::new(x, y), Pt::new(x, y)))
 }
 

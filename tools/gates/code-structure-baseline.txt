@@ -38,7 +38,6 @@ dup tools/ui-verify::open_properties in tools/ui-verify/src/checks/load_anomalie
 dup tools/ui-verify::open_window in tools/ui-verify/src/checks/remove_metadata.rs, tools/ui-verify/src/checks/remove_ocr_pages.rs
 dup tools/ui-verify::overlaps in tools/ui-verify/src/checks/pages_drag.rs, tools/ui-verify/src/checks/refused_character_face.rs
 dup tools/ui-verify::pdf_bytes in tools/ui-verify/src/checks/model_saved_view.rs, tools/ui-verify/src/checks/model_views_saved.rs
-dup tools/ui-verify::point in tools/ui-verify/src/checks/leaftransform.rs, tools/ui-verify/src/checks/ocr_layer_view.rs, tools/ui-verify/src/checks/signing/adjusting.rs, tools/ui-verify/src/checks/signing/placement.rs
 dup tools/ui-verify::press in tools/ui-verify/src/checks/attach_file.rs, tools/ui-verify/src/checks/attach_sound.rs, tools/ui-verify/src/checks/insert_text.rs, tools/ui-verify/src/checks/media_clip.rs, tools/ui-verify/src/checks/replace_text.rs
 dup tools/ui-verify::press in tools/ui-verify/src/checks/clip_pages.rs, tools/ui-verify/src/checks/print_shop.rs
 dup tools/ui-verify::resolve_exe in tools/ui-verify/src/checks/graphics_pressure.rs, tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/off_page_ceiling.rs, tools/ui-verify/src/checks/scripted_keys.rs, tools/ui-verify/src/checks/stamp_collection.rs

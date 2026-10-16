@@ -7,6 +7,7 @@
 
 use super::hand_sign::{count, ink_pixels, shoot, signing_area};
 use super::picture_sign::{REGION_PLACE, open, undo_and_save};
+use crate::checks::leaftransform::point;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::Result;
@@ -19,10 +20,6 @@ const REGION_SELECTED: &str = "form.hand-sig.selected";
 /// The fraction of the box's width, from its left edge, that must hold no
 /// ink once the signature is pushed past the box's right end.
 const LEFT_CLEAR: f32 = 0.4;
-
-fn point(x: f32, y: f32) -> WindowPoint {
-    WindowPoint::centre_of(LRect::new(Pt::new(x, y), Pt::new(x, y)))
-}
 
 /// See the module documentation.
 pub struct APlacedSignatureMovesAndResizes;

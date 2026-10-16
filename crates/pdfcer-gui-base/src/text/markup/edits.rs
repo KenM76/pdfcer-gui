@@ -480,6 +480,40 @@ pub const fn ink_redrawn_straight() -> &'static str {
      original drawing back."
 }
 
+/// Several markups resized (`turned` false) or turned together, some refused
+/// by the engine and left as they were.
+#[must_use]
+pub fn changed_some_of(turned: bool, done: usize, of: usize) -> String {
+    let verb = if turned { "Turned" } else { "Resized" };
+    format!("{verb} {done} of {of} markups; the others were refused and are as they were.")
+}
+
+/// Selected annotations a group resize or turn left out: locked, a ce
+/// dimension, or on another page.
+#[must_use]
+pub fn left_out_of_group(turned: bool, n: usize) -> String {
+    let verb = if turned { "turn" } else { "resize" };
+    let (count, is) = if n == 1 {
+        ("1 selected annotation".to_owned(), "is")
+    } else {
+        (format!("{n} selected annotations"), "are")
+    };
+    format!(
+        "{count} did not {verb} with the rest and {is} as before: locked, a ce dimension, \
+         or on another page."
+    )
+}
+
+/// Several markups resized or turned, but not as one undo step.
+#[must_use]
+pub const fn group_not_one_undo(turned: bool) -> &'static str {
+    if turned {
+        "Turned, but it will take more than one Undo to put them all back."
+    } else {
+        "Resized, but it will take more than one Undo to put them all back."
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

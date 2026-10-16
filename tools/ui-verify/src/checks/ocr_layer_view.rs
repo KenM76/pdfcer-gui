@@ -7,8 +7,9 @@
 
 use super::dimdrive::{Fixture, press_on_tab, run_on, ui_rect_event};
 use crate::checks::driving::{declared, declared_names, list};
+use crate::checks::leaftransform::point;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowFrame, WindowPoint};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowFrame};
 use crate::error::{Error, Result};
 use crate::geom::{LRect, PixRect, Pt};
 use crate::image::Image;
@@ -159,11 +160,6 @@ impl<'a> Scene<'a> {
         ));
         Ok(ink)
     }
-}
-
-/// The window point `(x, y)`, in logical points.
-fn point(x: f32, y: f32) -> WindowPoint {
-    WindowPoint::centre_of(LRect::new(Pt::new(x, y), Pt::new(x, y)))
 }
 
 fn drive(
