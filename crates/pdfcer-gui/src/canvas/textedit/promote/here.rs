@@ -6,7 +6,7 @@
 //! page, and an edit inside the paragraph moves its lower and right edges but
 //! not that corner.
 
-use super::{Declined, Draft, paragraph, widen};
+use super::{Draft, opening_box, widen};
 use crate::app::state::OpenDoc;
 use crate::canvas::textedit::{Anchor, read, store};
 
@@ -98,12 +98,10 @@ pub fn toggle(ctx: &egui::Context, doc: &OpenDoc) {
             trace(false, page, llx, ury, demoted);
         }
         Anchor::Run { run, original } => {
-            let p = match paragraph(doc, page, run, &original) {
-                Ok(p) if p.lines >= 2 => p,
-                Ok(_) => return trace_declined("one-line"),
-                Err(Declined { token, .. }) => return trace_declined(token),
+            let (llx, _, _, ury) = match opening_box(doc, page, run, &original) {
+                Ok(bbox) => bbox,
+                Err(token) => return trace_declined(token),
             };
-            let (llx, _, _, ury) = p.bbox;
             set(
                 ctx,
                 Answer {

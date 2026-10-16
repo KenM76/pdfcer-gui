@@ -256,7 +256,9 @@ pub fn widen(
     };
     let run = *run;
     if recognised(doc, draft.page, run).is_err() {
-        return recognised::widen(ctx, doc, draft, default);
+        // A recognised paragraph opens on its own answer only: its words
+        // have an in-place preview, its paragraph has none.
+        return recognised::widen(ctx, doc, draft);
     }
     let started = std::time::Instant::now();
     let result = paragraph(doc, draft.page, run, original).and_then(|p| {
@@ -319,6 +321,27 @@ fn recognised(doc: &OpenDoc, page: usize, run: usize) -> Result<(), Declined> {
         Err(Declined::no_paragraph("recognised-word"))
     } else {
         Ok(())
+    }
+}
+
+/// The box of the paragraph `run` would open as, recognised or not.
+///
+/// # Errors
+///
+/// The trace token when the run opens no paragraph of two lines or more.
+fn opening_box(
+    doc: &OpenDoc,
+    page: usize,
+    run: usize,
+    original: &str,
+) -> Result<(f64, f64, f64, f64), &'static str> {
+    if recognised(doc, page, run).is_err() {
+        return recognised::bbox(doc, page, run, original).map_err(|d| d.token);
+    }
+    match paragraph(doc, page, run, original) {
+        Ok(p) if p.lines >= 2 => Ok(p.bbox),
+        Ok(_) => Err("one-line"),
+        Err(d) => Err(d.token),
     }
 }
 
