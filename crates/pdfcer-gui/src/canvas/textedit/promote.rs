@@ -26,6 +26,7 @@ use super::{Anchor, Draft};
 use crate::app::state::OpenDoc;
 
 pub mod here;
+pub mod objects;
 
 /// The options a paragraph draft is previewed and committed under: the
 /// caret's typing disposition and the installed faces, no fallback face, and

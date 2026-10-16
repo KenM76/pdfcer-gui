@@ -657,6 +657,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(paragraphs_page::ParagraphsOffOnOnePageLeavesTheNext),
         Box::new(paragraph_here::OneParagraphOpensAsLinesWhileItsNeighbourOpensWhole),
         Box::new(word_gap_here::WordGapOpensFromTheTextBeingEdited),
+        Box::new(paragraph_pick::OneClickSelectsAParagraphDrawnFromSeveralObjects),
         // O127 defect 2 — and registered WITHOUT having been run, on the
         // precedent `left_rail`, `properties_tool` and `protect` above set: a
         // check that exists and is not registered is a check nobody will ever

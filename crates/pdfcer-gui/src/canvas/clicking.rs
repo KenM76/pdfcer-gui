@@ -922,7 +922,19 @@ pub fn click(
                 crate::canvas::smart::leave(ctx);
             }
         }
+        // Held before THIS gesture: the press has already selected an
+        // unselected hit (`presspick`), so its own change does not count.
+        let held = !crate::canvas::presspick::changed_selection(ctx)
+            && hit.object.is_some_and(|o| {
+                selection
+                    .entries()
+                    .iter()
+                    .any(|e| e.page == page_index && e.object == o)
+            });
         selection.click(page_index, hit, shift, double);
+        if !shift && !double && !held {
+            paragraph_pick(ctx, doc, page_index, hit.object, selection);
+        }
         // Recorded WITH the object it is about, so it cannot be claimed for
         // a selection that arrived some other way — see `canvas::depth::taken`.
         if let Some(object) = hit.object {
@@ -943,6 +955,40 @@ pub fn click(
             });
         }
     }
+}
+
+/// A first click on a text object that is one of several drawing a paragraph
+/// takes them all; a second click on one of them narrows to it.
+fn paragraph_pick(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    page: usize,
+    hit: Option<crate::panels::objects::provider::TargetId>,
+    selection: &mut SelectionState,
+) {
+    use crate::panels::objects::provider::TargetId;
+    let Some(TargetId::Object(object)) = hit else {
+        return;
+    };
+    let Ok(index) = usize::try_from(object) else {
+        return;
+    };
+    let found = match crate::canvas::textedit::promote::objects::of(ctx, doc, page, index) {
+        Ok(found) => found,
+        Err(reason) => {
+            crate::diag::trace(move || {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("paragraph-pick-declined object={index} reason={reason}")
+            });
+            return;
+        }
+    };
+    let ids: Vec<TargetId> = found.iter().map(|&i| TargetId::Object(i as u64)).collect();
+    selection.marquee(page, &ids, false);
+    crate::diag::trace(move || {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("paragraph-pick object={index} objects={}", ids.len())
+    });
 }
 
 /// **Is there a word under this point?**

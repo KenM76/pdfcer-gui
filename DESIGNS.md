@@ -60,8 +60,10 @@ conflicts with R75 and goes back to him.
    dragging it re-wraps at that width (`ReflowRequest::with_wrap_width`).
    This is the visible half of reflow and needs nothing from the engine.
 3. **Select tool** (four clicks built). A fourth click of a burst selects
-   the paragraph, a triple click the line, both across runs. Not built: a
-   click on the paragraph's box; OCR words wait on G201.
+   the paragraph, a triple click the line, both across runs. One click on
+   a paragraph drawn from several text objects (built) selects every one of
+   them (`promote::objects::of`, the paragraph a text click would open, under
+   the same switches); a second click on a held member narrows to it.
 4. **Settings where the text is** (the switch built). *Paragraphs* on
    Edit ▸ Content, on the canvas text menu and in Settings ▸ Text, one
    preference (`open_paragraphs`, on): off, a click opens one line and an edit
