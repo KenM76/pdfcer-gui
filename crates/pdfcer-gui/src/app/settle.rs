@@ -35,6 +35,11 @@ const CURRENT_UNFILLABLE_SLOT: &str = "current-order-unfillable";
 /// sheets could not be ordered at this zoom"* — O186.
 const BEYOND_RASTER_SLOT: &str = "strip-beyond-raster";
 
+/// The [`crate::diag::trace_changed`] slot for the strip's on-screen pages,
+/// zero-based: the only witness of where a scroll landed when every page it
+/// reached was already drawn and nothing was requested.
+const VISIBLE_SLOT: &str = "strip-visible";
+
 impl PdfcerApp {
     /// Decide whether the cached page textures are still valid and, if not,
     /// whether to re-rasterize now or wait for a zoom gesture to settle.
@@ -230,6 +235,11 @@ impl PdfcerApp {
             return;
         }
         let visible = std::mem::take(&mut doc.strip_visible);
+        crate::diag::trace_changed(VISIBLE_SLOT, || {
+            let pages: Vec<String> = visible.iter().map(ToString::to_string).collect();
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("strip-visible pages={} current={current}", pages.join(","))
+        });
         // `retain` no longer takes the visible set, and that is the whole of
         // the operator's *"they constantly redraw with larger files"*.
         //

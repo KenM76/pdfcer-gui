@@ -2322,7 +2322,7 @@ that same unchanged magnification. In both, the solver read `origin_x` as the
 offset measured *before* the click, which is the property that makes "where you
 were looking" the operator rather than the page-turn.
 
-## O201 — ◑ **BUILT AND UNIT-FALSIFIED — NOT YET DRIVEN** — pages should already be rendered when he scrolls to them, and the visible ones come first
+## O201 — ◑ **BUILT AND DRIVEN — NOT CLOSED, that is yours** — pages should already be rendered when he scrolls to them, and the visible ones come first
 
 > *"on multipage documents I noticed with scanned pdf I have to wait for pages
 > to load as a I scroll to them. As many pages as we can should be rendered and
@@ -2450,9 +2450,21 @@ visible set every frame, and one rule table stated as an invariant that
 That is the sentence this row overturns, and it is corrected in the same
 commit rather than left to contradict the code.
 
-**Not driven.** Every gate green and the unit tests falsified, but the band
-filling on a real scanned document is a claim about a running program and
-only `ui-verify` can make it. That runs at the end of this batch.
+### Driven
+
+`pages_are_drawn_before_he_scrolls_to_them` runs off-screen through the
+scripted pointer, on the checked-in four-page fixture by default and on any
+document passed with `--pdf`. It opens in Read, stands still, requires the
+band to fill nearest-first and under budget, wheels forward, requires a
+prefetched page to be on screen (the new `strip-visible` line names the
+on-screen set even when nothing needs drawing), and requires none of the
+prefetched pages to be asked for again.
+
+Measured 2026-10-16 on `pdfTests/scan/telehandler-8pages.pdf`: standing on
+page 1 drew pages 2–8 ahead; the scroll put page 2 on screen and asked for
+nothing. Falsified twice: render-ahead switched off fails on the missing
+band; a cache that evicts everything once he leaves page 1 fails on 117
+re-requests of prefetched pages.
 ## O202 — **FILED** — form objects have no way to set their colour, before or after placement
 
 > *"the forms objects have no way to edit their colour before or after

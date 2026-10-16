@@ -5,15 +5,21 @@
 
 use std::collections::BTreeSet;
 
+use super::dimdrive::launch_path;
 use crate::checks::driving;
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
-use crate::launch::{LaunchSpec, Session};
+use crate::input::scripted::ScriptedPointer;
+use crate::launch::Session;
 use crate::report::CheckReport;
 
-/// The mode whose default page display is continuous.
-const MODE: &str = "read";
+/// The ribbon command for the mode whose default page display is continuous.
+const MODE: &str = "mode.read"; // ui-text-exempt: a command id, never displayed
+
+/// The document driven when no `--pdf` is given: few pages, but more than fit.
+const FIXTURE: &str = "four-pages.pdf";
+const FIXTURE_METHOD: &str = "It is checked in; restore it from git.";
 
 /// `strip-prefetch-requested page=N current=C` — render-ahead's own request.
 const PREFETCH_EVENT: &str = "strip-prefetch-requested";
@@ -21,6 +27,9 @@ const PREFETCH_EVENT: &str = "strip-prefetch-requested";
 /// `strip-raster-requested page=N visible=M` — the strip asking for a page the
 /// operator can SEE. Prefetches are deliberately not matched here.
 const VISIBLE_EVENT: &str = "strip-raster-requested";
+
+/// `strip-visible pages=A,B current=C` — the strip's on-screen pages.
+const SHOWN_EVENT: &str = "strip-visible";
 
 /// `strip-prefetch band=N texels=T budget=B` — the off-canvas disclosure.
 const DISCLOSURE_EVENT: &str = "strip-prefetch";
@@ -54,58 +63,55 @@ impl Check for PagesAreDrawnBeforeHeScrollsToThem {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let exe = ctx.resolve_exe().ok_or_else(|| {
-        Error::new(format!(
-            "no binary to drive. Pass --exe, or build the profile's default at {}.",
-            ctx.profile.default_exe
-        ))
-    })?;
-    let pdf = ctx.pdf.clone().ok_or_else(|| {
-        Error::new(
-            "no --pdf. This check waits for a strip to fill in around the page being read, so it \
-             needs a document with pages to spare.",
-        )
-    })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment and turns the wheel \
-             over the canvas. Reported as SKIPPED rather than passed: a check that did not run \
-             has learned nothing.",
-        ));
+    let doc = ctx.out("page_prefetch.pdf");
+    let source = match &ctx.pdf {
+        Some(pdf) => pdf.clone(),
+        None => driving::repo_fixture(FIXTURE, FIXTURE_METHOD)?,
+    };
+    std::fs::copy(&source, &doc)
+        .map_err(|e| Error::new(format!("copying {}: {e}", source.display())))?;
+    report.note(format!("document: {}", source.display()));
+    let (session, pointer) = launch_path(ctx, report, doc, MODE, "page_prefetch", &[])?;
+    let outcome = measure(ctx, report, &session, &pointer);
+    let parked = pointer.gone(&session);
+    match outcome? {
+        Some(failure) => Ok(Some(failure)),
+        None => parked.map(|_| None),
     }
-    let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
-        Error::new(format!(
-            "the `{}` profile declares no ui-rect trace event.",
-            ctx.profile.name
-        ))
-    })?;
+}
 
-    let mut spec = LaunchSpec::new(&exe, ctx.out("page_prefetch.trace.txt"));
-    spec.pdf = Some(pdf);
-    spec.env.push((
-        ctx.profile.diag_env.0.to_owned(),
-        ctx.profile.diag_env.1.to_owned(),
-    ));
-    spec.env.push((
-        driving::SHELL_DIAG_ENV.0.to_owned(),
-        driving::SHELL_DIAG_ENV.1.to_owned(),
-    ));
-    spec.allow_stale = ctx.allow_stale;
-    spec.source_root = ctx.source_root.clone();
-
-    let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
-    report.artifact(session.trace_path().to_path_buf());
-    report.note(format!(
-        "launched {} as pid {}",
-        exe.display(),
-        session.pid()
-    ));
-    session.settle(50);
-    let driver = Driver::new(session.window());
-
-    driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
+fn measure(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
     session.settle(40);
+    let at = canvas_centre(ctx, session)?;
 
+    // No gesture here, and that is the point: his complaint is about what
+    // pdfcer does while he is NOT scrolling. The strip starts one render per
+    // frame by design, so the band fills a page at a time and a check that
+    // looked immediately would read a band that had not finished as a band that
+    // never started.
+    pointer.hover(session, at)?;
+    session.settle(120);
+
+    let ahead = prefetched(session)?;
+    if let Some(failure) = band_fault(ctx, session, &ahead)? {
+        return Ok(Some(failure));
+    }
+    let ahead_pages: BTreeSet<usize> = ahead.iter().map(|(page, _)| *page).collect();
+    report.note(format!(
+        "standing still drew {} page(s) ahead of him, nearest first: {}",
+        ahead_pages.len(),
+        list(&ahead_pages.iter().copied().collect::<Vec<_>>())
+    ));
+    scrolled(report, session, pointer, at, &ahead_pages)
+}
+
+/// The centre of the canvas, where the wheel is turned.
+fn canvas_centre(ctx: &CheckContext, session: &Session) -> Result<WindowPoint> {
     let trace = session.trace()?;
     let line = trace.last(ctx.profile.vocab.canvas_event).ok_or_else(|| {
         Error::new(format!(
@@ -121,17 +127,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
                 ctx.profile.vocab.canvas_event, ctx.profile.vocab.canvas_rect_field
             ))
         })?;
-    let at = session.frame()?.declared_center(canvas);
+    Ok(WindowPoint::centre_of(canvas))
+}
 
-    // No gesture here, and that is the point: his complaint is about what
-    // pdfcer does while he is NOT scrolling. The strip starts one render per
-    // frame by design, so the band fills a page at a time and a check that
-    // looked immediately would read a band that had not finished as a band that
-    // never started.
-    driver.move_to(at)?;
-    session.settle(120);
-
-    let ahead = prefetched(&session)?;
+/// The band standing still produced, judged: empty, over budget, or out of
+/// order is a failure (or a skip, for an empty band on a `--pdf` document).
+fn band_fault(
+    ctx: &CheckContext,
+    session: &Session,
+    ahead: &[(usize, usize)],
+) -> Result<Option<String>> {
+    if ahead.is_empty() && ctx.pdf.is_none() {
+        return Ok(Some(format!(
+            "no `{PREFETCH_EVENT}` line after standing still on page 1 of {FIXTURE} in Read \
+             mode, where the pages below it are off screen: render-ahead never ran. \
+             `app::settle::fill_strip` is where to look. Trace: {}",
+            session.trace_path().display()
+        )));
+    }
     if ahead.is_empty() {
         return Err(Error::new(format!(
             "no `{PREFETCH_EVENT}` line after standing still on the opening page. Either this \
@@ -143,15 +156,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let ahead_pages: BTreeSet<usize> = ahead.iter().map(|(page, _)| *page).collect();
-    let ahead_list: Vec<usize> = ahead_pages.iter().copied().collect();
-    report.note(format!(
-        "standing still drew {} page(s) ahead of him: {}",
-        ahead_list.len(),
-        list(&ahead_list)
-    ));
-
-    if let Some(over) = over_budget(&session)? {
+    if let Some(over) = over_budget(session)? {
         return Ok(Some(format!(
             "THE STRIP CACHE WENT OVER ITS BUDGET: {over}. `OpenDoc::prefetch_headroom` asks for \
              room for one MORE page rather than for the cache to be under budget, and the \
@@ -164,8 +169,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
 
-    if let Some(wrong) = not_nearest_first(&ahead) {
-        return Ok(Some(format!(
+    Ok(not_nearest_first(ahead).map(|wrong| {
+        format!(
             "THE BAND WAS OFFERED OUT OF ORDER: {wrong}. `StripRasters::retain` evicts the entry \
              FURTHEST from the current page, so the prefetch order has to be the exact reverse of \
              it — nearest first. Offered any other way, render-ahead asks for the page eviction \
@@ -173,14 +178,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              evict, render. Nothing fails, nothing looks wrong, and the machine works \
              permanently. See `render::prefetch::prefetch_ranking`. Trace: {}",
             session.trace_path().display()
-        )));
-    }
-    report.note("the band was offered nearest-page-first, which is the reverse of eviction");
+        )
+    }))
+}
 
-    let before = visible_requests(&session)?.len();
-    driver.scroll_at(at, -NOTCHES)?;
+/// Wheel forward onto the band; no page drawn ahead may be asked for again.
+fn scrolled(
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    at: WindowPoint,
+    ahead_pages: &BTreeSet<usize>,
+) -> Result<Option<String>> {
+    let ahead_list: Vec<usize> = ahead_pages.iter().copied().collect();
+    let before = visible_requests(session)?.len();
+    pointer.wheel(session, at, -(NOTCHES as f32), false)?;
     session.settle(90);
-    let arrived: Vec<usize> = visible_requests(&session)?
+    let arrived: Vec<usize> = visible_requests(session)?
         .into_iter()
         .skip(before)
         .collect();
@@ -189,6 +203,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         arrived.len(),
         list(&arrived)
     ));
+    // Asking for nothing after a wheel that went nowhere would read as a band
+    // that worked, so the scroll must have put a prefetched page on screen.
+    let shown = on_screen(session)?;
+    report.note(format!("on screen after the scroll: {}", list(&shown)));
+    if !shown.iter().any(|page| ahead_pages.contains(page)) {
+        return Err(Error::new(format!(
+            "the scroll left pages {} on screen, none of them drawn ahead ({}), so nothing \
+             about arriving on a prefetched page was measured. Trace: {}",
+            list(&shown),
+            list(&ahead_list),
+            session.trace_path().display()
+        )));
+    }
 
     // A page prefetched before the scroll and asked for again as a visible page
     // after it was rendered, forgotten, and rendered again — which is exactly
@@ -230,6 +257,21 @@ fn prefetched(session: &Session) -> Result<Vec<(usize, usize)>> {
         .events(PREFETCH_EVENT)
         .filter_map(|l| Some((l.get_usize("page")?, l.get_usize("current")?)))
         .collect())
+}
+
+/// The strip's on-screen pages at its last `strip-visible` line.
+fn on_screen(session: &Session) -> Result<Vec<usize>> {
+    let trace = session.trace()?;
+    let pages = trace
+        .last(SHOWN_EVENT)
+        .and_then(|l| l.get("pages"))
+        .ok_or_else(|| {
+            Error::new(format!(
+                "no `{SHOWN_EVENT} pages=` line, so where the scroll landed is unknown. Trace: {}",
+                session.trace_path().display()
+            ))
+        })?;
+    Ok(pages.split(',').filter_map(|p| p.parse().ok()).collect())
 }
 
 /// Every page the strip asked for because it was on screen, in order.

@@ -646,7 +646,6 @@ fn tools/ui-verify/src/checks/page_display_pref.rs::drive
 fn tools/ui-verify/src/checks/page_display_recentres.rs::drive
 fn tools/ui-verify/src/checks/page_drag_between_documents.rs::drive
 fn tools/ui-verify/src/checks/page_ops.rs::drive
-fn tools/ui-verify/src/checks/page_prefetch.rs::drive
 fn tools/ui-verify/src/checks/page_previews_pref.rs::drive
 fn tools/ui-verify/src/checks/page_scale.rs::assess
 fn tools/ui-verify/src/checks/page_size.rs::assess

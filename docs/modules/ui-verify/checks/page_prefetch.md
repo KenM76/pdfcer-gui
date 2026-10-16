@@ -41,8 +41,13 @@ unfalsifiable at once.
 # The three subsidiary assertions
 
 * **The band is non-empty.** If nothing was ever prefetched the main
-  assertion is vacuously true, so that outcome is reported as SKIPPED. An
-  instrument that can only return one answer is not an instrument.
+  assertion is vacuously true. On the checked-in fixture that is a FAIL —
+  its pages below the first are off screen in Read, so an empty band is the
+  program's. On a `--pdf` document it is SKIPPED, because the document may
+  have too few pages.
+* **The scroll landed on the band.** After the wheel, the last
+  `strip-visible pages=` line must name a prefetched page. Without it, a
+  wheel that went nowhere asks for nothing and reads as a band that worked.
 * **`texels <= budget` on every disclosure line.** `prefetch_headroom` asks
   for room for one more page rather than for the cache to be under budget,
   precisely so render-ahead cannot fill past the ceiling, be trimmed back,
@@ -57,15 +62,23 @@ unfalsifiable at once.
 
 # It needs a continuous mode and a document with pages to spare
 
-Single-page mode keeps no strip at all, so the check runs in **Read**,
-whose default page display is continuous. A band cannot exist on a one-page
-fixture; the check says so rather than passing vacuously.
+Single-page mode keeps no strip at all, so the check launches with
+`mode.read`, whose default page display is continuous. It drives through
+the scripted pointer with the window off the desktop, so it runs under
+`--no-input`. With no `--pdf` it drives `fixtures/four-pages.pdf`; a scanned
+document is the stronger case and is passed with `--pdf`.
+
+# Falsified
+
+* Render-ahead's candidate filtered to `None` in `fill_strip`: FAIL, no band.
+* `retain` given a zero budget once the current page is not the first: FAIL,
+  117 prefetched pages asked for again as visible.
 
 ## Item notes
 
 ### `const NOTCHES`
 
-Deliberately modest. 40 notches draw about three pages, measured by
+Deliberately modest: twelve scripted wheel lines. 40 notches draw about three pages, measured by
 `page_cache`, and this check must not outrun the eight-page band: a scroll
 landing past everything prefetched would pass the main assertion for the
 wrong reason, because the pages it then re-requests were never prefetched.
