@@ -274,6 +274,14 @@ if [ "$N" -lt 1 ]; then
     echo "sweep-full: --list produced no check names; the parse above is wrong" >&2
     exit 1
 fi
+# Every two-space line under `Checks:` is a name, whatever its characters, so
+# a filter narrower than the names shows up as a shortfall here.
+LISTED=$(./target/release/ui-verify.exe --list \
+    | awk '/^Checks:/ {on=1; next} /^[A-Za-z]/ {on=0} on && /^  [^ ]/' | wc -l)
+if [ "$N" -ne "$LISTED" ]; then
+    echo "sweep-full: --list names $LISTED checks but the filter kept $N" >&2
+    exit 1
+fi
 
 # Rule 3: the checks that need their own document.
 #
