@@ -936,9 +936,9 @@ impl Prefs {
         out.push('\n');
         // ui-text-exempt: settings-file COMMENT text and KEYS.
         out.push_str("\n# ribbon_tabs_show / dock_tabs_show: both | glyph | text\n");
-        out.push_str("ribbon_tabs_show = ");
+        out.push_str("ribbon_tabs_show = "); // ui-text-exempt: a file KEY.
         out.push_str(crate::tabface::key(self.ribbon_tab_face));
-        out.push_str("\ndock_tabs_show = ");
+        out.push_str("\ndock_tabs_show = "); // ui-text-exempt: a file KEY.
         out.push_str(crate::tabface::key(self.dock_tab_face));
         out.push('\n');
         out.push_str(
