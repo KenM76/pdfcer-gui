@@ -673,7 +673,8 @@ impl PrintDialog {
         crate::dialogs::host::Host::new(
             "print", // ui-text-exempt: a viewport key, never displayed.
             t::dialog_title(),
-            egui::vec2(800.0, 620.0),
+            // Tall enough for the options column without a scrollbar.
+            egui::vec2(800.0, 680.0),
             egui::vec2(520.0, 380.0),
         )
         // Its preview is what he reads before committing paper, and a larger
