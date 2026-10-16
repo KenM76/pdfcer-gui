@@ -4,10 +4,6 @@
 
 /// O263: Align left edges moves every box, in one undo.
 pub mod align_left;
-/// **Typing an angle into the Properties panel and pressing Apply** — the
-/// write half of `OPERATOR_REQUESTS.md` O146, whose read half
-/// `annot_rotate` already asserts. It turns the mark BEFORE it types, because
-/// from 0° an absolute setter and a delta setter are the same edit.
 pub mod annot_angle_typed;
 
 pub mod annot_delete_gate;
@@ -35,19 +31,10 @@ pub mod spots_flattened;
 pub mod tab_drag;
 pub mod text_render_mode;
 
-/// A check box dragged larger must be REDRAWN, not stretched —
-/// `OPERATOR_REQUESTS.md` O76. Reads `regenerated=` because the two outcomes
-/// are the same pixels.
 pub mod checkbox_resize;
 
-/// **Reading a comment where the comment is** — the canvas note
-/// pop-up, driven in READ mode, which is the mode the operator reported he could
-/// not read a sticky note in. ⬜ NOT RUN; see the module's own header.
 pub mod comment_popup;
 
-/// Not a check — the Comments panel's census, read the one way that is honest.
-/// Shared by `save_copy` and `undo_redo`, which each carried a copy of it and
-/// therefore each carried the same defect. See its header.
 pub mod comments_census;
 
 pub mod compact_save;
@@ -82,11 +69,6 @@ pub mod structure_round_trip;
 
 pub mod driving;
 
-/// **A drawing dragged in from Explorer and dropped on the page thumbnails**
-/// — `OPERATOR_REQUESTS.md` O67. The only check in this suite whose subject is
-/// a coordinate the toolkit throws away: `winit` discards the OLE drop point,
-/// so the application asks the operating system, and this drives the real
-/// cursor onto a real tile to prove the answer is used.
 pub mod drop_onto_thumbnails;
 
 pub mod embed_bundled;
@@ -105,62 +87,26 @@ pub mod system_theme;
 pub mod tab_glyphs;
 pub mod tabs_look;
 
-/// **Press Export form data and a file appears on disk with the form's
-/// values in it.** The oracle is the FILE, not a trace line: a build that
-/// computed the bytes and wrote them nowhere would satisfy a trace-only check
-/// completely and ship an Export button that exports nothing.
 pub mod export_form_data;
 
-/// **A sticky note whose icon name pdfcer does not model** — that the panel
-/// shows the file's own name rather than one of the seven, and says pdfcer
-/// draws its own symbol for it. Pins its own fixture; `--pdf` is ignored and
-/// the report says so.
 pub mod foreign_icon_name;
 
-/// **A text file becomes pages** — File ▸ Import, driven end to end. Its
-/// header names the five links and the four with no test anywhere else, and
-/// records why a dialog needs `frame_of` rather than `session.frame()`.
 pub mod import_text;
 
 /// **Insert blank pages** — several sheets land as separate page objects, of
 /// the chosen size, and one undo removes them.
 pub mod insert_blank_pages;
 
-/// **The CAD "line weights off" display mode** — `OPERATOR_REQUESTS.md`
-/// O137, asked for by name. The pixel assertion is SIGNED (strictly LESS ink),
-/// because the convention he asked for and the one it is confused with are
-/// opposites. ⬜ NOT RUN; see the module's own header.
 pub mod line_weights;
 
-/// The load-anomaly disclosure, driven: a PDF whose catalogue contradicts
-/// itself says so in the status bar and lists WHERE in Document properties,
-/// and a clean file says neither. Each check launches twice; the second
-/// launch is what makes it a check.
 pub mod load_anomalies;
 
-/// **One click is not always one pick** — rule 4's confirming second
-/// click on a derived snap candidate, gathered in one place so the rule has a
-/// single home. Its header carries the trap it exists to keep shut: a
-/// calibration check that reads a promotion the application had already
-/// announced blames the routing for a result the routing never produced.
 pub mod picking;
 
-/// Putting a control where the pointer can hit it — scrolling a pane, raising
-/// a dock tab, bringing a control inside its panel's body. Separate from
-/// [`driving`] under R2; its header carries the seam between the two.
 pub mod reaching;
 
-/// The dropped-object disclosure, driven: a document pdfcer had to rebuild by
-/// scanning says in Document properties what the rebuild could NOT keep, and a
-/// document whose rebuild kept everything says nothing.
-/// Its control launch is a RECOVERED file rather than a sound one, which is the
-/// only way the absence measures the block rather than the panel.
 pub mod recovery_losses;
 
-/// O120's copy-OUT, and the only observation anywhere of
-/// `native-clipboard`'s `unsafe` and of the placement ORDER against a real
-/// clipboard — which it REPLACES, so nothing else can be asserted about it
-/// afterwards. ⬜ **NOT RUN**; its module header says why.
 pub mod copy_as_vector;
 pub mod copy_as_vector_scripted;
 /// O285: an SVG and an EMF placed through Insert image, without the mouse.
@@ -173,49 +119,23 @@ pub mod insert_drawing;
 // says so in its own words rather than leaving an absent result to imply it.
 pub mod export_image_emf;
 
-/// The other half of O196's evidence, and the cheapest driven check in the
-/// suite to run: it opens all three Export windows through
-/// `PDFCER_DIAG_INVOKE` in one launch and reads three trace lines, so it
-/// moves no pointer, presses no key, and runs under `--no-input`.
 pub mod export_remembered;
 
-/// The fourth export on File ▸ Export, and the one whose interesting assertion
-/// is an exact identity rather than a bound: the characters in the file equal
-/// the characters the shell reported plus one separator per page boundary.
-///
-/// ⬜ **NOT RUN.** The module header says so in its own words rather than
-/// leaving an absent result to imply it.
 pub mod export_text;
 
 /// The same defect one `/Subtype` along: a certified document's FORM FIELDS.
 pub mod field_delete_gate;
 
-/// **The first driven context menu in this project.** Its header records the
-/// gap it closed: 92 checks and no `Driver::right_click_at`, so a whole gesture
-/// class was outside R1's reach and left no failing test behind to say so.
 pub mod field_menu;
 
 pub mod find_bar;
 
-/// The find bar's two PREFERENCES, driven — O179 and O180. Both shipped
-/// with a green unit suite and both were wrong in the running program,
-/// which is this project's founding defect shape; its header records how
-/// each unit suite managed to be right about the function and silent about
-/// the operator's sentence.
 pub mod find_options;
 
 pub mod form_field;
 
-/// The live preview of a form field's size and placement —
-/// `OPERATOR_REQUESTS.md` O203. It asserts the half a screenshot cannot see:
-/// that the rectangle the outline promises is the rectangle the click writes.
 pub mod form_ghost;
 
-/// The two forms surfaces `EDITABLE_SURFACES.md` found the engine had
-/// shipped and this shell had never grown: **deleting a field group**, which no
-/// control in the program could name, and **the structural refusal queries**,
-/// which nothing consulted — so Rename and both Delete buttons were drawn live
-/// on documents that refuse them.
 pub mod form_groups;
 
 pub mod form_leaf_descend;
@@ -253,24 +173,12 @@ pub mod typedturn;
 /// three checks that author a field and then try to select it.
 pub mod formaim;
 
-/// **The dial in front of the blank page** — the only consumer of
-/// `render::pressure`'s two trace lines, which were written for O219 and O221
-/// and, until this check existed, were emitted every frame and read by nothing.
-/// Its assertion is on the device's texture limit clearing a plausibility
-/// floor, because `egui`'s pre-backend default of 2048 is a number that looks
-/// exactly like a reading and belongs to no card. Sends no input and sits off
-/// the desktop, so it runs while the operator is working.
 pub mod graphics_pressure;
 
 /// Insert an image: the picture reaches the page, and the resolution the
 /// window promised is the one the document reports.
 pub mod insert_image;
 
-/// The OTHER half of the insert window: pressing *Place it on the page…*
-/// makes the window step aside, a click on the page fills its numbers in, and
-/// the window comes back. Beside `insert_image` because the two are one
-/// surface — that one asserts the picture lands, this one asserts the operator
-/// never has to type where.
 pub mod insert_image_place;
 
 /// The left rail — O123 part 7. ⚠ WRITTEN, NOT RUN: see the module header.
@@ -278,13 +186,6 @@ pub mod left_rail;
 
 pub mod legibility;
 
-/// **The Format ▸ Markup band**, driven from a drawn shape to a thicker line
-/// on the glass. Seven links stand between `manifest::format`'s six declared items
-/// and a restyle an operator can see, and no test in the workspace observes two of
-/// them joined. It carries the only assertion in the suite that a control is
-/// **absent rather than greyed** — R9 — paired with four siblings that did draw on
-/// the same frame, because a negative with no control beside it is the vacuous
-/// assertion this project has already shipped once.
 pub mod markup_band;
 
 pub mod markup_move;
@@ -296,12 +197,6 @@ pub mod markup_rectangle;
 
 pub mod markup_resize_preview;
 
-/// The three Phase 6 markup kinds that are **not drag-shaped** — Freehand,
-/// Polyline and Polygon — and the one control in this application whose
-/// availability is decided by a gesture in progress rather than by the document.
-/// It carries the only measurement of the ink simplification taken against a real
-/// pointer, and the only falsifier in the suite that needs a control to be
-/// **greyed at a specific moment mid-gesture**. Its header carries the argument.
 pub mod markup_shapes;
 
 /// `OPERATOR_REQUESTS.md` O123's layout claims, driven — Objects over
@@ -310,18 +205,8 @@ pub mod master_detail;
 
 pub mod progressive;
 
-/// **Smart-Selector** — a click selects the wrapped drawing, a double-click
-/// goes inside it (`OPERATOR_REQUESTS.md` O70). Reads `canvas-selection …
-/// first=`, the one field that tells the two index spaces apart.
-/// **Read mode copies a picture** — `OPERATOR_REQUESTS.md` O71. Two halves
-/// in one sequence: an image is selectable while reading, and `Ctrl+C` puts a
-/// bitmap on the Windows clipboard rather than a sentence.
 pub mod read_image_copy;
 
-/// **A signed document is warned about before it is saved.** The guard both
-/// HOLDS the write while the question is on screen and RELEASES it when the
-/// operator authorises one — asserted as a pair, because a build that showed
-/// the window and wrote the file anyway satisfies either half alone.
 pub mod signature_save;
 
 pub mod smart_select;
@@ -358,24 +243,10 @@ pub mod field_clipboard;
 
 pub mod form_selection;
 
-/// **Clicking a `/Link`** — two checks, and the second is the one that
-/// matters: a viewer
-/// that treats all five `Destination` variants as navigable resolves the four
-/// it cannot perform to a defaulted page 0 and navigates anyway, which has no
-/// symptom an operator would report. Its header carries the argument.
 pub mod link_follow;
 
-/// **A destination that names a point scrolls, and never sets the
-/// magnification** — the driven half of D47, over a fixture whose two links
-/// differ only in the destination's `left`, so "held" has a control and
-/// "moved" has a witness. Its header carries the argument.
 pub mod point_destination;
 
-/// **A MARKUP shape's nodes can be moved and deleted, and a refusal is
-/// SHOWN** — the operator's report in its literal form, for the
-/// half that is a comment shape rather than a ce dimension. It is the only
-/// instrument in this repository that asserts the reshape reaches the
-/// **pixels**, which is where the failure the engine warned about hides.
 pub mod markup_node_edit;
 
 /// A Review shape drawn with the pen set to draw on the page.
@@ -396,24 +267,12 @@ pub mod measure_linear;
 
 pub mod measure_perimeter;
 
-/// Hovering with a measure tool armed says which line and which node.
-/// The regression check for the icon painter that was never handed to a
-/// context menu — the twin of [`qat_icons`] on the second surface it
-/// happened on. See its header for why a menu row's own rectangle cannot
-/// express the defect and `menu.icon.*` had to be published for it.
 pub mod menu_icons;
 
 /// **Arming another tool writes the text draft** — `OPERATOR_REQUESTS.md`
 /// O222.
 pub mod navigate_commits_text;
 
-/// File ▸ New — the first command that makes a document out of **compiled-in
-/// bytes** rather than out of a file the operator named, and the only check in
-/// the suite whose subject is a page that is *supposed* to be blank. That is
-/// what makes it worth having: a blank page and a page that failed to
-/// rasterize are the same screenshot, so it reads the canvas's own `drawn=`
-/// count instead of a pixel. Its header carries the argument and the
-/// falsifying phase.
 pub mod new_document;
 
 pub mod new_document_size;
@@ -435,10 +294,6 @@ pub mod ocr_fetch_models;
 pub mod ocr_layer_group;
 pub mod ocr_layer_kept;
 pub mod ocr_layer_wysiwyg;
-/// The three checks about a recognition run **while it is still running** —
-/// the tally advancing, Stop keeping the work, Cancel discarding it. Separate
-/// from [`ocr`] because all three need a multi-page run and that module's
-/// one-page fixture has no observable middle. Its header carries the argument.
 pub mod ocr_live_search;
 pub mod ocr_models_common;
 pub mod ocr_models_install;
@@ -457,94 +312,32 @@ pub mod off_page_ceiling;
 /// **A band dragged into the grey margin reaches an object off the page** (O92).
 pub mod off_page_marquee;
 
-/// **A press that BEGINS in the grey margin** — O23's second half, and
-/// the half that had nothing to enable. Its sibling above drags a band FROM
-/// blank paper into the margin, which always worked because an `egui::Response`
-/// keeps reporting after the pointer leaves its widget. This one has no point
-/// on the sheet at all, so nothing but a margin-originating press can produce
-/// its band. The two fail on disjoint causes, which is why they are two checks.
 pub mod off_page_press;
 
-/// **The operator's switch for off-sheet content** — five launches
-/// against ONE profile directory, which is the only arrangement in which
-/// *"their preference is remembered for each read review edit modes"* can be
-/// observed at all. Read opens hidden, the toggle shows it, a restart still
-/// shows it, Edit opens shown and its toggle hides it, and Read is unaffected
-/// by that last part. The fifth rung is the one a single global flag passes
-/// the first four of. Every rung reads both a trace line (which of the three
-/// writers resolved the answer) and pixels (whether the page obeyed), because
-/// a hidden object and a missing one photograph identically.
 pub mod off_page_toggle;
 
-/// **The off-page object is actually PAINTED** — O23's other verb, and the
-/// one the operator asked about three weeks after the reach half shipped:
-/// *"how do I view and edit objects that are off of the page?"*. Its two
-/// siblings above prove the object can be **reached**; this one counts ink in a
-/// screenshot, because the defect is a pixmap SIZE and every layer above it
-/// reports success. Paired with a paper control off the sheet, so a
-/// uniformly-dark capture cannot pass.
 pub mod off_page_visible;
 
 pub mod off_page_wall;
 
 pub mod off_page_zoom;
 
-/// **O186 stage one** — Ctrl+wheeling in with the pointer just off the
-/// sheet carried the page off the screen entirely, and the state was terminal:
-/// `canvas::present` returns above every input handler when nothing was drawn,
-/// Ctrl suppresses the only wheel the deep pan route reads, and a plain wheel
-/// moves the f64 anchor by `delta / zoom` — about 0.09 pt a notch at zoom 540.
 pub mod off_sheet;
 
-/// The **Pages tab**, all of which did nothing: six verbs registered, drawn,
-/// offered by a context menu and four of them bound to chords, with no dispatch
-/// arm between them. The only check in the suite whose subject is a
-/// **structural** change to a document rather than a mark drawn on it, and
-/// therefore the only one that can assert the thing a page delete uniquely
-/// breaks — that the shell's page vector, its rasters and its two selections
-/// stop describing a document that no longer exists. Its header carries the
-/// argument and the three falsifying phases.
-/// A page pdfcer has already drawn is not drawn again — the operator's
-/// *"they constantly redraw with larger files"*, measured by scrolling a real
-/// drawing set away and back.
 pub mod os_fonts_setting;
 
 pub mod page_cache;
 
 pub mod page_clipboard;
 
-/// **A page-display choice survives a close and reaches a new document** —
-/// `OPERATOR_REQUESTS.md` O80. A two-process check, and the close must be
-/// GRACEFUL: dropping a session kills the process, and a killed process runs
-/// no exit hook, so the debounced write that carries the preference never
-/// happens. Its header carries why the second document must be one the
-/// program has never seen.
 pub mod page_display_pref;
 
-/// **O177, both halves.** Switching out of a scrolled continuous view must
-/// snap back to the middle of the canvas, and Fit page under a facing spread
-/// must fit BOTH pages. Two independent defects with one shared setup: the
-/// recentre is suppressed by `Action::SetPageDisplay`'s `tracked_page`
-/// assignment, and the spread is mis-placed because the fit's SCALE is
-/// row-aware while its PLACEMENT is page-aware. Its header carries why every
-/// assertion is made in a NON-continuous mode.
 pub mod page_display_recentres;
 
 pub mod page_ops;
 
-/// Render-ahead: pages are drawn BEFORE he scrolls to them —
-/// `OPERATOR_REQUESTS.md` O201. Registered next to `page_cache` because the
-/// two split one trace stream between them: this one reads
-/// `strip-prefetch-requested`, that one reads `strip-raster-requested`, and
-/// folding the names together would make both oracles unfalsifiable at once.
 pub mod page_prefetch;
 
-/// **The page-preview limit is remembered, and zero means never** —
-/// `OPERATOR_REQUESTS.md` O187. THREE processes, each KILLED rather than
-/// closed, which is the deliberate opposite of [`page_display_pref`]: this
-/// preference is written at the moment of the gesture and must need no exit
-/// hook to survive. Its header carries why a two-launch version could not
-/// tell a whole-file write from one that carried only the last field touched.
 pub mod page_previews_pref;
 
 /// Fit onto a new sheet scales the drawing by the factor the window quoted.
@@ -552,55 +345,26 @@ pub mod page_scale;
 
 pub mod page_size;
 
-/// **A save that would produce blank pages in Acrobat is refused** —
-/// the operator's report. `pdfcer-core`'s `delete_pages` leaves
-/// every ancestor's `/Count` above the immediate parent stale, so pdfcer's own
-/// `/Kids`-walking reader sees a healthy document and Acrobat, which reads the
-/// root `/Count`, shows the removed pages as blanks. The shell refuses the
-/// write.
 pub mod pagetree_guard;
 
-/// The capability the security audit found missing: an encrypted PDF could not
-/// be opened at all. Its phase D reads the harness's own captured trace and
-/// asserts the password is not in it.
 pub mod password_prompt;
 
-/// **Closing the program asks before losing unsaved work** —
-/// `OPERATOR_REQUESTS.md` O102. It drives the one state no other check ever
-/// constructed: a document with an unsaved edit at the moment of close.
 pub mod quit_unsaved;
 
-/// **Save As rebinds the document** — O95. Its oracle is the ORIGINAL
-/// file's digest after a LATER save, because every cheaper oracle passes
-/// against the defect it exists to catch.
 pub mod save_as;
 
 pub mod scale_ratio_units;
 pub mod scale_reads_the_group;
 
-/// Tab inside a form field goes to the next FIELD — `OPERATOR_REQUESTS.md`
-/// O204. The only oracle for it: the press is taken in
-/// the `app::keyclaim` input plugin, before one line of application `ui` code,
-/// so a unit test of the ring measures a press the ring may never receive.
 pub mod tab_navigation;
 
-/// The **two** driven checks of *"give this page its own copy"*:
-/// `the_context_menu_gives_this_page_its_own_copy_of_a_shared_form` and
-/// `the_unshare_declines_when_nothing_else_draws_the_form`.
 pub mod unshare_form;
 
 pub mod display_two_rows;
 
 pub mod field_shading;
 
-/// Row 2 of `FORMS_PARITY.md` §8.1, driven: a drop-down is answered by
-/// clicking it on the page. Its sibling above reaches the same fixture's
-/// Properties pane without a pointer; this one uses one.
 pub mod canvas_choice_fill;
-/// **A drop-down's reorder arrows are dead only at the ends of its list** —
-/// the six-assertion form, because asserting only the two disabled arrows
-/// would pass on a build that disabled every one of them. Its header carries
-/// the measurement for why the third row's rectangle is not asserted.
 pub mod option_arrows;
 
 /// Hide, print and show an annotation again from Properties and Comments.
@@ -677,44 +441,24 @@ pub mod straighten_scans;
 /// The page thumbnails zoom without a blank tile.
 pub mod thumbnail_zoom;
 
-/// **Selecting a page object names the layer it is on** — O126's third
-/// feature, driven at last. Its header carries the vacuous-pass argument for
-/// why the fixture is pinned, the two oracles, and the ⚠ notice that it has
-/// **not been run**.
 pub mod layers_membership;
 
-/// `file.print` — the dialog that told every operator this build could not
-/// print, on a machine with twelve printers, in a build that had the printing
-/// crate linked into it.
 pub mod layers_search;
 
 pub mod pages_drag;
 
-/// **The two pre-commit affordances of a panel drag** — the drop compass and
-/// the tear outline. Its header carries why each needs two channels asserted
-/// together, and why nothing in it names a compartment.
 pub mod dock_drop;
 
-/// **A panel tears out into a real OS window, comes back, and closes** —
-/// O126. Its header carries the two-line oracle and why one line is not
-/// enough.
 pub mod panel_carry;
 pub mod panel_float;
 
 pub mod preset_group_reachable;
 
-/// The commit button's clip count is corrected by what the preview has
-/// already examined — operator request O113. See the module header for why
-/// no unit test can observe the recording half of it.
 pub mod preview_popout;
 /// Operator request O238: poster printing.
 pub mod print_poster;
 pub mod print_preview_detail;
 
-/// Operator request O167: the Paper control's "Match the pages in this
-/// document" entry chooses a sheet FROM the document rather than from the
-/// front of the driver's list. Its header explains why the three obvious
-/// assertions are worth almost nothing without the fourth.
 pub mod print_auto_paper;
 
 pub mod print_clip_claim;
@@ -748,10 +492,6 @@ pub mod read_mode;
 
 pub mod redact_image_warning;
 
-/// **A document is signed, and the signature is read back out of the FILE**
-/// — the driven half of `crate::sign`, and the check whose verdict is taken in
-/// a **different process by a different subsystem** because a trace line saying
-/// `sign` was called is not evidence a document was signed.
 pub mod signing;
 
 pub mod tab_order_drag;
@@ -760,16 +500,8 @@ pub mod page_tabs_chooser;
 
 pub mod title_build_stamp;
 
-/// `tools.render_diagnostics` — the inert control whose data was already
-/// being computed. `shell::commands::reach` called it *"the least defensible
-/// kind — the work behind it is done"*: the renderer has produced the report
-/// since S0, and what was missing was a `match` arm and a window.
 pub mod render_diagnostics;
 
-/// The **Bézier handle** drag — the last Phase 1 row, and the one whose
-/// failure mode is a perfectly plausible gesture: a handle sits inside the
-/// selection box, so without a priority rule every attempt to shape a curve
-/// moves the whole object instead.
 pub mod bezier_handle;
 
 pub mod clipboard_annotation;
@@ -810,11 +542,6 @@ pub mod paste_stamp;
 /// Every window's title bar follows the Dark and Quiet presets.
 pub mod caption_theme;
 
-/// **Enter makes a second line, and Ctrl+Enter finishes it** —
-/// `OPERATOR_REQUESTS.md` O127, defect 2.
-///
-/// ⚠ It types at the real keyboard, so it cannot share the desktop with
-/// anyone: a driven run needs the machine to itself.
 pub mod enter_newline;
 
 /// **Escape on a text draft WRITES it, and `Ctrl+Z` takes it back** —
@@ -824,26 +551,12 @@ pub mod escape_commits_text;
 /// **A draft on existing page text is drawn in that text's own font** — O247.
 pub mod text_in_own_font;
 
-/// **Zero clicks.** The only check in this suite that drives no gesture: it
-/// opens a document, enters Edit, and asks what an operator SEES. Every other
-/// test of the tool list asks whether a named command is present — a question
-/// that stays green while the answer goes stale, because a list can be complete
-/// about yesterday's tools and silent about today's.
 pub mod first_frame;
 
-/// **The exception O55 names**: a fit that a pan has left must not be re-placed
-/// by the next resize. Its sibling asserts the opposite for the wheel, so the
-/// pair pins both directions.
 pub mod fit_left_by_a_pan;
 
 pub mod fit_places_the_view;
 
-/// **The ribbon route to a restyle, and the sentence that tells an operator
-/// how to reach it.** `restyle_text` below drives the PANEL; this drives the
-/// Format tab's Font group, and it drives the half of O37 that is not a
-/// capability — the two surfaces that answer *"nothing on screen tells you to
-/// press T"*, observed in the state before anything is swept, because that is
-/// the state an operator is in when they need them.
 pub mod font_group;
 
 /// **The same two surfaces as `font_group`, on the document the operator
@@ -857,77 +570,28 @@ pub mod geometry_fields;
 /// something** — O24.
 pub mod max_zoom;
 
-/// **A drag on one line of text MOVES it, and where it cannot the operator
-/// is TOLD which line is the problem** — O188. `move_text_run` moves most
-/// lines; it refuses the two whose position the file does not state, and a
-/// correct refusal that says nothing is this project's founding defect class:
-/// he dragged, nothing moved, nothing said why. So the check drives all three
-/// answers — the two refusals and the move — because a table of refusals alone
-/// passes for ever against the build that refused every line. Its oracle is a
-/// three-stage chain across the `Action` boundary, because the status bar's
-/// decline slot is shared by every decline in the application and its presence
-/// alone is satisfied equally by the wrong sentence and by a stale one.
 pub mod move_line_of_text;
 
-/// Shift-picked anchors move TOGETHER, not one at a time. The capability
-/// has always been in the selection model; what this check asserts is that a
-/// CONSUMER reads it that way, which is the half a model-level test cannot see.
 pub mod multi_node;
 
-/// **The operator's oldest open request** — cut, copy and paste of page
-/// content. Its header carries why the interesting failure is silent: a clip
-/// that carried the operators and dropped the resources pastes the right glyphs
-/// in the wrong typeface and errors nowhere, so the assertion is a COUNT the
-/// engine reports rather than a picture.
 pub mod object_clipboard;
 
 pub mod pan_refresh;
 
-/// **O186's two drivable halves.** The neighbour sheet first: the
-/// continuous strip ordered a whole-page raster for a page it could SEE at the
-/// scale of the page it was ACTING ON, which above the pixmap ceiling is an
-/// order that cannot be filled — so the `MAX_PIXMAP_EDGE` sentence the operator
-/// read named a sheet he was not looking at. Then the wall itself: once the
-/// rasterizer refuses, the zoom must stop and the bottom bar must say why,
-/// rather than leaving an error across the drawing.
 pub mod raster_wall;
 
 pub mod reach_out;
 
-/// `view.read_mode` — the command with a control, a glyph, a group, `Ctrl+H`
-/// and a line in the shortcuts reference, and **no dispatch arm** for the whole
-/// life of the project. Its whole behaviour is one `if` in the frame
-/// composition, which every unit test in the workspace is blind to.
 pub mod read_mode_chrome;
 
-/// **The way back OUT of read mode**, which the check above deliberately
-/// does not cover: its own header says *"the return trip is not driven here"*,
-/// because the exit is a chord and it drives the mouse only.
 pub mod read_mode_exit;
 
-/// **What the removal will destroy, in words.** `redaction` below proves
-/// that the removal happens and that the text is gone from the bytes; this
-/// proves the operator was shown WHAT was going while he could still cancel.
-/// The two share a fixture generator for one reason: a content assertion
-/// needs a page whose text the harness wrote itself.
 pub mod redact_preview;
 
-/// **O217 — the unit, the gesture and the route.** `redact_selection`
-/// below proves a selected object can be marked at all; this proves the
-/// mark is bounded by the LINE the operator clicked rather than the block
-/// it sits in, and that he can reach the verb without leaving the canvas.
 pub mod redact_chunk;
 
-/// **The canvas object menu's redact row, shared.** Not a check: the gesture
-/// `redact_chunk` and `redact_plural` both press, held in one place because
-/// they differ only in the selection standing when they press it, and a second
-/// copy of a route is a second place for it to drift unnoticed.
 pub mod redact_menu;
 
-/// **O217's third ask — one gesture over a set of lines is ONE mark.** Its
-/// neighbours prove a mark is bounded by the line clicked; this proves a set of
-/// them yields one undo and one region PER LINE, so the unselected line between
-/// two marked ones survives.
 pub mod redact_plural;
 
 pub mod redact_selection;
@@ -935,15 +599,8 @@ pub mod redact_selection;
 /// **Redaction** — the removed text is proved gone by a byte scan of the saved file.
 pub mod redaction;
 
-/// **The reach setting, driven twice.** `redaction` above proves a removal
-/// removes; this proves the operator's answer to *how far* arrives at the
-/// engine, by writing the preference and reading the saved bytes. It also
-/// covers the search-and-mark route, which its neighbour names as its gap.
 pub mod redaction_reach;
 
-/// **Paragraph reflow, driven.** The one check whose operand is a caret in
-/// egui's temporary memory — put there by a click and read by a command, with
-/// no other instrument that can see the handover.
 pub mod reflow;
 
 /// An open paragraph's width handle, dragged in: the paragraph gains lines.
@@ -970,29 +627,12 @@ pub mod ocr_select_block;
 /// One click selects a paragraph drawn from several text objects.
 pub mod paragraph_pick;
 
-/// The eight resize grips, driven all the way to a committed edit — being
-/// cursored, hit-tested and drag-consuming proves none of that.
-///
-/// Its header carries the six links and names the one that would fail silently
-/// and plausibly: a resize about the wrong anchor still resizes.
 pub mod resize;
 
-/// **Sweep text, press Bold, and the file changes** — O37's font tools,
-/// driven. `app::actions::textstyle`'s eight unit tests would all still pass on
-/// a build where the panel never draws, because they call the verb directly;
-/// three links of the chain in front of it have no other instrument.
 pub mod restyle_text;
 
 pub mod ribbon_captions;
 
-/// **The right-click route to one line inside a block of text** —
-/// O188(A). The delete works, and can be reached only by arming the Points
-/// tool with a chord BEFORE clicking — a working verb behind an undisclosed
-/// precondition is indistinguishable from a missing one. Its
-/// oracle is an index carried across three frames and four subsystems — the
-/// operand is parked in `egui::Memory` when the menu opens and read back when
-/// the row is pressed, and no in-process test in this project can own two
-/// frames of a real popup.
 pub mod run_menu_route;
 
 /// The zoom ladder and the closed-loop aim `scale_sweep` drives its battery
@@ -1001,19 +641,8 @@ pub mod scale_aim;
 
 pub mod scale_sweep;
 
-/// **The only headless route to the viewer verbs, asserted** — the
-/// scripted-keystroke seam, driven up a six-rung zoom ladder and back down one
-/// by a window that takes no OS input at all. Zoom in, zoom out and paging
-/// have no registered command id, so `PDFCER_DIAG_INVOKE` cannot ring them and
-/// an off-desktop window has no other way to be driven.
 pub mod scripted_keys;
 
-/// **The preview is the cursor, and a cursor does not grow with the
-/// document** — `OPERATOR_REQUESTS.md` O184. Drags one object at two zooms nine
-/// times apart and asserts the outline was painted at the same width both
-/// times, then turns the one-pixel line-weight view on and asserts the preview
-/// obeys it too. Its header carries why no single screenshot can make this
-/// claim.
 pub mod preview_width;
 
 /// **The chooser offers a face the document does not contain** —
@@ -1026,22 +655,10 @@ pub mod refused_character_face;
 // see its header for why, and for the command that runs it.
 pub mod ribbon_mockup;
 
-/// **The ninth grip** — the rotate handle above the selection box, and the
-/// third word of the operator's *"reposition, resize, or rotate"*. Its header
-/// carries the three links that would each produce a working gesture aimed at
-/// the wrong verb, and why the sign of the committed angle is the assertion
-/// that matters.
 pub mod rotate;
 
-/// **The Tool-row scale switches, driven.** `OPERATOR_REQUESTS.md` O51's
-/// `Scale line weight`, from the checkbox to the engine's `/BS /W`. Three of
-/// the five links in front of the verb are wiring no unit test can see.
 pub mod scale_switch;
 
-/// **The shape follows your hand** — `OPERATOR_REQUESTS.md` O63. Asserts
-/// the live geometry preview is BUILT, that it reaches the PAINTER, and that it
-/// OUTLIVES the release; its header carries why "built and never painted" needs
-/// a trace line of its own.
 pub mod shape_preview;
 
 pub mod std14_face;
@@ -1050,25 +667,10 @@ pub mod std14_face;
 /// embedding the subset it needs; asserted on the trace and the pixels.
 pub mod font_file_face;
 
-/// **The operator's own two gestures** — press T and type, press A and see
-/// the points. These assert the COUNT: one key, one click. A feature that
-/// exists but takes four steps and three gestures to reach, resembling no
-/// other program, is not reachable; the count is the whole assertion.
 pub mod autosize_overflow;
 
-/// **Text that does not run along the page's x axis** — the operator's report
-/// about a vertical stamp in a title block, driven end to
-/// end: it must select as one line, band as one box, turn the I-beam, and reach
-/// the OS clipboard without a newline in it.
 pub mod rotated_text;
 
-/// `file.save_copy` — the command that was registered, drawn, on the
-/// quick-access toolbar and bound to `Ctrl+S` with **no dispatch arm**, so
-/// nothing this shell could author could reach a disk. The only check in the
-/// suite that spans **two processes**: it authors an annotation with a real
-/// drag, saves a copy, and then re-opens the saved file in a fresh binary to ask
-/// whether the annotation is in it. Its header carries the three falsifying
-/// phases and the different wrong build each one catches.
 pub mod save_copy;
 
 pub mod save_in_place;
@@ -1082,10 +684,6 @@ pub mod select_filter;
 
 pub mod settings_headings;
 
-/// **Shift preserves aspect on a resize** — `ui-conventions/drag-moves.md`
-/// D5. Proves the constraint by the DIFFERENCE between two drags in one
-/// process,
-/// because a single locked drag reporting equal factors proves nothing.
 pub mod shift_constrains;
 
 pub mod tool_row;
@@ -1174,14 +772,8 @@ pub mod document_tabs;
 /// spring-loaded tab — the operator's request, end to end.
 pub mod page_drag_between_documents;
 
-/// **Dragging a document tab along the strip moves it**, and does not change
-/// which document is on screen — the second half being the failure that would
-/// otherwise ship silently.
 pub mod tab_reorder;
 
-/// **Dragging a PANEL's dock tab along its strip moves it**, marks where it
-/// will land while the pointer is down, and does not change which panel is on
-/// screen. The dock's strip, not the document strip [`tab_reorder`] drives.
 pub mod panel_tab_reorder;
 
 pub mod about;
@@ -1193,10 +785,6 @@ pub mod adopt_widget;
 
 pub mod attachment_clip;
 
-/// **The attachments round trip** — attach a file, read it back out, and
-/// compare the BYTES. Its header carries why a trace line is not enough here:
-/// an embedded file changes no pixel, so a truncated stream has no visible
-/// symptom at all.
 pub mod attachments;
 
 /// A 3D model placed from the ribbon, listed, and saved back byte for byte.
@@ -1237,25 +825,13 @@ pub mod paste_text;
 /// Every kind of form field loses its border through Properties' No border.
 pub mod widget_no_border;
 
-/// The harness's own ribbon search, driven: a command two scroll stops past
-/// the fold is still reachable. Its header records a HARNESS defect that
-/// reported the application as broken for eight days.
 pub mod band_scroll;
 
-/// **The cursor walks between blocks of text**, on the operator's report.
-/// Its header carries
-/// why the assertion is a CHANGE OF RUN rather than a caret movement: a build
-/// that moved within the same run looks identical from outside and does nothing
-/// that was asked for.
 pub mod block_nav;
 
 /// A bookmark can be written into a document that has no outline.
 pub mod bookmark_add;
 
-/// **The Bookmarks panel could only ever create** — rename and delete
-/// shipped in `Pass 156.0` and this drives both through the one block that
-/// carries them. Its header carries why the delete oracle asserts the count
-/// EXACTLY rather than "fewer than before".
 pub mod bookmark_dest;
 
 pub mod bookmark_edit;
@@ -1277,26 +853,14 @@ pub mod snapshot_grips;
 pub mod snapshot_paste;
 pub mod snapshot_save;
 
-/// **The Bookmarks panel could not REORGANISE** — `Pass 161.0` shipped
-/// `move_outline_item` and `set_outline_open`, and this drives both through the
-/// row list: a bookmark is dragged onto the middle of another and nests, then
-/// the branch is folded away with its triangle.
 pub mod bookmark_move;
 
 pub mod button_action;
 
 pub mod chords;
 
-/// **The Comments panel stopped being a viewer** — a note can be written
-/// onto a shape that already exists, which needed a verb `pdfcer-core` did not
-/// have until `Pass 154.0`. Its header carries why link 3 of the chain — a
-/// widget raising the action — is unreachable by any unit test.
 pub mod comment_note;
 
-/// **O172's placing half, driven** — one of the operator's OWN stamps
-/// is picked out of the gallery with the pointer and lands on a drawing. The
-/// collection is PLANTED into a scratch `%APPDATA%`, so the check is neither
-/// vacuous on a machine with no stamps nor dependent on his own folder.
 pub mod custom_stamp;
 
 /// **O173's ask-once offer**, and the only check in the suite that has to
@@ -1305,9 +869,6 @@ pub mod default_app_offer;
 
 pub mod dialog_windows;
 
-/// A selection INSIDE a text draft — Shift+arrows and the rule that drops it.
-/// Not to be confused with `text_selection`, which is about sweeping the
-/// page's own text with the pointer.
 pub mod draft_selection;
 
 pub mod marquee_table;
@@ -1321,82 +882,36 @@ pub mod ocr_word_lists;
 
 pub mod save_after_edit;
 
-/// `DEFECTS.md` **D10**'s second half — three themes shipped and nothing an
-/// operator could press chose one. Proved the only way a theme can be proved:
-/// two captures of one window, before and after the click.
 pub mod settings_theme;
 
 /// The keyboard reference lists every chord, and every chord names a command.
 pub mod shortcuts;
 
-/// **Somebody else's stamp collection says what it is** — O169's read
-/// half, driven. Two launches: the section is drawn on a file with a `/Names`
-/// → `/Pages` tree, and is NOT drawn on one without, with the panel provably
-/// open both times.
 pub mod stamp_collection;
 
-/// **O171** — the SECOND stamp's dialog still has its Add and Cancel on the
-/// screen. The only check in the suite that opens the same dialog twice, because
-/// the operator's report was about a window whose FIRST opening was fine.
 pub mod stamp_dialog_reopen;
 
 pub mod stamp_size;
 
-/// **The OTHER half of the same report** — a stamp already on the page
-/// is given a new label size by typing into the properties panel. `stamp_size`
-/// closes the placing dialog's chooser; this closes *"or by entering a
-/// different size in the properties box"*, which no dialog can be opened for
-/// once the stamp exists.
 pub mod stamp_size_properties;
 
 pub mod text_annot;
 
 pub mod text_annot_focus;
 
-/// **Multi-line text** — the operator's ask. Its header
-/// carries why multi-line needs a rectangle (a PDF has no paragraph) and which
-/// of the four links would ship silently: a plain Enter that still commits ends
-/// the draft at the first line break and discards everything after it.
 pub mod text_box;
 
-/// **O215 ask 3, driven** — clicking a block of text draws a thin box
-/// round each chunk inside it, and the ribbon toggle turns them off and back on.
-/// Its header carries why a green unit suite is not evidence here: the boxes are
-/// what makes the chunk aimable, and four links between the tested functions and
-/// the operator are invisible to a test that calls those functions.
 pub mod text_chunks;
 
-/// The other half of that row: **O215 asks 1 and 6, driven** — a plain left
-/// click inside a drawn chunk box selects that chunk, and the same point
-/// selects the same chunk on a later visit. Its header carries why the claim
-/// needs three clicks and why the chunk index is compared rather than pinned.
 pub mod chunk_click;
 
-/// The third of that row: **O215 ask 4, driven** — Shift-clicking a second
-/// line of a text block builds a set the whole program acts on, and a press on
-/// the unselected line between two selected ones re-picks that line rather than
-/// dragging the set. Its header carries why the gap press is the only step that
-/// can see the narrowing it tests.
 pub mod chunk_multi_move;
 
-/// The fourth of that row: **O215 ask 4's band half, driven** — a rubber-band
-/// drawn inside a text block takes the LINES it reaches rather than ascending
-/// to the block, and Shift and Ctrl refine that set. Its header carries why
-/// both bands must begin clear of the text object's box, and why they are
-/// aimed along the vertical axis alone.
 pub mod chunk_band;
 
-/// The fifth of that row: **O215 ask 5's floor, driven** — dragging a line of
-/// a note previews where it will land, and dragging several previews all of
-/// them. Its header carries the one withholding that is correct (a path node,
-/// whose real anchors already travel) and why gating on the RUNG instead of on
-/// that condition left a chunk drag with no feedback at all.
 pub mod chunk_ghost;
 pub mod chunk_ghost_pixels;
 
-/// O216 ask 1, driven: empty a text chunk and find out whether the engine is
-/// ever asked. Its header carries why an absent commit line has five causes
-/// and how each keystroke is calibrated from a line the shell already emits.
 pub mod chunk_empty;
 
 /// **The text-editing round trip** — `DEFECTS.md` D4b: the edit reaches the
@@ -1411,36 +926,16 @@ pub mod text_edit_real;
 /// control correctly disabled without one.
 pub mod text_markup;
 
-/// The canvas text-selection sweep: the one feature whose entire behaviour is a
-/// drag and whose entire feedback is a translucent wash, so a screenshot cannot
-/// tell it from a page with nothing selected. Its header carries the argument.
 pub mod text_selection;
 
-/// The **text tool** in Edit, and the `RIBBON_IA.md` P3 tension it closes. The
-/// only check in the suite that observes one control **dead and then live in the
-/// same mode in the same run**, and the only one whose subject changes nothing an
-/// operator can see except the mouse pointer — which a window capture does not
-/// carry at all. Its header carries the argument.
 pub mod text_tool;
 
-/// The two theme blind spots nothing else in this repository covers — the
-/// **Airy** preset, which no other check clicks, and the **page**, which no
-/// other check samples under a theme. Its header carries why the page is the
-/// one invariant a dark theme in this product must hold.
 pub mod theme_page;
 
 /// **A refusal an operator can read** — `OPERATOR_REQUESTS.md` O140, driven
 /// on the file he reported it on.
 pub mod typo_refusal;
 
-/// `edit.undo` and `edit.redo` — the pair that was registered, drawn on the
-/// quick-access toolbar in **every** mode and bound to three chords with **no
-/// dispatch arm**, so an operator could author dimensions, seven markup kinds,
-/// text marks and form fills and take none of it back. The only check in the
-/// suite that asserts a document change was **un-made**, and the only one whose
-/// oracles include two *invalidation* signals — a fresh `objects` line and a
-/// fresh `render-spawn` — because the build it exists to catch is one whose
-/// every count is already correct. Its header carries the argument.
 pub mod ui_scale;
 
 /// Several annotations, one locked, deleted by one Delete and restored by one Undo.

@@ -2,9 +2,10 @@
 
 The named checks — **the index of which checks exist.**
 
-One `pub mod` per check, each carrying the argument for why that check is
-here: what it drives, what its oracle is, and what a build with the wiring
-absent would look like. The three files beside it hold the other subjects —
+One `pub mod` per check, with at most a two-line summary. The argument for
+why a check is here — what it drives, what its oracle is, and what a build
+with the wiring absent would look like — is in the check's own `//!` header
+and its page beside this one. The three files beside it hold the other subjects —
 `roster.rs` the run order ([`all`]), `harness.rs` the contract ([`Check`],
 [`CheckContext`]), and [`conventions`] the rules a new check is held to.
 
