@@ -34,9 +34,9 @@ const REGION_BAR: &str = "status-bar";
 /// The rect-publishing event every named region uses.
 const UI_RECT: &str = "ui-rect";
 
-/// Where and how large the window is placed. `with_active(false)`, so it takes
+/// Off every monitor and `with_active(false)`, so it takes
 /// neither focus nor pointer.
-const VIEWPORT: &str = "0,0,1400,900";
+const VIEWPORT: &str = "-4200,-4200,1400,900";
 
 /// See the module documentation.
 pub struct ReadModeSaysHowToGetBackOut;

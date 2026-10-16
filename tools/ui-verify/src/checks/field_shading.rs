@@ -13,8 +13,8 @@ use crate::report::CheckReport;
 const SHADE: &str = "canvas-form-shade";
 /// The fixture: two widgets on one page, both visible at once.
 const FIXTURE: &str = "forms/demo-form.pdf";
-/// Where and how large the window is placed, as `PDFCER_DIAG_VIEWPORT` takes it.
-const VIEWPORT: &str = "0,0,1400,900";
+/// Off every monitor; the check reads only the trace.
+const VIEWPORT: &str = "-4200,-4200,1400,900";
 
 /// See the module documentation.
 pub struct FillableFieldsAreShadedOnThePage;

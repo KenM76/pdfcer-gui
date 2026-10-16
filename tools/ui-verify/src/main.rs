@@ -398,7 +398,9 @@ OPTIONS
   --out DIR          where screenshots and trace captures go
                      (default target/ui-verify).
   --no-input         do not touch the real pointer or keyboard. Checks that
-                     need input then report SKIPPED — never PASS.
+                     need input then report SKIPPED — never PASS. Every
+                     window is kept off the desktop and never activated;
+                     a check that places one on a monitor reports SKIPPED.
   --shared-profile   do NOT give each check its own profile directory. Off by
                      default: the binary is portable and keeps its settings
                      beside itself, so one --exe is one profile, and a check
