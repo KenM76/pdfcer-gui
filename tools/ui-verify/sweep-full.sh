@@ -59,12 +59,17 @@
 #
 # ## Usage
 #
-#   bash tools/ui-verify/sweep-full.sh
+#   bash tools/ui-verify/sweep-full.sh [--no-input]
 #
 # Requires `cargo build --release` to have produced both `ui-verify.exe` and
 # `pdfcer-gui.exe`. Takes the desktop for the duration — real cursor moves, real
 # clicks, real focus changes — so do not start it while the operator is at the
 # machine.
+#
+# `--no-input` passes `--no-input` to every run: windows off-screen, scripted
+# pointer only, nothing touches the desktop, so it may run while he works.
+# Every check that needs OS input SKIPs. Its log is `sweep-offscreen.log`, so
+# it never overwrites the full sweep's.
 #
 # ## Output
 #
@@ -138,7 +143,17 @@ cd "$(dirname "$0")/../.." || exit 1
 
 OUT=target/scratch
 LOG=$OUT/sweep-full.log
+NOINPUT=
+RUN=full
 VOIDED=$OUT/sweep-skips-foreground-voided.txt
+if [ "${1:-}" = "--no-input" ]; then
+    # Every output gets its own name, so an off-screen run never overwrites
+    # the foreground sweep's evidence.
+    NOINPUT=--no-input
+    RUN=offscreen
+    LOG=$OUT/sweep-offscreen.log
+    VOIDED=$OUT/sweep-skips-offscreen-voided.txt
+fi
 CLASSIFY=tools/ui-verify/skips-by-cause.sh
 LIST=$OUT/checks.txt
 DRIVE=$OUT/drive
@@ -368,9 +383,9 @@ for start in $(seq 1 20 "$N"); do
     ARGS=$(sed -n "${start},$((start + 19))p" "$LIST" | sed 's/^/--check /' | tr '\n' ' ')
     echo "=== chunk $start" >> "$LOG"
     # shellcheck disable=SC2086
-    ./target/release/ui-verify.exe --exe "$DRIVE/pdfcer-gui.exe" \
+    ./target/release/ui-verify.exe $NOINPUT --exe "$DRIVE/pdfcer-gui.exe" \
         --pdf fixtures/a1-titleblock.pdf --doc-point 0,2000,320 \
-        --second-pdf fixtures/four-pages.pdf --out "$OUT/uv-full" \
+        --second-pdf fixtures/four-pages.pdf --out "$OUT/uv-$RUN" \
         $ARGS >> "$LOG" 2>&1
     rc=$?
     echo "=== chunk $start rc=$rc" >> "$LOG"
@@ -393,8 +408,8 @@ while IFS='|' read -r name args; do
     esac
     echo "=== alone $name" >> "$LOG"
     # shellcheck disable=SC2086
-    ./target/release/ui-verify.exe --exe "$DRIVE/pdfcer-gui.exe" \
-        $args --check "$name" --out "$OUT/uv-full-$name" >> "$LOG" 2>&1
+    ./target/release/ui-verify.exe $NOINPUT --exe "$DRIVE/pdfcer-gui.exe" \
+        $args --check "$name" --out "$OUT/uv-$RUN-$name" >> "$LOG" 2>&1
     rc=$?
     echo "=== alone $name rc=$rc" >> "$LOG"
     [ "$rc" -gt "$worst" ] && worst=$rc
