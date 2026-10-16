@@ -1162,7 +1162,10 @@ impl DialogsState {
             // questions was asked: `SaveFirst` means the operator had unsaved
             // work at that moment, and `NoFileOnDisk` means nothing was ever
             // going to happen.
-            format!("acrobat-asked prompt={prompt:?} edits={edits}")
+            format!(
+                "acrobat-asked prompt={prompt:?} edits={edits} source={:?} path={:?}",
+                viewer.source, viewer.path
+            )
         });
         self.open_in_acrobat = Some(open_in_acrobat::OpenInAcrobatDialog::new(
             prompt, viewer, edits, file,

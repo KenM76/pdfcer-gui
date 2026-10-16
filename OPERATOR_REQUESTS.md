@@ -4285,13 +4285,14 @@ Checks: `the_armed_tools_settings_are_in_properties`, `the_first_frame_names_the
 
 ### Status
 
-**Built. NOT VERIFIED by a driven run** — see "The driven check that
-was not run" below, and the reason, which is that you were at your keyboard.
+**Built, and driven** (`open_in_acrobat_hands_the_file_over`). With a viewer
+configured, the File tab's *Open in Acrobat* asks first. Cancel leaves the
+document open, and the proceed button launches the configured viewer on the
+document's own file and then closes the document. The check uses a stand-in
+viewer, so it never opens a real Acrobat on your desktop. Two planted defects
+turned it red.
 
-`tools/ui-verify/` is another track's tree this session and I stayed out of it,
-so the check below is specified rather than added. **I did not run it, and I did
-not launch the GUI or Acrobat at any point** — you were at your keyboard, and a
-driven run takes your screen.
+**Not yet driven:** the *save first* question, shown when there are unsaved edits.
 
 ## O121 — ◑ **OPEN** — the test harness took your screen twice after you said you were back, and the fix is a lock rather than an apology
 
