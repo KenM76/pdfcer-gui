@@ -548,6 +548,42 @@ Each ribbon tab (File, View, Pages, Edit, Markup, Measure, Security, Tools, and 
 
 **Where it stands.** Built and driven (`every_tab_draws_its_glyph`). Ribbon tabs: File (document), View (screen), Pages, Edit, Markup, Measure (ruler), Security (lock), Tools, Format (properties). Panel tabs in the main dock use the glyph of the command that opens them. Not yet given glyphs: tabs listed inside a "N more" menu, and tabs on a floating panel.
 
+## O299 — **FILED** — tabs show glyphs, text, or both, set separately for the ribbon tabs and the dock tabs
+
+His words: *"add an option to have glyphs or text or glyphs and text show on tabs - and make these separate options for the menu tabs and the docking tabs."*
+
+Two settings, one for the ribbon's tabs and one for the dock panels' tabs, each offering glyph only, text only, or glyph and text.
+
+## O300 — **FILED** — a glyph-only tab names itself on hover
+
+His words: *"make it so a hover over the tabs brings up their label as well if only glyphs are being shown."*
+
+## O301 — **FILED** — the right dock has one row of tabs by default
+
+His words: *"make it so there is only one bar of tabs on the right as the default instead of the two rows we have currently."*
+
+## O302 — **FILED** — the right dock's hide arrow sits on its left edge
+
+His words: *"the hide arrow on the right side is sometimes hidden behind the more button - move it to the left side of the right docking area like most software has them."*
+
+## O303 — **FILED** — the Settings descriptions, and every text as small, are larger
+
+His words: *"increase the font size of the settings descriptions and any other font that is also this small size should be increased."*
+
+## O304 — **FILED** — the engine's new 3D mesh and OCR features reach the program, then a release
+
+His words: *"the pdfcer engine should have a new release soon with new features to add for 3d mesh, and a few other ocr things. update with these as well and make a release when all of this is done."*
+
+## O306 — **FILED** — right-clicking a dock tab or the dock's empty tab space shows or hides any panel
+
+His words: *"also add an option when a docked tab or a blank area of the dock is right clicked to show or hide tabs for other tools that can also be in the tab areas (properties, attachments, etc tabs)."*
+
+Both menus list every panel this build registers, ticked when it is on screen; clicking one shows or hides it.
+
+## O305 — **STANDING RULE** — between releases, drive only what changed and what it affects
+
+His words: *"Can you minimize your tests to only what was changed and would be affected between releases, and save this as a rule going forward?"*
+
 ## O292 — **BUILT AND DRIVEN — awaiting your verdict** — form fields multi-select, and Align and Distribute on several
 
 His words: *"I can't seem to select multiple form items at once. Not being able to do this makes it impossible to use the align and distribute tool with them."*

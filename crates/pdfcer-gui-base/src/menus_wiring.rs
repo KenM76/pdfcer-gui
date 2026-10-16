@@ -23,3 +23,23 @@ pub fn attach(
         .with_icon_painter(&mut icons)
         .attach(response, shell, registry, context_id, conditions)
 }
+
+/// [`attach`], with `custom` drawing the menu's custom rows.
+pub fn attach_custom(
+    shell: &egui_shell::manifest::Shell,
+    registry: &CommandRegistry,
+    response: &egui::Response,
+    context_id: &str,
+    conditions: &ConditionSet,
+    custom: &mut dyn FnMut(&mut egui::Ui, &str) -> Option<HandlerToken>,
+) -> Vec<HandlerToken> {
+    let mut sink = |name: &str, rect: egui::Rect| crate::diag::ui_rect(name, rect);
+    let mut icons = crate::icons::paint_ribbon_icon;
+    let mut rows =
+        |ui: &mut egui::Ui, item: &egui_shell::menu::MenuCustomItem<'_>| custom(ui, item.kind);
+    ContextMenu::new()
+        .reporting_rects_to(&mut sink)
+        .with_icon_painter(&mut icons)
+        .with_custom_items(&mut rows)
+        .attach(response, shell, registry, context_id, conditions)
+}

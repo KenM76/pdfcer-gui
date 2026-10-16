@@ -59,7 +59,12 @@
 #
 # ## Usage
 #
-#   bash tools/ui-verify/sweep-full.sh [--no-input]
+#   bash tools/ui-verify/sweep-full.sh [--no-input] [--affected[=REF]]
+#
+# `--affected` drives only the checks `affected-checks.py` selects from the
+# change since REF (default: the newest release tag). This is the default
+# before a release (OPERATOR_REQUESTS O305); the full sweep is for
+# framework-wide changes.
 #
 # Requires `cargo build --release` to have produced both `ui-verify.exe` and
 # `pdfcer-gui.exe`. Takes the desktop for the duration — real cursor moves, real
@@ -146,10 +151,18 @@ LOG=$OUT/sweep-full.log
 NOINPUT=
 RUN=full
 VOIDED=$OUT/sweep-skips-foreground-voided.txt
-if [ "${1:-}" = "--no-input" ]; then
+AFFECTED=
+for arg in "$@"; do
+    case "$arg" in
+        --no-input) NOINPUT=--no-input ;;
+        --affected) AFFECTED=latest-tag ;;
+        --affected=*) AFFECTED=${arg#--affected=} ;;
+        *) echo "sweep-full: unknown argument '$arg'" >&2; exit 2 ;;
+    esac
+done
+if [ -n "$NOINPUT" ]; then
     # Every output gets its own name, so an off-screen run never overwrites
     # the foreground sweep's evidence.
-    NOINPUT=--no-input
     RUN=offscreen
     LOG=$OUT/sweep-offscreen.log
     VOIDED=$OUT/sweep-skips-offscreen-voided.txt
@@ -384,6 +397,19 @@ done <<ALONE_TABLE
 $ALONE
 ALONE_TABLE
 
+# --affected keeps only what affected-checks.py selects (O305); the ALONE
+# table was already validated against the full list above.
+PICKED=$OUT/affected.txt
+if [ -n "$AFFECTED" ]; then
+    since=()
+    [ "$AFFECTED" != latest-tag ] && since=(--since "$AFFECTED")
+    if ! python tools/ui-verify/affected-checks.py "${since[@]}" > "$PICKED"; then
+        echo "sweep-full: affected-checks.py failed; nothing selected." >&2
+        exit 2
+    fi
+    grep -xF -f "$PICKED" "$LIST" > "$LIST.tmp"; mv "$LIST.tmp" "$LIST"
+fi
+
 N=$(wc -l < "$LIST")
 echo "=== sweeping $N checks in chunks, plus the ALONE table" | tee -a "$LOG"
 
@@ -418,6 +444,9 @@ while IFS='|' read -r name args; do
     case "$name" in
         '#'*) continue ;;
     esac
+    if [ -n "$AFFECTED" ] && ! grep -qx -- "$name" "$PICKED"; then
+        continue
+    fi
     echo "=== alone $name" >> "$LOG"
     # shellcheck disable=SC2086
     ./target/release/ui-verify.exe $NOINPUT --exe "$DRIVE/pdfcer-gui.exe" \

@@ -105,3 +105,34 @@ pub fn underline(ui: &mut egui::Ui, selected: bool, label: &str) -> egui::Respon
     }
     response
 }
+
+/// What a tab shows: its glyph, its name, or both. Set per tab row by the
+/// application ([`crate::ribbon::Ribbon::with_tab_label`],
+/// [`crate::dock::Dock::with_tab_label`]).
+///
+/// A tab with no glyph shows its name whatever the setting, so `Glyph` never
+/// leaves a tab blank; a tab drawn without its name says it on hover.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TabLabel {
+    /// The glyph alone; the name is the tooltip.
+    Glyph,
+    /// The name alone.
+    Text,
+    /// The glyph, then the name.
+    #[default]
+    Both,
+}
+
+impl TabLabel {
+    /// Whether a tab with a glyph draws it.
+    #[must_use]
+    pub fn draws_glyph(self) -> bool {
+        self != Self::Text
+    }
+
+    /// Whether a tab draws its name, given whether it draws a glyph.
+    #[must_use]
+    pub fn draws_text(self, has_glyph: bool) -> bool {
+        self != Self::Glyph || !has_glyph
+    }
+}

@@ -81,6 +81,7 @@ mod ocrband;
 /// The sentences a file earns the moment it opens: a wrapper, an action that reaches out.
 pub mod opennotes;
 pub mod panels;
+pub mod paneltoggles;
 /// Edits to a document kept under RC4, on request only.
 pub mod rc4;
 /// Edits an encrypted document refuses, and reopening it for its owner password.

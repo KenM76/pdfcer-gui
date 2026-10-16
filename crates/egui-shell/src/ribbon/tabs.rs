@@ -247,14 +247,19 @@ pub(crate) fn tab_label(tab: &Tab) -> &str {
 /// The width one tab will occupy, before the row's budget is applied.
 pub(crate) fn measure_tab(ui: &egui::Ui, ctx: &Ctx<'_>, tab: &Tab) -> f32 {
     let has_icon = icon_slot(ctx, tab).is_some();
+    let has_text = ctx.tab_label.draws_text(has_icon);
     ItemWidths {
         icon: if has_icon {
             ctx.theme.metrics.icon_pts
         } else {
             0.0
         },
-        text: measure::text_width(ui, tab_label(tab), &TextStyle::Button),
-        gap: if has_icon {
+        text: if has_text {
+            measure::text_width(ui, tab_label(tab), &TextStyle::Button)
+        } else {
+            0.0
+        },
+        gap: if has_icon && has_text {
             ui.spacing().icon_spacing
         } else {
             0.0
@@ -281,22 +286,32 @@ pub(crate) fn render_tabs(
     clicked
 }
 
-/// The tab's icon key and slot id, when it names an icon and the
-/// application installed a painter; otherwise the tab is text alone.
+/// The tab's icon key and slot id, when it names an icon, the application
+/// installed a painter and the strip draws glyphs; otherwise the tab is text
+/// alone.
 fn icon_slot(ctx: &Ctx<'_>, tab: &Tab) -> Option<(String, egui::Id)> {
+    if !ctx.tab_label.draws_glyph() {
+        return None;
+    }
     let key = tab.icon.as_ref().filter(|k| !k.trim().is_empty())?;
     ctx.icons.as_ref()?;
     Some((key.clone(), ctx.id("tab-icon", &tab.id)))
 }
 
-/// The tab's content: the icon slot, then the label.
-fn tab_atoms<'t>(ctx: &Ctx<'_>, slot: Option<&(String, egui::Id)>, text: RichText) -> Atoms<'t> {
+/// The tab's content: the icon slot, then the label when it has one.
+fn tab_atoms<'t>(
+    ctx: &Ctx<'_>,
+    slot: Option<&(String, egui::Id)>,
+    text: Option<RichText>,
+) -> Atoms<'t> {
     let mut atoms = Atoms::default();
     if let Some((_, slot_id)) = slot {
         let size = ctx.theme.metrics.icon_pts;
         atoms.push_right(egui::Atom::custom(*slot_id, Vec2::splat(size)));
     }
-    atoms.push_right(text);
+    if let Some(text) = text {
+        atoms.push_right(text);
+    }
     atoms
 }
 
@@ -350,7 +365,9 @@ fn draw_tab(
     };
 
     let slot = icon_slot(ctx, tab);
-    let atoms = tab_atoms(ctx, slot.as_ref(), text);
+    // A menu row always names its tab: a list of bare glyphs reads as nothing.
+    let named = in_menu || ctx.tab_label.draws_text(slot.is_some());
+    let atoms = tab_atoms(ctx, slot.as_ref(), named.then_some(text));
     let response = if in_menu {
         let laid_out = egui::Button::selectable(is_active, atoms)
             .truncate()
@@ -358,46 +375,19 @@ fn draw_tab(
         paint_tab_icon(ui, ctx, tab, slot, &laid_out, is_active);
         laid_out.response
     } else {
-        // Frameless, at the width `measure_tab` planned for (or what is left
-        // of the row); the tab's shape is painted into `body` once hover is known.
-        let width = measure_tab(ui, ctx, tab).min(ui.available_width());
-        let body = ui.painter().add(egui::Shape::Noop);
-        let laid_out = egui::Button::new(atoms)
-            .frame(false)
-            .truncate()
-            .min_size(vec2(width, strip_height(ctx)))
-            .selected(is_active)
-            .atom_ui(ui);
-        paint_tab_icon(ui, ctx, tab, slot, &laid_out, is_active);
-        let response = laid_out.response;
-        ui.painter().set(
-            body,
-            crate::tabshape::body(
-                &palette,
-                ctx.theme.metrics.corner_radius,
-                palette.surface,
-                response.rect,
-                cues.outlined,
-                response.hovered(),
-            ),
-        );
-        if is_active {
-            let pass = ui.ctx().cumulative_pass_nr();
-            ui.ctx()
-                .data_mut(|d| d.insert_temp(active_tab_key(), (pass, response.rect)));
-        }
-        response
+        strip_button(ui, ctx, tab, slot, atoms, is_active)
     };
 
     a11y::describe_tab(&response, label, is_active);
 
-    let response = match tab.question.as_deref() {
-        // The tab's one-line question is the best tooltip it could
-        // have: `RIBBON_IA.md` §4 keeps it as the test of whether a
-        // tab is coherent, and it answers "what is this tab for"
-        // better than any separate string an application would write.
-        Some(q) => response.on_hover_text(q),
-        None => response,
+    // The tab's one-line question is the best tooltip it could have:
+    // `RIBBON_IA.md` §4 keeps it as the test of whether a tab is coherent.
+    // A tab drawn without its name leads with the name.
+    let response = match (named, tab.question.as_deref()) {
+        (true, Some(q)) => response.on_hover_text(q),
+        (true, None) => response,
+        (false, Some(q)) => response.on_hover_text(format!("{label} — {q}")),
+        (false, None) => response.on_hover_text(label),
     };
 
     ctx.reporter.report(response.rect, || report::tab(&tab.id));
@@ -409,6 +399,46 @@ fn draw_tab(
         return true;
     }
     false
+}
+
+/// A tab on the strip: frameless, at the width `measure_tab` planned for (or
+/// what is left of the row), its shape painted underneath once hover is known.
+fn strip_button(
+    ui: &mut egui::Ui,
+    ctx: &mut Ctx<'_>,
+    tab: &Tab,
+    slot: Option<(String, egui::Id)>,
+    atoms: Atoms<'_>,
+    is_active: bool,
+) -> egui::Response {
+    let palette = ctx.theme.palette;
+    let width = measure_tab(ui, ctx, tab).min(ui.available_width());
+    let body = ui.painter().add(egui::Shape::Noop);
+    let laid_out = egui::Button::new(atoms)
+        .frame(false)
+        .truncate()
+        .min_size(vec2(width, strip_height(ctx)))
+        .selected(is_active)
+        .atom_ui(ui);
+    paint_tab_icon(ui, ctx, tab, slot, &laid_out, is_active);
+    let response = laid_out.response;
+    ui.painter().set(
+        body,
+        crate::tabshape::body(
+            &palette,
+            ctx.theme.metrics.corner_radius,
+            palette.surface,
+            response.rect,
+            tab_cues(is_active).outlined,
+            response.hovered(),
+        ),
+    );
+    if is_active {
+        let pass = ui.ctx().cumulative_pass_nr();
+        ui.ctx()
+            .data_mut(|d| d.insert_temp(active_tab_key(), (pass, response.rect)));
+    }
+    response
 }
 
 /// The tabs that did not fit, as a menu behind the strip's "⏷ N more"

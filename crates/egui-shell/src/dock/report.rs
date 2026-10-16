@@ -166,6 +166,12 @@ pub fn tab_bar(side: DockSide, column: usize, stack: usize) -> String {
     format!("{PREFIX}.{}.{column}.{stack}.tabbar", side.key())
 }
 
+/// The empty part of one stack's tab bar, right of its last tab.
+#[must_use]
+pub fn tab_bar_blank(side: DockSide, column: usize, stack: usize) -> String {
+    format!("{PREFIX}.{}.{column}.{stack}.tabbar.blank", side.key())
+}
+
 /// One stack's overflow affordance.
 #[must_use]
 pub fn overflow(side: DockSide, column: usize, stack: usize) -> String {

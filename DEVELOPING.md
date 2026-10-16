@@ -182,6 +182,14 @@ at the other, and one point passing is exactly what hides a grip whose centre
 leaves the canvas. Any check sensitive to where the pointer lands is run at
 both before its verdict is believed.
 
+**Before a release, drive only what changed (O305).**
+`bash tools/ui-verify/sweep-full.sh --no-input --affected` drives the checks
+`tools/ui-verify/affected-checks.py` selects from the change since the newest
+release tag: a check whose own file changed, a check quoting a trace event,
+region, command id or `PDFCER_*` variable that a changed source file also
+quotes, and a three-check smoke set. `--why` on the selector prints each
+reason. The full sweep is for framework-wide changes or on request.
+
 The full sweep takes about ninety-five minutes and aborts if any `.rs` or
 `.toml` in the tree is edited while it runs. **Two independent guards fire, and
 both consider only those two extensions**: `main::refuse_if_self_is_stale`

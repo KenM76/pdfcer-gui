@@ -15,6 +15,23 @@ impl PdfcerApp {
             self.show_panel(panel);
             return;
         }
+        self.hide_panel(panel);
+    }
+
+    /// Give `panel` a tab when it has none, else take its tab away: the dock
+    /// right-click list ticks a panel whose tab is anywhere in the dock.
+    pub(super) fn toggle_tab(&mut self, panel: crate::panels::Panel) {
+        let id = egui_shell::dock::PanelId::new(panel.command_id());
+        if self.dock.layout().contains(&id) {
+            self.hide_panel(panel);
+        } else {
+            self.show_panel(panel);
+        }
+    }
+
+    /// Take `panel` out of the arrangement.
+    fn hide_panel(&mut self, panel: crate::panels::Panel) {
+        let id = egui_shell::dock::PanelId::new(panel.command_id());
         let closed = self.dock.layout_mut().close(&id);
         self.dock.normalize();
         self.modes

@@ -81,16 +81,17 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 54 → 55: Paragraphs on this page on the canvas text menu.
     // 55 → 56: This paragraph on the canvas text menu.
     // 56 → 57: Word gap… on the canvas text menu.
+    // 57 → 58: Reset layout on the dock's blank-bar menu.
     // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
     // no stacking glyph exists (see `ledger`'s refused count).
     assert_eq!(
         (glyph, blank, absent),
-        (57, 5, 0),
+        (58, 5, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(
-        reserving_menus, 12,
-        "menus that reserve an icon column, of 12:\n{report}"
+        reserving_menus, 13,
+        "menus that reserve an icon column, of 13:\n{report}"
     );
 }
 

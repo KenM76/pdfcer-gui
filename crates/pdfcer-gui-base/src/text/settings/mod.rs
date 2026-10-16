@@ -29,6 +29,7 @@ pub mod remote;
 /// The settings that change pdfcer's own window.
 pub mod shell;
 pub mod snapshot;
+pub mod tabface;
 
 pub use bytes::*;
 pub use extract::*;
@@ -40,6 +41,7 @@ pub use print_colour::*;
 pub use redaction::*;
 pub use remote::*;
 pub use shell::*;
+pub use tabface::*;
 
 use pdfcer_core::settings::StoreKind;
 use pdfcer_core::settings::StoreLocation;

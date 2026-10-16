@@ -322,6 +322,8 @@ pub struct Dock<'a> {
     /// The tab glyph painter. Built by [`Dock::with_icon_painter`]; see
     /// [`tabicon`].
     icons: Option<&'a mut crate::ribbon::IconPainter<'a>>,
+    /// What a panel tab shows. Built by [`Dock::with_tab_label`].
+    tab_label: crate::tabshape::TabLabel,
 }
 
 impl<'a> Dock<'a> {
@@ -571,6 +573,7 @@ impl<'a> Dock<'a> {
             // build one per frame, which every caller does.
             tab_menu: self.tab_menu.take(),
             icons: self.icons.take(),
+            tab_label: self.tab_label,
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,

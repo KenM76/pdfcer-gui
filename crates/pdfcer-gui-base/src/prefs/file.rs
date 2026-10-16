@@ -435,6 +435,15 @@ impl Prefs {
                         line,
                     }),
                 },
+                "ribbon_tabs_show" | "dock_tabs_show" => match crate::tabface::from_key(value) {
+                    Some(f) if key == "ribbon_tabs_show" => prefs.ribbon_tab_face = f,
+                    Some(f) => prefs.dock_tab_face = f,
+                    None => notes.push(PrefNote::BadValue {
+                        key: key.to_owned(),
+                        value: value.to_owned(),
+                        line,
+                    }),
+                },
                 "rail_auto_hide" => match opening::bool_from_key(value) {
                     Some(on) => prefs.rail_auto_hide = on,
                     None => notes.push(PrefNote::BadValue {
@@ -924,6 +933,13 @@ impl Prefs {
         out.push('\n');
         out.push_str("rail_auto_hide = "); // ui-text-exempt: a file KEY, as above.
         out.push_str(opening::bool_key(self.rail_auto_hide));
+        out.push('\n');
+        // ui-text-exempt: settings-file COMMENT text and KEYS.
+        out.push_str("\n# ribbon_tabs_show / dock_tabs_show: both | glyph | text\n");
+        out.push_str("ribbon_tabs_show = ");
+        out.push_str(crate::tabface::key(self.ribbon_tab_face));
+        out.push_str("\ndock_tabs_show = ");
+        out.push_str(crate::tabface::key(self.dock_tab_face));
         out.push('\n');
         out.push_str(
             "\n\

@@ -78,8 +78,9 @@ mod tests {
     //
     // The coloured-icons switch (O232) is a shell preference beside the UI
     // scale in the Appearance group. Whether a click opens a whole paragraph
-    // (O295) is a shell preference in the Text group.
-    const SETTINGS_COUNT: usize = 46;
+    // (O295) is a shell preference in the Text group. What tabs show (O299)
+    // is one header over the ribbon's and the dock's choice.
+    const SETTINGS_COUNT: usize = 47;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -246,6 +247,7 @@ mod tests {
                 tab_tolerance_radius(),
             ),
             (auto_hide_title(), auto_hide_silence(), auto_hide_radius()),
+            (tab_face_title(), tab_face_silence(), tab_face_radius()),
             // The two trust-store settings, reached across into
             // `crate::text::trust` for the reason `crate::text::acrobat`'s
             // triple is reached across for: the subject's copy is one

@@ -184,3 +184,4 @@
 - [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.
 - [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.
 - [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.
+- [Drive only what changed between releases](feedback_drive_only_affected.md) — O305: select checks from the diff since the last tag; full sweep only if framework-wide.

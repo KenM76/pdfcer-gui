@@ -197,6 +197,8 @@ pub struct TabMenu<'a> {
     /// here is indistinguishable, downstream, from a close asked for by
     /// the built-in menu.
     close_requested: bool,
+    /// The click landed on the bar's empty space, not on a tab.
+    blank: bool,
 }
 
 impl<'a> TabMenu<'a> {
@@ -208,7 +210,24 @@ impl<'a> TabMenu<'a> {
             float_requested: false,
             dock_requested: false,
             close_requested: false,
+            blank: false,
         }
+    }
+
+    /// A right-click on the empty part of a tab bar. `panel` is the stack's
+    /// front tab; the application decides whether the menu concerns it.
+    pub(crate) fn blank(panel: &'a PanelId, response: &'a egui::Response) -> Self {
+        Self {
+            blank: true,
+            ..Self::new(panel, response)
+        }
+    }
+
+    /// Whether the click landed on the bar's empty space rather than a tab.
+    /// The dock ignores a close, float or dock request made from there.
+    #[must_use]
+    pub fn is_blank(&self) -> bool {
+        self.blank
     }
 
     /// Which panel this tab belongs to.

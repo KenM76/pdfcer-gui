@@ -261,6 +261,7 @@ impl PdfcerApp {
                     .reporting_rects_to(&mut report_rect)
                     .with_custom_items(&mut custom)
                     .with_icon_painter(&mut icons)
+                    .with_tab_label(self.prefs.ribbon_tab_face)
                     .render(ui, shell, &self.commands, &mut self.ribbon)
             })
             .inner;
@@ -304,6 +305,7 @@ impl PdfcerApp {
         // will not let it be reached through `self` afterwards. A `bool`, so
         // the copy costs nothing and cannot go stale within one frame.
         let rail_auto_hide = self.prefs.rail_auto_hide;
+        let dock_tab_face = self.prefs.dock_tab_face;
 
         let Self {
             status,
@@ -411,7 +413,27 @@ impl PdfcerApp {
             .iter()
             .map(|f| f.panel.clone())
             .collect();
+        let mut toggles =
+            crate::app::paneltoggles::PanelToggles::census(commands, &conditions, dock);
+        let panels_offered = !toggles.is_empty();
         let mut tab_menu = |tab: &mut egui_shell::dock::TabMenu<'_>| {
+            let mut rows = |ui: &mut egui::Ui, kind: &str| toggles.draw(ui, kind);
+            let offered = (crate::shell::menus::PANELS_OFFERED, panels_offered);
+            if tab.is_blank() {
+                for h in host.iter() {
+                    tab_tokens.extend(
+                        h.attach_custom(
+                            tab.response(),
+                            crate::shell::menus::DOCK_BLANK,
+                            &h.with_conditions(&[offered]),
+                            &mut rows,
+                        )
+                        .into_iter()
+                        .map(|t| (tab.panel().clone(), t)),
+                    );
+                }
+                return;
+            }
             // The dock hands out the tab's `Response`; what a right-click on
             // it offers is the application's business, which is the whole
             // point of the seam. Supplying a handler also takes the dock's
@@ -436,11 +458,17 @@ impl PdfcerApp {
                 let conditions = h.with_conditions(&[
                     (crate::shell::menus::PANEL_DOCKED, !is_floating),
                     (crate::shell::menus::PANEL_FLOATING, is_floating),
+                    offered,
                 ]);
                 tab_tokens.extend(
-                    h.attach_with(tab.response(), crate::shell::menus::DOCK_TAB, &conditions)
-                        .into_iter()
-                        .map(|t| (panel.clone(), t)),
+                    h.attach_custom(
+                        tab.response(),
+                        crate::shell::menus::DOCK_TAB,
+                        &conditions,
+                        &mut rows,
+                    )
+                    .into_iter()
+                    .map(|t| (panel.clone(), t)),
                 );
             }
         };
@@ -520,6 +548,7 @@ impl PdfcerApp {
         let report = egui_shell::dock::Dock::new()
             .with_registry(panel_registry)
             .with_icon_painter(&mut tab_icons)
+            .with_tab_label(dock_tab_face)
             .with_rail_reach(&mut rail_reach)
             .with_tab_menu(&mut tab_menu)
             .with_side_banner(
@@ -578,6 +607,9 @@ impl PdfcerApp {
         // `RIBBON_IA.md` P1a permits for a shortcut surface.
         for token in rail_tokens {
             self.dispatch_token(ui.ctx(), token, actions);
+        }
+        if let Some(panel) = toggles.picked {
+            self.toggle_tab(panel);
         }
         for (panel, token) in tab_tokens {
             self.dock_menu_panel = Some(panel);

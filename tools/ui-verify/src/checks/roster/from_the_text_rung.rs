@@ -657,6 +657,8 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(paragraphs_page::ParagraphsOffOnOnePageLeavesTheNext),
         Box::new(paragraph_here::OneParagraphOpensAsLinesWhileItsNeighbourOpensWhole),
         Box::new(word_gap_here::WordGapOpensFromTheTextBeingEdited),
+        Box::new(panel_toggles::ADockRightClickHidesAndShowsAnyPanel),
+        Box::new(tab_faces::RibbonAndDockTabsFollowTheirOwnFaceSetting),
         Box::new(paragraph_pick::OneClickSelectsAParagraphDrawnFromSeveralObjects),
         Box::new(ocr_select_block::ASelectClickOnRecognisedTextTakesItsParagraph),
         // O127 defect 2 — and registered WITHOUT having been run, on the

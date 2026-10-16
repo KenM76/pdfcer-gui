@@ -243,6 +243,8 @@ pub(crate) struct Ctx<'a> {
     pub tab_menu: Option<&'a mut TabMenuHandler<'a>>,
     /// Paints a panel's tab glyph; see [`super::tabicon`].
     pub icons: Option<&'a mut crate::ribbon::IconPainter<'a>>,
+    /// What a panel tab shows.
+    pub tab_label: crate::tabshape::TabLabel,
     /// What the operator did, in the order they did it.
     pub intents: Vec<Intent>,
     /// **Where every compartment of the dock was drawn**, accumulated as it is
@@ -336,6 +338,7 @@ mod tests {
             id_salt: Id::new("dock-test"),
             tab_menu: None,
             icons: None,
+            tab_label: crate::tabshape::TabLabel::default(),
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,
@@ -394,6 +397,7 @@ mod tests {
             id_salt: Id::new("dock-test"),
             tab_menu: None,
             icons: None,
+            tab_label: crate::tabshape::TabLabel::default(),
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,

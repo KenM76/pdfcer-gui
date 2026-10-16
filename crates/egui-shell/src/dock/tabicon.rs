@@ -7,7 +7,7 @@
 //! opens it can show one glyph. With no key or no painter the tab is text
 //! alone and measures exactly as it did.
 //!
-//! The icon's width is part of the tab's planned width ([`extra_width`]), so
+//! The icon's width is part of the tab's planned width ([`tab_width`]), so
 //! the overflow reservation stays true; the glyph's rect is published as
 //! `tabicon.dock.<panel>` for driven checks.
 
@@ -29,35 +29,62 @@ impl<'a> Dock<'a> {
         self.icons = Some(painter as &'a mut IconPainter<'a>);
         self
     }
+
+    /// Whether panel tabs show their glyph, name, or both.
+    #[must_use]
+    pub fn with_tab_label(mut self, label: crate::tabshape::TabLabel) -> Self {
+        self.tab_label = label;
+        self
+    }
 }
 
-/// The panel's icon key and slot id, when it has one and a painter is
-/// installed.
+/// The panel's icon key and slot id, when it has one, a painter is installed
+/// and the dock draws glyphs.
 pub(crate) fn slot(ctx: &Ctx<'_>, panel: &PanelId, tab_id: Id) -> Option<(String, Id)> {
+    if !ctx.tab_label.draws_glyph() {
+        return None;
+    }
     ctx.icons.as_ref()?;
     let info = ctx.registry?.get(panel.as_str())?;
     let key = info.icon.as_ref().filter(|k| !k.trim().is_empty())?;
     Some((key.clone(), tab_id.with("icon")))
 }
 
-/// The width the icon adds to a tab: the glyph and the gap after it, or
-/// nothing when the tab draws none.
-pub(crate) fn extra_width(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId) -> f32 {
-    if slot(ctx, panel, Id::NULL).is_some() {
+/// Whether the tab draws its name: always, unless it draws a glyph alone.
+pub(crate) fn named(ctx: &Ctx<'_>, panel: &PanelId) -> bool {
+    ctx.tab_label
+        .draws_text(slot(ctx, panel, Id::NULL).is_some())
+}
+
+/// A tab's planned width for a label `label_w` points wide: the glyph, the
+/// gap and the label, or the glyph alone.
+pub(crate) fn tab_width(ui: &egui::Ui, ctx: &Ctx<'_>, panel: &PanelId, label_w: f32) -> f32 {
+    let has_icon = slot(ctx, panel, Id::NULL).is_some();
+    if !named(ctx, panel) {
+        return ctx.theme.metrics.icon_pts + super::plan::TAB_PADDING;
+    }
+    let icon = if has_icon {
         ctx.theme.metrics.icon_pts + ui.spacing().icon_spacing
     } else {
         0.0
-    }
+    };
+    super::plan::tab_width(label_w) + icon
 }
 
-/// The tab's content: the icon slot, then the label.
-pub(crate) fn atoms<'t>(ctx: &Ctx<'_>, slot: Option<&(String, Id)>, text: RichText) -> Atoms<'t> {
+/// The tab's content: the icon slot, then the label when it has one.
+pub(crate) fn atoms<'t>(
+    ctx: &Ctx<'_>,
+    slot: Option<&(String, Id)>,
+    text: Option<RichText>,
+) -> Atoms<'t> {
     let mut atoms = Atoms::default();
     if let Some((_, slot_id)) = slot {
         let size = ctx.theme.metrics.icon_pts;
         atoms.push_right(egui::Atom::custom(*slot_id, Vec2::splat(size)));
     }
-    atoms.push_right(text);
+    if let Some(text) = text {
+        atoms.push_right(text);
+    }
     atoms
 }
 

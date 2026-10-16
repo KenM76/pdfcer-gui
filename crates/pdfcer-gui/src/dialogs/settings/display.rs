@@ -202,6 +202,25 @@ pub fn auto_hide(ui: &mut Ui, prefs: &mut Prefs) {
     );
 }
 
+/// What the ribbon's and the dock's tabs show, set separately (O299).
+pub fn tab_faces(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::tab_face_title(),
+        t::tab_face_silence(),
+        t::tab_face_radius(),
+    );
+    for (heading, pref) in [
+        (t::tab_face_ribbon(), &mut prefs.ribbon_tab_face),
+        (t::tab_face_dock(), &mut prefs.dock_tab_face),
+    ] {
+        ui.label(heading);
+        for face in pdfcer_gui_base::tabface::ALL {
+            widgets::option(ui, pref, face, t::tab_face_label(face), None);
+        }
+    }
+}
+
 pub fn page_chrome(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
         ui,

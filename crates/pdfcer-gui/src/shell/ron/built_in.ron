@@ -883,6 +883,16 @@
                 Command(id: "view.panel_dock", visible_when: "panel.floating"),
                 Command(id: "view.panel_close"),
                 Separator,
+                Custom(kind: "panel_toggles", visible_when: "dock.panels_offered"),
+                Separator,
+                Command(id: "view.reset_layout"),
+            ],
+        ),
+        (
+            context: "dock.blank",
+            items: [
+                Custom(kind: "panel_toggles", visible_when: "dock.panels_offered"),
+                Separator,
                 Command(id: "view.reset_layout"),
             ],
         ),

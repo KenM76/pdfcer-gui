@@ -131,6 +131,8 @@ pub(crate) struct Ctx<'a> {
     pub reporter: Reporter<'a>,
     /// How to paint an icon, if the application supplied a painter.
     pub icons: Option<&'a mut IconPainter<'a>>,
+    /// What the tab strip's tabs show.
+    pub tab_label: crate::tabshape::TabLabel,
     /// How to draw a custom item, if the application supplied a renderer.
     pub custom: Option<&'a mut CustomItemRenderer<'a>>,
     /// The base `egui::Id` every ribbon widget id is derived from.

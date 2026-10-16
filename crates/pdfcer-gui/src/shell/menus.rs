@@ -153,6 +153,17 @@ pub const IMAGE_REPLACEABLE: &str = "selection.image_replaceable";
 /// Defined but not attachable from this crate — see the module header.
 pub const DOCK_TAB: &str = "dock.tab";
 
+/// Right-click on the empty part of a dock tab bar.
+pub const DOCK_BLANK: &str = "dock.blank";
+
+/// **At least one panel can be listed** in a dock menu's show/hide rows. Set
+/// per menu by the dock's tab handler; never in the frame's condition set.
+pub const PANELS_OFFERED: &str = "dock.panels_offered";
+
+/// Custom menu rows whose only words are registered command labels, so they
+/// own no copy and route only to commands the ribbon also reaches.
+pub const REGISTRY_WORDED_ROWS: &[&str] = &[crate::app::paneltoggles::KIND];
+
 /// **The panel under this tab is docked**, so it can be floated.
 pub const PANEL_DOCKED: &str = "panel.docked";
 
@@ -181,6 +192,7 @@ pub const CONTEXTS: &[&str] = &[
     CANVAS_DIMENSION,
     CANVAS_SNAPSHOT,
     DOCK_TAB,
+    DOCK_BLANK,
     DOCUMENT_TAB,
     OBJECTS_ROW,
     PAGES_ROW,
@@ -701,6 +713,14 @@ pub fn built_in() -> Menus {
             Item::command("view.panel_dock").shown_when(PANEL_FLOATING),
             Item::command("view.panel_close"),
             Item::Separator,
+            Item::custom(crate::app::paneltoggles::KIND).shown_when(PANELS_OFFERED),
+            Item::Separator,
+            Item::command("view.reset_layout"),
+        ]))
+        // dock.blank — the empty part of a tab bar: which panels show (O306).
+        .with(Menu::new(DOCK_BLANK).with_items([
+            Item::custom(crate::app::paneltoggles::KIND).shown_when(PANELS_OFFERED),
+            Item::Separator,
             Item::command("view.reset_layout"),
         ]))
         // -------------------------------------------------------------------
@@ -886,6 +906,25 @@ impl<'a> MenuHost<'a> {
     #[must_use]
     pub fn attach(&self, response: &egui::Response, context_id: &str) -> Vec<HandlerToken> {
         self.attach_with(response, context_id, self.conditions)
+    }
+
+    /// [`Self::attach_with`], with `custom` drawing the menu's custom rows.
+    #[must_use]
+    pub fn attach_custom(
+        &self,
+        response: &egui::Response,
+        context_id: &str,
+        conditions: &ConditionSet,
+        custom: &mut dyn FnMut(&mut egui::Ui, &str) -> Option<HandlerToken>,
+    ) -> Vec<HandlerToken> {
+        super::menus_wiring::attach_custom(
+            self.shell,
+            self.registry,
+            response,
+            context_id,
+            conditions,
+            custom,
+        )
     }
 
     /// [`Self::attach`], against conditions the caller has corrected.

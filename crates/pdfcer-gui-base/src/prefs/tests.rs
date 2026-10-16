@@ -68,6 +68,9 @@ fn every_preference_round_trips_through_the_file() {
                     page_preview_budget_ms: 2000,
                     ribbon_auto_hide: false,
                     rail_auto_hide: false,
+                    // Non-default, so a writer dropping them can't pass.
+                    ribbon_tab_face: crate::tabface::TabLabel::Glyph,
+                    dock_tab_face: crate::tabface::TabLabel::Text,
                     // Non-default for the identical reason — O96 ships `true`,
                     // so a writer emitting a constant `true` would round-trip a
                     // preference the operator had turned OFF and this test would
@@ -620,6 +623,8 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         page_preview_budget_ms: 2000,
         ribbon_auto_hide: false,
         rail_auto_hide: false,
+        ribbon_tab_face: crate::tabface::TabLabel::Glyph,
+        dock_tab_face: crate::tabface::TabLabel::Text,
         // …and O96, which also ships `true`.
         shade_form_fields: false,
         // Non-default, for this test's stated reason. O229.

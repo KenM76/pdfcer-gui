@@ -437,10 +437,10 @@ fn each_menu_holds_exactly_the_documented_items() {
         // would forbid a separator in every menu in the program to guard
         // against a case a separator cannot produce.
         assert!(
-            !menu
-                .items()
-                .iter()
-                .any(|i| matches!(i, Item::Custom { .. })),
+            !menu.items().iter().any(|i| matches!(
+                i,
+                Item::Custom { kind, .. } if !REGISTRY_WORDED_ROWS.contains(&kind.as_str())
+            )),
             "menu `{context}` holds a non-command item; the sweeps in this file walk \
              `command_ids()` and would not see it"
         );
@@ -558,6 +558,8 @@ fn the_menu_surface_owns_no_copy_of_its_own() {
                 Item::Command { .. } => {}
                 // Punctuation. No words.
                 Item::Separator => {}
+                // Words are the registry's labels; see the list's docs.
+                Item::Custom { kind, .. } if REGISTRY_WORDED_ROWS.contains(&kind.as_str()) => {}
                 Item::Custom { kind, .. } => panic!(
                     // ui-text-exempt: a test panic, read by whoever is looking at
                     // the failure. Never rendered to an operator.

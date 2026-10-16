@@ -624,6 +624,8 @@ pub mod paragraphs_page;
 /// One paragraph sent back to lines: its neighbour still opens whole.
 pub mod paragraph_here;
 
+pub mod panel_toggles;
+pub mod tab_faces;
 /// Word gap… on the text menu lands on its slider.
 pub mod word_gap_here;
 

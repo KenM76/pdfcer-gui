@@ -138,16 +138,8 @@ pub(crate) fn tab_bar(
     let addr = StackAddr::new(side, column, stack_index);
     paint_bar(ui, ctx, addr, rect);
 
-    // 1. Measure. `egui` memoizes layout jobs, so asking for the width of
-    //    a label that is about to be drawn costs a hash lookup rather
-    //    than a second text layout. A tab's icon is part of its width.
-    let labels: Vec<String> = stack.tabs.iter().map(|p| ctx.describe(p).0).collect();
-    let widths: Vec<f32> = stack
-        .tabs
-        .iter()
-        .zip(&labels)
-        .map(|(p, l)| plan::tab_width(text_width(ui, l)) + tabicon::extra_width(ui, ctx, p))
-        .collect();
+    // 1. Measure.
+    let (labels, widths) = measure(ui, ctx, stack);
 
     // 2 & 3. The reservation, and the budget it is subtracted from.
     let overflow_w =
@@ -179,6 +171,8 @@ pub(crate) fn tab_bar(
         x += width + plan::TAB_GAP;
     }
 
+    blank_strip(ui, ctx, addr, stack, x, rect.left() + bar.tab_budget, rect);
+
     // 6. The affordance, in the space nothing else was allowed to touch.
     if bar.has_overflow() {
         outcome.overflow_drawn = true;
@@ -200,6 +194,19 @@ pub(crate) fn tab_bar(
     drag::preview(ui, ctx, addr, rect);
 
     outcome
+}
+
+/// Each tab's label and laid-out width, icon included. `egui` memoizes
+/// layout jobs, so measuring a label about to be drawn is a hash lookup.
+fn measure(ui: &egui::Ui, ctx: &Ctx<'_>, stack: &Stack) -> (Vec<String>, Vec<f32>) {
+    let labels: Vec<String> = stack.tabs.iter().map(|p| ctx.describe(p).0).collect();
+    let widths = stack
+        .tabs
+        .iter()
+        .zip(&labels)
+        .map(|(p, l)| tabicon::tab_width(ui, ctx, p, text_width(ui, l)))
+        .collect();
+    (labels, widths)
 }
 
 /// The bar's backdrop and bottom rule, and its rect published and recorded.
@@ -242,7 +249,8 @@ fn draw_tab(
         .id("tab", addr.side, addr.column, addr.stack)
         .with(panel.as_str());
     let slot = tabicon::slot(ctx, panel, id);
-    let atoms = tabicon::atoms(ctx, slot.as_ref(), text);
+    let named = tabicon::named(ctx, panel);
+    let atoms = tabicon::atoms(ctx, slot.as_ref(), named.then_some(text));
     let backdrop = ui.painter().add(egui::Shape::Noop);
     let laid_out = ui
         .scope_builder(
@@ -282,7 +290,7 @@ fn draw_tab(
     );
 
     press(ui, ctx, panel, addr.tab(index), &response);
-    let response = announce(ctx, panel, response, selected);
+    let response = announce(ctx, panel, response, selected, named);
     secondary_click(ctx, panel, &response);
 
     ctx.reporter
@@ -322,9 +330,16 @@ fn announce(
     panel: &PanelId,
     response: egui::Response,
     selected: bool,
+    named: bool,
 ) -> egui::Response {
-    let (_, announced) = ctx.describe(panel);
-    let response = response.on_hover_text(announced.clone());
+    let (label, announced) = ctx.describe(panel);
+    // A glyph-only tab's tooltip must carry its name.
+    let hover = if named || announced.starts_with(&label) {
+        announced.clone()
+    } else {
+        format!("{label} — {announced}")
+    };
+    let response = response.on_hover_text(hover);
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::WidgetType::SelectableLabel,
@@ -381,6 +396,40 @@ fn secondary_click(ctx: &mut Ctx<'_>, panel: &PanelId, response: &egui::Response
     } else if dock_requested {
         ctx.intents.push(Intent::Dock(panel.clone()));
     }
+}
+
+/// The bar's empty space from `from` to `to`: its secondary click goes to the
+/// application's tab-menu handler, flagged [`TabMenu::is_blank`].
+fn blank_strip(
+    ui: &mut egui::Ui,
+    ctx: &mut Ctx<'_>,
+    addr: StackAddr,
+    stack: &Stack,
+    from: f32,
+    to: f32,
+    bar: Rect,
+) {
+    let Some(handler) = ctx.tab_menu.as_deref_mut() else {
+        return;
+    };
+    let Some(front) = stack.tabs.get(stack.active) else {
+        return;
+    };
+    if to - from < 4.0 {
+        return;
+    }
+    let rect = Rect::from_x_y_ranges(from..=to, bar.y_range());
+    let id = egui::Id::new((
+        "dock-tabbar-blank",
+        addr.side.key(),
+        addr.column,
+        addr.stack,
+    ));
+    let response = ui.interact(rect, id, egui::Sense::click());
+    handler(&mut TabMenu::blank(front, &response));
+    ctx.reporter.report(ui, rect, || {
+        report::tab_bar_blank(addr.side, addr.column, addr.stack)
+    });
 }
 
 /// Draw the "⏷ N more" affordance and the menu behind it.
@@ -827,9 +876,23 @@ mod tests {
     fn a_supplied_handler_is_offered_every_drawn_tab_with_its_own_panel_id() {
         let mut h = Harness::new(3, 400.0, Vec2::new(1600.0, 800.0));
         let mut seen: Vec<(String, Rect)> = Vec::new();
+        let mut blank: Vec<String> = Vec::new();
         let frame = h.frame_with(vec![], &mut |tab: &mut TabMenu<'_>| {
-            seen.push((tab.panel().as_str().to_owned(), tab.response().rect));
+            if tab.is_blank() {
+                blank.push(tab.panel().as_str().to_owned());
+            } else {
+                seen.push((tab.panel().as_str().to_owned(), tab.response().rect));
+            }
         });
+        // The bar's empty space is offered once, naming the front tab.
+        assert_eq!(blank, vec!["p0".to_owned()]);
+        assert!(
+            frame
+                .rects
+                .iter()
+                .any(|(n, _)| n.ends_with(".tabbar.blank")),
+            "the blank part of the bar publishes no rect"
+        );
 
         let offered: Vec<String> = seen.iter().map(|(p, _)| p.clone()).collect();
         assert_eq!(
@@ -857,7 +920,9 @@ mod tests {
         let mut h = Harness::new(9, 240.0, Vec2::new(1280.0, 800.0));
         let mut offered: Vec<String> = Vec::new();
         let frame = h.frame_with(vec![], &mut |tab: &mut TabMenu<'_>| {
-            offered.push(tab.panel().as_str().to_owned());
+            if !tab.is_blank() {
+                offered.push(tab.panel().as_str().to_owned());
+            }
         });
         assert_eq!(offered, frame.drawn_tabs());
         assert!(

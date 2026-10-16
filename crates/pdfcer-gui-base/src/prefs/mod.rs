@@ -542,6 +542,10 @@ pub struct Prefs {
     /// from the rail — `markup.comments` in Read, which is on no tab that mode
     /// shows — stay reachable in every state of this setting.
     pub rail_auto_hide: bool,
+    /// What the ribbon's tabs show: glyph, name or both (O299).
+    pub ribbon_tab_face: crate::tabface::TabLabel,
+    /// What the dock's panel tabs show, set apart from the ribbon's (O299).
+    pub dock_tab_face: crate::tabface::TabLabel,
     /// **Which chord means which form-field paste** — `OPERATOR_REQUESTS.md`
     /// **O58**, operator ruling 2026-08-29.
     ///
@@ -819,6 +823,8 @@ impl Default for Prefs {
             // O58: the operator's own ruling, not Acrobat's. He was told about
             // the divergence and asked for a setting rather than a swap.
             paste_chords: PasteChords::default(),
+            ribbon_tab_face: crate::tabface::TabLabel::default(),
+            dock_tab_face: crate::tabface::TabLabel::default(),
             // Empty — nobody has answered yet, so every mode gets
             // `OffPagePrefs::default_for_mode`. See that function on why
             // *unanswered* is stored as absence rather than as `false`.

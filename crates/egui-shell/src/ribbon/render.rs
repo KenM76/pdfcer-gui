@@ -98,6 +98,7 @@ pub struct Ribbon<'a> {
     conditions: Option<&'a ConditionSet>,
     rects: Option<&'a mut RectSink<'a>>,
     icons: Option<&'a mut IconPainter<'a>>,
+    tab_label: crate::tabshape::TabLabel,
     custom: Option<&'a mut CustomItemRenderer<'a>>,
 }
 
@@ -131,6 +132,13 @@ impl<'a> Ribbon<'a> {
         painter: &'a mut (impl FnMut(&egui::Painter, &IconRequest<'_>) + 'a),
     ) -> Self {
         self.icons = Some(painter);
+        self
+    }
+
+    /// Whether the tab strip's tabs show their glyph, name, or both.
+    #[must_use]
+    pub fn with_tab_label(mut self, label: crate::tabshape::TabLabel) -> Self {
+        self.tab_label = label;
         self
     }
 
@@ -185,6 +193,7 @@ impl<'a> Ribbon<'a> {
             theme: Theme::of(ui.ctx()),
             reporter: Reporter::new(self.rects),
             icons: self.icons,
+            tab_label: self.tab_label,
             custom: self.custom,
             base_id: state.base_id,
             invoked: Vec::new(),

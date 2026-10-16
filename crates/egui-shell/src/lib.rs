@@ -150,4 +150,5 @@ pub use manifest::{Group, Item, Keymap, Mode, Qat, Shell, Tab};
 pub use menu::{ContextMenu, Menu, MenuLookup, Menus, Shortcuts};
 pub use peek::{AutoHide, Peek, Show};
 pub use ribbon::{FrameReport, Ribbon, RibbonState};
+pub use tabshape::TabLabel;
 pub use theme::{Metrics, Overlays, Palette, Preset, Theme};
