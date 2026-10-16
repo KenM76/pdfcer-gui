@@ -11,7 +11,11 @@ Its own fixture, `fixtures/layer-assign.pdf` (ignores `--pdf`): two layers,
 and a `/Square` annotation at 480..720 × 350..520 with no `/OC`.
 
 1. Edit mode; click the box's centre; bring `dock.tab.file.properties`
-   forward if the combo is not drawn.
+   forward if the combo is not drawn. The combo sits below the Geometry
+   section, under the panel's fold at this window height, so the panel is
+   wheeled over `properties.geometry` until the combo declares a visible
+   rectangle (`diag::ui_rect_visible`, at least 60% shown). Pressing a
+   combo published while clipped clicks whatever is drawn over it.
 2. `properties.layer.combo`, then `properties.layer.option.Walls`:
    `layer-assigned kind=objects moved=1 … layer=6_0`.
 3. Ctrl+Z: `undo-applied`.

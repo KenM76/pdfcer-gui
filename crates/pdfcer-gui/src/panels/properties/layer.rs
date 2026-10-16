@@ -111,7 +111,7 @@ pub fn section(ui: &mut egui::Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> b
                 let combo = egui::ComboBox::from_id_salt("properties-layer")
                     .selected_text(label(&read, was, membership))
                     .show_ui(ui, |ui| choices(ui, &read, &mut value, REGION_OPTION));
-                crate::diag::ui_rect(REGION_COMBO, combo.response.rect);
+                crate::diag::ui_rect_visible(REGION_COMBO, combo.response.rect, ui.clip_rect());
                 combo.response.on_hover_text(t::tooltip());
                 if value != was
                     && let Some(layer) = value

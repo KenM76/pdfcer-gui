@@ -33,6 +33,8 @@ const METHOD: &str = "Rebuild it with `python fixtures/layer-assign.PROVENANCE.p
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const PROPERTIES_TAB: &str = "dock.tab.file.properties";
 const COMBO: &str = "properties.layer.combo";
+/// The Properties panel's first section; the wheel aims where it sits.
+const GEOMETRY: &str = "properties.geometry";
 const WALLS: &str = "properties.layer.option.Walls";
 const MENU_ROW: &str = "menu.item.canvas.markup.format.move_to_layer";
 const WINDOW_COMBO: &str = "layer-assign.window.combo";
@@ -365,6 +367,36 @@ impl Drive<'_> {
         Ok(Ok(()))
     }
 
+    /// Wheel the Properties panel until `region` is on screen, aiming at the
+    /// point `anchor` occupies before the first notch. The panel is taller
+    /// than this check's window, so the Layer row sits below its fold.
+    fn reveal(&self, region: &str, anchor: &str) -> Result<std::result::Result<(), String>> {
+        let trace = self.session.trace()?;
+        if declared(&trace, self.ui_rect, region).is_some() {
+            return Ok(Ok(()));
+        }
+        let Some(at) = declared(&trace, self.ui_rect, anchor) else {
+            return Ok(Err(format!(
+                "neither `{region}` nor `{anchor}` is on screen, so there is nothing to aim \
+                 the wheel at. Trace: {}.",
+                self.session.trace_path().display()
+            )));
+        };
+        let at = WindowPoint::centre_of(at);
+        for _ in 0..12 {
+            self.pointer.wheel(self.session, at, -3.0, false)?;
+            self.session.settle(8);
+            if declared(&self.session.trace()?, self.ui_rect, region).is_some() {
+                return Ok(Ok(()));
+            }
+        }
+        Ok(Err(format!(
+            "twelve wheel notches over `{anchor}` never brought `{region}` on screen. \
+             Trace: {}.",
+            self.session.trace_path().display()
+        )))
+    }
+
     fn at(&self, p: (f64, f64)) -> Result<WindowPoint> {
         self.mapping.doc_to_window(DocPoint::new(0, p.0, p.1))
     }
@@ -467,6 +499,7 @@ fn objects(d: &Drive<'_>, report: &mut CheckReport) -> Result<Option<String>> {
     }
     let mut first = String::new();
     for round in ["the first choice", "the choice after Ctrl+Z"] {
+        step!(d.reveal(COMBO, GEOMETRY)?);
         step!(d.press(COMBO, "properties.")?);
         let mark = d.session.trace()?.mark();
         step!(d.press(WALLS, "properties.layer.")?);
