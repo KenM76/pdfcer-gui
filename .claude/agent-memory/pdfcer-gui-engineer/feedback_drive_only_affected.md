@@ -18,4 +18,4 @@ release tag>..HEAD` (the selector in tools/ui-verify — see DEVELOPING.md), dri
 those with `--no-input`, and say in the release report which were driven and
 why. Run the full sweep only when the change is framework-wide (dock, ribbon,
 launch, harness) or he asks. Gates (run-all.sh) still run on every commit.
-Related: [[feedback-ui-verify-competes]], [[feedback-smoke-launch-before]].
+Related: [[feedback_ui_verify_competes]], [[feedback_smoke_launch_before]].
