@@ -25,6 +25,8 @@ use pdfcer_gui_base::text::textedit::EnterRefusal;
 use super::{Anchor, Draft};
 use crate::app::state::OpenDoc;
 
+pub mod here;
+
 /// The options a paragraph draft is previewed and committed under: the
 /// caret's typing disposition and the installed faces, no fallback face, and
 /// the engine's own wrap width (the box's, or a table cell's inner width).
@@ -218,8 +220,14 @@ pub fn open(
 /// # Errors
 ///
 /// The note owed to the operator when the paragraph exists and could not be
-/// opened whole; `Err(None)` when the run is all there is.
-pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Result<LineEndSource, Option<DraftNote>> {
+/// opened whole; `Err(None)` when the run is all there is or its paragraph
+/// answers no: its own answer ([`here`]) when it has one, else `default`.
+pub fn widen(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    draft: &mut Draft,
+    default: bool,
+) -> Result<LineEndSource, Option<DraftNote>> {
     let Anchor::Run { run, original } = &draft.anchor else {
         return Err(None);
     };
@@ -230,6 +238,9 @@ pub fn widen(doc: &OpenDoc, draft: &mut Draft) -> Result<LineEndSource, Option<D
         .and_then(|p| {
             if p.lines < 2 {
                 return Err(Declined::no_paragraph("one-line"));
+            }
+            if !here::opens(ctx, doc.serial, draft.page, p.bbox, default) {
+                return Err(Declined::no_paragraph("switched-off"));
             }
             let promoted = promoted(draft, &p);
             rewrite(doc, draft.page, p.block, &promoted.text)?;

@@ -152,7 +152,7 @@ def show(text: str) -> str:
     return f"({esc}) Tj\n"
 
 
-def build_content() -> bytes:
+def build_content(tops: tuple = (TOP,)) -> bytes:
     """The page's whole content stream, uncompressed.
 
     One ``BT`` / ``ET`` holding six absolutely-positioned lines. The font is
@@ -160,16 +160,20 @@ def build_content() -> bytes:
     would give the recogniser a reason to split the block and the split is
     the failure this fixture exists to avoid.
     """
-    out = ["BT\n", f"/F1 {SIZE:g} Tf\n"]
-    for i, text in enumerate(LINES):
-        y = TOP - i * LEADING
-        out.append(f"1 0 0 1 {LEFT:.2f} {y:.2f} Tm\n")
-        out.append(show(text))
-    out.append("ET\n")
+    # One text object per block: the engine will not rewrite a block that
+    # shares its BT ... ET with other text.
+    out = []
+    for top in tops:
+        out += ["BT\n", f"/F1 {SIZE:g} Tf\n"]
+        for i, text in enumerate(LINES):
+            y = top - i * LEADING
+            out.append(f"1 0 0 1 {LEFT:.2f} {y:.2f} Tm\n")
+            out.append(show(text))
+        out.append("ET\n")
     return "".join(out).encode("ascii")
 
 
-def build_pdf(pages: int = 1) -> bytes:
+def build_pdf(pages: int = 1, tops: tuple = (TOP,)) -> bytes:
     """The whole file: five objects, a classic cross-reference table, EOF.
 
     ``pages`` > 1 appends further pages that share the first page's content
@@ -179,7 +183,7 @@ def build_pdf(pages: int = 1) -> bytes:
     are computed from the bytes actually written rather than predicted, so a
     change to any object body cannot desynchronise the table.
     """
-    content = build_content()
+    content = build_content(tops)
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
         b"<< /Type /Pages /Kids ["
@@ -221,6 +225,10 @@ def main() -> None:
         fh.write(data)
     with open(os.path.join(root, "fixtures", "paragraph-2p.pdf"), "wb") as fh:
         fh.write(build_pdf(2))
+    # Two copies of the block on one page, the second 200 pt lower: for checks
+    # that tell one paragraph's answer from its page's.
+    with open(os.path.join(root, "fixtures", "paragraph-two.pdf"), "wb") as fh:
+        fh.write(build_pdf(1, (TOP, TOP - 200.0)))
 
     print(f"wrote {target} ({len(data)} bytes)")
     widest = max(advance(t) for t in LINES)

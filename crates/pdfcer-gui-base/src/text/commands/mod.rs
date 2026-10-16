@@ -171,6 +171,18 @@ pub const fn edit_paragraphs_page() -> CommandText {
     )
 }
 
+/// `edit.paragraph_here`
+#[must_use]
+pub const fn edit_paragraph_here() -> CommandText {
+    CommandText::new(
+        "This paragraph",
+        "Pressed when the paragraph you are typing in is open whole. Press it to edit this \
+         paragraph one line at a time, or press it on a line to open its whole paragraph, \
+         whatever Paragraphs says for the rest of the page. It lasts while the document is \
+         open.",
+    )
+}
+
 /// `file.export_dxf`
 #[must_use]
 pub const fn file_export_dxf() -> CommandText {

@@ -184,8 +184,9 @@ pub fn click(
     };
     // A line of a paragraph opens as the whole paragraph, unless the
     // operator has switched Paragraphs off.
-    let widened = if super::promote::enabled_on(ctx, click.doc.serial, click.page_index) {
-        super::promote::widen(click.doc, &mut draft)
+    let on = super::promote::enabled_on(ctx, click.doc.serial, click.page_index);
+    let widened = if on || super::promote::here::any(ctx, click.doc.serial, click.page_index) {
+        super::promote::widen(ctx, click.doc, &mut draft, on)
     } else {
         Err(None)
     };

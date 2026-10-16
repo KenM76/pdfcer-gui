@@ -22,6 +22,7 @@ fn all() -> Vec<CommandText> {
         edit_reflow_block(),
         edit_paragraphs(),
         edit_paragraphs_page(),
+        edit_paragraph_here(),
         file_save_compacted(),
         file_export_dxf(),
         file_export_image(),

@@ -307,6 +307,7 @@
                         Command(id: "edit.reflow_block"),
                         Command(id: "edit.paragraphs"),
                         Command(id: "edit.paragraphs_page"),
+                        Command(id: "edit.paragraph_here"),
                     ],
                 ),
                 (
@@ -870,6 +871,7 @@
                 Command(id: "edit.reflow_block"),
                 Command(id: "edit.paragraphs"),
                 Command(id: "edit.paragraphs_page"),
+                Command(id: "edit.paragraph_here"),
             ],
         ),
         (

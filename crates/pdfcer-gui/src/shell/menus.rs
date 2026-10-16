@@ -661,6 +661,7 @@ pub fn built_in() -> Menus {
             Item::command("edit.reflow_block"),
             Item::command("edit.paragraphs"),
             Item::command("edit.paragraphs_page"),
+            Item::command("edit.paragraph_here"),
         ]))
         // -------------------------------------------------------------------
         // dock.tab — a panel tab.

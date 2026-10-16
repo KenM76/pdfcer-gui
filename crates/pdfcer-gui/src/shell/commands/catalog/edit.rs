@@ -73,6 +73,10 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.paragraphs_page", t::edit_paragraphs_page(), 415)
             .with_icon("paragraphs")
             .enabled_when("mode.edit_content"),
+        // The paragraph the caret is in, pressed while it is open whole. O295.
+        command("edit.paragraph_here", t::edit_paragraph_here(), 416)
+            .with_icon("paragraphs")
+            .enabled_when("mode.edit_content"),
         // ═══════════════════════════════════════════════════════════════════
         // `edit.copy_as_vector` — the clipboard's copy-OUT.
         //

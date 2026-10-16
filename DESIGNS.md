@@ -69,7 +69,9 @@ conflicts with R75 and goes back to him.
    line by switching it off, editing, and switching it back. *Paragraphs
    on this page* (built) gives the page on screen, or the pages picked in the
    thumbnails, their own answer while the document is open
-   (`promote::enabled_on`). Not built: a per-paragraph override, and the
+   (`promote::enabled_on`). *This paragraph* (built), on the caret's menu,
+   gives one paragraph its own answer (`promote::here`, keyed by its box's
+   upper-left corner). Not built: the
    word-gap slider beside the switch.
 5. **Engine (requests).** Derived word spaces as break points; mixed
    font/size/colour in `edit_block_text` and `reflow_block` (G079); OCR

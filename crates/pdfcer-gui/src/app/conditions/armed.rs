@@ -146,6 +146,13 @@ impl crate::app::PdfcerApp {
                 "edit.paragraphs_page",
             ));
         }
+        if crate::canvas::textedit::read(ctx)
+            .is_some_and(|d| matches!(d.anchor, crate::canvas::textedit::Anchor::Block { .. }))
+        {
+            set.set(egui_shell::ribbon::selected_condition(
+                "edit.paragraph_here",
+            ));
+        }
         // The armed markup tool, published the same way and outside the
         // `Status::Open` arm for the same reason as the two above.
         //

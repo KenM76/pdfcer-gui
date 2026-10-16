@@ -328,7 +328,7 @@ selection is correct.
 
 | Group | Commands |
 |---|---|
-| **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* |
+| **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* |
 | **Insert** | Image… · Link… · Attachments · Shape ⌄ |
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
 | **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
@@ -782,7 +782,7 @@ block:
 | `canvas.empty` | Fit page · Fit width · Fit height · Actual size |
 | `canvas.field` | Properties · Delete *(when permitted)* |
 | `canvas.markup` | Properties · Add a point here · Remove this point *(each when the mark offers it)* · Make part of the page *(when the engine would accept it)* · Cut · Copy · Paste · Delete *(when permitted)* |
-| `canvas.text` | Reflow paragraph · Paragraphs · Paragraphs on this page |
+| `canvas.text` | Reflow paragraph · Paragraphs · Paragraphs on this page · This paragraph *(pressed while it is open whole)* |
 | `dock.tab` | Float panel *(when docked)* · Dock panel *(when floating)* · Close panel · Reset layout |
 | `document.tab` | Close · Close others · Move to new window · Move to other window |
 | `objects.row` | Properties |

@@ -37,6 +37,7 @@ pub fn tab() -> Tab {
                     command("edit.reflow_block"),
                     command("edit.paragraphs"),
                     command("edit.paragraphs_page"),
+                    command("edit.paragraph_here"),
                 ],
             ),
             // ---------------------------------------------------------------

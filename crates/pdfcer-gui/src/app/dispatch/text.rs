@@ -25,6 +25,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "edit.reflow_block"
             | "edit.paragraphs"
             | "edit.paragraphs_page"
+            | "edit.paragraph_here"
     )
 }
 
@@ -40,6 +41,11 @@ pub(crate) fn dispatch(
         "edit.reflow_block" => reflow(ctx, &app.status, actions),
         "edit.paragraphs" => paragraphs(app, ctx),
         "edit.paragraphs_page" => paragraphs_page(app, ctx),
+        "edit.paragraph_here" => {
+            if let Status::Open(doc) = &app.status {
+                crate::canvas::textedit::promote::here::toggle(ctx, doc);
+            }
+        }
         _ => arm(app, ctx, id),
     }
 }
