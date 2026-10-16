@@ -951,6 +951,9 @@ pub mod paragraph_select;
 /// Paragraphs switched off: a click in a paragraph opens one line.
 pub mod paragraphs_off;
 
+/// Paragraphs switched off for one page: the next page still opens them.
+pub mod paragraphs_page;
+
 /// The eight resize grips, driven all the way to a committed edit — being
 /// cursored, hit-tested and drag-consuming proves none of that.
 ///

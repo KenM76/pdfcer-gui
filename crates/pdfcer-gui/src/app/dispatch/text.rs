@@ -20,7 +20,11 @@ pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
     matches!(
         id,
-        "edit.text" | "edit.add_text" | "edit.reflow_block" | "edit.paragraphs"
+        "edit.text"
+            | "edit.add_text"
+            | "edit.reflow_block"
+            | "edit.paragraphs"
+            | "edit.paragraphs_page"
     )
 }
 
@@ -35,6 +39,7 @@ pub(crate) fn dispatch(
         // ui-text-exempt: registered command id, never displayed.
         "edit.reflow_block" => reflow(ctx, &app.status, actions),
         "edit.paragraphs" => paragraphs(app, ctx),
+        "edit.paragraphs_page" => paragraphs_page(app, ctx),
         _ => arm(app, ctx, id),
     }
 }
@@ -45,6 +50,20 @@ fn paragraphs(app: &mut crate::app::PdfcerApp, ctx: &egui::Context) {
     crate::canvas::textedit::promote::set_enabled(ctx, on);
     app.prefs.open_paragraphs = on;
     let _ = app.prefs.save();
+}
+
+/// Flip Paragraphs for the pages the page commands act on (the thumbnails'
+/// pick, else the page on screen), to the opposite of the page on screen.
+fn paragraphs_page(app: &mut crate::app::PdfcerApp, ctx: &egui::Context) {
+    let Some(pages) = app.page_operands() else {
+        return;
+    };
+    let Status::Open(doc) = &app.status else {
+        return;
+    };
+    let promote = crate::canvas::textedit::promote::enabled_on;
+    let on = !promote(ctx, doc.serial, doc.view.page_index);
+    crate::canvas::textedit::promote::set_pages(ctx, doc.serial, &pages, on);
 }
 
 /// Arm the caret, or decline because this stance cannot author content.

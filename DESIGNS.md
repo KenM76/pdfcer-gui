@@ -66,9 +66,11 @@ conflicts with R75 and goes back to him.
    Edit ▸ Content, on the canvas text menu and in Settings ▸ Text, one
    preference (`open_paragraphs`, on): off, a click opens one line and an edit
    stays on it. It applies to the next click, so a section is edited line by
-   line by switching it off, editing, and switching it back. Not built: a
-   per-page or per-paragraph override, and the word-gap slider beside the
-   switch.
+   line by switching it off, editing, and switching it back. *Paragraphs
+   on this page* (built) gives the page on screen, or the pages picked in the
+   thumbnails, their own answer while the document is open
+   (`promote::enabled_on`). Not built: a per-paragraph override, and the
+   word-gap slider beside the switch.
 5. **Engine (requests).** Derived word spaces as break points; mixed
    font/size/colour in `edit_block_text` and `reflow_block` (G079); OCR
    structure readable after writing (space glyphs or line marks), and an

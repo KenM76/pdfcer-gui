@@ -660,6 +660,7 @@ pub fn built_in() -> Menus {
         .with(Menu::new(CANVAS_TEXT).with_items([
             Item::command("edit.reflow_block"),
             Item::command("edit.paragraphs"),
+            Item::command("edit.paragraphs_page"),
         ]))
         // -------------------------------------------------------------------
         // dock.tab — a panel tab.

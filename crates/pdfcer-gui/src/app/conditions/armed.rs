@@ -139,6 +139,13 @@ impl crate::app::PdfcerApp {
         if crate::canvas::textedit::promote::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("edit.paragraphs"));
         }
+        if let crate::app::state::Status::Open(doc) = &self.status
+            && crate::canvas::textedit::promote::enabled_on(ctx, doc.serial, doc.view.page_index)
+        {
+            set.set(egui_shell::ribbon::selected_condition(
+                "edit.paragraphs_page",
+            ));
+        }
         // The armed markup tool, published the same way and outside the
         // `Status::Open` arm for the same reason as the two above.
         //

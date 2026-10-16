@@ -68,6 +68,11 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.paragraphs", t::edit_paragraphs(), 414)
             .with_icon("paragraphs")
             .enabled_when("mode.edit_content"),
+        // The same switch for the picked pages, else the page on screen,
+        // pressed while that page opens paragraphs. O295.
+        command("edit.paragraphs_page", t::edit_paragraphs_page(), 415)
+            .with_icon("paragraphs")
+            .enabled_when("mode.edit_content"),
         // ═══════════════════════════════════════════════════════════════════
         // `edit.copy_as_vector` — the clipboard's copy-OUT.
         //

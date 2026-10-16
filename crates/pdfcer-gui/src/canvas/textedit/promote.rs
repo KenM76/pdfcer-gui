@@ -47,6 +47,45 @@ pub fn enabled(ctx: &egui::Context) -> bool {
         .unwrap_or(true)
 }
 
+/// Pages whose answer differs from the switch, keyed by (document serial,
+/// page index). Memory key; held for the life of the window, never saved.
+const PAGES_KEY: &str = "pdfcer.open-paragraphs.pages"; // ui-text-exempt: a memory key, never displayed
+
+type PageAnswers = std::collections::HashMap<(u64, usize), bool>;
+
+/// Does a click on `page` of document `serial` open its paragraph? The
+/// page's own answer when it has one, else the switch's.
+#[must_use]
+pub fn enabled_on(ctx: &egui::Context, serial: u64, page: usize) -> bool {
+    ctx.data(|d| d.get_temp::<PageAnswers>(egui::Id::new(PAGES_KEY)))
+        .and_then(|m| m.get(&(serial, page)).copied())
+        .unwrap_or_else(|| enabled(ctx))
+}
+
+/// Give `pages` of document `serial` the answer `on`. A page whose answer
+/// matches the switch's drops its own, so it follows the switch again.
+pub fn set_pages(ctx: &egui::Context, serial: u64, pages: &[usize], on: bool) {
+    let global = enabled(ctx);
+    ctx.data_mut(|d| {
+        let map = d.get_temp_mut_or_default::<PageAnswers>(egui::Id::new(PAGES_KEY));
+        for &page in pages {
+            if on == global {
+                map.remove(&(serial, page));
+            } else {
+                map.insert((serial, page), on);
+            }
+        }
+    });
+    crate::diag::trace(|| {
+        let list: Vec<String> = pages.iter().map(usize::to_string).collect();
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "open-paragraphs-pages enabled={on} pages={}",
+            list.join(",")
+        )
+    });
+}
+
 /// Turn paragraph opening on or off for the next click.
 pub fn set_enabled(ctx: &egui::Context, on: bool) {
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(ENABLED_KEY), on));

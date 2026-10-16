@@ -169,8 +169,11 @@ def build_content() -> bytes:
     return "".join(out).encode("ascii")
 
 
-def build_pdf() -> bytes:
+def build_pdf(pages: int = 1) -> bytes:
     """The whole file: five objects, a classic cross-reference table, EOF.
+
+    ``pages`` > 1 appends further pages that share the first page's content
+    stream, for checks that compare two pages of one document.
 
     No object streams and no compression — see the header. The xref offsets
     are computed from the bytes actually written rather than predicted, so a
@@ -179,7 +182,9 @@ def build_pdf() -> bytes:
     content = build_content()
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
-        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Pages /Kids ["
+        + b" ".join(b"%d 0 R" % k for k in [3] + [6 + i for i in range(pages - 1)])
+        + b"] /Count %d >>" % pages,
         b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
         b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
         b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n"
@@ -187,6 +192,8 @@ def build_pdf() -> bytes:
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica "
         b"/Encoding /WinAnsiEncoding >>",
     ]
+    page = objects[2]
+    objects += [page] * (pages - 1)
 
     out = bytearray(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
     offsets = []
@@ -212,6 +219,8 @@ def main() -> None:
     data = build_pdf()
     with open(target, "wb") as fh:
         fh.write(data)
+    with open(os.path.join(root, "fixtures", "paragraph-2p.pdf"), "wb") as fh:
+        fh.write(build_pdf(2))
 
     print(f"wrote {target} ({len(data)} bytes)")
     widest = max(advance(t) for t in LINES)

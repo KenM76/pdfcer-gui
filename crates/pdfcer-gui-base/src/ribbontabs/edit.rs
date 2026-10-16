@@ -36,6 +36,7 @@ pub fn tab() -> Tab {
                     // does the retyping.
                     command("edit.reflow_block"),
                     command("edit.paragraphs"),
+                    command("edit.paragraphs_page"),
                 ],
             ),
             // ---------------------------------------------------------------

@@ -160,6 +160,17 @@ pub const fn edit_paragraphs() -> CommandText {
     )
 }
 
+/// `edit.paragraphs_page`
+#[must_use]
+pub const fn edit_paragraphs_page() -> CommandText {
+    CommandText::new(
+        "Paragraphs on this page",
+        "Turn paragraphs on or off for this page alone, or for the pages picked in the \
+         thumbnails, whatever Paragraphs says for the rest. Pressed when a click on this page \
+         opens the whole paragraph. It lasts while the document is open.",
+    )
+}
+
 /// `file.export_dxf`
 #[must_use]
 pub const fn file_export_dxf() -> CommandText {
