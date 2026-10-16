@@ -263,9 +263,10 @@ cp target/release/pdfcer-gui.exe "$DRIVE/pdfcer-gui.exe" || exit 1
 # Rule 2: ask the harness what it has. `--list` prints a `Checks:` header, then
 # a name at two spaces of indent and its description at six, then a `Profiles:`
 # section in the same shape; the filter takes exactly the two-space names under
-# the first header.
+# the first header. A name may carry digits (`a_3d_model_...`); a class
+# without them dropped every 3D-viewer check here without a word.
 ./target/release/ui-verify.exe --list \
-    | awk '/^Checks:/ {on=1; next} /^[A-Za-z]/ {on=0} on && /^  [a-z_]+$/ {print $1}' \
+    | awk '/^Checks:/ {on=1; next} /^[A-Za-z]/ {on=0} on && /^  [a-z0-9_]+$/ {print $1}' \
     > "$LIST"
 
 N=$(wc -l < "$LIST")
@@ -308,7 +309,9 @@ fi
 #   precisely so that green on the fixture and red on a real drawing is a
 #   readable diagnosis. Its aim therefore belongs here even though its
 #   document does not differ.
-ALONE='
+# A quoted heredoc, not a single-quoted string: an apostrophe in one of the
+# comments below would end a quoted string early and run the rest as commands.
+ALONE=$(cat <<'END_ALONE'
 pages_stay_drawn_when_you_scroll_back|--pdf fixtures/synthetic-image-only-8pages.pdf --doc-point 0,150,200
 
 # Its other half, and it needs the same several pages for the same reason:
@@ -350,7 +353,8 @@ print_clip_claim_follows_the_preview|--pdf fixtures/blank-overhang.pdf
 # point cannot be pinned. See `fixture::a1_text_target`, which carries the
 # two requirements any replacement must satisfy.
 the_font_controls_are_live_on_the_drawing_you_open|--pdf fixtures/a1-titleblock.pdf --doc-point 0,1845.5,184.7
-'
+END_ALONE
+)
 
 # Take each ALONE name out of the chunked list, and refuse to continue when a
 # name is not in it. An entry that no longer matches a check is either a rename
