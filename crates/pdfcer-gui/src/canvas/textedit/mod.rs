@@ -407,19 +407,8 @@ pub(super) fn commit_into(
                 wrap: None,
             });
         }
-        // The boxed variant, and it reaches the SAME action — one commit
-        // path, one apply arm, one place that can be wrong about a font.
-        //
-        // The whole difference is that `wrap` is `Some`, which is what
-        // `AddTextRequest::with_box` turns into the multi-line layout: hard
-        // newlines split paragraphs and each is wrapped independently to the
-        // box's width, top-anchored from its top edge.
-        //
-        // `origin` is still carried and is still the box's lower-left, even
-        // though the engine documents it as **ignored** in boxed mode. Sending a
-        // meaningless value would be worse than sending a meaningful one that
-        // happens to be unread: the day a caller or a trace wants to know where
-        // this text was placed, the honest answer is already on the action.
+        // The boxed variant reaches the same action; `wrap` makes it the
+        // multi-line layout, and `origin` (unread in boxed mode) is its corner.
         Anchor::Box { llx, lly, urx, ury } if !draft.text.is_empty() => {
             actions.push(Action::CommitAddText {
                 page: draft.page,
