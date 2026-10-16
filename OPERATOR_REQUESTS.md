@@ -2725,6 +2725,13 @@ unit test handed the ring a model directly. Fixed: a claimed object-ring Tab now
 asks for the model, with a unit test beside the other reasons. The check failed
 before the fix and passes after it.
 
+**The object ring took Tab away from text being typed, and that is fixed.**
+While a text draft is open the canvas keeps the keyboard, so the object ring
+saw a focused canvas and claimed the Tab the draft was typing, selecting the
+page's first object instead. The draft now claims its Tab before the ring
+looks. The full sweep caught it (`draft_keys` failed); it passes after the fix,
+and so do both Tab checks above.
+
 **What is still open on this row.** The forms panel's own tab-order view
 numbers its rows from `/Annots` order while the field ring uses the engine's
 derived sequence, so on a page carrying `/Tabs /R` or `/C` the two surfaces

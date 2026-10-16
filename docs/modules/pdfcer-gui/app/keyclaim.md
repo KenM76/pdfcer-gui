@@ -6,11 +6,11 @@ An `egui::Plugin` whose `input_hook` runs on every viewport's raw input,
 after the scripted pointer's and before `Focus::begin_pass`. It calls, in
 order:
 
-1. `canvas::tabnav::claim` — a form-field or object ring that holds egui
-   focus takes Tab and Shift+Tab as a ring step.
-2. `canvas::textedit::claim_tab` — an open text draft, with no text field
+1. `canvas::textedit::claim_tab` — an open text draft, with no text field
    focused, takes a bare Tab as a typed tab (spaces to the next stop) and
    drops Shift+Tab and every Tab release.
+2. `canvas::tabnav::claim` — a form-field or object ring that holds egui
+   focus takes Tab and Shift+Tab as a ring step.
 3. `canvas::textedit::hold_arrows` — while a draft is open and no text field
    is focused, locks the arrow keys on the widget that holds focus (a page's
    `pagefocus` seat), so `begin_pass` turns none of them into a directional
@@ -18,6 +18,11 @@ order:
    released on the frame the draft closes, if that widget still holds focus.
 
 A press neither claims reaches egui and walks its focus ring as usual.
+
+**The draft goes first.** While a draft is open the canvas keeps egui focus,
+so the object ring's owner is still published; asked first, the ring would
+take the Tab the draft types and select the page's first object instead.
+`draft_keys` drives this order.
 
 ## Why a plugin
 

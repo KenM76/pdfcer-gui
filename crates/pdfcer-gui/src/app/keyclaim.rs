@@ -24,8 +24,10 @@ impl egui::Plugin for KeyClaim {
     }
 
     fn input_hook(&mut self, ctx: &egui::Context, input: &mut egui::RawInput) {
-        crate::canvas::tabnav::claim(ctx, input);
+        // The draft first: the canvas keeps egui focus while a draft is open,
+        // so the object ring would otherwise take the Tab the draft types.
         crate::canvas::textedit::claim_tab(ctx, input);
+        crate::canvas::tabnav::claim(ctx, input);
         crate::canvas::textedit::hold_arrows(ctx, input);
     }
 
