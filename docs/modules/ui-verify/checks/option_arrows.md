@@ -44,27 +44,27 @@ Three rows is also the fewest that can distinguish *"the ends"* from *"the
 first and the last are special-cased by index"*: with two rows every arrow
 is at an end.
 
-# No pointer, so this runs beside somebody working
+# Only the scripted wheel, so this runs beside somebody working
 
 The document arrives on argv, Edit mode and the Properties panel arrive
 through `PDFCER_DIAG_INVOKE`, and the field selection arrives through
 `PDFCER_DIAG_SELECT_FIELD`. That last seam exists because
 `doc.selected_field` — the Properties pane's only input — had no writer but
 a click, which made every properties surface in the shell unreachable by R1
-on any day the operator was at his machine.
+on any day the operator was at his machine. The one gesture the check makes
+is a wheel through the scripted pointer, which takes neither the OS cursor
+nor focus.
 
-# Why row 2's own rectangle is not asserted
+# Every row must come on screen under the wheel
 
-Because it cannot be brought into view by asking for a taller window.
-`PDFCER_DIAG_VIEWPORT`'s height is clamped to the monitor with no error and
-no report, so 2000, 2200 and 2600 all produced the same window and the same
-clip rect on this machine — measured, not assumed. The third row sits about
-fifteen logical points below the panel's scroll viewport at every one of
-them, and a check asserting its rect would fail identically on a correct
-build and on a genuinely misplaced control.
+The arrow STATES are read from the `ui-control` lines, which every row
+publishes whether or not it is scrolled into view. Reachability is a separate
+claim and is asserted separately: the panel is wheeled over the section until
+each of the three rows has declared a visible rectangle (`diag::ui_rect_visible`
+publishes only a region at least 60% shown).
 
-What is asserted instead is that the **section** is declared and that at
-least one row's arrows are, which separates *"the rows draw and the operator
-scrolls to the third"* from *"this section shipped unreachable"* — the
-defect class `D:/dev/rag/egui/` records the shell shipping before, with
-every gate green.
+A taller window cannot replace the wheel. `PDFCER_DIAG_VIEWPORT`'s height is
+clamped to the monitor with no error, so the third row sits below the
+panel's fold at every height this machine allows; only scrolling, which is
+what the operator does, brings it up. A row that never comes on screen is the
+"shipped unreachable with every gate green" class `D:/dev/rag/egui/` records.

@@ -6,7 +6,9 @@
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list, repo_fixture};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::trace::Trace;
@@ -99,10 +101,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         spec.env.push((name.to_owned(), VIEWPORT.to_owned()));
     }
 
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("option-arrows.pointer.txt"))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.note(format!(
-        "launched {} as pid {} with the seam selecting {FIELD} — no input is sent",
+        "launched {} as pid {} with the seam selecting {FIELD}; only the scripted wheel is sent",
         exe.display(),
         session.pid()
     ));
@@ -194,28 +197,41 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     report.note("all six arrows report the state their position calls for");
 
-    // --- 4: the rows are reachable, not merely traced ----------------------
+    // --- 4: every row is reachable by scrolling the panel -----------------
     //
-    // See the module header: row 2 is below the panel's scroll viewport at
-    // every window height this machine can produce, so the assertion is that
-    // SOME row's arrows are on screen rather than that all of them are.
-    let reachable = ["row0", "row1", "row2"]
-        .into_iter()
-        .filter(|row| declared(&trace, ui_rect, &format!("{SECTION}.{row}.up")).is_some())
-        .count();
-    if reachable == 0 {
-        return Ok(Some(format!(
-            "★★★ THE SECTION SHIPPED UNREACHABLE: all three rows traced their enabled state and \
-             NONE declared a visible rectangle, so every row is clipped out of the panel's \
-             scroll viewport. A `ui-rect-clipped` line per row says by how much. Trace: {}.",
-            session.trace_path().display()
-        )));
+    // The rows sit below the panel's fold at every window height the monitor
+    // allows, so the panel is wheeled through the scripted pointer, as the
+    // operator scrolls it, until all three rows have been on screen.
+    let Some(section) = declared(&trace, ui_rect, SECTION) else {
+        unreachable!("step 2 returned when the section was not declared");
+    };
+    let aim = WindowPoint::centre_of(section);
+    let mut seen = [false; 3];
+    for notch in 0..=10 {
+        let now = session.trace()?;
+        for (row, was) in seen.iter_mut().enumerate() {
+            *was |= declared(&now, ui_rect, &format!("{SECTION}.row{row}.up")).is_some();
+        }
+        if seen.iter().all(|s| *s) {
+            report.note(format!(
+                "all 3 option rows came on screen; {notch} wheel step(s) over the section"
+            ));
+            return Ok(None);
+        }
+        pointer.wheel(&session, aim, -2.0, false)?;
+        session.settle(8);
     }
-    report.note(format!(
-        "{reachable} of 3 option rows are inside the panel's scroll viewport at {VIEWPORT}"
-    ));
-
-    Ok(None)
+    let missed: Vec<String> = (0..3)
+        .filter(|row| !seen[*row])
+        .map(|row| format!("row{row}"))
+        .collect();
+    Ok(Some(format!(
+        "★★★ OPTION ROWS NEVER REACHED: {} never declared a visible rectangle while the panel \
+         was wheeled ten steps over `{SECTION}`, so the operator cannot scroll them into view. \
+         A `ui-rect-clipped` line per row says by how much. Trace: {}.",
+        list(&missed),
+        session.trace_path().display()
+    )))
 }
 
 /// The last `enabled=` a named control reported, or `None` if it reported none.
