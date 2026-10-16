@@ -181,6 +181,26 @@ pub fn form_widgets_partly_deleted(deleted: usize, of: usize, reason: &str) -> S
     format!("Only {deleted} of the {of} boxes were deleted: {reason}")
 }
 
+/// **Several whole fields were deleted**, and how many boxes went with them.
+#[must_use]
+pub fn form_fields_deleted(fields: usize, boxes: usize) -> String {
+    format!("Deleted {fields} fields and their {boxes} boxes.")
+}
+
+/// **Some of several fields were deleted** before the engine refused one.
+#[must_use]
+pub fn form_fields_partly_deleted(deleted: usize, of: usize, reason: &str) -> String {
+    format!("Only {deleted} of the {of} fields were deleted: {reason}")
+}
+
+/// **Button references to the deleted fields** that pdfcer cannot repair.
+#[must_use]
+pub fn form_fields_actions_orphaned(count: usize) -> String {
+    format!(
+        "⚠ {count} button reference(s) elsewhere in this document still name the deleted fields, and pdfcer cannot repair them — those buttons will now do less than they say when pressed. Any JavaScript naming them was not counted."
+    )
+}
+
 /// **The `Sort` flag was set over a list nobody has sorted.**
 #[must_use]
 pub const fn field_sort_claim_unmet() -> &'static str {

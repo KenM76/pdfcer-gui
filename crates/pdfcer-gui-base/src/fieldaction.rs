@@ -339,6 +339,13 @@ pub enum FieldAction {
         /// The selected boxes, as `FieldSet::all` lists them.
         widgets: Vec<crate::docidentity::SelectedField>,
     },
+    /// **Delete several whole fields**, every box of each, as one undo step.
+    DeleteFields {
+        /// The fields' fully-qualified names, each once.
+        fields: Vec<String>,
+        /// The page the primary field is on, for the trace.
+        page: usize,
+    },
     /// **Ask what deleting a grouping node would remove**, or forget the
     /// answer.
     ///

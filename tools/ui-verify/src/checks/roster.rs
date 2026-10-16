@@ -520,6 +520,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_group_scale::SeveralAnnotationsResizeAndTurnAsOneStep),
         Box::new(annot_too_many::AnAlignTooLargeForOneUndoIsRefused),
         Box::new(field_delete_many::SeveralFormFieldsDeleteAsOneUndoStep),
+        Box::new(field_delete_panel::ThePropertiesDeleteButtonsTakeEverySelectedField),
         Box::new(field_group_drag::SeveralFormFieldsDragAsOneUndoStep),
         Box::new(groupnudge::SeveralAnnotationsNudgeAsOneStep),
         Box::new(groupnudge::SeveralFormFieldsNudgeAsOneStep),

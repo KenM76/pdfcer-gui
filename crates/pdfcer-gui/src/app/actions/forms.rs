@@ -101,6 +101,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: FieldAction) {
         } => move_widget(doc, &field, widget, dx, dy),
         FieldAction::DeleteWidget { field, widget } => delete::widget(doc, &field, widget),
         FieldAction::DeleteWidgets { widgets } => delete::widgets(doc, &widgets),
+        FieldAction::DeleteFields { fields, page } => delete::fields(doc, &fields, page),
         FieldAction::JoinRadioGroup {
             field,
             widget,

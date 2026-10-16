@@ -64,6 +64,8 @@ pub use layers::layer_selection_unlayered;
 /// with it. Its own module under R2 and on the seam the code takes; the header
 /// argues the Shown/Sent vocabulary.
 pub mod choiceopts;
+/// The delete buttons for several selected form fields.
+pub mod fielddelete;
 /// A text field's scrolling, spell-check and file-select flags, and every
 /// field's export name.
 pub mod fieldextras;

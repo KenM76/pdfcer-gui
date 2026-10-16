@@ -145,6 +145,76 @@ fn commit(
     Ok(said)
 }
 
+/// **Delete several whole fields as one undo step**, every box of each. The
+/// engine deletes one field per command, so each goes by `delete_field` and
+/// the commands pushed are folded by `coalesce_last`.
+pub(in crate::app::actions) fn fields(doc: &mut OpenDoc, fields: &[String], page: usize) {
+    let Some(first) = fields.first() else {
+        return;
+    };
+    if refused(doc, "delete-fields", first) {
+        return;
+    }
+    let before = doc.edit_epoch;
+    let mut report = (0_usize, false);
+    crate::app::actions::apply::vector_edit(doc, "delete-fields", page, fields.len(), |session| {
+        commit_fields(session, fields, &mut report)
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!(
+            "delete-fields-applied deleted={}/{} one_step={}",
+            report.0,
+            fields.len(),
+            report.1
+        )
+    });
+    clear_selection_if_edited(doc, before);
+}
+
+/// Delete each field in `fields`, then fold. `report` is (deleted, folded).
+fn commit_fields(
+    session: &mut pdfcer_core::edit::EditSession,
+    fields: &[String],
+    report: &mut (usize, bool),
+) -> Result<Vec<String>, pdfcer_core::edit::EditError> {
+    use crate::app::actions::foldeach::{OnRefusal, fold_each};
+    use pdfcer_core::edit::{CommandKind, EditError};
+    let (mut boxes, mut orphaned) = (0_usize, 0_usize);
+    let done = fold_each(
+        session,
+        fields.iter().map(String::as_str),
+        CommandKind::DeleteFormField,
+        OnRefusal::Stop,
+        |session, field| {
+            let gone = session.delete_field(field)?;
+            boxes += gone.widgets_removed;
+            orphaned += gone.action_targets_orphaned;
+            Ok::<_, EditError>(Some(Vec::new()))
+        },
+    )?;
+    let (pushed, folded, failure) = (done.run.pushed, done.folded, done.run.failure);
+    *report = (pushed, folded);
+    let mut said = vec![crate::text::forms::form_fields_deleted(pushed, boxes)];
+    if let Some(e) = failure {
+        if pushed == 0 {
+            return Err(e);
+        }
+        said.push(crate::text::forms::form_fields_partly_deleted(
+            pushed,
+            fields.len(),
+            &e.to_string(),
+        ));
+    }
+    if orphaned > 0 {
+        said.push(crate::text::forms::form_fields_actions_orphaned(orphaned));
+    }
+    if !folded {
+        said.push(crate::text::markup::deleted_not_one_undo().to_owned());
+    }
+    Ok(said)
+}
+
 /// **Decline a structural form delete in WORDS, and keep the selection.**
 fn refused(doc: &OpenDoc, label: &str, field: &str) -> bool {
     if !crate::panels::properties::formfield::document_refuses_delete(doc) {

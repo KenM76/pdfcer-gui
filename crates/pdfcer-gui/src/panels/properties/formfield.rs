@@ -178,7 +178,11 @@ pub fn section(
     ui.add_space(6.0);
     super::fieldscripts::section(ui, doc, &form, field, actions);
     ui.add_space(6.0);
-    delete_row(ui, field, &selected, delete_refused, actions);
+    if delete_refused
+        || !super::fielddelete::row(ui, &form, &doc.field_set.all(Some(&selected)), actions)
+    {
+        delete_row(ui, field, &selected, delete_refused, actions);
+    }
     ui.add_space(6.0);
     // What is left out of reach, and it is now the WIDGET half rather than
     // the field half. See `text::panels::formfield::not_editable_note` for the

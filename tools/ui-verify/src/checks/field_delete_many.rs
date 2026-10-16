@@ -15,7 +15,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "all-field-kinds.pdf",
     method: "Rebuild it with `python fixtures/all-field-kinds.PROVENANCE.py`.",
     page: PageGeometry {
@@ -29,17 +29,17 @@ const APPLIED: &str = "delete-widgets-applied"; // ui-text-exempt: a trace event
 
 /// A box's name, the lower-left corner of its `/Rect` (which finds it in a
 /// saved copy), and a point on it.
-type Spot = (&'static str, (f64, f64), (f64, f64));
-const TEXT: Spot = ("TextOne", (170.0, 520.0), (270.0, 531.0)); // ui-text-exempt: a fixture field name
+pub(super) type Spot = (&'static str, (f64, f64), (f64, f64));
+pub(super) const TEXT: Spot = ("TextOne", (170.0, 520.0), (270.0, 531.0)); // ui-text-exempt: a fixture field name
 const CHECK: Spot = ("CheckOne", (170.0, 486.0), (178.0, 494.0)); // ui-text-exempt: a fixture field name
 /// Both members of `RadioGroup`, one field with two boxes, so deleting both
 /// tests that the second box is still found after the first renumbers it.
-const RADIO_A: Spot = ("RadioGroup #0", (170.0, 452.0), (178.0, 460.0)); // ui-text-exempt: a fixture field name
-const RADIO_B: Spot = ("RadioGroup #1", (260.0, 452.0), (268.0, 460.0)); // ui-text-exempt: a fixture field name
+pub(super) const RADIO_A: Spot = ("RadioGroup #0", (170.0, 452.0), (178.0, 460.0)); // ui-text-exempt: a fixture field name
+pub(super) const RADIO_B: Spot = ("RadioGroup #1", (260.0, 452.0), (268.0, 460.0)); // ui-text-exempt: a fixture field name
 /// Not selected, so it must survive.
-const COMBO: Spot = ("ComboOne", (170.0, 412.0), (270.0, 423.0)); // ui-text-exempt: a fixture field name
+pub(super) const COMBO: Spot = ("ComboOne", (170.0, 412.0), (270.0, 423.0)); // ui-text-exempt: a fixture field name
 /// The fixture's page lists ten widgets.
-const LISTED: usize = 10;
+pub(super) const LISTED: usize = 10;
 
 /// See the module documentation.
 pub struct SeveralFormFieldsDeleteAsOneUndoStep;
@@ -164,7 +164,11 @@ fn drive(
 
 /// The failure sentence when the saved page lists the wrong boxes, or the
 /// wrong number of them.
-fn listed(path: &std::path::Path, want: &[(Spot, bool)], count: usize) -> Result<Option<String>> {
+pub(super) fn listed(
+    path: &std::path::Path,
+    want: &[(Spot, bool)],
+    count: usize,
+) -> Result<Option<String>> {
     let bytes = std::fs::read(path)
         .map_err(|e| Error::new(format!("cannot read {}: {e}", path.display())))?;
     let annots = listed_annots(&bytes);

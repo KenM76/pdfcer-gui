@@ -38,6 +38,7 @@ mod disclose;
 /// panel's [`text`] section and the ribbon's Format ▸ Font group in
 /// [`crate::app::fontband`], which draw the one loop from the one place.
 pub mod face;
+pub mod fielddelete;
 /// The **form field** clicked on the page in Edit mode. `pub` for the same
 /// reason [`geometry`] is: its rename box holds a draft in
 /// `crate::panels::PanelsState`.
