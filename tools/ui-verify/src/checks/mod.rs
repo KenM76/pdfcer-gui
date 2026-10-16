@@ -1103,6 +1103,7 @@ pub mod draft_arrows;
 pub mod draft_keys;
 /// A paragraph of two looks opens whole and keeps both through an edit.
 pub mod draft_mixed;
+pub mod draft_mixed_ink;
 /// A paragraph re-opens as one draft and keeps its hand breaks.
 pub mod draft_paragraph;
 /// Enter in a paragraph on the page breaks it.

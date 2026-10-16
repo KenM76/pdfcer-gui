@@ -16,7 +16,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "paragraph.pdf",
     method: "Regenerate it: python tools/gen-reflow-fixture.py.",
     page: PageGeometry {

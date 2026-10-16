@@ -120,17 +120,23 @@ pub(super) fn draw_text(painter: &Painter, doc: &OpenDoc, pages: &[PageView], st
     super::ocrink::paint(painter, doc, view, held, colour(painter.ctx()), alpha);
 }
 
-/// The canvas rectangle of the invisible run an open text edit is rewriting on
+/// The canvas rectangle of the invisible run or paragraph an open text edit is rewriting on
 /// `page`, which `textedit::shaped` draws instead. `None` while that preview
 /// has fallen back to the editor box.
 fn edited_rect(ctx: &egui::Context, doc: &OpenDoc, page: usize) -> Option<Rect> {
     let draft = super::textedit::read(ctx)?;
-    let super::textedit::Anchor::Run { run, .. } = draft.anchor else {
-        return None;
-    };
     if draft.page != page || !super::textedit::shaped::read(ctx, &draft)?.invisible() {
         return None;
     }
+    let run = match draft.anchor {
+        super::textedit::Anchor::Run { run, .. } => run,
+        super::textedit::Anchor::Block {
+            llx, lly, urx, ury, ..
+        } => {
+            return super::geometry::pdf_rect_to_canvas((llx, lly, urx, ury), doc.pages.get(page)?);
+        }
+        _ => return None,
+    };
     // The provenance-bearing extraction, because the editor names runs by its
     // indices.
     let text = doc.provenance_page_text(page)?;

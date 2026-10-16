@@ -1,8 +1,9 @@
 # `pdfcer-gui/canvas/textedit/shaped`
 
 Typing into an existing run shows the replacement in the run's own font,
-size, colour and position (O247). Everything else keeps the shell-font box
-drawn by `paint`.
+size, colour and position (O247); an open paragraph (`Anchor::Block`) is laid
+out by `shapedblock` into the same `Shaped`. Everything else keeps the
+shell-font box drawn by `paint`.
 
 ## Contract
 
@@ -15,7 +16,7 @@ drawn by `paint`.
   face previews as the substitute that will render.
 - **When the editor falls back to the shell-font box.** `read` returns `None`
   and the box is drawn when any of these is true:
-  - the draft is not on an existing run;
+  - the draft is on neither an existing run nor an open paragraph;
   - the engine refuses the edit;
   - `skipped` is set (Type 3 or unsupported machinery);
   - glyph count differs from character count, so a caret stop could not be
@@ -38,7 +39,7 @@ drawn by `paint`.
     rotation and the viewer's y-flip come along with it.
   - The texture is rasterised in physical pixels, one per `ppp`.
 - **Stale for at most one frame, never flickering.** The cache key is
-  (page, run, original, text). `read` matches everything except the text, so
+  (page, run or block, whether it is a block, original, text). `read` matches everything except the text, so
   a frame between a keystroke and the next `refresh` draws the previous
   layout rather than dropping back to the box.
 
@@ -90,15 +91,21 @@ A render-without-this-run from the engine would remove the assumption.
   projection.
 - **The caret line** runs along `up` (one em, from the glyph matrix's second
   column), so rotated and skewed text gets a matching caret.
-- **Selection** is a quad per selected glyph pair, from -0.25 to 0.9 em.
+- **Selection** is a quad per selected glyph pair, from -0.25 to 0.9 em. A
+  pair whose stops are more than 0.3 em apart along `up` lies across a line
+  break and draws nothing.
+- **Ink per glyph.** `inks` holds each outline's colour when a paragraph mixes
+  looks, and is empty otherwise. It is used only while the draft is drawn in
+  its own colour; the OCR layer's colour overrides every glyph alike.
 - **Hit-testing** is published as `hit::Caret::Stops`. `Layout::index_at`
   picks the nearest stop, so click and drag inside the draft work as they do
   in the shell-font box.
 
 ## Trace
 
-`text-edit-shaped page= run= chars= shaped=0|1 refused=0|1 tier=`, once per
-distinct draft text, and `text-edit-preview-fallback page= run= reason=
+`text-edit-shaped page= run= block=0|1 chars= shaped=0|1 refused=0|1 tier=`,
+once per distinct draft text (`run=` is the block index and `tier=Block` when
+`block=1`), and `text-edit-preview-fallback page= run= reason=
 font_pt=` each time the reason for the open draft changes; `font_pt` is the
 stand-in's size in screen points. `plan::plan` is run under `diag::muted`, and the
 previous `last_commit` is restored, so the preview does not emit a second

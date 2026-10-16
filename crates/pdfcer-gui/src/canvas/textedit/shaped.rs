@@ -14,6 +14,8 @@
 //! An invisible run (render mode 3 or 7, an OCR layer) is drawn in the OCR
 //! overlay's colour with no paper cover, since it paints nothing over the scan
 //! beneath; `canvas::ocrlayer` leaves the run being edited to this preview.
+//! An open paragraph (`Anchor::Block`) is laid out by [`super::shapedblock`]
+//! into the same [`Shaped`], one ink per look.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/shaped.md`.
 
@@ -40,22 +42,37 @@ const MAX_SIDE_PX: f32 = 4096.0;
 #[derive(Clone, PartialEq, Eq)]
 struct Key {
     page: usize,
+    /// The run index, or the block index when `block`.
     run: usize,
+    block: bool,
     original: String,
     text: String,
 }
 
 impl Key {
     fn of(draft: &Draft) -> Option<Self> {
-        let Anchor::Run { run, original } = &draft.anchor else {
-            return None;
+        let (run, block, original) = match &draft.anchor {
+            Anchor::Run { run, original } => (*run, false, original),
+            Anchor::Block {
+                block, original, ..
+            } => (*block, true, original),
+            _ => return None,
         };
         Some(Self {
             page: draft.page,
-            run: *run,
+            run,
+            block,
             original: original.clone(),
             text: draft.text.clone(),
         })
+    }
+
+    /// The same draft, whatever its text: what a held layout is matched on.
+    fn same_draft(&self, other: &Self) -> bool {
+        self.page == other.page
+            && self.run == other.run
+            && self.block == other.block
+            && self.original == other.original
     }
 }
 
@@ -66,9 +83,12 @@ pub struct Shaped {
     /// The caret positions: before each character, then after the last.
     pub(super) stops: Vec<Pos2>,
     /// One em along the run's own vertical.
-    up: Vec2,
+    pub(super) up: Vec2,
     /// The run's ink.
-    ink: Color32,
+    pub(super) ink: Color32,
+    /// Each outline's ink, when the draft mixes looks; empty when every
+    /// outline takes `ink`.
+    pub(super) inks: Vec<Color32>,
     /// The run paints nothing (render mode 3 or 7).
     pub(super) invisible: bool,
     /// The extent of everything drawn: advance by ascent and descent.
@@ -107,9 +127,7 @@ struct Cached {
 pub fn read(ctx: &egui::Context, draft: &Draft) -> Option<Arc<Shaped>> {
     let key = Key::of(draft)?;
     ctx.data(|d| d.get_temp::<Cached>(egui::Id::new(KEY)))
-        .filter(|c| {
-            c.key.page == key.page && c.key.run == key.run && c.key.original == key.original
-        })
+        .filter(|c| c.key.same_draft(&key))
         .and_then(|c| c.shaped)
 }
 
@@ -119,9 +137,7 @@ pub fn read(ctx: &egui::Context, draft: &Draft) -> Option<Arc<Shaped>> {
 pub fn fallback(ctx: &egui::Context, draft: &Draft) -> Option<Option<PreviewFallback>> {
     let key = Key::of(draft)?;
     ctx.data(|d| d.get_temp::<Cached>(egui::Id::new(KEY)))
-        .filter(|c| {
-            c.key.page == key.page && c.key.run == key.run && c.key.original == key.original
-        })
+        .filter(|c| c.key.same_draft(&key))
         .map(|c| c.fallback)
 }
 
@@ -145,6 +161,24 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     {
         return;
     }
+    let (shaped, refused, tier) = if key.block {
+        let shaped =
+            crate::diag::muted(|| super::shapedblock::shape(doc, key.page, key.run, &key.text));
+        let refused = matches!(shaped, Err(PreviewFallback::Refused));
+        (shaped, refused, "Block".to_owned())
+    } else {
+        layout_run(ctx, doc, &key)
+    };
+    store(ctx, key, shaped, refused, &tier);
+}
+
+/// A run draft's layout: planned as its commit will be, on the first tier the
+/// engine accepts; whether the engine refused it, and the tier.
+fn layout_run(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    key: &Key,
+) -> (Result<Shaped, PreviewFallback>, bool, String) {
     // The commit plans again, so this plan's traces and its record of what the
     // commit will write are both kept out of the record.
     let kept = super::last_commit();
@@ -157,12 +191,24 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     let (laid, tier) = plan.attempt("preview", |request| {
         doc.session.edit_text_preview(request, &plan.options)
     });
-    let refused = laid.as_ref().err().map(ToString::to_string);
+    let refused = laid.is_err();
     let shaped = match laid {
-        Ok(p) => shape_any(doc, &p, &key, tier, &plan),
+        Ok(p) => shape_any(doc, &p, key, tier, &plan),
         Err(_) if super::reface::is_planned(ctx, key.page, key.run) => Err(PreviewFallback::Reface),
         Err(_) => Err(PreviewFallback::Refused),
     };
+    (shaped, refused, format!("{tier:?}"))
+}
+
+/// Hold `shaped` as the layout of `key`, with its trace line.
+fn store(
+    ctx: &egui::Context,
+    key: Key,
+    shaped: Result<Shaped, PreviewFallback>,
+    refused: bool,
+    tier: &str,
+) {
+    let id = egui::Id::new(KEY);
     let fallback = shaped
         .as_ref()
         .err()
@@ -172,12 +218,13 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "text-edit-shaped page={} run={} chars={} shaped={} refused={} tier={tier:?}",
+            "text-edit-shaped page={} run={} block={} chars={} shaped={} refused={} tier={tier}",
             key.page,
             key.run,
+            u8::from(key.block),
             key.text.chars().count(),
             u8::from(shaped.is_some()),
-            u8::from(refused.is_some()),
+            u8::from(refused),
         )
     });
     ctx.data_mut(|d| {
@@ -240,11 +287,7 @@ pub(super) fn shape(
     if count == 0 || preview.glyphs.len() != count {
         return Err(PreviewFallback::Unpaired);
     }
-    let (ink, invisible) = match preview.render_mode {
-        1 | 5 => (&preview.stroke, false),
-        3 | 7 => (&preview.fill, true),
-        _ => (&preview.fill, false),
-    };
+    let (ink, invisible) = ink_of(preview);
     let outlines = pdfcer_render::edit_preview::preview_outlines(
         &doc.session.view(),
         preview,
@@ -277,6 +320,7 @@ pub(super) fn shape(
         stops,
         up: Vec2::new(last[2] as f32, last[3] as f32),
         ink: colour(ink),
+        inks: Vec::new(),
         invisible,
         bbox: preview.bbox,
         text: text.to_owned(),
@@ -284,8 +328,18 @@ pub(super) fn shape(
     })
 }
 
+/// The colour a preview's glyphs are drawn in, and whether they paint
+/// nothing (render mode 3 or 7).
+pub(super) fn ink_of(preview: &TextEditPreview) -> (&PreviewColour, bool) {
+    match preview.render_mode {
+        1 | 5 => (&preview.stroke, false),
+        3 | 7 => (&preview.fill, true),
+        _ => (&preview.fill, false),
+    }
+}
+
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn colour(c: &PreviewColour) -> Color32 {
+pub(super) fn colour(c: &PreviewColour) -> Color32 {
     // DOCUMENT COLOUR: the run's own fill, as the saved page draws it; an
     // unmodelled space falls back to the PDF's initial fill, black.
     let u = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
@@ -378,8 +432,13 @@ pub fn paint(
         painter.rect_filled(white, 0.0, Color32::WHITE);
     }
     if let Some((from, to)) = super::caret::range(draft.mark, draft.caret) {
+        let em = shaped.up.length().max(f32::EPSILON);
         for i in from..to.min(shaped.stops.len() - 1) {
             let (a, b) = (shaped.stops[i], shaped.stops[i + 1]);
+            // Two stops on different lines bound no selected ink.
+            if ((b - a).dot(shaped.up) / em).abs() > em * 0.3 {
+                continue;
+            }
             painter.add(egui::Shape::convex_polygon(
                 vec![up(a, -0.25), up(b, -0.25), up(b, 0.9), up(a, 0.9)],
                 theme.palette.selection_fill,
@@ -449,7 +508,14 @@ fn ink_texture(
     {
         return Some(texture);
     }
-    let image = fill_paths(shaped.outlines.iter().flatten(), m, body, ppp, colour)?;
+    let inked = shaped.outlines.iter().enumerate().filter_map(|(i, path)| {
+        let ink = match shaped.inks.get(i) {
+            Some(&ink) if colour == shaped.ink => ink,
+            _ => colour,
+        };
+        path.as_ref().map(|p| (p, ink))
+    });
+    let image = fill_paths(inked, m, body, ppp)?;
     let [w, h] = image.size;
     crate::render::pressure::record_other(
         ctx,
@@ -462,15 +528,14 @@ fn ink_texture(
     Some(texture)
 }
 
-/// `paths` (page space) filled in `colour` through `m` into an image of the
-/// screen rectangle `body` at `ppp` pixels per point.
+/// `paths` (page space), each filled in its colour, through `m` into an image
+/// of the screen rectangle `body` at `ppp` pixels per point.
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 pub(crate) fn fill_paths<'a>(
-    paths: impl IntoIterator<Item = &'a Path>,
+    paths: impl IntoIterator<Item = (&'a Path, Color32)>,
     m: &[f32; 6],
     body: egui::Rect,
     ppp: f32,
-    colour: Color32,
 ) -> Option<egui::ColorImage> {
     let (w, h) = (
         (body.width() * ppp).ceil().max(1.0) as u32,
@@ -485,10 +550,12 @@ pub(crate) fn fill_paths<'a>(
         (m[4] - body.min.x) * ppp,
         (m[5] - body.min.y) * ppp,
     );
-    let mut paint = tiny_skia::Paint::default();
-    paint.set_color_rgba8(colour.r(), colour.g(), colour.b(), 255);
-    paint.anti_alias = true;
-    for path in paths {
+    let mut paint = tiny_skia::Paint {
+        anti_alias: true,
+        ..Default::default()
+    };
+    for (path, colour) in paths {
+        paint.set_color_rgba8(colour.r(), colour.g(), colour.b(), 255);
         pixmap.fill_path(path, &paint, tiny_skia::FillRule::Winding, to_pixels, None);
     }
     Some(egui::ColorImage::from_rgba_premultiplied(

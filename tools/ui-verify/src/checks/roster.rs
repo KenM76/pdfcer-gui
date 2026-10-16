@@ -274,7 +274,9 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(draft_arrows::ArrowsInATextDraftStayWithTheCaret),
         Box::new(draft_paragraph::AParagraphReopensAsOneDraft),
         Box::new(draft_mixed::AMixedParagraphOpensWholeAndKeepsItsLooks),
+        Box::new(draft_mixed_ink::AnOpenParagraphShowsEachWordsLook),
         Box::new(hand_breaks::HandBreaksAreReadFromMarks),
+        Box::new(hand_breaks::InferredBreaksAreDisclosed),
         Box::new(filter_rows::FormFieldsRowLetsClicksThroughFields),
         Box::new(filter_rows::CharactersRowStopsTextSweeps),
         // Immediately after the check whose gesture it extends, and the order

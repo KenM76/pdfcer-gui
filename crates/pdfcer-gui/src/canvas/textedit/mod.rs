@@ -115,6 +115,7 @@ pub mod repertoire;
 /// **An existing run's draft drawn in the run's own font, where the run is**
 /// — the engine's typing preview, with the shell-font box as its fallback.
 pub mod shaped;
+pub mod shapedblock;
 /// A narrowed preview spliced into the line it edits.
 mod splice;
 /// A text-tool drag that starts on text selects it instead of drawing a box.

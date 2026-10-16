@@ -1,6 +1,6 @@
 //! `hand_breaks_are_read_from_marks` — a paragraph pdfcer has written keeps a
-//! line broken by hand after its longest line, and one whose breaks were only
-//! judged from layout says so off-canvas.
+//! line broken by hand after its longest line; `inferred_breaks_are_disclosed`
+//! — one whose breaks were only judged from layout says so off-canvas.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/hand_breaks.md`.
 
@@ -28,12 +28,75 @@ const BLOCK_APPLIED: &str = "edit-block-text-applied"; // ui-text-exempt: a trac
 /// A long line then a one-word line: the word fits nowhere but after the
 /// longest line, so layout alone reads the break as a wrap.
 const TYPED: [&str; 2] = ["A much longer first line", "x"];
+/// The last line the re-opened paragraph is retyped with: as short as `x`.
+const RETYPED: &str = "y";
 const TYPED_AT: (f64, f64) = (100.0, 400.0);
 /// A point on the first typed line's glyphs.
 const ON_TYPED: (f64, f64) = (110.0, 403.0);
 
+/// A point on line 2 of `paragraph.pdf`'s paragraph, which carries no marks.
+const ON_FOREIGN: (f64, f64) = (120.0, 668.0);
+
 /// Hand breaks are read from pdfcer's marks.
 pub struct HandBreaksAreReadFromMarks;
+
+/// A paragraph with no break marks says its breaks were inferred.
+pub struct InferredBreaksAreDisclosed;
+
+impl Check for InferredBreaksAreDisclosed {
+    fn name(&self) -> &'static str {
+        "inferred_breaks_are_disclosed"
+    }
+
+    fn defect(&self) -> &'static str {
+        "a paragraph whose line breaks were judged from layout opens with nothing saying they \
+         were guessed"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        run_on(
+            self,
+            ctx,
+            &super::reflow::FIXTURE,
+            "mode.edit,edit.text",
+            "breaks-inferred",
+            drive_inferred,
+        )
+    }
+}
+
+/// Open the foreign paragraph; the failure sentence unless it traced
+/// `source=inferred` and drew the breaks-inferred note.
+fn drive_inferred(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    let opened = match reopen(ctx, session, pointer, &super::reflow::FIXTURE, ON_FOREIGN)? {
+        Ok(r) => r,
+        Err(failure) => return Ok(Some(failure)),
+    };
+    report.note(format!("opened: `{}`", opened.line.raw));
+    let said = opened
+        .note
+        .as_deref()
+        .is_some_and(|n| n.contains("note=breaks-inferred"));
+    pointer.key(session, None, "Escape", None)?;
+    session.settle(10);
+    Ok(
+        (opened.line.get("source") != Some("inferred") || !said || !opened.disclosed).then(|| {
+            format!(
+                "a paragraph with no break marks opened as `{}`, note {:?}, `{REGION}` drawn: {}; \
+                 want source=inferred, and the breaks-inferred note shown. Trace: {}.",
+                opened.line.raw,
+                opened.note,
+                opened.disclosed,
+                session.trace_path().display()
+            )
+        }),
+    )
+}
 
 impl Check for HandBreaksAreReadFromMarks {
     fn name(&self) -> &'static str {
@@ -57,11 +120,11 @@ impl Check for HandBreaksAreReadFromMarks {
     }
 }
 
-/// Type the two lines, broken by Enter, into the open draft.
-fn type_lines(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
+/// Type the long line, Enter, then `last` into the open draft.
+fn type_lines(session: &Session, pointer: &ScriptedPointer, last: &str) -> Result<()> {
     pointer.type_text(session, None, TYPED[0])?;
     pointer.key(session, None, "Enter", None)?;
-    pointer.type_text(session, None, TYPED[1])?;
+    pointer.type_text(session, None, last)?;
     Ok(())
 }
 
@@ -91,6 +154,8 @@ fn reopen(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
+    fixture: &Fixture,
+    at: (f64, f64),
 ) -> Result<std::result::Result<Reopened, String>> {
     let ui_rect = ctx
         .profile
@@ -98,12 +163,12 @@ fn reopen(
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile names no ui-rect trace event."))?;
     let mark = session.trace()?.mark();
-    click_on(ctx, session, pointer, &FIXTURE, 0, ON_TYPED)?;
+    click_on(ctx, session, pointer, fixture, 0, at)?;
     session.settle(20);
     let trace = session.trace()?;
     let Some(line) = trace.last_after(WIDENED, mark).cloned() else {
         return Ok(Err(format!(
-            "a click on the typed paragraph opened no paragraph draft. Trace: {}.",
+            "a click on the paragraph opened no paragraph draft. Trace: {}.",
             session.trace_path().display()
         )));
     };
@@ -126,45 +191,45 @@ fn drive(
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
     let path = session.trace_path().display().to_string();
-    // Written by Add text, which marks no breaks: the re-open infers them.
+    let len = TYPED.iter().map(|t| t.chars().count()).sum::<usize>() + 1;
+    let kept = |r: &Reopened| {
+        r.line.get("source") == Some("marked")
+            && r.line.get_usize("breaks") == Some(1)
+            && r.line.get_usize("len") == Some(len)
+            && r.note.is_none()
+    };
+    // Written by Add text, which marks its breaks as the paragraph does.
     click_on(ctx, session, pointer, &FIXTURE, 0, TYPED_AT)?;
-    type_lines(session, pointer)?;
+    type_lines(session, pointer, TYPED[1])?;
     commit(session, pointer, ADDED, "Ctrl+Enter on two typed lines")?;
-    let inferred = match reopen(ctx, session, pointer)? {
+    let added = match reopen(ctx, session, pointer, &FIXTURE, ON_TYPED)? {
         Ok(r) => r,
         Err(failure) => return Ok(Some(failure)),
     };
-    report.note(format!("added: `{}`", inferred.line.raw));
-    let said = inferred
-        .note
-        .as_deref()
-        .is_some_and(|n| n.contains("note=breaks-inferred"));
-    if inferred.line.get("source") != Some("inferred") || !said || !inferred.disclosed {
+    report.note(format!("added: `{}`", added.line.raw));
+    if !kept(&added) {
         return Ok(Some(format!(
-            "a paragraph with no break marks re-opened as `{}`, note {:?}, `{REGION}` drawn: {}; \
-             want source=inferred, and the breaks-inferred note shown. Trace: {path}.",
-            inferred.line.raw, inferred.note, inferred.disclosed
+            "a paragraph Add text wrote re-opened as `{}`, note {:?}; want source=marked \
+             breaks=1 len={len} and no note. Trace: {path}.",
+            added.line.raw, added.note
         )));
     }
-    // Retyped and committed through the paragraph, which marks its breaks.
+    // Retyped with a different last word, so the paragraph writes, and
+    // committed through the paragraph, which marks its breaks.
     pointer.key(session, None, "a", Some("ctrl"))?;
-    type_lines(session, pointer)?;
+    type_lines(session, pointer, RETYPED)?;
     commit(
         session,
         pointer,
         BLOCK_APPLIED,
         "Ctrl+Enter on the re-opened paragraph",
     )?;
-    let marked = match reopen(ctx, session, pointer)? {
+    let marked = match reopen(ctx, session, pointer, &FIXTURE, ON_TYPED)? {
         Ok(r) => r,
         Err(failure) => return Ok(Some(format!("after an edit, {failure}"))),
     };
     report.note(format!("edited: `{}`", marked.line.raw));
-    let len = TYPED.iter().map(|t| t.chars().count()).sum::<usize>() + 1;
-    let ok = marked.line.get("source") == Some("marked")
-        && marked.line.get_usize("breaks") == Some(1)
-        && marked.line.get_usize("len") == Some(len)
-        && marked.note.is_none();
+    let ok = kept(&marked);
     pointer.key(session, None, "Escape", None)?;
     session.settle(10);
     Ok((!ok).then(|| {

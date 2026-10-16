@@ -11,7 +11,7 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "mixed-paragraph.pdf",
     method: "`python tools/gen-mixed-paragraph-fixture.py`.",
     page: PageGeometry {
@@ -21,7 +21,7 @@ const FIXTURE: Fixture = Fixture {
 };
 const BLOCK_APPLIED: &str = "edit-block-text-applied"; // ui-text-exempt: a trace event name, never displayed
 /// On the first line's glyphs: baseline 700, left edge 72, size 12.
-const ON_FIRST_LINE: (f64, f64) = (90.0, 703.0);
+pub(super) const ON_FIRST_LINE: (f64, f64) = (90.0, 703.0);
 /// The paragraph's lines, as the fixture writes them.
 const LINES: usize = 6;
 

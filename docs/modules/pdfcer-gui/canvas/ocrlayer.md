@@ -59,7 +59,8 @@ not shown" disclosure.
 While a text edit is open on an invisible run and `textedit::shaped` has laid
 it out, that preview draws the run in its own font, in this layer's colour
 (`colour32`) and at its opacity, and the layer's raster is drawn with that
-run's rectangle cut out (`edited_rect`): drawing both would show the old and
+run's rectangle cut out (`edited_rect`; for an open paragraph, the
+paragraph's rectangle from its `Anchor::Block`): drawing both would show the old and
 the new text on top of each other. The rectangle comes from the
 provenance-bearing extraction (`OpenDoc::provenance_page_text`), whose run
 indices the editor uses. When the preview has fallen back to the stand-in box,
