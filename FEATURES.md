@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.83.0, a git dependency on the local engine repository, pinned at **`b2c1c56f`** (engine main after the v0.83.0 tag: carries G196 to G203) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.84.0, a git dependency on the local engine repository, pinned at **`742939cb`** (the engine's v0.84.0: adds the 3D compressed-mesh fit choice and partial rebuilds, and G204's recognised-paragraph edit preview) — the revision `Cargo.lock` resolves and the one this binary contains. The dependency is taken by branch with no `rev`, so `Cargo.lock` re-resolves without anyone typing `cargo update`, and `D:\Dev\pdfcer` is read-only from this workspace.
 
 **What is new in this build.** On a scanned page's recognised text, *This paragraph* on the text menu opens the whole recognised paragraph (a click still opens the word, previewed in place in its own font); an edit rewrites only the words changed, each fitted to the box of the word it replaces, so the rest stay over their scan words, and a word squeezed to its limit is reported on the status line. Several markups resized or turned together change through one engine call, still one undo step, and the status line says how many changed when some could not.
 
