@@ -171,13 +171,19 @@ pub fn open(
     draft: &mut Draft,
 ) -> Result<LineEndSource, EnterRefusal> {
     let Anchor::Run { run, original } = &draft.anchor else {
-        if matches!(
-            draft.anchor,
-            Anchor::Block {
-                recognised: true,
-                ..
-            }
-        ) {
+        if let Anchor::Block {
+            run,
+            recognised: true,
+            ..
+        } = draft.anchor
+        {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!(
+                    "text-edit-enter-declined page={} run={run} reason=recognised-word",
+                    draft.page
+                )
+            });
             return Err(EnterRefusal::Recognised);
         }
         return Err(EnterRefusal::NoParagraph);
