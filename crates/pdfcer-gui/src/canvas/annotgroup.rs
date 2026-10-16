@@ -13,12 +13,9 @@ use crate::app::actions::Action;
 use crate::app::actions::annot::AnnotAction;
 use crate::canvas::selection::{AnnotKind, SelectionState};
 
-/// Each markup and the point it scales or turns about.
-type Members = Vec<(ObjId, (f64, f64))>;
-
-/// The markups on `page` that can change, each with `point`, and how many
-/// selected annotations cannot.
-fn split(selection: &SelectionState, page: usize, point: (f64, f64)) -> Option<(Members, usize)> {
+/// The markups on `page` that can change, and how many selected annotations
+/// cannot.
+fn split(selection: &SelectionState, page: usize) -> Option<(Vec<ObjId>, usize)> {
     let annots = selection.annots();
     if annots.len() < 2 {
         return None;
@@ -26,7 +23,7 @@ fn split(selection: &SelectionState, page: usize, point: (f64, f64)) -> Option<(
     let items: Vec<_> = annots
         .iter()
         .filter(|a| a.target.page == page && a.target.kind == AnnotKind::Markup && !a.target.locked)
-        .map(|a| (a.target.id, point))
+        .map(|a| a.target.id)
         .collect();
     let left_out = annots.len() - items.len();
     (!items.is_empty()).then_some((items, left_out))
@@ -41,16 +38,17 @@ pub fn resize(
     (sx, sy): (f32, f32),
     modifiers: crate::canvas::scaling::Modifiers,
 ) -> Option<Action> {
-    let (items, left_out) = split(selection, page, anchor)?;
+    let (ids, left_out) = split(selection, page)?;
     trace(
         &format!("resize sx={sx:.4} sy={sy:.4}"), // ui-text-exempt: diagnostic trace measures
         page,
-        items.len(),
+        ids.len(),
         left_out,
     );
     Some(Action::Annot(AnnotAction::ResizeMany(ResizeMany {
         page,
-        items,
+        ids,
+        anchor,
         sx: f64::from(sx),
         sy: f64::from(sy),
         uniform: (sx - sy).abs() <= f32::EPSILON,
@@ -67,16 +65,17 @@ pub fn rotate(
     pivot: (f64, f64),
     degrees: f64,
 ) -> Option<Action> {
-    let (items, left_out) = split(selection, page, pivot)?;
+    let (ids, left_out) = split(selection, page)?;
     trace(
         &format!("rotate deg={degrees:.2}"), // ui-text-exempt: diagnostic trace measures
         page,
-        items.len(),
+        ids.len(),
         left_out,
     );
     Some(Action::Annot(AnnotAction::RotateMany(RotateMany {
         page,
-        items,
+        ids,
+        pivot,
         degrees,
         left_out,
     })))

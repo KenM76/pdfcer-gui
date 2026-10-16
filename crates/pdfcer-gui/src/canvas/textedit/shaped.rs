@@ -53,6 +53,10 @@ impl Key {
     fn of(draft: &Draft) -> Option<Self> {
         let (run, block, original) = match &draft.anchor {
             Anchor::Run { run, original } => (*run, false, original),
+            // The engine offers no layout preview of a recognised rewrite.
+            Anchor::Block {
+                recognised: true, ..
+            } => return None,
             Anchor::Block {
                 block, original, ..
             } => (*block, true, original),

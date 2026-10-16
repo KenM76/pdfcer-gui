@@ -1,113 +1,100 @@
 //! Several markups resized or turned by one grip drag, as one undo step: what
 //! [`AnnotAction::ResizeMany`] and [`AnnotAction::RotateMany`] run.
 //!
-//! The engine resizes and turns one annotation per command, so this is one
-//! `resize_annotation` or `rotate_annotation` per markup, every one tried, then
-//! one `coalesce_last` (G202). All share one anchor or pivot, so the group
-//! changes as one shape. What was applied stays applied when another is
-//! refused, and the status line says how many changed. When none changed, the
-//! first refusal is worded as the one-markup gesture words it.
+//! One `EditSession::resize_annotations` or `rotate_annotations` call about
+//! the selection box's shared anchor or pivot, so the group changes as one
+//! shape. The engine tries every member, keeps what applied when another is
+//! refused, and folds the applied ones into one undo entry; the status line
+//! says how many changed. When none changed, the first refusal is worded as
+//! the one-markup gesture words it.
 //!
 //! [`AnnotAction::ResizeMany`]: crate::app::actions::annot::AnnotAction::ResizeMany
 //! [`AnnotAction::RotateMany`]: crate::app::actions::annot::AnnotAction::RotateMany
 
-use pdfcer_core::edit::{CommandKind, EditError};
+use pdfcer_core::edit::{AnnotationBatchOutcome, EditError};
 use pdfcer_core::object::ObjId;
 use pdfcer_gui_base::annotmany::{ResizeMany, RotateMany};
 
-use crate::app::actions::foldeach::{Folded, OnRefusal, fold_each};
 use crate::app::state::OpenDoc;
 use crate::text::markup as t;
 
 /// Resize every markup in `many` about the shared anchor.
 pub(in crate::app::actions) fn resize_many(doc: &mut OpenDoc, many: &ResizeMany) {
     let stamps = stamps_on(doc, many.page);
-    let mut done = (0, false);
+    let targets: Vec<_> = many
+        .ids
+        .iter()
+        .map(|&id| (id, options(many.modifiers, stamps.contains(&id))))
+        .collect();
+    let mut done = 0;
     super::super::apply::vector_edit(
         doc,
         "resize-annotations",
         many.page,
-        many.items.len(),
+        many.ids.len(),
         |session| {
-            let folded = fold_each(
-                session,
-                many.items.iter().copied(),
-                CommandKind::ResizeAnnotation,
-                OnRefusal::Continue,
-                |session, (id, anchor)| {
-                    let opts = options(many.modifiers, stamps.contains(&id));
-                    session
-                        .resize_annotation(id, anchor, many.sx, many.sy, &opts)
-                        .map(|outcome| Some(super::resize_notes(&outcome)))
-                },
-            )?;
-            done = (folded.run.pushed, folded.folded);
+            let batch = session.resize_annotations(&targets, many.anchor, many.sx, many.sy);
+            let batch = batch.inspect_err(super::record_resize_refusal)?;
+            done = batch.applied();
+            let told = ok_results(&batch)
+                .flat_map(super::resize_notes)
+                .collect::<Vec<_>>();
             outcome(
-                folded,
+                &batch,
+                told,
                 false,
-                many.items.len(),
                 many.left_out,
                 super::record_resize_refusal,
             )
         },
     );
-    trace("resize", many.page, many.items.len(), many.left_out, done);
+    trace("resize", many.page, many.ids.len(), many.left_out, done);
 }
 
 /// Turn every markup in `many` about the shared pivot.
 pub(in crate::app::actions) fn rotate_many(doc: &mut OpenDoc, many: &RotateMany) {
-    let mut done = (0, false);
+    let mut done = 0;
+    let word = |e: &EditError| crate::app::status::decline::record_rotate(super::refusal_for(e));
     super::super::apply::vector_edit(
         doc,
         "rotate-annotations",
         many.page,
-        many.items.len(),
+        many.ids.len(),
         |session| {
-            let folded = fold_each(
-                session,
-                many.items.iter().copied(),
-                CommandKind::RotateAnnotation,
-                OnRefusal::Continue,
-                |session, (id, pivot)| {
-                    session
-                        .rotate_annotation(id, pivot, many.degrees)
-                        .map(|_| Some(Vec::new()))
-                },
-            )?;
-            done = (folded.run.pushed, folded.folded);
-            outcome(folded, true, many.items.len(), many.left_out, |e| {
-                crate::app::status::decline::record_rotate(super::refusal_for(e));
-            })
+            let batch = session.rotate_annotations(&many.ids, many.pivot, many.degrees);
+            let batch = batch.inspect_err(word)?;
+            done = batch.applied();
+            outcome(&batch, Vec::new(), true, many.left_out, word)
         },
     );
-    trace("rotate", many.page, many.items.len(), many.left_out, done);
+    trace("rotate", many.page, many.ids.len(), many.left_out, done);
 }
 
-/// The run's sentences, or its first refusal, worded by `word`, when nothing
+fn ok_results<R>(batch: &AnnotationBatchOutcome<R>) -> impl Iterator<Item = &R> {
+    batch.results.iter().filter_map(|(_, r)| r.as_ref().ok())
+}
+
+/// The batch's sentences, or its first refusal, worded by `word`, when nothing
 /// changed.
-fn outcome(
-    folded: Folded<EditError>,
+fn outcome<R>(
+    batch: &AnnotationBatchOutcome<R>,
+    mut said: Vec<String>,
     turned: bool,
-    asked: usize,
     left_out: usize,
     word: impl Fn(&EditError),
 ) -> Result<Vec<String>, EditError> {
-    let Folded { run, folded } = folded;
-    if run.pushed == 0
-        && let Some(e) = run.failure
+    let applied = batch.applied();
+    if applied == 0
+        && let Some((_, e)) = batch.refused().next()
     {
-        word(&e);
-        return Err(e);
+        word(e);
+        return Err(e.clone());
     }
-    let mut said = run.told;
-    if run.failure.is_some() {
-        said.push(t::changed_some_of(turned, run.pushed, asked));
+    if batch.refused().next().is_some() {
+        said.push(t::changed_some_of(turned, applied, batch.results.len()));
     }
     if left_out > 0 {
         said.push(t::left_out_of_group(turned, left_out));
-    }
-    if !folded && run.pushed > 1 {
-        said.push(t::group_not_one_undo(turned).to_owned());
     }
     Ok(said)
 }
@@ -137,12 +124,15 @@ fn options(
     }
 }
 
-fn trace(verb: &str, page: usize, asked: usize, left_out: usize, (done, folded): (usize, bool)) {
+/// `one_step` is whether anything changed: the engine folds every applied
+/// member into one undo entry.
+fn trace(verb: &str, page: usize, asked: usize, left_out: usize, done: usize) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
             "{verb}-annotations-applied page={page} changed={done}/{asked} left_out={left_out} \
-             one_step={folded}"
+             one_step={}",
+            done > 0
         )
     });
 }

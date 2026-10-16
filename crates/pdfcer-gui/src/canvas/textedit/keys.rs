@@ -147,7 +147,10 @@ pub const fn enter_means(anchor: &Anchor, command: bool) -> EnterMeans {
         return EnterMeans::Commit;
     }
     match anchor {
-        Anchor::Run { .. } => EnterMeans::CannotSplit,
+        Anchor::Run { .. }
+        | Anchor::Block {
+            recognised: true, ..
+        } => EnterMeans::CannotSplit,
         Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::Block { .. } => EnterMeans::NewLine,
     }
 }
@@ -830,6 +833,7 @@ mod tests {
                 ury: 50.0,
                 original: "a paragraph".to_owned(), // ui-text-exempt: test fixture text
                 places: Vec::new(),
+                recognised: false,
             },
         ] {
             assert_eq!(

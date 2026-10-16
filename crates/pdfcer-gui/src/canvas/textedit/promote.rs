@@ -27,6 +27,7 @@ use crate::app::state::OpenDoc;
 
 pub mod here;
 pub mod objects;
+mod recognised;
 
 /// The options a paragraph draft is previewed and committed under: the
 /// caret's typing disposition and the installed faces, no fallback face, and
@@ -170,6 +171,15 @@ pub fn open(
     draft: &mut Draft,
 ) -> Result<LineEndSource, EnterRefusal> {
     let Anchor::Run { run, original } = &draft.anchor else {
+        if matches!(
+            draft.anchor,
+            Anchor::Block {
+                recognised: true,
+                ..
+            }
+        ) {
+            return Err(EnterRefusal::Recognised);
+        }
         return Err(EnterRefusal::NoParagraph);
     };
     let run = *run;
@@ -239,20 +249,21 @@ pub fn widen(
         return Err(None);
     };
     let run = *run;
+    if recognised(doc, draft.page, run).is_err() {
+        return recognised::widen(ctx, doc, draft, default);
+    }
     let started = std::time::Instant::now();
-    let result = recognised(doc, draft.page, run)
-        .and_then(|()| paragraph(doc, draft.page, run, original))
-        .and_then(|p| {
-            if p.lines < 2 {
-                return Err(Declined::no_paragraph("one-line"));
-            }
-            if !here::opens(ctx, doc.serial, draft.page, p.bbox, default) {
-                return Err(Declined::no_paragraph("switched-off"));
-            }
-            let promoted = promoted(draft, &p);
-            rewrite(doc, draft.page, p.block, &promoted.text)?;
-            Ok((p, promoted))
-        });
+    let result = paragraph(doc, draft.page, run, original).and_then(|p| {
+        if p.lines < 2 {
+            return Err(Declined::no_paragraph("one-line"));
+        }
+        if !here::opens(ctx, doc.serial, draft.page, p.bbox, default) {
+            return Err(Declined::no_paragraph("switched-off"));
+        }
+        let promoted = promoted(draft, &p);
+        rewrite(doc, draft.page, p.block, &promoted.text)?;
+        Ok((p, promoted))
+    });
     let ms = started.elapsed().as_millis();
     match result {
         Ok((p, promoted)) => {
@@ -320,6 +331,7 @@ fn promoted(draft: &Draft, p: &Paragraph) -> Draft {
             ury,
             original: format!("{}{}{}", p.before, original_of(draft), p.after),
             places: p.places.clone(),
+            recognised: false,
         },
         text,
         caret: draft.caret + shift,

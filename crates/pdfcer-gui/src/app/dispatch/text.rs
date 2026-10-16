@@ -126,6 +126,7 @@ fn reflow(ctx: &egui::Context, status: &Status, actions: &mut Vec<Action>) {
         crate::canvas::textedit::Anchor::Block {
             block,
             ref original,
+            recognised: false,
             ..
         } => {
             if draft.text == *original {

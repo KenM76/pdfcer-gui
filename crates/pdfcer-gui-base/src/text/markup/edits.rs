@@ -504,16 +504,6 @@ pub fn left_out_of_group(turned: bool, n: usize) -> String {
     )
 }
 
-/// Several markups resized or turned, but not as one undo step.
-#[must_use]
-pub const fn group_not_one_undo(turned: bool) -> &'static str {
-    if turned {
-        "Turned, but it will take more than one Undo to put them all back."
-    } else {
-        "Resized, but it will take more than one Undo to put them all back."
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

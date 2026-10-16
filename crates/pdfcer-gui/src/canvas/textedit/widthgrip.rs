@@ -52,6 +52,7 @@ pub(in crate::canvas) fn offer(
         lly,
         urx,
         ury,
+        recognised: false,
         ..
     } = draft.anchor
     else {

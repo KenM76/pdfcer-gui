@@ -242,6 +242,10 @@ pub enum Anchor {
         /// Where each glyph of `original` lies on the page, in `original`'s
         /// order; valid only while the draft's text equals `original`.
         places: Vec<promote::Place>,
+        /// A recognised (invisible) paragraph: `block` is numbered among the
+        /// page's recognised text, and the commit rewrites its words in
+        /// place. `places` is empty.
+        recognised: bool,
     },
 }
 
@@ -424,6 +428,20 @@ pub(super) fn commit_into(
                 pen: pen::read(ctx),
                 wrap: Some((*llx, *lly, *urx, *ury)),
             });
+        }
+        Anchor::Block {
+            block,
+            original,
+            recognised: true,
+            ..
+        } if draft.text != *original => {
+            actions.push(Action::Text(
+                crate::app::actions::text::TextAction::CommitRecognised {
+                    page: draft.page,
+                    block: *block,
+                    text: draft.text.clone(),
+                },
+            ));
         }
         Anchor::Block {
             block,

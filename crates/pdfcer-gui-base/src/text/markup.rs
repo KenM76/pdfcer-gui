@@ -235,9 +235,8 @@ mod edits;
 pub use edits::{
     AnnotDeleteRefusal, NodeEditRefusal, ShapeWord, annot_delete_locked, appearance_distorted,
     changed_some_of, deleted_collateral, deleted_kept_locked, deleted_not_one_undo,
-    deletion_would_take, group_not_one_undo, ink_redrawn_straight, left_out_of_group,
-    measure_stale, note_removed, note_replaced, popup_left_behind, rich_text_dropped,
-    stroke_width_unchanged,
+    deletion_would_take, ink_redrawn_straight, left_out_of_group, measure_stale, note_removed,
+    note_replaced, popup_left_behind, rich_text_dropped, stroke_width_unchanged,
 };
 
 #[cfg(test)]

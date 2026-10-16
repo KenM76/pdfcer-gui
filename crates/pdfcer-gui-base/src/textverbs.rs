@@ -68,6 +68,18 @@ pub enum TextAction {
         /// Its new text; `\n` is a paragraph break.
         text: String,
     },
+    /// **Replace a recognised paragraph's words**
+    /// (`EditSession::edit_recognised_block_text`): unchanged words stay
+    /// where they are, each changed word is fitted to the box of the word it
+    /// replaces. `block` is numbered among the page's recognised text only.
+    CommitRecognised {
+        /// The 0-based page.
+        page: usize,
+        /// Which recognised paragraph.
+        block: usize,
+        /// Its new text; line breaks mean nothing.
+        text: String,
+    },
     /// **A key was pressed that the caret's run cannot spell** — the
     /// pre-commit half of `OPERATOR_REQUESTS.md` **O140/O141**, 2026-09-09.
     ///
