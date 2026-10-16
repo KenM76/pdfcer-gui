@@ -247,9 +247,10 @@ fn the_affordance_is_inside_the_bar_at_the_exact_width_where_tabs_start_hiding()
     let overflow_w = plan::overflow_width(n, plan::TAB_PADDING, |s| text_width(&ctx, s));
 
     // The dock width whose tab bar is exactly wide enough for everything.
-    // The bar is the dock width less the side splitter.
+    // The bar is the dock width less the side splitter and the hide arrow
+    // it gives way to.
     let fits = |dock_width: f32| {
-        let bar = dock_width - plan::SPLITTER_THICKNESS;
+        let bar = dock_width - plan::SPLITTER_THICKNESS - super::collapse::RAIL_WIDTH_PTS;
         !plan::plan_tabs(&widths, 0, bar, plan::TAB_GAP, overflow_w).has_overflow()
     };
 

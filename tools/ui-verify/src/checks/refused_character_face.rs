@@ -8,7 +8,6 @@ use crate::checks::text_selection::aim;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{DocPoint, PageGeometry};
 use crate::error::{Error, Result};
-use crate::geom::LRect;
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
@@ -113,11 +112,6 @@ impl Check for ARefusedCharacterOffersAFaceThatCanTypeIt {
             Err(why) => report.from_error(&why),
         }
     }
-}
-
-/// Do two rectangles share any area?
-fn overlaps(a: LRect, b: LRect) -> bool {
-    a.min.x < b.max.x && b.min.x < a.max.x && a.min.y < b.max.y && b.min.y < a.max.y
 }
 
 /// Was `region` published on any frame after trace line `after`?
@@ -452,7 +446,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     };
     if let Some(page_rect) = declared(&trace, ui_rect, PAGE_REGION)
-        && overlaps(disclosure, page_rect)
+        && disclosure.overlaps(page_rect)
     {
         let shot = ctx.out("refused-character-face.disclosure-on-canvas.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {

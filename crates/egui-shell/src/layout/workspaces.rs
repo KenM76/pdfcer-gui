@@ -206,6 +206,21 @@ impl LayoutDocument {
         true
     }
 
+    /// Whether the host recorded upgrade `id` as applied.
+    #[must_use]
+    pub fn upgrade_applied(&self, id: &str) -> bool {
+        self.upgrades.iter().any(|u| u == id)
+    }
+
+    /// Record upgrade `id` as applied; `false` when it already was.
+    pub fn mark_upgrade(&mut self, id: &str) -> bool {
+        if self.upgrade_applied(id) {
+            return false;
+        }
+        self.upgrades.push(id.to_owned());
+        true
+    }
+
     /// Every workspace name, in the order they were first saved.
     #[must_use]
     pub fn workspace_names(&self) -> Vec<&str> {

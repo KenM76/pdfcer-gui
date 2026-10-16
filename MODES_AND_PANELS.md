@@ -69,11 +69,12 @@ The tab lists are the manifest's (`shell::manifest::built_in`); the arrangements
 and widths are `app::modes::defaults::spec`. The contextual **Format** tab is in
 no mode's list and appears in all three, its items gated on `mode.edit_content`.
 
-Edit's right side is **two stacks in one column** — Objects above, its detail
-below, with the stack splitter between them. That is the master-detail pair, and
-`ui-verify`'s `master_detail` check is what catches a panel put at the front of
-the lower stack, which would open Edit with the document's keywords where the
-selected object's properties belong.
+Edit's right side is **one stack, so one tab bar** (O301): Properties first,
+Objects beside it, then the rest. Splitting Objects off into a stack of its own
+(the master-detail pair O123 asked for) is one drag. `ui-verify`'s
+`the_inspector_is_one_tab_bar` catches a second bar, and a panel put at the
+front, which would open Edit with the document's keywords where the selected
+object's properties belong.
 
 **Ordering within a tabbed stack is load-bearing**, because a stack draws only
 its active tab. The front of a stack is what the mode is *for*; the end is
@@ -759,9 +760,8 @@ cargo run --release -q -p ui-verify -- --list
 bash tools/gates/run-all.sh
 ```
 
-Driven checks that bear on this document's subject: `master_detail` (Edit's
-Objects and Properties are adjacent stacks in one column, not one tab away from
-each other), `panel_float` (a floated panel gets a real OS window *and* its body
+Driven checks that bear on this document's subject: `the_inspector_is_one_tab_bar` (Edit's
+right side is one tab bar, opening on Properties with Objects beside it), `panel_float` (a floated panel gets a real OS window *and* its body
 is drawn inside that window's viewport), `comments_census` (the Comments panel
 is reachable even when seeded behind another tab), `chords`, and `read_mode`,
 `read_mode_chrome` and `read_mode_exit` for the chrome stance. `left_rail` is

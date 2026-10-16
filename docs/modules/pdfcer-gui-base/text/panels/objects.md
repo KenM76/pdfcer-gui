@@ -115,7 +115,7 @@ does not — it is a uniqueness token, not a fact about the typeface.
 
 # Why it goes, and why the driven harness is what decided it
 
-`the_inspector_is_one_master_detail_column` drove the real binary against
+`the_inspector_is_one_tab_bar` drove the real binary against
 the operator's own A1 sheet and reported **8 of 9 object rows shortened at
 the default width**. O123 part 6 widened Edit's inspector to 360 pt
 precisely so the common row would fit, and it still did not — so either the
@@ -204,7 +204,7 @@ string from the one in the file.
 
 ### `fn a_subset_tag_is_stripped_from_the_row`
 
-The driven check `the_inspector_is_one_master_detail_column` reported 8
+The driven check `the_inspector_is_one_tab_bar` reported 8
 of 9 rows shortened at the intended width; this is the shortening that
 costs the operator nothing.
 
@@ -421,7 +421,7 @@ only carry fewer of them.
 
 # 1. Why a second form exists: every row was elided, on every fixture
 
-The driven check `the_inspector_is_one_master_detail_column` reported
+The driven check `the_inspector_is_one_tab_bar` reported
 **8 of 8 object rows do not fit at the default width**, and the panel's own
 `objects-rows overflow=` field — added for exactly this question — said how
 far: the widest row wanted **473.6 pt** in a **314 pt** pane. At O123's

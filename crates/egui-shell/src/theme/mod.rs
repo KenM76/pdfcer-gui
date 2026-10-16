@@ -339,9 +339,9 @@ pub struct Metrics {
     /// drift apart, which is a distinction no reader of the band could
     /// name.
     ///
-    /// It is larger than `egui`'s `TextStyle::Small` (9 pt), which is
-    /// what `RichText::small()` would give: the mockup asks for 11, so the
-    /// band must state the size rather than take the stock small.
+    /// It is also the size of `TextStyle::Small`, so every `small()` text
+    /// in the program — setting descriptions, captions, disclosures — is
+    /// this size rather than egui's stock 9 pt.
     pub ribbon_caption_pts: f32,
     /// **The icon size on a `Large` control** — `svg.g.big { width: 24px }`.
     ///
@@ -833,6 +833,10 @@ impl Theme {
 
     /// The style write itself, shared by both of `egui`'s per-theme styles.
     fn write_style(style: &mut egui::Style, p: &Palette, m: &Metrics, preset: Preset) {
+        style.text_styles.insert(
+            egui::TextStyle::Small,
+            egui::FontId::proportional(m.ribbon_caption_pts),
+        );
         let v = &mut style.visuals;
 
         v.dark_mode = matches!(preset, Preset::Dark);

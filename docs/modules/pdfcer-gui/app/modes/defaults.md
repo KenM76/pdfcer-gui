@@ -197,7 +197,7 @@ mid-character.
 ## ⚠ No width stops the common row being cut, and this one does not either
 
 Driven against `fixtures/a1-titleblock.pdf`,
-`the_inspector_is_one_master_detail_column` reports **8 of 8 object rows
+`the_inspector_is_one_tab_bar` reports **8 of 8 object rows
 elided** at 360, and the panel's `objects-rows overflow=` field names the
 numbers: the widest row wants **473.6 pt**, the narrowest **306.3 pt**,
 against **296 pt** of text room. *Every* row of that sheet is over — so

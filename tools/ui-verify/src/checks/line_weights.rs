@@ -299,7 +299,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // earns is: **a probe whose baseline has no dynamic range cannot produce a
     // verdict.** `mouse_work_survives_every_render_tier` failed at every rung on
     // his own drawing until it was re-aimed from blank paper to an object; the
-    // right-edge assertion in `master_detail` read six antialiased pixels as
+    // right-edge assertion in the inspector check read six antialiased pixels as
     // clipped text. Every one of them was a measurement of a region that had no
     // subject in it.
     //

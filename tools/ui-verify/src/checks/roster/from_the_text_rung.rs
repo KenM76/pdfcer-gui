@@ -602,7 +602,8 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(clip_pages::TheClipboardBecomesANewPdfOrPagesAfterThisOne),
         Box::new(caption_theme::TitleBarsFollowTheTheme),
         Box::new(first_frame::TheFirstFrameNamesTheArmedTool),
-        Box::new(master_detail::TheInspectorIsOneMasterDetailColumn),
+        Box::new(inspector::TheInspectorIsOneTabBar),
+        Box::new(hide_arrow::TheHideArrowSitsClearOfTheTabs),
         // The left rail — `OPERATOR_REQUESTS.md` O123 part 7 and O126.
         // Written and NOT executed: the operator was at his
         // keyboard and a watchdog kills GUI processes on sight. Registered

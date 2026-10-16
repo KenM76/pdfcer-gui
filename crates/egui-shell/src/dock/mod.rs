@@ -574,6 +574,7 @@ impl<'a> Dock<'a> {
             tab_menu: self.tab_menu.take(),
             icons: self.icons.take(),
             tab_label: self.tab_label,
+            chevron: None,
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,
@@ -723,7 +724,9 @@ impl<'a> Dock<'a> {
                 let area = banner::draw(ui, ctx, side, area, self.banner.as_mut());
                 // Reserved off the OUTER edge, for the banner's reason.
                 let area = rail::draw(ui, ctx, side, area, self.rail.as_mut(), rail_peek);
+                ctx.chevron = Some(collapse::chevron_rect(side, area));
                 self.draw_side_contents(ui, ctx, layout, side, area, report, body);
+                ctx.chevron = None;
                 // The collapse chevron, drawn LAST and OVER the columns.
                 //
                 // Over rather than inside, because inserting it into the column

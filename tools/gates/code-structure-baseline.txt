@@ -36,7 +36,6 @@ dup tools/ui-verify::local_fixture in tools/ui-verify/src/checks/form_groups.rs,
 dup tools/ui-verify::open_from_tab in tools/ui-verify/src/checks/adopt_widget.rs, tools/ui-verify/src/checks/form_groups.rs
 dup tools/ui-verify::open_properties in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/recovery_losses.rs, tools/ui-verify/src/checks/stamp_collection.rs
 dup tools/ui-verify::open_window in tools/ui-verify/src/checks/remove_metadata.rs, tools/ui-verify/src/checks/remove_ocr_pages.rs
-dup tools/ui-verify::overlaps in tools/ui-verify/src/checks/pages_drag.rs, tools/ui-verify/src/checks/refused_character_face.rs
 dup tools/ui-verify::pdf_bytes in tools/ui-verify/src/checks/model_saved_view.rs, tools/ui-verify/src/checks/model_views_saved.rs
 dup tools/ui-verify::press in tools/ui-verify/src/checks/attach_file.rs, tools/ui-verify/src/checks/attach_sound.rs, tools/ui-verify/src/checks/insert_text.rs, tools/ui-verify/src/checks/media_clip.rs, tools/ui-verify/src/checks/replace_text.rs
 dup tools/ui-verify::press in tools/ui-verify/src/checks/clip_pages.rs, tools/ui-verify/src/checks/print_shop.rs
@@ -597,7 +596,6 @@ fn tools/ui-verify/src/checks/markup_resize_preview.rs::drive
 fn tools/ui-verify/src/checks/markup_shapes.rs::drive
 fn tools/ui-verify/src/checks/markup_style.rs::assess
 fn tools/ui-verify/src/checks/marquee_table.rs::drive
-fn tools/ui-verify/src/checks/master_detail.rs::drive
 fn tools/ui-verify/src/checks/max_zoom.rs::drive
 fn tools/ui-verify/src/checks/measure_calibrate.rs::drive
 fn tools/ui-verify/src/checks/measure_circular_points.rs::drive

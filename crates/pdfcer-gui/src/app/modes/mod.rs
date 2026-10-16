@@ -10,6 +10,7 @@ pub use pdfcer_gui_base::modecapability as capability;
 #[cfg(test)]
 mod capability_tests;
 pub mod defaults;
+mod upgrade;
 
 pub use capability::Capabilities;
 pub use defaults::{ABSENT_PANELS, layout_for, layout_for_build};
@@ -175,6 +176,7 @@ impl Modes {
                 });
             }
         }
+        upgrade::apply(store.document_mut(), &ws, &mut layout, remembered);
         dock.set_layout(layout);
         // Stamped whether or not anything was added, so the next launch
         // reports `New(vec![])` instead of offering the same panels again.

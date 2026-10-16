@@ -51,7 +51,7 @@ use super::plan;
 use super::report;
 
 /// How wide the rail a collapsed side leaves behind is, in points.
-const RAIL_WIDTH_PTS: f32 = 16.0;
+pub(super) const RAIL_WIDTH_PTS: f32 = 16.0;
 
 /// How tall the clickable part of a collapse control or a rail is, in points.
 const RAIL_HIT_PTS: f32 = 22.0;
@@ -75,6 +75,10 @@ pub(super) fn draw_collapsed_rail(
         // content-dependent width next to a fit-to-viewport zoom is the
         // R128 oscillation, and a rail is the last place to reintroduce it.
         .exact_size(RAIL_WIDTH_PTS)
+        // No inner margin: the stock panel frame's would widen the content
+        // past `RAIL_WIDTH_PTS`, and a right rail would then hang off the
+        // window's edge with its arrow half clipped.
+        .frame(egui::Frame::NONE.fill(ctx.theme.palette.panel))
         .resizable(false)
         .show(ui, |ui| {
             ui.vertical_centered(|ui| {
@@ -106,6 +110,23 @@ pub(super) fn draw_collapsed_rail(
     report.sides_drawn.push(side);
 }
 
+/// Where an open side's collapse chevron sits: its INNER edge (the one
+/// facing the document), just inside the side splitter, as most programs in
+/// the class place it. The tab bar it sits on starts or ends clear of it
+/// ([`super::stack`]), so no tab or "more" button is ever drawn under it; at
+/// the trailing end the right dock's "more" button covered it.
+pub(super) fn chevron_rect(side: DockSide, area: Rect) -> Rect {
+    let t = plan::SPLITTER_THICKNESS;
+    let left = match side {
+        DockSide::Left => area.right() - t - RAIL_WIDTH_PTS,
+        DockSide::Right => area.left() + t,
+    };
+    Rect::from_min_size(
+        egui::pos2(left, area.top()),
+        egui::vec2(RAIL_WIDTH_PTS, RAIL_HIT_PTS),
+    )
+}
+
 /// **The collapse control on an open side** — the little tab that minimises
 /// it.
 pub(super) fn draw_collapse(ctx: &mut Ctx<'_>, ui: &mut egui::Ui, side: DockSide, area: Rect) {
@@ -116,33 +137,7 @@ pub(super) fn draw_collapse(ctx: &mut Ctx<'_>, ui: &mut egui::Ui, side: DockSide
         DockSide::Left => "\u{25c2}",
         DockSide::Right => "\u{25b8}",
     };
-    // ALWAYS THE TRAILING END OF THE TAB ROW — the right-hand end of the
-    // dock, on both sides.
-    //
-    // Putting it on each side's INNER edge reads well — the operator's hand is
-    // already over the document — and is wrong, because **tabs start at the
-    // dock's left edge in both docks**: on the right-hand dock the inner edge
-    // is exactly where the first tab is, and the chevron lands on top of it.
-    // Two controls occupying one rectangle is a collision no test sees; only a
-    // screenshot does.
-    //
-    // So the rule is the one every program in the class uses: the collapse
-    // control sits at the END of the tab row, where the tabs are not. For the
-    // left dock that happens to be the inner edge; for the right dock it is the
-    // outer one.
-    //
-    // Inset by the splitter's thickness only on the side the splitter is on —
-    // a click that could mean either "collapse" or "resize" is a click whose
-    // meaning depends on a pixel.
-    let t = plan::SPLITTER_THICKNESS;
-    let right = match side {
-        DockSide::Left => area.right() - t - RAIL_WIDTH_PTS,
-        DockSide::Right => area.right() - RAIL_WIDTH_PTS,
-    };
-    let rect = Rect::from_min_size(
-        egui::pos2(right, area.top()),
-        egui::vec2(RAIL_WIDTH_PTS, RAIL_HIT_PTS),
-    );
+    let rect = chevron_rect(side, area);
     let button = ui.put(
         rect,
         egui::Button::new(egui::RichText::new(glyph).monospace()).frame(false),

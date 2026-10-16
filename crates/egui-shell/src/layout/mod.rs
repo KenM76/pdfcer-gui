@@ -177,6 +177,11 @@ pub struct LayoutDocument {
     /// keeps R7 true: `egui-shell` has modes, and knows nothing about reading,
     /// reviewing or editing anything.
     pub active_mode: Option<String>,
+    /// One-time reshapes the host has applied to this file's arrangements,
+    /// by ids the host chose. Opaque here: it lets a host change an old
+    /// default once without undoing what the operator arranges afterwards.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub upgrades: Vec<String>,
 }
 
 /// A load's result: the document, and everything that had to be skipped.
@@ -201,6 +206,7 @@ impl LayoutDocument {
             active,
             workspaces: Vec::new(),
             active_mode: None,
+            upgrades: Vec::new(),
         }
     }
 

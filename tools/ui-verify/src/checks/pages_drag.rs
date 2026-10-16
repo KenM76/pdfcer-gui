@@ -6,7 +6,6 @@
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_names, list};
 use crate::checks::{Check, CheckContext};
 use crate::error::{Error, Result};
-use crate::geom::LRect;
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
@@ -215,7 +214,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              derived from did not."
         )));
     }
-    if !overlaps(caret, grid) {
+    if !caret.overlaps(grid) {
         return Ok(Some(format!(
             "the `{CARET}` region ({caret:?}) sits outside the grid ({grid:?}), so the caret \
              was drawn somewhere the operator is not looking. The likeliest cause is a \
@@ -300,9 +299,4 @@ pub(crate) fn open_pages_panel(session: &Session, driver: &Driver, ui_rect: &str
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(20);
     Ok(())
-}
-
-/// Whether two logical rectangles share any area.
-fn overlaps(a: LRect, b: LRect) -> bool {
-    a.min.x < b.max.x && b.min.x < a.max.x && a.min.y < b.max.y && b.min.y < a.max.y
 }

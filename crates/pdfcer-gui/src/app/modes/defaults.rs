@@ -256,13 +256,7 @@ fn spec(mode_id: &str) -> ModeSpec {
             left_width: NAVIGATOR_WIDTH,
             right_width: INSPECTOR_WIDTH,
         },
-        // Edit — everything. Two stacks per side rather than one long tab
-        // bar, because the previous implementation's reasoning still holds:
-        // *"reaching one surface must not hide another you are using AT THE
-        // SAME TIME"*. Navigating pages while reading the layer list is one
-        // such pair; picking an object while reading its properties is the
-        // other, and it is why Objects and Properties are separate stacks
-        // rather than two tabs of one.
+        // Edit — everything.
         "edit" => ModeSpec {
             // **ONE stack, five tabs** — `OPERATOR_REQUESTS.md` O123:
             // *"Layers, Signatures and Fonts join Pages and Bookmarks as tabs
@@ -289,29 +283,13 @@ fn spec(mode_id: &str) -> ModeSpec {
                 Panel::Fonts.command_id(),
             ]],
             right: vec![
-                // **Objects over Properties is the master–detail pair, and
-                // it now has the whole side** — `OPERATOR_REQUESTS.md` O123.
-                //
-                // > *"Objects and Properties become master–detail in one panel
-                // > with a draggable split … I'd also like those one to appear
-                // > in the space where the tool dock currently shown."*
-                //
-                // Two adjacent stacks in ONE column is exactly that shape, and
-                // it is what this dock already builds — a master–detail that
-                // is already a vertical pair with a draggable split. The split
-                // is
-                // `egui_shell::dock`'s own stack splitter, dragged at
-                // `dock/mod.rs`, floored at `plan::MIN_STACK_HEIGHT`.
-                //
-                // So what O123 changes here is **room, not linkage**. A
-                // Tool panel stack takes a third of the side; without it that
-                // third is these two panels'. A row click already raises
-                // `Action::SelectObject` and Properties already reads the same
-                // canvas selection, and neither end is touched by the
-                // arrangement.
-                vec![Panel::Objects.command_id()],
+                // ONE stack, so one tab bar (O301). Properties leads because a
+                // canvas click is how an object is picked, and Properties is
+                // what that click fills; Objects is the list beside it. The
+                // split into a master–detail pair (O123) is one drag away.
                 vec![
                     Panel::Properties.command_id(),
+                    Panel::Objects.command_id(),
                     comments(),
                     Panel::Forms.command_id(),
                     // Redact, and it is deliberately the LAST tab of this
@@ -367,16 +345,8 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // got: the end of the stack that is asked for rather than
                     // offered.
                     //
-                    // **And it must not be the FIRST tab of this stack.**
-                    // These two stacks are the master–detail pair O123 asked
-                    // for — Objects above, its detail below — and a tabbed
-                    // stack draws only its active tab. Putting this panel at
-                    // the front would open Edit with the document's keywords
-                    // where the selected object's properties belong, and
-                    // `ui-verify`'s `the_inspector_is_one_master_detail_column`
-                    // would report `dock.body.file.properties` missing: the
-                    // detail one tab away from the master, which is the failure
-                    // master–detail is defined against.
+                    // Never first: Edit would open on the document's
+                    // keywords where the selected object's properties belong.
                     Panel::DocumentProperties.command_id(),
                     // Align and Distribute, in Edit alone: its toggle is on
                     // the Edit tab, the same reason as Attachments.
@@ -506,24 +476,24 @@ mod tests {
         );
     }
 
-    /// **Objects sits directly above Properties on Edit's right side, and
-    /// nothing sits above them** — `OPERATOR_REQUESTS.md` O123, parts 3 and 4.
+    /// Edit's right side is one tab bar, Properties first and Objects next
+    /// to it (O301).
     #[test]
-    fn edits_right_side_is_objects_over_properties() {
+    fn edits_right_side_is_one_tab_bar() {
         let edit = layout_for("edit");
-        assert_eq!(edit.right.columns.len(), 1, "one column, two stacks");
+        assert_eq!(edit.right.columns.len(), 1, "one column");
         let stacks = &edit.right.columns[0].stacks;
-        assert_eq!(stacks.len(), 2, "master over detail, and nothing else");
+        assert_eq!(stacks.len(), 1, "one stack, so one tab bar");
         assert_eq!(
-            stacks[0].tabs.first().map(PanelId::as_str),
-            Some(Panel::Objects.command_id()),
-            "Objects must be the master, at the top of the side"
+            stacks[0]
+                .tabs
+                .iter()
+                .take(2)
+                .map(PanelId::as_str)
+                .collect::<Vec<_>>(),
+            [Panel::Properties.command_id(), Panel::Objects.command_id()],
         );
-        assert_eq!(
-            stacks[1].tabs.first().map(PanelId::as_str),
-            Some(Panel::Properties.command_id()),
-            "Properties must be the detail, directly under it"
-        );
+        assert_eq!(stacks[0].active, 0, "Properties is the tab Edit opens on");
     }
 
     /// **Each mode's default is the arrangement `MODES_AND_PANELS.md`

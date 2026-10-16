@@ -60,7 +60,7 @@ _the_comment_list_by_both_routes`, whose header argues it at length).
 
 That the Properties panel's *body* no longer draws the metadata. There is no
 headless frame runner in this crate, so the only oracle for what a body
-draws is `ui-verify` — `the_inspector_is_one_master_detail_column`'s
+draws is `ui-verify` — `the_inspector_is_one_tab_bar`'s
 assertion 2b, which was written for this and, as its own header says, **has
 not been run**. This test pins the structure; that one pins the pixels.
 

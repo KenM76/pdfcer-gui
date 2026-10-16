@@ -223,7 +223,7 @@ term that mattered under one mechanism matters under its replacement.
 ⚠ It is not the whole call site, and the difference is worth stating: no
 unit test can see whether [`body`] still **calls** `elide_to_width` at all.
 Deleting that call leaves every test in this module green. That is the gap
-`the_inspector_is_one_master_detail_column` exists to close, and it is why
+`the_inspector_is_one_tab_bar` exists to close, and it is why
 it samples pixels rather than only reading a trace.
 
 ### `const ROWS_SLOT`
@@ -369,7 +369,7 @@ repeated the row would be a popup that opens and says nothing.
 
 # The measurement this test is built from, and its provenance
 
-The driven check `the_inspector_is_one_master_detail_column` reported
+The driven check `the_inspector_is_one_tab_bar` reported
 **8 of 8 object rows do not fit**, and the panel's own `objects-rows`
 line said how far: `pane=314.0 overflow=473.6`. Re-measured headlessly
 here at the same 314 pt pane (`room` = 296 pt after the expander

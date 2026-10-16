@@ -44,7 +44,11 @@ impl<'a> Dock<'a> {
         } else {
             plan::TAB_BAR_HEIGHT.min(rect.height())
         };
-        let bar_rect = Rect::from_min_size(rect.min, Vec2::new(rect.width(), bar_height));
+        let bar_rect = clear_of_chevron(
+            ctx.chevron,
+            side,
+            Rect::from_min_size(rect.min, Vec2::new(rect.width(), bar_height)),
+        );
         let body_rect =
             Rect::from_min_max(egui::pos2(rect.left(), rect.top() + bar_height), rect.max);
 
@@ -108,5 +112,48 @@ impl<'a> Dock<'a> {
 
         ctx.reporter.report(ui, body_rect, || report::body(&panel));
         report.panels_drawn.push(panel);
+    }
+}
+
+/// `bar` shortened so it does not run under `chevron`: from the chevron's
+/// right on the right side, to its left on the left. Unchanged when they do
+/// not meet.
+fn clear_of_chevron(chevron: Option<Rect>, side: DockSide, bar: Rect) -> Rect {
+    let Some(c) = chevron.filter(|c| c.intersects(bar) && bar.height() > 0.0) else {
+        return bar;
+    };
+    let mut out = bar;
+    match side {
+        DockSide::Right => out.min.x = c.right().min(bar.right()),
+        DockSide::Left => out.max.x = c.left().max(bar.left()),
+    }
+    out
+}
+
+#[cfg(test)]
+mod chevron_tests {
+    use super::*;
+
+    fn r(x0: f32, y0: f32, x1: f32, y1: f32) -> Rect {
+        Rect::from_min_max(egui::pos2(x0, y0), egui::pos2(x1, y1))
+    }
+
+    #[test]
+    fn a_bar_under_the_chevron_gives_way_on_each_side() {
+        let bar = r(100.0, 0.0, 400.0, 24.0);
+        let right = clear_of_chevron(Some(r(104.0, 0.0, 120.0, 22.0)), DockSide::Right, bar);
+        assert_eq!(right, r(120.0, 0.0, 400.0, 24.0));
+        let left = clear_of_chevron(Some(r(380.0, 0.0, 396.0, 22.0)), DockSide::Left, bar);
+        assert_eq!(left, r(100.0, 0.0, 380.0, 24.0));
+    }
+
+    #[test]
+    fn a_bar_below_the_chevron_or_absent_keeps_its_width() {
+        let lower = r(100.0, 300.0, 400.0, 324.0);
+        let chevron = Some(r(104.0, 0.0, 120.0, 22.0));
+        assert_eq!(clear_of_chevron(chevron, DockSide::Right, lower), lower);
+        assert_eq!(clear_of_chevron(None, DockSide::Right, lower), lower);
+        let hidden = r(100.0, 0.0, 400.0, 0.0);
+        assert_eq!(clear_of_chevron(chevron, DockSide::Right, hidden), hidden);
     }
 }

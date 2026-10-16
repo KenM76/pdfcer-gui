@@ -245,6 +245,9 @@ pub(crate) struct Ctx<'a> {
     pub icons: Option<&'a mut crate::ribbon::IconPainter<'a>>,
     /// What a panel tab shows.
     pub tab_label: crate::tabshape::TabLabel,
+    /// The collapse chevron of the side being drawn, which a tab bar under it
+    /// gives way to; `None` outside a side.
+    pub chevron: Option<egui::Rect>,
     /// What the operator did, in the order they did it.
     pub intents: Vec<Intent>,
     /// **Where every compartment of the dock was drawn**, accumulated as it is
@@ -339,6 +342,7 @@ mod tests {
             tab_menu: None,
             icons: None,
             tab_label: crate::tabshape::TabLabel::default(),
+            chevron: None,
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,
@@ -398,6 +402,7 @@ mod tests {
             tab_menu: None,
             icons: None,
             tab_label: crate::tabshape::TabLabel::default(),
+            chevron: None,
             intents: Vec::new(),
             geometry: DockGeometry::default(),
             tab_drag: None,

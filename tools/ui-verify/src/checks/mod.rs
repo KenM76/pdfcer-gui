@@ -199,9 +199,10 @@ pub mod markup_resize_preview;
 
 pub mod markup_shapes;
 
-/// `OPERATOR_REQUESTS.md` O123's layout claims, driven — Objects over
-/// Properties in one column with a draggable split, at a width whose rows fit.
-pub mod master_detail;
+/// An open dock's hide arrow sits on its inner edge, clear of every tab.
+pub mod hide_arrow;
+/// Edit's right dock is one tab bar holding the inspector panels.
+pub mod inspector;
 
 pub mod progressive;
 

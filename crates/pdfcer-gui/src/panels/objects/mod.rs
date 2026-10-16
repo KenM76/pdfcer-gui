@@ -216,7 +216,7 @@ pub fn body(
             // published anyway because there is no substitute — the harness
             // cannot read the text a panel renders. What makes the check built
             // on it non-circular is the PIXEL half:
-            // `the_inspector_is_one_master_detail_column` samples the pane's right
+            // `the_inspector_is_one_tab_bar` samples the pane's right
             // edge, and a column of background there cannot be produced by an
             // arithmetic error in the same function that writes this line.
             //

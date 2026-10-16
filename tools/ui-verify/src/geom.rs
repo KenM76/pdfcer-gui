@@ -60,6 +60,15 @@ impl LRect {
         Self { min, max }
     }
 
+    /// Do this rectangle and `other` share any area?
+    #[must_use]
+    pub fn overlaps(&self, other: Self) -> bool {
+        self.min.x < other.max.x
+            && other.min.x < self.max.x
+            && self.min.y < other.max.y
+            && other.min.y < self.max.y
+    }
+
     /// Does this rectangle wholly contain `other`?
     #[must_use]
     pub fn contains_rect(&self, other: Self) -> bool {
