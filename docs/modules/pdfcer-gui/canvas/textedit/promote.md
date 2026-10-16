@@ -69,8 +69,9 @@ uniform one.
 `widen` declines the same way, plus `one-line` for a paragraph of one line
 and `recognised-word` for an invisible (OCR) run, and leaves the run draft. A
 recognised run (a line, or a word on a page an older pdfcer recognised) is
-edited as its own run so its preview keeps the run's size and scale, as the
-OCR layer (`canvas::ocrink`) renders it. It traces `text-edit-widened page= run= block=
+edited as its own run: `edit_block_text` repacks each line with single word
+gaps from its origin, which moves recognised words off the scan words they
+sit over (G203), and folds the layer's own stream into the page's first. It traces `text-edit-widened page= run= block=
 lines= breaks= len= source= ms= looks=` or `text-edit-widen-declined page= run= reason= ms=`.
 
 ## Options

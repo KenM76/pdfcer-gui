@@ -26,9 +26,10 @@ load-bearing: do not build past it. Rulings are recorded in
   trace only (`text-edit-widen-declined`), so he sees a line and no reason.
 - **"OCR words only."** The engine's OCR writer gives every word its own
   `Tm`, size and `Tz`, with no space glyphs, so each word reads back as its
-  own run. `promote::recognised` declines OCR runs outright. On his manual the
-  words are also written sideways (G197), so no line grouping can work until
-  that lands.
+  own run. `promote::recognised` declines OCR runs outright. G197 and G201
+  are consumed (lines lie along the words, one run per line), but
+  `edit_block_text` repacks a paragraph with single word gaps, moving
+  recognised words off their scan; a position-keeping paragraph edit is G203.
 - **"Reflow does nothing."** It re-wraps at the paragraph's own width, which
   changes nothing for an unedited paragraph. The *already fits* sentence is
   hidden behind engine notes that are always present. When the click did open
