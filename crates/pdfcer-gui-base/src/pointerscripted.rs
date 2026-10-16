@@ -89,6 +89,15 @@ pub fn scripted() -> bool {
     SCRIPTED.load(Ordering::Relaxed)
 }
 
+/// Whether typing can reach `ctx`'s window: the platform has not taken its
+/// focus away, or a script delivers the keys, which needs no OS focus. A
+/// scripted dialog opens inactive so it never takes the operator's keyboard,
+/// and a field waiting for OS focus there would wait forever.
+#[must_use]
+pub fn window_takes_keys(ctx: &egui::Context) -> bool {
+    scripted() || ctx.input(|i| i.viewport().focused) != Some(false)
+}
+
 /// Frames a drag spends moving when the step does not say.
 const DEFAULT_DRAG_STEPS: usize = 6;
 

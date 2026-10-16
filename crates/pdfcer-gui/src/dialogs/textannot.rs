@@ -713,7 +713,7 @@ impl TextAnnotDialog {
         // So an attempt is only counted while the window is focused. The bound
         // keeps its original meaning — *don't fight the operator's own click* —
         // and stops being consumed by a wait that has nothing to do with them.
-        let window_focused = ui.ctx().input(|i| i.viewport().focused) != Some(false);
+        let window_focused = pdfcer_gui_base::pointerscripted::window_takes_keys(ui.ctx());
         // Published because a field that never takes focus is a whole
         // defect class in this shell — *"it doesn't type anything in the box
         // when I type"* — and it is invisible from outside: the box is drawn,

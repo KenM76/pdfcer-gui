@@ -409,7 +409,7 @@ impl FormFieldDialog {
         // the foreground to a process that does not already have it. Spending
         // the eight frames during that wait means every attempt is made at a
         // window that cannot hold focus.
-        let window_focused = ui.ctx().input(|i| i.viewport().focused) != Some(false);
+        let window_focused = pdfcer_gui_base::pointerscripted::window_takes_keys(ui.ctx());
         crate::diag::trace_on_change("form-field-name", || {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
