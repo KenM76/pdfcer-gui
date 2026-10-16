@@ -4,6 +4,10 @@ A run draft edits one show operator, and a show operator holds no line break.
 Enter in a run draft therefore opens the run's **paragraph**: `open` re-anchors
 the draft as `Anchor::Block`, whose commit is `EditSession::edit_block_text`,
 and the keystroke then inserts its line break as in any multi-line draft.
+Backspace at a line's start, Delete at its end and a paste holding a line
+break call `open` too (`edits::open_paragraph`), so they join or break lines
+as Enter does; where `open` declines they act within the line, and a paste
+joins its lines with spaces.
 `widen` does the same on a click: a run in a paragraph of two or more lines
 opens as the paragraph, so text written as several lines re-opens as one
 draft.
@@ -50,10 +54,11 @@ a line-only text inside a paragraph draft.
 - **`Unrewritable`** — `edit_block_text_preview` refuses the text the break
   would produce (the same refusals the commit would raise); the engine's
   sentence is carried.
+- **`Recognised`** — the run is recognised text (see below).
 
 Each decline traces `text-edit-enter-declined page= run= reason=` with one of
-`no-text`, `no-cells`, `no-paragraph`, `run-not-in-paragraph`, `run-split`,
-`run-text-differs`, `engine-refuses`. A promotion traces
+`recognised-word`, `no-text`, `no-cells`, `no-paragraph`,
+`run-not-in-paragraph`, `run-split`, `run-text-differs`, `engine-refuses`. A promotion traces
 `text-edit-promoted page= run= block= len= caret= source= looks=`.
 
 A paragraph of several looks opens like any other. `edit_block_text` keeps
@@ -66,8 +71,9 @@ inherited one differs), a subset of the engine's
 `BlockEditReport::looks`, so a driven check can tell a mixed paragraph from a
 uniform one.
 
-`widen` declines the same way, plus `one-line` for a paragraph of one line
-and `recognised-word` for an invisible (OCR) run, and leaves the run draft. A
+`widen` declines the same way, plus `one-line` for a paragraph of one line,
+and leaves the run draft. Both decline an invisible (OCR) run as
+`recognised-word`. A
 recognised run (a line, or a word on a page an older pdfcer recognised) is
 edited as its own run: `edit_block_text` repacks each line with single word
 gaps from its origin, which moves recognised words off the scan words they

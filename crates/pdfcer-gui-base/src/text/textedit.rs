@@ -418,6 +418,9 @@ pub enum EnterRefusal {
     NoParagraph,
     /// The engine will not re-write the paragraph; `detail` is its reason.
     Unrewritable { detail: String },
+    /// The line is recognised text: re-writing its paragraph would move its
+    /// words off the scan they sit over.
+    Recognised,
 }
 
 impl EnterRefusal {
@@ -434,6 +437,11 @@ impl EnterRefusal {
                  {detail}. Press Ctrl+Enter to finish this edit."
             )
             .into(),
+            Self::Recognised => "This line is recognised text. A new line would re-space the \
+                                 whole paragraph, moving its words off the scan they sit over, \
+                                 so pdfcer edits it one line at a time. Press Ctrl+Enter to \
+                                 finish this edit."
+                .into(),
         }
     }
 }
@@ -547,6 +555,7 @@ mod tests {
             EnterRefusal::Unrewritable {
                 detail: "x".to_owned(),
             },
+            EnterRefusal::Recognised,
         ] {
             let s = why.line();
             assert!(s.contains("Ctrl+Enter"), "{why:?}: {s:?}");

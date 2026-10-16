@@ -268,11 +268,15 @@ impl Keys<'_> {
         ));
     }
 
-    /// Paste through the same sieve as typing. A line already on the page
-    /// holds no line break, so pasted lines join with spaces and say so; new
-    /// text keeps them.
+    /// Paste through the same sieve as typing. Pasted lines into a line
+    /// already on the page open its paragraph, as Enter does, and keep their
+    /// breaks; where the paragraph cannot be opened they join with spaces
+    /// and say so. New text keeps them.
     fn paste(&mut self, pasted: &str) {
         let text = pdfcer_gui_base::clippaste::textbox::normalise(pasted);
+        if text.contains('\n') && matches!(self.draft.anchor, Anchor::Run { .. }) {
+            self.open_paragraph();
+        }
         let joined = matches!(self.draft.anchor, Anchor::Run { .. }) && text.contains('\n');
         let text = if joined {
             text.replace('\n', " ") // ui-text-exempt: a typed character, not prose
@@ -294,8 +298,20 @@ impl Keys<'_> {
     }
 
     /// Backspace or Delete; with `word`, to the word boundary. A selection is
-    /// removed instead, by either key.
+    /// removed instead, by either key. At a line's start (Backspace) or end
+    /// (Delete) the line's paragraph is opened first, so the key joins the
+    /// line to its neighbour.
     fn remove(&mut self, forward: bool, word: bool) {
+        let d = &*self.draft;
+        let edge = if forward {
+            d.caret >= d.text.chars().count()
+        } else {
+            d.caret == 0
+        };
+        if edge && caret::range(d.mark, d.caret).is_none() && matches!(d.anchor, Anchor::Run { .. })
+        {
+            self.open_paragraph();
+        }
         self.record(EditKind::Deleting);
         let d = &mut *self.draft;
         d.caret = if caret::range(d.mark, d.caret).is_some() {
@@ -471,6 +487,18 @@ impl Keys<'_> {
             EnterMeans::NewLine => self.new_line(),
         }
         Flow::Continue
+    }
+
+    /// Open a run draft's paragraph for a key that crosses the line's edge.
+    /// A refusal leaves the run draft; the key then does what it does in a
+    /// line, so nothing is reported.
+    fn open_paragraph(&mut self) {
+        if matches!(
+            super::promote::open(self.ctx, self.doc, self.draft),
+            Ok(pdfcer_core::text_edit::LineEndSource::Inferred)
+        ) {
+            note::raise(self.ctx, DraftNote::BreaksInferred);
+        }
     }
 
     /// Replace the selection with a line break.

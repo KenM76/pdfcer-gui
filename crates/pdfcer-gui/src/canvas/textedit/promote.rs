@@ -173,11 +173,17 @@ pub fn open(
         return Err(EnterRefusal::NoParagraph);
     };
     let run = *run;
-    let result = paragraph(doc, draft.page, run, original).and_then(|p| {
-        let promoted = promoted(draft, &p);
-        preflight(doc, draft.page, p.block, &promoted)?;
-        Ok((p, promoted))
-    });
+    let result = recognised(doc, draft.page, run)
+        .map_err(|_| Declined {
+            why: EnterRefusal::Recognised,
+            token: "recognised-word",
+        })
+        .and_then(|()| paragraph(doc, draft.page, run, original))
+        .and_then(|p| {
+            let promoted = promoted(draft, &p);
+            preflight(doc, draft.page, p.block, &promoted)?;
+            Ok((p, promoted))
+        });
     match result {
         Ok((p, promoted)) => {
             super::history::embed(ctx, &p.before, &p.after);
@@ -283,9 +289,9 @@ pub fn widen(
 }
 
 /// Declines a recognised (invisible) run — a line, or a word on a page an older
-/// pdfcer recognised: it stays a run draft, so the edit is previewed in the
-/// run's own size and scale, as the OCR layer renders it (`canvas::ocrink`),
-/// which a paragraph rewrite would flatten.
+/// pdfcer recognised: it stays a run draft, because a paragraph rewrite
+/// re-spaces every word from the line's start, off the scan words the layer
+/// sits over (G203).
 fn recognised(doc: &OpenDoc, page: usize, run: usize) -> Result<(), Declined> {
     let ocr = doc.provenance_page_text(page).is_some_and(|text| {
         text.runs

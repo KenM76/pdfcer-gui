@@ -1117,6 +1117,9 @@ pub mod ime;
 pub mod installed_letter;
 /// A key typed mid-line is previewed where the commit puts it.
 pub mod mid_line_preview;
+/// Backspace at a line's start and a multi-line paste open its paragraph;
+/// Enter in a recognised line is declined.
+pub mod paragraph_joins;
 /// A stand-in preview is the text's size, and the status bar says why.
 pub mod preview_fallback;
 pub mod reface_commit;

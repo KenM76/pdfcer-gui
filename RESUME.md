@@ -243,7 +243,7 @@ Rental-form sweep (`tmp` script, Ken's copy only): 32 of 32 line edits commit
 at pin `dd5747d1`. Enter in a line of a one-look paragraph opens the paragraph and breaks it, committed as one
 `edit_block_text` (`canvas::textedit::promote`, `app::actions::blocktext`); measure with
 `ui-verify --check enter_breaks_a_paragraph_on_the_page`. A mixed-look paragraph opens and keeps its looks (G199).
-Next: the open paragraph drawn from `edit_block_text_preview`, then Backspace/Delete joins and multi-line paste.
+Backspace at a line's start, Delete at its end and a multi-line paste open the paragraph too (`edge_keys_open_the_paragraph`); Enter in a recognised line is declined (`enter_in_a_recognised_line_is_declined`, G203).
 
 **Since that release, unpublished:** title bars follow the light or dark
 theme (O281, `app::caption::sync` over `native_window::set_dark_captions`;
