@@ -960,6 +960,9 @@ pub mod paragraph_here;
 /// Word gap… on the text menu lands on its slider.
 pub mod word_gap_here;
 
+/// A Select click on recognised text takes its whole block.
+pub mod ocr_select_block;
+
 /// One click selects a paragraph drawn from several text objects.
 pub mod paragraph_pick;
 
