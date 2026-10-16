@@ -6,6 +6,7 @@
 use std::cell::{Cell, RefCell};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use crate::coords::WindowFrame;
@@ -74,6 +75,35 @@ impl LaunchSpec {
             place: true,
         }
     }
+}
+
+/// Set by `--no-input`: the environment variable a launch without its own
+/// placement is given, so the window opens off every monitor. When set, no
+/// launched window is moved onto the desktop either.
+static OFF_DESKTOP: OnceLock<&'static str> = OnceLock::new();
+
+/// Above both monitors of a side-by-side pair, so no window the harness opens
+/// covers the operator's work or takes a click meant for it.
+const OFF_DESKTOP_VIEWPORT: &str = "-4200,-4200,1400,900";
+
+/// Keep every window launched from here on off the desktop; `viewport_env`
+/// is the profile's placement variable.
+pub fn keep_off_desktop(viewport_env: &'static str) {
+    let _ = OFF_DESKTOP.set(viewport_env);
+}
+
+/// Whether an `x,y,width,height` placement overlaps any monitor.
+fn on_desktop(placement: &str) -> bool {
+    let n: Vec<i32> = placement
+        .split(',')
+        .filter_map(|v| v.trim().parse::<f32>().ok())
+        .map(|v| v as i32)
+        .collect();
+    let [x, y, w, h] = n[..] else {
+        return false;
+    };
+    let (dx, dy, dw, dh) = sys::desktop_bounds();
+    x < dx + dw && x + w > dx && y < dy + dh && y + h > dy
 }
 
 /// **Where every launched window is put**, in desktop pixels.
@@ -188,6 +218,20 @@ impl Session {
         for (k, v) in &spec.env {
             cmd.env(k, v);
         }
+        if let Some(var) = OFF_DESKTOP.get() {
+            match spec.env.iter().find(|(k, _)| k == var) {
+                None => {
+                    cmd.env(var, OFF_DESKTOP_VIEWPORT);
+                }
+                Some((_, placed)) if on_desktop(placed) => {
+                    return Err(Error::new(format!(
+                        "--no-input keeps every window off the desktop, and this check places \
+                         its window on it ({var}={placed}). Reported as SKIP: nothing was driven."
+                    )));
+                }
+                Some(_) => {}
+            }
+        }
         cmd.stderr(Stdio::from(stderr));
         cmd.stdout(Stdio::null());
         cmd.stdin(Stdio::null());
@@ -243,7 +287,7 @@ impl Session {
                 && frame.client_size.1 >= MIN_CLIENT_PX
             {
                 session.window = Some(w);
-                if spec.place {
+                if spec.place && OFF_DESKTOP.get().is_none() {
                     session.place();
                 }
                 break;

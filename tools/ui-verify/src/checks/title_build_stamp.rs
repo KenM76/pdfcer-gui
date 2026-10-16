@@ -15,7 +15,7 @@ const TITLE: &str = "window-title";
 ///
 /// Modest, because nothing here depends on width — and it switches `with_active`
 /// off, which is the property that lets this run beside somebody working.
-const VIEWPORT: &str = "0,0,1400,900";
+const VIEWPORT: &str = "-4200,-4200,1400,900";
 
 /// See the module documentation.
 pub struct TheTitleBarCarriesTheBuildTime;

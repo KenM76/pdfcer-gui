@@ -338,6 +338,11 @@ impl Host {
             // unavailable (see the module header) this is the only route back
             // to a dialog that has fallen behind the parent.
             .with_taskbar(true);
+        // A scripted run's keys need no OS keyboard; a new window the OS
+        // activates takes the operator's typing.
+        if crate::pointerscripted::scripted() {
+            builder = builder.with_active(false);
+        }
         // A SHORT WINDOW, not a single frame, and the reason is measured.
         //
         // One `Focus` on the opening frame was sent, granted — the dialog
@@ -574,7 +579,10 @@ impl Host {
                 if used {
                     // The operator has used this window. Stop asking, for good.
                     child.data_mut(|d| d.insert_temp(self.engaged_key, ENGAGED));
-                } else if opening {
+                } else if opening && !crate::pointerscripted::scripted() {
+                    // Never under a script: its keys reach this viewport
+                    // without the OS keyboard, and an off-screen dialog that
+                    // takes the keyboard takes the operator's typing.
                     child.send_viewport_cmd_to(self.id, egui::ViewportCommand::Focus);
                     // THE ASK, which is a different fact from the grant the
                     // `dialog-focus` line below reports. One line per frame for as long

@@ -18,9 +18,9 @@ const SUBJECT: &str = "file.print";
 /// The window sizes the dialog is driven at, as `width,height` in physical
 /// pixels for `PDFCER_DIAG_VIEWPORT`.
 const VIEWPORTS: &[&str] = &[
-    "-2400,80,1600,1000",
-    "-2400,80,1100,820",
-    "-2400,80,900,700",
+    "-4200,-4200,1600,1000",
+    "-4200,-4200,1100,820",
+    "-4200,-4200,900,700",
 ];
 
 /// See the module documentation.

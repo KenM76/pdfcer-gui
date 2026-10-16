@@ -169,6 +169,10 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
         target,
     };
 
+    if !allow_input && let Some(var) = profile.viewport_env {
+        ui_verify::launch::keep_off_desktop(var);
+    }
+
     let all = checks::all();
     if !selected.is_empty() {
         for want in &selected {
