@@ -1,7 +1,8 @@
 //! `a_recognised_paragraph_edits_word_by_word` — a click in recognised text
 //! opens its word, never the paragraph (the word keeps its in-place preview);
-//! *This paragraph* then opens the recognised paragraph under it, and a
-//! one-word change commits through the engine's word-by-word rewrite: one
+//! *This paragraph* then opens the recognised paragraph under it, the draft is
+//! laid out in place by the engine's recognised preview, and a one-word change
+//! commits through the engine's word-by-word rewrite: one
 //! word replaced, the rest kept where they were, none deleted.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/recognised_paragraph.md`.
@@ -17,6 +18,7 @@ use crate::report::CheckReport;
 const WIDENED: &str = "text-edit-widened"; // ui-text-exempt: a trace event name, never displayed
 const ROW: &str = "menu.item.canvas.text.edit.paragraph_here"; // ui-text-exempt: a trace region name, never displayed
 const APPLIED: &str = "edit-recognised-text-applied"; // ui-text-exempt: a trace event name, never displayed
+const SHAPED: &str = "text-edit-shaped"; // ui-text-exempt: a trace event name, never displayed
 /// On `SITE`, the first word of the layer's first line.
 const ON_RECOGNISED: (f64, f64) = (85.0, 704.0);
 /// Typed at the paragraph's start, so its first word changes and no other.
@@ -101,8 +103,46 @@ fn drive(
     }
     pointer.key(session, None, "Home", None)?;
     session.settle(5);
+    let typed_from = session.trace()?.mark();
     pointer.type_text(session, None, TYPED)?;
     session.settle(10);
+    if let Some(failure) = laid_out_in_place(report, session, typed_from, &path)? {
+        return Ok(Some(failure));
+    }
+    committed_word_by_word(report, session, pointer, &path)
+}
+
+/// The open recognised paragraph's last layout since `from` must be the
+/// engine's in-place one; `Some` says what was traced instead.
+fn laid_out_in_place(
+    report: &mut CheckReport,
+    session: &Session,
+    from: usize,
+    path: &str,
+) -> Result<Option<String>> {
+    let shaped = session
+        .trace()?
+        .last_after(SHAPED, from)
+        .map(|l| l.raw.clone());
+    report.note(format!("layout: {shaped:?}"));
+    let in_place = shaped
+        .as_deref()
+        .is_some_and(|s| s.contains(" block=1 recognised=1 ") && s.contains(" shaped=1 "));
+    Ok((!in_place).then(|| {
+        format!(
+            "the open recognised paragraph traced {shaped:?}; want {SHAPED} with block=1 \
+             recognised=1 shaped=1, the engine's in-place layout. Trace: {path}."
+        )
+    }))
+}
+
+/// Ctrl+Enter must commit the one typed letter as one replaced word.
+fn committed_word_by_word(
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    path: &str,
+) -> Result<Option<String>> {
     let mark = session.trace()?.mark();
     pointer.key(session, None, "Enter", Some("ctrl"))?;
     session.settle(40);

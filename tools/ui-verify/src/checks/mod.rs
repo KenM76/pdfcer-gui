@@ -804,6 +804,8 @@ pub mod models;
 
 /// A part-coloured 3D model draws in its colours, in the viewer and on the page.
 pub mod model_colours;
+/// The 3D viewer draws a compressed mesh in part, under a chosen fit.
+pub mod model_fit;
 /// The 3D viewer says when an assembly coloured the model.
 pub mod model_inferences;
 pub mod model_tree;

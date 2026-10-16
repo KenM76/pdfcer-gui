@@ -106,6 +106,23 @@ screen is the default. Queues `AttachmentAction::SetModelViews`, applied by
 `app::actions::models::set_views`; traces `model-view-views count= default=`.
 A view that cannot be formed queues nothing and shows its sentence.
 
+## Mesh fit
+
+A compressed mesh's arrays can admit more than one shape, or none pdfcer's
+traversal reads (`pdfcer_3d::MeshFit`). The drop-down picks how far the
+assembly goes: *Best fit* (the engine default), *Exact only*
+(`MeshFit::Unique`), *In part* (`MeshFit::Partial`: the triangles decoded
+before the arrays stopped fitting) and *Continued* (`MeshFit::Continue`).
+Picking one assembles the kept PRC bytes again (`models::refit`), keeps the
+camera, and re-frames the bounds. A fit that leaves nothing to draw is not
+applied; the window says so. When the default draws nothing because every
+mesh is compressed, `load_view` opens the model *In part* and says that too.
+
+Everything past *Exact only* is disclosed below the picture in the engine's
+wording (`text::panels::meshfit`): best-fit and partial counts, each reason a
+mesh stopped fitting or was left out, and the parts each list names. Nothing is
+marked on the picture: a partial mesh renders as a whole one would.
+
 ## Lifetime
 
 `DialogsState::model3d`, one at a time; opening another model replaces it,
@@ -126,14 +143,20 @@ and changing documents closes it.
   not a grey); `hues` counts the twelve 30-degree hue sectors holding at
   least 1% of them. The viewer is an immediate viewport no screenshot
   reaches, so these are a driven check's only view of its colours.
+- `model-view-opened` and `model-view-refit` end with `fit= opened-in-part=
+  partial= partial-triangles=drawn/total left-out=`; `model-view-refit` also
+  carries `parts= triangles= best-fit=`.
+- `model-view-refit-refused fit=` — a fit that would leave nothing to draw.
 - `model-view-render-failed error=`
 - `model-view-poster w= h= yaw= pitch= bytes=` — a picture made for the page.
 - Regions: `model3d.image`, `model3d.view.file`, `model3d.view.0`…`4`, `model3d.fit`,
-  `model3d.close`, `model3d.use_on_page`, `model3d.save_picture`, `model3d.parts`.
+  `model3d.close`, `model3d.use_on_page`, `model3d.save_picture`, `model3d.parts`,
+  `model3d.mesh_fit` and its items `model3d.mesh_fit.0`…`3`.
 
 Driven by `ui-verify` checks `a_3d_model_turns_under_the_pointer` (an
 uncoloured model is grey), `a_coloured_3d_model_draws_in_its_own_colours`
 , `the_3d_viewers_view_becomes_the_page_picture` and
 `the_3d_viewer_saves_its_view_as_a_picture`, and
 `the_3d_viewer_opens_on_the_files_view` (the file's view and the way back to
-it), `the_3d_viewer_draws_a_texture` and `the_3d_viewer_lists_the_model_tree`.
+it), `the_3d_viewer_draws_a_texture`, `the_3d_viewer_lists_the_model_tree` and
+`the_3d_viewer_draws_a_mesh_in_part`.

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `wanted` — a real gap — **33 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -138,7 +138,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `blocked` — waiting on something named — **2 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +156,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +167,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `declined` — deliberately no surface — **16 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -209,7 +209,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **315 of 366** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **316 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -229,7 +229,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Replace an existing 3D annotation's poster** — `EditSession::set_3d_poster`, undo kind `CommandKind::SetThreeDPoster` (our `G092`, Pass 440.0) | **shipped.** *Use this view on the page* in the 3D viewer and *Picture…* on the model's Attachments row, one undo entry each; driven by `the_3d_viewers_view_becomes_the_page_picture` and `a_picture_file_becomes_a_3d_models_page_picture`. The viewer's picture crosses as samples through `ImportedImage::from_rgba8` (our `G106`), traced `model-poster-requested … image=pixels`; a picture file traces `image=file`. A clipboard bitmap (`clippaste::image_from_dib`) takes the same route (`clip-pasted … image=pixels`, asserted by `a_picture_copied_in_another_program_pastes_at_the_pointer`). The module `pdfcer_core::image_import::pixels` is `wanted` and consumed whole through that one constructor. Its wrong-length refusal `pdfcer_core::image_import::ImageImportError::BufferSize` is `declined` as a branch: both callers size the buffer from the width and height they pass, and any refusal reaches the operator as its own sentence. |
 | **List the 3D model tree — node names, hierarchy, hidden/suppressed state** — `PrcFile::model_tree`, `ModelNode` (`pdfcer-3d`, engine Pass 461.0) | **shipped, read-only.** A resizable part list beside the 3D viewer's picture (`dialogs::model3d::parts`): one row per node, indented by depth, its name or *unnamed*, a borrowed name explained on hover, and *hidden*, *suppressed* or *not drawn* as stored; the engine's error stands in when the tree cannot be read. Driven by `the_3d_viewer_lists_the_model_tree` on `assembly.prc`. Hiding or picking a part from the list waits on a mesh-to-node link (our `G134`); names and visibility are undriven for want of a fixture (our `G135`). |
 | **Render 3D diffuse textures on an uncompressed mesh** … | **shipped.** The 3D viewer, its page picture and *Use this view on the page* draw through `pdfcer_3d::render_model`, which samples each mesh's texture; the viewer counts textured parts and words each `texture_notes` entry (a texture drawn in its base colour, with the engine's reason) off-canvas. Driven by `the_3d_viewer_draws_a_texture` on `textured.prc` (at least three hues). |
-| **Draw a compressed mesh no fit rebuilds in part** — `AssembleOptions::mesh_fit`, `MeshFit::Partial` / `MeshFit::Continue`, `AssembledModel::partial_triangles` / `partial_why` / `partial_parts`, the module `pdfcer_3d::compressed` (engine Pass 602.0) | **wanted — O304; being wired.** The viewer offers the fit as a choice and words the partial meshes off-canvas in the engine's sentence. `pdfcer_3d::compressed`'s `PartialMesh` is not read here: the shell draws through `render_model`, and drawing the sound and continued triangles differently would mark applied content on the canvas. |
+| **Draw a compressed mesh no fit rebuilds in part** — `AssembleOptions::mesh_fit`, `MeshFit::Partial` / `MeshFit::Continue`, `AssembledModel::partial_triangles` / `partial_why` / `partial_parts`, the module `pdfcer_3d::compressed` (engine Pass 602.0) | **shipped, v0.84.0.** The 3D viewer offers *Mesh fit* (`dialogs::model3d::fit`) and re-assembles under the fit picked, keeping the camera; a fit that leaves nothing to draw is refused and said. A model the default fit leaves empty opens drawn in part (`app::actions::models::assemble_for_view`) and says so. Partial meshes, their reasons and the parts lists are worded off-canvas in the engine's sentences. Driven by `the_3d_viewer_draws_a_mesh_in_part`. `pdfcer_3d::compressed`'s `PartialMesh` is not read here: the shell draws through `render_model`, and drawing the sound and continued triangles differently would mark applied content on the canvas. |
 | **PRC assembly colour/visibility overrides (entity references)** — `EntityOverrides::{Subtree, Everywhere, Ignore}` (`pdfcer-3d`, engine Pass 510.0) | **shipped.** `assemble` applies entity references by default, and the viewer counts and says the parts the assembly recoloured or hid (`t::view_overridden`). Driven by `the_3d_viewer_says_the_assembly_coloured_it` on `overridden.prc`. |
 | **`merge_document` carrying optional-content group (`/OCProperties`) configuration** — layers now merge with the pages | **shipped.** <!--namesake:merge_document--> File ▸ Merge and Insert from file call `EditSession::merge_document` (`app::actions::pages`), so a merged file's layers arrive with no shell change. Whether the Layers panel shows them after the merge is not yet driven. |
 | Transform several selected objects, each by its own matrix, as one command | **consumed** — Align and Distribute › Circular with *Rotate objects*. `pdfcer_core::vector::edit::plan_transform_each` is the engine's own planning half of that verb; the shell calls the verb, which runs it. `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
@@ -261,7 +261,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
-| **Edit a recognised (OCR) paragraph word by word in place** — `recognised_block_at_point`, `edit_recognised_block_text`, `edit_recognised_block_text_preview` | **shipped, past the v0.83.0 tag; request G203.** *This paragraph* on a recognised word opens the paragraph (`canvas::textedit::promote::recognised`; a click opens the word alone, which keeps its in-place preview) and its commit is `edit_recognised_block_text` (`app::actions::blocktext::commit_recognised`). The `_preview` twin is not called: it returns counts, not a layout, so the open paragraph shows its editor box; that is why a click does not open it. Modules `pdfcer_core::edit::recognised_block` and `pdfcer_core::text_edit::recognised_block`. `pdfcer_core::edit::CommandKind::EditRecognisedText` reaches the operator as the engine's own undo label; `pdfcer_core::text_edit::cause::UnsupportedCause::EditSpansStreams` arrives as a text refusal and is worded by `record_edit_text_refusal` from the engine's own `refusal_kind`, like every other cause. Driven by `a_recognised_paragraph_edits_word_by_word`. |
+| **Edit a recognised (OCR) paragraph word by word in place** — `recognised_block_at_point`, `edit_recognised_block_text`, `edit_recognised_block_text_preview` | **shipped; requests G203, G204.** *This paragraph* on a recognised word opens the paragraph (`canvas::textedit::promote::recognised`), drawn in place from the `_preview` layout (`canvas::textedit::shapedblock`) and committed by `edit_recognised_block_text` (`app::actions::blocktext::commit_recognised`). A click opens the word alone: that gesture is shared with the OCR word preview, which widening it has captured before. `CommandKind::EditRecognisedText` is the engine's undo label; `UnsupportedCause::EditSpansStreams` is worded by `record_edit_text_refusal`. Driven by `a_recognised_paragraph_edits_word_by_word`. |
 | **Rewriting a paragraph with its own text keeps its line count** — the wrap tolerance `linebreak::FIT_TOLERANCE` | **Reachable — every paragraph rewrite (G162).** `canvas::textedit::promote::options` passes no wrap width, so `edit_block_text` keeps a paragraph's widest line whole by its own tolerance; `a_paragraph_reopens_as_one_draft` step 5 re-opens an edited paragraph at its line count. |
 | **Exact break marker for pdfcer's own block text** — `pdfcer_core::text_edit::model::line_marks`, `LineEndSource::Marked` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` builds the model `with_line_marks(LineMarks::scan(..))`; `hand_breaks_are_read_from_marks` re-opens a pdfcer-rewritten paragraph as `source=marked` with a break after its longest line kept. Add text's marks are answered at the pin since v0.82.0 (G182); see the wanted row. |
 | **Per-line break-vs-wrap on recognised text blocks** — `pdfcer_core::text_edit::model::line_ends`, `block_text_with_breaks` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` joins each line end as `line_ends` says, and an `Inferred` source raises the `breaks-inferred` draft note (`hand_breaks_are_read_from_marks`). A marked blank line re-opens as one break until `line_gaps` is read (G183, at the pin since v0.82.0; see the wanted row). |
@@ -686,6 +686,7 @@ authoring is not among them: `EditSession::add_text_annotation` with
 - **G192** — `delete_widget` takes one box and renumbers the later boxes of its field, and has no preview. Worked around in `app::actions::forms::delete::widgets`: sorted by field, highest index first, one `delete_widget` each, one `coalesce_last`; a refusal part-way folds and discloses what went. Answered as `delete_widgets`; not yet wired.
 - **G193** — `FieldClip` holds one field and `paste_field` places one, so copying, cutting, pasting or duplicating several form fields is one verb per field; the layout, batch-unique names and radio export values are the shell's, and a refusal part-way is found after earlier fields landed. Worked around in `app::actions::forms::paste::many` (`FieldAction::PasteMany`: one `paste_field`, or `add_radio_button` for another radio box, per field, one `coalesce_last`; a partial paste is said). Answered as `copy_fields` and `paste_fields`; not yet wired.
 - **G194** — `FETCHABLE_MODELS` pins `ocrs` alone, so of the five recognisers the manager can remove, only `ocrs` can be downloaded again; `paddle` ships bare (no manifest), so no add-on for it carries fingerprints, and a fetched `ocrs` has no manifest to verify later. Worked around in `dialogs::ocr_models` (Download only where `fetchable_models` answers; Install from file or folder for the rest; a bare `paddle` folder installs with nothing to check, `checked=0`). Answered as `FETCHABLE_MODELS` with `paddle`, `ocrcer` and manifests; wired: the manager offers Download for each pinned set not installed and writes the set's manifest after its files, and the workaround is deleted.
+- **G204** — `edit_recognised_block_text_preview` returned counts, not a layout, so an open recognised paragraph showed the shell's editor box. Consumed: `canvas::textedit::shapedblock` draws the engine's layout, asserted by `a_recognised_paragraph_edits_word_by_word`. Closed.
 - **G202** — `resize_annotation` and `rotate_annotation` take one id, so a grip or rotate drag over N markups is N commands. Consumed: `app::actions::annots::many` makes one `resize_annotations` / `rotate_annotations` call. Closed.
 - **G203** — `edit_block_text` on a recognised paragraph repacks each line with single word gaps from its origin, moving OCR words off their scan words (about 34 pt on `ocr-layer.pdf` with the text unchanged), folds the layer's stream into the first, and takes in hidden text from another stream. Consumed: `promote::recognised::widen` opens the paragraph from `recognised_block_at_point`; `blocktext::commit_recognised` commits through `edit_recognised_block_text`. Enter in it stays declined (the word diff carries no line break). Closed.
 

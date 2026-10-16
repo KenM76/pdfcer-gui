@@ -2,10 +2,12 @@
 //! `EditSession::recognised_block_at_point` and committed by
 //! `edit_recognised_block_text`: unchanged words keep their place over the
 //! scan, so the rewrite never re-spaces the layer. It opens only on the
-//! paragraph's own answer (`edit.paragraph_here`), never on the page switch:
-//! a word draft is previewed in place in its own font, and the engine offers
-//! no preview of a recognised rewrite. Recognised paragraphs are numbered
-//! among the page's recognised text only, so the anchor says so.
+//! paragraph's own answer (`edit.paragraph_here`), never on the page switch,
+//! so a click keeps the word draft and its in-place preview. The opened
+//! paragraph is previewed in place too, through
+//! `edit_recognised_block_text_preview` (`super::super::shapedblock`).
+//! Recognised paragraphs are numbered among the page's recognised text only,
+//! so the anchor says so.
 
 use pdfcer_core::text_edit::LineEndSource;
 use pdfcer_gui_base::text::draftnote::DraftNote;

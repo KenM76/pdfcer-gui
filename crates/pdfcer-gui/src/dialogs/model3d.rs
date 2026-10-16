@@ -23,6 +23,7 @@ use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDSavedView};
 
 mod axes;
+mod fit;
 mod orbit;
 mod parts;
 
@@ -116,6 +117,8 @@ pub(crate) struct ModelView {
     native: bool,
     /// A picture of this view, waiting for the action queue.
     picture: Option<(PictureFor, Drawn)>,
+    /// Why the mesh fit last picked was not applied.
+    fit_refused: Option<String>,
     /// Views to write into the file and the one to open on, waiting for
     /// the action queue.
     views: Option<(Vec<ThreeDSavedView>, usize)>,
@@ -136,7 +139,7 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} textured={} texture-notes={} placed={} file-view={}",
+                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} textured={} texture-notes={} placed={} file-view={} {}",
                 model.drawn.meshes.len(),
                 model.uncoloured(),
                 model.triangles,
@@ -146,7 +149,8 @@ impl ModelView {
                 model.drawn.textured,
                 model.drawn.texture_notes.len(),
                 model.placed,
-                u8::from(saved.is_some())
+                u8::from(saved.is_some()),
+                fit::trace_fields(&model)
             )
         });
         crate::diag::trace(|| {
@@ -174,6 +178,7 @@ impl ModelView {
             escape_left_full_screen: false,
             native: false,
             picture: None,
+            fit_refused: None,
             views: None,
         }
     }
@@ -385,6 +390,7 @@ impl ModelView {
             ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
                 .on_hover_text(t::view_perspective_tooltip());
             self.axes_control(ui);
+            self.mesh_fit_control(ui);
             self.full_screen_control(ui);
         });
         ui.small(t::view_hint());
@@ -443,12 +449,7 @@ impl ModelView {
         if !self.model.placed {
             ui.small(t::mesh_placement_note());
         }
-        if self.model.skipped > 0 {
-            ui.small(t::mesh_skipped(self.model.skipped));
-        }
-        if self.model.best_fit > 0 {
-            ui.small(t::mesh_best_fit(self.model.best_fit));
-        }
+        fit::disclose(ui, &self.model, self.fit_refused.as_deref());
         if self.model.overridden > 0 {
             ui.small(t::view_overridden(self.model.overridden));
         }

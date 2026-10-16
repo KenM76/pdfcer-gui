@@ -117,6 +117,15 @@ pub(crate) struct Assembled {
     pub tree: Vec<pdfcer_3d::ModelNode>,
     /// Why [`Self::tree`] could not be read, set by [`load_view`].
     pub tree_error: Option<String>,
+    /// The PRC bytes it was assembled from, kept by [`load_view`] so the
+    /// viewer can assemble them again under another [`Self::fit`].
+    pub data: Vec<u8>,
+    /// How far the assembly went to draw a compressed mesh the arrays do not
+    /// determine; [`pdfcer_3d::AssembledModel`]'s `partial` fields count
+    /// what it drew in part.
+    pub fit: pdfcer_3d::MeshFit,
+    /// The default fit drew nothing, so [`load_view`] opened it in part.
+    pub opened_in_part: bool,
 }
 
 #[cfg(feature = "3d")]
@@ -147,11 +156,14 @@ pub(crate) enum Unassembled {
 }
 
 /// Decode a PRC model and place and colour its parts with
-/// `pdfcer_3d::assemble`.
+/// `pdfcer_3d::assemble_with_options`, drawing compressed meshes as far as
+/// `fit` allows.
 #[cfg(feature = "3d")]
-pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
+pub(crate) fn assemble(data: &[u8], fit: pdfcer_3d::MeshFit) -> Result<Assembled, Unassembled> {
     use pdfcer_3d::AssembleError;
-    let model = pdfcer_3d::assemble(data).map_err(|why| match why {
+    let mut options = pdfcer_3d::AssembleOptions::default();
+    options.mesh_fit = fit;
+    let model = pdfcer_3d::assemble_with_options(data, &options).map_err(|why| match why {
         AssembleError::NotPrc => Unassembled::NotPrc,
         AssembleError::CompressedOnly { count, .. } => Unassembled::Empty { compressed: count },
         AssembleError::NoTriangles => Unassembled::Empty { compressed: 0 },
@@ -168,14 +180,30 @@ pub(crate) fn assemble(data: &[u8]) -> Result<Assembled, Unassembled> {
         opening: None,
         tree: Vec::new(),
         tree_error: None,
+        data: Vec::new(),
+        fit,
+        opened_in_part: false,
     })
+}
+
+/// `model` assembled again from its bytes under `fit`, keeping what
+/// [`load_view`] read beside the meshes.
+#[cfg(feature = "3d")]
+pub(crate) fn refit(model: &Assembled, fit: pdfcer_3d::MeshFit) -> Result<Assembled, Unassembled> {
+    let mut again = assemble(&model.data, fit)?;
+    again.data.clone_from(&model.data);
+    again.aspect = model.aspect;
+    again.opening.clone_from(&model.opening);
+    again.tree.clone_from(&model.tree);
+    again.tree_error.clone_from(&model.tree_error);
+    Ok(again)
 }
 
 /// Decode a PRC model's placed triangle meshes to STL, or OBJ when `obj`.
 /// The error is the sentence to show.
 #[cfg(feature = "3d")]
 fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
-    let model = assemble(data).map_err(|why| match why {
+    let model = assemble(data, pdfcer_3d::MeshFit::default()).map_err(|why| match why {
         Unassembled::NotPrc => t::mesh_not_prc().to_owned(),
         Unassembled::Unreadable(detail) => t::mesh_unreadable(&detail),
         Unassembled::Empty { compressed } => t::mesh_empty(compressed),
@@ -206,7 +234,7 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
     let data = extract_3d(&view, artwork)
         .map_err(|e| t::extract_failed(&e.to_string()))?
         .data;
-    let mut model = assemble(&data).map_err(|why| match why {
+    let mut model = assemble_for_view(&data).map_err(|why| match why {
         Unassembled::NotPrc => t::view_not_prc().to_owned(),
         Unassembled::Unreadable(detail) => t::mesh_unreadable(&detail),
         Unassembled::Empty { compressed } => t::view_empty(compressed),
@@ -217,7 +245,24 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
         Ok(tree) => model.tree = tree,
         Err(why) => model.tree_error = Some(why.to_string()),
     }
+    model.data = data;
     Ok(model)
+}
+
+/// [`assemble`] at the default fit, or, when that draws nothing because
+/// every mesh is compressed, in part, so the viewer has something to show
+/// and says how it was drawn.
+#[cfg(feature = "3d")]
+fn assemble_for_view(data: &[u8]) -> Result<Assembled, Unassembled> {
+    match assemble(data, pdfcer_3d::MeshFit::default()) {
+        Err(Unassembled::Empty { compressed }) if compressed > 0 => {
+            let mut model = assemble(data, pdfcer_3d::MeshFit::Partial)
+                .map_err(|_| Unassembled::Empty { compressed })?;
+            model.opened_in_part = true;
+            Ok(model)
+        }
+        other => other,
+    }
 }
 
 /// The annotation's width over height, when its `/Rect` has an area.
@@ -696,7 +741,7 @@ mod tests {
         let Ok(model) = std::fs::read("D:/Dev/pdfcer/fixtures/synthetic/prc/assembly.prc") else {
             return; // The engine corpus is absent on this machine.
         };
-        let Ok(assembled) = super::assemble(&model) else {
+        let Ok(assembled) = super::assemble(&model, pdfcer_3d::MeshFit::default()) else {
             panic!("the assembly decodes");
         };
         assert!(assembled.placed);

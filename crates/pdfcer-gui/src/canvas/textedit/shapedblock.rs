@@ -2,7 +2,8 @@
 //! where it will be written
 //!
 //! [`shape`] lays an `Anchor::Block` draft out through
-//! `EditSession::edit_block_text_preview` and joins the preview's runs, one
+//! `EditSession::edit_block_text_preview`, or a recognised paragraph's
+//! through `edit_recognised_block_text_preview`, and joins the preview's runs, one
 //! per look, into one [`Shaped`]: every glyph's outline in its own run's ink,
 //! and a caret stop before every character of the draft. A character the
 //! layout draws no glyph for (the space where a line wraps, a typed break, a
@@ -13,6 +14,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/shapedblock.md`.
 
 use egui::{Color32, Pos2, Vec2};
+use pdfcer_core::page_tree::Rect;
+use pdfcer_core::text_edit::{BlockEditLine, TextEditPreview};
 use pdfcer_gui_base::text::previewfallback::PreviewFallback;
 use pdfcer_render::tiny_skia::Path;
 
@@ -44,6 +47,35 @@ impl Glyph {
     }
 }
 
+/// The engine's layout of a paragraph rewrite: its lines, its runs, and its
+/// box before and after.
+type Layout = (Vec<BlockEditLine>, Vec<TextEditPreview>, Rect, Rect);
+
+/// The layout of paragraph `block` on `page` rewritten to `text`, from the
+/// preview twin of the verb its commit calls: a recognised paragraph is
+/// numbered among the page's recognised text and rewritten word by word.
+fn layout(
+    doc: &OpenDoc,
+    page: usize,
+    block: usize,
+    text: &str,
+    recognised: bool,
+) -> Result<Layout, PreviewFallback> {
+    let options = super::promote::options(doc);
+    let session = &doc.session;
+    if recognised {
+        let p = session
+            .edit_recognised_block_text_preview(page, block, text, &options.edit)
+            .map_err(|_| PreviewFallback::Refused)?;
+        Ok((p.lines, p.runs, p.old_bbox, p.new_bbox))
+    } else {
+        let p = session
+            .edit_block_text_preview(page, block, text, &options)
+            .map_err(|_| PreviewFallback::Refused)?;
+        Ok((p.lines, p.runs, p.old_bbox, p.new_bbox))
+    }
+}
+
 /// The paragraph `block` on `page` rewritten to `text`, laid out as it will
 /// be committed.
 ///
@@ -57,16 +89,13 @@ pub(super) fn shape(
     page: usize,
     block: usize,
     text: &str,
+    recognised: bool,
 ) -> Result<Shaped, PreviewFallback> {
     if text.trim().is_empty() {
         return Err(PreviewFallback::Unpaired);
     }
-    let preview = doc
-        .session
-        .edit_block_text_preview(page, block, text, &super::promote::options(doc))
-        .map_err(|_| PreviewFallback::Refused)?;
-    let lines: Vec<Line> = preview
-        .lines
+    let (preview_lines, runs, o, b) = layout(doc, page, block, text, recognised)?;
+    let lines: Vec<Line> = preview_lines
         .iter()
         .map(|l| Line {
             x: l.origin_x,
@@ -74,12 +103,12 @@ pub(super) fn shape(
             width: l.width,
         })
         .collect();
-    let first = preview.runs.first().ok_or(PreviewFallback::Unpaired)?;
+    let first = runs.first().ok_or(PreviewFallback::Unpaired)?;
     let (first_ink, invisible) = ink_of(first);
     let view = doc.session.view();
     let fonts = &doc.settings.render_options().fonts;
     let mut glyphs = Vec::new();
-    for run in &preview.runs {
+    for run in &runs {
         let outlines = pdfcer_render::edit_preview::preview_outlines(&view, run, fonts);
         if outlines.skipped.is_some() {
             return Err(PreviewFallback::NoOutlines);
@@ -109,8 +138,6 @@ pub(super) fn shape(
         .map(|g| Vec2::new(g.matrix[2] as f32, g.matrix[3] as f32))
         .max_by(|a, b| a.length().total_cmp(&b.length()))
         .ok_or(PreviewFallback::Unpaired)?;
-    let b = preview.new_bbox;
-    let o = preview.old_bbox;
     let (inks, outlines) = glyphs.into_iter().map(|g| (g.ink, g.path)).unzip();
     Ok(Shaped {
         outlines,

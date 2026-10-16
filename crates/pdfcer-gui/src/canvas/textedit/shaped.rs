@@ -45,27 +45,29 @@ struct Key {
     /// The run index, or the block index when `block`.
     run: usize,
     block: bool,
+    /// A recognised paragraph, numbered among the page's recognised text.
+    recognised: bool,
     original: String,
     text: String,
 }
 
 impl Key {
     fn of(draft: &Draft) -> Option<Self> {
-        let (run, block, original) = match &draft.anchor {
-            Anchor::Run { run, original } => (*run, false, original),
-            // The engine offers no layout preview of a recognised rewrite.
+        let (run, block, recognised, original) = match &draft.anchor {
+            Anchor::Run { run, original } => (*run, false, false, original),
             Anchor::Block {
-                recognised: true, ..
-            } => return None,
-            Anchor::Block {
-                block, original, ..
-            } => (*block, true, original),
+                block,
+                original,
+                recognised,
+                ..
+            } => (*block, true, *recognised, original),
             _ => return None,
         };
         Some(Self {
             page: draft.page,
             run,
             block,
+            recognised,
             original: original.clone(),
             text: draft.text.clone(),
         })
@@ -76,6 +78,7 @@ impl Key {
         self.page == other.page
             && self.run == other.run
             && self.block == other.block
+            && self.recognised == other.recognised
             && self.original == other.original
     }
 }
@@ -166,8 +169,9 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
         return;
     }
     let (shaped, refused, tier) = if key.block {
-        let shaped =
-            crate::diag::muted(|| super::shapedblock::shape(doc, key.page, key.run, &key.text));
+        let shaped = crate::diag::muted(|| {
+            super::shapedblock::shape(doc, key.page, key.run, &key.text, key.recognised)
+        });
         let refused = matches!(shaped, Err(PreviewFallback::Refused));
         (shaped, refused, "Block".to_owned())
     } else {
@@ -222,10 +226,11 @@ fn store(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "text-edit-shaped page={} run={} block={} chars={} shaped={} refused={} tier={tier}",
+            "text-edit-shaped page={} run={} block={} recognised={} chars={} shaped={} refused={} tier={tier}",
             key.page,
             key.run,
             u8::from(key.block),
+            u8::from(key.recognised),
             key.text.chars().count(),
             u8::from(shaped.is_some()),
             u8::from(refused),
