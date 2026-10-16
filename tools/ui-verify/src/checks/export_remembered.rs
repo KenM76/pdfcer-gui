@@ -313,12 +313,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx.pdf.clone().ok_or_else(|| {
-        Error::new(
-            "no --pdf. All three export commands decline with nothing open, so there would be \
-             no window and no line to read.",
-        )
-    })?;
+    // All three export commands decline with nothing open, so a document is
+    // required; the committed title block is the default.
+    let pdf = match &ctx.pdf {
+        Some(pdf) => pdf.clone(),
+        None => crate::checks::driving::repo_fixture("a1-titleblock.pdf", "It is committed.")?,
+    };
     let Some(dir) = userdata(&exe) else {
         return Err(Error::new(
             "the executable under test has no parent directory, so its `userdata` folder cannot \

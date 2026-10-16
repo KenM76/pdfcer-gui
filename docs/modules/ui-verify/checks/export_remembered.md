@@ -144,10 +144,14 @@ reported as a note naming the document. The other eleven are unaffected,
 and the count in the pass note says eleven so that nobody reads the green
 as covering twelve.
 
+# The document
+
+`--pdf` if given, else `fixtures/a1-titleblock.pdf`. All three export
+commands decline with nothing open, so there is always a document.
+
 # Every way this reports SKIP
 
-No binary; no `--pdf` (all three commands decline with nothing open, so
-there would be no window and no line); the preferences file could not be
+No binary; the preferences file could not be
 reset; the process never saw `PDFCER_DIAG`; one of the three `-open` lines
 absent; a seeded value that turns out to equal the shipped default; or the
 two runs disagreeing about `suggestion=`, which would mean the control and

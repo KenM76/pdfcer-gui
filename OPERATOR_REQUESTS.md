@@ -3369,14 +3369,124 @@ defect, and the harness said so in its own words rather than going green.
 
 Cited: `text/panels/properties.rs:415-417`, `panels/pages/mod.rs:203`, `panels/docprops/mod.rs:538`, `text/new_document.rs:180-197`, `app/fontband.rs:356`, `panels/properties/text.rs:748`, `panels/properties/tool.rs:212`, `text/forms/mod.rs:583`.
 
-## O195 — ◑ **FILED** — smart select is not available in Review mode
+## O195 — ◑ **FILED 2026-09-13** — smart select is not available in Review mode
+
+> *“Also review tab should also have access to the smart select selector.”*
+
+**`view.smart_select` is gated on `mode.edit_content` in the ribbon manifest and
+in the navigate rail**, so it is offered in Edit and nowhere else. He wants it in
+**Review** as well.
+
+**Why it is the right ask, not a convenience.** Smart select governs what a click
+on a drawing resolves to. Review mode is where he marks up someone else's sheet —
+clouds, highlights, comments anchored to things — and every one of those
+gestures starts by pointing at a piece of geometry. Without smart select, Review
+mode points at whatever single PDF path object happens to be under the cursor,
+which on his sheets is routinely a lump holding thousands of anchors. **The mode
+that most needs help resolving what you meant is the one it is withheld from.**
+
+**What to build:**
+
+- Offer `view.smart_select` when the mode is Review as well as Edit — in the
+  ribbon, in the navigate rail, and anywhere else the condition is written.
+- ❌ ★ ~~**The condition is the whole fix, and that is the point of R8:** the
+  capability is registered once and the manifest decides where it appears. No new
+  command, no second implementation.~~ **FALSIFIED 2026-09-13 — see MEASURED
+  below.** The clause that followed it was the right instinct and is what
+  happened: *“if it turns out to need more than a condition change, that is a
+  finding about the command's coupling to Edit mode and gets written up.”*
+  It needs more than a condition change. It is written up below.
+- ⚠ **Check what smart select actually DOES in Review before shipping it
+  there.** If its substitution path is wired to the editing selection model
+  rather than to the pick, offering it in Review would arm a control that does
+  nothing — which is worse than its absence, and is the exact failure R9 exists
+  to prevent.
+- A driven check that switches to Review and asserts the control is present,
+  armed, and changes what a click resolves to.
+
+★★ **Read `shell/manifest/rail.rs` before editing it.** That file carries a
+long note about `view.smart_select`'s placement which was wrong once already and
+was corrected in place; the reasoning there is about *where the toggle belongs*,
+and this row changes *which modes see it*, which is a different axis. Do not read
+the correction as settling this question.
+
+### ❌ MEASURED 2026-09-13 — a condition change would ship an inert button
+
+**The ⚠ clause in this row was the right one to write, and it fired.** Smart
+select's substitution is wired to **the pick**, not to the editing selection model
+— one funnel, `canvas/input.rs:195` `scope.resolve(targets, page_index, target)`.
+That is the good half. The bad half is that **in Review the pick funnel is never
+reached.**
+
+`canvas/clicking.rs:592` hands the press to text selection whenever
+`textsel::takes_the_press(tool, caps)` — and `canvas/textsel/gate.rs:272-273`
+is:
+
+```rust
+tool.is_text() || (matches!(tool, CanvasTool::Select) && !caps.edit_content)
+```
+
+Review has `edit_content == false`, so **an ordinary arrow click in Review is
+consumed as a text sweep** and the content ladder below it — which contains
+`probe(... scope)`, the double-click enter-container arm, the leave-container arm
+and `selection.click` — is structurally unreachable. The project already knows
+this and says so at `canvas/clicking.rs:444-449`: *“a rung below it is a rung
+that never runs.”* A test pins the gate deliberately (`gate.rs:338-341`).
+
+★★★ **So the preference is already ON in Review and always has been.**
+`app/frame.rs:430` syncs it unconditionally every frame, `canvas/smart.rs:146-149`
+defaults it to `true`, and `app/conditions/armed.rs:146-147` publishes its pressed
+state in every mode. **What Review lacks is not the mechanism and not the setting.
+It is a consumer.** ⇒ Adding the toggle to the Review ribbon would put a
+pressable, correctly-lit control in front of him that changes nothing about what
+his click selects — the exact R9 failure this row warned against, and a direct
+violation of `app/modes/capability.rs:20-23`: *“A mode changes what is visible.
+It never makes a visible control silently inert.”*
+
+**What the real work is.** Making smart select mean something in Review means
+letting a Review click resolve to page content — which is what `edit_content`
+exists to prevent. `capability.rs:116-130` argues the case: *“Selection is the
+only route to the verbs... A selection with nothing to read it is not
+inspection.”* ⇒ **This is a capability-model question, not a manifest
+question**, and the same file already names the shape of the answer at
+`:132-136`: the day canvas selection reaches a different operand space, it gets
+its own capability.
+
+★★ **But the ask is still right, and the argument in this row still stands.**
+He is not asking for a toggle; he is asking to be able to point at a thing on a
+busy sheet while marking it up. Review is where he does that. ⇒ **The
+deliverable is that a Review click resolves the way he means, not that a control
+appears** — and if that is achieved, whether the toggle is also shown becomes a
+detail rather than the feature.
+
+⚠ **A likely regression to check on the way, unverified.** The one place
+`scope` *is* live in Review today is the image arm at `clicking.rs:572-584`, and
+`allowed_candidates` classifies the **resolved** target (`input.rs:196`). An image
+inside a title-block form therefore resolves to the container, whose class is
+`FormXObject`, which the image-only `PickFilter` then rejects — selecting
+nothing. ⇒ **Drive this before assuming it; it is read from a contract, not
+from a run.**
+
+**If it does ship, the sites are known:** `app/conditions/mod.rs:759-761` must
+publish a new condition name first (there is no `mode.review` condition — the
+mode ids are *commands*, `app/dispatch.rs:1397*`; capability is derived from a
+mode's tabs, `capability.rs:32-45`), then `shell/commands/tests.rs:274`'s
+allow-list, `shell/commands/catalog/view.rs:338`, `shell/manifest/view.rs:271`,
+`shell/manifest/rail.rs:261`, `app/dispatch/navigate.rs:121`, and
+`shell/ron/built_in.ron:160,537` **regenerated, never hand-edited**
+(`cargo test -p pdfcer-gui rewrite_built_in_ron -- --ignored`). Four notes and
+three tests assert the current placement and each carries reasoning that must be
+rewritten rather than deleted — `rail.rs:431-466`, `:483-516`,
+`MODES_AND_PANELS.md:554-564`. ★ And `left_rail.rs:277`'s message
+*“Read drops the Points tool and Review drops nothing”* **becomes false**
+the moment Review gains a rail row that Read does not have.
 
 **The driven check to extend, not duplicate:** `tools/ui-verify/src/checks/smart_select.rs`
 hard-codes `const MODE: &str = "edit"` at `:100`. Parameterise it.
 
-Cited: `canvas/input.rs:195`, `canvas/clicking.rs:592`, `canvas/textsel/gate.rs:272-273`, `canvas/clicking.rs:444-449`, `gate.rs:338-341`, `app/frame.rs:430`, `smartselect.rs:146-149` (base), `app/conditions/armed.rs:146-147`, `app/modes/capability.rs:20-23`, `capability.rs:116-130`, `clicking.rs:572-584`, `input.rs:196`, `app/conditions/mod.rs:759-761`, `app/dispatch.rs:1397`, `capability.rs:32-45`, `shell/commands/tests.rs:274`, `shell/commands/catalog/view.rs:338`, `shell/manifest/view.rs:271`, `shell/manifest/rail.rs:261`, `app/dispatch/navigate.rs:121`, `rail.rs:431-466`, `MODES_AND_PANELS.md:554-564`, `left_rail.rs:277`.
+---
 
-## O196 — ◑ **FOUND, not yet reported by the operator** — three export windows forget every setting, and nothing in the program remembers them
+## O196 — ◑ **BUILT AND DRIVEN — NOT CLOSED, that is yours; not something you asked for** — three export windows forget every setting, and nothing in the program remembers them
 
 **The precedent is already built and was built for exactly this.** Operator
 request **O166** produced `PrintDialog::open(doc, remembered: &PrintPrefs)` and
@@ -3400,9 +3510,9 @@ narrow sabotage of one window's constructor produced `RESULT: FAIL` naming that
 window's four rows and nothing else. The check needs no mouse at all — it
 opens all three windows in one launch through `PDFCER_DIAG_INVOKE` and reads
 three trace lines — so it is the cheapest driven check in the suite and runs
-on a machine whose desktop is in use.
-
-Cited: `dialogs/export_image.rs:270-295`, `dialogs/export_text.rs:137-158`, `dialogs/export_dxf.rs:116`.
+on a machine whose desktop is in use. It SKIPs without `--pdf`: run it as
+`ui-verify --no-input --pdf fixtures/a1-titleblock.pdf --check
+the_export_windows_open_on_the_settings_you_last_used`.
 
 ## O197 — **FILED** — the landing page sells pdfcer short by reading as a CAD tool, when the PDF compatibility is the bigger feature
 
