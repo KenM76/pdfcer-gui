@@ -338,6 +338,8 @@ pub mod page_ops;
 
 pub mod page_prefetch;
 
+/// A fresh profile draws page previews with no time limit.
+pub mod page_previews_default;
 pub mod page_previews_pref;
 
 /// Fit onto a new sheet scales the drawing by the factor the window quoted.
