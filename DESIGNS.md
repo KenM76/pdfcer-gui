@@ -71,8 +71,9 @@ conflicts with R75 and goes back to him.
    thumbnails, their own answer while the document is open
    (`promote::enabled_on`). *This paragraph* (built), on the caret's menu,
    gives one paragraph its own answer (`promote::here`, keyed by its box's
-   upper-left corner). Not built: the
-   word-gap slider beside the switch.
+   upper-left corner). *Word gap…* (built), on Edit ▸ Content and the
+   caret's menu, opens Settings ▸ Text at the word-gap slider, so the
+   setting that splits a line is one press from the text it splits.
 5. **Engine (requests).** Derived word spaces as break points; mixed
    font/size/colour in `edit_block_text` and `reflow_block` (G079); OCR
    structure readable after writing (space glyphs or line marks), and an

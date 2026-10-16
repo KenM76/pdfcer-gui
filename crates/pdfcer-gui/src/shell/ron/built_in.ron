@@ -308,6 +308,7 @@
                         Command(id: "edit.paragraphs"),
                         Command(id: "edit.paragraphs_page"),
                         Command(id: "edit.paragraph_here"),
+                        Command(id: "edit.word_gap"),
                     ],
                 ),
                 (
@@ -872,6 +873,7 @@
                 Command(id: "edit.paragraphs"),
                 Command(id: "edit.paragraphs_page"),
                 Command(id: "edit.paragraph_here"),
+                Command(id: "edit.word_gap"),
             ],
         ),
         (

@@ -77,6 +77,10 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.paragraph_here", t::edit_paragraph_here(), 416)
             .with_icon("paragraphs")
             .enabled_when("mode.edit_content"),
+        // Settings ▸ Text at the word-gap slider, where text is edited. O295.
+        command("edit.word_gap", t::edit_word_gap(), 417)
+            .with_icon("settings")
+            .enabled_when("mode.edit_content"),
         // ═══════════════════════════════════════════════════════════════════
         // `edit.copy_as_vector` — the clipboard's copy-OUT.
         //

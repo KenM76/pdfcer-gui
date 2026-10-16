@@ -38,6 +38,7 @@ pub fn tab() -> Tab {
                     command("edit.paragraphs"),
                     command("edit.paragraphs_page"),
                     command("edit.paragraph_here"),
+                    command("edit.word_gap"),
                 ],
             ),
             // ---------------------------------------------------------------

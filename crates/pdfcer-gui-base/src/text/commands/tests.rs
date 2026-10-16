@@ -23,6 +23,7 @@ fn all() -> Vec<CommandText> {
         edit_paragraphs(),
         edit_paragraphs_page(),
         edit_paragraph_here(),
+        edit_word_gap(),
         file_save_compacted(),
         file_export_dxf(),
         file_export_image(),

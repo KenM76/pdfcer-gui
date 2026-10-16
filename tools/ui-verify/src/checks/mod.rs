@@ -957,6 +957,9 @@ pub mod paragraphs_page;
 /// One paragraph sent back to lines: its neighbour still opens whole.
 pub mod paragraph_here;
 
+/// Word gap… on the text menu lands on its slider.
+pub mod word_gap_here;
+
 /// The eight resize grips, driven all the way to a committed edit — being
 /// cursored, hit-tested and drag-consuming proves none of that.
 ///

@@ -662,6 +662,7 @@ pub fn built_in() -> Menus {
             Item::command("edit.paragraphs"),
             Item::command("edit.paragraphs_page"),
             Item::command("edit.paragraph_here"),
+            Item::command("edit.word_gap"),
         ]))
         // -------------------------------------------------------------------
         // dock.tab — a panel tab.
