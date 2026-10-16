@@ -243,6 +243,8 @@ pub mod restack;
 /// The annotations a saved file finally lists on its pages.
 mod savedannots;
 pub mod stroke_style;
+/// A typed move and turn applied together are one Undo.
+pub mod typedonestep;
 pub mod typedturn;
 
 /// **Where to click so that a form-field selection CHANGES**, shared by the

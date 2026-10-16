@@ -222,6 +222,14 @@ impl PdfcerApp {
                 super::prefs::apply(pref, &mut self.prefs);
                 return;
             }
+            Action::OneUndoStep(steps) => {
+                let mark = self.undo_mark();
+                for step in steps {
+                    self.apply(step, pixels_per_point);
+                }
+                self.fold_since(mark);
+                return;
+            }
             _ => {}
         }
 
@@ -324,6 +332,7 @@ impl PdfcerApp {
             | Action::SaveAs
             | Action::Find(_)
             | Action::Pref(_)
+            | Action::OneUndoStep(_)
             | Action::RereadWithDuplicateKeys { .. } => {
                 // ui-text-exempt: a panic message, read from a stack trace by
                 // whoever moved one of these arms. Never rendered.

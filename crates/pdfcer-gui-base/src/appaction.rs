@@ -40,11 +40,6 @@ pub enum Action {
     /// the dialog is gone — so the only alternative would be a field on the
     /// application holding a half-finished intent between frames, which is
     /// precisely the state the funnel exists to avoid.
-    ///
-    /// Absolutizing happens in [`crate::app::recent::RecentFiles::remember`]
-    /// rather than here, because it is a property of *storing* a path, not of
-    /// opening one: `Document::load` is perfectly happy with a relative path
-    /// and the operator's shell already resolved it.
     Open(std::path::PathBuf),
 
     /// **Open a document that needs a password, with one.**
@@ -511,8 +506,10 @@ pub enum Action {
     },
     /// **Everything that changes page GEOMETRY** — delete, the four move
     /// verbs, the Bézier handle, and the transform.
-    ///
     Vector(crate::subactions::VectorAction),
+    /// Apply each in order, then fold every command they pushed into one
+    /// undo entry: one operator gesture that needs several verbs.
+    OneUndoStep(Vec<Action>),
     // =======================================================================
     // THE PAGE VERBS — structural edits, and the family that renumbers
     //

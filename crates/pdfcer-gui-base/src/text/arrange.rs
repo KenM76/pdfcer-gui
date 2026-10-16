@@ -74,6 +74,13 @@ pub const fn run_would_drag_the_next_line() -> &'static str {
      line along too — press Escape to select the whole block of text and drag that."
 }
 
+/// Said when one gesture's several commands could not be folded into one
+/// undo entry.
+#[must_use]
+pub fn takes_several_undo_presses(presses: usize) -> String {
+    format!("Taking this back needs {presses} presses of Undo rather than one.")
+}
+
 /// Said when a line's pieces could not be folded into one undo entry.
 #[must_use]
 pub fn line_takes_several_undo_presses(pieces: usize) -> String {

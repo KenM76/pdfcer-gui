@@ -97,7 +97,7 @@ fn drive(
     )
 }
 
-fn fail(session: &Session, want: &str, got: &str) -> String {
+pub(super) fn fail(session: &Session, want: &str, got: &str) -> String {
     format!(
         "{want}; it read `{got}`. Trace: {}.",
         session.trace_path().display()

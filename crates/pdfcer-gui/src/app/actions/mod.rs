@@ -147,6 +147,7 @@ mod foldeach;
 /// protocol are two subjects.
 mod funnel;
 mod movemixed;
+mod onestep;
 /// The three arms that mark content for removal. Its header carries the seam
 /// argument and names the one thing deliberately absent from it.
 mod redact;

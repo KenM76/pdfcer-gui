@@ -508,11 +508,7 @@ pub fn section(
         )
     });
 
-    // Greying, not hiding, and this is the case R9 reserves it for: Apply is
-    // *temporarily* unavailable — type a different number and it works — which
-    // is exactly the distinction the rule draws against a capability that is
-    // absent. Both reasons are on the hover, because a dead button with no
-    // explanation is the defect this project keeps finding.
+    // Greyed, not hidden: temporarily unavailable (R9); both reasons hover.
     let enabled = changed && usable;
     let response = ui
         .add_enabled(enabled, egui::Button::new(t::geometry_apply()))
@@ -524,17 +520,15 @@ pub fn section(
     crate::diag::ui_rect_visible(APPLY_REGION, response.rect, ui.clip_rect());
 
     if response.clicked() {
+        // One Apply is one Undo, however many verbs it takes.
+        let mut steps = Vec::new();
         let plan = plan(draft, bounds);
         if let Some((dx, dy)) = plan.translate {
-            actions.push(translate(page, target, dx, dy));
+            steps.push(translate(page, target, dx, dy));
         }
         if let Some((pivot, factors)) = plan.scale {
-            // Routed through `resizing::action` rather than assembled here,
-            // so the six refusals — not a path, no nodes, no object model — are
-            // asked once and answered the same way for a typed edit as for a
-            // dragged one. A second construction of `MoveNodes` in this file
-            // would be a second place for "can this object be scaled?" to have
-            // an opinion.
+            // Through `resizing::action`, so a typed resize is refused for the
+            // same reasons, in the same words, as a dragged one.
             let planned = resizing::action(
                 &doc.selection,
                 page,
@@ -543,7 +537,7 @@ pub fn section(
                 factors,
             );
             match planned {
-                Ok(action) => actions.push(action),
+                Ok(action) => steps.push(action),
                 // Off-canvas, in words, through the SAME `decline` the grips
                 // use — so a typed refusal and a dragged one produce one
                 // sentence from one place. See `resizing::decline` for why a
@@ -552,7 +546,12 @@ pub fn section(
             }
         }
         if draft.turns() {
-            actions.push(turn(page, target, draft));
+            steps.push(turn(page, target, draft));
+        }
+        if steps.len() > 1 {
+            actions.push(Action::OneUndoStep(steps));
+        } else {
+            actions.extend(steps);
         }
     }
 
