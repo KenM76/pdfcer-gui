@@ -441,6 +441,10 @@ pub struct PointerScript {
     seen: Vec<ViewportId>,
     /// A `shot` delivered and not yet written.
     shot: Option<Shot>,
+    /// The viewport the script last delivered to. It reports OS focus from
+    /// then on: a real click or key reaches only a focused window, and an
+    /// off-screen one never is, so `Response::has_focus` would stay false.
+    holder: Option<ViewportId>,
 }
 
 /// A screenshot owed to the harness.
@@ -470,6 +474,7 @@ impl PointerScript {
             last: None,
             seen: Vec::new(),
             shot: None,
+            holder: None,
         })
     }
 
@@ -618,6 +623,9 @@ impl egui::Plugin for PointerScript {
             self.retire_orphan(input);
         }
         self.write_shot(viewport, input);
+        if self.holder == Some(viewport) {
+            input.focused = true;
+        }
         let Some(step) = self.queue.front_mut() else {
             return;
         };
@@ -632,6 +640,8 @@ impl egui::Plugin for PointerScript {
             return;
         };
         self.last = Some((viewport, frame));
+        self.holder = Some(viewport);
+        input.focused = true;
         step.sent += 1;
         // Capping keeps time monotonic: each capped time exceeds the last,
         // and the step's end hands back the real clock, which is later still.
@@ -687,6 +697,7 @@ mod tests {
             last: None,
             seen: Vec::new(),
             shot: None,
+            holder: None,
         }
     }
 

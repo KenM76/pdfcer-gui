@@ -40,6 +40,10 @@ pub struct Need<'a> {
     /// for `delete_pressed`'s reason. A page-content nudge commits through the
     /// drag's release, which needs the model.
     pub arrow_pressed: bool,
+    /// Whether a Tab press was claimed for the object ring. The ring is the
+    /// page's objects, so spending the press needs the model even when nothing
+    /// is selected and nothing else in the frame asks for it.
+    pub tab_claimed: bool,
     /// The canvas selection, for the rung it is on.
     pub selection: &'a SelectionState,
 }
@@ -50,6 +54,7 @@ impl Need<'_> {
     pub fn wanted(&self) -> bool {
         self.secondary_clicked
             || self.measure_armed
+            || self.tab_claimed
             || self.delete_at_a_deeper_rung()
             || self.arrow_on_page_content()
             || gesture_needs_model(self.outcome)

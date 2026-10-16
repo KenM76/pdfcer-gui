@@ -96,8 +96,27 @@ fn quiet<'a>(selection: &'a SelectionState, idle: &'a GestureOutcome) -> Need<'a
         measure_armed: false,
         delete_pressed: false,
         arrow_pressed: false,
+        tab_claimed: false,
         selection,
     }
+}
+
+/// A Tab claimed for the object ring asks for the model with nothing
+/// selected: that is the press that picks the first object.
+#[test]
+fn a_claimed_tab_asks_for_the_object_model_with_nothing_selected() {
+    let idle = GestureOutcome::Idle;
+    let empty = SelectionState::default();
+    assert!(!quiet(&empty, &idle).wanted());
+    let need = Need {
+        tab_claimed: true,
+        ..quiet(&empty, &idle)
+    };
+    assert!(
+        need.wanted(),
+        "a claimed Tab must decompose the page, or `objring::advance` finds no provider and \
+         the press is spent on nothing"
+    );
 }
 
 /// **THE TRIPWIRE.** Delete at a deeper rung must ask for the model.

@@ -759,7 +759,6 @@ fn tools/ui-verify/src/checks/stamp_size_properties.rs::drive
 fn tools/ui-verify/src/checks/std14_face.rs::drive
 fn tools/ui-verify/src/checks/structure_round_trip.rs::drive
 fn tools/ui-verify/src/checks/system_theme.rs::assess
-fn tools/ui-verify/src/checks/tab_navigation.rs::drive
 fn tools/ui-verify/src/checks/tab_order_drag.rs::drive
 fn tools/ui-verify/src/checks/tab_reorder.rs::drive
 fn tools/ui-verify/src/checks/tabs_look.rs::assess

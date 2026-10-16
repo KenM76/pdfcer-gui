@@ -331,6 +331,7 @@ pub(super) fn interact(
         measure_armed: active_tool.measure_kind().is_some(),
         delete_pressed,
         arrow_pressed,
+        tab_claimed: crate::canvas::tabnav::pending(&ctx, crate::canvas::tabnav::Scope::Object),
         selection: &selection,
     }
     .wanted();

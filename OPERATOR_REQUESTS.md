@@ -2603,7 +2603,7 @@ moment a drag starts, because the drag's own rubber-band is then the cursor.
 
 Nothing in the engine is involved: this draws and commits nothing.
 
-## O204 — ◑ **BOTH HALVES ARE BUILT** — Tab escapes into the ribbon instead of moving through the form
+## O204 — ◑ **BUILT AND DRIVEN — NOT CLOSED, that is yours** — Tab escapes into the ribbon instead of moving through the form
 
 > *"when I press tab while in a form I end up tabbing through the menus instead
 > of the form items. The tab should tab through whatever space I have clicked
@@ -2705,13 +2705,33 @@ stop that is the entire drawing. It wraps within the page, per decision 3.
 Unit-tested over the engine’s own form fixture, falsified, every gate green
 (57 passed, 0 failed, 0 skipped) — **not yet driven**.
 
-**What is still open on this row.** The forms panel’s own tab-order view
-numbers its rows from `/Annots` order while the field ring uses the engine’s
+**Driven, both halves.** Off-screen, through the scripted pointer, whose keys
+enter the frame ahead of the hook exactly as a real keyboard's do.
+
+- `tab_moves_between_form_fields` clicks the first of three text fields, presses
+  Tab, then Shift+Tab, and requires the hook to claim both, the ring to move
+  forward to another field and back to the first. Falsified twice — the claim
+  planted out, and the two directions crossed — each FAIL, each restored.
+- `tab_walks_the_objects_on_a_clicked_page` clicks blank paper on a sheet of
+  three squares in Edit, presses Tab, Tab, Shift+Tab, and requires two
+  different objects forward, a step back to the first, and the selection set
+  by the ring.
+
+**Driving it found the object half had never worked.** A Tab after a page click
+was claimed and then spent on nothing: the page's object model is built only
+when something in the frame asks for it, and a claimed Tab was not one of the
+reasons, so the ring found no model and traced `tab-object-unmodelled`. Every
+unit test handed the ring a model directly. Fixed: a claimed object-ring Tab now
+asks for the model, with a unit test beside the other reasons. The check failed
+before the fix and passes after it.
+
+**What is still open on this row.** The forms panel's own tab-order view
+numbers its rows from `/Annots` order while the field ring uses the engine's
 derived sequence, so on a page carrying `/Tabs /R` or `/C` the two surfaces
 would disagree — and three sentences in that panel state, by name, that the
-order shown is NOT the tab order. Both halves of the gesture, and the panel,
-are still owed a driven check; it runs at the end of this batch rather than
-before each commit.
+order shown is NOT the tab order. Not driven: Tab on a page carrying a
+`/Tabs` order, a radio group's single stop, the crossing to another page's
+field, and the object ring scoped inside a form.
 
 ## O205–O207 — three reports in one message, FILED BEFORE ANY WORK
 

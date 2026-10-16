@@ -131,6 +131,14 @@ pub fn take(ctx: &egui::Context, scope: Scope) -> Option<Request> {
     Some(request)
 }
 
+/// Whether a claimed press for `scope` is waiting to be taken. Does not
+/// take it.
+#[must_use]
+pub fn pending(ctx: &egui::Context, scope: Scope) -> bool {
+    ctx.data(|d| d.get_temp::<Request>(Id::new(REQUEST_KEY)))
+        .is_some_and(|request| request.scope == scope)
+}
+
 /// Drop any claimed press without acting on it.
 pub fn discard(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Request>(Id::new(REQUEST_KEY)));

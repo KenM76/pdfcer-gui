@@ -893,6 +893,9 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // build that ignored the paste-order setting passes the first and fails
         // this one on its first assertion.
         Box::new(field_clipboard::TheAcrobatPasteOrderSwapsWhichChordDoesWhich),
+        // O204's canvas half, kept clear of the form run below, whose order is
+        // argued entry by entry. It opens its own sheet of three squares.
+        Box::new(tab_object_ring::TabWalksTheObjectsOnAClickedPage),
         // Before the click and tab checks because it is the gesture that comes
         // first: he arms a tool and looks at the page before he commits to a
         // placement. It runs on the shared fixture and aim point.

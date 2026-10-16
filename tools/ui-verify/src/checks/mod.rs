@@ -362,6 +362,8 @@ pub mod scale_reads_the_group;
 
 pub mod tab_navigation;
 
+pub mod tab_object_ring;
+
 pub mod unshare_form;
 
 pub mod display_two_rows;

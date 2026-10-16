@@ -93,11 +93,20 @@ Points are in egui logical points of the target viewport, the same space
 `ui-rect` line, with or without its quotes. A dialog is its own viewport,
 so its controls are clicked with its token and its own coordinates.
 
+## Window focus
+
+From its first delivery to a viewport, the script sets `RawInput::focused` on
+that viewport's every frame. A real click or key reaches only a focused window,
+and an off-screen one is never focused, so `Response::has_focus` — which ANDs
+the window's focus with egui's — would stay false for every widget the script
+focuses. The page's claim on Tab is published only while the page has focus,
+so without this the canvas never owns a scripted Tab.
+
 ## What it cannot test
 
 Anything decided below egui is out of reach:
 
-- OS activation and focus (`viewport().focused` stays false off-screen);
+- OS activation (`viewport().focused` stays false off-screen);
 - pointer capture;
 - OS drag-and-drop;
 - the focus-chain regressions.

@@ -104,10 +104,17 @@ rather than as a seventh `bool` nobody can order correctly at the call site.
 
 ### `fn wanted`
 
-The four terms are OR-ed and each is documented on its own field or
+The terms are OR-ed and each is documented on its own field or
 function. Nothing here short-circuits for cost reasons — every term is a
 field read or a `matches!`, and the expensive thing is what this decides
 to call, not the deciding.
+
+### `tab_claimed`
+
+A Tab claimed for the object ring is spent by `objring::advance`, which reads
+the page's objects. With nothing selected nothing else in the frame asks for
+the model, so without this term the first Tab after a click on blank paper
+found no model and was spent on nothing.
 
 ### `fn delete_at_a_deeper_rung`
 

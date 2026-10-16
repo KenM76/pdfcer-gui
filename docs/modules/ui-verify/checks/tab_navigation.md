@@ -49,6 +49,18 @@ _three_clickable_text_boxes` is its guard — **not** one of the engine's own
 form fixtures, none of which carries a text field with a drawn `/AP`, and
 an `/AP`-less field is not drawn on the canvas at all.
 
+# Driven through the scripted pointer
+
+Off-screen, no OS input. With no `--pdf` it opens `three-text-fields.pdf`;
+with one, it copies that document instead and SKIPs if it publishes fewer than
+three fillable text boxes.
+
+# Falsified
+
+- The hook's claim removed: FAIL, *the canvas never claimed it*.
+- The two directions crossed in the claim: FAIL, *a bare Tab moved the ring
+  BACKWARDS*.
+
 ## Item notes
 
 ### `const BOX_LINE`
