@@ -660,6 +660,8 @@ His words: *"Clipboard commands should be on the very left of the edit tab. Text
 
 His words: *"The pdfcer engine has also been updated, so use the latest. Also egui might have been updated too."* … *"Also check for an new and updated features that need to be implemented from the new pdfcer engine."*
 
+**Where it stands.** The engine pin is past v0.89.0 and includes the G210 fix. Of the new engine features, the space audit is built: the *Save a compacted copy* window has a *Where the space goes* fold, listing each kind of content's size now and in the copy. It is unit-tested but not yet driven. The other v0.89.0 changes are 3D mesh fixes that need no GUI change. egui 0.37 is still to do.
+
 ## O315 — **FILED** — text editing behaves as a word processor's does
 
 His words: *"In short, editing should try to work the same way as it would in most Word Processors."* A sweep, not the two drawings: O307–O311 are samples of it.

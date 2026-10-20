@@ -26,6 +26,14 @@ Re-serialising after the picker would be a second computation of the same
 answer, and the two could differ — the session is not editable behind this
 window, but that is a property of today's shell rather than of the code.
 
+## Where the space goes
+
+A fold under the size line lists `pdfcer_core::space_audit::audit` for the file on disk (*Now*) and for the measured copy (*Compacted*). The rows are sorted by the larger of the two, and categories empty in both are left out. Each column sums to its file's length, which is the audit's own invariant. *Earlier versions kept in the file* is usually the row that explains the saving.
+
+- **It is measured only when the fold opens.** That costs two parses and two audits, which a dense sheet does not need to pay just to see the headline number.
+- ***Now* is the file, not the session.** It matches the `before` the size line quotes. A document with no file shows a dash.
+- **A copy that does not parse back lists nothing.** A breakdown of half the trade would be misleading.
+
 ## Why the picker opens AFTER this window and not instead of it
 
 `app::save`'s `save_copy` opens a picker straight away, correctly: a copy

@@ -3,6 +3,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/compact.md`.
 
+use pdfcer_core::space_audit::SpaceCategory;
+
 /// The window's title bar.
 #[must_use]
 pub const fn window_title() -> &'static str {
@@ -94,6 +96,89 @@ pub fn written(path: &str, before: u64, after: u64) -> String {
         bytes(after),
         bytes(before)
     )
+}
+
+/// The fold that lists where the bytes go.
+#[must_use]
+pub const fn space_heading() -> &'static str {
+    "Where the space goes"
+}
+
+/// Hover on the fold.
+#[must_use]
+pub const fn space_tooltip() -> &'static str {
+    "Every byte of the file now and of the compacted copy, sorted into what it is for. The \
+     columns each add up to the whole file."
+}
+
+/// The column over what is on disk now.
+#[must_use]
+pub const fn space_column_now() -> &'static str {
+    "Now"
+}
+
+/// The column over the compacted copy.
+#[must_use]
+pub const fn space_column_copy() -> &'static str {
+    "Compacted"
+}
+
+/// The column over the category names.
+#[must_use]
+pub const fn space_column_what() -> &'static str {
+    "What"
+}
+
+/// Shown in the Now column when the document has no file yet.
+#[must_use]
+pub const fn space_no_file() -> &'static str {
+    "—"
+}
+
+/// What a category of the file holds, in the operator's words.
+///
+/// A category the engine adds later shows its engine name until it is given
+/// one here; its bytes are never hidden.
+#[must_use]
+pub fn space_category(category: SpaceCategory) -> &'static str {
+    match category {
+        SpaceCategory::ContentStreams => "Page drawing",
+        SpaceCategory::FormXObjects => "Reused drawing blocks",
+        SpaceCategory::Images => "Images",
+        SpaceCategory::Fonts => "Fonts",
+        SpaceCategory::ColorSpaces => "Colour profiles",
+        SpaceCategory::PatternsAndShadings => "Patterns and shading",
+        SpaceCategory::GraphicsStates => "Drawing settings",
+        SpaceCategory::PageStructure => "Pages and the page list",
+        SpaceCategory::Annotations => "Comments and markups",
+        SpaceCategory::Links => "Links",
+        SpaceCategory::Forms => "Form fields",
+        SpaceCategory::Bookmarks => "Bookmarks",
+        SpaceCategory::NamedDestinations => "Named destinations",
+        SpaceCategory::Thumbnails => "Page thumbnails",
+        SpaceCategory::StructureTree => "Accessibility tags",
+        SpaceCategory::Metadata => "Document information",
+        SpaceCategory::EmbeddedFiles => "Attached files",
+        SpaceCategory::JavaScript => "Scripts",
+        SpaceCategory::Layers => "Layers",
+        SpaceCategory::OtherReferenced => "Other content in use",
+        SpaceCategory::Unreferenced => "Content nothing uses",
+        SpaceCategory::CrossReference => "The file's index",
+        SpaceCategory::Superseded => "Earlier versions kept in the file",
+        SpaceCategory::FileOverhead => "File overhead",
+        other => other.as_str(),
+    }
+}
+
+/// A byte count in a breakdown cell; small counts stay exact so a 300-byte
+/// category does not read as "0 KB".
+#[must_use]
+pub fn space_bytes(n: u64) -> String {
+    if n < 1024 {
+        format!("{n} bytes")
+    } else {
+        bytes(n)
+    }
 }
 
 /// The engine refused to rewrite this file.

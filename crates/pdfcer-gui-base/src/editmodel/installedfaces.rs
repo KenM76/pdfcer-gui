@@ -193,4 +193,31 @@ mod tests {
                 .is_some_and(|f| f.is_empty())
         );
     }
+
+    /// The composite-font path G210 found dropped: a `/Type0` subset is
+    /// offered the letters the installed face draws, through this wrapper.
+    #[test]
+    fn a_composite_subset_is_offered_the_installed_faces_letters() {
+        use pdfcer_core::text_edit::ProgramAddressing;
+        // The full face alone: the fixture folder's subsets carry the same
+        // name, and the engine offers the first named face's letters.
+        let fixtures = crate::opendoc::fixtures::engine_fixture("text/augment");
+        let folder = std::env::temp_dir().join(format!("pdfcer-g210-{}", std::process::id()));
+        std::fs::create_dir_all(&folder).expect("temp folder");
+        std::fs::copy(fixtures.join("face.ttf"), folder.join("face.ttf")).expect("fixture");
+        let source = for_folders(std::slice::from_ref(&folder));
+        while !source.is_ready() {
+            std::thread::yield_now();
+        }
+        let program = std::fs::read(fixtures.join("cid-subset.ttf")).expect("fixture");
+        let known = [(1, 'A'), (2, 'B'), (3, 'C')];
+        let request = AugmentRequest::new(&program, "ABCDEF+pdfcerAugFace", &[])
+            .with_addressing(ProgramAddressing::CidKeyed(&known));
+        let offered = source.candidates(&request);
+        for c in ['D', 'E', 'É'] {
+            assert!(offered.contains(&c), "{c} not offered: {offered:?}");
+        }
+        assert!(!offered.contains(&'Z'));
+        let _ = std::fs::remove_dir_all(&folder);
+    }
 }

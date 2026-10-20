@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `wanted` — a real gap — **33 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -138,7 +138,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `blocked` — waiting on something named — **2 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +156,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +167,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `declined` — deliberately no surface — **16 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -209,7 +209,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **320 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **322 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -587,6 +587,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **shipped.** A click on a layer's name in Layers makes it current; a second click clears it. Add text passes it through `AddTextRequest::on_layer`, a raster picture through `NewImage::on_layer`, an SVG or EMF drawing through `add_svg_on_layer` / `add_emf_on_layer` (G130), Paste through `paste_objects_on_layer`, and markups, markup-as-content, picture stamps, notes (`add_text_annotation_reporting`), carets, Replace Text, attachments, sounds, screens, 3D (`add_3d_annotation`) and drawn hand signatures through `MarkupOptions::layer` (`drawlayer::onto`); typed and picture signatures as add text and pictures. Each add's notes name the layer. An add while the current layer is hidden is refused before the engine is called (`LayerRefusal::DrawLayerHidden`). Driven: `paste_goes_on_the_current_layer`, `a_caret_goes_on_the_current_layer`, `a_drawing_goes_on_the_current_layer` (the other adders share `drawlayer::onto`). |
 | **A size change on a two-byte (Identity-H) text run keeps its text** — `format_text` writes codes at the font's width (our `G207`, Pass 608.0) | **shipped.** Engine-internal: every size change the Font group and Properties send goes through `FormatRequest::drawn_size` in `app::actions::textstyle`, so the fix arrives with the pin; the shell has nothing to call. Owed: the driven check that a composite run reads back unchanged after a size change (O310). |
 | **Read and set the DRAWN font size** — `GlyphProvenance::em_scale()`/`drawn_size()`, `FormatRequest::drawn_size(points)` (our `G208`, Pass 609.0) | **shipped.** <!--namesake:drawn_size--> Properties and the Font group read `GlyphProvenance::drawn_size` (`canvas::textedit::pin::inspect`), and `StyleChange::Size` stamps `FormatRequest::drawn_size`, which solves each operator's `Tf` operand. The shell's own matrix arithmetic is deleted. |
+| **Space audit** — `pdfcer_core::space_audit` (`audit`, `SpaceAudit`, `SpaceCategory`; Pass 616.0) | **shipped.** The *Where the space goes* fold in File ▸ Save ▸ Save a compacted copy (`dialogs::compact::breakdown`) audits the file on disk and the measured copy, and lists each category's bytes side by side, with the audit's notes beneath. `diff` is not called: the fold pairs the two audits itself so it can leave out rows empty in both. The per-object and per-image facts (`ObjectSpace`, `ImageSpace`) are for the optimise passes the engine has not shipped yet, and `tools.optimise` is where they would surface. |
+| **A shell's subset augmenter that forgets `candidates` no longer compiles** — `SubsetAugmenter::candidates` required, `AugmentRequest::new` with `AugmentRequest::with_shown`, `AugmentRequest::with_outline_check`, `AugmentRequest::with_hinting_mismatch`, `AugmentRequest::with_addressing` (our `G210`, Pass 615.0) | **shipped.** `editmodel::installedfaces::InstalledFaces` forwards all three methods, so a composite subset is offered the installed face's letters (O311). The builders are for a shell's own tests: `a_composite_subset_is_offered_the_installed_faces_letters` uses `new` and `with_addressing`; production requests are built by the engine, so `with_shown`, `with_outline_check` and `with_hinting_mismatch` have no caller here and need none. Its test found `G212`. |
 | **Automatic word gap for extracted text** — `ExtractOptions::with_word_gap_auto`, `PageText::word_gap_ratio`/`word_gap_measured` (our `G209`, Pass 610.0) | **shipped.** `Settings::word_gap_auto` reaches extraction through `SettingsExt::extract_options`; Edit ▸ Content has an *Auto* switch beside *Gap width* (`app::wordgapband`), Settings ▸ Text has the same switch, and the threshold the current page used, measured or not, is on hover. |
 | **Paragraph and cell-aware block recognition on spaced pages** — a blank-line gap ends a paragraph, a column of heading numbers is not a column, a drawing frame's cell splits into its notes (our `G205`, `G206`, Pass 611.0/612.0) | **shipped — engine v0.88.0.** Every block index the shell sends to a block verb comes from `canvas::textedit::engine_model::recognise`: cell-aware, `reflow_recognition_options`, the page's `LineMarks` attached, as `EditSession::block_at_point` builds it. The draft's paragraph, the Select tool's paragraph objects, Reflow and Align all read it. Driven by `a_written_blank_line_paragraph_is_numbered_as_the_engine_numbers_it` (a blank line written with `edit_block_text`, every block checked against `block_at_point`), falsified by dropping the marks. |
 
