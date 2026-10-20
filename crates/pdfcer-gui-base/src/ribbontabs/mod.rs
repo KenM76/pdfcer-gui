@@ -51,6 +51,9 @@ pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item 
 /// **The `Item::Custom` kind of the Markup ▸ Style controls.**
 pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-item kind, never displayed
 
+/// **The `Item::Custom` kind of the Edit ▸ Content word-gap slider.**
+pub const WORD_GAP: &str = "word_gap"; // ui-text-exempt: a custom-item kind, never displayed
+
 /// **The `Item::Custom` kind of the View ▸ Display OCR blend control.**
 pub const OCR_BLEND: &str = "ocr_blend"; // ui-text-exempt: a custom-item kind, never displayed
 

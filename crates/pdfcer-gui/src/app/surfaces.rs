@@ -94,6 +94,9 @@ impl PdfcerApp {
         // this one is consumed a dozen lines below by the only code that will
         // ever want it.
         let mut blend: Option<f32> = None;
+        // The word-gap slider's committed ratio, consumed below like `blend`.
+        let gap_at = self.settings.word_gap_ratio;
+        let mut word_gap: Option<f32> = None;
         // The pen, borrowed for the closure. `Pen` is `Copy`, so the
         // closure takes a `&mut` to the field rather than a copy — a copy would
         // let the operator move a slider and have the change discarded when the
@@ -156,6 +159,10 @@ impl PdfcerApp {
                 crate::app::ocrband::draw(ui, item.kind, doc.and_then(|d| d.view.ocr_overlay))
             {
                 blend = Some(moved);
+                return None;
+            }
+            if let Some(ratio) = crate::app::wordgapband::draw(ui, item.kind, registry, gap_at) {
+                word_gap = Some(ratio);
                 return None;
             }
             // The Font group's face chooser, size field and colour swatch.
@@ -284,6 +291,9 @@ impl PdfcerApp {
         // would have no way back except the switch he did not touch.
         if let (Some(moved), Status::Open(doc)) = (blend, &mut self.status) {
             doc.view.ocr_overlay = Some(moved);
+        }
+        if let Some(ratio) = word_gap {
+            self.adopt_word_gap(ratio);
         }
 
         for token in tokens {

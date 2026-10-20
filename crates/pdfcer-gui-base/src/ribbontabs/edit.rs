@@ -5,7 +5,7 @@
 
 use super::{command, group, icon_only, large};
 use crate::text::ribbon;
-use egui_shell::manifest::Tab;
+use egui_shell::manifest::{Item, Tab};
 
 /// The Edit tab.
 pub fn tab() -> Tab {
@@ -125,6 +125,10 @@ pub fn tab() -> Tab {
                     command("edit.paragraphs"),
                     command("edit.paragraphs_page"),
                     command("edit.paragraph_here"),
+                    // The gap itself, where the text it spaces is edited
+                    // (O312); the command beside it opens the full
+                    // explanation in Settings.
+                    Item::custom(super::WORD_GAP),
                     command("edit.word_gap"),
                 ],
             ),

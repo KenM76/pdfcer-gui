@@ -86,6 +86,8 @@ pub mod paneltoggles;
 pub mod rc4;
 /// Edits an encrypted document refuses, and reopening it for its owner password.
 pub mod unlock;
+/// The Edit ▸ Content word-gap slider; reports a ratio on release.
+mod wordgapband;
 pub use pdfcer_gui_base::dockpersist as persistence;
 /// The **selection filter**, on disk — where it lives, and why it is written
 /// immediately where the dock layout is debounced.

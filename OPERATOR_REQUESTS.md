@@ -626,11 +626,11 @@ His words: *"If I type a character that doesn't exist in the embedded font I get
 
 **Built, not yet driven.** The font-folder source answered the engine's `addable` and `augment` but not `candidates`, which a composite (`/Type0`) subset is asked through, so every Identity-H subset was offered no letters and fell to a substitute. `editmodel::installedfaces` now forwards it. On SW41177 the repertoire query takes `z` with the fix and refuses it without. Installed fonts are on by default (`Preferences::use_os_fonts`).
 
-## O312 — **FILED** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
+## O312 — **HALF BUILT, NOT DRIVEN** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
 
 His words: *"Also the setting Where extracted text gets its spaces should be available right in the Content menu section, and I think we have an auto option for this?"*
 
-There is no Auto in the engine: `ExtractOptions::word_gap_ratio` is a fixed ratio. Asked as G209. The Content group's *Word gap…* opens the setting; an in-ribbon slider is not built yet.
+**The slider half is built, not yet driven.** Edit ▸ Content carries a *Gap width* slider beside *Word gap…*. It commits when released, saves to the settings file, and re-extracts the text of every open document. **Auto is not built.** The engine has none: `ExtractOptions::word_gap_ratio` is a fixed ratio. Asked as G209.
 
 ## O313 — **BUILT, NOT DRIVEN** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
 
@@ -645,6 +645,16 @@ His words: *"The pdfcer engine has also been updated, so use the latest. Also eg
 ## O315 — **FILED** — text editing behaves as a word processor's does
 
 His words: *"In short, editing should try to work the same way as it would in most Word Processors."* A sweep, not the two drawings: O307–O311 are samples of it.
+
+**Audited against a word processor; the gaps, most-hit first:**
+
+1. Formatting a selection commits the draft and drops the selection. It refuses on new text and on a retyped paragraph (`app::dispatch::textformat`).
+2. Shift+click does not extend a selection (`canvas::textedit::keys::pointer`).
+3. Undo takes back a whole typing run, not a word (`editmodel::history::DraftHistory::record`).
+4. Up/Down step `
+` lines rather than wrapped rows at the pointer's x. Ctrl+Home and Ctrl+End act as Home and End (`textedit::edits::Keys`).
+5. The ribbon and the font pickers read the first character only. They show no mixed state and ignore the caret's run (`app::conditions::textformat`, `app::fontband`).
+6. PageUp and PageDown do nothing in a draft, and a triple click selects a line rather than a paragraph.
 
 ## O305 — **STANDING RULE** — between releases, drive only what changed and what it affects
 
