@@ -29,7 +29,7 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
     let Some(layout) = hit::read(ctx) else {
         return false;
     };
-    let (pressed, down, clicks, pos, origin) = ui.input(|i| {
+    let (pressed, down, clicks, pos, origin, shift) = ui.input(|i| {
         let primary = egui::PointerButton::Primary;
         let clicks = if i.pointer.button_triple_clicked(primary) {
             3
@@ -44,6 +44,7 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
             clicks,
             i.pointer.interact_pos(),
             i.pointer.press_origin(),
+            i.modifiers.shift,
         )
     });
     let Some(pos) = pos else {
@@ -62,6 +63,13 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
         let (from, to) = clicked_span(&draft.text, layout.index_at(pos), clicks);
         draft.mark = Some(from);
         draft.caret = to;
+        return true;
+    }
+    // Shift extends the selection from where it stands to the pointer, on
+    // the press and through a drag that follows it.
+    if shift && (pressed || down) && began_inside {
+        draft.mark = draft.mark.or(Some(draft.caret));
+        draft.caret = layout.swept_index_at(pos, draft.text.chars().count());
         return true;
     }
     if pressed && began_inside {
@@ -680,6 +688,49 @@ mod tests {
             None,
             "a press drops the selection - rule 4 in the pointer's dialect"
         );
+    }
+
+    /// A Shift+press extends the selection from the caret to the pointer.
+    #[test]
+    fn a_shift_press_extends_the_selection_from_the_caret() {
+        let ctx = egui::Context::default();
+        let _ = ctx.run_ui(egui::RawInput::default(), |_| {});
+        let galley = publish_layout(&ctx, "SHEET 1 OF 4");
+        draft_of(&ctx, "SHEET 1 OF 4");
+        let mut d = read(&ctx).unwrap();
+        d.caret = 2;
+        store(&ctx, d);
+
+        let mut input = at(slot_x(&galley, 7) + 1.0, true);
+        input.modifiers = egui::Modifiers::SHIFT;
+        if let Some(egui::Event::PointerButton { modifiers, .. }) = input.events.last_mut() {
+            *modifiers = egui::Modifiers::SHIFT;
+        }
+        frame(&ctx, input);
+        let after = read(&ctx).expect("the draft survives a shift press");
+        assert_eq!(caret::range(after.mark, after.caret), Some((2, 7)));
+    }
+
+    /// Ctrl+Home and Ctrl+End reach the ends of the whole draft, past its
+    /// line breaks; with Shift they select to there.
+    #[test]
+    fn ctrl_home_and_end_take_the_whole_drafts_ends() {
+        let ctx = egui::Context::default();
+        draft_of(
+            &ctx,
+            "one
+two
+three",
+        );
+        key_frame(&ctx, egui::Key::Home, egui::Modifiers::COMMAND);
+        assert_eq!(read(&ctx).unwrap().caret, 0);
+        key_frame(
+            &ctx,
+            egui::Key::End,
+            egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+        );
+        let after = read(&ctx).unwrap();
+        assert_eq!(caret::range(after.mark, after.caret), Some((0, 13)));
     }
 
     /// **A press that begins OUTSIDE the box is not the draft's business**,

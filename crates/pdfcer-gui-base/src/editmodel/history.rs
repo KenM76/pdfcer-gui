@@ -2,8 +2,9 @@
 //!
 //! A draft's text, caret and selection before each edit, so `Ctrl+Z` inside a
 //! draft takes back a keystroke rather than a document command. A run of
-//! typing, or of deleting, is one entry; anything else, or a caret move in
-//! between, starts a new one.
+//! typing is one entry per word, as in a word processor: the first letter
+//! after a space starts a new entry. A run of deleting is one entry; anything
+//! else, or a caret move in between, starts a new one.
 
 /// The draft's state at one moment: its text, caret and selection mark, as
 /// character indices into the text.
@@ -33,10 +34,13 @@ pub struct DraftHistory {
 
 impl DraftHistory {
     /// Record `before`, the state an edit of `kind` is about to change. Clears
-    /// redo; joins the previous entry when `kind` continues its run.
+    /// redo; joins the previous entry when `kind` continues its run, unless
+    /// typing is about to start a new word.
     pub fn record(&mut self, before: Snap, kind: EditKind) {
         self.redo.clear();
-        let joins = kind != EditKind::Other && self.run == Some(kind);
+        let joins = kind != EditKind::Other
+            && self.run == Some(kind)
+            && !(kind == EditKind::Typing && starts_word(&before));
         if !joins {
             self.undo.push(before);
         }
@@ -93,6 +97,16 @@ impl DraftHistory {
     }
 }
 
+/// Whether typing at `s`'s caret starts a word: the character before it is
+/// the last of a run of whitespace that follows something else.
+fn starts_word(s: &Snap) -> bool {
+    let before: Vec<char> = s.text.chars().take(s.caret).collect();
+    match before.as_slice() {
+        [.., a, b] => b.is_whitespace() && !a.is_whitespace(),
+        _ => false,
+    }
+}
+
 /// How many spaces take a caret at `x_pt` to the next tab stop: stops every
 /// `stop_pt` from 0, each space `space_pt` wide, and always at least one.
 /// All three in the same unit.
@@ -118,6 +132,22 @@ mod tests {
             caret: text.chars().count(),
             mark: None,
         }
+    }
+
+    #[test]
+    fn typing_undoes_a_word_at_a_time() {
+        let mut h = DraftHistory::default();
+        let typed = "one two  three";
+        for n in 0..typed.len() {
+            h.record(snap(&typed[..n]), EditKind::Typing);
+        }
+        let mut now = snap(typed);
+        let mut seen = Vec::new();
+        while let Some(back) = h.undo(now) {
+            seen.push(back.text.clone());
+            now = back;
+        }
+        assert_eq!(seen, ["one two ", "one ", ""]);
     }
 
     #[test]

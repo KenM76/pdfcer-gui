@@ -442,7 +442,10 @@ impl Keys<'_> {
     fn home_end(&mut self, end: bool, m: Modifiers) -> Flow {
         let shift = caret::shifted(m.shift, self.frame_shift);
         let d = &mut *self.draft;
-        let to = if super::lines::is_multi_line(&d.text) {
+        // Ctrl+Home and Ctrl+End take the whole draft's ends.
+        let to = if m.command {
+            if end { d.text.chars().count() } else { 0 }
+        } else if super::lines::is_multi_line(&d.text) {
             if end {
                 super::lines::end_of_line(&d.text, d.caret)
             } else {

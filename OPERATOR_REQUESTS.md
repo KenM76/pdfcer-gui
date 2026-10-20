@@ -671,10 +671,11 @@ His words: *"In short, editing should try to work the same way as it would in mo
 1. Formatting a selection commits the draft and drops the selection. It refuses on new text and on a retyped paragraph (`app::dispatch::textformat`).
 2. Shift+click does not extend a selection (`canvas::textedit::keys::pointer`).
 3. Undo takes back a whole typing run, not a word (`editmodel::history::DraftHistory::record`).
-4. Up/Down step `
-` lines rather than wrapped rows at the pointer's x. Ctrl+Home and Ctrl+End act as Home and End (`textedit::edits::Keys`).
+4. Up/Down step line breaks rather than wrapped rows at the pointer's x. Ctrl+Home and Ctrl+End act as Home and End (`textedit::edits::Keys`).
 5. The ribbon and the font pickers read the first character only. They show no mixed state and ignore the caret's run (`app::conditions::textformat`, `app::fontband`).
 6. PageUp and PageDown do nothing in a draft, and a triple click selects a line rather than a paragraph.
+
+**Where it stands.** Items 2, 3 and the Ctrl+Home/End half of 4 are built, not driven. Shift+click (and Shift+drag) inside the box extends the selection from the caret. Undo takes back a word at a time: the first letter typed after a space starts a new step. Ctrl+Home and Ctrl+End reach the ends of the whole draft, with Shift selecting to there. Each has a unit test, falsified by disabling the feature. Items 1, 5, 6 and the Up/Down half of 4 remain.
 
 ## O305 — **STANDING RULE** — between releases, drive only what changed and what it affects
 
