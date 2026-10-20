@@ -602,9 +602,11 @@ His words: *"I'd made some requests and I'm not sure they got implemented into p
 
 His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text is still shown as individual lines. Some paragraphs work fine, but for some reason this one isn't detected as a paragraph."* (`ROPS-FOPS\Code 4 - Final.pdf`) and *"FRONT EDGE OF FOPS PLATE SHOULD BE / APPROXIMATELY 1/2" FROM THE FRONT OF THE / TRUCK BED. These also don't get detected as a paragraph."* (`SW41177.pdf`).
 
-## O308 — **FILED** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
+## O308 — **BUILT, NOT DRIVEN** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
 
 His words: *"If I try to italicize, bold, underline, change font etc it doesn't appear to work if I select an area within a block of text with the I cursor."*
+
+**Built, not yet driven.** Ribbon Bold, Italic, Underline and Strikethrough already acted on the I-beam range; the Properties panel's face, size, Bold, Italic and colour, and the ribbon's Font, Size and Colour, restyled the whole line. All now take the same route (`app::dispatch::textformat::restyle`): the selected characters, else the word at the caret, else the caret alone, which records the style for what is typed next. A paragraph opened as one block and already retyped still refuses until it is committed (`ParagraphEdited`).
 
 ## O309 — **BUILT** — the font size shows the size the text is drawn at, fractional sizes included
 
@@ -618,17 +620,23 @@ His words: *"Changing the font size causes the text chunk to go blank, and if I 
 
 **Half built.** The blanking was the O309 defect: a typed size became the Tf operand under a 13.2× matrix and the text was drawn off the page. That half is fixed by O309. The squares are an engine defect: after `FormatRequest::size`, an Identity-H subset run reads back as U+FFFD (G207, open).
 
-## O311 — **FILED** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
+## O311 — **BUILT, NOT DRIVEN** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
 
 His words: *"If I type a character that doesn't exist in the embedded font I get this notice: CenturyGothic has no ‘z’, so it will be set in Helvetica when you commit. But CenturyGothic is installed on the system, so it doesn't need to substitute the font, just add the embedded missing character. Also the settings default should be to use the fonts installed on this computer."*
+
+**Built, not yet driven.** The font-folder source answered the engine's `addable` and `augment` but not `candidates`, which a composite (`/Type0`) subset is asked through, so every Identity-H subset was offered no letters and fell to a substitute. `editmodel::installedfaces` now forwards it. On SW41177 the repertoire query takes `z` with the fix and refuses it without. Installed fonts are on by default (`Preferences::use_os_fonts`).
 
 ## O312 — **FILED** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
 
 His words: *"Also the setting Where extracted text gets its spaces should be available right in the Content menu section, and I think we have an auto option for this?"*
 
-## O313 — **FILED** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
+There is no Auto in the engine: `ExtractOptions::word_gap_ratio` is a fixed ratio. Asked as G209. The Content group's *Word gap…* opens the setting; an in-ribbon slider is not built yet.
+
+## O313 — **BUILT, NOT DRIVEN** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
 
 His words: *"Clipboard commands should be on the very left of the edit tab. Text markup highlight icon needs to be filled with yellow color. Save commands should be next to File."*
+
+**Built, not yet driven.** Clipboard is the Edit tab's first group; Save follows File, ahead of Recognise; `RIBBON_IA.md` §5.1 and §5.4 say so. The highlight glyph's band is filled yellow (`IconAccents::wash`) when icons are coloured, and stays hollow in the plain single-colour set, where a filled band would read as the redaction bar.
 
 ## O314 — **FILED** — the latest engine and egui, and every new engine feature reaches the program
 

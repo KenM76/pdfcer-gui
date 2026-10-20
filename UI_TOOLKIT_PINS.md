@@ -32,9 +32,9 @@ Pinned is what `Cargo.lock` resolved; published is `MAJOR.MINOR` from
 
 | crate | pinned | published | status |
 |---|---|---|---|
-| `egui` | 0.35.0 | 0.37 | deliberately behind — see the 0.36 migration below; 0.37 measured published, not yet verified by driving the binary |
+| `egui` | 0.35.0 | 0.37 | deliberately behind — see the 0.37 migration below; 0.37 measured published, not yet verified by driving the binary |
 | `eframe` | 0.35.0 | 0.37 | deliberately behind — one decision with `egui`, never bumped apart; 0.37 measured published, not adopted |
-| `egui_tiles` | 0.16.0 | 0.17 | pinned but unused — no consumer, absent from `Cargo.lock` |
+| `egui_tiles` | 0.16.0 | 0.18 | pinned but unused — no consumer, absent from `Cargo.lock` |
 
 ### The row shape is the contract
 
@@ -98,7 +98,7 @@ that heading in the same commit.
 ## `egui_tiles` — pinned, and not in the build at all
 
 No crate in this workspace depends on it, so Cargo never resolves it and it does
-not reach `Cargo.lock`. A published `egui_tiles` 0.17 is therefore of no
+not reach `Cargo.lock`. A published `egui_tiles` 0.18 is therefore of no
 consequence to this binary, and its register row is what stops the gate making
 it look like one.
 
@@ -116,50 +116,56 @@ Any feasibility verdict elsewhere in the documentation that turns on what
 next person reaches for `egui_tiles` again. If it is still unused at fold-in,
 delete it then, with a line in `PROJECT_PLAN.md` saying so.
 
-## The 0.36 migration
+## The 0.37 migration
 
-Re-derive the cost rather than trusting a figure: bump `egui`/`eframe` to 0.36
-and `egui_tiles` to 0.17 in `Cargo.toml`, then restore.
+Re-derive the cost rather than trusting a figure: bump `egui`/`eframe` to 0.37
+in `Cargo.toml` on a scratch copy and read `cargo check --workspace --all-targets`
+and `cargo clippy -- -D warnings` there. Clippy matters: 0.37 deprecates names
+this tree uses hundreds of times, and the gates run clippy at `-D warnings`.
 
-```sh
-cargo check --workspace --all-targets
-git checkout Cargo.toml Cargo.lock
-```
+Rust 1.95 is required; the toolchain pin is above it. `egui-wgpu` is not
+reached (eframe builds with `glow`), and `egui_tiles` is not linked.
 
-Two API changes reach this tree. The dock, the ribbon, the panels, the canvas
-and `wgpu` compile untouched, and `egui-shell` is untouched entirely.
+### Silent losses — no compile error marks them
 
-### 1. `DroppedFile::path` is a method, not a field
+- **`links`**: eframe 0.36 stops enabling it. `ui.hyperlink` in the About
+  dialog stops opening a browser.
+- **`clipboard`**: eframe 0.37 makes it optional. Without it `Event::Copy`,
+  `Event::Paste` and `Event::Cut` never arrive and the OS clipboard is
+  unreachable from every text field.
 
-It returns `&Path` in 0.36, where in 0.35 it is a field of type
-`Option<PathBuf>`. One call site: `crates/pdfcer-gui/src/app/filedrag.rs`, which
-collects `i.raw.dropped_files` through `.filter_map(|f| f.path.clone())`.
+Both go into the eframe feature list in the root `Cargo.toml` in the same
+commit as the bump.
 
-A semantic change hides in the type. The option is gone, so a dropped file always
-has a path — true on native, false on web, and this shell is native-only, which
-makes the new shape correct here. But a `filter_map` that silently becomes a
-`map` is a behaviour change wearing a compile error's clothes, and it deserves a
-driven check rather than a sight-read. Two already exist: `dropped_file` and
-`drop_onto_thumbnails`.
+### Breaks that reach shipped code
 
-### 2. `RawInput::modifiers` is removed
-
-Modifiers travel on the events instead of on the frame. Every site in this tree
-that sets the field is `#[cfg(test)]` code building a synthetic frame:
-
-| File | What it builds |
+| Change | Where |
 |---|---|
-| `crates/pdfcer-gui/src/app/keyboard.rs` | a `key_press` builder, and one test that mutates the field directly |
-| `crates/pdfcer-gui/src/app/status.rs` | a `key_press` builder |
-| `crates/pdfcer-gui/src/canvas/textedit/keys.rs` | a clipboard-frame builder and an arrow-key driver |
-| `crates/pdfcer-gui/src/canvas/textsel/clipboard.rs` | three frames carrying `Event::Copy` under `Modifiers::COMMAND` |
-| `crates/pdfcer-gui/src/canvas/dimdrag/tests.rs` | a drag driver |
-| `crates/pdfcer-gui/src/canvas/moving/nudge/tests.rs` | a nudge driver |
+| `RawInput::modifiers` removed; modifiers arrive as `Event::ModifiersChanged` and stay set until changed | the test builders below, and `pdfcer-gui-base::pointerscripted`, which must also send `ModifiersChanged(NONE)` when a step ends or a modifier stays held |
+| `DroppedFile` is a trait; `dropped_files` holds `Arc<dyn DroppedFile>`; `path()` returns `&Path` | `pdfcer-gui-base::filedrag` reads it; `pointerscripted` builds one and needs its own type implementing the trait |
+| `ViewportCommand::Screenshot` takes a callback; `Event::Screenshot` and `UserData` are gone | `pointerscripted`'s shot path: a restructure through `request_screenshot` and a channel |
+| `Event::MouseWheel` gains `source` | `pointerscripted` |
+| `scroll_area::State::offset` is private; `clamped_offset()` / `unclamped_offset()` | `canvas::present` — rubber-band overshoot makes the two differ, so this is a canvas-scroll risk |
+| `TextEdit::{horizontal,vertical}_align` → `.align(Align2)` | the page box, `formtextbox` |
+| `WidgetType` → `Role`; `WidgetInfo` takes a `Role`; `.typ` → `.role`; `SelectableLabel` and `Other` have no `Role` of that name | `egui-shell` dock, menu, ribbon, tab strip, and `panels::align` — ui-verify reads roles, so the choice of `Role::Tab` versus `Role::Button` is visible to checks |
+| `Panel::{left,right,top,bottom}` take a salt; the id becomes the parent's `scope_id().with_salt(..)` | five callers pass an `Id::new(..)`; panel sizes reset once |
+| `Atom::custom` and `WidgetAtomResponse::rect` take an `IdSalt`; `AtomLayoutResponse` → `WidgetAtomResponse` | `egui-shell` tab icon, ribbon tabs and controls, menu render |
+| `Id::new` → `Id::unique` (same hash); `Ui::id()` → `scope_id()` | mechanical, about 280 sites |
 
-### Why the small change is the risky one
+`RawInput::modifiers` test builders: `app::keyboard`, `app::status`,
+`canvas::textedit::keys`, `canvas::textsel::clipboard`, `canvas::dimdrag` tests,
+`canvas::moving::nudge` tests, `settingspages::keys`.
 
-Nothing the compiler flags is shipped code, and that is the hazard rather than
-the reassurance.
+Behaviour changes with no API mark: a press that leaves a widget counts as a
+drag; buttons are roomier with larger corner radii, so the ribbon and the dock
+move; scrolling is kinetic with rubber-banding; `Cmd+X/C/V` fire only with no
+other modifier; a missing glyph draws as tofu; the window caption follows the
+egui theme (`Options::sync_window_theme`), which `native-window::caption` also
+sets.
+
+### Why the keyboard change is the risky one
+
+The keyboard harness is the hazard.
 
 `app::keyboard::commands` matches each chord against the modifiers carried by its
 own `Event::Key`, never against `InputState::modifiers`. Those are different
@@ -191,9 +197,12 @@ What the bump needs, when the machine is free:
    gesture: `Ctrl`-drag and `Ctrl`+`Shift`-drag on markup nodes, `Shift`-extended
    selection and marquee, `Alt` on measure and vertex routing, `Shift` on page
    drag, and the clipboard chords.
-3. A driven check on dropping a file onto the window, for change 1.
+3. A driven check on dropping a file onto the window, on OS copy and paste
+   in a text field, and on the About link.
 4. A screenshot comparison of the dock and the ribbon, because a minor egui
    release moves layout and a layout defect has exactly one oracle.
+5. Before any of that is trusted: one known-red check run through the
+   rewritten off-screen driver, because the driver itself changed.
 
-The work is well under a day and the verification rather more, which is the
+The edit is about a day and the verification rather more, which is the
 correct ratio for this change.

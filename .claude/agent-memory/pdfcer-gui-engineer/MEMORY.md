@@ -187,3 +187,4 @@
 - [Drive only what changed between releases](feedback_drive_only_affected.md) — O305: select checks from the diff since the last tag; full sweep only if framework-wide.
 - [One gate run at a time](feedback_one_gate_run_at_a_time.md) — two runs on one log: no verdict; check for a live run first.
 - [An inactive window starves focus gates](feedback_inactive_window_starves_gate.md) — no-steal scripted dialogs never typed; route gates via window_takes_keys.
+- [A wrapper drops a trait's default methods](feedback_wrapper_drops_default_method.md) — installedfaces lost `candidates`; every composite font fell to Helvetica.
