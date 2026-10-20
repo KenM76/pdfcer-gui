@@ -130,6 +130,8 @@ mod tests {
             Icon::CursorNode,
             Icon::RedactSelection,
             Icon::ApplyRedactions,
+            // Its wash, drawn only when coloured (`accent::coloured_only`).
+            Icon::ShapeHighlight,
         ];
 
         for &icon in Icon::ALL {

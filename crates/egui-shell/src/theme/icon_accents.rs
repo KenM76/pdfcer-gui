@@ -9,12 +9,14 @@
 //!
 //! ## Contract
 //!
-//! - Four **roles**, never colour names, for the reason [`super::Palette`]
+//! - Four outline **roles** and one fill, never colour names, for the reason [`super::Palette`]
 //!   gives: a preset must be free to move a role without its field lying.
 //! - Every role clears [`super::contrast::READABLE_LUMA_GAP`] against both
 //!   [`super::Palette::surface`] and [`super::Palette::panel`] in every
 //!   preset — the grounds a toolbar glyph is drawn on. The test below holds
 //!   it, so a preset cannot ship an accent that vanishes into its own chrome.
+//!   [`IconAccents::wash`] is exempt: it fills a shape the foreground
+//!   outlines, as a highlighter's ink does.
 //! - Nothing here is on by default. An application that never asks for these
 //!   draws exactly what it drew before.
 //!
@@ -37,6 +39,10 @@ pub struct IconAccents {
     /// Something is marked or kept: a highlighter, a note, a folder, a lock.
     /// Amber.
     pub mark: Color32,
+    /// A highlighter's wash: yellow. Drawn only as a fill inside an outline
+    /// in the foreground, which carries the glyph's legibility, so it is the
+    /// one role exempt from the readable-gap rule.
+    pub wash: Color32,
 }
 
 impl IconAccents {
@@ -49,12 +55,14 @@ impl IconAccents {
                 affirm: Color32::from_rgb(0x2E, 0x8B, 0x45),
                 remove: Color32::from_rgb(0xC8, 0x37, 0x2F),
                 mark: Color32::from_rgb(0xB0, 0x72, 0x16),
+                wash: Color32::from_rgb(0xFF, 0xE1, 0x3D),
             },
             Preset::Dark => Self {
                 primary: Color32::from_rgb(0x6F, 0xA8, 0xF0),
                 affirm: Color32::from_rgb(0x62, 0xC2, 0x7A),
                 remove: Color32::from_rgb(0xF0, 0x7A, 0x70),
                 mark: Color32::from_rgb(0xE3, 0xB0, 0x4A),
+                wash: Color32::from_rgb(0xF2, 0xD7, 0x2E),
             },
         }
     }
@@ -65,7 +73,8 @@ impl IconAccents {
         Self::for_preset(Theme::of(ctx).preset)
     }
 
-    /// All four, for tests and for anything that must treat them alike.
+    /// The four outline roles, for tests and for anything that must treat
+    /// them alike; [`Self::wash`] is a fill and is not among them.
     #[must_use]
     pub const fn all(self) -> [Color32; 4] {
         [self.primary, self.affirm, self.remove, self.mark]
@@ -100,7 +109,9 @@ mod tests {
     #[test]
     fn the_four_roles_are_distinct_in_every_preset() {
         for &preset in Preset::ALL {
-            let hues = IconAccents::for_preset(preset).all();
+            let accents = IconAccents::for_preset(preset);
+            let mut hues = accents.all().to_vec();
+            hues.push(accents.wash);
             for a in 0..hues.len() {
                 for b in a + 1..hues.len() {
                     assert_ne!(

@@ -13,6 +13,93 @@ pub fn tab() -> Tab {
         .with_icon("edit")
         .with_question(ribbon::question_edit())
         .with_groups([
+            // Clipboard — leftmost on the tab, where a word processor puts it (O313).
+            // **Paste-in-place is not here** and its absence is
+            // a decision: a same-page paste offsets so the copy is visible, and
+            // a cross-page paste lands in place already — so the fourth command
+            // would be a control that does what `Ctrl+V` does on the only page
+            // where an operator would press it. `canvas::clipboard`'s header
+            // carries the argument.
+            group(
+                "clipboard",
+                ribbon::group_edit_clipboard(),
+                [
+                    icon_only("edit.cut"),
+                    icon_only("edit.copy"),
+                    icon_only("edit.paste"),
+                    // Four now, and the fourth is NOT the paste-in-place the
+                    // note above rules out. It is `edit.paste_duplicate`, and it
+                    // earns its place on the one ground that note demanded and
+                    // paste-in-place could not meet: it does something Ctrl+V
+                    // does not. Pasting a form field as another BOX for the same
+                    // field is a different act with a different result, not the
+                    // same act in a different position.
+                    //
+                    // Labelled rather than icon-only would be better on
+                    // discoverability grounds and is not offered, because the
+                    // group is four icons wide and a single labelled member in a
+                    // row of three icons reads as a mistake. The label is in the
+                    // tooltip and in the Edit menu; `RIBBON_SCALING.md`'s rule is
+                    // that a group's members share a presentation.
+                    icon_only("edit.paste_duplicate"),
+                    //
+                    // **Clipboard, not File ▸ Export**, and the mockup's own
+                    // caption note is the argument: *"it is a clipboard verb —
+                    // chord-reachable, and its result is pasted, not saved."*
+                    // Export writes a file the operator then has to find and
+                    // place; this puts the same geometry one `Ctrl+V` away.
+                    // Putting it beside Copy is also what makes the difference
+                    // legible — it reads as a variant of Copy, which is exactly
+                    // what it is.
+                    //
+                    // **`icon_only`, and the approved mockup draws it
+                    // labelled.** The deviation is this group's own rule, stated
+                    // one comment up when `edit.paste_duplicate` joined: *"a
+                    // single labelled member in a row of three icons reads as a
+                    // mistake … `RIBBON_SCALING.md`'s rule is that a group's
+                    // members share a presentation."* The mockup's Clipboard cap
+                    // draws three members and this one; the shipped group has
+                    // four already, all icon-only, so adopting the label here
+                    // would make this the only labelled control in a band of
+                    // five. The label is in the tooltip and in the Edit menu,
+                    // which is where `edit.paste_duplicate` puts its own.
+                    icon_only("edit.copy_as_vector"),
+                    //
+                    // **That is exactly why it is in the Clipboard group.**
+                    // The band is the operator's *"make another one of this"*
+                    // cluster, and until today the only way to make another
+                    // comment was Copy-then-Paste — which is to say, the
+                    // capability was in this group already, spread across two
+                    // of its buttons and costing whatever was on the clipboard.
+                    // Putting the direct verb anywhere else would separate it
+                    // from the two controls it replaces.
+                    //
+                    // **Placed LAST rather than beside `edit.copy`**, whose
+                    // glyph it reuses. `edit.paste` and `edit.paste_duplicate`
+                    // are adjacent and share `paste`, which is the precedent
+                    // that makes a shared glyph admissible here at all; not
+                    // repeating the adjacency keeps the band readable. The
+                    // registration in `shell::commands::catalog::edit` carries
+                    // the whole argument for the reuse.
+                    //
+                    // `icon_only`, like its five neighbours —
+                    // `RIBBON_SCALING.md`'s rule that a group's members share a
+                    // presentation, and the same rule `edit.copy_as_vector`
+                    // deviated from the mockup to honour one comment up.
+                    //
+                    // ⚠ **The approved mockup's home for this verb is the
+                    // CANVAS CONTEXT MENU**, not the ribbon —
+                    // `mockups/app.html:198` draws *"Duplicate  Ctrl+D"* in the
+                    // object menu. That placement is not made here because
+                    // `canvas::menus` and `shell::menus` belonged to a
+                    // concurrent track on the day this landed, and a context
+                    // menu edited from two sessions is a merge nobody can
+                    // review. The ribbon entry is a placement, not a
+                    // substitute: **the context-menu row is still owed**, and
+                    // this note is where whoever adds it should start.
+                    icon_only("edit.duplicate"),
+                ],
+            ),
             // ---------------------------------------------------------------
             // Content — the three primary editing tools, relabelled.
             // ---------------------------------------------------------------
@@ -110,99 +197,6 @@ pub fn tab() -> Tab {
                     command("edit.bring_forward"),
                     command("edit.send_backward"),
                     command("edit.send_to_back"),
-                ],
-            ),
-            //
-            // It was deleted because its two members moved to File ▸ Export and
-            // nothing was left. What refills it is not those two returning: it
-            // is `edit.cut`, `edit.copy` and `edit.paste`, the three the old
-            // note called *"a group whose eventual first four entries are
-            // cut/copy/paste/paste-in-place for the object clipboard (N)"*.
-            //
-            // Three, not four. **Paste-in-place is not here** and its absence is
-            // a decision: a same-page paste offsets so the copy is visible, and
-            // a cross-page paste lands in place already — so the fourth command
-            // would be a control that does what `Ctrl+V` does on the only page
-            // where an operator would press it. `canvas::clipboard`'s header
-            // carries the argument.
-            group(
-                "clipboard",
-                ribbon::group_edit_clipboard(),
-                [
-                    icon_only("edit.cut"),
-                    icon_only("edit.copy"),
-                    icon_only("edit.paste"),
-                    // Four now, and the fourth is NOT the paste-in-place the
-                    // note above rules out. It is `edit.paste_duplicate`, and it
-                    // earns its place on the one ground that note demanded and
-                    // paste-in-place could not meet: it does something Ctrl+V
-                    // does not. Pasting a form field as another BOX for the same
-                    // field is a different act with a different result, not the
-                    // same act in a different position.
-                    //
-                    // Labelled rather than icon-only would be better on
-                    // discoverability grounds and is not offered, because the
-                    // group is four icons wide and a single labelled member in a
-                    // row of three icons reads as a mistake. The label is in the
-                    // tooltip and in the Edit menu; `RIBBON_SCALING.md`'s rule is
-                    // that a group's members share a presentation.
-                    icon_only("edit.paste_duplicate"),
-                    //
-                    // **Clipboard, not File ▸ Export**, and the mockup's own
-                    // caption note is the argument: *"it is a clipboard verb —
-                    // chord-reachable, and its result is pasted, not saved."*
-                    // Export writes a file the operator then has to find and
-                    // place; this puts the same geometry one `Ctrl+V` away.
-                    // Putting it beside Copy is also what makes the difference
-                    // legible — it reads as a variant of Copy, which is exactly
-                    // what it is.
-                    //
-                    // **`icon_only`, and the approved mockup draws it
-                    // labelled.** The deviation is this group's own rule, stated
-                    // one comment up when `edit.paste_duplicate` joined: *"a
-                    // single labelled member in a row of three icons reads as a
-                    // mistake … `RIBBON_SCALING.md`'s rule is that a group's
-                    // members share a presentation."* The mockup's Clipboard cap
-                    // draws three members and this one; the shipped group has
-                    // four already, all icon-only, so adopting the label here
-                    // would make this the only labelled control in a band of
-                    // five. The label is in the tooltip and in the Edit menu,
-                    // which is where `edit.paste_duplicate` puts its own.
-                    icon_only("edit.copy_as_vector"),
-                    //
-                    // **That is exactly why it is in the Clipboard group.**
-                    // The band is the operator's *"make another one of this"*
-                    // cluster, and until today the only way to make another
-                    // comment was Copy-then-Paste — which is to say, the
-                    // capability was in this group already, spread across two
-                    // of its buttons and costing whatever was on the clipboard.
-                    // Putting the direct verb anywhere else would separate it
-                    // from the two controls it replaces.
-                    //
-                    // **Placed LAST rather than beside `edit.copy`**, whose
-                    // glyph it reuses. `edit.paste` and `edit.paste_duplicate`
-                    // are adjacent and share `paste`, which is the precedent
-                    // that makes a shared glyph admissible here at all; not
-                    // repeating the adjacency keeps the band readable. The
-                    // registration in `shell::commands::catalog::edit` carries
-                    // the whole argument for the reuse.
-                    //
-                    // `icon_only`, like its five neighbours —
-                    // `RIBBON_SCALING.md`'s rule that a group's members share a
-                    // presentation, and the same rule `edit.copy_as_vector`
-                    // deviated from the mockup to honour one comment up.
-                    //
-                    // ⚠ **The approved mockup's home for this verb is the
-                    // CANVAS CONTEXT MENU**, not the ribbon —
-                    // `mockups/app.html:198` draws *"Duplicate  Ctrl+D"* in the
-                    // object menu. That placement is not made here because
-                    // `canvas::menus` and `shell::menus` belonged to a
-                    // concurrent track on the day this landed, and a context
-                    // menu edited from two sessions is a merge nobody can
-                    // review. The ribbon entry is a placement, not a
-                    // substitute: **the context-menu row is still owed**, and
-                    // this note is where whoever adds it should start.
-                    icon_only("edit.duplicate"),
                 ],
             ),
             // ---------------------------------------------------------------

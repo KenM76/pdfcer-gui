@@ -57,6 +57,16 @@
                     ],
                 ),
                 (
+                    id: "save",
+                    caption: "Save",
+                    items: [
+                        Command(id: "file.save", size: Large),
+                        Command(id: "file.save_as"),
+                        Command(id: "file.save_copy"),
+                        Command(id: "file.save_compacted"),
+                    ],
+                ),
+                (
                     id: "recognise",
                     caption: "Recognise",
                     items: [
@@ -67,16 +77,6 @@
                         Command(id: "file.ocr_models"),
                     ],
                     collapse: 4,
-                ),
-                (
-                    id: "save",
-                    caption: "Save",
-                    items: [
-                        Command(id: "file.save", size: Large),
-                        Command(id: "file.save_as"),
-                        Command(id: "file.save_copy"),
-                        Command(id: "file.save_compacted"),
-                    ],
                 ),
                 (
                     id: "export",
@@ -298,6 +298,19 @@
             question: "What am I changing about content that is already there?",
             groups: [
                 (
+                    id: "clipboard",
+                    caption: "Clipboard",
+                    items: [
+                        Command(id: "edit.cut", size: Small),
+                        Command(id: "edit.copy", size: Small),
+                        Command(id: "edit.paste", size: Small),
+                        Command(id: "edit.paste_duplicate", size: Small),
+                        Command(id: "edit.copy_as_vector", size: Small),
+                        Command(id: "edit.duplicate", size: Small),
+                    ],
+                    collapse: 3,
+                ),
+                (
                     id: "content",
                     caption: "Content",
                     items: [
@@ -339,19 +352,6 @@
                         Command(id: "edit.send_backward"),
                         Command(id: "edit.send_to_back"),
                     ],
-                ),
-                (
-                    id: "clipboard",
-                    caption: "Clipboard",
-                    items: [
-                        Command(id: "edit.cut", size: Small),
-                        Command(id: "edit.copy", size: Small),
-                        Command(id: "edit.paste", size: Small),
-                        Command(id: "edit.paste_duplicate", size: Small),
-                        Command(id: "edit.copy_as_vector", size: Small),
-                        Command(id: "edit.duplicate", size: Small),
-                    ],
-                    collapse: 3,
                 ),
                 (
                     id: "forms",

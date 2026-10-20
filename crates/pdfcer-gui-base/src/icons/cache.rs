@@ -100,7 +100,7 @@ impl IconCache {
                         b.body
                     })
                 }),
-                _ => art.rasterize(px, weight),
+                _ => plain(&art, icon, px, weight),
             },
             Err(err) => {
                 eprintln!(
@@ -175,6 +175,20 @@ thread_local! {
 /// Run `f` with the shared cache.
 pub(super) fn with_cache<R>(f: impl FnOnce(&mut IconCache) -> R) -> R {
     CACHE.with(|c| f(&mut c.borrow_mut()))
+}
+
+/// The plain single-colour mask of `icon`, without its
+/// [`super::accent::coloured_only`] shapes.
+pub(crate) fn plain(art: &IconArt, icon: Icon, px: u32, weight: IconWeight) -> egui::ColorImage {
+    let skip = super::accent::coloured_only(icon);
+    if skip.is_empty() {
+        return art.rasterize(px, weight);
+    }
+    // NOT A THEME COLOUR: the mask's alpha carries the glyph; see
+    // `IconArt::rasterize`.
+    art.rasterize_with(px, weight, |i| {
+        (!skip.contains(&i)).then_some(egui::Color32::WHITE)
+    })
 }
 
 #[cfg(test)]

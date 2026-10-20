@@ -4,13 +4,16 @@
 //! outline in the theme foreground as always and one meaningful part in a
 //! muted hue, the way Office and SOLIDWORKS toolbars do: the plus on *New* in
 //! green, the cross on *Close* in red, the arrows on *Undo* in blue, the
-//! highlighter's band in amber. On is the default; off, every icon is the plain
+//! highlighter's band filled yellow. On is the default; off, every icon is the plain
 //! single-colour mask, drawn by the same code path.
 //!
 //! ## Contract
 //!
 //! - [`accent`] names, per icon, the hue role and the shapes (indices in the
 //!   asset's paint order) that take it. An icon with no entry never changes.
+//! - A coloured glyph lights the pixels the plain mask does, plus the shapes
+//!   [`coloured_only`] names — a wash the mask cannot draw without turning
+//!   its band into the redaction bar.
 //! - The hues are the theme's [`egui_shell::theme::IconAccents`]; this module
 //!   chooses roles, never colours.
 //! - The accent is part of the glyph, not a state: hover, press and the
@@ -38,6 +41,8 @@ pub enum Hue {
     Remove,
     /// Marks or keeps.
     Mark,
+    /// A highlighter's wash, filling a shape the outline encloses.
+    Wash,
 }
 
 impl Hue {
@@ -49,6 +54,7 @@ impl Hue {
             Self::Affirm => accents.affirm,
             Self::Remove => accents.remove,
             Self::Mark => accents.mark,
+            Self::Wash => accents.wash,
         }
     }
 }
@@ -68,7 +74,8 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
         Icon::Permissions => (Hue::Affirm, &[2, 4]),
         Icon::Open | Icon::FontFolders | Icon::EditText => (Hue::Mark, &[0]),
         Icon::Locked | Icon::TextSticky => (Hue::Mark, &[0, 1]),
-        Icon::Markup | Icon::ShapeHighlight | Icon::Paste => (Hue::Mark, &[1]),
+        Icon::Markup | Icon::Paste => (Hue::Mark, &[1]),
+        Icon::ShapeHighlight => (Hue::Wash, &[0]),
         Icon::Encrypt => (Hue::Mark, &[2, 3]),
         Icon::SaveAs => (Hue::Mark, &[3]),
         Icon::Bookmarks | Icon::Layers | Icon::Signatures | Icon::Combine | Icon::ZoomSelection => {
@@ -170,6 +177,17 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
     })
 }
 
+/// The shapes of `icon` drawn only when it is coloured. A wash in the plain
+/// mask's one colour fills its outline solid, and a solid band is the
+/// redaction glyph.
+#[must_use]
+pub const fn coloured_only(icon: Icon) -> &'static [usize] {
+    match icon {
+        Icon::ShapeHighlight => &[0],
+        _ => &[],
+    }
+}
+
 /// The `egui::Context` key the switch is mirrored under.
 const KEY: &str = "pdfcer-icon-accents";
 
@@ -230,9 +248,9 @@ mod tests {
         }
     }
 
-    /// A coloured glyph lights exactly the pixels the plain mask does, so
-    /// turning the option on recolours a glyph and never redraws it; and its
-    /// accent really draws.
+    /// A coloured glyph lights exactly the pixels the plain mask does, plus
+    /// only those of its [`coloured_only`] shapes, so turning the option on
+    /// recolours a glyph and never redraws it; and its accent really draws.
     #[test]
     fn a_coloured_glyph_covers_what_the_plain_mask_covers() {
         // NOT A THEME COLOUR: two test colours told apart by channel.
@@ -242,15 +260,15 @@ mod tests {
                 continue;
             };
             let art = IconArt::parse(icon.source()).expect("parses");
-            let whole = art.rasterize(32, IconWeight::Regular);
+            let whole = crate::icons::cache::plain(&art, icon, 32, IconWeight::Regular);
+            let wash_only = !coloured_only(icon).is_empty();
             let coloured = art.rasterize_with(32, IconWeight::Regular, |i| {
                 Some(if shapes.contains(&i) { hue } else { body })
             });
             let mut accent_px = 0;
             for (k, (w, c)) in whole.pixels.iter().zip(&coloured.pixels).enumerate() {
-                assert_eq!(
-                    w.a() > 0,
-                    c.a() > 0,
+                assert!(
+                    w.a() == 0 && (c.a() == 0 || wash_only) || w.a() > 0 && c.a() > 0,
                     "{}: pixel {k} differs between the plain and the coloured glyph",
                     icon.name()
                 );
@@ -260,6 +278,24 @@ mod tests {
             }
             assert!(accent_px > 0, "{}: the accent draws nothing", icon.name());
         }
+    }
+
+    /// The highlighter's band is hollow in the plain mask, so it never reads
+    /// as the redaction bar, and filled when coloured.
+    #[test]
+    fn the_highlight_band_is_washed_only_when_coloured() {
+        let icon = Icon::ShapeHighlight;
+        let art = IconArt::parse(icon.source()).expect("parses");
+        let plain = crate::icons::cache::plain(&art, icon, 48, IconWeight::Regular);
+        // NOT A THEME COLOUR: a test colour.
+        let wash = egui::Color32::from_rgb(255, 255, 0);
+        let coloured = art.rasterize_with(48, IconWeight::Regular, |i| {
+            Some(if i == 0 { wash } else { egui::Color32::WHITE })
+        });
+        // Inside the band, between two hatch strokes.
+        let at = 24 * 48 + 11;
+        assert_eq!(plain.pixels[at].a(), 0, "plain band is filled");
+        assert_eq!(coloured.pixels[at], wash, "coloured band is not washed");
     }
 
     #[test]

@@ -216,12 +216,14 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 | Group | Commands |
 |---|---|
 | **File** | New (blank) · New from template… (page size) · New from clipboard · Open… · Recent ⌄ · Close |
-| **Recognise** | OCR… · Remove OCR text · Straighten scans… · Enlarge scans… · Manage OCR models… (Download inside it only in a build with model download) |
 | **Save** | Save · Save as… · Save a copy… · Save compacted · Revert |
+| **Recognise** | OCR… · Remove OCR text · Straighten scans… · Enlarge scans… · Manage OCR models… (Download inside it only in a build with model download) |
 | **Export** | Export DXF… · Export image… (PNG/JPEG/TIFF, DPI picker) · Export text… · Import text · Stamp collection · Export form data ⌄ (FDF / XFDF / CSV) · Import form data · Export for hand editing… · Compile hand edits… · Copy this page's text · Copy the whole document's text |
 | **Print** | Print… · Imposition… (n-up / booklet / poster) |
 | **Document** | Properties · Fonts |
 | **pdfcer** | Settings… · Keyboard shortcuts · About |
+
+**Save sits beside File**, the order a word processor uses (`OPERATOR_REQUESTS.md` O313).
 
 **Save writes the open file in place, and the write is atomic.** pdfcer writes
 an **incremental update** — the previous revision stays in the file — so the
@@ -328,11 +330,13 @@ selection is correct.
 
 | Group | Commands |
 |---|---|
-| **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* · Word gap… *(opens Settings ▸ Text at the slider)* |
+| **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
+| **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* · Gap width *(slider: how wide a gap between glyphs reads as a space; commits on release)* · Word gap… *(opens Settings ▸ Text at the full explanation)* |
 | **Insert** | Image… · Link… · Attachments · Shape ⌄ |
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
-| **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
 | **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten · Repair fonts |
+
+**Clipboard leads the tab**, where a word processor puts it (`OPERATOR_REQUESTS.md` O313).
 
 **Reflow follows the tool that does the retyping**, not the tool that selects:
 an operator reflows a paragraph because they have just retyped a sentence in it.

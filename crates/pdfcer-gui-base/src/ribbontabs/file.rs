@@ -60,39 +60,6 @@ pub fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Save — see the module header on why this band has one item.
             // ---------------------------------------------------------------
-            // ---------------------------------------------------------------
-            // Recognise — OCR.
-            //
-            // `RIBBON_IA.md` §5.7 puts this on **Tools**, and it is here
-            // instead. The whole argument is in `super::tools`'s header, where a
-            // reader looking for it in the specified place will find it; the
-            // short version is that Read's tab list is `["file", "view"]`, so a
-            // command on Tools is unreachable in the one mode the operator
-            // specifically asked for it in.
-            //
-            // Between File and Save, which is where it belongs on its own
-            // terms: this band's neighbours are the verbs that make a document
-            // exist (open) and the verbs that write one out (save, export), and
-            // recognition is adjacent to both — it is what turns a scan into a
-            // document you can search and save as one.
-            //
-            // ⚠ It is an EDIT of the open document, not a separate output.
-            // `app::actions::apply` runs it as an ordinary `vector_edit`
-            // through `EditSession::add_ocr_layer`, so it dirties the document
-            // and lands on the undo stack like any other edit — one step for
-            // the whole run, however many pages it covered.
-            // ---------------------------------------------------------------
-            group(
-                "recognise",
-                ribbon::group_file_recognise(),
-                [
-                    large("file.ocr"),
-                    command("file.remove_ocr"),
-                    command("file.deskew"),
-                    command("file.enlarge_scans"),
-                    command("file.ocr_models"),
-                ],
-            ),
             group(
                 "save",
                 ribbon::group_file_save(),
@@ -117,6 +84,37 @@ pub fn tab() -> Tab {
                     command("file.save_as"),
                     command("file.save_copy"),
                     command("file.save_compacted"),
+                ],
+            ),
+            // ---------------------------------------------------------------
+            // Recognise — OCR.
+            //
+            // `RIBBON_IA.md` §5.7 puts this on **Tools**, and it is here
+            // instead. The whole argument is in `super::tools`'s header, where a
+            // reader looking for it in the specified place will find it; the
+            // short version is that Read's tab list is `["file", "view"]`, so a
+            // command on Tools is unreachable in the one mode the operator
+            // specifically asked for it in.
+            //
+            // After Save, which sits beside File (O313): recognition turns a
+            // scan into a document you can search, and stays beside the verbs
+            // that write one out.
+            //
+            // ⚠ It is an EDIT of the open document, not a separate output.
+            // `app::actions::apply` runs it as an ordinary `vector_edit`
+            // through `EditSession::add_ocr_layer`, so it dirties the document
+            // and lands on the undo stack like any other edit — one step for
+            // the whole run, however many pages it covered.
+            // ---------------------------------------------------------------
+            group(
+                "recognise",
+                ribbon::group_file_recognise(),
+                [
+                    large("file.ocr"),
+                    command("file.remove_ocr"),
+                    command("file.deskew"),
+                    command("file.enlarge_scans"),
+                    command("file.ocr_models"),
                 ],
             ),
             // ---------------------------------------------------------------

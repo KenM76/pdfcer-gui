@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
   <!-- Generic highlight-band shape — generic, no trademark risk -->
-  <!-- ui-spec §3.3: a wide flat rounded band with a 45deg hatch TEXTURE standing in
-       for "translucent highlighter colour" — these are single-colour mask icons with
-       no palette in which to show the operator's actual chosen highlight colour. The
-       hatch is deliberately stroke-width 1, not the set's usual 2.5: it is a texture,
-       not a contour, and at 2.5 it would fill the band solid and read as redaction. -->
+  <!-- A wide flat rounded band. Shape 0 is the band's yellow wash, drawn only
+       when icons are coloured (icons::accent::coloured_only): in the plain
+       mask's one colour it would fill the band solid and read as redaction.
+       The hatch stands in for the wash there, and is stroke-width 1 for the
+       same reason. -->
+  <rect x="8" y="19" width="32" height="10" rx="2" fill="currentColor" stroke="none"/>
   <rect x="8" y="19" width="32" height="10" rx="2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
   <path d="M13 28l8-8M21 28l8-8M29 28l8-8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
 </svg>
