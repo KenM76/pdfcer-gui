@@ -50,8 +50,9 @@ pub struct CompactDialog {
     /// off, since it is lossless and never makes the copy larger.
     want_recompress: bool,
     recompress: Recompress,
-    /// The options the copy was written with, for the recompressed rewrite.
-    options: pdfcer_core::writer::SaveOptions,
+    /// The operator's settings, for the recompressed rewrite's session and
+    /// save options.
+    settings: pdfcer_core::settings::Settings,
     save_requested: bool,
     close_requested: bool,
 }
@@ -83,7 +84,7 @@ impl CompactDialog {
             space: None,
             want_recompress: true,
             recompress: Recompress::Off,
-            options,
+            settings: doc.settings.clone(),
             save_requested: false,
             close_requested: false,
         })
@@ -224,7 +225,7 @@ impl CompactDialog {
     /// Start the recompression when it is wanted, and take its result.
     fn recompress_step(&mut self, ctx: &egui::Context) {
         if self.want_recompress && matches!(self.recompress, Recompress::Off) {
-            let job = Job::start(ctx, self.bytes.clone(), self.options.clone());
+            let job = Job::start(ctx, self.bytes.clone(), self.settings.clone());
             self.recompress = Recompress::Working(job);
         }
         let landed = match &self.recompress {
@@ -272,7 +273,7 @@ impl CompactDialog {
                 for (reason, count) in &done.left {
                     ui.small(t::left_line(reason, *count));
                 }
-                for note in &done.notes {
+                for note in done.restructured.iter().chain(&done.notes) {
                     ui.small(note.as_str());
                 }
             }

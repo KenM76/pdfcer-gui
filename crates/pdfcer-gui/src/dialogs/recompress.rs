@@ -2,18 +2,20 @@
 //!
 //! Contract: [`recompress`] runs the engine's lossless optimize preset on a
 //! scratch session parsed from the compacted copy, so the open document and
-//! its undo history are untouched, and answers the smaller file with what the
-//! plan left alone. A signed copy proceeds: the compact window already states
+//! its undo history are untouched. The preset re-encodes streams and rebuilds
+//! the structure: unused parts dropped, duplicates merged, the index packed.
+//! It answers the smaller file with what the plan left alone and what the
+//! rebuild did. A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
 use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
-use pdfcer_core::edit::EditSession;
 use pdfcer_core::optimize::{OptimizedFile, Preset};
-use pdfcer_core::writer::SaveOptions;
+use pdfcer_core::settings::Settings;
 
+use crate::app::settings::SettingsExt;
 use crate::text::compact as t;
 
 /// What recompressing the copy did.
@@ -28,24 +30,28 @@ pub struct Recompressed {
     pub left: BTreeMap<String, usize>,
     /// The engine's own disclosures.
     pub notes: Vec<String>,
+    /// What the structure rebuild did, one sentence each.
+    pub restructured: Vec<String>,
 }
 
-/// Recompress `copy`, writing with `options`.
+/// Recompress `copy` in a session and with save options built from the
+/// operator's `settings`.
 ///
 /// # Errors
 ///
 /// The engine's sentence when the copy does not parse, the plan is refused
 /// (an encrypted copy) or the rewrite fails.
-pub fn recompress(copy: &[u8], options: &SaveOptions) -> Result<Recompressed, String> {
+pub fn recompress(copy: &[u8], settings: &Settings) -> Result<Recompressed, String> {
     let doc = Document::from_bytes(copy.to_vec()).map_err(|e| e.to_string())?;
-    let mut session = EditSession::new(doc);
-    let mut settings = Preset::Lossless.settings();
-    settings.allow_signed = true;
-    let plan = session
-        .plan_optimize(&settings)
-        .map_err(|e| e.to_string())?;
+    let mut session = settings.open_session(doc);
+    let options = settings.save_options();
+    let mut preset = Preset::Lossless.settings();
+    preset.allow_signed = true;
+    let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
-    let file = session.save_optimized(options).map_err(|e| e.to_string())?;
+    let (file, report) = session
+        .save_optimized(&options, &preset.structure)
+        .map_err(|e| e.to_string())?;
     let mut left = BTreeMap::new();
     for skipped in &plan.skipped {
         *left.entry(t::left_because(&skipped.reason)).or_insert(0) += 1;
@@ -58,6 +64,7 @@ pub fn recompress(copy: &[u8], options: &SaveOptions) -> Result<Recompressed, St
         changed: plan.changes.len(),
         left,
         notes: plan.notes,
+        restructured: report.as_ref().map(t::restructured).unwrap_or_default(),
     })
 }
 
@@ -68,14 +75,14 @@ pub struct Job {
 
 impl Job {
     /// Start recompressing `copy`; the window repaints when it is done.
-    pub fn start(ctx: &egui::Context, copy: Vec<u8>, options: SaveOptions) -> Self {
+    pub fn start(ctx: &egui::Context, copy: Vec<u8>, settings: Settings) -> Self {
         let (tx, rx) = channel();
         let ctx = ctx.clone();
         let spawned = std::thread::Builder::new()
             .name("compact-recompress".to_owned())
             .spawn(move || {
                 let started = std::time::Instant::now();
-                let result = recompress(&copy, &options);
+                let result = recompress(&copy, &settings);
                 crate::diag::trace(|| {
                     format!(
                         "compact-recompressed ok={} smaller={} changed={} ms={}", // ui-text-exempt: diagnostic trace
@@ -110,7 +117,8 @@ impl Job {
 mod tests {
     use super::*;
 
-    /// A one-page file whose content stream is stored unfiltered.
+    /// A one-page file whose content stream is stored unfiltered, with one
+    /// object nothing refers to.
     fn unfiltered() -> Vec<u8> {
         let page = "0 g 10 10 20 20 re f\n".repeat(200);
         let bodies = [
@@ -118,6 +126,7 @@ mod tests {
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
             format!("<< /Length {} >>\nstream\n{page}\nendstream", page.len()),
+            "<< /Unused true >>".to_string(),
         ];
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();
@@ -142,13 +151,18 @@ mod tests {
         buf
     }
 
-    /// The unfiltered stream is re-encoded, the file comes out smaller, and
-    /// it opens with the same page content.
+    /// The unfiltered stream is re-encoded, the unused object is dropped, the
+    /// file comes out smaller, and it opens with the same page content.
     #[test]
     fn an_unfiltered_stream_is_recompressed_into_a_smaller_copy() {
         let copy = unfiltered();
-        let done = recompress(&copy, &SaveOptions::default()).expect("recompresses");
+        let done = recompress(&copy, &Settings::default()).expect("recompresses");
         assert_eq!(done.changed, 1, "{done:?}");
+        assert!(
+            done.restructured.iter().any(|l| l.starts_with("1 unused")),
+            "the unused object is dropped and said so: {:?}",
+            done.restructured
+        );
         let bytes = done.bytes.expect("smaller");
         assert!(bytes.len() < copy.len());
         let after = Document::from_bytes(bytes).expect("parses back");

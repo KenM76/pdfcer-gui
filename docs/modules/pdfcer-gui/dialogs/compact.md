@@ -68,7 +68,7 @@ never wrong; only the account of it here was.
 
 ## Recompress
 
-A switch under the size line, on by default, runs the engine's lossless optimize preset (`Preset::Lossless`) on the measured copy. That re-encodes every stream that comes out strictly smaller. The work happens in `dialogs::recompress`.
+A switch under the size line, on by default, runs the engine's lossless optimize preset (`Preset::Lossless`) on the measured copy. That re-encodes every stream that comes out strictly smaller, then rebuilds the structure under the preset's `RebuildOptions`: unused objects dropped, identical ones merged, non-stream objects packed into object streams with a cross-reference stream. The window words each `RebuildReport` count that is non-zero, and says so when the header was raised to PDF 1.5. The work happens in `dialogs::recompress`.
 
 - **It runs on a scratch session parsed from the copy.** The open document's session is untouched, so no undo step appears and nothing on the canvas changes. Optimizing the live session would have put an Optimize command in the operator's history for a save that is a copy.
 - **It runs off the UI thread.** A dense sheet takes seconds at level 9. Save is greyed meanwhile, explained on hover, because the size line would otherwise promise one file and write another.

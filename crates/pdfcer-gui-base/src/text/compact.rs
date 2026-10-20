@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/compact.md`.
 
-use pdfcer_core::optimize::SkipReason;
+use pdfcer_core::optimize::{RebuildReport, SkipReason};
 use pdfcer_core::space_audit::SpaceCategory;
 
 /// The window's title bar.
@@ -108,9 +108,39 @@ pub const fn recompress_toggle() -> &'static str {
 /// Hover on the switch.
 #[must_use]
 pub const fn recompress_tooltip() -> &'static str {
-    "Re-encodes the data inside the file more tightly. Nothing you see changes, and \
-     anything that would not get smaller is kept as it was. A large drawing \
-     takes a few seconds."
+    "Re-encodes the data inside the file more tightly, drops parts nothing uses, merges \
+     identical ones and packs the file's index. Nothing you see changes, and anything that \
+     would not get smaller is kept as it was. A large drawing takes a few seconds."
+}
+
+/// What the structure rebuild did, one sentence per kind of change; kinds
+/// that did not happen are left out.
+#[must_use]
+pub fn restructured(report: &RebuildReport) -> Vec<String> {
+    let mut lines = Vec::new();
+    if !report.unreferenced.is_empty() {
+        lines.push(format!(
+            "{} unused part(s) dropped.",
+            report.unreferenced.len()
+        ));
+    }
+    if !report.merged.is_empty() {
+        lines.push(format!("{} duplicate part(s) merged.", report.merged.len()));
+    }
+    if report.dangling > 0 {
+        lines.push(format!(
+            "{} reference(s) to parts the file does not contain were written as empty, which is \
+             what a reader already took them to mean.",
+            report.dangling
+        ));
+    }
+    if let Some(version) = report.version_raised {
+        lines.push(format!(
+            "The copy is marked PDF {version}, which packing its index requires. Readers older \
+             than that may not open it."
+        ));
+    }
+    lines
 }
 
 /// Shown while the copy is being recompressed.
