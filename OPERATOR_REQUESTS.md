@@ -594,6 +594,46 @@ Both menus list every panel this build registers, ticked when it is on screen; c
 
 **Where it stands.** Built. Driven by `a_dock_right_click_hides_and_shows_any_panel`, falsified.
 
+## O307–O315 — nine asks in one message, FILED BEFORE ANY WORK
+
+His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*
+
+## O307 — **FILED** — a paragraph that reads as a paragraph edits as one
+
+His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text is still shown as individual lines. Some paragraphs work fine, but for some reason this one isn't detected as a paragraph."* (`ROPS-FOPS\Code 4 - Final.pdf`) and *"FRONT EDGE OF FOPS PLATE SHOULD BE / APPROXIMATELY 1/2" FROM THE FRONT OF THE / TRUCK BED. These also don't get detected as a paragraph."* (`SW41177.pdf`).
+
+## O308 — **FILED** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
+
+His words: *"If I try to italicize, bold, underline, change font etc it doesn't appear to work if I select an area within a block of text with the I cursor."*
+
+## O309 — **FILED** — the font size shows the size the text is drawn at, fractional sizes included
+
+His words: *"when I am in the text with the I cursor, in the Format and Properties section it shows me the font as 1.0pt high instead of the actual height. This might be because it does not match a whole point measurement, but we should be able to handle that."* (`SW41177.pdf`)
+
+## O310 — **FILED** — changing the size of that text redraws it, and clicking a line never shows squares
+
+His words: *"Changing the font size causes the text chunk to go blank, and if I click on a line the text is replaced with squares."* (`SW41177.pdf`)
+
+## O311 — **FILED** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
+
+His words: *"If I type a character that doesn't exist in the embedded font I get this notice: CenturyGothic has no ‘z’, so it will be set in Helvetica when you commit. But CenturyGothic is installed on the system, so it doesn't need to substitute the font, just add the embedded missing character. Also the settings default should be to use the fonts installed on this computer."*
+
+## O312 — **FILED** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
+
+His words: *"Also the setting Where extracted text gets its spaces should be available right in the Content menu section, and I think we have an auto option for this?"*
+
+## O313 — **FILED** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
+
+His words: *"Clipboard commands should be on the very left of the edit tab. Text markup highlight icon needs to be filled with yellow color. Save commands should be next to File."*
+
+## O314 — **FILED** — the latest engine and egui, and every new engine feature reaches the program
+
+His words: *"The pdfcer engine has also been updated, so use the latest. Also egui might have been updated too."* … *"Also check for an new and updated features that need to be implemented from the new pdfcer engine."*
+
+## O315 — **FILED** — text editing behaves as a word processor's does
+
+His words: *"In short, editing should try to work the same way as it would in most Word Processors."* A sweep, not the two drawings: O307–O311 are samples of it.
+
 ## O305 — **STANDING RULE** — between releases, drive only what changed and what it affects
 
 His words: *"Can you minimize your tests to only what was changed and would be affected between releases, and save this as a rule going forward?"*
