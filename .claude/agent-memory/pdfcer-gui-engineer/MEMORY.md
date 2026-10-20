@@ -158,7 +158,7 @@
 - [fmt moves a literal off its exemption](feedback_fmt_moves_exemption.md) — trail the exempt comment on the literal's line.
 - [Moving comments can fail a gate](feedback_moving_comments_blinds.md) — check-conventions reads header blocks; keep them in source.
 - [OCRcer adoption triggers a release](project_ocrcer_release_trigger.md) — pre-approved: wire options + publish when the engine says so.
-- [A filtered test run hides the registry tests](feedback_filtered_test_run.md) — a new command reddens 4 far-away tests; run the lib suite unfiltered.
+- [Gates run no unit tests](feedback_filtered_test_run.md) - new commands and pin moves need `cargo test --workspace` unfiltered.
 - [An engine count is not the operator's](feedback_engine_count_not_operators.md) — purge verb said 0 while the rewrite removed the password.
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
 - [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.

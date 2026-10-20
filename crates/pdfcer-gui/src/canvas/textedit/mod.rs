@@ -64,6 +64,9 @@ pub mod draftkeys;
 mod edits;
 pub mod ime;
 pub use edits::{claim_tab, hold_arrows};
+/// The block model the engine's block verbs read; every block index sent
+/// to one comes from here.
+pub mod engine_model;
 /// The open draft's undo stack.
 pub mod history;
 /// Where the pointer is in relation to the editor box, published by `paint`

@@ -594,6 +594,16 @@ Both menus list every panel this build registers, ticked when it is on screen; c
 
 **Where it stands.** Built. Driven by `a_dock_right_click_hides_and_shows_any_panel`, falsified.
 
+## O316–O318 — three asks about layers and objects, FILED BEFORE ANY WORK
+
+His words: *"with show and hide layers, if I click to show or hide a layer that has sub items in the tree those should change to show or hide as well. also when layers and objects are hidden they shouldn't get selected when I select around things on the page. also our objects section should also put things treed into their layers if possible."*
+
+## O316 — **OPEN** — showing or hiding a layer shows or hides everything under it in the tree
+
+## O317 — **OPEN** — a hidden layer's or object's content is not picked up by a selection rectangle
+
+## O318 — **OPEN** — the Objects panel groups objects under the layer they belong to, where the file says so
+
 ## O307–O315 — nine asks in one message, FILED BEFORE ANY WORK
 
 His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*
@@ -602,7 +612,7 @@ His words: *"I'd made some requests and I'm not sure they got implemented into p
 
 His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text is still shown as individual lines. Some paragraphs work fine, but for some reason this one isn't detected as a paragraph."* (`ROPS-FOPS\Code 4 - Final.pdf`) and *"FRONT EDGE OF FOPS PLATE SHOULD BE / APPROXIMATELY 1/2" FROM THE FRONT OF THE / TRUCK BED. These also don't get detected as a paragraph."* (`SW41177.pdf`).
 
-**Engine fixed; the shell's own paragraph numbering is not yet aligned.** Engine v0.88.0 (G205, G206) reads the paragraph under 1.6.1 as one block, each heading as its own block, and each note in a drawing frame as its own block; this build links it, and the draft's click, Enter and commit take the engine's numbering. Reflow and Align still number paragraphs without the engine's line marks, so on a page pdfcer already wrote a blank-line paragraph into they can name the wrong one; that is next. Not yet driven on either file.
+**Engine fixed, shell aligned, not driven.** Engine v0.88.0 (G205, G206) reads the paragraph under 1.6.1 as one block, each heading as its own block, and each note in a drawing frame as its own block. The draft's click, Enter and commit, the Select tool's paragraph, Reflow and Align now all number paragraphs exactly as the engine does, including a paragraph pdfcer itself wrote with a blank line in it (unit test against the engine's own lookup). Not yet driven on either file.
 
 ## O308 — **BUILT, NOT DRIVEN** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
 

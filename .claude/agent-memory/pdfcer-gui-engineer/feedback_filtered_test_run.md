@@ -1,6 +1,6 @@
 ---
 name: filtered-test-run-hides-registry-tests
-description: A filtered `cargo test <name>` run skips the registry-wide tests (ledger counts, handler-token uniqueness, built_in.ron) that every new command breaks
+description: run-all.sh runs no unit tests; a filtered cargo test skips registry-wide ones. Pin moves and command additions need the unfiltered workspace run before commit
 metadata:
   type: feedback
 ---
@@ -19,3 +19,13 @@ run the unfiltered `cargo test -p pdfcer-gui --lib` (about 15 s once built).
 After a new command, regenerate the RON with
 `cargo test -p pdfcer-gui rewrite_built_in_ron -- --ignored` and bump both
 ledger counts. See [[feedback_skip_red_check_stop]].
+
+**Pin moves too.** The v0.88.0 pin commit went in on 86/86 gates without
+`cargo test --workspace`, and the engine had moved a calibration test
+(`reflow::tests::the_index_is_one_the_engine_accepts_on_a_right_aligned_fixture`).
+A pin move changes engine behaviour under every test, so run
+`CARGO_BUILD_JOBS=2 cargo test --workspace` before that commit.
+
+**Do not isolate a cause with `git stash -u`.** It fails on the locked
+`.claude/agent-memory` folders, leaves the tree unreset, and then cannot pop.
+Reason from what the failing assertion reads instead, or use a worktree.

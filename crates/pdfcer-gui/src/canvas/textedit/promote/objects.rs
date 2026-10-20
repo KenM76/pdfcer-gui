@@ -8,10 +8,11 @@
 //! `vector::text_locate::locate_text_run`, which answers `None` rather than
 //! guessing.
 
-use pdfcer_core::text_edit::{EditableTextModel, GlyphRef, TextPosition};
+use pdfcer_core::text_edit::{GlyphRef, TextPosition};
 
-use super::{detect_cell_regions, enabled_on, here, marks, reflow_recognition_options};
+use super::{enabled_on, here};
 use crate::app::state::OpenDoc;
+use crate::canvas::textedit::engine_model;
 use crate::canvas::textedit::pin;
 
 /// The page objects (indices into `PageObjects::objects`, ascending) whose
@@ -29,10 +30,7 @@ pub fn of(
         .first_run;
     let text = doc.provenance_page_text(page).ok_or("no-text")?;
     let view = doc.session.view();
-    let cells = detect_cell_regions(&view, page).map_err(|_| "no-cells")?;
-    let model =
-        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells)
-            .with_line_marks(marks(&view, page));
+    let model = engine_model::recognise(&text, &view, page).ok_or("no-cells")?;
     let block = model
         .blocks()
         .get(

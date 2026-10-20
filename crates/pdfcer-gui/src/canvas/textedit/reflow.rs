@@ -5,9 +5,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/reflow.md`.
 
-use pdfcer_core::text_edit::{
-    EditableTextModel, TextPosition, detect_cell_regions, reflow_recognition_options,
-};
+use pdfcer_core::text_edit::TextPosition;
+
+use super::engine_model;
 
 use crate::app::state::OpenDoc;
 
@@ -24,9 +24,7 @@ pub fn block_of_run(doc: &OpenDoc, page_index: usize, run: usize) -> Option<usiz
     // properties of the shared cache rather than of this function; see
     // `crate::app::cache::provenance`.
     let text = doc.provenance_page_text(page_index)?;
-    let cells = detect_cell_regions(&doc.session.view(), page_index).ok()?;
-    let model =
-        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells);
+    let model = engine_model::recognise(&text, &doc.session.view(), page_index)?;
     model.block_at(TextPosition::new(run, 0))
 }
 
@@ -37,11 +35,9 @@ pub fn blocks_of_runs(doc: &OpenDoc, page_index: usize, runs: &[usize]) -> Vec<u
     let Some(text) = doc.provenance_page_text(page_index) else {
         return Vec::new();
     };
-    let Ok(cells) = detect_cell_regions(&doc.session.view(), page_index) else {
+    let Some(model) = engine_model::recognise(&text, &doc.session.view(), page_index) else {
         return Vec::new();
     };
-    let model =
-        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells);
     let mut blocks: Vec<usize> = runs
         .iter()
         .filter_map(|run| model.block_at(TextPosition::new(*run, 0)))
@@ -53,37 +49,86 @@ pub fn blocks_of_runs(doc: &OpenDoc, page_index: usize, runs: &[usize]) -> Vec<u
 
 #[cfg(test)]
 mod tests {
-    /// **The recognition is the one the ENGINE will index the answer in.**
+    /// A paragraph pdfcer wrote with a blank line in it is one block to the
+    /// engine (its line marks merge it). Every block this module numbers must
+    /// be the block `block_at_point` names at the same place.
+    #[test]
+    fn a_written_blank_line_paragraph_is_numbered_as_the_engine_numbers_it() {
+        use pdfcer_core::text_edit::BlockEditOptions;
+
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/paragraph-two.pdf");
+        let document = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let pages = pdfcer_core::page_tree::pages(&document).expect("a page tree");
+        let mut session = pdfcer_core::edit::EditSession::new(document);
+        session
+            .edit_block_text(
+                0,
+                0,
+                "First line
+
+Second paragraph",
+                &BlockEditOptions::default(),
+            )
+            .expect("the block takes a blank line");
+        let doc = crate::app::state::OpenDoc::new(path, session, pages);
+
+        let text = doc.provenance_page_text(0).expect("page 0 extracts");
+        let model = super::engine_model::recognise(&text, &doc.session.view(), 0)
+            .expect("the page's cells read");
+        assert!(
+            model.blocks().len() >= 2,
+            "the fixture has a second paragraph"
+        );
+        for (index, block) in model.blocks().iter().enumerate() {
+            let line = model
+                .lines()
+                .get(block.line_indices[0])
+                .expect("a block has a first line");
+            let (x, y) = (
+                (line.bbox.llx + line.bbox.urx) / 2.0,
+                (line.bbox.lly + line.bbox.ury) / 2.0,
+            );
+            let hit = doc
+                .session
+                .block_at_point(0, x, y)
+                .expect("the page reads")
+                .expect("a line is under its own centre");
+            assert_eq!(
+                hit.block_index, index,
+                "block {index} is numbered differently"
+            );
+        }
+    }
+
+    /// The block lookup numbers paragraphs through `engine_model`, which
+    /// builds the model as the engine's block verbs do, line marks included.
+    /// The needles are built, not written, so this file cannot match itself.
     #[test]
     fn the_block_is_numbered_the_way_the_engine_will_read_it() {
         let source = include_str!("reflow.rs");
-        // The needle is BUILT rather than written, and it has to be: a
-        // literal here appears in this very file, so the scan would match its
-        // own assertion and pass against wrong code. **A source scan cannot
-        // contain its own needle** — the same trap `typing-guard-exempt:
-        // SELF-REFERENTIAL` names one module along.
-        let engines = format!(
-            "recognize_with_cells(&text, &{}(), &cells)",
-            "reflow_recognition_options"
+        let production = source.split("#[cfg(test)]").next().unwrap_or_default();
+        let routed = format!("{}::recognise(", "engine_model");
+        assert_eq!(
+            production.matches(&routed).count(),
+            2,
+            "both block lookups must number through engine_model"
         );
+        let local = format!("{}::recognize", "EditableTextModel");
         assert!(
-            source.contains(&engines),
-            "the block lookup no longer numbers its answer the way `reflow_block` reads it"
+            !production.contains(&local),
+            "a block lookup builds its own model, which the engine's verbs never read"
         );
-        // The negative targets the CALL, not the name. The name appears in
-        // this module's own header, in the quoted argument that got this wrong
-        // — an assertion on the bare string would fail on the documentation
-        // that prevents the mistake, which is the shape where a test punishes
-        // its own fix.
-        let carets = format!(
-            "recognize(&text, &{}::default())",
-            "BlockRecognitionOptions"
-        );
-        assert!(
-            !source.contains(&carets),
-            "the block lookup numbers its answer in the CARET's recognition, which the engine \
-             never builds — the index names a different paragraph, or none"
-        );
+        let model = include_str!("engine_model.rs");
+        for needle in [
+            format!(
+                "{}(text, &{}(), &cells)",
+                "recognize_with_cells", "reflow_recognition_options"
+            ),
+            format!(".{}(marks(view, page))", "with_line_marks"),
+        ] {
+            assert!(model.contains(&needle), "engine_model lost `{needle}`");
+        }
     }
 
     /// **THE BEHAVIOURAL ONE: the index this returns must be an index the
@@ -95,18 +140,18 @@ mod tests {
     /// disagree about, and the disagreement is large enough to be fatal:
     ///
     /// ```text
-    /// page 0, run 2 : caret recognition -> block 3 of 4
-    ///                 reflow recognition -> block 2 of 3
+    /// page 0, run 2 : caret recognition -> block 4 of 5
+    ///                 reflow recognition -> block 3 of 4
     /// ```
     ///
-    /// **Block 3 does not exist in the engine's model.** So a build resolving
+    /// **Block 4 does not exist in the engine's model.** So a build resolving
     /// the caret's recognition hands `reflow_block` a subscript one past the
-    /// end and is refused — `BlockIndexOutOfRange(3, 3)` — for a paragraph the
+    /// end and is refused — `BlockIndexOutOfRange(4, 4)` — for a paragraph the
     /// operator can see. That is asserted here both ways round: the wrong
     /// answer is proved to be rejected, and the right answer is proved not to
     /// be rejected *for that reason*.
     ///
-    /// The literals `3` and `2` are asserted rather than derived. They are
+    /// The literals `4` and `3` are asserted rather than derived. They are
     /// the calibration: if the engine's recogniser changes so the two configs
     /// agree on this fixture, this test goes red saying so, instead of quietly
     /// becoming a test that cannot distinguish the answers — which is exactly
@@ -161,21 +206,21 @@ mod tests {
         let engines = EditableTextModel::recognize(&extracted, &reflow_recognition_options());
         assert_eq!(
             carets.block_at(TextPosition::new(RUN, 0)),
-            Some(3),
-            "the caret's recognition no longer puts run {RUN} in block 3 — this fixture can no \
+            Some(4),
+            "the caret's recognition no longer puts run {RUN} in block 4 — this fixture can no \
              longer tell the two numberings apart, so the assertions below prove nothing"
         );
         assert_eq!(
             engines.block_at(TextPosition::new(RUN, 0)),
-            Some(2),
-            "the engine's recognition no longer puts run {RUN} in block 2"
+            Some(3),
+            "the engine's recognition no longer puts run {RUN} in block 3"
         );
-        assert_eq!(engines.blocks().len(), 3, "the engine's block count moved");
+        assert_eq!(engines.blocks().len(), 4, "the engine's block count moved");
 
         // --- what the shell sends -------------------------------------------
         assert_eq!(
             super::block_of_run(&doc, 0, RUN),
-            Some(2),
+            Some(3),
             "the reflow target is numbered in the caret's recognition, which the engine never \
              builds — so it names a different paragraph, or none at all"
         );
@@ -188,12 +233,12 @@ mod tests {
         let mut wrong = open();
         assert!(
             matches!(
-                wrong.reflow_block(0, 3, &ReflowRequest::new()),
+                wrong.reflow_block(0, 4, &ReflowRequest::new()),
                 Err(ReflowApplyError::Preview(
-                    ReflowError::BlockIndexOutOfRange(3, 3)
+                    ReflowError::BlockIndexOutOfRange(4, 4)
                 ))
             ),
-            "block 3 is no longer out of range for the engine, so the caret's numbering is no \
+            "block 4 is no longer out of range for the engine, so the caret's numbering is no \
              longer provably fatal on this fixture and this test has stopped measuring"
         );
 
@@ -205,7 +250,7 @@ mod tests {
         let mut right = open();
         assert!(
             !matches!(
-                right.reflow_block(0, 2, &ReflowRequest::new()),
+                right.reflow_block(0, 3, &ReflowRequest::new()),
                 Err(ReflowApplyError::Preview(
                     ReflowError::BlockIndexOutOfRange(..)
                 ))

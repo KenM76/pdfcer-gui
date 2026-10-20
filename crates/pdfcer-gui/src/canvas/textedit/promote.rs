@@ -13,10 +13,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textedit/promote.md`.
 
-use pdfcer_core::content::ContentStream;
 use pdfcer_core::text_edit::{
-    BlockEditOptions, EditableTextModel, GlyphRef, Line, LineEnd, LineEndSource, LineMarks,
-    TextPosition, detect_cell_regions, reflow_recognition_options,
+    BlockEditOptions, EditableTextModel, GlyphRef, Line, LineEnd, LineEndSource, TextPosition,
 };
 use pdfcer_core::text_extract::TextColor;
 use pdfcer_gui_base::text::draftnote::DraftNote;
@@ -411,10 +409,8 @@ fn paragraph(
         .provenance_page_text(page)
         .ok_or(Declined::no_paragraph("no-text"))?;
     let view = doc.session.view();
-    let cells = detect_cell_regions(&view, page).map_err(|_| Declined::no_paragraph("no-cells"))?;
-    let model =
-        EditableTextModel::recognize_with_cells(&text, &reflow_recognition_options(), &cells)
-            .with_line_marks(marks(&view, page));
+    let model = super::engine_model::recognise(&text, &view, page)
+        .ok_or(Declined::no_paragraph("no-cells"))?;
     let block = model
         .block_at(TextPosition::new(run, 0))
         .ok_or(Declined::no_paragraph("no-paragraph"))?;
@@ -475,16 +471,6 @@ pub fn position(places: &[Place], byte: usize, end: bool) -> Option<TextPosition
     } else {
         places.iter().find(|p| p.at + p.len > byte).map(|p| p.pos)
     }
-}
-
-/// The page's line-end marks, so a paragraph pdfcer wrote reads its breaks
-/// exactly; empty when the page's content cannot be read.
-fn marks(view: &pdfcer_core::view::DocumentView<'_>, page: usize) -> LineMarks {
-    pdfcer_core::page_tree::pages_in(view)
-        .ok()
-        .and_then(|pages| ContentStream::from_page(view, pages.get(page)?).ok())
-        .map(|content| LineMarks::scan(&content))
-        .unwrap_or_default()
 }
 
 /// A glyph's text, or `""` when the reference is stale.
