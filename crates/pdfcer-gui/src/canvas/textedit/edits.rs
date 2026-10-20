@@ -164,6 +164,7 @@ impl Keys<'_> {
             Key::ArrowLeft | Key::ArrowRight => self.horizontal(key == Key::ArrowRight, m),
             Key::ArrowUp | Key::ArrowDown => return self.vertical(key == Key::ArrowUp, m),
             Key::Home | Key::End => return self.home_end(key == Key::End, m),
+            Key::PageUp | Key::PageDown => self.page(key == Key::PageUp, m),
             Key::Enter => return self.enter(m),
             _ => {}
         }
@@ -434,6 +435,16 @@ impl Keys<'_> {
             return Flow::Done;
         }
         Flow::Continue
+    }
+
+    /// PageUp and PageDown: [`super::lines::page`]; Shift selects to there.
+    fn page(&mut self, up: bool, m: Modifiers) {
+        let shift = caret::shifted(m.shift, self.frame_shift);
+        let d = &mut *self.draft;
+        let to = super::lines::page(&d.text, d.caret, up);
+        d.mark = caret::moved(d.mark, d.caret, shift);
+        d.caret = to;
+        self.moved();
     }
 
     /// Home and End: the draft's own line when it has several, else the line

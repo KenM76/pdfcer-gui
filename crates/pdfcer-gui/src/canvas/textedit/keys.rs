@@ -24,7 +24,7 @@ use super::{Anchor, DIAG_TYPE, Draft, hit, read, store};
 use crate::app::state::OpenDoc;
 
 /// **What the pointer does inside the editor box** — place the caret, sweep a
-/// selection, take a word on a double click or a line on a triple click.
+/// selection, take a word on a double click or a paragraph on a triple click.
 fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
     let Some(layout) = hit::read(ctx) else {
         return false;
@@ -94,7 +94,9 @@ fn pointer(ui: &Ui, ctx: &egui::Context, draft: &mut Draft) -> bool {
 
 /// The span a multiple click at character `at` takes: on a double click the
 /// word under it without its trailing space (or the run of spaces under it),
-/// so typing over it keeps the separator; on a triple the draft's line.
+/// so typing over it keeps the separator; on a triple the paragraph, since a
+/// draft breaks lines only between paragraphs. A draft opened on one line of
+/// the page holds only that line.
 fn clicked_span(text: &str, at: usize, clicks: u8) -> (usize, usize) {
     if clicks >= 3 {
         return (
@@ -734,6 +736,25 @@ three",
         );
         let after = read(&ctx).unwrap();
         assert_eq!(caret::range(after.mark, after.caret), Some((0, 13)));
+    }
+
+    /// PageUp and PageDown move the caret in the draft, Shift selecting.
+    #[test]
+    fn page_keys_move_through_the_draft() {
+        let ctx = egui::Context::default();
+        draft_of(
+            &ctx,
+            "one
+two
+three",
+        );
+        key_frame(&ctx, egui::Key::PageUp, egui::Modifiers::NONE);
+        assert_eq!(read(&ctx).unwrap().caret, 3);
+        key_frame(&ctx, egui::Key::PageUp, egui::Modifiers::NONE);
+        assert_eq!(read(&ctx).unwrap().caret, 0);
+        key_frame(&ctx, egui::Key::PageDown, egui::Modifiers::SHIFT);
+        let after = read(&ctx).unwrap();
+        assert_eq!(caret::range(after.mark, after.caret), Some((0, 8)));
     }
 
     /// **A press that begins OUTSIDE the box is not the draft's business**,

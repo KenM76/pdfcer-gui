@@ -47,7 +47,8 @@
 //!   well.
 //! - T8 selection: Shift+arrows extend it (Shift+Up/Down past the first or last
 //!   line reach its start or end and keep the draft), Ctrl+A takes the run, a
-//!   double click the word and a triple click the line ([`keys::pointer`]); a
+//!   double click the word and a triple click the paragraph ([`keys::pointer`]),
+//!   PageUp and PageDown the first and last lines then the ends; a
 //!   text-tool drag that starts on page text opens it and sweeps rather than
 //!   drawing a box ([`sweep::over_text`]).
 

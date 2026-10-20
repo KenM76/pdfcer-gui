@@ -80,6 +80,21 @@ pub fn end_of_line(text: &str, caret: usize) -> usize {
     spans(text)[line].1
 }
 
+/// **Press PageUp or PageDown.** The same column on the draft's first or
+/// last line; from that line already, the draft's start or end. A draft is
+/// never taller than the view, so one page is the whole draft.
+#[must_use]
+pub fn page(text: &str, caret: usize, up: bool) -> usize {
+    let (line, column) = locate(text, caret);
+    let last = spans(text).len() - 1;
+    match (up, line) {
+        (true, 0) => 0,
+        (true, _) => offset_of(text, 0, column),
+        (false, l) if l == last => text.chars().count(),
+        (false, _) => offset_of(text, last, column),
+    }
+}
+
 /// **Does this draft hold more than one line?**
 #[must_use]
 pub fn is_multi_line(text: &str) -> bool {
@@ -89,6 +104,18 @@ pub fn is_multi_line(text: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn page_keys_reach_the_first_and_last_line_then_the_ends() {
+        let text = "abcd
+ef
+ghij";
+        assert_eq!(page(text, 10, true), 2, "same column on the first line");
+        assert_eq!(page(text, 2, true), 0, "from the first line, the start");
+        assert_eq!(page(text, 1, false), 9, "same column on the last line");
+        assert_eq!(page(text, 9, false), 12, "from the last line, the end");
+        assert_eq!(page("one line", 3, false), 8);
+    }
 
     /// **A draft with no break is one line, and every key still works on
     /// it.**
