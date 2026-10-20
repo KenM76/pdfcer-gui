@@ -5,6 +5,12 @@ One row per layer with its visibility switch, arranged as the document's
 search field is empty, and as a flat filtered list while it is not. The tree,
 its moves and its folders are in `layers/tree.md`.
 
+A layer's switch also sets every unlocked layer nested under it in `/Order`,
+on or off with it, so hiding a parent hides what the tree shows under it.
+Locked sublayers keep their state. A folder (a label with no group) has no
+switch. Sublayers may hold a mix the file chose; a click on the parent
+replaces that mix, and Reset restores it.
+
 # What it shows that a name cannot
 
 Whether a reader opening this document with no interaction would DRAW

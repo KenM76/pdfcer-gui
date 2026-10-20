@@ -49,12 +49,15 @@ pub use pdfcer_gui_base::annotselection::AnnotTarget;
 pub use pdfcer_gui_base::annotselection::AnnotSelection;
 
 /// Every annotation on `page_index` that a click may select, topmost last.
+/// `off` is the hidden layers: an annotation on one is not drawn, so it is
+/// not selectable either.
 pub fn selectable_on(
     view: &pdfcer_core::view::DocumentView<'_>,
     page: &Page,
     page_index: usize,
     ce_dimensions: &BTreeSet<ObjId>,
     shapes: &BTreeMap<ObjId, Vec<(Pos2, Pos2)>>,
+    off: &BTreeSet<ObjId>,
 ) -> Vec<Candidate> {
     let mut out = Vec::new();
     for annot in page_annotations(view, page.id) {
@@ -88,6 +91,12 @@ pub fn selectable_on(
         // to know"*. What it must not be is **clickable on a canvas that is not
         // drawing it.**
         if annot.is_widget() || annot.is_popup || annot.flags.suppressed_on_screen() {
+            continue;
+        }
+        if annot
+            .oc
+            .is_some_and(|oc| pdfcer_core::annot::oc_is_hidden(view, oc, off))
+        {
             continue;
         }
         let subtype = String::from_utf8_lossy(&annot.subtype).into_owned();
@@ -241,21 +250,28 @@ pub fn in_band(
     };
     let ce = crate::panels::comments::model::ce_dimension_annots(&doc.session);
     let view = doc.session.view();
-    selectable_on(&view, page, page_index, &ce, &BTreeMap::new())
-        .into_iter()
-        .filter(|c| {
-            if crossing {
-                rect.intersects(c.outline)
-            } else {
-                rect.contains_rect(c.outline)
-            }
-        })
-        .map(|c| AnnotSelection {
-            target: c.target,
-            outline: c.outline,
-            oriented: c.oriented,
-        })
-        .collect()
+    selectable_on(
+        &view,
+        page,
+        page_index,
+        &ce,
+        &BTreeMap::new(),
+        &doc.hidden_layers(),
+    )
+    .into_iter()
+    .filter(|c| {
+        if crossing {
+            rect.intersects(c.outline)
+        } else {
+            rect.contains_rect(c.outline)
+        }
+    })
+    .map(|c| AnnotSelection {
+        target: c.target,
+        outline: c.outline,
+        oriented: c.oriented,
+    })
+    .collect()
 }
 
 /// Whether the pick filter and the mode let `target` be selected: its
@@ -288,7 +304,7 @@ pub fn under_pointer(
     // clickable and what is visible cannot drift apart.
     let shapes = crate::canvas::dimdrag::annot_shapes(doc, &ce);
     let view = doc.session.view();
-    let candidates = selectable_on(&view, page, page_index, &ce, &shapes);
+    let candidates = selectable_on(&view, page, page_index, &ce, &shapes, &doc.hidden_layers());
     #[allow(clippy::cast_possible_truncation)]
     let tolerance = map.tolerance() as f32;
     // A ce dimension's value text is part of it: its segments do not cover
@@ -551,10 +567,17 @@ mod tests {
             &[],
             pdfcer_core::PdfVersion { major: 1, minor: 7 },
         );
-        let ids: Vec<u32> = selectable_on(&view, &page, 0, &BTreeSet::new(), &BTreeMap::new())
-            .into_iter()
-            .map(|c| c.target.id.num)
-            .collect();
+        let ids: Vec<u32> = selectable_on(
+            &view,
+            &page,
+            0,
+            &BTreeSet::new(),
+            &BTreeMap::new(),
+            &BTreeSet::new(),
+        )
+        .into_iter()
+        .map(|c| c.target.id.num)
+        .collect();
 
         assert_eq!(
             ids,
@@ -575,5 +598,32 @@ mod tests {
         fn trailer_entry(&self, _key: &[u8]) -> Option<&pdfcer_core::object::Object> {
             None
         }
+    }
+
+    /// An annotation on a hidden layer is not drawn, so it is not offered.
+    #[test]
+    fn an_annotation_on_a_hidden_layer_is_not_selectable() {
+        let path =
+            crate::panels::objects::test_support::engine_fixture("layers/ocmd-membership.pdf");
+        let doc = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let pages = pdfcer_core::page_tree::pages(&doc).expect("a page tree");
+        let view = doc.view();
+        let count = |off: &BTreeSet<ObjId>| {
+            selectable_on(&view, &pages[0], 0, &BTreeSet::new(), &BTreeMap::new(), off).len()
+        };
+        let all: BTreeSet<ObjId> = pdfcer_core::layers::read_layers(&view)
+            .layers
+            .iter()
+            .map(|l| l.id)
+            .collect();
+        let shown = count(&BTreeSet::new());
+        assert!(
+            shown > 0,
+            "the fixture must offer something, or this is vacuous"
+        );
+        assert!(
+            count(&all) < shown,
+            "hiding every layer must withdraw annotations"
+        );
     }
 }

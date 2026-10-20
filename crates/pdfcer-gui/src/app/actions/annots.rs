@@ -898,6 +898,7 @@ mod tests {
                 0,
                 &std::collections::BTreeSet::new(),
                 &std::collections::BTreeMap::new(),
+                &std::collections::BTreeSet::new(),
             );
             assert!(
                 candidates

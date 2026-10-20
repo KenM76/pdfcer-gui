@@ -291,7 +291,10 @@ fn is_locked(read: &Layers, id: ObjId) -> bool {
     read.layers.iter().any(|l| l.id == id && l.locked)
 }
 
-/// The complete list of actions one click on `id`'s control should raise.
+/// The complete list of actions one click on `id`'s control should raise:
+/// the layer itself, its `/RBGroups` siblings switched off when it is
+/// switched on, and every unlocked layer nested under it in `/Order`, set
+/// the same way, so a parent's switch carries its sublayers.
 fn toggle_actions(read: &Layers, id: ObjId, visible: bool) -> Vec<Action> {
     let mut out = Vec::new();
     if visible && let Some(members) = read.radio_group_of(id) {
@@ -305,7 +308,38 @@ fn toggle_actions(read: &Layers, id: ObjId, visible: bool) -> Vec<Action> {
         }
     }
     out.push(Action::SetLayerVisible { group: id, visible });
+    let mut nested = Vec::new();
+    nested_under(&read.order, id, &mut nested);
+    for group in nested {
+        if group != id && !is_locked(read, group) {
+            out.push(Action::SetLayerVisible { group, visible });
+        }
+    }
     out
+}
+
+/// Every layer nested under `id`'s entries in `order`, depth first, without
+/// repeats.
+fn nested_under(order: &[pdfcer_core::layers::OrderNode], id: ObjId, out: &mut Vec<ObjId>) {
+    for node in order {
+        if node.group == Some(id) {
+            groups_in(&node.children, out);
+        } else {
+            nested_under(&node.children, id, out);
+        }
+    }
+}
+
+/// Every layer in `nodes` and below them.
+fn groups_in(nodes: &[pdfcer_core::layers::OrderNode], out: &mut Vec<ObjId>) {
+    for node in nodes {
+        if let Some(group) = node.group
+            && !out.contains(&group)
+        {
+            out.push(group);
+        }
+        groups_in(&node.children, out);
+    }
 }
 
 /// Everything this row has to explain about itself, in the order shown.
@@ -660,6 +694,40 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// A layer's switch carries every layer nested under it in `/Order`,
+    /// both ways (O316).
+    #[test]
+    fn a_parent_layers_switch_carries_its_sublayers() {
+        let (read, _) = read_fixture("layers/nested-order.pdf");
+        let mut parents = 0;
+        for l in read.layers.iter().filter(|l| !l.locked) {
+            let mut nested = Vec::new();
+            nested_under(&read.order, l.id, &mut nested);
+            if nested.is_empty() {
+                continue;
+            }
+            parents += 1;
+            for visible in [false, true] {
+                let set: Vec<ObjId> = toggle_actions(&read, l.id, visible)
+                    .into_iter()
+                    .filter_map(|a| match a {
+                        Action::SetLayerVisible { group, visible: v } if v == visible => {
+                            Some(group)
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                for child in nested.iter().filter(|c| !is_locked(&read, **c)) {
+                    assert!(set.contains(child), "{child:?} under {:?} was left", l.id);
+                }
+            }
+        }
+        assert!(
+            parents > 0,
+            "the fixture exists to nest a layer under a layer"
+        );
     }
 
     /// **Turning a layer OFF never turns a sibling ON.**

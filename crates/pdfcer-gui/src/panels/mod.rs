@@ -347,6 +347,8 @@ pub struct ObjectTreeUi {
     pub(crate) objects_expanded: std::collections::BTreeSet<usize>,
     /// Which part rows are expanded, by `(object, part)`.
     pub(crate) parts_expanded: std::collections::BTreeSet<(usize, usize)>,
+    /// Which layer headings are folded; `None` is the no-layer heading.
+    pub(crate) layers_collapsed: std::collections::BTreeSet<Option<pdfcer_core::object::ObjId>>,
     /// One paint-order index, **retired**: nothing in production writes or
     /// reads it.
     ///
@@ -401,6 +403,13 @@ impl ObjectTreeUi {
     pub(crate) fn toggle_object(&mut self, index: usize) {
         if !self.objects_expanded.remove(&index) {
             self.objects_expanded.insert(index);
+        }
+    }
+
+    /// Fold or unfold a layer heading.
+    pub(crate) fn toggle_layer(&mut self, group: Option<pdfcer_core::object::ObjId>) {
+        if !self.layers_collapsed.remove(&group) {
+            self.layers_collapsed.insert(group);
         }
     }
 

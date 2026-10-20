@@ -36,10 +36,19 @@ impl OpenDoc {
     #[must_use]
     pub fn page_objects(&self) -> Option<Ref<'_, ObjectModelProvider>> {
         self.ensure_page_objects();
-        Ref::filter_map(self.page_objects.provider.borrow(), |slot| {
+        let provider = Ref::filter_map(self.page_objects.provider.borrow(), |slot| {
             slot.as_ref().and_then(|built| built.as_ref().ok())
         })
-        .ok()
+        .ok()?;
+        let generation = self.layers.generation;
+        if !provider.hides_for(generation) {
+            let view = self.session.view();
+            let off = self.hidden_layers();
+            provider.hide_layers(generation, |oc| {
+                pdfcer_core::annot::oc_is_hidden(&view, oc, &off)
+            });
+        }
+        Some(provider)
     }
 
     /// **Where the ink on this page actually reaches**, in PDF user space —
@@ -788,5 +797,36 @@ mod tests {
         doc.edit_epoch = 1;
         let _ = doc.font_inventory();
         assert_eq!(doc.fonts.built_for.get(), Some(1), "an edit must drop it");
+    }
+
+    /// Content on a hidden layer is not taken by a band over the whole
+    /// page, and comes back when its layer is shown.
+    #[test]
+    fn a_band_does_not_take_what_a_hidden_layer_holds() {
+        use pdfcer_core::vector::{FormMarquee, MarqueeMode};
+        let mut doc = open_fixture(PAINTED_LAYERS);
+        doc.refresh_content_generation();
+        let everything = |doc: &crate::opendoc::OpenDoc| {
+            let p = doc.page_objects().expect("page 0");
+            let all = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1.0e5, 1.0e5));
+            p.hit_test_rect(0, all, MarqueeMode::Touched, FormMarquee::Exclude)
+                .len()
+        };
+        let read = pdfcer_core::layers::read_layers(&doc.session.view());
+        let ids: Vec<_> = read.layers.iter().map(|l| l.id).collect();
+        doc.set_hidden_layers(std::collections::BTreeSet::new());
+        let shown = everything(&doc);
+        doc.set_hidden_layers(ids.into_iter().collect());
+        let hidden = everything(&doc);
+        assert!(
+            hidden < shown,
+            "hiding every layer took {hidden} of {shown}"
+        );
+        doc.set_hidden_layers(std::collections::BTreeSet::new());
+        assert_eq!(
+            everything(&doc),
+            shown,
+            "showing them again gives them back"
+        );
     }
 }

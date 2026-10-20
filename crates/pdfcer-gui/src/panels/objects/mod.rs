@@ -6,6 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/mod.md`.
 
 mod disagree;
+mod layered;
 pub use pdfcer_gui_base::objectprovider as provider;
 #[cfg(test)]
 mod provider_node_rung_tests;
@@ -29,6 +30,13 @@ pub const POINT_ROWS_PER_PART: usize = 200;
 /// One visible line of the object tree.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectTreeRow {
+    /// A layer heading, over the objects on that layer.
+    Layer {
+        /// The `/OC` the objects name; `None` heads those on no layer.
+        group: Option<pdfcer_core::object::ObjId>,
+        /// How many objects on this page are under it.
+        count: usize,
+    },
     /// A page object, at paint-order `index`.
     Object {
         /// Paint-order index — the number every command-line verb takes.
@@ -110,12 +118,26 @@ pub fn body(
     disagree::lines(ui, page_index, diagnostics);
     ui.separator();
 
-    let rows = build_rows(
+    let rows = build_tree(
         provider,
         &tree.objects_expanded,
         &tree.parts_expanded,
+        &tree.layers_collapsed,
         POINT_ROWS_PER_PART,
     );
+    // Rows under a layer heading sit one level in.
+    let base = if rows
+        .first()
+        .is_some_and(|r| matches!(r, ObjectTreeRow::Layer { .. }))
+    {
+        t::OBJECT_TREE_INDENT
+    } else {
+        0.0
+    };
+    let layers_read = (base > 0.0).then(|| {
+        let view = doc.session.view();
+        (pdfcer_core::layers::read_layers(&view), doc.hidden_layers())
+    });
     let total_rows = rows.len();
     let object_count = objects.len();
     crate::diag::trace(|| {
@@ -129,6 +151,7 @@ pub fn body(
     // the whole of the draw.
     let mut toggle_object: Option<usize> = None;
     let mut toggle_part: Option<(usize, usize)> = None;
+    let mut toggle_layer: Option<Option<pdfcer_core::object::ObjId>> = None;
     let mut focus: Option<usize> = None;
     // The commands invoked from a row's context menu, collected across the
     // visible rows and returned. Not applied here — a panel raises intent.
@@ -188,8 +211,14 @@ pub fn body(
             let labelled: Vec<RowText> = range
                 .filter_map(|i| rows.get(i).copied())
                 .map(|row| {
-                    let label = row_label(provider, row);
-                    let room = row_text_room(viewport, row);
+                    let (label, room) = match (row, &layers_read) {
+                        (ObjectTreeRow::Layer { group, count }, Some((read, off))) => {
+                            let view = doc.session.view();
+                            let hidden = |oc| pdfcer_core::annot::oc_is_hidden(&view, oc, off);
+                            (layered::label(read, hidden, group, count), row_text_room(viewport, row))
+                        }
+                        _ => (row_label(provider, row), row_text_room(viewport - base, row)),
+                    };
                     let shortened =
                         elide_to_width(&label, room, |candidate| text_width(ui, candidate));
                     RowText {
@@ -275,8 +304,26 @@ pub fn body(
                 let overflows = shortened.is_some();
                 let label = shortened.unwrap_or_else(|| full.clone());
                 match row {
+                    ObjectTreeRow::Layer { group, .. } => {
+                        ui.horizontal(|ui| {
+                            let open = !tree.layers_collapsed.contains(&group);
+                            if expander(ui, open)
+                                .on_hover_text(t::object_tree_layer_expander_tooltip())
+                                .clicked()
+                            {
+                                toggle_layer = Some(group);
+                            }
+                            let resp = ui
+                                .label(label.as_str())
+                                .on_hover_text(t::object_tree_layer_tooltip());
+                            if overflows {
+                                resp.on_hover_text(full.as_str());
+                            }
+                        });
+                    }
                     ObjectTreeRow::Object { index } => {
                         ui.horizontal(|ui| {
+                            ui.add_space(base);
                             if provider.part_count(index) > 0 {
                                 let open = expanded_objects.contains(&index);
                                 if expander(ui, open).clicked() {
@@ -328,7 +375,7 @@ pub fn body(
                     }
                     ObjectTreeRow::Part { object, part } => {
                         ui.horizontal(|ui| {
-                            ui.add_space(t::OBJECT_TREE_INDENT);
+                            ui.add_space(base + t::OBJECT_TREE_INDENT);
                             // A part has points exactly when it is a
                             // SUBPATH; a text run has no anchors. Asking the
                             // provider's one dispatcher rather than matching
@@ -355,7 +402,7 @@ pub fn body(
                     }
                     ObjectTreeRow::Point { .. } => {
                         ui.horizontal(|ui| {
-                            ui.add_space(POINT_ROW_INDENT);
+                            ui.add_space(base + POINT_ROW_INDENT);
                             // A point row gains the recovery hover it never
                             // had. It could not overflow before — it was
                             // horizontally scrollable like every other row —
@@ -372,7 +419,7 @@ pub fn body(
                     }
                     ObjectTreeRow::PointsCapped { .. } => {
                         ui.horizontal(|ui| {
-                            ui.add_space(POINT_ROW_INDENT);
+                            ui.add_space(base + POINT_ROW_INDENT);
                             let resp = ui.label(egui::RichText::new(label.as_str()).small().weak());
                             // The capped-rows notice carries BOTH numbers by
                             // design — a silently truncated list is
@@ -393,6 +440,9 @@ pub fn body(
     }
     if let Some((object, part)) = toggle_part {
         tree.toggle_part(object, part);
+    }
+    if let Some(group) = toggle_layer {
+        tree.toggle_layer(group);
     }
     // A row click SELECTS.
     //
@@ -472,7 +522,7 @@ fn expander(ui: &mut egui::Ui, open: bool) -> egui::Response {
 /// indented twice needs 28 pt more container than its text alone.
 fn row_indent(row: ObjectTreeRow) -> f32 {
     match row {
-        ObjectTreeRow::Object { .. } => 0.0,
+        ObjectTreeRow::Layer { .. } | ObjectTreeRow::Object { .. } => 0.0,
         ObjectTreeRow::Part { .. } => t::OBJECT_TREE_INDENT,
         ObjectTreeRow::Point { .. } | ObjectTreeRow::PointsCapped { .. } => {
             t::OBJECT_TREE_INDENT * 2.0
@@ -495,6 +545,8 @@ fn row_label(provider: &ObjectModelProvider, row: ObjectTreeRow) -> String {
         },
         ObjectTreeRow::Point { node, .. } => t::object_tree_node_row(node),
         ObjectTreeRow::PointsCapped { shown, total } => t::object_tree_points_capped(shown, total),
+        // Named by `layered::label`, which needs the document's layers.
+        ObjectTreeRow::Layer { .. } => String::new(),
     }
 }
 
@@ -507,7 +559,8 @@ fn row_description(provider: &ObjectModelProvider, row: ObjectTreeRow) -> Option
     }
 }
 
-/// Materialise the visible rows for one frame, front-most first.
+/// Materialise the visible rows for one frame, front-most first, ignoring
+/// layers.
 #[must_use]
 pub fn build_rows(
     provider: &ObjectModelProvider,
@@ -517,12 +570,58 @@ pub fn build_rows(
 ) -> Vec<ObjectTreeRow> {
     let total = provider.page_objects().objects.len();
     let mut rows = Vec::with_capacity(total);
-    for display in 0..total {
-        // Front-most first: display row 0 is the LAST-painted object.
-        let index = total - 1 - display;
+    // Front-most first: display row 0 is the LAST-painted object.
+    for index in (0..total).rev() {
+        object_rows(
+            &mut rows,
+            provider,
+            index,
+            objects_expanded,
+            parts_expanded,
+            point_cap,
+        );
+    }
+    rows
+}
+
+/// The visible rows, under layer headings when the page's objects are on
+/// layers (see [`layered`]), otherwise as [`build_rows`].
+#[must_use]
+pub fn build_tree(
+    provider: &ObjectModelProvider,
+    objects_expanded: &std::collections::BTreeSet<usize>,
+    parts_expanded: &std::collections::BTreeSet<(usize, usize)>,
+    layers_collapsed: &std::collections::BTreeSet<Option<pdfcer_core::object::ObjId>>,
+    point_cap: usize,
+) -> Vec<ObjectTreeRow> {
+    match layered::groups(provider) {
+        Some(groups) => layered::rows(groups, layers_collapsed, |rows, index| {
+            object_rows(
+                rows,
+                provider,
+                index,
+                objects_expanded,
+                parts_expanded,
+                point_cap,
+            );
+        }),
+        None => build_rows(provider, objects_expanded, parts_expanded, point_cap),
+    }
+}
+
+/// One object's row, and its parts and points where expanded.
+fn object_rows(
+    rows: &mut Vec<ObjectTreeRow>,
+    provider: &ObjectModelProvider,
+    index: usize,
+    objects_expanded: &std::collections::BTreeSet<usize>,
+    parts_expanded: &std::collections::BTreeSet<(usize, usize)>,
+    point_cap: usize,
+) {
+    {
         rows.push(ObjectTreeRow::Object { index });
         if !objects_expanded.contains(&index) {
-            continue;
+            return;
         }
         for part in 0..provider.part_count(index) {
             rows.push(ObjectTreeRow::Part {
@@ -552,7 +651,6 @@ pub fn build_rows(
             }
         }
     }
-    rows
 }
 
 /// Fixtures, for the tests in this module tree.

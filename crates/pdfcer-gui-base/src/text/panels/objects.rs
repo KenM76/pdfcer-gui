@@ -107,6 +107,41 @@ pub fn object_tree_node_tooltip() -> &'static str {
     "One anchor point of this part. The number counts across the whole object, so it matches what pdfcer's command-line tools address."
 }
 
+/// A layer heading in the object tree.
+#[must_use]
+pub fn object_tree_layer_row(name: &str, count: usize, hidden: bool) -> String {
+    if hidden {
+        format!("{name}, hidden ({count})")
+    } else {
+        format!("{name} ({count})")
+    }
+}
+
+/// The heading over objects on no layer.
+#[must_use]
+pub fn object_tree_no_layer_row(count: usize) -> String {
+    format!("Not on a layer ({count})")
+}
+
+/// A heading whose `/OC` is not a layer the Layers panel lists, such as a
+/// membership of several layers.
+#[must_use]
+pub fn object_tree_unlisted_layer() -> &'static str {
+    "Layer combination"
+}
+
+/// Tooltip on a layer heading.
+#[must_use]
+pub fn object_tree_layer_tooltip() -> &'static str {
+    "The objects on this layer, front-most first. Show or hide the layer in the Layers panel; objects on a hidden layer cannot be picked on the page."
+}
+
+/// Tooltip on a layer heading's expander.
+#[must_use]
+pub fn object_tree_layer_expander_tooltip() -> &'static str {
+    "Show or fold away the objects on this layer."
+}
+
 /// Disclosure when a part holds more points than the tree will list.
 #[must_use]
 pub fn object_tree_points_capped(shown: usize, total: usize) -> String {

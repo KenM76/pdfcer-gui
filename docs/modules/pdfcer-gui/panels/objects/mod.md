@@ -34,6 +34,20 @@ object-list` prints as `index=`, and the number
 display-position number would look equally authoritative and address a
 different object.
 
+## Layer headings (O318)
+
+A page whose objects carry `/OC` lists them under one heading per layer,
+in the order of each layer's front-most object, with objects front-most
+first beneath it and content on no layer under a last "Not on a layer"
+heading. A page with no `/OC` keeps the flat list, so most drawings see no
+change. A heading names the layer as the Layers panel does, says when it is
+hidden, counts its objects, and folds away (`ObjectTreeUi::layers_collapsed`,
+cleared with the rest of the tree on a page change). The layer is the
+innermost `/OC` the engine reports per object (`VectorObject::oc`); an `/OC`
+that is not a listed layer, such as a membership dictionary, is headed
+"Layer combination". Objects on a hidden layer are still listed here and a
+row click still selects them: the list is the way to reach them.
+
 ## The nesting is the LEVEL LADDER, and nothing else
 
 **object → part → point**, which is exactly the ladder the canvas walks

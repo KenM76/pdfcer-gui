@@ -32,6 +32,18 @@ but the current one, and continuous mode needs a page *range*. That is
 `GUI_ROADMAP.md` Phase 4 work, and it is a real change here rather than a
 wiring change above.
 
+## Hidden layers are not hit (O317)
+
+`unseen.rs`: `OpenDoc::page_objects` hands the provider the current layer
+state once per `layers.generation`, and every hit test (`hit_test_all`,
+`hit_test`, `hit_test_rect`) drops the objects and form leaves whose `/OC`
+is hidden, asked through `pdfcer_core::annot::oc_is_hidden` so it agrees
+with the painter. A leaf is hidden when its own `/OC` is or the page object
+it is painted through is. The engine reports only the innermost `/OC`, so
+content in a visible inner group nested in a hidden outer group stays
+selectable. Annotations follow the same rule in
+`canvas::selection::annot::selectable_on`.
+
 ## [`TargetId`] encoding
 
 A [`TargetId`] is the object's index into

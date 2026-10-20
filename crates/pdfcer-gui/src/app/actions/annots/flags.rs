@@ -69,6 +69,7 @@ mod tests {
             0,
             &std::collections::BTreeSet::new(),
             &std::collections::BTreeMap::new(),
+            &std::collections::BTreeSet::new(),
         )
         .iter()
         .any(|c| c.target.id == id)

@@ -26,6 +26,9 @@ mod line;
 /// seam rather than an arbitrary cut.
 mod node_rung;
 
+/// Hidden-layer content, dropped from every hit test.
+mod unseen;
+
 use egui::{Pos2, Rect};
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::vector::{
@@ -138,6 +141,8 @@ pub struct ObjectModelProvider {
     /// test walks every subpath of every path, and one press asks it at two
     /// tolerances, again on every frame of the drag that follows.
     recent_hits: std::sync::Mutex<Vec<(HitKey, Vec<TargetId>)>>,
+    /// The targets the current layer state hides.
+    unseen: std::sync::Mutex<unseen::Unseen>,
 }
 
 /// How many [`ObjectModelProvider::recent_hits`] are kept.
@@ -216,6 +221,7 @@ impl ObjectModelProvider {
             page_index,
             summaries: unfilled(&objects),
             recent_hits: std::sync::Mutex::new(Vec::new()),
+            unseen: std::sync::Mutex::default(),
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
@@ -239,6 +245,7 @@ impl ObjectModelProvider {
             page_index,
             summaries: unfilled(&objects),
             recent_hits: std::sync::Mutex::new(Vec::new()),
+            unseen: std::sync::Mutex::default(),
             objects,
             to_canvas,
             to_pdf: to_canvas.invert(),
@@ -447,7 +454,7 @@ impl ObjectModelProvider {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some((_, answer)) = recent.iter().find(|(asked, _)| *asked == key) {
-            return answer.clone();
+            return self.visible_only(answer.clone());
         }
         let Some(pdf) = self.canvas_to_pdf(point) else {
             return Vec::new();
@@ -469,7 +476,7 @@ impl ObjectModelProvider {
             recent.remove(0);
         }
         recent.push((key, answer.clone()));
-        answer
+        self.visible_only(answer)
     }
 
     /// The page paint-order index of the **outermost form** enclosing a
@@ -529,13 +536,15 @@ impl ObjectModelProvider {
         // `TargetId` variants the selection vocabulary uses. It is the same
         // mapping `hit_test_all` performs for a click, written the same way,
         // because they are the same two spaces.
-        hit_test_rect_deep(&self.objects, bounds, mode, forms)
-            .into_iter()
-            .map(|hit| match hit {
-                HitTarget::Object(i) => TargetId::Object(i as u64),
-                HitTarget::Leaf(i) => TargetId::Leaf(i as u64),
-            })
-            .collect()
+        self.visible_only(
+            hit_test_rect_deep(&self.objects, bounds, mode, forms)
+                .into_iter()
+                .map(|hit| match hit {
+                    HitTarget::Object(i) => TargetId::Object(i as u64),
+                    HitTarget::Leaf(i) => TargetId::Leaf(i as u64),
+                })
+                .collect(),
+        )
     }
 
     /// One object's canvas-space bounding rect, or `None` for a stale id.
