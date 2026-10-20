@@ -10,6 +10,7 @@ use pdfcer_core::space_audit::SpaceCategory;
 
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
+use crate::dialogs::recompress::{Job, Recompressed};
 use crate::text::compact as t;
 
 /// The window body's rect, for `ui-verify`.
@@ -45,6 +46,12 @@ pub struct CompactDialog {
     /// The breakdown, measured the first time its fold is opened; the inner
     /// `None` is a copy that would not parse back.
     space: Option<Option<Breakdown>>,
+    /// Whether the copy is recompressed too; on unless the operator turns it
+    /// off, since it is lossless and never makes the copy larger.
+    want_recompress: bool,
+    recompress: Recompress,
+    /// The options the copy was written with, for the recompressed rewrite.
+    options: pdfcer_core::writer::SaveOptions,
     save_requested: bool,
     close_requested: bool,
 }
@@ -62,9 +69,10 @@ impl CompactDialog {
         // `::default()` here would produce a compacted copy that differed from
         // an ordinary one in ways nobody chose, on a command whose whole subject
         // is the bytes.
+        let options = doc.settings.save_options();
         let (bytes, _report) = doc
             .session
-            .to_full_bytes(&doc.settings.save_options())
+            .to_full_bytes(&options)
             .map_err(|error| t::refused(&error.to_string()))?;
         let before = std::fs::metadata(&doc.path).map(|m| m.len()).unwrap_or(0);
         Ok(Self {
@@ -73,6 +81,9 @@ impl CompactDialog {
             signatures: doc.session.signature_census().signatures,
             path: doc.path.clone(),
             space: None,
+            want_recompress: true,
+            recompress: Recompress::Off,
+            options,
             save_requested: false,
             close_requested: false,
         })
@@ -80,6 +91,7 @@ impl CompactDialog {
 
     /// Draw it. Returns whether it stays open.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+        self.recompress_step(ctx);
         let (frame, ()) = crate::dialogs::host::Host::new(
             "compact-copy", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
@@ -98,7 +110,7 @@ impl CompactDialog {
                 format!(
                     "compact-requested before={} after={} signatures={}",
                     self.before,
-                    self.bytes.len(),
+                    chosen(&self.bytes, &self.recompress).len(),
                     self.signatures
                 )
             });
@@ -108,7 +120,7 @@ impl CompactDialog {
             // the operator receives.
             actions.push(Action::Write(
                 crate::app::actions::write::WriteAction::Compacted {
-                    bytes: std::mem::take(&mut self.bytes),
+                    bytes: self.take_chosen(),
                     before: self.before,
                 },
             ));
@@ -120,7 +132,10 @@ impl CompactDialog {
     fn body(&mut self, ui: &mut Ui) {
         ui.label(t::intro());
         ui.add_space(8.0);
-        ui.label(t::size_change(self.before, self.bytes.len() as u64));
+        let after = chosen(&self.bytes, &self.recompress).len() as u64;
+        ui.label(t::size_change(self.before, after));
+        ui.add_space(4.0);
+        self.recompress_row(ui);
         ui.add_space(8.0);
         ui.small(t::revisions_line());
         // The signature warning LAST of the three and drawn full-size, not
@@ -142,7 +157,10 @@ impl CompactDialog {
             // operator may legitimately proceed from — including "no smaller",
             // which is an accurate answer about a tidy file and not a reason to
             // refuse them a copy they asked for.
-            let save = ui.button(t::save_button());
+            let working = matches!(self.recompress, Recompress::Working(_));
+            let save = ui
+                .add_enabled(!working, egui::Button::new(t::save_button()))
+                .on_disabled_hover_text(t::save_waiting());
             crate::diag::ui_rect_visible(REGION_SAVE, save.rect, ui.clip_rect());
             if save.clicked() {
                 self.save_requested = true;
@@ -161,7 +179,7 @@ impl CompactDialog {
         let fold = egui::CollapsingHeader::new(t::space_heading())
             .id_salt("compact-space") // ui-text-exempt: an id, never displayed
             .show(ui, |ui| {
-                let (path, bytes) = (&self.path, &self.bytes);
+                let (path, bytes) = (&self.path, chosen(&self.bytes, &self.recompress));
                 let space = self.space.get_or_insert_with(|| {
                     let started = std::time::Instant::now();
                     let now = std::fs::read(path).ok();
@@ -180,6 +198,95 @@ impl CompactDialog {
                 }
             });
         fold.header_response.on_hover_text(t::space_tooltip());
+    }
+}
+
+/// Where recompressing the copy has got to.
+enum Recompress {
+    Off,
+    Working(Job),
+    Done(Recompressed),
+    Failed(String),
+}
+
+/// The bytes Save writes: the recompressed copy when it came out smaller,
+/// otherwise the plain compacted one.
+fn chosen<'a>(plain: &'a [u8], recompress: &'a Recompress) -> &'a [u8] {
+    match recompress {
+        Recompress::Done(Recompressed {
+            bytes: Some(bytes), ..
+        }) => bytes,
+        _ => plain,
+    }
+}
+
+impl CompactDialog {
+    /// Start the recompression when it is wanted, and take its result.
+    fn recompress_step(&mut self, ctx: &egui::Context) {
+        if self.want_recompress && matches!(self.recompress, Recompress::Off) {
+            let job = Job::start(ctx, self.bytes.clone(), self.options.clone());
+            self.recompress = Recompress::Working(job);
+        }
+        let landed = match &self.recompress {
+            Recompress::Working(job) => job.poll(),
+            _ => None,
+        };
+        if let Some(result) = landed {
+            self.recompress = match result {
+                Ok(done) => Recompress::Done(done),
+                Err(detail) => Recompress::Failed(detail),
+            };
+            self.space = None;
+        }
+    }
+
+    /// The switch, and what the recompression did.
+    fn recompress_row(&mut self, ui: &mut Ui) {
+        let toggled = ui
+            .checkbox(&mut self.want_recompress, t::recompress_toggle())
+            .on_hover_text(t::recompress_tooltip())
+            .changed();
+        if toggled && !self.want_recompress {
+            self.recompress = Recompress::Off;
+            self.space = None;
+        }
+        match &self.recompress {
+            Recompress::Off => {}
+            Recompress::Working(_) => {
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::Spinner::new().color(egui_shell::Theme::of(ui.ctx()).palette.text),
+                    );
+                    ui.small(t::recompress_working());
+                });
+            }
+            Recompress::Failed(detail) => {
+                ui.small(t::recompress_failed(detail));
+            }
+            Recompress::Done(done) => {
+                if done.bytes.is_some() {
+                    ui.small(t::recompressed(done.changed));
+                } else {
+                    ui.small(t::recompress_no_gain());
+                }
+                for (reason, count) in &done.left {
+                    ui.small(t::left_line(reason, *count));
+                }
+                for note in &done.notes {
+                    ui.small(note.as_str());
+                }
+            }
+        }
+    }
+
+    /// The bytes [`chosen`] names, moved out for the write.
+    fn take_chosen(&mut self) -> Vec<u8> {
+        match std::mem::replace(&mut self.recompress, Recompress::Off) {
+            Recompress::Done(Recompressed {
+                bytes: Some(bytes), ..
+            }) => bytes,
+            _ => std::mem::take(&mut self.bytes),
+        }
     }
 }
 

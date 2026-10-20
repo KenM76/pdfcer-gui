@@ -65,3 +65,14 @@ The first of those read *"a hybrid-reference file"* until 2026-09-11.
 compacting an ordinary hybrid now succeeds where this comment said it
 could not. The sentence the operator reads is the engine's own and was
 never wrong; only the account of it here was.
+
+## Recompress
+
+A switch under the size line, on by default, runs the engine's lossless optimize preset (`Preset::Lossless`) on the measured copy. That re-encodes every stream that comes out strictly smaller. The work happens in `dialogs::recompress`.
+
+- **It runs on a scratch session parsed from the copy.** The open document's session is untouched, so no undo step appears and nothing on the canvas changes. Optimizing the live session would have put an Optimize command in the operator's history for a save that is a copy.
+- **It runs off the UI thread.** A dense sheet takes seconds at level 9. Save is greyed meanwhile, explained on hover, because the size line would otherwise promise one file and write another.
+- **The size line quotes what Save writes.** That is the recompressed copy when the engine answers `OptimizedFile::Smaller`, and the plain compacted copy otherwise. The breakdown is re-measured against the same bytes.
+- **A signed copy proceeds** (`allow_signed`). The window already states that the copy keeps no signatures, so a second refusal would only hide the switch. An encrypted copy is refused by the engine, and that sentence is shown with the plain copy kept.
+- **Disclosure is off-canvas and complete.** The window lists how many parts were recompressed, each reason a selected part was left as stored with its count, and the engine's notes verbatim.
+- **One switch, not five presets.** Every `Preset` currently has the same settings. A picker would offer five names for one behaviour, and it can arrive once the presets diverge.

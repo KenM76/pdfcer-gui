@@ -3,6 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/compact.md`.
 
+use pdfcer_core::optimize::SkipReason;
 use pdfcer_core::space_audit::SpaceCategory;
 
 /// The window's title bar.
@@ -96,6 +97,74 @@ pub fn written(path: &str, before: u64, after: u64) -> String {
         bytes(after),
         bytes(before)
     )
+}
+
+/// The switch that recompresses the copy's streams as well.
+#[must_use]
+pub const fn recompress_toggle() -> &'static str {
+    "Also recompress the drawing data"
+}
+
+/// Hover on the switch.
+#[must_use]
+pub const fn recompress_tooltip() -> &'static str {
+    "Re-encodes the data inside the file more tightly. Nothing you see changes, and \
+     anything that would not get smaller is kept as it was. A large drawing \
+     takes a few seconds."
+}
+
+/// Shown while the copy is being recompressed.
+#[must_use]
+pub const fn recompress_working() -> &'static str {
+    "Recompressing…"
+}
+
+/// How much was recompressed.
+#[must_use]
+pub fn recompressed(changed: usize) -> String {
+    format!("{changed} part(s) of the file were recompressed.")
+}
+
+/// Recompressing gained nothing.
+#[must_use]
+pub const fn recompress_no_gain() -> &'static str {
+    "Recompressing made nothing smaller, so the plain compacted copy is kept."
+}
+
+/// Recompressing failed; the plain copy stands.
+#[must_use]
+pub fn recompress_failed(detail: &str) -> String {
+    format!("Could not recompress: {detail}. The plain compacted copy is kept.")
+}
+
+/// The worker went away without an answer.
+#[must_use]
+pub const fn recompress_stopped() -> &'static str {
+    "the recompression stopped unexpectedly"
+}
+
+/// Hover on the save button while recompressing.
+#[must_use]
+pub const fn save_waiting() -> &'static str {
+    "Waiting for the recompression to finish."
+}
+
+/// Parts the recompression left as stored, for one reason.
+#[must_use]
+pub fn left_line(reason: &str, count: usize) -> String {
+    format!("{count} part(s) left as they were: {reason}.")
+}
+
+/// Why a part was left as stored, in the operator's words.
+#[must_use]
+pub fn left_because(reason: &SkipReason) -> String {
+    match reason {
+        SkipReason::NotSmaller { .. } => "re-encoding them was not smaller".to_owned(),
+        SkipReason::UnsupportedFilter(name) => format!("they use {name}, which is not re-encoded"),
+        SkipReason::Undecodable(_) => "they could not be read".to_owned(),
+        SkipReason::Protected(what) => format!("{what} is never rewritten"),
+        other => other.to_string(),
+    }
 }
 
 /// The fold that lists where the bytes go.

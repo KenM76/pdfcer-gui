@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **34 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `wanted` — a real gap — **33 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,7 +66,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Reduce file size by lossless stream recompression** — `pdfcer_core::optimize`, `pdfcer_core::edit::optimize` (`EditSession::plan_optimize`, `apply_optimize`, `save_optimized`), `CommandKind::Optimize` | **wanted, at the pin past v0.89.0 (Pass 616.1).** File ▸ Save a compacted copy is the surface: a Recompress switch plans the lossless preset on a scratch session of the copy, so the copy's streams are re-encoded and the open document is untouched. The plan's skips and notes are disclosed in that window. The presets all recompress at level 9 until the image Passes land, so one switch is offered, not five identical choices. |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
@@ -210,7 +209,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **324 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **325 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -218,6 +217,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Reduce file size by lossless stream recompression** — `pdfcer_core::optimize`, `pdfcer_core::edit::optimize` (`EditSession::plan_optimize`, `apply_optimize`, `save_optimized`), `CommandKind::Optimize` | **shipped — File ▸ Save a compacted copy, the *Also recompress the drawing data* switch (on by default); unit-tested, not yet driven.** `dialogs::recompress` plans `Preset::Lossless` on a scratch session parsed from the measured copy, applies it, and keeps the engine's `OptimizedFile::Smaller` bytes; the open session gets no Optimize step. Runs off the UI thread with Save greyed meanwhile. Off-canvas disclosure lists parts recompressed, each `SkipReason` with its count, and the plan's notes. One switch, not a preset picker, because every `Preset` has the same settings at this pin. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **shipped — Pages ▸ Sheet size; request G136.** <!--namesake:MediaBoxChange--> `app::actions::pagesize::disclosures` words `MediaBoxChange::bleed_box_outside`, `MediaBoxChange::trim_box_outside` and `MediaBoxChange::art_box_outside` beside `crop_box_outside`, one sentence per box kind, and `page-size-applied` counts each; driven by `resizing_a_sheet_says_which_print_boxes_reach_past_it`, whose art box is the control. |
 | **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **shipped for Insert image, a drop, and the stamp; the clipboard is still owed.** An inserted or dropped `.emf` is placed by `add_emf` (`app::actions::picture`), its `EmfImportNotes::summary()` shown in the window before Insert and repeated in the disclosures, an import refusal in the engine's words; driven by `insert_image_places_a_drawing`. A drop in Review places it by `add_emf_stamp`, signed, dated and at the pen's opacity. Still owed: Office's EMF copy on the clipboard (paste step P9). |
 | **Import an SVG as vector content** — `svg_import::import`, `EditSession::add_svg`/`add_svg_stamp`, `SvgImportNotes`, the modules `pdfcer_core::svg_import` and `pdfcer_core::edit::svg`, undo kind `CommandKind::AddSvg`, compiled behind the forwarded `svg-import` | **shipped for Insert image, a drop, and the stamp.** An inserted or dropped `.svg` is placed by `add_svg` (`app::actions::picture`), `SvgImportNotes::summary()` shown in the window before Insert and repeated in the disclosures; driven by `insert_image_places_a_drawing`, whose fixture's `<text>` is reported not carried. A drop in Review places it by `add_svg_stamp` (`a_dropped_picture_stamps_in_review`), signed, dated and at the pen's opacity. The `<pattern>` clause is moot: the notes carry no "pattern placed" signal to key a disclosure on, and tiled fills paint on the canvas since engine Pass 448.0 (the tiling-patterns row). |

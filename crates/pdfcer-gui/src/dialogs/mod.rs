@@ -41,6 +41,7 @@ pub mod export_dxf;
 pub mod export_image;
 /// File ▸ Recognise ▸ Manage OCR models….
 pub mod ocr_models;
+pub mod recompress;
 /// The WRITING half of what the three export windows remember --
 /// `OPERATOR_REQUESTS.md` O196. Shared by all three because the argument
 /// (the no-op guard, the swallowed failure, the position of the call, the
