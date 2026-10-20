@@ -172,6 +172,7 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         }
         ops.reverse();
         let final_op = ops.len();
+        let change = &change.for_scale(crate::canvas::textedit::pin::run_em_scale(doc, page, run));
         for (which, op) in ops.into_iter().enumerate() {
             let mut req = change.stamp(request(page, op.pin));
             if let Some(plan) = &plan {

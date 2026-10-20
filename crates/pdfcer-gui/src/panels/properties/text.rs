@@ -287,7 +287,8 @@ impl TextStyleDraft {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
-                "text-style-synced page={page} run={run} whole_ms={whole_ms} forecast_ms={forecast_ms} resolved=1 faces={} bold={} italic={}",
+                "text-style-synced page={page} run={run} whole_ms={whole_ms} forecast_ms={forecast_ms} resolved=1 size={:.2} faces={} bold={} italic={}",
+                self.size,
                 self.faces.len(),
                 u8::from(self.bold_outlook.is_some()),
                 u8::from(self.italic_outlook.is_some()),

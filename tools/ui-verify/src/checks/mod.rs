@@ -907,6 +907,10 @@ pub mod stamp_dialog_reopen;
 
 pub mod stamp_size;
 
+/// **O309** — CAD text set `1 Tf` under a scaled matrix reads and takes its
+/// drawn size.
+pub mod scaled_text_size;
+
 pub mod stamp_size_properties;
 
 pub mod text_annot;

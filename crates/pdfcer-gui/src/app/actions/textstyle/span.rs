@@ -129,7 +129,9 @@ pub(in crate::app::actions) fn apply(
     let pieces = pieces
         .into_iter()
         .map(|p| Piece {
-            req: change.stamp(p.req),
+            req: change
+                .for_scale(crate::canvas::textedit::pin::run_em_scale(doc, page, p.run))
+                .stamp(p.req),
             ..p
         })
         .collect();

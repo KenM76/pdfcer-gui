@@ -606,13 +606,17 @@ His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text i
 
 His words: *"If I try to italicize, bold, underline, change font etc it doesn't appear to work if I select an area within a block of text with the I cursor."*
 
-## O309 — **FILED** — the font size shows the size the text is drawn at, fractional sizes included
+## O309 — **BUILT** — the font size shows the size the text is drawn at, fractional sizes included
 
 His words: *"when I am in the text with the I cursor, in the Format and Properties section it shows me the font as 1.0pt high instead of the actual height. This might be because it does not match a whole point measurement, but we should be able to handle that."* (`SW41177.pdf`)
 
-## O310 — **FILED** — changing the size of that text redraws it, and clicking a line never shows squares
+**Built and driven.** Properties shows the Tf operand times the text and current matrices' vertical scale (`canvas::textedit::pin::drawn_size`), and a typed size is divided by that scale per run before it is sent (`StyleChange::for_scale`). Driven by `scaled_text_shows_and_takes_its_drawn_size`: a `1 Tf` line under an 18-pt matrix reads 18.00, and a typed 24 re-reads 24.00. Both halves were watched red. The engine-side ask is G208.
+
+## O310 — **PART BUILT** — changing the size of that text redraws it, and clicking a line never shows squares
 
 His words: *"Changing the font size causes the text chunk to go blank, and if I click on a line the text is replaced with squares."* (`SW41177.pdf`)
+
+**Half built.** The blanking was the O309 defect: a typed size became the Tf operand under a 13.2× matrix and the text was drawn off the page. That half is fixed by O309. The squares are an engine defect: after `FormatRequest::size`, an Identity-H subset run reads back as U+FFFD (G207, open).
 
 ## O311 — **FILED** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
 
