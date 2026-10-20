@@ -1,8 +1,10 @@
-//! # `app::wordgapband` — the Edit ▸ Content word-gap slider
+//! # `app::wordgapband` — the Edit ▸ Content word-gap Auto switch and slider
 //!
-//! One control, drawn for one custom-item kind
-//! ([`crate::shell::manifest::WORD_GAP`]), reporting a new
-//! `Settings::word_gap_ratio` when the operator lets go of it.
+//! Two controls, drawn for one custom-item kind
+//! ([`crate::shell::manifest::WORD_GAP`]), reporting `Settings::word_gap_auto`
+//! when the switch flips and `Settings::word_gap_ratio` when the operator lets
+//! go of the slider. Under Auto the slider is the fallback for a page too
+//! sparse to measure; the threshold the current page used is on hover.
 //!
 //! Contract: drawn only while `edit.word_gap` is registered (R8), so a build
 //! without the capability loses the slider with the button. The position
@@ -17,18 +19,51 @@ use crate::text::settings as t;
 /// How wide the slider is drawn, in points.
 const TRAVEL_PT: f32 = 120.0;
 
-/// Draw the slider, if `kind` is its kind; `Some(ratio)` on a commit.
+/// The word-gap settings the band shows and reports.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct WordGap {
+    /// `Settings::word_gap_ratio`: the fixed threshold, and Auto's fallback.
+    pub ratio: f32,
+    /// `Settings::word_gap_auto`: each page measures its own threshold.
+    pub auto: bool,
+}
+
+/// Draw the Auto switch and the slider, if `kind` is theirs; `Some` on a
+/// commit. `page` is the threshold the current page was extracted with and
+/// whether it was measured (`PageText::word_gap_ratio`, `word_gap_measured`),
+/// when that page's text is already built; it is disclosed on hover.
 pub(super) fn draw(
     ui: &mut egui::Ui,
     kind: &str,
     registry: &egui_shell::commands::CommandRegistry,
-    at: f32,
-) -> Option<f32> {
+    at: WordGap,
+    page: Option<(f32, bool)>,
+) -> Option<WordGap> {
     if kind != crate::shell::manifest::WORD_GAP || registry.get("edit.word_gap").is_none() {
         return None;
     }
+    let used = page.map(|(ratio, measured)| t::word_gap_on_page(ratio, measured));
+    let hover = |note: &str| match &used {
+        Some(used) => format!(
+            "{note}
+
+{used}"
+        ),
+        None => note.to_owned(),
+    };
+    let mut auto = at.auto;
+    let switch = ui
+        .checkbox(&mut auto, t::word_gap_auto_label())
+        .on_hover_text(hover(t::word_gap_auto_note()));
+    if switch.changed() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("word-gap auto={auto}")
+        });
+        return Some(WordGap { auto, ..at });
+    }
     let held = egui::Id::new(crate::shell::manifest::WORD_GAP);
-    let mut ratio = ui.data(|d| d.get_temp::<f32>(held)).unwrap_or(at);
+    let mut ratio = ui.data(|d| d.get_temp::<f32>(held)).unwrap_or(at.ratio);
     let response = ui.add_sized(
         egui::Vec2::new(TRAVEL_PT, ui.spacing().interact_size.y),
         egui::Slider::new(&mut ratio, MIN_WORD_GAP_RATIO..=MAX_WORD_GAP_RATIO)
@@ -40,20 +75,20 @@ pub(super) fn draw(
         &egui_shell::ribbon::report::band_item(crate::shell::manifest::WORD_GAP),
         response.rect,
     );
-    let response = response.on_hover_text(t::word_gap_note());
+    let response = response.on_hover_text(hover(t::word_gap_note()));
     if response.dragged() {
         ui.data_mut(|d| d.insert_temp(held, ratio));
         return None;
     }
     ui.data_mut(|d| d.remove::<f32>(held));
-    if !(response.changed() || response.drag_stopped()) || (ratio - at).abs() < f32::EPSILON {
+    if !(response.changed() || response.drag_stopped()) || (ratio - at.ratio).abs() < f32::EPSILON {
         return None;
     }
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!("word-gap set={ratio:.3}")
     });
-    Some(ratio)
+    Some(WordGap { ratio, ..at })
 }
 
 #[cfg(test)]
@@ -73,7 +108,16 @@ mod tests {
         let mut width = f32::NAN;
         let _ = ctx.run_ui(egui::RawInput::default(), |ui| {
             let before = ui.min_rect().width();
-            let _ = draw(ui, kind, registry, 0.2);
+            let _ = draw(
+                ui,
+                kind,
+                registry,
+                WordGap {
+                    ratio: 0.2,
+                    auto: false,
+                },
+                None,
+            );
             width = ui.min_rect().width() - before;
         });
         width

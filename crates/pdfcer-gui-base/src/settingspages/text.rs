@@ -37,6 +37,12 @@ pub fn word_gap(ui: &mut Ui, draft: &mut Draft) {
         t::word_gap_silence(),
         t::word_gap_radius(),
     );
+    widgets::toggle(
+        ui,
+        &mut draft.working.word_gap_auto,
+        t::word_gap_auto_label(),
+        Some(t::word_gap_auto_note()),
+    );
     ui.add(
         egui::Slider::new(
             &mut draft.working.word_gap_ratio,

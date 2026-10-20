@@ -250,14 +250,17 @@ impl PdfcerApp {
         self.adopt_settings();
     }
 
-    /// Adopt a word-gap ratio from the ribbon: every open document's text is
-    /// re-extracted under it and the settings file keeps it. Rasters stay —
-    /// the gap changes what extraction reads, never what is drawn.
-    pub(crate) fn adopt_word_gap(&mut self, ratio: f32) {
+    /// Adopt the word-gap settings from the ribbon: every open document's
+    /// text is re-extracted under them and the settings file keeps them.
+    /// Rasters stay — the gap changes what extraction reads, never what is
+    /// drawn.
+    pub(crate) fn adopt_word_gap(&mut self, ratio: f32, auto: bool) {
         self.settings.word_gap_ratio = ratio;
+        self.settings.word_gap_auto = auto;
         let adopt_one = |status: &mut crate::app::state::Status| {
             if let crate::app::state::Status::Open(doc) = status {
                 doc.settings.word_gap_ratio = ratio;
+                doc.settings.word_gap_auto = auto;
                 doc.invalidate_derived_text();
             }
         };

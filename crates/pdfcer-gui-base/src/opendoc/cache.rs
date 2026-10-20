@@ -261,6 +261,19 @@ impl OpenDoc {
         .ok()
     }
 
+    /// The current page's text when it is already built for this page and
+    /// edit epoch; never extracts, so a per-frame reader cannot stall a frame.
+    #[must_use]
+    pub fn page_text_built(&self) -> Option<Ref<'_, PageText>> {
+        if self.page_text.built_for.get() != Some((self.view.page_index, self.edit_epoch)) {
+            return None;
+        }
+        Ref::filter_map(self.page_text.text.borrow(), |slot| {
+            slot.as_ref().and_then(|built| built.as_ref().ok())
+        })
+        .ok()
+    }
+
     /// **What `page_index` is labelled**, when the document labels its pages
     /// and that label is not simply the page's number.
     #[must_use]

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `wanted` — a real gap — **34 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -134,11 +134,12 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
+| **Paragraph and cell-aware block recognition on spaced pages** — a blank-line gap ends a paragraph, a column of heading numbers is not a column, a drawing frame's cell splits into its notes (our `G205`, `G206`, Pass 611.0/612.0) | **wanted: the engine's paths have it; the shell's own Reflow and Align numbering does not yet.** The draft's Enter and commit already number blocks the engine's way (`canvas::textedit::promote::paragraph`: `recognize_with_cells` plus `with_line_marks`). `canvas::textedit::reflow::block_of_run` and `blocks_of_runs` build the model without line marks and pass the index to `reflow_block`, so on a page pdfcer wrote a blank-line paragraph into they name the wrong block. Owed: one shared model builder for every index sent to the engine, and a regression on a page pdfcer wrote a blank-line paragraph into. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `blocked` — waiting on something named — **2 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +157,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +168,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `declined` — deliberately no surface — **16 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -209,7 +210,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **316 of 367** <!-- counted by tools/walk-engine-backlog.py, 2026-10-16; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **319 of 371** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -585,6 +586,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Tagged-PDF `TextDecorationType` structure attribute — an underline … | **shipped.** The engine writes `/Layout /TextDecorationType` on the elements a decoration fully covers when Format ▸ Font or Ctrl+U sends `DecorationSet` through the restyle path; the shell adds no control. A decoration covering part of an element is not recorded (pdfcer does not split structure elements) and the engine's sentence naming the element reaches the status line's edit-disclosure group. Driven: `underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded` on `fixtures/tagged-paragraph.pdf`. |
 | **`/ToUnicode` partial inversion** — a composite font's character map is inverted per CHARACTER, not per font … | **shipped.** A refusal with `RInvTrigger::Ambiguous` reaches `EditRefusal::of` as its own class: a letter the operator typed is said as the font drawing it two ways (`FontHasTwoGlyphsFor`), a letter the text already held as *this text holds it* (`TextHoldsTwoGlyphsFor`), and the Properties offer says *draws it two ways* rather than *does not carry it*. `RunRepertoire::ambiguous` names the letters drawn two ways (G128; `CompositeEncoding::ambiguous_chars` is the data, `ToUnicodeCMap::partial_inverse` its source), so the keystroke notice and the re-face sentence say *draws it two ways*; `edit_text` keeps a held letter's code, so an edit beside it commits (G129). Driven by `a_letter_drawn_two_ways_is_named`, which saves and reads the kept code. |
 | **Choose a layer when adding new content** — `paste_objects_on_layer`, `NewImage::on_layer`, `AddTextRequest::on_layer`, and a `layer` field on the markup options | **shipped.** A click on a layer's name in Layers makes it current; a second click clears it. Add text passes it through `AddTextRequest::on_layer`, a raster picture through `NewImage::on_layer`, an SVG or EMF drawing through `add_svg_on_layer` / `add_emf_on_layer` (G130), Paste through `paste_objects_on_layer`, and markups, markup-as-content, picture stamps, notes (`add_text_annotation_reporting`), carets, Replace Text, attachments, sounds, screens, 3D (`add_3d_annotation`) and drawn hand signatures through `MarkupOptions::layer` (`drawlayer::onto`); typed and picture signatures as add text and pictures. Each add's notes name the layer. An add while the current layer is hidden is refused before the engine is called (`LayerRefusal::DrawLayerHidden`). Driven: `paste_goes_on_the_current_layer`, `a_caret_goes_on_the_current_layer`, `a_drawing_goes_on_the_current_layer` (the other adders share `drawlayer::onto`). |
+| **A size change on a two-byte (Identity-H) text run keeps its text** — `format_text` writes codes at the font's width (our `G207`, Pass 608.0) | **shipped.** Engine-internal: every size change the Font group and Properties send goes through `FormatRequest::drawn_size` in `app::actions::textstyle`, so the fix arrives with the pin; the shell has nothing to call. Owed: the driven check that a composite run reads back unchanged after a size change (O310). |
+| **Read and set the DRAWN font size** — `GlyphProvenance::em_scale()`/`drawn_size()`, `FormatRequest::drawn_size(points)` (our `G208`, Pass 609.0) | **shipped.** <!--namesake:drawn_size--> Properties and the Font group read `GlyphProvenance::drawn_size` (`canvas::textedit::pin::inspect`), and `StyleChange::Size` stamps `FormatRequest::drawn_size`, which solves each operator's `Tf` operand. The shell's own matrix arithmetic is deleted. |
+| **Automatic word gap for extracted text** — `ExtractOptions::with_word_gap_auto`, `PageText::word_gap_ratio`/`word_gap_measured` (our `G209`, Pass 610.0) | **shipped.** `Settings::word_gap_auto` reaches extraction through `SettingsExt::extract_options`; Edit ▸ Content has an *Auto* switch beside *Gap width* (`app::wordgapband`), Settings ▸ Text has the same switch, and the threshold the current page used, measured or not, is on hover. |
 
 ## Filed requests for OCR — not verdict rows
 

@@ -24,45 +24,6 @@ pub(super) fn target_of(
     }
 }
 
-/// Points one unit of the `Tf` operand draws at: the length of text space's
-/// vertical unit through `Tm` then the CTM (§9.4.4), so a rotated or
-/// sheared run reads its true height. `1.0` when the matrices collapse it.
-#[must_use]
-pub fn em_scale(p: &pdfcer_core::text_extract::GlyphProvenance) -> f64 {
-    matrix_em_scale(p.text_matrix, p.ctm)
-}
-
-/// [`em_scale`] from the two matrices, `[a b c d e f]` row-vector form.
-fn matrix_em_scale(tm: [f32; 6], ctm: [f32; 6]) -> f64 {
-    let [_, _, tc, td, _, _] = tm.map(f64::from);
-    let [a, b, c, d, _, _] = ctm.map(f64::from);
-    let scale = (tc * a + td * c).hypot(tc * b + td * d);
-    if scale.is_finite() && scale > f64::EPSILON {
-        scale
-    } else {
-        1.0
-    }
-}
-
-/// The size a glyph is drawn at, in points: `Tf` times [`em_scale`].
-#[must_use]
-#[allow(clippy::cast_possible_truncation)] // a font size fits an f32
-pub fn drawn_size(p: &pdfcer_core::text_extract::GlyphProvenance) -> f32 {
-    (f64::from(p.tf_size) * em_scale(p)) as f32
-}
-
-/// The [`em_scale`] of run `run`'s first glyph on `page`; `1.0` when it has
-/// none, so a size passes through unchanged.
-#[must_use]
-pub fn run_em_scale(doc: &OpenDoc, page: usize, run: usize) -> f64 {
-    doc.provenance_page_text(page)
-        .and_then(|text| {
-            let g = text.runs.get(run)?.glyphs.first()?;
-            g.provenance.as_ref().map(em_scale)
-        })
-        .unwrap_or(1.0)
-}
-
 /// Everything a pinned text verb needs in order to name one show operator.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pinned {
@@ -148,8 +109,8 @@ pub fn resolve(doc: &OpenDoc, page: usize, run: usize) -> Option<Pinned> {
 /// shows and a restyle changes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RunStyle {
-    /// The size the run is drawn at, in points: the `Tf` operand times
-    /// [`em_scale`]. What a word processor shows; a CAD export writes `1 Tf`
+    /// The size the run is drawn at, in points
+    /// (`GlyphProvenance::drawn_size`). What a word processor shows; a CAD export writes `1 Tf`
     /// and scales the text matrix, so the operand alone reads 1.
     pub size: f32,
     /// The `/Resources /Font` **key** in force — `F1`, not `Helvetica`.
@@ -289,7 +250,7 @@ pub fn inspect(doc: &OpenDoc, page: usize, run: usize) -> Option<Inspected> {
     Some(Inspected {
         pin,
         style: RunStyle {
-            size: drawn_size(p),
+            size: p.drawn_size(),
             text: text
                 .runs
                 .get(run)
@@ -529,35 +490,4 @@ fn operator_is_inside(p: &pdfcer_core::text_extract::GlyphProvenance, object: By
         pdfcer_core::text_extract::ContentStreamRef::Page
     ) && p.operator_span.start >= object.start
         && p.operator_span.end() <= object.end()
-}
-
-#[cfg(test)]
-mod scale_tests {
-    use super::matrix_em_scale;
-
-    const IDENTITY: [f32; 6] = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
-
-    #[test]
-    fn a_cad_label_scales_by_its_text_matrix() {
-        let tm = [13.228_35, 0.0, 0.0, 13.228_35, 1102.0, 696.0];
-        assert!((matrix_em_scale(tm, IDENTITY) - 13.228_35).abs() < 1e-4);
-    }
-
-    #[test]
-    fn a_rotated_run_keeps_its_height() {
-        let tm = [0.0, 12.0, -12.0, 0.0, 50.0, 50.0];
-        assert!((matrix_em_scale(tm, IDENTITY) - 12.0).abs() < 1e-6);
-    }
-
-    #[test]
-    fn the_ctm_scales_too() {
-        let ctm = [0.5, 0.0, 0.0, 0.5, 0.0, 0.0];
-        assert!((matrix_em_scale(IDENTITY, ctm) - 0.5).abs() < 1e-6);
-    }
-
-    #[test]
-    fn a_collapsed_matrix_reads_one() {
-        let flat = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-        assert!((matrix_em_scale(flat, IDENTITY) - 1.0).abs() < f64::EPSILON);
-    }
 }

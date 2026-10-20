@@ -17,7 +17,10 @@ as "the text chunk goes blank".
 
 ## Falsification
 
-| control build | expected verdict | watched |
-|---|---|---|
-| `RunStyle.size` = `tf_size` | FAIL at step 1, reads `1.00` | red |
-| `StyleChange::for_scale` passes the size through | FAIL at step 2, reads `432.00` | red |
+| control build | expected verdict |
+|---|---|
+| `RunStyle.size` = `tf_size` instead of `GlyphProvenance::drawn_size` | FAIL at step 1, reads `1.00` |
+| `StyleChange::Size` stamps `FormatRequest::size` instead of `drawn_size` | FAIL at step 2, reads `432.00` |
+
+Both controls were watched red when the size arithmetic was the shell's own;
+they are to be re-watched on the engine's.

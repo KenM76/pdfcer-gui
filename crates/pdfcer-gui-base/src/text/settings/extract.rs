@@ -59,6 +59,30 @@ pub const fn word_gap_slider_label() -> &'static str {
     "Gap width"
 }
 
+/// The Auto switch's label.
+#[must_use]
+pub const fn word_gap_auto_label() -> &'static str {
+    "Auto"
+}
+
+/// What Auto does, and what it falls back to.
+#[must_use]
+pub const fn word_gap_auto_note() -> &'static str {
+    "Measure the gap on each page: pdfcer finds the width that separates the \
+     gaps between letters from the gaps between words. A page with too little \
+     text to measure uses the Gap width setting instead."
+}
+
+/// The threshold one page was read with, and whether it was measured there.
+#[must_use]
+pub fn word_gap_on_page(ratio: f32, measured: bool) -> String {
+    if measured {
+        format!("This page: spaces at gaps over {ratio:.2} of the text size, measured.")
+    } else {
+        format!("This page: spaces at gaps over {ratio:.2} of the text size, from Gap width.")
+    }
+}
+
 /// How to use it, and that the default is a guess.
 #[must_use]
 pub const fn word_gap_note() -> &'static str {

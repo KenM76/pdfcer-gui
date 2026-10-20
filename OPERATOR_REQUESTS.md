@@ -598,9 +598,11 @@ Both menus list every panel this build registers, ticked when it is on screen; c
 
 His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*
 
-## O307 — **FILED** — a paragraph that reads as a paragraph edits as one
+## O307 — **ENGINE FIXED, SHELL PART WIRED, NOT DRIVEN** — a paragraph that reads as a paragraph edits as one
 
 His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text is still shown as individual lines. Some paragraphs work fine, but for some reason this one isn't detected as a paragraph."* (`ROPS-FOPS\Code 4 - Final.pdf`) and *"FRONT EDGE OF FOPS PLATE SHOULD BE / APPROXIMATELY 1/2" FROM THE FRONT OF THE / TRUCK BED. These also don't get detected as a paragraph."* (`SW41177.pdf`).
+
+**Engine fixed; the shell's own paragraph numbering is not yet aligned.** Engine v0.88.0 (G205, G206) reads the paragraph under 1.6.1 as one block, each heading as its own block, and each note in a drawing frame as its own block; this build links it, and the draft's click, Enter and commit take the engine's numbering. Reflow and Align still number paragraphs without the engine's line marks, so on a page pdfcer already wrote a blank-line paragraph into they can name the wrong one; that is next. Not yet driven on either file.
 
 ## O308 — **BUILT, NOT DRIVEN** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
 
@@ -608,17 +610,17 @@ His words: *"If I try to italicize, bold, underline, change font etc it doesn't 
 
 **Built, not yet driven.** Ribbon Bold, Italic, Underline and Strikethrough already acted on the I-beam range; the Properties panel's face, size, Bold, Italic and colour, and the ribbon's Font, Size and Colour, restyled the whole line. All now take the same route (`app::dispatch::textformat::restyle`): the selected characters, else the word at the caret, else the caret alone, which records the style for what is typed next. A paragraph opened as one block and already retyped still refuses until it is committed (`ParagraphEdited`).
 
-## O309 — **BUILT** — the font size shows the size the text is drawn at, fractional sizes included
+## O309 — **BUILT, RE-WIRED, NOT RE-DRIVEN** — the font size shows the size the text is drawn at, fractional sizes included
 
 His words: *"when I am in the text with the I cursor, in the Format and Properties section it shows me the font as 1.0pt high instead of the actual height. This might be because it does not match a whole point measurement, but we should be able to handle that."* (`SW41177.pdf`)
 
-**Built and driven.** Properties shows the Tf operand times the text and current matrices' vertical scale (`canvas::textedit::pin::drawn_size`), and a typed size is divided by that scale per run before it is sent (`StyleChange::for_scale`). Driven by `scaled_text_shows_and_takes_its_drawn_size`: a `1 Tf` line under an 18-pt matrix reads 18.00, and a typed 24 re-reads 24.00. Both halves were watched red. The engine-side ask is G208.
+**Built; re-wired onto the engine, not yet re-driven.** Properties and the Font group show `GlyphProvenance::drawn_size`, and a typed size is sent as `FormatRequest::drawn_size`, which solves each operator's `Tf` operand (engine v0.88.0, G208). The shell's own matrix arithmetic is deleted. The driven check `scaled_text_shows_and_takes_its_drawn_size` (a `1 Tf` line under an 18-pt matrix reads 18.00; a typed 24 re-reads 24.00) passed on the shell's arithmetic and is to be re-driven on the engine's.
 
-## O310 — **PART BUILT** — changing the size of that text redraws it, and clicking a line never shows squares
+## O310 — **BUILT, NOT DRIVEN** — changing the size of that text redraws it, and clicking a line never shows squares
 
 His words: *"Changing the font size causes the text chunk to go blank, and if I click on a line the text is replaced with squares."* (`SW41177.pdf`)
 
-**Half built.** The blanking was the O309 defect: a typed size became the Tf operand under a 13.2× matrix and the text was drawn off the page. That half is fixed by O309. The squares are an engine defect: after `FormatRequest::size`, an Identity-H subset run reads back as U+FFFD (G207, open).
+**Half built.** The blanking was the O309 defect: a typed size became the Tf operand under a 13.2× matrix and the text was drawn off the page. That half is fixed by O309. The squares were an engine defect, a composite run's two-byte codes written one byte each after a size change; engine v0.88.0 fixes it (G207) and this build links it. Not yet driven on `SW41177.pdf`.
 
 ## O311 — **BUILT, NOT DRIVEN** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
 
@@ -626,11 +628,11 @@ His words: *"If I type a character that doesn't exist in the embedded font I get
 
 **Built, not yet driven.** The font-folder source answered the engine's `addable` and `augment` but not `candidates`, which a composite (`/Type0`) subset is asked through, so every Identity-H subset was offered no letters and fell to a substitute. `editmodel::installedfaces` now forwards it. On SW41177 the repertoire query takes `z` with the fix and refuses it without. Installed fonts are on by default (`Preferences::use_os_fonts`).
 
-## O312 — **HALF BUILT, NOT DRIVEN** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
+## O312 — **BUILT, NOT DRIVEN** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
 
 His words: *"Also the setting Where extracted text gets its spaces should be available right in the Content menu section, and I think we have an auto option for this?"*
 
-**The slider half is built, not yet driven.** Edit ▸ Content carries a *Gap width* slider beside *Word gap…*. It commits when released, saves to the settings file, and re-extracts the text of every open document. **Auto is not built.** The engine has none: `ExtractOptions::word_gap_ratio` is a fixed ratio. Asked as G209.
+**Built, not yet driven.** Edit ▸ Content carries an *Auto* switch and a *Gap width* slider beside *Word gap…*; Settings ▸ Text has the same switch. Auto measures each page's own threshold (engine v0.88.0, G209), and *Gap width* is the fallback for a page too sparse to measure. Hovering either control says what the current page used and whether it was measured. Either control saves to the settings file and re-extracts the text of every open document.
 
 ## O313 — **BUILT, NOT DRIVEN** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
 

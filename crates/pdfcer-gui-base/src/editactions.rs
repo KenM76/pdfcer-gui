@@ -11,9 +11,8 @@ use pdfcer_core::text_edit::{FormatRequest, NewFill, StyleTarget};
 /// One property of a text run, and the value the operator chose for it.
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleChange {
-    /// A new drawn size in points. The `Tf` operand written is this divided
-    /// by the run's text-space scale (`canvas::textedit::pin::em_scale`),
-    /// applied per run by [`Self::for_scale`].
+    /// A new drawn size in points; the engine solves each operator's `Tf`
+    /// operand through its own matrices (`FormatRequest::drawn_size`).
     Size(f64),
     /// A new fill colour, stored in the space the operator chose.
     Fill(NewFill),
@@ -64,7 +63,7 @@ impl StyleChange {
     /// Stamp this change onto a request that is already pinned.
     pub fn stamp(&self, req: FormatRequest) -> FormatRequest {
         match self {
-            Self::Size(points) => req.size(*points),
+            Self::Size(points) => req.drawn_size(*points),
             Self::Fill(fill) => req.fill(fill.clone()),
             Self::Face(selector) => req.font(pdfcer_core::text_edit::FontSelector::new(selector)),
             // `style`, **not** `synthetic`, and the one word is the whole
@@ -85,16 +84,6 @@ impl StyleChange {
             // font file's plan is built once per gesture by `textstyle`,
             // which attaches it after this call.
             Self::RunWidth { .. } | Self::FaceFile(_) => req,
-        }
-    }
-
-    /// This change for a run drawn at `scale` points per `Tf` unit: a size
-    /// becomes the operand that draws it; every other change is unchanged.
-    #[must_use]
-    pub fn for_scale(&self, scale: f64) -> Self {
-        match self {
-            Self::Size(points) if scale > f64::EPSILON => Self::Size(points / scale),
-            other => other.clone(),
         }
     }
 
@@ -1242,25 +1231,4 @@ pub enum AttachmentAction {
         /// The picture, as PNG file bytes.
         png: Vec<u8>,
     },
-}
-
-#[cfg(test)]
-mod scale_tests {
-    use super::StyleChange;
-
-    #[test]
-    fn a_size_becomes_the_operand_that_draws_it() {
-        assert_eq!(
-            StyleChange::Size(24.0).for_scale(12.0),
-            StyleChange::Size(2.0)
-        );
-    }
-
-    #[test]
-    fn other_changes_pass_through() {
-        assert_eq!(
-            StyleChange::RenderMode(3).for_scale(12.0),
-            StyleChange::RenderMode(3)
-        );
-    }
 }

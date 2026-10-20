@@ -35,6 +35,7 @@ impl SettingsExt for Settings {
     fn extract_options(&self) -> ExtractOptions {
         let mut options = ExtractOptions::default();
         options.word_gap_ratio = self.word_gap_ratio;
+        options.word_gap_auto = self.word_gap_auto;
         options.unmappable_code = self.unmappable_code;
         options.actual_text = self.actual_text;
         options
@@ -115,5 +116,22 @@ impl SettingsExt for Settings {
         options.trailing_eol = self.trailing_eol;
         options.edited_stream_compression = self.edited_stream_compression;
         options
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SettingsExt;
+    use pdfcer_core::settings::Settings;
+
+    #[test]
+    fn extraction_takes_both_word_gap_settings() {
+        let mut settings = Settings::default();
+        settings.word_gap_ratio = 0.35;
+        settings.word_gap_auto = true;
+        let options = settings.extract_options();
+        assert!((options.word_gap_ratio - 0.35).abs() < f32::EPSILON);
+        assert!(options.word_gap_auto);
+        assert!(!Settings::default().extract_options().word_gap_auto);
     }
 }
