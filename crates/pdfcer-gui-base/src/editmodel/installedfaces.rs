@@ -133,6 +133,14 @@ impl SubsetAugmenter for InstalledFaces {
         self.faces_for(request.base_font)
             .map_or_else(Vec::new, |faces| faces.addable(request))
     }
+
+    /// A composite font names no character list of its own, so the engine
+    /// asks the face what to offer; without this a `/Type0` subset never
+    /// takes a letter it lacks.
+    fn candidates(&self, request: &AugmentRequest<'_>) -> Vec<char> {
+        self.faces_for(request.base_font)
+            .map_or_else(Vec::new, |faces| faces.candidates(request))
+    }
 }
 
 /// The font files directly in `folder`, sorted; none when it cannot be read.

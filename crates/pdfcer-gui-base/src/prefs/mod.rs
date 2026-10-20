@@ -197,13 +197,10 @@ pub struct Prefs {
     /// `OPERATOR_REQUESTS.md` **O50**, in his words: *"just a simple checkbox
     /// to include fonts from the OS installed font folders."*
     ///
-    /// **`false` by default, and that is the whole of the licensing
-    /// argument surviving intact.** The field above explains why pdfcer must not
-    /// go looking on its own; this does not overrule that, it satisfies it. The
-    /// objection was never to *using* system fonts — it was to pdfcer deciding
-    /// silently, and an explicit, persistent, off-by-default switch is the
-    /// operator making that decision once, visibly, where they can find it
-    /// again.
+    /// **`true` by default** (`OPERATOR_REQUESTS.md` O311: *"the settings
+    /// default should be to use the fonts installed on this computer"*). It
+    /// stays an explicit, persistent switch the operator can turn off, because
+    /// embedding a face in a document sent elsewhere is a licensing question.
     ///
     /// It is a **separate preference** rather than the two OS folders being
     /// appended to [`Self::font_folders`] when the box is ticked, and the
@@ -843,7 +840,7 @@ impl Default for Prefs {
             // system font directory would embed whatever that machine holds
             // into the operator's document, which is a licensing decision.
             font_folders: Vec::new(),
-            use_os_fonts: false,
+            use_os_fonts: true,
             opening_fit: OpeningFit::default(),
             wheel_paging: WheelPaging::default(),
             remote_control: RemoteControl::default(),

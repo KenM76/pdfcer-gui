@@ -178,9 +178,9 @@ pub fn write_os_flag(on: bool) -> String {
          # the folders above: this machine's font folder and the one holding\n\
          # fonts installed for your user only.\n\
          #\n\
-         # Off unless you turn it on. Embedding puts a font's outlines inside a\n\
+         # On unless you turn it off. Embedding puts a font's outlines inside a\n\
          # document you may send to somebody else, and which font that is, is a\n\
-         # licensing question -- so pdfcer does not answer it for you.\n",
+         # licensing question -- turn this off to keep to the folders above.\n",
     );
     out.push_str(if on {
         // ui-text-exempt: a file KEY and its VALUE, never displayed in the UI.
