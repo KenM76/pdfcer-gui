@@ -168,6 +168,98 @@ pub(crate) fn dispatch(
     }
 }
 
+/// Apply `change` to the text the operator means, resolved as a Bold press
+/// is (module header). A caret with no range or word records it for what is
+/// typed next. A face picked from a file, a render mode and a run width act
+/// on whole runs and do not come here.
+pub(crate) fn restyle(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    change: StyleChange,
+    actions: &mut Vec<Action>,
+) {
+    match target(ctx, doc) {
+        Ok(target) => restyle_target(ctx, target, change, actions),
+        Err(why) => refuse("format.restyle", why),
+    }
+}
+
+/// [`restyle`] when a draft or a live sweep says which characters are meant,
+/// else `change` on `runs` of `page`, the whole runs the caller shows.
+pub(crate) fn restyle_or_runs(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    page: usize,
+    runs: &[usize],
+    change: StyleChange,
+    actions: &mut Vec<Action>,
+) {
+    let swept = doc
+        .text_selection
+        .as_ref()
+        .is_some_and(|s| s.live(doc.edit_epoch) && !s.is_empty());
+    if textedit::read(ctx).is_some() || swept {
+        restyle(ctx, doc, change, actions);
+    } else {
+        actions.push(Action::TextStyle {
+            page,
+            runs: runs.to_vec(),
+            change,
+        });
+    }
+}
+
+/// Push `change` for `target`.
+fn restyle_target(
+    ctx: &egui::Context,
+    target: Target,
+    change: StyleChange,
+    actions: &mut Vec<Action>,
+) {
+    match target {
+        Target::Range {
+            page,
+            from,
+            to,
+            expected,
+            draft,
+        } => {
+            if draft {
+                textedit::settle(ctx, actions);
+            }
+            actions.push(Action::Text(TextAction::SpanStyle {
+                page,
+                from,
+                to,
+                expected,
+                change,
+            }));
+        }
+        Target::Caret { draft, .. } => {
+            let key = pending_key(&change);
+            typing::set(ctx, draft.caret, key, typing::Pending::Style(change));
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed.
+                format!("text-typing-style id={key} at={} set=true", draft.caret)
+            });
+        }
+        Target::Runs { page, runs } => actions.push(Action::TextStyle { page, runs, change }),
+    }
+}
+
+/// The command a pending `change` is keyed under, so a second size replaces
+/// the first rather than stacking.
+fn pending_key(change: &StyleChange) -> &'static str {
+    // ui-text-exempt: registered command ids, never displayed.
+    match change {
+        StyleChange::Size(_) => "format.font_size",
+        StyleChange::Fill(_) => "format.font_colour",
+        StyleChange::Weight { bold: Some(_), .. } => "format.bold",
+        StyleChange::Weight { .. } => "format.italic",
+        _ => "format.font",
+    }
+}
+
 /// The characters, word, caret or runs a press acts on.
 fn target(ctx: &egui::Context, doc: &OpenDoc) -> Result<Target, TextStyleRefusal> {
     if let Some(draft) = textedit::read(ctx) {

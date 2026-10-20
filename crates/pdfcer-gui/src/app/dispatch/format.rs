@@ -520,14 +520,15 @@ pub(crate) fn dispatch(
             // cannot reach here by clicking. The route that can is a chord, and
             // a chord pressed with nothing selected is the operator asking a
             // question, not making a mistake worth a sentence in the status bar.
-            let Some(operand) = crate::app::textoperand::resolve(doc) else {
+            // An I-beam range or the word at the caret is what is meant, as
+            // for Bold (`OPERATOR_REQUESTS.md` O308); no draft and no sweep
+            // falls through to the object's whole runs.
+            if crate::canvas::textedit::read(ctx).is_none()
+                && crate::app::textoperand::resolve(doc).is_none()
+            {
                 return;
-            };
-            actions.push(crate::app::actions::Action::TextStyle {
-                page: operand.page,
-                runs: operand.runs,
-                change,
-            });
+            }
+            super::textformat::restyle(ctx, doc, change, actions);
         }
         // The Markup group. ONE operand shape, and the operand arrives
         // WITH the token rather than being re-derived here.

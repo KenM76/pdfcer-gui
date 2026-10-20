@@ -410,12 +410,12 @@ pub fn section(
     ui.label(t::text_covers(runs.len()));
 
     face_row(ui, doc, draft, page, &runs, actions);
-    size_row(ui, draft, page, &runs, actions);
-    weight_row(ui, draft, page, &runs, actions);
+    size_row(ui, doc, draft, page, &runs, actions);
+    weight_row(ui, doc, draft, page, &runs, actions);
     render_row(ui, page, &runs, actions);
     align_row(ui, actions);
     if owns_colour {
-        colour_row(ui, draft, page, &runs, actions);
+        colour_row(ui, doc, draft, page, &runs, actions);
     }
 
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
@@ -451,11 +451,14 @@ fn face_row(
         // one `Action`, exactly as the ribbon's copy turns it into one parked
         // `StyleChange`.
         if let Some(selector) = chosen {
-            actions.push(Action::TextStyle {
+            crate::app::dispatch::textformat::restyle_or_runs(
+                ui.ctx(),
+                doc,
                 page,
-                runs: runs.to_vec(),
-                change: StyleChange::Face(selector),
-            });
+                runs,
+                StyleChange::Face(selector),
+                actions,
+            );
         }
         let file = ui
             .button(crate::text::panels::face::font_file_button())
@@ -474,6 +477,7 @@ fn face_row(
 /// The size, in points.
 fn size_row(
     ui: &mut Ui,
+    doc: &OpenDoc,
     draft: &mut TextStyleDraft,
     page: usize,
     runs: &[usize],
@@ -491,11 +495,14 @@ fn size_row(
         if (response.drag_stopped() || response.lost_focus())
             && (draft.typed_size - draft.size).abs() > f64::EPSILON
         {
-            actions.push(Action::TextStyle {
+            crate::app::dispatch::textformat::restyle_or_runs(
+                ui.ctx(),
+                doc,
                 page,
-                runs: runs.to_vec(),
-                change: StyleChange::Size(draft.typed_size),
-            });
+                runs,
+                StyleChange::Size(draft.typed_size),
+                actions,
+            );
         }
     });
 }
@@ -503,6 +510,7 @@ fn size_row(
 /// Bold and Italic — buttons that apply, not switches that reflect.
 fn weight_row(
     ui: &mut Ui,
+    doc: &OpenDoc,
     draft: &TextStyleDraft,
     page: usize,
     runs: &[usize],
@@ -513,26 +521,32 @@ fn weight_row(
         let bold = ui.button(t::text_bold());
         crate::diag::ui_rect_visible(BOLD_REGION, bold.rect, ui.clip_rect());
         if bold.on_hover_text(bold_hint(draft)).clicked() {
-            actions.push(Action::TextStyle {
+            crate::app::dispatch::textformat::restyle_or_runs(
+                ui.ctx(),
+                doc,
                 page,
-                runs: runs.to_vec(),
-                change: StyleChange::Weight {
+                runs,
+                StyleChange::Weight {
                     bold: Some(true),
                     italic: None,
                 },
-            });
+                actions,
+            );
         }
         let italic = ui.button(t::text_italic());
         crate::diag::ui_rect_visible(ITALIC_REGION, italic.rect, ui.clip_rect());
         if italic.on_hover_text(italic_hint(draft)).clicked() {
-            actions.push(Action::TextStyle {
+            crate::app::dispatch::textformat::restyle_or_runs(
+                ui.ctx(),
+                doc,
                 page,
-                runs: runs.to_vec(),
-                change: StyleChange::Weight {
+                runs,
+                StyleChange::Weight {
                     bold: None,
                     italic: Some(true),
                 },
-            });
+                actions,
+            );
         }
     });
 }
@@ -608,6 +622,7 @@ fn align_row(ui: &mut Ui, actions: &mut Vec<Action>) {
 /// The fill colour.
 fn colour_row(
     ui: &mut Ui,
+    doc: &OpenDoc,
     draft: &TextStyleDraft,
     page: usize,
     runs: &[usize],
@@ -656,11 +671,14 @@ fn colour_row(
                 pdfcer_core::text_edit::FillModel::Rgb,
                 components,
             ) {
-                actions.push(Action::TextStyle {
+                crate::app::dispatch::textformat::restyle_or_runs(
+                    ui.ctx(),
+                    doc,
                     page,
-                    runs: runs.to_vec(),
-                    change: StyleChange::Fill(fill),
-                });
+                    runs,
+                    StyleChange::Fill(fill),
+                    actions,
+                );
             }
         }
     });

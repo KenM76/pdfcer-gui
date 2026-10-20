@@ -65,6 +65,18 @@ pub fn toggle(ctx: &egui::Context, at: usize, command: &'static str, pending: Pe
     set
 }
 
+/// Set `command`'s pending style at `at`, replacing any it had: a size or a
+/// face is a value, not a toggle.
+pub fn set(ctx: &egui::Context, at: usize, command: &'static str, pending: Pending) {
+    let mut typing = read(ctx).filter(|t| t.at == at).unwrap_or(Typing {
+        at,
+        pending: Vec::new(),
+    });
+    typing.pending.retain(|(id, _)| *id != command);
+    typing.pending.push((command, pending));
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(MEMORY_KEY), typing));
+}
+
 /// Forget the pending styles.
 pub fn forget(ctx: &egui::Context) {
     ctx.data_mut(|d| d.remove::<Typing>(egui::Id::new(MEMORY_KEY)));
