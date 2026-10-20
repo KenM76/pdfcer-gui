@@ -221,6 +221,7 @@ mod tests {
                 bytes: ByteSpan { start: 0, len: 1 },
                 ctm: Matrix::IDENTITY,
                 oc: None,
+                oc_chain: Vec::new(),
             })],
             initial: Matrix::IDENTITY,
             diagnostics: DecomposeDiagnostics::default(),

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `wanted` — a real gap — **34 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,6 +66,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Reduce file size by lossless stream recompression** — `pdfcer_core::optimize`, `pdfcer_core::edit::optimize` (`EditSession::plan_optimize`, `apply_optimize`, `save_optimized`), `CommandKind::Optimize` | **wanted, at the pin past v0.89.0 (Pass 616.1).** File ▸ Save a compacted copy is the surface: a Recompress switch plans the lossless preset on a scratch session of the copy, so the copy's streams are re-encoded and the open document is untouched. The plan's skips and notes are disclosed in that window. The presets all recompress at level 9 until the image Passes land, so one switch is offered, not five identical choices. |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
@@ -138,7 +139,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `blocked` — waiting on something named — **2 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +157,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +168,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `declined` — deliberately no surface — **16 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -209,7 +210,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **322 of 373** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **324 of 376** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -589,6 +590,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Read and set the DRAWN font size** — `GlyphProvenance::em_scale()`/`drawn_size()`, `FormatRequest::drawn_size(points)` (our `G208`, Pass 609.0) | **shipped.** <!--namesake:drawn_size--> Properties and the Font group read `GlyphProvenance::drawn_size` (`canvas::textedit::pin::inspect`), and `StyleChange::Size` stamps `FormatRequest::drawn_size`, which solves each operator's `Tf` operand. The shell's own matrix arithmetic is deleted. |
 | **Space audit** — `pdfcer_core::space_audit` (`audit`, `SpaceAudit`, `SpaceCategory`; Pass 616.0) | **shipped.** The *Where the space goes* fold in File ▸ Save ▸ Save a compacted copy (`dialogs::compact::breakdown`) audits the file on disk and the measured copy, and lists each category's bytes side by side, with the audit's notes beneath. `diff` is not called: the fold pairs the two audits itself so it can leave out rows empty in both. The per-object and per-image facts (`ObjectSpace`, `ImageSpace`) are for the optimise passes the engine has not shipped yet, and `tools.optimise` is where they would surface. |
 | **A shell's subset augmenter that forgets `candidates` no longer compiles** — `SubsetAugmenter::candidates` required, `AugmentRequest::new` with `AugmentRequest::with_shown`, `AugmentRequest::with_outline_check`, `AugmentRequest::with_hinting_mismatch`, `AugmentRequest::with_addressing` (our `G210`, Pass 615.0) | **shipped.** `editmodel::installedfaces::InstalledFaces` forwards all three methods, so a composite subset is offered the installed face's letters (O311). The builders are for a shell's own tests: `a_composite_subset_is_offered_the_installed_faces_letters` uses `new` and `with_addressing`; production requests are built by the engine, so `with_shown`, `with_outline_check` and `with_hinting_mismatch` have no caller here and need none. Its test found `G212`. |
+| **Tell whether a page object is hidden by ANY enclosing layer** — `VectorObject::oc_chain`, `VectorObject::is_hidden_under`, `FormLeaf::oc_chain`, `FormLeaf::is_hidden_under` (our `G211`, Pass 617.1) | **shipped.** `objectprovider::unseen` hides an object or leaf when any membership in its chain is hidden, so content in a shown layer nested in a hidden one is not picked (O317). `content_under_a_hidden_outer_layer_is_not_picked`, falsified with the innermost-only rule. The Objects panel still groups by `oc()`, the innermost layer. `is_hidden_under` is not called: the shell memoises one answer per `/OC` across the page, which the per-object predicate would recompute. |
+| **`candidates` takes the first name-matched face that can serve** — `InstalledFaceAugmenter::candidates` (our `G212`, Pass 617.0) | **shipped.** No shell change: `editmodel::installedfaces` forwards `candidates`. `a_composite_subset_is_offered_the_installed_faces_letters` now reads the engine's fixture folder as installed, same-named subsets included, instead of a copy of the full face alone. |
 | **Automatic word gap for extracted text** — `ExtractOptions::with_word_gap_auto`, `PageText::word_gap_ratio`/`word_gap_measured` (our `G209`, Pass 610.0) | **shipped.** `Settings::word_gap_auto` reaches extraction through `SettingsExt::extract_options`; Edit ▸ Content has an *Auto* switch beside *Gap width* (`app::wordgapband`), Settings ▸ Text has the same switch, and the threshold the current page used, measured or not, is on hover. |
 | **Paragraph and cell-aware block recognition on spaced pages** — a blank-line gap ends a paragraph, a column of heading numbers is not a column, a drawing frame's cell splits into its notes (our `G205`, `G206`, Pass 611.0/612.0) | **shipped — engine v0.88.0.** Every block index the shell sends to a block verb comes from `canvas::textedit::engine_model::recognise`: cell-aware, `reflow_recognition_options`, the page's `LineMarks` attached, as `EditSession::block_at_point` builds it. The draft's paragraph, the Select tool's paragraph objects, Reflow and Align all read it. Driven by `a_written_blank_line_paragraph_is_numbered_as_the_engine_numbers_it` (a blank line written with `edit_block_text`, every block checked against `block_at_point`), falsified by dropping the marks. |
 

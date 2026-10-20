@@ -199,13 +199,10 @@ mod tests {
     #[test]
     fn a_composite_subset_is_offered_the_installed_faces_letters() {
         use pdfcer_core::text_edit::ProgramAddressing;
-        // The full face alone: the fixture folder's subsets carry the same
-        // name, and the engine offers the first named face's letters.
+        // The fixture folder holds subsets under the full face's name; the
+        // face that can serve is the one offered.
         let fixtures = crate::opendoc::fixtures::engine_fixture("text/augment");
-        let folder = std::env::temp_dir().join(format!("pdfcer-g210-{}", std::process::id()));
-        std::fs::create_dir_all(&folder).expect("temp folder");
-        std::fs::copy(fixtures.join("face.ttf"), folder.join("face.ttf")).expect("fixture");
-        let source = for_folders(std::slice::from_ref(&folder));
+        let source = for_folders(std::slice::from_ref(&fixtures));
         while !source.is_ready() {
             std::thread::yield_now();
         }
@@ -218,6 +215,5 @@ mod tests {
             assert!(offered.contains(&c), "{c} not offered: {offered:?}");
         }
         assert!(!offered.contains(&'Z'));
-        let _ = std::fs::remove_dir_all(&folder);
     }
 }
