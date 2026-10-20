@@ -784,3 +784,67 @@ fn bold_off_returns_to_the_regular_face_the_page_carries() {
         "the sentence must say the page's own face without bold was used; it said: {joined}"
     );
 }
+
+/// **Restyling a selection inside a draft reopens the draft on it**, with the
+/// caret at the end it was at, once the restyle has landed.
+#[test]
+fn a_restyle_inside_a_draft_reopens_it_on_the_selection() {
+    use crate::canvas::textedit::{self, Anchor, Draft, TextEditKind, restyled};
+    use crate::canvas::textsel::{self, PageContext};
+    use pdfcer_core::text_edit::TextPosition;
+
+    let mut doc = open_local_fixture(ROTATED_TEXT);
+    let original = doc.provenance_page_text(0).unwrap().runs[0].text.clone();
+    let cut: usize = original
+        .char_indices()
+        .nth(2)
+        .map_or(original.len(), |(i, _)| i);
+    let (from, to) = (TextPosition::new(0, 0), TextPosition::new(0, cut));
+    let sel = {
+        let text = doc.provenance_page_text(0).unwrap();
+        let pc = PageContext {
+            text: &text,
+            page: &doc.pages[0],
+            index: 0,
+            epoch: doc.edit_epoch,
+        };
+        textsel::span(&pc, from, to).expect("the first two letters select")
+    };
+    let expected = sel.text.clone();
+    doc.text_selection = Some(sel);
+
+    let ctx = egui::Context::default();
+    let draft = Draft {
+        page: 0,
+        kind: TextEditKind::Edit,
+        anchor: Anchor::Run {
+            run: 0,
+            original: original.clone(),
+        },
+        text: original.clone(),
+        caret: 2,
+        mark: Some(0),
+        seeded: true,
+    };
+    restyled::arm(&ctx, &doc, &draft);
+    assert!(
+        !restyled::resume(&ctx, &doc),
+        "nothing reopens before the restyle lands"
+    );
+
+    let (size, _) = style_of(&doc, 0);
+    super::span::apply(
+        &mut doc,
+        0,
+        (from, to),
+        &expected,
+        &StyleChange::Size(f64::from(size) * 2.0),
+    );
+    assert!(
+        restyled::resume(&ctx, &doc),
+        "the draft reopens once the restyle lands"
+    );
+    let back = textedit::read(&ctx).expect("a draft is open again");
+    assert_eq!((back.page, back.caret, back.mark), (0, 2, Some(0)));
+    assert!(matches!(back.anchor, Anchor::Run { run: 0, .. }));
+}

@@ -172,6 +172,9 @@ pub fn typing(
     focused: bool,
     actions: &mut Vec<crate::app::actions::Action>,
 ) -> bool {
+    if read(ctx).is_none() {
+        super::restyled::resume(ctx, doc);
+    }
     let Some(mut draft) = read(ctx) else {
         return false;
     };

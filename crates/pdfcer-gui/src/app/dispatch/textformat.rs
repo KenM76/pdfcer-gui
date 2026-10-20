@@ -7,7 +7,8 @@
 //! 1. **Inside a draft on existing text**: the selected characters; else the
 //!    word the caret is inside; else the caret itself, which records a pending
 //!    style for what is typed next (`canvas::textedit::typing`). A draft with
-//!    edits is committed first, and closed.
+//!    edits is committed first; a draft on one run reopens on the same
+//!    selection once the restyle lands (`canvas::textedit::restyled`).
 //! 2. **A live text sweep**: exactly the swept characters.
 //! 3. **A selected text object**: its whole runs.
 //!
@@ -121,6 +122,7 @@ pub(crate) fn dispatch(
             draft,
         } => {
             if draft {
+                keep_open(ctx, doc);
                 textedit::settle(ctx, actions);
             }
             actions.push(Action::Text(match pending {
@@ -179,7 +181,7 @@ pub(crate) fn restyle(
     actions: &mut Vec<Action>,
 ) {
     match target(ctx, doc) {
-        Ok(target) => restyle_target(ctx, target, change, actions),
+        Ok(target) => restyle_target(ctx, doc, target, change, actions),
         Err(why) => refuse("format.restyle", why),
     }
 }
@@ -212,6 +214,7 @@ pub(crate) fn restyle_or_runs(
 /// Push `change` for `target`.
 fn restyle_target(
     ctx: &egui::Context,
+    doc: &OpenDoc,
     target: Target,
     change: StyleChange,
     actions: &mut Vec<Action>,
@@ -225,6 +228,7 @@ fn restyle_target(
             draft,
         } => {
             if draft {
+                keep_open(ctx, doc);
                 textedit::settle(ctx, actions);
             }
             actions.push(Action::Text(TextAction::SpanStyle {
@@ -244,6 +248,13 @@ fn restyle_target(
             });
         }
         Target::Runs { page, runs } => actions.push(Action::TextStyle { page, runs, change }),
+    }
+}
+
+/// Reopen the draft on its selection once the restyle closing it has landed.
+fn keep_open(ctx: &egui::Context, doc: &OpenDoc) {
+    if let Some(draft) = textedit::read(ctx) {
+        textedit::restyled::arm(ctx, doc, &draft);
     }
 }
 

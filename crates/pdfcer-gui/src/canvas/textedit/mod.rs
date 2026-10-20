@@ -95,6 +95,8 @@ pub mod reflow;
 /// channel, and which reach neither. Its header carries the rule and why the
 /// middle row of it exists.
 pub mod report;
+/// A draft reopened on its selection after a restyle closed it.
+pub mod restyled;
 pub use caret::{backspace, delete_forward, insert, word_left, word_right};
 /// Why the open draft's preview is in a stand-in font, for the status bar.
 pub mod fallback;
