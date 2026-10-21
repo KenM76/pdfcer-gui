@@ -423,6 +423,15 @@ pub fn left_because(reason: &SkipReason) -> String {
         SkipReason::UnsupportedFilter(name) => format!("they use {name}, which is not re-encoded"),
         SkipReason::Undecodable(_) => "they could not be read".to_owned(),
         SkipReason::Protected(what) => format!("{what} is never rewritten"),
+        SkipReason::Unplaced => {
+            "they are pictures drawn on no page, so they were not scaled".to_owned()
+        }
+        SkipReason::BelowMinSaving { pct, .. } => {
+            format!("re-encoding them saved less than {pct}%")
+        }
+        SkipReason::ImageUnsupported(why) => {
+            format!("they are pictures that cannot be rewritten ({why})")
+        }
         other => other.to_string(),
     }
 }

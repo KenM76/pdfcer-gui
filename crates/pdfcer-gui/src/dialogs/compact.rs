@@ -10,6 +10,7 @@ use pdfcer_core::space_audit::SpaceCategory;
 
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
+use crate::dialogs::compact_images::{self, Pictures};
 use crate::dialogs::recompress::{Choices, Job, Recompressed};
 use crate::text::compact as t;
 use pdfcer_core::optimize::{DiscardObject, DiscardOptions};
@@ -20,6 +21,10 @@ pub const REGION_BODY: &str = "compact.body";
 /// The button that goes on to the picker.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_SAVE: &str = "compact.commit";
+/// Height kept for the separator and the Save row below the scrolling choices.
+const BUTTON_ROW: f32 = 40.0;
+/// Height kept above it for the two-line picture-loss warning.
+const LOSSY_LINE: f32 = 40.0;
 
 /// The window, and the bytes it measured.
 pub struct CompactDialog {
@@ -90,6 +95,7 @@ impl CompactDialog {
                 broken: true,
                 destinations: false,
                 discard: DiscardOptions::none(),
+                pictures: Pictures::OFF,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -139,6 +145,19 @@ impl CompactDialog {
     }
 
     fn body(&mut self, ui: &mut Ui) {
+        // The choices scroll and the button row does not: an opened fold must
+        // never push Save below the window's edge.
+        let footer = BUTTON_ROW + if self.lossy() { LOSSY_LINE } else { 0.0 };
+        let room = (ui.available_height() - footer).max(BUTTON_ROW);
+        egui::ScrollArea::vertical()
+            .max_height(room)
+            .auto_shrink([false, true])
+            .show(ui, |ui| self.choices_column(ui));
+        self.button_row(ui);
+    }
+
+    /// Everything above the button row.
+    fn choices_column(&mut self, ui: &mut Ui) {
         ui.label(t::intro());
         ui.add_space(8.0);
         let after = chosen(&self.bytes, &self.recompress).len() as u64;
@@ -158,8 +177,25 @@ impl CompactDialog {
 
         ui.add_space(8.0);
         self.space_fold(ui);
+    }
 
-        ui.add_space(12.0);
+    /// Whether the bytes Save would write lost picture detail.
+    fn lossy(&self) -> bool {
+        matches!(
+            &self.recompress,
+            Recompress::Done(Recompressed { bytes: Some(_), pictures, .. }) if pictures.lossy
+        )
+    }
+
+    /// The loss line, the separator and Save / Cancel, always in view. The
+    /// loss line sits here, full-size, because it is the one change a reader
+    /// of the copy can see and it must not scroll away from the button.
+    fn button_row(&mut self, ui: &mut Ui) {
+        ui.add_space(4.0);
+        if self.lossy() {
+            let line = ui.label(crate::text::compact_images::lossy_line());
+            crate::diag::ui_rect_visible(compact_images::REGION_LOSSY, line.rect, ui.clip_rect());
+        }
         ui.separator();
         ui.horizontal(|ui| {
             // Never greyed. Every state this window can be in is one an
@@ -271,6 +307,7 @@ impl CompactDialog {
             ui.checkbox(on, label).on_hover_text(tip).changed() || any
         });
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
+        let toggled = compact_images::switches(ui, &mut c.pictures) || toggled;
         if toggled {
             self.recompress = Recompress::Off;
             self.space = None;
@@ -299,6 +336,9 @@ impl CompactDialog {
                     }
                     if done.changed > 0 {
                         ui.small(t::recompressed(done.changed));
+                    }
+                    for line in done.pictures.lines() {
+                        ui.small(line);
                     }
                     for line in done.cleaned.iter().chain(&done.restructured) {
                         ui.small(line.as_str());

@@ -37,6 +37,8 @@ pub mod comment_popup;
 
 pub mod comments_census;
 
+pub mod compact_pictures;
+
 pub mod compact_save;
 
 /// Doc-only: how a check is written and what makes one admissible.

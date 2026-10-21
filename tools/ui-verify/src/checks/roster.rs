@@ -405,6 +405,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(embed_fonts::EmbeddingFontsPutsAProgramInTheDocument),
         Box::new(embed_bundled::EmbeddingWorksWithNoFontFolderAtAll),
         Box::new(compact_save::ACompactedCopyIsActuallySmaller),
+        Box::new(compact_pictures::ACompactedCopyCanMakePicturesSmaller),
         // The page-tree guard, from the operator's own report. Placed immediately
         // after `compact_save` because the two are
         // the same subject from opposite ends: that one asserts a save

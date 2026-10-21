@@ -8,7 +8,10 @@
 //! bookmarks and named destinations that go nowhere or that nothing uses; the
 //! discards remove whole classes of document object. It answers the smaller
 //! file, or a file no smaller that removes what was asked for, with what the
-//! plan left alone and what each step did. A signed copy proceeds: the compact window already states
+//! plan left alone and what each step did. Pictures are changed only when
+//! [`Choices::pictures`] is on, by one Images rule over the preset; the
+//! preset's own stream action stays, so everything else is still recompressed.
+//! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
 use std::collections::BTreeMap;
@@ -16,11 +19,14 @@ use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
 use pdfcer_core::optimize::{
-    CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, StreamAction,
+    CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, Rule, Selector,
+    StreamAction,
 };
 use pdfcer_core::settings::Settings;
+use pdfcer_core::space_audit::SpaceCategory;
 
 use crate::app::settings::SettingsExt;
+use crate::dialogs::compact_images::{Pictures, Tally};
 use crate::text::compact as t;
 
 /// What the operator asked the copy to have done.
@@ -35,13 +41,20 @@ pub struct Choices {
     /// The classes of document object removed; metadata kinds stay with
     /// File ▸ Remove metadata.
     pub discard: DiscardOptions,
+    /// What is done to pictures; the only choice that changes how the page
+    /// looks.
+    pub pictures: Pictures,
 }
 
 impl Choices {
     /// Whether anything is asked for.
     #[must_use]
     pub const fn any(self) -> bool {
-        self.recompress || self.broken || self.destinations || !self.discard.is_none()
+        self.recompress
+            || self.broken
+            || self.destinations
+            || !self.discard.is_none()
+            || self.pictures.on
     }
 }
 
@@ -63,6 +76,8 @@ pub struct Recompressed {
     pub restructured: Vec<String>,
     /// What the clean-ups and discards removed, one sentence each.
     pub cleaned: Vec<String>,
+    /// What was done to pictures.
+    pub pictures: Tally,
 }
 
 /// Optimize `copy` as `choices` ask, in a session and with save options
@@ -92,11 +107,21 @@ pub fn recompress(
         unreferenced_destinations: choices.destinations,
     };
     preset.discard = choices.discard;
+    if let Some(patch) = choices.pictures.patch() {
+        patch.validate()?;
+        let mut select = Selector::new();
+        select.categories = vec![SpaceCategory::Images];
+        preset.rules.push(Rule {
+            select,
+            action: StreamAction::Image(patch),
+        });
+    }
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
     let (file, report) = session
         .save_optimized(&plan, &options, &preset.structure)
         .map_err(|e| e.to_string())?;
+    let pictures = Tally::of(&plan);
     let mut left = BTreeMap::new();
     for skipped in &plan.skipped {
         *left.entry(t::left_because(&skipped.reason)).or_insert(0) += 1;
@@ -116,6 +141,7 @@ pub fn recompress(
         notes: plan.notes,
         restructured: report.as_ref().map(t::restructured).unwrap_or_default(),
         cleaned,
+        pictures,
     })
 }
 
@@ -136,10 +162,19 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
+                        result.as_ref().map_or(0, |r| r.pictures.resized),
+                        result.as_ref().map_or(0, |r| r.pictures.jpeg),
+                        result.as_ref().map_or(0, |r| r.pictures.converted),
+                        result.as_ref().is_ok_and(|r| r.pictures.lossy),
+                        result
+                            .as_ref()
+                            .ok()
+                            .and_then(|r| r.bytes.as_ref())
+                            .map_or(0, Vec::len),
                         started.elapsed().as_millis()
                     )
                 });
@@ -174,6 +209,7 @@ mod tests {
         broken: true,
         destinations: true,
         discard: DiscardOptions::none(),
+        pictures: Pictures::OFF,
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -497,6 +533,62 @@ mod tests {
         let drawn = String::from_utf8_lossy(&drawn.buf);
         assert!(drawn.matches(" c").count() > 0, "curves drawn: {drawn}");
         assert!(drawn.matches(" l").count() < 10, "the lines went: {drawn}");
+    }
+
+    /// A 300-pixel noise picture drawn 100 pt wide (216 ppi), asked down to
+    /// 72 ppi as JPEG, is scaled, stored as JPEG and disclosed as lossy, and
+    /// the copy is much smaller; with pictures off none of it happens.
+    #[test]
+    fn pictures_change_only_when_asked() {
+        let side = 300_usize;
+        let mut seed = 12_345_u32;
+        let pixels: String = (0..side * side)
+            .map(|_| {
+                seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+                char::from(b'0' + ((seed >> 16) % 64) as u8)
+            })
+            .collect();
+        let content = "q 100 0 0 100 0 0 cm /Im1 Do Q\n";
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 4 0 R \
+             /Resources << /XObject << /Im1 5 0 R >> >> >>"
+                .to_string(),
+            format!(
+                "<< /Length {} >>\nstream\n{content}endstream",
+                content.len()
+            ),
+            format!(
+                "<< /Type /XObject /Subtype /Image /Width {side} /Height {side} \
+                 /ColorSpace /DeviceGray /BitsPerComponent 8 /Length {} >>\nstream\n{pixels}\nendstream",
+                pixels.len()
+            ),
+        ]);
+        let off = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert_eq!(off.pictures, Tally::default(), "{:?}", off.pictures);
+        let asked = Choices {
+            pictures: Pictures {
+                on: true,
+                ppi: Some(72),
+                format: crate::dialogs::compact_images::Format::Jpeg,
+                ..Pictures::OFF
+            },
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        let tally = done.pictures;
+        assert!(
+            tally.resized == 1 && tally.jpeg == 1 && tally.lossy,
+            "{tally:?} left {:?} notes {:?}",
+            done.left,
+            done.notes
+        );
+        let (small, plain) = (
+            done.bytes.expect("smaller").len(),
+            off.bytes.map_or(copy.len(), |b| b.len()),
+        );
+        assert!(small * 2 < plain, "{small} B against {plain} B");
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {

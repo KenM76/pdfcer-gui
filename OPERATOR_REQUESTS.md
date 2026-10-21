@@ -610,6 +610,12 @@ His words: *"with show and hide layers, if I click to show or hide a layer that 
 
 **Where it stands.** On a page whose objects are on layers, the Objects panel lists them under one folding heading per layer (name, hidden or not, count), with "Not on a layer" last; a page without layers keeps the flat list. Tested by the three `panels::objects::layered` tests, falsified. Driving waits for the PC.
 
+## O319 — **FILED** — picture compression, and object commands generally, from a right-click on the object, in the Objects tree, and on a Ctrl/Shift multi-selection
+
+His words: *"Don't forget to make these new compression options available by right clicking on an image like a user would expect to do or right clicking an image in the object tree or being able to use the normal control keys to select a bunch of images at once before right clicking. And don't forget that users expect this type of behaviour consistently for a lot of different commands and options for objects that would be available this way in a modern UI."*
+
+**Scope, whole behaviour.** (1) The picture options of *Save a compacted copy* (resolution, store as, JPEG quality, colour) reachable from a right-click on a picture on the canvas and on a picture row in the Objects tree, applied to that picture. (2) Ctrl-click and Shift-click build a multi-selection in both places, and the right-click applies to all of it. (3) The same holds for the other per-object commands a modern editor puts on an object's context menu: an audit of every object command against the canvas menu, the tree menu and the multi-selection is part of the row.
+
 ## O307–O315 — nine asks in one message, FILED BEFORE ANY WORK
 
 His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*

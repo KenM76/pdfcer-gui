@@ -24,6 +24,8 @@ pub mod archive;
 /// document, computed by the verb's own planner and shown before any of it
 /// happens.
 pub mod compact;
+/// The compact window's picture options.
+pub mod compact_images;
 /// The startup offer O173 asks for - *"Ask once with a don't show me again
 /// check box option"*. Its header carries the three ways the question can be
 /// answered and which two of them stop it coming back.

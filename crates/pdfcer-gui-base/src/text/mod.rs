@@ -70,6 +70,8 @@ pub mod commands;
 /// a revision history, possibly every signature, and the original file's role
 /// as the canonical one.
 pub mod compact;
+/// Every word of the compact window's picture options and their report.
+pub mod compact_images;
 /// Every word File ▸ Straighten scans says. Consumed by
 /// `pdfcer_gui::dialogs::deskew`.
 pub mod deskew;
