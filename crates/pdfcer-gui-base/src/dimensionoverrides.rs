@@ -4,7 +4,6 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/dimensionoverrides.md`.
 
 use egui::Ui;
-use pdfcer_core::annot_author::Color;
 use pdfcer_core::dimension::{
     ArrowForm, DecimalMarker, DimDash, DimStandard, FractionMode, Group, StyleOverrides,
     StyleProvenance, StyleSource, Unit, resolve_style,
@@ -17,6 +16,10 @@ pub const REGION: &str = "dimension-properties.overrides"; // ui-text-exempt: tr
 /// The region the text-height control publishes, so a driven check has one
 /// numeric control it can move.
 pub const REGION_TEXT_HEIGHT: &str = "dimension-properties.text_height"; // ui-text-exempt: trace region name, never displayed
+/// The region the colour swatch publishes; its picker publishes beneath it.
+pub const REGION_COLOUR: &str = "dimension-properties.colour"; // ui-text-exempt: trace region name, never displayed
+/// The colour row's *Set here* checkbox.
+pub const REGION_COLOUR_SET: &str = "dimension-properties.colour.set"; // ui-text-exempt: trace region name, never displayed
 
 /// The drag speed for the point-valued properties. See
 /// `dialogs::dimension_groups::style`'s constant of the same name.
@@ -171,11 +174,9 @@ pub fn show(ui: &mut Ui, group: &Group, overrides: &mut StyleOverrides) -> bool 
         &mut overrides.color,
         || resolved.color,
     )
+    .published(ui, REGION_COLOUR_SET)
     .edit(ui, |ui, value| {
-        let mut screen = color32_of(*value);
-        if ui.color_edit_button_srgba(&mut screen).changed() {
-            *value = rgb_of(screen);
-        }
+        crate::colourpick::edit_color(ui, "dimension-override-colour", value, REGION_COLOUR);
     });
 
     stroke_rows(ui, &provenance, overrides, resolved.dash, resolved.opacity);
@@ -283,9 +284,17 @@ fn stroke_rows(
 struct Row<'a, T> {
     /// The slot the checkbox governs, `Some` once it is ticked.
     slot: &'a mut Option<T>,
+    /// The checkbox, for [`Row::published`].
+    set: egui::Rect,
 }
 
 impl<T: Copy> Row<'_, T> {
+    /// Publish the row's *Set here* checkbox as `region`.
+    fn published(self, ui: &Ui, region: &str) -> Self {
+        crate::diag::ui_rect_visible(region, self.set, ui.clip_rect());
+        self
+    }
+
     /// Draw the editor, if this row is overridden.
     fn edit(self, ui: &mut Ui, editor: impl FnOnce(&mut Ui, &mut T)) {
         if let Some(value) = self.slot.as_mut() {
@@ -302,10 +311,11 @@ fn row<'a, T: Copy>(
     slot: &'a mut Option<T>,
     seed: impl FnOnce() -> T,
 ) -> Row<'a, T> {
-    ui.horizontal(|ui| {
+    let set = ui.horizontal(|ui| {
         ui.label(label);
         let mut set = slot.is_some();
         let response = ui.checkbox(&mut set, t::set_here());
+        let rect = response.rect;
         if response.changed() {
             *slot = if set { Some(seed()) } else { None };
         }
@@ -317,8 +327,12 @@ fn row<'a, T: Copy>(
         if slot.is_none() {
             ui.weak(t::source_name(source));
         }
+        rect
     });
-    Row { slot }
+    Row {
+        slot,
+        set: set.inner,
+    }
 }
 
 /// The precision editor — a mode, then the control that mode implies.
@@ -386,33 +400,6 @@ fn point_box(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>)
 fn places_box(ui: &mut Ui, value: &mut u32) {
     let (widget, refusal) = crate::entry::drag_value(ui, value, crate::entry::Kind::Count);
     refusal.show(ui.add(widget.range(PLACES_RANGE)));
-}
-
-/// A screen colour from a ce dimension's stored colour, in whichever device
-/// space it is stored. CMYK goes through the engine's own conversion, the
-/// colour pdfcer renders it as.
-pub fn color32_of(colour: Color) -> egui::Color32 {
-    #[allow(clippy::cast_possible_truncation)] // colour channels are 0..1
-    let to_byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    let [r, g, b] = match colour {
-        Color::Gray(v) => [v, v, v],
-        Color::Rgb(r, g, b) => [r, g, b],
-        #[allow(clippy::cast_possible_truncation)] // colour channels are 0..1
-        Color::Cmyk(c, m, y, k) => {
-            pdfcer_core::color::cmyk_to_srgb(c as f32, m as f32, y as f32, k as f32).map(f64::from)
-        }
-    };
-    egui::Color32::from_rgb(to_byte(r), to_byte(g), to_byte(b)) // DOCUMENT COLOUR: this ce dimension's own `/C`, chosen by the operator — not a theme colour
-}
-
-/// The colour a screen pick stores — `DeviceRGB`, the space the screen
-/// picker offers.
-pub fn rgb_of(c: egui::Color32) -> Color {
-    Color::Rgb(
-        f64::from(c.r()) / 255.0,
-        f64::from(c.g()) / 255.0,
-        f64::from(c.b()) / 255.0,
-    )
 }
 
 /// Every property this panel draws, paired with the provenance field that

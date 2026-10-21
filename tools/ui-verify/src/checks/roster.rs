@@ -272,6 +272,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(dimension_tool_options::ADimensionJoinsTheGroupMadeInToolOptions),
         Box::new(dimension_tool_options::ANewGroupCopiesAGroupsScaleInItsOwnUnit),
         Box::new(dimension_text_select::ClickingADimensionsTextSelectsIt),
+        Box::new(dimension_colour_cmyk::ADimensionsColourIsStoredInCmyk),
         Box::new(draft_arrows::ArrowsInATextDraftStayWithTheCaret),
         Box::new(draft_paragraph::AParagraphReopensAsOneDraft),
         Box::new(draft_mixed::AMixedParagraphOpensWholeAndKeepsItsLooks),

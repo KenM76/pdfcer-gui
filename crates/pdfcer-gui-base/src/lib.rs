@@ -208,6 +208,7 @@ pub mod fontsearch;
 pub mod commandregisters;
 
 /// One colour control with three honest states: set, mixed, and none.
+pub mod colourpick;
 pub mod swatch;
 
 /// A restyle refused for a look pdfcer did not draw, held for the redraw offer.

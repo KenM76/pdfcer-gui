@@ -59,6 +59,8 @@ pub mod attachclip;
 pub mod bates;
 /// Tools ▸ Batch ▸ Bates number files…: its window.
 pub mod bates_batch;
+/// Every word of the compact window's picture options and their report.
+pub mod colourpick;
 pub mod commands;
 /// The words form-data export says — `file.export_form_data`, wired
 /// 2026-08-27. Its one load-bearing sentence is the CSV neutralisation
@@ -70,7 +72,6 @@ pub mod commands;
 /// a revision history, possibly every signature, and the original file's role
 /// as the canonical one.
 pub mod compact;
-/// Every word of the compact window's picture options and their report.
 pub mod compact_images;
 /// Every word File ▸ Straighten scans says. Consumed by
 /// `pdfcer_gui::dialogs::deskew`.

@@ -7,7 +7,6 @@ use egui::Ui;
 use pdfcer_core::dimension::{
     ArrowForm, DimensionModel, Group, StyleDefaults, StyleSource, style_provenance,
 };
-use pdfcer_gui_base::dimensionoverrides::{color32_of, rgb_of};
 
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
@@ -17,6 +16,8 @@ use crate::text::dimension_groups as t;
 pub const REGION: &str = "dimension-groups.appearance"; // ui-text-exempt: trace region name, never displayed
 /// The region the text-height control publishes.
 pub const REGION_TEXT_HEIGHT: &str = "dimension-groups.text_height"; // ui-text-exempt: trace region name, never displayed
+/// The region the colour swatch publishes; its picker publishes beneath it.
+pub const REGION_COLOUR: &str = "dimension-groups.colour"; // ui-text-exempt: trace region name, never displayed
 
 /// The drag speed for the three point-valued properties.
 const POINT_SPEED: f64 = 0.05;
@@ -115,10 +116,12 @@ pub fn show(ui: &mut Ui, model: &DimensionModel, group: &Group, actions: &mut Ve
         StyleDefaults::FACTORY.color,
         (moving, total),
         |ui, value| {
-            let mut screen = color32_of(*value);
-            if ui.color_edit_button_srgba(&mut screen).changed() {
-                *value = rgb_of(screen);
-            }
+            pdfcer_gui_base::colourpick::edit_color(
+                ui,
+                "dimension-group-colour",
+                value,
+                REGION_COLOUR,
+            );
         },
         |_| String::new(),
     );
@@ -265,27 +268,6 @@ mod tests {
         assert!(
             crate::text::dimension_groups::members_that_will_move(0, 0)
                 .contains("no dimensions yet")
-        );
-    }
-
-    /// The colour round-trips exactly, including both ends of the range.
-    #[test]
-    fn a_colour_survives_the_round_trip_at_both_ends() {
-        for c in [
-            egui::Color32::from_rgb(255, 0, 0), // DOCUMENT COLOUR: a test operand, not a theme colour
-            egui::Color32::from_rgb(0, 0, 0), // DOCUMENT COLOUR: a test operand, not a theme colour
-            egui::Color32::from_rgb(17, 128, 240), // DOCUMENT COLOUR: a test operand, not a theme colour
-        ] {
-            assert_eq!(color32_of(rgb_of(c)), c, "{c:?} did not survive");
-        }
-        assert_eq!(
-            rgb_of(egui::Color32::from_rgb(255, 255, 255)), // DOCUMENT COLOUR: a test operand, not a theme colour
-            pdfcer_core::annot_author::Color::Rgb(1.0, 1.0, 1.0)
-        );
-        // A grey or CMYK ce dimension shows as the colour it renders as.
-        assert_eq!(
-            color32_of(pdfcer_core::annot_author::Color::Gray(0.0)),
-            egui::Color32::BLACK // DOCUMENT COLOUR: a test operand, not a theme colour
         );
     }
 }

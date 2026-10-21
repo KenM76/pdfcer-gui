@@ -2,6 +2,18 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/dimensions.md`.
 
+/// A colour as `space:c1,c2,..` for a trace line: the space the file stores.
+fn colour_key(colour: pdfcer_core::annot_author::Color) -> String {
+    use pdfcer_core::annot_author::Color;
+    let (space, parts) = match colour {
+        Color::Gray(v) => ("gray", vec![v]),
+        Color::Rgb(r, g, b) => ("rgb", vec![r, g, b]),
+        Color::Cmyk(c, m, y, k) => ("cmyk", vec![c, m, y, k]),
+    };
+    let parts: Vec<String> = parts.iter().map(|v| format!("{v:.3}")).collect();
+    format!("{space}:{}", parts.join(","))
+}
+
 #[cfg(test)]
 use pdfcer_core::dimension::{
     DimStandard, DimensionId, GroupStyle, ScaleState, StyleOverrides, Unit,
@@ -341,6 +353,16 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             });
         }
         DimensionAction::SetStyle { dimension, style } => {
+            if let Some(colour) = style.color {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "dimension-style id={} colour={}",
+                        dimension.0,
+                        colour_key(colour)
+                    )
+                });
+            }
             super::apply::vector_edit(doc, "set-dimension-style", 0, 1, |session| {
                 session
                     .set_dimension_style(dimension, style)

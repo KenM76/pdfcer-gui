@@ -150,6 +150,7 @@ pub mod alignmixed;
 pub mod annot_restyle;
 /// Shared driving for the ce dimension checks on `dimension-scaled.pdf`.
 mod dimdrive;
+pub mod dimension_colour_cmyk;
 pub mod dimension_text_select;
 pub mod dimension_tool_options;
 pub mod form_leaf_move;
