@@ -1206,7 +1206,8 @@ impl PdfcerApp {
                     g: f32::from(c[1]) / 255.0,
                     b: f32::from(c[2]) / 255.0,
                 };
-                let (fill, stroke) = (fill.map(to_rgb), stroke.map(to_rgb));
+                let colour = |c| pdfcer_core::annot_author::Color::from(to_rgb(c));
+                let (fill, stroke) = (fill.map(colour), stroke.map(colour));
                 super::apply::vector_edit(doc, "set-object-paint", page, objects.len(), |s| {
                     let (paint, reach) = if leaves {
                         let o = s.set_object_paint_in_form(page, &objects, fill, stroke)?;
