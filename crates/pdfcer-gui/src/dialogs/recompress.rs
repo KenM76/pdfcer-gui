@@ -456,6 +456,49 @@ mod tests {
         assert_eq!(drawn.matches(" Do").count(), 1, "one image drawn: {drawn}");
     }
 
+    /// A quarter circle drawn as 90 short lines, as CAD writes an arc,
+    /// comes back as a few curves, and the report names the page's move.
+    #[test]
+    fn short_lines_become_curves() {
+        let mut path = String::new();
+        for i in 0..=90 {
+            let a = f64::from(i).to_radians();
+            let op = if i == 0 { "m" } else { "l" };
+            path.push_str(&format!(
+                "{:.3} {:.3} {op}\n",
+                50.0 + 100.0 * a.cos(),
+                50.0 + 100.0 * a.sin()
+            ));
+        }
+        path.push_str("S\n");
+        let bodies = vec![
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] /Contents 4 0 R /Resources << >> >>".to_string(),
+            format!("<< /Length {} >>\nstream\n{path}endstream", path.len()),
+        ];
+        let asked = Choices {
+            discard: DiscardOptions::none().with_object(DiscardObject::SmoothLines),
+            ..ALL
+        };
+        let done = recompress(&file(&bodies), &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned.iter().any(|l| l
+                .starts_with("Lines smoothed into curves: page 1, 90 line segments into ")
+                && l.contains("(max deviation ")),
+            "{done:?}"
+        );
+        let saved =
+            Document::from_bytes(done.bytes.expect("the curves are written")).expect("parses");
+        let pages = pdfcer_core::page_tree::pages(&saved).expect("a page tree");
+        let session = pdfcer_core::edit::EditSession::new(saved);
+        let drawn = pdfcer_core::content::ContentStream::from_page(&session.view(), &pages[0])
+            .expect("content decodes");
+        let drawn = String::from_utf8_lossy(&drawn.buf);
+        assert!(drawn.matches(" c").count() > 0, "curves drawn: {drawn}");
+        assert!(drawn.matches(" l").count() < 10, "the lines went: {drawn}");
+    }
+
     fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();

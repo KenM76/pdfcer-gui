@@ -194,6 +194,10 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Merge picture strips into one image",
             "Some programs store a picture as many thin strips, each its own image. Each such picture becomes one image that draws the same, and the faint lines some viewers show between the strips go. Pictures that are masked, on a layer or tagged stay as they are.",
         ),
+        DiscardObject::SmoothLines => (
+            "Smooth short lines into curves",
+            "CAD programs often draw an arc or spline as many short straight lines. Each such run is redrawn as a few curves, which is smaller. The linework moves by up to 0.1 pt, so a measurement taken from the drawing can change by that much; the report lists each page's largest move.",
+        ),
         _ => return None,
     })
 }
@@ -221,6 +225,9 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
             }
             if class == DiscardObject::MergeImageFragments {
                 return (!of.is_empty()).then(|| merged_strips(&of, bytes));
+            }
+            if class == DiscardObject::SmoothLines {
+                return (!of.is_empty()).then(|| smoothed(&of, bytes));
             }
             let what = match class {
                 DiscardObject::Bookmarks => "Bookmarks".to_owned(),
@@ -276,6 +283,20 @@ fn merged_strips(of: &[&ObjectDiscard], bytes: u64) -> String {
         .collect();
     format!(
         "Picture strips merged: {}. About {} KB smaller.",
+        pages.join("; "),
+        bytes.div_ceil(1024)
+    )
+}
+
+/// The pages whose lines were smoothed; the engine words a page as
+/// `page 1: 120 line segments into 6 curves (max deviation 0.031 pt)`.
+fn smoothed(of: &[&ObjectDiscard], bytes: u64) -> String {
+    let pages: Vec<String> = of
+        .iter()
+        .map(|o| o.location.replacen(": ", ", ", 1))
+        .collect();
+    format!(
+        "Lines smoothed into curves: {}. About {} KB smaller.",
         pages.join("; "),
         bytes.div_ceil(1024)
     )
