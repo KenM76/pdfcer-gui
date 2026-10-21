@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **37 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `wanted` — a real gap — **37 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -142,7 +142,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `blocked` — waiting on something named — **2 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -160,7 +160,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -171,7 +171,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `declined` — deliberately no surface — **17 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -214,7 +214,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **329 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **330 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -225,6 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Lossless structure rebuild** — `writer::rebuild`, `EditSession::save_optimized` with `RebuildOptions`, `RebuildReport` | **shipped — File ▸ Save a compacted copy, under the same *Also recompress the drawing data* switch; unit-tested, not yet driven.** `dialogs::recompress` passes `Preset::Lossless`'s `structure` (every option on) to `save_optimized`, and `text::compact::restructured` words each non-zero `RebuildReport` count. One switch for streams and structure, one lossless trade. The navigation clean-up has two switches of its own, because it deletes things the operator can see: *Remove links and bookmarks that go nowhere* (on, `invalid_links`, `invalid_bookmarks`) and *Remove named places nothing in the file links to* (off, `unreferenced_destinations`); `text::compact::cleaned` names each removed bookmark. A clean-up or discard that leaves the file no smaller is still written, `OptimizedFile::NotSmaller` (answering G213), and the window says it was kept for what it removes. |
 | **Discard document objects during optimize** — bookmarks, tags, print settings, alternate images, form actions, external references, object data, form fields, multimedia, 3D models, flattening the visible layers, the embedded search index, merging picture strips, smoothing short lines into curves; `DiscardObject`, `DiscardOptions::with_object`, `OptimizePlan::discard_objects` | **shipped — File ▸ Save a compacted copy, fourteen switches, all off; unit-tested, not yet driven.** `dialogs::compact::discard_switches` offers one per class `text::compact::discard_toggle` words, so a class the engine adds stays hidden until it has a sentence. Off by default because each removes something the operator relies on, from working bookmarks and accessibility to a drawing's layer structure and, for smoothing, measurements taken from the linework (it moves by up to `DEFAULT_SMOOTH_TOLERANCE`, 0.1 pt; the tolerance is not yet offered). Web links are not external references and stay. `text::compact::discarded` says what each took and about how much. The metadata kinds stay declined here (row above). |
 | **Downsample images during optimize** — resample so the lowest-ppi placement keeps the target: `ImagePatch`, `StreamAction::Image`, `ImageChange`, module `pdfcer_core::jpeg_write` (our `G214`–`G217` filed against it) | **shipped — File ▸ Save a compacted copy, the *Make pictures smaller* fold, off by default; driven by `a_compacted_copy_can_make_pictures_smaller`.** `dialogs::compact_images` builds the `ImagePatch` (resolution, store as Keep / Flate 9 / JPEG, `QUALITY_LEVELS`, `ImageConvert`, palette size) and greys exactly the pairings `ImagePatch::validate` refuses; `dialogs::recompress` sets the preset's `OptimizeSettings::images` and counts each `ImageChange`; `OptimizePlan::is_lossy` is disclosed full-size beside Save. Per picture: *Make pictures smaller* from the canvas object menu, the Objects-row menu and the Format tab (`dispatch::shrinkimages`, driven by `shrink_pictures_reaches_every_selected_picture`). `ImageSkip` is worded by `text::compact_images::picture_left_because`; starting from `Preset::Lossless` keeps G216's image presets from scaling unasked. RunLength and LZW are not offered; *Lossless* takes the engine's planned `auto` (decision 193). |
+| **Cut embedded fonts down to the glyphs drawn** — `pdfcer_core::optimize::resubset` (`OptimizeSettings::resubset`, `ResubsetFonts`, `ResubsetPlan`), with the cutter in `pdfcer_render::font::resubset` (`GLYPH_ZERO_RESUBSETTER`) | **wanted — a switch in File ▸ Save a compacted copy**, set on the preset `dialogs::recompress` builds, with the plan's programs cut, bytes saved and each refusal listed off-canvas beside the other disclosures. |
 | **Reduce file size by lossless stream recompression** — `pdfcer_core::optimize`, `pdfcer_core::edit::optimize` (`EditSession::plan_optimize`, `apply_optimize`, `save_optimized`), `CommandKind::Optimize` | **shipped — File ▸ Save a compacted copy, the *Also recompress the drawing data* switch (on by default); unit-tested, not yet driven.** `dialogs::recompress` plans `Preset::Lossless` on a scratch session parsed from the measured copy, applies it, and keeps the engine's `OptimizedFile::Smaller` bytes; the open session gets no Optimize step. Runs off the UI thread with Save greyed meanwhile. Off-canvas disclosure lists parts recompressed, each `SkipReason` with its count, and the plan's notes. One switch, not a preset picker, because every `Preset` has the same settings at this pin. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **shipped — Pages ▸ Sheet size; request G136.** <!--namesake:MediaBoxChange--> `app::actions::pagesize::disclosures` words `MediaBoxChange::bleed_box_outside`, `MediaBoxChange::trim_box_outside` and `MediaBoxChange::art_box_outside` beside `crop_box_outside`, one sentence per box kind, and `page-size-applied` counts each; driven by `resizing_a_sheet_says_which_print_boxes_reach_past_it`, whose art box is the control. |
 | **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **shipped for Insert image, a drop, and the stamp; the clipboard is still owed.** An inserted or dropped `.emf` is placed by `add_emf` (`app::actions::picture`), its `EmfImportNotes::summary()` shown in the window before Insert and repeated in the disclosures, an import refusal in the engine's words; driven by `insert_image_places_a_drawing`. A drop in Review places it by `add_emf_stamp`, signed, dated and at the pen's opacity. Still owed: Office's EMF copy on the clipboard (paste step P9). |
