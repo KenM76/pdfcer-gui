@@ -10,7 +10,7 @@ use pdfcer_core::space_audit::SpaceCategory;
 
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
-use crate::dialogs::recompress::{Job, Recompressed};
+use crate::dialogs::recompress::{Choices, Job, Recompressed};
 use crate::text::compact as t;
 
 /// The window body's rect, for `ui-verify`.
@@ -46,9 +46,11 @@ pub struct CompactDialog {
     /// The breakdown, measured the first time its fold is opened; the inner
     /// `None` is a copy that would not parse back.
     space: Option<Option<Breakdown>>,
-    /// Whether the copy is recompressed too; on unless the operator turns it
-    /// off, since it is lossless and never makes the copy larger.
-    want_recompress: bool,
+    /// What is done to the copy beyond compacting. Recompressing and removing
+    /// what goes nowhere start on: both are lossless to what a reader can
+    /// reach, and the result is kept only when smaller. Removing unused named
+    /// places starts off, since a link from another file may name one.
+    choices: Choices,
     recompress: Recompress,
     /// The operator's settings, for the recompressed rewrite's session and
     /// save options.
@@ -82,7 +84,11 @@ impl CompactDialog {
             signatures: doc.session.signature_census().signatures,
             path: doc.path.clone(),
             space: None,
-            want_recompress: true,
+            choices: Choices {
+                recompress: true,
+                broken: true,
+                destinations: false,
+            },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
             save_requested: false,
@@ -224,8 +230,8 @@ fn chosen<'a>(plain: &'a [u8], recompress: &'a Recompress) -> &'a [u8] {
 impl CompactDialog {
     /// Start the recompression when it is wanted, and take its result.
     fn recompress_step(&mut self, ctx: &egui::Context) {
-        if self.want_recompress && matches!(self.recompress, Recompress::Off) {
-            let job = Job::start(ctx, self.bytes.clone(), self.settings.clone());
+        if self.choices.any() && matches!(self.recompress, Recompress::Off) {
+            let job = Job::start(ctx, self.bytes.clone(), self.settings.clone(), self.choices);
             self.recompress = Recompress::Working(job);
         }
         let landed = match &self.recompress {
@@ -241,13 +247,28 @@ impl CompactDialog {
         }
     }
 
-    /// The switch, and what the recompression did.
+    /// The switches, and what the work on the copy did. Any change starts
+    /// the work again from the plain copy; the running job is dropped.
     fn recompress_row(&mut self, ui: &mut Ui) {
-        let toggled = ui
-            .checkbox(&mut self.want_recompress, t::recompress_toggle())
-            .on_hover_text(t::recompress_tooltip())
-            .changed();
-        if toggled && !self.want_recompress {
+        let c = &mut self.choices;
+        let toggled = [
+            (
+                &mut c.recompress,
+                t::recompress_toggle(),
+                t::recompress_tooltip(),
+            ),
+            (&mut c.broken, t::broken_toggle(), t::broken_tooltip()),
+            (
+                &mut c.destinations,
+                t::destinations_toggle(),
+                t::destinations_tooltip(),
+            ),
+        ]
+        .into_iter()
+        .fold(false, |any, (on, label, tip)| {
+            ui.checkbox(on, label).on_hover_text(tip).changed() || any
+        });
+        if toggled {
             self.recompress = Recompress::Off;
             self.space = None;
         }
@@ -265,15 +286,22 @@ impl CompactDialog {
                 ui.small(t::recompress_failed(detail));
             }
             Recompress::Done(done) => {
-                if done.bytes.is_some() {
-                    ui.small(t::recompressed(done.changed));
-                } else {
+                // What a discarded result did is not in the copy, so only
+                // the engine's notes are said then.
+                if done.bytes.is_none() {
                     ui.small(t::recompress_no_gain());
+                } else {
+                    if done.changed > 0 {
+                        ui.small(t::recompressed(done.changed));
+                    }
+                    for line in done.cleaned.iter().chain(&done.restructured) {
+                        ui.small(line.as_str());
+                    }
+                    for (reason, count) in &done.left {
+                        ui.small(t::left_line(reason, *count));
+                    }
                 }
-                for (reason, count) in &done.left {
-                    ui.small(t::left_line(reason, *count));
-                }
-                for note in done.restructured.iter().chain(&done.notes) {
+                for note in &done.notes {
                     ui.small(note.as_str());
                 }
             }

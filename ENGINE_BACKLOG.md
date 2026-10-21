@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 377** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `wanted` — a real gap — **33 of 378** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -138,7 +138,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 377** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `blocked` — waiting on something named — **2 of 378** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +156,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 377** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 378** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +167,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **16 of 377** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `declined` — deliberately no surface — **17 of 378** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -178,6 +178,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Inspect and dump a document's own internal COS object … | **declined; no `pdfcer-gui` surface exists or is planned, and the engine says the same.** A COS object browser is a format-engineer's instrument, not a drawing tool — the audience for a reverse-reference map over `/ObjStm` membership is somebody already at a command line, and `pdfcer inspect` is that command line. Declining this is not declining *diagnostics*: the Render-diagnostics dialog exists and is where an operator-facing finding goes. |
 | **A strict open** — `LoadOptions::strict()`, `UnreadableObjectPolicy::{TreatAsUndefined, Refuse}` and `unreadable_objects` … | **declined as a load mode — this project's decision 145, *fail-clean never meant refuse*.** `strict()`'s audience is a conformance checker, a fuzz harness or a gate, not this shell's job on a file the operator opens; a strict switch here would be a control whose only effect is that his CAD drawings stop opening. `UnreadableObjectPolicy::TreatAsUndefined`, the default already in force, is §7.3.10's own answer: an undefined reference *"shall not be considered an error by a conforming reader"*. Named rather than exempted — `LoadAnomaly::ObjectUnreadable` is disclosed off-canvas, so the consequence is already visible; what is refused is the *control*, not the capability. What would overturn this: a **report** rather than a mode — a throwaway second `strict()` load whose only output is the refusal sentence, filed as its own feature and not smuggled onto the Open dialog. |
 | **A choice about recovered stream extents and missing `endobj`** — the `stream_lengths` and `terminators` fields of `LoadOptions` … | **declined, on the engine's own finding that there is nothing to choose between.** The alternative to the scanned extent recorded by `LoadAnomaly::StreamLengthRecovered` is **no object at all**, and `LoadAnomaly::MissingEndobjRecovered` is the same shape — an unambiguous end with no second reading. Setting either field to its `Strict` value offers no alternative reading; it converts a document that opens into one that does not, which is the row above's argument and the same decision-145 answer. The operator-facing half is the disclosure and it is built: both are censused into the status-bar clause and itemised in Document properties by `app::status::anomalies`, so *pdfcer had to work out where an object's stream ended* reaches him without a mark being drawn on the page. `StreamLengthPolicy` and `TerminatorPolicy` are older than the pin; only the `LoadOptions` fields are new surface. |
+| **Discard user data during optimize, by kind** — `OptimizeSettings.discard`, `DiscardOptions` … | **declined in the compacted copy; the capability is reachable through File ▸ Remove metadata.** The engine runs the same code as `metadata remove`, and that dialog already lists every item by kind and removes the ticked ones as one undo step. A second set of switches in the compact window would offer the same removals on a copy, under a name the operator would have to match to the first. Revisit if the operator asks for a smaller copy without thumbnails or private application data in one step. |
 
 ### Annotations & markup
 
@@ -209,7 +210,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **326 of 377** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **326 of 378** <!-- counted by tools/walk-engine-backlog.py, 2026-10-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -217,7 +218,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
-| **Lossless structure rebuild** — `writer::rebuild`, `EditSession::save_optimized` with `RebuildOptions`, `RebuildReport` | **shipped — File ▸ Save a compacted copy, under the same *Also recompress the drawing data* switch; unit-tested, not yet driven.** `dialogs::recompress` passes `Preset::Lossless`'s `structure` (every option on) to `save_optimized`, and `text::compact::restructured` words the `RebuildReport`: unused parts dropped, duplicates merged, dangling references written as null, and the raised header version, each only when it happened. One switch, because the stream and structure halves are one lossless trade the operator has already accepted by asking for a compacted copy. |
+| **Lossless structure rebuild** — `writer::rebuild`, `EditSession::save_optimized` with `RebuildOptions`, `RebuildReport` | **shipped — File ▸ Save a compacted copy, under the same *Also recompress the drawing data* switch; unit-tested, not yet driven.** `dialogs::recompress` passes `Preset::Lossless`'s `structure` (every option on) to `save_optimized`, and `text::compact::restructured` words each non-zero `RebuildReport` count. One switch for streams and structure, one lossless trade. The navigation clean-up has two switches of its own, because it deletes things the operator can see: *Remove links and bookmarks that go nowhere* (on, `invalid_links`, `invalid_bookmarks`) and *Remove named places nothing in the file links to* (off, `unreferenced_destinations`); `text::compact::cleaned` names each removed bookmark. A clean-up that leaves the file no smaller is lost to `OptimizedFile::KeptOriginal` (G213). |
 | **Reduce file size by lossless stream recompression** — `pdfcer_core::optimize`, `pdfcer_core::edit::optimize` (`EditSession::plan_optimize`, `apply_optimize`, `save_optimized`), `CommandKind::Optimize` | **shipped — File ▸ Save a compacted copy, the *Also recompress the drawing data* switch (on by default); unit-tested, not yet driven.** `dialogs::recompress` plans `Preset::Lossless` on a scratch session parsed from the measured copy, applies it, and keeps the engine's `OptimizedFile::Smaller` bytes; the open session gets no Optimize step. Runs off the UI thread with Save greyed meanwhile. Off-canvas disclosure lists parts recompressed, each `SkipReason` with its count, and the plan's notes. One switch, not a preset picker, because every `Preset` has the same settings at this pin. |
 | **`/BleedBox`, `/TrimBox` and `/ArtBox` overhang is not disclosed on a sheet resize** — `MediaBoxChange` has a field for `/CropBox` and none for the other three | **shipped — Pages ▸ Sheet size; request G136.** <!--namesake:MediaBoxChange--> `app::actions::pagesize::disclosures` words `MediaBoxChange::bleed_box_outside`, `MediaBoxChange::trim_box_outside` and `MediaBoxChange::art_box_outside` beside `crop_box_outside`, one sentence per box kind, and `page-size-applied` counts each; driven by `resizing_a_sheet_says_which_print_boxes_reach_past_it`, whose art box is the control. |
 | **Import an EMF as vector content** — `emf_import::import`, `EditSession::add_emf`/`add_emf_stamp`, the modules `pdfcer_core::emf_import` and `pdfcer_core::edit::emf`, undo kind `CommandKind::AddEmf` | **shipped for Insert image, a drop, and the stamp; the clipboard is still owed.** An inserted or dropped `.emf` is placed by `add_emf` (`app::actions::picture`), its `EmfImportNotes::summary()` shown in the window before Insert and repeated in the disclosures, an import refusal in the engine's words; driven by `insert_image_places_a_drawing`. A drop in Review places it by `add_emf_stamp`, signed, dated and at the pen's opacity. Still owed: Office's EMF copy on the clipboard (paste step P9). |

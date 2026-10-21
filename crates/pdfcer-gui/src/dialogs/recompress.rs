@@ -1,24 +1,45 @@
-//! # `dialogs::recompress` — the compacted copy, recompressed
+//! # `dialogs::recompress` — the compacted copy, optimized
 //!
-//! Contract: [`recompress`] runs the engine's lossless optimize preset on a
-//! scratch session parsed from the compacted copy, so the open document and
-//! its undo history are untouched. The preset re-encodes streams and rebuilds
-//! the structure: unused parts dropped, duplicates merged, the index packed.
-//! It answers the smaller file with what the plan left alone and what the
-//! rebuild did. A signed copy proceeds: the compact window already states
+//! Contract: [`recompress`] runs the engine's lossless optimize preset, cut
+//! down to the operator's [`Choices`], on a scratch session parsed from the
+//! compacted copy, so the open document and its undo history are untouched.
+//! Recompressing re-encodes streams and rebuilds the structure (unused parts
+//! dropped, duplicates merged, the index packed); the clean-ups remove links,
+//! bookmarks and named destinations that go nowhere or that nothing uses. It
+//! answers the smaller file with what the plan left alone and what each step
+//! did. A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
 use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
-use pdfcer_core::optimize::{OptimizedFile, Preset};
+use pdfcer_core::optimize::{CleanupOptions, OptimizedFile, Preset, RebuildOptions, StreamAction};
 use pdfcer_core::settings::Settings;
 
 use crate::app::settings::SettingsExt;
 use crate::text::compact as t;
 
-/// What recompressing the copy did.
+/// What the operator asked the copy to have done.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Choices {
+    /// Re-encode streams and rebuild the structure.
+    pub recompress: bool,
+    /// Remove links and bookmarks whose destination is broken.
+    pub broken: bool,
+    /// Remove named destinations nothing in the file names.
+    pub destinations: bool,
+}
+
+impl Choices {
+    /// Whether anything is asked for.
+    #[must_use]
+    pub const fn any(self) -> bool {
+        self.recompress || self.broken || self.destinations
+    }
+}
+
+/// What optimizing the copy did.
 #[derive(Debug)]
 pub struct Recompressed {
     /// The smaller file; `None` when the result was no smaller than the copy,
@@ -32,21 +53,36 @@ pub struct Recompressed {
     pub notes: Vec<String>,
     /// What the structure rebuild did, one sentence each.
     pub restructured: Vec<String>,
+    /// What the clean-ups removed, one sentence each.
+    pub cleaned: Vec<String>,
 }
 
-/// Recompress `copy` in a session and with save options built from the
-/// operator's `settings`.
+/// Optimize `copy` as `choices` ask, in a session and with save options
+/// built from the operator's `settings`.
 ///
 /// # Errors
 ///
 /// The engine's sentence when the copy does not parse, the plan is refused
 /// (an encrypted copy) or the rewrite fails.
-pub fn recompress(copy: &[u8], settings: &Settings) -> Result<Recompressed, String> {
+pub fn recompress(
+    copy: &[u8],
+    settings: &Settings,
+    choices: Choices,
+) -> Result<Recompressed, String> {
     let doc = Document::from_bytes(copy.to_vec()).map_err(|e| e.to_string())?;
     let mut session = settings.open_session(doc);
     let options = settings.save_options();
     let mut preset = Preset::Lossless.settings();
     preset.allow_signed = true;
+    if !choices.recompress {
+        preset.streams = StreamAction::Leave;
+        preset.structure = RebuildOptions::none();
+    }
+    preset.cleanup = CleanupOptions {
+        invalid_links: choices.broken,
+        invalid_bookmarks: choices.broken,
+        unreferenced_destinations: choices.destinations,
+    };
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
     let (file, report) = session
@@ -65,6 +101,7 @@ pub fn recompress(copy: &[u8], settings: &Settings) -> Result<Recompressed, Stri
         left,
         notes: plan.notes,
         restructured: report.as_ref().map(t::restructured).unwrap_or_default(),
+        cleaned: t::cleaned(&plan.cleanup),
     })
 }
 
@@ -75,14 +112,14 @@ pub struct Job {
 
 impl Job {
     /// Start recompressing `copy`; the window repaints when it is done.
-    pub fn start(ctx: &egui::Context, copy: Vec<u8>, settings: Settings) -> Self {
+    pub fn start(ctx: &egui::Context, copy: Vec<u8>, settings: Settings, choices: Choices) -> Self {
         let (tx, rx) = channel();
         let ctx = ctx.clone();
         let spawned = std::thread::Builder::new()
             .name("compact-recompress".to_owned())
             .spawn(move || {
                 let started = std::time::Instant::now();
-                let result = recompress(&copy, &settings);
+                let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
                         "compact-recompressed ok={} smaller={} changed={} ms={}", // ui-text-exempt: diagnostic trace
@@ -117,17 +154,64 @@ impl Job {
 mod tests {
     use super::*;
 
+    const ALL: Choices = Choices {
+        recompress: true,
+        broken: true,
+        destinations: true,
+    };
+
     /// A one-page file whose content stream is stored unfiltered, with one
     /// object nothing refers to.
     fn unfiltered() -> Vec<u8> {
         let page = "0 g 10 10 20 20 re f\n".repeat(200);
-        let bodies = [
+        file(&[
             "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
             format!("<< /Length {} >>\nstream\n{page}\nendstream", page.len()),
             "<< /Unused true >>".to_string(),
-        ];
+        ])
+    }
+
+    /// A one-page file with a link and a bookmark to a page that is not in
+    /// it.
+    fn broken() -> Vec<u8> {
+        file(&[
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 6 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R \
+             /Annots [5 0 R] >>"
+                .to_string(),
+            "<< /Length 0 >>\nstream\n\nendstream".to_string(),
+            "<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] /Dest [9 0 R /Fit] >>".to_string(),
+            "<< /Type /Outlines /First 7 0 R /Last 7 0 R /Count 1 >>".to_string(),
+            "<< /Title (Gone) /Parent 6 0 R /Dest [9 0 R /Fit] >>".to_string(),
+        ])
+    }
+
+    /// The links and bookmarks that go nowhere are removed and named when
+    /// asked for, and left when not.
+    #[test]
+    fn links_and_bookmarks_that_go_nowhere_are_removed_when_asked() {
+        let copy = broken();
+        let done = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert_eq!(
+            done.cleaned,
+            [
+                "1 link(s) that went nowhere removed.",
+                "1 bookmark(s) that went nowhere removed: Gone."
+            ],
+            "{done:?}"
+        );
+        let kept = Choices {
+            broken: false,
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), kept).expect("optimizes");
+        assert!(done.cleaned.is_empty(), "{done:?}");
+    }
+
+    fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();
         for (i, body) in bodies.iter().enumerate() {
@@ -156,7 +240,7 @@ mod tests {
     #[test]
     fn an_unfiltered_stream_is_recompressed_into_a_smaller_copy() {
         let copy = unfiltered();
-        let done = recompress(&copy, &Settings::default()).expect("recompresses");
+        let done = recompress(&copy, &Settings::default(), ALL).expect("recompresses");
         assert_eq!(done.changed, 1, "{done:?}");
         assert!(
             done.restructured.iter().any(|l| l.starts_with("1 unused")),

@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/compact.md`.
 
-use pdfcer_core::optimize::{RebuildReport, SkipReason};
+use pdfcer_core::optimize::{CleanupPlan, RebuildReport, SkipReason};
 use pdfcer_core::space_audit::SpaceCategory;
 
 /// The window's title bar.
@@ -113,6 +113,64 @@ pub const fn recompress_tooltip() -> &'static str {
      would not get smaller is kept as it was. A large drawing takes a few seconds."
 }
 
+/// The switch that removes links and bookmarks that go nowhere.
+#[must_use]
+pub const fn broken_toggle() -> &'static str {
+    "Remove links and bookmarks that go nowhere"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn broken_tooltip() -> &'static str {
+    "A link or bookmark whose page has been deleted, or whose named place does not exist, does nothing when clicked. A bookmark is removed only when every bookmark under it goes nowhere too, so no working bookmark is lost. Links to web pages and other files are never touched."
+}
+
+/// The switch that removes named destinations nothing uses.
+#[must_use]
+pub const fn destinations_toggle() -> &'static str {
+    "Remove named places nothing in the file links to"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn destinations_tooltip() -> &'static str {
+    "Named places (named destinations) that no link or bookmark in this file points to. A link from another file or a web page to one of them stops working, which is why this is off unless you turn it on. A file with scripts is left alone, since a script can name a place."
+}
+
+/// What the clean-ups removed, one sentence per kind; kinds with nothing
+/// removed are left out.
+#[must_use]
+pub fn cleaned(plan: &CleanupPlan) -> Vec<String> {
+    let mut lines = Vec::new();
+    if !plan.links.is_empty() {
+        lines.push(format!(
+            "{} link(s) that went nowhere removed.",
+            plan.links.len()
+        ));
+    }
+    if !plan.bookmarks.is_empty() {
+        let titles: Vec<&str> = plan.bookmarks.iter().map(|b| b.title.as_str()).collect();
+        let under: usize = plan.bookmarks.iter().map(|b| b.descendants).sum();
+        lines.push(format!(
+            "{} bookmark(s) that went nowhere removed{}: {}.",
+            plan.bookmarks.len(),
+            if under > 0 {
+                format!(", with the {under} under them")
+            } else {
+                String::new()
+            },
+            titles.join(", ")
+        ));
+    }
+    if !plan.destinations.is_empty() {
+        lines.push(format!(
+            "{} named place(s) nothing linked to removed.",
+            plan.destinations.len()
+        ));
+    }
+    lines
+}
+
 /// What the structure rebuild did, one sentence per kind of change; kinds
 /// that did not happen are left out.
 #[must_use]
@@ -146,7 +204,7 @@ pub fn restructured(report: &RebuildReport) -> Vec<String> {
 /// Shown while the copy is being recompressed.
 #[must_use]
 pub const fn recompress_working() -> &'static str {
-    "Recompressing…"
+    "Working on the copy…"
 }
 
 /// How much was recompressed.
@@ -158,25 +216,25 @@ pub fn recompressed(changed: usize) -> String {
 /// Recompressing gained nothing.
 #[must_use]
 pub const fn recompress_no_gain() -> &'static str {
-    "Recompressing made nothing smaller, so the plain compacted copy is kept."
+    "None of this made the copy smaller, so the plain compacted copy is kept."
 }
 
 /// Recompressing failed; the plain copy stands.
 #[must_use]
 pub fn recompress_failed(detail: &str) -> String {
-    format!("Could not recompress: {detail}. The plain compacted copy is kept.")
+    format!("Could not optimize the copy: {detail}. The plain compacted copy is kept.")
 }
 
 /// The worker went away without an answer.
 #[must_use]
 pub const fn recompress_stopped() -> &'static str {
-    "the recompression stopped unexpectedly"
+    "the work on the copy stopped unexpectedly"
 }
 
 /// Hover on the save button while recompressing.
 #[must_use]
 pub const fn save_waiting() -> &'static str {
-    "Waiting for the recompression to finish."
+    "Waiting for the work on the copy to finish."
 }
 
 /// Parts the recompression left as stored, for one reason.
