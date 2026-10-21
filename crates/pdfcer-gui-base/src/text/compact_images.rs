@@ -4,7 +4,7 @@
 //! report. The fold starts off: every picture change it offers is visible on
 //! the page, so it is asked for, never assumed.
 
-use pdfcer_core::optimize::{ImageConvert, QUALITY_LEVELS};
+use pdfcer_core::optimize::{ImageConvert, ImageSkip, ImageStep, QUALITY_LEVELS};
 
 /// The fold's heading, saying when pictures will be changed.
 #[must_use]
@@ -220,6 +220,33 @@ pub fn shrink_left(reason: &str, count: usize) -> String {
     format!("{count} picture(s) left as they were: {reason}.")
 }
 
+/// Why a picture was left as stored, in the operator's words. Carries no
+/// per-picture numbers, so equal reasons group into one report line.
+#[must_use]
+pub fn picture_left_because(why: &ImageSkip) -> String {
+    let s = match why {
+        ImageSkip::MatteMask | ImageSkip::MatteParent | ImageSkip::MatteMaskFailed { .. } => {
+            "their see-through edge is tied to the picture's size"
+        }
+        ImageSkip::ColourKey(ImageStep::Resample) => {
+            "they hide one exact colour, which scaling would blur"
+        }
+        ImageSkip::ColourKey(_) => "they hide one exact colour, which re-encoding would shift",
+        ImageSkip::SoftMaskConvert | ImageSkip::MatteParentConvert => {
+            "their transparency keeps them in the colours they have"
+        }
+        ImageSkip::OneBitAsJpeg | ImageSkip::PaletteAsJpeg | ImageSkip::ReducedAsJpeg => {
+            "they are black-and-white or few-colour pictures, which JPEG would spoil"
+        }
+        ImageSkip::JpegComponents => "their colours cannot be stored as JPEG",
+        ImageSkip::AlreadyJpeg { .. } => "they are already JPEG at that quality or lower",
+        ImageSkip::NoDefinedGrey { .. } => "their spot colours have no grey to convert to",
+        ImageSkip::SizeChanged => "they changed while being planned; try again",
+        _ => return format!("they are pictures that cannot be rewritten ({why})"),
+    };
+    s.to_owned()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,5 +266,20 @@ mod tests {
     fn the_report_names_only_what_happened() {
         assert!(done(0, 0, 0).is_empty());
         assert_eq!(done(2, 0, 1).len(), 2);
+    }
+
+    /// The report counts skips by their wording, so a reason carrying a
+    /// per-picture number must still word identically.
+    #[test]
+    fn equal_reasons_with_different_numbers_word_alike() {
+        let a = ImageSkip::AlreadyJpeg {
+            source_estimate: Some(40),
+            asked: 60,
+        };
+        let b = ImageSkip::AlreadyJpeg {
+            source_estimate: None,
+            asked: 80,
+        };
+        assert_eq!(picture_left_because(&a), picture_left_because(&b));
     }
 }

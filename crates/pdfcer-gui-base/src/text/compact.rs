@@ -429,9 +429,7 @@ pub fn left_because(reason: &SkipReason) -> String {
         SkipReason::BelowMinSaving { pct, .. } => {
             format!("re-encoding them saved less than {pct}%")
         }
-        SkipReason::ImageUnsupported(why) => {
-            format!("they are pictures that cannot be rewritten ({why})")
-        }
+        SkipReason::ImageUnsupported(why) => super::compact_images::picture_left_because(why),
         other => other.to_string(),
     }
 }
