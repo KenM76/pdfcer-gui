@@ -65,8 +65,11 @@ impl Fill {
     #[must_use]
     pub const fn to_core(self) -> Option<Color> {
         match self {
-            Self::Black => Some(Color::Gray(0.0)),
-            Self::White => Some(Color::Gray(1.0)),
+            // DeviceRGB: a `/Redact` `/IC` is three components (ISO 32000-1
+            // Table 192), and the engine's apply reads any other length as
+            // no fill, so a grey black would apply as no box.
+            Self::Black => Some(Color::Rgb(0.0, 0.0, 0.0)),
+            Self::White => Some(Color::Rgb(1.0, 1.0, 1.0)),
             Self::Custom(r, g, b) => Some(Color::Rgb(r, g, b)),
             Self::Transparent => None,
         }
@@ -138,13 +141,38 @@ impl Appearance {
 mod tests {
     use super::*;
 
+    /// Every boxed fill reaches the written `/IC` as three components, the
+    /// only length the engine's apply draws as a box.
+    #[test]
+    fn every_boxed_fill_writes_a_three_component_ic() {
+        use pdfcer_core::annot_author::{Quad, build_redact_mark};
+        let quad = Quad {
+            ul: (0.0, 10.0),
+            ur: (10.0, 10.0),
+            ll: (0.0, 0.0),
+            lr: (10.0, 0.0),
+        };
+        for fill in [Fill::Black, Fill::White, Fill::Custom(0.2, 0.4, 0.6)] {
+            let look = Appearance {
+                fill,
+                ..Appearance::default()
+            };
+            let mark = build_redact_mark(&look.to_core().to_spec(vec![quad]));
+            let ic = mark
+                .annot
+                .get(b"IC")
+                .and_then(pdfcer_core::object::Object::as_array);
+            assert_eq!(ic.map(<[_]>::len), Some(3), "{fill:?} wrote /IC {ic:?}");
+        }
+    }
+
     /// **The shipped appearance is an explicit black box.**
     #[test]
     fn the_shipped_fill_is_an_explicit_black_box_not_a_none() {
         let core = Appearance::default().to_core();
         assert_eq!(
             core.fill,
-            Some(Color::Gray(0.0)),
+            Some(Color::Rgb(0.0, 0.0, 0.0)),
             "the default redaction fill must be EXPLICIT black — `None` now means \
              transparent, so a redaction would remove the content and draw nothing over it"
         );
@@ -180,8 +208,8 @@ mod tests {
     /// Every fill maps to the engine colour it names.
     #[test]
     fn every_fill_maps_to_its_engine_colour() {
-        assert_eq!(Fill::Black.to_core(), Some(Color::Gray(0.0)));
-        assert_eq!(Fill::White.to_core(), Some(Color::Gray(1.0)));
+        assert_eq!(Fill::Black.to_core(), Some(Color::Rgb(0.0, 0.0, 0.0)));
+        assert_eq!(Fill::White.to_core(), Some(Color::Rgb(1.0, 1.0, 1.0)));
         assert_eq!(
             Fill::Custom(0.8, 0.1, 0.1).to_core(),
             Some(Color::Rgb(0.8, 0.1, 0.1))

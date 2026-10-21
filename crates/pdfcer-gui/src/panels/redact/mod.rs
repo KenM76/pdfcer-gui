@@ -392,7 +392,7 @@ mod tests {
         // path an operator reaches with one click and no configuration.
         assert_eq!(
             spec.fill,
-            Some(pdfcer_core::annot_author::Color::Gray(0.0)),
+            Some(pdfcer_core::annot_author::Color::Rgb(0.0, 0.0, 0.0)),
             "a default whole-page mark must apply as a BLACK box; `None` is now \
              transparent and would remove the content leaving no sign of it"
         );
