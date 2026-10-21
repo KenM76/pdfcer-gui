@@ -170,8 +170,30 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Remove object data",
             "Removes the name-and-value properties a CAD or diagram program attaches to each drawn object, such as part numbers and layer details. The drawing looks the same. Has no effect when tags are removed too, since the properties live in the tags.",
         ),
+        DiscardObject::FormFields => (
+            "Remove form fields",
+            "Removes every fill-in field, check box, button and signature field, and what each showed: a filled-in value disappears from the page. To keep what a field shows, flatten the form instead.",
+        ),
+        DiscardObject::Multimedia => (
+            "Remove sound and video",
+            "Removes sound, movie and other media players from the pages, and the actions that play them.",
+        ),
+        DiscardObject::ThreeDModels => (
+            "Remove 3D models",
+            "Removes 3D models embedded in the pages, and the links that change their view. The area where a model was shown is left empty.",
+        ),
         _ => return None,
     })
+}
+
+/// The heading over the document-object switches, counting those that are on.
+#[must_use]
+pub fn discard_heading(on: usize) -> String {
+    if on == 0 {
+        "Remove whole kinds of content".to_owned()
+    } else {
+        format!("Remove whole kinds of content ({on} on)")
+    }
 }
 
 /// What the document-object removals took, one sentence per class.
@@ -198,6 +220,9 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
                 DiscardObject::ObjectData => {
                     format!("Object data in {} place(s)", of.len())
                 }
+                DiscardObject::FormFields => "Form fields".to_owned(),
+                DiscardObject::Multimedia => "Sound and video".to_owned(),
+                DiscardObject::ThreeDModels => "3D models".to_owned(),
                 _ => return None,
             };
             (!of.is_empty()).then(|| format!("{what} removed, about {} KB.", bytes.div_ceil(1024)))

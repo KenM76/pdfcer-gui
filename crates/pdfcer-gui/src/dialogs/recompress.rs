@@ -344,6 +344,38 @@ endstream".to_string(),
         assert!(text.contains("/StructTreeRoot"), "the tags stay");
     }
 
+    /// Asking for form fields removes the field, its widget and the form.
+    #[test]
+    fn form_fields_go_with_what_they_showed() {
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R              /Annots [5 0 R] >>"
+                .to_string(),
+            "<< /Length 0 >>
+stream
+
+endstream".to_string(),
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (Name) /V (Filled-In)              /Rect [0 0 50 10] /P 3 0 R >>"
+                .to_string(),
+        ]);
+        let asked = Choices {
+            recompress: false,
+            discard: DiscardOptions::none().with_object(DiscardObject::FormFields),
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned
+                .iter()
+                .any(|l| l.starts_with("Form fields removed")),
+            "{done:?}"
+        );
+        let text =
+            String::from_utf8_lossy(&done.bytes.expect("the removal is written")).into_owned();
+        assert!(!text.contains("Filled-In"), "the field goes");
+    }
+
     fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();

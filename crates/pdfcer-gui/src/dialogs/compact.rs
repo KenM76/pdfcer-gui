@@ -326,8 +326,22 @@ impl CompactDialog {
 }
 
 /// One switch per class of document object the engine can discard and this
-/// window offers; whether any changed.
+/// window offers, under a heading that starts closed and counts the switches
+/// that are on, so a removal is never hidden; whether any changed.
 fn discard_switches(ui: &mut Ui, discard: &mut DiscardOptions) -> bool {
+    let on = DiscardObject::ALL
+        .into_iter()
+        .filter(|&c| t::discard_toggle(c).is_some() && discard.contains_object(c))
+        .count();
+    egui::CollapsingHeader::new(t::discard_heading(on))
+        .id_salt("compact-discards")
+        .show(ui, |ui| discard_list(ui, discard))
+        .body_returned
+        .unwrap_or(false)
+}
+
+/// The switches themselves; whether any changed.
+fn discard_list(ui: &mut Ui, discard: &mut DiscardOptions) -> bool {
     let mut changed = false;
     for class in DiscardObject::ALL {
         let Some((label, tip)) = t::discard_toggle(class) else {
