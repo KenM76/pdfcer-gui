@@ -186,6 +186,10 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Merge visible layers into the page",
             "Every layer shown when the file opens stops being a layer: what it draws stays on the page and always shows and prints, and the layer leaves the Layers list. Hidden layers stay layers.",
         ),
+        DiscardObject::SearchIndex => (
+            "Remove the search index",
+            "Removes a ready-made full-text index some programs embed to search large files quickly. It holds a copy of the document's text; searching still works without it.",
+        ),
         _ => return None,
     })
 }
@@ -230,6 +234,7 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
                 DiscardObject::FormFields => "Form fields".to_owned(),
                 DiscardObject::Multimedia => "Sound and video".to_owned(),
                 DiscardObject::ThreeDModels => "3D models".to_owned(),
+                DiscardObject::SearchIndex => "The search index".to_owned(),
                 _ => return None,
             };
             (!of.is_empty()).then(|| format!("{what} removed, about {} KB.", bytes.div_ceil(1024)))

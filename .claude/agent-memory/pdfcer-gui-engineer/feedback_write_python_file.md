@@ -214,3 +214,12 @@ bash eat one backslash of every `\`, so `'\n'` in the script became a real
 `'\n'` newline and the anchor counted 0 against a file that visibly held it.
 Twice in one session before the cause was found by `od -c` on the script. Always
 `<<'EOF'`; for a single anchored edit, use `Edit`, which also keeps CRLF.
+
+**2026-10-20: again, with `<<'EOF'` quoted.** `python - <<'EOF'` carrying
+`\` + newline produced a joined line with a gap, and `\n` a real newline,
+in four test fixtures and four tooltips. Quoting the delimiter is not enough:
+the transport halves the backslashes before bash sees them. The Write tool
+followed by `python file.py` came through intact the same evening. And
+`check-string-gaps` missed the fixtures, because a PDF literal resumes on `/`;
+its right-hand class is now widened to a backtick, a quote, `/`, `<`, `[` and
+digits (nine more live defects found).

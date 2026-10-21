@@ -314,16 +314,13 @@ mod tests {
     #[test]
     fn object_data_goes_and_the_tags_stay() {
         let copy = file(&[
-            "<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 5 0 R              /MarkInfo << /Marked true /UserProperties true >> >>"
+            "<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 5 0 R /MarkInfo << /Marked true /UserProperties true >> >>"
                 .to_string(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
-            "<< /Length 0 >>
-stream
-
-endstream".to_string(),
+            "<< /Length 0 >>\nstream\n\nendstream".to_string(),
             "<< /Type /StructTreeRoot /K 6 0 R >>".to_string(),
-            "<< /Type /StructElem /S /Figure /P 5 0 R              /A << /O /UserProperties /P [<< /N (Part) /V (A-100) >>] >> >>"
+            "<< /Type /StructElem /S /Figure /P 5 0 R /A << /O /UserProperties /P [<< /N (Part) /V (A-100) >>] >> >>"
                 .to_string(),
         ]);
         let asked = Choices {
@@ -350,13 +347,10 @@ endstream".to_string(),
         let copy = file(&[
             "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [5 0 R] >> >>".to_string(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R              /Annots [5 0 R] >>"
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R /Annots [5 0 R] >>"
                 .to_string(),
-            "<< /Length 0 >>
-stream
-
-endstream".to_string(),
-            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (Name) /V (Filled-In)              /Rect [0 0 50 10] /P 3 0 R >>"
+            "<< /Length 0 >>\nstream\n\nendstream".to_string(),
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (Name) /V (Filled-In) /Rect [0 0 50 10] /P 3 0 R >>"
                 .to_string(),
         ]);
         let asked = Choices {
@@ -376,25 +370,23 @@ endstream".to_string(),
         assert!(!text.contains("Filled-In"), "the field goes");
     }
 
-    /// Merging visible layers names the shown layer and leaves the hidden one.
+    /// Merging visible layers names the shown layer and leaves the hidden one,
+    /// with recompression on as the window opens: a recompression planned for
+    /// the same content must not bring the merged layer back.
     #[test]
     fn a_visible_layer_is_merged_and_a_hidden_one_stays() {
-        let content = "/OC /L1 BDC 0 0 m 10 10 l S EMC /OC /L2 BDC 1 1 m 9 9 l S EMC";
+        let content = "/OC /L1 BDC 0 0 m 10 10 l S EMC /OC /L2 BDC 1 1 m 9 9 l S EMC\n".repeat(50);
         let copy = file(&[
-            "<< /Type /Catalog /Pages 2 0 R              /OCProperties << /OCGs [5 0 R 6 0 R] /D << /OFF [6 0 R] >> >> >>"
+            "<< /Type /Catalog /Pages 2 0 R /OCProperties << /OCGs [5 0 R 6 0 R] /D << /OFF [6 0 R] >> >> >>"
                 .to_string(),
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R              /Resources << /Properties << /L1 5 0 R /L2 6 0 R >> >> >>"
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R /Resources << /Properties << /L1 5 0 R /L2 6 0 R >> >> >>"
                 .to_string(),
-            format!("<< /Length {} >>
-stream
-{content}
-endstream", content.len()),
+            format!("<< /Length {} >>\nstream\n{content}\nendstream", content.len()),
             "<< /Type /OCG /Name (Notes) >>".to_string(),
             "<< /Type /OCG /Name (Draft) >>".to_string(),
         ]);
         let asked = Choices {
-            recompress: false,
             discard: DiscardOptions::none().with_object(DiscardObject::FlattenLayers),
             ..ALL
         };
@@ -405,8 +397,16 @@ endstream", content.len()),
                 .any(|l| l == "1 layer(s) merged into the page: Notes."),
             "{done:?}"
         );
-        let text = String::from_utf8_lossy(&done.bytes.expect("the merge is written")).into_owned();
-        assert!(text.contains("(Draft)"), "the hidden layer stays");
+        let bytes = done.bytes.expect("the merge is written");
+        let saved = Document::from_bytes(bytes).expect("parses");
+        let pages = pdfcer_core::page_tree::pages(&saved).expect("a page tree");
+        let session = pdfcer_core::edit::EditSession::new(saved);
+        let drawn = pdfcer_core::content::ContentStream::from_page(&session.view(), &pages[0])
+            .expect("content decodes");
+        let drawn = String::from_utf8_lossy(&drawn.buf);
+        assert!(!drawn.contains("/L1"), "the merged layer came back");
+        assert_eq!(drawn.matches("/L2").count(), 50, "the hidden layer stays");
+        assert_eq!(drawn.matches("10 10 l").count(), 50, "what it drew stays");
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {
