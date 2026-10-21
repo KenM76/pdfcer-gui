@@ -2,7 +2,8 @@
 //! white through each 1-bit encoder: CCITT Group 4 on one picture, JBIG2 on
 //! the other. Each must reach the engine as that encoder and rewrite the
 //! picture with it. A second check chooses Smallest exact and requires the
-//! engine to have tried every exact storage for the picture.
+//! engine to have tried every exact storage for the picture. A third stores
+//! JBIG2 in a PDF 1.3 document and requires the version raised to 1.4.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/bilevel_pictures.md`.
 
@@ -30,6 +31,13 @@ const PHOTOS: Fixture = Fixture {
         width_pt: 400.0,
         height_pt: 200.0,
     },
+};
+/// The same page declaring PDF 1.3, older than JBIG2 needs. Its geometry
+/// equals `PHOTOS`', so `pass` clicks it by that.
+const OLD_PHOTOS: Fixture = Fixture {
+    file: "two-photos-pdf13.pdf",
+    method: "Rebuild it with `python fixtures/two-photos.PROVENANCE.py`.",
+    page: PHOTOS.page,
 };
 /// Each pass: the picture's centre in page space, the format chosen, and the
 /// trace field that must read 1.
@@ -158,4 +166,44 @@ fn drive_smallest(
         "smallest",
         "tried",
     )
+}
+
+/// See the module documentation.
+pub struct Jbig2RaisesAnOldDocumentsVersion;
+
+impl Check for Jbig2RaisesAnOldDocumentsVersion {
+    fn name(&self) -> &'static str {
+        "jbig2_raises_an_old_documents_version"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Make pictures smaller with JBIG2 in a PDF 1.3 document leaves the picture as \
+         stored, or rewrites it without the document declaring PDF 1.4"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        run_on(self, ctx, &OLD_PHOTOS, INVOKE, "jbig2raise", drive_raise)
+    }
+}
+
+fn drive_raise(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    let at = (100.0, 100.0);
+    if let Some(failure) = pass(ctx, report, session, pointer, at, "jbig2", "jbig2")? {
+        return Ok(Some(failure));
+    }
+    let trace = session.trace()?;
+    let raised = trace.last(SHRUNK).and_then(|line| line.get("raised"));
+    if raised == Some("1.4") {
+        return Ok(None);
+    }
+    Ok(Some(format!(
+        "JBIG2 in a PDF 1.3 document must read `raised=1.4`: the version JBIG2 needs, \
+         declared. It read `{raised:?}`. Trace: {}.",
+        session.trace_path().display()
+    )))
 }

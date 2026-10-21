@@ -35,6 +35,13 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, ids: &[ObjId], patch: ImageP
         if tally.lossy {
             notes.insert(0, crate::text::compact_images::shrink_lossy().to_owned());
         }
+        let raised = plan.version_raise();
+        if let Some(version) = raised {
+            notes.insert(
+                0,
+                crate::text::compact_images::shrink_raised(&version.to_string()),
+            );
+        }
         notes.extend(left(&plan));
         notes.extend(plan.notes.iter().cloned());
         let changed = plan.changes.len();
@@ -43,17 +50,17 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, ids: &[ObjId], patch: ImageP
         } else {
             notes.insert(0, crate::text::compact_images::shrink_nothing().to_owned());
         }
-        done = Some((tally, changed, plan.skipped.len()));
+        done = Some((tally, changed, plan.skipped.len(), raised));
         Ok::<_, OptimizeError>(notes)
     });
-    let Some((tally, changed, skipped)) = done else {
+    let Some((tally, changed, skipped, raised)) = done else {
         return;
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
             "images-shrunk page={page} asked={} changed={changed} resized={} jpeg={} \
-             converted={} lossy={} ccitt={} jbig2={} lzw={} runlength={} tried={} skipped={skipped}",
+             converted={} lossy={} ccitt={} jbig2={} lzw={} runlength={} tried={} raised={} skipped={skipped}",
             ids.len(),
             tally.resized,
             tally.jpeg,
@@ -63,7 +70,8 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, ids: &[ObjId], patch: ImageP
             tally.exact[1],
             tally.exact[2],
             tally.exact[3],
-            tally.tried
+            tally.tried,
+            raised.map_or_else(|| "none".to_owned(), |v| v.to_string())
         )
     });
 }

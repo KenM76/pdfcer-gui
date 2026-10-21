@@ -85,3 +85,10 @@ assert raw[startxref:startxref + 4] == b"xref", raw[startxref:startxref + 16]
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "two-photos.pdf")
 io.open(out, "wb").write(raw)
 print("wrote", out, len(raw), "bytes;", len(OBJECTS), "objects, xref at", startxref)
+
+# The same document declaring PDF 1.3, older than JBIG2 needs. The header
+# keeps its length, so every offset above still holds.
+old = raw.replace(b"%PDF-1.7", b"%PDF-1.3", 1)
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "two-photos-pdf13.pdf")
+io.open(out, "wb").write(old)
+print("wrote", out, len(old), "bytes, declaring PDF 1.3")

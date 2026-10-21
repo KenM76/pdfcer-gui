@@ -119,8 +119,8 @@ pub const fn format_tooltip(word: FormatWord) -> &'static str {
         }
         FormatWord::Jbig2 => {
             "Exact, and often smaller than CCITT Group 4 for black-and-white scans. Other \
-             pictures are left as they are, and so is every picture in a document older \
-             than PDF 1.4."
+             pictures are left as they are. A document older than PDF 1.4 is raised to \
+             1.4, which JBIG2 needs, and the report says so."
         }
     }
 }
@@ -280,6 +280,12 @@ pub const fn shrink_cancel() -> &'static str {
 #[must_use]
 pub const fn shrink_lossy() -> &'static str {
     "The pictures lost detail. Undo puts them back."
+}
+
+/// Reported when the storage chosen raised the document's PDF version.
+#[must_use]
+pub fn shrink_raised(version: &str) -> String {
+    format!("The document now declares PDF {version}, which the storage chosen needs.")
 }
 
 /// Reported when the plan changed no picture.

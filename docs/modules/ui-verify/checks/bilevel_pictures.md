@@ -40,3 +40,12 @@ The same route on picture A with `compact.pictures.format.smallest`
 `tried=` counts pictures whose `ImageChange::candidates` is non-empty, which the
 engine fills only under `encode=auto`. A dialog that sent any single encoder
 instead writes the picture with `tried=0`.
+
+## `jbig2_raises_an_old_documents_version`
+
+The JBIG2 route on picture A of `two-photos-pdf13.pdf`, the same page
+declaring PDF 1.3, older than the 1.4 JBIG2 needs. It requires
+`images-shrunk changed=1 jbig2=1 skipped=0` and then `raised=1.4`, read from
+`OptimizePlan::version_raise`. An engine refusing the raise leaves the picture
+(`skipped=1`, `VersionTooLow`); a shell that dropped the disclosure reads
+`raised=none`. Either fails.

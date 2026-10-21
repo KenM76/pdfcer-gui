@@ -409,6 +409,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(shrink_pictures::ShrinkPicturesReachesEverySelectedPicture),
         Box::new(bilevel_pictures::BilevelPicturesStoreAsCcittAndJbig2),
         Box::new(bilevel_pictures::SmallestExactPictureTriesEveryStorage),
+        Box::new(bilevel_pictures::Jbig2RaisesAnOldDocumentsVersion),
         Box::new(objects_multiselect::ObjectsTreeGathersRowsForOneMenu),
         Box::new(weblink_prompt::AWebLinkAsksBeforeItOpens),
         // The page-tree guard, from the operator's own report. Placed immediately
