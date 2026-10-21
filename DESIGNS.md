@@ -2621,3 +2621,49 @@ text, save, and assert the saved content wraps the new text in
 `/OC /<Walls' property name> BDC`. Falsify by dropping `.on_layer` from the add
 text path. A second leg hides Walls and asserts the refusal sentence and no
 `add-text` trace.
+
+## O320 — a link, a file launch or 3D content asks before it is refused
+
+**The rule.** Nothing a document asks to do is refused without a prompt that
+offers to allow it. A remembered answer (the operator ticked *Remember…* or
+chose a setting on Security) is the operator's own refusal, and the status
+line names where to change it. A capability this program does not have at all
+(running a document's JavaScript) is said in words; that is absence, not denial.
+
+**Web links (`/URI`).** A click in Read or Review reads the link's target with
+`EditSession::link` (the link `Hit` carries the annotation's `ObjId`, which
+`page_link_destinations` already supplies). The prompt is Acrobat's Security
+Warning: *The document is trying to connect to: <url>. If you trust this site,
+choose Allow. If you do not trust this site, choose Block.*, the checkbox
+*Remember this action for this site for all PDF documents*, and Allow / Block.
+Escape is Block. The remembered answer is per host, kept in `Prefs`
+(`web_sites`), beside a mode (`web_links`: Always ask / Allow all / Block all),
+Acrobat's Trust Manager ▸ Internet Access choices.
+
+**Files (`/Launch`, `/GoToR`).** `/Launch` prompts with Acrobat's Launch File
+wording, *Do not show this message again*, and Open / Do Not Open. A path is
+resolved against the document's folder. A PDF opens here; anything else is
+handed to the application Windows associates with it. `/GoToR` to a PDF opens
+it here and goes to its page, without a prompt, as Acrobat does: opening a PDF
+in this viewer runs nothing.
+
+**Handing to Windows.** `rundll32 url.dll,FileProtocolHandler <target>`, never
+`cmd /c start`: `cmd` parses `&` and `|` inside an untrusted URL as command
+separators. A web target must be `http`, `https`, `mailto` or `ftp`; any other
+scheme is named in the prompt and still offered, because refusing it would be a
+denial. Under `PDFCER_DIAG_NO_LAUNCH` the hand-off is traced
+(`external-open kind= target=`) and not performed, so a driven check never
+opens a browser on the operator's desktop.
+
+**3D content.** A switch, *Play 3D content*, on by default because the viewer
+renders a model's mesh and runs none of its scripts. When off, a model click
+and the Attachments panel's View… open a prompt modelled on Acrobat's document
+message bar: *3D content has been disabled. Enable this feature if you trust
+this document.*, with *Trust this document one time only* and *Trust this
+document always* (kept in `Prefs`, by path). The one choke point is the
+`AttachmentAction::ViewModel` arm.
+
+**Where the switches live.** Security ▸ Trust: *Web sites…* (the mode and the
+remembered list, each row Allow or Block, removable), *Ask before opening
+other files* and *Play 3D content*, drawn pressed from their live value like
+`view.smart_select`. The Settings window carries the same under a Trust page.

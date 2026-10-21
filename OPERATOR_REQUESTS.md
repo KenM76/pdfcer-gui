@@ -625,6 +625,14 @@ His words: *"Don't forget to make these new compression options available by rig
 - Replace picture on several pictures at once.
 Group, rotate/flip and lock have no command to put on a menu.
 
+## O320 — **FILED, BEING BUILT** — a blocked link, launch or 3D model asks, the way Acrobat asks; Security holds the switches
+
+His words: *"Just noticing that external links in pdfs don't let us click them due to security, but there is no way to click on a link and have it prompt to allow in the exact same way that Acrobat would. There should be ways to turn on and off things like this and 3D models on the Security tab, and when clicked on the same style of pop up that acrobat gives for permissions. nothing should ever be denied outright without a prompt to allow with all the options that acrobat has."*
+
+**Scope, whole behaviour.** (1) A web link (`/URI`) clicked in Read or Review asks before opening, with Acrobat's choices: Allow, Block, and *Remember this action for this site for all PDF documents*; Allow opens it in the default browser. (2) A link that opens another file (`/Launch`, and `/GoToR` to a file not open) asks with Acrobat's Open / Do Not Open and *Do not show this message again*; Open hands the file to its application (a PDF opens here). (3) 3D content has an on/off switch; when off, a model asks to be enabled for this document once or always, as Acrobat's document-message bar does. (4) Security holds the switches: web sites (always ask / allow all / block all, plus the remembered per-site list, editable), opening other files, and 3D. (5) Nothing is refused without a prompt that offers to allow it. A link whose action this program cannot perform at all (JavaScript) says so in words; that is an absent capability, not a denial.
+
+Today: every non-page link only writes a note to the status line (`canvas::links::follow`); a 3D model opens in the viewer on a click with no switch.
+
 ## O307–O315 — nine asks in one message, FILED BEFORE ANY WORK
 
 His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*
