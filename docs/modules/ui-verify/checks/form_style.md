@@ -25,6 +25,12 @@ later `paint-shown leaves=true` whose fill is not `255,0,0`. A selection
 cleared by the Escape leaves no later `paint-shown`, so the check also covers
 the popup's claim on Escape.
 
+That re-read must also say `fill_space=rgb`. The fill picker is then reopened
+and its CMYK tab (`properties.paint.fill.space.cmyk`) pressed and closed; the
+next `paint-shown` must say `fill_space=cmyk`. `paint-shown` is written from the
+re-modelled document, so it reports the space the file now stores, not the tab
+that was showing.
+
 ## Falsified
 
 - Leaves routed to the page verbs → both FAIL (width: no re-read; colour: no

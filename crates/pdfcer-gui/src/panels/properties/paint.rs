@@ -5,7 +5,9 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/paint.md`.
 
 use egui::Ui;
-use pdfcer_core::vector::PathPaint;
+use pdfcer_core::annot_author::Color;
+use pdfcer_core::vector::{DevicePaintSpace, PathPaint};
+use pdfcer_gui_base::colourpick::{self, Ink, Pick, Shown, Spaces};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -29,9 +31,9 @@ const REGION_PARTIAL_INK: &str = "properties.paint.partial-ink"; // ui-text-exem
 /// **What one frame's interaction asked for**, per channel.
 struct Recolour {
     /// The new fill, or `None` to leave it alone.
-    fill: Option<[u8; 3]>,
+    fill: Option<Color>,
     /// The new stroke, or `None` to leave it alone.
-    stroke: Option<[u8; 3]>,
+    stroke: Option<Color>,
 }
 
 /// **What one channel looks like across the whole selection.**
@@ -42,7 +44,7 @@ struct Channel {
     /// What the swatch shows, or `None` when **every** member of the selection
     /// carries an ink this control will not overwrite — in which case no
     /// control is drawn at all and the sentence stands in its place.
-    value: Option<super::swatch::Value>,
+    value: Option<Shown>,
     /// The names of the members' inks this control will not overwrite, in
     /// selection order, `None` where the space carries no name.
     ///
@@ -122,13 +124,13 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     }
 
     let mut change: Option<Recolour> = None;
-    if let Some(rgb) = row(ui, &fill, t::fill_label(), REGION_FILL, "paint-fill") {
+    if let Some(ink) = row(ui, &fill, t::fill_label(), REGION_FILL, "paint-fill") {
         change = Some(Recolour {
-            fill: Some(rgb),
+            fill: Some(ink.into()),
             stroke: None,
         });
     }
-    if let Some(rgb) = row(
+    if let Some(ink) = row(
         ui,
         &stroke,
         t::stroke_label(),
@@ -137,7 +139,7 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
     ) {
         change = Some(Recolour {
             fill: None,
-            stroke: Some(rgb),
+            stroke: Some(ink.into()),
         });
     }
 
@@ -160,19 +162,30 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
 }
 
 /// One line per change of what the section shows, for a driven check:
-/// `fill=`/`stroke=` are `r,g,b`, `mixed` or `ink`.
+/// `fill=`/`stroke=` are the screen `r,g,b`, `mixed` or `ink`;
+/// `fill_space=`/`stroke_space=` the agreed colour's stored space, else `-`.
 fn trace(leaves: bool, paths: usize, fill: &Channel, stroke: &Channel) {
     let token = |c: &Channel| match c.value {
-        Some(super::swatch::Value::Agreed(rgb)) => format!("{},{},{}", rgb[0], rgb[1], rgb[2]),
-        Some(super::swatch::Value::Mixed) => "mixed".to_owned(), // ui-text-exempt: trace token
-        None => "ink".to_owned(),                                // ui-text-exempt: trace token
+        Some(Shown::Agreed(pick)) => {
+            let rgb = pick.ink.screen();
+            format!("{},{},{}", rgb.r(), rgb.g(), rgb.b())
+        }
+        Some(Shown::Mixed { .. }) => "mixed".to_owned(), // ui-text-exempt: trace token
+        None => "ink".to_owned(),                        // ui-text-exempt: trace token
+    };
+    let space = |c: &Channel| match c.value {
+        Some(Shown::Agreed(pick)) => colourpick::key(pick.ink.space()),
+        _ => "-",
     };
     crate::diag::trace_changed(REGION_PAINT, || {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            "paint-shown leaves={leaves} paths={paths} fill={} stroke={}",
+            "paint-shown leaves={leaves} paths={paths} fill={} stroke={} fill_space={} \
+             stroke_space={}",
             token(fill),
-            token(stroke)
+            token(stroke),
+            space(fill),
+            space(stroke)
         )
     });
 }
@@ -200,42 +213,35 @@ fn path_indices(doc: &OpenDoc, page: usize, objects: &[usize], leaves: bool) -> 
 /// **Fold one channel of a whole selection into a control state.**
 fn channel<'a>(paints: impl Iterator<Item = &'a PathPaint>) -> Channel {
     let mut inks: Vec<Option<String>> = Vec::new();
-    let mut agreed: Option<[u8; 3]> = None;
+    let mut agreed: Option<Ink> = None;
     let mut mixed = false;
     let mut total = 0_usize;
     for paint in paints {
         total += 1;
-        match paint.rgb() {
+        match ink_of(paint) {
             None => inks.push(ink_name(paint)),
-            Some(rgb) => {
-                let rgb = to_bytes(rgb);
-                match agreed {
-                    None => agreed = Some(rgb),
-                    Some(seen) if seen != rgb => mixed = true,
-                    Some(_) => {}
-                }
-            }
+            Some(ink) => match agreed {
+                None => agreed = Some(ink),
+                Some(seen) if seen != ink => mixed = true,
+                Some(_) => {}
+            },
         }
     }
     let value = match agreed {
         // Every member is an ink this control will not overwrite. No swatch —
         // the whole of O89's vector ruling, unchanged by the selection size.
         None => None,
-        Some(_) if mixed => Some(super::swatch::Value::Mixed),
-        Some(rgb) => Some(super::swatch::Value::Agreed(rgb)),
+        Some(_) if mixed => Some(Shown::Mixed {
+            with_opacity: false,
+        }),
+        Some(ink) => Some(Shown::Agreed(Pick { ink, opacity: None })),
     };
     Channel { value, inks, total }
 }
 
 /// One channel's row: its label, its disclosure, and its control — or its
 /// refusal, where no control may be drawn.
-fn row(
-    ui: &mut Ui,
-    channel: &Channel,
-    label: String,
-    region: &str,
-    id_salt: &str,
-) -> Option<[u8; 3]> {
+fn row(ui: &mut Ui, channel: &Channel, label: String, region: &str, id_salt: &str) -> Option<Ink> {
     let mut chosen = None;
     // The partial-ink disclosure sits ABOVE the control, on this project's
     // standing rule that *"a caveat below a list arrives after the operator has
@@ -254,9 +260,12 @@ fn row(
         match channel.value {
             Some(value) => {
                 // The hint names THIS row's subject — shapes, not words. See
-                // `super::swatch::show`'s note on why the widget takes it as a
-                // parameter rather than reaching for one.
-                chosen = super::swatch::show(ui, id_salt, value, region, &t::mixed_hint());
+                // `colourpick::show`'s note on why the widget takes it as a
+                // parameter rather than reaching for one. No opacity here:
+                // a path's opacity is the Line section's.
+                chosen =
+                    colourpick::show(ui, id_salt, value, Spaces::ALL, region, &t::mixed_hint())
+                        .map(|pick| pick.ink);
             }
             // NO SWATCH. See the header: one opening on black over a spot
             // ink is one click from destroying a plate, and it would look right
@@ -272,10 +281,23 @@ fn row(
     chosen
 }
 
-/// The engine's 0..1 components as the swatch's 8-bit sRGB.
-fn to_bytes(rgb: pdfcer_core::vector::Rgb) -> [u8; 3] {
-    let f = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    [f(rgb.r), f(rgb.g), f(rgb.b)]
+/// The paint as the picker edits it, in the device space the file wrote it
+/// in. `Default` is the initial DeviceGray black (ISO 32000-2 §8.6.8);
+/// `None` is a space pdfcer does not decode, which gets no picker.
+#[allow(clippy::cast_possible_truncation)] // colour components are 0..1
+fn ink_of(paint: &PathPaint) -> Option<Ink> {
+    let f = |v: &f64| *v as f32;
+    match paint {
+        PathPaint::Default => Some(Ink::Gray(0.0)),
+        PathPaint::Device { space, comps, rgb } => Some(match (space, comps.as_slice()) {
+            (DevicePaintSpace::Gray, [g]) => Ink::Gray(f(g)),
+            (DevicePaintSpace::Rgb, [r, g, b]) => Ink::Rgb([f(r), f(g), f(b)]),
+            (DevicePaintSpace::Cmyk, [c, m, y, k]) => Ink::Cmyk([f(c), f(m), f(y), f(k)]),
+            // A wrong operand count: edit what pdfcer drew.
+            _ => Ink::Rgb([rgb.r, rgb.g, rgb.b]),
+        }),
+        PathPaint::Other { .. } => None,
+    }
 }
 
 /// The ink's name as the file states it, when there is one.
@@ -291,7 +313,30 @@ fn ink_name(paint: &PathPaint) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pdfcer_core::vector::{DevicePaintSpace, Rgb};
+    use pdfcer_core::vector::Rgb;
+
+    fn red() -> Option<Shown> {
+        Some(Shown::Agreed(Pick {
+            ink: Ink::Rgb([1.0, 0.0, 0.0]),
+            opacity: None,
+        }))
+    }
+
+    /// A CMYK path opens the picker on CMYK, not on its RGB preview.
+    #[test]
+    fn a_cmyk_path_opens_on_cmyk() {
+        let cmyk = PathPaint::Device {
+            space: DevicePaintSpace::Cmyk,
+            comps: vec![0.0, 1.0, 1.0, 0.0],
+            rgb: Rgb {
+                r: 1.0,
+                g: 0.0,
+                b: 0.0,
+            },
+        };
+        assert_eq!(ink_of(&cmyk), Some(Ink::Cmyk([0.0, 1.0, 1.0, 0.0])));
+        assert_eq!(ink_of(&PathPaint::Default), Some(Ink::Gray(0.0)));
+    }
 
     fn spot(name: &str) -> PathPaint {
         PathPaint::Other {
@@ -351,7 +396,12 @@ mod tests {
     #[test]
     fn two_different_colours_read_as_mixed() {
         let ch = channel([rgb(1.0, 0.0, 0.0), rgb(0.0, 1.0, 0.0)].iter());
-        assert_eq!(ch.value, Some(super::super::swatch::Value::Mixed));
+        assert_eq!(
+            ch.value,
+            Some(Shown::Mixed {
+                with_opacity: false
+            })
+        );
         assert!(ch.inks.is_empty());
         assert_eq!(ch.total, 2);
     }
@@ -363,10 +413,7 @@ mod tests {
     #[test]
     fn a_selection_that_agrees_opens_on_that_colour() {
         let ch = channel([rgb(1.0, 0.0, 0.0), rgb(1.0, 0.0, 0.0)].iter());
-        assert_eq!(
-            ch.value,
-            Some(super::super::swatch::Value::Agreed([255, 0, 0]))
-        );
+        assert_eq!(ch.value, red());
     }
 
     /// **One spot ink among process colours keeps the control AND names
@@ -376,7 +423,7 @@ mod tests {
         let ch = channel([rgb(1.0, 0.0, 0.0), rgb(1.0, 0.0, 0.0), spot("PANTONE 300")].iter());
         assert_eq!(
             ch.value,
-            Some(super::super::swatch::Value::Agreed([255, 0, 0])),
+            red(),
             "the process-colour members still have a colour to open on"
         );
         assert_eq!(ch.inks, vec![Some("PANTONE 300".to_owned())]);
@@ -398,9 +445,6 @@ mod tests {
     #[test]
     fn a_spot_ink_does_not_make_the_process_colours_look_mixed() {
         let ch = channel([rgb(1.0, 0.0, 0.0), spot("PANTONE 300")].iter());
-        assert_eq!(
-            ch.value,
-            Some(super::super::swatch::Value::Agreed([255, 0, 0]))
-        );
+        assert_eq!(ch.value, red());
     }
 }

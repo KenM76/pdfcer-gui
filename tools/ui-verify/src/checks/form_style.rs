@@ -4,7 +4,7 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/form_style.md`.
 
-use super::dimdrive::pick_colour;
+use super::dimdrive::{pick_colour, pick_space};
 use super::form_node_move::{enter_leaf_at, run_body};
 use super::stroke_style::{shown_since, type_into};
 use crate::checks::{Check, CheckContext};
@@ -25,6 +25,7 @@ const WIDTH: &str = "properties.stroke.width";
 const LINE_ALPHA: &str = "properties.stroke.line-opacity";
 const FILL_SWATCH: &str = "properties.paint.fill";
 const FILL_PICKER: &str = "properties.paint.fill.picker";
+const FILL_CMYK: &str = "properties.paint.fill.space.cmyk";
 /// The blue line, leaf 0: page y 95, 2 pt wide.
 const ON_THE_LINE: (f64, f64) = (120.0, 95.0);
 /// The red rectangle, leaf 1: page (50,50)..(90,80).
@@ -167,15 +168,34 @@ fn colour(
     }
     let after = paint_since(session, mark)?;
     report.note(format!("after the pick: `{after}`"));
-    Ok(
-        (!after.contains("leaves=true") || after.contains("fill=255,0,0")).then(|| {
-            format!(
-                "the recolour was applied and the part re-reads `{after}`; it must read a fill \
-             other than the red it started with. Trace: {}.",
-                session.trace_path().display()
-            )
-        }),
-    )
+    if !after.contains("leaves=true") || after.contains("fill=255,0,0") {
+        return Ok(Some(format!(
+            "the recolour was applied and the part re-reads `{after}`; it must read a fill other \
+             than the red it started with. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    if !after.contains("fill_space=rgb") {
+        return Ok(Some(format!(
+            "an RGB fill re-reads `{after}`; it must read `fill_space=rgb` before the CMYK step \
+             can show anything. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    let mark = session.trace()?.mark();
+    if let Some(failure) = pick_space(ctx, session, pointer, FILL_SWATCH, FILL_CMYK)? {
+        return Ok(Some(failure));
+    }
+    // Read back from the re-modelled document, so this is the stored space.
+    let cmyk = paint_since(session, mark)?;
+    report.note(format!("after the CMYK tab: `{cmyk}`"));
+    Ok((!cmyk.contains("fill_space=cmyk")).then(|| {
+        format!(
+            "the fill's picker was switched to CMYK and the part re-reads `{cmyk}`; it must be \
+             stored as CMYK (`fill_space=cmyk`). Trace: {}.",
+            session.trace_path().display()
+        )
+    }))
 }
 
 /// The last `paint-shown` line after trace line `mark`, or a token every

@@ -264,6 +264,29 @@ pub(super) fn pick_colour(
     Ok(None)
 }
 
+/// Opens the picker on `region`, presses its space tab `tab`, and closes it:
+/// a tab switch alone is a commit. `Some(failure)` when the tab is not drawn.
+pub(super) fn pick_space(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    region: &str,
+    tab: &str,
+) -> Result<Option<String>> {
+    into_view(ctx, session, pointer, region)?;
+    press(ctx, session, pointer, region)?;
+    let Some((_, vp)) = declared_in(&session.trace()?, ui_rect_event(ctx)?, tab) else {
+        return Ok(Some(format!(
+            "`{region}`'s picker opened with no `{tab}` tab. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    press(ctx, session, pointer, tab)?;
+    pointer.key(session, vp.as_deref(), "Escape", None)?;
+    session.settle(40);
+    Ok(None)
+}
+
 /// The point `(fx, fy)` of the way across `r`.
 fn at_fraction(r: LRect, fx: f32, fy: f32) -> WindowPoint {
     let p = Pt {

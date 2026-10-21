@@ -1197,17 +1197,6 @@ impl PdfcerApp {
                 fill,
                 stroke,
             } => {
-                // 8-bit sRGB from the swatch back into PDF's own 0..1 units.
-                // The inverse of `panels::properties::paint::to_bytes`, and the
-                // pair is what keeps the operand in the engine's units rather
-                // than leaving a byte triple to be reinterpreted downstream.
-                let to_rgb = |c: [u8; 3]| pdfcer_core::vector::Rgb {
-                    r: f32::from(c[0]) / 255.0,
-                    g: f32::from(c[1]) / 255.0,
-                    b: f32::from(c[2]) / 255.0,
-                };
-                let colour = |c| pdfcer_core::annot_author::Color::from(to_rgb(c));
-                let (fill, stroke) = (fill.map(colour), stroke.map(colour));
                 super::apply::vector_edit(doc, "set-object-paint", page, objects.len(), |s| {
                     let (paint, reach) = if leaves {
                         let o = s.set_object_paint_in_form(page, &objects, fill, stroke)?;

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **36 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `wanted` — a real gap — **37 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -134,6 +134,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
+| An RGB-to-CMYK that keeps the colour — the inverse of `pdfcer_color::color::cmyk_to_srgb` (our `G224`) <!--namesake:cmyk_to_srgb--> (the shell calls `cmyk_to_srgb` itself; the row wants its inverse) | **wanted.** The picker converts by §10.4.2's naive formula, so switching an RGB colour to the CMYK tab visibly darkens it (driven: `0,160,255` re-reads `0,129,200`). |
 | **Add Text in grey or CMYK** — `NewTextColor::Gray`, `NewTextColor::Cmyk` (our `G219`, Pass 617.3) | **wanted, to build with the shared colour picker (O321).** Add Text keeps its RGB swatch until the picker that offers grey and CMYK replaces it; then the Add Text colour passes through `From<&NewFill>` as the Format colour does. |
 | Fill opacity on existing text — `FormatRequest::fill_alpha` <!--namesake:fill_alpha--> (the shell's `fill_alpha` call sites are `StrokeStyle::fill_alpha` on paths), `FormatRequest::set_fill_alpha`, `FormatReport::fill_alpha_change` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. Page text's Format gains it when it moves onto the picker. |
 | Fill opacity on new page text — `AddTextRequest::with_fill_alpha` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. Add Text gains it with its grey and CMYK. |
@@ -141,7 +142,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `blocked` — waiting on something named — **2 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -159,7 +160,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -170,7 +171,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `declined` — deliberately no surface — **17 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -213,7 +214,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **329 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **329 of 385** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -339,7 +340,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Ask whether a page's model has changed — `EditSession::page_content_generation(page_index) -> u64` … | **Consumed — `app::cache` calls `page_content_generation`** to decide whether a cached decomposition still describes the page. It is the verb the engine's row says was asked for by name by `pdfcer-gui`, and it is in use. |
 | **Adopt the engine's deep marquee and delete ours** — `hit_test_rect_deep` / `FormMarquee` (`pdfcer-core/src/vector/hit.rs`) … | **Reachable, not driven — our extension is deleted.** `provider::hit_test_rect` is one call to `hit_test_rect_deep` plus a `HitTarget` → `TargetId` mapping; the hand-written leaf loop is gone, and `FormMarquee` is a parameter of `canvas::TargetProvider::hit_test_rect` rather than a constant in one impl. This shell passes `Include` where the engine defaults to `Exclude`, on purpose: here a form LEAF is not an edit operand (`canvas::moving::Refusal::InsideForm`) and the CONTAINER is, so `Exclude` would hand the operator a selection every verb refuses. Safe only because `canvas::marquee::without_page_wrappers` (O88) drops a page-sized wrapper from a crossing band. The result SET is unchanged; only the ORDER moved, to the engine's `paint_order` interleave, which all three consumers ignore. The both-policies assertion was falsified by planting a hard-coded `Include`. |
 | Selectable-object diagnostics: when the model disagrees with the canvas. Four … | **shipped.** All four are said, and none on the canvas. `oc_sections_hidden` is a status-line finding (`app::status::notes::findings`). The three that say *the object list and the picture disagree* — `paths_invisible_by_alpha`, `shadings_unmodelled`, `paths_with_undecoded_colour` — are one line each under the Objects panel's summary (`panels::objects::disagree::lines`), where the disagreement is met, rather than in the Render-diagnostics dialog, which describes the picture alone. Driven: `objects_panel_says_where_the_list_and_page_disagree` on `fixtures/object-disagreements.pdf`. |
-| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **shipped — Properties ▸ Line and opacity; G143, G155, G142.** Width and dash typed in points, converted per CTM scale in `app::actions::strokestyle`, folded by `EditSession::coalesce_last` until `StrokeUnits::Page` is used (G174, at the pin since v0.82.0). A part of a placed drawing goes through `EditSession::set_object_stroke_style_in_form` and `EditSession::set_object_paint_in_form` (`FormPaintOutcome`). Driven: `a_line_width_is_typed_in_points`, `a_pictures_opacity_can_be_set`, `a_part_of_a_placed_drawing_takes_a_width_in_points`, `a_part_of_a_placed_drawing_can_be_recoloured`. Modules `pdfcer_core::edit::stroke_style`, `pdfcer_core::vector::stroke_style`, `pdfcer_core::edit::form_paint`; `CommandKind::SetObjectStrokeStyle`. Read back: `PathObject::fill_alpha`, `PathObject::stroke_alpha`, `ImageObject::fill_alpha`, `ImageObject::stroke_alpha`, `ExtGStateParams::dash`. Refusals: `VectorEditError::InvalidStrokeStyle`, `EditError::FormInheritsResources`. |
+| **Set a page path's line width, dash and stroke/fill opacity** — `set_object_stroke_style` | **shipped — Properties ▸ Line and opacity; G143, G155, G142.** Width and dash typed in points, converted per CTM scale in `app::actions::strokestyle`, folded by `EditSession::coalesce_last` until `StrokeUnits::Page` is used (G174, at the pin since v0.82.0). A part of a placed drawing goes through `EditSession::set_object_stroke_style_in_form` and `EditSession::set_object_paint_in_form` (`FormPaintOutcome`). Colour is grey, RGB or CMYK in the path's own space, through `pdfcer_gui_base::colourpick` (G220). Driven: `a_line_width_is_typed_in_points`, `a_pictures_opacity_can_be_set`, `a_part_of_a_placed_drawing_takes_a_width_in_points`, `a_part_of_a_placed_drawing_can_be_recoloured`. Modules `pdfcer_core::edit::stroke_style`, `pdfcer_core::vector::stroke_style`, `pdfcer_core::edit::form_paint`; `CommandKind::SetObjectStrokeStyle`. Read back: `PathObject::fill_alpha`, `PathObject::stroke_alpha`, `ImageObject::fill_alpha`, `ImageObject::stroke_alpha`, `ExtGStateParams::dash`. Refusals: `VectorEditError::InvalidStrokeStyle`, `EditError::FormInheritsResources`. |
 | **Restack page objects** — `EditSession::restack_objects` | **shipped — Edit ▸ Arrange and the canvas object menu; G157.** Bring to front, Bring forward, Send backward, Send to back in `app::actions::restack`; the Arrange chords route here when page objects are selected. Driven: `an_object_can_be_brought_forward_and_sent_to_back`. Modules `pdfcer_core::edit::restack`, `pdfcer_core::vector::restack`; one `CommandKind::RestackObjects` per press. Disclosed: `RestackOutcome`, `RestackLimitReason::Scope`, `RestackLimitReason::Entangled`. |
 | **Add a node to a path; convert a node (corner / smooth / symmetric) or a segment (line / curve)** — `pdfcer_core::edit::node_shape`, `pdfcer_core::vector::edit::node_shape` | **shipped — Format ▸ Nodes; G154.** Insert node, Corner, Smooth, Symmetric, Segment to line and Segment to curve in `app::actions::vector::nodeshape`, shown when nodes of a page path or of a path inside a placed drawing are selected. One press visits every selected node, one `CommandKind::InsertNode`, `CommandKind::ConvertNode` or `CommandKind::ConvertSegment` each, folded into one undo step. `VectorEditError::NoSegmentHere` and `VectorEditError::NodeHasOneSide` skip a node with a status-line count; `VectorEditError::InvalidSegmentParameter` cannot arise, the insert is at t = 0.5. An insert selects the new nodes. Driven: `a_nodes_segment_can_be_curved_and_a_node_inserted`. |
 | **A placed image's pixels can be replaced in place** — `pdfcer_core::edit::image_replace` | **shipped — Format ▸ Image ▸ Replace image…; G156.** `EditSession::replace_image` with `ImageFit::Contain` in `app::actions::vector::replaceimage`, one `CommandKind::ReplaceImage`, reached from the Format tab, the canvas object menu and the Properties panel when one image XObject or inline image is selected. A form XObject is never offered, so `EditError::ReplaceImageOnOther` cannot arise; an SVG or EMF file is refused by the shell. The `ImageAuthorDisclosures` are worded in the status notes, with the old data kept. Driven: `replace_image_swaps_the_picture_in_place`. |

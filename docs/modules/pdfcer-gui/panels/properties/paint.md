@@ -62,7 +62,7 @@ project's standing rule is that the convergence of the product class **is**
 the specification and an invented interaction is a defect even when it
 works, so the mixed state is not one option among several; it is the answer.
 
-[`super::swatch`] is that control. It opens on nothing in particular (PDF
+`pdfcer_gui_base::colourpick` is that control. It opens on nothing in particular (PDF
 §8.6.8's default, never applied unless the operator moves the picker), it
 reads as *no single value* using the marker this shell already writes for
 one, and picking a colour applies it to the whole selection.
@@ -70,7 +70,7 @@ one, and picking a colour applies it to the whole selection.
 **One undo step for the whole gesture** — and that took the swatch being
 hand-built rather than `ui.color_edit_button_srgb`. `egui`'s own colour
 button marks itself changed on *every frame of a drag inside the picker*, so
-acting on `.changed()` authors an edit per frame; [`super::swatch`]'s header
+acting on `.changed()` authors an edit per frame; `colourpick`'s header
 carries the measurement and the fix (commit when the picker closes). That
 defect was present in the single-object control this section shipped with —
 it is fixed by the same change, for the same reason, and nothing about it is
@@ -155,16 +155,20 @@ unify them, which is exactly what will not happen.
 ### `fn row`
 
 Returns the newly chosen colour, or `None` when nothing was committed this
-frame. *Committed*, not *changed*: [`super::swatch::show`] answers only on
+frame. *Committed*, not *changed*: `colourpick::show` answers only on
 the frame the picker closes, so one drag through a colour wheel is one
 action and one undo entry.
 
-### `fn to_bytes`
+### `fn ink_of`
 
-Rounded rather than truncated. Truncation makes 1.0 into 255 correctly and
-0.5 into 127 — half a step dark on every mid-tone, which over a round trip
-through the swatch would walk a colour steadily darker every time it was
-opened and closed without being changed.
+The picker edits the paint in the device space the file wrote it in: grey,
+RGB or CMYK opens on that tab with those numbers, and is written back in that
+space unless the operator switches tabs. The operands are passed as the
+engine's own 0..1 values, never through 8-bit bytes, so opening and closing a
+picker without changing anything writes the same numbers back. A device paint
+whose operand count does not match its space edits the RGB pdfcer drew for
+it. The panel offers no opacity: a path's opacity belongs to the Line and
+opacity section.
 
 ### `fn ink_name`
 

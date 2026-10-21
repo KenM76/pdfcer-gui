@@ -1417,10 +1417,10 @@ pub enum Action {
         objects: Vec<usize>,
         /// `objects` are leaves of one invocation of one form (G142).
         leaves: bool,
-        /// The new fill, or `None` to leave it.
-        fill: Option<[u8; 3]>,
+        /// The new fill in the space it is written in, or `None` to leave it.
+        fill: Option<pdfcer_core::annot_author::Color>,
         /// The new stroke, or `None` to leave it.
-        stroke: Option<[u8; 3]>,
+        stroke: Option<pdfcer_core::annot_author::Color>,
     },
     /// **Line width, dash and opacity of selected page objects** (G143, G155).
     /// `style`'s width and dash are in **points**; the apply arm converts each
