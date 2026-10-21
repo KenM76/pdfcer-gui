@@ -227,7 +227,7 @@ mod tests {
         assert_eq!(
             inner.x,
             800.0 + OVERFLOW * DIVERGENCE_ROUNDS as f32,
-            "unbounded, in steps of exactly the overflow — the operator's              'little steps to infinity'"
+            "unbounded, in steps of exactly the overflow — the operator's 'little steps to infinity'"
         );
     }
 

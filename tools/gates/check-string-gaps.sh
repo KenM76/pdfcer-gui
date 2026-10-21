@@ -164,7 +164,11 @@ scan() {
                 # continuation. `println!("      default exe: {}")` is a report
                 # laying out a column, and four of them in this harness are the
                 # false positives that widening the class first produced.
-                if (code ~ /[^[:space:]("]   +[A-Za-z{]/) {
+                # The right-hand side also takes what a wrapped clause resumes
+                # on besides a word: a backtick, a quote, a PDF name or
+                # dictionary, a bracket or a digit. A column layout resumes on
+                # `:`, `=`, `|` or `(`, none of which is here.
+                if (code ~ /[^[:space:]("]   +[A-Za-z{`\047\/<\[0-9]/) {
                     body = code
                     sub(/^[[:space:]]+/, "", body)
                     print "  " FILENAME ":" FNR ": a run of spaces baked into a string literal"
@@ -216,6 +220,17 @@ pub fn line(chord: &str, needle: &str) -> String {
     format!("the text tool is bound to `{chord}`, so the sentence should say              {needle}")
 }
 EOF
+    # The gap is followed by a backtick or a PDF name, not a word.
+    cat > "$tmp/dirty/tick.rs" <<'EOF'
+pub const fn note() -> &'static str {
+    "say so with                  `session.expect_thread_panic()`."
+}
+EOF
+    cat > "$tmp/dirty/name.rs" <<'EOF'
+pub const fn body() -> &'static str {
+    "<< /Type /Catalog /Pages 2 0 R              /OCProperties << >> >>"
+}
+EOF
     cat > "$tmp/clean/good.rs" <<'EOF'
 //! A doc comment may align a table:
 //!     Mode(id: "read",   label: "Read")
@@ -234,6 +249,10 @@ pub const fn block_marked() -> &'static str {
 }
 pub const fn short() -> &'static str {
     "Two spaces after a stop.  That is a convention, not a defect."
+}
+pub fn columns(span: &str) {
+    println!("  pin span   : {span}");
+    println!("  llx      | lly");
 }
 pub fn column(last: &str) -> String {
     format!("title in read mode:     {last}")  // string-gap-exempt: a value column

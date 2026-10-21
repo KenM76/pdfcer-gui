@@ -244,7 +244,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     #[allow(clippy::cast_possible_truncation, reason = "page points are small")]
     let target_canvas = (target.x as f32, (page.height_pt - target.y) as f32);
     report.note(format!(
-        "aiming at PDF ({}, {}) on page {} — canvas ({:.3}, {:.3}) — which is screen          ({:.0}, {:.0}) at the opening zoom",
+        "aiming at PDF ({}, {}) on page {} — canvas ({:.3}, {:.3}) — which is screen ({:.0}, {:.0}) at the opening zoom",
         target.x,
         target.y,
         target.page,

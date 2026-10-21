@@ -680,7 +680,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
          both routes reach `PdfcerApp::dispatch_command`, which is what one choke point is for",
     );
     report.note(
-        "NOT covered here: Extract, which opens its own window;          `extract_pages_keeps_or_drops_the_labels` drives it",
+        "NOT covered here: Extract, which opens its own window; `extract_pages_keeps_or_drops_the_labels` drives it",
     );
 
     let _ = std::fs::remove_file(ctx.out("page-ops-unused.pdf"));

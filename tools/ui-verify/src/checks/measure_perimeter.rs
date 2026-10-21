@@ -108,7 +108,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         },
         None => crate::fixture::page_geometry(&pdf).ok_or_else(|| {
             Error::new(format!(
-                "cannot read a page size from {}. The harness needs the page box to turn this check's four corner fractions into points, and the page height to flip PDF y                  (up) into window y (down). Pass --page-size WxH.",
+                "cannot read a page size from {}. The harness needs the page box to turn this check's four corner fractions into points, and the page height to flip PDF y (up) into window y (down). Pass --page-size WxH.",
                 pdf.display()
             ))
         })?,

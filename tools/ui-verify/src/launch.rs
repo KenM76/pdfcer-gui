@@ -430,9 +430,9 @@ impl Session {
                 "A THREAD OF THE APPLICATION PANICKED while the process carried on.
   {panic}
 
-The window is still up, the event loop is still running and every trace line this                  check greps for may well have been written — a worker that dies is invisible to                  the liveness test above, which only asks whether the PROCESS exited. Full                  capture: {}
+The window is still up, the event loop is still running and every trace line this check greps for may well have been written — a worker that dies is invisible to the liveness test above, which only asks whether the PROCESS exited. Full capture: {}
 
-If this check provokes a panic on purpose, say so with                  `session.expect_thread_panic()`.",
+If this check provokes a panic on purpose, say so with `session.expect_thread_panic()`.",
                 self.stderr_path.display()
             ))
             .fatal());

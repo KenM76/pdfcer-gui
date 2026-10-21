@@ -386,7 +386,7 @@ mod tests {
         assert_eq!(
             scoped,
             Some(false),
-            "…and allocating inside a disabled scope is what does, which is what              `on_disabled_hover_text` and the click gate both read"
+            "…and allocating inside a disabled scope is what does, which is what `on_disabled_hover_text` and the click gate both read"
         );
     }
 

@@ -280,7 +280,7 @@ fn judge(trace: &Trace, mark: usize, case: Case, latencies: &[u128], failures: &
     }
     if let Some((line, gui)) = gui_held(trace, mark) {
         failures.push(format!(
-            "{}: a frame after the edit held the interface for {gui} ms of its own work:              `{}`.",
+            "{}: a frame after the edit held the interface for {gui} ms of its own work: `{}`.",
             case.name, line.raw
         ));
     }

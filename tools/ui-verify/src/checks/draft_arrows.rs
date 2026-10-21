@@ -135,7 +135,7 @@ fn drive(
     session.settle(20);
     if let Some(pressed) = shell_trace(session)?.last_after(INVOKED, mark) {
         return Ok(Some(format!(
-            "Enter in an open text draft, after the arrow keys, also ran a ribbon command:              `{}`. Trace: {}.",
+            "Enter in an open text draft, after the arrow keys, also ran a ribbon command: `{}`. Trace: {}.",
             pressed.raw,
             session.trace_path().display()
         )));

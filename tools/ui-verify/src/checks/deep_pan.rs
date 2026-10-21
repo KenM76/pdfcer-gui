@@ -211,7 +211,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         },
         None => crate::fixture::page_geometry(&pdf).ok_or_else(|| {
             Error::new(format!(
-                "cannot read a page size from {}, so the cells cannot be aimed at. Pass                  --page-size WxH.",
+                "cannot read a page size from {}, so the cells cannot be aimed at. Pass --page-size WxH.",
                 pdf.display()
             ))
         })?,
