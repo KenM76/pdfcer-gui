@@ -190,6 +190,19 @@ content-stream rewrite and one undo entry, so committing on change would
 author an edit per pixel of drag and leave a `Ctrl+Z` stack an operator
 could not get back through.
 
+### What the face box and size field show
+
+`app::fontlook` reads the letters a press acts on: the letter at a draft's
+caret, a draft's selection, or a live sweep. The read comes from the page's
+cached provenance, where every glyph carries its `Tf` resource and size, so it
+costs no extraction. `Shown::Mixed` empties the box, as a word processor does.
+For size, `fn mixed_size` draws an empty text field instead of the
+`DragValue`, and a typed number (`pt` allowed, 1 to 1440) is parked as one
+`StyleChange::Size` for every letter. `fn follow` puts the caret's size into
+the field only when the value it shows changes, so a half-typed number is not
+overwritten every frame. With no draft and no sweep (a clicked text object),
+both boxes show the shared draft's first run.
+
 ### `fn colour`
 
 # Why a run painted in CMYK greys rather than showing its nearest RGB

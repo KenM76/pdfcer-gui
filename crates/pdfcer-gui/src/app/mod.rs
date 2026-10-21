@@ -40,6 +40,8 @@ pub mod files;
 /// greying and the tooltips are this crate's job for a custom item and the
 /// shell's for a command.
 mod fontband;
+/// The face and size the Font controls show for the letters a press acts on.
+pub(crate) mod fontlook;
 /// Turning the operator's font folders into donors an embed can use — the half
 /// of font embedding the engine says is the shell's. See its header for why
 /// pdfcer never goes looking on its own.

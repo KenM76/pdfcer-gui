@@ -16,8 +16,8 @@ use egui_shell::ribbon::selected_condition;
 use pdfcer_core::text_edit::TextPosition;
 
 use crate::app::state::{OpenDoc, Status};
+use crate::canvas::textedit::typing;
 use crate::canvas::textedit::weight::{self, Weight};
-use crate::canvas::textedit::{self, Anchor, typing};
 
 const CACHE_KEY: &str = "pdfcer-textformat-weight-cache"; // ui-text-exempt: internal memory id, never displayed
 
@@ -34,56 +34,14 @@ impl crate::app::PdfcerApp {
         let Status::Open(doc) = &self.status else {
             return;
         };
-        let draft = textedit::read(ctx);
-        let (page, at, to, caret) = match &draft {
-            Some(d) => {
-                let chosen = textedit::caret::range(d.mark, d.caret);
-                let first = chosen.map_or(d.caret.saturating_sub(1), |(a, _)| a);
-                let byte_of = |n: usize| {
-                    d.text
-                        .char_indices()
-                        .nth(n)
-                        .map_or(d.text.len(), |(b, _)| b)
-                };
-                let byte = byte_of(first);
-                let mut to = None;
-                let at = match &d.anchor {
-                    Anchor::Run { run, original } => {
-                        // An unedited draft is the run's text, so a
-                        // selection in it is a byte range in the run.
-                        if let Some((_, end)) = chosen.filter(|_| d.text == *original) {
-                            to = Some(TextPosition::new(*run, byte_of(end)));
-                        }
-                        TextPosition::new(*run, byte)
-                    }
-                    // An edited paragraph reads the look it was opened in;
-                    // a press says why it cannot restyle it yet.
-                    Anchor::Block {
-                        places, original, ..
-                    } => {
-                        let byte = if d.text == *original { byte } else { 0 };
-                        let Some(at) = textedit::promote::position(places, byte, false) else {
-                            return;
-                        };
-                        at
-                    }
-                    _ => return,
-                };
-                set.set("selection.text_runs");
-                set.set("selection.formattable");
-                (d.page, at, to, Some(d.caret))
-            }
-            None => match doc
-                .text_selection
-                .as_ref()
-                .filter(|s| s.live(doc.edit_epoch) && !s.is_empty())
-            {
-                Some(s) => {
-                    let (from, to) = pdfcer_gui_base::textselection::ordered(s.anchor(), s.focus());
-                    (s.page, from, Some(to), None)
-                }
-                None => return,
-            },
+        let Some(crate::app::fontlook::Subject {
+            page,
+            at,
+            to,
+            caret,
+        }) = crate::app::fontlook::subject(ctx, doc, Some(set))
+        else {
+            return;
         };
         let read = weight_cached(ctx, doc, page, at, to);
         let pending = typing::read(ctx).zip(caret);

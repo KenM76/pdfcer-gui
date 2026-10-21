@@ -8,6 +8,7 @@ use egui_shell::commands::{CommandRegistry, ConditionSet, HandlerToken};
 use pdfcer_gui_base::entry;
 
 use crate::app::actions::textstyle::StyleChange;
+use crate::app::fontlook::{Look, Shown};
 use crate::app::state::OpenDoc;
 use crate::panels::properties::text::TextStyleDraft;
 use crate::text::panels::properties as t;
@@ -43,16 +44,21 @@ pub(super) fn draw(
     let ready = enabled.then(|| resolved(doc, draft)).flatten();
     let live = ready.is_some();
     report_enablement(id, enabled, live);
+    // The letters a press acts on, when a draft or a sweep names them; the
+    // draft above reads a whole run.
+    let look = doc
+        .filter(|_| live)
+        .and_then(|d| crate::app::fontlook::current(ui.ctx(), d));
 
     let mut invoked = false;
     let response = ui
         .add_enabled_ui(live, |ui| {
             match kind {
                 k if k == crate::shell::manifest::FONT_FACE => {
-                    invoked = face(ui, doc, draft, ready.as_ref(), parked);
+                    invoked = face(ui, doc, draft, ready.as_ref(), look.as_ref(), parked);
                 }
                 k if k == crate::shell::manifest::FONT_SIZE => {
-                    invoked = size(ui, draft, live, parked);
+                    invoked = size(ui, draft, live, look.as_ref(), parked);
                 }
                 k if k == crate::shell::manifest::FONT_COLOUR => {
                     invoked = colour(ui, draft, live, parked);
@@ -142,6 +148,7 @@ fn face(
     doc: Option<&OpenDoc>,
     draft: &TextStyleDraft,
     ready: Option<&(usize, Vec<usize>)>,
+    look: Option<&Look>,
     parked: &mut Option<StyleChange>,
 ) -> bool {
     // The face the draft holds, or the no-value placeholder — see
@@ -149,8 +156,15 @@ fn face(
     // control must not show a value it does not have. The draft is only synced
     // when the control is live, so `None` here is the ordinary greyed state and
     // not an error.
-    let current = draft.face().unwrap_or_default().to_owned();
-    let shown = if current.is_empty() {
+    let current = match look.and_then(|l| l.face.as_ref()) {
+        Some(Shown::One(face)) => face.clone(),
+        Some(Shown::Mixed) => String::new(),
+        None => draft.face().unwrap_or_default().to_owned(),
+    };
+    // A mixed selection shows an empty box, as a word processor does.
+    let shown = if look.is_some_and(|l| l.face == Some(Shown::Mixed)) {
+        ""
+    } else if current.is_empty() {
         t::text_value_absent()
     } else {
         crate::panels::properties::text::shorten(&current)
@@ -192,9 +206,22 @@ fn size(
     ui: &mut Ui,
     draft: &mut TextStyleDraft,
     live: bool,
+    look: Option<&Look>,
     parked: &mut Option<StyleChange>,
 ) -> bool {
-    let was = draft.size();
+    if live {
+        match look.and_then(|l| l.size.as_ref()) {
+            Some(Shown::Mixed) => return mixed_size(ui, parked),
+            Some(Shown::One(v)) => follow(ui, draft, *v),
+            None => ui.data_mut(|d| d.remove::<f64>(egui::Id::new(SIZE_SHOWN))),
+        }
+    }
+    let was = look
+        .and_then(|l| match l.size {
+            Some(Shown::One(v)) => Some(v),
+            _ => None,
+        })
+        .unwrap_or_else(|| draft.size());
     // A greyed size field shows the PLACEHOLDER, not a number.
     //
     //
@@ -229,6 +256,48 @@ fn size(
         return true;
     }
     false
+}
+
+/// Put `size` in the field when the letters it describes change, leaving a
+/// half-typed number alone otherwise.
+fn follow(ui: &Ui, draft: &mut TextStyleDraft, size: f64) {
+    let id = egui::Id::new(SIZE_SHOWN);
+    let last = ui.data(|d| d.get_temp::<f64>(id));
+    if last.is_none_or(|l| (l - size).abs() > f64::EPSILON) {
+        *draft.typed_size_mut() = size;
+        ui.data_mut(|d| d.insert_temp(id, size));
+    }
+}
+
+const SIZE_SHOWN: &str = "ribbon-format-font-size-shown"; // ui-text-exempt: internal memory id, never displayed
+
+/// The size field over letters of several sizes: empty until a size is
+/// typed, which then applies to all of them.
+fn mixed_size(ui: &mut Ui, parked: &mut Option<StyleChange>) -> bool {
+    let id = egui::Id::new("ribbon-format-font-size-mixed"); // ui-text-exempt: internal memory id, never displayed
+    let mut typed = ui.data(|d| d.get_temp::<String>(id)).unwrap_or_default();
+    // escape-disposition: commits, keyed on `lost_focus()` below.
+    let response = ui.add(egui::TextEdit::singleline(&mut typed).desired_width(SIZE_WIDTH));
+    ui.data_mut(|d| d.remove::<f64>(egui::Id::new(SIZE_SHOWN)));
+    if response.lost_focus() {
+        ui.data_mut(|d| d.remove::<String>(id));
+        if let Some(size) = typed_points(&typed) {
+            *parked = Some(StyleChange::Size(size));
+            return true;
+        }
+        return false;
+    }
+    ui.data_mut(|d| d.insert_temp(id, typed));
+    false
+}
+
+/// A typed size in points, `pt` suffix allowed; `None` outside 1 to 1440.
+fn typed_points(typed: &str) -> Option<f64> {
+    let number = typed.trim().trim_end_matches("pt").trim();
+    number
+        .parse::<f64>()
+        .ok()
+        .filter(|v| (1.0..=1440.0).contains(v))
 }
 
 /// The colour swatch, or a greyed stand-in for a run this control must not
@@ -325,6 +394,17 @@ mod tests {
                  silently vanish"
             );
         }
+    }
+
+    /// A size typed into the mixed field is read in points, with or without
+    /// the suffix, and only inside the field's range.
+    #[test]
+    fn a_typed_size_is_read_in_points() {
+        assert_eq!(typed_points("12"), Some(12.0));
+        assert_eq!(typed_points(" 10.5 pt "), Some(10.5));
+        assert_eq!(typed_points(""), None);
+        assert_eq!(typed_points("0.5"), None);
+        assert_eq!(typed_points("big"), None);
     }
 
     /// The three kinds this module claims are exactly the three the manifest
