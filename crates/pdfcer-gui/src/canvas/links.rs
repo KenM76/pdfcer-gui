@@ -4,7 +4,10 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/links.md`.
 
 use egui::{Pos2, Rect};
+use pdfcer_core::edit::LinkTarget;
+use pdfcer_core::object::ObjId;
 use pdfcer_core::outline::{Destination, RemoteTarget};
+use pdfcer_gui_base::outwardaction::OutwardAction;
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -23,6 +26,8 @@ pub struct Hit {
     pub annots_index: usize,
     /// The clickable box, in canvas coordinates.
     pub rect: Rect,
+    /// The link annotation, when it is an indirect object; a `/URI` is read through it.
+    pub id: Option<ObjId>,
 }
 
 impl Hit {
@@ -30,6 +35,18 @@ impl Hit {
     #[must_use]
     pub const fn navigable(&self) -> bool {
         matches!(self.destination, Destination::Page { .. })
+    }
+
+    /// Whether this is a `/URI` link, which asks before it opens.
+    #[must_use]
+    pub fn is_web(&self) -> bool {
+        matches!(&self.destination, Destination::NonNavigation { action: Some(a), .. } if a.0 == b"URI")
+    }
+
+    /// Whether a click does something beyond a sentence: a page jump or the web prompt.
+    #[must_use]
+    pub fn followable(&self) -> bool {
+        self.navigable() || self.is_web()
     }
 }
 
@@ -52,6 +69,7 @@ pub fn under_pointer(doc: &OpenDoc, page_index: usize, point: Pos2) -> Option<Hi
                 destination: link.destination.clone(),
                 annots_index: link.annots_index,
                 rect: canvas,
+                id: link.id,
             });
         }
     }
@@ -115,6 +133,7 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
         // only that the disclosure can now NAME the file instead of saying
         // "this is a Launch action" and stopping — which is the difference
         // between a sentence an operator can act on and one they cannot.
+        Destination::NonNavigation { .. } if hit.is_web() => web(hit, doc, actions),
         Destination::NonNavigation { action, file } => {
             let named = action.as_ref().map_or_else(
                 || unknown_action().to_owned(),
@@ -133,6 +152,24 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
         _ => {
             crate::app::actions::record_note(doc.edit_epoch, t::no_destination().to_owned());
         }
+    }
+}
+
+/// A `/URI` link: read its address through the engine and raise the prompt.
+fn web(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
+    let uri = hit
+        .id
+        .and_then(|id| doc.session.link(id).ok())
+        .and_then(|reading| match reading.target {
+            Some(LinkTarget::Uri(uri)) => Some(uri),
+            _ => None,
+        });
+    match uri {
+        Some(uri) => actions.push(Action::Outward(OutwardAction::WebLink { uri })),
+        None => crate::app::actions::record_note(
+            doc.edit_epoch,
+            crate::text::outward::web_unreadable().to_owned(),
+        ),
     }
 }
 
@@ -197,7 +234,8 @@ pub(super) fn cursor(
         if !view.map.image_rect().contains(pos) {
             continue;
         }
-        if under_pointer(doc, view.page, view.map.to_page(pos)).is_some_and(|hit| hit.navigable()) {
+        if under_pointer(doc, view.page, view.map.to_page(pos)).is_some_and(|hit| hit.followable())
+        {
             ctx.set_cursor_icon(egui::CursorIcon::PointingHand);
             return;
         }
@@ -212,6 +250,7 @@ mod tests {
         Hit {
             destination,
             annots_index: 0,
+            id: None,
             rect: Rect::from_min_size(Pos2::ZERO, egui::vec2(10.0, 10.0)),
         }
     }

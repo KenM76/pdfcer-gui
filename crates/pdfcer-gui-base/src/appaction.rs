@@ -311,6 +311,9 @@ pub enum Action {
     /// reason; `crate::app::actions::acrobat` holds the whole argument,
     /// including why the drain's order is save → launch → close.
     OpenInAcrobat,
+    /// A link leaving the document, or the Security Warning's answer.
+    /// Applied by `crate::app::actions::outward`; never an edit.
+    Outward(crate::outwardaction::OutwardAction),
     /// **Close the document in tab position `0`-based slot.**
     ///
     /// Raised by the document tab strip's ✕ and by a middle click on a tab,

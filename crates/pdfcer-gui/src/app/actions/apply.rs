@@ -113,6 +113,11 @@ impl PdfcerApp {
                 self.apply_open_in_acrobat();
                 return;
             }
+            // Not an edit, for `OpenInAcrobat`'s reason.
+            Action::Outward(action) => {
+                self.apply_outward(action);
+                return;
+            }
             // Beside the four above rather than below the document guard,
             // and for a third reason again: this arm needs `&mut self`, not
             // `&mut OpenDoc`. It reads a **parked** document's session while
@@ -324,6 +329,7 @@ impl PdfcerApp {
             | Action::NewSized { .. }
             | Action::Close
             | Action::OpenInAcrobat
+            | Action::Outward(_)
             | Action::CloseDocument(_)
             | Action::CloseOtherDocuments(_)
             | Action::InsertPagesFromOpenDocument { .. }

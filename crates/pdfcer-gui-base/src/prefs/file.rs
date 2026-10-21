@@ -984,6 +984,7 @@ impl Prefs {
         shortcuts::write_block(&self.shortcuts, &mut out);
         snapshot::write_block(&self.snapshot, &mut out);
         ocrmodels::write_block(&self.ocr_models, &mut out);
+        trust::write_block(&self.trust, &mut out);
 
         out
     }

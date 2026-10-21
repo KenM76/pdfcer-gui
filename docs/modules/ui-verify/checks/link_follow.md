@@ -35,7 +35,7 @@ wrong. So:
 | check | subject | what it would catch |
 |---|---|---|
 | [`ALinkGoesToThePageItNames`] | a `/GoTo` that resolves | the capability being absent, or aiming at the wrong page |
-| [`ALinkItCannotFollowSaysSo`] | a `/URI` | **a link that cannot be performed being performed anyway** |
+| [`ALinkItCannotFollowSaysSo`] | a `/JavaScript` (a `/URI` asks first; see `weblink_prompt`) | **a link that cannot be performed being performed anyway** |
 
 The second asserts a **conjunction of an absence and a presence**: the
 page did **not** change, *and* a sentence was drawn. Either alone is

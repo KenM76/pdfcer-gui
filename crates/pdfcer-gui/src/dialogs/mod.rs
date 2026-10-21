@@ -116,6 +116,7 @@ pub mod remove_metadata;
 pub mod remove_ocr;
 /// Format ▸ Make pictures smaller.
 pub mod shrink_images;
+pub mod weblink;
 /// **The question that comes before pdfcer lets go of the file** —
 /// `OPERATOR_REQUESTS.md` O122. Three shapes of one window: save-then-hand-over,
 /// confirm-and-hand-over, and the refusal for a document that has never been
@@ -404,6 +405,7 @@ pub struct DialogsState {
     /// The dropped-PDF question, when one is open. **Document-scoped**: two
     /// of its answers edit the open document.
     drop_pdf: Option<drop_pdf::DropPdfDialog>,
+    weblink: Option<weblink::WebLinkDialog>,
 
     /// The Import-text window, when one is open.
     ///
@@ -837,6 +839,10 @@ impl DialogsState {
         }
         if self.drop_pdf.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.drop_pdf = None;
+            self.weblink = None;
+        }
+        if self.weblink.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.weblink = None;
         }
         if self.insert_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_image = None;
@@ -1267,6 +1273,7 @@ impl DialogsState {
         self.import_text = None;
         self.link.reset();
         self.drop_pdf = None;
+        self.weblink = None;
         self.export_dxf = None;
         // On this list because it holds a SNAPSHOT: the page count it built
         // its rows from, and the names it read out of the file's name tree.

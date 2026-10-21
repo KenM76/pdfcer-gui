@@ -628,6 +628,13 @@ impl DialogsState {
     }
 
     /// Ask what a dropped PDF is for, unless the question is already open.
+    /// Raise the Security Warning for `uri`, unless one is already up.
+    pub fn open_weblink(&mut self, uri: String) {
+        if self.weblink.is_none() {
+            self.weblink = Some(crate::dialogs::weblink::WebLinkDialog::new(uri));
+        }
+    }
+
     pub fn open_drop_pdf(&mut self, dialog: crate::dialogs::drop_pdf::DropPdfDialog) {
         if self.drop_pdf.is_none() {
             self.drop_pdf = Some(dialog);

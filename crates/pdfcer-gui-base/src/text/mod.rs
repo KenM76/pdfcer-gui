@@ -176,6 +176,7 @@ pub mod ocrupscale;
 pub mod offpage;
 /// What pasting another program's copy says.
 pub mod ospaste;
+pub mod outward;
 /// The words for **the visible area of a sheet** — the Crop… window and the
 /// disclosures its commit raises. Consumed by `pdfcer_gui::dialogs::page_crop`
 /// and `pdfcer_gui::app::actions::pagesize::crop`.

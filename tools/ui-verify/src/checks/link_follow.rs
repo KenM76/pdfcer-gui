@@ -41,9 +41,10 @@ const GOTO_LINK: (f64, f64) = (118.0, 635.0);
 /// Where that link should land, 0-based.
 const GOTO_TARGET_PAGE: usize = 3;
 
-/// The centre of `non-navigation-links.pdf`'s **first** link — rect
-/// 36,700–200,730, a `/URI`.
-const ACTION_LINK: (f64, f64) = (118.0, 715.0);
+/// The centre of `non-navigation-links.pdf`'s **second** link — rect
+/// 36,660–200,690, a `/JavaScript`. The `/URI` above it raises the Security
+/// Warning instead; `weblink_prompt` drives that.
+const ACTION_LINK: (f64, f64) = (118.0, 675.0);
 
 /// How many Ctrl+wheel notches to zoom in before the non-navigation click.
 const ZOOM_NOTCHES: usize = 4;
@@ -284,7 +285,7 @@ fn drive_goto(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
 // 2 — a link that cannot be followed
 // ---------------------------------------------------------------------------
 
-/// **A `/URI` link is disclosed, not performed, and not silently ignored.**
+/// **A `/JavaScript` link is disclosed, not performed, and not silently ignored.**
 ///
 /// The falsifying half of the pair. See the module header on why this is the
 /// check that matters and why its assertion is a conjunction.
@@ -367,7 +368,7 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     let trace = session.trace()?;
     let Some(click) = trace.last(CLICK_EVENT) else {
         return Ok(Some(format!(
-            "THE CLICK ON A `/URI` LINK PRODUCED NOTHING. No `{CLICK_EVENT}` line followed. A \
+            "THE CLICK ON A `/JavaScript` LINK PRODUCED NOTHING. No `{CLICK_EVENT}` line followed. A \
              link this program cannot perform still has to be RECOGNISED — a click that falls \
              through to text selection leaves the operator with no way to learn that the box \
              they pressed was a link at all. `{RESOLVE_EVENT}`: {}.",
@@ -378,15 +379,15 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     };
     if click.get("kind") != Some("action") {
         return Ok(Some(format!(
-            "THE `/URI` WAS CLASSIFIED AS `{}`: `{}`. The engine's `list-links` reports this \
-             one as `dest=action action=URI`. A `/URI` reaching this shell as anything else is \
+            "THE `/JavaScript` WAS CLASSIFIED AS `{}`: `{}`. The engine's `list-links` reports this \
+             one as `dest=action action=JavaScript`. A `/JavaScript` reaching this shell as anything else is \
              a destination the reader resolved and the shell then re-interpreted.",
             click.get("kind").unwrap_or("nothing"),
             click.raw
         )));
     }
     report.note(format!(
-        "the `/URI` was recognised as an action: `{}`",
+        "the `/JavaScript` was recognised as an action: `{}`",
         click.raw
     ));
 
@@ -394,7 +395,7 @@ fn drive_action(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<S
     let after = view_of(&session.trace()?).unwrap_or_else(|| before.clone());
     if after != before {
         return Ok(Some(format!(
-            "★★★ A `/URI` LINK NAVIGATED. The view was page {} at zoom {} offset {} \
+            "★★★ A `/JavaScript` LINK NAVIGATED. The view was page {} at zoom {} offset {} \
              before the click, and is page {} at zoom {} offset {} after it — on a \
              link that names no page at all.\n\n\
              This is the failure the whole five-variant enum exists to prevent, and \
@@ -474,9 +475,9 @@ mod tests {
         // goto-actions.pdf, index 2: rect=36,620,200,650
         assert!((36.0..=200.0).contains(&GOTO_LINK.0), "{GOTO_LINK:?}");
         assert!((620.0..=650.0).contains(&GOTO_LINK.1), "{GOTO_LINK:?}");
-        // non-navigation-links.pdf, index 0: rect=36,700,200,730
+        // non-navigation-links.pdf, index 1: rect=36,660,200,690
         assert!((36.0..=200.0).contains(&ACTION_LINK.0), "{ACTION_LINK:?}");
-        assert!((700.0..=730.0).contains(&ACTION_LINK.1), "{ACTION_LINK:?}");
+        assert!((660.0..=690.0).contains(&ACTION_LINK.1), "{ACTION_LINK:?}");
         // …and both are inside the page, or the mapping would refuse them.
         for p in [GOTO_LINK, ACTION_LINK] {
             assert!(p.0 > 0.0 && p.0 < PAGE_PT.0, "{p:?}");

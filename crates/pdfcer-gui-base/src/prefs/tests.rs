@@ -31,6 +31,13 @@ fn every_preference_round_trips_through_the_file() {
         for fit in OpeningFit::ALL {
             for reach in RedactionReach::ALL {
                 let original = Prefs {
+                    trust: {
+                        let mut t = crate::prefs::TrustPrefs::default();
+                        t.remember_site("example.com", false);
+                        t.trust_3d(std::path::Path::new("E:/drawings/a.pdf"));
+                        t.play_3d = false;
+                        t
+                    },
                     ocr_models: {
                         let mut o = crate::prefs::OcrModelPrefs::default();
                         o.add_folder(std::path::Path::new("E:/extra models"));
@@ -592,6 +599,13 @@ fn the_writer_emits_no_key_the_parser_rejects() {
     // A non-default in every field, so no emitted value can coincide with
     // what a failed parse would have left behind.
     let prefs = Prefs {
+        trust: {
+            let mut t = crate::prefs::TrustPrefs::default();
+            t.remember_site("example.com", false);
+            t.trust_3d(std::path::Path::new("E:/drawings/a.pdf"));
+            t.play_3d = false;
+            t
+        },
         ocr_models: {
             let mut o = crate::prefs::OcrModelPrefs::default();
             o.add_folder(std::path::Path::new("E:/extra models"));

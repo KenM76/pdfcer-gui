@@ -222,6 +222,8 @@ mod acrobat;
 /// header carries what makes them a family: all three find their operand by
 /// stable object id, so none needs a page to locate one.
 pub mod annot;
+/// A link leaving the document: ask, open or refuse. See `DESIGNS.md` § O320.
+mod outward;
 /// The verbs that re-shape a page's own text. Its header carries the reason
 /// reflow is not like its neighbours: it re-emits the page's FIRST content
 /// stream and the commit sweep empties the rest, so it refuses a page carrying
