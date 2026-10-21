@@ -5,9 +5,11 @@
 //! inside of a colour popup: one tab per space the target accepts
 //! ([`Spaces`]), a number for every component, and an opacity slider when
 //! [`Pick::opacity`] is `Some`. A value is shown in its own space and is never
-//! converted unless the operator switches tab; a switch seeds the new space
-//! from the old by the standard's plain formulas (ISO 32000-2 §10.4.2), a
-//! starting position rather than a claim about how a press prints it.
+//! converted unless the operator switches tab. A switch seeds the new space
+//! with the colour pdfcer draws the old one as: into CMYK by
+//! `pdfcer_core::color::srgb_to_cmyk`, out of it by `cmyk_to_srgb`. A colour
+//! CMYK cannot draw is seeded with the nearest it can, and the picker says so
+//! beneath the CMYK numbers (`{region}.outside-cmyk`).
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/colourpick.md`.
 
@@ -74,34 +76,43 @@ impl Ink {
         }
     }
 
-    /// This colour in `space` by §10.4.2's formulas; itself when already there.
+    /// This colour in `space`; itself when already there.
     #[must_use]
     pub fn to_space(self, space: Space) -> Self {
+        self.convert(space).ink
+    }
+
+    /// This colour in `space` as pdfcer draws it, and whether `space` can
+    /// draw it. Grey takes the §10.4.2 luminance of the drawn RGB.
+    #[must_use]
+    pub fn convert(self, space: Space) -> Converted {
+        let exact = |ink| Converted {
+            ink,
+            in_gamut: true,
+        };
         if self.space() == space {
-            return self;
+            return exact(self);
         }
         let [r, g, b] = self.rgb();
-        match (self, space) {
-            (Self::Cmyk([c, m, y, k]), Space::Gray) => {
-                Self::Gray(1.0 - (0.11f32.mul_add(y, 0.3f32.mul_add(c, 0.59 * m)) + k).min(1.0))
-            }
-            (_, Space::Gray) => Self::Gray(0.11f32.mul_add(b, 0.3f32.mul_add(r, 0.59 * g))),
-            (_, Space::Rgb) => Self::Rgb([r, g, b]),
-            (Self::Gray(v), Space::Cmyk) => Self::Cmyk([0.0, 0.0, 0.0, 1.0 - v]),
-            (_, Space::Cmyk) => {
-                let [c, m, y] = [1.0 - r, 1.0 - g, 1.0 - b];
-                let k = c.min(m).min(y);
-                Self::Cmyk([c - k, m - k, y - k, k])
+        match space {
+            Space::Gray => exact(Self::Gray(0.11f32.mul_add(b, 0.3f32.mul_add(r, 0.59 * g)))),
+            Space::Rgb => exact(Self::Rgb([r, g, b])),
+            Space::Cmyk => {
+                let fit = pdfcer_core::color::srgb_to_cmyk(r, g, b);
+                Converted {
+                    ink: Self::Cmyk(fit.cmyk),
+                    in_gamut: fit.in_gamut,
+                }
             }
         }
     }
 
-    /// Red, green and blue by §10.4.2's formulas.
+    /// Red, green and blue as pdfcer draws this colour.
     fn rgb(self) -> [f32; 3] {
         match self {
             Self::Gray(v) => [v; 3],
             Self::Rgb(c) => c,
-            Self::Cmyk([c, m, y, k]) => [c, m, y].map(|v| 1.0 - (v + k).min(1.0)),
+            Self::Cmyk([c, m, y, k]) => pdfcer_core::color::cmyk_to_srgb(c, m, y, k),
         }
     }
 
@@ -205,7 +216,7 @@ pub fn body(ui: &mut Ui, pick: &mut Pick, spaces: Spaces, region: &str) -> bool 
     if !spaces.accepts(pick.ink.space()) {
         // A value in a space the target cannot take is shown in one it can.
         let first = TABS.into_iter().find(|s| spaces.accepts(*s));
-        pick.ink = pick.ink.to_space(first.unwrap_or(Space::Rgb));
+        switch(ui, pick, first.unwrap_or(Space::Rgb), region);
     }
     if TABS.iter().filter(|s| spaces.accepts(**s)).count() > 1 {
         ui.horizontal(|ui| {
@@ -215,17 +226,26 @@ pub fn body(ui: &mut Ui, pick: &mut Pick, spaces: Spaces, region: &str) -> bool 
                     .on_hover_text(t::space_tooltip(space));
                 crate::diag::ui_rect(&format!("{region}.space.{}", key(space)), tab.rect);
                 if tab.clicked() && pick.ink.space() != space {
-                    pick.ink = pick.ink.to_space(space);
+                    switch(ui, pick, space, region);
                     changed = true;
                 }
             }
         });
     }
-    changed |= match &mut pick.ink {
+    let edited = match &mut pick.ink {
         Ink::Rgb(c) => rgb_rows(ui, c),
         Ink::Cmyk(c) => cmyk_rows(ui, c),
         Ink::Gray(v) => gray_rows(ui, v),
     };
+    if edited || pick.ink.space() != Space::Cmyk {
+        // Numbers typed are the operator's own; nothing was approximated.
+        ui.data_mut(|d| d.insert_temp(outside_id(region), false));
+    }
+    changed |= edited;
+    if ui.data(|d| d.get_temp(outside_id(region))).unwrap_or(false) {
+        let line = ui.label(egui::RichText::new(t::outside_cmyk()).small());
+        crate::diag::ui_rect(&format!("{region}.outside-cmyk"), line.rect);
+    }
     if let Some(alpha) = &mut pick.opacity {
         let row = ui.horizontal(|ui| {
             ui.label(t::opacity());
@@ -235,6 +255,38 @@ pub fn body(ui: &mut Ui, pick: &mut Pick, spaces: Spaces, region: &str) -> bool 
         changed |= row.inner;
     }
     changed
+}
+
+/// The result of [`Ink::convert`].
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Converted {
+    /// The colour in the asked-for space.
+    pub ink: Ink,
+    /// `false` when the space cannot draw the colour and `ink` is the nearest
+    /// it can.
+    pub in_gamut: bool,
+}
+
+/// The memory slot holding whether the CMYK shown in `region`'s picker was
+/// seeded from a colour CMYK cannot draw.
+fn outside_id(region: &str) -> egui::Id {
+    egui::Id::new(("colourpick-outside-cmyk", region)) // ui-text-exempt: an egui id salt, never displayed
+}
+
+/// Convert `pick` to `space`, remembering whether the result is the nearest
+/// colour rather than the same one.
+fn switch(ui: &Ui, pick: &mut Pick, space: Space, region: &str) {
+    let converted = pick.ink.convert(space);
+    pick.ink = converted.ink;
+    let outside = !converted.in_gamut;
+    ui.data_mut(|d| d.insert_temp(outside_id(region), outside));
+    crate::diag::trace(|| {
+        format!(
+            "colour-switched region={region} to={} in_gamut={}",
+            key(space),
+            converted.in_gamut
+        )
+    });
 }
 
 /// What a selection says its colour is.
@@ -295,6 +347,7 @@ pub fn show(
     if egui::Popup::is_id_open(ui.ctx(), popup_id) && !state.was_open {
         state.working = seed;
         state.dirty = false;
+        ui.data_mut(|d| d.insert_temp(outside_id(region), false));
     }
     egui::Popup::menu(&response)
         .id(popup_id)
@@ -452,25 +505,41 @@ mod tests {
 
     #[test]
     fn black_and_white_cross_every_space() {
-        for space in TABS {
-            for other in TABS {
-                let crossed = Ink::black(space).to_space(other);
-                assert_eq!(crossed.rgb(), [0.0; 3], "{space:?}->{other:?}");
-            }
+        // CMYK's black is full K, which pdfcer draws as a warm near-black, so
+        // only grey and RGB cross exactly.
+        for (a, b) in [(Space::Gray, Space::Rgb), (Space::Rgb, Space::Gray)] {
+            assert_eq!(Ink::black(a).to_space(b), Ink::black(b));
+        }
+        for space in [Space::Gray, Space::Rgb] {
+            let Ink::Cmyk([.., k]) = Ink::black(space).to_space(Space::Cmyk) else {
+                panic!("not CMYK");
+            };
+            assert!(k > 0.99, "{space:?}: k {k}");
         }
         let white = Ink::Rgb([1.0; 3]);
-        assert_eq!(white.to_space(Space::Cmyk), Ink::Cmyk([0.0; 4]));
+        let Ink::Cmyk(ink) = white.to_space(Space::Cmyk) else {
+            panic!("not CMYK");
+        };
+        assert!(ink.iter().all(|v| *v < 1e-3), "{ink:?}");
         assert_eq!(white.to_space(Space::Gray), Ink::Gray(1.0));
     }
 
     #[test]
-    fn rgb_to_cmyk_moves_the_common_part_to_black() {
-        let Ink::Cmyk([c, m, y, k]) = Ink::Rgb([0.8, 0.4, 0.4]).to_space(Space::Cmyk) else {
-            panic!("not CMYK");
-        };
-        for (got, want) in [(c, 0.0), (m, 0.4), (y, 0.4), (k, 0.2)] {
-            assert!((got - want).abs() < 1e-5, "{got} vs {want}");
+    fn rgb_to_cmyk_keeps_the_colour_pdfcer_draws() {
+        let rgb = [0.8, 0.4, 0.4];
+        let converted = Ink::Rgb(rgb).convert(Space::Cmyk);
+        assert!(converted.in_gamut);
+        for (got, want) in converted.ink.rgb().into_iter().zip(rgb) {
+            assert!((got - want).abs() <= 0.5 / 255.0, "{got} vs {want}");
         }
+    }
+
+    #[test]
+    fn a_colour_cmyk_cannot_draw_says_so() {
+        let converted = Ink::from_srgb([0, 160, 255]).convert(Space::Cmyk);
+        assert!(!converted.in_gamut);
+        assert_eq!(converted.ink.space(), Space::Cmyk);
+        assert!(Ink::Gray(0.5).convert(Space::Rgb).in_gamut);
     }
 
     #[test]

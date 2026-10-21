@@ -26,6 +26,9 @@ const LINE_ALPHA: &str = "properties.stroke.line-opacity";
 const FILL_SWATCH: &str = "properties.paint.fill";
 const FILL_PICKER: &str = "properties.paint.fill.picker";
 const FILL_CMYK: &str = "properties.paint.fill.space.cmyk";
+const OUTSIDE: &str = "properties.paint.fill.outside-cmyk";
+/// `colourpick::switch`'s line for a tab switch.
+const SWITCHED: &str = "colour-switched"; // ui-text-exempt: a trace event name, never displayed
 /// The blue line, leaf 0: page y 95, 2 pt wide.
 const ON_THE_LINE: (f64, f64) = (120.0, 95.0);
 /// The red rectangle, leaf 1: page (50,50)..(90,80).
@@ -189,13 +192,68 @@ fn colour(
     // Read back from the re-modelled document, so this is the stored space.
     let cmyk = paint_since(session, mark)?;
     report.note(format!("after the CMYK tab: `{cmyk}`"));
-    Ok((!cmyk.contains("fill_space=cmyk")).then(|| {
-        format!(
+    if !cmyk.contains("fill_space=cmyk") {
+        return Ok(Some(format!(
             "the fill's picker was switched to CMYK and the part re-reads `{cmyk}`; it must be \
              stored as CMYK (`fill_space=cmyk`). Trace: {}.",
             session.trace_path().display()
+        )));
+    }
+    kept_or_disclosed(ctx, report, session, mark, &after, &cmyk)
+}
+
+/// The CMYK seeded by the switch draws as the RGB it replaced, or the picker
+/// said it could not (`OUTSIDE` drawn).
+fn kept_or_disclosed(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    mark: usize,
+    rgb: &str,
+    cmyk: &str,
+) -> Result<Option<String>> {
+    let trace = session.trace()?;
+    let Some(switched) = trace.last_after(SWITCHED, mark) else {
+        return Ok(Some(format!(
+            "the CMYK tab was pressed and no `{SWITCHED}` line followed. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("switch: `{}`", switched.raw));
+    if switched.get("in_gamut") == Some("true") {
+        let kept = fill_of(rgb)
+            .zip(fill_of(cmyk))
+            .is_some_and(|(a, b)| a.iter().zip(b).all(|(x, y)| x.abs_diff(y) <= 1));
+        return Ok((!kept).then(|| {
+            format!(
+                "an in-gamut RGB fill `{rgb}` switched to CMYK re-reads `{cmyk}`; the CMYK must \
+                 draw within one count of the RGB it replaced. Trace: {}.",
+                session.trace_path().display()
+            )
+        }));
+    }
+    // The line lives in the picker, which has closed by now: look for it
+    // having been drawn after the switch, not for it being drawn still.
+    let event = super::dimdrive::ui_rect_event(ctx)?;
+    let disclosed = trace
+        .events(event)
+        .any(|l| l.lineno > switched.lineno && l.get("name") == Some(OUTSIDE));
+    Ok((!disclosed).then(|| {
+        format!(
+            "the RGB fill `{rgb}` is outside CMYK and the picker never drew `{OUTSIDE}` to say \
+             the nearest colour was used. Trace: {}.",
+            session.trace_path().display()
         )
     }))
+}
+
+/// The `fill=r,g,b` bytes of a `paint-shown` line.
+fn fill_of(line: &str) -> Option<[u8; 3]> {
+    let value = line
+        .split_whitespace()
+        .find_map(|w| w.strip_prefix("fill="))?;
+    let mut parts = value.split(',').map(|v| v.parse::<u8>().ok());
+    Some([parts.next()??, parts.next()??, parts.next()??])
 }
 
 /// The last `paint-shown` line after trace line `mark`, or a token every

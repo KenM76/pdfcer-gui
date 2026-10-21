@@ -34,11 +34,17 @@ one (O321).
     back as CMYK.
   - Narrowing CMYK to RGB for display would make the first edit rewrite the
     colour as RGB — a silent change of colour space.
-- **Switching tabs converts by ISO 32000-2 §10.4.2's plain formulas.**
-  - CMYK→RGB is `1 − min(1, c + k)`.
-  - RGB→CMYK takes full undercolour removal.
-  - These seed the new tab as a starting position. They are not a press
-    simulation.
+- **Switching tabs keeps the colour pdfcer draws.**
+  - Into CMYK by `pdfcer_core::color::srgb_to_cmyk`, the inverse of the
+    renderer's CMYK table; out of CMYK by `cmyk_to_srgb`; grey takes the
+    §10.4.2 luminance of the drawn RGB.
+  - §10.4.2's plain formulas are not used: they invert the naive forward
+    formula, not the calibrated one pdfcer renders with, so a switch visibly
+    darkened the colour.
+  - A colour CMYK cannot draw (`CmykFit::in_gamut` false) is seeded with the
+    nearest it can, and the picker says so under the numbers
+    (`{region}.outside-cmyk`) until the operator moves a number or leaves the
+    tab. Typed numbers are never flagged.
   - The swatch itself is drawn from `annot_author::Color::to_device_rgb`,
     the conversion the renderer uses, so it matches the page.
 - **Grey is entered as percent black**, so 100 % is solid black, matching how

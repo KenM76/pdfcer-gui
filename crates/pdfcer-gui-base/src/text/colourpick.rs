@@ -62,3 +62,9 @@ pub const fn percent() -> &'static str {
 pub const fn cmyk_on_screen() -> &'static str {
     "The swatch shows the ink as pdfcer draws it; the numbers are what is saved."
 }
+
+/// Under the CMYK numbers when they were seeded from a colour CMYK cannot draw.
+#[must_use]
+pub const fn outside_cmyk() -> &'static str {
+    "That colour is outside CMYK; the nearest CMYK colour is used."
+}

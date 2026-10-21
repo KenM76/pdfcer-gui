@@ -31,6 +31,12 @@ next `paint-shown` must say `fill_space=cmyk`. `paint-shown` is written from the
 re-modelled document, so it reports the space the file now stores, not the tab
 that was showing.
 
+The switch must keep the colour or say it cannot. Its `colour-switched` line
+carries `in_gamut`. When `true`, the CMYK re-read's `fill=` must be within one
+count of the RGB re-read's, since `paint-shown` reports the drawn RGB. When
+`false`, `properties.paint.fill.outside-cmyk` must have been drawn: the
+picker's line saying the nearest CMYK colour is used.
+
 ## Falsified
 
 - Leaves routed to the page verbs → both FAIL (width: no re-read; colour: no
