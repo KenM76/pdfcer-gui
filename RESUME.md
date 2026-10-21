@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**O319 parts 2–3 next (Ken's newest ask).** Part 1 is built and driven (`shrink_pictures_reaches_every_selected_picture`): *Make pictures smaller…* on the Format tab, the canvas object menu and the Objects-panel row menu, over every selected picture. Owed: Ctrl/Shift multi-select in the Objects tree (`panels::objects`; a right-click inside the selection must keep it, and rows need region names to drive), then an audit of every per-object command against the canvas menu, the tree menu and a multi-selection.
+**O319 part 3 next (Ken's newest ask).** Parts 1–2 are built and driven: *Make pictures smaller…* on the Format tab, the canvas object menu and the Objects-panel row menu over every selected picture (`shrink_pictures_reaches_every_selected_picture`), and Ctrl/Shift multi-select in the Objects tree with a right-click that keeps the selection (`objects_tree_gathers_rows_for_one_menu`). Owed: an audit of every per-object command against the canvas menu, the tree menu and a multi-selection.
 
 Ordered by what the operator reaches for, never by what arrived in the engine
 channel: a reply is an input to *how* a thing is built, never to *which*. Each

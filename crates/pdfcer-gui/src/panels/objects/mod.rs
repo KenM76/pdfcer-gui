@@ -7,6 +7,7 @@
 
 mod disagree;
 mod layered;
+mod rowclick;
 pub use pdfcer_gui_base::objectprovider as provider;
 #[cfg(test)]
 mod provider_node_rung_tests;
@@ -152,7 +153,7 @@ pub fn body(
     let mut toggle_object: Option<usize> = None;
     let mut toggle_part: Option<(usize, usize)> = None;
     let mut toggle_layer: Option<Option<pdfcer_core::object::ObjId>> = None;
-    let mut focus: Option<usize> = None;
+    let mut row_click: Option<rowclick::RowClick> = None;
     // The commands invoked from a row's context menu, collected across the
     // visible rows and returned. Not applied here — a panel raises intent.
     let mut tokens: Vec<HandlerToken> = Vec::new();
@@ -168,7 +169,7 @@ pub fn body(
     // CONTENT, which is what this tree lists. An annotation or a ce dimension
     // selected on the canvas leaves every row here unhighlighted, correctly —
     // none of these rows is that thing.
-    let focused = doc.selection.object_indices_on(page_index).first().copied();
+    let selected = doc.selection.object_indices_on(page_index);
     let expanded_objects = &tree.objects_expanded;
     let expanded_parts = &tree.parts_expanded;
 
@@ -337,7 +338,7 @@ pub fn body(
                                 ui.add_space(t::OBJECT_TREE_EXPANDER_WIDTH);
                             }
                             let mut resp = ui
-                                .selectable_label(focused == Some(index), label.as_str())
+                                .selectable_label(selected.contains(&index), label.as_str())
                                 .on_hover_text(t::objects_dock_row_tooltip());
                             // The long form, always — see the note above the
                             // match. `None` is unreachable for an object row
@@ -349,20 +350,17 @@ pub fn body(
                             } else if overflows {
                                 resp = resp.on_hover_text(full.as_str());
                             }
-                            if resp.clicked() {
-                                focus = Some(index);
+                            if crate::diag::enabled() {
+                                crate::diag::ui_rect_visible(
+                                    &format!("objects.row.{index}"),
+                                    resp.rect,
+                                    ui.clip_rect(),
+                                );
                             }
-                            // Right-click focuses the row FIRST, so the
-                            // menu is about the row the pointer is on rather
-                            // than about whichever row was last clicked.
-                            // Guarded on the row not already being focused
-                            // because `set_focus` is a TOGGLE — a bare
-                            // `focus = Some(index)` would make a right-click
-                            // on the focused row *un*focus it, and the
-                            // Properties panel would empty at the moment the
-                            // operator asked to look at it.
-                            if resp.secondary_clicked() && focused != Some(index) {
-                                focus = Some(index);
+                            // See `rowclick`: a right-click inside the
+                            // selection keeps it for the menu.
+                            if let Some(click) = rowclick::RowClick::read(&resp, index) {
+                                row_click = Some(click);
                             }
                             // Attached on every frame, not only on the frame
                             // of the click: `egui` draws an open popup until
@@ -444,31 +442,17 @@ pub fn body(
     if let Some(group) = toggle_layer {
         tree.toggle_layer(group);
     }
-    // A row click SELECTS.
-    //
-    // It must not write a panel-local focus the canvas neither writes nor
-    // reads: a second notion of *"the thing I am working on"* is what makes
-    // the Tool tab fail to follow the object the operator picked. Both ends
-    // write the same thing — a row click sets the canvas selection, and the
-    // canvas selection is what the Properties panel describes — so neither can
-    // disagree with the other.
-    //
-    // The toggle matters: clicking the already-selected row deselects, which
-    // is what clicking a selected item does in every list in every
-    // application, and it makes a row click its own undo.
-    if let Some(index) = focus {
-        let already = doc
-            .selection
-            .object_indices_on(page_index)
-            .first()
-            .copied()
-            .is_some_and(|selected| selected == index);
-        actions.push(Action::Selection(
-            crate::app::actions::selecting::SelectionAction::SelectObject {
-                page: page_index,
-                object: (!already).then_some(crate::canvas::target::TargetId::Object(index as u64)),
-            },
-        ));
+    // A row click SELECTS, through `doc.selection` — the one notion of what
+    // is being worked on, which the canvas reads too. See `rowclick`.
+    if let Some(click) = row_click {
+        rowclick::apply(
+            click,
+            page_index,
+            &rows,
+            &selected,
+            &mut tree.range_anchor,
+            actions,
+        );
     }
     tokens
 }

@@ -40,6 +40,14 @@ pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
                 doc.selection.clear();
             }
         },
+        SelectionAction::SetObjects { page, objects, add } => {
+            doc.selection.marquee(page, &objects, add);
+            trace_panel(doc, if add { "add" } else { "set" }, objects.len());
+        }
+        SelectionAction::RemoveObjects { page, objects } => {
+            doc.selection.marquee_remove(page, &objects);
+            trace_panel(doc, "remove", objects.len());
+        }
         SelectionAction::SelectAllOnPage => {
             let page = doc.view.page_index;
             // A large finite rect, never `Rect::EVERYTHING`.
@@ -80,4 +88,19 @@ pub(super) fn apply_action(doc: &mut OpenDoc, action: SelectionAction) {
             doc.selection.marquee(page, &hits, false);
         }
     }
+}
+
+/// What an Objects-panel multi-select did, for the driven checks.
+fn trace_panel(doc: &OpenDoc, op: &'static str, n: usize) {
+    use pdfcer_gui_base::selectionidentity::SelectionLevel;
+    let sel = doc.selection.len();
+    let level = match doc.selection.level() {
+        SelectionLevel::Object => "object",
+        SelectionLevel::Part => "part",
+        SelectionLevel::Node => "node",
+    };
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("objects-panel-selection op={op} n={n} sel={sel} level={level}")
+    });
 }

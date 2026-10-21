@@ -379,6 +379,10 @@ pub struct ObjectTreeUi {
     /// set from outside, and deleting it would delete the assertion with it.
     ///
     focus: Option<usize>,
+    /// The row a Shift+click range runs from: the last row clicked without
+    /// Shift. Not a selection — it names where a range starts, and resets with
+    /// the rest of this state on a page or revision change.
+    pub(crate) range_anchor: Option<usize>,
 }
 
 impl ObjectTreeUi {

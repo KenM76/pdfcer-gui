@@ -699,6 +699,24 @@ pub enum SelectionAction {
         /// which act it was performing when it only ever performs one.
         object: Option<crate::canvastarget::TargetId>,
     },
+    /// **Make these objects the selection, or add them to it** — the Objects
+    /// panel's Shift+click range (`add: false`) and Ctrl+click (`add: true`).
+    SetObjects {
+        /// The page the objects are on.
+        page: usize,
+        /// The objects, as paint-order targets.
+        objects: Vec<crate::canvastarget::TargetId>,
+        /// Add to the selection rather than replace it.
+        add: bool,
+    },
+    /// **Take these objects out of the selection** — Ctrl+click on a row
+    /// already selected.
+    RemoveObjects {
+        /// The page the objects are on.
+        page: usize,
+        /// The objects, as paint-order targets.
+        objects: Vec<crate::canvastarget::TargetId>,
+    },
 }
 /// The verbs whose subject is a form XObject — a drawing invoked by a page,
 /// possibly by many pages, possibly several times by one.
