@@ -12,6 +12,7 @@ use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
 use crate::dialogs::recompress::{Choices, Job, Recompressed};
 use crate::text::compact as t;
+use pdfcer_core::optimize::{DiscardObject, DiscardOptions};
 
 /// The window body's rect, for `ui-verify`.
 // ui-text-exempt: trace region name, never displayed
@@ -88,6 +89,7 @@ impl CompactDialog {
                 recompress: true,
                 broken: true,
                 destinations: false,
+                discard: DiscardOptions::none(),
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -268,6 +270,7 @@ impl CompactDialog {
         .fold(false, |any, (on, label, tip)| {
             ui.checkbox(on, label).on_hover_text(tip).changed() || any
         });
+        let toggled = discard_switches(ui, &mut c.discard) || toggled;
         if toggled {
             self.recompress = Recompress::Off;
             self.space = None;
@@ -291,6 +294,9 @@ impl CompactDialog {
                 if done.bytes.is_none() {
                     ui.small(t::recompress_no_gain());
                 } else {
+                    if done.not_smaller {
+                        ui.small(t::kept_not_smaller());
+                    }
                     if done.changed > 0 {
                         ui.small(t::recompressed(done.changed));
                     }
@@ -317,6 +323,27 @@ impl CompactDialog {
             _ => std::mem::take(&mut self.bytes),
         }
     }
+}
+
+/// One switch per class of document object the engine can discard and this
+/// window offers; whether any changed.
+fn discard_switches(ui: &mut Ui, discard: &mut DiscardOptions) -> bool {
+    let mut changed = false;
+    for class in DiscardObject::ALL {
+        let Some((label, tip)) = t::discard_toggle(class) else {
+            continue;
+        };
+        let mut on = discard.contains_object(class);
+        if ui.checkbox(&mut on, label).on_hover_text(tip).changed() {
+            *discard = if on {
+                discard.with_object(class)
+            } else {
+                discard.without_object(class)
+            };
+            changed = true;
+        }
+    }
+    changed
 }
 
 fn space_table(ui: &mut Ui, space: &Breakdown) {

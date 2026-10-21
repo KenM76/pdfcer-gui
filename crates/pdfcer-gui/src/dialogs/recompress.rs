@@ -5,16 +5,19 @@
 //! compacted copy, so the open document and its undo history are untouched.
 //! Recompressing re-encodes streams and rebuilds the structure (unused parts
 //! dropped, duplicates merged, the index packed); the clean-ups remove links,
-//! bookmarks and named destinations that go nowhere or that nothing uses. It
-//! answers the smaller file with what the plan left alone and what each step
-//! did. A signed copy proceeds: the compact window already states
+//! bookmarks and named destinations that go nowhere or that nothing uses; the
+//! discards remove whole classes of document object. It answers the smaller
+//! file, or a file no smaller that removes what was asked for, with what the
+//! plan left alone and what each step did. A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
 use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
-use pdfcer_core::optimize::{CleanupOptions, OptimizedFile, Preset, RebuildOptions, StreamAction};
+use pdfcer_core::optimize::{
+    CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, StreamAction,
+};
 use pdfcer_core::settings::Settings;
 
 use crate::app::settings::SettingsExt;
@@ -29,22 +32,27 @@ pub struct Choices {
     pub broken: bool,
     /// Remove named destinations nothing in the file names.
     pub destinations: bool,
+    /// The classes of document object removed; metadata kinds stay with
+    /// File ▸ Remove metadata.
+    pub discard: DiscardOptions,
 }
 
 impl Choices {
     /// Whether anything is asked for.
     #[must_use]
     pub const fn any(self) -> bool {
-        self.recompress || self.broken || self.destinations
+        self.recompress || self.broken || self.destinations || !self.discard.is_none()
     }
 }
 
 /// What optimizing the copy did.
 #[derive(Debug)]
 pub struct Recompressed {
-    /// The smaller file; `None` when the result was no smaller than the copy,
-    /// which is then kept.
+    /// The file to save; `None` when the result was no smaller than the copy
+    /// and removed nothing, so the copy is kept.
     pub bytes: Option<Vec<u8>>,
+    /// The file is no smaller than the copy and is kept for what it removes.
+    pub not_smaller: bool,
     /// Streams re-encoded.
     pub changed: usize,
     /// Why selected streams were left as stored, with how many each.
@@ -53,7 +61,7 @@ pub struct Recompressed {
     pub notes: Vec<String>,
     /// What the structure rebuild did, one sentence each.
     pub restructured: Vec<String>,
-    /// What the clean-ups removed, one sentence each.
+    /// What the clean-ups and discards removed, one sentence each.
     pub cleaned: Vec<String>,
 }
 
@@ -83,25 +91,31 @@ pub fn recompress(
         invalid_bookmarks: choices.broken,
         unreferenced_destinations: choices.destinations,
     };
+    preset.discard = choices.discard;
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
     let (file, report) = session
-        .save_optimized(&options, &preset.structure)
+        .save_optimized(&plan, &options, &preset.structure)
         .map_err(|e| e.to_string())?;
     let mut left = BTreeMap::new();
     for skipped in &plan.skipped {
         *left.entry(t::left_because(&skipped.reason)).or_insert(0) += 1;
     }
+    let (bytes, not_smaller) = match file {
+        OptimizedFile::Smaller(bytes) => (Some(bytes), false),
+        OptimizedFile::NotSmaller { bytes, .. } => (Some(bytes), true),
+        _ => (None, false),
+    };
+    let mut cleaned = t::cleaned(&plan.cleanup);
+    cleaned.extend(t::discarded(&plan.discard_objects));
     Ok(Recompressed {
-        bytes: match file {
-            OptimizedFile::Smaller(bytes) => Some(bytes),
-            _ => None,
-        },
+        bytes,
+        not_smaller,
         changed: plan.changes.len(),
         left,
         notes: plan.notes,
         restructured: report.as_ref().map(t::restructured).unwrap_or_default(),
-        cleaned: t::cleaned(&plan.cleanup),
+        cleaned,
     })
 }
 
@@ -153,11 +167,13 @@ impl Job {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pdfcer_core::optimize::DiscardObject;
 
     const ALL: Choices = Choices {
         recompress: true,
         broken: true,
         destinations: true,
+        discard: DiscardOptions::none(),
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -209,6 +225,43 @@ mod tests {
         };
         let done = recompress(&copy, &Settings::default(), kept).expect("optimizes");
         assert!(done.cleaned.is_empty(), "{done:?}");
+    }
+
+    /// A working bookmark goes only when every bookmark is asked to, and the
+    /// copy saved then has no bookmark list, even if it is no smaller.
+    #[test]
+    fn all_bookmarks_are_removed_only_when_asked() {
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 5 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
+            "<< /Length 0 >>\nstream\n\nendstream".to_string(),
+            "<< /Type /Outlines /First 6 0 R /Last 6 0 R /Count 1 >>".to_string(),
+            "<< /Title (Here) /Parent 5 0 R /Dest [3 0 R /Fit] >>".to_string(),
+        ]);
+        let none = Choices {
+            recompress: false,
+            ..ALL
+        };
+        let kept = recompress(&copy, &Settings::default(), none).expect("optimizes");
+        assert!(kept.cleaned.is_empty(), "{kept:?}");
+        let asked = Choices {
+            discard: DiscardOptions::none().with_object(DiscardObject::Bookmarks),
+            ..none
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned
+                .iter()
+                .any(|l| l.starts_with("Bookmarks removed")),
+            "{done:?}"
+        );
+        let bytes = done.bytes.expect("the removal is written");
+        let again = recompress(&bytes, &Settings::default(), asked).expect("optimizes");
+        assert!(
+            again.cleaned.is_empty(),
+            "the bookmarks are gone: {again:?}"
+        );
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {

@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/compact.md`.
 
-use pdfcer_core::optimize::{CleanupPlan, RebuildReport, SkipReason};
+use pdfcer_core::optimize::{CleanupPlan, DiscardObject, ObjectDiscard, RebuildReport, SkipReason};
 use pdfcer_core::space_audit::SpaceCategory;
 
 /// The window's title bar.
@@ -135,6 +135,60 @@ pub const fn destinations_toggle() -> &'static str {
 #[must_use]
 pub const fn destinations_tooltip() -> &'static str {
     "Named places (named destinations) that no link or bookmark in this file points to. A link from another file or a web page to one of them stops working, which is why this is off unless you turn it on. A file with scripts is left alone, since a script can name a place."
+}
+
+/// The switch that removes one class of document object, and its hover;
+/// `None` for a class this window does not offer.
+#[must_use]
+pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'static str)> {
+    Some(match object {
+        DiscardObject::Bookmarks => (
+            "Remove all bookmarks",
+            "Removes the whole bookmark list, working bookmarks included. The pages are not changed, and links on the pages keep working.",
+        ),
+        DiscardObject::Tags => (
+            "Remove tags",
+            "Removes the structure that screen readers, reflow and PDF/UA rely on. The pages look the same, but the copy is no longer an accessible (tagged) PDF.",
+        ),
+        DiscardObject::PrintSettings => (
+            "Remove print settings",
+            "Removes the page scaling, two-sided printing, paper tray, page range and copy count stored in the file; a reader then prints with its own defaults.",
+        ),
+        DiscardObject::AlternateImages => (
+            "Remove alternate images",
+            "Removes the extra versions some pictures carry, such as a high-resolution one for printing, keeping the one shown on screen. A picture on a layer keeps them.",
+        ),
+        _ => return None,
+    })
+}
+
+/// What the document-object removals took, one sentence per class.
+#[must_use]
+pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
+    DiscardObject::ALL
+        .into_iter()
+        .filter_map(|class| {
+            let of: Vec<&ObjectDiscard> = objects.iter().filter(|o| o.object == class).collect();
+            let bytes: u64 = of.iter().map(|o| o.bytes).sum();
+            let what = match class {
+                DiscardObject::Bookmarks => "Bookmarks".to_owned(),
+                DiscardObject::Tags => "Tags".to_owned(),
+                DiscardObject::PrintSettings => "Print settings".to_owned(),
+                DiscardObject::AlternateImages => {
+                    format!("Alternate images of {} picture(s)", of.len())
+                }
+                _ => return None,
+            };
+            (!of.is_empty()).then(|| format!("{what} removed, about {} KB.", bytes.div_ceil(1024)))
+        })
+        .collect()
+}
+
+/// Said when the copy is kept although it is no smaller, because it removes
+/// what was asked for.
+#[must_use]
+pub const fn kept_not_smaller() -> &'static str {
+    "The copy is no smaller, and is kept anyway because it removes what you asked for."
 }
 
 /// What the clean-ups removed, one sentence per kind; kinds with nothing
