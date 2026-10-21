@@ -91,6 +91,12 @@ impl ScriptedPointer {
         }
     }
 
+    /// A primary click at `at` with modifiers held, `mods` as the pointer
+    /// script spells them (`ctrl`, `shift`, `ctrl|shift`).
+    pub fn click_with(&self, session: &Session, at: WindowPoint, mods: &str) -> Result<TraceLine> {
+        self.send(session, &format!("click {} mods={mods}", xy(at)))
+    }
+
     /// A secondary (right) click.
     pub fn right_click(&self, session: &Session, at: WindowPoint) -> Result<TraceLine> {
         self.send(session, &format!("click {} btn=r", xy(at)))

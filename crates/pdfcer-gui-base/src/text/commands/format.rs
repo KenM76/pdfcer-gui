@@ -307,3 +307,14 @@ pub const fn format_replace_image() -> CommandText {
          that box.",
     )
 }
+
+/// `format.shrink_images`
+#[must_use]
+pub const fn format_shrink_images() -> CommandText {
+    CommandText::new(
+        "Make pictures smaller…",
+        "Lower the resolution of the selected pictures, store them more compactly or with \
+         fewer colours. Select several with Ctrl or Shift, on the page or in the Objects \
+         panel. One undo puts them back.",
+    )
+}

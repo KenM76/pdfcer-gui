@@ -28,6 +28,8 @@ const NODES_VISIBLE_WHEN: &str = "selection.nodes_shapeable"; // ui-text-exempt:
 /// The condition under which the **Image** group is drawn: one replaceable
 /// image object is selected, in a mode that edits content.
 const IMAGE_VISIBLE_WHEN: &str = "selection.image_replaceable"; // ui-text-exempt: a condition name, never displayed
+/// Pictures are selected that Make pictures smaller can rewrite.
+const SHRINK_VISIBLE_WHEN: &str = "selection.images_shrinkable"; // ui-text-exempt: a condition name, never displayed
 
 /// The Format tab.
 pub fn tab() -> Tab {
@@ -196,7 +198,10 @@ pub fn tab() -> Tab {
             group(
                 "image",
                 ribbon::group_format_image(),
-                [command("format.replace_image").shown_when(IMAGE_VISIBLE_WHEN)],
+                [
+                    command("format.replace_image").shown_when(IMAGE_VISIBLE_WHEN),
+                    command("format.shrink_images").shown_when(SHRINK_VISIBLE_WHEN),
+                ],
             ),
             group(
                 "selection",
@@ -310,6 +315,7 @@ mod tests {
         "format.segment_line",
         "format.segment_curve",
         "format.replace_image",
+        "format.shrink_images",
     ];
 
     /// Read on this tab: describe what is selected, and delete it where the
@@ -345,7 +351,12 @@ mod tests {
             assert!(
                 matches!(
                     visible_when.as_deref(),
-                    Some(FONT_VISIBLE_WHEN | NODES_VISIBLE_WHEN | IMAGE_VISIBLE_WHEN)
+                    Some(
+                        FONT_VISIBLE_WHEN
+                            | NODES_VISIBLE_WHEN
+                            | IMAGE_VISIBLE_WHEN
+                            | SHRINK_VISIBLE_WHEN
+                    )
                 ),
                 "`{id}` writes to the document but is shown in every mode. R9: an unavailable \
                  capability renders NOTHING. Greying is for something temporarily unavailable and \

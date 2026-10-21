@@ -153,7 +153,7 @@ pub fn switches(ui: &mut Ui, pictures: &mut Pictures) -> bool {
 }
 
 /// The resolution, format and quality rows, then [`colour_rows`].
-fn rows(ui: &mut Ui, p: &mut Pictures) {
+pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
     ui.label(t::resolution_label())
         .on_hover_text(t::resolution_tooltip());
     egui::ComboBox::from_id_salt("compact-pictures-ppi") // ui-text-exempt: an id, never displayed

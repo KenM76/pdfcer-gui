@@ -16,6 +16,7 @@ mod inform_delete;
 mod leaftransform;
 mod nodeshape;
 mod replaceimage;
+mod shrinkimages;
 mod textmerge;
 
 pub use pdfcer_gui_base::subactions::VectorAction;
@@ -690,6 +691,9 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             object,
             image,
         } => replaceimage::apply(doc, page, object, &image),
+        VectorAction::ShrinkImages { page, ids, patch } => {
+            shrinkimages::apply(doc, page, &ids, patch);
+        }
     }
     // A delete or a split renumbers what follows it, so a surviving selection would name
     // objects the operator never picked, and a second Delete would remove them.

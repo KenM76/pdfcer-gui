@@ -62,6 +62,19 @@ impl DialogsState {
         }
     }
 
+    /// Open Format ▸ Make pictures smaller on the pictures `ids` of
+    /// document `doc`, replacing a window open on an earlier selection.
+    pub fn open_shrink_images(
+        &mut self,
+        doc: u64,
+        page: usize,
+        ids: Vec<pdfcer_core::object::ObjId>,
+    ) {
+        self.shrink_images = Some(super::shrink_images::ShrinkImagesDialog::new(
+            doc, page, ids,
+        ));
+    }
+
     /// Open File ▸ Remove OCR text. `false` when the document holds no pdfcer
     /// OCR layer, so the caller sends the unfiltered removal whose refusal
     /// says so.

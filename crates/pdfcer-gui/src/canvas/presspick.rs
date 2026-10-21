@@ -107,8 +107,8 @@ pub(super) fn at_press(
     //    row makes: it is a one-shot the operator armed deliberately from the
     //    ribbon, and it is spent on the next press.
     //
-    // And `Shift` declines, because a Shift-press is the *extend* gesture and
-    // the click path owns it. Selecting on press would replace the selection the
+    // And a modified press (`shift` is Shift or Ctrl, the click's toggle)
+    // declines, because it is the *extend* gesture and the click path owns it. Selecting on press would replace the selection the
     // operator was adding to — the same mid-gesture loss as case 2, arrived at
     // from the other direction.
     if press_selects(ctx, response, active_tool, caps, shift)

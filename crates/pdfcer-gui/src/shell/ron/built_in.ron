@@ -652,6 +652,10 @@
                             id: "format.replace_image",
                             visible_when: "selection.image_replaceable",
                         ),
+                        Command(
+                            id: "format.shrink_images",
+                            visible_when: "selection.images_shrinkable",
+                        ),
                     ],
                 ),
                 (
@@ -791,6 +795,7 @@
                     visible_when: "selection.text_split_offered",
                 ),
                 Command(id: "format.replace_image", visible_when: "selection.image_replaceable"),
+                Command(id: "format.shrink_images", visible_when: "selection.images_shrinkable"),
                 Command(id: "edit.bring_to_front", visible_when: "selection.objects_restackable"),
                 Command(id: "edit.bring_forward", visible_when: "selection.objects_restackable"),
                 Command(id: "edit.send_backward", visible_when: "selection.objects_restackable"),
@@ -910,6 +915,7 @@
             context: "objects.row",
             items: [
                 Command(id: "file.properties"),
+                Command(id: "format.shrink_images", visible_when: "selection.images_shrinkable"),
             ],
         ),
         (

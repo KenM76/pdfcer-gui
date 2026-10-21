@@ -818,4 +818,16 @@ pub enum VectorAction {
         /// The imported raster, shared rather than copied through the queue.
         image: std::sync::Arc<pdfcer_core::image_import::ImportedImage>,
     },
+    /// **Format ▸ Make pictures smaller** — rewrite the image XObjects
+    /// `ids` with `patch`, through the engine's in-document optimize: one
+    /// undo entry, `CommandKind::Optimize`. Every placement of a picture
+    /// changes; object indices do not, so the selection stands.
+    ShrinkImages {
+        /// The page the first picture was selected on.
+        page: usize,
+        /// The pictures, each once.
+        ids: Vec<pdfcer_core::object::ObjId>,
+        /// What is done to them; already accepted by `ImagePatch::validate`.
+        patch: pdfcer_core::optimize::ImagePatch,
+    },
 }

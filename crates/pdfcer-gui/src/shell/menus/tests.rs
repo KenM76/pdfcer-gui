@@ -360,6 +360,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.merge_text_runs",
                 "format.split_text_lines",
                 "format.replace_image",
+                "format.shrink_images",
                 "edit.bring_to_front",
                 "edit.bring_forward",
                 "edit.send_backward",
@@ -413,7 +414,10 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.delete",
             ][..],
         ),
-        (OBJECTS_ROW, &["file.properties"][..]),
+        (
+            OBJECTS_ROW,
+            &["file.properties", "format.shrink_images"][..],
+        ),
     ] {
         let menu = menus.get(context).expect("defined");
         let ids: Vec<&str> = menu.command_ids().collect();

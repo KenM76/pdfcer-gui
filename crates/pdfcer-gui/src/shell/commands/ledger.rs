@@ -419,11 +419,12 @@ fn registration_succeeds_and_registers_every_command() {
     // 235 → 236: `edit.paragraphs_page`, Edit ▸ Content.
     // 236 → 237: `edit.paragraph_here`, Edit ▸ Content.
     // 237 → 238: `edit.word_gap`, Edit ▸ Content.
+    // 238 → 239: `format.shrink_images`, Format ▸ Image.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     assert_eq!(
         registry().len(),
-        238 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        239 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
     );
 }
 
@@ -851,10 +852,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 204 → 205: `edit.paragraphs_page` names `paragraphs`, shared.
     // 205 → 206: `edit.paragraph_here` names `paragraphs`, shared.
     // 206 → 207: `edit.word_gap` names `settings`, shared with `file.settings`.
+    // 207 → 208: `format.shrink_images` names `save-compact`, shared.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     assert_eq!(
         named,
-        207 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        208 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

@@ -446,6 +446,13 @@ pub(super) fn band() -> Vec<Command> {
         command("format.replace_image", t::format_replace_image(), 846)
             .with_icon("replace-image")
             .enabled_when(crate::shell::menus::IMAGE_REPLACEABLE),
+        // Format ▸ Image, the canvas object menu and the Objects panel's
+        // row menu, routed by `app::dispatch::shrinkimages`. Shares
+        // `save-compact`: it is the compacted copy's picture option, aimed
+        // at the selection.
+        command("format.shrink_images", t::format_shrink_images(), 847)
+            .with_icon("save-compact")
+            .enabled_when(crate::shell::menus::IMAGES_SHRINKABLE),
     ]
 }
 

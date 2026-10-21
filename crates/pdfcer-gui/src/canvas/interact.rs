@@ -240,7 +240,9 @@ pub(super) fn interact(
         active_tool,
         caps,
         *pick,
-        shift,
+        // The click's own modifier: a press that replaced the selection would
+        // leave the click's toggle to take the object straight back out.
+        shift || ctrl,
     );
 
     let press = crate::canvas::pressing::look(

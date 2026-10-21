@@ -168,6 +168,58 @@ pub fn done(resized: usize, jpeg: usize, converted: usize) -> Vec<String> {
     lines
 }
 
+/// Format ▸ Make pictures smaller: the window's title.
+#[must_use]
+pub const fn shrink_title() -> &'static str {
+    "Make pictures smaller"
+}
+
+/// The window's opening line, naming how many pictures it changes.
+#[must_use]
+pub fn shrink_intro(pictures: usize) -> String {
+    if pictures == 1 {
+        "Change the selected picture:".to_owned()
+    } else {
+        format!("Change the {pictures} selected pictures:")
+    }
+}
+
+/// Said before Apply: a picture is one stored object, however often drawn.
+#[must_use]
+pub const fn shrink_everywhere() -> &'static str {
+    "A picture drawn in more than one place changes everywhere it is drawn. Undo puts it back."
+}
+
+/// The button that applies.
+#[must_use]
+pub const fn shrink_button() -> &'static str {
+    "Apply"
+}
+
+/// The button that closes without changing anything.
+#[must_use]
+pub const fn shrink_cancel() -> &'static str {
+    "Cancel"
+}
+
+/// Reported after a change the engine calls lossy.
+#[must_use]
+pub const fn shrink_lossy() -> &'static str {
+    "The pictures lost detail. Undo puts them back."
+}
+
+/// Reported when the plan changed no picture.
+#[must_use]
+pub const fn shrink_nothing() -> &'static str {
+    "No picture was changed."
+}
+
+/// Pictures left as stored, for one reason.
+#[must_use]
+pub fn shrink_left(reason: &str, count: usize) -> String {
+    format!("{count} picture(s) left as they were: {reason}.")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

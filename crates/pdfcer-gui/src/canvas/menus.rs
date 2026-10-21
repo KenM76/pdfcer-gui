@@ -576,6 +576,14 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::TEXT_SPLIT_ALLOWED, split.allowed && !refused),
         ]);
     }
+    // The selection this click made decides whether Make pictures smaller is
+    // drawn, as it does for Move to layer below.
+    overrides.push((
+        menus::IMAGES_SHRINKABLE,
+        !reading
+            && matches!(chosen, CanvasMenu::Object)
+            && crate::app::dispatch::shrinkimages::shrinkable_images(doc, selection).is_some(),
+    ));
     // The selection this click made decides whether Move to layer is drawn.
     overrides.push((
         menus::LAYER_ASSIGNABLE,

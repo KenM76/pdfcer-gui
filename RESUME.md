@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**O319 first (Ken's newest ask).** Picture compression and the other per-object commands from a right-click on the canvas, a right-click in the Objects tree, and a Ctrl/Shift multi-selection. The engine already has the verb: `EditSession::plan_optimize` with a `Rule` whose `Selector::ids` lists the pictures' image XObjects and `StreamAction::Image(patch)`, then `apply_optimize` as one undo step. Reuse `dialogs::compact_images`' rows; a shared XObject changes every placement, which the window must say. The compacted-copy fold (`a_compacted_copy_can_make_pictures_smaller`) is built and driven.
+**O319 parts 2–3 next (Ken's newest ask).** Part 1 is built and driven (`shrink_pictures_reaches_every_selected_picture`): *Make pictures smaller…* on the Format tab, the canvas object menu and the Objects-panel row menu, over every selected picture. Owed: Ctrl/Shift multi-select in the Objects tree (`panels::objects`; a right-click inside the selection must keep it, and rows need region names to drive), then an audit of every per-object command against the canvas menu, the tree menu and a multi-selection.
 
 Ordered by what the operator reaches for, never by what arrived in the engine
 channel: a reply is an input to *how* a thing is built, never to *which*. Each

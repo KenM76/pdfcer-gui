@@ -9,7 +9,7 @@
 //! discards remove whole classes of document object. It answers the smaller
 //! file, or a file no smaller that removes what was asked for, with what the
 //! plan left alone and what each step did. Pictures are changed only when
-//! [`Choices::pictures`] is on, by one Images rule over the preset; the
+//! [`Choices::pictures`] is on, through `OptimizeSettings::images`; the
 //! preset's own stream action stays, so everything else is still recompressed.
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
@@ -19,11 +19,9 @@ use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
 use pdfcer_core::optimize::{
-    CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, Rule, Selector,
-    StreamAction,
+    CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, StreamAction,
 };
 use pdfcer_core::settings::Settings;
-use pdfcer_core::space_audit::SpaceCategory;
 
 use crate::app::settings::SettingsExt;
 use crate::dialogs::compact_images::{Pictures, Tally};
@@ -109,12 +107,7 @@ pub fn recompress(
     preset.discard = choices.discard;
     if let Some(patch) = choices.pictures.patch() {
         patch.validate()?;
-        let mut select = Selector::new();
-        select.categories = vec![SpaceCategory::Images];
-        preset.rules.push(Rule {
-            select,
-            action: StreamAction::Image(patch),
-        });
+        preset.images = patch;
     }
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;

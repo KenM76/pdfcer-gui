@@ -83,6 +83,7 @@ mod replacetext;
 pub(crate) mod routes;
 pub(crate) mod security;
 pub(crate) mod settings;
+pub(crate) mod shrinkimages;
 /// **The three commands whose subject is a text caret** — the two that arm it
 /// and the reflow that acts on the paragraph it is in. All three live there so
 /// the subject lives in one place.
@@ -976,6 +977,7 @@ impl PdfcerApp {
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             id if nodeshape::claims(id) => nodeshape::dispatch(self, id, actions),
             "format.replace_image" => replaceimage::dispatch(self, actions),
+            "format.shrink_images" => shrinkimages::dispatch(self),
             "edit.align_left"
             | "edit.align_right"
             | "edit.align_top"

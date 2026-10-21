@@ -53,6 +53,12 @@ impl Refusal for pdfcer_core::edit::EditError {
     }
 }
 
+impl Refusal for pdfcer_core::optimize::OptimizeError {
+    fn encrypted(&self) -> bool {
+        matches!(self, Self::Refused(why) if why.iter().any(|r| matches!(r, pdfcer_core::optimize::Refusal::Encrypted)))
+    }
+}
+
 impl Refusal for pdfcer_core::text_edit::EditError {
     fn encrypted(&self) -> bool {
         matches!(self, Self::Encrypted)

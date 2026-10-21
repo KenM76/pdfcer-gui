@@ -148,6 +148,11 @@ pub const NODES_SHAPEABLE: &str = "selection.nodes_shapeable";
 /// Format-group and canvas-menu `shown_when`.
 pub const IMAGE_REPLACEABLE: &str = "selection.image_replaceable";
 
+/// **Pictures are selected that Format ▸ Make pictures smaller can
+/// rewrite**, in a mode that edits content: one or many, on the canvas or
+/// in the Objects panel (`app::dispatch::shrinkimages::shrinkable_images`).
+pub const IMAGES_SHRINKABLE: &str = "selection.images_shrinkable";
+
 /// Right-click on a panel tab in the dock.
 ///
 /// Defined but not attachable from this crate — see the module header.
@@ -363,6 +368,7 @@ pub fn built_in() -> Menus {
             Item::command("format.merge_text_runs").shown_when(TEXT_MERGE_OFFERED),
             Item::command("format.split_text_lines").shown_when(TEXT_SPLIT_OFFERED),
             Item::command("format.replace_image").shown_when(IMAGE_REPLACEABLE),
+            Item::command("format.shrink_images").shown_when(IMAGES_SHRINKABLE),
             Item::command("edit.bring_to_front").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.bring_forward").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.send_backward").shown_when(OBJECTS_RESTACKABLE),
@@ -783,7 +789,10 @@ pub fn built_in() -> Menus {
             Item::command("view.move_to_new_window"),
             Item::command("view.move_to_window"),
         ]))
-        .with(Menu::new(OBJECTS_ROW).with_items([Item::command("file.properties")]))
+        .with(Menu::new(OBJECTS_ROW).with_items([
+            Item::command("file.properties"),
+            Item::command("format.shrink_images").shown_when(IMAGES_SHRINKABLE),
+        ]))
         // -------------------------------------------------------------------
         // pages.row — a page tile in the Pages panel.
         //

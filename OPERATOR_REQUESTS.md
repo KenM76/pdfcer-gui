@@ -610,11 +610,13 @@ His words: *"with show and hide layers, if I click to show or hide a layer that 
 
 **Where it stands.** On a page whose objects are on layers, the Objects panel lists them under one folding heading per layer (name, hidden or not, count), with "Not on a layer" last; a page without layers keeps the flat list. Tested by the three `panels::objects::layered` tests, falsified. Driving waits for the PC.
 
-## O319 — **FILED** — picture compression, and object commands generally, from a right-click on the object, in the Objects tree, and on a Ctrl/Shift multi-selection
+## O319 — **PART 1 BUILT AND DRIVEN; parts 2–3 open** — picture compression, and object commands generally, from a right-click on the object, in the Objects tree, and on a Ctrl/Shift multi-selection
 
 His words: *"Don't forget to make these new compression options available by right clicking on an image like a user would expect to do or right clicking an image in the object tree or being able to use the normal control keys to select a bunch of images at once before right clicking. And don't forget that users expect this type of behaviour consistently for a lot of different commands and options for objects that would be available this way in a modern UI."*
 
 **Scope, whole behaviour.** (1) The picture options of *Save a compacted copy* (resolution, store as, JPEG quality, colour) reachable from a right-click on a picture on the canvas and on a picture row in the Objects tree, applied to that picture. (2) Ctrl-click and Shift-click build a multi-selection in both places, and the right-click applies to all of it. (3) The same holds for the other per-object commands a modern editor puts on an object's context menu: an audit of every object command against the canvas menu, the tree menu and the multi-selection is part of the row.
+
+**Part 1 built and driven.** *Make pictures smaller…* is on the Format tab's image group, on the canvas object menu and on the Objects-panel row menu; it opens the compact window's picture rows on every picture in the selection (a mixed selection offers it for the pictures in it) and applies them as one undoable edit, saying first that a picture drawn in several places changes in all of them. Ctrl+click now adds an unselected object on the canvas: the press used to replace the selection with it and the click then toggled it back out, leaving nothing selected. Driven by `shrink_pictures_reaches_every_selected_picture` (Ctrl+click two pictures; the Format tab and a right-click each open on both; Apply rewrites both). **Open:** Ctrl/Shift multi-select in the Objects tree, and the audit of the other object commands.
 
 ## O307–O315 — nine asks in one message, FILED BEFORE ANY WORK
 

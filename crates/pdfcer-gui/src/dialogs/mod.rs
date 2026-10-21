@@ -114,6 +114,8 @@ mod page_scope;
 pub mod remove_metadata;
 /// File ▸ Remove OCR text: which pages, and which recogniser's text.
 pub mod remove_ocr;
+/// Format ▸ Make pictures smaller.
+pub mod shrink_images;
 /// **The question that comes before pdfcer lets go of the file** —
 /// `OPERATOR_REQUESTS.md` O122. Three shapes of one window: save-then-hand-over,
 /// confirm-and-hand-over, and the refusal for a document that has never been
@@ -215,6 +217,9 @@ pub struct DialogsState {
     /// The Remove-OCR-text window. Document-scoped: it lists the layers the
     /// open document held when it opened.
     remove_ocr: Option<remove_ocr::RemoveOcrDialog>,
+    /// The Make-pictures-smaller window. Document-scoped: it names the
+    /// open document's pictures by object id.
+    shrink_images: Option<shrink_images::ShrinkImagesDialog>,
     /// The Straighten-scans window. Document-scoped: its run belongs to the
     /// document it was opened on, and waits while another is on screen.
     deskew: Option<deskew::DeskewDialog>,
@@ -902,6 +907,14 @@ impl DialogsState {
             self.remove_ocr = None;
         }
         if self
+            .shrink_images
+            .as_mut()
+            .map(|d| d.show(ctx, doc.serial, actions))
+            == Some(false)
+        {
+            self.shrink_images = None;
+        }
+        if self
             .deskew
             .as_mut()
             .map(|d| d.show(ctx, doc.serial, actions, prefs))
@@ -1274,6 +1287,7 @@ impl DialogsState {
         self.offpage = None;
         self.compact = None;
         self.remove_ocr = None;
+        self.shrink_images = None;
         self.deskew = None;
         self.remove_metadata = None;
         self.hand_sign = None;

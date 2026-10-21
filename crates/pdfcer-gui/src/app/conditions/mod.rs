@@ -603,6 +603,13 @@ impl PdfcerApp {
             {
                 set.set(crate::shell::menus::IMAGE_REPLACEABLE);
             }
+            // Format ▸ Make pictures smaller, on the same test.
+            if self.capabilities().edit_content
+                && crate::app::dispatch::shrinkimages::shrinkable_images(doc, &doc.selection)
+                    .is_some()
+            {
+                set.set(crate::shell::menus::IMAGES_SHRINKABLE);
+            }
             // `selection.bounds` is NOT `selection.any`, and the gap
             // between them is a real state rather than a defensive check.
             //
