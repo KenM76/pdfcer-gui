@@ -182,6 +182,10 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Remove 3D models",
             "Removes 3D models embedded in the pages, and the links that change their view. The area where a model was shown is left empty.",
         ),
+        DiscardObject::FlattenLayers => (
+            "Merge visible layers into the page",
+            "Every layer shown when the file opens stops being a layer: what it draws stays on the page and always shows and prints, and the layer leaves the Layers list. Hidden layers stay layers.",
+        ),
         _ => return None,
     })
 }
@@ -204,6 +208,9 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
         .filter_map(|class| {
             let of: Vec<&ObjectDiscard> = objects.iter().filter(|o| o.object == class).collect();
             let bytes: u64 = of.iter().map(|o| o.bytes).sum();
+            if class == DiscardObject::FlattenLayers {
+                return (!of.is_empty()).then(|| merged_layers(&of));
+            }
             let what = match class {
                 DiscardObject::Bookmarks => "Bookmarks".to_owned(),
                 DiscardObject::Tags => "Tags".to_owned(),
@@ -228,6 +235,24 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
             (!of.is_empty()).then(|| format!("{what} removed, about {} KB.", bytes.div_ceil(1024)))
         })
         .collect()
+}
+
+/// The layers merged into the page, by name; the engine words a layer's
+/// location as `layer 9 0: Notes`.
+fn merged_layers(of: &[&ObjectDiscard]) -> String {
+    let names: Vec<&str> = of
+        .iter()
+        .map(|o| {
+            o.location
+                .split_once(": ")
+                .map_or(o.location.as_str(), |(_, n)| n)
+        })
+        .collect();
+    format!(
+        "{} layer(s) merged into the page: {}.",
+        names.len(),
+        names.join(", ")
+    )
 }
 
 /// Said when the copy is kept although it is no smaller, because it removes

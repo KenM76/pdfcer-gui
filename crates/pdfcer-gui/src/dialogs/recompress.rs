@@ -376,6 +376,39 @@ endstream".to_string(),
         assert!(!text.contains("Filled-In"), "the field goes");
     }
 
+    /// Merging visible layers names the shown layer and leaves the hidden one.
+    #[test]
+    fn a_visible_layer_is_merged_and_a_hidden_one_stays() {
+        let content = "/OC /L1 BDC 0 0 m 10 10 l S EMC /OC /L2 BDC 1 1 m 9 9 l S EMC";
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R              /OCProperties << /OCGs [5 0 R 6 0 R] /D << /OFF [6 0 R] >> >> >>"
+                .to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R              /Resources << /Properties << /L1 5 0 R /L2 6 0 R >> >> >>"
+                .to_string(),
+            format!("<< /Length {} >>
+stream
+{content}
+endstream", content.len()),
+            "<< /Type /OCG /Name (Notes) >>".to_string(),
+            "<< /Type /OCG /Name (Draft) >>".to_string(),
+        ]);
+        let asked = Choices {
+            recompress: false,
+            discard: DiscardOptions::none().with_object(DiscardObject::FlattenLayers),
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned
+                .iter()
+                .any(|l| l == "1 layer(s) merged into the page: Notes."),
+            "{done:?}"
+        );
+        let text = String::from_utf8_lossy(&done.bytes.expect("the merge is written")).into_owned();
+        assert!(text.contains("(Draft)"), "the hidden layer stays");
+    }
+
     fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();
