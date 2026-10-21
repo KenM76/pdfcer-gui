@@ -4,7 +4,9 @@
 //! A draft on existing text is a text subject for the Font group exactly as a
 //! sweep is, so it enables the group and its tab. Bold, Italic, Underline and
 //! Strikethrough render pressed when the letter they would act on carries the
-//! axis or line; a pending style for what is typed next flips that.
+//! axis or line, or, over a selection, when every letter in it does, as a
+//! word processor shows a mixed selection unpressed; a pending style for what
+//! is typed next flips that.
 //!
 //! The weight read recognises the page's blocks, so it is cached by position
 //! and edit epoch rather than paid every frame.
@@ -19,10 +21,10 @@ use crate::canvas::textedit::{self, Anchor, typing};
 
 const CACHE_KEY: &str = "pdfcer-textformat-weight-cache"; // ui-text-exempt: internal memory id, never displayed
 
-/// The position whose weight was last read, and what it read.
+/// The position, or range, whose weight was last read, and what it read.
 #[derive(Clone)]
 struct Cached {
-    key: (usize, TextPosition, u64),
+    key: (usize, TextPosition, Option<TextPosition>, u64),
     weight: Option<Weight>,
 }
 
@@ -33,17 +35,27 @@ impl crate::app::PdfcerApp {
             return;
         };
         let draft = textedit::read(ctx);
-        let (page, at, caret) = match &draft {
+        let (page, at, to, caret) = match &draft {
             Some(d) => {
-                let first = textedit::caret::range(d.mark, d.caret)
-                    .map_or(d.caret.saturating_sub(1), |(a, _)| a);
-                let byte = d
-                    .text
-                    .char_indices()
-                    .nth(first)
-                    .map_or(d.text.len(), |(b, _)| b);
+                let chosen = textedit::caret::range(d.mark, d.caret);
+                let first = chosen.map_or(d.caret.saturating_sub(1), |(a, _)| a);
+                let byte_of = |n: usize| {
+                    d.text
+                        .char_indices()
+                        .nth(n)
+                        .map_or(d.text.len(), |(b, _)| b)
+                };
+                let byte = byte_of(first);
+                let mut to = None;
                 let at = match &d.anchor {
-                    Anchor::Run { run, .. } => TextPosition::new(*run, byte),
+                    Anchor::Run { run, original } => {
+                        // An unedited draft is the run's text, so a
+                        // selection in it is a byte range in the run.
+                        if let Some((_, end)) = chosen.filter(|_| d.text == *original) {
+                            to = Some(TextPosition::new(*run, byte_of(end)));
+                        }
+                        TextPosition::new(*run, byte)
+                    }
                     // An edited paragraph reads the look it was opened in;
                     // a press says why it cannot restyle it yet.
                     Anchor::Block {
@@ -59,7 +71,7 @@ impl crate::app::PdfcerApp {
                 };
                 set.set("selection.text_runs");
                 set.set("selection.formattable");
-                (d.page, at, Some(d.caret))
+                (d.page, at, to, Some(d.caret))
             }
             None => match doc
                 .text_selection
@@ -67,13 +79,13 @@ impl crate::app::PdfcerApp {
                 .filter(|s| s.live(doc.edit_epoch) && !s.is_empty())
             {
                 Some(s) => {
-                    let (from, _) = pdfcer_gui_base::textselection::ordered(s.anchor(), s.focus());
-                    (s.page, from, None)
+                    let (from, to) = pdfcer_gui_base::textselection::ordered(s.anchor(), s.focus());
+                    (s.page, from, Some(to), None)
                 }
                 None => return,
             },
         };
-        let read = weight_cached(ctx, doc, page, at);
+        let read = weight_cached(ctx, doc, page, at, to);
         let pending = typing::read(ctx).zip(caret);
         let holds = |id: &str| pending.as_ref().is_some_and(|(t, c)| t.holds(id, *c));
         let bold = read.is_some_and(|w| w.bold.present()) != holds("format.bold");
@@ -94,22 +106,27 @@ impl crate::app::PdfcerApp {
     }
 }
 
-/// [`weight::at`], read once per position and edit.
+/// [`weight::at`], or [`weight::across`] a range, read once per range and
+/// edit.
 fn weight_cached(
     ctx: &egui::Context,
     doc: &OpenDoc,
     page: usize,
     at: TextPosition,
+    to: Option<TextPosition>,
 ) -> Option<Weight> {
     let id = egui::Id::new(CACHE_KEY);
-    let key = (page, at, doc.edit_epoch);
+    let key = (page, at, to, doc.edit_epoch);
     if let Some(hit) = ctx
         .data(|d| d.get_temp::<Cached>(id))
         .filter(|c| c.key == key)
     {
         return hit.weight;
     }
-    let weight = weight::at(doc, page, at);
+    let weight = match to {
+        Some(to) => weight::across(doc, page, at, to),
+        None => weight::at(doc, page, at),
+    };
     ctx.data_mut(|d| d.insert_temp(id, Cached { key, weight }));
     weight
 }

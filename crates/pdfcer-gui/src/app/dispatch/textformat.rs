@@ -371,12 +371,13 @@ fn byte_of(text: &str, chars: usize) -> usize {
         .map_or(text.len(), |(b, _)| b)
 }
 
-/// The weight of the text a press acts on: the first letter of a range or of
-/// the runs, the letter before a caret.
+/// The weight of the text a press acts on: what every letter of a range or
+/// of the runs shares, so a mixed selection is turned on, or the letter
+/// before a caret.
 fn read_weight(ctx: &egui::Context, doc: &OpenDoc, target: &Target) -> Option<weight::Weight> {
     let _ = ctx;
     match target {
-        Target::Range { page, from, .. } => weight::at(doc, *page, *from),
+        Target::Range { page, from, to, .. } => weight::across(doc, *page, *from, *to),
         Target::Caret { draft, run } => {
             let before = draft.caret.saturating_sub(1);
             weight::at(
@@ -385,10 +386,16 @@ fn read_weight(ctx: &egui::Context, doc: &OpenDoc, target: &Target) -> Option<we
                 TextPosition::new(*run, byte_of(&draft.text, before)),
             )
         }
-        Target::Runs { page, runs } => {
-            let run = *runs.first()?;
-            weight::at(doc, *page, TextPosition::new(run, 0))
-        }
+        Target::Runs { page, runs } => runs
+            .iter()
+            .filter_map(|&run| {
+                let whole = (
+                    TextPosition::new(run, 0),
+                    TextPosition::new(run, usize::MAX),
+                );
+                weight::across(doc, *page, whole.0, whole.1)
+            })
+            .reduce(weight::shared),
     }
 }
 
