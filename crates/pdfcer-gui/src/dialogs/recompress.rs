@@ -409,6 +409,53 @@ mod tests {
         assert_eq!(drawn.matches("10 10 l").count(), 50, "what it drew stays");
     }
 
+    /// Twenty grey strips stacked edge to edge become one image drawn once,
+    /// and the report names the page, the strips and the size.
+    #[test]
+    fn picture_strips_become_one_image() {
+        let strips = 20;
+        let names: String = (0..strips)
+            .map(|i| format!("/S{i} {} 0 R ", i + 5))
+            .collect();
+        let content: String = (0..strips)
+            .map(|i| format!("q 40 0 0 10 0 {} cm /S{i} Do Q\n", 190 - 10 * i))
+            .collect();
+        let mut bodies = vec![
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            format!(
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R /Resources << /XObject << {names}>> >> >>"
+            ),
+            format!(
+                "<< /Length {} >>\nstream\n{content}endstream",
+                content.len()
+            ),
+        ];
+        for i in 0..strips {
+            let row = char::from(b'A' + i as u8).to_string().repeat(32);
+            bodies.push(format!("<< /Type /XObject /Subtype /Image /Width 16 /Height 2 /ColorSpace /DeviceGray /BitsPerComponent 8 /Length 32 >>\nstream\n{row}\nendstream"));
+        }
+        let asked = Choices {
+            discard: DiscardOptions::none().with_object(DiscardObject::MergeImageFragments),
+            ..ALL
+        };
+        let done = recompress(&file(&bodies), &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned.iter().any(|l| l.starts_with(
+                "Picture strips merged: page 1, 20 strips into 1 image (16x40). About "
+            )),
+            "{done:?}"
+        );
+        let saved =
+            Document::from_bytes(done.bytes.expect("the merge is written")).expect("parses");
+        let pages = pdfcer_core::page_tree::pages(&saved).expect("a page tree");
+        let session = pdfcer_core::edit::EditSession::new(saved);
+        let drawn = pdfcer_core::content::ContentStream::from_page(&session.view(), &pages[0])
+            .expect("content decodes");
+        let drawn = String::from_utf8_lossy(&drawn.buf);
+        assert_eq!(drawn.matches(" Do").count(), 1, "one image drawn: {drawn}");
+    }
+
     fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();

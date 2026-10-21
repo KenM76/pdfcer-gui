@@ -190,6 +190,10 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Remove the search index",
             "Removes a ready-made full-text index some programs embed to search large files quickly. It holds a copy of the document's text; searching still works without it.",
         ),
+        DiscardObject::MergeImageFragments => (
+            "Merge picture strips into one image",
+            "Some programs store a picture as many thin strips, each its own image. Each such picture becomes one image that draws the same, and the faint lines some viewers show between the strips go. Pictures that are masked, on a layer or tagged stay as they are.",
+        ),
         _ => return None,
     })
 }
@@ -214,6 +218,9 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
             let bytes: u64 = of.iter().map(|o| o.bytes).sum();
             if class == DiscardObject::FlattenLayers {
                 return (!of.is_empty()).then(|| merged_layers(&of));
+            }
+            if class == DiscardObject::MergeImageFragments {
+                return (!of.is_empty()).then(|| merged_strips(&of, bytes));
             }
             let what = match class {
                 DiscardObject::Bookmarks => "Bookmarks".to_owned(),
@@ -257,6 +264,20 @@ fn merged_layers(of: &[&ObjectDiscard]) -> String {
         "{} layer(s) merged into the page: {}.",
         names.len(),
         names.join(", ")
+    )
+}
+
+/// The pictures whose strips were merged, page by page; the engine words a
+/// page as `page 1: 40 strips into 1 image (800x1100)`.
+fn merged_strips(of: &[&ObjectDiscard], bytes: u64) -> String {
+    let pages: Vec<String> = of
+        .iter()
+        .map(|o| o.location.replacen(": ", ", ", 1))
+        .collect();
+    format!(
+        "Picture strips merged: {}. About {} KB smaller.",
+        pages.join("; "),
+        bytes.div_ceil(1024)
     )
 }
 
