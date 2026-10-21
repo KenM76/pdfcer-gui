@@ -1,0 +1,34 @@
+# `ui-verify/checks/bilevel_pictures`
+
+`bilevel_pictures_store_as_ccitt_and_jbig2` — **Make pictures smaller stores a
+picture as black and white through CCITT Group 4 and through JBIG2, each
+reaching the engine as the encoder chosen.**
+
+## What it drives
+
+Opens `fixtures/two-photos.pdf` (two 400×400 grey noise pictures, PDF 1.7, so
+JBIG2's 1.4 floor is met) in Edit mode. For picture A with `ccitt`, then
+picture B with `jbig2`:
+
+1. Click the picture; press `ribbon.item.format.shrink_images`; require
+   `shrink-images-opened`.
+2. Press `compact.pictures.colour`, then `compact.pictures.colour.bilevel`.
+3. Press `compact.pictures.format`, then `compact.pictures.format.<encoder>`.
+4. Press `shrink-images.commit`; require
+   `images-shrunk changed=1 <encoder>=1 skipped=0`.
+
+## Why the counts prove the encoder
+
+`<encoder>=` is counted from the engine's plan (`Tally::exact`), one per
+picture rewritten with that `ImageEncode`. A dialog that dropped the choice
+stores the picture as it was (`ccitt=0`); one that sent the encoder without
+Black and white gets the picture skipped as not bilevel (`skipped=1`). Neither
+can produce the assertion.
+
+## What a failure means
+
+| arm | failure |
+|---|---|
+| opened | the Format tab route is missing |
+| press | a list or a choice was never drawn: the colour list, Black and white, or the encoder |
+| shrunk | Apply did not reach the engine, or the plan stored the picture another way |

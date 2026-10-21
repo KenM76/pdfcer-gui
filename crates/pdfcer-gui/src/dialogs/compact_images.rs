@@ -5,7 +5,9 @@
 //! `None` while the switch is off. [`switches`] draws the choices and greys
 //! the pairings `ImagePatch::validate` refuses (JPEG with black and white or
 //! fewer colours), each saying why on hover, so a refused patch is never
-//! built. [`Tally`] counts what a plan did to pictures for the report.
+//! built. It also greys CCITT Group 4 and JBIG2 beside greyscale or fewer colours: the
+//! engine accepts that patch but every picture it reaches is skipped, since
+//! both store 1-bit pictures only. [`Tally`] counts what a plan did to pictures for the report.
 
 use egui::Ui;
 use pdfcer_core::optimize::{ImageConvert, ImageEncode, ImagePatch, OptimizePlan, QUALITY_LEVELS};
@@ -18,6 +20,10 @@ pub const REGION_FOLD: &str = "compact.pictures";
 pub const REGION_SWITCH: &str = "compact.pictures.on";
 /// The full-size line saying the copy's pictures lose detail.
 pub const REGION_LOSSY: &str = "compact.pictures.lossy";
+/// The storage list; each choice in it is `<this>.<Format::key>`.
+pub const REGION_FORMAT: &str = "compact.pictures.format";
+/// The colour list; each choice in it is `<this>.<colour_key>`.
+pub const REGION_COLOUR: &str = "compact.pictures.colour";
 
 /// The resolutions offered; `None` keeps every picture's size.
 const RESOLUTIONS: [Option<u16>; 6] = [None, Some(72), Some(96), Some(150), Some(200), Some(300)];
@@ -33,6 +39,50 @@ pub enum Format {
     Lossless,
     /// JPEG at [`Pictures::quality`].
     Jpeg,
+    /// LZW: exact, for workflows that expect it; refused under PDF/A.
+    Lzw,
+    /// Run length: exact, small for flat areas of one colour.
+    RunLength,
+    /// CCITT Group 4: exact, 1-bit pictures only; others are left as stored.
+    Ccitt,
+    /// JBIG2: exact, 1-bit pictures only, PDF 1.4 and later.
+    Jbig2,
+}
+
+impl Format {
+    /// Every choice, in the order the list shows them.
+    pub const ALL: [Self; 7] = [
+        Self::Keep,
+        Self::Lossless,
+        Self::Jpeg,
+        Self::Lzw,
+        Self::RunLength,
+        Self::Ccitt,
+        Self::Jbig2,
+    ];
+
+    /// The choice's name in a region, never displayed.
+    pub const fn key(self) -> &'static str {
+        match self {
+            Self::Keep => "keep",
+            Self::Lossless => "lossless",
+            Self::Jpeg => "jpeg",
+            Self::Lzw => "lzw",
+            Self::RunLength => "runlength",
+            Self::Ccitt => "ccitt",
+            Self::Jbig2 => "jbig2",
+        }
+    }
+}
+
+/// A colour choice's name in a region, never displayed.
+pub const fn colour_key(colour: ImageConvert) -> &'static str {
+    match colour {
+        ImageConvert::Gray => "gray",
+        ImageConvert::Bilevel => "bilevel",
+        ImageConvert::Indexed => "indexed",
+        _ => "keep",
+    }
 }
 
 /// What the operator asked done to the copy's pictures.
@@ -76,6 +126,10 @@ impl Pictures {
             Format::Keep => ImageEncode::Keep,
             Format::Lossless => ImageEncode::Flate { level: 9 },
             Format::Jpeg => ImageEncode::Jpeg,
+            Format::Lzw => ImageEncode::Lzw,
+            Format::RunLength => ImageEncode::RunLength,
+            Format::Ccitt => ImageEncode::Ccitt,
+            Format::Jbig2 => ImageEncode::Jbig2,
         });
         if self.format == Format::Jpeg {
             patch.quality = Some(self.quality);
@@ -89,10 +143,16 @@ impl Pictures {
         Some(patch)
     }
 
-    /// Whether `colour` cannot be stored as `format`.
+    /// Whether `colour` cannot be stored as `format`: the engine refuses it
+    /// (JPEG), or would skip every picture (CCITT or JBIG2 beside a multi-bit result).
     const fn clashes(format: Format, colour: ImageConvert) -> bool {
-        matches!(format, Format::Jpeg)
-            && matches!(colour, ImageConvert::Bilevel | ImageConvert::Indexed)
+        match format {
+            Format::Jpeg => matches!(colour, ImageConvert::Bilevel | ImageConvert::Indexed),
+            Format::Ccitt | Format::Jbig2 => {
+                matches!(colour, ImageConvert::Gray | ImageConvert::Indexed)
+            }
+            _ => false,
+        }
     }
 }
 
@@ -103,6 +163,8 @@ pub struct Tally {
     pub resized: usize,
     /// Written as JPEG.
     pub jpeg: usize,
+    /// Written as CCITT Group 4, JBIG2, LZW or run length, in that order.
+    pub exact: [usize; 4],
     /// Colour-converted.
     pub converted: usize,
     /// Whether any change lost information, by the engine's own test.
@@ -120,6 +182,15 @@ impl Tally {
         for image in plan.changes.iter().filter_map(|c| c.image.as_ref()) {
             tally.resized += usize::from(image.size_after != image.size_before);
             tally.jpeg += usize::from(image.encoded_as == ImageEncode::Jpeg);
+            let exact = [
+                ImageEncode::Ccitt,
+                ImageEncode::Jbig2,
+                ImageEncode::Lzw,
+                ImageEncode::RunLength,
+            ];
+            for (count, encode) in tally.exact.iter_mut().zip(exact) {
+                *count += usize::from(image.encoded_as == encode);
+            }
             tally.converted += usize::from(image.conversion.is_some());
         }
         tally
@@ -128,7 +199,9 @@ impl Tally {
     /// The report's lines.
     #[must_use]
     pub fn lines(self) -> Vec<String> {
-        t::done(self.resized, self.jpeg, self.converted)
+        let mut lines = t::done(self.resized, self.jpeg, self.converted);
+        lines.extend(t::stored_exact(self.exact));
+        lines
     }
 }
 
@@ -165,25 +238,28 @@ pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
         });
     ui.end_row();
     ui.label(t::format_label());
-    let formats = [
-        (Format::Keep, t::format_keep()),
-        (Format::Lossless, t::format_lossless()),
-        (Format::Jpeg, t::format_jpeg()),
-    ];
-    let shown = formats.iter().find(|f| f.0 == p.format).map_or("", |f| f.1);
-    egui::ComboBox::from_id_salt("compact-pictures-format") // ui-text-exempt: an id, never displayed
+    let shown = t::format(format_word(p.format));
+    let list = egui::ComboBox::from_id_salt("compact-pictures-format") // ui-text-exempt: an id, never displayed
         .selected_text(shown)
         .show_ui(ui, |ui| {
-            for (format, label) in formats {
+            for format in Format::ALL {
+                let word = format_word(format);
                 let open = !Pictures::clashes(format, p.colour);
                 let item = ui
-                    .add_enabled(open, egui::Button::selectable(p.format == format, label))
-                    .on_disabled_hover_text(t::jpeg_ruled_out());
+                    .add_enabled(
+                        open,
+                        egui::Button::selectable(p.format == format, t::format(word)),
+                    )
+                    .on_hover_text(t::format_tooltip(word))
+                    .on_disabled_hover_text(t::format_ruled_out(word));
+                let region = format!("{REGION_FORMAT}.{}", format.key());
+                crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
                 if item.clicked() {
                     p.format = format;
                 }
             }
         });
+    crate::diag::ui_rect_visible(REGION_FORMAT, list.response.rect, ui.clip_rect());
     ui.end_row();
     if p.format == Format::Jpeg {
         ui.label(t::quality_label())
@@ -203,7 +279,7 @@ pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
 /// The colour row, and the palette size under fewer colours.
 fn colour_rows(ui: &mut Ui, p: &mut Pictures) {
     ui.label(t::colour_label());
-    egui::ComboBox::from_id_salt("compact-pictures-colour") // ui-text-exempt: an id, never displayed
+    let list = egui::ComboBox::from_id_salt("compact-pictures-colour") // ui-text-exempt: an id, never displayed
         .selected_text(t::colour(p.colour))
         .show_ui(ui, |ui| {
             for colour in ImageConvert::ALL {
@@ -213,12 +289,15 @@ fn colour_rows(ui: &mut Ui, p: &mut Pictures) {
                         open,
                         egui::Button::selectable(p.colour == colour, t::colour(colour)),
                     )
-                    .on_disabled_hover_text(t::colour_ruled_out());
+                    .on_disabled_hover_text(t::colour_ruled_out(format_word(p.format)));
+                let region = format!("{REGION_COLOUR}.{}", colour_key(colour));
+                crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
                 if item.clicked() {
                     p.colour = colour;
                 }
             }
         });
+    crate::diag::ui_rect_visible(REGION_COLOUR, list.response.rect, ui.clip_rect());
     ui.end_row();
     if p.colour == ImageConvert::Indexed {
         ui.label(t::colors_label());
@@ -233,6 +312,19 @@ fn colour_rows(ui: &mut Ui, p: &mut Pictures) {
     }
 }
 
+/// The wording's name for a choice.
+const fn format_word(format: Format) -> t::FormatWord {
+    match format {
+        Format::Keep => t::FormatWord::Keep,
+        Format::Lossless => t::FormatWord::Lossless,
+        Format::Jpeg => t::FormatWord::Jpeg,
+        Format::Lzw => t::FormatWord::Lzw,
+        Format::RunLength => t::FormatWord::RunLength,
+        Format::Ccitt => t::FormatWord::Ccitt,
+        Format::Jbig2 => t::FormatWord::Jbig2,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -244,10 +336,11 @@ mod tests {
     }
 
     /// Every pairing the window lets the operator reach is one the engine
-    /// accepts, and every pairing it greys is one the engine refuses.
+    /// accepts; every pairing it greys is one the engine refuses, or CCITT
+    /// or JBIG2 beside a multi-bit colour result, which the engine accepts and skips.
     #[test]
     fn the_greyed_pairings_are_exactly_the_refused_ones() {
-        for format in [Format::Keep, Format::Lossless, Format::Jpeg] {
+        for format in Format::ALL {
             for colour in ImageConvert::ALL {
                 let p = Pictures {
                     on: true,
@@ -256,8 +349,10 @@ mod tests {
                     ..Pictures::OFF
                 };
                 let accepted = p.patch().expect("on").validate().is_ok();
+                let pointless = matches!(format, Format::Ccitt | Format::Jbig2)
+                    && matches!(colour, ImageConvert::Gray | ImageConvert::Indexed);
                 assert_eq!(
-                    accepted,
+                    accepted && !pointless,
                     !Pictures::clashes(format, colour),
                     "{format:?} {colour:?}"
                 );
@@ -284,5 +379,24 @@ mod tests {
             ..Pictures::OFF
         };
         assert_eq!(jpeg.patch().expect("on").quality, Some(80));
+    }
+
+    /// Each exact format asks the engine for its own encoder, with no quality.
+    #[test]
+    fn each_exact_format_names_its_encoder() {
+        for (format, encode) in [
+            (Format::Lzw, ImageEncode::Lzw),
+            (Format::RunLength, ImageEncode::RunLength),
+            (Format::Ccitt, ImageEncode::Ccitt),
+            (Format::Jbig2, ImageEncode::Jbig2),
+        ] {
+            let p = Pictures {
+                on: true,
+                format,
+                ..Pictures::OFF
+            };
+            let patch = p.patch().expect("on");
+            assert_eq!((patch.encode, patch.quality), (Some(encode), None));
+        }
     }
 }

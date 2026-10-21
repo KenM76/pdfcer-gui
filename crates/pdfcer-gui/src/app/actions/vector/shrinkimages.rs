@@ -53,12 +53,16 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, ids: &[ObjId], patch: ImageP
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
             "images-shrunk page={page} asked={} changed={changed} resized={} jpeg={} \
-             converted={} lossy={} skipped={skipped}",
+             converted={} lossy={} ccitt={} jbig2={} lzw={} runlength={} skipped={skipped}",
             ids.len(),
             tally.resized,
             tally.jpeg,
             tally.converted,
-            tally.lossy
+            tally.lossy,
+            tally.exact[0],
+            tally.exact[1],
+            tally.exact[2],
+            tally.exact[3]
         )
     });
 }

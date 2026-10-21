@@ -58,29 +58,77 @@ pub const fn format_label() -> &'static str {
     "Store as"
 }
 
-/// The choice that keeps each picture's stored format.
-#[must_use]
-pub const fn format_keep() -> &'static str {
-    "Keep how each is stored"
+/// One "Store as" choice, as the wording names it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FormatWord {
+    /// Keep each picture's stored format.
+    Keep,
+    /// Flate.
+    Lossless,
+    /// JPEG.
+    Jpeg,
+    /// LZW.
+    Lzw,
+    /// Run length.
+    RunLength,
+    /// CCITT Group 4.
+    Ccitt,
+    /// JBIG2.
+    Jbig2,
 }
 
-/// The lossless choice.
+/// A choice's name in the list.
 #[must_use]
-pub const fn format_lossless() -> &'static str {
-    "Lossless (exact)"
+pub const fn format(word: FormatWord) -> &'static str {
+    match word {
+        FormatWord::Keep => "Keep how each is stored",
+        FormatWord::Lossless => "Lossless (exact)",
+        FormatWord::Jpeg => "JPEG (smaller, loses detail)",
+        FormatWord::Lzw => "LZW (exact)",
+        FormatWord::RunLength => "Run length (exact)",
+        FormatWord::Ccitt => "CCITT Group 4 (exact, black and white)",
+        FormatWord::Jbig2 => "JBIG2 (exact, black and white)",
+    }
 }
 
-/// The JPEG choice.
+/// Hover on a choice, saying what it is for.
 #[must_use]
-pub const fn format_jpeg() -> &'static str {
-    "JPEG (smaller, loses detail)"
+pub const fn format_tooltip(word: FormatWord) -> &'static str {
+    match word {
+        FormatWord::Keep => "Each picture stays in the kind of storage it has now.",
+        FormatWord::Lossless => "Exact; the usual choice when nothing may change.",
+        FormatWord::Jpeg => "Much smaller for photographs; detail around edges is lost.",
+        FormatWord::Lzw => {
+            "Exact, usually larger than Lossless; for programs that expect LZW. A PDF/A \
+             document's pictures are left as they are, since PDF/A forbids it."
+        }
+        FormatWord::RunLength => "Exact; small only for pictures with large areas of one colour.",
+        FormatWord::Ccitt => {
+            "Exact, and the smallest storage for black-and-white pictures such as \
+             scanned drawings. Other pictures are left as they are; choose Black and white \
+             under Colours to convert them first."
+        }
+        FormatWord::Jbig2 => {
+            "Exact, and often smaller than CCITT Group 4 for black-and-white scans. Other \
+             pictures are left as they are, and so is every picture in a document older \
+             than PDF 1.4."
+        }
+    }
 }
 
-/// Hover on the JPEG choice while a colour choice rules it out.
+/// Hover on a choice the colour setting rules out.
 #[must_use]
-pub const fn jpeg_ruled_out() -> &'static str {
-    "JPEG cannot store black-and-white or reduced-colour pictures. Choose another colour \
-     setting to use JPEG."
+pub const fn format_ruled_out(word: FormatWord) -> &'static str {
+    match word {
+        FormatWord::Ccitt | FormatWord::Jbig2 => {
+            "This stores black-and-white pictures only. Choose Black and white or Keep \
+             their colours to use it."
+        }
+        _ => {
+            "JPEG cannot store black-and-white or reduced-colour pictures. Choose another \
+             colour setting to use JPEG."
+        }
+    }
 }
 
 /// The quality row's label.
@@ -127,10 +175,16 @@ pub fn colour(convert: ImageConvert) -> &'static str {
     }
 }
 
-/// Hover on a colour choice JPEG rules out.
+/// Hover on a colour choice the chosen storage rules out.
 #[must_use]
-pub const fn colour_ruled_out() -> &'static str {
-    "JPEG cannot store this. Choose Lossless or Keep how each is stored to use it."
+pub const fn colour_ruled_out(word: FormatWord) -> &'static str {
+    match word {
+        FormatWord::Ccitt | FormatWord::Jbig2 => {
+            "The chosen storage keeps black-and-white pictures only. Choose another \
+             storage to use this."
+        }
+        _ => "JPEG cannot store this. Choose Lossless or Keep how each is stored to use it.",
+    }
 }
 
 /// The palette-size row's label.
@@ -166,6 +220,17 @@ pub fn done(resized: usize, jpeg: usize, converted: usize) -> Vec<String> {
         lines.push(format!("{converted} picture(s) had their colours changed."));
     }
     lines
+}
+
+/// Report lines for pictures stored as CCITT Group 4, JBIG2, LZW and run length.
+#[must_use]
+pub fn stored_exact(counts: [usize; 4]) -> Vec<String> {
+    ["CCITT Group 4", "JBIG2", "LZW", "run length"]
+        .into_iter()
+        .zip(counts)
+        .filter(|(_, n)| *n > 0)
+        .map(|(name, n)| format!("{n} picture(s) were stored as {name}."))
+        .collect()
 }
 
 /// Format ▸ Make pictures smaller: the window's title.
@@ -242,6 +307,13 @@ pub fn picture_left_because(why: &ImageSkip) -> String {
         ImageSkip::AlreadyJpeg { .. } => "they are already JPEG at that quality or lower",
         ImageSkip::NoDefinedGrey { .. } => "their spot colours have no grey to convert to",
         ImageSkip::SizeChanged => "they changed while being planned; try again",
+        ImageSkip::NotBilevel(_) | ImageSkip::NotBilevelOverride(_) => {
+            "they are not black and white, the only pictures that storage keeps"
+        }
+        ImageSkip::LzwUnderPdfa => "the document is PDF/A, which forbids LZW",
+        ImageSkip::VersionTooLow { .. } => {
+            "the document is an older PDF version than that storage needs"
+        }
         _ => return format!("they are pictures that cannot be rewritten ({why})"),
     };
     s.to_owned()
