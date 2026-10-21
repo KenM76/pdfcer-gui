@@ -39,7 +39,7 @@ one (O321).
   - RGB→CMYK takes full undercolour removal.
   - These seed the new tab as a starting position. They are not a press
     simulation.
-  - The swatch itself draws CMYK through `pdfcer_core::color::cmyk_to_srgb`,
+  - The swatch itself is drawn from `annot_author::Color::to_device_rgb`,
     the conversion the renderer uses, so it matches the page.
 - **Grey is entered as percent black**, so 100 % is solid black, matching how
   every editor and the old GUI's property bar present it. The file stores

@@ -105,15 +105,14 @@ impl Ink {
         }
     }
 
-    /// A screen colour for the swatch: CMYK through the engine's own
-    /// conversion, so the swatch matches the page.
+    /// A screen colour for the swatch, as pdfcer renders the stored colour
+    /// (`annot_author::Color::to_device_rgb`), so the swatch matches the page.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)] // colour channels are 0..1
     pub fn screen(self) -> Color32 {
-        let [r, g, b] = match self {
-            Self::Cmyk([c, m, y, k]) => pdfcer_core::color::cmyk_to_srgb(c, m, y, k),
-            _ => self.rgb(),
-        }
-        .map(byte);
+        let [r, g, b] = pdfcer_core::annot_author::Color::from(self)
+            .to_device_rgb()
+            .map(|v| byte(v as f32));
         // DOCUMENT COLOUR: the ink being edited, not chrome.
         Color32::from_rgb(r, g, b)
     }
