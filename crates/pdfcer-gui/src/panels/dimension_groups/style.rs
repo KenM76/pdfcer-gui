@@ -7,7 +7,7 @@ use egui::Ui;
 use pdfcer_core::dimension::{
     ArrowForm, DimensionModel, Group, StyleDefaults, StyleSource, style_provenance,
 };
-use pdfcer_core::vector::Rgb;
+use pdfcer_gui_base::dimensionoverrides::{color32_of, rgb_of};
 
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
@@ -178,21 +178,6 @@ fn will_move(
         .count()
 }
 
-/// A screen colour from PDF components.
-fn color32_of(rgb: Rgb) -> egui::Color32 {
-    let to_byte = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    egui::Color32::from_rgb(to_byte(rgb.r), to_byte(rgb.g), to_byte(rgb.b)) // DOCUMENT COLOUR: the ce dimension's own `/C`, chosen by the operator — not a theme colour
-}
-
-/// PDF components from a screen colour — the inverse of [`color32_of`].
-fn rgb_of(c: egui::Color32) -> Rgb {
-    Rgb {
-        r: f32::from(c.r()) / 255.0,
-        g: f32::from(c.g()) / 255.0,
-        b: f32::from(c.b()) / 255.0,
-    }
-}
-
 /// A point-valued box: shows `pt`, reads a typed unit or arithmetic.
 fn point_box(ui: &mut Ui, value: &mut f64, range: std::ops::RangeInclusive<f64>) -> egui::Response {
     let (widget, refusal) = pdfcer_gui_base::entry::drag_value(
@@ -293,6 +278,14 @@ mod tests {
         ] {
             assert_eq!(color32_of(rgb_of(c)), c, "{c:?} did not survive");
         }
-        assert_eq!(rgb_of(egui::Color32::from_rgb(255, 255, 255)).r, 1.0); // DOCUMENT COLOUR: a test operand, not a theme colour
+        assert_eq!(
+            rgb_of(egui::Color32::from_rgb(255, 255, 255)), // DOCUMENT COLOUR: a test operand, not a theme colour
+            pdfcer_core::annot_author::Color::Rgb(1.0, 1.0, 1.0)
+        );
+        // A grey or CMYK ce dimension shows as the colour it renders as.
+        assert_eq!(
+            color32_of(pdfcer_core::annot_author::Color::Gray(0.0)),
+            egui::Color32::BLACK // DOCUMENT COLOUR: a test operand, not a theme colour
+        );
     }
 }

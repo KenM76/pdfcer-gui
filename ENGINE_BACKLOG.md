@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 382** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `wanted` — a real gap — **36 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -134,11 +134,14 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
+| **Add Text in grey or CMYK** — `NewTextColor::Gray`, `NewTextColor::Cmyk` (our `G219`, Pass 617.3) | **wanted, to build with the shared colour picker (O321).** Add Text keeps its RGB swatch until the picker that offers grey and CMYK replaces it; then the Add Text colour passes through `From<&NewFill>` as the Format colour does. |
+| Fill opacity on existing text — `FormatRequest::fill_alpha` <!--namesake:fill_alpha--> (the shell's `fill_alpha` call sites are `StrokeStyle::fill_alpha` on paths), `FormatRequest::set_fill_alpha`, `FormatReport::fill_alpha_change` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. Page text's Format gains it when it moves onto the picker. |
+| Fill opacity on new page text — `AddTextRequest::with_fill_alpha` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. Add Text gains it with its grey and CMYK. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 382** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `blocked` — waiting on something named — **2 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +159,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 382** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +170,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 382** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `declined` — deliberately no surface — **17 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -210,7 +213,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **330 of 382** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **329 of 384** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -596,7 +599,6 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A shell's subset augmenter that forgets `candidates` no longer compiles** — `SubsetAugmenter::candidates` required, `AugmentRequest::new` with `AugmentRequest::with_shown`, `AugmentRequest::with_outline_check`, `AugmentRequest::with_hinting_mismatch`, `AugmentRequest::with_addressing` (our `G210`, Pass 615.0) | **shipped.** `editmodel::installedfaces::InstalledFaces` forwards all three methods, so a composite subset is offered the installed face's letters (O311). The builders are for a shell's own tests: `a_composite_subset_is_offered_the_installed_faces_letters` uses `new` and `with_addressing`; production requests are built by the engine, so `with_shown`, `with_outline_check` and `with_hinting_mismatch` have no caller here and need none. Its test found `G212`. |
 | **Tell whether a page object is hidden by ANY enclosing layer** — `VectorObject::oc_chain`, `VectorObject::is_hidden_under`, `FormLeaf::oc_chain`, `FormLeaf::is_hidden_under` (our `G211`, Pass 617.1) | **shipped.** `objectprovider::unseen` hides an object or leaf when any membership in its chain is hidden, so content in a shown layer nested in a hidden one is not picked (O317). `content_under_a_hidden_outer_layer_is_not_picked`, falsified with the innermost-only rule. The Objects panel still groups by `oc()`, the innermost layer. `is_hidden_under` is not called: the shell memoises one answer per `/OC` across the page, which the per-object predicate would recompute. |
 | **Count redaction boxes painted from a grey or CMYK `/IC`** — `RedactionReport::overlay_fill_not_rgb` (our `G218`, Pass 617.2) | **disclosed through the engine's note, not read.** The apply that sets the count also adds a note naming it, and the redaction report shows every engine note under its own heading (`redact::disclosures`). The shell's marks are always written as three numbers by the engine, so a non-zero count comes only from another producer's `/IC`. |
-| **Add Text in grey or CMYK** — `NewTextColor::Gray`, `NewTextColor::Cmyk` (our `G219`, Pass 617.3) | **to build, with the shared colour picker (O321).** Add Text keeps its RGB swatch until the picker that offers grey and CMYK replaces it; then the Add Text colour passes through `From<&NewFill>` as the Format colour does. |
 | **`candidates` takes the first name-matched face that can serve** — `InstalledFaceAugmenter::candidates` (our `G212`, Pass 617.0) | **shipped.** No shell change: `editmodel::installedfaces` forwards `candidates`. `a_composite_subset_is_offered_the_installed_faces_letters` now reads the engine's fixture folder as installed, same-named subsets included, instead of a copy of the full face alone. |
 | **Automatic word gap for extracted text** — `ExtractOptions::with_word_gap_auto`, `PageText::word_gap_ratio`/`word_gap_measured` (our `G209`, Pass 610.0) | **shipped.** `Settings::word_gap_auto` reaches extraction through `SettingsExt::extract_options`; Edit ▸ Content has an *Auto* switch beside *Gap width* (`app::wordgapband`), Settings ▸ Text has the same switch, and the threshold the current page used, measured or not, is on hover. |
 | **Paragraph and cell-aware block recognition on spaced pages** — a blank-line gap ends a paragraph, a column of heading numbers is not a column, a drawing frame's cell splits into its notes (our `G205`, `G206`, Pass 611.0/612.0) | **shipped — engine v0.88.0.** Every block index the shell sends to a block verb comes from `canvas::textedit::engine_model::recognise`: cell-aware, `reflow_recognition_options`, the page's `LineMarks` attached, as `EditSession::block_at_point` builds it. The draft's paragraph, the Select tool's paragraph objects, Reflow and Align all read it. Driven by `a_written_blank_line_paragraph_is_numbered_as_the_engine_numbers_it` (a blank line written with `edit_block_text`, every block checked against `block_at_point`), falsified by dropping the marks. |

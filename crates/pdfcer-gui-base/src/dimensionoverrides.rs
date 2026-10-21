@@ -4,11 +4,11 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/dimensionoverrides.md`.
 
 use egui::Ui;
+use pdfcer_core::annot_author::Color;
 use pdfcer_core::dimension::{
     ArrowForm, DecimalMarker, DimDash, DimStandard, FractionMode, Group, StyleOverrides,
     StyleProvenance, StyleSource, Unit, resolve_style,
 };
-use pdfcer_core::vector::Rgb;
 
 use crate::text::panels::dimension as t;
 
@@ -388,20 +388,31 @@ fn places_box(ui: &mut Ui, value: &mut u32) {
     refusal.show(ui.add(widget.range(PLACES_RANGE)));
 }
 
-/// A screen colour from PDF components. See
-/// `dialogs::dimension_groups::style`'s twin for why the divisor is 255.
-fn color32_of(rgb: Rgb) -> egui::Color32 {
-    let to_byte = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    egui::Color32::from_rgb(to_byte(rgb.r), to_byte(rgb.g), to_byte(rgb.b)) // DOCUMENT COLOUR: this ce dimension's own `/C`, chosen by the operator — not a theme colour
+/// A screen colour from a ce dimension's stored colour, in whichever device
+/// space it is stored. CMYK goes through the engine's own conversion, the
+/// colour pdfcer renders it as.
+pub fn color32_of(colour: Color) -> egui::Color32 {
+    #[allow(clippy::cast_possible_truncation)] // colour channels are 0..1
+    let to_byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+    let [r, g, b] = match colour {
+        Color::Gray(v) => [v, v, v],
+        Color::Rgb(r, g, b) => [r, g, b],
+        #[allow(clippy::cast_possible_truncation)] // colour channels are 0..1
+        Color::Cmyk(c, m, y, k) => {
+            pdfcer_core::color::cmyk_to_srgb(c as f32, m as f32, y as f32, k as f32).map(f64::from)
+        }
+    };
+    egui::Color32::from_rgb(to_byte(r), to_byte(g), to_byte(b)) // DOCUMENT COLOUR: this ce dimension's own `/C`, chosen by the operator — not a theme colour
 }
 
-/// PDF components from a screen colour — the inverse of [`color32_of`].
-fn rgb_of(c: egui::Color32) -> Rgb {
-    Rgb {
-        r: f32::from(c.r()) / 255.0,
-        g: f32::from(c.g()) / 255.0,
-        b: f32::from(c.b()) / 255.0,
-    }
+/// The colour a screen pick stores — `DeviceRGB`, the space the screen
+/// picker offers.
+pub fn rgb_of(c: egui::Color32) -> Color {
+    Color::Rgb(
+        f64::from(c.r()) / 255.0,
+        f64::from(c.g()) / 255.0,
+        f64::from(c.b()) / 255.0,
+    )
 }
 
 /// Every property this panel draws, paired with the provenance field that
