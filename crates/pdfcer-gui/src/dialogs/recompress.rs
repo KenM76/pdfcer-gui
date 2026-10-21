@@ -264,6 +264,51 @@ mod tests {
         );
     }
 
+    /// Asking for links to other files removes the one to `other.pdf` and
+    /// leaves the web link, and asking for form actions alone touches neither.
+    #[test]
+    fn a_link_to_another_file_goes_and_a_web_link_stays() {
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R \
+             /Annots [5 0 R 6 0 R] >>"
+                .to_string(),
+            "<< /Length 0 >>\nstream\n\nendstream".to_string(),
+            "<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] \
+             /A << /S /GoToR /F (other.pdf) /D [0 /Fit] >> >>"
+                .to_string(),
+            "<< /Type /Annot /Subtype /Link /Rect [20 0 30 10] \
+             /A << /S /URI /URI (https://example.com) >> >>"
+                .to_string(),
+        ]);
+        let base = Choices {
+            recompress: false,
+            ..ALL
+        };
+        let forms = Choices {
+            discard: DiscardOptions::none().with_object(DiscardObject::FormActions),
+            ..base
+        };
+        let untouched = recompress(&copy, &Settings::default(), forms).expect("optimizes");
+        assert!(untouched.cleaned.is_empty(), "{untouched:?}");
+        let asked = Choices {
+            discard: DiscardOptions::none().with_object(DiscardObject::ExternalReferences),
+            ..base
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned
+                .iter()
+                .any(|l| l.starts_with("Links to other files in 1 place(s) removed")),
+            "{done:?}"
+        );
+        let bytes = done.bytes.expect("the removal is written");
+        let text = String::from_utf8_lossy(&bytes);
+        assert!(text.contains("example.com"), "the web link stays");
+        assert!(!text.contains("other.pdf"), "the file link goes");
+    }
+
     fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();

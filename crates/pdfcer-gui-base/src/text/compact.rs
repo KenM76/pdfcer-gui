@@ -158,6 +158,14 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Remove alternate images",
             "Removes the extra versions some pictures carry, such as a high-resolution one for printing, keeping the one shown on screen. A picture on a layer keeps them.",
         ),
+        DiscardObject::FormActions => (
+            "Remove form submit and reset",
+            "Removes the actions that send a form's contents somewhere, import data into it or clear it, from fields, buttons and links. Anything chained after one still runs.",
+        ),
+        DiscardObject::ExternalReferences => (
+            "Remove links to other files",
+            "Removes links and actions that open another file or launch a program. Links to web pages stay.",
+        ),
         _ => return None,
     })
 }
@@ -176,6 +184,12 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
                 DiscardObject::PrintSettings => "Print settings".to_owned(),
                 DiscardObject::AlternateImages => {
                     format!("Alternate images of {} picture(s)", of.len())
+                }
+                DiscardObject::FormActions => {
+                    format!("Form submit and reset actions in {} place(s)", of.len())
+                }
+                DiscardObject::ExternalReferences => {
+                    format!("Links to other files in {} place(s)", of.len())
                 }
                 _ => return None,
             };
