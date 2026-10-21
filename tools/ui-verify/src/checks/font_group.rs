@@ -176,21 +176,6 @@ fn aim_verdict(trace: &Trace) -> Aim<'_> {
     }
 }
 
-fn wait_for_verdict(session: &Session) -> Result<u128> {
-    const CEILING_MS: u128 = 20_000;
-    let started = std::time::Instant::now();
-    loop {
-        session.settle(4);
-        let trace = session.trace()?;
-        if trace.last(STYLE_EVENT).is_some() || trace.last(DECLINED_EVENT).is_some() {
-            return Ok(started.elapsed().as_millis());
-        }
-        if started.elapsed().as_millis() > CEILING_MS {
-            return Ok(started.elapsed().as_millis());
-        }
-    }
-}
-
 #[allow(clippy::too_many_lines)]
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let vocab = &ctx.profile.vocab;
@@ -565,7 +550,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         })?;
     driver.click_at(session.frame()?.declared_center(bold))?;
 
-    let waited = wait_for_verdict(&session)?;
+    let waited = driving::wait_for_any(&session, &[STYLE_EVENT, DECLINED_EVENT])?;
     report.note(format!(
         "the restyle took {waited} ms of wall clock — one provenance extraction per run"
     ));

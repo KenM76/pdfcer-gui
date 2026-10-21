@@ -475,18 +475,24 @@ fn tooltip(
 const TOOLTIP_OFFSET: f32 = 16.0;
 
 /// **A click landed on the canvas — open or close a note's pop-up.**
+///
+/// `slop` widens the hit by the selection tolerance. A text tool passes
+/// `false`: its click means the letter under it, so a note owns only a click
+/// inside its box; the tolerance is six screen pixels, which at a fit zoom
+/// on a large sheet covers the words beside a comment.
 pub fn clicked_on(
     ctx: &egui::Context,
     doc: &OpenDoc,
     page_index: usize,
     point: Pos2,
     map: &PageMapping,
+    slop: bool,
 ) -> Option<ObjId> {
     let page = doc.pages.get(page_index)?;
     let view = doc.session.view();
     let notes = model::notes_on(&view, page);
     #[allow(clippy::cast_possible_truncation)]
-    let tolerance = map.tolerance() as f32;
+    let tolerance = if slop { map.tolerance() as f32 } else { 0.0 };
     let note = model::under(&notes, point, tolerance)?;
     // **A mark with nothing to say does not open a window.** The press
     // falls through to selection, which is what the operator meant by clicking

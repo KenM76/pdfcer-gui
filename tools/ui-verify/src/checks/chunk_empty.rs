@@ -89,18 +89,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no --pdf. This check needs a document with text in it."))?;
-    let Some(target) = ctx.target else {
-        return Err(Error::new(
-            "no --doc-point. There is deliberately no default: an Edit click on blank paper \
-             becomes an ADD draft, and every assertion here is about emptying an EXISTING run. \
-             Get a point from the engine — `pdfcer find-text --needle WORD <file>` prints a \
-             rectangle per hit — and pass its centre as `--doc-point page,x,y`.",
-        ));
-    };
+    // The sweep's shared point lands on FreeText annotations, not page text, so
+    // this check carries its own aim: an editable run, `fixture::text_chunk_point`.
+    let (pdf, target) = crate::fixture::text_chunk_point(0);
+    if !pdf.exists() {
+        return Err(Error::new(format!(
+            "{} is missing from the repository, so there is no run to empty. SKIPPED.",
+            pdf.display()
+        )));
+    }
     if !ctx.allow_input {
         return Err(Error::new(
             "input is disabled (--no-input). This check clicks a mode segment, a ribbon tab, a \
@@ -115,18 +112,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.name
         ))
     })?;
-    let page: PageGeometry = match ctx.page_size {
-        Some((w, h)) => PageGeometry {
-            width_pt: w,
-            height_pt: h,
-        },
-        None => crate::fixture::page_geometry(&pdf).ok_or_else(|| {
-            Error::new(format!(
-                "cannot read a page size from {}. Pass --page-size WxH.",
-                pdf.display()
-            ))
-        })?,
-    };
+    let page: PageGeometry = crate::fixture::page_geometry(&pdf)
+        .ok_or_else(|| Error::new(format!("cannot read a page size from {}.", pdf.display())))?;
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("chunk_empty.trace.txt"));
     spec.pdf = Some(pdf);
@@ -150,6 +137,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     click_tab(&session, &driver, ui_rect, EDIT_TAB)?;
     session.settle(14);
     click_command(&session, &driver, ui_rect, EDIT_TEXT_ITEM, 18)?;
+    if let Some(failure) = driving::paragraphs_off(&session, &driver, ui_rect)? {
+        return Ok(Some(failure));
+    }
     if !session
         .trace()?
         .events(TOOL_EVENT)
@@ -200,7 +190,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             .ok()
             .and_then(|t| t.last(BECAME_ADD_EVENT).map(|l| l.raw.clone()));
         return Err(Error::new(format!(
-            "the --doc-point (page {}, {:.1}, {:.1}) found NO RUN under the click, so the caret \
+            "the aim (page {}, {:.1}, {:.1}) found NO RUN under the click, so the caret \
              opened on bare page: `{}`{}. Emptying an Add draft is not this check's subject and \
              every oracle below would be describing a draft that is not a run. SKIPPED rather \
              than failed. ★ Aim with `pdfcer find-text --needle WORD FILE.pdf`. Trace: {}.",

@@ -125,6 +125,16 @@ pub const GATED_BY_THEIR_DISPATCHER: [&str; 5] = [
     "edit.duplicate",
 ];
 
+/// Commands drawn only under [`EDIT_CONTENT_CONDITION`] whose dispatcher
+/// arms them on a wider capability, so their chord must not be refused where
+/// the item is hidden. The Points tool (`A`) also reshapes markup and ce
+/// dimension corners, which Review authors; `app::dispatch::navigate` asks
+/// `edit_content || author_measure` and declines in words otherwise.
+#[doc(hidden)]
+pub const WIDER_THAN_THEIR_ITEM: [&str; 1] = [
+    "view.tool_node", // ui-text-exempt: a registered command id, never displayed.
+];
+
 /// **Whether the active mode offers `command_id` at all.**
 ///
 /// The rule a **keyboard chord** is filtered through, so that a chord cannot
@@ -295,7 +305,10 @@ pub fn offers_command(shell: Option<&Shell>, mode_id: Option<&str>, command_id: 
     };
     // An item shown only where content may be edited is refused elsewhere
     // even when its tab is listed — Security ▸ Protect in Read.
-    if edit_content_only(owning_tab, command_id) && !mode.tabs().iter().any(|t| t == TAB_EDIT) {
+    if edit_content_only(owning_tab, command_id)
+        && !WIDER_THAN_THEIR_ITEM.contains(&command_id)
+        && !mode.tabs().iter().any(|t| t == TAB_EDIT)
+    {
         return false;
     }
     mode.tabs().contains(&owning_tab.id)

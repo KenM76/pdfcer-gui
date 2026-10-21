@@ -185,6 +185,20 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let from = float_frame.declared_center(header_rect);
 
     let target_body = format!("{BODY}{TARGET}");
+    // A dock draws only its active tab's body, so a target sharing its
+    // compartment is first brought to the front by its tab.
+    let mut trace = trace;
+    if declared_in(&trace, ui_rect, &target_body).is_none()
+        && let Some((tab_rect, tab_vp)) = declared_in(&trace, ui_rect, &format!("{TAB}{TARGET}"))
+    {
+        let at = frame_for(&session, &trace, tab_vp.as_deref())?.declared_center(tab_rect);
+        Driver::new(session.window()).click_at(at)?;
+        session.settle(20);
+        trace = session.trace()?;
+        report.note(format!(
+            "brought `{TARGET}` to the front of its compartment by its tab"
+        ));
+    }
     let Some((target_rect, target_vp)) = declared_in(&trace, ui_rect, &target_body) else {
         return Ok(Some(format!(
             "no `{target_body}` region, so the compartment this check aims at is not on screen. \
@@ -193,6 +207,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              restating rather than repairing"
         )));
     };
+    // The aimed bar, read now: a full strip moves the target's own tab into
+    // its overflow list once the carried panel joins and takes the front.
+    let aimed_before = declared(&trace, ui_rect, &format!("{TAB}{TARGET}"))
+        .and_then(|anchor| bar_holding(&trace, ui_rect, anchor));
     let target_frame = frame_for(&session, &trace, target_vp.as_deref())?;
     let to = target_frame.declared_center(target_rect);
 
@@ -259,11 +277,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The assertion the two above cannot make between them: a panel that
     // docked back to its own left-dock home satisfies both of them.
     let target_tab = format!("{TAB}{TARGET}");
-    match declared(&trace, ui_rect, &target_tab) {
-        Some(anchor) => match (
-            bar_holding(&trace, ui_rect, anchor),
-            bar_holding(&trace, ui_rect, tab_rect),
-        ) {
+    let aimed = declared(&trace, ui_rect, &target_tab)
+        .and_then(|anchor| bar_holding(&trace, ui_rect, anchor))
+        .or(aimed_before);
+    match aimed {
+        Some(aimed) => match (Some(aimed), bar_holding(&trace, ui_rect, tab_rect)) {
             (Some(aimed), Some(landed)) => {
                 if aimed == landed {
                     report.note(format!(
@@ -287,7 +305,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )),
         },
         None => failures.push(format!(
-            "`{target_tab}` is not declared after the drop, so the stack this check aimed at is \
+            "`{target_tab}` was drawn inside no tab bar before the drop and is not declared after it, so the stack this check aimed at is \
              no longer on screen and there is nothing to compare the landing against"
         )),
     }

@@ -379,13 +379,24 @@ fn read_mode_refuses_exactly_these_bound_chords() {
             "pages.move_up",
             "pages.rotate_left",
             "pages.rotate_right",
-            // The node tool's `A`: its View ▸ Navigate item is shown only
-            // under `mode.edit_content`, and `offers_command` refuses such an
-            // item wherever the mode lacks the Edit tab. The same rule keeps
-            // Security ▸ Protect's redaction out of Read and Review.
-            "view.tool_node",
         ]
         .map(str::to_owned),
         "the set of chords Read refuses has changed"
+    );
+}
+
+/// The Points tool's chord reaches Review, which reshapes markup and ce
+/// dimension corners with it, and is refused there only by its dispatcher.
+#[test]
+fn the_points_tool_chord_reaches_review() {
+    let shell = built_in();
+    assert!(
+        offers_command(Some(&shell), Some("review"), "view.tool_node"),
+        "`A` must arm the Points tool in Review: its corners are a measure edit"
+    );
+    let review = Capabilities::for_mode(Some(&shell), Some("review"));
+    assert!(
+        review.author_measure,
+        "Review authors ce dimensions: {review:?}"
     );
 }

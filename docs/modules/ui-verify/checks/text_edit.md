@@ -25,6 +25,11 @@ adds two more that are specific to typing:
 |---|---|---|
 | 1 | the ribbon control arms the caret tool | `shell::commands` — the registration, not the arm |
 | 2 | a click on the page resolves a **run** | nothing: it needs a rendered page and a real hit test |
+
+Edit ▸ Paragraphs is on in a fresh profile, and with it on a click opens the
+whole block. The seam replaces the draft outright, so the watched line would
+be deleted rather than left alone; the check switches Paragraphs off from the
+ribbon before aiming, and fails if the switch stays drawn pressed.
 | 3 | a draft reaches the commit | nothing: the typing loop is `egui::Event` handling |
 | 4 | the commit plans the **right disposition** | `textedit::proof` — the arithmetic, not the route |
 | 5 | the engine writes it | `pdfcer-core` |

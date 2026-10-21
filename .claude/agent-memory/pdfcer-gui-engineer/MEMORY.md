@@ -188,3 +188,4 @@
 - [One gate run at a time](feedback_one_gate_run_at_a_time.md) — two runs on one log: no verdict; check for a live run first.
 - [An inactive window starves focus gates](feedback_inactive_window_starves_gate.md) — no-steal scripted dialogs never typed; route gates via window_takes_keys.
 - [A wrapper drops a trait's default methods](feedback_wrapper_drops_default_method.md) — installedfaces lost `candidates`; every composite font fell to Helvetica.
+- [A seam's unit can widen under it](feedback_seam_unit_widens.md) — whole-draft seed wiped a paragraph; reach the old unit by his switch.

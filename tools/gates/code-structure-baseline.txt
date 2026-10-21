@@ -50,7 +50,6 @@ dup tools/ui-verify::switch in tools/ui-verify/src/checks/drop_stamp.rs, tools/u
 dup tools/ui-verify::ui_rect_event in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/stamp_collection.rs
 dup tools/ui-verify::undo in tools/ui-verify/src/checks/preview_width.rs, tools/ui-verify/src/checks/scale_sweep.rs
 dup tools/ui-verify::userdata in tools/ui-verify/src/checks/export_remembered.rs, tools/ui-verify/src/checks/print_dismissal.rs, tools/ui-verify/src/checks/print_remembered.rs
-dup tools/ui-verify::wait_for_verdict in tools/ui-verify/src/checks/font_file_face.rs, tools/ui-verify/src/checks/font_group.rs, tools/ui-verify/src/checks/restyle_text.rs, tools/ui-verify/src/checks/std14_face.rs
 dup tools/ui-verify::workspace_root in tools/ui-verify/src/checks/link_follow.rs, tools/ui-verify/src/checks/ocr_progress.rs, tools/ui-verify/src/checks/page_display_pref.rs, tools/ui-verify/src/checks/point_destination.rs, tools/ui-verify/src/checks/quit_unsaved.rs, tools/ui-verify/src/checks/save_as.rs
 dup tools/ui-verify::workspace_root in tools/ui-verify/src/checks/off_page_census.rs, tools/ui-verify/src/checks/off_page_marquee.rs, tools/ui-verify/src/checks/off_page_toggle.rs, tools/ui-verify/src/checks/off_page_visible.rs, tools/ui-verify/src/checks/off_page_zoom.rs
 dup tools/ui-verify::zoom_now in tools/ui-verify/src/checks/preview_width.rs, tools/ui-verify/src/checks/zoom_gallery.rs

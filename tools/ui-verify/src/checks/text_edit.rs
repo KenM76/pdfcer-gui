@@ -23,7 +23,6 @@ const MODE: &str = "edit";
 const EDIT_TAB: (&str, &str) = ("ribbon.tab.edit", "edit");
 /// The control under test's own ribbon region and id.
 const EDIT_TEXT: (&str, &str) = ("ribbon.item.edit.text", "edit.text");
-
 /// Where the copy goes — the seam every other write-driving check uses.
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 
@@ -210,6 +209,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         }
         report.note("the ribbon control armed the caret tool".to_owned());
+
+        // --- PHASE B2: the line tier, as the operator reaches it ------------
+        // With Paragraphs on, the click opens the whole right-aligned block and
+        // the draft (which the seam replaces outright) is the paragraph, so the
+        // line this check watches would be deleted rather than left alone.
+        if let Some(failure) = driving::paragraphs_off(&session, &driver, ui_rect)? {
+            return Ok(Some(failure));
+        }
+        report.note("Edit ▸ Paragraphs is off: a click opens one line".to_owned());
 
         // --- PHASE C: click the right-aligned line's first word -------------
         let at = crate::checks::text_selection::aim(

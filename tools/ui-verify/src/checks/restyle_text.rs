@@ -23,6 +23,8 @@ const BOLD_REGION: &str = "properties.text.bold";
 /// The `text-style-applied page=… change=… applied=… of=…` line — this
 /// module's own summary of the whole gesture.
 const STYLE_EVENT: &str = "text-style-applied";
+/// The same verdict for a sweep inside one run, restyled through the span path.
+const SPAN_STYLE_EVENT: &str = "text-span-style-applied";
 /// The `text-style-declined applied=…` line.
 const DECLINED_EVENT: &str = "text-style-declined";
 /// The label `vector_edit` writes when the restyle reached the engine — named
@@ -57,23 +59,6 @@ impl Check for RestylingSelectedTextReachesTheDocument {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
-        }
-    }
-}
-
-/// Poll until the restyle reports one way or the other, and answer how long it
-/// took.
-fn wait_for_verdict(session: &Session) -> Result<u128> {
-    const CEILING_MS: u128 = 20_000;
-    let started = std::time::Instant::now();
-    loop {
-        session.settle(4);
-        let trace = session.trace()?;
-        if trace.last(STYLE_EVENT).is_some() || trace.last(DECLINED_EVENT).is_some() {
-            return Ok(started.elapsed().as_millis());
-        }
-        if started.elapsed().as_millis() > CEILING_MS {
-            return Ok(started.elapsed().as_millis());
         }
     }
 }
@@ -323,7 +308,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // and recorded in the module's own docs; it is not this check's business to
     // hide it behind a longer sleep, so the poll below REPORTS the elapsed time
     // whatever the verdict.
-    let waited = wait_for_verdict(&session)?;
+    let waited = driving::wait_for_any(&session, &[STYLE_EVENT, SPAN_STYLE_EVENT, DECLINED_EVENT])?;
     report.note(format!(
         "the restyle took {waited} ms of wall clock — one provenance extraction per run"
     ));
@@ -342,7 +327,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     }
-    let Some(applied) = trace.events(STYLE_EVENT).last() else {
+    let Some(applied) = trace
+        .events(STYLE_EVENT)
+        .last()
+        .or_else(|| trace.events(SPAN_STYLE_EVENT).last())
+    else {
         let shot = ctx.out("restyle_text.no-effect.png");
         if crate::capture::window_to_png(&session, &shot).is_ok() {
             report.artifact(shot);

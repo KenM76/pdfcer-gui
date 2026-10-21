@@ -79,22 +79,6 @@ impl Check for AFontFileRestylesSweptText {
     }
 }
 
-/// Poll until the restyle reports one way or the other.
-fn wait_for_verdict(session: &Session) -> Result<u128> {
-    const CEILING_MS: u128 = 20_000;
-    let started = std::time::Instant::now();
-    loop {
-        session.settle(4);
-        let trace = session.trace()?;
-        if trace.last(STYLE_EVENT).is_some() || trace.last(DECLINED_EVENT).is_some() {
-            return Ok(started.elapsed().as_millis());
-        }
-        if started.elapsed().as_millis() > CEILING_MS {
-            return Ok(started.elapsed().as_millis());
-        }
-    }
-}
-
 /// The fraction of pixels in `region` that differ between two captures.
 fn changed(a: &Image, b: &Image, region: PixRect) -> f64 {
     let mut total = 0_u32;
@@ -286,7 +270,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 4: press the button -----------------------------------------------
     driver.click_at(frame.declared_center(button))?;
-    let waited = wait_for_verdict(&session)?;
+    let waited = driving::wait_for_any(&session, &[STYLE_EVENT, DECLINED_EVENT])?;
     report.note(format!("the restyle answered in {waited} ms"));
 
     let trace = session.trace()?;

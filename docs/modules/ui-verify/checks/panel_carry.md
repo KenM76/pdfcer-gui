@@ -77,3 +77,9 @@ supplies for that strip.
 Layers, and the choice carries the oracle: it is a **left**-dock panel in
 Edit's default arrangement, so a drop that landed in the right dock cannot
 be a drop that went home.
+
+# The target shares a compartment
+
+Edit's default dock holds `view.panel_objects` behind another tab, and a dock
+draws only its active tab's body. The check clicks the target's tab first, so
+the aim is the body the operator would see.

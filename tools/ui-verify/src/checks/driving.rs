@@ -730,6 +730,55 @@ pub fn press_until_traced(
     Ok(false)
 }
 
+/// The Edit ▸ Paragraphs ribbon toggle, as `(ui-rect name, command id)`.
+const PARAGRAPHS: (&str, &str) = ("ribbon.item.edit.paragraphs", "edit.paragraphs");
+/// `ribbon-item-selected id=… selected=0|1`, the ribbon's drawn toggle state.
+const SELECTED: &str = "ribbon-item-selected"; // ui-text-exempt: a trace event name, never displayed
+
+/// Switches Edit ▸ Paragraphs off when it is drawn pressed, so an Edit click
+/// opens one line (`run=N`) rather than the whole paragraph (`block=N`).
+///
+/// The Edit tab must already be showing. Returns `Ok(None)` once the toggle is
+/// off, or `Ok(Some(failure))` when the press arrived and the toggle is still
+/// drawn pressed.
+pub fn paragraphs_off(session: &Session, driver: &Driver, ui_rect: &str) -> Result<Option<String>> {
+    let on = |t: &Trace| {
+        t.events(SELECTED)
+            .filter(|l| l.get("id") == Some(PARAGRAPHS.1))
+            .last()
+            .is_some_and(|l| l.get("selected") == Some("1"))
+    };
+    if !on(&shell_trace(session)?) {
+        return Ok(None);
+    }
+    crate::checks::save_copy::click_command(session, driver, ui_rect, PARAGRAPHS, 16)?;
+    if !on(&shell_trace(session)?) {
+        return Ok(None);
+    }
+    Ok(Some(format!(
+        "EDIT ▸ PARAGRAPHS DID NOT SWITCH OFF. It was drawn pressed, the press arrived, and it \
+         is still drawn pressed, so a click opens the whole paragraph and the one-line edit \
+         this check is about cannot be reached. Trace: {}.",
+        session.trace_path().display()
+    )))
+}
+
+/// Polls the trace until any of `events` appears, or 20 s pass, and returns the
+/// milliseconds waited. The caller judges which event arrived, if any.
+pub fn wait_for_any(session: &Session, events: &[&str]) -> Result<u128> {
+    const CEILING_MS: u128 = 20_000;
+    let started = std::time::Instant::now();
+    loop {
+        session.settle(4);
+        let trace = session.trace()?;
+        if events.iter().any(|e| trace.last(e).is_some())
+            || started.elapsed().as_millis() > CEILING_MS
+        {
+            return Ok(started.elapsed().as_millis());
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

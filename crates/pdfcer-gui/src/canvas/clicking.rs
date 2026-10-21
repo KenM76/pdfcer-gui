@@ -244,7 +244,8 @@ pub fn click(
     // feature exists for. `notepopup` runs its own hit test with its own
     // exclusions, and its `model` header states where the two differ and why
     // each is right for its surface.
-    let note_hit = crate::canvas::notepopup::clicked_on(ctx, doc, page_index, point, map);
+    let slop = !active_tool.is_text() && active_tool.text_edit_kind().is_none();
+    let note_hit = crate::canvas::notepopup::clicked_on(ctx, doc, page_index, point, map, slop);
     if let Some(id) = &note_hit {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI

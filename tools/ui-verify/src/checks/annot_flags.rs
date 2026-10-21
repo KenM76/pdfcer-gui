@@ -24,6 +24,8 @@ const ANNOT: (f64, f64) = (600.0, 435.0);
 const PRINTS: &str = "properties.annot_flags.prints";
 const ON_SCREEN: &str = "properties.annot_flags.on_screen";
 const COMMENTS_TAB: &str = "dock.tab.markup.comments";
+/// The same panel's tab on the side rail, where Edit's arrangement keeps it.
+const COMMENTS_RAIL: &str = "rail.tabs.markup.comments";
 const SHOW_AGAIN: &str = "comments.show_again";
 const SELECT: &str = "annot-select";
 const APPLIED: &str = "set-annotation-flag-applied";
@@ -202,7 +204,9 @@ fn steps(
 
     let mark = session.trace()?.mark();
     if !press(ctx, session, pointer, SHOW_AGAIN)? {
-        press(ctx, session, pointer, COMMENTS_TAB)?;
+        if !press(ctx, session, pointer, COMMENTS_TAB)? {
+            press(ctx, session, pointer, COMMENTS_RAIL)?;
+        }
         if !press(ctx, session, pointer, SHOW_AGAIN)? {
             return Ok(Some(format!(
                 "★★★ the Comments list offers no `{SHOW_AGAIN}` for the hidden mark, so it \

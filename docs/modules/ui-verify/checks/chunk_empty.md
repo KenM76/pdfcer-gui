@@ -51,30 +51,14 @@ check reads it as an instrument:
 Only with both in hand does an absent `text-edit-plan` mean what this check
 says it means.
 
-# ⚠ The aim is the ENGINE's, not a guess
+# The aim is fixed, and is the engine's
 
-`--doc-point` is required and has no default, for the reason
-`text_edit_on_a_real_drawing` records at length: a click on empty page is
-symptom-identical to a broken hit test, and an Edit click that lands on bare
-paper is silently converted into an **Add** draft, where every assertion
-here would be describing something that is not a run.
-
-```text
-# ⚠ Drive a COPY — a run types into the document and may commit.
-cp D:/dev/pdfTests/SW41177/SW41177.pdf target/scratch/docs/SW41177-empty.pdf
-
-pdfcer find-text --needle SLOT target/scratch/docs/SW41177-empty.pdf
-  match page=1 text="SLOT" rect=271.76,717.10,301.58,731.26
-  …
-
-# The aim is that rect's CENTRE. `find-text` numbers pages from 1 and
-# `--doc-point` numbers them from 0, so the first match is page 0 here.
-
-ui-verify --exe target/release/pdfcer-gui.exe \
-          --pdf target/scratch/docs/SW41177-empty.pdf \
-          --doc-point 0,286.67,724.18 \
-          --check emptying_a_chunk_commits_the_emptying
-```
+The check opens `fixtures/a1-titleblock.pdf` at `fixture::a1_text_target`
+and ignores `--pdf` and `--doc-point`. The sweep's shared point lands on
+FreeText annotations, and an Edit click there, or on bare paper, becomes an
+**Add** draft, where every assertion here would describe something that is
+not a run. A click on empty page is symptom-identical to a broken hit test,
+so the point comes from `pdfcer find-text`, never from a guess.
 
 ## Falsified in both directions, which is what the calibration is for
 
