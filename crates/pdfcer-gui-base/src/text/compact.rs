@@ -166,6 +166,10 @@ pub const fn discard_toggle(object: DiscardObject) -> Option<(&'static str, &'st
             "Remove links to other files",
             "Removes links and actions that open another file or launch a program. Links to web pages stay.",
         ),
+        DiscardObject::ObjectData => (
+            "Remove object data",
+            "Removes the name-and-value properties a CAD or diagram program attaches to each drawn object, such as part numbers and layer details. The drawing looks the same. Has no effect when tags are removed too, since the properties live in the tags.",
+        ),
         _ => return None,
     })
 }
@@ -190,6 +194,9 @@ pub fn discarded(objects: &[ObjectDiscard]) -> Vec<String> {
                 }
                 DiscardObject::ExternalReferences => {
                     format!("Links to other files in {} place(s)", of.len())
+                }
+                DiscardObject::ObjectData => {
+                    format!("Object data in {} place(s)", of.len())
                 }
                 _ => return None,
             };

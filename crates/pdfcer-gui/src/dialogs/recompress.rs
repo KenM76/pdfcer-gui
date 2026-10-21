@@ -309,6 +309,41 @@ mod tests {
         assert!(!text.contains("other.pdf"), "the file link goes");
     }
 
+    /// Asking for object data removes a drawn object's part number and keeps
+    /// the tags that held it.
+    #[test]
+    fn object_data_goes_and_the_tags_stay() {
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 5 0 R              /MarkInfo << /Marked true /UserProperties true >> >>"
+                .to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
+            "<< /Length 0 >>
+stream
+
+endstream".to_string(),
+            "<< /Type /StructTreeRoot /K 6 0 R >>".to_string(),
+            "<< /Type /StructElem /S /Figure /P 5 0 R              /A << /O /UserProperties /P [<< /N (Part) /V (A-100) >>] >> >>"
+                .to_string(),
+        ]);
+        let asked = Choices {
+            recompress: false,
+            discard: DiscardOptions::none().with_object(DiscardObject::ObjectData),
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        assert!(
+            done.cleaned
+                .iter()
+                .any(|l| l.starts_with("Object data in ")),
+            "{done:?}"
+        );
+        let text =
+            String::from_utf8_lossy(&done.bytes.expect("the removal is written")).into_owned();
+        assert!(!text.contains("A-100"), "the part number goes");
+        assert!(text.contains("/StructTreeRoot"), "the tags stay");
+    }
+
     fn file(bodies: &[String]) -> Vec<u8> {
         let mut buf = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();
