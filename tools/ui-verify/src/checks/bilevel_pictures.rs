@@ -1,7 +1,8 @@
 //! Format ▸ Make pictures smaller driven to store a picture as black and
 //! white through each 1-bit encoder: CCITT Group 4 on one picture, JBIG2 on
 //! the other. Each must reach the engine as that encoder and rewrite the
-//! picture with it.
+//! picture with it. A second check chooses Smallest exact and requires the
+//! engine to have tried every exact storage for the picture.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/bilevel_pictures.md`.
 
@@ -30,8 +31,12 @@ const PHOTOS: Fixture = Fixture {
         height_pt: 200.0,
     },
 };
-/// Each pass: the picture's centre in page space, and the encoder chosen.
-const PASSES: [((f64, f64), &str); 2] = [((100.0, 100.0), "ccitt"), ((300.0, 100.0), "jbig2")];
+/// Each pass: the picture's centre in page space, the format chosen, and the
+/// trace field that must read 1.
+const PASSES: [((f64, f64), &str, &str); 2] = [
+    ((100.0, 100.0), "ccitt", "ccitt"),
+    ((300.0, 100.0), "jbig2", "jbig2"),
+];
 
 /// See the module documentation.
 pub struct BilevelPicturesStoreAsCcittAndJbig2;
@@ -57,8 +62,8 @@ fn drive(
     session: &Session,
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
-    for (at, encoder) in PASSES {
-        if let Some(failure) = pass(ctx, report, session, pointer, at, encoder)? {
+    for (at, encoder, field) in PASSES {
+        if let Some(failure) = pass(ctx, report, session, pointer, at, encoder, field)? {
             return Ok(Some(failure));
         }
     }
@@ -66,7 +71,7 @@ fn drive(
 }
 
 /// Select the picture at `at`, open the window, choose black and white
-/// stored by `encoder`, Apply, and require the edit to have used it.
+/// stored by `encoder`, Apply, and require the edit's `field` to read 1.
 fn pass(
     ctx: &CheckContext,
     report: &mut CheckReport,
@@ -74,6 +79,7 @@ fn pass(
     pointer: &ScriptedPointer,
     at: (f64, f64),
     encoder: &str,
+    field: &str,
 ) -> Result<Option<String>> {
     click_on(ctx, session, pointer, &PHOTOS, 0, at)?;
     let mark = session.trace()?.mark();
@@ -99,15 +105,57 @@ fn pass(
         )));
     };
     report.note(format!("{encoder}: `{}`", line.raw));
-    let used = line.get(encoder) == Some("1");
+    let used = line.get(field) == Some("1");
     let changed = line.get("changed") == Some("1") && line.get("skipped") == Some("0");
     if used && changed {
         return Ok(None);
     }
     Ok(Some(format!(
-        "Apply with Black and white stored as {encoder} must read `changed=1 {encoder}=1 \
-         skipped=0`: the picture rewritten by that encoder. It read `{}`. Trace: {}.",
+        "Apply with Black and white stored as {encoder} must read `changed=1 {field}=1 \
+         skipped=0`: the picture rewritten that way. It read `{}`. Trace: {}.",
         line.raw,
         session.trace_path().display()
     )))
+}
+
+/// See the module documentation.
+pub struct SmallestExactPictureTriesEveryStorage;
+
+impl Check for SmallestExactPictureTriesEveryStorage {
+    fn name(&self) -> &'static str {
+        "smallest_exact_picture_tries_every_storage"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Make pictures smaller offers no Smallest exact storage, or choosing it rewrites \
+         the picture without the engine trying each exact storage and keeping the smallest"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        run_on(
+            self,
+            ctx,
+            &PHOTOS,
+            INVOKE,
+            "smallestpicture",
+            drive_smallest,
+        )
+    }
+}
+
+fn drive_smallest(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    pass(
+        ctx,
+        report,
+        session,
+        pointer,
+        (100.0, 100.0),
+        "smallest",
+        "tried",
+    )
 }

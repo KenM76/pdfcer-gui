@@ -32,3 +32,11 @@ can produce the assertion.
 | opened | the Format tab route is missing |
 | press | a list or a choice was never drawn: the colour list, Black and white, or the encoder |
 | shrunk | Apply did not reach the engine, or the plan stored the picture another way |
+
+## `smallest_exact_picture_tries_every_storage`
+
+The same route on picture A with `compact.pictures.format.smallest`
+(`ImageEncode::Auto`); it requires `images-shrunk changed=1 tried=1 skipped=0`.
+`tried=` counts pictures whose `ImageChange::candidates` is non-empty, which the
+engine fills only under `encode=auto`. A dialog that sent any single encoder
+instead writes the picture with `tried=0`.

@@ -65,6 +65,8 @@ pub enum FormatWord {
     Keep,
     /// Flate.
     Lossless,
+    /// The smallest exact storage, tried per picture.
+    Smallest,
     /// JPEG.
     Jpeg,
     /// LZW.
@@ -83,6 +85,7 @@ pub const fn format(word: FormatWord) -> &'static str {
     match word {
         FormatWord::Keep => "Keep how each is stored",
         FormatWord::Lossless => "Lossless (exact)",
+        FormatWord::Smallest => "Smallest exact (tries each)",
         FormatWord::Jpeg => "JPEG (smaller, loses detail)",
         FormatWord::Lzw => "LZW (exact)",
         FormatWord::RunLength => "Run length (exact)",
@@ -97,6 +100,12 @@ pub const fn format_tooltip(word: FormatWord) -> &'static str {
     match word {
         FormatWord::Keep => "Each picture stays in the kind of storage it has now.",
         FormatWord::Lossless => "Exact; the usual choice when nothing may change.",
+        FormatWord::Smallest => {
+            "Exact. Each picture is stored every exact way that suits it (Lossless, run \
+             length, and for black-and-white pictures CCITT Group 4 and JBIG2), and the \
+             smallest is kept. A JPEG picture stays JPEG, and nothing raises the PDF \
+             version."
+        }
         FormatWord::Jpeg => "Much smaller for photographs; detail around edges is lost.",
         FormatWord::Lzw => {
             "Exact, usually larger than Lossless; for programs that expect LZW. A PDF/A \
@@ -311,6 +320,7 @@ pub fn picture_left_because(why: &ImageSkip) -> String {
             "they are not black and white, the only pictures that storage keeps"
         }
         ImageSkip::LzwUnderPdfa => "the document is PDF/A, which forbids LZW",
+        ImageSkip::AutoNotSmaller { .. } => "no exact storage made them smaller",
         ImageSkip::VersionTooLow { .. } => {
             "the document is an older PDF version than that storage needs"
         }

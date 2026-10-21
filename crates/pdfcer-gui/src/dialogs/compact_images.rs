@@ -37,6 +37,8 @@ pub enum Format {
     Keep,
     /// Flate at level 9.
     Lossless,
+    /// The smallest exact storage the engine finds for each picture.
+    Smallest,
     /// JPEG at [`Pictures::quality`].
     Jpeg,
     /// LZW: exact, for workflows that expect it; refused under PDF/A.
@@ -51,9 +53,10 @@ pub enum Format {
 
 impl Format {
     /// Every choice, in the order the list shows them.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Keep,
         Self::Lossless,
+        Self::Smallest,
         Self::Jpeg,
         Self::Lzw,
         Self::RunLength,
@@ -66,6 +69,7 @@ impl Format {
         match self {
             Self::Keep => "keep",
             Self::Lossless => "lossless",
+            Self::Smallest => "smallest",
             Self::Jpeg => "jpeg",
             Self::Lzw => "lzw",
             Self::RunLength => "runlength",
@@ -125,6 +129,7 @@ impl Pictures {
         patch.encode = Some(match self.format {
             Format::Keep => ImageEncode::Keep,
             Format::Lossless => ImageEncode::Flate { level: 9 },
+            Format::Smallest => ImageEncode::Auto,
             Format::Jpeg => ImageEncode::Jpeg,
             Format::Lzw => ImageEncode::Lzw,
             Format::RunLength => ImageEncode::RunLength,
@@ -165,6 +170,8 @@ pub struct Tally {
     pub jpeg: usize,
     /// Written as CCITT Group 4, JBIG2, LZW or run length, in that order.
     pub exact: [usize; 4],
+    /// Pictures the engine stored every exact way and kept the smallest of.
+    pub tried: usize,
     /// Colour-converted.
     pub converted: usize,
     /// Whether any change lost information, by the engine's own test.
@@ -192,6 +199,7 @@ impl Tally {
                 *count += usize::from(image.encoded_as == encode);
             }
             tally.converted += usize::from(image.conversion.is_some());
+            tally.tried += usize::from(!image.candidates.is_empty());
         }
         tally
     }
@@ -241,6 +249,8 @@ pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
     let shown = t::format(format_word(p.format));
     let list = egui::ComboBox::from_id_salt("compact-pictures-format") // ui-text-exempt: an id, never displayed
         .selected_text(shown)
+        // Every choice in view: the default height scrolls the last one out.
+        .height(f32::INFINITY)
         .show_ui(ui, |ui| {
             for format in Format::ALL {
                 let word = format_word(format);
@@ -317,6 +327,7 @@ const fn format_word(format: Format) -> t::FormatWord {
     match format {
         Format::Keep => t::FormatWord::Keep,
         Format::Lossless => t::FormatWord::Lossless,
+        Format::Smallest => t::FormatWord::Smallest,
         Format::Jpeg => t::FormatWord::Jpeg,
         Format::Lzw => t::FormatWord::Lzw,
         Format::RunLength => t::FormatWord::RunLength,
@@ -385,6 +396,7 @@ mod tests {
     #[test]
     fn each_exact_format_names_its_encoder() {
         for (format, encode) in [
+            (Format::Smallest, ImageEncode::Auto),
             (Format::Lzw, ImageEncode::Lzw),
             (Format::RunLength, ImageEncode::RunLength),
             (Format::Ccitt, ImageEncode::Ccitt),
