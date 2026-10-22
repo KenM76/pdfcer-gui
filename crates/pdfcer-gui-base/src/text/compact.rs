@@ -266,8 +266,8 @@ pub fn unrounded<'a>(changes: impl IntoIterator<Item = &'a ContentChange>) -> Ve
 /// Why one part was not rounded, in the operator's terms.
 fn unrounded_because(why: Unrounded) -> String {
     match why {
-        Unrounded::NotPageStart => {
-            "they are drawn inside another part, so their scale on the page is not known".to_owned()
+        Unrounded::UnknownStart => {
+            "they are drawn inside another part, or after one pdfcer cannot follow, so their scale on the page is not known".to_owned()
         }
         Unrounded::UnknownMatrix => {
             "a change of scale pdfcer cannot follow stopped the rounding part way".to_owned()

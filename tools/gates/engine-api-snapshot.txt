@@ -41,7 +41,7 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: ba1f2f69218a0b30b33488995657d3e2a4f25f32
+# baseline: c05e6af2c78f27067c3bacc8c710086d8d7c1ab7
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
 # items: 9741
 # ---------------------------------------------------------------------------
@@ -7512,8 +7512,8 @@ pdfcer-core variant pdfcer_core::optimize::content::Numbers::Keep
 pdfcer-core variant pdfcer_core::optimize::content::Numbers::Shortest
 pdfcer-core variant pdfcer_core::optimize::content::Rounding::Off
 pdfcer-core variant pdfcer_core::optimize::content::Rounding::Within
-pdfcer-core variant pdfcer_core::optimize::content::Unrounded::NotPageStart
 pdfcer-core variant pdfcer_core::optimize::content::Unrounded::UnknownMatrix
+pdfcer-core variant pdfcer_core::optimize::content::Unrounded::UnknownStart
 pdfcer-core variant pdfcer_core::optimize::content::Whitespace::Keep
 pdfcer-core variant pdfcer_core::optimize::content::Whitespace::Minimal
 pdfcer-core variant pdfcer_core::optimize::image::ImageEncode::Auto
