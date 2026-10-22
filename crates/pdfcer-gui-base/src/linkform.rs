@@ -11,6 +11,7 @@ use pdfcer_core::annot_author::{BorderDash, Color};
 use pdfcer_core::edit::{LinkBorder, LinkTarget};
 use pdfcer_core::outline::DestView;
 
+use crate::colourpick;
 use crate::linkread::{Border, Goes, LinkReading};
 use crate::text::linkedit as t;
 
@@ -48,8 +49,8 @@ pub struct LinkForm {
     pub border_on: bool,
     /// Its width in points.
     pub width: f64,
-    /// Its colour.
-    pub rgb: [u8; 3],
+    /// Its colour, in the space it was read or chosen in.
+    pub colour: Color,
     /// Whether it is dashed.
     pub dashed: bool,
 }
@@ -65,7 +66,7 @@ impl Default for LinkForm {
             name: String::new(),
             border_on: false,
             width: 1.0,
-            rgb: [0, 0, 0],
+            colour: Color::Rgb(0.0, 0.0, 0.0),
             dashed: false,
         }
     }
@@ -107,10 +108,15 @@ impl LinkForm {
             }
             Goes::Other(_) | Goes::Nowhere => {}
         }
-        if let Some(Border { width, rgb, dashed }) = &reading.border {
+        if let Some(Border {
+            width,
+            colour,
+            dashed,
+        }) = &reading.border
+        {
             form.border_on = true;
             form.width = width.clamp(MIN_WIDTH_PT, MAX_WIDTH_PT);
-            form.rgb = rgb.unwrap_or([0, 0, 0]);
+            form.colour = colour.unwrap_or(Color::Rgb(0.0, 0.0, 0.0));
             form.dashed = *dashed;
         }
         form
@@ -154,11 +160,7 @@ impl LinkForm {
         if !self.border_on {
             return None;
         }
-        let [r, g, b] = self.rgb.map(|c| f64::from(c) / 255.0);
-        let border = LinkBorder::new(
-            self.width.clamp(MIN_WIDTH_PT, MAX_WIDTH_PT),
-            Color::Rgb(r, g, b),
-        );
+        let border = LinkBorder::new(self.width.clamp(MIN_WIDTH_PT, MAX_WIDTH_PT), self.colour);
         Some(
             match self
                 .dashed
@@ -239,14 +241,15 @@ impl LinkForm {
                         .suffix(t::width_suffix()),
                 );
                 ui.label(t::border_colour());
-                if let Some(rgb) = crate::swatch::show(
-                    ui,
-                    salt,
-                    crate::swatch::Value::Agreed(self.rgb),
-                    regions.colour,
-                    "",
-                ) {
-                    self.rgb = rgb;
+                // No opacity: `/C` carries none.
+                let shown = colourpick::Shown::Agreed(colourpick::Pick {
+                    ink: colourpick::Ink::from(self.colour),
+                    opacity: None,
+                });
+                if let Some(pick) =
+                    colourpick::show(ui, salt, shown, colourpick::Spaces::ALL, regions.colour, "")
+                {
+                    self.colour = pick.ink.into();
                 }
                 ui.checkbox(&mut self.dashed, t::border_dashed());
             });
@@ -308,7 +311,7 @@ mod tests {
         let form = LinkForm {
             border_on: true,
             dashed: true,
-            rgb: [255, 0, 0],
+            colour: Color::Rgb(1.0, 0.0, 0.0),
             width: 2.0,
             ..LinkForm::default()
         };
@@ -324,7 +327,7 @@ mod tests {
             goes: Goes::Uri("https://example.com".to_owned()),
             border: Some(Border {
                 width: 2.0,
-                rgb: Some([0, 0, 255]),
+                colour: Some(Color::Cmyk(1.0, 0.5, 0.0, 0.1)),
                 dashed: true,
             }),
         };
@@ -332,6 +335,10 @@ mod tests {
         assert_eq!(form.choice, Choice::Web);
         assert_eq!(form.uri, "https://example.com");
         assert!(form.border_on && form.dashed);
-        assert_eq!(form.rgb, [0, 0, 255]);
+        assert_eq!(
+            form.colour,
+            Color::Cmyk(1.0, 0.5, 0.0, 0.1),
+            "a CMYK border opens as CMYK"
+        );
     }
 }

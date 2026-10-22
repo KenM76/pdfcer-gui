@@ -10,7 +10,7 @@ choice loses nothing typed:
 
 - `choice`: `Page`, `Web` or `Named`.
 - `page_number` (1-based), `uri`, `name`.
-- `border_on`, `width` (pt), `rgb`, `dashed`.
+- `border_on`, `width` (pt), `colour` (the engine `Color`), `dashed`.
 
 The default is page 1 with no visible border: how most producers write a link,
 and the choice that changes nothing on the printed sheet.
@@ -29,8 +29,11 @@ and the choice that changes nothing on the printed sheet.
   - Named: refused when empty. Whether the name exists is the engine's check;
     there is no public listing of names to pick from (request G179).
 - `border() -> Option<LinkBorder>`: `None` when off. The width is clamped to
-  0.25–12 pt, the colour written as RGB, and a dashed border gets a 3 pt dash.
+  0.25–12 pt, the colour written in its own space (grey, RGB or CMYK), and a
+  dashed border gets a 3 pt dash.
 - `goes_ui` and `border_ui` draw the controls and return whether anything
-  changed. Each publishes the regions its caller names in `Regions`.
+  changed. Each publishes the regions its caller names in `Regions`. The
+  colour is `colourpick::show` with grey, RGB and CMYK and no opacity (`/C`
+  carries none); its tabs publish under `{colour}.space.<rgb|cmyk|gray>`.
 
 The words are in `text::linkedit`.

@@ -258,7 +258,7 @@ pub(super) fn pick_colour(
     // preview button, which opens a nested popup.
     pointer.click_in(session, vp.as_deref(), at_fraction(rect, 0.35, 0.80))?;
     session.settle(16);
-    // The close is the commit: `swatch::show` answers on the frame it closes.
+    // The close is the commit: `colourpick::show` answers on the frame it closes.
     pointer.key(session, vp.as_deref(), "Escape", None)?;
     session.settle(40);
     Ok(None)

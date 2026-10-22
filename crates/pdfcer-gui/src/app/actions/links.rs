@@ -84,10 +84,14 @@ fn set_border(doc: &mut OpenDoc, id: ObjId, border: Option<&LinkBorder>) {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!(
-                        "set-link-border-applied id={} visible={} width={} appearance_replaced={}",
+                        "set-link-border-applied id={} visible={} width={} colour={} appearance_replaced={}",
                         id.num,
                         border.is_some(),
                         border.map_or(0.0, |b| b.width),
+                        border.map_or_else(
+                            || "none".to_owned(),
+                            |b| pdfcer_gui_base::colourpick::trace_key(b.color)
+                        ),
                         change.appearance_replaced
                     )
                 });
@@ -205,7 +209,7 @@ mod tests {
         );
         let border = read.border.expect("a visible border");
         assert!((border.width - 2.0).abs() < 1e-9);
-        assert_eq!(border.rgb, Some([255, 0, 0]));
+        assert_eq!(border.colour, Some(Color::Rgb(1.0, 0.0, 0.0)));
         assert!(!border.dashed);
     }
 }

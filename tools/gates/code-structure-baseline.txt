@@ -191,7 +191,6 @@ fn crates/pdfcer-gui-base/src/settingspages/preset.rs::detail
 fn crates/pdfcer-gui-base/src/settingspages/preset.rs::row
 fn crates/pdfcer-gui-base/src/sign/mod.rs::prepare
 fn crates/pdfcer-gui-base/src/snapmark.rs::snap_marker_shapes
-fn crates/pdfcer-gui-base/src/swatch.rs::show
 fn crates/pdfcer-gui-base/src/swatch.rs::show_mk
 fn crates/pdfcer-gui-base/src/tabordermodel.rs::collect
 fn crates/pdfcer-gui-base/src/text/about.rs::attributions

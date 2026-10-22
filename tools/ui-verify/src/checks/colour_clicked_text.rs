@@ -401,7 +401,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              A control that is drawn, pressed, and does nothing is the defect class this whole \
              project was founded on, and it is worse here than usual: the operator has already \
              failed once to find this control, and the thing they finally found is inert. \
-             `panels::properties::swatch::show` opens `egui::Popup::menu` on the button's \
+             `colourpick::show` opens `egui::Popup::menu` on the button's \
              response with an id it owns; the popup body publishes this region. Candidates: the \
              popup id collided with another control's (the fill and line swatches on the paint \
              section share this widget and must not share an `id_salt`), or the click landed \
@@ -447,7 +447,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★ A COLOUR WAS PICKED AND NO RESTYLE WAS EVEN ATTEMPTED: no `{STYLE_EVENT}` line.\n\
              The section raises `Action::TextStyle` with the object's run range and \
              `StyleChange::Fill`. Candidates, in order of likelihood. (1) \
-             `panels::properties::swatch::show` never committed: it answers `Some` only on the \
+             `colourpick::show` never committed: it answers `Some` only on the \
              frame the popup CLOSES and only if `dirty` was set, so a click inside the picker \
              that landed on inert space leaves `dirty` false and the gesture is correctly a \
              no-op — which would be the harness's aim, not the program. (2) The run range came \

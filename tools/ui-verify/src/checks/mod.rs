@@ -43,6 +43,7 @@ pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
 pub mod compact_round;
+pub mod link_cmyk;
 pub mod objects_multiselect;
 pub mod pen_cmyk;
 pub mod shrink_pictures;

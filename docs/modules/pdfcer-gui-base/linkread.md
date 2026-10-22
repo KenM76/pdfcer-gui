@@ -20,10 +20,11 @@ G178), and is deleted with that answer.
   - `/A /S /GoTo` → its `/D`, read as `/Dest` is.
   - Any other `/A` → `Other(S)`, with `S` empty when the action has no `/S`.
   - Nothing usable → `Nowhere`.
-- `Border{width, rgb, dashed}`, or `None` for an invisible border:
+- `Border{width, colour, dashed}`, or `None` for an invisible border:
   - The width is `/BS /W`, else `/Border[2]`, else 1 pt.
   - A zero width, or a `/C` that is present and empty, reads as `None`.
-  - `rgb` is `/C` with 1 (grey), 3 (RGB) or 4 (CMYK) components, converted to
-    8-bit RGB; `None` when absent.
+  - `colour` is `/C` with 1 (grey), 3 (RGB) or 4 (CMYK) components, kept in
+    that space so re-applying a border does not rewrite a CMYK ink as RGB;
+    `None` when absent or another length.
   - Dashed means `/BS /S /D`, or a `/Border` array with a fourth (dash)
     element.

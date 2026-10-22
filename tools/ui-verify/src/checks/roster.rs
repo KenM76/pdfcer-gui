@@ -376,6 +376,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(widget_bg_cmyk::AWidgetsBackgroundIsStoredInCmyk),
         Box::new(band_cmyk::AMarksOutlineFromTheFormatTabIsStoredInCmyk),
         Box::new(pen_cmyk::AMarkDrawnWithACmykPenIsStoredInCmyk),
+        Box::new(link_cmyk::ALinksBorderColourIsStoredInCmyk),
         Box::new(inherited_alignment::AFieldsAlignmentCanGoBackToInherited),
         Box::new(check_mark::ACheckBoxsMarkCanBeChosen),
         Box::new(check_mark::ARadioButtonsMarkCanBeChosen),

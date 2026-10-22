@@ -16,7 +16,7 @@ const ADD_INVOKE: &str = "mode.edit,edit.insert_link";
 const EDIT_INVOKE: &str = "mode.edit,file.properties";
 const REVIEW_INVOKE: &str = "mode.review,file.properties";
 const FOLLOWED: &str = "link-click"; // ui-text-exempt: a trace event name, never displayed
-const FIXTURE: Fixture = Fixture {
+pub(super) const FIXTURE: Fixture = Fixture {
     file: "link-edit.pdf",
     method: "Rebuild it with `python fixtures/link-edit.PROVENANCE.py`.",
     page: PageGeometry {
@@ -47,7 +47,7 @@ const ADDRESS_WORD: &str = "target=uri:https://example.com/drawings";
 const DRAG_FROM: (f64, f64) = (100.0, 300.0);
 const DRAG_TO: (f64, f64) = (260.0, 340.0);
 /// Inside the fixture's link.
-const ON_LINK: (f64, f64) = (200.0, 200.0);
+pub(super) const ON_LINK: (f64, f64) = (200.0, 200.0);
 /// The fixture link's top-right corner, where its grip is centred, and where
 /// the drag lands.
 const LINK_CORNER: (f64, f64) = (300.0, 220.0);

@@ -5,6 +5,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/linkread.md`.
 
+use pdfcer_core::annot_author::Color;
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::graph::ObjectGraph;
 use pdfcer_core::object::{Dict, ObjId, Object};
@@ -30,8 +31,8 @@ pub enum Goes {
 pub struct Border {
     /// Stroke width in points, above zero.
     pub width: f64,
-    /// `/C` as 0–255 RGB, `None` when absent or empty (no stroke colour).
-    pub rgb: Option<[u8; 3]>,
+    /// `/C` in its own space, `None` when absent or a length no space has.
+    pub colour: Option<Color>,
     /// Whether it is dashed.
     pub dashed: bool,
 }
@@ -141,23 +142,19 @@ fn border(graph: &impl ObjectGraph, dict: &Dict) -> Option<Border> {
         || legacy.as_ref().is_some_and(|a| a.len() > 3);
     Some(Border {
         width,
-        rgb: colour.as_deref().and_then(rgb_of),
+        colour: colour.as_deref().and_then(colour_of),
         dashed,
     })
 }
 
-/// `/C`'s numbers as 0–255 RGB: one is grey, three RGB, four CMYK.
-fn rgb_of(c: &[f64]) -> Option<[u8; 3]> {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+/// `/C`'s numbers in their own space: one is grey, three RGB, four CMYK
+/// (ISO 32000-1 Table 164). Kept unconverted, so re-applying a border does
+/// not rewrite a CMYK ink as RGB.
+fn colour_of(c: &[f64]) -> Option<Color> {
     match *c {
-        [g] => Some([byte(g); 3]),
-        [r, g, b] => Some([byte(r), byte(g), byte(b)]),
-        [c, m, y, k] => Some([
-            byte((1.0 - c) * (1.0 - k)),
-            byte((1.0 - m) * (1.0 - k)),
-            byte((1.0 - y) * (1.0 - k)),
-        ]),
+        [g] => Some(Color::Gray(g)),
+        [r, g, b] => Some(Color::Rgb(r, g, b)),
+        [c, m, y, k] => Some(Color::Cmyk(c, m, y, k)),
         _ => None,
     }
 }
@@ -167,10 +164,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn colour_arrays_of_each_length_become_rgb() {
-        assert_eq!(rgb_of(&[0.5]), Some([128, 128, 128]));
-        assert_eq!(rgb_of(&[1.0, 0.0, 0.0]), Some([255, 0, 0]));
-        assert_eq!(rgb_of(&[0.0, 0.0, 0.0, 1.0]), Some([0, 0, 0]));
-        assert_eq!(rgb_of(&[0.1, 0.2]), None);
+    fn colour_arrays_keep_the_space_their_length_names() {
+        assert_eq!(colour_of(&[0.5]), Some(Color::Gray(0.5)));
+        assert_eq!(colour_of(&[1.0, 0.0, 0.0]), Some(Color::Rgb(1.0, 0.0, 0.0)));
+        assert_eq!(
+            colour_of(&[0.0, 0.0, 0.0, 1.0]),
+            Some(Color::Cmyk(0.0, 0.0, 0.0, 1.0))
+        );
+        assert_eq!(colour_of(&[0.1, 0.2]), None);
     }
 }

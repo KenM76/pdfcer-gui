@@ -1,31 +1,20 @@
-//! # `swatch` — one colour control, three honest states
+//! # `swatch` — a form box's `/MK` colour control
 //!
-//! `OPERATOR_REQUESTS.md` **O89**, both pieces. It is the widget behind the
-//! clicked-text colour ([`super::textobject`]) and behind the multi-object
-//! fill/line colour ([`super::paint`]), and it exists because those two
-//! surfaces have to answer the same three questions the same way:
+//! A swatch with a popup picker for one `/MK` colour key (background or
+//! border), offering *No colour* and *Remove* beside the colour, and a key the
+//! picker cannot show disclosed rather than guessed. It answers `Some` only on
+//! the frame the picker closes after a change, so one gesture is one edit.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/swatch.md`.
 
 use egui::Ui;
 
-/// What the selection says its colour is.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Value {
-    /// Every member of the selection is this colour.
-    Agreed([u8; 3]),
-    /// The members disagree. The control still applies to all of them.
-    Mixed,
-}
-
-/// PDF §8.6.8's default fill, and where the picker opens over a selection that
-/// has no agreed colour of its own.
+/// PDF §8.6.8's default fill, and where the picker opens over a key it cannot
+/// show.
 ///
-/// It is **never applied unless the operator moves the picker** — [`show`]
+/// It is **never applied unless the operator moves the picker** — [`show_mk`]
 /// returns `None` when nothing changed — so this is a starting position on
-/// screen and not a proposed value. "Opens on nothing in particular" is what a
-/// mixed control is required to do; opening on the *first member's* colour is
-/// the specific thing O89 refused, and this is not that.
+/// screen and not a proposed value.
 // DOCUMENT COLOUR: the PDF default fill (§8.6.8), used as the picker's opening
 // position over a document colour. It is not chrome and a restyle must not
 // move it.
@@ -33,111 +22,6 @@ const NO_PARTICULAR_COLOUR: [u8; 3] = [0, 0, 0];
 
 /// The width of the swatch, as a multiple of the row height.
 const ASPECT: f32 = 1.7;
-
-/// One frame of the control. `Some(rgb)` **only** on the frame the picker
-/// closed after the operator changed it.
-pub fn show(
-    ui: &mut Ui,
-    id_salt: &str,
-    value: Value,
-    region: &str,
-    mixed_hint: &str,
-) -> Option<[u8; 3]> {
-    let id = ui.make_persistent_id(id_salt);
-    let popup_id = id.with("popup"); // ui-text-exempt: an egui id salt, never displayed
-    let seed = match value {
-        Value::Agreed(rgb) => rgb,
-        Value::Mixed => NO_PARTICULAR_COLOUR,
-    };
-
-    let mut state: Editing = ui.data(|d| d.get_temp(id)).unwrap_or(Editing {
-        working: seed,
-        dirty: false,
-        was_open: false,
-    });
-
-    let height = ui.spacing().interact_size.y;
-    let size = egui::vec2(height * ASPECT, height);
-    let response = match value {
-        Value::Agreed(rgb) => {
-            // DOCUMENT COLOUR: the object's own fill, read from the file. A
-            // theme must never move it — restyling the application would
-            // change what the operator sees their document's ink as.
-            let fill = egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
-            ui.add(egui::Button::new("").fill(fill).min_size(size))
-        }
-        Value::Mixed => {
-            let (plate, ink) = egui_shell::Theme::indeterminate_pair(ui.ctx());
-            let marker = crate::text::panels::properties::text_value_absent();
-            ui.add(
-                egui::Button::new(egui::RichText::new(marker).color(ink))
-                    .fill(plate)
-                    .min_size(size),
-            )
-        }
-    };
-    crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
-
-    // A fresh open re-seeds. Without this, a swatch opened over object A,
-    // closed, and re-opened over object B would show A's colour in the picker —
-    // a stale value presented as B's, which is the failure that makes a
-    // properties panel untrustworthy.
-    let open_before = egui::Popup::is_id_open(ui.ctx(), popup_id);
-    if open_before && !state.was_open {
-        state.working = seed;
-        state.dirty = false;
-    }
-
-    egui::Popup::menu(&response)
-        .id(popup_id)
-        .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
-        .show(|ui| {
-            if let Value::Mixed = value {
-                ui.label(egui::RichText::new(mixed_hint).small().weak());
-            }
-            // DOCUMENT COLOUR: the working value of a document fill being
-            // edited. Not chrome.
-            let mut colour =
-                egui::Color32::from_rgb(state.working[0], state.working[1], state.working[2]);
-            if egui::color_picker::color_picker_color32(
-                ui,
-                &mut colour,
-                egui::color_picker::Alpha::Opaque,
-            ) {
-                state.working = [colour.r(), colour.g(), colour.b()];
-                state.dirty = true;
-            }
-            // The picker's own rectangle, published so a DRIVEN check can
-            // aim a real pointer inside it.
-            //
-            // It has to be its own name rather than [`region`], and this is the
-            // same argument `app::fontband::FACE_POPUP_REGION` makes about the
-            // face chooser: the button and its popup are two rectangles in one
-            // frame, and a check reading one name would aim at whichever the
-            // paint order happened to leave last — which for a popup is the
-            // popup, so the *button* would become unclickable to the harness the
-            // moment it opened once.
-            //
-            // `ui_rect`, not `ui_rect_visible`. A popup is drawn in its own
-            // `Area` on the tooltip layer, so its clip rect is the whole screen
-            // and the visibility fraction is meaningless — the gated form would
-            // be asserting a property that is trivially true here while reading
-            // as though it had been checked.
-            crate::diag::ui_rect(&format!("{region}.picker"), ui.min_rect());
-        });
-
-    let open_after = egui::Popup::is_id_open(ui.ctx(), popup_id);
-    // The commit. The picker CLOSED and something moved while it was open,
-    // so the whole gesture becomes one action and one undo entry — see the
-    // module header for the sixty-edits-a-second defect this avoids.
-    let committed = (state.was_open && !open_after && state.dirty).then_some(state.working);
-    if committed.is_some() {
-        state.dirty = false;
-    }
-    state.was_open = open_after;
-    ui.data_mut(|d| d.insert_temp(id, state));
-    committed
-}
 
 /// What one `/MK` colour key says, as far as a swatch is concerned.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -263,7 +147,7 @@ pub fn show_mk(
     };
     crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
 
-    // A fresh open re-seeds, for [`show`]'s reason: a picker opened over one
+    // A fresh open re-seeds: a picker opened over one
     // widget, closed, and re-opened over another would otherwise show the first
     // one's colour as though it were the second's.
     let open_before = egui::Popup::is_id_open(ui.ctx(), popup_id);
@@ -351,30 +235,15 @@ fn disc(ui: &mut Ui, size: egui::Vec2, fill: egui::Color32) -> egui::Response {
     response
 }
 
-/// The picker's in-progress value, across the frames it is open for.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct Editing {
-    /// The colour the picker is showing right now.
-    working: [u8; 3],
-    /// Has the operator moved it since this open?
-    ///
-    /// Without this, opening the picker to *look* at a colour and closing it
-    /// would author an edit — a document changed, an undo entry added and a
-    /// file marked dirty, by a gesture that changed nothing.
-    dirty: bool,
-    /// Was the popup open on the previous frame? The edge this compares against
-    /// is the whole commit trigger.
-    was_open: bool,
-}
-
-/// [`Editing`] for [`show_mk`], whose colour keeps its space.
+/// The picker's in-progress value across the frames it is open for, in the
+/// space the `/MK` key states.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct MkEditing {
     /// The colour the picker is showing right now.
     working: crate::colourpick::Ink,
-    /// As [`Editing::dirty`].
+    /// Moved since this open: opening to look and closing authors nothing.
     dirty: bool,
-    /// As [`Editing::was_open`].
+    /// Open on the previous frame; the close edge is the commit trigger.
     was_open: bool,
 }
 
@@ -382,22 +251,10 @@ struct MkEditing {
 mod tests {
     use super::*;
 
-    /// **The mixed state must not carry a colour.**
+    /// The picker's opening position over an unshowable key is the PDF
+    /// default.
     #[test]
-    fn mixed_carries_no_colour() {
-        // A compile-time fact asserted at runtime, because the thing being
-        // protected is the SHAPE of the enum and a shape has no other test.
-        match Value::Mixed {
-            Value::Mixed => {}
-            Value::Agreed(_) => panic!("mixed must not be constructible with a colour"),
-        }
-        assert_eq!(std::mem::size_of::<Value>(), std::mem::size_of::<[u8; 4]>());
-    }
-
-    /// The picker's opening position over a disagreeing selection is the PDF
-    /// default, not a member's colour.
-    #[test]
-    fn a_mixed_selection_opens_on_the_pdf_default() {
+    fn an_unshowable_key_opens_on_the_pdf_default() {
         assert_eq!(NO_PARTICULAR_COLOUR, [0, 0, 0]);
     }
 }
