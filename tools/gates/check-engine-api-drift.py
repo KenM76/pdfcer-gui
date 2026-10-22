@@ -721,6 +721,39 @@ def flatten(api: dict[str, set[str]]) -> set[str]:
 # ===========================================================================
 
 
+def snapshot_baseline(path: pathlib.Path) -> str | None:
+    """The revision the snapshot's `# baseline:` line names, or `None`."""
+    if not path.is_file():
+        return None
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if raw.startswith("# baseline:"):
+            return raw.split(":", 1)[1].strip() or None
+    return None
+
+
+def baseline_lag(baseline: str | None, rev: str) -> str | None:
+    """Why a snapshot whose baseline is not the locked revision fails, or `None`.
+
+    A module new since the baseline is discharged as a whole by one sentence
+    naming it, and that discharge keeps covering everything the engine adds
+    under the module for as long as the snapshot is not folded. Folding at
+    each pin move ends the window: the module becomes "seen", and an item
+    added under it later is reported as an item. `--update` folds only what is
+    accounted for, so requiring it hides nothing.
+    """
+    if baseline and (baseline.startswith(rev) or rev.startswith(baseline)):
+        return None
+    return (
+        f"FAIL: the snapshot's baseline is {(baseline or 'missing')[:7]}, and {LOCK.name}\n"
+        f"      pins {rev[:7]}.\n\n"
+        "  A snapshot left behind a pin move keeps every module that was new at its\n"
+        "  baseline counted as new, so one sentence naming such a module discharges\n"
+        "  everything the engine has added under it since, unread. Once the report\n"
+        "  above is accounted for, run `--update`: it folds only accounted items and\n"
+        "  moves the baseline to the lock.\n"
+    )
+
+
 def read_snapshot(path: pathlib.Path) -> tuple[set[str], dict[str, str], list[str]]:
     """`(seen, exemptions, complaints)`.
 
@@ -1541,6 +1574,17 @@ def self_test() -> int:
         print("  a gate that found nothing.")
         fail = 1
 
+    # --- a snapshot behind the lock fails; one at it does not ---------------
+    full = "47578b9ea394be97e73cb5cd0754a51e58089408"
+    if (baseline_lag(full, "7faafa0a") is None or baseline_lag(None, full) is None
+            or baseline_lag(full, full) is not None
+            or baseline_lag(full[:7], full) is not None):
+        print("engine-api-drift --self-test: FAIL -- the baseline-lag rule misjudged a")
+        print("  snapshot behind the lock, a missing baseline, or an equal one written")
+        print("  in short or full form. A lagging snapshot lets one sentence naming a")
+        print("  new module discharge everything added under it later.")
+        fail = 1
+
     if fail:
         return 1
     print("engine-api-drift --self-test: PASS -- the scanner reads all 13 shapes of the")
@@ -1549,7 +1593,7 @@ def self_test() -> int:
     print("  MODULE (once, with its count) and a thin exemption; it names the removal")
     print("  a moved item came from; and it reports none of the five correct shapes,")
     print("  including a new item in an EXISTING module, which the module rule must")
-    print("  never swallow.")
+    print("  never swallow; and a snapshot whose baseline is not the lock fails.")
     return 0
 
 
@@ -1746,7 +1790,13 @@ def main() -> int:
         keep = foldable
         baseline = rev
         write_snapshot(SNAPSHOT, baseline, crates, keep, exempt)
-        left = sorted(live - keep - set(exempt))
+        # An item under an exempted MODULE is silenced by that line, not
+        # unaccounted, so it is not counted as left.
+        exempt_modules = tuple(
+            k.split(" ", 2)[2] + "::" for k in exempt if k.split(" ", 2)[1] == "module"
+        )
+        left = sorted(k for k in live - keep - set(exempt)
+                      if not k.split(" ", 2)[2].startswith(exempt_modules))
         print()
         print(f"--update: wrote {len(keep)} item(s) to "
               f"{rel(SNAPSHOT)} at baseline {baseline[:7]}.")
@@ -1756,6 +1806,12 @@ def main() -> int:
             print("          about, or exempted with a reason. There is no command that")
             print("          makes a finding disappear.")
         return 0
+
+    lag = baseline_lag(snapshot_baseline(SNAPSHOT), rev)
+    if lag:
+        print()
+        print(lag, end="")
+        rc = 1
 
     if rc == 0:
         print()

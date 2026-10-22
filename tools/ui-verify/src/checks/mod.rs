@@ -38,6 +38,7 @@ pub mod comment_popup;
 pub mod comments_census;
 
 pub mod bilevel_pictures;
+pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
 pub mod objects_multiselect;

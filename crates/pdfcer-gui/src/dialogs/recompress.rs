@@ -12,7 +12,8 @@
 //! [`Choices::pictures`] is on, through `OptimizeSettings::images`; the
 //! preset's own stream action stays, so everything else is still recompressed.
 //! [`Choices::fonts`] cuts embedded TrueType fonts to the glyphs drawn
-//! through `OptimizeSettings::resubset`.
+//! through `OptimizeSettings::resubset`. [`Choices::content`] tidies page
+//! drawing instructions losslessly through `OptimizeSettings::content`.
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
@@ -20,9 +21,11 @@ use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
+use pdfcer_core::optimize::ContentPatch;
 use pdfcer_core::optimize::resubset::ResubsetFonts;
 use pdfcer_core::optimize::{
-    CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, StreamAction,
+    CleanupOptions, DiscardOptions, OptimizedFile, PlannedChange, Preset, RebuildOptions,
+    StreamAction,
 };
 use pdfcer_core::settings::Settings;
 use pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER;
@@ -49,6 +52,8 @@ pub struct Choices {
     /// Cut each embedded TrueType font to the glyphs drawn, merging copies
     /// of one face.
     pub fonts: bool,
+    /// Rewrite page drawing instructions in their shortest equivalent form.
+    pub content: bool,
 }
 
 impl Choices {
@@ -61,6 +66,7 @@ impl Choices {
             || !self.discard.is_none()
             || self.pictures.on
             || self.fonts
+            || self.content
     }
 }
 
@@ -88,6 +94,10 @@ pub struct Recompressed {
     pub fonts: Vec<String>,
     /// Embedded fonts cut.
     pub fonts_cut: usize,
+    /// What tidying the drawing instructions did, when it did anything.
+    pub content: Option<String>,
+    /// Parts whose drawing instructions were tidied.
+    pub content_tidied: usize,
 }
 
 /// Optimize `copy` as `choices` ask, in a session and with save options
@@ -124,6 +134,9 @@ pub fn recompress(
     if choices.fonts {
         preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
     }
+    if choices.content {
+        preset.content = Some(ContentPatch::new());
+    }
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
     let (file, report) = session
@@ -141,6 +154,11 @@ pub fn recompress(
     };
     let fonts = plan.resubset.as_ref().map(t::resubset).unwrap_or_default();
     let fonts_cut = plan.resubset.as_ref().map_or(0, |r| r.targets.len());
+    let tidied: Vec<_> = plan
+        .changes
+        .iter()
+        .filter_map(|c: &PlannedChange| c.content.as_ref())
+        .collect();
     let mut cleaned = t::cleaned(&plan.cleanup);
     cleaned.extend(t::discarded(&plan.discard_objects));
     Ok(Recompressed {
@@ -154,6 +172,8 @@ pub fn recompress(
         pictures,
         fonts,
         fonts_cut,
+        content: t::content(tidied.iter().copied()),
+        content_tidied: tidied.len(),
     })
 }
 
@@ -174,7 +194,7 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -183,6 +203,7 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.pictures.converted),
                         result.as_ref().is_ok_and(|r| r.pictures.lossy),
                         result.as_ref().map_or(0, |r| r.fonts_cut),
+                        result.as_ref().map_or(0, |r| r.content_tidied),
                         result
                             .as_ref()
                             .ok()
@@ -224,6 +245,7 @@ mod tests {
         discard: DiscardOptions::none(),
         pictures: Pictures::OFF,
         fonts: false,
+        content: false,
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -635,6 +657,62 @@ mod tests {
             cut.len() < off.bytes.map_or(copy.len(), |b| b.len()),
             "{done:?}"
         );
+    }
+
+    /// Padded drawing instructions are tidied only when asked: the sentence
+    /// counts the 199 setters repeating the grey already set (one in the
+    /// first line, both in each later one), and the
+    /// copy's page no longer spells `0.500`.
+    #[test]
+    fn drawing_instructions_are_tidied_only_when_asked() {
+        // string-gap-exempt: the gap is the redundant spacing being tidied.
+        let page = "0.500 g   0.500 g
+10 10 20 20 re f % a comment
+"
+        .repeat(100);
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
+            format!(
+                "<< /Length {} >>
+stream
+{page}
+endstream",
+                page.len()
+            ),
+        ]);
+        let off = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert!(off.content.is_none() && off.content_tidied == 0, "{off:?}");
+        let on = Choices {
+            content: true,
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), on).expect("optimizes");
+        assert_eq!(done.content_tidied, 1, "{done:?}");
+        let said = done.content.as_deref().expect("a sentence");
+        assert!(
+            said.starts_with("Drawing instructions in 1 part(s) tidied")
+                && said.contains(": 199 instruction(s) that changed nothing removed, ")
+                && !said.contains("  "),
+            "{said}"
+        );
+        let after = Document::from_bytes(done.bytes.expect("written")).expect("parses back");
+        let view = after.view();
+        let decoded = after
+            .objects()
+            .filter_map(|o| match &o.value {
+                pdfcer_core::object::Object::Stream(s) => {
+                    pdfcer_core::filters::decode_stream(&s.dict, view.slice(s.data_span)?).ok()
+                }
+                _ => None,
+            })
+            // The writer may pack objects into an object stream; the page's is
+            // the one that draws a rectangle.
+            .find(|d| d.windows(3).any(|w| w == b" re"))
+            .expect("the page content");
+        let text = String::from_utf8_lossy(&decoded);
+        assert!(!text.contains("0.500") && text.contains(".5"), "{text}");
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {

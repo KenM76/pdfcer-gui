@@ -107,7 +107,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let Some(halved) = mark_now(&opened) else {
         pointer.gone(session)?;
         return Ok(Some(format!(
-            "after the corner drag no hand signature is on the page; the corner drag traced              (tagged, undo depth)={resize:?}."
+            "after the corner drag no hand signature is on the page; the corner drag traced \
+             (tagged, undo depth)={resize:?}."
         )));
     };
 

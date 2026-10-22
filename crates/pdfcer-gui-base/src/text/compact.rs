@@ -5,6 +5,7 @@
 
 use pdfcer_core::optimize::resubset::ResubsetPlan;
 use pdfcer_core::optimize::{CleanupPlan, DiscardObject, ObjectDiscard, RebuildReport, SkipReason};
+use pdfcer_core::optimize::{ContentChange, ContentSkip};
 use pdfcer_core::space_audit::SpaceCategory;
 
 /// The window's title bar.
@@ -147,7 +148,59 @@ pub const fn fonts_toggle() -> &'static str {
 /// Hover on it.
 #[must_use]
 pub const fn fonts_tooltip() -> &'static str {
-    "Each embedded TrueType or CFF font keeps only the characters this document draws, and copies of one font embedded more than once become one. The pages look the same. Text added later in another program may have no characters to draw with. A font that cannot be cut safely is kept whole and listed with why. In a PDF/A-1 document, a font that would need a character list pdfcer does not write yet is kept whole."
+    "Each embedded TrueType or CFF font keeps only the characters this document draws, and copies of one font embedded more than once become one. The pages look the same. Text added later in another program may have no characters to draw with. A font that cannot be cut safely is kept whole and listed with why. In a PDF/A-1 document the list of characters the standard asks for is written with the cut font; a font whose list cannot be written is kept whole."
+}
+
+/// The switch that tidies the page drawing instructions.
+#[must_use]
+pub const fn content_toggle() -> &'static str {
+    "Tidy the drawing instructions on each page"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn content_tooltip() -> &'static str {
+    "Rewrites the instructions that draw each page in their shortest form: spacing and comments a \
+     PDF reader does not need are dropped, a number like 0.500 is written .5, and instructions \
+     that change nothing are removed. Each rewrite is read back and compared with the original \
+     before it is kept, so the pages look exactly the same. Text, pictures and fonts are not \
+     touched."
+}
+
+/// What tidying the drawing instructions did, as one sentence; `None` when
+/// nothing was tidied.
+#[must_use]
+pub fn content<'a>(changes: impl IntoIterator<Item = &'a ContentChange>) -> Option<String> {
+    let (mut parts, mut before, mut after, mut removed, mut shortened) = (0usize, 0, 0, 0, 0);
+    for change in changes {
+        parts += 1;
+        before += change.decoded_before;
+        after += change.decoded_after;
+        removed += change.operators_removed;
+        shortened += change.numbers_shortened;
+    }
+    (parts > 0).then(|| {
+        format!(
+            "Drawing instructions in {parts} part(s) tidied from {} to {} before compression: \
+             {removed} instruction(s) that changed nothing removed, {shortened} number(s) written \
+             shorter.",
+            space_bytes(before),
+            space_bytes(after)
+        )
+    })
+}
+
+/// Why tidying a part's drawing instructions left it as stored.
+#[must_use]
+pub fn content_left_because(why: &ContentSkip) -> String {
+    match why {
+        ContentSkip::Mismatch => {
+            "tidying their drawing instructions did not read back the same, so pdfcer kept them \
+             as stored"
+                .to_owned()
+        }
+        other => other.to_string(),
+    }
 }
 
 /// What cutting the fonts did, one sentence each: the total, each font cut,
@@ -167,8 +220,15 @@ pub fn resubset(plan: &ResubsetPlan) -> Vec<String> {
             0 => String::new(),
             n => format!(", with {n} other copy(ies) merged into it"),
         };
+        // A PDF/A-1 cut adds the character list the standard requires, which
+        // is a change to the file and is said.
+        let listed = if cut.listed.is_empty() {
+            ""
+        } else {
+            ", and the character list PDF/A-1 asks for written"
+        };
         lines.push(format!(
-            "{}: {} of {} characters kept{merged}.",
+            "{}: {} of {} characters kept{merged}{listed}.",
             cut.name_before, cut.glyphs_kept, cut.glyphs_total
         ));
     }
@@ -477,6 +537,7 @@ pub fn left_because(reason: &SkipReason) -> String {
             format!("re-encoding them saved less than {pct}%")
         }
         SkipReason::ImageUnsupported(why) => super::compact_images::picture_left_because(why),
+        SkipReason::Content(why) => content_left_because(why),
         other => other.to_string(),
     }
 }

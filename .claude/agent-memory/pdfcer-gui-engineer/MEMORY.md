@@ -191,3 +191,4 @@
 - [A seam's unit can widen under it](feedback_seam_unit_widens.md) — whole-draft seed wiped a paragraph; reach the old unit by his switch.
 - [Press-select and click must share modifiers](feedback_press_select_modifier.md) — Ctrl+click picked at press, toggled out at release: sel=0.
 - [Consuming a reply keeps its files](feedback_channel_keeps_files.md) — add done_*; never rm in the channel (no git).
+- [The first stream is not the page](feedback_first_stream_order.md) — pick a read-back stream by content; an object stream came first.

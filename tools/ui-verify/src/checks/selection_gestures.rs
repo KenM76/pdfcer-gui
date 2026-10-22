@@ -163,7 +163,8 @@ fn lines(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     if boxed || !swept.contains(&format!(" to={LINE_CHARS} ")) {
         wrong.push(format!(
-            "a drag from text down onto the next line did not select to the line's end              (to={LINE_CHARS}), or drew a box"
+            "a drag from text down onto the next line did not select to the line's end \
+             (to={LINE_CHARS}), or drew a box"
         ));
     }
     Ok((!wrong.is_empty()).then(|| wrong.join("; ")))

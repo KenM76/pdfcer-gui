@@ -129,3 +129,16 @@ added later in another program may draw blank. `resubset` keeps the engine's
 refusal and unmerged reasons verbatim after the font's name: they are already
 sentences about the file ("the font is in the form's default resources, so a
 field can type with it"), and rewording them would lose the specific cause.
+
+A cut that wrote the character list PDF/A-1 asks for (`ResubsetTarget::listed`
+non-empty) says so after the font's counts, because it is a byte the operator's
+conformance checker will look for.
+
+### `fn content_toggle`, `fn content_tooltip`, `fn content`, `fn content_left_because`
+
+`content` sums every `ContentChange` into one sentence: a per-stream list would
+run to hundreds of lines on a CAD drawing and say nothing more. Sizes are the
+decoded streams', before compression, because that is what tidying changes;
+the size line above Save already quotes the compressed file.
+`content_left_because` rewords `ContentSkip::Mismatch` to say the stream was
+kept as stored, since the engine's own text names the check, not the outcome.

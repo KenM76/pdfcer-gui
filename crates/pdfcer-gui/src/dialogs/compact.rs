@@ -27,6 +27,12 @@ pub const REGION_FONTS: &str = "compact.fonts";
 /// Each sentence saying what cutting the fonts did.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_FONTS_SAID: &str = "compact.fonts.said";
+/// The switch that tidies page drawing instructions.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_CONTENT: &str = "compact.content";
+/// The sentence saying what tidying them did.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_CONTENT_SAID: &str = "compact.content.said";
 /// Height kept for the separator and the Save row below the scrolling choices.
 const BUTTON_ROW: f32 = 40.0;
 /// Height kept above it for the two-line picture-loss warning.
@@ -103,6 +109,7 @@ impl CompactDialog {
                 discard: DiscardOptions::none(),
                 pictures: Pictures::OFF,
                 fonts: false,
+                content: true,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -316,6 +323,11 @@ impl CompactDialog {
             .on_hover_text(t::fonts_tooltip());
         crate::diag::ui_rect_visible(REGION_FONTS, fonts.rect, ui.clip_rect());
         let toggled = fonts.changed() || toggled;
+        let content = ui
+            .checkbox(&mut c.content, t::content_toggle())
+            .on_hover_text(t::content_tooltip());
+        crate::diag::ui_rect_visible(REGION_CONTENT, content.rect, ui.clip_rect());
+        let toggled = content.changed() || toggled;
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
         let toggled = compact_images::switches(ui, &mut c.pictures) || toggled;
         if toggled {
@@ -335,36 +347,7 @@ impl CompactDialog {
             Recompress::Failed(detail) => {
                 ui.small(t::recompress_failed(detail));
             }
-            Recompress::Done(done) => {
-                // What a discarded result did is not in the copy, so only
-                // the engine's notes are said then.
-                if done.bytes.is_none() {
-                    ui.small(t::recompress_no_gain());
-                } else {
-                    if done.not_smaller {
-                        ui.small(t::kept_not_smaller());
-                    }
-                    if done.changed > 0 {
-                        ui.small(t::recompressed(done.changed));
-                    }
-                    for line in done.pictures.lines() {
-                        ui.small(line);
-                    }
-                    for line in done.cleaned.iter().chain(&done.restructured) {
-                        ui.small(line.as_str());
-                    }
-                    for line in &done.fonts {
-                        let said = ui.small(line.as_str());
-                        crate::diag::ui_rect_visible(REGION_FONTS_SAID, said.rect, ui.clip_rect());
-                    }
-                    for (reason, count) in &done.left {
-                        ui.small(t::left_line(reason, *count));
-                    }
-                }
-                for note in &done.notes {
-                    ui.small(note.as_str());
-                }
-            }
+            Recompress::Done(done) => done_lines(ui, done),
         }
     }
 
@@ -483,6 +466,42 @@ pub fn open_for(status: &Status) -> Option<Result<CompactDialog, String>> {
     match status {
         Status::Open(doc) => Some(CompactDialog::open(doc)),
         _ => None,
+    }
+}
+
+/// What a finished recompression did, one small line each.
+fn done_lines(ui: &mut Ui, done: &Recompressed) {
+    // What a discarded result did is not in the copy, so only
+    // the engine's notes are said then.
+    if done.bytes.is_none() {
+        ui.small(t::recompress_no_gain());
+    } else {
+        if done.not_smaller {
+            ui.small(t::kept_not_smaller());
+        }
+        if done.changed > 0 {
+            ui.small(t::recompressed(done.changed));
+        }
+        for line in done.pictures.lines() {
+            ui.small(line);
+        }
+        for line in done.cleaned.iter().chain(&done.restructured) {
+            ui.small(line.as_str());
+        }
+        for line in &done.fonts {
+            let said = ui.small(line.as_str());
+            crate::diag::ui_rect_visible(REGION_FONTS_SAID, said.rect, ui.clip_rect());
+        }
+        if let Some(line) = &done.content {
+            let said = ui.small(line.as_str());
+            crate::diag::ui_rect_visible(REGION_CONTENT_SAID, said.rect, ui.clip_rect());
+        }
+        for (reason, count) in &done.left {
+            ui.small(t::left_line(reason, *count));
+        }
+    }
+    for note in &done.notes {
+        ui.small(note.as_str());
     }
 }
 

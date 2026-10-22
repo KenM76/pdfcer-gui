@@ -61,7 +61,7 @@ impl Check for ACompactedCopyCanCutFontsDown {
 }
 
 /// Polls until a `compact-recompressed` line after `mark` appears, or 30 s.
-fn recompressed_after(session: &Session, mark: usize) -> Result<Option<TraceLine>> {
+pub(super) fn recompressed_after(session: &Session, mark: usize) -> Result<Option<TraceLine>> {
     let started = std::time::Instant::now();
     loop {
         session.settle(8);
