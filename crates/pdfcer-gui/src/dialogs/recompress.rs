@@ -15,7 +15,9 @@
 //! through `OptimizeSettings::resubset`. [`Choices::content`] tidies page
 //! drawing instructions losslessly through `OptimizeSettings::content`, and
 //! [`Choices::round`] adds `ContentPatch::round`, which moves line positions
-//! by at most the distance chosen.
+//! by at most the distance chosen. [`Choices::linearize`] writes the copy
+//! for Fast Web View through `RebuildOptions::linearize`; the engine keeps
+//! that copy even when it is larger, because the layout was asked for.
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
@@ -59,6 +61,9 @@ pub struct Choices {
     /// Round path coordinates within this distance; acted on only with
     /// [`Self::content`], because rounding is part of the same rewrite.
     pub round: Option<Tolerance>,
+    /// Lay the copy out for Fast Web View: page 1 first, then a table
+    /// locating every other page. Takes the place of packing the index.
+    pub linearize: bool,
 }
 
 impl Choices {
@@ -72,6 +77,7 @@ impl Choices {
             || self.pictures.on
             || self.fonts
             || self.content
+            || self.linearize
     }
 }
 
@@ -81,8 +87,11 @@ pub struct Recompressed {
     /// The file to save; `None` when the result was no smaller than the copy
     /// and removed nothing, so the copy is kept.
     pub bytes: Option<Vec<u8>>,
-    /// The file is no smaller than the copy and is kept for what it removes.
+    /// The file is no smaller than the copy and is kept for what it removes
+    /// or for its Fast Web View layout.
     pub not_smaller: bool,
+    /// The file is laid out for Fast Web View.
+    pub linearized: bool,
     /// Streams re-encoded.
     pub changed: usize,
     /// Why selected streams were left as stored, with how many each.
@@ -130,6 +139,7 @@ pub fn recompress(
         preset.streams = StreamAction::Leave;
         preset.structure = RebuildOptions::none();
     }
+    preset.structure.linearize = choices.linearize;
     preset.cleanup = CleanupOptions {
         invalid_links: choices.broken,
         invalid_bookmarks: choices.broken,
@@ -175,6 +185,7 @@ pub fn recompress(
     Ok(Recompressed {
         bytes,
         not_smaller,
+        linearized: report.as_ref().is_some_and(|r| r.linearized),
         changed: plan.changes.len(),
         left,
         notes: plan.notes,
@@ -207,7 +218,7 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -218,6 +229,7 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.fonts_cut),
                         result.as_ref().map_or(0, |r| r.content_tidied),
                         result.as_ref().map_or(0, |r| r.content_rounded),
+                        result.as_ref().is_ok_and(|r| r.linearized),
                         result
                             .as_ref()
                             .ok()
@@ -261,6 +273,7 @@ mod tests {
         fonts: false,
         content: false,
         round: None,
+        linearize: false,
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -824,5 +837,33 @@ endstream",
             filtered && raw < page.len(),
             "stored {raw} B, filtered {filtered}"
         );
+    }
+
+    /// Fast Web View lays the copy out with page 1 first, says so, and keeps
+    /// the copy even where it comes out larger.
+    #[test]
+    fn fast_web_view_is_written_only_when_asked() {
+        let copy = broken();
+        let plain = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert!(!plain.linearized, "{plain:?}");
+        let asked = Choices {
+            linearize: true,
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("linearizes");
+        assert!(done.linearized, "{done:?}");
+        let bytes = done.bytes.expect("a linearized copy is always written");
+        assert!(
+            bytes.windows(11).any(|w| w == b"/Linearized"),
+            "the copy carries a linearization dictionary"
+        );
+        assert!(
+            done.restructured
+                .iter()
+                .any(|l| l.contains("Fast Web View")),
+            "{:?}",
+            done.restructured
+        );
+        Document::from_bytes(bytes).expect("parses back");
     }
 }

@@ -36,6 +36,9 @@ pub const REGION_CONTENT_SAID: &str = "compact.content.said";
 /// The rounding list; each entry is `{REGION_ROUND}.{index}` in [`ROUNDINGS`].
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_ROUND: &str = "compact.content.round";
+/// The Fast Web View switch.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_LINEARIZE: &str = "compact.linearize";
 /// The rounding distances offered, in points, after Off.
 const ROUNDINGS: [f64; 4] = [0.001, 0.01, 0.1, 0.5];
 /// Height kept for the separator and the Save row below the scrolling choices.
@@ -116,6 +119,7 @@ impl CompactDialog {
                 fonts: false,
                 content: true,
                 round: None,
+                linearize: false,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -335,6 +339,11 @@ impl CompactDialog {
         crate::diag::ui_rect_visible(REGION_CONTENT, content.rect, ui.clip_rect());
         let toggled = content.changed() || toggled;
         let toggled = round_row(ui, c.content, &mut c.round) || toggled;
+        let web = ui
+            .checkbox(&mut c.linearize, t::linearize_toggle())
+            .on_hover_text(t::linearize_tooltip());
+        crate::diag::ui_rect_visible(REGION_LINEARIZE, web.rect, ui.clip_rect());
+        let toggled = web.changed() || toggled;
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
         let toggled = compact_images::switches(ui, &mut c.pictures) || toggled;
         if toggled {
@@ -518,7 +527,7 @@ fn done_lines(ui: &mut Ui, done: &Recompressed) {
         ui.small(t::recompress_no_gain());
     } else {
         if done.not_smaller {
-            ui.small(t::kept_not_smaller());
+            ui.small(t::kept_not_smaller(done.linearized));
         }
         if done.changed > 0 {
             ui.small(t::recompressed(done.changed));

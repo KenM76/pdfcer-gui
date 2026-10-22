@@ -151,6 +151,22 @@ pub const fn fonts_tooltip() -> &'static str {
     "Each embedded TrueType or CFF font keeps only the characters this document draws, and copies of one font embedded more than once become one. The pages look the same. Text added later in another program may have no characters to draw with. A font that cannot be cut safely is kept whole and listed with why. In a PDF/A-1 document the list of characters the standard asks for is written with the cut font; a font whose list cannot be written is kept whole."
 }
 
+/// The switch that lays the copy out for Fast Web View.
+#[must_use]
+pub const fn linearize_toggle() -> &'static str {
+    "Fast Web View: show the first page before the rest has downloaded"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn linearize_tooltip() -> &'static str {
+    "Writes the file with its first page at the front and a table saying where every other page \
+     is, so a web browser or a viewer reading over a network shows a page without waiting for \
+     the whole file. The file is always rewritten in full, its index is not packed, and it is \
+     usually a little larger; it is kept even then, because you asked for the layout. Saving it \
+     again in pdfcer adds your changes at the end, which most viewers then read the slow way."
+}
+
 /// The switch that tidies the page drawing instructions.
 #[must_use]
 pub const fn content_toggle() -> &'static str {
@@ -483,10 +499,14 @@ fn smoothed(of: &[&ObjectDiscard], bytes: u64) -> String {
 }
 
 /// Said when the copy is kept although it is no smaller, because it removes
-/// what was asked for.
+/// what was asked for or is laid out for Fast Web View (`linearized`).
 #[must_use]
-pub const fn kept_not_smaller() -> &'static str {
-    "The copy is no smaller, and is kept anyway because it removes what you asked for."
+pub const fn kept_not_smaller(linearized: bool) -> &'static str {
+    if linearized {
+        "The copy is no smaller, and is kept anyway because it is laid out for Fast Web View."
+    } else {
+        "The copy is no smaller, and is kept anyway because it removes what you asked for."
+    }
 }
 
 /// What the clean-ups removed, one sentence per kind; kinds with nothing
@@ -544,10 +564,22 @@ pub fn restructured(report: &RebuildReport) -> Vec<String> {
             report.dangling
         ));
     }
+    if report.linearized {
+        lines.push(
+            "The copy is laid out for Fast Web View: its first page shows before the rest has \
+             downloaded."
+                .to_owned(),
+        );
+    }
     if let Some(version) = report.version_raised {
+        let why = if report.linearized {
+            "Fast Web View"
+        } else {
+            "packing its index"
+        };
         lines.push(format!(
-            "The copy is marked PDF {version}, which packing its index requires. Readers older \
-             than that may not open it."
+            "The copy is marked PDF {version}, which {why} requires. Readers older than that may \
+             not open it."
         ));
     }
     lines

@@ -48,3 +48,11 @@ never learned the shape.
 - Related: [[a-check-that-cannot-fail-is-not-evidence]] (the driven-check form of
   the same rule), [[a-driven-failure-is-a-claim-about-the-check-too]] (the
   reverse direction — a red result also needs triage).
+- **Control = current tree minus one line, not an older published build.**
+  2026-10-22, Fast Web View: the previous release copied to scratch went red
+  on the new check AND on an unrelated long-green neighbour (no
+  `compact-recompressed` line at all), so its red proved nothing. Instead: `cp`
+  the source aside, neutralise the one line, `cargo build --release`, copy the
+  exe to D:\scratch, restore from the `cp`, and drive the copy with
+  `--allow-stale` (ui-verify rightly refuses it as STALE otherwise). It went red
+  on exactly the switch arm.
