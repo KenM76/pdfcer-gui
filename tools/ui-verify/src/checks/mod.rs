@@ -295,6 +295,8 @@ pub mod ocr_extra_folder;
 /// A Tesseract program add-on: listed, run, disclosed, and refused by policy.
 pub mod ocr_program_addon;
 
+/// The text pen's CMYK and opacity reaching the saved run.
+pub mod add_text_ink_scripted;
 pub mod invisible_text_scripted;
 pub mod ocr_edit_preview;
 pub mod ocr_export_filter;

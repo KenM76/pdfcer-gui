@@ -20,7 +20,7 @@ panel is the surface that owns that category.
 |---|---|
 | text pen **font** picker | [`text_pen`] |
 | text pen **size** | [`text_pen`] |
-| text pen **colour** swatch | [`text_pen`] |
+| text pen **colour** swatch: grey, RGB or CMYK, with opacity | [`text_pen`] |
 | the pen's disclosure note | [`text_pen`] |
 | the circular measure's **pick list**, one removable row per point | [`measure_points`] |
 | the dimension tools' group, new-group and direction controls | [`tooldim`] |

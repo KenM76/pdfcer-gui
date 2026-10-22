@@ -97,7 +97,17 @@ documents — Helvetica, 12 pt, black — because that is the claim.
 
 One operator and one byte instead of four, for the same ink. The
 property is worth a test rather than a comment because a colour picker
-hands back `[0, 0, 0]` and the obvious implementation forwards it.
+hands back `Rgb(0, 0, 0)` and the obvious implementation forwards it.
+
+### `fn cmyk_and_grey_are_written_in_their_own_space`
+
+The picker offers grey and CMYK so a drawing's ink can be matched; a pen
+that converted them to RGB on the way out would undo that silently.
+
+### `fn an_opaque_pen_writes_no_opacity`
+
+`None`, not `Some(1.0)`: an opaque run must produce the same bytes it did
+before the slider existed.
 
 ### `fn every_bundled_face_is_offered_once`
 
@@ -108,18 +118,20 @@ duplicate cannot make up the number.
 
 ### `struct TextPen`
 
-# Why the colour is `[u8; 3]` and not the engine's `NewTextColor`
+# Why the colour is an `Ink` and not the engine's `NewTextColor`
 
-Because the engine's type has a `Black` variant *and* an `Rgb` variant, and
-`Rgb(0, 0, 0)` is a third spelling of the same ink. A control bound to it
-would let an operator reach black two ways and would then have to decide
-which one a colour picker produces — a distinction with no meaning on the
-page.
+Because the engine's type has a `Black` variant *and* `Gray(0)` *and*
+`Rgb(0, 0, 0)`, three spellings of one ink. A control bound to it would have
+to decide which one a picker produces — a distinction with no meaning on the
+page. So the pen holds the shared picker's own value (`colourpick::Ink`: grey,
+RGB or CMYK, in the space the operator picked), and `engine_colour` resolves
+it, **preferring `Black`** for grey or RGB black: `0 g` is one operator and one
+byte where `0 0 0 rg` is four. CMYK black stays CMYK, because `0 0 0 1 k` and
+`0 g` separate onto different plates.
 
-So this holds the operator's answer in the one form a colour picker speaks,
-and [`Self::colour`] resolves it, **preferring `Black`** where it can:
-`0 g` is one operator and one byte where `0 0 0 rg` is four, and pdfcer's
-standing preference is the smaller edit where the two are equivalent.
+`opacity` is the run's fill opacity, `1.0` opaque. `fill_alpha` returns
+`None` at full opacity so an opaque run writes no graphics state at all, the
+request the engine's own default builds.
 
 ### `const MIN_SIZE_PT`
 

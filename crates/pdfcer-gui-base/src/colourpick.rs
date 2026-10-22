@@ -179,6 +179,19 @@ impl Ink {
         };
         NewFill::new(model, parts.iter().map(|&v| f64::from(v)).collect()).ok()
     }
+
+    /// One whitespace-free token for a trace line: `cmyk:0.000,…`, `rgb:…`
+    /// or `gray:…`.
+    #[must_use]
+    pub fn token(self) -> String {
+        let parts: &[f32] = match &self {
+            Self::Gray(v) => std::slice::from_ref(v),
+            Self::Rgb(c) => c,
+            Self::Cmyk(c) => c,
+        };
+        let joined: Vec<String> = parts.iter().map(|v| format!("{v:.3}")).collect();
+        format!("{}:{}", key(self.space()), joined.join(","))
+    }
 }
 
 fn byte(v: f32) -> u8 {

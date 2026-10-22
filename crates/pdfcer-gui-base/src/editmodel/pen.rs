@@ -1,11 +1,13 @@
-//! # `editmodel::pen` — the face, size and colour **new** page text is
-//! written in
+//! # `editmodel::pen` — the face, size, colour and opacity **new** page text
+//! is written in
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/editmodel/pen.md`.
 
 use pdfcer_core::fontdata::Std14;
 use pdfcer_core::text_edit::NewTextColor;
 use pdfcer_core::text_edit::addtext::NewTextFace;
+
+use crate::colourpick::Ink;
 
 /// The `egui::Memory` key the text pen is parked under.
 const KEY: &str = "pdfcer.textedit.pen"; // ui-text-exempt: memory key, never displayed
@@ -17,8 +19,10 @@ pub struct TextPen {
     pub face: Std14,
     /// The type size in points.
     pub size_pt: f64,
-    /// The ink, as sRGB bytes.
-    pub colour: [u8; 3],
+    /// The ink, in the device space the operator picked it in.
+    pub colour: Ink,
+    /// The fill opacity, `0.0..=1.0`; `1.0` is opaque.
+    pub opacity: f32,
     /// Written in rendering mode 3: present, searchable and copyable, and
     /// never drawn, which is how a scan's recognised text is stored.
     pub invisible: bool,
@@ -27,12 +31,13 @@ pub struct TextPen {
 impl Default for TextPen {
     /// **The engine's own documented default**, restated here rather than
     /// invented: `AddTextRequest::new` is *"Helvetica, bundled, 12 pt,
-    /// black"*.
+    /// black"*, at full opacity.
     fn default() -> Self {
         Self {
             face: Std14::Helvetica,
             size_pt: 12.0,
-            colour: [0, 0, 0],
+            colour: Ink::Gray(0.0),
+            opacity: 1.0,
             invisible: false,
         }
     }
@@ -51,21 +56,25 @@ impl TextPen {
         NewTextFace::Std14(self.face)
     }
 
-    /// The engine colour, preferring `Black` over an equivalent `Rgb`.
-    ///
-    /// See the struct's own note: `0 g` is one operator where `0 0 0 rg` is
-    /// four, and they draw the same ink.
+    /// The engine colour in the pen's own space, preferring `Black` for grey
+    /// or RGB black (`0 g` is one operator where `0 0 0 rg` is four).
     #[must_use]
     pub fn engine_colour(self) -> NewTextColor {
-        if self.colour == [0, 0, 0] {
-            NewTextColor::Black
-        } else {
-            NewTextColor::Rgb(
-                f64::from(self.colour[0]) / 255.0,
-                f64::from(self.colour[1]) / 255.0,
-                f64::from(self.colour[2]) / 255.0,
-            )
+        let f = f64::from;
+        match self.colour {
+            Ink::Gray(v) if v <= 0.0 => NewTextColor::Black,
+            Ink::Rgb([r, g, b]) if r <= 0.0 && g <= 0.0 && b <= 0.0 => NewTextColor::Black,
+            Ink::Gray(v) => NewTextColor::Gray(f(v)),
+            Ink::Rgb([r, g, b]) => NewTextColor::Rgb(f(r), f(g), f(b)),
+            Ink::Cmyk([c, m, y, k]) => NewTextColor::Cmyk(f(c), f(m), f(y), f(k)),
         }
+    }
+
+    /// The fill opacity to write, or `None` when opaque so the run carries
+    /// no graphics state.
+    #[must_use]
+    pub fn fill_alpha(self) -> Option<f64> {
+        (self.opacity < 1.0).then(|| f64::from(self.opacity.clamp(0.0, 1.0)))
     }
 
     /// The rendering mode the engine writes: 3 when invisible, else 0.
@@ -129,8 +138,13 @@ mod tests {
     #[test]
     fn black_ink_is_written_as_black() {
         assert_eq!(TextPen::default().engine_colour(), NewTextColor::Black);
+        let rgb_black = TextPen {
+            colour: Ink::Rgb([0.0; 3]),
+            ..TextPen::default()
+        };
+        assert_eq!(rgb_black.engine_colour(), NewTextColor::Black);
         let red = TextPen {
-            colour: [255, 0, 0],
+            colour: Ink::Rgb([1.0, 0.0, 0.0]),
             ..TextPen::default()
         };
         match red.engine_colour() {
@@ -141,6 +155,35 @@ mod tests {
             }
             other => panic!("red must be Rgb, got {other:?}"),
         }
+    }
+
+    /// Grey and CMYK reach the engine in their own space.
+    #[test]
+    fn cmyk_and_grey_are_written_in_their_own_space() {
+        let grey = TextPen {
+            colour: Ink::Gray(0.5),
+            ..TextPen::default()
+        };
+        assert_eq!(grey.engine_colour(), NewTextColor::Gray(0.5));
+        let cmyk_black = TextPen {
+            colour: Ink::Cmyk([0.0, 0.0, 0.0, 1.0]),
+            ..TextPen::default()
+        };
+        assert_eq!(
+            cmyk_black.engine_colour(),
+            NewTextColor::Cmyk(0.0, 0.0, 0.0, 1.0)
+        );
+    }
+
+    /// An opaque pen writes no opacity; a translucent one writes its own.
+    #[test]
+    fn an_opaque_pen_writes_no_opacity() {
+        assert_eq!(TextPen::default().fill_alpha(), None);
+        let half = TextPen {
+            opacity: 0.5,
+            ..TextPen::default()
+        };
+        assert_eq!(half.fill_alpha(), Some(0.5));
     }
 
     /// The size is clamped where it is READ, so an out-of-range stored value

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **36 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `wanted` — a real gap — **34 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -134,9 +134,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| **Add Text in grey or CMYK** — `NewTextColor::Gray`, `NewTextColor::Cmyk` (our `G219`, Pass 617.3) | **wanted, to build with the shared colour picker (O321).** Add Text keeps its RGB swatch until the picker that offers grey and CMYK replaces it; then the Add Text colour passes through `From<&NewFill>` as the Format colour does. |
 | Fill opacity on existing text — `FormatRequest::fill_alpha` <!--namesake:fill_alpha--> (the shell's `fill_alpha` call sites are `StrokeStyle::fill_alpha` on paths), `FormatRequest::set_fill_alpha`, `FormatReport::fill_alpha_change` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. Clicked page text is on the picker without it: there is no reader for the opacity in force (asked as our `G225`), and a slider opened at a guess would reset the opacity of text whose colour alone was changed. |
-| Fill opacity on new page text — `AddTextRequest::with_fill_alpha` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. Add Text gains it with its grey and CMYK. |
 
 ---
 
@@ -213,7 +211,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **331 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **333 of 386** <!-- counted by tools/walk-engine-backlog.py, 2026-10-21; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -270,6 +268,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Add Text in grey or CMYK** — `NewTextColor::Gray`, `NewTextColor::Cmyk` (our `G219`, Pass 617.3) | **shipped — Properties ▸ the text pen's colour swatch (O321).** `TextPen::engine_colour` maps the picker's `Ink` to `NewTextColor`, black kept as `Black`. Driven: `added_text_keeps_its_cmyk_and_opacity`. |
+| Fill opacity on new page text — `AddTextRequest::with_fill_alpha` (our `G222`, Pass 617.6) | **shipped — the text pen's opacity slider (O321).** `TextPen::fill_alpha` is `None` at full opacity, so an opaque pen writes no `gs`; `AddTextError::InvalidOpacity` reaches the status line through the edit funnel. Driven: `added_text_keeps_its_cmyk_and_opacity`. |
 | **Edit a recognised (OCR) paragraph word by word in place** — `recognised_block_at_point`, `edit_recognised_block_text`, `edit_recognised_block_text_preview`, modules `pdfcer_core::edit::recognised_block` and `pdfcer_core::text_edit::recognised_block` | **shipped; requests G203, G204.** *This paragraph* on a recognised word opens the paragraph (`canvas::textedit::promote::recognised`), drawn in place from the `_preview` layout (`canvas::textedit::shapedblock`) and committed by `edit_recognised_block_text` (`app::actions::blocktext::commit_recognised`). A click opens the word alone: that gesture is shared with the OCR word preview, which widening it has captured before. `CommandKind::EditRecognisedText` is the engine's undo label; `UnsupportedCause::EditSpansStreams` is worded by `record_edit_text_refusal`. Driven by `a_recognised_paragraph_edits_word_by_word`. |
 | **Rewriting a paragraph with its own text keeps its line count** — the wrap tolerance `linebreak::FIT_TOLERANCE` | **Reachable — every paragraph rewrite (G162).** `canvas::textedit::promote::options` passes no wrap width, so `edit_block_text` keeps a paragraph's widest line whole by its own tolerance; `a_paragraph_reopens_as_one_draft` step 5 re-opens an edited paragraph at its line count. |
 | **Exact break marker for pdfcer's own block text** — `pdfcer_core::text_edit::model::line_marks`, `LineEndSource::Marked` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` builds the model `with_line_marks(LineMarks::scan(..))`; `hand_breaks_are_read_from_marks` re-opens a pdfcer-rewritten paragraph as `source=marked` with a break after its longest line kept. Add text's marks are answered at the pin since v0.82.0 (G182); see the wanted row. |

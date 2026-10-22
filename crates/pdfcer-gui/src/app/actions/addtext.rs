@@ -102,11 +102,11 @@ pub(super) fn request(
     placed: &Placed,
     crop: Option<pdfcer_core::page_tree::Rect>,
 ) -> (pdfcer_core::text_edit::AddTextRequest, bool) {
-    // The three fields `AddTextRequest` carries beyond the text itself. The pen
+    // The fields `AddTextRequest` carries beyond the text itself. The pen
     // is `canvas::textedit::pen`, edited from the Tool panel and sampled at the
-    // commit, so this computes nothing — it routes three values it was handed.
-    // Dropping any one of them authors text in the engine's default face, size
-    // or colour, which is a plausible-looking wrong answer.
+    // commit, so this computes nothing — it routes the values it was handed.
+    // Dropping any one of them authors text in the engine's default face, size,
+    // colour or opacity, which is a plausible-looking wrong answer.
     let req = pdfcer_core::text_edit::AddTextRequest::new(
         placed.page,
         placed.origin,
@@ -116,6 +116,10 @@ pub(super) fn request(
     .with_size(placed.pen.size())
     .with_color(placed.pen.engine_colour())
     .with_render_mode(placed.pen.render_mode());
+    let req = match placed.pen.fill_alpha() {
+        Some(alpha) => req.with_fill_alpha(alpha),
+        None => req,
+    };
     // Invisible text joins the page's OCR layer as its own marked section
     // (`/Engine (manual)`), so Remove OCR text takes it and Find reads it as
     // recognised text.
@@ -274,6 +278,15 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// The pen's opacity reaches the request; an opaque pen writes none.
+    #[test]
+    fn the_pens_opacity_reaches_the_request() {
+        let mut p = placed("QZXW", None);
+        assert_eq!(request(&p, Some(crop())).0.fill_alpha, None);
+        p.pen.opacity = 0.25;
+        assert_eq!(request(&p, Some(crop())).0.fill_alpha, Some(0.25));
     }
 
     /// **Invisible text is written into the OCR layer; visible text is not.**

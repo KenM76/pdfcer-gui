@@ -53,7 +53,7 @@ impl Check for AddedInvisibleTextIsSavedInvisible {
                 std::fs::copy(&fixture, &copy)
                     .map_err(|e| Error::new(format!("copying the fixture: {e}")))
             })
-            .and_then(|_| launch(ctx, &mut report, &copy))
+            .and_then(|_| launch(ctx, &mut report, &copy, "invisible_text"))
             .and_then(|(session, pointer)| {
                 let outcome = drive(ctx, &mut report, &session, &pointer, &copy);
                 let parked = pointer.gone(&session);
@@ -74,10 +74,13 @@ impl Check for AddedInvisibleTextIsSavedInvisible {
     }
 }
 
-fn launch(
+/// Launch on `pdf` with Add text armed, off the desktop; `stem` names the
+/// trace and pointer files.
+pub(crate) fn launch(
     ctx: &CheckContext,
     report: &mut CheckReport,
     pdf: &std::path::Path,
+    stem: &str,
 ) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -88,7 +91,7 @@ fn launch(
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("invisible_text.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(pdf.to_path_buf());
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -103,7 +106,7 @@ fn launch(
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("invisible_text.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
@@ -113,7 +116,12 @@ fn launch(
 }
 
 /// Click a declared region at its centre, in its own viewport.
-fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, region: &str) -> Result<()> {
+pub(crate) fn press(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    region: &str,
+) -> Result<()> {
     let trace = session.trace()?;
     let (rect, viewport) = declared_in(&trace, ui_rect, region).ok_or_else(|| {
         let prefix = region.rsplit_once('.').map_or(region, |(head, _)| head);

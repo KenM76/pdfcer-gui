@@ -18,6 +18,8 @@ pub const REGION: &str = "properties.tool"; // ui-text-exempt: trace region name
 pub const REGION_TEXT_PEN: &str = "properties.tool.text_pen"; // ui-text-exempt: trace region name, never displayed
 /// The text pen's invisible switch.
 pub const REGION_TEXT_PEN_INVISIBLE: &str = "properties.tool.text_pen_invisible"; // ui-text-exempt: trace region name, never displayed
+/// The text pen's colour swatch; its picker publishes `{this}.picker`.
+pub const REGION_TEXT_PEN_COLOUR: &str = "properties.tool.text_pen_colour"; // ui-text-exempt: trace region name, never displayed
 /// The region the Select tool's three scale switches publish.
 pub const REGION_SCALE_SWITCHES: &str = "properties.tool.scale_switches"; // ui-text-exempt: trace region name, never displayed
 /// The *Scale line weight* switch's own rect.
@@ -157,7 +159,7 @@ fn section_in(ui: &mut Ui, slot: Slot, doc: &OpenDoc, actions: &mut Vec<Action>)
     true
 }
 
-/// The text pen — face, size and colour for the next run of new text.
+/// The text pen — face, size, colour and opacity for the next run of new text.
 fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
     use crate::canvas::textedit::pen;
     let mut current = pen::read(ctx);
@@ -187,7 +189,18 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
     });
     ui.horizontal_wrapped(|ui| {
         ui.label(t::text_pen_colour_label());
-        ui.color_edit_button_srgb(&mut current.colour);
+        let shown = pdfcer_gui_base::colourpick::Shown::Agreed(pdfcer_gui_base::colourpick::Pick {
+            ink: current.colour,
+            opacity: Some(current.opacity),
+        });
+        let salt = "properties-text-pen-colour"; // ui-text-exempt: an egui id salt, never displayed
+        let spaces = pdfcer_gui_base::colourpick::Spaces::ALL;
+        if let Some(pick) =
+            pdfcer_gui_base::colourpick::show(ui, salt, shown, spaces, REGION_TEXT_PEN_COLOUR, "")
+        {
+            current.colour = pick.ink;
+            current.opacity = pick.opacity.unwrap_or(1.0);
+        }
     });
     let invisible = ui
         .checkbox(&mut current.invisible, t::text_pen_invisible_label())
@@ -203,12 +216,11 @@ fn text_pen(ui: &mut Ui, ctx: &egui::Context) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(
-                "text-pen face={:?} size={:.1} rgb={},{},{} invisible={}",
+                "text-pen face={:?} size={:.1} ink={} opacity={:.2} invisible={}",
                 current.face,
                 current.size_pt,
-                current.colour[0],
-                current.colour[1],
-                current.colour[2],
+                current.colour.token(),
+                current.opacity,
                 u8::from(current.invisible)
             )
         });
@@ -314,6 +326,7 @@ mod tests {
             REGION,
             REGION_TEXT_PEN,
             REGION_TEXT_PEN_INVISIBLE,
+            REGION_TEXT_PEN_COLOUR,
             REGION_SCALE_SWITCHES,
             REGION_SCALE_STROKE,
             REGION_SCALE_INSETS,
