@@ -141,6 +141,30 @@ impl From<pdfcer_core::annot_author::Color> for Ink {
     }
 }
 
+#[allow(clippy::cast_possible_truncation)] // colour channels are 0..1
+impl From<pdfcer_core::vartext::TextColor> for Ink {
+    fn from(colour: pdfcer_core::vartext::TextColor) -> Self {
+        use pdfcer_core::vartext::TextColor;
+        match colour {
+            TextColor::Gray(v) => Self::Gray(v as f32),
+            TextColor::Rgb(r, g, b) => Self::Rgb([r, g, b].map(|v| v as f32)),
+            TextColor::Cmyk(c, m, y, k) => Self::Cmyk([c, m, y, k].map(|v| v as f32)),
+        }
+    }
+}
+
+impl From<Ink> for pdfcer_core::vartext::TextColor {
+    fn from(ink: Ink) -> Self {
+        match ink {
+            Ink::Gray(v) => Self::Gray(f64::from(v)),
+            Ink::Rgb([r, g, b]) => Self::Rgb(f64::from(r), f64::from(g), f64::from(b)),
+            Ink::Cmyk([c, m, y, k]) => {
+                Self::Cmyk(f64::from(c), f64::from(m), f64::from(y), f64::from(k))
+            }
+        }
+    }
+}
+
 impl From<Ink> for pdfcer_core::annot_author::Color {
     fn from(ink: Ink) -> Self {
         match ink {

@@ -408,6 +408,7 @@ pub mod encrypted_edit;
 pub mod field_extras;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;
+pub mod field_text_cmyk;
 pub mod forms_spotlight;
 /// A field's alignment chosen, then handed back to what the form states.
 pub mod inherited_alignment;

@@ -630,35 +630,28 @@ fn text_colour_row(
     fqn: &str,
     actions: &mut Vec<Action>,
 ) {
-    let Some(rgb) = swatch_rgb(ink) else {
-        ui.label(
-            egui::RichText::new(t::text_colour_unshowable())
-                .small()
-                .weak(),
-        );
-        return;
-    };
-
+    use pdfcer_gui_base::colourpick::{self, Pick, Shown, Spaces};
     let picked = ui
         .horizontal(|ui| {
-            ui.label(t::label_text_colour());
-            super::swatch::show(
+            ui.label(t::label_text_colour())
+                .on_hover_text(t::label_text_colour_hover());
+            colourpick::show(
                 ui,
                 // ui-text-exempt: an egui id salt, never displayed
                 "properties-field-text-colour",
-                super::swatch::Value::Agreed(rgb),
+                Shown::Agreed(Pick {
+                    ink: ink.into(),
+                    opacity: None,
+                }),
+                Spaces::ALL,
                 TEXT_COLOUR_REGION,
-                t::label_text_colour_hover(),
+                "",
             )
         })
         .inner;
 
-    if let Some(rgb) = picked {
-        let picked = TextColor::Rgb(
-            f64::from(rgb[0]) / 255.0,
-            f64::from(rgb[1]) / 255.0,
-            f64::from(rgb[2]) / 255.0,
-        );
+    if let Some(pick) = picked {
+        let picked: TextColor = pick.ink.into();
         actions.push(
             FieldAction::EditProperties {
                 field: fqn.to_owned(),
@@ -744,17 +737,6 @@ fn appearance_edit(font: &Face, size: f64, ink: TextColor) -> FieldEdit {
         Face::Embedded(key) => FieldAppearance::resource(key.clone(), size, ink),
     };
     FieldEdit::new().with_appearance(appearance)
-}
-
-/// The ink as something a swatch can draw, or `None` for a four-ink separation.
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn swatch_rgb(ink: TextColor) -> Option<[u8; 3]> {
-    let byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    match ink {
-        TextColor::Gray(g) => Some([byte(g); 3]),
-        TextColor::Rgb(r, g, b) => Some([byte(r), byte(g), byte(b)]),
-        TextColor::Cmyk(..) => None,
-    }
 }
 
 /// Every justification `/Q` can state, in the order the chooser offers them.

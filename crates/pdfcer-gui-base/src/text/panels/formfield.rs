@@ -1061,8 +1061,8 @@ pub const fn text_font_name(font: pdfcer_core::fontdata::Std14) -> &'static str 
 /// Stands in for the swatch when the file states an ink no swatch can draw.
 #[must_use]
 pub const fn text_colour_unshowable() -> &'static str {
-    "This field's text is set in an ink with no single screen colour — a four-ink separation, or \
-     a colour space pdfcer keeps exactly as the file states it. It is left as it is."
+    "This field's text is set in a colour space pdfcer keeps exactly as the file states it. It is \
+     left as it is."
 }
 
 /// What the operator touched, for a refusal and for the receipt. Reads as a

@@ -372,6 +372,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(media_clip::AClipPlaysFromARegion),
         Box::new(field_scripts::AFieldIsCalculatedFromOthers),
         Box::new(field_extras::ATextFieldsExtrasReachTheFile),
+        Box::new(field_text_cmyk::AFieldsTextColourIsStoredInCmyk),
         Box::new(inherited_alignment::AFieldsAlignmentCanGoBackToInherited),
         Box::new(check_mark::ACheckBoxsMarkCanBeChosen),
         Box::new(check_mark::ARadioButtonsMarkCanBeChosen),

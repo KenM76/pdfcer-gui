@@ -250,12 +250,14 @@ author one `/DA` rewrite per pixel, each one separately undoable.
 
 ### `fn text_colour_row`
 
-A four-ink separation gets the sentence and no control, for
-`text::panels::formfield::text_colour_unshowable`'s stated reason — showing a
-converted approximation would put a colour on screen the file does not
-contain, and the first nudge of the picker would commit pdfcer's guess. The
-font and size rows above still work on such a field, and re-send the CMYK
-ink unchanged.
+The shared picker (`pdfcer_gui_base::colourpick::show`), opened in the
+`/DA`'s own space: grey, RGB or CMYK, with the file's numbers on that space's
+tab. Nothing is converted unless the operator switches tab, and the tab open
+at close is the space written (O321, which supersedes O202 decision 4's
+refusal of CMYK: the refusal guarded against a converted RGB swatch, and the
+picker shows and writes the CMYK numbers themselves). The `TextColor` ↔ `Ink`
+conversions live beside the picker. Driven:
+`a_fields_text_colour_is_stored_in_cmyk`.
 
 ### `enum Face`
 
@@ -295,12 +297,6 @@ answer for one anyway, because it is then re-authored verbatim.
 `FieldAppearance` is `#[non_exhaustive]`, so a caller outside `pdfcer-core`
 cannot build one with a struct literal — the two constructors are the only
 route, and they are what selects between the two `FieldFont` variants.
-
-### `fn swatch_rgb`
-
-CMYK is refused rather than converted, O202 decision 4: pdfcer owns no
-rendering intent for a form field, so a converted swatch would show a colour
-the file does not contain.
 
 ### `fn sync`
 
