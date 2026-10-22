@@ -21,6 +21,12 @@ pub const REGION_BODY: &str = "compact.body";
 /// The button that goes on to the picker.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_SAVE: &str = "compact.commit";
+/// The switch that cuts embedded fonts down.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_FONTS: &str = "compact.fonts";
+/// Each sentence saying what cutting the fonts did.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_FONTS_SAID: &str = "compact.fonts.said";
 /// Height kept for the separator and the Save row below the scrolling choices.
 const BUTTON_ROW: f32 = 40.0;
 /// Height kept above it for the two-line picture-loss warning.
@@ -96,6 +102,7 @@ impl CompactDialog {
                 destinations: false,
                 discard: DiscardOptions::none(),
                 pictures: Pictures::OFF,
+                fonts: false,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -183,7 +190,7 @@ impl CompactDialog {
     fn lossy(&self) -> bool {
         matches!(
             &self.recompress,
-            Recompress::Done(Recompressed { bytes: Some(_), pictures, .. }) if pictures.lossy
+            Recompress::Done(done) if done.bytes.is_some() && done.pictures.lossy
         )
     }
 
@@ -250,7 +257,7 @@ impl CompactDialog {
 enum Recompress {
     Off,
     Working(Job),
-    Done(Recompressed),
+    Done(Box<Recompressed>),
     Failed(String),
 }
 
@@ -258,9 +265,7 @@ enum Recompress {
 /// otherwise the plain compacted one.
 fn chosen<'a>(plain: &'a [u8], recompress: &'a Recompress) -> &'a [u8] {
     match recompress {
-        Recompress::Done(Recompressed {
-            bytes: Some(bytes), ..
-        }) => bytes,
+        Recompress::Done(done) => done.bytes.as_deref().unwrap_or(plain),
         _ => plain,
     }
 }
@@ -278,7 +283,7 @@ impl CompactDialog {
         };
         if let Some(result) = landed {
             self.recompress = match result {
-                Ok(done) => Recompress::Done(done),
+                Ok(done) => Recompress::Done(Box::new(done)),
                 Err(detail) => Recompress::Failed(detail),
             };
             self.space = None;
@@ -306,6 +311,11 @@ impl CompactDialog {
         .fold(false, |any, (on, label, tip)| {
             ui.checkbox(on, label).on_hover_text(tip).changed() || any
         });
+        let fonts = ui
+            .checkbox(&mut c.fonts, t::fonts_toggle())
+            .on_hover_text(t::fonts_tooltip());
+        crate::diag::ui_rect_visible(REGION_FONTS, fonts.rect, ui.clip_rect());
+        let toggled = fonts.changed() || toggled;
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
         let toggled = compact_images::switches(ui, &mut c.pictures) || toggled;
         if toggled {
@@ -343,6 +353,10 @@ impl CompactDialog {
                     for line in done.cleaned.iter().chain(&done.restructured) {
                         ui.small(line.as_str());
                     }
+                    for line in &done.fonts {
+                        let said = ui.small(line.as_str());
+                        crate::diag::ui_rect_visible(REGION_FONTS_SAID, said.rect, ui.clip_rect());
+                    }
                     for (reason, count) in &done.left {
                         ui.small(t::left_line(reason, *count));
                     }
@@ -357,9 +371,10 @@ impl CompactDialog {
     /// The bytes [`chosen`] names, moved out for the write.
     fn take_chosen(&mut self) -> Vec<u8> {
         match std::mem::replace(&mut self.recompress, Recompress::Off) {
-            Recompress::Done(Recompressed {
-                bytes: Some(bytes), ..
-            }) => bytes,
+            Recompress::Done(done) => match done.bytes {
+                Some(bytes) => bytes,
+                None => std::mem::take(&mut self.bytes),
+            },
             _ => std::mem::take(&mut self.bytes),
         }
     }

@@ -221,16 +221,27 @@ pub(super) fn into_view(
     pointer: &ScriptedPointer,
     region: &str,
 ) -> Result<()> {
+    into_view_of(ctx, session, pointer, region, PANEL_BODY)
+}
+
+/// Wheel over the scrolling region `body` until `region` is on screen.
+pub(super) fn into_view_of(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    region: &str,
+    body: &str,
+) -> Result<()> {
     let ui_rect = ui_rect_event(ctx)?;
     for _ in 0..SCROLL_NOTCHES {
         let trace = session.trace()?;
         if declared_in(&trace, ui_rect, region).is_some() {
             return Ok(());
         }
-        let Some((body, vp)) = declared_in(&trace, ui_rect, PANEL_BODY) else {
+        let Some((under, vp)) = declared_in(&trace, ui_rect, body) else {
             break;
         };
-        pointer.wheel_in(session, vp.as_deref(), WindowPoint::centre_of(body), -3.0)?;
+        pointer.wheel_in(session, vp.as_deref(), WindowPoint::centre_of(under), -3.0)?;
         session.settle(15);
     }
     Ok(())

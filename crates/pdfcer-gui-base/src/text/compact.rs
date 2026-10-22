@@ -3,6 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/compact.md`.
 
+use pdfcer_core::optimize::resubset::ResubsetPlan;
 use pdfcer_core::optimize::{CleanupPlan, DiscardObject, ObjectDiscard, RebuildReport, SkipReason};
 use pdfcer_core::space_audit::SpaceCategory;
 
@@ -135,6 +136,52 @@ pub const fn destinations_toggle() -> &'static str {
 #[must_use]
 pub const fn destinations_tooltip() -> &'static str {
     "Named places (named destinations) that no link or bookmark in this file points to. A link from another file or a web page to one of them stops working, which is why this is off unless you turn it on. A file with scripts is left alone, since a script can name a place."
+}
+
+/// The switch that cuts embedded fonts down.
+#[must_use]
+pub const fn fonts_toggle() -> &'static str {
+    "Cut embedded fonts down to the characters used"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn fonts_tooltip() -> &'static str {
+    "Each embedded TrueType font keeps only the characters this document draws, and copies of one font embedded more than once become one. The pages look the same. Text added later in another program may have no characters to draw with. A font that cannot be cut safely is kept whole and listed with why. Not done to a PDF/A document."
+}
+
+/// What cutting the fonts did, one sentence each: the total, each font cut,
+/// each copy merged, and each font kept whole with why.
+#[must_use]
+pub fn resubset(plan: &ResubsetPlan) -> Vec<String> {
+    let mut lines = Vec::new();
+    if !plan.targets.is_empty() {
+        lines.push(format!(
+            "{} embedded font(s) cut down to the characters used, saving {}.",
+            plan.targets.len(),
+            bytes(plan.saving())
+        ));
+    }
+    for cut in &plan.targets {
+        let merged = match cut.merged.len() {
+            0 => String::new(),
+            n => format!(", with {n} other copy(ies) merged into it"),
+        };
+        lines.push(format!(
+            "{}: {} of {} characters kept{merged}.",
+            cut.name_before, cut.glyphs_kept, cut.glyphs_total
+        ));
+    }
+    for copies in &plan.unmerged {
+        lines.push(format!(
+            "Copies of {} kept apart: {}.",
+            copies.face, copies.why.reason
+        ));
+    }
+    for kept in &plan.refused {
+        lines.push(format!("{} kept whole: {}.", kept.name, kept.why.reason));
+    }
+    lines
 }
 
 /// The switch that removes one class of document object, and its hover;

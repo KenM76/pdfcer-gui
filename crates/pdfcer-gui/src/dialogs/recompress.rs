@@ -11,6 +11,8 @@
 //! plan left alone and what each step did. Pictures are changed only when
 //! [`Choices::pictures`] is on, through `OptimizeSettings::images`; the
 //! preset's own stream action stays, so everything else is still recompressed.
+//! [`Choices::fonts`] cuts embedded TrueType fonts to the glyphs drawn
+//! through `OptimizeSettings::resubset`; the engine skips a PDF/A document.
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
@@ -18,10 +20,12 @@ use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
+use pdfcer_core::optimize::resubset::ResubsetFonts;
 use pdfcer_core::optimize::{
     CleanupOptions, DiscardOptions, OptimizedFile, Preset, RebuildOptions, StreamAction,
 };
 use pdfcer_core::settings::Settings;
+use pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER;
 
 use crate::app::settings::SettingsExt;
 use crate::dialogs::compact_images::{Pictures, Tally};
@@ -42,6 +46,9 @@ pub struct Choices {
     /// What is done to pictures; the only choice that changes how the page
     /// looks.
     pub pictures: Pictures,
+    /// Cut each embedded TrueType font to the glyphs drawn, merging copies
+    /// of one face.
+    pub fonts: bool,
 }
 
 impl Choices {
@@ -53,6 +60,7 @@ impl Choices {
             || self.destinations
             || !self.discard.is_none()
             || self.pictures.on
+            || self.fonts
     }
 }
 
@@ -76,6 +84,10 @@ pub struct Recompressed {
     pub cleaned: Vec<String>,
     /// What was done to pictures.
     pub pictures: Tally,
+    /// What cutting the fonts did, one sentence each.
+    pub fonts: Vec<String>,
+    /// Embedded fonts cut.
+    pub fonts_cut: usize,
 }
 
 /// Optimize `copy` as `choices` ask, in a session and with save options
@@ -109,6 +121,9 @@ pub fn recompress(
         patch.validate()?;
         preset.images = patch;
     }
+    if choices.fonts {
+        preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
+    }
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
     let (file, report) = session
@@ -124,6 +139,8 @@ pub fn recompress(
         OptimizedFile::NotSmaller { bytes, .. } => (Some(bytes), true),
         _ => (None, false),
     };
+    let fonts = plan.resubset.as_ref().map(t::resubset).unwrap_or_default();
+    let fonts_cut = plan.resubset.as_ref().map_or(0, |r| r.targets.len());
     let mut cleaned = t::cleaned(&plan.cleanup);
     cleaned.extend(t::discarded(&plan.discard_objects));
     Ok(Recompressed {
@@ -135,6 +152,8 @@ pub fn recompress(
         restructured: report.as_ref().map(t::restructured).unwrap_or_default(),
         cleaned,
         pictures,
+        fonts,
+        fonts_cut,
     })
 }
 
@@ -155,7 +174,7 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -163,6 +182,7 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.pictures.jpeg),
                         result.as_ref().map_or(0, |r| r.pictures.converted),
                         result.as_ref().is_ok_and(|r| r.pictures.lossy),
+                        result.as_ref().map_or(0, |r| r.fonts_cut),
                         result
                             .as_ref()
                             .ok()
@@ -203,6 +223,7 @@ mod tests {
         destinations: true,
         discard: DiscardOptions::none(),
         pictures: Pictures::OFF,
+        fonts: false,
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -582,6 +603,38 @@ mod tests {
             off.bytes.map_or(copy.len(), |b| b.len()),
         );
         assert!(small * 2 < plain, "{small} B against {plain} B");
+    }
+
+    /// One face embedded twice: the switch off leaves both copies; on, one
+    /// program is cut, the other copy is merged into it, and the window's
+    /// sentences say both, with the bytes saved.
+    #[test]
+    fn fonts_are_cut_and_merged_only_when_asked() {
+        let copy = std::fs::read(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../fixtures/resubset-pair.pdf"),
+        )
+        .expect("fixture");
+        let off = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert!(off.fonts.is_empty() && off.fonts_cut == 0, "{off:?}");
+        let on = Choices { fonts: true, ..ALL };
+        let done = recompress(&copy, &Settings::default(), on).expect("optimizes");
+        assert_eq!(done.fonts_cut, 1, "{done:?}");
+        assert!(
+            done.fonts[0].starts_with("1 embedded font(s) cut down to the characters used, saving"),
+            "{done:?}"
+        );
+        assert!(
+            done.fonts
+                .iter()
+                .any(|l| l.contains("3 of 8 characters kept, with 1 other copy(ies) merged")),
+            "{done:?}"
+        );
+        let cut = done.bytes.as_ref().expect("smaller");
+        assert!(
+            cut.len() < off.bytes.map_or(copy.len(), |b| b.len()),
+            "{done:?}"
+        );
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {

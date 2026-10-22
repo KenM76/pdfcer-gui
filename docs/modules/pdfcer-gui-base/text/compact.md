@@ -120,3 +120,12 @@ stated rule: *"access is denied"* and *"the device is not ready"* are
 different problems with different remedies, and a shell that collapsed them
 to *"could not save"* would leave the operator with the one fact they cannot
 derive.
+
+### `fn fonts_tooltip`, `fn resubset`
+
+The tooltip names the one cost a glyph-zeroing cut carries: the pages draw the
+same, but a character the document never drew has no outline left, so text
+added later in another program may draw blank. `resubset` keeps the engine's
+refusal and unmerged reasons verbatim after the font's name: they are already
+sentences about the file ("the font is in the form's default resources, so a
+field can type with it"), and rewording them would lose the specific cause.
