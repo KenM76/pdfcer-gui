@@ -223,8 +223,8 @@ pub const fn round_label() -> &'static str {
 /// Hover on the rounding row.
 #[must_use]
 pub const fn round_tooltip() -> &'static str {
-    "Writes the corners and curve points of drawn lines with fewer decimals, so no point moves \
-     more than the distance chosen. This changes the drawing, by at most that distance; the \
+    "Writes the corners and curve points of drawn lines, and where each line of text starts, \
+     with fewer decimals, so no point moves more than the distance chosen. This changes the drawing, by at most that distance; the \
      window says how far the farthest point moved. Only each page's main drawing is rounded."
 }
 
