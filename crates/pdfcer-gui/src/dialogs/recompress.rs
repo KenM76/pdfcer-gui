@@ -12,7 +12,7 @@
 //! [`Choices::pictures`] is on, through `OptimizeSettings::images`; the
 //! preset's own stream action stays, so everything else is still recompressed.
 //! [`Choices::fonts`] cuts embedded TrueType fonts to the glyphs drawn
-//! through `OptimizeSettings::resubset`; the engine skips a PDF/A document.
+//! through `OptimizeSettings::resubset`.
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
