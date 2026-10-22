@@ -261,10 +261,11 @@ them.
 
 ### `fn colour_row`
 
-`None` renders a sentence, not a swatch. A run painted in DeviceCMYK, a
-Separation or an ICC space has no faithful `[u8; 3]`, and a swatch showing
-its nearest RGB would write that RGB back on the next press — converting
-the operator's ink without being asked. `pdfcer-core` deliberately does not
+Grey, RGB and CMYK open the shared picker (`colourpick::edit_text_fill`) in
+their own space, and the fill is written in the space whose tab was open.
+`None` renders a sentence, not a swatch: a run painted in a `/Separation`,
+`/DeviceN` or ICC space would have a process colour written back on the next
+press — converting the operator's ink without being asked. `pdfcer-core` deliberately does not
 force-convert to DeviceRGB the way Acrobat does, and this control must not
 undo that on its behalf.
 
@@ -338,30 +339,3 @@ action is the full name, because `set_font` accepts either and handing it
 the full one keeps the shell from having to know the stripping rule. What
 an operator gains from `ABCDEF+ArialMT` being shown as `ArialMT` is the
 ability to read the list at all.
-
-### `fn rgb_of`
-
-# Why CMYK is `None` rather than converted
-
-A conversion here would be a **one-way** trip the operator never asked for.
-The swatch would show DeviceCMYK ink as its nearest RGB; the next press
-would write that RGB back through `set_fill`; and the run would leave its
-original space for ever, on a document heading for a printer that cares.
-
-`pdfcer-core` deliberately does not force-convert to DeviceRGB the way
-Acrobat does — it stores the space the caller chose — and a control that
-undid that on the operator's behalf would make the engine's care pointless.
-Gray round-trips exactly, so it is offered.
-
-
-[`super::textobject`] asks the same question about a **whole text object**,
-and it asks it **here** rather than deciding for itself which spaces are
-safe. This function IS the spot-ink guard for text: it is what makes a
-`TextColor::Other` or a `TextColor::Cmyk` produce no swatch, on either
-surface.
-
-A second copy would be two answers to *"may pdfcer overwrite this ink with a
-screen colour?"*, and the two would drift the first time a space was added
-to the safe list — with the drift showing up as a colour picker opening over
-a `/Separation` on one surface and not the other. There is one answer, in one
-place, with one doc comment stating why.

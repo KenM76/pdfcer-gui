@@ -28,13 +28,13 @@ pub const fn colour_label() -> &'static str {
 #[must_use]
 pub fn ink_present(affected: usize, total: usize) -> String {
     if affected == total {
-        "Set in CMYK or a spot colour. pdfcer will not overwrite it with a screen colour, because \
-         that would look right here and change what prints."
+        "Set in a spot or calibrated colour. pdfcer will not overwrite it with a process colour, \
+         because that would look right here and change what prints."
             .to_owned()
     } else {
         format!(
-            "{affected} of these {total} runs are set in CMYK or a spot colour. pdfcer will not \
-             overwrite those with a screen colour, because that would look right here and change \
+            "{affected} of these {total} runs are set in a spot or calibrated colour. pdfcer will \
+             not overwrite those with a process colour, because that would look right here and change \
              what prints — so it offers no swatch for the shape as a whole. Sweep the runs you \
              want with the Text tool (T) to change them one at a time."
         )

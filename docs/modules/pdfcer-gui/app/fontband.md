@@ -205,11 +205,13 @@ both boxes show the shared draft's first run.
 
 ### `fn colour`
 
-# Why a run painted in CMYK greys rather than showing its nearest RGB
+# Why a run painted in a spot ink greys rather than opening the picker
 
-A swatch showing DeviceCMYK ink as its nearest sRGB would write that sRGB
-back on the next press, moving the run out of its original space for ever —
-on a document heading for a printer that cares. `pdfcer-core` deliberately
+Grey, RGB and CMYK runs open the shared picker in their own space. A
+`/Separation`, `/DeviceN` or ICC-based ink has no picker tab, and a picker
+over it would write a process colour back on the next press, moving the run
+out of its original space for ever — on a document heading for a printer
+that cares. `pdfcer-core` deliberately
 stores the space it was given instead of force-converting to DeviceRGB the
 way Acrobat does, and a control that undid that on the operator's behalf
 would make the engine's care pointless.

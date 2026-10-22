@@ -452,7 +452,7 @@ pub const fn text_colour_label() -> &'static str {
 /// cannot round-trip.
 #[must_use]
 pub const fn text_colour_not_plain() -> &'static str {
-    "Set in CMYK or a spot colour — pdfcer will not offer to change it here, because doing so would convert the ink to screen colour permanently."
+    "Set in a spot or calibrated colour — pdfcer will not offer to change it here, because doing so would convert the ink to process colour permanently."
 }
 
 //

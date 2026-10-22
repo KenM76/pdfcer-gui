@@ -366,10 +366,11 @@ between pdfcer's two verbs every page is covered.
 
 ### `fn text_colour_not_plain`
 
-The sentence protects the operator's ink. A swatch showing DeviceCMYK as
-its nearest RGB would write that RGB back on the next press, moving the run
-out of its original space for ever on a document heading for a printer that
-cares. pdfcer deliberately stores the space it was given rather than
+The sentence protects the operator's ink. Grey, RGB and CMYK get the shared
+picker in their own space; a `/Separation`, `/DeviceN` or ICC-based ink does
+not, because a picker would write a process colour back on the next press,
+moving the run out of its original space for ever on a document heading for
+a printer that cares. pdfcer deliberately stores the space it was given rather than
 force-converting the way Acrobat does, and this control must not undo that.
 
 ### `fn text_bold_hint_already`

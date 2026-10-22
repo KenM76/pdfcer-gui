@@ -418,6 +418,21 @@ pub fn edit_color(
     true
 }
 
+/// A swatch over one text fill with no opacity, in any device space: the
+/// fill to write, in the space picked, on the frame the edit commits.
+pub fn edit_text_fill(
+    ui: &mut Ui,
+    id_salt: &str,
+    current: Ink,
+    region: &str,
+) -> Option<pdfcer_core::text_edit::NewFill> {
+    let shown = Shown::Agreed(Pick {
+        ink: current,
+        opacity: None,
+    });
+    show(ui, id_salt, shown, Spaces::ALL, region, "").and_then(|pick| pick.ink.fill())
+}
+
 /// The swatch: the agreed colour, or the indeterminate marker over a mix.
 fn swatch_button(ui: &mut Ui, shown: Shown) -> egui::Response {
     let height = ui.spacing().interact_size.y;

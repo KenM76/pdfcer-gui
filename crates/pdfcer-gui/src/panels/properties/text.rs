@@ -6,6 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/text.md`.
 
 use egui::Ui;
+use pdfcer_gui_base::colourpick::Ink;
 use pdfcer_gui_base::entry;
 
 use crate::app::actions::Action;
@@ -48,6 +49,9 @@ pub const FONT_FILE_REGION: &str = "properties.text.font-file";
 /// The render-mode chooser's own region.
 // ui-text-exempt: trace region name, never displayed
 pub const RENDER_REGION: &str = "properties.text.render";
+/// The colour swatch.
+// ui-text-exempt: trace region name, never displayed
+pub const COLOUR_REGION: &str = "properties.text.colour";
 
 /// What the selected text looks like now, re-read only when it can have
 /// changed.
@@ -60,15 +64,13 @@ pub struct TextStyleDraft {
     face: Option<String>,
     /// The `Tf` size in points.
     size: f64,
-    /// The fill colour as sRGB bytes, or `None` when the run is painted in a
-    /// space this control cannot round-trip.
+    /// The fill colour in its own device space, or `None` when the run is
+    /// painted in a space the picker cannot edit (spot, ICC-based).
     ///
-    /// `None` is shown as *"not a plain colour"* rather than as black. A
-    /// swatch that renders a CMYK or Separation fill as its nearest RGB and
-    /// then writes that back on the next press would silently convert the
-    /// operator's ink — the exact narrowing pdfcer refuses to do on their
-    /// behalf elsewhere.
-    colour: Option<[u8; 3]>,
+    /// `None` is shown as a sentence rather than as black: a picker over a
+    /// `/Separation` would write a process colour back on the next press and
+    /// silently convert the operator's ink.
+    colour: Option<Ink>,
     /// The size the operator is typing, kept separate from [`Self::size`] so a
     /// half-typed number does not become an edit.
     typed_size: f64,
@@ -218,7 +220,7 @@ impl TextStyleDraft {
                 .find(|record| record.resource_names.iter().any(|name| name == key))
                 .and_then(|record| record.base_font.clone())
         });
-        self.colour = read.style.fill.and_then(rgb_of);
+        self.colour = read.style.fill.and_then(Ink::from_text);
         // The pre-flight, in the same stamped read as everything else. It
         // costs a second extraction, which is why it is here and not in the
         // chooser: a combo is drawn every frame it is open.
@@ -337,10 +339,10 @@ impl TextStyleDraft {
         &mut self.typed_size
     }
 
-    /// The fill colour as sRGB bytes, or `None` when the run is painted in a
-    /// space this control cannot round-trip. See [`rgb_of`].
+    /// The fill colour in its own space, or `None` when the run is painted in
+    /// a space the picker cannot edit. See [`Ink::from_text`].
     #[must_use]
-    pub(crate) fn colour(&self) -> Option<[u8; 3]> {
+    pub(crate) fn colour(&self) -> Option<Ink> {
         self.colour
     }
 
@@ -634,7 +636,7 @@ fn colour_row(
     // that wide. Measured on a 354 pt dock, the section's box came out 851.7 pt
     // wide and the operator saw
     //
-    //     Colour  Set in CMYK or a spot colour — pdfcer will not offer to
+    //     Colour  Set in a spot or calibrated colour — pdfcer will not offer to
     //
     // with the rest against the window edge. That is the disclosure failing
     // in the precise way Rule 4 exists to prevent: the control is withheld AND
@@ -660,26 +662,18 @@ fn colour_row(
             ui.label(t::text_colour_not_plain());
             return;
         };
-        let mut rgb = current;
-        if ui.color_edit_button_srgb(&mut rgb).changed() && rgb != current {
-            let components = vec![
-                f64::from(rgb[0]) / 255.0,
-                f64::from(rgb[1]) / 255.0,
-                f64::from(rgb[2]) / 255.0,
-            ];
-            if let Ok(fill) = pdfcer_core::text_edit::NewFill::new(
-                pdfcer_core::text_edit::FillModel::Rgb,
-                components,
-            ) {
-                crate::app::dispatch::textformat::restyle_or_runs(
-                    ui.ctx(),
-                    doc,
-                    page,
-                    runs,
-                    StyleChange::Fill(fill),
-                    actions,
-                );
-            }
+        let salt = "properties-text-colour"; // ui-text-exempt: an egui id salt, never displayed
+        if let Some(fill) =
+            pdfcer_gui_base::colourpick::edit_text_fill(ui, salt, current, COLOUR_REGION)
+        {
+            crate::app::dispatch::textformat::restyle_or_runs(
+                ui.ctx(),
+                doc,
+                page,
+                runs,
+                StyleChange::Fill(fill),
+                actions,
+            );
         }
     });
 }
@@ -712,22 +706,5 @@ pub(crate) fn shorten(base_font: &str) -> &str {
         // if unusual, font name.
         Some((tag, rest)) if tag.len() == 6 && tag.bytes().all(|b| b.is_ascii_uppercase()) => rest,
         _ => base_font,
-    }
-}
-
-/// sRGB bytes for a fill colour, or `None` when the space cannot round-trip.
-pub(super) fn rgb_of(colour: pdfcer_core::text_extract::TextColor) -> Option<[u8; 3]> {
-    use pdfcer_core::text_extract::TextColor;
-    let byte = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    match colour {
-        TextColor::Rgb(r, g, b) => Some([byte(r), byte(g), byte(b)]),
-        // DeviceGray IS a subset of DeviceRGB with r == g == b, so this is a
-        // faithful reading. The write-back is a widening, disclosed by the
-        // engine, and the operator asked for a colour.
-        TextColor::Gray(v) => Some([byte(v), byte(v), byte(v)]),
-        TextColor::Cmyk(..) | TextColor::Other => None,
-        // `TextColor` is `#[non_exhaustive]`: a space added later is unknown,
-        // and unknown means do not guess.
-        _ => None,
     }
 }

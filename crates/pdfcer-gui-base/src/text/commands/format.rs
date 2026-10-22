@@ -291,8 +291,8 @@ pub const fn format_align_justify() -> CommandText {
 pub const fn format_font_colour() -> CommandText {
     CommandText::new(
         "Colour",
-        "Set the colour of the selected text. Text painted in CMYK or a spot colour is left \
-         alone, so a drawing's ink is not converted to screen colour behind your back. \
+        "Set the colour of the selected text, in grey, RGB or CMYK. Text painted in a spot or \
+         calibrated colour is left alone, so a drawing's ink is not converted behind your back. \
          Sweeping text with the Text tool (T) chooses what it applies to.",
     )
 }

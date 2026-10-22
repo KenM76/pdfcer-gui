@@ -84,7 +84,7 @@ one difference the module header argues: the ink **cannot be named** here,
 so this sentence does not pretend to name it.
 
 It says *"some of"* whenever more than one run is involved, because a
-single object can be part CMYK and part RGB and a sentence claiming all of
+single object can be part spot ink and part RGB and a sentence claiming all of
 it would be false half the time. The absent swatch is per **object**, not
 per run, and that is deliberate: this control's operand is the whole object,
 so a partial refusal is a refusal of the gesture the operator would make.

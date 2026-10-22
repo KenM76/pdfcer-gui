@@ -141,6 +141,9 @@ fn resolved(doc: Option<&OpenDoc>, draft: &mut TextStyleDraft) -> Option<(usize,
 /// because the two must otherwise be identical.
 // ui-text-exempt: trace region name, never displayed
 const FACE_POPUP_REGION: &str = "ribbon.font.face";
+/// The Font Colour swatch, and `{region}.picker` while it is open.
+// ui-text-exempt: trace region name, never displayed
+const COLOUR_REGION: &str = "ribbon.font.colour";
 
 /// The face chooser.
 fn face(
@@ -320,7 +323,7 @@ fn colour(
         //
         // | why | the truth |
         // |---|---|
-        // | the run is painted in CMYK or a spot colour | the sentence below |
+        // | the run is painted in a spot or calibrated colour | the sentence below |
         // | **nothing is swept, so no run has been read at all** | *"sweep the text first"* |
         //
         // The second is the state an operator is in **every time they go
@@ -328,7 +331,7 @@ fn colour(
         // the Select tool, the Format tab has appeared, and the Font group is
         // greyed. `resolved` never ran, so the draft holds its `Default` and
         // `colour()` is `None` — and hovering the greyed swatch answered with
-        // *"Set in CMYK or a spot colour…"*: a confident, specific claim about
+        // *"Set in a spot or calibrated colour…"*: a confident, specific claim about
         // text this control had not read one byte of.
         //
         // It is the same defect class as the size field two functions up
@@ -352,21 +355,19 @@ fn colour(
         }
         return false;
     };
-    let mut rgb = current;
-    if ui.color_edit_button_srgb(&mut rgb).changed() && rgb != current && live {
-        let components = vec![
-            f64::from(rgb[0]) / 255.0,
-            f64::from(rgb[1]) / 255.0,
-            f64::from(rgb[2]) / 255.0,
-        ];
-        if let Ok(fill) =
-            pdfcer_core::text_edit::NewFill::new(pdfcer_core::text_edit::FillModel::Rgb, components)
-        {
+    let picked = pdfcer_gui_base::colourpick::edit_text_fill(
+        ui,
+        "ribbon-font-colour", // ui-text-exempt: an egui id salt, never displayed
+        current,
+        COLOUR_REGION,
+    );
+    match picked {
+        Some(fill) if live => {
             *parked = Some(StyleChange::Fill(fill));
-            return true;
+            true
         }
+        _ => false,
     }
-    false
 }
 
 #[cfg(test)]
