@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 7faafa0ae6848c87f395db9adfc45632a2c50239
+# baseline: 09b4a073300c8bb7336666e86face9eab56a9bb0
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 9728
+# items: 9741
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives as the engine's own warning, shown verbatim.
@@ -766,6 +766,8 @@ pdfcer-core enum pdfcer_core::optimize::StreamAction
 pdfcer-core enum pdfcer_core::optimize::cleanup::BrokenTarget
 pdfcer-core enum pdfcer_core::optimize::content::ContentSkip
 pdfcer-core enum pdfcer_core::optimize::content::Numbers
+pdfcer-core enum pdfcer_core::optimize::content::Rounding
+pdfcer-core enum pdfcer_core::optimize::content::Unrounded
 pdfcer-core enum pdfcer_core::optimize::content::Whitespace
 pdfcer-core enum pdfcer_core::optimize::image::ImageEncode
 pdfcer-core enum pdfcer_core::optimize::image::ResampleMethod
@@ -2567,11 +2569,15 @@ pdfcer-core field pdfcer_core::optimize::cleanup::CleanupPlan::links
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::decoded_after
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::decoded_before
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::encoded_as
+pdfcer-core field pdfcer_core::optimize::content::ContentChange::max_displacement
+pdfcer-core field pdfcer_core::optimize::content::ContentChange::numbers_rounded
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::numbers_shortened
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::operators_removed
+pdfcer-core field pdfcer_core::optimize::content::ContentChange::unrounded
 pdfcer-core field pdfcer_core::optimize::content::ContentPatch::numbers
 pdfcer-core field pdfcer_core::optimize::content::ContentPatch::redundant
 pdfcer-core field pdfcer_core::optimize::content::ContentPatch::reset
+pdfcer-core field pdfcer_core::optimize::content::ContentPatch::round
 pdfcer-core field pdfcer_core::optimize::content::ContentPatch::whitespace
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::above
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::chroma
@@ -5193,6 +5199,8 @@ pdfcer-core method pdfcer_core::optimize::cleanup::CleanupOptions::none
 pdfcer-core method pdfcer_core::optimize::cleanup::CleanupPlan::is_empty
 pdfcer-core method pdfcer_core::optimize::content::ContentPatch::new
 pdfcer-core method pdfcer_core::optimize::content::ContentPatch::parse
+pdfcer-core method pdfcer_core::optimize::content::Tolerance::as_units
+pdfcer-core method pdfcer_core::optimize::content::Tolerance::from_units
 pdfcer-core method pdfcer_core::optimize::discard::DiscardOptions::all
 pdfcer-core method pdfcer_core::optimize::discard::DiscardOptions::contains
 pdfcer-core method pdfcer_core::optimize::discard::DiscardOptions::contains_object
@@ -6082,6 +6090,7 @@ pdfcer-core struct pdfcer_core::optimize::cleanup::CleanupOptions
 pdfcer-core struct pdfcer_core::optimize::cleanup::CleanupPlan
 pdfcer-core struct pdfcer_core::optimize::content::ContentChange
 pdfcer-core struct pdfcer_core::optimize::content::ContentPatch
+pdfcer-core struct pdfcer_core::optimize::content::Tolerance
 pdfcer-core struct pdfcer_core::optimize::discard::DiscardOptions
 pdfcer-core struct pdfcer_core::optimize::image::ImagePatch
 pdfcer-core struct pdfcer_core::optimize::image::ResolvedImage
@@ -7501,6 +7510,10 @@ pdfcer-core variant pdfcer_core::optimize::cleanup::BrokenTarget::UndefinedName
 pdfcer-core variant pdfcer_core::optimize::content::ContentSkip::Mismatch
 pdfcer-core variant pdfcer_core::optimize::content::Numbers::Keep
 pdfcer-core variant pdfcer_core::optimize::content::Numbers::Shortest
+pdfcer-core variant pdfcer_core::optimize::content::Rounding::Off
+pdfcer-core variant pdfcer_core::optimize::content::Rounding::Within
+pdfcer-core variant pdfcer_core::optimize::content::Unrounded::NotPageStart
+pdfcer-core variant pdfcer_core::optimize::content::Unrounded::UnknownMatrix
 pdfcer-core variant pdfcer_core::optimize::content::Whitespace::Keep
 pdfcer-core variant pdfcer_core::optimize::content::Whitespace::Minimal
 pdfcer-core variant pdfcer_core::optimize::image::ImageEncode::Auto
