@@ -3,8 +3,9 @@
 The **Edit** tab — *what am I changing about content that is already
 there?*
 
-`RIBBON_IA.md` §5.4. Three groups: Content, Insert, Forms. Redaction is
-on the Security tab's Protect group (`security.md`).
+`RIBBON_IA.md` §5.4. Two groups: Content, Insert. Form fields are the
+Forms tab (`forms.md`). Redaction is on the Security tab's Protect group
+(`security.md`).
 
 
 # Three renames that are the point of the tab

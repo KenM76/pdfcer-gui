@@ -732,6 +732,15 @@ pub const fn edit_form_repair_fonts() -> CommandText {
     )
 }
 
+/// `edit.form_use_as_default`
+#[must_use]
+pub const fn edit_form_use_as_default() -> CommandText {
+    CommandText::new(
+        "Use as default look",
+        "Place every new field with this field's fill, outline colour and outline width. The Style group on the Forms tab shows and changes the same look.",
+    )
+}
+
 /// `edit.form_flatten`
 #[must_use]
 pub const fn edit_form_flatten() -> CommandText {

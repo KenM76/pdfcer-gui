@@ -112,6 +112,7 @@ impl PdfcerApp {
         // frame ended, which is the shape of bug that produces "the control
         // does nothing" reports.
         let pen = &mut self.pen;
+        let form_defaults = &mut self.form_defaults;
         // The Format ▸ Font group's three custom controls, borrowed as four
         // disjoint fields. `&self.status` is shared while `&mut self.panels`
         // and `&mut self.font_change` are exclusive, which the borrow checker
@@ -156,6 +157,11 @@ impl PdfcerApp {
             // invoked, which is true.
             if item.kind == crate::shell::manifest::COLOUR_SWATCH {
                 crate::canvas::markup::swatch::show(ui, pen);
+                return None;
+            }
+            // Forms ▸ Style: the next field's look, a tool setting like the pen.
+            if item.kind == crate::shell::manifest::FORM_LOOK {
+                pdfcer_gui_base::formlookband::show(ui, form_defaults);
                 return None;
             }
             // The View ▸ Display blend slider. Returns `None` for the same

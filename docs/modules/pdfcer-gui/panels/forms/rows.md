@@ -42,7 +42,7 @@ Two rules follow from that exclusion:
 ## Deliberately absent: field creation, deletion, renaming, widget moving
 
 A Rename editor, a per-widget Delete, a whole-field Delete and a
-grouping-node roster are `Edit ▸ Forms` **authoring** commands
+grouping-node roster are Forms-tab **authoring** commands
 (`edit.form_create_field`, `edit.form_manage_fields`). They answer to core's
 *structural* certification gate rather than the fill gate, and a reader that
 fills a form does not create fields in it. They land with the commands that

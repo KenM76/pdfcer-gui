@@ -53,6 +53,12 @@ pub fn tab_markup() -> &'static str {
     "Markup"
 }
 
+/// The Forms tab's label.
+#[must_use]
+pub fn tab_forms() -> &'static str {
+    "Forms"
+}
+
 /// The Measure tab's label.
 #[must_use]
 pub fn tab_measure() -> &'static str {
@@ -107,6 +113,12 @@ pub fn question_edit() -> &'static str {
 #[must_use]
 pub fn question_markup() -> &'static str {
     "What am I adding for someone else to read?"
+}
+
+/// The Forms tab's question.
+#[must_use]
+pub fn question_forms() -> &'static str {
+    "What will someone filling this in be asked?"
 }
 
 /// The Measure tab's question.
@@ -317,10 +329,22 @@ pub fn group_edit_clipboard() -> &'static str {
 // compiles and quietly encourages reusing a group that was deleted for a
 // reason.
 
-/// Edit ▸ Forms.
+/// Forms ▸ Fields.
 #[must_use]
-pub fn group_edit_forms() -> &'static str {
-    "Forms"
+pub fn group_forms_fields() -> &'static str {
+    "Fields"
+}
+
+/// Forms ▸ Style.
+#[must_use]
+pub fn group_forms_style() -> &'static str {
+    "Style"
+}
+
+/// Forms ▸ Manage.
+#[must_use]
+pub fn group_forms_manage() -> &'static str {
+    "Manage"
 }
 
 /// Security ▸ Protect.

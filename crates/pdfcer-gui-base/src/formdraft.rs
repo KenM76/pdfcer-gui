@@ -182,11 +182,46 @@ impl Draft {
     }
 }
 
+/// **How the next field looks**: the three settings every kind shares and the
+/// Forms ▸ Style band edits. Applying one over a draft is the band's whole
+/// effect, so the dialog opens on what the band shows.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FieldLook {
+    /// [`Draft::border_width`].
+    pub border_width: f64,
+    /// [`Draft::background`].
+    pub background: Option<MkColor>,
+    /// [`Draft::border_color`].
+    pub border_color: Option<MkColor>,
+}
+
+impl FieldLook {
+    /// The look `draft` carries.
+    #[must_use]
+    pub const fn of(draft: &Draft) -> Self {
+        Self {
+            border_width: draft.border_width,
+            background: draft.background,
+            border_color: draft.border_color,
+        }
+    }
+
+    /// Write this look into `draft`.
+    pub const fn apply(&self, draft: &mut Draft) {
+        draft.border_width = self.border_width;
+        draft.background = self.background;
+        draft.border_color = self.border_color;
+    }
+}
+
 /// The last settings the operator accepted, per session.
 #[derive(Debug, Clone, Default)]
 pub struct Remembered {
     /// The last accepted draft, whatever kind it was.
     last: Option<Draft>,
+    /// The look the Style band or the last accepted draft set; `None` until
+    /// one of them does, which leaves each kind its own defaults.
+    look: Option<FieldLook>,
 }
 
 impl Remembered {
@@ -226,6 +261,9 @@ impl Remembered {
             None => Draft::fresh(kind),
         };
         draft.kind = kind;
+        if let Some(look) = &self.look {
+            look.apply(&mut draft);
+        }
 
         if matches!(kind, FormFieldKind::Radio) && !draft.name.trim().is_empty() {
             // The group persists and the EXPORT VALUE advances — the
@@ -244,6 +282,20 @@ impl Remembered {
     /// Record what the operator accepted.
     pub fn remember(&mut self, draft: &Draft) {
         self.last = Some(draft.clone());
+        self.look = Some(FieldLook::of(draft));
+    }
+
+    /// The look the next field will be placed with: what was set, or a text
+    /// field's defaults, which are what the band shows before anything is.
+    #[must_use]
+    pub fn look(&self) -> FieldLook {
+        self.look
+            .unwrap_or_else(|| FieldLook::of(&Draft::fresh(FormFieldKind::Text)))
+    }
+
+    /// Set the look every following placement opens with, whatever its kind.
+    pub const fn set_look(&mut self, look: FieldLook) {
+        self.look = Some(look);
     }
 }
 
@@ -271,6 +323,50 @@ fn next_free(prefix: &str, taken: &[String]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// **The band's look reaches every kind**, including over a remembered
+    /// draft of the same kind, and survives the next acceptance only as what
+    /// that acceptance carried.
+    #[test]
+    fn a_set_look_opens_every_following_kind() {
+        let mut mem = Remembered::default();
+        let first = mem.next(FormFieldKind::CheckBox, &[]);
+        mem.remember(&first);
+        let look = FieldLook {
+            border_width: 3.0,
+            background: Some(MkColor::Gray(0.5)),
+            border_color: Some(MkColor::Rgb(1.0, 0.0, 0.0)),
+        };
+        mem.set_look(look);
+        for kind in [
+            FormFieldKind::Text,
+            FormFieldKind::CheckBox,
+            FormFieldKind::Radio,
+            FormFieldKind::Choice,
+            FormFieldKind::PushButton,
+        ] {
+            assert_eq!(FieldLook::of(&mem.next(kind, &[])), look, "{kind:?}");
+        }
+        let mut accepted = mem.next(FormFieldKind::Text, &[]);
+        accepted.border_width = 0.5;
+        mem.remember(&accepted);
+        assert!((mem.look().border_width - 0.5).abs() < f64::EPSILON);
+    }
+
+    /// **Before anything is set, each kind keeps its own defaults** — a check
+    /// box is not given a text field's outline by a band nobody touched.
+    #[test]
+    fn an_untouched_look_changes_nothing() {
+        let mem = Remembered::default();
+        assert_eq!(
+            mem.next(FormFieldKind::CheckBox, &[]).border_color,
+            Draft::fresh(FormFieldKind::CheckBox).border_color
+        );
+        assert_eq!(
+            mem.look(),
+            FieldLook::of(&Draft::fresh(FormFieldKind::Text))
+        );
+    }
 
     /// **A second field of the same kind gets a different name**, which is the
     /// guard against the silent merge described in the header.

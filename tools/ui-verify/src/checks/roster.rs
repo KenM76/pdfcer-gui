@@ -350,6 +350,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(layer_combine::LayersCanBeMergedAndFlattened),
         Box::new(layer_folders::LayerFoldersShowAndReorganise),
         Box::new(layer_assign::LayerAssignMovesTheSelection),
+        Box::new(forms_style::FormsStyleSetsTheNextField),
         Box::new(layer_assign::PasteGoesOnTheCurrentLayer),
         Box::new(layer_assign::ACaretGoesOnTheCurrentLayer),
         Box::new(layer_assign::ADrawingGoesOnTheCurrentLayer),

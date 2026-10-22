@@ -171,7 +171,7 @@ pub enum Action {
     /// File ▸ Straighten scans: one page's turn of a run, paced one per
     /// frame. See `crate::deskewstep`.
     Deskew(crate::deskewstep::DeskewStep),
-    /// Edit ▸ Forms ▸ Repair fonts: every inline `/DR` font becomes an object
+    /// Forms ▸ Manage ▸ Repair fonts: every inline `/DR` font becomes an object
     /// of its own, as one undo entry. See `super::formfonts`.
     RepairFormFonts,
     /// Security ▸ Add validation evidence…: pick files, embed them in

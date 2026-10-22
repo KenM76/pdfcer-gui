@@ -280,6 +280,8 @@ fn every_predicate_names_a_documented_condition() {
         "dimension.perimeter_offered",
         // Published by `PdfcerApp::conditions` and re-asked per right-click.
         "selection.layer_assignable",
+        // Published by `PdfcerApp::conditions` while a form field is selected.
+        "selection.field",
         // Published by `app::rc4::publish` while the document uses RC4.
         "doc.rc4",
         // Published by `app::unlock::publish`.

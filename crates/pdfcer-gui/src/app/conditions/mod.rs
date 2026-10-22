@@ -109,6 +109,10 @@ impl PdfcerApp {
             if !doc.selection.is_empty() || doc.selected_field.is_some() {
                 set.set("selection.actionable");
             }
+            // A form field is selected: what `edit.form_use_as_default` reads.
+            if doc.selected_field.is_some() {
+                set.set("selection.field");
+            }
             // **Deleting what is selected would not be refused** — the
             // condition `format.delete` carries as its `visible_when`, so the
             // control is **absent** rather than greyed where the engine would

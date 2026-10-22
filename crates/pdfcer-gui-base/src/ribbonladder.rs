@@ -27,7 +27,6 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     ("pages", "transform", 1),
     ("pages", "insert", 2),
     // EDIT — Content is the tab.
-    ("edit", "forms", 2),
     ("edit", "clipboard", 3),
     ("edit", "insert", 4),
     // MARKUP — Shapes is the pen. Style configures it, so it goes late.
@@ -35,6 +34,9 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     ("markup", "notes", 2),
     ("markup", "text_markup", 3),
     ("markup", "style", 4),
+    // FORMS — Fields is the tab; Style is set once per form.
+    ("forms", "manage", 1),
+    ("forms", "style", 2),
     // MEASURE — Dimension is the tab; Scale is set once per drawing.
     ("measure", "scale", 1),
     // SECURITY — the file-level band is the tab; redaction folds first.

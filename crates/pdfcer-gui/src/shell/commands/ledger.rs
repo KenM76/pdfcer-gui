@@ -380,7 +380,7 @@ fn registration_succeeds_and_registers_every_command() {
     // 172 → 173: `file.purge_password_values`, File ▸ Security.
     // 173 → 174: `pages.bates`, Pages ▸ Stamp.
     // 174 → 175: `pages.bates_remove`, beside it.
-    // 175 → 176: `edit.form_repair_fonts` (G070), Edit ▸ Forms.
+    // 175 → 176: `edit.form_repair_fonts` (G070), Forms ▸ Manage.
     // 176 → 177: `edit.align` (O263), Edit ▸ Arrange — the Align and Distribute panel.
     // 177 → 184: the seven one-click aligns beside it, for the Ctrl+Alt+keypad chords.
     // 184 → 185: `edit.insert_3d`, Edit ▸ Insert.
@@ -424,9 +424,10 @@ fn registration_succeeds_and_registers_every_command() {
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
     // 239 → 241: `file.trust_web_sites` and `file.trust_ask_files`, Security ▸ Trust.
     // +1 with 3d: `file.trust_play_3d`, Security ▸ Trust.
+    // 241 → 242: `edit.form_use_as_default`, Forms ▸ Manage.
     assert_eq!(
         registry().len(),
-        241 + 2 * usize::from(cfg!(feature = "signing"))
+        242 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -860,9 +861,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
     // 208 → 210: `file.trust_web_sites` names `pick-link`, `file.trust_ask_files`
     // names `open`, both shared. +1 with 3d: `file.trust_play_3d` names `model-3d`.
+    // 210 → 211: `edit.form_use_as_default` names `form-field`, shared.
     assert_eq!(
         named,
-        210 + 2 * usize::from(cfg!(feature = "signing"))
+        211 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

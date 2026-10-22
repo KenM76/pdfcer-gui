@@ -1,6 +1,6 @@
-//! # `ribbontabs` — eight of the ribbon's tabs, as `egui_shell` values
+//! # `ribbontabs` — nine of the ribbon's tabs, as `egui_shell` values
 //!
-//! File, Pages, Edit, Markup, Measure, Security, Tools and the contextual Format tab,
+//! File, Pages, Edit, Markup, Forms, Measure, Security, Tools and the contextual Format tab,
 //! with the item helpers every tab module writes its lists in and the
 //! condition names and `Item::Custom` kinds those tabs emit. The app's
 //! `shell::manifest::built_in` assembles them with the View tab, which names
@@ -12,6 +12,7 @@ use egui_shell::manifest::{Group, Item, ItemSize};
 pub mod edit;
 pub mod file;
 pub mod format;
+pub mod forms;
 pub mod markup;
 pub mod measure;
 pub mod pages;
@@ -50,6 +51,9 @@ pub const RECENT_FILES: &str = "recent_files"; // ui-text-exempt: a custom-item 
 
 /// **The `Item::Custom` kind of the Markup ▸ Style controls.**
 pub const COLOUR_SWATCH: &str = "colour_swatch"; // ui-text-exempt: a custom-item kind, never displayed
+
+/// **The `Item::Custom` kind of the Forms ▸ Style controls.**
+pub const FORM_LOOK: &str = "form_look"; // ui-text-exempt: a custom-item kind, never displayed
 
 /// **The `Item::Custom` kind of the Edit ▸ Content word-gap slider.**
 pub const WORD_GAP: &str = "word_gap"; // ui-text-exempt: a custom-item kind, never displayed

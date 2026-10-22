@@ -63,3 +63,5 @@ with the lesson unread. Run `check-string-gaps.sh` straight after any scripted R
 takes seconds.
 
 A third time: a Rust `\`-continued literal passed through a bash heredoc into a python `replace()` came out joined with a run of spaces. `check-string-gaps` caught it; the falsifying run had shown the message cut short by `sed -n`. Put Rust literals in with the Edit tool, never through a python string.
+
+**2026-10-22, both failure modes in one check.** Splitting a function through a python heredoc lost five wraps. A repair through a second heredoc then wrote a literal backslash-n. A third script spelled the wrap `chr(92)+chr(10)` and fixed it. When a heredoc is going to rewrite Rust that contains wrapped literals, use `chr(92)` from the start, then run `check-string-gaps.sh` at once.

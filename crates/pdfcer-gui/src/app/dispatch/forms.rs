@@ -63,3 +63,46 @@ pub(super) fn flatten(app: &PdfcerApp, id: &str, actions: &mut Vec<Action>) {
     }
     actions.push(Action::Field(FieldAction::Edit(FormEdit::Flatten)));
 }
+
+/// **Make the selected field's look the one new fields are placed with** —
+/// what Forms ▸ Style then shows. A field whose file states no border reads
+/// as the standard's width of 1.
+pub(super) fn use_as_default(app: &mut PdfcerApp, id: &str) {
+    let Status::Open(doc) = &app.status else {
+        return;
+    };
+    let Some(selected) = doc.selected_field.as_ref() else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("command-declined id={id} reason=no-field-selected")
+        });
+        return;
+    };
+    let view = doc.session.view();
+    let widget = pdfcer_core::forms::parse_acroform(&view).and_then(|form| {
+        form.fields
+            .into_iter()
+            .find(|f| f.fully_qualified_name == selected.field)
+            .and_then(|f| f.widgets.into_iter().nth(selected.widget))
+    });
+    let Some(widget) = widget else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("command-declined id={id} reason=field-not-found")
+        });
+        return;
+    };
+    let look = crate::canvas::formfield::FieldLook {
+        border_width: widget.border.map_or(1.0, |b| b.width),
+        background: widget.background,
+        border_color: widget.border_color,
+    };
+    app.form_defaults.set_look(look);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "form-look-taken field={} width={}",
+            selected.field, look.border_width
+        )
+    });
+}

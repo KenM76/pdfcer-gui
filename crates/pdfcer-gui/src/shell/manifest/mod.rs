@@ -17,7 +17,7 @@ mod rail_tests;
 mod view;
 
 use pdfcer_gui_base::ribbontabs::{
-    command, edit, file, format, group, group_two_rows, icon_only, markup, measure, pages,
+    command, edit, file, format, forms, group, group_two_rows, icon_only, markup, measure, pages,
     security, tools,
 };
 
@@ -92,7 +92,7 @@ pub fn built_in() -> Shell {
             "edit",
             ribbon::mode_edit(),
             [
-                "file", "view", "pages", "edit", "markup", "measure", "security", "tools",
+                "file", "view", "pages", "edit", "markup", "forms", "measure", "security", "tools",
             ],
         ))
         // -------------------------------------------------------------------
@@ -103,6 +103,7 @@ pub fn built_in() -> Shell {
         .with_tab(pages::tab())
         .with_tab(edit::tab())
         .with_tab(markup::tab())
+        .with_tab(forms::tab())
         .with_tab(measure::tab())
         .with_tab(security::tab())
         .with_tab(tools::tab())
@@ -446,8 +447,8 @@ pub fn built_in() -> Shell {
 
 pub use pdfcer_gui_base::ribbontabs::{
     ACROBAT_AVAILABLE, COLOUR_SWATCH, DELETE_PERMITTED, FONT_COLOUR, FONT_FACE, FONT_SIZE,
-    MARKUP_DASH, MARKUP_ENDINGS, MARKUP_FILL, MARKUP_OPACITY, MARKUP_STROKE, MARKUP_WIDTH,
-    OCR_BLEND, RECENT_FILES, SELECTION_ACTIONABLE, SELECTION_ANY, WORD_GAP,
+    FORM_LOOK, MARKUP_DASH, MARKUP_ENDINGS, MARKUP_FILL, MARKUP_OPACITY, MARKUP_STROKE,
+    MARKUP_WIDTH, OCR_BLEND, RECENT_FILES, SELECTION_ACTIONABLE, SELECTION_ANY, WORD_GAP,
 };
 
 // ===========================================================================
@@ -646,12 +647,12 @@ mod tests {
     #[test]
     fn the_ribbon_has_the_documented_shape() {
         let shell = built_in();
-        assert_eq!(shell.tabs().len(), 8, "eight ordinary tabs");
+        assert_eq!(shell.tabs().len(), 9, "nine ordinary tabs");
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
-            42,
-            "forty-two groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
+            44,
+            "forty-four groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
         );
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
@@ -689,15 +690,15 @@ mod tests {
         }
     }
 
-    /// The tabs are the eight of `RIBBON_IA.md` §4, in its order.
+    /// The tabs are the nine of `RIBBON_IA.md` §4, in its order.
     #[test]
-    fn the_tabs_are_the_eight_in_specification_order() {
+    fn the_tabs_are_the_nine_in_specification_order() {
         let shell = built_in();
         let ids: Vec<&str> = shell.tabs().iter().map(|t| t.id.as_str()).collect();
         assert_eq!(
             ids,
             [
-                "file", "view", "pages", "edit", "markup", "measure", "security", "tools"
+                "file", "view", "pages", "edit", "markup", "forms", "measure", "security", "tools"
             ]
         );
         assert_eq!(shell.contextual_tabs()[0].id, "format");
@@ -705,12 +706,15 @@ mod tests {
 
     /// **Every command id is prefixed with the tab that owns it** — except
     /// Security's, which keep the `file.` and `edit.` prefixes that name their
-    /// handler-token blocks (`RIBBON_IA.md` §5.9).
+    /// handler-token blocks (`RIBBON_IA.md` §5.9), and Forms', which keep
+    /// `edit.form_` so keymaps and saved layouts survive the move (§5.5a).
     #[test]
     fn every_command_id_names_its_owning_tab() {
         for tab in built_in().all_tabs() {
             let prefixes: Vec<String> = if tab.id == "security" {
                 vec!["file.".into(), "edit.".into()]
+            } else if tab.id == "forms" {
+                vec!["edit.form_".into()]
             } else {
                 vec![format!("{}.", tab.id)]
             };

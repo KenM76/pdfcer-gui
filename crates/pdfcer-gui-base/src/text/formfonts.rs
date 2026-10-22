@@ -1,4 +1,4 @@
-//! The sentences for Edit ▸ Forms ▸ Repair fonts, which moves every inline
+//! The sentences for Forms ▸ Manage ▸ Repair fonts, which moves every inline
 //! font in the form's default resources into an object of its own so Acrobat
 //! draws the fields' values.
 

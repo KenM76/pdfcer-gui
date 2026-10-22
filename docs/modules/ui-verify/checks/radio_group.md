@@ -37,7 +37,7 @@ Launched with `mode.edit,file.properties,edit.form_radio_button`.
    button is its own field.
 2. Type `RadioGroup` into `properties.form_field.radio_group.name` and press
    `properties.form_field.radio_group.move`; require `radio-move-applied`.
-3. Re-arm Edit ▸ Radio button (placing puts the tool down) and drag
+3. Re-arm Forms ▸ Fields ▸ Radio button (placing puts the tool down) and drag
    (40, 420)→(56, 404); accept.
 4. Type `RadioGroup` into `properties.form_field.rename_name` and press
    `properties.form_field.rename`; require `radio-move-applied` — a rename

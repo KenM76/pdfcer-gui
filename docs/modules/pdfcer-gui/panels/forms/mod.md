@@ -123,7 +123,7 @@ a form must not change a computed `/V`.
 
 ## What was deliberately left behind
 
-Everything that is `Edit ▸ Forms` **authoring**: field creation, field
+Everything that is Forms-tab **authoring**: field creation, field
 deletion, widget deletion, field renaming with its ancestor breadcrumb, and
 the grouping-node roster. Also the FDF/XFDF/CSV import and export surface,
 which needs a file dialog this stage does not have. Each answers to a

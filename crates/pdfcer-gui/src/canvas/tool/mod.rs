@@ -259,7 +259,7 @@ pub enum CanvasTool {
     /// [`TextEditKind::Edit`]: crate::canvas::textedit::TextEditKind::Edit
     /// [`TextEditKind::Add`]: crate::canvas::textedit::TextEditKind::Add
     TextEdit(TextEditKind),
-    /// **Placing a new form field**, armed from Edit ▸ Forms.
+    /// **Placing a new form field**, armed from the Forms tab.
     ///
     /// Geometrically identical to a markup rectangle — arm, put a rectangle
     /// on a page, commit once — which is why it borrows

@@ -573,6 +573,9 @@ pub mod layerorder;
 /// What the form-field placement dialog collects and remembers.
 pub mod formdraft;
 
+/// The Forms ▸ Style band: how the next placed field looks.
+pub mod formlookband;
+
 /// The ruler guides a document carries, and their on-disk spelling.
 pub mod guidemodel;
 

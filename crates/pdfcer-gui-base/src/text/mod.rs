@@ -617,3 +617,5 @@ pub mod protect;
 
 /// Every string the form-field pop-up shows.
 pub mod formfield;
+/// The Forms ▸ Style band's words.
+pub mod formlook;

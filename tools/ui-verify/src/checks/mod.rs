@@ -421,6 +421,8 @@ pub mod field_extras;
 pub mod field_scripts;
 pub mod field_text_cmyk;
 pub mod forms_spotlight;
+/// Forms ▸ Style's width reaches the next placed field.
+pub mod forms_style;
 /// A field's alignment chosen, then handed back to what the form states.
 pub mod inherited_alignment;
 /// Mark an insertion with a caret from Markup.

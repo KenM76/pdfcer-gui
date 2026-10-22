@@ -44,7 +44,7 @@ const SWEEP_TWO: ((f64, f64), (f64, f64)) = ((40.0, 420.0), (56.0, 404.0));
 
 const FILE_TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name
 const SAVE_COPY: &str = "ribbon.item.file.save_copy"; // ui-text-exempt: a trace region name
-const EDIT_TAB: &str = "ribbon.tab.edit"; // ui-text-exempt: a trace region name
+const FORMS_TAB: &str = "ribbon.tab.forms"; // ui-text-exempt: a trace region name
 const RADIO_TOOL: &str = "ribbon.item.edit.form_radio_button"; // ui-text-exempt: a trace region name
 const ACCEPT: &str = "dialog.form_field.accept"; // ui-text-exempt: a trace region name
 /// Mirror `panels::properties::radiogroup` and `::formfield`.
@@ -309,7 +309,7 @@ fn join_from_properties(
     report.note(format!("by the row: {}", moved.raw));
 
     // --- another, joined by renaming it to the group's name.
-    press_on_tab(ctx, session, pointer, RADIO_TOOL, EDIT_TAB)?;
+    press_on_tab(ctx, session, pointer, RADIO_TOOL, FORMS_TAB)?;
     if let Some(failure) = place(ctx, report, session, pointer, SWEEP_TWO)? {
         return Ok(Some(failure));
     }

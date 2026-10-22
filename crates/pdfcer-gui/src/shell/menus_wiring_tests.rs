@@ -83,11 +83,13 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 56 → 57: Word gap… on the canvas text menu.
     // 57 → 58: Reset layout on the dock's blank-bar menu.
     // 58 → 60: Make pictures smaller on the canvas object and Objects-row menus.
+    // 60 → 66: Use as default look, Cut, Copy, Paste, Paste duplicate and
+    // Manage fields on the canvas field menu.
     // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
     // no stacking glyph exists (see `ledger`'s refused count).
     assert_eq!(
         (glyph, blank, absent),
-        (60, 5, 0),
+        (66, 5, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

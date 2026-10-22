@@ -1024,7 +1024,7 @@ pub enum Declined {
     /// Making a markup part of the page was refused; worded in
     /// [`crate::text::flattenannot::refused`].
     MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason),
-    /// Edit ▸ Forms ▸ Repair fonts found no inline font to move. Worded in
+    /// Forms ▸ Manage ▸ Repair fonts found no inline font to move. Worded in
     /// [`crate::text::formfonts::nothing_to_repair`].
     FormFontsNothingToRepair,
     /// A text-tool click opened no caret. Worded by

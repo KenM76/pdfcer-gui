@@ -439,6 +439,15 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.form_repair_fonts", t::edit_form_repair_fonts(), 439)
             .with_icon("embed-fonts")
             .enabled_when("doc.pages"),
+        // An app-state verb like the Markup pen: it sets what the NEXT field
+        // looks like, so it writes nothing and leaves no undo entry.
+        command(
+            "edit.form_use_as_default",
+            t::edit_form_use_as_default(),
+            444,
+        )
+        .with_icon("form-field")
+        .enabled_when("selection.field"),
         // Find — registered, bound to Ctrl+F, and on **no tab**.
         //
         // A third documented exception to the "every command is on its owning

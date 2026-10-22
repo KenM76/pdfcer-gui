@@ -1,4 +1,4 @@
-//! Edit ▸ Forms ▸ Repair fonts: move every inline font in `/AcroForm /DR /Font`
+//! Forms ▸ Manage ▸ Repair fonts: move every inline font in `/AcroForm /DR /Font`
 //! into an object of its own, so Acrobat draws filled text fields.
 //!
 //! Acrobat shows a filled text field blank when its `/DA` font resolves to an

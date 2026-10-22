@@ -123,3 +123,13 @@ nobody can find the source of.
 3. **The name never carries over — except for a radio.** See the
    header: sharing a name merges two widgets into one field, and for
    radio buttons that merging *is* the group.
+
+## `FieldLook` — the part Forms ▸ Style sets
+
+Fill, outline colour and outline width, copied out of a `Draft` by
+`FieldLook::of` and into one by `apply`. `Remembered::look` is set by
+`remember` (the dialog was accepted), by `set_look` (the Style band, or
+*Use as default look* on a placed field), and is applied by `next_in` to
+every kind — a look is not per-kind, so the check box placed after a styled
+text field opens with its fill. Unset, `next_in` leaves each kind's own
+defaults alone.

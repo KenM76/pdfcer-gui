@@ -203,7 +203,7 @@ mod drawlayer;
 /// Security ▸ Add validation evidence….
 #[cfg(feature = "signing")]
 mod evidence;
-/// Edit ▸ Forms ▸ Repair fonts.
+/// Forms ▸ Manage ▸ Repair fonts.
 mod formfonts;
 /// Put the selection on a layer: `LayerAction::Assign`.
 pub mod layerassign;

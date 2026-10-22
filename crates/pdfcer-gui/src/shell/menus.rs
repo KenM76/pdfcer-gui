@@ -540,6 +540,14 @@ pub fn built_in() -> Menus {
         // meaning: *deleting what is selected would not be refused*.
         .with(Menu::new(CANVAS_FIELD).with_items([
             Item::command("format.properties"),
+            Item::command("edit.form_use_as_default"),
+            Item::Separator,
+            Item::command("edit.cut"),
+            Item::command("edit.copy"),
+            Item::command("edit.paste"),
+            Item::command("edit.paste_duplicate"),
+            Item::Separator,
+            Item::command("edit.form_manage_fields"),
             Item::command("format.move_to_layer").shown_when(LAYER_ASSIGNABLE),
             Item::command("format.delete").shown_when(super::manifest::DELETE_PERMITTED),
         ]))

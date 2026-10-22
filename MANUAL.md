@@ -650,8 +650,8 @@ is disclosed as such rather than half-drawn.
 
 ### Making one
 
-**Edit mode**, Edit ▸ Forms. Five buttons: text field, check box, radio button,
-drop-down, button.
+**Edit mode**, the **Forms** tab. Five buttons: text field, check box, radio
+button, drop-down, button.
 
 Press one, then either **click the page** to drop the field at its usual size,
 or **drag a box** for an exact one. A window asks for the details. Nothing is
@@ -660,6 +660,11 @@ nothing.
 
 The settings you accept carry over to the next field you place — so a column of
 identical check boxes is one set of choices and then a row of clicks.
+
+**Forms ▸ Style** shows the fill, outline colour and outline width the next
+field will get, and changing it there is the same as changing it in that
+window. To match a field already on the page, right-click it and choose **Use
+as default look**.
 
 **Give every field a different name.** Two fields with the same name are *one*
 field shown twice: type in either and both change. pdfcer numbers new fields for

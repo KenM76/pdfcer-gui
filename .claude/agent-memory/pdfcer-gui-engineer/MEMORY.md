@@ -192,3 +192,4 @@
 - [Press-select and click must share modifiers](feedback_press_select_modifier.md) — Ctrl+click picked at press, toggled out at release: sel=0.
 - [Consuming a reply keeps its files](feedback_channel_keeps_files.md) — add done_*; never rm in the channel (no git).
 - [The first stream is not the page](feedback_first_stream_order.md) — pick a read-back stream by content; an object stream came first.
+- [Moving a command's tab breaks checks](feedback_moving_command_tab.md) — grep checks for the old `ribbon.tab.`; the chain stays green.

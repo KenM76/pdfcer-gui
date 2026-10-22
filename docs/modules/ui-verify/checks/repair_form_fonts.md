@@ -1,6 +1,6 @@
 # `ui-verify/checks/repair_form_fonts`
 
-`repair_form_fonts` — **Edit ▸ Forms ▸ Repair fonts on a form that keeps its
+`repair_form_fonts` — **Forms ▸ Manage ▸ Repair fonts on a form that keeps its
 font inline moves it, and a second press says there is nothing left.**
 
 ## What it guards

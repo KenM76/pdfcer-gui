@@ -44,7 +44,7 @@ pub enum Panel {
     DocumentProperties,
     /// The document's form fields, for **filling** — not for authoring.
     ///
-    /// Creating, deleting, renaming and grouping fields are `Edit ▸ Forms`
+    /// Creating, deleting, renaming and grouping fields are the `Forms` tab
     /// authoring work behind a different certification gate, and are absent.
     Forms,
     /// The document's pages, as pictures — navigate, pick, and act on sheets.

@@ -368,7 +368,7 @@ pub(super) fn tab() -> Tab {
                     // this one is a *capability* the other five are not — it
                     // opens the only panel here that writes to the document
                     // — and the operator meets the read-only surfaces first.
-                    // Edit ▸ Forms keeps the three authoring verbs, which is
+                    // The Forms tab keeps the three authoring verbs, which is
                     // the line this move draws: filling is not authoring.
                     command("view.panel_forms"),
                 ],

@@ -173,15 +173,21 @@ read *Edit text* and *Add text*, with their icons kept.
 | 3 | **Pages** | What am I doing to the set of pages? |
 | 4 | **Edit** | What am I changing about content that is already there? |
 | 5 | **Markup** | What am I adding for someone else to read? |
-| 6 | **Measure** | What am I measuring, and in what units? |
-| 7 | **Security** | Who may open, change or trust this file, and what must never leave it? |
-| 8 | **Tools** | What do I run across files, or configure once? |
+| 6 | **Forms** | What will someone filling this in be asked? |
+| 7 | **Measure** | What am I measuring, and in what units? |
+| 8 | **Security** | Who may open, change or trust this file, and what must never leave it? |
+| 9 | **Tools** | What do I run across files, or configure once? |
 
 Plus one contextual tab:
 
 | Tab | Appears when |
 |---|---|
 | **Format** | A markup, ce dimension, image, vector object or text run is selected |
+
+**Why Forms is a tab.** The operator asked for one (O324): authoring a form
+is a job of its own, and it needs a Style group — how the next field looks —
+that a group on Edit had no room for. It is in Edit mode only, as the Edit
+tab's Forms group was: placing a field changes the document's design.
 
 **Why Security is a tab.** The operator asked for one (O289 item 10): the
 file's passwords, permissions and signatures and the page redactions are
@@ -334,7 +340,6 @@ selection is correct.
 | **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* · Gap width *(slider: how wide a gap between glyphs reads as a space; commits on release)* · Word gap… *(opens Settings ▸ Text at the full explanation)* |
 | **Insert** | Image… · Link… · Attachments · Shape ⌄ |
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
-| **Forms** | Create field ⌄ (text, check box, radio button, choice, push button) · Manage fields · Flatten · Repair fonts |
 
 **Clipboard leads the tab**, where a word processor puts it (`OPERATOR_REQUESTS.md` O313).
 
@@ -351,7 +356,8 @@ neighbours.
 
 **Not here:** *Copy page text* / *Copy document text* are `file.copy_*` on File ▸
 Export, and *Fill form* is `view.panel_forms` on View ▸ Panels — both by §2's
-mode rule, spelled out in §7. Edit ▸ Forms keeps create, manage and flatten. The
+mode rule, spelled out in §7. Creating, managing and flattening fields is the
+Forms tab, §5.5a. The
 tool that edits an object's own points is `view.tool_node` on View ▸ Navigate,
 because it arms the canvas and every canvas tool lives beside Select, Text and
 Hand.
@@ -453,6 +459,28 @@ marks* or *Arrange objects* would be a caption explaining the ribbon to itself.
 The contextual rule already separates them — one appears on Markup beside markup
 tools, the other on Edit beside content tools — and no operator sees both at once
 with one selection.
+
+---
+
+### 5.5a Forms — *what will someone filling this in be asked?*
+
+| Group | Commands |
+|---|---|
+| **Fields** | Text field · Check box · Radio button · Drop-down · Push button |
+| **Style** | Fill · Outline *(colour)* · Outline width — the look of the **next** field placed |
+| **Manage** | Manage fields · Use as default look · Flatten · Repair fonts |
+
+**Style sets the next field, never the selected one** — Markup ▸ Style's rule.
+A placed field is restyled in Properties. The placement dialog opens on what
+Style shows, and accepting the dialog sets Style, so the two never disagree.
+
+**Use as default look** copies a selected field's fill, outline colour and
+width into Style — Acrobat's *Use Current Properties as New Defaults*. It is on
+the field's right-click menu too, with Cut, Copy, Paste, Duplicate and Manage
+fields.
+
+**The command ids keep their `edit.form_` prefix.** A keymap or a saved layout
+names them, and renaming an id to follow a move would break both for no gain.
 
 ---
 
@@ -835,7 +863,7 @@ decided and each decision holds.
 | Command | Lives on | Not on | Because |
 |---|---|---|---|
 | `file.copy_page_text`, `file.copy_document_text` | File ▸ Export | Edit ▸ Clipboard | copying is not authoring — it reads the page and writes the clipboard, and cannot change a byte. Read, whose standard is Acrobat Reader, copies text |
-| `view.panel_forms` | View ▸ Panels | Edit ▸ Forms | filling is not authoring, and it is a panel toggle rather than a verb, so it sits with the other panel toggles |
+| `view.panel_forms` | View ▸ Panels | Forms ▸ Manage | filling is not authoring, and it is a panel toggle rather than a verb, so it sits with the other panel toggles |
 | `file.ocr` | File ▸ Recognise | Tools ▸ Recognise | OCR must be reachable in Read and Tools is not in Read's tab list. File over View because OCR's product is a new file. Giving Read the whole Tools tab was the alternative and was refused: it would hand a reading stance batch merge, batch split and font embedding |
 | `view.reset_layout` | View ▸ Window | File | it resets panel geometry, which is a view concern (§3) |
 | `file.fonts` | File ▸ Document | View ▸ Panels | the Fonts panel answers *what is inside this file*, not *what is on my screen*, so it sits with Properties (§5.1). The left rail carries it too, and a rail is a panel strip rather than a tab |

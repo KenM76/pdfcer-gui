@@ -12,7 +12,7 @@ pub use pdfcer_gui_base::formdraft as draft;
 pub use pdfcer_gui_base::pushbutton as action;
 pub mod ghost;
 
-pub use draft::{Draft, Remembered};
+pub use draft::{Draft, FieldLook, Remembered};
 
 pub use pdfcer_gui_base::formfieldkind::FormFieldKind;
 

@@ -1,21 +1,23 @@
-//! `repair_form_fonts` — **Edit ▸ Forms ▸ Repair fonts on a form that keeps its
+//! `repair_form_fonts` — **Forms ▸ Manage ▸ Repair fonts on a form that keeps its
 //! font inline moves it, and a second press says there is nothing left.**
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/repair_form_fonts.md`.
 
 use crate::checks::driving::{self, SHELL_DIAG_ENV, click_mode_segment};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-/// The mode whose ribbon carries the Edit tab.
+/// The mode whose ribbon carries the Forms tab.
 const MODE: &str = "edit";
 /// One filled text field; `/AcroForm /DR /Font /Helv` is an inline dictionary.
 const FIXTURE: &str = "inline-dr-font.pdf";
-/// The Edit tab, and the command's item on it.
-const TAB: &str = "ribbon.tab.edit";
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
+/// The Forms tab, and the command's item on it.
+const TAB: &str = "ribbon.tab.forms";
 const ITEM: &str = "ribbon.item.edit.form_repair_fonts";
 /// `form-repair-fonts-applied fonts=N`, written after the engine moved N fonts.
 const APPLIED_EVENT: &str = "form-repair-fonts-applied";
@@ -34,7 +36,7 @@ impl Check for RepairingFormFontsReachesTheDocument {
     }
 
     fn defect(&self) -> &'static str {
-        "Edit ▸ Forms ▸ Repair fonts is offered and pressing it on a form whose font is \
+        "Forms ▸ Manage ▸ Repair fonts is offered and pressing it on a form whose font is \
          inline moves nothing, or moves it again on a second press"
     }
 
@@ -48,12 +50,12 @@ impl Check for RepairingFormFontsReachesTheDocument {
     }
 }
 
-/// Find the item on the Edit tab, following the overflow, and press it.
-fn press(session: &Session, driver: &Driver, ui_rect: &str) -> Result<bool> {
-    let Some(item) = driving::declared_or_in_overflow(session, driver, ui_rect, ITEM)? else {
+/// Find the item on the Forms tab, following the overflow, and press it.
+fn press(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<bool> {
+    let Some(item) = driving::declared_or_in_overflow(session, pointer, ui_rect, ITEM)? else {
         return Ok(false);
     };
-    driver.click_at(session.frame()?.declared_center(item))?;
+    pointer.click(session, WindowPoint::centre_of(item))?;
     session.settle(30);
     Ok(true)
 }
@@ -74,11 +76,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             pdf.display()
         )));
     }
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks the ribbon.",
-        ));
-    }
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
     let ui_rect = ctx
         .profile
         .vocab
@@ -93,15 +93,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     ));
     spec.env
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("repair_form_fonts.pointer.txt"))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    let driver = Driver::new(session.window());
 
-    // --- 1: Edit mode, Edit tab --------------------------------------------
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    // --- 1: Edit mode, Forms tab -------------------------------------------
+    click_mode_segment(&session, &pointer, ui_rect, MODE)?;
     session.settle(20);
     let trace = session.trace()?;
     let tab = driving::declared(&trace, ui_rect, TAB).ok_or_else(|| {
@@ -110,13 +114,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             driving::list(&driving::declared_names(&trace, ui_rect, "ribbon.tab."))
         ))
     })?;
-    driver.click_at(session.frame()?.declared_center(tab))?;
+    pointer.click(&session, WindowPoint::centre_of(tab))?;
     session.settle(14);
 
     // --- 2: the first press moves the inline font --------------------------
-    if !press(&session, &driver, ui_rect)? {
+    if !press(&session, &pointer, ui_rect)? {
         return Ok(Some(format!(
-            "no `{ITEM}` on the Edit tab or in its overflow: Repair fonts is missing. Items \
+            "no `{ITEM}` on the Forms tab or in its overflow: Repair fonts is missing. Items \
              declared: {}. Trace: {}.",
             driving::list(&driving::declared_names(
                 &session.trace()?,
@@ -148,7 +152,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 3: the second press finds nothing left ----------------------------
     let applied_before = trace.events(APPLIED_EVENT).count();
-    if !press(&session, &driver, ui_rect)? {
+    if !press(&session, &pointer, ui_rect)? {
         return Err(Error::new(format!(
             "`{ITEM}` was pressed once and could not be found for the second press. Trace: {}.",
             session.trace_path().display()
