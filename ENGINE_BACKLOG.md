@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 390** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `wanted` — a real gap — **34 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -69,6 +69,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
+| **Linearization (Fast Web View)** — `RebuildOptions::linearize` | **wanted — a *Fast Web View* switch in File ▸ Save a compacted copy, off by default.** It goes beside the structure rebuild it is part of: `dialogs::recompress` sets `linearize` on the `RebuildOptions` it already passes to `save_optimized`. The window must say what the engine reports: the copy is always a full rewrite, uses no object streams, and is written even when it comes out larger. |
 
 ### Text
 
@@ -138,7 +139,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 390** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `blocked` — waiting on something named — **2 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +157,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 390** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +168,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 390** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `declined` — deliberately no surface — **18 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -211,7 +212,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **337 of 390** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **337 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
