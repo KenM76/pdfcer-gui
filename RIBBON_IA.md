@@ -689,10 +689,15 @@ menus are not tabs — and it is the path most users try after the keyboard.
 |---|---|
 | **Security** | Remove old passwords · Encrypt · Allow edits under RC4 (RC4 documents only) · Unlock (locked documents only) · Permissions · Sign · Add validation evidence · Add archive time-stamp |
 | **Protect** | Redact ⌄ (mark page / by text / by pattern) · Remove metadata… · Redact selection · Off-page · Apply redactions · Sanitise… |
+| **Trust** | Web sites… · Ask before opening other files · Play 3D content |
 
-**Two groups, two kinds of verb.** Security writes something about the
+**Three groups, three kinds of verb.** Security writes something about the
 *file* — a save transform, nothing in the undo log. Protect removes content
-from *pages*; marking is undoable and applying is not.
+from *pages*; marking is undoable and applying is not. Trust changes neither:
+it is the operator's standing answer to what *any* document may reach outside
+itself, kept in preferences, so it is in every mode and needs no document
+open. *Web sites…* edits the web-link mode and the remembered sites; the other
+two are switches drawn pressed while on (`DESIGNS.md` § O320).
 
 **The tab is in every mode; Protect's redaction is in Edit alone.** Encrypting,
 signing and reading permissions produce a new document, which Read permits.
