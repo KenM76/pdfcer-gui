@@ -41,6 +41,7 @@ pub mod bilevel_pictures;
 pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
+pub mod compact_round;
 pub mod objects_multiselect;
 pub mod shrink_pictures;
 pub mod weblink_prompt;

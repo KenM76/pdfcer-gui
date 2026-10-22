@@ -411,6 +411,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(compact_pictures::ACompactedCopyCanMakePicturesSmaller),
         Box::new(compact_fonts::ACompactedCopyCanCutFontsDown),
         Box::new(compact_content::ACompactedCopyTidiesDrawingInstructions),
+        Box::new(compact_round::ACompactedCopyRoundsLinePositions),
         Box::new(shrink_pictures::ShrinkPicturesReachesEverySelectedPicture),
         Box::new(bilevel_pictures::BilevelPicturesStoreAsCcittAndJbig2),
         Box::new(bilevel_pictures::SmallestExactPictureTriesEveryStorage),

@@ -13,7 +13,9 @@
 //! preset's own stream action stays, so everything else is still recompressed.
 //! [`Choices::fonts`] cuts embedded TrueType fonts to the glyphs drawn
 //! through `OptimizeSettings::resubset`. [`Choices::content`] tidies page
-//! drawing instructions losslessly through `OptimizeSettings::content`.
+//! drawing instructions losslessly through `OptimizeSettings::content`, and
+//! [`Choices::round`] adds `ContentPatch::round`, which moves line positions
+//! by at most the distance chosen.
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
@@ -21,12 +23,12 @@ use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
-use pdfcer_core::optimize::ContentPatch;
 use pdfcer_core::optimize::resubset::ResubsetFonts;
 use pdfcer_core::optimize::{
     CleanupOptions, DiscardOptions, OptimizedFile, PlannedChange, Preset, RebuildOptions,
     StreamAction,
 };
+use pdfcer_core::optimize::{ContentPatch, Rounding, Tolerance};
 use pdfcer_core::settings::Settings;
 use pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER;
 
@@ -54,6 +56,9 @@ pub struct Choices {
     pub fonts: bool,
     /// Rewrite page drawing instructions in their shortest equivalent form.
     pub content: bool,
+    /// Round path coordinates within this distance; acted on only with
+    /// [`Self::content`], because rounding is part of the same rewrite.
+    pub round: Option<Tolerance>,
 }
 
 impl Choices {
@@ -98,6 +103,10 @@ pub struct Recompressed {
     pub content: Option<String>,
     /// Parts whose drawing instructions were tidied.
     pub content_tidied: usize,
+    /// Line positions rounded, summed over every part.
+    pub content_rounded: u64,
+    /// Why rounding left parts as they were, one line per reason.
+    pub unrounded: Vec<String>,
 }
 
 /// Optimize `copy` as `choices` ask, in a session and with save options
@@ -135,7 +144,9 @@ pub fn recompress(
         preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
     }
     if choices.content {
-        preset.content = Some(ContentPatch::new());
+        let mut patch = ContentPatch::new();
+        patch.round = choices.round.map(Rounding::Within);
+        preset.content = Some(patch);
     }
     let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
     session.apply_optimize(&plan).map_err(|e| e.to_string())?;
@@ -174,6 +185,8 @@ pub fn recompress(
         fonts_cut,
         content: t::content(tidied.iter().copied()),
         content_tidied: tidied.len(),
+        content_rounded: tidied.iter().map(|c| c.numbers_rounded).sum(),
+        unrounded: t::unrounded(tidied.iter().copied()),
     })
 }
 
@@ -194,7 +207,7 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -204,6 +217,7 @@ impl Job {
                         result.as_ref().is_ok_and(|r| r.pictures.lossy),
                         result.as_ref().map_or(0, |r| r.fonts_cut),
                         result.as_ref().map_or(0, |r| r.content_tidied),
+                        result.as_ref().map_or(0, |r| r.content_rounded),
                         result
                             .as_ref()
                             .ok()
@@ -246,6 +260,7 @@ mod tests {
         pictures: Pictures::OFF,
         fonts: false,
         content: false,
+        round: None,
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -713,6 +728,46 @@ endstream",
             .expect("the page content");
         let text = String::from_utf8_lossy(&decoded);
         assert!(!text.contains("0.500") && text.contains(".5"), "{text}");
+    }
+
+    /// Line positions round only when a distance is chosen, and the
+    /// sentence says how many moved and how far at most.
+    #[test]
+    fn line_positions_round_only_when_asked() {
+        let page = "10.00371 10.00412 m 20.00618 20.00133 l S
+"
+        .repeat(50);
+        let copy = file(&[
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 40] /Contents 4 0 R >>".to_string(),
+            format!(
+                "<< /Length {} >>
+stream
+{page}
+endstream",
+                page.len()
+            ),
+        ]);
+        let tidy = Choices {
+            content: true,
+            ..ALL
+        };
+        let plain = recompress(&copy, &Settings::default(), tidy).expect("optimizes");
+        assert_eq!(plain.content_rounded, 0, "{plain:?}");
+        let rounded = Choices {
+            round: Tolerance::from_units(0.01),
+            ..tidy
+        };
+        let done = recompress(&copy, &Settings::default(), rounded).expect("optimizes");
+        assert!(done.content_rounded > 0, "{done:?}");
+        let said = done.content.as_deref().expect("a sentence");
+        assert!(
+            said.contains(" line position(s) rounded, none moving more than ")
+                && !said.contains("  "),
+            "{said}"
+        );
+        assert!(done.unrounded.is_empty(), "{done:?}");
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {

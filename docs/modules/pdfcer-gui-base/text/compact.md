@@ -142,3 +142,14 @@ decoded streams', before compression, because that is what tidying changes;
 the size line above Save already quotes the compressed file.
 `content_left_because` rewords `ContentSkip::Mismatch` to say the stream was
 kept as stored, since the engine's own text names the check, not the outcome.
+When any stream was rounded the sentence adds the count rounded and the
+farthest move, the largest `max_displacement` across streams, because the
+operator chose a bound and wants to see it held.
+
+### `fn round_label`, `fn round_tooltip`, `fn round_needs_content`, `fn round_choice`, `fn unrounded`
+
+`round_choice` names a list entry: "Off" for `None`, otherwise the bound in
+points with trailing zeros trimmed. `unrounded` groups streams the engine left
+unrounded by reason, one line per reason with its count; an `Unrounded`
+variant this build does not know falls back to the engine's `Display`, since
+the enum is non-exhaustive.

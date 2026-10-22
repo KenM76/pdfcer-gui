@@ -33,6 +33,11 @@ pub const REGION_CONTENT: &str = "compact.content";
 /// The sentence saying what tidying them did.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_CONTENT_SAID: &str = "compact.content.said";
+/// The rounding list; each entry is `{REGION_ROUND}.{index}` in [`ROUNDINGS`].
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_ROUND: &str = "compact.content.round";
+/// The rounding distances offered, in points, after Off.
+const ROUNDINGS: [f64; 4] = [0.001, 0.01, 0.1, 0.5];
 /// Height kept for the separator and the Save row below the scrolling choices.
 const BUTTON_ROW: f32 = 40.0;
 /// Height kept above it for the two-line picture-loss warning.
@@ -110,6 +115,7 @@ impl CompactDialog {
                 pictures: Pictures::OFF,
                 fonts: false,
                 content: true,
+                round: None,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -328,6 +334,7 @@ impl CompactDialog {
             .on_hover_text(t::content_tooltip());
         crate::diag::ui_rect_visible(REGION_CONTENT, content.rect, ui.clip_rect());
         let toggled = content.changed() || toggled;
+        let toggled = round_row(ui, c.content, &mut c.round) || toggled;
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
         let toggled = compact_images::switches(ui, &mut c.pictures) || toggled;
         if toggled {
@@ -469,6 +476,40 @@ pub fn open_for(status: &Status) -> Option<Result<CompactDialog, String>> {
     }
 }
 
+/// The rounding list, greyed while tidying is off; whether it changed.
+fn round_row(
+    ui: &mut Ui,
+    content: bool,
+    round: &mut Option<pdfcer_core::optimize::Tolerance>,
+) -> bool {
+    let before = *round;
+    let choices = std::iter::once(None).chain(
+        ROUNDINGS
+            .iter()
+            .map(|&pt| pdfcer_core::optimize::Tolerance::from_units(pt)),
+    );
+    ui.horizontal(|ui| {
+        ui.add_space(ui.spacing().indent);
+        ui.label(t::round_label()).on_hover_text(t::round_tooltip());
+        ui.add_enabled_ui(content, |ui| {
+            let list = egui::ComboBox::from_id_salt("compact-content-round") // ui-text-exempt: an id, never displayed
+                .selected_text(t::round_choice(*round))
+                .show_ui(ui, |ui| {
+                    for (i, choice) in choices.enumerate() {
+                        let item = ui.selectable_value(round, choice, t::round_choice(choice));
+                        let region = format!("{REGION_ROUND}.{i}");
+                        crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
+                    }
+                });
+            let shown = list
+                .response
+                .on_disabled_hover_text(t::round_needs_content());
+            crate::diag::ui_rect_visible(REGION_ROUND, shown.rect, ui.clip_rect());
+        });
+    });
+    *round != before
+}
+
 /// What a finished recompression did, one small line each.
 fn done_lines(ui: &mut Ui, done: &Recompressed) {
     // What a discarded result did is not in the copy, so only
@@ -495,6 +536,9 @@ fn done_lines(ui: &mut Ui, done: &Recompressed) {
         if let Some(line) = &done.content {
             let said = ui.small(line.as_str());
             crate::diag::ui_rect_visible(REGION_CONTENT_SAID, said.rect, ui.clip_rect());
+        }
+        for line in &done.unrounded {
+            ui.small(line.as_str());
         }
         for (reason, count) in &done.left {
             ui.small(t::left_line(reason, *count));

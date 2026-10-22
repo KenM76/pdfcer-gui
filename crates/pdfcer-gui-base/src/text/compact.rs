@@ -5,7 +5,7 @@
 
 use pdfcer_core::optimize::resubset::ResubsetPlan;
 use pdfcer_core::optimize::{CleanupPlan, DiscardObject, ObjectDiscard, RebuildReport, SkipReason};
-use pdfcer_core::optimize::{ContentChange, ContentSkip};
+use pdfcer_core::optimize::{ContentChange, ContentSkip, Tolerance, Unrounded};
 use pdfcer_core::space_audit::SpaceCategory;
 
 /// The window's title bar.
@@ -172,18 +172,29 @@ pub const fn content_tooltip() -> &'static str {
 #[must_use]
 pub fn content<'a>(changes: impl IntoIterator<Item = &'a ContentChange>) -> Option<String> {
     let (mut parts, mut before, mut after, mut removed, mut shortened) = (0usize, 0, 0, 0, 0);
+    let (mut rounded, mut farthest) = (0u64, 0.0f64);
     for change in changes {
         parts += 1;
         before += change.decoded_before;
         after += change.decoded_after;
         removed += change.operators_removed;
         shortened += change.numbers_shortened;
+        rounded += change.numbers_rounded;
+        farthest = farthest.max(change.max_displacement);
     }
     (parts > 0).then(|| {
+        let moved = if rounded > 0 {
+            format!(
+                " {rounded} line position(s) rounded, none moving more than {} pt.",
+                distance(farthest)
+            )
+        } else {
+            String::new()
+        };
         format!(
             "Drawing instructions in {parts} part(s) tidied from {} to {} before compression: \
              {removed} instruction(s) that changed nothing removed, {shortened} number(s) written \
-             shorter.",
+             shorter.{moved}",
             space_bytes(before),
             space_bytes(after)
         )
@@ -198,6 +209,68 @@ pub fn content_left_because(why: &ContentSkip) -> String {
             "tidying their drawing instructions did not read back the same, so pdfcer kept them \
              as stored"
                 .to_owned()
+        }
+        other => other.to_string(),
+    }
+}
+
+/// The rounding row's label.
+#[must_use]
+pub const fn round_label() -> &'static str {
+    "Round line positions"
+}
+
+/// Hover on the rounding row.
+#[must_use]
+pub const fn round_tooltip() -> &'static str {
+    "Writes the corners and curve points of drawn lines with fewer decimals, so no point moves \
+     more than the distance chosen. This changes the drawing, by at most that distance; the \
+     window says how far the farthest point moved. Only each page's main drawing is rounded."
+}
+
+/// Why the rounding row is greyed.
+#[must_use]
+pub const fn round_needs_content() -> &'static str {
+    "Rounding is part of tidying the drawing instructions; turn that on first."
+}
+
+/// One rounding choice as the list shows it: off, or the farthest a point may move.
+#[must_use]
+pub fn round_choice(within: Option<Tolerance>) -> String {
+    within.map_or_else(
+        || "Off".to_owned(),
+        |t| format!("Move no point more than {} pt", distance(t.as_units())),
+    )
+}
+
+/// A distance in points with no trailing zeros.
+fn distance(units: f64) -> String {
+    let s = format!("{units:.4}");
+    s.trim_end_matches('0').trim_end_matches('.').to_owned()
+}
+
+/// Why rounding left some drawing instructions as they were, one line per
+/// reason with how many parts it covers.
+#[must_use]
+pub fn unrounded<'a>(changes: impl IntoIterator<Item = &'a ContentChange>) -> Vec<String> {
+    let mut counts = std::collections::BTreeMap::new();
+    for why in changes.into_iter().filter_map(|c| c.unrounded) {
+        *counts.entry(unrounded_because(why)).or_insert(0usize) += 1;
+    }
+    counts
+        .into_iter()
+        .map(|(why, n)| format!("Line positions left unrounded in {n} part(s): {why}."))
+        .collect()
+}
+
+/// Why one part was not rounded, in the operator's terms.
+fn unrounded_because(why: Unrounded) -> String {
+    match why {
+        Unrounded::NotPageStart => {
+            "they are drawn inside another part, so their scale on the page is not known".to_owned()
+        }
+        Unrounded::UnknownMatrix => {
+            "a change of scale pdfcer cannot follow stopped the rounding part way".to_owned()
         }
         other => other.to_string(),
     }
