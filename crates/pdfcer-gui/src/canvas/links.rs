@@ -7,7 +7,7 @@ use egui::{Pos2, Rect};
 use pdfcer_core::edit::LinkTarget;
 use pdfcer_core::object::ObjId;
 use pdfcer_core::outline::{Destination, RemoteTarget};
-use pdfcer_gui_base::outwardaction::OutwardAction;
+use pdfcer_gui_base::outwardaction::{OutwardAction, RemoteGoTo};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -43,10 +43,23 @@ impl Hit {
         matches!(&self.destination, Destination::NonNavigation { action: Some(a), .. } if a.0 == b"URI")
     }
 
-    /// Whether a click does something beyond a sentence: a page jump or the web prompt.
+    /// Whether this is a `/Launch` naming a file, which asks before it opens.
+    #[must_use]
+    pub fn is_launch(&self) -> bool {
+        matches!(&self.destination, Destination::NonNavigation { action: Some(a), file: Some(_) } if a.0 == b"Launch")
+    }
+
+    /// Whether this is a `/GoToR` naming a file, which opens it here.
+    #[must_use]
+    pub const fn is_remote_file(&self) -> bool {
+        matches!(&self.destination, Destination::Remote { file: Some(_), .. })
+    }
+
+    /// Whether a click does something beyond a sentence: a page jump, the web
+    /// prompt, or opening a file.
     #[must_use]
     pub fn followable(&self) -> bool {
-        self.navigable() || self.is_web()
+        self.navigable() || self.is_web() || self.is_launch() || self.is_remote_file()
     }
 }
 
@@ -78,20 +91,7 @@ pub fn under_pointer(doc: &OpenDoc, page_index: usize, point: Pos2) -> Option<Hi
 
 /// **Act on a link the operator clicked.**
 pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed.
-        //
-        // The VARIANT is named, not merely "a link was clicked". The whole
-        // defect class here is a viewer collapsing five destinations into two
-        // behaviours, and a trace that said `link-followed` for all five would
-        // be unable to show it.
-        format!(
-            "link-click page={page_index} index={index} kind={kind}",
-            page_index = doc.view.page_index,
-            index = hit.annots_index,
-            kind = kind_token(&hit.destination),
-        )
-    });
+    trace_click(hit, doc);
     match &hit.destination {
         // The ONE navigable case, and it goes through the same pipeline a
         // bookmark does — `app::actions::destination::actions_for`, page first
@@ -110,11 +110,22 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
             let name = hit.destination.name_lossy().unwrap_or_default();
             crate::app::actions::record_note(doc.edit_epoch, t::unresolved_name(&name));
         }
-        // `/GoToR`. The remote name is NEVER resolved against this document's
-        // name tree — §12.6.4.3 puts it in the target file's namespace, and a
+        // `/GoToR` naming a file: open it here and arrive at its place. The
+        // remote name is resolved in the OPENED file's names, never in this
+        // one's — §12.6.4.3 puts it in the target file's namespace, and a
         // document that happened to define the same name would otherwise
-        // produce a confident, entirely wrong local page jump with no error
-        // anywhere. The engine refuses to do it and so does this.
+        // produce a confident, entirely wrong local page jump.
+        Destination::Remote {
+            file: Some(file),
+            target,
+            ..
+        } => {
+            actions.push(Action::Outward(OutwardAction::FileLink {
+                file: resolve(doc, file),
+                target: remote_go_to(target),
+            }));
+        }
+        // No readable `/F`: there is no file to open, only a sentence.
         Destination::Remote { file, target, .. } => {
             crate::app::actions::record_note(
                 doc.edit_epoch,
@@ -122,28 +133,23 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
             );
         }
         //
-        // The engine already resolved a file specification for `/GoToR` and
-        // **threw it away for `/Launch`** — the same key, the same question,
-        // answered in one case and not the other. It now reads Table 203's `/F`
-        // and the deprecated `/Win` fallback, so *"which file does this open?"*
-        // has an answer where one is written.
-        //
-        // `/Launch` stays NON-navigation. It starts an application; it does
-        // not go to a page, and pdfcer will not run it (R13). What changed is
-        // only that the disclosure can now NAME the file instead of saying
-        // "this is a Launch action" and stopping — which is the difference
-        // between a sentence an operator can act on and one they cannot.
+        // `/URI` raises the Security Warning and `/Launch` naming a file the
+        // Launch File prompt (`DESIGNS.md` § O320). Every other action, and a
+        // `/Launch` naming no file, is said in words: what it is, and the file
+        // it names where it names one (Table 203's `/F`, or `/Win`).
         Destination::NonNavigation { .. } if hit.is_web() => web(hit, doc, actions),
+        Destination::NonNavigation {
+            file: Some(file), ..
+        } if hit.is_launch() => {
+            actions.push(Action::Outward(OutwardAction::Launch {
+                file: resolve(doc, file),
+            }));
+        }
         Destination::NonNavigation { action, file } => {
-            let named = action.as_ref().map_or_else(
-                || unknown_action().to_owned(),
-                |a| String::from_utf8_lossy(&a.0).into_owned(),
+            crate::app::actions::record_note(
+                doc.edit_epoch,
+                described(action.as_ref(), file.as_deref()),
             );
-            let note = match file.as_ref() {
-                Some(bytes) => t::non_navigation_file(&named, &String::from_utf8_lossy(bytes)),
-                None => t::non_navigation(&named),
-            };
-            crate::app::actions::record_note(doc.edit_epoch, note);
         }
         // `Destination` is `#[non_exhaustive]`. A variant added by a later
         // engine Pass must not silently become "nothing happened": this arm
@@ -152,6 +158,37 @@ pub fn follow(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
         _ => {
             crate::app::actions::record_note(doc.edit_epoch, t::no_destination().to_owned());
         }
+    }
+}
+
+/// Trace the click, naming the destination's variant.
+fn trace_click(hit: &Hit, doc: &OpenDoc) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        //
+        // The VARIANT is named, not merely "a link was clicked". The whole
+        // defect class here is a viewer collapsing five destinations into two
+        // behaviours, and a trace that said `link-followed` for all five would
+        // be unable to show it.
+        format!(
+            "link-click page={page_index} index={index} kind={kind}",
+            page_index = doc.view.page_index,
+            index = hit.annots_index,
+            kind = kind_token(&hit.destination),
+        )
+    });
+}
+
+/// The sentence for an action pdfcer does not perform: what it is, and the file
+/// it names where it names one.
+fn described(action: Option<&pdfcer_core::object::Name>, file: Option<&[u8]>) -> String {
+    let named = action.map_or_else(
+        || unknown_action().to_owned(),
+        |a| String::from_utf8_lossy(&a.0).into_owned(),
+    );
+    match file {
+        Some(bytes) => t::non_navigation_file(&named, &String::from_utf8_lossy(bytes)),
+        None => t::non_navigation(&named),
     }
 }
 
@@ -170,6 +207,25 @@ fn web(hit: &Hit, doc: &OpenDoc, actions: &mut Vec<Action>) {
             doc.edit_epoch,
             crate::text::outward::web_unreadable().to_owned(),
         ),
+    }
+}
+
+/// A link's file specification as a path, relative to `doc`'s folder.
+fn resolve(doc: &OpenDoc, spec: &[u8]) -> std::path::PathBuf {
+    let folder = (doc.origin == crate::app::state::Origin::Opened)
+        .then(|| doc.path.parent())
+        .flatten();
+    pdfcer_gui_base::outward::resolve_file(&String::from_utf8_lossy(spec), folder)
+}
+
+/// Where a `/GoToR` arrives. A `/D` that names no page (absent, negative,
+/// unreadable) opens the file at its start rather than not at all.
+fn remote_go_to(target: &RemoteTarget) -> RemoteGoTo {
+    match target {
+        RemoteTarget::Named(name) => RemoteGoTo::Named(name.clone()),
+        other => other
+            .page_index()
+            .map_or(RemoteGoTo::Start, RemoteGoTo::Page),
     }
 }
 

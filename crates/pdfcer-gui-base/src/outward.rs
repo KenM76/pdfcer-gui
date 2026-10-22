@@ -94,6 +94,44 @@ pub fn open(kind: &str, target: &str) -> Result<Opened, String> {
     launch(target).map(|()| Opened::Launched)
 }
 
+/// **The file a link's file specification names**, as a path on this machine.
+///
+/// §7.11.2's form `/C/dir/file.pdf` is drive `C:`; a Windows path or a
+/// `file:///` address is taken as written; anything else is relative and
+/// resolved against `folder`, the linking document's folder, as Acrobat does.
+/// With no folder (an unsaved document) a relative name stays relative.
+#[must_use]
+pub fn resolve_file(spec: &str, folder: Option<&std::path::Path>) -> std::path::PathBuf {
+    let spec = spec.trim();
+    let spec = spec
+        .strip_prefix("file:///") // ui-text-exempt: a URL scheme prefix, never displayed.
+        .unwrap_or(spec);
+    let bytes = spec.as_bytes();
+    // `/C/…` or a bare `/C`: a one-letter first component is a drive.
+    if bytes.len() >= 2
+        && bytes[0] == b'/'
+        && bytes[1].is_ascii_alphabetic()
+        && (bytes.len() == 2 || bytes[2] == b'/')
+    {
+        let rest = spec.get(3..).unwrap_or_default();
+        return std::path::PathBuf::from(format!("{}:/{rest}", char::from(bytes[1])));
+    }
+    let path = std::path::Path::new(spec);
+    let windows_absolute = (bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':')
+        || spec.starts_with("\\\\");
+    if path.is_absolute() || windows_absolute {
+        return path.to_path_buf();
+    }
+    folder.map_or_else(|| path.to_path_buf(), |f| f.join(path))
+}
+
+/// Whether `path` names a PDF, which this program opens itself.
+#[must_use]
+pub fn is_pdf(path: &std::path::Path) -> bool {
+    path.extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("pdf")) // ui-text-exempt: a file extension
+}
+
 #[cfg(windows)]
 fn launch(target: &str) -> Result<(), String> {
     // ui-text-exempt: program and entry-point names, never displayed.
@@ -144,5 +182,46 @@ mod tests {
         assert!(!handable("https://example.com/\" & calc"));
         assert!(!handable("https://example.com/\n"));
         assert!(!handable("  "));
+    }
+
+    #[test]
+    fn a_file_specification_resolves_against_the_documents_folder() {
+        let folder = std::path::Path::new("D:/drawings");
+        assert_eq!(
+            resolve_file("other.pdf", Some(folder)),
+            folder.join("other.pdf")
+        );
+        assert_eq!(
+            resolve_file("../sheets/a.pdf", Some(folder)),
+            folder.join("../sheets/a.pdf")
+        );
+        assert_eq!(
+            resolve_file("/C/plans/b.pdf", Some(folder)),
+            std::path::PathBuf::from("C:/plans/b.pdf")
+        );
+        assert_eq!(
+            resolve_file("E:\\x\\c.dwg", Some(folder)),
+            std::path::PathBuf::from("E:\\x\\c.dwg")
+        );
+        assert_eq!(
+            resolve_file("file:///F:/d.pdf", Some(folder)),
+            std::path::PathBuf::from("F:/d.pdf")
+        );
+        assert_eq!(
+            resolve_file("\\\\server\\share\\e.pdf", Some(folder)),
+            std::path::PathBuf::from("\\\\server\\share\\e.pdf")
+        );
+        assert_eq!(
+            resolve_file("rel.pdf", None),
+            std::path::PathBuf::from("rel.pdf")
+        );
+    }
+
+    #[test]
+    fn a_pdf_is_known_by_its_extension_in_any_case() {
+        assert!(is_pdf(std::path::Path::new("a/B.PDF")));
+        assert!(is_pdf(std::path::Path::new("c.pdf")));
+        assert!(!is_pdf(std::path::Path::new("payload.exe")));
+        assert!(!is_pdf(std::path::Path::new("pdf")));
     }
 }

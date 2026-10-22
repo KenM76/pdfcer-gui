@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**O320 part 1 built and driven:** a web link raises Acrobat's Security Warning (Allow / Block / remember for the site); `a_web_link_asks_before_it_opens`. Parts 2–4 owed: /Launch and /GoToR prompts, the 3D switch, Security ▸ Trust switches and site-list editor (design in `DESIGNS.md` § O320). The retargeted `/JavaScript` disclosure check in `link_follow` needs real input; not re-driven.
+**O320 parts 1–2 built and driven:** a web link raises Acrobat's Security Warning (Allow / Block / remember for the site), `a_web_link_asks_before_it_opens`; a /Launch raises the Launch File prompt and a /GoToR opens the PDF here at its place, `a_file_link_asks_or_opens_here`. Parts 3–4 owed: the 3D switch, Security ▸ Trust switches and site-list editor (design in `DESIGNS.md` § O320). The retargeted `/JavaScript` disclosure check in `link_follow` needs real input; not re-driven.
 
 **O319 part 3 also open.** Parts 1–2 are built and driven: *Make pictures smaller…* on the Format tab, the canvas object menu and the Objects-panel row menu over every selected picture (`shrink_pictures_reaches_every_selected_picture`), and Ctrl/Shift multi-select in the Objects tree with a right-click that keeps the selection (`objects_tree_gathers_rows_for_one_menu`). Owed: an audit of every per-object command against the canvas menu, the tree menu and a multi-selection.
 

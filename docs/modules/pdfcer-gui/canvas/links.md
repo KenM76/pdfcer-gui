@@ -40,6 +40,13 @@ four fail for different reasons with different remedies. A deleted target
 page, a lost name table, another file, and an action pdfcer deliberately does
 not run are four situations, not one.
 
+Three of them reach outside the document and are followed, through
+`OutwardAction` (`DESIGNS.md` § O320): a `/URI` raises the Security Warning, a
+`/GoToR` naming a file opens it here and arrives at its page or name (resolved
+in the opened file's names), and a `/Launch` naming a file raises the Launch
+File prompt. A file specification resolves against the document's folder with
+`outward::resolve_file`. The hand cursor appears over these too.
+
 ## The affordance is a CURSOR, and there is no mark on the page
 
 [`cursor`] sets a pointing hand over a link that can be followed and does

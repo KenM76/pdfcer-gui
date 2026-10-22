@@ -627,7 +627,6 @@ impl DialogsState {
         Some(crate::text::unembed::nothing_removable().to_owned())
     }
 
-    /// Ask what a dropped PDF is for, unless the question is already open.
     /// Raise the Security Warning for `uri`, unless one is already up.
     pub fn open_weblink(&mut self, uri: String) {
         if self.weblink.is_none() {
@@ -635,6 +634,14 @@ impl DialogsState {
         }
     }
 
+    /// Raise the Launch File prompt for `file`, unless one is already up.
+    pub fn open_launch(&mut self, file: std::path::PathBuf) {
+        if self.launch.is_none() {
+            self.launch = Some(crate::dialogs::launch::LaunchDialog::new(file));
+        }
+    }
+
+    /// Ask what a dropped PDF is for, unless the question is already open.
     pub fn open_drop_pdf(&mut self, dialog: crate::dialogs::drop_pdf::DropPdfDialog) {
         if self.drop_pdf.is_none() {
             self.drop_pdf = Some(dialog);

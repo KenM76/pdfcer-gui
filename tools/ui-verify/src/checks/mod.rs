@@ -44,6 +44,7 @@ pub mod compact_fonts;
 pub mod compact_pictures;
 pub mod compact_round;
 pub mod compact_web;
+pub mod filelink_prompt;
 pub mod link_cmyk;
 pub mod objects_multiselect;
 pub mod pen_cmyk;

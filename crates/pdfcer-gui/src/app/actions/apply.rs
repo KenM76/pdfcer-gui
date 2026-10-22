@@ -115,7 +115,7 @@ impl PdfcerApp {
             }
             // Not an edit, for `OpenInAcrobat`'s reason.
             Action::Outward(action) => {
-                self.apply_outward(action);
+                self.apply_outward(action, pixels_per_point);
                 return;
             }
             // Beside the four above rather than below the document guard,

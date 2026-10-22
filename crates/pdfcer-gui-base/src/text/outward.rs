@@ -94,3 +94,93 @@ pub const fn not_handable() -> &'static str {
 pub const fn no_launcher() -> &'static str {
     "Opening addresses outside pdfcer is available on Windows only."
 }
+
+/// The Launch File prompt's title.
+#[must_use]
+pub const fn launch_title() -> &'static str {
+    "Launch File"
+}
+
+/// The Launch File prompt's warning, naming the file in full.
+#[must_use]
+pub fn launch_question(file: &str) -> String {
+    format!(
+        "The file and its viewing application are set to be launched by this PDF file:\n\n\
+         {file}\n\nThe file may contain programs, macros, or viruses that could potentially harm \
+         your computer. Only open the file if you are sure it is safe. If this file was placed by \
+         a trusted person or program, click Open to view the file."
+    )
+}
+
+/// Said under the file when it is a PDF, which opens here rather than in another program.
+#[must_use]
+pub const fn launch_is_pdf() -> &'static str {
+    "This is a PDF: it opens here, in a tab of its own."
+}
+
+/// The Launch File prompt's checkbox.
+#[must_use]
+pub const fn launch_dont_ask() -> &'static str {
+    "Do not show this message again"
+}
+
+/// Hover on the Launch File checkbox.
+#[must_use]
+pub const fn launch_dont_ask_hover() -> &'static str {
+    "With Open, files a link names open without asking from now on. Turn asking back on under \
+     Security > Trust > Ask before opening other files."
+}
+
+/// The Launch File prompt's opening button.
+#[must_use]
+pub const fn launch_open() -> &'static str {
+    "Open"
+}
+
+/// The Launch File prompt's refusing button.
+#[must_use]
+pub const fn launch_refuse() -> &'static str {
+    "Do Not Open"
+}
+
+/// Status line after a file was handed to the program Windows opens it with.
+#[must_use]
+pub fn file_opened(file: &str) -> String {
+    format!("Opened {file} in the program Windows uses for it.")
+}
+
+/// Status line when Windows would not open the file.
+#[must_use]
+pub fn file_failed(file: &str, why: &str) -> String {
+    format!("Windows could not open {file}: {why}")
+}
+
+/// Status line after the operator chose Do Not Open.
+#[must_use]
+pub fn file_not_opened(file: &str) -> String {
+    format!("{file} was not opened.")
+}
+
+/// Status line when the file a link names is not there.
+#[must_use]
+pub fn file_missing(file: &str) -> String {
+    format!("This link opens {file}, and there is no such file.")
+}
+
+/// Status line when the linked PDF opened but the place it names is not in it.
+#[must_use]
+pub fn file_place_missing(file: &str, place: &str) -> String {
+    format!("Opened {file}, which has no {place}; showing its first page.")
+}
+
+/// A page number, 1-based, for [`file_place_missing`]'s hole.
+#[must_use]
+pub fn place_page(page: usize) -> String {
+    format!("page {page}")
+}
+
+/// A destination name, for [`file_place_missing`]'s hole.
+#[must_use]
+pub fn place_named(name: &str) -> String {
+    format!("destination named \"{name}\"")
+}
