@@ -560,25 +560,16 @@ it; and `OpenArrow` is what pdfcer's own pen authors and what
 `LineEnding::OpenArrow`'s doc records as *"Acrobat's default at both ends"*,
 so a plain line given its first head gets the head this program draws.
 
-### `fn rgb_of`
+### `fn swatch`
 
-`None` for anything that is not RGB or grey, and that is honest rather
-than lossy: §12.5.2 lets `/C` be a 0-, 1-, 3- or 4-component array, and a
-swatch showing a CMYK mark's *converted* colour would be a control whose
-readback is a conversion the operator never asked for — pick it up, put it
-down unchanged, and the file now says something different, on a drawing
-heading for a printer that cares.
-
-Grey is included rather than refused because it is **lossless** in both
-directions: `Gray(v)` and `Rgb(v, v, v)` are the same ink.
-
-### `fn srgb_to_colour`
-
-Always `DeviceRGB`, never a grey collapsed from three equal channels. The
-swatch is an sRGB picker, so what the operator chose *is* an RGB triple; a
-mark silently written as `DeviceGray` because its channels happened to match
-would be pdfcer inferring a colour space the operator did not ask for, which
-is Rule 4's whole subject.
+`colourpick::show` over the stored `/C` or `/IC` in its own device space,
+grey, RGB or CMYK, with every space's tab offered (§12.5.2 allows a 1-, 3-
+or 4-component array). A colour put down unchanged writes nothing, because
+the comparison is against the stored `Color`, not a screen conversion of it.
+The picker answers once, on the frame it closes, so a drag is one edit. An
+absent outline opens on black and an absent fill on white; the regions are
+`markup_band.stroke` and `markup_band.fill`, each with `.picker` and the
+picker's tab regions.
 
 ### `enum MarkupEdit`
 

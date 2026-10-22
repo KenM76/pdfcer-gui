@@ -179,9 +179,8 @@ than a missing arm.
 
 ### `fn a_cmyk_background_uses_the_engines_own_table_and_not_one_minus_k`
 
-This shell refuses to convert DeviceCMYK in two other places on purpose
-(`app::markupband::rgb_of`, `app::fontband`) because those are swatches
-whose readback would write an invented colour back into the file.
+Editable swatches keep DeviceCMYK in its own space (`colourpick`) because
+their readback would otherwise write an invented colour back into the file.
 [`editor_fill`] writes nothing and sits on a raster the engine itself
 produced, so the right answer there is to use the engine's own table —
 which makes the box AGREE with the pixels beside it.

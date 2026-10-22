@@ -160,13 +160,13 @@ different facts about the file and a caller that collapsed them upstream
 would have lost one. This function is where they are allowed to merge, and
 it merges them at the point of use rather than at the point of reading.
 
-# DeviceCMYK IS converted here, and elsewhere in this shell it is not
+# DeviceCMYK IS converted here, and an editable swatch never converts it
 
-`app::markupband::rgb_of` returns `None` for a CMYK mark and
-`app::fontband` greys the swatch, on a rule this project holds firmly: *a
-swatch showing a converted colour is a control whose readback is a
-conversion the operator never asked for — pick it up, put it down
-unchanged, and the file now says something different.*
+An editable swatch (`colourpick`) keeps a stored colour in its own space,
+on a rule this project holds firmly: *a swatch holding a converted colour
+is a control whose readback is a conversion the operator never asked for —
+pick it up, put it down unchanged, and the file now says something
+different.*
 
 That argument is about a **round trip**, and this is not one. Nothing here
 is written back; the value is a tint on a transient overlay that is gone

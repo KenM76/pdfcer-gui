@@ -90,13 +90,6 @@ fewest-endings-first, so an operator scanning for "both" finds it last
 every time, and a reordering that put the common case first would be a
 change to the control's shape rather than to its wording.
 
-### `fn a_swatch_shows_only_colours_it_can_show_without_converting`
-
-Grey is accepted **in** and never produced **out**, which is the
-asymmetry `srgb_to_colour` argues: reading `Gray(v)` as an equal-channel
-swatch is lossless, and writing an equal-channel pick back as `Gray`
-would be pdfcer choosing a colour space the operator did not ask for.
-
 ### `fn the_width_range_matches_the_pen_that_authors`
 
 Two ranges for one quantity would let an operator author a 2 pt mark and
@@ -132,7 +125,7 @@ control that makes the negative one mean something.
 
 The rows are not vacuous. `offers_width` reading only
 `self.width.is_some()` turns the `Highlight` row red, and `offers_fill`
-reading `self.interior_set` turns the `Line` and `Ink` rows red.
+reading `self.interior.is_some()` turns the `Line` and `Ink` rows red.
 
 ### `fn each_predicate_reads_the_engines_flag_and_nothing_else`
 

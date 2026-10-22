@@ -169,21 +169,6 @@ fn the_four_arrowhead_positions_are_named_and_ordered() {
     assert_eq!(labels.len(), total, "two positions share a label");
 }
 
-/// A swatch shows only colours it can show without converting, and an sRGB
-/// pick round-trips back out as `DeviceRGB`.
-#[test]
-fn a_swatch_shows_only_colours_it_can_show_without_converting() {
-    assert_eq!(rgb_of(Color::Rgb(1.0, 0.0, 0.0)), Some([255, 0, 0]));
-    assert_eq!(rgb_of(Color::Gray(0.0)), Some([0, 0, 0]));
-    assert_eq!(rgb_of(Color::Gray(1.0)), Some([255, 255, 255]));
-    assert_eq!(rgb_of(Color::Cmyk(0.0, 0.0, 0.0, 1.0)), None);
-    assert_eq!(
-        srgb_to_colour([128, 128, 128]),
-        Color::Rgb(128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0)
-    );
-    assert_eq!(rgb_of(srgb_to_colour([1, 2, 3])), Some([1, 2, 3]));
-}
-
 /// The width range is the same one the markup pen offers, and the same
 /// one the Properties panel offers.
 #[test]
@@ -197,9 +182,8 @@ fn the_width_range_matches_the_pen_that_authors() {
 fn every_value_present(subtype: &[u8]) -> Current {
     Current {
         support: MarkupStyleSupport::for_subtype(subtype),
-        stroke: Some([0, 0, 0]),
-        interior: Some([255, 255, 255]),
-        interior_set: true,
+        stroke: Some(Color::Gray(0.0)),
+        interior: Some(Color::Rgb(1.0, 1.0, 1.0)),
         width: Some(2.0),
         // `Solid` is a **value**, not an absence — `linestyle::read` is
         // total and every dictionary answers it — so there is no "dash

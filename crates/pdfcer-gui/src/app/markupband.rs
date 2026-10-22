@@ -16,6 +16,11 @@ use crate::text::ribbon as r;
 
 /// The narrowest border this shell offers, in points.
 const MIN_WIDTH_PT: f64 = 0.25;
+/// The outline and fill swatches; each picker adds `.picker` and its tabs.
+// ui-text-exempt: trace region names, never displayed
+const REGION_STROKE: &str = "markup_band.stroke";
+// ui-text-exempt: trace region names, never displayed
+const REGION_FILL: &str = "markup_band.fill";
 
 /// The widest, in points.
 const MAX_WIDTH_PT: f64 = 12.0;
@@ -287,17 +292,10 @@ struct Current {
     /// one would imply that an arrow could be filled if only something were
     /// different. Nothing is.
     support: MarkupStyleSupport,
-    /// `/C` as sRGB, if it is a colour a swatch can show without converting.
-    stroke: Option<[u8; 3]>,
-    /// `/IC` as sRGB, if it is set and is showable.
-    interior: Option<[u8; 3]>,
-    /// Whether `/IC` is set at all — showable or not.
-    ///
-    /// Tracked apart from [`Self::interior`] because a CMYK fill is *set* and
-    /// *unshowable*, and the two questions have different answers: the swatch
-    /// falls back to its default, and *No fill* must still be offered, because
-    /// there is genuinely something to remove.
-    interior_set: bool,
+    /// `/C` in its own device space.
+    stroke: Option<Color>,
+    /// `/IC` in its own device space, when set.
+    interior: Option<Color>,
     /// `/BS` `/W`, the border width in points.
     width: Option<f64>,
     /// `/CA`, the constant opacity, `0.0`–`1.0`.
@@ -347,7 +345,6 @@ impl Default for Current {
             support: MarkupStyleSupport::for_subtype(b""),
             stroke: None,
             interior: None,
-            interior_set: false,
             width: None,
             alpha: None,
             // Solid, which is what `linestyle::read` answers for an annotation
@@ -461,9 +458,8 @@ impl Current {
                 border_width,
                 ..
             } => {
-                current.stroke = border.and_then(rgb_of);
-                current.interior_set = interior.is_some();
-                current.interior = interior.and_then(rgb_of);
+                current.stroke = border;
+                current.interior = interior;
                 current.width = Some(border_width);
             }
             MarkupSpec::Polygon {
@@ -478,9 +474,8 @@ impl Current {
                 width,
                 ..
             } => {
-                current.stroke = border.and_then(rgb_of);
-                current.interior_set = interior.is_some();
-                current.interior = interior.and_then(rgb_of);
+                current.stroke = border;
+                current.interior = interior;
                 current.width = Some(width);
             }
             MarkupSpec::Line {
@@ -490,17 +485,16 @@ impl Current {
                 interior,
                 ..
             } => {
-                current.stroke = rgb_of(color);
-                current.interior_set = interior.is_some();
-                current.interior = interior.and_then(rgb_of);
+                current.stroke = Some(color);
+                current.interior = interior;
                 current.width = Some(width);
                 current.endings = Some(endings);
             }
             MarkupSpec::PolyLine { color, width, .. } | MarkupSpec::Ink { color, width, .. } => {
-                current.stroke = rgb_of(color);
+                current.stroke = Some(color);
                 current.width = Some(width);
             }
-            MarkupSpec::TextMarkup { color, .. } => current.stroke = rgb_of(color),
+            MarkupSpec::TextMarkup { color, .. } => current.stroke = Some(color),
             // `MarkupSpec` is `#[non_exhaustive]`. A kind this build does not
             // know the shape of gets no readback, which is the same answer a
             // refused parse gets and for the same reason: nothing is destroyed
@@ -564,21 +558,17 @@ fn stroke(
     target: &AnnotTarget,
     parked: &mut Option<(AnnotTarget, MarkupEdit)>,
 ) -> bool {
-    // The default is BLACK rather than an invented colour, and it is the same
-    // default `panels::properties::markup` shows. A mark whose `/C` is CMYK, a
-    // separation, or absent gets it — see `rgb_of` for why a converted
-    // near-match would be worse than a default: pick the swatch up, put it down
-    // unchanged, and the file now says something different.
+    // Black when absent, the same default `panels::properties::markup` shows.
     let existing = current.stroke;
-    let mut rgb = existing.unwrap_or([0, 0, 0]);
-    if ui.color_edit_button_srgb(&mut rgb).changed() && Some(rgb) != existing {
-        *parked = Some((
-            target.clone(),
-            MarkupEdit::Stroke(StyleEdit::Set(srgb_to_colour(rgb))),
-        ));
-        return true;
+    let shown = existing.unwrap_or(Color::Gray(0.0));
+    match swatch(ui, "markup-band-stroke", shown, REGION_STROKE) {
+        // ui-text-exempt: an id salt
+        Some(picked) if Some(picked) != existing => {
+            *parked = Some((target.clone(), MarkupEdit::Stroke(StyleEdit::Set(picked))));
+            true
+        }
+        _ => false,
     }
-    false
 }
 
 /// The interior colour, `/IC`, and its removal.
@@ -598,17 +588,16 @@ fn fill(
     // drawing underneath — which is the exact outcome pdfcer authors
     // `interior: None` to avoid. White is the least destructive first guess and
     // is what a shape tool defaults to in every drawing program.
-    let mut rgb = existing.unwrap_or([255, 255, 255]);
+    let shown = existing.unwrap_or(Color::Rgb(1.0, 1.0, 1.0));
     let mut invoked = false;
     ui.horizontal(|ui| {
-        if ui.color_edit_button_srgb(&mut rgb).changed() && Some(rgb) != existing {
-            *parked = Some((
-                target.clone(),
-                MarkupEdit::Interior(StyleEdit::Set(srgb_to_colour(rgb))),
-            ));
+        if let Some(picked) = swatch(ui, "markup-band-fill", shown, REGION_FILL) // ui-text-exempt: an id salt
+            && Some(picked) != existing
+        {
+            *parked = Some((target.clone(), MarkupEdit::Interior(StyleEdit::Set(picked))));
             invoked = true;
         }
-        if current.interior_set && ui.button(r::markup_no_fill()).clicked() {
+        if existing.is_some() && ui.button(r::markup_no_fill()).clicked() {
             *parked = Some((target.clone(), MarkupEdit::Interior(StyleEdit::Clear)));
             invoked = true;
         }
@@ -840,30 +829,16 @@ fn arrow_shape(pair: (LineEnding, LineEnding)) -> LineEnding {
     }
 }
 
-/// An annotation colour as sRGB bytes, if it is one a swatch can show.
-fn rgb_of(color: Color) -> Option<[u8; 3]> {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    match color {
-        Color::Rgb(r, g, b) => Some([
-            (r.clamp(0.0, 1.0) * 255.0).round() as u8,
-            (g.clamp(0.0, 1.0) * 255.0).round() as u8,
-            (b.clamp(0.0, 1.0) * 255.0).round() as u8,
-        ]),
-        Color::Gray(v) => {
-            let g = (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-            Some([g, g, g])
-        }
-        Color::Cmyk(..) => None,
-    }
-}
-
-/// sRGB bytes as the engine's device colour.
-fn srgb_to_colour(rgb: [u8; 3]) -> Color {
-    Color::Rgb(
-        f64::from(rgb[0]) / 255.0,
-        f64::from(rgb[1]) / 255.0,
-        f64::from(rgb[2]) / 255.0,
-    )
+/// The band's swatch over one annotation colour, in its own device space:
+/// the colour picked, on the frame the picker closes changed, so a drag
+/// across it is one edit.
+fn swatch(ui: &mut Ui, salt: &str, shown: Color, region: &str) -> Option<Color> {
+    use pdfcer_gui_base::colourpick::{Ink, Pick, Shown, Spaces, show};
+    let pick = Pick {
+        ink: Ink::from(shown),
+        opacity: None,
+    };
+    show(ui, salt, Shown::Agreed(pick), Spaces::ALL, region, "").map(|p| p.ink.into())
 }
 
 /// **Holding a spinner's value across frames while it is being dragged.**
