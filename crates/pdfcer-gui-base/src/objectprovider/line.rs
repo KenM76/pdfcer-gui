@@ -249,6 +249,7 @@ mod tests {
             },
             text_start: 0,
             text_end: 0,
+            fill_alpha: Some(1.0),
         }
     }
 
