@@ -23,6 +23,9 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const ACCEPT_ENV: (&str, &str) = ("PDFCER_DIAG_FORM_ACCEPT", "1");
 const FORMS_TAB: &str = "ribbon.tab.forms";
 const WIDTH: &str = "forms.style.width";
+const STYLE: &str = "forms.style.border_style";
+/// The picker's second row, Dashed; any row but the first beats the default.
+const DASHED_ROW: &str = "forms.style.border_style.1";
 const TEXT_FIELD: &str = "ribbon.item.edit.form_text_field";
 const MENU_ROW: &str = "menu.item.canvas.field.edit.form_use_as_default";
 /// Written by the Style band on every change.
@@ -124,11 +127,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         Ok(v) => v,
         Err(why) => return Ok(Some(why)),
     };
+    if let Err(why) = set_style(&session, &pointer, ui_rect, report)? {
+        return Ok(Some(why));
+    }
     let centre = match place_field(&session, &pointer, ui_rect, &mapping, report)? {
         Ok(c) => c,
         Err(why) => return Ok(Some(why)),
     };
-    let (taken, line) = match read_back(&session, &pointer, ui_rect, centre, report)? {
+    let (taken, line, style) = match read_back(&session, &pointer, ui_rect, centre, report)? {
         Ok(v) => v,
         Err(why) => return Ok(Some(why)),
     };
@@ -141,7 +147,50 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              not take the Style group's width. Band: `{look}`; field: `{line}`."
         )));
     }
+    if style != "dashed" {
+        return Ok(Some(format!(
+            "the band chose Dashed and the placed field's border reads back as `{style}`: \
+             the next field did not take the Style group's border style. Field: `{line}`."
+        )));
+    }
     Ok(None)
+}
+
+/// Picks Dashed from the Style band's border-style drop-down.
+fn set_style(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    report: &mut CheckReport,
+) -> Step<()> {
+    let Some(button) = declared_or_in_overflow(session, pointer, ui_rect, STYLE)? else {
+        return Ok(Err(format!(
+            "the Forms tab draws no `{STYLE}` border-style picker."
+        )));
+    };
+    pointer.click(session, WindowPoint::centre_of(button))?;
+    session.settle(20);
+    let Some(row) = declared(&session.trace()?, ui_rect, DASHED_ROW) else {
+        return Ok(Err(format!(
+            "opening `{STYLE}` showed no `{DASHED_ROW}` row. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    let mark = session.trace()?.mark();
+    pointer.click(session, WindowPoint::centre_of(row))?;
+    session.settle(20);
+    let picked = session
+        .trace()?
+        .last_after(LOOK, mark)
+        .map(|l| (l.get("style").unwrap_or("?").to_owned(), l.raw.clone()));
+    match picked {
+        Some((style, _)) if style == "dashed" => {
+            report.note("the band: border style dashed");
+            Ok(Ok(()))
+        }
+        Some((_, raw)) => Ok(Err(format!("picking Dashed traced `{raw}`."))),
+        None => Ok(Err(format!("picking Dashed traced no `{LOOK}` line."))),
+    }
 }
 
 /// Opens the Forms tab and drags the Style band's width to the right.
@@ -247,7 +296,7 @@ fn read_back(
     ui_rect: &str,
     centre: WindowPoint,
     report: &mut CheckReport,
-) -> Step<(f32, String)> {
+) -> Step<(f32, String, String)> {
     pointer.right_click(session, centre)?;
     session.settle(20);
     let trace = session.trace()?;
@@ -272,5 +321,10 @@ fn read_back(
         )));
     };
     report.note(format!("read back: `{line}`"));
-    Ok(Ok((taken, line)))
+    let style = session
+        .trace()?
+        .last_after(TAKEN, mark)
+        .and_then(|l| l.get("style").map(str::to_owned))
+        .unwrap_or_default();
+    Ok(Ok((taken, line, style)))
 }

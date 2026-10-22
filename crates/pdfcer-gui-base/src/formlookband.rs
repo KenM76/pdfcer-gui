@@ -1,6 +1,7 @@
 //! # `formlookband` — the Forms ▸ Style band
 //!
-//! Fill, outline colour and outline width for the **next** form field placed,
+//! Fill, outline colour, outline width and border style for the **next** form
+//! field placed,
 //! edited in the same [`Remembered`] the placement dialog opens from, so the
 //! dialog shows what the band shows. Like the Markup pen it edits a tool
 //! setting: no command, no undo entry, nothing written to `userdata`.
@@ -8,6 +9,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/formlookband.md`.
 
 use egui::Ui;
+use pdfcer_core::edit::BorderStyle;
 
 use crate::entry;
 use crate::formdraft::{FieldLook, Remembered};
@@ -21,6 +23,18 @@ pub const REGION_FILL: &str = "forms.style.fill"; // ui-text-exempt: trace regio
 pub const REGION_OUTLINE: &str = "forms.style.outline"; // ui-text-exempt: trace region name, never displayed
 /// The width field's trace region.
 pub const REGION_WIDTH: &str = "forms.style.width"; // ui-text-exempt: trace region name, never displayed
+/// The border-style picker's trace region; its rows are `<region>.<index>`
+/// in [`STYLES`] order.
+pub const REGION_STYLE: &str = "forms.style.border_style"; // ui-text-exempt: trace region name, never displayed
+
+/// The five border styles the engine authors, in the order offered.
+pub const STYLES: [BorderStyle; 5] = [
+    BorderStyle::Solid,
+    BorderStyle::Dashed,
+    BorderStyle::Beveled,
+    BorderStyle::Inset,
+    BorderStyle::Underline,
+];
 
 /// The widest outline offered, matching the placement dialog's field.
 const MAX_WIDTH_PTS: f64 = 12.0;
@@ -79,11 +93,31 @@ pub fn show(ui: &mut Ui, mem: &mut Remembered) {
             .show(ui.add(widget.range(0.0..=MAX_WIDTH_PTS).speed(0.1)))
             .on_hover_text(t::width_hover());
         crate::diag::ui_rect(REGION_WIDTH, response.rect);
+        style_picker(ui, &mut look.border_style, REGION_STYLE);
     });
     if look != before {
         mem.set_look(look);
         trace(look);
     }
+}
+
+/// A drop-down of [`STYLES`] editing `style`, shared by the band and the
+/// placement dialog. `region` names the button; each row is `<region>.<i>`.
+pub fn style_picker(ui: &mut Ui, style: &mut BorderStyle, region: &str) {
+    use crate::text::panels::formfield::border_style_label;
+    let combo = egui::ComboBox::from_id_salt(region)
+        .selected_text(border_style_label(*style))
+        .show_ui(ui, |ui| {
+            for (i, each) in STYLES.into_iter().enumerate() {
+                let row = ui.selectable_value(style, each, border_style_label(each));
+                crate::diag::ui_rect_visible(
+                    &format!("{region}.{i}"), // ui-text-exempt: trace region name
+                    row.rect,
+                    ui.clip_rect(),
+                );
+            }
+        });
+    crate::diag::ui_rect(region, combo.response.on_hover_text(t::style_hover()).rect);
 }
 
 /// A swatch's pick as the draft's value: `Remove` states nothing.
@@ -94,13 +128,14 @@ const fn resolve(pick: Pick) -> Option<pdfcer_core::forms::MkColor> {
     }
 }
 
-/// The band's one trace line, read by `forms_style_band_sets_the_next_field`.
+/// The band's one trace line, read by `forms_style_sets_the_next_field`.
 fn trace(look: FieldLook) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "form-look width={} bg={} bc={}",
+            "form-look width={} style={} bg={} bc={}",
             look.border_width,
+            look.border_style.token(),
             key(look.background),
             key(look.border_color)
         )

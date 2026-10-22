@@ -27,8 +27,8 @@ pub(in crate::app::actions) fn author(
 ) {
     use crate::canvas::formfield::FormFieldKind as K;
     use pdfcer_core::edit::{
-        BorderSpec, BorderStyle, ChoiceOption, NewCheckBox, NewChoiceField, NewPushButton,
-        NewRadioButton, NewTextField, TooltipChoice,
+        BorderSpec, ChoiceOption, NewCheckBox, NewChoiceField, NewPushButton, NewRadioButton,
+        NewTextField, TooltipChoice,
     };
 
     // NO PRE-CHECK. The engine's dotted-name rule is not modelled here; its
@@ -46,7 +46,7 @@ pub(in crate::app::actions) fn author(
     // travels as a number rather than as a second boolean that could disagree
     // with it.
     let border = BorderSpec {
-        style: BorderStyle::Solid,
+        style: draft.border_style,
         width: draft.border_width.max(0.0),
     };
     let kind = draft.kind;

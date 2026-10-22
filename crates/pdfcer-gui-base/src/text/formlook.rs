@@ -24,3 +24,9 @@ pub const fn outline_hover() -> &'static str {
 pub const fn width_hover() -> &'static str {
     "How thick the next field's outline is, in points. Zero draws no outline."
 }
+
+/// Hover for the border-style picker on Forms ▸ Style.
+#[must_use]
+pub const fn style_hover() -> &'static str {
+    "How the next field's outline is drawn: solid, dashed, raised, sunken, or a line under the box only."
+}

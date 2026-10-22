@@ -126,7 +126,7 @@ nobody can find the source of.
 
 ## `FieldLook` — the part Forms ▸ Style sets
 
-Fill, outline colour and outline width, copied out of a `Draft` by
+Fill, outline colour, outline width and border style, copied out of a `Draft` by
 `FieldLook::of` and into one by `apply`. `Remembered::look` is set by
 `remember` (the dialog was accepted), by `set_look` (the Style band, or
 *Use as default look* on a placed field), and is applied by `next_in` to

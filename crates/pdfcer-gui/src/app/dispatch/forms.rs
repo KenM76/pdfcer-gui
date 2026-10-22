@@ -94,6 +94,9 @@ pub(super) fn use_as_default(app: &mut PdfcerApp, id: &str) {
     };
     let look = crate::canvas::formfield::FieldLook {
         border_width: widget.border.map_or(1.0, |b| b.width),
+        border_style: widget
+            .border
+            .map_or(pdfcer_core::edit::BorderStyle::Solid, |b| b.style),
         background: widget.background,
         border_color: widget.border_color,
     };
@@ -101,8 +104,10 @@ pub(super) fn use_as_default(app: &mut PdfcerApp, id: &str) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "form-look-taken field={} width={}",
-            selected.field, look.border_width
+            "form-look-taken field={} width={} style={}",
+            selected.field,
+            look.border_width,
+            look.border_style.token()
         )
     });
 }

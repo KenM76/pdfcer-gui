@@ -41,6 +41,8 @@ pub struct Draft {
     pub read_only: bool,
     /// The border width in points; `0.0` for no border.
     pub border_width: f64,
+    /// The border's `/BS` `/S`: solid, dashed, raised, sunken or underline.
+    pub border_style: pdfcer_core::edit::BorderStyle,
     /// `/MK` `/BG` — what is painted behind the box, or `None` to state
     /// nothing and let the kind's own default stand.
     ///
@@ -149,6 +151,7 @@ impl Draft {
             required: false,
             read_only: false,
             border_width: 1.0,
+            border_style: pdfcer_core::edit::BorderStyle::Solid,
             // No background, so a push button keeps its plate. A text or
             // choice field gets a black outline: with no `/BC` it draws no
             // box, and an empty field is then invisible in a reader that
@@ -189,6 +192,8 @@ impl Draft {
 pub struct FieldLook {
     /// [`Draft::border_width`].
     pub border_width: f64,
+    /// [`Draft::border_style`].
+    pub border_style: pdfcer_core::edit::BorderStyle,
     /// [`Draft::background`].
     pub background: Option<MkColor>,
     /// [`Draft::border_color`].
@@ -201,6 +206,7 @@ impl FieldLook {
     pub const fn of(draft: &Draft) -> Self {
         Self {
             border_width: draft.border_width,
+            border_style: draft.border_style,
             background: draft.background,
             border_color: draft.border_color,
         }
@@ -209,6 +215,7 @@ impl FieldLook {
     /// Write this look into `draft`.
     pub const fn apply(&self, draft: &mut Draft) {
         draft.border_width = self.border_width;
+        draft.border_style = self.border_style;
         draft.background = self.background;
         draft.border_color = self.border_color;
     }
@@ -254,6 +261,7 @@ impl Remembered {
                 required: prev.required,
                 read_only: prev.read_only,
                 border_width: prev.border_width,
+                border_style: prev.border_style,
                 background: prev.background,
                 border_color: prev.border_color,
                 ..Draft::fresh(kind)
@@ -334,6 +342,7 @@ mod tests {
         mem.remember(&first);
         let look = FieldLook {
             border_width: 3.0,
+            border_style: pdfcer_core::edit::BorderStyle::Dashed,
             background: Some(MkColor::Gray(0.5)),
             border_color: Some(MkColor::Rgb(1.0, 0.0, 0.0)),
         };

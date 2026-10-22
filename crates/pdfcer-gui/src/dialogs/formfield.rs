@@ -27,6 +27,8 @@ const REGION_MARK: &str = "dialog.form_field.mark";
 const REGION_BACKGROUND: &str = "dialog.form_field.background";
 /// The `/MK` `/BC` swatch's rect.
 const REGION_BORDER_COLOR: &str = "dialog.form_field.border_color";
+/// The border-style picker; its rows are `<region>.<index>`.
+const REGION_BORDER_STYLE: &str = "dialog.form_field.border_style"; // ui-text-exempt: trace region name, never displayed
 
 /// How many characters a tooltip may run to.
 const TOOLTIP_MAX: usize = 240;
@@ -615,6 +617,11 @@ impl FormFieldDialog {
             refusal
                 .show(ui.add(widget.range(0.0..=12.0).speed(0.1)))
                 .on_hover_text(t::border_hover());
+            pdfcer_gui_base::formlookband::style_picker(
+                ui,
+                &mut self.draft.border_style,
+                REGION_BORDER_STYLE,
+            );
         });
         self.chrome_rows(ui);
     }
