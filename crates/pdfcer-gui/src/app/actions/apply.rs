@@ -1119,6 +1119,19 @@ impl PdfcerApp {
             // disclosure that is still true.
             #[cfg(feature = "3d")]
             Action::Attachment(super::attachments::AttachmentAction::ViewModel { artwork }) => {
+                // The one choke point for 3D content: the canvas click and the
+                // Attachments panel's View… both arrive here.
+                let plays = doc.models_trusted_once || self.prefs.trust.plays_3d(Some(&doc.path));
+                let page = artwork.page_index;
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    let decision = if plays { "play" } else { "ask" }; // ui-text-exempt: trace tokens
+                    format!("model3d-decision decision={decision} page={page}")
+                });
+                if !plays {
+                    self.dialogs.open_model_trust(artwork);
+                    return;
+                }
                 match super::models::load_view(doc, &artwork) {
                     Ok(model) => self.dialogs.open_model_view(artwork, model),
                     Err(said) => {

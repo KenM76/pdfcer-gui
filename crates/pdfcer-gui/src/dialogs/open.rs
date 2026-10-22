@@ -454,6 +454,14 @@ impl DialogsState {
         self.model3d = Some(super::model3d::ModelView::open(artwork, model));
     }
 
+    /// Raise the 3D prompt for `artwork`, unless one is already up.
+    #[cfg(feature = "3d")]
+    pub(crate) fn open_model_trust(&mut self, artwork: pdfcer_core::threed::ThreeDArtwork) {
+        if self.model_trust.is_none() {
+            self.model_trust = Some(super::model_trust::ModelTrustDialog::new(artwork));
+        }
+    }
+
     /// **Open the sheet-size window** over `pages`, the operand sheets.
     pub fn open_page_size(&mut self, doc: &crate::app::state::OpenDoc, pages: &[usize]) {
         if self.page_size.is_some() {

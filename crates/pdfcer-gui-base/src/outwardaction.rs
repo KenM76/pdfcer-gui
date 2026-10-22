@@ -43,6 +43,23 @@ pub enum OutwardAction {
         /// *Do not show this message again*; honoured with Open only.
         dont_ask: bool,
     },
+    /// The 3D prompt was answered, for the active document. A trusting answer
+    /// is followed by the `ViewModel` that raised the prompt.
+    ModelAnswer {
+        /// How far the document is trusted.
+        trust: ModelTrust,
+    },
+}
+
+/// The 3D prompt's answer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModelTrust {
+    /// Cancel: the model is not shown.
+    No,
+    /// *Trust this document one time only*: until the document is closed.
+    Once,
+    /// *Trust this document always*: kept in preferences, by path.
+    Always,
 }
 
 /// Where a `/GoToR` arrives in the file it opens.

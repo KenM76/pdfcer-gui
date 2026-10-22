@@ -184,3 +184,51 @@ pub fn place_page(page: usize) -> String {
 pub fn place_named(name: &str) -> String {
     format!("destination named \"{name}\"")
 }
+
+/// The 3D prompt's window title.
+#[must_use]
+pub const fn model_title() -> &'static str {
+    "3D Content"
+}
+
+/// The 3D prompt's message: Acrobat's document message bar.
+#[must_use]
+pub const fn model_disabled() -> &'static str {
+    "3D content has been disabled. Enable this feature if you trust this document."
+}
+
+/// The 3D prompt's default button.
+#[must_use]
+pub const fn model_trust_once() -> &'static str {
+    "Trust this document one time only"
+}
+
+/// Hover on [`model_trust_once`].
+#[must_use]
+pub const fn model_trust_once_hover() -> &'static str {
+    "Shows this document's 3D models until the document is closed."
+}
+
+/// The 3D prompt's lasting button.
+#[must_use]
+pub const fn model_trust_always() -> &'static str {
+    "Trust this document always"
+}
+
+/// Hover on [`model_trust_always`].
+#[must_use]
+pub const fn model_trust_always_hover() -> &'static str {
+    "Shows this document's 3D models whenever it is open, while Play 3D content is off."
+}
+
+/// The 3D prompt's refusing button.
+#[must_use]
+pub const fn model_refuse() -> &'static str {
+    "Cancel"
+}
+
+/// Status line after the 3D prompt was cancelled.
+#[must_use]
+pub const fn model_not_shown() -> &'static str {
+    "The 3D model was not shown: Play 3D content is off and this document is not trusted."
+}

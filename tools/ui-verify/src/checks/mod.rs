@@ -844,6 +844,8 @@ pub mod model_poster;
 /// The 3D viewer opens on the file's own saved view, and *File's view* returns
 /// to it.
 pub mod model_saved_view;
+/// While Play 3D content is off, View… on a model asks first.
+pub mod model_trust;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the
 /// scripted pointer.
 pub mod model_view;

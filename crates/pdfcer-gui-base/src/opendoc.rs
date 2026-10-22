@@ -1017,6 +1017,9 @@ pub struct OpenDoc {
     /// The last restyle the engine refused for a look pdfcer did not draw,
     /// for the Properties panel's redraw offer. View state; never saved.
     pub redraw_offer: Option<crate::redrawoffer::RedrawOffer>,
+    /// *Trust this document one time only* was chosen at the 3D prompt: its
+    /// models show while Play 3D content is off, until the document closes.
+    pub models_trusted_once: bool,
 }
 
 /// A fresh [`OpenDoc::serial`].
@@ -1165,6 +1168,7 @@ impl OpenDoc {
             draw_layer: None,
             snapshot: None,
             redraw_offer: None,
+            models_trusted_once: false,
         }
     }
 

@@ -131,6 +131,8 @@ pub mod bates_batch;
 pub mod labels;
 #[cfg(feature = "3d")]
 pub mod model3d;
+#[cfg(feature = "3d")]
+pub mod model_trust;
 /// **Changing the paper an open drawing sits on** — `pages.resize`. Its
 /// header carries the design decision the window is built around: a
 /// `/MediaBox` change crops, it does not shrink, so the window's real product
@@ -286,6 +288,10 @@ pub struct DialogsState {
     /// closes with the document.
     #[cfg(feature = "3d")]
     model3d: Option<model3d::ModelView>,
+    /// The 3D prompt, raised while Play 3D content is off; it names the model
+    /// it would show, so it closes with the document.
+    #[cfg(feature = "3d")]
+    model_trust: Option<model_trust::ModelTrustDialog>,
     /// The open text-annotation dialog, if a text box, sticky or stamp has
     /// just been placed.
     text_annot: Option<textannot::TextAnnotDialog>,
@@ -1017,6 +1023,10 @@ impl DialogsState {
         if self.model3d.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.model3d = None;
         }
+        #[cfg(feature = "3d")]
+        if self.model_trust.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.model_trust = None;
+        }
         if self.form_field.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.form_field = None;
         }
@@ -1272,6 +1282,7 @@ impl DialogsState {
         #[cfg(feature = "3d")]
         {
             self.model3d = None;
+            self.model_trust = None;
         }
         self.insert_image = None;
         self.insert_pages = None;

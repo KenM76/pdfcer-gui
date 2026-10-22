@@ -423,6 +423,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(objects_multiselect::ObjectsTreeGathersRowsForOneMenu),
         Box::new(weblink_prompt::AWebLinkAsksBeforeItOpens),
         Box::new(filelink_prompt::AFileLinkAsksOrOpensHere),
+        Box::new(model_trust::ThreeDContentAsksWhileItIsOff),
         // The page-tree guard, from the operator's own report. Placed immediately
         // after `compact_save` because the two are
         // the same subject from opposite ends: that one asserts a save

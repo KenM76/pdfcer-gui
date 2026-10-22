@@ -402,3 +402,8 @@ cut. That cache exists only because the release profile turns incremental ON on
 purpose (the release build is the dev loop; see the `[profile.release]` comment
 in `Cargo.toml`), so it regrows. Deleting both incremental dirs took D: from 30 to
 61 GB; the next release build was a cold one and nothing else was lost.
+
+2026-10-22: D: hit 69 MB free and a release link died with **LNK1180**, the
+linker's name for a full disk. The two incremental dirs were 31 GB (release) and
+20 GB (debug); deleting both took D: to 96 GB free. Two weeks after the 2026-10-08
+cut it was larger, so plan on doing it about once a week.

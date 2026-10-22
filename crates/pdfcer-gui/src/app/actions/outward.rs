@@ -3,7 +3,8 @@
 //! Decides, from Security ▸ Trust and the operator's remembered answers,
 //! whether a clicked web link opens, is refused with a sentence saying where
 //! to change that, or raises the Security Warning; whether a `/Launch` file
-//! opens or raises the Launch File prompt; and applies either prompt's answer.
+//! opens or raises the Launch File prompt; and applies every prompt's answer,
+//! the 3D prompt's included.
 //! A `/GoToR` to a PDF opens it here at its place without asking, because
 //! opening a PDF in this viewer runs nothing. Nothing is refused that the
 //! operator did not refuse.
@@ -15,7 +16,7 @@ use std::path::{Path, PathBuf};
 use pdfcer_core::object::{Dict, Name, Object};
 use pdfcer_core::outline::{Destination, DestinationReader};
 use pdfcer_gui_base::outward;
-use pdfcer_gui_base::outwardaction::{OutwardAction, RemoteGoTo};
+use pdfcer_gui_base::outwardaction::{ModelTrust, OutwardAction, RemoteGoTo};
 use pdfcer_gui_base::prefs::trust::WebDecision;
 
 use crate::app::PdfcerApp;
@@ -42,6 +43,24 @@ impl PdfcerApp {
                 open,
                 dont_ask,
             } => self.launch_answer(&file, open, dont_ask, pixels_per_point),
+            OutwardAction::ModelAnswer { trust } => self.model_answer(trust),
+        }
+    }
+
+    /// Record the 3D prompt's answer for the active document. The model itself
+    /// is shown by the `ViewModel` the prompt raises after a trusting answer.
+    fn model_answer(&mut self, trust: ModelTrust) {
+        let Status::Open(doc) = &mut self.status else {
+            return;
+        };
+        match trust {
+            ModelTrust::No => self.note(t::model_not_shown().to_owned()),
+            ModelTrust::Once => doc.models_trusted_once = true,
+            ModelTrust::Always => {
+                self.prefs.trust.trust_3d(&doc.path);
+                // As `web_answer`: one decision, written now.
+                let _ = self.prefs.save();
+            }
         }
     }
 
