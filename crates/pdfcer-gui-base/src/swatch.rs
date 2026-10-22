@@ -142,8 +142,8 @@ pub fn show(
 /// What one `/MK` colour key says, as far as a swatch is concerned.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MkValue<'a> {
-    /// A colour the swatch draws exactly.
-    Shown([u8; 3]),
+    /// A colour the swatch draws, in the space the file states it in.
+    Shown(crate::colourpick::Ink),
     /// No colour this control can draw. `mark` is what the button reads
     /// instead — an em dash for *the file says nothing*, a word for *no
     /// colour*, four numbers for a separation — and `note` is the sentence the
@@ -157,10 +157,11 @@ pub enum MkValue<'a> {
 }
 
 /// What the operator chose. Returned **once**, on the frame the gesture ended.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MkPick {
-    /// A colour, from the picker, on the frame it closed.
-    Colour([u8; 3]),
+    /// A colour, from the picker, on the frame it closed, in the space the
+    /// picker was on.
+    Colour(crate::colourpick::Ink),
     /// Table 189's empty array — *this widget has no such colour*, stated
     /// positively, which is not the same as the key being absent.
     NoColour,
@@ -231,15 +232,11 @@ pub fn show_mk(
     let id = ui.make_persistent_id(id_salt);
     let popup_id = id.with("popup"); // ui-text-exempt: an egui id salt, never displayed
     let seed = match control.value {
-        MkValue::Shown(rgb) => rgb,
-        // Black, never a conversion of the CMYK the widget may be carrying.
-        // Converting would put a number in the picker that the file does not
-        // contain, and the operator's first nudge would commit pdfcer's guess
-        // at their separation as though it were their own.
-        MkValue::Unshowable { .. } => NO_PARTICULAR_COLOUR,
+        MkValue::Shown(ink) => ink,
+        MkValue::Unshowable { .. } => crate::colourpick::Ink::from_srgb(NO_PARTICULAR_COLOUR),
     };
 
-    let mut state: Editing = ui.data(|d| d.get_temp(id)).unwrap_or(Editing {
+    let mut state: MkEditing = ui.data(|d| d.get_temp(id)).unwrap_or(MkEditing {
         working: seed,
         dirty: false,
         was_open: false,
@@ -248,11 +245,10 @@ pub fn show_mk(
     let height = ui.spacing().interact_size.y;
     let size = egui::vec2(height * ASPECT, height);
     let response = match control.value {
-        MkValue::Shown(rgb) => {
-            // DOCUMENT COLOUR: the widget's own `/MK` value, read from the
-            // file. A theme must never move it — restyling the application
-            // would change what the operator sees their form's ink as.
-            let fill = egui::Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
+        MkValue::Shown(ink) => {
+            // DOCUMENT COLOUR: the widget's own `/MK` value as pdfcer renders
+            // it. A theme must never move it.
+            let fill = ink.screen();
             if control.disc {
                 disc(ui, size, fill)
             } else {
@@ -309,16 +305,13 @@ pub fn show_mk(
             if !control.entries.is_empty() {
                 ui.separator();
             }
-            // DOCUMENT COLOUR: the working value of a widget's `/MK` colour
-            // being edited. Not chrome.
-            let mut colour =
-                egui::Color32::from_rgb(state.working[0], state.working[1], state.working[2]);
-            if egui::color_picker::color_picker_color32(
-                ui,
-                &mut colour,
-                egui::color_picker::Alpha::Opaque,
-            ) {
-                state.working = [colour.r(), colour.g(), colour.b()];
+            // `/MK` colours carry no opacity: Table 189 gives them none.
+            let mut pick = crate::colourpick::Pick {
+                ink: state.working,
+                opacity: None,
+            };
+            if crate::colourpick::body(ui, &mut pick, crate::colourpick::Spaces::ALL, region) {
+                state.working = pick.ink;
                 state.dirty = true;
             }
             crate::diag::ui_rect(&format!("{region}.picker"), ui.min_rect());
@@ -371,6 +364,17 @@ struct Editing {
     dirty: bool,
     /// Was the popup open on the previous frame? The edge this compares against
     /// is the whole commit trigger.
+    was_open: bool,
+}
+
+/// [`Editing`] for [`show_mk`], whose colour keeps its space.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct MkEditing {
+    /// The colour the picker is showing right now.
+    working: crate::colourpick::Ink,
+    /// As [`Editing::dirty`].
+    dirty: bool,
+    /// As [`Editing::was_open`].
     was_open: bool,
 }
 

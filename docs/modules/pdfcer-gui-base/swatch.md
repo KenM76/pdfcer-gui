@@ -148,22 +148,22 @@ Deliberately **not** [`Value`], and the difference is the subject.
 states — they agree or they do not. One widget's `/MK` `/BG` is one key on
 one dictionary, and Table 189 gives it four: absent, the empty array that
 states *no colour*, a DeviceGray or DeviceRGB value, and a DeviceCMYK
-separation. Two of those four are colours no swatch can draw, and one of
-them is not a colour at all.
+value. Both colour states are carried as a `colourpick::Ink` in the space the
+file states, and the popup is `colourpick::body` with every space and no
+opacity (`/MK` has none), so a CMYK background opens on its own numbers and
+is written back in CMYK.
 
-So this enum carries the one state a swatch CAN draw and defers the rest to
-the caller, exactly as the module header requires: *"the sentence that
-stands in its place belongs to whoever knows what the ink is."* Which of the
-three unshowable states a widget is in is a fact about `/MK`, and `/MK` is
-not a thing this file knows about.
+The two states that are not a colour are deferred to the caller with their
+mark and note: which of them a widget is in is a fact about `/MK`, and `/MK`
+is not a thing this file knows about.
 
 ### `fn show_mk`
 
 Returns `Some` **only** on the frame a choice was made: the picker closed
 after the operator moved it, or the *no colour* entry was pressed. The
 commit rule is [`show`]'s, for [`show`]'s reason — the module header's
-sixty-content-stream-rewrites-a-second defect — and the two functions share
-[`Editing`] so there is one implementation of it rather than two that drift.
+sixty-content-stream-rewrites-a-second defect. Its state, `MkEditing`, is
+[`Editing`] with a colour that keeps its space.
 
 The *no colour* entry commits **immediately** rather than on close, and
 that is not an inconsistency: it is a discrete press, not a drag, so there

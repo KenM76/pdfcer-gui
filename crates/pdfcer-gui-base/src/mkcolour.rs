@@ -10,6 +10,8 @@
 use egui::Ui;
 use pdfcer_core::forms::MkColor;
 
+use crate::colourpick::Ink;
+
 use crate::text::panels::formfield as t;
 
 /// One `/MK` colour row's inputs.
@@ -77,18 +79,7 @@ pub enum Pick {
 
 /// Draw the row. Returns a colour **once**, on the frame the gesture ended.
 pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
-    // Held outside the call because `MkValue` borrows its mark, and this is the
-    // one state whose mark is computed rather than a `&'static str`.
-    let cmyk = match spec.colour {
-        Some(MkColor::Cmyk(c, m, y, k)) => Some(t::colour_cmyk_mark(c, m, y, k)),
-        _ => None,
-    };
-    let value = mk_value(
-        spec.colour,
-        cmyk.as_deref(),
-        spec.unstated_note,
-        spec.no_colour_note,
-    );
+    let value = mk_value(spec.colour, spec.unstated_note, spec.no_colour_note);
 
     let mut entries = Vec::with_capacity(2);
     if let Some(label) = spec.no_colour_entry {
@@ -127,9 +118,11 @@ pub fn row(ui: &mut Ui, spec: &Row<'_>) -> Option<Pick> {
         .inner?;
 
     Some(match picked {
-        crate::swatch::MkPick::Colour([r, g, b]) => {
-            Pick::Set(MkColor::Rgb(fraction(r), fraction(g), fraction(b)))
-        }
+        crate::swatch::MkPick::Colour(ink) => Pick::Set(match ink {
+            Ink::Gray(g) => MkColor::Gray(g),
+            Ink::Rgb([r, g, b]) => MkColor::Rgb(r, g, b),
+            Ink::Cmyk([c, m, y, k]) => MkColor::Cmyk(c, m, y, k),
+        }),
         crate::swatch::MkPick::NoColour => Pick::Set(MkColor::None),
         crate::swatch::MkPick::Remove => Pick::Remove,
     })
@@ -148,22 +141,15 @@ const fn removal_would_change_something(colour: Option<MkColor>) -> bool {
 /// What the swatch should show for one `/MK` colour key.
 fn mk_value<'a>(
     colour: Option<MkColor>,
-    cmyk: Option<&'a str>,
     unstated_note: &'a str,
     no_colour_note: &'a str,
 ) -> crate::swatch::MkValue<'a> {
+    // Every colour is shown in its own space, so the picker opens on the
+    // file's numbers and an untouched space is written back unchanged.
     match colour {
-        // DeviceGray widens exactly — one component repeated three times is the
-        // same colour, not an approximation — so it is SHOWN. DeviceCMYK does
-        // not, and is not. O202 decision 4.
-        Some(MkColor::Gray(g)) => crate::swatch::MkValue::Shown([component(g); 3]),
-        Some(MkColor::Rgb(r, g, b)) => {
-            crate::swatch::MkValue::Shown([component(r), component(g), component(b)])
-        }
-        Some(MkColor::Cmyk(..)) => crate::swatch::MkValue::Unshowable {
-            mark: cmyk.unwrap_or_default(),
-            note: t::colour_cmyk_note(),
-        },
+        Some(MkColor::Gray(g)) => crate::swatch::MkValue::Shown(Ink::Gray(g)),
+        Some(MkColor::Rgb(r, g, b)) => crate::swatch::MkValue::Shown(Ink::Rgb([r, g, b])),
+        Some(MkColor::Cmyk(c, m, y, k)) => crate::swatch::MkValue::Shown(Ink::Cmyk([c, m, y, k])),
         Some(MkColor::None) => crate::swatch::MkValue::Unshowable {
             mark: t::colour_mark_no_colour(),
             note: no_colour_note,
@@ -179,16 +165,6 @@ fn mk_value<'a>(
     }
 }
 
-/// A `/MK` component as a screen byte.
-fn component(v: f32) -> u8 {
-    (v.clamp(0.0, 1.0) * 255.0).round() as u8
-}
-
-/// A screen byte as a `/MK` component.
-fn fraction(v: u8) -> f32 {
-    f32::from(v) / 255.0
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,31 +174,21 @@ mod tests {
     #[test]
     fn a_mk_key_reaches_the_swatch_in_four_distinguishable_states() {
         assert_eq!(
-            mk_value(Some(MkColor::Gray(1.0)), None, "unstated", "none"),
-            MkValue::Shown([255, 255, 255])
+            mk_value(Some(MkColor::Gray(1.0)), "unstated", "none"),
+            MkValue::Shown(Ink::Gray(1.0))
         );
         assert_eq!(
-            mk_value(Some(MkColor::Rgb(1.0, 0.0, 0.0)), None, "unstated", "none"),
-            MkValue::Shown([255, 0, 0])
+            mk_value(Some(MkColor::Rgb(1.0, 0.0, 0.0)), "unstated", "none"),
+            MkValue::Shown(Ink::Rgb([1.0, 0.0, 0.0]))
         );
-
-        // A separation is never converted, so it is never shown.
-        let mark = t::colour_cmyk_mark(0.1, 0.2, 0.3, 0.4);
+        // CMYK is shown in its own space, never converted.
         assert_eq!(
-            mk_value(
-                Some(MkColor::Cmyk(0.1, 0.2, 0.3, 0.4)),
-                Some(&mark),
-                "unstated",
-                "none"
-            ),
-            MkValue::Unshowable {
-                mark: "0.10 0.20 0.30 0.40",
-                note: t::colour_cmyk_note(),
-            }
+            mk_value(Some(MkColor::Cmyk(0.1, 0.2, 0.3, 0.4)), "unstated", "none"),
+            MkValue::Shown(Ink::Cmyk([0.1, 0.2, 0.3, 0.4]))
         );
 
-        let stated = mk_value(Some(MkColor::None), None, "unstated", "none");
-        let absent = mk_value(None, None, "unstated", "none");
+        let stated = mk_value(Some(MkColor::None), "unstated", "none");
+        let absent = mk_value(None, "unstated", "none");
         assert_ne!(
             stated, absent,
             "`no colour` and `the file is silent` must not read the same"
@@ -241,16 +207,6 @@ mod tests {
                 note: "unstated",
             }
         );
-    }
-
-    /// **The clamp is on the way to the screen and nowhere else.**
-    #[test]
-    fn an_out_of_range_component_is_clamped_for_the_screen_only() {
-        assert_eq!(component(2.5), 255);
-        assert_eq!(component(-1.0), 0);
-        for byte in [0_u8, 1, 127, 254, 255] {
-            assert_eq!(component(fraction(byte)), byte, "round trip at {byte}");
-        }
     }
 
     /// Table 189's four states against both entries at once.

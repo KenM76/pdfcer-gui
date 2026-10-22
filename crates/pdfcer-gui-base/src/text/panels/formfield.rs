@@ -697,20 +697,6 @@ pub const fn border_colour_no_colour_note() -> &'static str {
      below replaces it."
 }
 
-/// The button face for a four-ink separation — the file's own four numbers.
-#[must_use]
-pub fn colour_cmyk_mark(c: f32, m: f32, y: f32, k: f32) -> String {
-    format!("{c:.2} {m:.2} {y:.2} {k:.2}")
-}
-
-/// The popup note over a four-ink separation.
-#[must_use]
-pub const fn colour_cmyk_note() -> &'static str {
-    "This colour is a four-ink CMYK separation, kept exactly as the file states it and never \
-     converted, so there is no one screen colour to show for it. Picking a colour below replaces \
-     the separation."
-}
-
 // ===========================================================================
 // What the operator touched, for a refusal and for the receipt.
 //

@@ -283,14 +283,6 @@ It says the box is **still drawn black**, which is the opposite of what
 the phrase "no colour" suggests and is what the engine does. A box with no
 border says so through a border width of 0.
 
-### `fn colour_cmyk_mark`
-
-**Not a converted approximation**, O202 decision 4. pdfcer owns no
-rendering intent for a widget's chrome, so converting DeviceCMYK to
-something a swatch could show would put a colour on screen that the file
-does not contain — and the operator's first nudge of the picker would
-commit pdfcer's guess at their separation as though it were their own.
-
 ### `fn border_unstated`
 
 **Not "Solid, 1 pt".** `BorderSpec::default()` is solid/1 pt because that

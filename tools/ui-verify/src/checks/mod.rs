@@ -460,6 +460,7 @@ pub mod straighten_confidence;
 pub mod straighten_scans;
 /// The page thumbnails zoom without a blank tile.
 pub mod thumbnail_zoom;
+pub mod widget_bg_cmyk;
 
 pub mod layers_membership;
 
