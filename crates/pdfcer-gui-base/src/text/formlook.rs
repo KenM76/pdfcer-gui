@@ -30,3 +30,33 @@ pub const fn width_hover() -> &'static str {
 pub const fn style_hover() -> &'static str {
     "How the next field's outline is drawn: solid, dashed, raised, sunken, or a line under the box only."
 }
+
+/// Said when a placed field could not be given the Style band's text look.
+#[must_use]
+pub fn text_look_refused(name: &str, why: &str) -> String {
+    format!("{name} was placed in black Helvetica: its text style could not be set: {why}")
+}
+
+/// The text-font picker's hover.
+#[must_use]
+pub const fn font_hover() -> &'static str {
+    "The typeface the next text or choice field's value is drawn in."
+}
+
+/// The text-size field's hover.
+#[must_use]
+pub const fn size_hover() -> &'static str {
+    "How large the next text or choice field's value is drawn, in points. Auto fits it to the box."
+}
+
+/// The text-colour swatch's label.
+#[must_use]
+pub const fn text_colour_label() -> &'static str {
+    "Text"
+}
+
+/// The text-colour swatch's hover.
+#[must_use]
+pub const fn text_colour_hover() -> &'static str {
+    "The ink the next text or choice field's value is drawn in."
+}

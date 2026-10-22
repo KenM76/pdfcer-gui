@@ -661,7 +661,8 @@ nothing.
 The settings you accept carry over to the next field you place — so a column of
 identical check boxes is one set of choices and then a row of clicks.
 
-**Forms ▸ Style** shows the fill, outline colour, outline width and border style the next
+**Forms ▸ Style** shows the fill, outline colour, outline width, border style, and the text's
+font, size and colour the next
 field will get, and changing it there is the same as changing it in that
 window. To match a field already on the page, right-click it and choose **Use
 as default look**.

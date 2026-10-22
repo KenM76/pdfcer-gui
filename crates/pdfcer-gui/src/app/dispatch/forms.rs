@@ -79,13 +79,16 @@ pub(super) fn use_as_default(app: &mut PdfcerApp, id: &str) {
         return;
     };
     let view = doc.session.view();
-    let widget = pdfcer_core::forms::parse_acroform(&view).and_then(|form| {
+    let found = pdfcer_core::forms::parse_acroform(&view).and_then(|form| {
         form.fields
             .into_iter()
             .find(|f| f.fully_qualified_name == selected.field)
-            .and_then(|f| f.widgets.into_iter().nth(selected.widget))
+            .and_then(|f| {
+                let da = f.default_appearance.clone();
+                f.widgets.into_iter().nth(selected.widget).map(|w| (w, da))
+            })
     });
-    let Some(widget) = widget else {
+    let Some((widget, da)) = found else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!("command-declined id={id} reason=field-not-found")
@@ -99,15 +102,23 @@ pub(super) fn use_as_default(app: &mut PdfcerApp, id: &str) {
             .map_or(pdfcer_core::edit::BorderStyle::Solid, |b| b.style),
         background: widget.background,
         border_color: widget.border_color,
+        // A face outside the fourteen keeps the band's own text look: a new
+        // field has no `/DR` font of its own to name.
+        text: da
+            .as_deref()
+            .and_then(crate::canvas::formfield::TextLook::from_da)
+            .unwrap_or(app.form_defaults.look().text),
     };
     app.form_defaults.set_look(look);
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "form-look-taken field={} width={} style={}",
+            "form-look-taken field={} width={} style={} font={:?} text-size={}",
             selected.field,
             look.border_width,
-            look.border_style.token()
+            look.border_style.token(),
+            look.text.font,
+            look.text.size
         )
     });
 }

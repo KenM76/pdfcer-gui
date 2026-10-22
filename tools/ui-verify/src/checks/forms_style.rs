@@ -1,5 +1,5 @@
-//! `forms_style_sets_the_next_field` — Forms ▸ Style's width reaches the
-//! next placed field, and the field's right-click *Use as default look* reads
+//! `forms_style_sets_the_next_field` — Forms ▸ Style's width, border style
+//! and text font and size reach the next placed field, and the field's right-click *Use as default look* reads
 //! it back from the document.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/forms_style.md`.
@@ -26,6 +26,13 @@ const WIDTH: &str = "forms.style.width";
 const STYLE: &str = "forms.style.border_style";
 /// The picker's second row, Dashed; any row but the first beats the default.
 const DASHED_ROW: &str = "forms.style.border_style.1";
+const FONT: &str = "forms.style.text_font";
+/// The font list's fifth row, Times-Roman; any face but Helvetica beats the
+/// engine's own, and the fifth is inside the list's first screen.
+const TIMES_ROW: &str = "forms.style.text_font.4";
+/// `Std14`'s debug spelling of that row, as both traces write it.
+const TIMES: &str = "TimesRoman";
+const SIZE: &str = "forms.style.text_size";
 const TEXT_FIELD: &str = "ribbon.item.edit.form_text_field";
 const MENU_ROW: &str = "menu.item.canvas.field.edit.form_use_as_default";
 /// Written by the Style band on every change.
@@ -130,11 +137,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Err(why) = set_style(&session, &pointer, ui_rect, report)? {
         return Ok(Some(why));
     }
+    let size = match set_text(&session, &pointer, ui_rect, report)? {
+        Ok(v) => v,
+        Err(why) => return Ok(Some(why)),
+    };
     let centre = match place_field(&session, &pointer, ui_rect, &mapping, report)? {
         Ok(c) => c,
         Err(why) => return Ok(Some(why)),
     };
-    let (taken, line, style) = match read_back(&session, &pointer, ui_rect, centre, report)? {
+    let (taken, line, taken_text) = match read_back(&session, &pointer, ui_rect, centre, report)? {
         Ok(v) => v,
         Err(why) => return Ok(Some(why)),
     };
@@ -147,13 +158,75 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              not take the Style group's width. Band: `{look}`; field: `{line}`."
         )));
     }
-    if style != "dashed" {
+    if taken_text.style != "dashed" {
         return Ok(Some(format!(
-            "the band chose Dashed and the placed field's border reads back as `{style}`: \
-             the next field did not take the Style group's border style. Field: `{line}`."
+            "the band chose Dashed and the placed field's border reads back as `{}`: \
+             the next field did not take the Style group's border style. Field: `{line}`.",
+            taken_text.style
+        )));
+    }
+    if taken_text.font != TIMES || (taken_text.size - size).abs() > 0.05 {
+        return Ok(Some(format!(
+            "the band chose {TIMES} at {size} pt and the placed field's text reads back as \
+             {} at {} pt: the next field did not take the Style group's text look. \
+             Field: `{line}`.",
+            taken_text.font, taken_text.size
         )));
     }
     Ok(None)
+}
+
+/// What *Use as default look* read off the field beyond its width.
+struct Taken {
+    style: String,
+    font: String,
+    size: f32,
+}
+
+/// Picks Times-Roman from the band's font list and drags its size up from
+/// Auto; returns the size the band traced.
+fn set_text(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    report: &mut CheckReport,
+) -> Step<f32> {
+    let Some(button) = declared_or_in_overflow(session, pointer, ui_rect, FONT)? else {
+        return Ok(Err(format!("the Forms tab draws no `{FONT}` font picker.")));
+    };
+    pointer.click(session, WindowPoint::centre_of(button))?;
+    session.settle(20);
+    let Some(row) = declared(&session.trace()?, ui_rect, TIMES_ROW) else {
+        return Ok(Err(format!(
+            "opening `{FONT}` showed no `{TIMES_ROW}` row. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    pointer.click(session, WindowPoint::centre_of(row))?;
+    session.settle(20);
+    let Some(field) = declared_or_in_overflow(session, pointer, ui_rect, SIZE)? else {
+        return Ok(Err(format!("the Forms tab draws no `{SIZE}` text size.")));
+    };
+    let mark = session.trace()?.mark();
+    let from = WindowPoint::centre_of(field);
+    let to = WindowPoint::centre_of(LRect::new(
+        Pt::new(field.min.x + DRAG_PX, field.min.y),
+        Pt::new(field.max.x + DRAG_PX, field.max.y),
+    ));
+    pointer.drag(session, from, to, 8)?;
+    session.settle(20);
+    let Some(line) = session.trace()?.last_after(LOOK, mark).cloned() else {
+        return Ok(Err(format!("dragging `{SIZE}` traced no `{LOOK}` line.")));
+    };
+    let size = line.get_f32("size").unwrap_or(0.0);
+    if line.get("font") != Some(TIMES) || size <= 0.0 {
+        return Ok(Err(format!(
+            "after picking {TIMES} and dragging the size, the band traced `{}`.",
+            line.raw
+        )));
+    }
+    report.note(format!("the band: `{}`", line.raw));
+    Ok(Ok(size))
 }
 
 /// Picks Dashed from the Style band's border-style drop-down.
@@ -296,7 +369,7 @@ fn read_back(
     ui_rect: &str,
     centre: WindowPoint,
     report: &mut CheckReport,
-) -> Step<(f32, String, String)> {
+) -> Step<(f32, String, Taken)> {
     pointer.right_click(session, centre)?;
     session.settle(20);
     let trace = session.trace()?;
@@ -321,10 +394,16 @@ fn read_back(
         )));
     };
     report.note(format!("read back: `{line}`"));
-    let style = session
-        .trace()?
-        .last_after(TAKEN, mark)
-        .and_then(|l| l.get("style").map(str::to_owned))
-        .unwrap_or_default();
-    Ok(Ok((taken, line, style)))
+    let trace = session.trace()?;
+    let last = trace.last_after(TAKEN, mark);
+    let field = |key: &str| {
+        last.and_then(|l| l.get(key).map(str::to_owned))
+            .unwrap_or_default()
+    };
+    let text = Taken {
+        style: field("style"),
+        font: field("font"),
+        size: last.and_then(|l| l.get_f32("text-size")).unwrap_or(-1.0),
+    };
+    Ok(Ok((taken, line, text)))
 }

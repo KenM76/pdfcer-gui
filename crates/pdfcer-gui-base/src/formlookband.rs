@@ -1,7 +1,7 @@
 //! # `formlookband` — the Forms ▸ Style band
 //!
-//! Fill, outline colour, outline width and border style for the **next** form
-//! field placed,
+//! Fill, outline colour, outline width, border style and the text's font, size
+//! and colour for the **next** form field placed,
 //! edited in the same [`Remembered`] the placement dialog opens from, so the
 //! dialog shows what the band shows. Like the Markup pen it edits a tool
 //! setting: no command, no undo entry, nothing written to `userdata`.
@@ -12,7 +12,7 @@ use egui::Ui;
 use pdfcer_core::edit::BorderStyle;
 
 use crate::entry;
-use crate::formdraft::{FieldLook, Remembered};
+use crate::formdraft::{FieldLook, Remembered, TextLook};
 use crate::mkcolour::{self, Pick};
 use crate::text::formfield as dialog_text;
 use crate::text::formlook as t;
@@ -26,6 +26,13 @@ pub const REGION_WIDTH: &str = "forms.style.width"; // ui-text-exempt: trace reg
 /// The border-style picker's trace region; its rows are `<region>.<index>`
 /// in [`STYLES`] order.
 pub const REGION_STYLE: &str = "forms.style.border_style"; // ui-text-exempt: trace region name, never displayed
+/// The text-font picker's trace region; its rows are `<region>.<index>` in
+/// `Std14::ALL` order.
+pub const REGION_FONT: &str = "forms.style.text_font"; // ui-text-exempt: trace region name, never displayed
+/// The text-size field's trace region.
+pub const REGION_SIZE: &str = "forms.style.text_size"; // ui-text-exempt: trace region name, never displayed
+/// The text-colour swatch's trace region.
+pub const REGION_TEXT_COLOUR: &str = "forms.style.text_colour"; // ui-text-exempt: trace region name, never displayed
 
 /// The five border styles the engine authors, in the order offered.
 pub const STYLES: [BorderStyle; 5] = [
@@ -94,6 +101,8 @@ pub fn show(ui: &mut Ui, mem: &mut Remembered) {
             .on_hover_text(t::width_hover());
         crate::diag::ui_rect(REGION_WIDTH, response.rect);
         style_picker(ui, &mut look.border_style, REGION_STYLE);
+        ui.separator();
+        text_controls(ui, &mut look.text);
     });
     if look != before {
         mem.set_look(look);
@@ -120,6 +129,69 @@ pub fn style_picker(ui: &mut Ui, style: &mut BorderStyle, region: &str) {
     crate::diag::ui_rect(region, combo.response.on_hover_text(t::style_hover()).rect);
 }
 
+/// Font, size and ink of a text or choice field's value.
+fn text_controls(ui: &mut Ui, text: &mut TextLook) {
+    use crate::colourpick::{self, Pick as Ink, Shown, Spaces};
+    use crate::text::panels::formfield::{text_font_name, text_size_auto};
+    use pdfcer_core::fontdata::Std14;
+    let combo = egui::ComboBox::from_id_salt(REGION_FONT)
+        .selected_text(text_font_name(text.font))
+        .show_ui(ui, |ui| {
+            for (i, face) in Std14::ALL.into_iter().enumerate() {
+                let row = ui.selectable_value(&mut text.font, face, text_font_name(face));
+                crate::diag::ui_rect_visible(
+                    &format!("{REGION_FONT}.{i}"), // ui-text-exempt: trace region name
+                    row.rect,
+                    ui.clip_rect(),
+                );
+            }
+        });
+    crate::diag::ui_rect(
+        REGION_FONT,
+        combo.response.on_hover_text(t::font_hover()).rect,
+    );
+
+    let kind = entry::Kind::Length(entry::LengthUnit::Point);
+    let (widget, refusal) = if text.size <= 0.0 {
+        entry::drag_value_unlabelled(ui, &mut text.size, kind)
+    } else {
+        entry::drag_value(ui, &mut text.size, kind)
+    };
+    let response = refusal
+        .show(
+            ui.add(
+                widget
+                    .speed(0.5)
+                    .range(0.0..=144.0)
+                    .custom_formatter(|n, _| {
+                        if n <= 0.0 {
+                            text_size_auto().to_owned()
+                        } else {
+                            format!("{n:.0}")
+                        }
+                    }),
+            ),
+        )
+        .on_hover_text(t::size_hover());
+    crate::diag::ui_rect(REGION_SIZE, response.rect);
+
+    ui.label(t::text_colour_label())
+        .on_hover_text(t::text_colour_hover());
+    if let Some(pick) = colourpick::show(
+        ui,
+        REGION_TEXT_COLOUR,
+        Shown::Agreed(Ink {
+            ink: text.colour.into(),
+            opacity: None,
+        }),
+        Spaces::ALL,
+        REGION_TEXT_COLOUR,
+        "",
+    ) {
+        text.colour = pick.ink.into();
+    }
+}
+
 /// A swatch's pick as the draft's value: `Remove` states nothing.
 const fn resolve(pick: Pick) -> Option<pdfcer_core::forms::MkColor> {
     match pick {
@@ -133,9 +205,11 @@ fn trace(look: FieldLook) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "form-look width={} style={} bg={} bc={}",
+            "form-look width={} style={} font={:?} size={} bg={} bc={}",
             look.border_width,
             look.border_style.token(),
+            look.text.font,
+            look.text.size,
             key(look.background),
             key(look.border_color)
         )

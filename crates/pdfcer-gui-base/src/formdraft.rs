@@ -7,7 +7,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/formdraft.md`.
 
+use pdfcer_core::fontdata::Std14;
 use pdfcer_core::forms::MkColor;
+use pdfcer_core::vartext::TextColor;
 
 use crate::formfieldkind::FormFieldKind;
 
@@ -59,6 +61,8 @@ pub struct Draft {
     /// gives: the engine resolves an empty `/BC` and an absent `/BC` to
     /// the same black.
     pub border_color: Option<MkColor>,
+    /// **Text / choice** — the face, size and ink the value is drawn in.
+    pub text: TextLook,
     /// **Text** — the value the field starts with.
     pub value: String,
     /// **Text** — whether the box wraps onto more than one line.
@@ -159,6 +163,7 @@ impl Draft {
             background: None,
             border_color: matches!(kind, FormFieldKind::Text | FormFieldKind::Choice)
                 .then_some(MkColor::Gray(0.0)),
+            text: TextLook::ENGINE,
             value: String::new(),
             multiline: false,
             password: false,
@@ -198,6 +203,8 @@ pub struct FieldLook {
     pub background: Option<MkColor>,
     /// [`Draft::border_color`].
     pub border_color: Option<MkColor>,
+    /// [`Draft::text`].
+    pub text: TextLook,
 }
 
 impl FieldLook {
@@ -209,6 +216,7 @@ impl FieldLook {
             border_style: draft.border_style,
             background: draft.background,
             border_color: draft.border_color,
+            text: draft.text,
         }
     }
 
@@ -218,6 +226,63 @@ impl FieldLook {
         draft.border_style = self.border_style;
         draft.background = self.background;
         draft.border_color = self.border_color;
+        draft.text = self.text;
+    }
+}
+
+/// **The text a text or choice field's value is drawn in** — its `/DA`
+/// (§12.7.3.3). Only the fourteen built-in faces: a new field has no `/DR`
+/// font of its own to name.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct TextLook {
+    /// The face.
+    pub font: Std14,
+    /// Points; `0.0` is Table 224's auto-size.
+    pub size: f64,
+    /// The ink the glyphs are filled with.
+    pub colour: TextColor,
+}
+
+impl TextLook {
+    /// What the engine writes for a new field on its own: black Helvetica,
+    /// auto-sized. A draft carrying this needs no second verb at placement.
+    pub const ENGINE: Self = Self {
+        font: Std14::Helvetica,
+        size: 0.0,
+        colour: TextColor::Gray(0.0),
+    };
+
+    /// The look a field's `/DA` states, or `None` when it names a face that is
+    /// not one of the fourteen or does not parse. A `/DA` that sets no colour
+    /// draws in black (§12.7.3.3).
+    #[must_use]
+    pub fn from_da(da: &[u8]) -> Option<Self> {
+        let parsed = pdfcer_core::vartext::parse_default_appearance(da).ok()?;
+        Some(Self {
+            font: builtin_face(&parsed.font_name)?,
+            size: parsed.font_size,
+            colour: parsed.color.unwrap_or(TextColor::Gray(0.0)),
+        })
+    }
+}
+
+/// The built-in face a `/DA` resource key names: a `BaseFont` spelling, or one
+/// of the short keys Acrobat and pdfcer write into `/DR` (`Helv`, `TiRo`, …).
+#[must_use]
+pub fn builtin_face(key: &[u8]) -> Option<Std14> {
+    let name = std::str::from_utf8(key).ok()?;
+    if let Some(font) = pdfcer_core::fontdata::std14_by_base_font(name) {
+        return Some(font);
+    }
+    // ui-text-exempt: /DA resource keys read out of a file, never displayed
+    match name {
+        "Helv" => Some(Std14::Helvetica),
+        "HeBo" => Some(Std14::HelveticaBold),
+        "TiRo" => Some(Std14::TimesRoman),
+        "Cour" => Some(Std14::Courier),
+        "Symb" => Some(Std14::Symbol),
+        "ZaDb" => Some(Std14::ZapfDingbats),
+        _ => None,
     }
 }
 
@@ -264,6 +329,7 @@ impl Remembered {
                 border_style: prev.border_style,
                 background: prev.background,
                 border_color: prev.border_color,
+                text: prev.text,
                 ..Draft::fresh(kind)
             },
             None => Draft::fresh(kind),
@@ -345,6 +411,11 @@ mod tests {
             border_style: pdfcer_core::edit::BorderStyle::Dashed,
             background: Some(MkColor::Gray(0.5)),
             border_color: Some(MkColor::Rgb(1.0, 0.0, 0.0)),
+            text: TextLook {
+                font: Std14::Courier,
+                size: 14.0,
+                colour: TextColor::Rgb(0.0, 0.0, 1.0),
+            },
         };
         mem.set_look(look);
         for kind in [

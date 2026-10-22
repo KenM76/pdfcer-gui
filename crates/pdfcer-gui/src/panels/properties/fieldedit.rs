@@ -712,22 +712,8 @@ fn current_appearance(field: &Field) -> Appearance {
 
 /// A `/DA` resource key, as one of the fourteen when it names one.
 fn face_of(key: &[u8]) -> Face {
-    let Ok(name) = std::str::from_utf8(key) else {
-        return Face::Embedded(key.to_vec());
-    };
-    if let Some(font) = pdfcer_core::fontdata::std14_by_base_font(name) {
-        return Face::Builtin(font);
-    }
-    // ui-text-exempt: /DA resource keys read out of a file, never displayed
-    match name {
-        "Helv" => Face::Builtin(Std14::Helvetica),
-        "HeBo" => Face::Builtin(Std14::HelveticaBold),
-        "TiRo" => Face::Builtin(Std14::TimesRoman),
-        "Cour" => Face::Builtin(Std14::Courier),
-        "Symb" => Face::Builtin(Std14::Symbol),
-        "ZaDb" => Face::Builtin(Std14::ZapfDingbats),
-        _ => Face::Embedded(key.to_vec()),
-    }
+    pdfcer_gui_base::formdraft::builtin_face(key)
+        .map_or_else(|| Face::Embedded(key.to_vec()), Face::Builtin)
 }
 
 /// One `FieldEdit` carrying a whole `/DA`.
