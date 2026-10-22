@@ -264,6 +264,9 @@ pub enum TextStyleRefusal {
     /// An underline or strikethrough was asked for on text drawn invisibly
     /// (rendering mode 3 or 7), such as the hidden text layer of a scan.
     DecorationInvisible,
+    /// A new opacity was asked for on text whose opacity is set by a
+    /// graphics state pdfcer cannot read (`FormatError::OpacityUnrestorable`).
+    OpacityUnreadable,
     /// An axis asked off is the face itself, and no face of its family
     /// without it can show the text; carries the axes (`"bold"`, `"italic"`,
     /// `"bold italic"`), in the engine's words.
@@ -373,6 +376,9 @@ impl TextStyleRefusal {
             }
             Self::DecorationInvisible => {
                 "This text is not drawn on the page (it is hidden, like the searchable text behind a scan), so a line under or through it would mark nothing you can see. Nothing changed."
+            }
+            Self::OpacityUnreadable => {
+                "The opacity of this text is set in a way pdfcer cannot read, so it could not keep what follows the text unchanged. Nothing changed."
             }
             Self::NewText => {
                 "New text takes its style from the text pen. Finish it with Enter, then select it to style part of it."

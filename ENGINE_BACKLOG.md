@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **35 of 387** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `wanted` — a real gap — **33 of 388** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -93,7 +93,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)`, memoised and consulted by the editing verbs … | **wanted.** <!--namesake:page_objects--> Every hit in `crates/pdfcer-gui/src/` is this shell's own `OpenDoc::page_objects(&self)`, never the engine's `EditSession::page_objects(&mut self, page_index)`, so a bare-identifier grep reads as *thoroughly consumed* and means the opposite — an absence claim here has to name the receiver. The engine's is called only from `tests/engine_overlay_skew.rs` and `tests/page_generation_covers.rs`. Production still runs the shell's own parse in `panels::objects::provider`, cached separately on `OpenDoc` by `app::cache`, so every edit pays the session's decomposition **and** ours. Wiring it needs a decided answer on cache invalidation: the engine memoises against the session revision and we key on our own. |
 | **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **wanted, at the pin since v0.81.0; request G140.** It shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **wanted, at the pin since v0.81.0; request G138.** Every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. The canvas still box-tests an image. Owed: call `hit_test_point_deep_with` with a `DocumentImageAlpha` from one `vector::ImageAlphaCache` kept per edit epoch (`ImageAlphaCache::with_view`, cleared on an edit; request G181, at the pin since v0.82.0), and a driven click through a clear pixel onto ink beneath. Its module is `pdfcer_core::vector::image_hit`; the canvas's point queries move to `hit_test_point_with` and `hit_test_point_all_with`. |
-| **Read a text run's fill opacity** — `TextRun::fill_alpha` <!--namesake:fill_alpha--> (the shell's other `fill_alpha` reads are `PathObject::fill_alpha`, `ImageObject::fill_alpha` and `TextPen::fill_alpha`), `PathObject::fill_alpha_known`, `PathObject::stroke_alpha_known`, `ImageObject::fill_alpha_known`, `ImageObject::stroke_alpha_known`, `ExtGStateParams::fill_alpha_unreadable`, `ExtGStateParams::stroke_alpha_unreadable` (our `G225`, Pass 617.9) | **wanted, next.** Properties ▸ Line and opacity opens its sliders at `PathObject::fill_alpha`, which reads 1.0 when the graphics state in force cannot be resolved; a slider moved from there writes over an opacity nobody saw. Where the value is unknown the slider is to be withheld with a line saying why. Clicked page text gains its opacity slider from the same reader, `None` withholding it likewise. |
 | **Stroke width and dash in points across paths under different CTMs** — `StrokeUnits::Page`, `PathObject::line_width_pt`, `PathObject::dash_pt` | **wanted, at the pin since v0.82.0; request G174.** `app::actions::strokestyle` sends one `set_object_stroke_style` with `StrokeStyle::units` set to `StrokeUnits::Page` instead of one call per CTM scale folded with `coalesce_last`; calling it deletes `in_user_space` and `group_by_scale`. Properties reads widths back with `line_width_pt` and `dash_pt`, and `PathObject::stroke_scale_is_uniform` says when one number cannot describe a path. |
 
 ### ce dimensions
@@ -135,12 +134,11 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| Fill opacity on existing text — `FormatRequest::fill_alpha` <!--namesake:fill_alpha--> (the shell's `fill_alpha` call sites are `StrokeStyle::fill_alpha` on paths), `FormatRequest::set_fill_alpha`, `FormatReport::fill_alpha_change` (our `G222`, Pass 617.6) | **wanted, to build with the shared colour picker (O321).** The picker's opacity slider is the surface; a refusal (`FormatError::BadOpacity`, `FormatError::OpacityUnrestorable`, `AddTextError::InvalidOpacity`) reaches the status line through the edit funnel's Display wording. The opacity in force is read as `TextRun::fill_alpha` (our `G225`, Pass 617.9); `None` means unknown, where the slider is not offered, because one opened at a guess would reset the opacity of text whose colour alone was changed. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 387** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `blocked` — waiting on something named — **2 of 388** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -158,7 +156,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 387** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 388** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -169,7 +167,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **17 of 387** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `declined` — deliberately no surface — **18 of 388** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -196,6 +194,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, declined) | Why |
 |---|---|
+| The graphics state's unreadable-opacity flags — `ExtGStateParams::fill_alpha_unreadable`, `ExtGStateParams::stroke_alpha_unreadable` (our `G225`, Pass 617.9) | **declined as a surface.** The shell reads opacity per object, through `PathObject::fill_alpha_known` and its siblings and `TextRun::fill_alpha`, which already fold these flags in; an `/ExtGState` dictionary has no surface of its own to show them on. |
 | **A run's own embedded program sets the characters its font dictionary cannot encode** — the module `pdfcer_core::text_edit::same_program` (`CidFontProgram`, `CidProgramUse`), `EditOptions::cid_font_program`, `EditOptions::with_cid_font_program` (Pass 430.3, 430.4) | **declined as a setting — the default is taken.** The engine's default, `CidFontProgram::StripCmap`, already sets such characters through a new CID font over the run's own program and stays within §9.9 in every case, and every text edit here takes it without asking. `ShareStream` would knowingly break §9.9 to save bytes and `Off` brings back the refusal; neither is a choice the operator should have to make. When the engine is forced to share a program that keeps its `cmap`, it says so in `TextEditOutcome::disclosures`, which `app::actions::textcommit` shows verbatim. |
 | Upgrade a below-opset-13 OCR model on load — `pdfcer_core::ocr::onnx_upgrade` | **declined as a surface.** `PaddleEngine::from_model_dir` applies it inside the load; the shell benefits by calling the loader and has no choice to offer. The consequence for packaging — the official PP-OCRv5 `inference.onnx` now loads unconverted — is the package's business, not a control's. |
 | Form XObject viewport culling — a `Do` whose `/BBox`, mapped … | **declined — the cull is lossless by construction.** §8.10.1 makes `/BBox` a clip, so a culled form cannot mark a pixel and the raster is byte-identical. `app::status::notes::findings` reports only findings that change *what the operator can see*, and it excludes `tolerated` and `compat_skipped` on exactly that argument; `forms_culled` belongs with those two. It becomes wanted the day a **performance** readout exists; it is not wanted on a correctness one. |
@@ -212,7 +211,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **333 of 387** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **335 of 388** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -269,6 +268,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| Fill opacity on existing text — `FormatRequest::fill_alpha` <!--namesake:fill_alpha--> (the shell's other `fill_alpha` call sites are `StrokeStyle::fill_alpha` on paths), `FormatRequest::set_fill_alpha`, `FormatReport::fill_alpha_change` (our `G222`, Pass 617.6) | **shipped — Properties ▸ the clicked text's Opacity row (O321).** `StyleChange::Opacity` stamps `FormatRequest::fill_alpha`; `FormatError::OpacityUnrestorable` and `FormatError::BadOpacity` reach the status line as refusal sentences. The row opens at the runs' `TextRun::fill_alpha`; where any run reads `None` it is withheld with a sentence, because a field opened at a guess would overwrite an opacity nobody saw. Driven: `clicked_text_takes_an_opacity`. |
 | **Add Text in grey or CMYK** — `NewTextColor::Gray`, `NewTextColor::Cmyk` (our `G219`, Pass 617.3) | **shipped — Properties ▸ the text pen's colour swatch (O321).** `TextPen::engine_colour` maps the picker's `Ink` to `NewTextColor`, black kept as `Black`. Driven: `added_text_keeps_its_cmyk_and_opacity`. |
 | Fill opacity on new page text — `AddTextRequest::with_fill_alpha` (our `G222`, Pass 617.6) | **shipped — the text pen's opacity slider (O321).** `TextPen::fill_alpha` is `None` at full opacity, so an opaque pen writes no `gs`; `AddTextError::InvalidOpacity` reaches the status line through the edit funnel. Driven: `added_text_keeps_its_cmyk_and_opacity`. |
 | **Edit a recognised (OCR) paragraph word by word in place** — `recognised_block_at_point`, `edit_recognised_block_text`, `edit_recognised_block_text_preview`, modules `pdfcer_core::edit::recognised_block` and `pdfcer_core::text_edit::recognised_block` | **shipped; requests G203, G204.** *This paragraph* on a recognised word opens the paragraph (`canvas::textedit::promote::recognised`), drawn in place from the `_preview` layout (`canvas::textedit::shapedblock`) and committed by `edit_recognised_block_text` (`app::actions::blocktext::commit_recognised`). A click opens the word alone: that gesture is shared with the OCR word preview, which widening it has captured before. `CommandKind::EditRecognisedText` is the engine's undo label; `UnsupportedCause::EditSpansStreams` is worded by `record_edit_text_refusal`. Driven by `a_recognised_paragraph_edits_word_by_word`. |
@@ -331,6 +331,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Read a text run's fill opacity** — `TextRun::fill_alpha` <!--namesake:fill_alpha--> (the shell's other `fill_alpha` reads are `PathObject::fill_alpha`, `ImageObject::fill_alpha` and `TextPen::fill_alpha`), `PathObject::fill_alpha_known`, `PathObject::stroke_alpha_known`, `ImageObject::fill_alpha_known`, `ImageObject::stroke_alpha_known` (our `G225`, Pass 617.9) | **shipped — the opacity rows of Properties ▸ Line and opacity and of clicked text.** An opacity read as unknown gets no field, only the sentence `properties.*.unknown`; `panels::properties::opacityrow` decides. Driven: `clicked_text_takes_an_opacity`, `a_pictures_opacity_can_be_set`. |
 | Edit a Bézier handle, with grab/hover/live preview. … | **Reachable — `app::actions::vector` calls `move_handle`**, and the stage table records Phase 1 complete *but for the clipboard (selection, move, resize by grip and by typed number, multi-node move, Bézier handles)*. The engine's evidence was a `grep -i bezier` over the canvas taken days before the work landed, and **an absence measured once is a claim with a date on it**. |
 | Select several nodes and move them as one surgery, one … | **Reachable — `app::actions::vector` calls `move_nodes`** with a slice, so several nodes move as one surgery and one undo entry. Same stale sweep as the Bézier row above. |
 | Edit geometry INSIDE a form XObject — `move_node_in_form` … | **Reachable — `app::actions::vector` calls `move_node_in_form`** and its siblings, which is the whole point of the deep hit test: click a line inside a title block and drag *that line*. The engine's disclosure data (`FormSurgeryOutcome { invocations, pages }`) is what the shell reports back, deliberately as two numbers rather than one. |

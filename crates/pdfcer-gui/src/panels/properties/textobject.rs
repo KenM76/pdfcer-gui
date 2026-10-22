@@ -6,6 +6,7 @@
 
 use egui::Ui;
 
+use super::opacityrow::{self, Alpha};
 use crate::app::actions::Action;
 use crate::app::actions::textstyle::StyleChange;
 use crate::app::state::OpenDoc;
@@ -32,6 +33,10 @@ pub const SWATCH_REGION: &str = "properties.textobject.swatch";
 /// The same argument every other region here makes about its own state.
 // ui-text-exempt: trace region name, never displayed
 pub const INK_REGION: &str = "properties.textobject.ink";
+/// The opacity field's region; `{OPACITY_REGION}.unknown` where the file's
+/// opacity cannot be read.
+// ui-text-exempt: trace region name, never displayed
+pub const OPACITY_REGION: &str = "properties.textobject.opacity";
 
 /// What this object's text is painted in, as the control has to draw it.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -66,6 +71,8 @@ struct Reading {
     runs: Vec<usize>,
     /// What the swatch shows.
     colour: Colour,
+    /// What the opacity row shows; `None` for an object with no show run.
+    alpha: Option<Alpha>,
 }
 
 impl TextObjectDraft {
@@ -78,6 +85,7 @@ impl TextObjectDraft {
                 crate::canvas::textedit::pin::object_text(doc, page, object).map(|found| Reading {
                     runs: (found.first_run..=found.last_run).collect(),
                     colour: classify(&found),
+                    alpha: Alpha::of(found.alphas.iter().copied()),
                 });
         }
         self.read.is_some()
@@ -167,9 +175,9 @@ pub fn section(
                 crate::diag::ui_rect_visible(INK_REGION, said.rect, ui.clip_rect());
                 return;
             }
-            // No opacity: the engine writes text's `/ca` but reports none to
-            // read (our G225), and a slider starting at a guess would reset
-            // the opacity of text whose colour alone was changed.
+            // Opacity has its own row below: a picker carrying it would
+            // commit ink and opacity together, so moving one would rewrite
+            // the other across runs that disagree on it.
             Colour::Agreed(ink) => Shown::Agreed(Pick { ink, opacity: None }),
             Colour::Mixed => Shown::Mixed {
                 with_opacity: false,
@@ -195,6 +203,27 @@ pub fn section(
             change: StyleChange::Fill(fill),
         });
     }
+    if let Some(alpha) = read.alpha {
+        crate::diag::trace_changed(OPACITY_REGION, || {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "text-opacity-shown page={page} object={object} alpha={}",
+                alpha.token()
+            )
+        });
+        if let Some(a) = opacityrow::row(
+            ui,
+            crate::text::strokestyle::text_opacity_label(),
+            alpha,
+            OPACITY_REGION,
+        ) {
+            actions.push(Action::TextStyle {
+                page,
+                runs: read.runs.clone(),
+                change: StyleChange::Opacity(a),
+            });
+        }
+    }
 
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     // The separator for the WHOLE text block, this section and the editor
@@ -214,6 +243,7 @@ mod tests {
             first_run: 0,
             last_run: fills.len().saturating_sub(1),
             fills,
+            alphas: Vec::new(),
         }
     }
 

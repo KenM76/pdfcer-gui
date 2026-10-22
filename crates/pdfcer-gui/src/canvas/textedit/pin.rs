@@ -376,6 +376,10 @@ pub struct ObjectText {
     /// See [`RunFill`] — and in particular why *"no colour operator"* and *"no
     /// glyphs"* are two variants rather than one `None`.
     pub fills: Vec<RunFill>,
+    /// The fill opacity of each of the object's show runs in the vector model
+    /// (`vector::TextRun::fill_alpha`), in content order; `None` where the
+    /// engine could not read the `/ca` in force.
+    pub alphas: Vec<Option<f64>>,
 }
 
 /// **What one run of a text object is painted in.**
@@ -398,7 +402,7 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
     // The object's own byte span, and the confirmation that it is text at all.
     // Read first and dropped before the extraction, so the provider's `Ref` is
     // not held across the expensive half.
-    let span = {
+    let (span, alphas) = {
         // The provider is asked through the trait rather than through its
         // inherent `page_objects()`, because the trait method is guarded on the
         // PAGE — the provider decomposes exactly one page, and its inherent
@@ -408,7 +412,9 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
         let provider = doc.page_objects()?;
         let model = provider.page_objects_model(page)?;
         match model.objects.get(object)? {
-            pdfcer_core::vector::VectorObject::Text(t) => t.bytes,
+            pdfcer_core::vector::VectorObject::Text(t) => {
+                (t.bytes, t.runs.iter().map(|r| r.fill_alpha).collect())
+            }
             // A path has its own colour control (`panels::properties::paint`)
             // and an image has no text. Answering `None` rather than an empty
             // reading keeps *"this is not text"* distinguishable from *"this is
@@ -465,6 +471,7 @@ pub fn object_text(doc: &OpenDoc, page: usize, object: usize) -> Option<ObjectTe
         first_run,
         last_run: last,
         fills,
+        alphas,
     })
 }
 

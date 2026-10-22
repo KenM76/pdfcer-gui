@@ -25,6 +25,13 @@ A field commits once, when a drag stops or the field loses focus, and only if
 the value changed. Otherwise every pixel of a drag would be a content rewrite
 and an undo entry.
 
+## Unreadable opacity
+
+A path's or picture's opacity the engine could not read (`fill_alpha_known` /
+`stroke_alpha_known` false) has no field: `super::opacityrow` draws the
+sentence that says so, and the trace token is `unknown`. A field must open on a
+value, and one opened on a guess would overwrite a value nobody saw.
+
 ## Mixed selections
 
 A row shows the first member's value. When members disagree it adds a note
@@ -38,4 +45,4 @@ and selects no entry.
 
 `stroke-style-shown leaves= paths= pictures= width_pt= dash= line_alpha= fill_alpha=
 picture_alpha=` is written on change. Values print to three decimals, or as
-`mixed` or `none`.
+`mixed`, `unknown` or `none`.

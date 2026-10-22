@@ -16,6 +16,9 @@ pub enum StyleChange {
     Size(f64),
     /// A new fill colour, stored in the space the operator chose.
     Fill(NewFill),
+    /// A new fill opacity, 0.0 (invisible) to 1.0 (opaque), written as an
+    /// ExtGState `/ca` (`FormatRequest::fill_alpha`).
+    Opacity(f64),
     /// A new face, named by `/Resources /Font` key or by `/BaseFont`.
     ///
     /// A `String` rather than a `FontSelector` because `pdfcer_gui::app::actions::Action`
@@ -65,6 +68,7 @@ impl StyleChange {
         match self {
             Self::Size(points) => req.drawn_size(*points),
             Self::Fill(fill) => req.fill(fill.clone()),
+            Self::Opacity(alpha) => req.fill_alpha(*alpha),
             Self::Face(selector) => req.font(pdfcer_core::text_edit::FontSelector::new(selector)),
             // `style`, **not** `synthetic`, and the one word is the whole
             // feature. `set_synthetic` means *"thicken the strokes"* and is
@@ -92,6 +96,7 @@ impl StyleChange {
         match self {
             Self::Size(_) => "size",
             Self::Fill(_) => "fill",
+            Self::Opacity(_) => "opacity",
             Self::Face(_) => "face",
             Self::FaceFile(_) => "face-file",
             Self::Weight { .. } => "weight",

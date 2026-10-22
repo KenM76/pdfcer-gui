@@ -78,6 +78,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         }),
         Box::new(invisible_text_scripted::AddedInvisibleTextIsSavedInvisible),
         Box::new(add_text_ink_scripted::AddedTextKeepsItsCmykAndOpacity),
+        Box::new(text_opacity_scripted::ClickedTextTakesAnOpacity),
         Box::new(ocr_edit_preview::AnOcrWordIsPreviewedInItsOwnFont),
         Box::new(ocr_layer_wysiwyg::TheOcrLayerDrawsAWordAsItsEditDoes),
         Box::new(ocr_layer_kept::AnEditedOcrLayerStaysALayer),

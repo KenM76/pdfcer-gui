@@ -72,6 +72,8 @@ mod markup;
 /// overwrite. Shared by [`paint`] and [`textobject`], because O89's two pieces
 /// have to answer the same three questions the same way.
 pub use pdfcer_gui_base::mkcolour;
+/// One opacity field, or the sentence saying the file's cannot be read.
+mod opacityrow;
 /// The colour of a selected path. `OPERATOR_REQUESTS.md` O89's vector half, and
 /// the colour of a whole **selection** of paths, with the indeterminate state
 /// the product class already agrees on.

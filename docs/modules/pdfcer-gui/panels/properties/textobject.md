@@ -112,10 +112,19 @@ Grey, RGB and CMYK are each read in their own space and the shared picker
 colour in two spaces reads as **mixed**: one pick writes one space to every
 run.
 
-**No opacity row.** The engine writes text's fill opacity
-(`FormatRequest::set_fill_alpha`) but reports none to read (our G225). A
-slider opened at a guess would reset the opacity of text whose colour alone
-was changed, so the row is withheld until the reading exists.
+**Opacity has its own row**, not the picker's slider. The engine reads each
+show run's fill opacity (`vector::TextRun::fill_alpha`, carried into
+`ObjectText::alphas`) and `super::opacityrow` draws one 0–100 % field over
+them, or, when any run's `/ca` cannot be read, a sentence instead of a field.
+It is kept out of the picker because a picker commits ink and opacity
+together: over runs that disagree on one, moving the other would rewrite it.
+A new value is `StyleChange::Opacity`, written by `format_text` as an
+ExtGState `/ca`; the engine refuses by name (`OpacityUnrestorable`) when the
+opacity after the run could not be put back, and the status line says so.
+
+The row publishes `properties.textobject.opacity` (or `.opacity.unknown`) and
+traces `text-opacity-shown page= object= alpha=` on change, `alpha` being the
+value to three places, `mixed` or `unknown`.
 
 Note what this does NOT do: it does not name the ink.
 `TextColor::Other` is a fieldless variant and carries no `/Separation` name,

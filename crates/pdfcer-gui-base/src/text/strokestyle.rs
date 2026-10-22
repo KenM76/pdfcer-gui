@@ -44,6 +44,19 @@ pub fn picture_opacity_label() -> String {
     "Picture opacity".to_owned()
 }
 
+/// The one opacity row of a text object.
+#[must_use]
+pub fn text_opacity_label() -> String {
+    "Opacity".to_owned()
+}
+
+/// In place of an opacity control over a member whose opacity the file does
+/// not state readably.
+#[must_use]
+pub fn opacity_unknown() -> String {
+    "(not readable from this file — left as it is)".to_owned()
+}
+
 /// The status line after a restyle that changed everything sent.
 #[must_use]
 pub fn restyled(changed: usize) -> String {
@@ -79,6 +92,8 @@ mod tests {
             line_opacity_label(),
             fill_opacity_label(),
             picture_opacity_label(),
+            text_opacity_label(),
+            opacity_unknown(),
             restyled(2),
             restyled_partly(2, 1),
             several_undos(2),

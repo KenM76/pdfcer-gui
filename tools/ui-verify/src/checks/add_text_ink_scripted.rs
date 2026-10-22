@@ -208,7 +208,7 @@ fn judge(pdf: &std::path::Path, report: &mut CheckReport) -> Result<Option<Strin
 }
 
 /// Every numeric `/ca` in the file's uncompressed bytes.
-fn fill_alphas(bytes: &[u8]) -> Vec<f64> {
+pub(crate) fn fill_alphas(bytes: &[u8]) -> Vec<f64> {
     let text = String::from_utf8_lossy(bytes);
     text.match_indices("/ca ")
         .filter_map(|(i, _)| {

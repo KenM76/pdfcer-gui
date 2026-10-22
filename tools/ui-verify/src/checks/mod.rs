@@ -313,6 +313,8 @@ pub mod ocr_models_unwritable;
 pub mod ocr_progress;
 pub mod ocr_reading_order;
 pub mod ocr_scripted;
+/// A clicked text object's opacity, read, set and saved.
+pub mod text_opacity_scripted;
 
 /// **The operator can FIND OUT a sheet has content beside it** — the off-page census.
 pub mod off_page_census;

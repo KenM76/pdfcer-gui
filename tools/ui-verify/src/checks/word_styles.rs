@@ -196,6 +196,16 @@ impl Driven {
         Ok(Ok(()))
     }
 
+    /// Click at a page point on page 0.
+    pub(crate) fn click_page(&self, at: (f64, f64)) -> Result<()> {
+        self.pointer.click(
+            &self.session,
+            self.mapping.doc_to_window(DocPoint::new(0, at.0, at.1))?,
+        )?;
+        self.session.settle(20);
+        Ok(())
+    }
+
     /// Whether the last frame declared `region`.
     pub(crate) fn declares(&self, region: &str) -> Result<bool> {
         Ok(declared(&self.session.trace()?, self.ui_rect, region).is_some())

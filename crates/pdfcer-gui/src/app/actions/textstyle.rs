@@ -569,6 +569,7 @@ fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
             t::TextStyleRefusal::SpanNotFound
         }
         FormatError::DecorationOnInvisibleText { .. } => t::TextStyleRefusal::DecorationInvisible,
+        FormatError::OpacityUnrestorable => t::TextStyleRefusal::OpacityUnreadable,
         FormatError::TextRun(VectorEditError::TextRunHasNoWidth { .. }) => {
             t::TextStyleRefusal::WidthNoBaseline
         }

@@ -5,7 +5,8 @@
 //! drawings get one Picture opacity. Width and dash are shown and sent in
 //! **points** (`app::actions::strokestyle` converts to each path's user space).
 //! A row whose members disagree shows the first member's value and says so; a
-//! new value sets them all.
+//! new value sets them all. An opacity the file does not state readably gets
+//! no field (`super::opacityrow`).
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/strokestyle.md`.
 
@@ -14,6 +15,7 @@ use pdfcer_core::vector::{Dash, StrokeStyle, VectorObject};
 use pdfcer_gui_base::entry;
 use pdfcer_gui_base::linestyle::{DashReading, LineStyle};
 
+use super::opacityrow::{self, Alpha};
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
 use crate::canvas::target::CanvasTargetProvider as _;
@@ -63,15 +65,18 @@ struct PathRead {
     index: usize,
     width_pt: f64,
     dash: DashReading,
-    stroke_alpha: f64,
-    fill_alpha: f64,
+    /// `None` where the file's opacity could not be read.
+    stroke_alpha: Option<f64>,
+    /// `None` where the file's opacity could not be read.
+    fill_alpha: Option<f64>,
 }
 
 /// What the selection holds that this section can act on.
 struct Subjects {
     paths: Vec<PathRead>,
-    /// Pictures and placed drawings: `(index, fill_alpha)`.
-    pictures: Vec<(usize, f64)>,
+    /// Pictures and placed drawings: `(index, fill_alpha)`, `None` where the
+    /// file's opacity could not be read.
+    pictures: Vec<(usize, Option<f64>)>,
 }
 
 /// Draw the section. `true` if anything was drawn.
@@ -102,13 +107,9 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         let mut send = |style: StrokeStyle| chosen = Some((indices.clone(), style));
         path_rows(ui, &subjects.paths, &mut send);
     }
-    if let Some(reading) = Reading::of(subjects.pictures.iter().map(|&(_, a)| a))
-        && let Some(a) = opacity_row(
-            ui,
-            t::picture_opacity_label(),
-            reading,
-            REGION_PICTURE_ALPHA,
-        )
+    if let Some(alpha) = Alpha::of(subjects.pictures.iter().map(|&(_, a)| a))
+        && let Some(a) =
+            opacityrow::row(ui, t::picture_opacity_label(), alpha, REGION_PICTURE_ALPHA)
     {
         chosen = Some((
             subjects.pictures.iter().map(|&(i, _)| i).collect(),
@@ -167,16 +168,16 @@ fn path_rows(ui: &mut Ui, paths: &[PathRead], send: &mut impl FnMut(StrokeStyle)
             ..StrokeStyle::default()
         });
     }
-    if let Some(reading) = Reading::of(paths.iter().map(|p| p.stroke_alpha))
-        && let Some(a) = opacity_row(ui, t::line_opacity_label(), reading, REGION_LINE_ALPHA)
+    if let Some(alpha) = Alpha::of(paths.iter().map(|p| p.stroke_alpha))
+        && let Some(a) = opacityrow::row(ui, t::line_opacity_label(), alpha, REGION_LINE_ALPHA)
     {
         send(StrokeStyle {
             stroke_alpha: Some(a),
             ..StrokeStyle::default()
         });
     }
-    if let Some(reading) = Reading::of(paths.iter().map(|p| p.fill_alpha))
-        && let Some(a) = opacity_row(ui, t::fill_opacity_label(), reading, REGION_FILL_ALPHA)
+    if let Some(alpha) = Alpha::of(paths.iter().map(|p| p.fill_alpha))
+        && let Some(a) = opacityrow::row(ui, t::fill_opacity_label(), alpha, REGION_FILL_ALPHA)
     {
         send(StrokeStyle {
             fill_alpha: Some(a),
@@ -214,11 +215,13 @@ fn read(doc: &OpenDoc, page: usize, objects: &[usize], leaves: bool) -> Option<S
                     index,
                     width_pt: path.line_width * k,
                     dash: dash_reading(&path.dash, k),
-                    stroke_alpha: path.stroke_alpha,
-                    fill_alpha: path.fill_alpha,
+                    stroke_alpha: path.stroke_alpha_known.then_some(path.stroke_alpha),
+                    fill_alpha: path.fill_alpha_known.then_some(path.fill_alpha),
                 });
             }
-            Some(VectorObject::Image(image)) => subjects.pictures.push((index, image.fill_alpha)),
+            Some(VectorObject::Image(image)) => subjects
+                .pictures
+                .push((index, image.fill_alpha_known.then_some(image.fill_alpha))),
             _ => {}
         }
     }
@@ -300,33 +303,6 @@ fn dash_row(ui: &mut Ui, current: DashReading) -> Option<LineStyle> {
     picked
 }
 
-/// A 0–100 % opacity field. `Some` (as 0..=1) once, when an edit ends on a
-/// new value.
-fn opacity_row(ui: &mut Ui, label: String, reading: Reading, region: &str) -> Option<f64> {
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let shown = (reading.first * 100.0).round().clamp(0.0, 100.0) as u8;
-    let mut percent = shown;
-    let mut chosen = None;
-    ui.horizontal(|ui| {
-        ui.label(label);
-        let (widget, refusal) = entry::drag_value(ui, &mut percent, entry::Kind::Number(&["%"]));
-        let response = refusal.show(
-            ui.add(
-                widget
-                    .range(0..=100)
-                    .speed(1.0)
-                    .suffix(crate::text::panels::properties::markup_opacity_suffix()),
-            ),
-        );
-        crate::diag::ui_rect_visible(region, response.rect, ui.clip_rect());
-        if (response.drag_stopped() || response.lost_focus()) && percent != shown {
-            chosen = Some(f64::from(percent) / 100.0);
-        }
-        mixed_note(ui, reading.mixed);
-    });
-    chosen
-}
-
 fn mixed_note(ui: &mut Ui, mixed: bool) {
     if mixed {
         ui.label(egui::RichText::new(t::mixed()).small().weak());
@@ -350,10 +326,9 @@ fn trace(subjects: &Subjects, leaves: bool) {
             } else {
                 crate::panels::properties::widgetdash::token(dash_of(paths))
             },
-            Reading::of(paths.iter().map(|p| p.stroke_alpha)).map_or_else(none, Reading::token),
-            Reading::of(paths.iter().map(|p| p.fill_alpha)).map_or_else(none, Reading::token),
-            Reading::of(subjects.pictures.iter().map(|&(_, a)| a))
-                .map_or_else(none, Reading::token),
+            Alpha::of(paths.iter().map(|p| p.stroke_alpha)).map_or_else(none, Alpha::token),
+            Alpha::of(paths.iter().map(|p| p.fill_alpha)).map_or_else(none, Alpha::token),
+            Alpha::of(subjects.pictures.iter().map(|&(_, a)| a)).map_or_else(none, Alpha::token),
         )
     });
 }
@@ -395,8 +370,8 @@ mod tests {
             index: 0,
             width_pt: 1.0,
             dash,
-            stroke_alpha: 1.0,
-            fill_alpha: 1.0,
+            stroke_alpha: Some(1.0),
+            fill_alpha: Some(1.0),
         }
     }
 
