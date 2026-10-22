@@ -301,6 +301,8 @@ fn page_body(
             let prefs = &mut draft.working_prefs;
             display::render_quality(ui, prefs);
             ui.add_space(10.0);
+            display::smooth_pictures(ui, prefs);
+            ui.add_space(10.0);
             display::zoom_settle(ui, prefs);
             ui.add_space(10.0);
             display::page_cache(ui, prefs);

@@ -24,6 +24,7 @@ pub mod repair_form_fonts;
 pub mod run_width;
 /// A selection dropped on another window is pasted there; Shift moves it.
 pub mod selection_drop;
+pub mod smooth_pictures;
 /// One text object split into one per line, and a split the engine refuses.
 pub mod split_lines;
 pub mod spots_flattened;

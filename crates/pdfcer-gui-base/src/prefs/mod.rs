@@ -42,6 +42,7 @@ pub mod ocrmodels;
 /// file format — parser and writer together, on [`printing`]'s precedent. See
 /// its header.
 pub mod offpage;
+pub mod pictures;
 pub mod shortcuts;
 pub mod snapshot;
 pub mod trust;
@@ -83,6 +84,7 @@ pub use ocrmodels::OcrModelPrefs;
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
 pub use pastechords::PasteChords;
+pub use pictures::PicturePrefs;
 pub use shortcuts::ShortcutPrefs;
 pub use snapshot::SnapshotPrefs;
 pub use trust::TrustPrefs;
@@ -380,6 +382,8 @@ pub struct Prefs {
     pub ocr_models: OcrModelPrefs,
     /// Web links, other files and 3D content: Security ▸ Trust. See [`trust`].
     pub trust: TrustPrefs,
+    /// How the page view draws an enlarged picture. See [`pictures`].
+    pub pictures: PicturePrefs,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -834,6 +838,7 @@ impl Default for Prefs {
             snapshot: SnapshotPrefs::default(),
             ocr_models: OcrModelPrefs::default(),
             trust: TrustPrefs::default(),
+            pictures: PicturePrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

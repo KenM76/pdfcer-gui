@@ -88,6 +88,7 @@ impl OpenDoc {
             // `RenderRequest` at all.
             stroke_display: self.view.stroke_display(),
             subpixel_culling: self.view.skip_tiny_details,
+            image_magnify: self.prefs.pictures.magnify(),
             layers: self.layer_visibility(),
             layers_generation: self.layers.generation,
             // The SNAPSHOT, not a live read — see the field's own docs.

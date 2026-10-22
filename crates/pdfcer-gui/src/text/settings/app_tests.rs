@@ -80,7 +80,7 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 47;
+    const SETTINGS_COUNT: usize = 48;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -211,6 +211,7 @@ mod tests {
             // the obligation is a property of a **control in this window**, not
             // of which file its value happens to be stored in.
             (quality_title(), quality_silence(), quality_radius()),
+            (pictures_title(), pictures_silence(), pictures_radius()),
             (settle_title(), settle_silence(), settle_radius()),
             (
                 page_cache_title(),

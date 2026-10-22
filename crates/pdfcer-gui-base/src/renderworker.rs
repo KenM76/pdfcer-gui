@@ -258,6 +258,10 @@ pub struct RenderRequest {
     /// `view.skip_tiny_details`, canvas only; assigned to the options in
     /// `render_on_worker` and nowhere else, like [`Self::stroke_display`].
     pub subpixel_culling: bool,
+    /// How a picture enlarged past its own pixels is drawn — the canvas's
+    /// `PicturePrefs::magnify`. Canvas only, like [`Self::stroke_display`];
+    /// not a staleness key, because `adopt_settings` drops every cached raster.
+    pub image_magnify: pdfcer_core::settings::MagnifyFilter,
     /// The operator's configuration, as of the frame this request was built.
     ///
     /// **Five of the thirteen settings change what a rasterization looks
@@ -552,6 +556,7 @@ fn render_on_worker(request: &RenderRequest, cancel: &RenderCancel) -> Outcome {
     // and `pdfcer_gui::app::settings::tests::only_the_canvas_worker_sets_stroke_display`.
     options.stroke_display = request.stroke_display;
     options.subpixel_culling = request.subpixel_culling;
+    options.image_magnify = request.image_magnify;
     // Cloned rather than moved because the worker takes the request by
     // reference — a `BTreeSet<ObjId>` per render, against a rasterization
     // measured in seconds. `None` here is not the same as an empty set: it

@@ -985,6 +985,7 @@ impl Prefs {
         snapshot::write_block(&self.snapshot, &mut out);
         ocrmodels::write_block(&self.ocr_models, &mut out);
         trust::write_block(&self.trust, &mut out);
+        pictures::write_block(&self.pictures, &mut out);
 
         out
     }

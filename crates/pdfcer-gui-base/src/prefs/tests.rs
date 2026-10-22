@@ -31,6 +31,9 @@ fn every_preference_round_trips_through_the_file() {
         for fit in OpeningFit::ALL {
             for reach in RedactionReach::ALL {
                 let original = Prefs {
+                    pictures: crate::prefs::PicturePrefs {
+                        smooth_enlarged: false,
+                    },
                     trust: {
                         let mut t = crate::prefs::TrustPrefs::default();
                         t.remember_site("example.com", false);
@@ -599,6 +602,9 @@ fn the_writer_emits_no_key_the_parser_rejects() {
     // A non-default in every field, so no emitted value can coincide with
     // what a failed parse would have left behind.
     let prefs = Prefs {
+        pictures: crate::prefs::PicturePrefs {
+            smooth_enlarged: false,
+        },
         trust: {
             let mut t = crate::prefs::TrustPrefs::default();
             t.remember_site("example.com", false);

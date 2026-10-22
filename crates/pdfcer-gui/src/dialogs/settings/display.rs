@@ -34,6 +34,22 @@ pub fn render_quality(ui: &mut Ui, prefs: &mut Prefs) {
     }
 }
 
+/// Whether a picture enlarged past its own pixels is smoothed — O322.
+pub fn smooth_pictures(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::pictures_title(),
+        t::pictures_silence(),
+        t::pictures_radius(),
+    );
+    widgets::toggle(
+        ui,
+        &mut prefs.pictures.smooth_enlarged,
+        t::pictures_label(),
+        Some(t::pictures_note()),
+    );
+}
+
 /// How much memory the page cache may hold.
 pub fn page_cache(ui: &mut Ui, prefs: &mut Prefs) {
     widgets::header(
