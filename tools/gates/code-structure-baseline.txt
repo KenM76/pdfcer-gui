@@ -415,13 +415,10 @@ fn crates/pdfcer-gui/src/panels/properties/formfield.rs::rename_row
 fn crates/pdfcer-gui/src/panels/properties/formfield.rs::section
 fn crates/pdfcer-gui/src/panels/properties/geometry.rs::section
 fn crates/pdfcer-gui/src/panels/properties/geometry/annot.rs::section
-fn crates/pdfcer-gui/src/panels/properties/markup.rs::from_spec
-fn crates/pdfcer-gui/src/panels/properties/markup.rs::read
 fn crates/pdfcer-gui/src/panels/properties/markup.rs::section
 fn crates/pdfcer-gui/src/panels/properties/markup/rows.rs::endings_row
 fn crates/pdfcer-gui/src/panels/properties/markup/textannot.rs::icon_row
 fn crates/pdfcer-gui/src/panels/properties/markup/textannot.rs::size_row
-fn crates/pdfcer-gui/src/panels/properties/markup/textbox.rs::border_rows
 fn crates/pdfcer-gui/src/panels/properties/mod.rs::body_sections
 fn crates/pdfcer-gui/src/panels/properties/mod.rs::object_section
 fn crates/pdfcer-gui/src/panels/properties/mod.rs::property_rows

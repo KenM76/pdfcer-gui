@@ -156,13 +156,6 @@ pub const fn text_box_text_colour_label() -> &'static str {
     "Text colour"
 }
 
-/// Shown instead of the text colour swatch when the file's colour is CMYK.
-#[must_use]
-pub const fn text_box_text_colour_cmyk() -> &'static str {
-    "The text is coloured in CMYK, which this swatch cannot show; picking a colour here \
-     replaces it with an RGB one."
-}
-
 /// The font row on a text box.
 #[must_use]
 pub const fn text_box_font_label() -> &'static str {

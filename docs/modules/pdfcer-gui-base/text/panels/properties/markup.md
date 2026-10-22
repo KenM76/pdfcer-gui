@@ -176,19 +176,6 @@ back different from the one that went out) rather than the mechanism (a
 dictionary key). Both surfaces read this one string, so the Format tab and
 this panel cannot come to explain the same act two different ways.
 
-### `fn markup_colour_narrowed`
-
-§12.5.2 lets `/C` and `/IC` be a 0-, 1-, 3- or **4**-component array, and the
-four-component case is CMYK, which is not rare on a CAD sheet where the
-producer is plotter-bound. The swatches convert one for display and a change
-made through them writes RGB in its place, which is a real narrowing of the
-colour space and is disclosed rather than performed quietly — the engine's
-own posture on every conversion it makes.
-
-The full argument, including the refuse-to-show behaviour this replaced and
-why that was worse than an approximation, is on
-`crate::panels::properties::markup`'s `swatch_of`.
-
 ### `fn markup_dropped`
 
 `set_markup_style` redraws a mark from the geometry pdfcer models, so

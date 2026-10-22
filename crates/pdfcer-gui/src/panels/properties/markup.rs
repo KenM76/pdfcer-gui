@@ -150,18 +150,6 @@ fn markup_rows(
 ) {
     colour_row(ui, current, target, actions);
     fill_row(ui, current, target, actions);
-    // The narrowing disclosure sits under BOTH swatches and above the rest,
-    // because it qualifies them and a caveat below the thing it qualifies
-    // arrives after the operator has drawn their conclusion. It is absent —
-    // not greyed, not blank — for the overwhelming
-    // majority of marks, whose `/C` is RGB or grey and costs no conversion.
-    if current.colour.narrowed || current.interior.narrowed {
-        ui.label(
-            egui::RichText::new(t::markup_colour_narrowed())
-                .small()
-                .weak(),
-        );
-    }
     width_row(ui, current, target, actions);
     // Directly under the width, because the two are one subject — *what the
     // line looks like* — and the Format tab's band puts them adjacent for the
@@ -274,15 +262,43 @@ struct Current {
     marker: Option<Swatch>,
 }
 
-/// A colour a swatch can show, and the honesty that goes with it.
+/// An annotation colour as the file stores it, in its own device space.
 #[derive(Debug, Clone, Copy, Default)]
 struct Swatch {
-    /// What to show, `None` when there is no such key or it names no device
-    /// space §8.6.3 defines.
-    rgb: Option<[u8; 3]>,
-    /// `true` when [`Self::rgb`] is a **conversion** rather than the file's own
-    /// value, so a change made through it narrows the colour space.
-    narrowed: bool,
+    /// `None` when there is no such key or it names no device space §8.6.3
+    /// defines.
+    color: Option<Color>,
+}
+
+impl Swatch {
+    /// The colour as the screen draws it, for a test.
+    #[cfg(test)]
+    fn rgb(self) -> Option<[u8; 3]> {
+        self.color.map(|c| {
+            let [r, g, b, _] = pdfcer_gui_base::colourpick::Ink::from(c)
+                .screen()
+                .to_array();
+            [r, g, b]
+        })
+    }
+}
+
+/// One swatch over `shown` in its own space, opening on `absent` when there is
+/// none; `Some` once, on the frame its picker closed changed, so a drag across
+/// the picker is one edit.
+fn pick(ui: &mut Ui, salt: &str, shown: Swatch, absent: Color, region: &str) -> Option<Color> {
+    use pdfcer_gui_base::colourpick::{Ink, Pick, Shown, Spaces, show};
+    let ink = Ink::from(shown.color.unwrap_or(absent));
+    // The hint is shown for a mixed value only, which one mark never has.
+    show(
+        ui,
+        salt,
+        Shown::Agreed(Pick { ink, opacity: None }),
+        Spaces::ALL,
+        region,
+        "",
+    )
+    .map(|p| p.ink.into())
 }
 
 /// Even "nothing to show" asks the engine what the properties are.
@@ -439,7 +455,7 @@ impl Current {
             // `alpha` is carried: `set_annot_opacity` writes `/CA` on any
             // annotation, so the opacity row is offered for these too.
             return Self {
-                reach: text.map_or(Reach::Neither, Reach::TextAnnot),
+                reach: text.map_or(Reach::Neither, |r| Reach::TextAnnot(Box::new(r))),
                 alpha,
                 ..Self::default()
             };
@@ -576,37 +592,11 @@ impl Current {
     }
 }
 
-/// An annotation's `/C` or `/IC` as something a swatch can show, plus whether
-/// showing it cost a conversion.
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+/// An annotation's `/C` or `/IC` as a swatch shows it.
 fn swatch_of(color: Option<&Color>) -> Swatch {
-    let byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-    let Some(color) = color else {
-        return Swatch::default();
-    };
-    match *color {
-        Color::Rgb(r, g, b) => Swatch {
-            rgb: Some([byte(r), byte(g), byte(b)]),
-            narrowed: false,
-        },
-        Color::Gray(v) => Swatch {
-            rgb: Some([byte(v), byte(v), byte(v)]),
-            narrowed: false,
-        },
-        Color::Cmyk(c, m, y, k) => Swatch {
-            rgb: Some([
-                byte(1.0 - (c + k).min(1.0)),
-                byte(1.0 - (m + k).min(1.0)),
-                byte(1.0 - (y + k).min(1.0)),
-            ]),
-            narrowed: true,
-        },
+    Swatch {
+        color: color.copied(),
     }
-    // EXHAUSTIVE, with no wildcard, and deliberately so. `Color` is not
-    // `#[non_exhaustive]`, so a fourth device space would fail to compile here
-    // rather than fall into a catch-all that shows the operator a default black
-    // square. A wildcard arm here is what lets a colour space sit unhandled and
-    // unnoticed.
 }
 
 /// A `/C` array as a colour: 1, 3 or 4 numbers are gray, RGB or CMYK

@@ -11,11 +11,10 @@ question is asked about, and a helper that derived the second from the
 first would have put this module's deleted list straight back — in the
 tests, where it could no longer be seen.
 
-### `fn a_swatch_shows_grey_and_rgb_without_calling_them_converted`
+### `fn a_swatch_keeps_the_stored_colour_in_its_own_space`
 
-Grey is not flagged because it is **lossless** in both directions —
-`Gray(v)` and `Rgb(v, v, v)` are the same ink — where CMYK is not, which
-is the distinction `swatch_of`'s own docs draw.
+A CMYK mark read into an RGB approximation would be rewritten as RGB by the
+first pick; the swatch must hold the four components the file has.
 
 ### `fn a_subtype_the_style_verb_refuses_offers_no_controls`
 

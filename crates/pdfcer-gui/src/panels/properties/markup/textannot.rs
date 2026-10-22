@@ -23,6 +23,9 @@ pub(super) const REGION: &str = "properties.markup.textannot"; // ui-text-exempt
 /// actually on screen.
 pub(super) const SIZE_REGION: &str = "properties.markup.textannot.size"; // ui-text-exempt: trace region name, never displayed
 
+/// The colour swatch's region, and its picker `….picker`.
+pub(super) const COLOUR_REGION: &str = "properties.markup.textannot.colour"; // ui-text-exempt: trace region name, never displayed
+
 /// The **fit chooser**'s region — see [`SIZE_REGION`] for the argument.
 pub(super) const FIT_REGION: &str = "properties.markup.textannot.fit"; // ui-text-exempt: trace region name, never displayed
 
@@ -60,7 +63,7 @@ pub(super) enum Reach {
     /// `/FreeText`.
     /// `annot_author::text_spec_from_dict` read a spec and
     /// [`Reading::of`] accepted the face.
-    TextAnnot(Reading),
+    TextAnnot(Box<Reading>),
     /// Neither reader could produce a spec: a `/Subtype` outside both families,
     /// or geometry pdfcer does not model.
     Neither,
@@ -264,17 +267,6 @@ pub(super) fn rows(
         return;
     }
     colour_row(ui, current, target, actions);
-    // The narrowing disclosure sits directly under the swatch it qualifies,
-    // which is also the parent's placement. A caveat placed after the NEXT
-    // control arrives once the operator has already drawn their conclusion, so
-    // it must sit against its own subject and before anything else.
-    if current.colour.narrowed {
-        ui.label(
-            egui::RichText::new(t::markup_colour_narrowed())
-                .small()
-                .weak(),
-        );
-    }
     // The size sits between the colour and the icon, and the two never
     // appear together: a stamp takes a size and no icon, a sticky note takes an
     // icon and no size. It is placed here rather than last so that the ORDER a
@@ -569,24 +561,24 @@ fn colour_row(
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    // The fallback is the mark's own default rather than black, and it
-    // matters here in a way it does not in the parent: `text_spec_from_dict`
-    // supplies a default `/C` when the key is absent (yellow for a note, black
-    // for a stamp), so `current.colour.rgb` is `None` only when the value is
-    // present and names no device space §8.6.3 defines. Black is then as good
-    // an answer as any and the operator's first pick replaces it.
-    let mut rgb = current.colour.rgb.unwrap_or([0, 0, 0]);
+    // `text_spec_from_dict` supplies a default `/C` when the key is absent
+    // (yellow for a note, black for a stamp), so an absent colour here is a
+    // value naming no device space, and black is as good a start as any.
     ui.horizontal(|ui| {
         ui.label(t::markup_colour_label());
-        if ui.color_edit_button_srgb(&mut rgb).changed() {
+        let black = Color::Rgb(0.0, 0.0, 0.0);
+        // ui-text-exempt: an egui id salt, never displayed
+        if let Some(color) = super::pick(
+            ui,
+            "properties-textannot-colour",
+            current.colour,
+            black,
+            COLOUR_REGION,
+        ) {
             actions.push(Action::Annot(AnnotAction::SetTextAnnotStyle {
                 id: target.id,
                 style: Box::new(TextAnnotStyle {
-                    color: Some(Color::Rgb(
-                        f64::from(rgb[0]) / 255.0,
-                        f64::from(rgb[1]) / 255.0,
-                        f64::from(rgb[2]) / 255.0,
-                    )),
+                    color: Some(color),
                     // Explicit `None` on EVERY other field, and it is
                     // the contract rather than a formality: "a field left
                     // `None` is left alone", so a call that names only the

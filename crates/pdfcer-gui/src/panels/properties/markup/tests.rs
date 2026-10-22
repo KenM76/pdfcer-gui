@@ -89,42 +89,20 @@ fn line(endings: (LineEnding, LineEnding)) -> MarkupSpec {
     }
 }
 
-/// Grey resolves to an equal-component swatch, and RGB round-trips —
-/// neither of them flagged as narrowing.
+/// A swatch keeps the file's colour in its own space, so a CMYK mark is
+/// edited as CMYK rather than through an RGB approximation.
 #[test]
-fn a_swatch_shows_grey_and_rgb_without_calling_them_converted() {
-    let red = swatch_of(Some(&Color::Rgb(1.0, 0.0, 0.0)));
-    assert_eq!(red.rgb, Some([255, 0, 0]));
-    assert!(!red.narrowed);
-
-    let black = swatch_of(Some(&Color::Gray(0.0)));
-    assert_eq!(black.rgb, Some([0, 0, 0]));
-    assert!(!black.narrowed);
-
-    assert_eq!(
-        swatch_of(Some(&Color::Gray(1.0))).rgb,
-        Some([255, 255, 255])
-    );
-    assert_eq!(swatch_of(None).rgb, None);
-}
-
-/// **A CMYK `/C` shows, and says it is a conversion.**
-///
-///
-#[test]
-fn a_cmyk_colour_is_shown_as_a_conversion_and_is_flagged_as_one() {
-    // Pure cyan: 1 - min(1, 1 + 0) = 0 red, 1 - 0 = 1 green and blue.
+fn a_swatch_keeps_the_stored_colour_in_its_own_space() {
     let cyan = swatch_of(Some(&Color::Cmyk(1.0, 0.0, 0.0, 0.0)));
-    assert_eq!(cyan.rgb, Some([0, 255, 255]));
-    assert!(
-        cyan.narrowed,
-        "a converted colour must announce itself, or the swatch is a quiet lie"
-    );
-    // Registration black: every channel plus K, clamped, is black.
+    assert!(matches!(cyan.color, Some(Color::Cmyk(c, _, _, k)) if c == 1.0 && k == 0.0));
+    let grey = swatch_of(Some(&Color::Gray(1.0)));
+    assert!(matches!(grey.color, Some(Color::Gray(_))));
+    assert_eq!(grey.rgb(), Some([255, 255, 255]));
     assert_eq!(
-        swatch_of(Some(&Color::Cmyk(1.0, 1.0, 1.0, 1.0))).rgb,
-        Some([0, 0, 0])
+        swatch_of(Some(&Color::Rgb(1.0, 0.0, 0.0))).rgb(),
+        Some([255, 0, 0])
     );
+    assert_eq!(swatch_of(None).rgb(), None);
 }
 
 /// **A mark the style verb cannot reach gets NO rows.**
@@ -144,7 +122,7 @@ fn a_subtype_the_style_verb_refuses_offers_no_controls() {
         false,
     );
     assert!(matches!(refused.reach, Reach::Neither));
-    assert_eq!(refused.colour.rgb, None);
+    assert_eq!(refused.colour.rgb(), None);
     assert_eq!(refused.width, None);
     assert!(!refused.offers_fill());
     assert_eq!(refused.endings, None);
@@ -167,7 +145,7 @@ fn a_subtype_the_style_verb_reads_offers_its_controls() {
         false,
     );
     assert!(matches!(ok.reach, Reach::Markup));
-    assert_eq!(ok.colour.rgb, Some([255, 0, 0]));
+    assert_eq!(ok.colour.rgb(), Some([255, 0, 0]));
     assert_eq!(ok.width, Some(2.0));
     assert_eq!(ok.alpha, Some(0.5));
 }
@@ -206,11 +184,11 @@ fn only_a_shape_with_an_interior_gets_a_fill_row() {
 #[test]
 fn the_fill_swatch_reads_back_the_interior_and_knows_when_it_is_absent() {
     let filled = current(&square(Some(Color::Rgb(0.0, 0.0, 1.0))), b"Square");
-    assert_eq!(filled.interior.rgb, Some([0, 0, 255]));
+    assert_eq!(filled.interior.rgb(), Some([0, 0, 255]));
 
     let unfilled = current(&square(None), b"Square");
     assert!(unfilled.offers_fill(), "the row draws");
-    assert_eq!(unfilled.interior.rgb, None, "…with no Clear beside it");
+    assert_eq!(unfilled.interior.rgb(), None, "…with no Clear beside it");
 }
 
 /// **The line-ending choosers appear for a `/Line` and for nothing
@@ -263,14 +241,8 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
         Current {
             reach: Reach::Markup,
             support: MarkupStyleSupport::for_subtype(subtype),
-            colour: Swatch {
-                rgb: Some([0, 0, 0]),
-                narrowed: false,
-            },
-            interior: Swatch {
-                rgb: Some([255, 255, 255]),
-                narrowed: false,
-            },
+            colour: swatch_of(Some(&Color::Rgb(0.0, 0.0, 0.0))),
+            interior: swatch_of(Some(&Color::Rgb(1.0, 1.0, 1.0))),
             width: Some(2.0),
             // `Solid` is a value, not an absence — `linestyle::read` is
             // total — so there is no "no dash" state to over-supply, which
@@ -453,7 +425,7 @@ fn each_family_routes_to_its_own_verb() {
     assert_eq!(reading.face, Face::Sticky);
     assert_eq!(reading.icon, Some(StickyIcon::Comment));
     assert_eq!(
-        reading.colour.rgb,
+        reading.colour.rgb(),
         Some([150, 67, 252]),
         "the swatch must show the note's own /C, not a default"
     );
@@ -517,7 +489,7 @@ fn a_text_box_routes_with_its_properties_and_an_unreadable_mark_does_not() {
     assert_eq!(reading.face, Face::TextBox);
     assert!(!reading.face.takes_icon());
     assert_eq!(
-        reading.colour.rgb,
+        reading.colour.rgb(),
         Some([255, 0, 0]),
         "/C is the border colour"
     );
@@ -526,9 +498,9 @@ fn a_text_box_routes_with_its_properties_and_an_unreadable_mark_does_not() {
         .expect("a text box carries its rows' values");
     assert!((tb.border_width - 2.0).abs() < f64::EPSILON);
     assert!(tb.bordered);
-    assert_eq!(tb.text_rgb, Some([0, 0, 255]));
+    assert_eq!(tb.text.rgb(), Some([0, 0, 255]));
     assert_eq!(tb.font, pdfcer_core::fontdata::Std14::TimesRoman);
-    assert_eq!(tb.fill.rgb, None, "no background was set");
+    assert_eq!(tb.fill.rgb(), None, "no background was set");
 
     // A `/Link`: neither reader produces a spec, so neither verb reaches it.
     let unreadable = text_current(None, b"Link");

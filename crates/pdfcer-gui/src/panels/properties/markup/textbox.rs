@@ -52,10 +52,10 @@ pub(super) struct TextBox {
     pub(super) bordered: bool,
     /// `/BS /D`, as the chooser shows it.
     pub(super) dash: DashReading,
-    /// The background; `rgb: None` when the box has none.
+    /// The background; `color: None` when the box has none.
     pub(super) fill: super::Swatch,
-    /// The text colour from `/DA`; `None` when it is CMYK.
-    pub(super) text_rgb: Option<[u8; 3]>,
+    /// The text colour from `/DA`.
+    pub(super) text: super::Swatch,
     /// The face from `/DA`.
     pub(super) font: Std14,
     /// The size from `/DA`, in points; 0 is auto-size.
@@ -82,7 +82,7 @@ impl TextBox {
             bordered: border.is_some() && *border_width > 0.0,
             dash: dash_reading(frame.dash.as_ref()),
             fill: super::swatch_of(frame.fill.as_ref()),
-            text_rgb: text_rgb(*color),
+            text: super::swatch_of(Some(&text_ink(*color))),
             font: *font,
             font_size: *font_size,
         })
@@ -99,39 +99,26 @@ fn dash_reading(dash: Option<&BorderDash>) -> DashReading {
     }
 }
 
-/// A `/DA` colour as a swatch shows it; `None` for CMYK, which an sRGB swatch
-/// would narrow.
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn text_rgb(ink: TextColor) -> Option<[u8; 3]> {
-    let byte = |v: f64| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
+/// A `/DA` colour in the annotation colour type the swatch edits.
+const fn text_ink(ink: TextColor) -> Color {
     match ink {
-        TextColor::Gray(g) => Some([byte(g); 3]),
-        TextColor::Rgb(r, g, b) => Some([byte(r), byte(g), byte(b)]),
-        TextColor::Cmyk(..) => None,
+        TextColor::Gray(g) => Color::Gray(g),
+        TextColor::Rgb(r, g, b) => Color::Rgb(r, g, b),
+        TextColor::Cmyk(c, m, y, k) => Color::Cmyk(c, m, y, k),
     }
 }
 
-/// A swatch value as its three device RGB components.
-fn rgb_of(rgb: [u8; 3]) -> (f64, f64, f64) {
-    (
-        f64::from(rgb[0]) / 255.0,
-        f64::from(rgb[1]) / 255.0,
-        f64::from(rgb[2]) / 255.0,
-    )
+/// A picked colour as a `/DA` colour.
+const fn da_ink(colour: Color) -> TextColor {
+    match colour {
+        Color::Gray(g) => TextColor::Gray(g),
+        Color::Rgb(r, g, b) => TextColor::Rgb(r, g, b),
+        Color::Cmyk(c, m, y, k) => TextColor::Cmyk(c, m, y, k),
+    }
 }
 
-/// One colour swatch; `Some` only on the frame its picker closed changed.
-fn swatch(ui: &mut Ui, salt: &str, rgb: [u8; 3], region: &str) -> Option<(f64, f64, f64)> {
-    // The hint is shown for a mixed value only, which one box never has.
-    crate::panels::properties::swatch::show(
-        ui,
-        salt,
-        crate::panels::properties::swatch::Value::Agreed(rgb),
-        region,
-        "",
-    )
-    .map(rgb_of)
-}
+/// Black, where a box has no colour to show.
+const BLACK: Color = Color::Rgb(0.0, 0.0, 0.0);
 
 /// Raise one restyle of the box.
 fn push(target: &AnnotTarget, actions: &mut Vec<Action>, style: TextAnnotStyle) {
@@ -153,12 +140,11 @@ pub(super) fn rows(
     crate::diag::trace_changed("textbox-rows", || {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "textbox-rows id={} width={} bordered={} fill={} text={} font={:?} size={}",
+            "textbox-rows id={} width={} bordered={} fill={} font={:?} size={}",
             target.id.num,
             tb.border_width,
             u8::from(tb.bordered),
-            u8::from(tb.fill.rgb.is_some()),
-            u8::from(tb.text_rgb.is_some()),
+            u8::from(tb.fill.color.is_some()),
             tb.font,
             tb.font_size
         )
@@ -178,12 +164,17 @@ fn border_rows(
     target: &AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    let border = colour.rgb.unwrap_or([0, 0, 0]);
     ui.horizontal(|ui| {
         ui.label(ts::text_box_border_colour_label());
         // ui-text-exempt: an egui id salt, never displayed
-        if let Some((r, g, b)) = swatch(ui, "properties-textbox-border", border, BORDER_REGION) {
-            let color = Some(Color::Rgb(r, g, b));
+        if let Some(c) = super::pick(
+            ui,
+            "properties-textbox-border",
+            colour,
+            BLACK,
+            BORDER_REGION,
+        ) {
+            let color = Some(c);
             push(
                 target,
                 actions,
@@ -194,13 +185,6 @@ fn border_rows(
             );
         }
     });
-    if colour.narrowed {
-        ui.label(
-            egui::RichText::new(t::markup_colour_narrowed())
-                .small()
-                .weak(),
-        );
-    }
 
     let mut width = tb.border_width;
     ui.horizontal(|ui| {
@@ -257,12 +241,12 @@ fn border_rows(
 fn fill_row(ui: &mut Ui, tb: &TextBox, target: &AnnotTarget, actions: &mut Vec<Action>) {
     // An absent background opens the picker on white without writing
     // anything until a colour is picked.
-    let fill = tb.fill.rgb.unwrap_or([255, 255, 255]);
+    let white = Color::Rgb(1.0, 1.0, 1.0);
     ui.horizontal(|ui| {
         ui.label(ts::text_box_fill_label());
         // ui-text-exempt: an egui id salt, never displayed
-        if let Some((r, g, b)) = swatch(ui, "properties-textbox-fill", fill, FILL_REGION) {
-            let fill = Some(StyleEdit::Set(Color::Rgb(r, g, b)));
+        if let Some(c) = super::pick(ui, "properties-textbox-fill", tb.fill, white, FILL_REGION) {
+            let fill = Some(StyleEdit::Set(c));
             push(
                 target,
                 actions,
@@ -272,7 +256,7 @@ fn fill_row(ui: &mut Ui, tb: &TextBox, target: &AnnotTarget, actions: &mut Vec<A
                 },
             );
         }
-        if tb.fill.rgb.is_none() {
+        if tb.fill.color.is_none() {
             ui.label(egui::RichText::new(ts::text_box_fill_none()).small().weak());
         } else if ui.button(t::markup_clear()).clicked() {
             let fill = Some(StyleEdit::Clear);
@@ -286,23 +270,15 @@ fn fill_row(ui: &mut Ui, tb: &TextBox, target: &AnnotTarget, actions: &mut Vec<A
             );
         }
     });
-    if tb.fill.narrowed {
-        ui.label(
-            egui::RichText::new(t::markup_colour_narrowed())
-                .small()
-                .weak(),
-        );
-    }
 }
 
 /// The text colour, `/DA`'s fill.
 fn text_colour_row(ui: &mut Ui, tb: &TextBox, target: &AnnotTarget, actions: &mut Vec<Action>) {
-    let ink = tb.text_rgb.unwrap_or([0, 0, 0]);
     ui.horizontal(|ui| {
         ui.label(ts::text_box_text_colour_label());
         // ui-text-exempt: an egui id salt, never displayed
-        if let Some((r, g, b)) = swatch(ui, "properties-textbox-ink", ink, INK_REGION) {
-            let text_color = Some(TextColor::Rgb(r, g, b));
+        if let Some(c) = super::pick(ui, "properties-textbox-ink", tb.text, BLACK, INK_REGION) {
+            let text_color = Some(da_ink(c));
             push(
                 target,
                 actions,
@@ -313,13 +289,6 @@ fn text_colour_row(ui: &mut Ui, tb: &TextBox, target: &AnnotTarget, actions: &mu
             );
         }
     });
-    if tb.text_rgb.is_none() {
-        ui.label(
-            egui::RichText::new(ts::text_box_text_colour_cmyk())
-                .small()
-                .weak(),
-        );
-    }
 }
 
 /// The face and the size.

@@ -34,13 +34,10 @@ why none of these functions takes a `support` argument.
    each; a constant copied down here would be the start of two answers to
    the same question.
 
-# ⚠ `swatch_of` is NOT here, and it looks like it should be
+# `swatch_of` and `pick` are the parent's
 
-It converts an annotation's `/C` or `/IC` into something a swatch can
-show and reports whether that cost a narrowing. Its callers are the
-parent's gathering `match` and [`super::textannot`] — neither is a row.
-It is a colour-space conversion, and a file about controls is the wrong
-home for one.
+Their callers include [`super::textannot`] and [`super::textbox`], neither a
+row file.
 
 ## Item notes
 

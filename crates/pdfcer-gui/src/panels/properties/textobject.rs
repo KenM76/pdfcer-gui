@@ -11,6 +11,7 @@ use crate::app::actions::textstyle::StyleChange;
 use crate::app::state::OpenDoc;
 use crate::canvas::textedit::pin::{ObjectText, RunFill};
 use crate::text::panels::textobject as t;
+use pdfcer_gui_base::colourpick::{Ink, Pick, Shown, Spaces};
 
 /// The section's own trace region, so a driven check can find it on screen.
 // ui-text-exempt: trace region name, never displayed
@@ -31,25 +32,12 @@ pub const SWATCH_REGION: &str = "properties.textobject.swatch";
 /// The same argument every other region here makes about its own state.
 // ui-text-exempt: trace region name, never displayed
 pub const INK_REGION: &str = "properties.textobject.ink";
-//
-// It read *"To change the font, size, bold or italic of these words, press T
-// for the Text tool and sweep across them"*, and `OPERATOR_REQUESTS.md` O198
-// made every clause of it false: face, size, bold and italic now act on the
-// clicked object through `app::textoperand`, from this panel and from the
-// ribbon band alike. A disclosure has a subject, and when the fix removes the
-// subject the disclosure goes with it — leaving it in place would have been
-// the application telling the operator to go and do something it had just
-// done for him.
-//
-// ⚠ `tools/ui-verify/src/checks/font_group.rs` found the surface by the
-// string `properties.text.route` and was updated in the same commit. A driven
-// check left aiming at a deleted region reports the feature as missing.
 
 /// What this object's text is painted in, as the control has to draw it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Colour {
-    /// Every run that carries glyphs is this colour.
-    Agreed([u8; 3]),
+    /// Every run that carries glyphs is this colour, in this space.
+    Agreed(Ink),
     /// They disagree. A swatch is still offered and applies to all of them.
     Mixed,
     /// `affected` of `total` glyph-bearing runs are painted in a space this
@@ -100,20 +88,21 @@ impl TextObjectDraft {
 fn classify(found: &ObjectText) -> Colour {
     let mut total = 0_usize;
     let mut affected = 0_usize;
-    let mut agreed: Option<[u8; 3]> = None;
+    let mut agreed: Option<Ink> = None;
     let mut mixed = false;
     for fill in &found.fills {
-        let rgb = match fill {
+        // An absent colour operator is the initial DeviceGray black (§8.6.8).
+        let ink = match fill {
             RunFill::NoGlyphs => continue,
-            RunFill::DefaultBlack => Some([0, 0, 0]),
-            RunFill::Painted(colour) => super::text::rgb_of(*colour),
+            RunFill::DefaultBlack => Some(Ink::Gray(0.0)),
+            RunFill::Painted(colour) => Ink::from_text(*colour),
         };
         total += 1;
-        match rgb {
+        match ink {
             None => affected += 1,
-            Some(rgb) => match agreed {
-                None => agreed = Some(rgb),
-                Some(seen) if seen != rgb => mixed = true,
+            Some(ink) => match agreed {
+                None => agreed = Some(ink),
+                Some(seen) if seen != ink => mixed = true,
                 Some(_) => {}
             },
         }
@@ -122,7 +111,7 @@ fn classify(found: &ObjectText) -> Colour {
         return Colour::Ink { affected, total };
     }
     match agreed {
-        Some(rgb) if !mixed => Colour::Agreed(rgb),
+        Some(ink) if !mixed => Colour::Agreed(ink),
         // No glyph-bearing run at all reads as **mixed**, not as black. A
         // text object whose every string failed to decode has no colour this
         // shell may claim to have read, and `Agreed(black)` would be a claim.
@@ -166,60 +155,45 @@ pub fn section(
         return false;
     };
 
-    let mut chosen: Option<[u8; 3]> = None;
+    let mut chosen: Option<Pick> = None;
     ui.horizontal(|ui| {
         ui.label(t::colour_label());
-        match read.colour {
+        let shown = match read.colour {
             // NO SWATCH. See the header: one opened over a `/Separation`
             // is a click away from a destroyed plate, and it would look
             // entirely normal while it happened.
             Colour::Ink { affected, total } => {
                 let said = ui.label(egui::RichText::new(t::ink_present(affected, total)).weak());
                 crate::diag::ui_rect_visible(INK_REGION, said.rect, ui.clip_rect());
+                return;
             }
-            Colour::Agreed(rgb) => {
-                chosen = super::swatch::show(
-                    ui,
-                    // ui-text-exempt: an egui id salt, never displayed
-                    "properties-textobject-colour",
-                    super::swatch::Value::Agreed(rgb),
-                    SWATCH_REGION,
-                    t::mixed_hint(),
-                );
-            }
-            Colour::Mixed => {
-                chosen = super::swatch::show(
-                    ui,
-                    // ui-text-exempt: an egui id salt, never displayed
-                    "properties-textobject-colour",
-                    super::swatch::Value::Mixed,
-                    SWATCH_REGION,
-                    t::mixed_hint(),
-                );
-            }
-        }
+            // No opacity: the engine writes text's `/ca` but reports none to
+            // read (our G225), and a slider starting at a guess would reset
+            // the opacity of text whose colour alone was changed.
+            Colour::Agreed(ink) => Shown::Agreed(Pick { ink, opacity: None }),
+            Colour::Mixed => Shown::Mixed {
+                with_opacity: false,
+            },
+        };
+        chosen = pdfcer_gui_base::colourpick::show(
+            ui,
+            // ui-text-exempt: an egui id salt, never displayed
+            "properties-textobject-colour",
+            shown,
+            Spaces::ALL,
+            SWATCH_REGION,
+            t::mixed_hint(),
+        );
     });
 
-    if let Some(rgb) = chosen {
-        // The same `NewFill` the swept-text control builds, so the two routes
-        // reach `format_text` with an identical operand shape. `FillModel::Rgb`
-        // because the operator picked in sRGB; the engine stores the space it
-        // is given rather than force-converting, which is the care this control
-        // must not undo.
-        let components = vec![
-            f64::from(rgb[0]) / 255.0,
-            f64::from(rgb[1]) / 255.0,
-            f64::from(rgb[2]) / 255.0,
-        ];
-        if let Ok(fill) =
-            pdfcer_core::text_edit::NewFill::new(pdfcer_core::text_edit::FillModel::Rgb, components)
-        {
-            actions.push(Action::TextStyle {
-                page,
-                runs: read.runs.clone(),
-                change: StyleChange::Fill(fill),
-            });
-        }
+    // The ink is written in the space it was picked in; `format_text` stores
+    // the space it is given rather than converting.
+    if let Some(fill) = chosen.and_then(|pick| pick.ink.fill()) {
+        actions.push(Action::TextStyle {
+            page,
+            runs: read.runs.clone(),
+            change: StyleChange::Fill(fill),
+        });
     }
 
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
@@ -261,24 +235,24 @@ mod tests {
         );
     }
 
-    /// **CMYK counts as an ink that must not be flattened**, not as a
-    /// colour that disagrees.
-    ///
-    /// A mixed swatch over CMYK would still apply sRGB to it. The whole point
-    /// of the refusal is that pdfcer stores the space it was given.
+    /// **CMYK is read in CMYK**, so the picker opens on the process values
+    /// and writes them back unconverted.
     #[test]
-    fn cmyk_is_a_refusal_and_not_a_disagreement() {
+    fn cmyk_is_offered_in_its_own_space() {
+        let colour = classify(&reading(vec![RunFill::Painted(TextColor::Cmyk(
+            0.0, 0.5, 0.0, 1.0,
+        ))]));
+        assert_eq!(colour, Colour::Agreed(Ink::Cmyk([0.0, 0.5, 0.0, 1.0])));
+    }
+
+    /// The same black in two spaces disagrees: one pick writes one space.
+    #[test]
+    fn one_colour_in_two_spaces_is_mixed() {
         let colour = classify(&reading(vec![
             RunFill::Painted(TextColor::Cmyk(0.0, 0.0, 0.0, 1.0)),
-            RunFill::Painted(TextColor::Rgb(1.0, 0.0, 0.0)),
+            RunFill::DefaultBlack,
         ]));
-        assert!(matches!(
-            colour,
-            Colour::Ink {
-                affected: 1,
-                total: 2
-            }
-        ));
+        assert_eq!(colour, Colour::Mixed);
     }
 
     /// **An absent colour operator is BLACK and therefore disagrees with
@@ -300,7 +274,7 @@ mod tests {
             RunFill::NoGlyphs,
             RunFill::DefaultBlack,
         ]));
-        assert_eq!(colour, Colour::Agreed([0, 0, 0]));
+        assert_eq!(colour, Colour::Agreed(Ink::Gray(0.0)));
     }
 
     /// Two different explicit colours are mixed, and mixed carries no colour.
@@ -313,12 +287,10 @@ mod tests {
         assert_eq!(colour, Colour::Mixed);
     }
 
-    /// Gray round-trips, so a gray object gets a swatch — the same reading
-    /// `super::text::rgb_of` gives the swept-text control, asserted here so the
-    /// two surfaces cannot drift apart silently.
+    /// Grey is read as grey, not widened to RGB.
     #[test]
-    fn gray_is_offered_because_it_round_trips() {
+    fn gray_is_offered_in_its_own_space() {
         let colour = classify(&reading(vec![RunFill::Painted(TextColor::Gray(1.0))]));
-        assert_eq!(colour, Colour::Agreed([255, 255, 255]));
+        assert_eq!(colour, Colour::Agreed(Ink::Gray(1.0)));
     }
 }

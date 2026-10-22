@@ -99,17 +99,23 @@ destroying a plate, and it would look completely normal while it
 happened."*
 
 So an object **any** of whose runs is painted in a space
-[`super::text::rgb_of`] will not round-trip gets **no swatch at all** — the
-sentence [`t::ink_present`] stands where it would have been, and it names
-how many of how many runs are affected. Two properties of that rule matter:
+[`Ink::from_text`] cannot read — anything but DeviceGray, DeviceRGB and
+DeviceCMYK — gets **no swatch at all**: the sentence [`t::ink_present`]
+stands where it would have been, and it names how many of how many runs are
+affected. The rule is **all-or-nothing for the object**, because the operand
+is the object; a partial apply would need the operator to have asked for a
+partial thing.
 
-* It is **all-or-nothing for the object**, because the operand is the
-  object. A partial apply would need the operator to have asked for a
-  partial thing, and they asked for *this shape*.
-* The refusal is decided by the **same function** the swept-text swatch uses
-  to decide whether to show a colour at all, so the two surfaces cannot
-  disagree about which spaces are safe. That is why `rgb_of` was widened to
-  `pub(super)` rather than copied.
+Grey, RGB and CMYK are each read in their own space and the shared picker
+(`pdfcer_gui_base::colourpick`) opens on that space; the pick is written as
+`NewFill` in the space whose tab was open, so CMYK text stays CMYK. The same
+colour in two spaces reads as **mixed**: one pick writes one space to every
+run.
+
+**No opacity row.** The engine writes text's fill opacity
+(`FormatRequest::set_fill_alpha`) but reports none to read (our G225). A
+slider opened at a guess would reset the opacity of text whose colour alone
+was changed, so the row is withheld until the reading exists.
 
 Note what this does NOT do: it does not name the ink.
 `TextColor::Other` is a fieldless variant and carries no `/Separation` name,
@@ -166,13 +172,11 @@ Its own function, and every branch is a decision O89 argued:
 1. **A glyphless run is not a colour.** It has no show operator, so
    `textstyle::apply` skips it; counting it would let a derived word space
    make an object "mixed".
-2. **An ink pdfcer will not convert wins over everything.** It is checked
+2. **An ink the picker cannot edit wins over everything.** It is checked
    before agreement, not after, because *"they all agree and one of them is a
-   spot ink"* must not draw a swatch. The check is
-   [`super::text::rgb_of`] — the same predicate the swept-text swatch uses —
-   so the two surfaces cannot disagree about which spaces are safe.
-3. **`DefaultBlack` is black**, not "no opinion". §8.6.8 says an absent
-   colour operator paints black, so an object of one red run and one
+   spot ink"* must not draw a swatch. The check is [`Ink::from_text`].
+3. **`DefaultBlack` is DeviceGray black**, not "no opinion". §8.6.8 says an
+   absent colour operator paints black in the initial DeviceGray space, so an object of one red run and one
    default-black run is genuinely **mixed** and must say so. See
    [`RunFill`]'s own docs for the flattening that collapsing this would
    cause.

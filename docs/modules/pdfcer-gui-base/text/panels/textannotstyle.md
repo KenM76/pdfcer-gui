@@ -33,11 +33,6 @@ Says that a note or stamp's colour cannot be removed: each `TextAnnotSpec`
 variant carries a required colour, so no-colour is not a state the mark can
 be in. Told as a fact about the file, not about this panel's buttons.
 
-### `fn text_box_text_colour_cmyk`
-
-A `/DA` colour in CMYK has no faithful sRGB swatch; the sentence replaces
-the swatch's silent narrowing with a statement of what a pick will do.
-
 ### `fn redraw_offer_text_box_foreign`, `fn redraw_offer_text_box_rich`, `fn redraw_offer_marker_foreign`
 
 The three refusals `pdfcer_gui_base::redrawoffer::Why` answers with a

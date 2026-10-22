@@ -195,14 +195,6 @@ pub const fn markup_endings_clear_hint() -> &'static str {
      was not there before is a difference someone will find."
 }
 
-/// The narrowing the colour swatches perform, said where the operator can
-/// see it — **before** the click rather than after.
-#[must_use]
-pub const fn markup_colour_narrowed() -> &'static str {
-    "This mark's colour is recorded in CMYK and the swatches above are an approximation of it. \
-     Picking a new colour here records an RGB one in its place."
-}
-
 /// What regenerating an appearance LOST, in the operator's terms.
 #[must_use]
 pub const fn markup_dropped(dropped: pdfcer_core::edit::DroppedProperty) -> &'static str {

@@ -71,37 +71,20 @@ pub(super) fn marker_row(
     target: &AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    let seed = colour.rgb.unwrap_or([0, 0, 0]);
     ui.horizontal(|ui| {
         ui.label(ts::marker_colour_label());
-        // The hint is shown for a mixed value only, which one mark never has.
-        let picked = crate::panels::properties::swatch::show(
-            ui,
-            // ui-text-exempt: an egui id salt, never displayed
-            "properties-annot-marker",
-            crate::panels::properties::swatch::Value::Agreed(seed),
-            MARKER_REGION,
-            "",
-        );
-        if let Some(rgb) = picked {
+        let black = Color::Rgb(0.0, 0.0, 0.0);
+        // ui-text-exempt: an egui id salt, never displayed
+        if let Some(color) =
+            super::pick(ui, "properties-annot-marker", colour, black, MARKER_REGION)
+        {
             actions.push(Action::Annot(AnnotAction::SetMarkerColour {
                 id: target.id,
-                color: Color::Rgb(
-                    f64::from(rgb[0]) / 255.0,
-                    f64::from(rgb[1]) / 255.0,
-                    f64::from(rgb[2]) / 255.0,
-                ),
+                color,
                 redraw_as_plain: false,
             }));
         }
     });
-    if colour.narrowed {
-        ui.label(
-            egui::RichText::new(t::markup_colour_narrowed())
-                .small()
-                .weak(),
-        );
-    }
 }
 
 /// **The redraw offer** for the selected annotation, when its last restyle

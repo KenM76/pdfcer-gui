@@ -18,28 +18,6 @@ pub(super) const COLOUR_REGION: &str = "properties.markup.colour"; // ui-text-ex
 /// The region the Fill swatch publishes, and its picker `…fill.picker`.
 pub(super) const FILL_REGION: &str = "properties.markup.fill"; // ui-text-exempt: trace region name, never displayed
 
-/// A swatch value as a device RGB colour.
-fn colour_of(rgb: [u8; 3]) -> Color {
-    Color::Rgb(
-        f64::from(rgb[0]) / 255.0,
-        f64::from(rgb[1]) / 255.0,
-        f64::from(rgb[2]) / 255.0,
-    )
-}
-
-/// One swatch; `Some` once, on the frame its picker closed changed — so a
-/// drag across the picker is one edit, not one per frame.
-fn swatch(ui: &mut Ui, salt: &str, rgb: [u8; 3], region: &str) -> Option<Color> {
-    crate::panels::properties::swatch::show(
-        ui,
-        salt,
-        crate::panels::properties::swatch::Value::Agreed(rgb),
-        region,
-        "",
-    )
-    .map(colour_of)
-}
-
 /// The border colour.
 pub(super) fn colour_row(
     ui: &mut Ui,
@@ -47,11 +25,18 @@ pub(super) fn colour_row(
     target: &crate::canvas::selection::annot::AnnotTarget,
     actions: &mut Vec<Action>,
 ) {
-    let existing = current.colour.rgb;
+    let existing = current.colour.color;
     ui.horizontal(|ui| {
         ui.label(t::markup_colour_label());
-        let rgb = existing.unwrap_or([0, 0, 0]);
-        if let Some(colour) = swatch(ui, "properties-markup-colour", rgb, COLOUR_REGION) {
+        let black = Color::Rgb(0.0, 0.0, 0.0);
+        // ui-text-exempt: an egui id salt, never displayed
+        if let Some(colour) = super::pick(
+            ui,
+            "properties-markup-colour",
+            current.colour,
+            black,
+            COLOUR_REGION,
+        ) {
             actions.push(Action::SetMarkupStyle {
                 page: target.page,
                 id: target.id,
@@ -87,11 +72,18 @@ pub(super) fn fill_row(
     if !current.offers_fill() {
         return;
     }
-    let existing = current.interior.rgb;
+    let existing = current.interior.color;
     ui.horizontal(|ui| {
         ui.label(t::markup_fill_label());
-        let rgb = existing.unwrap_or([0, 0, 0]);
-        if let Some(colour) = swatch(ui, "properties-markup-fill", rgb, FILL_REGION) {
+        let black = Color::Rgb(0.0, 0.0, 0.0);
+        // ui-text-exempt: an egui id salt, never displayed
+        if let Some(colour) = super::pick(
+            ui,
+            "properties-markup-fill",
+            current.interior,
+            black,
+            FILL_REGION,
+        ) {
             actions.push(Action::SetMarkupStyle {
                 page: target.page,
                 id: target.id,

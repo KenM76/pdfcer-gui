@@ -207,14 +207,11 @@ and hands it out by reference.
 
 ### `struct Swatch`
 
-The second field is the whole reason this is a struct rather than an
-`Option<[u8; 3]>`. `/C` and `/IC` may be grey, RGB **or CMYK** (§12.5.2), and
-the three are not equally showable: grey is the same ink as its equal-
-component RGB and converts losslessly in both directions, where CMYK does
-not. Carrying *whether a conversion happened* beside the converted value is
-what lets [`section`] disclose it rather than the operator discovering it
-from a changed file. See [`t::markup_colour_narrowed`] for the argument that
-replaced the old refuse-to-show behaviour.
+`/C` and `/IC` may be grey, RGB or CMYK (§12.5.2). The swatch carries the
+file's own value in its own space, and [`pick`] edits it there through
+`colourpick::show` with every device space offered, so a CMYK mark stays
+CMYK unless the operator switches tab, and the switch itself seeds the new
+space with the colour pdfcer draws the old one as.
 
 ### `impl Default`
 
@@ -275,44 +272,8 @@ border?*, which is the same predicate `set_markup_style` guards
 
 ### `fn swatch_of`
 
-# Why CMYK gets a converted swatch rather than none
-
-§12.5.2 lets `/C` be a 0-, 1-, 3- or 4-component array, so the tempting
-answer is `None` for anything that is not RGB — on the grounds that showing
-a CMYK mark's *converted* colour is a readback the operator never asked for.
-
-**That answer is worse than the thing it avoids.** A CMYK mark is not rare
-on a CAD sheet, where a plotter-bound producer writes process colour, and
-`None` gives it a **default black swatch and no Clear**: the panel would
-tell the operator their coloured mark has no colour, which is not a smaller
-misstatement than an approximate one, and it would withhold Clear, the one
-operation on a CMYK `/C` that loses nothing at all.
-
-**And the feared round trip is not a thing this control can do.** egui's
-colour button reports `changed()` only when the value actually moves, so
-*pick it up and put it down unchanged* raises no action and writes no byte.
-
-# ⚠ The narrowing, disclosed rather than hidden
-
-A restyle raised from a swatch fed by this function writes
-`Color::Rgb`, because `color_edit_button_srgb` produces sRGB and nothing
-else. **On a mark whose `/C` or `/IC` was CMYK that NARROWS the colour
-space** — four components in the file become three, and a colour-managed
-consumer downstream will separate the result differently than the original
-process values. The engine's own posture is that a narrowing conversion is
-disclosed rather than performed quietly, so [`Swatch::narrowed`] carries the
-fact up to [`section`] and [`t::markup_colour_narrowed`] is the sentence the
-operator reads **before** they pick, not after.
-
-Grey is **not** narrowing and is not flagged: `Gray(v)` and `Rgb(v, v, v)`
-are the same ink, exactly, in both directions.
-
-# The conversion itself
-
-The naïve `1 - min(1, x + k)` per channel — the same one §8.6.4.4 states as
-the default `DeviceCMYK` → `DeviceRGB` transform when no colour management is
-in play. It is an approximation and this shell says so; it is not a place to
-invent an ICC pipeline for a 16-pixel square.
+A `/C` array names gray, RGB or CMYK by its length; anything else is no
+colour, which every row shows as its own default and offers no Clear for.
 
 ### `fn section`
 

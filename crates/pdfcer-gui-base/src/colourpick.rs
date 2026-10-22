@@ -153,6 +153,34 @@ impl From<Ink> for pdfcer_core::annot_author::Color {
     }
 }
 
+impl Ink {
+    /// A text run's fill in its own space; `None` for a space this picker
+    /// cannot edit (`/Separation`, `/DeviceN`, ICC-based, or one the engine
+    /// adds later), which must not be rewritten as process colour.
+    #[must_use]
+    pub fn from_text(colour: pdfcer_core::text_extract::TextColor) -> Option<Self> {
+        use pdfcer_core::text_extract::TextColor;
+        match colour {
+            TextColor::Gray(v) => Some(Self::Gray(v)),
+            TextColor::Rgb(r, g, b) => Some(Self::Rgb([r, g, b])),
+            TextColor::Cmyk(c, m, y, k) => Some(Self::Cmyk([c, m, y, k])),
+            _ => None,
+        }
+    }
+
+    /// The text fill that writes this ink in its own space.
+    #[must_use]
+    pub fn fill(self) -> Option<pdfcer_core::text_edit::NewFill> {
+        use pdfcer_core::text_edit::{FillModel, NewFill};
+        let (model, parts): (FillModel, &[f32]) = match &self {
+            Self::Gray(v) => (FillModel::Gray, std::slice::from_ref(v)),
+            Self::Rgb(c) => (FillModel::Rgb, c),
+            Self::Cmyk(c) => (FillModel::Cmyk, c),
+        };
+        NewFill::new(model, parts.iter().map(|&v| f64::from(v)).collect()).ok()
+    }
+}
+
 fn byte(v: f32) -> u8 {
     // In range by the clamp, so the cast cannot truncate.
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
