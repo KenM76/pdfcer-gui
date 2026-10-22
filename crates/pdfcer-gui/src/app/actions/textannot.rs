@@ -103,7 +103,7 @@ pub(super) fn commit(
     prefs: &Prefs,
     placed: &Placement,
     text: &str,
-    ink: (f64, f64, f64),
+    ink: pdfcer_core::annot_author::Color,
     opacity: Option<f64>,
 ) {
     let Placement {
@@ -320,7 +320,7 @@ mod tests {
             &Prefs::default(),
             &placed,
             "APPROVED",
-            (0.8, 0.1, 0.1),
+            pdfcer_core::annot_author::Color::Rgb(0.8, 0.1, 0.1),
             None,
         );
         let page = doc.pages[0].clone();

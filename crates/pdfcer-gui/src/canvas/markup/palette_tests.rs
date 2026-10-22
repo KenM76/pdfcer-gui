@@ -10,7 +10,9 @@ fn every_shipped_default_is_one_click_away_in_the_grid() {
     for slot in PenSlot::ALL {
         let wanted = pen.colour_of(*slot);
         assert!(
-            ACROBAT.iter().any(|s| close(s.rgb_components(), wanted)),
+            ACROBAT
+                .iter()
+                .any(|s| close(s.rgb_components(), rgb(wanted))),
             "{slot:?} ships at {wanted:?}, which no cell in the palette offers — \
              an operator who changes it has no way back"
         );
@@ -94,6 +96,14 @@ fn the_grid_is_rectangular() {
 }
 
 /// Component-wise equality at PDF precision.
+/// The components of a shipped pen colour, which are always RGB.
+fn rgb(c: pdfcer_core::annot_author::Color) -> (f64, f64, f64) {
+    let pdfcer_core::annot_author::Color::Rgb(r, g, b) = c else {
+        panic!("a pen ships at {c:?}, which is not RGB");
+    };
+    (r, g, b)
+}
+
 fn close(a: (f64, f64, f64), b: (f64, f64, f64)) -> bool {
     (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9 && (a.2 - b.2).abs() < 1e-9
 }

@@ -177,6 +177,19 @@ impl From<Ink> for pdfcer_core::annot_author::Color {
     }
 }
 
+/// A colour as a trace value: its space, then its channels joined by commas
+/// to three places (`rgb:1.000,0.000,0.000`). One token, so a trace line
+/// stays splittable on whitespace.
+#[must_use]
+pub fn trace_key(c: pdfcer_core::annot_author::Color) -> String {
+    use pdfcer_core::annot_author::Color;
+    match c {
+        Color::Gray(g) => format!("gray:{g:.3}"),
+        Color::Rgb(r, g, b) => format!("rgb:{r:.3},{g:.3},{b:.3}"),
+        Color::Cmyk(c, m, y, k) => format!("cmyk:{c:.3},{m:.3},{y:.3},{k:.3}"),
+    }
+}
+
 impl Ink {
     /// A text run's fill in its own space; `None` for a space this picker
     /// cannot edit (`/Separation`, `/DeviceN`, ICC-based, or one the engine

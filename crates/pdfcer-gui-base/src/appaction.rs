@@ -917,7 +917,7 @@ pub enum Action {
         /// not repeated here — of which the load-bearing one is that the pen is
         /// **sampled when the operator asks**, not read when the queue drains.
         ///
-        /// Only [`crate::canvas::markup::text::TextMarkKind::rgb`] reads it, and
+        /// Only [`crate::canvas::markup::text::TextMarkKind::colour`] reads it, and
         /// it takes the **ink**: these three kinds are lines, so they are the
         /// biro rather than the marker. Highlight is not in this variant at all.
         pen: crate::markuppen::Pen,

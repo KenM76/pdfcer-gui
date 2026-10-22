@@ -10,7 +10,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup.md`.
 
 use egui::{Color32, Pos2};
-use pdfcer_core::annot_author::{Color, LineEnding, MarkupSpec, Quad, TextMarkupKind};
+use pdfcer_core::annot_author::{LineEnding, MarkupSpec, Quad, TextMarkupKind};
 use pdfcer_core::page_tree::Rect as PageRect;
 
 use crate::app::actions::Action;
@@ -109,8 +109,7 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
     // `MarkupKind::rgb`'s own doc comment named in advance: *"give it a colour
     // and a width from the document's markup state and nothing else in the
     // module changes."* Nothing else in this module did.
-    let (r, g, b) = pen.colour_for(kind);
-    let color = Color::Rgb(r, g, b);
+    let color = pen.colour_for(kind);
     let width = pen.width_pts;
     match (kind, geometry) {
         (
@@ -358,17 +357,11 @@ pub(crate) fn pen_px(mapping: &PageMapping, pen: pen::Pen) -> f32 {
 
 /// The pen colour, as egui sees it.
 pub(crate) fn pen_color(kind: MarkupKind, pen: pen::Pen) -> Color32 {
-    let (r, g, b) = pen.colour_for(kind);
-    let byte = |v: f64| {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let out = (v.clamp(0.0, 1.0) * 255.0).round() as u8;
-        out
-    };
     // DOCUMENT COLOUR: the operator's pen, converted for the preview from the
-    // exact components `spec` writes into `/C`. Deriving it from one source
-    // rather than naming a second is what keeps the band the colour of the
-    // thing it is previewing.
-    Color32::from_rgb(byte(r), byte(g), byte(b))
+    // exact colour `spec` writes into `/C`, as pdfcer renders it. Deriving it
+    // from one source rather than naming a second is what keeps the band the
+    // colour of the thing it is previewing.
+    pdfcer_gui_base::colourpick::Ink::from(pen.colour_for(kind)).screen()
 }
 
 #[cfg(test)]

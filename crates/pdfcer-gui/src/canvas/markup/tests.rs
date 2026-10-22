@@ -432,7 +432,10 @@ fn a_non_finite_coordinate_is_refused_in_every_family() {
 #[test]
 fn the_preview_colour_is_the_committed_colour() {
     for &kind in MarkupKind::ALL {
-        let (r, g, b) = pen::Pen::default().colour_for(kind);
+        let pdfcer_core::annot_author::Color::Rgb(r, g, b) = pen::Pen::default().colour_for(kind)
+        else {
+            panic!("{kind:?} ships a non-RGB pen");
+        };
         let c = pen_color(kind, pen::Pen::default());
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let expect = |v: f64| (v * 255.0).round() as u8;
@@ -470,7 +473,10 @@ fn the_preview_colour_is_the_committed_colour() {
             kind == MarkupKind::Highlight,
             "{kind:?} took the wrong pen slot"
         );
-        let (r, g, b) = pen::Pen::default().colour_for(kind);
+        let pdfcer_core::annot_author::Color::Rgb(r, g, b) = pen::Pen::default().colour_for(kind)
+        else {
+            panic!("{kind:?} ships a non-RGB pen");
+        };
         // Rec. 709 relative luminance, which is the standard measure of how
         // light a colour reads. Pure yellow is 0.93 and vanishes on white;
         // Acrobat's orange highlighter is 0.49 and does not. The threshold is

@@ -209,13 +209,14 @@ fn chip(ui: &mut Ui, pen: &mut Pen, slot: PenSlot, region: &str, tooltip: &str) 
 
     egui::Popup::menu(&response)
         .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
-        .show(|ui| popup(ui, pen, slot));
+        .show(|ui| popup(ui, pen, slot, region));
 
     response
 }
 
-/// The grid, and the route to the full picker underneath it.
-fn popup(ui: &mut Ui, pen: &mut Pen, slot: PenSlot) {
+/// The grid, and the route to the full picker underneath it. The disclosure
+/// publishes `{region}.more_colours`; the picker its tabs under `{region}.more`.
+fn popup(ui: &mut Ui, pen: &mut Pen, slot: PenSlot, region: &str) {
     ui.label(t::palette_heading());
     ui.separator();
     crate::diag::ui_rect(REGION_PALETTE, grid(ui, pen, slot));
@@ -231,25 +232,25 @@ fn popup(ui: &mut Ui, pen: &mut Pen, slot: PenSlot) {
     // It is CLOSED by default, which is the whole point of the change: the grid
     // is the fast path and the wheel is the escape hatch, not the other way
     // round.
-    egui::CollapsingHeader::new(t::more_colours())
+    let header = egui::CollapsingHeader::new(t::more_colours())
         .id_salt(REGION_MORE_COLOURS)
         .default_open(false)
         .show(ui, |ui| {
-            let mut chosen = pen.color32_of(slot);
-            // `Alpha::Opaque`. `/C` is three components — see
-            // `Pen::set_ink` — so a picker offering a fourth would be offering
-            // a value with nowhere to go.
-            if egui::widgets::color_picker::color_picker_color32(
-                ui,
-                &mut chosen,
-                egui::widgets::color_picker::Alpha::Opaque,
-            ) {
-                pen.set_colour(slot, chosen);
+            use crate::colourpick::{Ink, Pick, Spaces, body};
+            // No opacity row: the pen's opacity is the Style group's own
+            // control, and `/C` carries none.
+            let mut pick = Pick {
+                ink: Ink::from(pen.colour_of(slot)),
+                opacity: None,
+            };
+            if body(ui, &mut pick, Spaces::ALL, &format!("{region}.more")) {
+                pen.set_device_colour(slot, pick.ink.into());
                 trace(*pen);
             }
         })
         .header_response
         .on_hover_text(t::more_colours_tooltip());
+    crate::diag::ui_rect(&format!("{region}.more_colours"), header.rect);
 }
 
 /// **The grid of Acrobat's colours.** Returns the rect it occupied.
@@ -312,10 +313,10 @@ fn trace(pen: Pen) {
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "markup-pen ink={:?} highlighter={:?} width_pts={} opacity={} ca={:?} \
+            "markup-pen ink={} highlighter={} width_pts={} opacity={} ca={:?} \
              dash={:?} d={:?} on_page={}",
-            pen.ink,
-            pen.highlighter,
+            crate::colourpick::trace_key(pen.ink),
+            crate::colourpick::trace_key(pen.highlighter),
             pen.width_pts,
             pen.opacity,
             // BOTH, because they answer different questions and only the
@@ -497,7 +498,7 @@ mod tests {
 
             assert_eq!(
                 pen.colour_of(slot),
-                cell.rgb_components(),
+                cell.colour(),
                 "clicking cell {index} ({}) did not set the highlighter to it",
                 cell.name
             );

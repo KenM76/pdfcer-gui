@@ -105,7 +105,11 @@ have given them.
 ⇒ The full picker is kept, underneath, because *"the ten Adobe uses"* is not
 *"the ten that exist"* and an operator with a company standard colour must not
 be told no. It expands **in place** rather than opening a second popup: a
-popup inside a popup is two dismissal rules the operator has to learn.
+popup inside a popup is two dismissal rules the operator has to learn. The
+expanded picker is the shared `colourpick::body`, offering grey, RGB and CMYK;
+the choice is stored in its own space through `Pen::set_device_colour`, so a
+mark drawn with a CMYK pen carries a four-component `/C`. Its controls publish
+under `{region}.more`.
 
 ## Why the swatch shows the colour rather than naming it
 
@@ -114,11 +118,8 @@ colour is the colour. The chip is a filled rectangle carrying the pen's
 current value; its accessible name comes from the hover text, which is why
 both swatches carry one.
 
-**The alpha channel is not offered**, and [`super::pen::Pen::set_ink`]
-carries the argument: a PDF annotation's `/C` is three components, and
-feeding a picker's alpha into it would be a value with nowhere to go. The
-`Opaque` variant of the picker is what says so, and it is why the grid's
-cells are opaque too.
+**The picker's own opacity is not offered**: `/C` carries no alpha. The
+pen's opacity is the separate slider beside the grid, written to `/CA`.
 
 ## Item notes
 

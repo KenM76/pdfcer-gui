@@ -12,6 +12,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/markuppen.md`.
 
 use egui::Color32;
+use pdfcer_core::annot_author::Color;
 
 use crate::markupkind::MarkupKind;
 use crate::markuppalette as palette;
@@ -105,30 +106,30 @@ impl PenSlot {
 /// The colour and width the next markup gesture will be authored with.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pen {
-    /// The comment-linework colour, as PDF `/DeviceRGB` components in
-    /// `0.0..=1.0`.
+    /// The comment-linework colour, in the device space it is written in:
+    /// `/C` takes grey, RGB or CMYK (ISO 32000-1 §12.5.2, Table 164).
     ///
     /// **DOCUMENT COLOUR.** This is written into the annotation's `/C` and
     /// therefore into the saved file — restyling the application must never
     /// move it, which is the case the theme gate's escape hatch exists for.
-    pub ink: (f64, f64, f64),
+    pub ink: Color,
     /// The highlight band's colour, same units and the same warning.
-    pub highlighter: (f64, f64, f64),
+    pub highlighter: Color,
     /// `/Underline`'s colour — [`PenSlot::Underline`]. Same units, same warning.
-    pub underline: (f64, f64, f64),
+    pub underline: Color,
     /// `/StrikeOut`'s colour — [`PenSlot::StrikeOut`].
-    pub strike_out: (f64, f64, f64),
+    pub strike_out: Color,
     /// `/Squiggly`'s colour — [`PenSlot::Squiggly`].
-    pub squiggly: (f64, f64, f64),
+    pub squiggly: Color,
     /// The sticky note's colour — [`PenSlot::Note`].
-    pub note: (f64, f64, f64),
+    pub note: Color,
     /// The text box's border **and** painted text — [`PenSlot::TextBox`]. See
     /// that variant on why one value serves two of Acrobat's.
-    pub text_box: (f64, f64, f64),
+    pub text_box: Color,
     /// The stamp's colour — [`PenSlot::Stamp`].
-    pub stamp: (f64, f64, f64),
+    pub stamp: Color,
     /// The caret's colour — [`PenSlot::Caret`].
-    pub caret: (f64, f64, f64),
+    pub caret: Color,
     /// Border and stroke width, in PDF points.
     ///
     /// Clamped to [`MIN_WIDTH_PTS`]`..=`[`MAX_WIDTH_PTS`] by the control that
@@ -218,26 +219,26 @@ impl Default for Pen {
     fn default() -> Self {
         Self {
             // DOCUMENT COLOUR: Acrobat's shape-tool red, written into `/C`.
-            ink: palette::components(palette::MARKUP_RED),
+            ink: palette::colour(palette::MARKUP_RED),
             // DOCUMENT COLOUR: Acrobat's highlighter — ORANGE, measured, see
             // `palette`'s header for why that is not the mistake it looks like.
-            highlighter: palette::components(palette::HIGHLIGHTER_ORANGE),
+            highlighter: palette::colour(palette::HIGHLIGHTER_ORANGE),
             // DOCUMENT COLOUR: Acrobat's `cUnderline`.
-            underline: palette::components(palette::UNDERLINE_BLUE),
+            underline: palette::colour(palette::UNDERLINE_BLUE),
             // DOCUMENT COLOUR: Acrobat's `cStrikeOut`.
-            strike_out: palette::components(palette::STRIKEOUT_PINK),
+            strike_out: palette::colour(palette::STRIKEOUT_PINK),
             // DOCUMENT COLOUR: Acrobat's `cSquiggly` — the same red as the shape
             // pen, under its own key, so it is its own slot.
-            squiggly: palette::components(palette::MARKUP_RED),
+            squiggly: palette::colour(palette::MARKUP_RED),
             // DOCUMENT COLOUR: Acrobat's `cText` — the sticky note's violet.
-            note: palette::components(palette::NOTE_PURPLE),
+            note: palette::colour(palette::NOTE_PURPLE),
             // DOCUMENT COLOUR: Acrobat's `cFreeText` TEXT colour. See
             // `PenSlot::TextBox` on why the text colour and not the border's.
-            text_box: palette::components(palette::MARKUP_RED),
+            text_box: palette::colour(palette::MARKUP_RED),
             // DOCUMENT COLOUR: Acrobat's `cStamp`.
-            stamp: palette::components(palette::MARKUP_RED),
+            stamp: palette::colour(palette::MARKUP_RED),
             // DOCUMENT COLOUR: Acrobat's `cCaret`.
-            caret: palette::components(palette::CARET_MAGENTA),
+            caret: palette::colour(palette::CARET_MAGENTA),
             width_pts: 2.0,
             opacity: 1.0,
             // Solid, which writes no dash at all — see the field's own doc
@@ -261,13 +262,13 @@ impl Pen {
 
     /// The colour this kind is authored in.
     #[must_use]
-    pub fn colour_for(self, kind: MarkupKind) -> (f64, f64, f64) {
+    pub fn colour_for(self, kind: MarkupKind) -> Color {
         self.colour_of(PenSlot::of(kind))
     }
 
-    /// **The colour in one slot**, as PDF `/DeviceRGB` components.
+    /// **The colour in one slot**, in the space it will be written in.
     #[must_use]
-    pub fn colour_of(self, slot: PenSlot) -> (f64, f64, f64) {
+    pub fn colour_of(self, slot: PenSlot) -> Color {
         match slot {
             PenSlot::Shape => self.ink,
             PenSlot::Highlighter => self.highlighter,
@@ -283,29 +284,34 @@ impl Pen {
 
     /// **Set one slot's colour** from a screen colour, discarding alpha.
     pub fn set_colour(&mut self, slot: PenSlot, colour: Color32) {
-        let rgb = rgb_of(colour);
+        let (r, g, b) = rgb_of(colour);
+        self.set_device_colour(slot, Color::Rgb(r, g, b));
+    }
+
+    /// **Set one slot's colour** exactly, in whatever device space it is in.
+    pub fn set_device_colour(&mut self, slot: PenSlot, colour: Color) {
         match slot {
-            PenSlot::Shape => self.ink = rgb,
-            PenSlot::Highlighter => self.highlighter = rgb,
-            PenSlot::Underline => self.underline = rgb,
-            PenSlot::StrikeOut => self.strike_out = rgb,
-            PenSlot::Squiggly => self.squiggly = rgb,
-            PenSlot::Note => self.note = rgb,
-            PenSlot::TextBox => self.text_box = rgb,
-            PenSlot::Stamp => self.stamp = rgb,
-            PenSlot::Caret => self.caret = rgb,
+            PenSlot::Shape => self.ink = colour,
+            PenSlot::Highlighter => self.highlighter = colour,
+            PenSlot::Underline => self.underline = colour,
+            PenSlot::StrikeOut => self.strike_out = colour,
+            PenSlot::Squiggly => self.squiggly = colour,
+            PenSlot::Note => self.note = colour,
+            PenSlot::TextBox => self.text_box = colour,
+            PenSlot::Stamp => self.stamp = colour,
+            PenSlot::Caret => self.caret = colour,
         }
     }
 
     /// One slot's colour as a screen colour, for the swatch that shows it.
     #[must_use]
     pub fn color32_of(self, slot: PenSlot) -> Color32 {
-        color32_of(self.colour_of(slot))
+        crate::colourpick::Ink::from(self.colour_of(slot)).screen()
     }
 
     /// **The colour a sticky note, text box or stamp is authored in.**
     #[must_use]
-    pub fn text_annot_colour(self, kind: crate::wordmarkup::TextAnnotKind) -> (f64, f64, f64) {
+    pub fn text_annot_colour(self, kind: crate::wordmarkup::TextAnnotKind) -> Color {
         self.colour_of(PenSlot::of_text_annot(kind))
     }
 
@@ -353,24 +359,6 @@ fn rgb_of(c: Color32) -> (f64, f64, f64) {
     )
 }
 
-/// A screen colour from PDF components.
-fn color32_of((r, g, b): (f64, f64, f64)) -> Color32 {
-    let byte = |v: f64| {
-        // `clamp` first: a settings file or a future loader could hand this a
-        // component outside the range, and `as u8` on an out-of-range float is
-        // a saturating cast in Rust but on a NaN produces 0 — a silent black.
-        // Clamping states the intent instead of relying on that.
-        let scaled = (v.clamp(0.0, 1.0) * 255.0).round();
-        // The value is provably in `0..=255` and finite, so this cast is exact.
-        scaled as u8
-    };
-    // DOCUMENT COLOUR: the operator's own pen, arriving from the file's
-    // `/DeviceRGB` components rather than from the palette. No theme may move
-    // it — a restyle that changed the swatch would be claiming the annotation
-    // had changed colour, and the annotation is in the document.
-    Color32::from_rgb(byte(r), byte(g), byte(b))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -398,7 +386,7 @@ mod tests {
         for (slot, bytes) in expected {
             assert_eq!(
                 pen.colour_of(slot),
-                palette::components(bytes),
+                palette::colour(bytes),
                 "{slot:?} does not ship at the Acrobat value it is documented as"
             );
         }
@@ -409,10 +397,10 @@ mod tests {
     #[test]
     fn the_highlighter_is_acrobats_orange_and_not_the_old_yellow() {
         let pen = Pen::default();
-        assert_eq!(pen.highlighter, palette::components([255, 98, 0]));
+        assert_eq!(pen.highlighter, palette::colour([255, 98, 0]));
         assert_ne!(
             pen.highlighter,
-            (1.0, 1.0, 0.0),
+            Color::Rgb(1.0, 1.0, 0.0),
             "the highlighter has been put back to this shell's old invented \
              yellow — Acrobat's is #FF6200, measured from cHighlight, and the \
              operator asked for Adobe's value. Yellow is still one click away \
@@ -453,7 +441,7 @@ mod tests {
             pen.set_colour(*target, Color32::from_rgb(1, 2, 3));
             assert_eq!(
                 pen.colour_of(*target),
-                (1.0 / 255.0, 2.0 / 255.0, 3.0 / 255.0),
+                Color::Rgb(1.0 / 255.0, 2.0 / 255.0, 3.0 / 255.0),
                 "{target:?} did not take the colour it was given"
             );
             for (i, other) in PenSlot::ALL.iter().enumerate() {
@@ -507,7 +495,7 @@ mod tests {
         assert_eq!(PenSlot::of_text_annot(TextAnnotKind::Screen), PenSlot::Note);
         assert_eq!(
             Pen::default().text_annot_colour(TextAnnotKind::Sticky),
-            palette::components(palette::NOTE_PURPLE)
+            palette::colour(palette::NOTE_PURPLE)
         );
     }
 
@@ -545,7 +533,7 @@ mod tests {
     }
 
     /// Every slot's colour, in [`PenSlot::ALL`] order.
-    fn pen_slots(pen: &Pen) -> Vec<(f64, f64, f64)> {
+    fn pen_slots(pen: &Pen) -> Vec<Color> {
         PenSlot::ALL.iter().map(|s| pen.colour_of(*s)).collect()
     }
 
@@ -576,9 +564,18 @@ mod tests {
     #[test]
     fn an_impossible_component_clamps_instead_of_wrapping() {
         // DOCUMENT COLOUR: expected `/DeviceRGB` results, not palette entries.
-        assert_eq!(color32_of((2.0, -1.0, 0.5)), Color32::from_rgb(255, 0, 128));
+        let swatch = |colour| {
+            let mut pen = Pen::default();
+            pen.set_device_colour(PenSlot::Shape, colour);
+            pen.ink_color32()
+        };
         assert_eq!(
-            color32_of((f64::NAN, 1.0, 0.0)),
+            swatch(Color::Rgb(2.0, -1.0, 0.5)),
+            Color32::from_rgb(255, 0, 128)
+        );
+        // DOCUMENT COLOUR: an expected `/DeviceRGB` result.
+        assert_eq!(
+            swatch(Color::Rgb(f64::NAN, 1.0, 0.0)),
             Color32::from_rgb(0, 255, 0)
         );
     }

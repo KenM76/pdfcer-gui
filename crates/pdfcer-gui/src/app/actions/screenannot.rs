@@ -49,12 +49,7 @@ pub(super) struct Placed<'a> {
 }
 
 /// Read the clip, then author the region.
-pub(super) fn place(
-    doc: &mut OpenDoc,
-    placed: &Placed<'_>,
-    ink: (f64, f64, f64),
-    opacity: Option<f64>,
-) {
+pub(super) fn place(doc: &mut OpenDoc, placed: &Placed<'_>, ink: Color, opacity: Option<f64>) {
     let bytes = match std::fs::read(placed.file) {
         Ok(bytes) => bytes,
         Err(error) => {
@@ -77,9 +72,8 @@ pub(super) fn place(
         placed.trigger,
         placed.temp_access,
     );
-    let (r, g, b) = ink;
     let mut spec = ScreenSpec::new(placed.rect, &name, placed.content_type, bytes);
-    spec.color = Color::Rgb(r, g, b);
+    spec.color = ink;
     spec.trigger = placed.trigger;
     spec.temp_access = placed.temp_access;
     // The engine writes no author for a screen: its `/T` is the title.

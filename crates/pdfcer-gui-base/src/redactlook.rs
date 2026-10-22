@@ -66,8 +66,8 @@ impl Fill {
     pub const fn to_core(self) -> Option<Color> {
         match self {
             // DeviceRGB: a `/Redact` `/IC` is three components (ISO 32000-1
-            // Table 192), and the engine's apply reads any other length as
-            // no fill, so a grey black would apply as no box.
+            // Table 192), so another reader may draw any other length as no
+            // box.
             Self::Black => Some(Color::Rgb(0.0, 0.0, 0.0)),
             Self::White => Some(Color::Rgb(1.0, 1.0, 1.0)),
             Self::Custom(r, g, b) => Some(Color::Rgb(r, g, b)),

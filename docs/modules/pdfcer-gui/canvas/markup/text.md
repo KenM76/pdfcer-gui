@@ -291,7 +291,7 @@ be visible after saving.
 
 # It asserts a RELATION, never a magnitude
 
-A test that pins the literal triple [`TextMarkKind::rgb`] returns is two
+A test that pins the literal triple [`TextMarkKind::colour`] returns is two
 copies of one constant, and two copies of one constant can only disagree
 if somebody edits one of them — so such a test stays green through the
 entire life of a defect in which the pen never reaches the spec at all.
@@ -435,7 +435,7 @@ The exact signature change [`super::spec`] took when the Style group landed,
 and for the same reason: this is a pure function whose job is to say what a
 given request authors, and a colour it fetched for itself would make it a
 function of application state that a test cannot vary. It takes the pen the
-[`Action`] carried, and [`TextMarkKind::rgb`] decides which of the pen's two
+[`Action`] carried, and [`TextMarkKind::colour`] decides which of the pen's two
 colours a text kind is entitled to.
 
 ### `fn mark`

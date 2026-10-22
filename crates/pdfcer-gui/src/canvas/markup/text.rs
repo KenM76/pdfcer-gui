@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/markup/text.md`.
 
-use pdfcer_core::annot_author::{Color, MarkupSpec, Quad};
+use pdfcer_core::annot_author::{MarkupSpec, Quad};
 
 use crate::app::actions::Action;
 use crate::canvas::textsel::TextSelection;
@@ -44,11 +44,10 @@ pub enum Refusal {
 /// Build the `pdfcer-core` spec one text-markup command authors.
 #[must_use]
 pub fn spec(kind: TextMarkKind, quads: Vec<Quad>, pen: super::pen::Pen) -> MarkupSpec {
-    let (r, g, b) = kind.rgb(pen);
     MarkupSpec::TextMarkup {
         kind: kind.subtype(),
         quads,
-        color: Color::Rgb(r, g, b),
+        color: kind.colour(pen),
     }
 }
 
@@ -174,6 +173,7 @@ pub fn swept(frame: Swept<'_>, actions: &mut Vec<Action>) -> Option<Vec<egui::Re
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pdfcer_core::annot_author::Color;
     use pdfcer_core::annot_author::TextMarkupKind;
     use pdfcer_core::page_tree::Rect as PageRect;
 
@@ -246,11 +246,12 @@ mod tests {
             let Color::Rgb(r, g, b) = color else {
                 panic!("{kind:?} authored a non-RGB colour");
             };
-            let expected = chosen.colour_of(kind.slot());
+            let Color::Rgb(er, eg, eb) = chosen.colour_of(kind.slot()) else {
+                panic!("{kind:?}'s pen is not RGB");
+            };
+            let expected = (er, eg, eb);
             assert!(
-                (r - expected.0).abs() < 1e-9
-                    && (g - expected.1).abs() < 1e-9
-                    && (b - expected.2).abs() < 1e-9,
+                (r - er).abs() < 1e-9 && (g - eg).abs() < 1e-9 && (b - eb).abs() < 1e-9,
                 "{kind:?} ignored its own pen and authored ({r}, {g}, {b}) instead of \
                  {expected:?} — the Markup ▸ Style swatch moves shapes and not text marks again"
             );

@@ -187,7 +187,7 @@ pub enum TextMarkKind {
     /// one variant.
     ///
     /// It takes the **highlighter**, not the ink, unlike the other three —
-    /// see [`Self::rgb`]. Same instrument, same swatch, whichever gesture
+    /// see [`Self::colour`]. Same instrument, same swatch, whichever gesture
     /// reached it.
     Highlight,
     /// `/Underline` — a line near each quad's baseline.
@@ -284,11 +284,11 @@ impl TextMarkKind {
     /// the same swatch. The alternative is one feature that changes colour
     /// depending on how it was reached.
     #[must_use]
-    pub fn rgb(self, pen: crate::markuppen::Pen) -> (f64, f64, f64) {
+    pub fn colour(self, pen: crate::markuppen::Pen) -> pdfcer_core::annot_author::Color {
         pen.colour_of(self.slot())
     }
 
-    /// **Which pen draws this kind** — see [`Self::rgb`] for the table.
+    /// **Which pen draws this kind** — see [`Self::colour`] for the table.
     #[must_use]
     pub const fn slot(self) -> crate::markuppen::PenSlot {
         match self {

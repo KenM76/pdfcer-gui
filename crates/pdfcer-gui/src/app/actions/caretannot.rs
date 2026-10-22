@@ -54,12 +54,11 @@ pub(super) fn place(
     doc: &mut OpenDoc,
     prefs: &Prefs,
     placed: &Placed<'_>,
-    ink: (f64, f64, f64),
+    ink: Color,
     opacity: Option<f64>,
 ) {
-    let (r, g, b) = ink;
     let mut spec = CaretSpec::new(caret_rect(placed.at, placed.paragraph));
-    spec.color = Color::Rgb(r, g, b);
+    spec.color = ink;
     if placed.paragraph {
         spec.symbol = CaretSymbol::Paragraph;
     }
@@ -116,12 +115,11 @@ pub(super) fn replace(
     doc: &mut OpenDoc,
     prefs: &Prefs,
     replaced: &Replaced<'_>,
-    ink: (f64, f64, f64),
+    ink: Color,
     opacity: Option<f64>,
 ) {
-    let (r, g, b) = ink;
     let mut spec = CaretSpec::new(caret_rect(replaced.at, false));
-    spec.color = Color::Rgb(r, g, b);
+    spec.color = ink;
     let options = MarkupOptions {
         note: Some(super::annots::signed_note(
             replaced.text,

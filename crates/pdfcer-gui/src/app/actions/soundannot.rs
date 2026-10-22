@@ -59,7 +59,7 @@ pub(super) fn place(
     doc: &mut OpenDoc,
     prefs: &Prefs,
     placed: &Placed<'_>,
-    ink: (f64, f64, f64),
+    ink: Color,
     opacity: Option<f64>,
 ) {
     let bytes = match std::fs::read(placed.file) {
@@ -83,10 +83,9 @@ pub(super) fn place(
         .file_name()
         .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
     let disclosure = t::placed(&name, placed.page, &import.sound, &import.conversions);
-    let (r, g, b) = ink;
     let mut spec = SoundSpec::new(placed.rect, import.sound);
     spec.icon = placed.icon.clone();
-    spec.color = Color::Rgb(r, g, b);
+    spec.color = ink;
     let options = MarkupOptions {
         note: placed
             .description

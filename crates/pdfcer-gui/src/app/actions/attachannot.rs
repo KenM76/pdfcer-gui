@@ -57,7 +57,7 @@ pub(super) fn place(
     doc: &mut OpenDoc,
     prefs: &Prefs,
     placed: &Placed<'_>,
-    ink: (f64, f64, f64),
+    ink: Color,
     opacity: Option<f64>,
 ) {
     let bytes = match std::fs::read(placed.file) {
@@ -76,10 +76,9 @@ pub(super) fn place(
         |n| n.to_string_lossy().into_owned(),
     );
     let size = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
-    let (r, g, b) = ink;
     let mut spec: FileAttachmentSpec = FileAttachmentSpec::new(placed.rect, &name, bytes);
     spec.icon = placed.icon.clone();
-    spec.color = Color::Rgb(r, g, b);
+    spec.color = ink;
     let options = MarkupOptions {
         note: placed
             .description

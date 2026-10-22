@@ -53,7 +53,7 @@ impl Check for AMarksOutlineFromTheFormatTabIsStoredInCmyk {
 }
 
 /// The component count of every `/C` array in a file, as written.
-fn colour_arity(bytes: &[u8]) -> Vec<usize> {
+pub(super) fn colour_arity(bytes: &[u8]) -> Vec<usize> {
     let text = String::from_utf8_lossy(bytes);
     text.match_indices("/C")
         .filter_map(|(i, _)| {

@@ -61,6 +61,19 @@ impl Swatch {
     pub fn rgb_components(&self) -> (f64, f64, f64) {
         components(self.rgb)
     }
+
+    /// This cell as the engine's colour.
+    #[must_use]
+    pub fn colour(&self) -> pdfcer_core::annot_author::Color {
+        colour(self.rgb)
+    }
+}
+
+/// The engine's `DeviceRGB` colour from sRGB bytes.
+#[must_use]
+pub fn colour(rgb: [u8; 3]) -> pdfcer_core::annot_author::Color {
+    let (r, g, b) = components(rgb);
+    pdfcer_core::annot_author::Color::Rgb(r, g, b)
 }
 
 /// PDF `/DeviceRGB` components from sRGB bytes.

@@ -48,12 +48,7 @@ pub(in crate::app::actions) fn trace_applied(session: &EditSession, id: ObjId) {
 
 /// `none`, or the channels joined by commas to three places.
 fn colour(c: Option<Color>) -> String {
-    match c {
-        None => "none".to_owned(),
-        Some(Color::Gray(g)) => format!("gray:{g:.3}"),
-        Some(Color::Rgb(r, g, b)) => format!("rgb:{r:.3},{g:.3},{b:.3}"),
-        Some(Color::Cmyk(c, m, y, k)) => format!("cmyk:{c:.3},{m:.3},{y:.3},{k:.3}"),
-    }
+    c.map_or_else(|| "none".to_owned(), pdfcer_gui_base::colourpick::trace_key)
 }
 
 /// The `/LE` name, spelled as the file spells it.

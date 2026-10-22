@@ -236,6 +236,15 @@ pub fn painted_text(typed: &str) -> &str {
     typed.trim()
 }
 
+/// The text box's painted text in the same device space as its border.
+const fn text_colour(colour: Color) -> TextColor {
+    match colour {
+        Color::Gray(v) => TextColor::Gray(v),
+        Color::Rgb(r, g, b) => TextColor::Rgb(r, g, b),
+        Color::Cmyk(c, m, y, k) => TextColor::Cmyk(c, m, y, k),
+    }
+}
+
 /// Build the engine spec for a placed, typed annotation.
 #[must_use]
 pub fn spec(
@@ -250,7 +259,7 @@ pub fn spec(
     // chooser always has a selection, so an `Option` here would model a state
     // the dialog cannot be in.
     stamp_size: StampSize,
-    colour: (f64, f64, f64),
+    colour: Color,
 ) -> Option<TextAnnotSpec> {
     let text = painted_text(text);
     // The blank refusal applies to the two kinds whose words the OPERATOR
@@ -260,7 +269,6 @@ pub fn spec(
     if text.is_empty() && !kind.uses_gallery() {
         return None;
     }
-    let (r, g, b) = colour;
     Some(match kind {
         // Each has its own engine verb, reached through `NewComment`.
         TextAnnotKind::Attachment
@@ -275,7 +283,7 @@ pub fn spec(
             // also the safe end of what the engine will author.
             font: Std14::Helvetica,
             font_size: TEXT_SIZE_PT,
-            color: TextColor::Rgb(r, g, b),
+            color: text_colour(colour),
             // Left, because a callout is read as prose and prose is
             // left-aligned. Centring is a stamp's property, not a note's.
             quadding: Quadding::Left,
@@ -317,7 +325,7 @@ pub fn spec(
             // sheet a borderless caption is indistinguishable from the
             // drawing's own annotation, and a revision markup must read as
             // something added.
-            border: Some(Color::Rgb(r, g, b)),
+            border: Some(colour),
             border_width: 1.0,
         },
         // **The icon is real in the file and invisible on pdfcer's own
@@ -350,7 +358,7 @@ pub fn spec(
             rect,
             icon: icon.clone(),
             contents: text.to_owned(),
-            color: Color::Rgb(r, g, b),
+            color: colour,
             //
             // It used to read: *"a popup that opened itself on every sticky
             // would cover the drawing the note is about — and
@@ -418,7 +426,7 @@ pub fn spec(
                 rect,
                 name: stamp,
                 label: None,
-                color: Color::Rgb(r, g, b),
+                color: colour,
                 // **The operator's own choice, and this field exists because a
                 // compiler asked for it.**
                 //
@@ -504,7 +512,7 @@ mod tests {
     /// Every kind maps to the engine variant it names.
     #[test]
     fn every_kind_authors_the_annotation_it_names() {
-        let colour = (0.85, 0.16, 0.16);
+        let colour = Color::Rgb(0.85, 0.16, 0.16);
         assert!(matches!(
             spec(
                 TextAnnotKind::TextBox,
@@ -565,7 +573,7 @@ mod tests {
                         DEFAULT_STAMP,
                         &DEFAULT_STICKY_ICON,
                         DEFAULT_STAMP_SIZE,
-                        (0.0, 0.0, 0.0)
+                        Color::Rgb(0.0, 0.0, 0.0)
                     )
                     .is_none(),
                     "{kind:?} authored an annotation for {blank:?}"
@@ -584,7 +592,7 @@ mod tests {
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
             DEFAULT_STAMP_SIZE,
-            (0.0, 0.0, 0.0),
+            Color::Rgb(0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
         };
@@ -604,7 +612,7 @@ mod tests {
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
             DEFAULT_STAMP_SIZE,
-            (0.0, 0.0, 0.0),
+            Color::Rgb(0.0, 0.0, 0.0),
         ) else {
             panic!("a text box with words must author");
         };
@@ -632,7 +640,7 @@ mod tests {
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
             DEFAULT_STAMP_SIZE,
-            (0.0, 0.0, 0.0),
+            Color::Rgb(0.0, 0.0, 0.0),
         ) else {
             panic!("a text box must author");
         };
@@ -645,7 +653,7 @@ mod tests {
             DEFAULT_STAMP,
             &DEFAULT_STICKY_ICON,
             DEFAULT_STAMP_SIZE,
-            (0.0, 0.0, 0.0),
+            Color::Rgb(0.0, 0.0, 0.0),
         ) else {
             panic!("a sticky must author");
         };
@@ -727,7 +735,7 @@ mod tests {
                 *chosen,
                 &DEFAULT_STICKY_ICON,
                 DEFAULT_STAMP_SIZE,
-                (0.0, 0.0, 0.0),
+                Color::Rgb(0.0, 0.0, 0.0),
             ) else {
                 panic!("{chosen:?} must author");
             };
@@ -753,7 +761,7 @@ mod tests {
                 DEFAULT_STAMP,
                 &DEFAULT_STICKY_ICON,
                 DEFAULT_STAMP_SIZE,
-                (0.0, 0.0, 0.0)
+                Color::Rgb(0.0, 0.0, 0.0)
             )
             .is_some(),
             "the gallery supplies no typed text, so requiring some refuses every stamp"
@@ -816,7 +824,7 @@ mod tests {
                 DEFAULT_STAMP,
                 chosen,
                 DEFAULT_STAMP_SIZE,
-                (0.0, 0.0, 0.0),
+                Color::Rgb(0.0, 0.0, 0.0),
             ) else {
                 panic!("{chosen:?} must author a sticky");
             };
@@ -838,7 +846,7 @@ mod tests {
                 DEFAULT_STAMP,
                 &StickyIcon::Key,
                 DEFAULT_STAMP_SIZE,
-                (0.0, 0.0, 0.0)
+                Color::Rgb(0.0, 0.0, 0.0)
             ),
             Some(TextAnnotSpec::FreeText { .. })
         ));
@@ -850,7 +858,7 @@ mod tests {
                 DEFAULT_STAMP,
                 &StickyIcon::Key,
                 DEFAULT_STAMP_SIZE,
-                (0.0, 0.0, 0.0)
+                Color::Rgb(0.0, 0.0, 0.0)
             ),
             Some(TextAnnotSpec::Stamp { .. })
         ));

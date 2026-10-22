@@ -191,10 +191,10 @@ written as `0.996` and round-trip to a slightly different swatch.
 
 ### `fn color32_of`
 
-The inverse of [`rgb_of`], and **opaque**: the swatch shows the colour the
-annotation will be, and an annotation has no alpha in `/C`. Rounding rather
-than truncating, so the round trip through the picker is stable — truncation
-would walk a colour down by one unit per visit.
+The slot's colour as the swatch draws it, **opaque**: an annotation has no
+alpha in `/C`. Goes through `colourpick::Ink::screen`, the same conversion
+pdfcer renders a grey or CMYK `/C` with, so a CMYK pen's chip is the colour
+the mark will be.
 
 ### `fn every_slot_ships_at_the_acrobat_value_it_was_measured_from`
 
@@ -477,8 +477,14 @@ kind"* is this function plus the fact that [`Pen`] lives on the
 application rather than on the document — see the module header's own
 section on why a pencil does not change colour when you turn the page.
 
-Alpha is dropped; see [`Self::set_ink`] for the argument, which is about
-`/C` having three components and no fourth.
+Takes an sRGB `Color32` from a palette cell and stores it as RGB; alpha is
+dropped because `/C` carries no opacity.
+
+### `fn set_device_colour`
+
+Stores a colour in the space the operator chose it in — grey, RGB or CMYK —
+and writes it to `/C` in that space (Table 164 allows 1, 3 or 4 components).
+[`Self::set_colour`] is the RGB route the palette's cells take.
 
 ### `fn text_annot_colour`
 
