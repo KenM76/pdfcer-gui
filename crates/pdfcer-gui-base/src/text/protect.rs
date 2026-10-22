@@ -17,6 +17,43 @@ pub const fn group_file_security() -> &'static str {
     "Security"
 }
 
+/// The **Trust** group's caption, on the Security tab.
+#[must_use]
+pub const fn group_trust() -> &'static str {
+    "Trust"
+}
+
+/// `file.trust_web_sites`
+#[must_use]
+pub const fn file_trust_web_sites() -> CommandText {
+    CommandText::new(
+        "Web sites…",
+        "Choose whether a web link in any document asks first, opens or is \
+         refused, and change or forget the answers kept for each site.",
+    )
+}
+
+/// `file.trust_ask_files`
+#[must_use]
+pub const fn file_trust_ask_files() -> CommandText {
+    CommandText::new(
+        "Ask before opening other files",
+        "While this is on, a link that opens another file asks first. A link \
+         into another PDF opens it here without asking either way.",
+    )
+}
+
+/// `file.trust_play_3d`
+#[must_use]
+pub const fn file_trust_play_3d() -> CommandText {
+    CommandText::new(
+        "Play 3D content",
+        "While this is on, a 3D model opens when you ask for it. While it is \
+         off, a model asks first, and you can trust its document once or \
+         always.",
+    )
+}
+
 /// `file.encrypt` — the password.
 #[must_use]
 pub const fn file_encrypt() -> CommandText {

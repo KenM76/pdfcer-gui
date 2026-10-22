@@ -16,7 +16,6 @@ dup tools/ui-verify::annot_count in tools/ui-verify/src/checks/text_annot.rs, to
 dup tools/ui-verify::armed_tool in tools/ui-verify/src/checks/custom_stamp.rs, tools/ui-verify/src/checks/stamp_dialog_reopen.rs
 dup tools/ui-verify::at in tools/ui-verify/src/checks/signing/hand_sign.rs, tools/ui-verify/src/checks/signing/next_box.rs
 dup tools/ui-verify::census in tools/ui-verify/src/checks/bookmark_edit.rs, tools/ui-verify/src/checks/bookmark_move.rs
-dup tools/ui-verify::click in tools/ui-verify/src/checks/remove_metadata.rs, tools/ui-verify/src/checks/remove_ocr_pages.rs
 dup tools/ui-verify::click in tools/ui-verify/src/checks/shortcut_change.rs, tools/ui-verify/src/checks/snapshot_dpi.rs
 dup tools/ui-verify::click_doc in tools/ui-verify/src/checks/link_follow.rs, tools/ui-verify/src/checks/point_destination.rs
 dup tools/ui-verify::differs in tools/ui-verify/src/checks/model_poster.rs, tools/ui-verify/src/checks/model_view_poster.rs

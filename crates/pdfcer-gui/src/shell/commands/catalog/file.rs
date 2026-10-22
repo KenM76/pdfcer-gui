@@ -726,6 +726,27 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("permissions")
         .enabled_when("doc.open"),
+        // Security ▸ Trust: preferences, so no condition — they apply to any
+        // document, open or not. Play 3D content exists only where 3D does.
+        command(
+            "file.trust_web_sites",
+            crate::text::protect::file_trust_web_sites(),
+            170,
+        )
+        .with_icon("pick-link"),
+        command(
+            "file.trust_ask_files",
+            crate::text::protect::file_trust_ask_files(),
+            171,
+        )
+        .with_icon("open"),
+        #[cfg(feature = "3d")]
+        command(
+            "file.trust_play_3d",
+            crate::text::protect::file_trust_play_3d(),
+            172,
+        )
+        .with_icon("model-3d"),
         // SIGNING — `file.sign`, token **128**, and the `#[cfg]` here is
         // THE ONLY EXPRESSION OF THE CAPABILITY ANYWHERE IN THE GUI.
         //

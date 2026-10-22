@@ -532,6 +532,16 @@
                         Command(id: "edit.offpage", visible_when: "mode.edit_content"),
                         Command(id: "edit.redact_apply", visible_when: "mode.edit_content"),
                     ],
+                    collapse: 2,
+                ),
+                (
+                    id: "trust",
+                    caption: "Trust",
+                    items: [
+                        Command(id: "file.trust_web_sites", size: Large),
+                        Command(id: "file.trust_ask_files"),
+                        Command(id: "file.trust_play_3d"),
+                    ],
                     collapse: 1,
                 ),
             ],

@@ -44,6 +44,11 @@ impl PdfcerApp {
                 dont_ask,
             } => self.launch_answer(&file, open, dont_ask, pixels_per_point),
             OutwardAction::ModelAnswer { trust } => self.model_answer(trust),
+            OutwardAction::SetWebTrust { mode, sites } => {
+                self.prefs.trust.web_links = mode;
+                self.prefs.trust.set_sites(&sites);
+                let _ = self.prefs.save();
+            }
         }
     }
 

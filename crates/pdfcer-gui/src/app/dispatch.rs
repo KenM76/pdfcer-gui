@@ -89,6 +89,7 @@ pub(crate) mod shrinkimages;
 /// the subject lives in one place.
 pub(crate) mod text;
 pub(crate) mod textformat;
+pub(crate) mod trust;
 
 use super::actions::Action;
 use super::state::Status;
@@ -801,6 +802,7 @@ impl PdfcerApp {
             // File > Security: Remove old passwords…, Encrypt…, Permissions…,
             // Sign…. See that module.
             id if security::claims(id) => self.dispatch_security(id, actions),
+            id if trust::claims(id) => self.dispatch_trust(id),
             // File > Export: the three exports and the three imports beside
             // them. `dispatch::exchange`'s header carries the seam and the
             // warning that is easy to read and not act on.

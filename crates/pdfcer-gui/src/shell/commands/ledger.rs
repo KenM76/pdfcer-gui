@@ -422,9 +422,13 @@ fn registration_succeeds_and_registers_every_command() {
     // 238 → 239: `format.shrink_images`, Format ▸ Image.
     // +1 more with signing: `file.add_validation_evidence`, File ▸ Security.
     // +1 with timestamp: `file.add_archive_timestamp`, File ▸ Security.
+    // 239 → 241: `file.trust_web_sites` and `file.trust_ask_files`, Security ▸ Trust.
+    // +1 with 3d: `file.trust_play_3d`, Security ▸ Trust.
     assert_eq!(
         registry().len(),
-        239 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp"))
+        241 + 2 * usize::from(cfg!(feature = "signing"))
+            + usize::from(cfg!(feature = "timestamp"))
+            + usize::from(cfg!(feature = "3d"))
     );
 }
 
@@ -854,9 +858,13 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 206 → 207: `edit.word_gap` names `settings`, shared with `file.settings`.
     // 207 → 208: `format.shrink_images` names `save-compact`, shared.
     // +1 more with signing: `file.add_validation_evidence` names `sign`.
+    // 208 → 210: `file.trust_web_sites` names `pick-link`, `file.trust_ask_files`
+    // names `open`, both shared. +1 with 3d: `file.trust_play_3d` names `model-3d`.
     assert_eq!(
         named,
-        208 + 2 * usize::from(cfg!(feature = "signing")) + usize::from(cfg!(feature = "timestamp")),
+        210 + 2 * usize::from(cfg!(feature = "signing"))
+            + usize::from(cfg!(feature = "timestamp"))
+            + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"
     );
     // 12 → 17: the Format ▸ Font group's five commands

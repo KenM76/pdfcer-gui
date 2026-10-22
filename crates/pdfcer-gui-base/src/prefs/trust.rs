@@ -128,6 +128,15 @@ impl TrustPrefs {
         self.sites.push(SiteAnswer { host, allow });
     }
 
+    /// Replace every remembered site with `sites`, normalised as
+    /// [`Self::remember_site`] normalises one.
+    pub fn set_sites(&mut self, sites: &[SiteAnswer]) {
+        self.sites.clear();
+        for site in sites {
+            self.remember_site(&site.host, site.allow);
+        }
+    }
+
     /// Forget the site at `index`, if there is one.
     pub fn forget_site(&mut self, index: usize) {
         if index < self.sites.len() {

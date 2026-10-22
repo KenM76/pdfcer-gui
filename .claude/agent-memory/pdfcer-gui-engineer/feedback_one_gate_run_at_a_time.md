@@ -20,3 +20,8 @@ gates race. A verdict read from it is attributable to neither commit.
 (`taskkill /PID n /T /F`) and run once clean. Compaction summaries list the
 background task ids — check those before re-launching. See
 [[feedback_gate_run_no_timeout]], [[feedback_stopped_background]].
+
+**A failed first step is not a finished chain.** A `{ test; clippy; run-all; }`
+chain wrote `TESTS rc=101` and kept going; a rerun started on that line ran
+beside its clippy and gates, on the same logs. Wait for the task
+notification, or kill the chain by PID, before rerunning.

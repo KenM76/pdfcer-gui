@@ -7,6 +7,7 @@
 
 use crate::checks::driving::declared_in;
 use crate::checks::model_view_window::{VIEW_REGION, launch_with_model, press_insert, ui_rect};
+use crate::checks::scripteddrive::userdata;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
@@ -45,16 +46,6 @@ impl Check for ThreeDContentAsksWhileItIsOff {
             Err(why) => report.from_error(&why),
         }
     }
-}
-
-fn userdata(ctx: &CheckContext) -> Result<std::path::PathBuf> {
-    let exe = ctx
-        .resolve_exe()
-        .ok_or_else(|| Error::new("no binary to drive. Pass --exe."))?;
-    Ok(exe
-        .parent()
-        .ok_or_else(|| Error::new("the binary has no parent directory"))?
-        .join("userdata"))
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {

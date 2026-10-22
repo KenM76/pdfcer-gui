@@ -117,6 +117,7 @@ pub mod remove_metadata;
 pub mod remove_ocr;
 /// Format ▸ Make pictures smaller.
 pub mod shrink_images;
+pub mod trust_sites;
 pub mod weblink;
 /// **The question that comes before pdfcer lets go of the file** —
 /// `OPERATOR_REQUESTS.md` O122. Three shapes of one window: save-then-hand-over,
@@ -414,6 +415,8 @@ pub struct DialogsState {
     drop_pdf: Option<drop_pdf::DropPdfDialog>,
     /// The Security Warning a web link raised, when one is up.
     weblink: Option<weblink::WebLinkDialog>,
+    /// Security ▸ Trust ▸ Web sites…. Preferences, so it outlives a document.
+    trust_sites: Option<trust_sites::TrustSitesDialog>,
     /// The Launch File prompt a `/Launch` link raised, when one is up.
     launch: Option<launch::LaunchDialog>,
 
@@ -852,6 +855,9 @@ impl DialogsState {
         }
         if self.weblink.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.weblink = None;
+        }
+        if self.trust_sites.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.trust_sites = None;
         }
         if self.launch.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.launch = None;

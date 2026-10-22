@@ -635,6 +635,13 @@ impl DialogsState {
         Some(crate::text::unembed::nothing_removable().to_owned())
     }
 
+    /// Open Security ▸ Trust ▸ Web sites… over `trust`, unless it is already up.
+    pub fn open_trust_sites(&mut self, trust: &pdfcer_gui_base::prefs::trust::TrustPrefs) {
+        if self.trust_sites.is_none() {
+            self.trust_sites = Some(crate::dialogs::trust_sites::TrustSitesDialog::new(trust));
+        }
+    }
+
     /// Raise the Security Warning for `uri`, unless one is already up.
     pub fn open_weblink(&mut self, uri: String) {
         if self.weblink.is_none() {

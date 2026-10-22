@@ -341,6 +341,11 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         "tools.font_folders",
         "tools.merge_files",
         "tools.bates_files",
+        // Security ▸ Trust: preferences, which apply to whatever is opened next.
+        "file.trust_web_sites",
+        "file.trust_ask_files",
+        #[cfg(feature = "3d")]
+        "file.trust_play_3d",
         "view.fullscreen",
         // The three panel-layout verbs need no document, and that is
         // deliberate rather than an omission. A panel arrangement is

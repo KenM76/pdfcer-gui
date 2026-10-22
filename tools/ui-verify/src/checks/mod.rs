@@ -83,6 +83,9 @@ pub mod structure_round_trip;
 
 pub mod driving;
 
+/// Helpers shared by checks that press through the scripted pointer.
+pub mod scripteddrive;
+
 pub mod drop_onto_thumbnails;
 
 pub mod embed_bundled;
@@ -859,6 +862,8 @@ pub mod os_image_paste;
 pub mod paste_chord;
 /// Text another program copied pastes as a text box at the pointer.
 pub mod paste_text;
+/// Security ▸ Trust's switches flip and are saved; Web sites… forgets a site.
+pub mod trust;
 /// Every kind of form field loses its border through Properties' No border.
 pub mod widget_no_border;
 

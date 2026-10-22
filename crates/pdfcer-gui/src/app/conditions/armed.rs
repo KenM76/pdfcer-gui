@@ -129,6 +129,15 @@ impl crate::app::PdfcerApp {
         if crate::canvas::smart::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("view.smart_select"));
         }
+        // Security ▸ Trust's switches: preferences, so outside any document.
+        if self.prefs.trust.ask_before_files {
+            set.set(egui_shell::ribbon::selected_condition(
+                "file.trust_ask_files",
+            ));
+        }
+        if self.prefs.trust.play_3d {
+            set.set(egui_shell::ribbon::selected_condition("file.trust_play_3d"));
+        }
         // **The chunk boxes' pressed state** — `OPERATOR_REQUESTS.md` O215.
         //
         // The live value, not the persisted one, for the reason stated

@@ -38,7 +38,8 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     // MEASURE — Dimension is the tab; Scale is set once per drawing.
     ("measure", "scale", 1),
     // SECURITY — the file-level band is the tab; redaction folds first.
-    ("security", "protect", 1),
+    ("security", "trust", 1),
+    ("security", "protect", 2),
     // TOOLS — no group here outranks another, so all three may collapse.
     ("tools", "diagnostics", 1),
     ("tools", "fonts", 2),

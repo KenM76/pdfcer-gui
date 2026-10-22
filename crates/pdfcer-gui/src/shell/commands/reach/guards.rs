@@ -77,6 +77,9 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::security::claims(id) {
         return Some("claims");
     }
+    if crate::app::dispatch::trust::claims(id) {
+        return Some("claims");
+    }
     //
     // The first attempt registered `exchange` as a second SOURCE FILE, the way
     // `pages` and `measure` are, and every test in this module failed with

@@ -232,3 +232,75 @@ pub const fn model_refuse() -> &'static str {
 pub const fn model_not_shown() -> &'static str {
     "The 3D model was not shown: Play 3D content is off and this document is not trusted."
 }
+
+/// Security ▸ Trust ▸ Web sites…'s window title.
+#[must_use]
+pub const fn sites_title() -> &'static str {
+    "Web Sites"
+}
+
+/// The web-link mode that asks.
+#[must_use]
+pub const fn sites_mode_ask() -> &'static str {
+    "Ask before opening a web link, unless the site is listed below"
+}
+
+/// The web-link mode that allows all.
+#[must_use]
+pub const fn sites_mode_allow() -> &'static str {
+    "Allow all web sites"
+}
+
+/// The web-link mode that blocks all.
+#[must_use]
+pub const fn sites_mode_block() -> &'static str {
+    "Block all web sites"
+}
+
+/// The heading over the remembered sites.
+#[must_use]
+pub const fn sites_heading() -> &'static str {
+    "Remembered sites"
+}
+
+/// Said under the heading while the mode is not Ask.
+#[must_use]
+pub const fn sites_unused() -> &'static str {
+    "These answers are kept but not used while every site is allowed or blocked."
+}
+
+/// Said in place of an empty list.
+#[must_use]
+pub const fn sites_none() -> &'static str {
+    "No site has a remembered answer."
+}
+
+/// A site row's Allow choice.
+#[must_use]
+pub const fn sites_allow() -> &'static str {
+    "Allow"
+}
+
+/// A site row's Block choice.
+#[must_use]
+pub const fn sites_block() -> &'static str {
+    "Block"
+}
+
+/// A site row's remove button.
+#[must_use]
+pub const fn sites_forget() -> &'static str {
+    "Forget"
+}
+
+/// The window's accept button.
+#[must_use]
+pub const fn sites_ok() -> &'static str {
+    "OK"
+}
+
+/// The window's cancel button.
+#[must_use]
+pub const fn sites_cancel() -> &'static str {
+    "Cancel"
+}

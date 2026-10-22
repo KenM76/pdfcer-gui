@@ -71,5 +71,18 @@ pub fn tab() -> Tab {
                     command("edit.redact_apply").shown_when(EDIT_CONTENT),
                 ],
             ),
+            // ---------------------------------------------------------------
+            // Trust — what any document may reach outside itself. Preferences,
+            // in every mode; the two switches draw pressed while on.
+            // ---------------------------------------------------------------
+            group(
+                "trust",
+                crate::text::protect::group_trust(),
+                [
+                    large("file.trust_web_sites"),
+                    command("file.trust_ask_files"),
+                    command("file.trust_play_3d"),
+                ],
+            ),
         ])
 }

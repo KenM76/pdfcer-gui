@@ -5,6 +5,8 @@
 
 use std::path::PathBuf;
 
+use crate::prefs::trust::{SiteAnswer, WebLinks};
+
 /// A link reaching outside the document, or the operator's answer about one.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OutwardAction {
@@ -48,6 +50,14 @@ pub enum OutwardAction {
     ModelAnswer {
         /// How far the document is trusted.
         trust: ModelTrust,
+    },
+    /// Security ▸ Trust ▸ Web sites… was accepted: the web-link mode and the
+    /// whole remembered list, replacing what preferences held.
+    SetWebTrust {
+        /// The web-link mode.
+        mode: WebLinks,
+        /// Every remembered site, oldest first.
+        sites: Vec<SiteAnswer>,
     },
 }
 

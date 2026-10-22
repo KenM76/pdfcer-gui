@@ -7,12 +7,10 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/remove_metadata.md`.
 
-use crate::checks::driving::{
-    SHELL_DIAG_ENV, declared, declared_in, declared_names, list, repo_fixture,
-};
+use crate::checks::driving::{SHELL_DIAG_ENV, declared, repo_fixture};
+use crate::checks::scripteddrive::click;
 use crate::checks::security_notes::await_line;
 use crate::checks::{Check, CheckContext};
-use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -198,19 +196,4 @@ fn launch(
     report.note(format!("launched as pid {}", session.pid()));
     session.settle(45);
     Ok((session, pointer))
-}
-
-/// Click `name` in whichever viewport declared it.
-fn click(session: &Session, pointer: &ScriptedPointer, name: &str) -> Result<()> {
-    let trace = session.trace()?;
-    let (rect, viewport) = declared_in(&trace, UI_RECT, name).ok_or_else(|| {
-        let prefix = name.rsplit_once('.').map_or(name, |(head, _)| head);
-        Error::new(format!(
-            "no `{name}` region. Declared under `{prefix}`: {}.",
-            list(&declared_names(&trace, UI_RECT, prefix))
-        ))
-    })?;
-    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
-    session.settle(15);
-    Ok(())
 }
