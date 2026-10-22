@@ -147,7 +147,7 @@ pub const fn fonts_toggle() -> &'static str {
 /// Hover on it.
 #[must_use]
 pub const fn fonts_tooltip() -> &'static str {
-    "Each embedded TrueType font keeps only the characters this document draws, and copies of one font embedded more than once become one. The pages look the same. Text added later in another program may have no characters to draw with. A font that cannot be cut safely is kept whole and listed with why. Not done to a PDF/A document."
+    "Each embedded TrueType or CFF font keeps only the characters this document draws, and copies of one font embedded more than once become one. The pages look the same. Text added later in another program may have no characters to draw with. A font that cannot be cut safely is kept whole and listed with why. Not done to a PDF/A document."
 }
 
 /// What cutting the fonts did, one sentence each: the total, each font cut,
