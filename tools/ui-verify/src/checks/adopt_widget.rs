@@ -4,23 +4,30 @@
 //! Design and rationale: `docs/modules/ui-verify/checks/adopt_widget.md`.
 
 use crate::checks::driving::{
-    SHELL_DIAG_ENV, click_mode_segment, declared, declared_names, declared_or_in_overflow,
-    frame_of, list, live_names,
+    SHELL_DIAG_ENV, declared, declared_in, declared_names, list, live_names,
 };
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
-/// The form whose pages are inserted to manufacture the orphans.
-const SOURCE: &str = "forms/demo-form.pdf";
+/// The form whose page is inserted to manufacture the orphans: two of its
+/// three merged field-widgets are missing from `/AcroForm /Fields`, so they
+/// arrive with their own `/T` and no field.
+const SOURCE: &str = "fixtures/unlisted-fields.pdf";
+/// The document the page is inserted into: one page, no form.
+const TARGET: &str = "fixtures/blank-overhang.pdf";
 /// The environment seam that answers the Insert-pages file picker.
 const INSERT_PATH_ENV: &str = "PDFCER_DIAG_INSERT_PATH";
-/// The mode the Forms panel is reached in.
-const MODE: &str = "edit";
+/// The mode the Forms panel is reached in, rung once at launch.
+const MODE_COMMAND: &str = "mode.edit";
+/// Where the window is placed: off the desktop, so nothing he does reaches it.
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
+/// The Tab-order section's collapsing header.
+const TAB_ORDER_HEADER: &str = "forms.tab_order.header";
 /// The command that opens the insert window, and the tab it lives on.
-///
 const INSERT_TAB: &str = "pages";
 const INSERT_ITEM: &str = "ribbon.item.pages.insert_from_file";
 /// The insert window's commit control.
@@ -76,27 +83,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             ctx.profile.default_exe
         ))
     })?;
-    let pdf = ctx
-        .pdf
-        .clone()
-        .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a mode segment, three ribbon \
-             controls and two panel controls. Reported as SKIPPED rather than passed: a check \
-             that did not run has learned nothing.",
-        ));
-    }
+    // A copy, so the insert never writes into a file the repository holds.
+    let target = repo_fixture(TARGET)
+        .ok_or_else(|| Error::new(format!("the fixture `{TARGET}` is not on disk.")))?;
+    let pdf = ctx.out("adopt_widget-target.pdf");
+    std::fs::copy(&target, &pdf).map_err(|e| Error::new(format!("copying {TARGET}: {e}")))?;
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
     let ui_rect = ctx.profile.vocab.ui_rect_event.ok_or_else(|| {
         Error::new(format!(
             "the `{}` profile declares no ui-rect trace event.",
             ctx.profile.name
         ))
     })?;
-    let source = engine_fixture(SOURCE).ok_or_else(|| {
+    let source = repo_fixture(SOURCE).ok_or_else(|| {
         Error::new(format!(
-            "the engine fixture `{SOURCE}` is not on disk. This check manufactures its own \
-             subject by inserting a real form's pages, so there is nothing to fall back to."
+            "the fixture `{SOURCE}` is not on disk. This check manufactures its own subject \
+             by inserting a form's page, so there is nothing to fall back to."
         ))
     })?;
 
@@ -115,34 +119,45 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         INSERT_PATH_ENV.to_owned(),
         source.to_string_lossy().into_owned(),
     ));
+    for (k, v) in [
+        (viewport_env, OFFSCREEN),
+        ("PDFCER_DIAG_INVOKE", MODE_COMMAND),
+    ] {
+        spec.env.push((k.to_owned(), v.to_owned()));
+    }
+    spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("adopt_widget.pointer.txt"))?;
 
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.note(format!(
-        "launched {} as pid {}, with {INSERT_PATH_ENV} pointing at {}",
+        "launched {} as pid {} off the desktop, with {INSERT_PATH_ENV} pointing at {}",
         exe.display(),
         session.pid(),
         source.display()
     ));
     report.artifact(session.trace_path().to_path_buf());
-    session.settle(40);
-    let driver = Driver::new(session.window());
-
-    click_mode_segment(&session, &driver, ui_rect, MODE)?;
+    report.artifact(pointer.path().to_path_buf());
+    session.settle(45);
+    let hand = Hand {
+        session: &session,
+        pointer: &pointer,
+        ui_rect,
+    };
 
     // --- A: manufacture the orphans ----------------------------------------
-    open_from_tab(&session, &driver, ui_rect, INSERT_TAB, INSERT_ITEM)?;
+    hand.open_from_tab(INSERT_TAB, INSERT_ITEM)?;
     session.settle(24);
     let trace = session.trace()?;
-    let button = declared(&trace, ui_rect, INSERT_BUTTON).ok_or_else(|| {
-        Error::new(format!(
+    if declared(&trace, ui_rect, INSERT_BUTTON).is_none() {
+        return Err(Error::new(format!(
             "the Insert-pages window declared no `{INSERT_BUTTON}` region, so it did not open or \
              did not read the source. Regions beginning `insert-pages`: {}.",
             list(&declared_names(&trace, ui_rect, "insert-pages"))
-        ))
-    })?;
-    driver.click_at(frame_of(&session, &trace, ui_rect, INSERT_BUTTON)?.declared_center(button))?;
+        )));
+    }
+    hand.click(INSERT_BUTTON)?;
     session.settle(40);
 
     let trace = session.trace()?;
@@ -157,16 +172,16 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if !disclosures.contains("re-registering") {
         return Ok(Some(format!(
             "the insert succeeded and its disclosure said nothing about form controls needing \
-             re-registering: {disclosures:?}. Either `{SOURCE}` no longer carries widgets, or \
+             re-registering: {disclosures:?}. Either `{SOURCE}` no longer carries unlisted widgets, or \
              `InsertOutcome::orphaned_widgets` came back zero — in which case pdfcer has started \
-             merging `/AcroForm` on this path and this check's whole premise has changed."
+             carrying fields missing from `/Fields` and this check's whole premise has changed."
         )));
     }
 
     // --- B: the Tab-order section, which is where they are listed ----------
-    open_from_tab(&session, &driver, ui_rect, "view", PANEL_ITEM)?;
+    hand.open_from_tab("view", PANEL_ITEM)?;
     session.settle(24);
-    open_tab_order(&session, &driver, ui_rect)?;
+    hand.open_tab_order()?;
 
     let trace = session.trace()?;
     let Some(before) = unclaimed_total(&trace) else {
@@ -205,7 +220,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if named == 0 {
         return Ok(Some(format!(
             "all {} row(s) previewed and NONE resolved a name, so every button reads \
-             \"Register\" rather than \"Register as …\". The engine measured 11 of 13 orphans as \
+             \"Register\" rather than \"Register as …\". Both of `{SOURCE}`'s orphans are \
              merged field-widgets carrying their own `/T`; zero here means the preview is being \
              asked with the wrong argument, or the source's widgets are all bare kids and this \
              fixture can no longer exercise the case it was chosen for.",
@@ -238,7 +253,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new(format!("the `{first}` region went away between phases.")))?;
     let mut turns = 0;
     while !panel.contains_rect(rect) && turns < MAX_SCROLL {
-        driver.scroll_at(session.frame()?.declared_center(panel), -3)?;
+        pointer.wheel_in(&session, None, WindowPoint::centre_of(panel), -3.0)?;
         session.settle(10);
         turns += 1;
         rect = declared(&session.trace()?, ui_rect, first)
@@ -253,7 +268,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!("the row is on screen after {turns} wheel turn(s)"));
-    driver.click_at(session.frame()?.declared_center(rect))?;
+    pointer.click(&session, WindowPoint::centre_of(rect))?;
     session.settle(30);
 
     let trace = session.trace()?;
@@ -318,9 +333,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     Ok(None)
 }
 
-/// Resolve a fixture under the engine repository's synthetic corpus.
-fn engine_fixture(rel: &str) -> Option<std::path::PathBuf> {
-    let path = std::path::Path::new("D:/Dev/pdfcer/fixtures/synthetic").join(rel);
+/// Resolve a fixture relative to this repository's root.
+fn repo_fixture(rel: &str) -> Option<std::path::PathBuf> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join(rel);
     path.is_file().then_some(path)
 }
 
@@ -348,45 +366,64 @@ fn unclaimed_total(trace: &crate::trace::Trace) -> Option<usize> {
     Some(total)
 }
 
-/// Click a ribbon tab, then an item on it, following the overflow if the item
-/// went there.
-fn open_from_tab(
-    session: &Session,
-    driver: &Driver,
-    ui_rect: &str,
-    tab: &str,
-    item: &str,
-) -> Result<()> {
-    let trace = session.trace()?;
-    let tab_region = declared(&trace, ui_rect, &format!("ribbon.tab.{tab}")).ok_or_else(|| {
-        Error::new(format!(
-            "no `ribbon.tab.{tab}` region. Tabs declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.tab."))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(tab_region))?;
-    session.settle(14);
-    let found = declared_or_in_overflow(session, driver, ui_rect, item)?.ok_or_else(|| {
-        Error::new(format!(
-            "no `{item}` region on the {tab} tab or in its overflow. Items declared: {}.",
-            list(&declared_names(
-                &session.trace().unwrap_or_default(),
-                ui_rect,
-                &format!("ribbon.item.{tab}.")
-            ))
-        ))
-    })?;
-    driver.click_at(session.frame()?.declared_center(found))?;
-    session.settle(20);
-    Ok(())
+/// The window and the scripted pointer that drives it off the desktop.
+struct Hand<'a> {
+    session: &'a Session,
+    pointer: &'a ScriptedPointer,
+    ui_rect: &'a str,
 }
 
-/// Expand the Tab-order collapsing header, which ships closed.
-fn open_tab_order(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
-    let trace = session.trace()?;
-    if let Some(header) = declared(&trace, ui_rect, "forms.tab_order.header") {
-        driver.click_at(session.frame()?.declared_center(header))?;
-        session.settle(20);
+impl Hand<'_> {
+    /// Click the centre of `region`, in whichever viewport declared it.
+    fn click(&self, region: &str) -> Result<()> {
+        let trace = self.session.trace()?;
+        let (rect, viewport) = declared_in(&trace, self.ui_rect, region).ok_or_else(|| {
+            let prefix = region.rsplit_once('.').map_or(region, |(head, _)| head);
+            Error::new(format!(
+                "no `{region}` region. Declared under `{prefix}`: {}.",
+                list(&declared_names(&trace, self.ui_rect, prefix))
+            ))
+        })?;
+        self.pointer.click_in(
+            self.session,
+            viewport.as_deref(),
+            WindowPoint::centre_of(rect),
+        )?;
+        self.session.settle(15);
+        Ok(())
     }
-    Ok(())
+
+    /// Click a ribbon tab, then an item on it, opening each collapsed group on
+    /// the tab until the item shows.
+    fn open_from_tab(&self, tab: &str, item: &str) -> Result<()> {
+        self.click(&format!("ribbon.tab.{tab}"))?;
+        if declared(&self.session.trace()?, self.ui_rect, item).is_none() {
+            let collapsed: Vec<String> = declared_names(
+                &self.session.trace()?,
+                self.ui_rect,
+                &format!("ribbon.group.{tab}."),
+            )
+            .into_iter()
+            .filter(|n| n.ends_with(".collapsed"))
+            .collect();
+            for group in collapsed {
+                self.click(&group)?;
+                if declared(&self.session.trace()?, self.ui_rect, item).is_some() {
+                    break;
+                }
+            }
+        }
+        self.click(item)?;
+        self.session.settle(20);
+        Ok(())
+    }
+
+    /// Expand the Tab-order collapsing header, which ships closed.
+    fn open_tab_order(&self) -> Result<()> {
+        if declared(&self.session.trace()?, self.ui_rect, TAB_ORDER_HEADER).is_some() {
+            self.click(TAB_ORDER_HEADER)?;
+            self.session.settle(20);
+        }
+        Ok(())
+    }
 }
