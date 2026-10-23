@@ -662,6 +662,8 @@ pub mod paragraphs_page;
 pub mod paragraph_here;
 
 pub mod panel_toggles;
+/// Clipboard leads Edit, Save follows File, the highlight band is yellow.
+pub mod ribbon_order;
 pub mod tab_faces;
 /// Word gap… on the text menu lands on its slider.
 pub mod word_gap_here;

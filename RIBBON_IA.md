@@ -337,7 +337,7 @@ selection is correct.
 | Group | Commands |
 |---|---|
 | **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
-| **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* · Gap width *(slider: how wide a gap between glyphs reads as a space; commits on release)* · Word gap… *(opens Settings ▸ Text at the full explanation)* |
+| **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* · Auto *(switch: each page measures its own gap width)* · Gap width *(slider: how wide a gap between glyphs reads as a space where a page is too sparse to measure, or with Auto off; commits on release)* · Word gap… *(opens Settings ▸ Text at the full explanation)* |
 | **Insert** | Image… · Link… · Attachments · Shape ⌄ |
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
 

@@ -727,11 +727,11 @@ His words: *"Also the setting Where extracted text gets its spaces should be ava
 
 **Built, not yet driven.** Edit ▸ Content carries an *Auto* switch and a *Gap width* slider beside *Word gap…*; Settings ▸ Text has the same switch. Auto measures each page's own threshold (engine v0.88.0, G209), and *Gap width* is the fallback for a page too sparse to measure. Hovering either control says what the current page used and whether it was measured. Either control saves to the settings file and re-extracts the text of every open document.
 
-## O313 — **BUILT, NOT DRIVEN** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
+## O313 — **BUILT AND DRIVEN, awaiting his check** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
 
 His words: *"Clipboard commands should be on the very left of the edit tab. Text markup highlight icon needs to be filled with yellow color. Save commands should be next to File."*
 
-**Built, not yet driven.** Clipboard is the Edit tab's first group; Save follows File, ahead of Recognise; `RIBBON_IA.md` §5.1 and §5.4 say so. The highlight glyph's band is filled yellow (`IconAccents::wash`) when icons are coloured, and stays hollow in the plain single-colour set, where a filled band would read as the redaction bar.
+**Built and driven** (`ribbon_puts_clipboard_first_and_save_beside_file`, off the desktop: the group order read from the window, the band's yellow counted in its own screenshot). Clipboard is the Edit tab's first group; Save follows File, ahead of Recognise; `RIBBON_IA.md` §5.1 and §5.4 say so. The highlight glyph's band is filled yellow (`IconAccents::wash`) when icons are coloured, and stays hollow in the plain single-colour set, where a filled band would read as the redaction bar.
 
 ## O314 — **FILED** — the latest engine and egui, and every new engine feature reaches the program
 
