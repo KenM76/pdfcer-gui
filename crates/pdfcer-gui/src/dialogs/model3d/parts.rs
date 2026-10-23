@@ -39,7 +39,7 @@ pub(super) fn trace_fields(nodes: &[ModelNode]) -> String {
 
 /// Draw the list into `ui`, or `error` when the tree could not be read.
 pub(super) fn show(ui: &mut Ui, nodes: &[ModelNode], error: Option<&str>) {
-    ui.strong(t::parts_heading(nodes.len()));
+    ui.label(t::parts_heading(nodes.len()));
     if let Some(why) = error {
         ui.small(t::parts_unreadable(why));
         return;

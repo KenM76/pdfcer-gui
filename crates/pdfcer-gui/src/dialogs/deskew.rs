@@ -383,7 +383,7 @@ impl DeskewDialog {
         if log.len() < of {
             ui.label(stopped(log.len(), of));
         }
-        ui.strong(done(changed, log.len()));
+        ui.label(done(changed, log.len()));
         for line in summary(self.kind, &log, step::folded(run)) {
             ui.label(line);
         }

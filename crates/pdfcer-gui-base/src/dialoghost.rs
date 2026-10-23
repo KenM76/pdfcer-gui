@@ -532,7 +532,10 @@ impl Host {
             // dialog's rectangles as if they were the application window's,
             // and they are plausible numbers naming a different place on the
             // desktop.
-            let _regions = crate::diag::ViewportScope::enter(self.id);
+            // An embedded dialog draws in its parent's window, whose
+            // coordinates its rectangles are in.
+            let _regions = (class != ViewportClass::EmbeddedWindow)
+                .then(|| crate::diag::ViewportScope::enter(self.id));
 
             // OWNED BY THE APPLICATION WINDOW. See the module header's G3
             // section: this is what makes the dialog stay in front of the

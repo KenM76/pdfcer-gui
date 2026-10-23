@@ -169,6 +169,7 @@ scan() {
         for k in "${!code[@]}"; do
             case "${code[$k]}" in
                 *".strong()"*) ;;
+                *"ui.strong("*) ;;
                 *"ui.spinner()"*) ;;
                 *"Spinner::new()"*) ;;
                 *) continue ;;
@@ -179,10 +180,18 @@ scan() {
             for j in $(seq "$lo" $((k + 2))); do
                 window="$window${code[$j]:-}"
             done
-            case "$window" in
-                *".color("*) continue ;;
+            case "${code[$k]}" in
+                *"ui.strong("*) ;;
+                *)
+                    case "$window" in
+                        *".color("*) continue ;;
+                    esac
+                    ;;
             esac
             case "${code[$k]}" in
+                *"ui.strong("*)
+                    echo "  $file:${where[$k]}: ui.strong() is .strong() with no way to take the colour back; use ui.label()"
+                    ;;
                 *"pinner"*)
                     echo "  $file:${where[$k]}: a spinner with no explicit .color() — it will resolve strong_text_color() and draw it on the panel behind it"
                     ;;
@@ -207,7 +216,15 @@ scan() {
 if [ "$SELF_TEST" = "1" ]; then
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
-    mkdir -p "$tmp/dirty" "$tmp/clean"
+    mkdir -p "$tmp/dirty" "$tmp/clean" "$tmp/shorthand"
+    # `ui.strong` is the same role behind a shorthand, and its Response has no
+    # `.color()`: a `.color(` on the next line belongs to something else.
+    cat > "$tmp/shorthand/bad.rs" <<'EOF'
+fn draw(ui: &mut Ui) {
+    ui.strong("Picture");
+    ui.label(RichText::new("x").color(c));
+}
+EOF
 
     cat > "$tmp/dirty/bad.rs" <<'EOF'
 fn draw(ui: &mut Ui) {
@@ -230,6 +247,10 @@ EOF
     fail=0
     if scan "$tmp/dirty" > /dev/null; then
         echo "SELF-TEST FAILED: a bare .strong() was not detected"
+        fail=1
+    fi
+    if scan "$tmp/shorthand" > /dev/null; then
+        echo "SELF-TEST FAILED: ui.strong() was not detected"
         fail=1
     fi
     if ! scan "$tmp/clean" > /dev/null; then

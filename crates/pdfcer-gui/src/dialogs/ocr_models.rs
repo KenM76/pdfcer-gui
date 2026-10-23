@@ -157,7 +157,7 @@ impl OcrModelsDialog {
         listing: &Listing,
         token: &'static str,
     ) {
-        ui.strong(engine_label(token));
+        ui.label(engine_label(token));
         let installed: Vec<usize> = listing.of_engine(token).map(|(i, _)| i).collect();
         if installed.is_empty() {
             missing_row(ui, token);

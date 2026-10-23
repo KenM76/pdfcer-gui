@@ -48,7 +48,15 @@ impl Check for ACompactedCopyListsEachPictureBeforeAndAfter {
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
-        run_on_with(self, ctx, &FIXTURE, INVOKE, "compact-compare", &[], body)
+        run_on_with(
+            self,
+            ctx,
+            &FIXTURE,
+            INVOKE,
+            "compact-compare",
+            &[("PDFCER_DIAG_EMBED", "1".to_owned())],
+            body,
+        )
     }
 }
 
@@ -102,5 +110,19 @@ fn body(
         )));
     }
     report.note("the before-and-after table drew");
+    // The picture is evidence for a reader, not an oracle.
+    // Dialogs are embedded in the main window, so the root's picture shows
+    // it; the pointer leaves first so no tooltip covers the table.
+    pointer.gone(session)?;
+    session.settle(10);
+    let shot = ctx.out("compact_compare.table.png");
+    match pointer.screenshot(session, &shot) {
+        Ok(()) => {
+            report.artifact(shot);
+        }
+        Err(why) => {
+            report.note(format!("no picture of the table: {why}"));
+        }
+    }
     Ok(None)
 }

@@ -20,3 +20,8 @@ added "for a person reading the run" broke it with no failure signal.
 oracle needs the app's own rendering (an in-process screenshot seam), not a
 screen grab. Checks that already call window_to_png are on-screen checks —
 ask before running them. See [[drive-off-screen-while-ken-uses-the-pc]].
+
+The in-process seam exists: the scripted pointer's `screenshot` (egui's own
+frame). For a DIALOG, launch with `PDFCER_DIAG_EMBED=1` so dialogs draw inside
+the main window, then shoot the main window. Its first use found two defects in
+a table every trace check had passed.

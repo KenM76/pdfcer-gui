@@ -23,5 +23,10 @@ fresh `compact-recompressed` line, then presses the `compact.compare` fold.
 What each cell says is asserted by
 `recompress::tests::the_comparison_lists_each_changed_picture` (sizes, JPEG,
 quality asked, bytes) and `text::compact_compare`'s tests (the cell wording).
-The table's layout is not photographed: every capture route reads the
-desktop, which is forbidden while the window is driven off-screen.
+
+## The photograph
+
+The check launches with `PDFCER_DIAG_EMBED=1`, which draws dialogs inside the
+main window, so the main window's own screenshot shows the table. It parks the
+pointer first, so no tooltip covers it, and writes
+`compact_compare.table.png` as evidence for a reader, not an oracle.

@@ -1102,6 +1102,12 @@ pub fn configure_context(ctx: &egui::Context) {
     if let Some(script) = pdfcer_gui_base::pointerscripted::PointerScript::from_env() {
         ctx.add_plugin(script);
     }
+    // Dialogs drawn inside the main window, so a driven screenshot of it
+    // shows them: eframe screenshots no immediate viewport.
+    if std::env::var_os("PDFCER_DIAG_EMBED").is_some() {
+        ctx.set_embed_viewports(true);
+        crate::diag::trace(|| "diag-embed-viewports".to_owned()); // ui-text-exempt: diagnostic trace
+    }
     // After the script, so a driven Tab is claimed exactly as an OS one is.
     ctx.add_plugin(keyclaim::KeyClaim::default());
 }

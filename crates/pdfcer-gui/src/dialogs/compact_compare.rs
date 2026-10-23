@@ -2,9 +2,9 @@
 //!
 //! Contract: [`rows`] reads a recompression's plan into one [`Row`] per
 //! picture it changes, and [`show`] draws them as a folded table under the
-//! finished recompression, before the copy is saved: pixel size, resolution,
-//! colours, storage, JPEG quality asked and written, closeness reached and
-//! bytes, each as `before to after`. At most [`LISTED`] rows are drawn; the
+//! finished recompression, before the copy is saved: bytes, pixel size,
+//! resolution, colours, storage, JPEG quality asked and written and closeness
+//! reached, each as `before to after`. At most [`LISTED`] rows are drawn; the
 //! rest are counted in a line under the table, never dropped silently.
 
 use egui::Ui;
@@ -99,7 +99,7 @@ pub fn show(ui: &mut Ui, rows: &[Row]) {
                         .striped(true)
                         .show(ui, |ui| {
                             for heading in t::columns() {
-                                ui.strong(heading);
+                                ui.label(heading);
                             }
                             ui.end_row();
                             for row in rows.iter().take(LISTED) {
@@ -119,6 +119,7 @@ pub fn show(ui: &mut Ui, rows: &[Row]) {
 /// One row's cells, in [`t::columns`] order.
 fn cells(ui: &mut Ui, row: &Row) {
     ui.label(t::picture(row.number));
+    ui.label(t::size(row.bytes.0, row.bytes.1));
     ui.label(t::change(
         &t::pixels(row.pixels.0),
         &t::pixels(row.pixels.1),
@@ -128,6 +129,5 @@ fn cells(ui: &mut Ui, row: &Row) {
     ui.label(t::change(&row.stored.0, &row.stored.1));
     ui.label(t::quality(row.quality));
     ui.label(t::closeness(row.closeness));
-    ui.label(t::size(row.bytes.0, row.bytes.1));
     ui.end_row();
 }

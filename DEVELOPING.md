@@ -318,6 +318,12 @@ PDFCER_DIAG=1 PDFCER_DIAG_VIEWPORT=-4000,-4000,1200,850 \
 PDFCER_DIAG_INVOKE=file.print target/release/pdfcer-gui.exe file.pdf
 ```
 
+`PDFCER_DIAG_EMBED=1` draws every dialog inside the main window instead of
+its own OS window. eframe screenshots no dialog window, so this is the one way
+to photograph a dialog off-screen: the scripted pointer's `shot` of the main
+window then shows it. Use it for photographs only; focus, chrome and closing
+differ from a real child window.
+
 Clear the desktop first — `(New-Object -ComObject Shell.Application).MinimizeAll()`,
 and `UndoMinimizeALL()` afterwards — because a covering window produces a SKIP
 that reads like a defect. Two on this machine are named:

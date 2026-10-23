@@ -34,7 +34,7 @@ pub fn banner(ui: &mut egui::Ui, remote: &mut Remote, now: Instant) -> bool {
     );
     let mut choice: Option<Option<Scope>> = None;
     ui.horizontal_centered(|ui| {
-        ui.strong(text).on_hover_text(
+        ui.label(text).on_hover_text(
             "A program on this computer, running as you, wants to run commands in this window. \
              The name is the one it gave; it cannot be verified.",
         );

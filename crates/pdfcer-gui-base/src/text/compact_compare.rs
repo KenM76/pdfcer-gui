@@ -15,18 +15,19 @@ pub const fn heading_tooltip() -> &'static str {
      saved. A picture drawn in more than one place is listed once."
 }
 
-/// The table's column headings, in order.
+/// The table's column headings, in order. Size comes first after the
+/// name: it is what the window is for, and the table scrolls sideways.
 #[must_use]
 pub const fn columns() -> [&'static str; 8] {
     [
         "Picture",
+        "Size",
         "Pixels",
         "Resolution",
         "Colours",
         "Stored as",
         "JPEG quality",
         "Match",
-        "Size",
     ]
 }
 
