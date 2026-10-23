@@ -4,9 +4,11 @@
 document opens with overprint preview on, and the Settings window writes the
 choice ([`prefs::overprint`](../../pdfcer-gui-base/prefs/overprint.md)).
 
-**Drive.** Seven launches, each with the choice planted in the sandbox's
+**Drive.** Nine launches, each with the choice planted in the sandbox's
 preferences file and one fixture opened in Read mode; the oracle is the
-`overprint-default choice=… on=…` line each open writes.
+last `overprint-default choice=… on=…` line whose `asks` is not `?`.
+*Automatic* answers from a thread, so its first line says `asks=?` and the
+check waits for the second; a walk that never answers fails.
 
 | Planted | Fixture | Owed |
 |---|---|---|
@@ -15,11 +17,15 @@ preferences file and one fixture opened in Read mode; the oracle is the
 | `never` | `print-shop-pdfx.pdf` | off |
 | `pdfx` | `print-shop.pdf` | off |
 | `pdfx` | `print-shop-pdfx.pdf` | on |
+| `pdfx` | `print-shop-pdfx4.pdf` | on |
 | `automatic` | `checker-image.pdf` | off |
 | `automatic` | `print-shop.pdf` | on |
+| `automatic` | `print-shop-listed.pdf` | off |
 
 `print-shop.pdf` asks for overprint and claims no standard;
 `print-shop-pdfx.pdf` is the same page with a `GTS_PDFX` output intent;
+`print-shop-pdfx4.pdf` claims PDF/X-4 in XMP only, with no intent;
+`print-shop-listed.pdf` lists an overprinting `/GS0` that no `gs` invokes;
 `checker-image.pdf` asks for neither. Every choice meets one fixture where a
 wrong reading flips the answer, so neither a constant nor a choice ignored in
 favour of another passes.

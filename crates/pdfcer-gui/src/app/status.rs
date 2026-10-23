@@ -200,6 +200,8 @@ pub(super) const REGION_LINE_WEIGHTS: &str = "status-group:line-weights"; // ui-
 pub(super) const REGION_TINY_DETAILS: &str = "status-group:tiny-details"; // ui-text-exempt: trace region name, never displayed
 /// The "overprint preview is off" line, while the page asks for overprint.
 pub(super) const REGION_OVERPRINT: &str = "status-group:overprint"; // ui-text-exempt: trace region name, never displayed
+/// The "overprint preview is on because Automatic could not check" line.
+pub(super) const REGION_OVERPRINT_UNKNOWN: &str = "status-group:overprint-unknown"; // ui-text-exempt: trace region name, never displayed
 /// The "separation preview is on" line, while Output Preview draws in ink.
 pub(super) const REGION_OUTPUT_PREVIEW: &str = "status-group:output-preview"; // ui-text-exempt: trace region name, never displayed
 

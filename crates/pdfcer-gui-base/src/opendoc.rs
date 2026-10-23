@@ -440,6 +440,9 @@ pub struct OpenDoc {
     /// nobody checked.
     ///
     pub redaction_absence_claims: Vec<String>,
+    /// Where the overprint default stands for this document: settled, or
+    /// waiting on *Automatic*'s walk. See [`crate::overprintseed`].
+    pub overprint_seed: crate::overprintseed::OverprintSeed,
     /// The single-slot background rasterizer.
     pub render_worker: RenderWorker,
     /// **What this document's canvas observed about itself on the previous
@@ -1114,6 +1117,7 @@ impl OpenDoc {
             // Nothing has been redacted into this document, so there is nothing
             // for a save to prove the absence of.
             redaction_absence_claims: Vec::new(),
+            overprint_seed: crate::overprintseed::OverprintSeed::Settled,
             render_worker: RenderWorker::default(),
             fit_placement: None,
             // No arrangement has been switched to; the seed arm in

@@ -11,8 +11,8 @@ use egui::{Align, Layout, Vec2};
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_DRAFT_NOTE,
     REGION_EDIT_DISCLOSURE, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES,
-    REGION_OUTPUT_PREVIEW, REGION_OVERPRINT, REGION_PREVIEW_FALLBACK, REGION_RECOVERED,
-    REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS, ROW_HEIGHT_PTS,
+    REGION_OUTPUT_PREVIEW, REGION_OVERPRINT, REGION_OVERPRINT_UNKNOWN, REGION_PREVIEW_FALLBACK,
+    REGION_RECOVERED, REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -321,6 +321,14 @@ fn tiny_details_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
 /// page asks for none, since then the switch changes nothing.
 fn overprint_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     if doc.view.overprint_preview {
+        // Settings' *Automatic* turned it on without an answer: say so,
+        // since the choice was meant to follow the file.
+        if let pdfcer_gui_base::overprintseed::OverprintSeed::Unknown { unwalked } =
+            &doc.overprint_seed
+        {
+            let line = t::overprint_preview_unchecked(unwalked.len());
+            disclosure_line(ui, REGION_OVERPRINT_UNKNOWN, &line);
+        }
         return;
     }
     let Some(texture) = doc.page_texture.as_ref() else {

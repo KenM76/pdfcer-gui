@@ -52,6 +52,16 @@ pub fn overprint_preview_off(n: usize) -> String {
     }
 }
 
+/// Overprint preview is on because Settings' *Automatic* could not read
+/// every part of the file that draws (`n` places it stopped).
+#[must_use]
+pub fn overprint_preview_unchecked(n: usize) -> String {
+    format!(
+        "Overprint preview is on \u{2014} Automatic could not read {n} part(s) of this file to \
+         check for overprint, so the page is shown as it prints."
+    )
+}
+
 /// **The line-weights mode is on and it changed NOTHING in view** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the half this shell asked the engine
 /// for by name.

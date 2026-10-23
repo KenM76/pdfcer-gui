@@ -82,6 +82,8 @@ pub mod modes;
 mod ocrband;
 /// The sentences a file earns the moment it opens: a wrapper, an action that reaches out.
 pub mod opennotes;
+/// The overprint default, applied as a document opens.
+mod overprintopen;
 pub mod panels;
 pub mod paneltoggles;
 /// Edits to a document kept under RC4, on request only.

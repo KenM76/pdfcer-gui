@@ -1,8 +1,11 @@
 //! `overprint_default` — **Settings ▸ Display ▸ Use overprint preview decides
 //! whether a document opens with the preview on, and the Settings window
-//! writes the choice.** Each choice is planted and three fixtures opened: one
-//! that asks for overprint, the same file claiming PDF/X, and one that asks for
-//! neither. Driven off the desktop with the scripted pointer.
+//! writes the choice.** Each choice is planted and fixtures opened: one that
+//! asks for overprint, the same file claiming PDF/X by output intent and by
+//! XMP alone, the same file listing an overprinting state nothing invokes,
+//! and one that asks for neither. *Automatic*'s answer arrives from a
+//! thread, so the line read is the first with a known `asks`. Driven off the
+//! desktop with the scripted pointer.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/overprint_default.md`.
 
@@ -30,6 +33,18 @@ const PDFX: Fixture = Fixture {
     method: "Rebuild it with `python fixtures/print-shop-pdfx.PROVENANCE.py`.",
     page: LETTER,
 };
+/// The same page claiming PDF/X-4 in XMP only: no intent, no Info key.
+const PDFX4: Fixture = Fixture {
+    file: "print-shop-pdfx4.pdf",
+    method: "Rebuild it with `python fixtures/print-shop-pdfx4.PROVENANCE.py`.",
+    page: LETTER,
+};
+/// The same page listing `/GS0` (`/OP true`) without any `gs` invoking it.
+const LISTED: Fixture = Fixture {
+    file: "print-shop-listed.pdf",
+    method: "Rebuild it with `python fixtures/print-shop-listed.PROVENANCE.py`.",
+    page: LETTER,
+};
 /// Asks for no overprint and claims no standard.
 const PLAIN: Fixture = Fixture {
     file: "checker-image.pdf",
@@ -45,15 +60,21 @@ const DECIDED: &str = "overprint-default"; // ui-text-exempt: a trace event name
 /// Planted choice (`None` plants nothing), fixture, the choice the trace must
 /// name, and whether the preview must open on. Every choice meets a fixture
 /// where a wrong reading gives the other answer, so no constant passes.
-const CASES: [(Option<&str>, &Fixture, &str, &str); 7] = [
+const CASES: [(Option<&str>, &Fixture, &str, &str); 9] = [
     (None, &PLAIN, "always", "1"),
     (Some("never"), &ASKS, "never", "0"),
     (Some("never"), &PDFX, "never", "0"),
     (Some("pdfx"), &ASKS, "pdfx", "0"),
     (Some("pdfx"), &PDFX, "pdfx", "1"),
+    (Some("pdfx"), &PDFX4, "pdfx", "1"),
     (Some("automatic"), &PLAIN, "automatic", "0"),
     (Some("automatic"), &ASKS, "automatic", "1"),
+    (Some("automatic"), &LISTED, "automatic", "0"),
 ];
+/// Settles allowed for *Automatic*'s walk to answer.
+const WAITS: usize = 12;
+/// The `asks` value of a line written before the walk answered.
+const PENDING: &str = "?";
 const OPEN_SETTINGS: &str = "file.settings";
 const DIALOG: &str = "dialog:settings";
 const DISPLAY_HEADING: &str = "settings.heading.display";
@@ -99,9 +120,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         let stem = format!("overprint_default.{i}");
         let (session, pointer) = launch_with(ctx, report, fixture, "mode.read", &stem, &[])?;
         let mut line = None;
-        for _ in 0..6 {
+        for _ in 0..WAITS {
             line = session.trace()?.last(DECIDED).cloned();
-            if line.is_some() {
+            if line
+                .as_ref()
+                .is_some_and(|l| l.get("asks") != Some(PENDING))
+            {
                 break;
             }
             session.settle(10);
@@ -116,6 +140,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             )));
         };
         report.note(format!("{planted:?} on {}: {}", fixture.file, line.raw));
+        if line.get("asks") == Some(PENDING) {
+            return Ok(Some(format!(
+                "{} opened under {planted:?} and Automatic never answered: the last line \
+                 is `{}`.",
+                fixture.file, line.raw
+            )));
+        }
         if line.get("choice") != Some(*choice) || line.get("on") != Some(*on) {
             return Ok(Some(format!(
                 "{} opened under {planted:?}: owed choice={choice} on={on}, the trace says `{}`.",

@@ -11,7 +11,17 @@
 use std::fmt::Write as _;
 
 use super::printing::KeyOutcome;
-use crate::printclaims::PrintClaims;
+
+/// What a document says about how it prints, as far as the overprint
+/// default reads it. Read by [`crate::overprintseed`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct PrintClaims {
+    /// The file claims PDF/X.
+    pub pdfx: bool,
+    /// Whether anything drawn asks for overprint; `None` when that is not
+    /// known, because the walk has not answered or could not finish.
+    pub overprint: Option<bool>,
+}
 
 /// The file key.
 const KEY: &str = "overprint_preview_default";
@@ -51,14 +61,18 @@ impl OverprintDefault {
         Self::ALL.iter().copied().find(|c| c.id() == id)
     }
 
-    /// Whether a document making `claims` opens with the preview on.
+    /// Whether a document making `claims` opens with the preview on. An
+    /// unknown overprint answer is on: the page as it prints.
     #[must_use]
     pub const fn resolve(self, claims: PrintClaims) -> bool {
         match self {
             Self::PdfxOnly => claims.pdfx,
             Self::Always => true,
             Self::Never => false,
-            Self::Automatic => claims.overprint,
+            Self::Automatic => match claims.overprint {
+                Some(asks) => asks,
+                None => true,
+            },
         }
     }
 
@@ -101,7 +115,7 @@ mod tests {
 
     const PLAIN: PrintClaims = PrintClaims {
         pdfx: false,
-        overprint: false,
+        overprint: Some(false),
     };
 
     #[test]
@@ -111,13 +125,23 @@ mod tests {
             ..PLAIN
         };
         let op = PrintClaims {
-            overprint: true,
+            overprint: Some(true),
             ..PLAIN
         };
         use OverprintDefault as D;
         assert!(D::PdfxOnly.resolve(pdfx) && !D::PdfxOnly.resolve(op));
         assert!(D::Automatic.resolve(op) && !D::Automatic.resolve(pdfx));
         assert!(D::Always.resolve(PLAIN) && !D::Never.resolve(pdfx));
+    }
+
+    #[test]
+    fn an_unknown_overprint_answer_shows_the_preview() {
+        let unknown = PrintClaims {
+            overprint: None,
+            ..PLAIN
+        };
+        assert!(OverprintDefault::Automatic.resolve(unknown));
+        assert!(!OverprintDefault::PdfxOnly.resolve(unknown));
     }
 
     #[test]
