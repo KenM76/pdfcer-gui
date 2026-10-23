@@ -15,6 +15,9 @@ A read of 432 at step 2 is the typed size written as the `Tf` operand under
 the 18× matrix — the text redrawn off the page, which is what the operator saw
 as "the text chunk goes blank".
 
+Driven off the desktop through the scripted pointer, so it runs under
+`--no-input` while the operator uses the machine.
+
 ## Falsification
 
 | control build | expected verdict |

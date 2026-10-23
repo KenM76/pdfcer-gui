@@ -703,11 +703,11 @@ His words: *"If I try to italicize, bold, underline, change font etc it doesn't 
 
 **Built, not yet driven.** Ribbon Bold, Italic, Underline and Strikethrough already acted on the I-beam range; the Properties panel's face, size, Bold, Italic and colour, and the ribbon's Font, Size and Colour, restyled the whole line. All now take the same route (`app::dispatch::textformat::restyle`): the selected characters, else the word at the caret, else the caret alone, which records the style for what is typed next. A paragraph opened as one block and already retyped still refuses until it is committed (`ParagraphEdited`).
 
-## O309 — **BUILT, RE-WIRED, NOT RE-DRIVEN** — the font size shows the size the text is drawn at, fractional sizes included
+## O309 — **BUILT AND DRIVEN, awaiting his check** — the font size shows the size the text is drawn at, fractional sizes included
 
 His words: *"when I am in the text with the I cursor, in the Format and Properties section it shows me the font as 1.0pt high instead of the actual height. This might be because it does not match a whole point measurement, but we should be able to handle that."* (`SW41177.pdf`)
 
-**Built; re-wired onto the engine, not yet re-driven.** Properties and the Font group show `GlyphProvenance::drawn_size`, and a typed size is sent as `FormatRequest::drawn_size`, which solves each operator's `Tf` operand (engine v0.88.0, G208). The shell's own matrix arithmetic is deleted. The driven check `scaled_text_shows_and_takes_its_drawn_size` (a `1 Tf` line under an 18-pt matrix reads 18.00; a typed 24 re-reads 24.00) passed on the shell's arithmetic and is to be re-driven on the engine's.
+**Built; re-wired onto the engine, not yet re-driven.** Properties and the Font group show `GlyphProvenance::drawn_size`, and a typed size is sent as `FormatRequest::drawn_size`, which solves each operator's `Tf` operand (engine v0.88.0, G208). The shell's own matrix arithmetic is deleted. Driven on the engine's arithmetic, off the desktop: `scaled_text_shows_and_takes_its_drawn_size` (a `1 Tf` line under an 18-pt matrix reads 18.00; a typed 24 re-reads 24.00) passes, and fails when 30 is typed instead. Not yet driven on `SW41177.pdf` itself.
 
 ## O310 — **BUILT, NOT DRIVEN** — changing the size of that text redraws it, and clicking a line never shows squares
 

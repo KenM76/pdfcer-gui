@@ -4,16 +4,18 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/scaled_text_size.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared};
+use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared_in};
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::{Error, Result};
-use crate::input::Driver;
+use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 
 /// Startup commands: Edit mode with Properties mounted.
 const INVOKE: &str = "mode.edit,file.properties";
+/// Off-desktop viewport, so the check runs while the operator uses the machine.
+const OFFSCREEN: &str = "-4200,-4200,1400,900";
 /// The size field.
 const SIZE_REGION: &str = "properties.text.size";
 /// The panel's read of the clicked run; `size=` is the drawn size.
@@ -101,18 +103,16 @@ fn wait<T>(ceiling_ms: u128, mut ready: impl FnMut() -> Result<Option<T>>) -> Re
 }
 
 /// Write the fixture and launch the binary on it.
-fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<Session> {
+fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
             ctx.profile.default_exe
         ))
     })?;
-    if !ctx.allow_input {
-        return Err(Error::new(
-            "input is disabled (--no-input). This check clicks text and types a size.",
-        ));
-    }
+    let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
+        Error::new("the profile has no viewport variable to place the window off the desktop.")
+    })?;
     let pdf = ctx.out("scaled-text-size.pdf");
     std::fs::write(&pdf, fixture())
         .map_err(|e| Error::new(format!("cannot write {}: {e}", pdf.display())))?;
@@ -126,21 +126,30 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<Session> {
         .push((SHELL_DIAG_ENV.0.to_owned(), SHELL_DIAG_ENV.1.to_owned()));
     spec.env
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
+    spec.env
+        .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("scaled-text-size.pointer.txt"))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
+    report.artifact(pointer.path().to_path_buf());
     session.settle(40);
-    Ok(session)
+    Ok((session, pointer))
 }
 
 /// Click the line as an object and answer the size the panel read.
-fn click_text(ctx: &CheckContext, session: &Session, driver: &Driver) -> Result<Option<f64>> {
+fn click_text(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<f64>> {
     let vocab = &ctx.profile.vocab;
     let ui_rect = vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    click_mode_segment(session, driver, ui_rect, "edit")?;
+    click_mode_segment(session, pointer, ui_rect, "edit")?;
     session.settle(20);
     let page = PageGeometry {
         width_pt: 612.0,
@@ -149,7 +158,7 @@ fn click_text(ctx: &CheckContext, session: &Session, driver: &Driver) -> Result<
     let mapping = CanvasMapping::from_trace(&session.trace()?, vocab, page, 0)?;
     let at = DocPoint::new(0, ORIGIN.0 + 30.0, ORIGIN.1 + 5.0);
     let mark = session.trace()?.mark();
-    driver.click_at(session.frame()?.to_screen(mapping.doc_to_window(at)?))?;
+    pointer.click(session, mapping.doc_to_window(at)?)?;
     wait(10_000, || {
         session.settle(4);
         synced_size(session, mark)
@@ -157,9 +166,8 @@ fn click_text(ctx: &CheckContext, session: &Session, driver: &Driver) -> Result<
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let session = launch(ctx, report)?;
-    let driver = Driver::new(session.window());
-    let Some(read) = click_text(ctx, &session, &driver)? else {
+    let (session, pointer) = launch(ctx, report)?;
+    let Some(read) = click_text(ctx, &session, &pointer)? else {
         return Err(Error::new(format!(
             "a click on the line produced no resolved `{SYNCED}` line, so the panel never \
              read the run. SKIPPED: the aim or the selection failed before this check's \
@@ -176,7 +184,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!("★ Properties read {read:.2} pt, the drawn size"));
-    type_size(ctx, &session, &driver, report)
+    type_size(ctx, &session, &pointer, report)
 }
 
 /// Type [`WANTED_PT`] into the size field; the restyle's verdict line, or a
@@ -184,23 +192,24 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 fn commit_typed_size(
     ctx: &CheckContext,
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     mark: usize,
 ) -> Result<std::result::Result<String, String>> {
     let ui_rect = ctx.profile.vocab.ui_rect_event.unwrap_or_default();
-    let Some(field) = declared(&session.trace()?, ui_rect, SIZE_REGION) else {
+    let Some((field, viewport)) = declared_in(&session.trace()?, ui_rect, SIZE_REGION) else {
         return Err(Error::new(format!(
             "no `{SIZE_REGION}` region on screen, so there is nothing to type into. \
              Trace: {}.",
             session.trace_path().display()
         )));
     };
-    driver.click_at(session.frame()?.declared_center(field))?;
+    let vp = viewport.as_deref();
+    pointer.click_in(session, vp, WindowPoint::centre_of(field))?;
     session.settle(12);
-    driver.press_chord(&[crate::sys::vk::CONTROL], crate::sys::vk::A)?;
-    driver.type_ascii(&format!("{WANTED_PT:.0}"))?;
+    pointer.key(session, vp, "A", Some("ctrl"))?;
+    pointer.type_text(session, vp, &format!("{WANTED_PT:.0}"))?;
     session.settle(8);
-    driver.press(crate::sys::vk::ENTER)?;
+    pointer.key(session, vp, "Enter", None)?;
     let verdict = wait(30_000, || {
         session.settle(4);
         let t = session.trace()?;
@@ -223,11 +232,11 @@ fn commit_typed_size(
 fn type_size(
     ctx: &CheckContext,
     session: &Session,
-    driver: &Driver,
+    pointer: &ScriptedPointer,
     report: &mut CheckReport,
 ) -> Result<Option<String>> {
     let mark = session.trace()?.mark();
-    let verdict = match commit_typed_size(ctx, session, driver, mark)? {
+    let verdict = match commit_typed_size(ctx, session, pointer, mark)? {
         Ok(v) => v,
         Err(failure) => return Ok(Some(failure)),
     };
