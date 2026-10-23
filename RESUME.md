@@ -110,7 +110,7 @@ fixture's 4 paragraphs because the engine over-splits at a short last line;
 tighten the check to 4 when the tag lands. G134 and G135 are also fixed on
 engine main (`AssembledModel::mesh_placements`, `tree`,
 `fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G137
-asks for `Field::own_quadding`; when it lands delete `states_own_quadding`. Next, in order: the
+asks for `Field::own_quadding`; when it lands delete `states_own_quadding`. Also waiting for that tag: inserted and pasted pages carry their form fields (`InsertOutcome::{fields_carried, fields_renamed, fields_split, acroform_created}`). Then `text::pages::inserted` reports carried and renamed fields, warns on split ones only when non-zero, and the comment in `actions::pages` claiming `/AcroForm` is not merged gets deleted. Sum the new fields in `insertruns`. Next, in order: the
 rest of ENGINE_BACKLOG (17 wanted, 3 blocked). Every field redraw says what it decided about the text
 (`a_redraw_says_what_it_did_to_a_fields_text`). Document properties names a page box not
 used as written (`document_properties_say_which_page_boxes_were_not_used_as_written`). The Objects panel says where its list and
