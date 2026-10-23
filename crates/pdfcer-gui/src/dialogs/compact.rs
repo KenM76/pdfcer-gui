@@ -12,8 +12,10 @@ use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
 use crate::dialogs::compact_images::{self, Pictures};
 use crate::dialogs::compact_target;
+use crate::dialogs::compact_version::{self, Lowering};
 use crate::dialogs::recompress::{Choices, Job, Recompressed};
 use crate::text::compact as t;
+use pdfcer_core::PdfVersion;
 use pdfcer_core::optimize::{DiscardObject, DiscardOptions};
 
 /// The window body's rect, for `ui-verify`.
@@ -82,6 +84,10 @@ pub struct CompactDialog {
     /// places starts off, since a link from another file may name one.
     choices: Choices,
     recompress: Recompress,
+    /// *Make compatible with*; `None` keeps the copy's version.
+    version: Option<PdfVersion>,
+    /// Lowering the copy to [`Self::version`], last of the work on it.
+    lowering: Lowering,
     /// The operator's settings, for the recompressed rewrite's session and
     /// save options.
     settings: pdfcer_core::settings::Settings,
@@ -129,6 +135,8 @@ impl CompactDialog {
                 budget,
             },
             recompress: Recompress::Off,
+            version: None,
+            lowering: Lowering::Off,
             settings: doc.settings.clone(),
             save_requested: false,
             close_requested: false,
@@ -156,7 +164,7 @@ impl CompactDialog {
                 format!(
                     "compact-requested before={} after={} signatures={}",
                     self.before,
-                    chosen(&self.bytes, &self.recompress).len(),
+                    chosen(&self.bytes, &self.recompress, &self.lowering).len(),
                     self.signatures
                 )
             });
@@ -191,7 +199,7 @@ impl CompactDialog {
     fn choices_column(&mut self, ui: &mut Ui) {
         ui.label(t::intro());
         ui.add_space(8.0);
-        let after = chosen(&self.bytes, &self.recompress).len() as u64;
+        let after = chosen(&self.bytes, &self.recompress, &self.lowering).len() as u64;
         ui.label(t::size_change(self.before, after));
         ui.add_space(4.0);
         self.recompress_row(ui);
@@ -233,7 +241,8 @@ impl CompactDialog {
             // operator may legitimately proceed from — including "no smaller",
             // which is an accurate answer about a tidy file and not a reason to
             // refuse them a copy they asked for.
-            let working = matches!(self.recompress, Recompress::Working(_));
+            let working = matches!(self.recompress, Recompress::Working(_))
+                || matches!(self.lowering, Lowering::Working(_));
             let save = ui
                 .add_enabled(!working, egui::Button::new(t::save_button()))
                 .on_disabled_hover_text(t::save_waiting());
@@ -257,7 +266,10 @@ impl CompactDialog {
         let fold = egui::CollapsingHeader::new(t::space_heading())
             .id_salt("compact-space") // ui-text-exempt: an id, never displayed
             .show(ui, |ui| {
-                let (path, bytes) = (&self.path, chosen(&self.bytes, &self.recompress));
+                let (path, bytes) = (
+                    &self.path,
+                    chosen(&self.bytes, &self.recompress, &self.lowering),
+                );
                 let space = self.space.get_or_insert_with(|| {
                     let started = std::time::Instant::now();
                     let now = std::fs::read(path).ok();
@@ -287,9 +299,12 @@ enum Recompress {
     Failed(String),
 }
 
-/// The bytes Save writes: the recompressed copy when it came out smaller,
-/// otherwise the plain compacted one.
-fn chosen<'a>(plain: &'a [u8], recompress: &'a Recompress) -> &'a [u8] {
+/// The bytes Save writes: the lowered copy when lowering succeeded, else the
+/// recompressed copy when it came out smaller, else the plain compacted one.
+fn chosen<'a>(plain: &'a [u8], recompress: &'a Recompress, lowering: &'a Lowering) -> &'a [u8] {
+    if let Some(lowered) = lowering.bytes() {
+        return lowered;
+    }
     match recompress {
         Recompress::Done(done) => done.bytes.as_deref().unwrap_or(plain),
         _ => plain,
@@ -312,6 +327,25 @@ impl CompactDialog {
                 Ok(done) => Recompress::Done(Box::new(done)),
                 Err(detail) => Recompress::Failed(detail),
             };
+            self.space = None;
+        }
+        self.lower_step(ctx);
+    }
+
+    /// Lower the copy once the work before it has finished, when a version
+    /// is chosen, and take the result.
+    fn lower_step(&mut self, ctx: &egui::Context) {
+        if let Some(target) = self.version
+            && matches!(self.lowering, Lowering::Off)
+            && !matches!(self.recompress, Recompress::Working(_))
+        {
+            use crate::app::settings::SettingsExt;
+            let copy = chosen(&self.bytes, &self.recompress, &Lowering::Off).to_vec();
+            self.lowering = Lowering::start(ctx, copy, target, self.settings.save_options());
+        }
+        let working = matches!(self.lowering, Lowering::Working(_));
+        self.lowering.step();
+        if working && matches!(self.lowering, Lowering::Done(_)) {
             self.space = None;
         }
     }
@@ -359,6 +393,11 @@ impl CompactDialog {
         let toggled = compact_images::switches(ui, &mut c.pictures) || toggled || aimed;
         if toggled {
             self.recompress = Recompress::Off;
+            self.lowering = Lowering::Off;
+            self.space = None;
+        }
+        if compact_version::row(ui, &mut self.version) {
+            self.lowering = Lowering::Off;
             self.space = None;
         }
         match &self.recompress {
@@ -376,10 +415,14 @@ impl CompactDialog {
             }
             Recompress::Done(done) => done_lines(ui, done),
         }
+        compact_version::lines(ui, &self.lowering);
     }
 
     /// The bytes [`chosen`] names, moved out for the write.
     fn take_chosen(&mut self) -> Vec<u8> {
+        if let Some(lowered) = self.lowering.take_bytes() {
+            return lowered;
+        }
         match std::mem::replace(&mut self.recompress, Recompress::Off) {
             Recompress::Done(done) => match done.bytes {
                 Some(bytes) => bytes,

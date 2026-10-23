@@ -47,6 +47,7 @@ pub mod compact_pictures;
 pub mod compact_reach;
 pub mod compact_round;
 pub mod compact_target;
+pub mod compact_version;
 pub mod compact_web;
 pub mod filelink_prompt;
 pub mod link_cmyk;

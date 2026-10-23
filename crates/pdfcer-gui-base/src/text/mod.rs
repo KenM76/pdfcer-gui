@@ -75,6 +75,8 @@ pub mod compact;
 pub mod compact_images;
 /// The compact window's starting point and size target.
 pub mod compact_target;
+/// The compact window's *Make compatible with* list.
+pub mod compact_version;
 /// Every word File ▸ Straighten scans says. Consumed by
 /// `pdfcer_gui::dialogs::deskew`.
 pub mod deskew;
