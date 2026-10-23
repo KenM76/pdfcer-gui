@@ -33,7 +33,7 @@ const OPENED: &str = "open";
 const UNDONE: &str = "undo-applied";
 const UI_RECT: &str = "ui-rect";
 const BODY: &str = "drop-pdf.body";
-const INSERT: &str = "drop-pdf.insert";
+pub(super) const INSERT: &str = "drop-pdf.insert";
 const PLACE: &str = "drop-pdf.place";
 /// The fixture's page size, in points.
 const SIZE: (f64, f64) = (144.0, 72.0);
@@ -128,7 +128,7 @@ fn drive(
 }
 
 /// Drop the file at the first point and wait for the question.
-fn ask(
+pub(super) fn ask(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
@@ -154,7 +154,7 @@ fn ask(
 }
 
 /// Click the window's `region`.
-fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<()> {
+pub(super) fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<()> {
     let trace = session.trace()?;
     let (rect, viewport) = declared_in(&trace, UI_RECT, region).ok_or_else(|| {
         Error::new(format!(

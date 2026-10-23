@@ -143,6 +143,10 @@ fn add(total: &mut InsertOutcome, more: &InsertOutcome) {
     total.pages_inserted += more.pages_inserted;
     total.orphaned_widgets += more.orphaned_widgets;
     total.orphaned_widgets_unrecoverable += more.orphaned_widgets_unrecoverable;
+    total.fields_carried += more.fields_carried;
+    total.fields_renamed += more.fields_renamed;
+    total.fields_split += more.fields_split;
+    total.acroform_created |= more.acroform_created;
     total.source_outline_dropped |= more.source_outline_dropped;
     total.source_page_labels_dropped |= more.source_page_labels_dropped;
     total.page_labels_stale |= more.page_labels_stale;

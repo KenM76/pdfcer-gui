@@ -335,7 +335,9 @@ pub fn residual_heading() -> &'static str {
 // invisible to consumers and the catalog keeps one flat namespace.
 // ---------------------------------------------------------------------------
 use crate::text::redactcarriers as carriers;
-pub use crate::text::redactproof::{proof_unparsed_line, proof_unsearched_line};
+pub use crate::text::redactproof::{
+    proof_unextracted_line, proof_unparsed_line, proof_unsearched_line,
+};
 pub use carriers::{
     carrier_name, checked_clean_line, engine_notes_heading, engine_notes_lead, left_by_choice_line,
     residual_carrier_line, residual_sweep_line, sweep_scrubbed_line,
@@ -359,8 +361,11 @@ pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> Strin
             "⚠  The removed text “{text}” also appears in this document's drawn content OUTSIDE the area you marked — most likely another occurrence of the same words that you did not select. pdfcer cannot tell that apart from removed text left behind. If it is text you did not mean to remove, this is not a leak and you can continue; if you meant to remove every occurrence, cancel and mark those too."
         );
     }
+    if site == S::ExtractedText {
+        return crate::text::redactproof::extracted_residual_line(text);
+    }
     let place = match site {
-        S::DrawnContent => unreachable!("answered above"),
+        S::DrawnContent | S::ExtractedText => unreachable!("answered above"),
         S::FontProgram => {
             "inside an embedded font program — the part of a font file that holds its own name, its copyright and the English descriptions of its lettering features"
         }

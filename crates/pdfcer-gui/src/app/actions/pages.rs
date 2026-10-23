@@ -309,13 +309,8 @@ pub(super) fn insert_from_view(
     let page_count = doc.pages.len();
     super::apply::vector_edit(doc, "insert-pages", landing, count, |session| {
         super::insertruns::insert(session, view, pages, position, page_count)
-            // `InsertOutcome`, not a `usize`, and the second field is the
-            // one this shell needs. `orphaned_widgets`
-            // is EXACT rather than an upper bound (the engine's reply: no field
-            // in the target can be claiming a widget that just arrived, because
-            // `/AcroForm` is not merged and every object number is remapped), so
-            // the number goes in front of the operator unhedged and a zero drops
-            // the clause entirely.
+            // `orphaned_widgets` is exact, so the number goes in front of the
+            // operator unhedged and a zero drops the clause entirely.
             //
             // `orphaned_widgets_unrecoverable` is beside it, and the two
             // numbers are two different pieces of news. The engine
@@ -337,6 +332,12 @@ pub(super) fn insert_from_view(
                     },
                     landing.checked_sub(1),
                 )];
+                notes.extend(crate::text::insertfields::carried(
+                    outcome.fields_carried,
+                    outcome.fields_renamed,
+                    outcome.fields_split,
+                    outcome.acroform_created,
+                ));
                 if let Some(refusal) = done.stopped {
                     notes.push(crate::text::insertblank::insert_stopped(
                         outcome.pages_inserted,

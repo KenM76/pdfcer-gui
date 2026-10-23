@@ -1005,7 +1005,8 @@ pub(super) fn open_for(status: &Status, reach: RedactionReach) -> Option<RedactD
 mod tests;
 
 /// What the proof could not reach: strings too short to search for, streams it
-/// could not decode, output it could not parse. Each stops the word *verified*.
+/// could not decode, output it could not parse, page text it could not read
+/// back. Each stops the word *verified*.
 fn proof_limits(
     ui: &mut egui::Ui,
     theme: &Theme,
@@ -1020,6 +1021,9 @@ fn proof_limits(
     }
     if verification.output_unparsed {
         lines.push(t::proof_unparsed_line().to_owned());
+    }
+    if verification.text_unextracted {
+        lines.push(t::proof_unextracted_line().to_owned());
     }
     for line in lines {
         ui.add_space(4.0);

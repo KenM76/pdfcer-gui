@@ -577,6 +577,8 @@ pub mod dropped_file;
 pub mod dropped_pdf;
 /// A text file dropped on the window becomes pages after the one on screen.
 pub mod dropped_text;
+/// A form's pages inserted into a plain document bring their fields.
+pub mod insert_fields;
 /// In Review a copied picture pastes as a stamp.
 pub mod paste_stamp;
 

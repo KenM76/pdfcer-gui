@@ -453,12 +453,13 @@ pub fn prepare_redaction_apply(
     let proven = proof::prove(&bytes, &report.redacted_text);
     crate::diag::trace(|| {
         format!(
-            "redact-prove drawn_content_hits={} residuals={} short={} undecoded={} unparsed={}",
+            "redact-prove drawn_content_hits={} residuals={} short={} undecoded={} unparsed={} unextracted={}",
             proven.survivors.as_ref().map_or(0, Vec::len),
             proven.verification.residuals.len(),
             proven.verification.strings_too_short,
             proven.verification.streams_undecoded,
             u8::from(proven.verification.output_unparsed),
+            u8::from(proven.verification.text_unextracted),
         )
     });
 

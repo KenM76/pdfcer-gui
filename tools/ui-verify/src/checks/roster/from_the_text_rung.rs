@@ -600,6 +600,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(dropped_file::ADroppedPictureLandsWhereItWasDropped),
         Box::new(dropped_text::ADroppedTextFileBecomesPagesAfterThisOne),
         Box::new(dropped_pdf::ADroppedPdfAsksOpenInsertOrPlace),
+        Box::new(insert_fields::InsertedFormPagesBringTheirFields),
         Box::new(paste_stamp::ACopiedPicturePastesAsAStampInReview),
         Box::new(drop_stamp::ADroppedPictureStampsInReview),
         Box::new(clip_pages::TheClipboardBecomesANewPdfOrPagesAfterThisOne),

@@ -142,6 +142,7 @@ pub mod importtext;
 pub mod inkpick;
 /// Pages ▸ Insert blank pages… — the dialog's own copy.
 pub mod insertblank;
+pub mod insertfields;
 /// Pages ▸ Stamp ▸ Number pages…: its window and its receipts.
 /// Consumed by `pdfcer_gui::dialogs::labels`.
 pub mod labels;
