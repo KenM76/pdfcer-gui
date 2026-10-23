@@ -105,8 +105,10 @@ pub(in crate::app::actions) fn author(
                 spec.required = draft.required;
                 spec.border = border;
                 spec.chrome = chrome;
-                let placed = session.add_text_field(&spec);
-                with_text_look(session, placed, &fqn, draft.text, &mut refused, &mut folded)
+                styled(draft.text, &fqn, &mut refused, |look| {
+                    spec.appearance = look;
+                    session.add_text_field(&spec)
+                })
             }
             K::CheckBox => {
                 let mut spec = NewCheckBox::new(page, name, rect);
@@ -158,8 +160,10 @@ pub(in crate::app::actions) fn author(
                 spec.required = draft.required;
                 spec.border = border;
                 spec.chrome = chrome;
-                let placed = session.add_choice_field(&spec);
-                with_text_look(session, placed, &fqn, draft.text, &mut refused, &mut folded)
+                styled(draft.text, &fqn, &mut refused, |look| {
+                    spec.appearance = look;
+                    session.add_choice_field(&spec)
+                })
             }
             K::PushButton => {
                 let mut spec = NewPushButton::new(page, name, rect, draft.caption.clone());
@@ -349,51 +353,42 @@ pub(in crate::app::actions) fn author(
     }
 }
 
-/// Give a just-placed text or choice field `look` as its `/DA`, then fold the
-/// two commands into one undo entry. A second verb because `New*Field` cannot
-/// state `/DA` (`request_new_field_default_appearance.md`); a look equal to
-/// what the engine writes on its own costs no verb.
+/// Place a text or choice field with `look` as its `/DA`, in one command. A
+/// look equal to what the engine writes on its own is not stated, so an
+/// untouched Style band authors the bytes it always did.
 ///
-/// A refusal leaves the field placed with the engine's look and is reported
-/// through `refused`, so `placed` is returned whatever the second verb did.
-fn with_text_look<T>(
-    session: &mut pdfcer_core::edit::EditSession,
-    placed: Result<T, pdfcer_core::edit::EditError>,
-    fqn: &str,
+/// A name that joins an existing field cannot carry a look (its widgets share
+/// that field's `/DA`), so the engine refuses it; the field is then placed
+/// without one and `refused` says why.
+fn styled<T>(
     look: crate::canvas::formfield::TextLook,
+    fqn: &str,
     refused: &mut Option<String>,
-    folded: &mut bool,
+    mut place: impl FnMut(
+        Option<pdfcer_core::edit::FieldAppearance>,
+    ) -> Result<T, pdfcer_core::edit::EditError>,
 ) -> Result<T, pdfcer_core::edit::EditError> {
-    use pdfcer_core::edit::{FieldAppearance, FieldEdit};
-    let outcome = placed?;
+    use pdfcer_core::edit::{EditError, FieldAppearance};
     if look == crate::canvas::formfield::TextLook::ENGINE {
-        return Ok(outcome);
+        return place(None);
     }
-    let edit = FieldEdit::new().with_appearance(FieldAppearance::standard(
-        look.font,
-        look.size,
-        look.colour,
-    ));
-    match session.edit_field(fqn, &edit) {
-        Ok(_) => {
-            if !session.coalesce_last(2, pdfcer_core::edit::CommandKind::AddFormField) {
-                *folded = false;
-            }
+    let stated = FieldAppearance::standard(look.font, look.size, look.colour);
+    match place(Some(stated)) {
+        Err(EditError::FieldAppearanceOnMerge { .. }) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("field-text-look-refused name={fqn} why=joins-existing-field")
+            });
+            *refused = Some(crate::text::formlook::joins_field_style(fqn));
+            place(None)
+        }
+        Ok(outcome) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("field-text-look-applied name={fqn} size={}", look.size)
             });
+            Ok(outcome)
         }
-        Err(why) => {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed in the UI
-                format!("field-text-look-refused name={fqn} why={why}")
-            });
-            *refused = Some(crate::text::formlook::text_look_refused(
-                fqn,
-                &why.to_string(),
-            ));
-        }
+        other => other,
     }
-    Ok(outcome)
 }

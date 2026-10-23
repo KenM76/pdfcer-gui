@@ -31,10 +31,12 @@ pub const fn style_hover() -> &'static str {
     "How the next field's outline is drawn: solid, dashed, raised, sunken, or a line under the box only."
 }
 
-/// Said when a placed field could not be given the Style band's text look.
+/// Said when a new box joins an existing field, whose text style it must share.
 #[must_use]
-pub fn text_look_refused(name: &str, why: &str) -> String {
-    format!("{name} was placed in black Helvetica: its text style could not be set: {why}")
+pub fn joins_field_style(name: &str) -> String {
+    format!(
+        "{name} is an existing field, so the new box joins it and draws in that field's text style; change it in Properties."
+    )
 }
 
 /// The text-font picker's hover.

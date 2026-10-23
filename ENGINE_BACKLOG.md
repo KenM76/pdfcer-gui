@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **44 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `wanted` — a real gap — **43 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -133,7 +133,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Features used versus the target (report)** — lists … | **wanted — O325, beside the version chooser**: what the file uses that needs a newer version, with an example object, so the operator sees why a target cannot be met. Engine: `features_used`, `FeatureUse`, `VersionFeature`. |
 | **Quality target (SSIM)** — `image(ssim=0.98)` … | **wanted — O325, a *Keep pictures looking the same* level in Save a compacted copy's picture settings**, reporting the similarity each picture reached. Engine: `pdfcer_core::optimize::image::ssim` (`structural_similarity`, `SsimPick`, `SsimScore`), `ImagePatch::ssim`, `ResolvedImage::ssim`, `JpegQuality::ssim`. |
 | **Before/after visual-diff report** — `pdfcer_render::visual_diff` (`PageDiff`, `ChangedRegion`, `VisualDiffError`) | **wanted — O325, a before/after check in Save a compacted copy**: per page, how many pixels changed and where, so a lossy setting is judged on the drawing, not on the byte count. |
-| State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::with_appearance`, `NewChoiceField::with_appearance`, `EditError::FieldAppearanceOnMerge` <!--namesake:with_appearance--> (the shell's two calls are the edit verb's, not the creation builders') | **wanted — replaces the shell's add, `edit_field`, `coalesce_last` sequence in `app::actions::forms::author`** with one command; a field joining an existing name is refused with a style, and is placed in that field's own style instead, said on the status line. |
 | Encode `/BrotliDecode` streams (write side), shipped … | **wanted — O325, a Brotli choice in Save a compacted copy**, with the hover saying that readers older than PDF 2.0 cannot open the result. |
 | **Change an image's format, on all images, a class or one image** … | **wanted in part.** Save a compacted copy's picture settings offer Keep, Lossless (Flate) and Smallest (`ImageEncode::Auto`) in `dialogs::compact_images`; JPEG, JPEG 2000, CCITT, JBIG2, RunLength and LZW by choice, and per class or per picture, are not offered (O325). |
 
@@ -222,7 +221,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **338 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **339 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -437,6 +436,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::appearance`, `NewChoiceField::appearance`, `EditError::FieldAppearanceOnMerge` | **shipped — `app::actions::forms::author` states Forms ▸ Style's text look on the spec, one command and one undo entry;** a name joining an existing field is refused with a look, so the box is placed again without one and the status line says it takes that field's style. Driven by `forms_style_sets_the_next_field`. |
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **shipped.** One formatter, `text::forms::redraw_notes`, turns `LayoutDisclosure` into status-line sentences on `status-group:edit-disclosure`: the auto size and, where the bound is `Width` or `Floor`, what chose it; a `/DA` colour drawn black; characters drawn as `?`. Called by Properties (`app::actions::forms::edit_properties`), the box edit (`edit_widget`), Turn (`forms::widget::rotate`), and Reset and Redraw values in the Forms panel, which name no field because the engine reports the last auto-sized one. Regenerate reads `RegenOutcome`'s own four fields. Driven by `a_redraw_says_what_it_did_to_a_fields_text`. |
 | **Write a field's quadding, default value and NoExport flag** — `FieldEdit::with_no_export`, `clearing_quadding` | **shipped.** *Sent with the form* writes NoExport (`panels::properties::fieldextras::sent_row`, driven in `a_text_fields_extras_reach_the_file`); the *Default value* box and the Alignment chooser are driven in `form_field`. The chooser's first choice is *Inherited (…)*, naming the justification the field takes from its `/Parent` or the `/AcroForm`, and it calls `clearing_quadding`; Left, Centred and Right call `with_quadding`, so `/Q 0` written and no `/Q` stay distinct. Whether the field states its own `/Q` is read from its dictionary (`panels::properties::formfield::states_own_quadding`) because `Field` exposes only the resolved value: workaround reported as G137. Driven: `a_fields_alignment_can_go_back_to_inherited` on `fixtures/inherited-alignment.pdf`. |
 | **Write a field's four advisory flags and its export mapping name (`/TM`)** — | **shipped.** A selected text field's Properties carry *Scroll long text* (`with_no_scroll`), *Check spelling* (`with_no_spell_check`) and *Sends a file* (`with_file_select`), and every field carries an *Export name* box writing `/TM`, emptied to remove it (`panels::properties::fieldextras`). While Sends a file is ticked a sentence says a submit sends a file from the filler's computer, which is the disclosure the engine leaves to the caller. One undo entry each. Driven: `a_text_fields_extras_reach_the_file`, which reads each flag back from the saved field. |
