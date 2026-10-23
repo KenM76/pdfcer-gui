@@ -36,3 +36,15 @@ returns it — no marking.
 `output-preview on={0|1} inks=a|b|… hidden=…` on change (`-` for none,
 spaces as `_`). Regions: `panel:output-preview`, `output-preview.on`,
 `output-preview.ink:<name>`, `output-preview.show-all`.
+
+## Inks under the pointer
+
+While the preview is on and the pointer rests on the page, each ink row shows
+its tint there as a percentage and a line beneath gives where (page points,
+lower-left origin) and the total area coverage — the sum of every plate,
+Acrobat's figure for a printer's ink limit. The reading comes from
+`canvas::inkhover`; moving the pointer off the canvas (to the panel, say)
+clears it, as Acrobat's does.
+
+Trace: `output-preview-coverage` on change — `none`, `reading`, `failed`,
+`off_page`, `no_inks`, or `page= x= y= inks=Cyan:1.000|… total=`.

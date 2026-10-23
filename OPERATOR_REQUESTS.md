@@ -665,7 +665,7 @@ His words: *"I assume there will be appropriate menu items and dalogue boxes and
 
 **Status.** Nothing built; blocked on an engine tag that resolves. NOT VERIFIED.
 
-## O323 — **PARTLY BUILT** — Overprint Preview the way Acrobat has it
+## O323 — **BUILT, awaiting his check** — Overprint Preview the way Acrobat has it
 
 His words: *"do we have overprint preveiw like acrobat does?"*
 
@@ -673,7 +673,7 @@ His words: *"do we have overprint preveiw like acrobat does?"*
 
 **Scope, whole behaviour (Acrobat: Preferences ▸ Page Display ▸ Use Overprint Preview — Only for PDF/X files, Always, Never, Automatic; Print Production ▸ Output Preview).** (1) A View-level Overprint Preview switch, pressed while on, with Acrobat's four-way default in Settings ▸ Display; screen only — print and export are unaffected. Needs an engine switch to paint overprinting marks as knock-outs: filed as `open/request_overprint_simulation_switch.md`. (2) Output Preview: each ink (process and spot) listed with a show/hide box and its coverage under the cursor, the page drawn from the shown inks only — to be argued in `DESIGNS.md` before any engine request, since it needs per-ink rendering.
 
-**Built so far.** View ▸ Display ▸ *Overprint preview*: on by default; off shows each overprinting mark covering what is beneath it, and the status bar says how many marks asked for overprint. Screen only. Driven: `overprint_preview`. View ▸ Panels ▸ *Output Preview*: *Preview separations* draws the page as its inks, each listed with a show box; hiding one redraws the page without that plate, and the status bar says how many are hidden. Screen only. Driven: `output_preview`. Settings ▸ Display ▸ *Use overprint preview*: Acrobat's four choices (Only for PDF/X files, Always, Never, Automatic), deciding whether a document opens with the preview on; default Always, so nothing changes until he picks another. Automatic reads whether any page asks for overprint, PDF/X reads the file's claim. Driven: `overprint_default`. Still to build: the ink coverage under the cursor.
+**Built so far.** View ▸ Display ▸ *Overprint preview*: on by default; off shows each overprinting mark covering what is beneath it, and the status bar says how many marks asked for overprint. Screen only. Driven: `overprint_preview`. View ▸ Panels ▸ *Output Preview*: *Preview separations* draws the page as its inks, each listed with a show box; hiding one redraws the page without that plate, and the status bar says how many are hidden. Screen only. Driven: `output_preview`. Settings ▸ Display ▸ *Use overprint preview*: Acrobat's four choices (Only for PDF/X files, Always, Never, Automatic), deciding whether a document opens with the preview on; default Always, so nothing changes until he picks another. Automatic reads whether any page asks for overprint, PDF/X reads the file's claim. Driven: `overprint_default`. Output Preview shows each ink's percentage under a resting pointer, and the total area coverage. Driven: `output_coverage`. All of O323 is built; awaiting his check.
 
 **Status.** Switch and panel built and driven. NOT VERIFIED by him.
 

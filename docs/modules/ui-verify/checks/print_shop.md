@@ -89,3 +89,13 @@ fixture, whose page uses only the four process inks.
 
 Falsified: the build before the panel has no `view.output_preview` and fails
 step 1.
+
+## `output_coverage`
+
+Opens View ▸ Panels ▸ Output Preview, switches the preview on, then — after
+the dock has opened, so the canvas mapping is final — rests the scripted
+pointer on the two `AIMS` points and waits for an
+`output-preview-coverage … inks=` line at each. Owed: `Cyan:1.000` and
+`Magenta:0.000` on cyan alone, both `1.000` on the overprinted magenta, and a
+`total` at least their sum. Falsified on a control build with the canvas call
+removed: it fails with `output-preview-coverage none`.

@@ -108,23 +108,14 @@ pub fn current(ctx: &Context, doc: &OpenDoc) -> Option<Reading> {
 /// A click at canvas `point` on page `page_index`, drawn at `zoom` screen
 /// points per page point.
 pub fn click(ctx: &Context, doc: &OpenDoc, page_index: usize, point: Pos2, zoom: f32) {
-    let Some(page) = doc.pages.get(page_index) else {
-        return;
-    };
-    let Some((at, _)) = crate::canvas::markup::band::endpoints(point, point, page) else {
-        return;
-    };
-    let scale = (zoom * ctx.pixels_per_point()).clamp(SCALE_RANGE.0, SCALE_RANGE.1);
-    let Some(request) = doc.render_request_for(page_index, scale) else {
-        return;
-    };
-    let cancel = RenderCancel::new();
-    let job = Job {
-        options: options_for(&request, &cancel),
-        region: region_around(at, scale),
+    let Some(Prepared {
+        at,
         scale,
-        session: Arc::clone(&request.session),
-        page: request.page,
+        job,
+        cancel,
+    }) = prepare(ctx, doc, page_index, point, zoom)
+    else {
+        return;
     };
     let reading = Reading {
         doc: doc.serial,
@@ -160,7 +151,7 @@ pub fn click(ctx: &Context, doc: &OpenDoc, page_index: usize, point: Pos2, zoom:
             if cancel.is_cancelled() {
                 return;
             }
-            trace_found(page_index, at, &found);
+            trace_found(PROBE_EVENT, page_index, at, &found);
             guard.cancel = None;
             guard.reading = Some(Reading { found, ..reading });
             drop(guard);
@@ -172,8 +163,50 @@ pub fn click(ctx: &Context, doc: &OpenDoc, page_index: usize, point: Pos2, zoom:
     }
 }
 
+/// A probe ready to run: where, at what scale, and its cancel handle.
+pub(crate) struct Prepared {
+    /// PDF user space, y-up.
+    pub at: (f64, f64),
+    /// Device pixels per page point.
+    pub scale: f32,
+    pub job: Job,
+    pub cancel: RenderCancel,
+}
+
+/// The probe for canvas `point` on page `page_index`, drawn at `zoom` screen
+/// points per page point, or `None` off the page or with no request to make.
+pub(crate) fn prepare(
+    ctx: &Context,
+    doc: &OpenDoc,
+    page_index: usize,
+    point: Pos2,
+    zoom: f32,
+) -> Option<Prepared> {
+    let page = doc.pages.get(page_index)?;
+    let (at, _) = crate::canvas::markup::band::endpoints(point, point, page)?;
+    let scale = (zoom * ctx.pixels_per_point()).clamp(SCALE_RANGE.0, SCALE_RANGE.1);
+    let request = doc.render_request_for(page_index, scale)?;
+    let cancel = RenderCancel::new();
+    let job = Job {
+        options: options_for(&request, &cancel),
+        region: region_around(at, scale),
+        scale,
+        session: Arc::clone(&request.session),
+        page: request.page,
+    };
+    Some(Prepared {
+        at,
+        scale,
+        job,
+        cancel,
+    })
+}
+
+/// The picker's trace event for a finished probe.
+const PROBE_EVENT: &str = "ink-probe"; // ui-text-exempt: diagnostic trace event name
+
 /// One probe render, owned so it can cross to the worker thread.
-struct Job {
+pub(crate) struct Job {
     session: Arc<EditSession>,
     page: pdfcer_core::page_tree::Page,
     scale: f32,
@@ -182,7 +215,17 @@ struct Job {
 }
 
 impl Job {
-    fn run(self) -> Found {
+    /// Composite under `preview` too, so an RGB page splits into the same
+    /// plates the Output Preview panel lists.
+    pub(crate) fn with_separations(
+        mut self,
+        preview: Option<pdfcer_render::SeparationPreview>,
+    ) -> Self {
+        self.options.separation_preview = preview;
+        self
+    }
+
+    pub(crate) fn run(self) -> Found {
         let view = self.session.view();
         match pdfcer_render::render_page_region(
             &view,
@@ -291,8 +334,8 @@ pub fn settle(ctx: &Context) {
     }
 }
 
-/// `ink-probe page= x= y= source= c= m= y= k= alpha= spots= srgb=`.
-fn trace_found(page: usize, at: (f64, f64), found: &Found) {
+/// `<event> page= x= y= source= c= m= y= k= alpha= spots= srgb=`.
+pub(crate) fn trace_found(event: &str, page: usize, at: (f64, f64), found: &Found) {
     use pdfcer_render::InkProbeSource as S;
     let fields = match found {
         Found::Reading => return,
@@ -327,5 +370,5 @@ fn trace_found(page: usize, at: (f64, f64), found: &Found) {
         }
     };
     // ui-text-exempt: diagnostic trace, never displayed.
-    crate::diag::trace(|| format!("ink-probe page={page} x={:.1} y={:.1} {fields}", at.0, at.1));
+    crate::diag::trace(|| format!("{event} page={page} x={:.1} y={:.1} {fields}", at.0, at.1));
 }

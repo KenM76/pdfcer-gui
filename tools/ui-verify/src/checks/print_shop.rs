@@ -6,7 +6,8 @@
 //! Overprint preview starts on and turning it off reaches the render and the
 //! status bar.
 //! `output_preview` — View ▸ Panels ▸ Output Preview lists the page's inks and
-//! hides one, and the status bar says so.
+//! hides one, and the status bar says so. `output_coverage` — resting the
+//! pointer on the page shows each ink's percentage and the total there.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/print_shop.md`.
 
@@ -502,6 +503,91 @@ fn output_preview(
             "an ink is hidden and `{OUTPUT_NOTE}` was never declared: the canvas stopped showing \
              what will print without saying so."
         )));
+    }
+    Ok(None)
+}
+
+const COVERAGE: &str = "output-preview-coverage"; // ui-text-exempt: a trace event name, never displayed
+
+/// See the module documentation.
+pub struct OutputPreviewReadsTheInksUnderThePointer;
+
+impl Check for OutputPreviewReadsTheInksUnderThePointer {
+    fn name(&self) -> &'static str {
+        "output_coverage"
+    }
+
+    fn defect(&self) -> &'static str {
+        "with View ▸ Panels ▸ Output Preview on, resting the pointer on the page does not show \
+         each ink's percentage and the total area coverage there, or shows the wrong ones"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven = launch(ctx, &mut report, self.name(), None).and_then(|(session, pointer)| {
+            let outcome = coverage(ctx, &mut report, &session, &pointer);
+            let parked = pointer.gone(&session);
+            match outcome? {
+                Some(failure) => Ok(Some(failure)),
+                None => parked.map(|_| None),
+            }
+        });
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Switch the preview on, rest the pointer on cyan alone and then on the
+/// overprinted magenta, and require the panel's coverage line to read the
+/// fixture's tints at each.
+fn coverage(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    press(session, pointer, VIEW_TAB)?;
+    press(session, pointer, OUTPUT_ITEM)?;
+    let mark = session.trace()?.mark();
+    press(session, pointer, OUTPUT_SWITCH)?;
+    if await_line(session, OUTPUT_TRACE, mark, |l| l.get("on") == Some("1"))?.is_none() {
+        return Ok(Some(format!(
+            "`{OUTPUT_SWITCH}` was pressed and no `{OUTPUT_TRACE} on=1` followed."
+        )));
+    }
+    // The dock is open now, so the canvas has its final width; map after it.
+    let pdf = repo_fixture(FIXTURE, METHOD)?;
+    let page = crate::fixture::page_geometry(&pdf)
+        .ok_or_else(|| Error::new(format!("cannot read a page size from {}.", pdf.display())))?;
+    let mapping = CanvasMapping::from_trace(&session.trace()?, &ctx.profile.vocab, page, 0)?;
+    for &(x, y, c, m) in &AIMS {
+        let mark = session.trace()?.mark();
+        pointer.hover(session, mapping.doc_to_window(DocPoint::new(0, x, y))?)?;
+        let read = |l: &TraceLine| l.get("inks").is_some();
+        let Some(line) = await_line(session, COVERAGE, mark, read)? else {
+            let last = session.trace()?.last(COVERAGE).map(|l| l.raw.clone());
+            return Ok(Some(format!(
+                "the pointer rested at {x}, {y} pt and no `{COVERAGE}` line carried inks; last \
+                 was {last:?}."
+            )));
+        };
+        report.note(format!("at {x}, {y}: `{}`", line.raw));
+        let inks = line.get("inks").unwrap_or_default();
+        let owed = [format!("Cyan:{c}"), format!("Magenta:{m}")];
+        let total = line.get("total").and_then(|t| t.parse::<f32>().ok());
+        let at_least: f32 = [c, m].iter().filter_map(|v| v.parse::<f32>().ok()).sum();
+        if !owed.iter().all(|o| inks.split('|').any(|i| i == o))
+            || total.is_none_or(|t| t + 0.001 < at_least)
+        {
+            return Ok(Some(format!(
+                "at {x}, {y} pt the fixture prints {} and {} (total at least {at_least}); the \
+                 panel read `{}`.",
+                owed[0], owed[1], line.raw
+            )));
+        }
     }
     Ok(None)
 }

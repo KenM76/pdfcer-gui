@@ -160,6 +160,13 @@ pub(super) fn interact(
     let screen_pos = response
         .interact_pointer_pos()
         .or_else(|| ctx.pointer_latest_pos());
+    crate::canvas::inkhover::frame(
+        &ctx,
+        doc,
+        page_index,
+        response.hover_pos().map(|p| map.to_page(p)),
+        map.page_vec_to_screen(egui::Vec2::X).x,
+    );
     let shift = ctx.input(|i| i.modifiers.shift);
     // Ctrl, read beside Shift — `OPERATOR_REQUESTS.md` O104. It means "take
     // this OUT of the selection", for a click and for a band; the argument for

@@ -13,6 +13,8 @@ use pdfcer_render::SeparationPreview;
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
+use crate::canvas::inkhover::{Hover, Tints};
+use crate::canvas::inkpick::Found;
 use crate::panels::PanelsState;
 use crate::text::panels::output_preview as t;
 
@@ -62,19 +64,13 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
         return;
     }
     ui.separator();
-    for ink in &diag.inks {
-        let mut shown = !preview.hides(ink);
-        let row = ui
-            .checkbox(&mut shown, ink)
-            .on_hover_text(t::ink_hover(ink));
-        crate::diag::ui_rect(
-            &format!("{REGION_INK_PREFIX}{}", ink.replace(' ', "_")),
-            row.rect,
-        );
-        if row.changed() {
-            actions.push(Action::SetSeparations(Some(toggled(preview, ink, shown))));
-        }
-    }
+    let hover = crate::canvas::inkhover::current(ui.ctx(), doc);
+    let probe = hover.as_ref().and_then(|h| match &h.found {
+        Found::Probe(p) => Some(Tints::of(p)),
+        _ => None,
+    });
+    ink_rows(ui, preview, &diag.inks, probe, actions);
+    coverage(ui, hover.as_ref(), probe);
     let all = ui.add_enabled(!preview.hidden.is_empty(), egui::Button::new(t::show_all()));
     crate::diag::ui_rect(REGION_SHOW_ALL, all.rect);
     if all.clicked() {
@@ -90,6 +86,104 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
                 .weak(),
         );
     }
+}
+
+/// One row per plate: its show switch and, under the pointer, its tint.
+fn ink_rows(
+    ui: &mut egui::Ui,
+    preview: &SeparationPreview,
+    inks: &[String],
+    probe: Option<Tints<'_>>,
+    actions: &mut Vec<Action>,
+) {
+    for ink in inks {
+        let mut shown = !preview.hides(ink);
+        let tint = probe.and_then(|p| p.tint(ink));
+        let row = ui
+            .horizontal(|ui| {
+                let row = ui.checkbox(&mut shown, ink);
+                if let Some(tint) = tint {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        ui.label(t::percent(tint));
+                    });
+                }
+                row
+            })
+            .inner
+            .on_hover_text(t::ink_hover(ink));
+        crate::diag::ui_rect(
+            &format!("{REGION_INK_PREFIX}{}", ink.replace(' ', "_")),
+            row.rect,
+        );
+        if row.changed() {
+            actions.push(Action::SetSeparations(Some(toggled(preview, ink, shown))));
+        }
+    }
+}
+
+/// The line under the ink list: where the pointer reading was taken and its
+/// total area coverage, or why there is none.
+fn coverage(ui: &mut egui::Ui, hover: Option<&Hover>, probe: Option<Tints<'_>>) {
+    let Some(hover) = hover else {
+        trace_coverage("none"); // ui-text-exempt: diag trace value
+        ui.label(egui::RichText::new(t::hover_hint()).small().weak());
+        return;
+    };
+    let (x, y) = hover.at;
+    let line = match (&hover.found, probe) {
+        (Found::Reading, _) => {
+            trace_coverage("reading"); // ui-text-exempt: diag trace value
+            t::hover_reading().to_owned()
+        }
+        (Found::Failed(why), _) => {
+            trace_coverage("failed"); // ui-text-exempt: diag trace value
+            t::hover_failed(why)
+        }
+        (Found::Probe(p), _) if p.source == pdfcer_render::InkProbeSource::OutOfRange => {
+            trace_coverage("off_page"); // ui-text-exempt: diag trace value
+            t::hover_off_page().to_owned()
+        }
+        (Found::Probe(_), Some(tints)) if tints.total().is_some() => {
+            trace_coverage(&reading_token(hover, tints));
+            ui.label(egui::RichText::new(t::hover_at(x, y)).small().weak());
+            let total = tints.total().unwrap_or_default();
+            ui.label(t::total_coverage(total))
+                .on_hover_text(t::total_coverage_hover());
+            return;
+        }
+        (Found::Probe(_), _) => {
+            trace_coverage("no_inks"); // ui-text-exempt: diag trace value
+            t::hover_no_inks().to_owned()
+        }
+    };
+    ui.label(egui::RichText::new(line).small().weak());
+}
+
+/// `page= x= y= inks=Cyan:1.000|… total=` for a reading with tints.
+fn reading_token(hover: &Hover, tints: Tints<'_>) -> String {
+    let mut inks: Vec<String> = pdfcer_render::PROCESS_INKS
+        .iter()
+        .filter_map(|ink| tints.tint(ink).map(|t| format!("{ink}:{t:.3}")))
+        .collect();
+    inks.extend(
+        tints
+            .spots
+            .iter()
+            .map(|(name, t)| format!("{}:{t:.3}", name.replace(' ', "_"))),
+    );
+    format!(
+        "page={} x={:.1} y={:.1} inks={} total={:.3}", // ui-text-exempt: diag trace value
+        hover.page,
+        hover.at.0,
+        hover.at.1,
+        inks.join("|"),
+        tints.total().unwrap_or_default()
+    )
+}
+
+/// The coverage line's state, on change only.
+fn trace_coverage(state: &str) {
+    crate::diag::trace_on_change("output-preview-coverage", || state.to_owned());
 }
 
 /// `preview` with `ink` shown (`show`) or hidden.

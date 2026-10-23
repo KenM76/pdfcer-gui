@@ -73,3 +73,58 @@ pub fn status_line(hidden: usize) -> String {
         ),
     }
 }
+
+/// Shown under the ink list until the pointer rests on the page.
+#[must_use]
+pub fn hover_hint() -> &'static str {
+    "Rest the pointer on the page to read the inks under it."
+}
+
+/// Shown while the inks under the pointer are being read.
+#[must_use]
+pub fn hover_reading() -> &'static str {
+    "Reading the inks under the pointer\u{2026}"
+}
+
+/// Where the reading was taken, in page points from the lower-left corner.
+#[must_use]
+pub fn hover_at(x: f64, y: f64) -> String {
+    format!("Under the pointer, at {x:.0}, {y:.0} pt")
+}
+
+/// The sum of every plate's tint at the pointer.
+#[must_use]
+pub fn total_coverage(total: f32) -> String {
+    format!("Total area coverage: {}", percent(total))
+}
+
+/// What the total means, on hover.
+#[must_use]
+pub fn total_coverage_hover() -> &'static str {
+    "The sum of all inks at this point. Printers often set a limit, such as \
+     300%, above which ink may not dry or may smear."
+}
+
+/// One plate's tint as a percentage.
+#[must_use]
+pub fn percent(tint: f32) -> String {
+    format!("{:.0}%", tint * 100.0)
+}
+
+/// The pointer rested outside the page.
+#[must_use]
+pub fn hover_off_page() -> &'static str {
+    "The pointer is off the page."
+}
+
+/// The point could not be read as inks.
+#[must_use]
+pub fn hover_no_inks() -> &'static str {
+    "The inks at this point could not be read."
+}
+
+/// The probe render failed.
+#[must_use]
+pub fn hover_failed(why: &str) -> String {
+    format!("The inks at this point could not be read: {why}")
+}

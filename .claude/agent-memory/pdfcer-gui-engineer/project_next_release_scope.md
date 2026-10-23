@@ -1,12 +1,14 @@
 ---
 name: next-release-scope
-description: The next release waits until O323 (overprint + Output Preview), O324 (Forms tab + Style) and O325 (size-reduction dialogs/menus/right-click) are all built
+description: Next release = after the next pdfcer engine tag is folded in and its new features supported; O323/O324/O325 work carries on meanwhile
 metadata:
   type: project
 ---
 
-On 2026-10-23 Ken answered "Release after that work is done." to the question of whether the next release waits for the work he asked for: the Forms tab with next-field Style (O324), menu items, dialogs and right-click entries for every engine v0.92.0 size-reduction feature (O325), and overprint preview plus Output Preview (O323).
+2026-10-23, Ken, twice:
+1. "Release after that work is done." — the Forms tab with Style (O324), menus/dialogs/right-click for every v0.92.0 size-reduction feature (O325), overprint + Output Preview (O323).
+2. Later the same day: "carry on. once the new pdfcer engine is released finish up any work to support any new features then make a release."
 
-**Why:** he asked for all three "for the next release", so a release that ships only part of them doesn't deliver what he asked for.
+**Why:** he wants the next release to carry the next engine and the GUI for whatever it adds, plus the O323–O325 work he asked for.
 
-**How to apply:** no release until all three rows are built and driven. Then release straight away without asking again (releases are pre-authorised; see [[feedback_always_publish_latest]]). Engine tags arriving in the meantime are folded in, but they don't trigger a release on their own until this scope is done. Delete this memory once the release ships.
+**How to apply:** keep building O325 (O323 and O324 are done) while waiting. When an engine tag after v0.92.0 lands: move the pin, build GUI support for its new features (each driven and falsified), finish O325 stages that are close, then release without asking (clean tree, gates, smoke, GitHub + OneDrive, no prerelease). If an O325 stage is far from done at that point, ship it in the next release and say so in the report rather than hold this one. Delete this memory once the release ships.

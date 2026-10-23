@@ -194,4 +194,4 @@
 - [The first stream is not the page](feedback_first_stream_order.md) — pick a read-back stream by content; an object stream came first.
 - [Moving a command's tab breaks checks](feedback_moving_command_tab.md) — grep checks for the old `ribbon.tab.`; the chain stays green.
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
-- [Next release waits for O323/O324/O325](project_next_release_scope.md) — Ken 2026-10-23: release once all three are built; delete after shipping.
+- [Next release: after the next engine tag](project_next_release_scope.md) — fold it in, support its features, then release; O325 carries on meanwhile.
