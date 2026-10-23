@@ -268,7 +268,7 @@ impl PreparedRedaction {
         {
             let undisclosed: Vec<String> = survivors
                 .into_iter()
-                .filter(|s| !self.verification.disclosed_in_drawn_content(s))
+                .filter(|s| !proof::disclosed_in_drawn_content(&self.verification, s))
                 .collect();
             if !undisclosed.is_empty() {
                 return Err(WriteRefusal::VerificationFailed {
@@ -309,7 +309,7 @@ impl PreparedRedaction {
         {
             let undisclosed: Vec<String> = survivors
                 .into_iter()
-                .filter(|s| !self.verification.disclosed_in_drawn_content(s))
+                .filter(|s| !proof::disclosed_in_drawn_content(&self.verification, s))
                 .collect();
             if !undisclosed.is_empty() {
                 return Err(WriteRefusal::VerificationFailed {
@@ -453,10 +453,12 @@ pub fn prepare_redaction_apply(
     let proven = proof::prove(&bytes, &report.redacted_text);
     crate::diag::trace(|| {
         format!(
-            "redact-prove drawn_content_hits={} residuals={} short={}",
+            "redact-prove drawn_content_hits={} residuals={} short={} undecoded={} unparsed={}",
             proven.survivors.as_ref().map_or(0, Vec::len),
             proven.verification.residuals.len(),
-            proven.verification.strings_too_short_for_raw_check,
+            proven.verification.strings_too_short,
+            proven.verification.streams_undecoded,
+            u8::from(proven.verification.output_unparsed),
         )
     });
 

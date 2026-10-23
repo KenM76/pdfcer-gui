@@ -1054,7 +1054,7 @@ fn where_do_the_survivors_live_on_his_drawing() {
                 prepared.report.pages_redacted,
                 prepared.report.glyphs_removed,
                 prepared.verification.strings_checked,
-                prepared.verification.strings_too_short_for_raw_check,
+                prepared.verification.strings_too_short,
                 prepared.verification.residuals.len(),
                 prepared.verification.is_clean()
             );

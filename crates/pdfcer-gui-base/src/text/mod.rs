@@ -355,6 +355,9 @@ pub mod window;
 /// The places a copy of the removed text can hide.
 pub mod redactcarriers;
 
+/// What stopped the absence proof saying *verified*.
+pub mod redactproof;
+
 /// The copy naming where the redacted document goes.
 pub mod redactdestcopy;
 

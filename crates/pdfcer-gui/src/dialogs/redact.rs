@@ -227,7 +227,7 @@ impl RedactDialog {
                         prepared.report.glyphs_removed,
                         prepared.report.content_streams_rewritten,
                         prepared.verification.strings_checked,
-                        prepared.verification.strings_too_short_for_raw_check,
+                        prepared.verification.strings_too_short,
                         prepared.verification.residuals.len(),
                         prepared.verification.is_clean(),
                         prepared.byte_len(),
@@ -519,15 +519,7 @@ impl RedactDialog {
                     ui.add_space(8.0);
                     ui.label(t::verified_line(verification.strings_checked));
                 }
-                if verification.strings_too_short_for_raw_check > 0 {
-                    ui.add_space(4.0);
-                    ui.label(
-                        egui::RichText::new(t::verification_limit_line(
-                            verification.strings_too_short_for_raw_check,
-                        ))
-                        .color(theme.palette.text_muted),
-                    );
-                }
+                proof_limits(ui, theme, verification);
                 // The carriers the engine looked inside and found clean.
                 // With the proof rather than with the counts, because it is the
                 // same kind of statement — evidence that a check ran — and it
@@ -1011,3 +1003,26 @@ pub(super) fn open_for(status: &Status, reach: RedactionReach) -> Option<RedactD
 /// since 2026-09-04 — see [`tests`]'s header for the seam.
 #[cfg(test)]
 mod tests;
+
+/// What the proof could not reach: strings too short to search for, streams it
+/// could not decode, output it could not parse. Each stops the word *verified*.
+fn proof_limits(
+    ui: &mut egui::Ui,
+    theme: &Theme,
+    verification: &pdfcer_gui_base::redact::AbsenceVerification,
+) {
+    let mut lines = Vec::new();
+    if verification.strings_too_short > 0 {
+        lines.push(t::verification_limit_line(verification.strings_too_short));
+    }
+    if verification.streams_undecoded > 0 {
+        lines.push(t::proof_unsearched_line(verification.streams_undecoded));
+    }
+    if verification.output_unparsed {
+        lines.push(t::proof_unparsed_line().to_owned());
+    }
+    for line in lines {
+        ui.add_space(4.0);
+        ui.label(egui::RichText::new(line).color(theme.palette.text_muted));
+    }
+}

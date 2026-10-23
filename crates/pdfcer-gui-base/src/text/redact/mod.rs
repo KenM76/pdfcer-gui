@@ -335,6 +335,7 @@ pub fn residual_heading() -> &'static str {
 // invisible to consumers and the catalog keeps one flat namespace.
 // ---------------------------------------------------------------------------
 use crate::text::redactcarriers as carriers;
+pub use crate::text::redactproof::{proof_unparsed_line, proof_unsearched_line};
 pub use carriers::{
     carrier_name, checked_clean_line, engine_notes_heading, engine_notes_lead, left_by_choice_line,
     residual_carrier_line, residual_sweep_line, sweep_scrubbed_line,
@@ -373,6 +374,7 @@ pub fn raw_residual_line(text: &str, site: crate::redact::ResidualSite) -> Strin
         S::Metadata => "inside a metadata stream",
         S::OtherStream => "inside a stream this build does not recognise",
         S::RawBytes => "in the file's raw bytes, outside every stream pdfcer could decode",
+        _ => "somewhere this build has no name for",
     };
     format!(
         "⚠  The removed text “{text}” no longer appears in anything this document draws, but that same byte sequence still occurs {place}. It may be an unrelated coincidence, or a copy in a carrier pdfcer does not recognise — pdfcer cannot tell which, so it is reported rather than claimed removed."

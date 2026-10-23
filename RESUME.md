@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**v0.93.0 wired:** Settings ▸ Display ▸ *Use overprint preview* reads `prepress::overprint_use` (Automatic, on a thread over a byte copy; unknown opens on and the status line says why) and `pdfx_claim` / `pdfx_output_intents` (Only for PDF/X); `overprint_default` drives nine opens. Save a compacted copy gains *Make compatible with* (`optimize::lower_version`, Keep by default); `a_compacted_copy_is_made_compatible_with_an_older_version`. **Not wired:** `redact::verify_absence` — the shell's own `redact::proof` still answers; migrating it is the next engine-driven job.
+**v0.93.0 wired:** Settings ▸ Display ▸ *Use overprint preview* reads `prepress::overprint_use` (Automatic, on a thread over a byte copy; unknown opens on and the status line says why) and `pdfx_claim` / `pdfx_output_intents` (Only for PDF/X); `overprint_default` drives nine opens. Save a compacted copy gains *Make compatible with* (`optimize::lower_version`, Keep by default); `a_compacted_copy_is_made_compatible_with_an_older_version`. **Wired since:** `redact::proof` calls `redact::verify_absence` (driven off-screen both ways on a pre-marked page; not in a release yet).
 
 **O322 part 2 built and driven:** Settings ▸ Display ▸ *Smooth enlarged pictures* (pref key `smooth_enlarged_pictures`, default on) sets `RenderRequest::image_magnify` for the canvas only; `smooth_enlarged_pictures_follows_the_setting`. Parts 1 (area-averaged minify) and 3 (font contrast) wait on the engine / a design. **O323** (Overprint Preview switch, Output Preview) filed; engine request `request_overprint_simulation_switch.md`.
 

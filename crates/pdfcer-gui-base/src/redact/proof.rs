@@ -1,378 +1,52 @@
-//! # `redact::proof` — the absence proof, and the only thing entitled to the
-//! word *verified*
+//! # `redact::proof` — the absence proof, read through the engine's verb
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/redact/proof.md`.
 
-use pdfcer_core::document::Document;
-use pdfcer_core::object::{ObjId, Object};
-
-/// The shortest redacted string whose presence **outside every content-bearing
-/// stream** is worth asserting anything about.
-pub const MIN_VERIFIABLE_LEN: usize = 4;
-
-/// **Where a disclosed residual was found**, so the sentence about it can name
-/// the place rather than say *"somewhere in the saved file"*.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResidualSite {
-    /// **In drawn content — a page's content stream, a form XObject, a
-    /// pattern or a Type 3 glyph procedure — somewhere in the document.**
-    ///
-    /// **A hit here is a doubt, not a proven leak.** The proof greps the
-    /// WHOLE output for each removed string while the mark covered one region
-    /// of one page, so a hit is far more often than not another occurrence of
-    /// the same word that was never selected — a title-block label, a note
-    /// repeated on every sheet. pdfcer cannot tell that apart from the removed
-    /// glyphs still being drawn. Resolving the doubt by refusing to write
-    /// anything makes a multi-page drawing set unredactable whenever a marked
-    /// word appears anywhere else in it.
-    ///
-    /// So it is a **disclosure behind the acknowledgement gate**, like every
-    /// other residual: the window lists each such string with this site's
-    /// sentence — which says *outside the area you marked* in as many words —
-    /// and the operator ticks the box to proceed. The hard refusal survives
-    /// for exactly one case: a survivor found at write time that was NOT in
-    /// the acknowledged list (the document changed between the two), which is
-    /// the module's "removal and report disagree" line.
-    DrawnContent,
-    /// An embedded font program — `/FontFile`, `/FontFile2` or `/FontFile3`.
-    ///
-    /// By far the most common site, and the one that made this whole
-    /// classification necessary: a font's `name` table carries its family name,
-    /// its copyright, its licence URL and the English descriptions of every
-    /// OpenType feature it implements. Ordinary words live there by
-    /// construction.
-    FontProgram,
-    /// The sample data of an image XObject.
-    ///
-    /// Arbitrary bytes. A four-character run occurring in a megapixel of
-    /// photographic noise is unremarkable; a run occurring in a *screenshot of
-    /// the redacted text* is not, and pdfcer cannot tell those apart, so it says
-    /// where it looked and stops.
-    ImageSamples,
-    /// A compressed object container (`/Type /ObjStm`).
-    ///
-    /// Engine rule R38's case: promoting an object out of a container leaves the
-    /// container's own copy of its previous value behind. Page content can never
-    /// live in one (ISO 32000-1 §7.5.7), so this cannot be drawn text — but it
-    /// can be a string in a dictionary, which a viewer may still show.
-    ObjectContainer,
-    /// An embedded file attachment (`/Type /EmbeddedFile`).
-    ///
-    /// The one site on this list where a hit is most likely to be **real**: an
-    /// attachment is a whole other document, and redaction does not reach into
-    /// it. The engine discloses `attachments` as a carrier for the same reason.
-    Attachment,
-    /// A metadata stream (`/Type /Metadata`).
-    Metadata,
-    /// A decoded stream this build does not classify further.
-    OtherStream,
-    /// Not inside any decoded stream — in the file's raw bytes.
-    ///
-    /// A string in a dictionary, an unfiltered stream, a name object, a
-    /// cross-reference table. The original middle verdict, unchanged.
-    RawBytes,
-}
-
-/// One disclosed residual: a removed string that is absent from everything the
-/// document draws, and present somewhere else.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Residual {
-    /// The removed string that was found again.
-    pub text: String,
-    /// Where it was found.
-    pub site: ResidualSite,
-}
-
-/// What a decoded stream **is**, for the one question this module asks of it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum StreamRole {
-    /// A renderer draws this and a text extractor reads it: page content, a
-    /// form XObject (which is also what an annotation's appearance stream is),
-    /// a tiling pattern's cell, a Type 3 glyph procedure.
-    ///
-    /// A redacted string surviving here is the glyphs still being painted.
-    Content,
-    /// Everything else. Bytes that are *about* the document rather than bytes
-    /// the document shows.
-    Opaque(ResidualSite),
-}
-
-/// One decoded stream and what it is.
-struct DecodedStream {
-    /// What the stream is for.
-    role: StreamRole,
-    /// Its decoded bytes.
-    bytes: Vec<u8>,
-}
-
-/// What the absence proof found, for the report the operator reads before
-/// confirming.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct AbsenceVerification {
-    /// Distinct redacted strings the proof checked against decoded streams.
-    pub strings_checked: usize,
-    /// How many of those were too short for the **disclosure** half to say
-    /// anything about ([`MIN_VERIFIABLE_LEN`]).
-    ///
-    /// Reported so the operator can see the proof's own limit rather than
-    /// inferring a completeness it does not have. These strings *were* checked
-    /// against every content-bearing stream, where a hit is still a refusal —
-    /// which is what [`crate::text::redact::verification_limit_line`] tells the
-    /// operator in so many words.
-    pub strings_too_short_for_raw_check: usize,
-    /// Redacted strings that still occur somewhere in the output while
-    /// occurring in **no content-bearing stream** — with the place named.
-    ///
-    /// Disclosed, acknowledgement-gated, never silently dropped — and never
-    /// described as a confirmed leak either, because pdfcer genuinely cannot
-    /// tell an un-recognised carrier from a coincidental byte run (module
-    /// docs).
-    ///
-    /// The name is deliberately not `raw_byte_residuals`: an opaque decoded
-    /// hit is a disclosure too, so this field carries more than raw-byte hits,
-    /// and a name that is a lie about half its contents is, on this screen,
-    /// the one thing that must never happen.
-    pub residuals: Vec<Residual>,
-}
-
-impl AbsenceVerification {
-    /// Whether every checked string is absent from the output by every measure
-    /// this build applies — the condition under which the post-apply wording may
-    /// say "verified".
-    #[must_use]
-    pub const fn is_clean(&self) -> bool {
-        self.residuals.is_empty()
-    }
-
-    /// Whether `text` was disclosed to the operator as a drawn-content hit
-    /// at preparation — the write-time check's question.
-    #[must_use]
-    pub fn disclosed_in_drawn_content(&self, text: &str) -> bool {
-        self.residuals
-            .iter()
-            .any(|r| r.site == ResidualSite::DrawnContent && r.text == text)
-    }
-}
+use pdfcer_core::redact::verify_absence;
+pub use pdfcer_core::redact::{AbsenceVerdict, AbsenceVerification, Residual, ResidualSite};
 
 /// Everything one pass of the proof establishes.
 #[derive(Debug, Clone, Default)]
 pub(super) struct Proof {
     /// The disclosure half: what was checked, what the length floor could not
-    /// speak to, and which strings survive outside everything the document
-    /// draws — each with the place it was found.
+    /// speak to, what could not be searched, and every residual with its site.
     pub(super) verification: AbsenceVerification,
-    /// The refusal half: redacted strings still present in a **content-bearing**
-    /// decoded stream of the output. `None` is clean by this measure; `Some` is
-    /// a leak and the caller must write nothing.
+    /// The refusal half: redacted strings still present in **drawn** content.
+    /// `None` is clean by this measure; `Some` is a leak the operator must be
+    /// shown before anything is written.
     pub(super) survivors: Option<Vec<String>>,
 }
 
-/// **Run both halves of the proof over `bytes`, decoding the document once.**
-///
-/// See the module docs for the one departure from the salvage source this
-/// represents, and for why the two halves are still separate functions.
+/// **Run the engine's absence proof over `bytes`.**
 pub(super) fn prove(bytes: &[u8], redacted: &[String]) -> Proof {
-    let decoded = decoded_streams_of(bytes);
+    let verification = verify_absence(bytes, redacted);
+    let survivors: Vec<String> = verification.drawn_survivors().map(str::to_owned).collect();
     Proof {
-        verification: verify_absence(bytes, redacted, &decoded),
-        survivors: leaked_in_content_streams(redacted, &decoded),
+        verification,
+        survivors: (!survivors.is_empty()).then_some(survivors),
     }
 }
 
-/// **The refusal half, run on its own against `bytes`.**
+/// **The refusal half alone: redacted strings still in drawn content.**
 pub(super) fn survivors_in_content_streams(
     bytes: &[u8],
     redacted: &[String],
 ) -> Option<Vec<String>> {
-    leaked_in_content_streams(redacted, &decoded_streams_of(bytes))
-}
-
-/// The refusal half of the absence proof, isolated so the refusal branch in
-/// [`super::prepare_redaction_apply`] reads as one question.
-fn leaked_in_content_streams(
-    redacted: &[String],
-    decoded: &[DecodedStream],
-) -> Option<Vec<String>> {
     if redacted.is_empty() {
         return None;
     }
-    let survivors: Vec<String> = redacted
-        .iter()
-        .filter(|needle| {
-            needle.chars().count() >= MIN_VERIFIABLE_LEN && in_content(decoded, needle)
-        })
-        .cloned()
-        .collect();
-    if survivors.is_empty() {
-        None
-    } else {
-        Some(survivors)
-    }
+    prove(bytes, redacted).survivors
 }
 
-/// Whether `needle` occurs in any stream the document actually draws.
-fn in_content(decoded: &[DecodedStream], needle: &str) -> bool {
-    decoded
-        .iter()
-        .filter(|s| s.role == StreamRole::Content)
-        .any(|s| contains(&s.bytes, needle.as_bytes()))
+/// Whether `text` was disclosed to the operator as a drawn-content hit at
+/// preparation — the write-time check's question.
+pub(super) fn disclosed_in_drawn_content(verification: &AbsenceVerification, text: &str) -> bool {
+    verification.drawn_survivors().any(|s| s == text)
 }
 
-/// Build the [`AbsenceVerification`] the report renders: how much was checked,
-/// how much the length floor could not speak to, and which strings survive
-/// somewhere the document does not draw.
-fn verify_absence(
-    bytes: &[u8],
-    redacted: &[String],
-    decoded: &[DecodedStream],
-) -> AbsenceVerification {
-    let mut out = AbsenceVerification {
-        strings_checked: redacted
-            .iter()
-            .filter(|s| s.chars().count() >= MIN_VERIFIABLE_LEN)
-            .count(),
-        ..AbsenceVerification::default()
-    };
-    for needle in redacted {
-        if needle.is_empty() {
-            continue;
-        }
-        if needle.chars().count() < MIN_VERIFIABLE_LEN {
-            out.strings_too_short_for_raw_check += 1;
-            continue;
-        }
-        // A content hit is DISCLOSED here, and refused only if it is still
-        // undisclosed at write time. See `ResidualSite::DrawnContent`.
-        if in_content(decoded, needle) {
-            out.residuals.push(Residual {
-                text: needle.clone(),
-                site: ResidualSite::DrawnContent,
-            });
-            continue;
-        }
-        let opaque_site = decoded
-            .iter()
-            .find(|s| s.role != StreamRole::Content && contains(&s.bytes, needle.as_bytes()))
-            .and_then(|s| match s.role {
-                StreamRole::Opaque(site) => Some(site),
-                StreamRole::Content => None,
-            });
-        let site = match opaque_site {
-            Some(site) => Some(site),
-            None if contains(bytes, needle.as_bytes()) => Some(ResidualSite::RawBytes),
-            None => None,
-        };
-        if let Some(site) = site {
-            out.residuals.push(Residual {
-                text: needle.clone(),
-                site,
-            });
-        }
-    }
-    out
-}
-
-/// Parse `bytes`, decode every stream in it, and say what each one is.
-fn decoded_streams_of(bytes: &[u8]) -> Vec<DecodedStream> {
-    Document::from_bytes(bytes.to_vec())
-        .map(|doc| decode_every_stream(&doc))
-        .unwrap_or_default()
-}
-
-/// Decode **every** stream in the document, not merely page content, and label
-/// each with what it is.
-fn decode_every_stream(doc: &Document) -> Vec<DecodedStream> {
-    let view = doc.view();
-    let content_ids = content_stream_ids(doc);
-    let mut out = Vec::new();
-    for object in doc.objects() {
-        let Object::Stream(stream) = &object.value else {
-            continue;
-        };
-        let Some(raw) = view.slice(stream.data_span) else {
-            continue;
-        };
-        if let Ok(decoded) = pdfcer_core::filters::decode_stream(&stream.dict, raw) {
-            out.push(DecodedStream {
-                role: role_of(&stream.dict, object.id, &content_ids),
-                bytes: decoded,
-            });
-        }
-    }
-    out
-}
-
-/// Every object id this document reaches as **drawn content by reference**:
-/// each page's `/Contents`, and every Type 3 font's `/CharProcs` entries.
-fn content_stream_ids(doc: &Document) -> Vec<ObjId> {
-    let mut ids: Vec<ObjId> = pdfcer_core::page_tree::pages(doc)
-        .map(|pages| pages.iter().flat_map(|p| p.contents.clone()).collect())
-        .unwrap_or_default();
-    // Type 3 glyph procedures: `/Subtype /Type3` fonts hold a `/CharProcs`
-    // dictionary whose every value is a content stream drawn for one character
-    // code. A redacted string surviving in one is the redacted glyph itself.
-    for object in doc.objects() {
-        let Some(dict) = object.value.as_dict() else {
-            continue;
-        };
-        if dict
-            .get(b"Subtype")
-            .map(|o| doc.resolve(o))
-            .and_then(Object::as_name)
-            .is_none_or(|n| n.as_bytes() != b"Type3")
-        {
-            continue;
-        }
-        let Some(procs) = dict
-            .get(b"CharProcs")
-            .map(|o| doc.resolve(o))
-            .and_then(Object::as_dict)
-        else {
-            continue;
-        };
-        ids.extend(procs.iter().filter_map(|(_, v)| v.as_reference()));
-    }
-    ids
-}
-
-/// **Classify one stream: does the document DRAW this, or is it about the
-/// document?**
-fn role_of(dict: &pdfcer_core::object::Dict, id: ObjId, content_ids: &[ObjId]) -> StreamRole {
-    if content_ids.contains(&id) {
-        return StreamRole::Content;
-    }
-    let subtype = dict
-        .get(b"Subtype")
-        .and_then(Object::as_name)
-        .map(|n| n.as_bytes().to_vec());
-    let type_ = dict
-        .get(b"Type")
-        .and_then(Object::as_name)
-        .map(|n| n.as_bytes().to_vec());
-    let subtype = subtype.as_deref();
-    match subtype {
-        Some(b"Form") => return StreamRole::Content,
-        Some(b"Image") => return StreamRole::Opaque(ResidualSite::ImageSamples),
-        Some(b"Type1C" | b"CIDFontType0C" | b"OpenType") => {
-            return StreamRole::Opaque(ResidualSite::FontProgram);
-        }
-        _ => {}
-    }
-    if dict.get(b"PatternType").and_then(Object::as_int) == Some(1) {
-        return StreamRole::Content;
-    }
-    if dict.contains_key(b"Length1") {
-        return StreamRole::Opaque(ResidualSite::FontProgram);
-    }
-    match type_.as_deref() {
-        Some(b"ObjStm") => StreamRole::Opaque(ResidualSite::ObjectContainer),
-        Some(b"EmbeddedFile") => StreamRole::Opaque(ResidualSite::Attachment),
-        Some(b"Metadata") => StreamRole::Opaque(ResidualSite::Metadata),
-        _ => StreamRole::Opaque(ResidualSite::OtherStream),
-    }
-}
-
-/// Whether `hay` contains `needle` as a byte subsequence.
+/// Whether `hay` contains `needle` as a byte subsequence — the tests' own
+/// witness, independent of the proof under test.
+#[cfg(test)]
 pub(super) fn contains(hay: &[u8], needle: &[u8]) -> bool {
     if needle.is_empty() || needle.len() > hay.len() {
         return false;
@@ -425,7 +99,7 @@ mod tests {
         assert_eq!(proof.survivors, None);
         assert!(proof.verification.is_clean());
         assert_eq!(proof.verification.strings_checked, 1);
-        assert_eq!(proof.verification.strings_too_short_for_raw_check, 0);
+        assert_eq!(proof.verification.strings_too_short, 0);
     }
 
     /// **A string in the raw bytes but in no decoded stream is a disclosed
@@ -471,7 +145,7 @@ mod tests {
         // Too short, and absent — counted, no residual, no refusal.
         let clean = pdf_drawing("nothing here");
         let proof = prove(&clean, &["ab".to_owned()]);
-        assert_eq!(proof.verification.strings_too_short_for_raw_check, 1);
+        assert_eq!(proof.verification.strings_too_short, 1);
         assert_eq!(
             proof.verification.strings_checked, 0,
             "a needle the proof cannot check is not counted as checked"
@@ -486,7 +160,7 @@ mod tests {
             "a needle under the floor is the alphabet, not a leak — refusing on \
              it refused every drawing a per-glyph producer ever wrote"
         );
-        assert_eq!(proof.verification.strings_too_short_for_raw_check, 1);
+        assert_eq!(proof.verification.strings_too_short, 1);
         // The control that keeps the line where it belongs: a needle AT the
         // floor, drawn, is still the hard refusal.
         let proof = prove(&pdf_drawing("abcd is drawn"), &["abcd".to_owned()]);
@@ -506,7 +180,7 @@ mod tests {
         let needles: Vec<String> = "3.5 TYP".chars().map(|c| c.to_string()).collect();
         let proof = prove(&page, &needles);
         assert_eq!(proof.survivors, None, "single characters are not survivors");
-        assert_eq!(proof.verification.strings_too_short_for_raw_check, 7);
+        assert_eq!(proof.verification.strings_too_short, 7);
         assert_eq!(proof.verification.strings_checked, 0);
         assert!(proof.verification.is_clean());
     }

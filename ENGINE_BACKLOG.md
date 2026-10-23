@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **41 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `wanted` — a real gap — **40 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -130,7 +130,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
 | **Reduce File Size by compatibility target (PDF version)** — `pdfcer_core::optimize::compat`, `SkipReason::AboveCompatibility`, `ImageSkip::AboveCompatibility` | **wanted — O325, Acrobat's *Make compatible with*.** A version chooser in Save a compacted copy; a step the version forbids is skipped and names the version as its reason. |
 | **Features used versus the target (report)** — lists … | **wanted — O325, beside the version chooser**: what the file uses that needs a newer version, with an example object, so the operator sees why a target cannot be met. Engine: `features_used`, `FeatureUse`, `VersionFeature`. |
-| **Prove redacted text absent from the written bytes** — `pdfcer_core::redact_proof` (`redact::verify_absence`, `AbsenceVerification`, `AbsenceVerdict`, `Residual`, `ResidualSite`, `MIN_VERIFIABLE_LEN`) <!--namesake:AbsenceVerification--> <!--namesake:ResidualSite--> the shell's own `redact::proof` declares types of these names; the engine's are not called | **wanted — the deletion Pass 72.0 was waiting for.** `redact::proof` is the shell's parallel proof and the engine now owns one. Before swapping, the differences are decided: the engine skips strings under four characters, which ours refuses on when drawn; and an undecoded stream or an unparsed output forfeits *Verified* there. |
 | **Quality target (SSIM)** — `image(ssim=0.98)` … | **wanted — O325, a *Keep pictures looking the same* level in Save a compacted copy's picture settings**, reporting the similarity each picture reached. Engine: `pdfcer_core::optimize::image::ssim` (`structural_similarity`, `SsimPick`, `SsimScore`), `ImagePatch::ssim`, `ResolvedImage::ssim`, `JpegQuality::ssim`. |
 | **Before/after visual-diff report** — `pdfcer_render::visual_diff` (`PageDiff`, `ChangedRegion`, `VisualDiffError`) | **wanted — O325, a before/after check in Save a compacted copy**: per page, how many pixels changed and where, so a lossy setting is judged on the drawing, not on the byte count. |
 | Encode `/BrotliDecode` streams (write side), shipped … | **wanted — O325, a Brotli choice in Save a compacted copy**, with the hover saying that Acrobat Reader opens such a file without an error and draws every page that uses one blank (the engine's own measured note, carried in the plan's `notes`). |
@@ -219,7 +218,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **346 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **347 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -507,6 +506,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Lower the declared PDF version** — `pdfcer optimize` `--lower-version`; `pdfcer_core::optimize::lower_version` (`lower_version`, `LowerOptions`, `LoweredVersion`, `LowerRoute`, `LowerError`) | **shipped — Save a compacted copy, *Make compatible with* (Keep by default, then 1.4 to 1.7); driven by `a_compacted_copy_is_made_compatible_with_an_older_version`.** Runs on the copy's bytes after every other switch, on a thread; Save waits for it. The window says from and to, a rebuild, a removed catalog `/Version`, and each refusal by name. `allow_signed` is set: the compacted copy already drops every signature and says so. |
 | **Detect overprint use in a document** — says whether anything asks for overprint; `pdfcer_core::prepress::overprint_use` (`overprint_use`, `OverprintUse`) | **shipped — Settings ▸ Display ▸ *Use overprint preview* = Automatic; driven by `overprint_default`.** `overprintseed::walk_bytes` runs it on a thread over a copy of the tab's bytes; only a state a `gs` invokes counts (`print-shop-listed.pdf` opens off). An incomplete walk is *unknown*, not *no*: the preview opens on and the status line says how many parts went unread. |
 | **Detect a PDF/X claim (ISO 15930)** — reads the level the file claims; `pdfcer_core::prepress::pdfx_claim` (`pdfx_claim`, `PdfxClaim`, `pdfx_output_intents`) | **shipped — Settings ▸ Display ▸ *Use overprint preview* = Only for PDF/X files; driven by `overprint_default`.** `overprintseed::claims_pdfx` takes the wider reading the engine offers: a claim (PDF/X-4's XMP included, `print-shop-pdfx4.pdf`), or a `GTS_PDFX` output intent alone. |
+| **Prove redacted text absent from the written bytes** — `pdfcer_core::redact_proof` (`redact::verify_absence`, `AbsenceVerification`, `AbsenceVerdict`, `Residual`, `ResidualSite`, `MIN_VERIFIABLE_LEN`) | **shipped — `redact::proof` calls `verify_absence`; the shell's parallel proof is deleted.** Its tests run unchanged against the engine. Strings under four characters were already excluded from both halves here, so nothing changed for them; an undecoded stream or unparsed output now withholds *verified*, and the redaction window says which. |
 
 ### Fonts & rendering
 
