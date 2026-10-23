@@ -237,6 +237,54 @@ pub fn done(resized: usize, jpeg: usize, converted: usize) -> Vec<String> {
     lines
 }
 
+/// Report lines for pictures written by a closeness search: `matched` reached
+/// the target, `short` did not and were stored at the highest quality allowed.
+#[must_use]
+pub fn closeness(matched: usize, short: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    if matched > 0 {
+        lines.push(format!(
+            "{matched} picture(s) were stored at the lowest quality that matches the \
+             original as closely as asked."
+        ));
+    }
+    if short > 0 {
+        lines.push(format!(
+            "{short} picture(s) could not match the original as closely as asked within the \
+             highest JPEG quality allowed, and were stored at that quality."
+        ));
+    }
+    lines
+}
+
+/// The closeness row's label.
+#[must_use]
+pub const fn target_label() -> &'static str {
+    "Match the original"
+}
+
+/// Hover on the closeness row.
+#[must_use]
+pub const fn target_tooltip() -> &'static str {
+    "Stores each picture at the lowest JPEG quality that still looks this close to the \
+     original, measured by structural similarity (SSIM), and never above the JPEG quality \
+     chosen above. Busy photographs keep more quality and plain ones shrink further. \
+     Each picture is encoded several times to find its quality, so this takes longer."
+}
+
+/// A closeness choice; `None` is off, otherwise ten-thousandths of SSIM.
+#[must_use]
+pub fn target(value: Option<u16>) -> String {
+    let name = match value {
+        None => return "Off: every picture at the quality above".to_owned(),
+        Some(9900..) => "Indistinguishable",
+        Some(9800..) => "Very close",
+        Some(_) => "Close",
+    };
+    let score = value.map_or(0.0, |n| f64::from(n) / 10_000.0);
+    format!("{name} ({score:.2})")
+}
+
 /// Report lines for pictures stored as CCITT Group 4, JBIG2, LZW and run length.
 #[must_use]
 pub fn stored_exact(counts: [usize; 4]) -> Vec<String> {

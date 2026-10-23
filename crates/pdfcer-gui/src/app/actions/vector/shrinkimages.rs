@@ -59,11 +59,13 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, ids: &[ObjId], patch: ImageP
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "images-shrunk page={page} asked={} changed={changed} resized={} jpeg={} \
+            "images-shrunk page={page} asked={} changed={changed} resized={} jpeg={} matched={} short={} \
              converted={} lossy={} ccitt={} jbig2={} lzw={} runlength={} tried={} raised={} skipped={skipped}",
             ids.len(),
             tally.resized,
             tally.jpeg,
+            tally.matched,
+            tally.short,
             tally.converted,
             tally.lossy,
             tally.exact[0],

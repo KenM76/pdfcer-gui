@@ -329,12 +329,14 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
                         result.as_ref().map_or(0, |r| r.pictures.resized),
                         result.as_ref().map_or(0, |r| r.pictures.jpeg),
+                        result.as_ref().map_or(0, |r| r.pictures.matched),
+                        result.as_ref().map_or(0, |r| r.pictures.short),
                         result.as_ref().map_or(0, |r| r.pictures.converted),
                         result.as_ref().is_ok_and(|r| r.pictures.lossy),
                         result.as_ref().map_or(0, |r| r.fonts_cut),
@@ -755,6 +757,35 @@ mod tests {
             off.bytes.map_or(copy.len(), |b| b.len()),
         );
         assert!(small * 2 < plain, "{small} B against {plain} B");
+    }
+
+    /// A closeness target sends the JPEG through the engine's search, which
+    /// the tally counts; without one, nothing is counted.
+    #[test]
+    fn a_closeness_target_is_searched_and_counted() {
+        use crate::dialogs::compact_images::Format;
+        let copy = noise();
+        let plain = Choices {
+            pictures: Pictures {
+                on: true,
+                format: Format::Jpeg,
+                ..Pictures::OFF
+            },
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), plain).expect("optimizes");
+        let p = done.pictures;
+        assert_eq!((p.jpeg, p.matched, p.short), (1, 0, 0), "{p:?}");
+        let aimed = Choices {
+            pictures: Pictures {
+                target: Some(9500),
+                ..plain.pictures
+            },
+            ..plain
+        };
+        let done = recompress(&copy, &Settings::default(), aimed).expect("optimizes");
+        let p = done.pictures;
+        assert_eq!((p.jpeg, p.matched + p.short), (1, 1), "{p:?}");
     }
 
     /// Split by kind, the grey noise picture follows the grey settings only:

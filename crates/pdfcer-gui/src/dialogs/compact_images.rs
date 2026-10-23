@@ -10,7 +10,9 @@
 //! both store 1-bit pictures only. [`Tally`] counts what a plan did to pictures for the report.
 
 use egui::Ui;
-use pdfcer_core::optimize::{ImageConvert, ImageEncode, ImagePatch, OptimizePlan, QUALITY_LEVELS};
+use pdfcer_core::optimize::{
+    ImageConvert, ImageEncode, ImagePatch, OptimizePlan, QUALITY_LEVELS, SsimScore,
+};
 
 use crate::text::compact_images as t;
 
@@ -23,6 +25,8 @@ pub const REGION_LOSSY: &str = "compact.pictures.lossy";
 // The storage list is `<stem>.format`, each choice `<stem>.format.<Format::key>`;
 // the colour list `<stem>.colour`, each choice `<stem>.colour.<colour_key>`. The
 // stem is `REGION_FOLD` for the one set of rows, a kind's own for the split.
+// The closeness list is `<stem>.target`, each choice `<stem>.target.<n>` with
+// `n` the score in ten-thousandths, or `off`.
 
 /// The resolutions offered; `None` keeps every picture's size.
 const RESOLUTIONS: [Option<u16>; 7] = [
@@ -34,6 +38,9 @@ const RESOLUTIONS: [Option<u16>; 7] = [
     Some(300),
     Some(600),
 ];
+/// The closeness targets offered under JPEG, in ten-thousandths of SSIM;
+/// `None` writes every picture at the chosen quality.
+const TARGETS: [Option<u16>; 4] = [None, Some(9900), Some(9800), Some(9500)];
 /// The palette sizes offered for fewer colours.
 const PALETTES: [u16; 3] = [256, 64, 16];
 
@@ -105,8 +112,12 @@ pub struct Pictures {
     pub ppi: Option<u16>,
     /// How they are stored.
     pub format: Format,
-    /// JPEG quality, one of the engine's named levels.
+    /// JPEG quality, one of the engine's named levels; under [`Self::target`]
+    /// the highest quality the search may use.
     pub quality: u8,
+    /// JPEG only: write each picture at the lowest quality whose SSIM against
+    /// the original reaches this many ten-thousandths.
+    pub target: Option<u16>,
     /// Colour conversion.
     pub colour: ImageConvert,
     /// Palette size for [`ImageConvert::Indexed`].
@@ -121,6 +132,7 @@ impl Pictures {
         ppi: Some(150),
         format: Format::Keep,
         quality: QUALITY_LEVELS[3].1,
+        target: None,
         colour: ImageConvert::Keep,
         colors: 256,
     };
@@ -145,6 +157,7 @@ impl Pictures {
         });
         if self.format == Format::Jpeg {
             patch.quality = Some(self.quality);
+            patch.ssim = self.target.and_then(SsimScore::from_ten_thousandths);
         }
         if self.colour != ImageConvert::Keep {
             patch.convert = Some(self.colour);
@@ -181,6 +194,11 @@ pub struct Tally {
     pub tried: usize,
     /// Colour-converted.
     pub converted: usize,
+    /// Written as JPEG by a closeness search that reached its target.
+    pub matched: usize,
+    /// Written as JPEG at the highest quality allowed, a closeness search
+    /// having found no lower one that reached its target.
+    pub short: usize,
     /// Whether any change lost information, by the engine's own test.
     pub lossy: bool,
 }
@@ -207,6 +225,13 @@ impl Tally {
             }
             tally.converted += usize::from(image.conversion.is_some());
             tally.tried += usize::from(!image.candidates.is_empty());
+            if let Some(pick) = image.jpeg.and_then(|j| j.ssim) {
+                *(if pick.met {
+                    &mut tally.matched
+                } else {
+                    &mut tally.short
+                }) += 1;
+            }
         }
         tally
     }
@@ -216,6 +241,7 @@ impl Tally {
     pub fn lines(self) -> Vec<String> {
         let mut lines = t::done(self.resized, self.jpeg, self.converted);
         lines.extend(t::stored_exact(self.exact));
+        lines.extend(t::closeness(self.matched, self.short));
         lines
     }
 }
@@ -317,10 +343,36 @@ pub(crate) fn rows_in(ui: &mut Ui, p: &mut Pictures, stem: &str, one_bit: bool) 
                 }
             });
         ui.end_row();
+        target_row(ui, p, stem);
     }
     if !one_bit {
         colour_rows(ui, p, stem);
     }
+}
+
+/// The closeness row: a SSIM target the search writes each picture down to.
+fn target_row(ui: &mut Ui, p: &mut Pictures, stem: &str) {
+    ui.label(t::target_label())
+        .on_hover_text(t::target_tooltip());
+    let list = egui::ComboBox::from_id_salt("compact-pictures-target") // ui-text-exempt: an id, never displayed
+        .selected_text(t::target(p.target))
+        .show_ui(ui, |ui| {
+            for target in TARGETS {
+                let item = ui.selectable_value(&mut p.target, target, t::target(target));
+                let key = target.map_or_else(|| "off".to_owned(), |n| n.to_string()); // ui-text-exempt: a region key
+                crate::diag::ui_rect_visible(
+                    &format!("{stem}.target.{key}"),
+                    item.rect,
+                    ui.clip_rect(),
+                );
+            }
+        });
+    crate::diag::ui_rect_visible(
+        &format!("{stem}.target"),
+        list.response.rect,
+        ui.clip_rect(),
+    );
+    ui.end_row();
 }
 
 /// The colour row, and the palette size under fewer colours.
@@ -431,6 +483,28 @@ mod tests {
             ..Pictures::OFF
         };
         assert_eq!(jpeg.patch().expect("on").quality, Some(80));
+    }
+
+    /// A closeness target reaches the engine only with JPEG, the quality as
+    /// its ceiling.
+    #[test]
+    fn a_target_rides_only_with_jpeg() {
+        let jpeg = Pictures {
+            on: true,
+            format: Format::Jpeg,
+            target: Some(9800),
+            ..Pictures::OFF
+        };
+        let patch = jpeg.patch().expect("on");
+        assert_eq!(
+            (patch.quality, patch.ssim.map(SsimScore::ten_thousandths)),
+            (Some(80), Some(9800))
+        );
+        let lossless = Pictures {
+            format: Format::Lossless,
+            ..jpeg
+        };
+        assert_eq!(lossless.patch().expect("on").ssim, None);
     }
 
     /// Each exact format asks the engine for its own encoder, with no quality.
