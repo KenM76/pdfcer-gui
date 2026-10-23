@@ -427,6 +427,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(compact_version::ACompactedCopyIsMadeCompatibleWithAnOlderVersion),
         Box::new(compact_classes::ACompactedCopyTreatsEachKindOfPictureSeparately),
         Box::new(compact_closeness::AClosenessTargetPicksEachPicturesQuality),
+        Box::new(compact_compare::ACompactedCopyListsEachPictureBeforeAndAfter),
         Box::new(shrink_pictures::ShrinkPicturesReachesEverySelectedPicture),
         Box::new(bilevel_pictures::BilevelPicturesStoreAsCcittAndJbig2),
         Box::new(bilevel_pictures::SmallestExactPictureTriesEveryStorage),

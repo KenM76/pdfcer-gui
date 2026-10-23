@@ -597,6 +597,7 @@ fn done_lines(ui: &mut Ui, done: &Recompressed) {
         for line in done.pictures.lines() {
             ui.small(line);
         }
+        crate::dialogs::compact_compare::show(ui, &done.compared);
         for line in done.cleaned.iter().chain(&done.restructured) {
             ui.small(line.as_str());
         }

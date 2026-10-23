@@ -26,6 +26,7 @@ pub mod archive;
 pub mod compact;
 /// The compact window's picture options.
 pub mod compact_classes;
+pub mod compact_compare;
 pub mod compact_images;
 /// The compact window's starting point and size target.
 pub mod compact_target;

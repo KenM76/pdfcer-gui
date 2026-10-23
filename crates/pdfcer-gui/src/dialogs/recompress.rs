@@ -121,6 +121,8 @@ pub struct Recompressed {
     pub cleaned: Vec<String>,
     /// What was done to pictures.
     pub pictures: Tally,
+    /// Each changed picture, before and after.
+    pub compared: Vec<crate::dialogs::compact_compare::Row>,
     /// What cutting the fonts did, one sentence each.
     pub fonts: Vec<String>,
     /// Embedded fonts cut.
@@ -264,6 +266,7 @@ pub fn recompress(
         &settings.save_options(),
     )?;
     let pictures = Tally::of(&plan);
+    let compared = crate::dialogs::compact_compare::rows(&plan);
     let mut left = BTreeMap::new();
     for skipped in &plan.skipped {
         *left.entry(t::left_because(&skipped.reason)).or_insert(0) += 1;
@@ -292,6 +295,7 @@ pub fn recompress(
         restructured: report.as_ref().map(t::restructured).unwrap_or_default(),
         cleaned,
         pictures,
+        compared,
         fonts,
         fonts_cut,
         content: t::content(tidied.iter().copied()),
@@ -329,7 +333,7 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} compared={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -337,6 +341,7 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.pictures.jpeg),
                         result.as_ref().map_or(0, |r| r.pictures.matched),
                         result.as_ref().map_or(0, |r| r.pictures.short),
+                        result.as_ref().map_or(0, |r| r.compared.len()),
                         result.as_ref().map_or(0, |r| r.pictures.converted),
                         result.as_ref().is_ok_and(|r| r.pictures.lossy),
                         result.as_ref().map_or(0, |r| r.fonts_cut),
@@ -786,6 +791,34 @@ mod tests {
         let done = recompress(&copy, &Settings::default(), aimed).expect("optimizes");
         let p = done.pictures;
         assert_eq!((p.jpeg, p.matched + p.short), (1, 1), "{p:?}");
+    }
+
+    /// The comparison lists the one changed picture with its sizes, storage
+    /// and JPEG quality before and after; with pictures off it lists none.
+    #[test]
+    fn the_comparison_lists_each_changed_picture() {
+        use crate::dialogs::compact_images::Format;
+        let copy = noise();
+        let off = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert!(off.compared.is_empty(), "{:?}", off.compared);
+        let small = Choices {
+            pictures: Pictures {
+                on: true,
+                ppi: Some(72),
+                format: Format::Jpeg,
+                ..Pictures::OFF
+            },
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), small).expect("optimizes");
+        let [row] = done.compared.as_slice() else {
+            panic!("one row: {:?}", done.compared);
+        };
+        assert_eq!(row.pixels.0, (300, 300), "{row:?}");
+        assert!(row.pixels.1.0 < 300, "{row:?}");
+        assert_eq!(row.stored.1, "JPEG", "{row:?}");
+        assert!(row.quality.is_some_and(|(asked, _)| asked == 80), "{row:?}");
+        assert!(row.bytes.1 < row.bytes.0, "{row:?}");
     }
 
     /// Split by kind, the grey noise picture follows the grey settings only:
