@@ -14,19 +14,26 @@ use pdfcer_core::optimize::{ImageConvert, ImageEncode, ImagePatch, OptimizePlan,
 
 use crate::text::compact_images as t;
 
-/// The fold's header.
+/// The fold's header, and the stem every other region here is named from.
 pub const REGION_FOLD: &str = "compact.pictures";
 /// The switch inside it.
 pub const REGION_SWITCH: &str = "compact.pictures.on";
 /// The full-size line saying the copy's pictures lose detail.
 pub const REGION_LOSSY: &str = "compact.pictures.lossy";
-/// The storage list; each choice in it is `<this>.<Format::key>`.
-pub const REGION_FORMAT: &str = "compact.pictures.format";
-/// The colour list; each choice in it is `<this>.<colour_key>`.
-pub const REGION_COLOUR: &str = "compact.pictures.colour";
+// The storage list is `<stem>.format`, each choice `<stem>.format.<Format::key>`;
+// the colour list `<stem>.colour`, each choice `<stem>.colour.<colour_key>`. The
+// stem is `REGION_FOLD` for the one set of rows, a kind's own for the split.
 
 /// The resolutions offered; `None` keeps every picture's size.
-const RESOLUTIONS: [Option<u16>; 6] = [None, Some(72), Some(96), Some(150), Some(200), Some(300)];
+const RESOLUTIONS: [Option<u16>; 7] = [
+    None,
+    Some(72),
+    Some(96),
+    Some(150),
+    Some(200),
+    Some(300),
+    Some(600),
+];
 /// The palette sizes offered for fewer colours.
 const PALETTES: [u16; 3] = [256, 64, 16];
 
@@ -150,7 +157,7 @@ impl Pictures {
 
     /// Whether `colour` cannot be stored as `format`: the engine refuses it
     /// (JPEG), or would skip every picture (CCITT or JBIG2 beside a multi-bit result).
-    const fn clashes(format: Format, colour: ImageConvert) -> bool {
+    pub(crate) const fn clashes(format: Format, colour: ImageConvert) -> bool {
         match format {
             Format::Jpeg => matches!(colour, ImageConvert::Bilevel | ImageConvert::Indexed),
             Format::Ccitt | Format::Jbig2 => {
@@ -213,8 +220,13 @@ impl Tally {
     }
 }
 
-/// The Pictures fold; whether any choice changed.
-pub fn switches(ui: &mut Ui, pictures: &mut Pictures) -> bool {
+/// The Pictures fold; whether any choice changed. With `classes` split, the
+/// one set of rows gives way to one per kind of picture.
+pub fn switches(
+    ui: &mut Ui,
+    pictures: &mut Pictures,
+    classes: &mut crate::dialogs::compact_classes::Classes,
+) -> bool {
     let fold = egui::CollapsingHeader::new(t::heading(pictures.on))
         .id_salt("compact-pictures") // ui-text-exempt: an id, never displayed
         .show(ui, |ui| {
@@ -223,11 +235,14 @@ pub fn switches(ui: &mut Ui, pictures: &mut Pictures) -> bool {
                 .checkbox(&mut pictures.on, t::toggle())
                 .on_hover_text(t::toggle_tooltip());
             crate::diag::ui_rect_visible(REGION_SWITCH, switch.rect, ui.clip_rect());
+            let split_before = *classes;
             ui.add_enabled_ui(pictures.on, |ui| {
-                egui::Grid::new("compact-pictures-grid") // ui-text-exempt: an id, never displayed
-                    .show(ui, |ui| rows(ui, pictures));
+                if !crate::dialogs::compact_classes::show(ui, classes) {
+                    egui::Grid::new("compact-pictures-grid") // ui-text-exempt: an id, never displayed
+                        .show(ui, |ui| rows(ui, pictures));
+                }
             });
-            *pictures != before
+            *pictures != before || *classes != split_before
         });
     crate::diag::ui_rect_visible(REGION_FOLD, fold.header_response.rect, ui.clip_rect());
     fold.body_returned.unwrap_or(false)
@@ -235,6 +250,13 @@ pub fn switches(ui: &mut Ui, pictures: &mut Pictures) -> bool {
 
 /// The resolution, format and quality rows, then [`colour_rows`].
 pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
+    rows_in(ui, p, REGION_FOLD, false);
+}
+
+/// [`rows`] with its regions named from `stem`. `one_bit` is for black-and-white
+/// pictures: no colour row, and JPEG greyed, since the engine stores no
+/// 1-bit picture as JPEG.
+pub(crate) fn rows_in(ui: &mut Ui, p: &mut Pictures, stem: &str, one_bit: bool) {
     ui.label(t::resolution_label())
         .on_hover_text(t::resolution_tooltip());
     egui::ComboBox::from_id_salt("compact-pictures-ppi") // ui-text-exempt: an id, never displayed
@@ -254,22 +276,35 @@ pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
         .show_ui(ui, |ui| {
             for format in Format::ALL {
                 let word = format_word(format);
-                let open = !Pictures::clashes(format, p.colour);
+                let open = if one_bit {
+                    format != Format::Jpeg
+                } else {
+                    !Pictures::clashes(format, p.colour)
+                };
+                let ruled_out = if one_bit {
+                    t::format_one_bit_ruled_out()
+                } else {
+                    t::format_ruled_out(word)
+                };
                 let item = ui
                     .add_enabled(
                         open,
                         egui::Button::selectable(p.format == format, t::format(word)),
                     )
                     .on_hover_text(t::format_tooltip(word))
-                    .on_disabled_hover_text(t::format_ruled_out(word));
-                let region = format!("{REGION_FORMAT}.{}", format.key());
+                    .on_disabled_hover_text(ruled_out);
+                let region = format!("{stem}.format.{}", format.key());
                 crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
                 if item.clicked() {
                     p.format = format;
                 }
             }
         });
-    crate::diag::ui_rect_visible(REGION_FORMAT, list.response.rect, ui.clip_rect());
+    crate::diag::ui_rect_visible(
+        &format!("{stem}.format"),
+        list.response.rect,
+        ui.clip_rect(),
+    );
     ui.end_row();
     if p.format == Format::Jpeg {
         ui.label(t::quality_label())
@@ -283,11 +318,13 @@ pub(crate) fn rows(ui: &mut Ui, p: &mut Pictures) {
             });
         ui.end_row();
     }
-    colour_rows(ui, p);
+    if !one_bit {
+        colour_rows(ui, p, stem);
+    }
 }
 
 /// The colour row, and the palette size under fewer colours.
-fn colour_rows(ui: &mut Ui, p: &mut Pictures) {
+fn colour_rows(ui: &mut Ui, p: &mut Pictures, stem: &str) {
     ui.label(t::colour_label());
     let list = egui::ComboBox::from_id_salt("compact-pictures-colour") // ui-text-exempt: an id, never displayed
         .selected_text(t::colour(p.colour))
@@ -300,14 +337,18 @@ fn colour_rows(ui: &mut Ui, p: &mut Pictures) {
                         egui::Button::selectable(p.colour == colour, t::colour(colour)),
                     )
                     .on_disabled_hover_text(t::colour_ruled_out(format_word(p.format)));
-                let region = format!("{REGION_COLOUR}.{}", colour_key(colour));
+                let region = format!("{stem}.colour.{}", colour_key(colour));
                 crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
                 if item.clicked() {
                     p.colour = colour;
                 }
             }
         });
-    crate::diag::ui_rect_visible(REGION_COLOUR, list.response.rect, ui.clip_rect());
+    crate::diag::ui_rect_visible(
+        &format!("{stem}.colour"),
+        list.response.rect,
+        ui.clip_rect(),
+    );
     ui.end_row();
     if p.colour == ImageConvert::Indexed {
         ui.label(t::colors_label());

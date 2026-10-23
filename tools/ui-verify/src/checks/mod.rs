@@ -41,6 +41,7 @@ pub mod comments_census;
 
 pub mod band_cmyk;
 pub mod bilevel_pictures;
+pub mod compact_classes;
 pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;

@@ -9,7 +9,8 @@
 //! discards remove whole classes of document object. It answers the smaller
 //! file, or a file no smaller that removes what was asked for, with what the
 //! plan left alone and what each step did. Pictures are changed only when
-//! [`Choices::pictures`] is on, through `OptimizeSettings::images`; the
+//! [`Choices::pictures`] is on, through `OptimizeSettings::images`, or through
+//! per-class `OptimizeSettings::rules` when [`Choices::classes`] is split; the
 //! preset's own stream action stays, so everything else is still recompressed.
 //! [`Choices::fonts`] cuts embedded TrueType fonts to the glyphs drawn
 //! through `OptimizeSettings::resubset`. [`Choices::content`] tidies page
@@ -41,6 +42,7 @@ use pdfcer_core::writer::{RebuildReport, SaveOptions};
 use pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER;
 
 use crate::app::settings::SettingsExt;
+use crate::dialogs::compact_classes::Classes;
 use crate::dialogs::compact_images::{Pictures, Tally};
 use crate::text::compact as t;
 
@@ -59,6 +61,9 @@ pub struct Choices {
     /// What is done to pictures; the only choice that changes how the page
     /// looks.
     pub pictures: Pictures,
+    /// Separate picture settings per kind; used in place of [`Self::pictures`]'s
+    /// choices while split and [`Self::pictures`] is on.
+    pub classes: Classes,
     /// Cut each embedded TrueType font to the glyphs drawn, merging copies
     /// of one face.
     pub fonts: bool,
@@ -178,6 +183,10 @@ pub fn settings_for(choices: Choices) -> Result<OptimizeSettings, String> {
         patch.validate()?;
         preset.images = patch;
         preset.rules.clear();
+        if let Some(rules) = choices.classes.rules()? {
+            preset.images = pdfcer_core::optimize::ImagePatch::new();
+            preset.rules = rules;
+        }
     }
     if choices.fonts {
         preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
@@ -384,6 +393,7 @@ mod tests {
         destinations: true,
         discard: DiscardOptions::none(),
         pictures: Pictures::OFF,
+        classes: Classes::OFF,
         fonts: false,
         content: false,
         round: None,
@@ -745,6 +755,56 @@ mod tests {
             off.bytes.map_or(copy.len(), |b| b.len()),
         );
         assert!(small * 2 < plain, "{small} B against {plain} B");
+    }
+
+    /// Split by kind, the grey noise picture follows the grey settings only:
+    /// colour asked down to 72 ppi JPEG leaves it alone, grey asked the same
+    /// shrinks it.
+    #[test]
+    fn a_split_picture_follows_its_own_kind() {
+        use crate::dialogs::compact_classes::Classes;
+        use crate::dialogs::compact_images::Format;
+        let copy = noise();
+        let small = Pictures {
+            on: true,
+            ppi: Some(72),
+            format: Format::Jpeg,
+            ..Pictures::OFF
+        };
+        let colour_only = Choices {
+            pictures: Pictures {
+                on: true,
+                ..Pictures::OFF
+            },
+            classes: Classes {
+                separate: true,
+                colour: small,
+                grey: Pictures { on: false, ..small },
+                ..Classes::OFF
+            },
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), colour_only).expect("optimizes");
+        assert_eq!(
+            (done.pictures.resized, done.pictures.jpeg),
+            (0, 0),
+            "{:?}",
+            done.pictures
+        );
+        let grey = Choices {
+            classes: Classes {
+                grey: small,
+                ..colour_only.classes
+            },
+            ..colour_only
+        };
+        let done = recompress(&copy, &Settings::default(), grey).expect("optimizes");
+        assert_eq!(
+            (done.pictures.resized, done.pictures.jpeg),
+            (1, 1),
+            "{:?}",
+            done.pictures
+        );
     }
 
     /// One face embedded twice: the switch off leaves both copies; on, one

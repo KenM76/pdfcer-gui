@@ -127,6 +127,7 @@ impl CompactDialog {
                 destinations: false,
                 discard: DiscardOptions::none(),
                 pictures: Pictures::OFF,
+                classes: crate::dialogs::compact_classes::Classes::OFF,
                 fonts: false,
                 content: true,
                 round: None,
@@ -390,7 +391,8 @@ impl CompactDialog {
         crate::diag::ui_rect_visible(REGION_LINEARIZE, web.rect, ui.clip_rect());
         let toggled = web.changed() || toggled;
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
-        let toggled = compact_images::switches(ui, &mut c.pictures) || toggled || aimed;
+        let toggled =
+            compact_images::switches(ui, &mut c.pictures, &mut c.classes) || toggled || aimed;
         if toggled {
             self.recompress = Recompress::Off;
             self.lowering = Lowering::Off;

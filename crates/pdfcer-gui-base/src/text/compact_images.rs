@@ -140,6 +140,12 @@ pub const fn format_ruled_out(word: FormatWord) -> &'static str {
     }
 }
 
+/// Hover on JPEG among the black-and-white settings.
+#[must_use]
+pub const fn format_one_bit_ruled_out() -> &'static str {
+    "JPEG cannot store black-and-white pictures; they would be left as they are."
+}
+
 /// The quality row's label.
 #[must_use]
 pub const fn quality_label() -> &'static str {

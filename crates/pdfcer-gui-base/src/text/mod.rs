@@ -72,6 +72,8 @@ pub mod commands;
 /// a revision history, possibly every signature, and the original file's role
 /// as the canonical one.
 pub mod compact;
+/// The compact window's per-kind picture settings.
+pub mod compact_classes;
 pub mod compact_images;
 /// The compact window's starting point and size target.
 pub mod compact_target;
