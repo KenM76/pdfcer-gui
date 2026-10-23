@@ -32,7 +32,10 @@ the five engine specs share nine fields and differ in one to five, so five
 GUI structs would mean writing the shared half five times. The same argument
 holds for the surface, with one addition — **the shared half is the half an
 operator adjusts.** Name, tooltip, required, read-only and border are asked
-identically for all five, and only the kind-specific rows change.
+identically for all five, and only the kind-specific rows change. Text and
+choice fields add one common row, the text font, size and colour
+(`formlookband::text_controls`, regions `dialog.form_field.text_*`); `has_text`
+is the predicate and `content_height` counts the row for those two kinds.
 
 So the layout is: the common rows, a separator, then [`Self::specific`],
 which is the only `match` on kind in the file. A reader looking for "what is

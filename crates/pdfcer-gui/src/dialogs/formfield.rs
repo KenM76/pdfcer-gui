@@ -29,6 +29,13 @@ const REGION_BACKGROUND: &str = "dialog.form_field.background";
 const REGION_BORDER_COLOR: &str = "dialog.form_field.border_color";
 /// The border-style picker; its rows are `<region>.<index>`.
 const REGION_BORDER_STYLE: &str = "dialog.form_field.border_style"; // ui-text-exempt: trace region name, never displayed
+/// The text font, size and colour, shown for text and choice fields only.
+const TEXT_REGIONS: pdfcer_gui_base::formlookband::TextRegions =
+    pdfcer_gui_base::formlookband::TextRegions {
+        font: "dialog.form_field.text_font", // ui-text-exempt: trace region name, never displayed
+        size: "dialog.form_field.text_size", // ui-text-exempt: trace region name, never displayed
+        colour: "dialog.form_field.text_colour", // ui-text-exempt: trace region name, never displayed
+    };
 
 /// How many characters a tooltip may run to.
 const TOOLTIP_MAX: usize = 240;
@@ -154,7 +161,10 @@ fn content_height(kind: FormFieldKind) -> f32 {
     let name = LABEL_PTS + CONTROL_PTS;
     let tooltip = GAP_PTS + LABEL_PTS + CONTROL_PTS + NOTE_PTS;
     // Required, read-only, then the border row behind a gap.
-    let flags = CONTROL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS;
+    let mut flags = CONTROL_PTS + CONTROL_PTS + GAP_PTS + CONTROL_PTS;
+    if has_text(kind) {
+        flags += CONTROL_PTS;
+    }
     let specific = match kind {
         // Starting value, multiline, password, the max-length row, and comb —
         // which appears only once a maximum has been set, and is counted
@@ -623,6 +633,16 @@ impl FormFieldDialog {
                 REGION_BORDER_STYLE,
             );
         });
+        if has_text(self.draft.kind) {
+            ui.horizontal(|ui| {
+                ui.label(crate::text::panels::formfield::label_text_font());
+                pdfcer_gui_base::formlookband::text_controls(
+                    ui,
+                    &mut self.draft.text,
+                    &TEXT_REGIONS,
+                );
+            });
+        }
         self.chrome_rows(ui);
     }
 
@@ -680,6 +700,11 @@ impl FormFieldDialog {
             self.draft.border_color = resolve(pick);
         }
     }
+}
+
+/// Whether `kind` draws a value in text, and so takes a font, size and colour.
+const fn has_text(kind: FormFieldKind) -> bool {
+    matches!(kind, FormFieldKind::Text | FormFieldKind::Choice)
 }
 
 /// Whether `PDFCER_DIAG_FORM_ACCEPT` asks this dialog to accept itself.

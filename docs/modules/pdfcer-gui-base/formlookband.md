@@ -12,8 +12,9 @@ solid, dashed, beveled, inset, underline). `style_picker` is shared with the
 placement dialog, whose picker is `dialog.form_field.border_style`.
 Text: `forms.style.text_font` (rows `.<i>` in `Std14::ALL` order),
 `forms.style.text_size` (0 shows *Auto*), `forms.style.text_colour`. The text
-look applies to text and choice fields; the placement dialog carries it
-through unchanged and does not yet show it.
+look applies to text and choice fields. `text_controls` is shared with the
+placement dialog, which shows it for those two kinds under
+`dialog.form_field.text_font` / `.text_size` / `.text_colour`.
 Fill offers *no colour*; Outline does not, because width 0 is how a field
 has no outline.
 

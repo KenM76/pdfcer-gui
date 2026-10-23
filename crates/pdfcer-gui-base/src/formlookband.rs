@@ -43,6 +43,23 @@ pub const STYLES: [BorderStyle; 5] = [
     BorderStyle::Underline,
 ];
 
+/// Where one set of text controls publishes its three regions.
+pub struct TextRegions {
+    /// The font picker; its rows are `<font>.<i>` in `Std14::ALL` order.
+    pub font: &'static str,
+    /// The size field.
+    pub size: &'static str,
+    /// The colour swatch.
+    pub colour: &'static str,
+}
+
+/// The band's own text controls.
+const BAND_TEXT: TextRegions = TextRegions {
+    font: REGION_FONT,
+    size: REGION_SIZE,
+    colour: REGION_TEXT_COLOUR,
+};
+
 /// The widest outline offered, matching the placement dialog's field.
 const MAX_WIDTH_PTS: f64 = 12.0;
 
@@ -102,7 +119,7 @@ pub fn show(ui: &mut Ui, mem: &mut Remembered) {
         crate::diag::ui_rect(REGION_WIDTH, response.rect);
         style_picker(ui, &mut look.border_style, REGION_STYLE);
         ui.separator();
-        text_controls(ui, &mut look.text);
+        text_controls(ui, &mut look.text, &BAND_TEXT);
     });
     if look != before {
         mem.set_look(look);
@@ -129,25 +146,26 @@ pub fn style_picker(ui: &mut Ui, style: &mut BorderStyle, region: &str) {
     crate::diag::ui_rect(region, combo.response.on_hover_text(t::style_hover()).rect);
 }
 
-/// Font, size and ink of a text or choice field's value.
-fn text_controls(ui: &mut Ui, text: &mut TextLook) {
+/// Font, size and ink of a text or choice field's value, shared by the band
+/// and the placement dialog.
+pub fn text_controls(ui: &mut Ui, text: &mut TextLook, regions: &TextRegions) {
     use crate::colourpick::{self, Pick as Ink, Shown, Spaces};
     use crate::text::panels::formfield::{text_font_name, text_size_auto};
     use pdfcer_core::fontdata::Std14;
-    let combo = egui::ComboBox::from_id_salt(REGION_FONT)
+    let combo = egui::ComboBox::from_id_salt(regions.font)
         .selected_text(text_font_name(text.font))
         .show_ui(ui, |ui| {
             for (i, face) in Std14::ALL.into_iter().enumerate() {
                 let row = ui.selectable_value(&mut text.font, face, text_font_name(face));
                 crate::diag::ui_rect_visible(
-                    &format!("{REGION_FONT}.{i}"), // ui-text-exempt: trace region name
+                    &format!("{}.{i}", regions.font), // ui-text-exempt: trace region name
                     row.rect,
                     ui.clip_rect(),
                 );
             }
         });
     crate::diag::ui_rect(
-        REGION_FONT,
+        regions.font,
         combo.response.on_hover_text(t::font_hover()).rect,
     );
 
@@ -173,19 +191,19 @@ fn text_controls(ui: &mut Ui, text: &mut TextLook) {
             ),
         )
         .on_hover_text(t::size_hover());
-    crate::diag::ui_rect(REGION_SIZE, response.rect);
+    crate::diag::ui_rect(regions.size, response.rect);
 
     ui.label(t::text_colour_label())
         .on_hover_text(t::text_colour_hover());
     if let Some(pick) = colourpick::show(
         ui,
-        REGION_TEXT_COLOUR,
+        regions.colour,
         Shown::Agreed(Ink {
             ink: text.colour.into(),
             opacity: None,
         }),
         Spaces::ALL,
-        REGION_TEXT_COLOUR,
+        regions.colour,
         "",
     ) {
         text.colour = pick.ink.into();
