@@ -149,14 +149,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         line.get("engine").unwrap_or_default(),
         line.get("engine_rev").unwrap_or_default()
     ));
-    // Reported, never asserted. `iccce` is legitimately absent today, and a
-    // check that failed on that would have to be edited on the day it lands —
-    // which is the wrong direction for a gate to point.
+    // Reported, never asserted: a build without colour management is legal,
+    // and About says so. The trace key keeps the colour engine's old name.
     let icc = line.get("iccce").unwrap_or_default();
     report.note(if icc.is_empty() {
-        "iccce is NOT in this build, and About says so".to_owned()
+        "icccer is NOT in this build, and About says so".to_owned()
     } else {
-        format!("iccce {icc} is in this build")
+        format!("icccer {icc} is in this build")
     });
 
     // --- C: the picture ----------------------------------------------------

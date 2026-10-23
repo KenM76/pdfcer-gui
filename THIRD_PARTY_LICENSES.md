@@ -6888,9 +6888,9 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [iccce-cmm 0.3.0](https://github.com/KenM76/iccce)
-- [iccce-color 0.3.0](https://github.com/KenM76/iccce)
-- [iccce-profile 0.3.0](https://github.com/KenM76/iccce)
+- [icccer-cmm 0.4.1](https://github.com/KenM76/icccer)
+- [icccer-color 0.4.1](https://github.com/KenM76/icccer)
+- [icccer-profile 0.4.1](https://github.com/KenM76/icccer)
 - [egui-shell 0.1.0](https://crates.io/crates/egui-shell)
 - [pdfcer-gui 0.1.0](https://crates.io/crates/pdfcer-gui)
 - [pdfcer-gui-base 0.1.0](https://crates.io/crates/pdfcer-gui-base)

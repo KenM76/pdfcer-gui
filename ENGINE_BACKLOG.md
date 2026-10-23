@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `wanted` — a real gap — **44 of 406** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -130,9 +130,14 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
 | **Reduce File Size by compatibility target (PDF version)** — `pdfcer_core::optimize::compat`, `SkipReason::AboveCompatibility`, `ImageSkip::AboveCompatibility` | **wanted — O325, Acrobat's *Make compatible with*.** A version chooser in Save a compacted copy; a step the version forbids is skipped and names the version as its reason. |
 | **Features used versus the target (report)** — lists … | **wanted — O325, beside the version chooser**: what the file uses that needs a newer version, with an example object, so the operator sees why a target cannot be met. Engine: `features_used`, `FeatureUse`, `VersionFeature`. |
+| **Lowest PDF version the content needs (report)** — `pdfcer_core::optimize::version_floor` (`version_floor`, `version_floor_with`, `VersionFloor`, `Requirement`, `Unprovable`, `FloorOptions`, `IccVersionGate`) | **wanted — O325, beside the version chooser.** The floor, whether it is proven, and the constructs that set it (highest first, with an example object) answer *why can't this file be made compatible with 1.4*. Report only: it never lowers the file, and the window must say so. |
+| **Lower the declared PDF version** — `pdfcer optimize` `--lower-version`; `pdfcer_core::optimize::lower_version` (`lower_version`, `LowerOptions`, `LoweredVersion`, `LowerRoute`, `LowerError`) | **wanted — O325, *Make compatible with* in Save a compacted copy.** Run on the copy's bytes after compaction, opt-in. Owed off-canvas: from and to, whether the copy was rebuilt (which renumbers objects), whether a catalog `/Version` was removed, and every refusal by name (encrypted, signed, not lower, unproven, below the floor). |
+| **Detect overprint use in a document** — says whether anything asks for overprint; `pdfcer_core::prepress::overprint_use` (`overprint_use`, `OverprintUse`) | **wanted — O323, replaces `printclaims`'s overprint reading** for Settings ▸ Display ▸ *Use overprint preview* = Automatic. The engine's walk counts only a graphics state a `gs` invokes and reaches appearances, patterns and Type 3 glyphs; ours counts listed states and stops at a budget. An incomplete walk is *unknown*, not *no*: Automatic treats it as on and says why. |
+| **Detect a PDF/X claim (ISO 15930)** — reads the level the file claims; `pdfcer_core::prepress::pdfx_claim` (`pdfx_claim`, `PdfxClaim`, `pdfx_output_intents`) | **wanted — O323, replaces `printclaims`'s PDF/X reading** for *Only for PDF/X files*. Reads PDF/X-4's XMP claim, which ours misses. The shell takes the wider reading the engine offers: a claim, or a `GTS_PDFX` output intent alone. |
+| **Prove redacted text absent from the written bytes** — `pdfcer_core::redact_proof` (`redact::verify_absence`, `AbsenceVerification`, `AbsenceVerdict`, `Residual`, `ResidualSite`, `MIN_VERIFIABLE_LEN`) <!--namesake:AbsenceVerification--> <!--namesake:ResidualSite--> the shell's own `redact::proof` declares types of these names; the engine's are not called | **wanted — the deletion Pass 72.0 was waiting for.** `redact::proof` is the shell's parallel proof and the engine now owns one. Before swapping, the differences are decided: the engine skips strings under four characters, which ours refuses on when drawn; and an undecoded stream or an unparsed output forfeits *Verified* there. |
 | **Quality target (SSIM)** — `image(ssim=0.98)` … | **wanted — O325, a *Keep pictures looking the same* level in Save a compacted copy's picture settings**, reporting the similarity each picture reached. Engine: `pdfcer_core::optimize::image::ssim` (`structural_similarity`, `SsimPick`, `SsimScore`), `ImagePatch::ssim`, `ResolvedImage::ssim`, `JpegQuality::ssim`. |
 | **Before/after visual-diff report** — `pdfcer_render::visual_diff` (`PageDiff`, `ChangedRegion`, `VisualDiffError`) | **wanted — O325, a before/after check in Save a compacted copy**: per page, how many pixels changed and where, so a lossy setting is judged on the drawing, not on the byte count. |
-| Encode `/BrotliDecode` streams (write side), shipped … | **wanted — O325, a Brotli choice in Save a compacted copy**, with the hover saying that readers older than PDF 2.0 cannot open the result. |
+| Encode `/BrotliDecode` streams (write side), shipped … | **wanted — O325, a Brotli choice in Save a compacted copy**, with the hover saying that Acrobat Reader opens such a file without an error and draws every page that uses one blank (the engine's own measured note, carried in the plan's `notes`). |
 | **Change an image's format, on all images, a class or one image** … | **wanted in part.** Save a compacted copy's picture settings offer Keep, Lossless (Flate) and Smallest (`ImageEncode::Auto`) in `dialogs::compact_images`; JPEG, JPEG 2000, CCITT, JBIG2, RunLength and LZW by choice, and per class or per picture, are not offered (O325). |
 
 ### Fonts & rendering
@@ -145,7 +150,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `blocked` — waiting on something named — **2 of 406** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -163,7 +168,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 406** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -174,7 +179,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `declined` — deliberately no surface — **18 of 406** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -218,7 +223,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **342 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **342 of 406** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

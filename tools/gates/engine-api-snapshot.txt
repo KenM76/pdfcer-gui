@@ -41,14 +41,15 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 77d6adcff505ecbabed6bb80a5a8228a2a17be38
+# baseline: a68f3742e444fe3282a7a17804abbd3092eaed2d
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 9843
+# items: 9941
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives as the engine's own warning, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_REPEATED_TAIL -- the other half of the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it.
 exempt pdfcer-core const pdfcer_core::vector::decompose::MAX_TEXT_PREVIEW_PAGE_CHARS -- the engine's memory ceiling on one decomposition's preview text. Nothing here chooses or compares against it: a run cut by it arrives as `truncated`, which `panels::objects::summary` already carries into the row's ellipsis, and `text::panels::objects::quoted_text_preview` elides every preview at display time whatever its length.
+exempt pdfcer-core field pdfcer_core::build::BuildInfo::icccer -- the About box reads the colour engine's version and revision from Cargo.lock in `build.rs` (`icccer-cmm`), the same fact BuildInfo carries for the engine's own build.
 exempt pdfcer-core field pdfcer_core::edit::PasswordPurgeOutcome::layout -- what the empty redraw decided: autosize, an unmodelled colour, unencodable characters. An empty value draws no text, so none of it can arise; `app::actions::purge_passwords` has nothing to word.
 exempt pdfcer-core field pdfcer_core::edit::WidgetEdit::replace_foreign_appearance -- the field under `WidgetEdit::with_replace_foreign_appearance`, which `panels::properties::widgetedit::border_edit` calls for every border edit; the shell sets it through the builder and never reads it back, and the outcome's `foreign_appearance_replaced` is what it reports.
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
@@ -515,6 +516,7 @@ pdfcer-core const pdfcer_core::pageops::references::MAX_NAME_TREE_DEPTH
 pdfcer-core const pdfcer_core::pageops::references::MAX_NAME_TREE_NODES
 pdfcer-core const pdfcer_core::pageops::references::MAX_OUTLINE_ITEMS
 pdfcer-core const pdfcer_core::pageops::split::DEFAULT_NAME_TEMPLATE
+pdfcer-core const pdfcer_core::redact_proof::MIN_VERIFIABLE_LEN
 pdfcer-core const pdfcer_core::settings::DEFAULT_TAB_ROW_TOLERANCE
 pdfcer-core const pdfcer_core::settings::MAX_PARALLEL_EPSILON_DEGREES
 pdfcer-core const pdfcer_core::settings::MAX_TAB_ROW_TOLERANCE
@@ -782,9 +784,13 @@ pdfcer-core enum pdfcer_core::optimize::image::predict::Predictor
 pdfcer-core enum pdfcer_core::optimize::image::skip::ImageSkip
 pdfcer-core enum pdfcer_core::optimize::image::skip::ImageStep
 pdfcer-core enum pdfcer_core::optimize::image::version_raise::VersionRaise
+pdfcer-core enum pdfcer_core::optimize::lower_version::LowerError
+pdfcer-core enum pdfcer_core::optimize::lower_version::LowerRoute
 pdfcer-core enum pdfcer_core::optimize::objects::DiscardObject
 pdfcer-core enum pdfcer_core::optimize::preset::Preset
 pdfcer-core enum pdfcer_core::optimize::resubset::PresentGlyphs
+pdfcer-core enum pdfcer_core::optimize::version_floor::Unprovable
+pdfcer-core enum pdfcer_core::optimize::version_floor::icc::IccVersionGate
 pdfcer-core enum pdfcer_core::outline::DestView
 pdfcer-core enum pdfcer_core::outline::Destination
 pdfcer-core enum pdfcer_core::outline::OutlineClipError
@@ -808,6 +814,8 @@ pdfcer-core enum pdfcer_core::paper::PaperSize
 pdfcer-core enum pdfcer_core::redact::CarrierAction
 pdfcer-core enum pdfcer_core::redact::RedactError
 pdfcer-core enum pdfcer_core::redact::ResidualScope
+pdfcer-core enum pdfcer_core::redact_proof::AbsenceVerdict
+pdfcer-core enum pdfcer_core::redact_proof::ResidualSite
 pdfcer-core enum pdfcer_core::richtext::Align
 pdfcer-core enum pdfcer_core::richtext::RichTextError
 pdfcer-core enum pdfcer_core::richtext::Stretch
@@ -1116,7 +1124,6 @@ pdfcer-core field pdfcer_core::bates::BatesStamp::pages
 pdfcer-core field pdfcer_core::bates::BatesStamp::position
 pdfcer-core field pdfcer_core::build::BuildInfo::built_at
 pdfcer-core field pdfcer_core::build::BuildInfo::committed_at
-pdfcer-core field pdfcer_core::build::BuildInfo::iccce
 pdfcer-core field pdfcer_core::build::BuildInfo::revision
 pdfcer-core field pdfcer_core::build::BuildInfo::version
 pdfcer-core field pdfcer_core::deskew::SkewEstimate::angle_degrees
@@ -2664,6 +2671,14 @@ pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::achieved
 pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::met
 pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::target
 pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::trials
+pdfcer-core field pdfcer_core::optimize::lower_version::LowerOptions::allow_signed
+pdfcer-core field pdfcer_core::optimize::lower_version::LowerOptions::floor
+pdfcer-core field pdfcer_core::optimize::lower_version::LoweredVersion::bytes
+pdfcer-core field pdfcer_core::optimize::lower_version::LoweredVersion::catalog_version_removed
+pdfcer-core field pdfcer_core::optimize::lower_version::LoweredVersion::floor
+pdfcer-core field pdfcer_core::optimize::lower_version::LoweredVersion::from
+pdfcer-core field pdfcer_core::optimize::lower_version::LoweredVersion::route
+pdfcer-core field pdfcer_core::optimize::lower_version::LoweredVersion::to
 pdfcer-core field pdfcer_core::optimize::objects::ObjectDiscard::bytes
 pdfcer-core field pdfcer_core::optimize::objects::ObjectDiscard::location
 pdfcer-core field pdfcer_core::optimize::objects::ObjectDiscard::object
@@ -2712,6 +2727,20 @@ pdfcer-core field pdfcer_core::optimize::select::Selector::max_ppi
 pdfcer-core field pdfcer_core::optimize::select::Selector::min_bytes
 pdfcer-core field pdfcer_core::optimize::select::Selector::min_ppi
 pdfcer-core field pdfcer_core::optimize::select::Selector::pages
+pdfcer-core field pdfcer_core::optimize::version_floor::FloorOptions::icc
+pdfcer-core field pdfcer_core::optimize::version_floor::Requirement::construct
+pdfcer-core field pdfcer_core::optimize::version_floor::Requirement::example
+pdfcer-core field pdfcer_core::optimize::version_floor::Requirement::objects
+pdfcer-core field pdfcer_core::optimize::version_floor::Requirement::version
+pdfcer-core field pdfcer_core::optimize::version_floor::VersionFloor::floor
+pdfcer-core field pdfcer_core::optimize::version_floor::VersionFloor::icc_profiles
+pdfcer-core field pdfcer_core::optimize::version_floor::VersionFloor::requirements
+pdfcer-core field pdfcer_core::optimize::version_floor::VersionFloor::structural
+pdfcer-core field pdfcer_core::optimize::version_floor::VersionFloor::unprovable
+pdfcer-core field pdfcer_core::optimize::version_floor::icc::IccProfile::major
+pdfcer-core field pdfcer_core::optimize::version_floor::icc::IccProfile::minor
+pdfcer-core field pdfcer_core::optimize::version_floor::icc::IccProfile::object
+pdfcer-core field pdfcer_core::optimize::version_floor::icc::IccProfile::strict
 pdfcer-core field pdfcer_core::outline::Outline::diagnostics
 pdfcer-core field pdfcer_core::outline::Outline::items
 pdfcer-core field pdfcer_core::outline::OutlineClip::items
@@ -2854,6 +2883,13 @@ pdfcer-core field pdfcer_core::password_history::PasswordValueScan::stored
 pdfcer-core field pdfcer_core::password_history::PasswordValueScan::unreadable_revisions
 pdfcer-core field pdfcer_core::password_history::StoredPasswordValue::field
 pdfcer-core field pdfcer_core::password_history::StoredPasswordValue::revision
+pdfcer-core field pdfcer_core::prepress::OverprintUse::first
+pdfcer-core field pdfcer_core::prepress::OverprintUse::unwalked
+pdfcer-core field pdfcer_core::prepress::pdfx::PdfxClaim::info_conformance
+pdfcer-core field pdfcer_core::prepress::pdfx::PdfxClaim::info_version
+pdfcer-core field pdfcer_core::prepress::pdfx::PdfxClaim::level
+pdfcer-core field pdfcer_core::prepress::pdfx::PdfxClaim::output_intents
+pdfcer-core field pdfcer_core::prepress::pdfx::PdfxClaim::xmp_version
 pdfcer-core field pdfcer_core::redact::CarrierStatus::action
 pdfcer-core field pdfcer_core::redact::CarrierStatus::carrier
 pdfcer-core field pdfcer_core::redact::CarrierStatus::present
@@ -2892,6 +2928,13 @@ pdfcer-core field pdfcer_core::redact::RedactionReport::vector_clips_kept
 pdfcer-core field pdfcer_core::redact::RedactionReport::vector_paths_cut
 pdfcer-core field pdfcer_core::redact::RedactionReport::vector_paths_dropped
 pdfcer-core field pdfcer_core::redact::RedactionReport::vector_paths_intersecting
+pdfcer-core field pdfcer_core::redact_proof::AbsenceVerification::output_unparsed
+pdfcer-core field pdfcer_core::redact_proof::AbsenceVerification::residuals
+pdfcer-core field pdfcer_core::redact_proof::AbsenceVerification::streams_undecoded
+pdfcer-core field pdfcer_core::redact_proof::AbsenceVerification::strings_checked
+pdfcer-core field pdfcer_core::redact_proof::AbsenceVerification::strings_too_short
+pdfcer-core field pdfcer_core::redact_proof::Residual::site
+pdfcer-core field pdfcer_core::redact_proof::Residual::text
 pdfcer-core field pdfcer_core::richtext::Run::paragraph
 pdfcer-core field pdfcer_core::richtext::Run::style
 pdfcer-core field pdfcer_core::richtext::Run::text
@@ -4118,10 +4161,13 @@ pdfcer-core fn pdfcer_core::offpage::scan_page
 pdfcer-core fn pdfcer_core::optimize::compat::features_used
 pdfcer-core fn pdfcer_core::optimize::image::jpeg_quality::estimate_jpeg_quality
 pdfcer-core fn pdfcer_core::optimize::image::ssim::structural_similarity
+pdfcer-core fn pdfcer_core::optimize::lower_version::lower_version
 pdfcer-core fn pdfcer_core::optimize::profile::parse
 pdfcer-core fn pdfcer_core::optimize::profile::parse_object
 pdfcer-core fn pdfcer_core::optimize::profile::parse_rule
 pdfcer-core fn pdfcer_core::optimize::profile::to_profile
+pdfcer-core fn pdfcer_core::optimize::version_floor::version_floor
+pdfcer-core fn pdfcer_core::optimize::version_floor::version_floor_with
 pdfcer-core fn pdfcer_core::outline::parse_outline
 pdfcer-core fn pdfcer_core::outline::read_outline
 pdfcer-core fn pdfcer_core::page_labels::label_ranges
@@ -4151,10 +4197,14 @@ pdfcer-core fn pdfcer_core::pageops::split::split_with
 pdfcer-core fn pdfcer_core::pageops::split::split_with_labels
 pdfcer-core fn pdfcer_core::password_history::revision_ends
 pdfcer-core fn pdfcer_core::password_history::scan_stored_password_values
+pdfcer-core fn pdfcer_core::prepress::overprint_use
+pdfcer-core fn pdfcer_core::prepress::pdfx::pdfx_claim
+pdfcer-core fn pdfcer_core::prepress::pdfx::pdfx_output_intents
 pdfcer-core fn pdfcer_core::redact::apply_redactions
 pdfcer-core fn pdfcer_core::redact::apply_redactions_with
 pdfcer-core fn pdfcer_core::redact::count_redaction_marks
 pdfcer-core fn pdfcer_core::redact::redaction_marks
+pdfcer-core fn pdfcer_core::redact_proof::verify_absence
 pdfcer-core fn pdfcer_core::richtext::parse
 pdfcer-core fn pdfcer_core::settings::format_byte_size
 pdfcer-core fn pdfcer_core::settings::parse_byte_size
@@ -5274,6 +5324,8 @@ pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::ten_thousandth
 pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::to_f64
 pdfcer-core method pdfcer_core::optimize::image::version_raise::VersionRaise::as_str
 pdfcer-core method pdfcer_core::optimize::image::version_raise::VersionRaise::from_name
+pdfcer-core method pdfcer_core::optimize::lower_version::LowerOptions::with_allow_signed
+pdfcer-core method pdfcer_core::optimize::lower_version::LowerOptions::with_floor
 pdfcer-core method pdfcer_core::optimize::objects::DiscardObject::as_str
 pdfcer-core method pdfcer_core::optimize::objects::DiscardObject::from_name
 pdfcer-core method pdfcer_core::optimize::preset::Preset::as_str
@@ -5292,6 +5344,8 @@ pdfcer-core method pdfcer_core::optimize::resubset::ResubsetRequest::new
 pdfcer-core method pdfcer_core::optimize::select::PageRanges::contains
 pdfcer-core method pdfcer_core::optimize::select::PageRanges::parse
 pdfcer-core method pdfcer_core::optimize::select::Selector::new
+pdfcer-core method pdfcer_core::optimize::version_floor::FloorOptions::with_icc
+pdfcer-core method pdfcer_core::optimize::version_floor::VersionFloor::proven
 pdfcer-core method pdfcer_core::outline::DestView::rect
 pdfcer-core method pdfcer_core::outline::DestView::zoom_is_retain
 pdfcer-core method pdfcer_core::outline::Destination::name_lossy
@@ -5361,12 +5415,21 @@ pdfcer-core method pdfcer_core::paper::PaperSize::rect_with
 pdfcer-core method pdfcer_core::paper::PaperSize::size_pt
 pdfcer-core method pdfcer_core::password_history::PasswordValueScan::in_latest
 pdfcer-core method pdfcer_core::password_history::PasswordValueScan::in_superseded
+pdfcer-core method pdfcer_core::prepress::OverprintUse::asks
+pdfcer-core method pdfcer_core::prepress::OverprintUse::is_complete
+pdfcer-core method pdfcer_core::prepress::pdfx::PdfxClaim::carriers_agree
+pdfcer-core method pdfcer_core::prepress::pdfx::PdfxClaim::has_output_intent
+pdfcer-core method pdfcer_core::prepress::pdfx::PdfxClaim::is_recognised
 pdfcer-core method pdfcer_core::redact::CarrierAction::as_str
 pdfcer-core method pdfcer_core::redact::RedactOptions::with_residual_scope
 pdfcer-core method pdfcer_core::redact::RedactionReport::has_disclosed_residuals
 pdfcer-core method pdfcer_core::redact::RedactionReport::has_unscrubbed_matches
 pdfcer-core method pdfcer_core::redact::ResidualScope::blanks_content_streams
 pdfcer-core method pdfcer_core::redact::ResidualScope::scrubs_hidden_carriers
+pdfcer-core method pdfcer_core::redact_proof::AbsenceVerification::drawn_survivors
+pdfcer-core method pdfcer_core::redact_proof::AbsenceVerification::is_clean
+pdfcer-core method pdfcer_core::redact_proof::AbsenceVerification::verdict
+pdfcer-core method pdfcer_core::redact_proof::ResidualSite::as_str
 pdfcer-core method pdfcer_core::settings::LoadReport::is_quiet
 pdfcer-core method pdfcer_core::settings::LoadReport::was_stated
 pdfcer-core method pdfcer_core::settings::MagnifyFilter::token
@@ -6143,6 +6206,8 @@ pdfcer-core struct pdfcer_core::optimize::image::pipeline::ImageChange
 pdfcer-core struct pdfcer_core::optimize::image::pipeline::JpegQuality
 pdfcer-core struct pdfcer_core::optimize::image::ssim::SsimPick
 pdfcer-core struct pdfcer_core::optimize::image::ssim::SsimScore
+pdfcer-core struct pdfcer_core::optimize::lower_version::LowerOptions
+pdfcer-core struct pdfcer_core::optimize::lower_version::LoweredVersion
 pdfcer-core struct pdfcer_core::optimize::objects::ObjectDiscard
 pdfcer-core struct pdfcer_core::optimize::profile::ProfileError
 pdfcer-core struct pdfcer_core::optimize::resubset::FontUse
@@ -6156,6 +6221,10 @@ pdfcer-core struct pdfcer_core::optimize::resubset::ResubsetTarget
 pdfcer-core struct pdfcer_core::optimize::resubset::ResubsetUnmerged
 pdfcer-core struct pdfcer_core::optimize::select::PageRanges
 pdfcer-core struct pdfcer_core::optimize::select::Selector
+pdfcer-core struct pdfcer_core::optimize::version_floor::FloorOptions
+pdfcer-core struct pdfcer_core::optimize::version_floor::Requirement
+pdfcer-core struct pdfcer_core::optimize::version_floor::VersionFloor
+pdfcer-core struct pdfcer_core::optimize::version_floor::icc::IccProfile
 pdfcer-core struct pdfcer_core::outline::DestinationReader
 pdfcer-core struct pdfcer_core::outline::Outline
 pdfcer-core struct pdfcer_core::outline::OutlineClip
@@ -6184,10 +6253,14 @@ pdfcer-core struct pdfcer_core::pageops::separation::SeparationSplitRefused
 pdfcer-core struct pdfcer_core::pageops::split::SplitPart
 pdfcer-core struct pdfcer_core::password_history::PasswordValueScan
 pdfcer-core struct pdfcer_core::password_history::StoredPasswordValue
+pdfcer-core struct pdfcer_core::prepress::OverprintUse
+pdfcer-core struct pdfcer_core::prepress::pdfx::PdfxClaim
 pdfcer-core struct pdfcer_core::redact::CarrierStatus
 pdfcer-core struct pdfcer_core::redact::RedactOptions
 pdfcer-core struct pdfcer_core::redact::RedactionMark
 pdfcer-core struct pdfcer_core::redact::RedactionReport
+pdfcer-core struct pdfcer_core::redact_proof::AbsenceVerification
+pdfcer-core struct pdfcer_core::redact_proof::Residual
 pdfcer-core struct pdfcer_core::richtext::Run
 pdfcer-core struct pdfcer_core::richtext::Style
 pdfcer-core struct pdfcer_core::settings::ByteSizeError
@@ -7636,6 +7709,16 @@ pdfcer-core variant pdfcer_core::optimize::image::skip::ImageStep::Jpeg
 pdfcer-core variant pdfcer_core::optimize::image::skip::ImageStep::Resample
 pdfcer-core variant pdfcer_core::optimize::image::version_raise::VersionRaise::Allow
 pdfcer-core variant pdfcer_core::optimize::image::version_raise::VersionRaise::Refuse
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::BelowFloor
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::Encrypted
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::Load
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::NotLower
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::Signed
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::Unproven
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::Verify
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerError::Write
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerRoute::InPlace
+pdfcer-core variant pdfcer_core::optimize::lower_version::LowerRoute::Rebuilt
 pdfcer-core variant pdfcer_core::optimize::objects::DiscardObject::AlternateImages
 pdfcer-core variant pdfcer_core::optimize::objects::DiscardObject::Bookmarks
 pdfcer-core variant pdfcer_core::optimize::objects::DiscardObject::ExternalReferences
@@ -7658,6 +7741,11 @@ pdfcer-core variant pdfcer_core::optimize::preset::Preset::Standard
 pdfcer-core variant pdfcer_core::optimize::resubset::PresentGlyphs::Cids
 pdfcer-core variant pdfcer_core::optimize::resubset::PresentGlyphs::Count
 pdfcer-core variant pdfcer_core::optimize::resubset::PresentGlyphs::Names
+pdfcer-core variant pdfcer_core::optimize::version_floor::Unprovable::UnreadableContent
+pdfcer-core variant pdfcer_core::optimize::version_floor::Unprovable::UnreadableFont
+pdfcer-core variant pdfcer_core::optimize::version_floor::Unprovable::UnreadableProfile
+pdfcer-core variant pdfcer_core::optimize::version_floor::icc::IccVersionGate::Permissive
+pdfcer-core variant pdfcer_core::optimize::version_floor::icc::IccVersionGate::Strict
 pdfcer-core variant pdfcer_core::outline::DestView::Absent
 pdfcer-core variant pdfcer_core::outline::DestView::Fit
 pdfcer-core variant pdfcer_core::outline::DestView::FitB
@@ -7764,6 +7852,17 @@ pdfcer-core variant pdfcer_core::redact::RedactError::Write
 pdfcer-core variant pdfcer_core::redact::ResidualScope::HiddenCarriers
 pdfcer-core variant pdfcer_core::redact::ResidualScope::MarkedOnly
 pdfcer-core variant pdfcer_core::redact::ResidualScope::WholeDocument
+pdfcer-core variant pdfcer_core::redact_proof::AbsenceVerdict::Disclose
+pdfcer-core variant pdfcer_core::redact_proof::AbsenceVerdict::Refuse
+pdfcer-core variant pdfcer_core::redact_proof::AbsenceVerdict::Verified
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::Attachment
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::DrawnContent
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::FontProgram
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::ImageSamples
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::Metadata
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::ObjectContainer
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::OtherStream
+pdfcer-core variant pdfcer_core::redact_proof::ResidualSite::RawBytes
 pdfcer-core variant pdfcer_core::richtext::Align::Center
 pdfcer-core variant pdfcer_core::richtext::Align::Left
 pdfcer-core variant pdfcer_core::richtext::Align::Right

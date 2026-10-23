@@ -193,7 +193,7 @@ fn provenance() {
     };
     println!("cargo:rustc-env=PDFCER_ENGINE_TIME={engine_time}");
 
-    // iccce, looked up under that exact package name.
+    // icccer, the colour engine, looked up under its CMM package.
     //
     // Reported as absent rather than omitted when the lookup finds nothing.
     // `RIBBON_IA.md`'s no-placeholders rule governs *controls* — an unavailable
@@ -202,13 +202,13 @@ fn provenance() {
     // management in this one", which is a different and more useful answer than
     // silence.
     //
-    // ⚠ **The argument is a PACKAGE name, not a project name**, and the two
-    // differ here. The colour-management crates reach this binary through
-    // `pdfcer-render` and are locked as `iccce-cmm`, `iccce-color` and
-    // `iccce-profile`; none of them is spelled `iccce`. So an empty result from
-    // this lookup means "no package by this name in the lockfile", which is a
-    // narrower claim than the sentence About draws from it.
-    let (icc_version, icc_rev, icc_repo) = locked_git_package(&lock, "iccce");
+    // The argument is a PACKAGE name, not a project name. The colour crates
+    // reach this binary through `pdfcer-render`, locked as `icccer-cmm`,
+    // `icccer-color` and `icccer-profile`, all from one git revision; none is
+    // spelled `icccer`, so the lookup names the CMM, the one that transforms.
+    // An empty result means "no package by this name in the lockfile", so a
+    // rename upstream reads as absent until this name follows it.
+    let (icc_version, icc_rev, icc_repo) = locked_git_package(&lock, "icccer-cmm");
     println!("cargo:rustc-env=PDFCER_ICCCE_VERSION={icc_version}");
     println!(
         "cargo:rustc-env=PDFCER_ICCCE_REV={}",
@@ -498,7 +498,7 @@ fn git(args: &[&str], dir: &str) -> Option<String> {
 /// ```
 ///
 /// Returns empty strings for anything absent, which is how a name that is **not
-/// a package in the lockfile** reports itself. See the `iccce` lookup in
+/// a package in the lockfile** reports itself. See the `icccer-cmm` lookup in
 /// [`provenance`] for what that does and does not prove about the build.
 fn locked_git_package(lock: &str, name: &str) -> (String, String, String) {
     let mut version = String::new();

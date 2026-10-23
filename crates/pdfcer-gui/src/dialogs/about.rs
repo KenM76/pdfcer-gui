@@ -203,7 +203,7 @@ fn build_block(ui: &mut egui::Ui, theme: &Theme) {
     );
     component(
         ui,
-        "iccce",
+        "icccer",
         env!("PDFCER_ICCCE_VERSION"),
         env!("PDFCER_ICCCE_REV"),
         env!("PDFCER_ICCCE_TIME"),
