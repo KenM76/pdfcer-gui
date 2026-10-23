@@ -39,7 +39,7 @@ const WRITTEN: &str = "compact-written"; // ui-text-exempt: a trace event name
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH";
 const COPY: &str = "target-copy.pdf";
 /// A size search writes the file up to a dozen times.
-const WAIT_S: u64 = 90;
+pub(super) const WAIT_S: u64 = 90;
 
 /// See the module documentation.
 pub struct ACompactedCopyCanBeMadeToFitASize;
@@ -67,7 +67,7 @@ impl Check for ACompactedCopyCanBeMadeToFitASize {
 }
 
 /// Polls until a `compact-recompressed` line after `mark` appears.
-fn recompressed_after(session: &Session, mark: usize) -> Result<Option<TraceLine>> {
+pub(super) fn recompressed_after(session: &Session, mark: usize) -> Result<Option<TraceLine>> {
     let started = std::time::Instant::now();
     loop {
         session.settle(8);
@@ -81,7 +81,7 @@ fn recompressed_after(session: &Session, mark: usize) -> Result<Option<TraceLine
 }
 
 /// Whether `region` is declared now.
-fn drawn(ctx: &CheckContext, session: &Session, region: &str) -> Result<bool> {
+pub(super) fn drawn(ctx: &CheckContext, session: &Session, region: &str) -> Result<bool> {
     Ok(declared(&session.trace()?, ui_rect_event(ctx)?, region).is_some())
 }
 

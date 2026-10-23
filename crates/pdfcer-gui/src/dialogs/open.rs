@@ -607,11 +607,15 @@ impl DialogsState {
     }
 
     /// Open the compacted-copy window, or answer why the engine refused.
-    pub fn open_compact(&mut self, status: &Status) -> Option<String> {
+    pub fn open_compact(
+        &mut self,
+        status: &Status,
+        start: super::compact_target::Start,
+    ) -> Option<String> {
         if self.compact.is_some() {
             return None;
         }
-        match compact::open_for(status)? {
+        match compact::open_for(status, start)? {
             Ok(dialog) => {
                 self.compact = Some(dialog);
                 None

@@ -427,9 +427,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 241 → 242: `edit.form_use_as_default`, Forms ▸ Manage.
     // 242 → 243: `view.overprint_preview`, View ▸ Display.
     // 243 → 244: `view.output_preview`, View ▸ Panels.
+    // 244 → 246: `file.reduce_size` and `file.fit_size`, File ▸ Save.
     assert_eq!(
         registry().len(),
-        244 + 2 * usize::from(cfg!(feature = "signing"))
+        246 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -866,9 +867,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 210 → 211: `edit.form_use_as_default` names `form-field`, shared.
     // 211 → 212: `view.overprint_preview` names `overprint`, drawn for it.
     // 212 → 213: `view.output_preview` shares `overprint`.
+    // 213 → 215: `file.reduce_size` and `file.fit_size` share `save-compact`.
     assert_eq!(
         named,
-        213 + 2 * usize::from(cfg!(feature = "signing"))
+        215 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

@@ -55,6 +55,7 @@ use super::PdfcerApp;
 /// wearing four ids.
 pub(crate) mod arrange;
 pub(crate) mod batch;
+mod compactopen;
 /// `markup.flatten` — make the selected markup part of the page.
 pub(crate) mod dimdisplay;
 /// The File > Security band's commands — O119 plus signing; see its header.
@@ -427,18 +428,8 @@ impl PdfcerApp {
             // states the rule this obeys: *"the honest response is to refuse and
             // say so, not to fall back to a full rewrite"*, read here in the
             // other direction.
-            "file.save_compacted" => {
-                let epoch = match &self.status {
-                    Status::Open(doc) => doc.edit_epoch,
-                    _ => return,
-                };
-                if let Some(refusal) = self.dialogs.open_compact(&self.status) {
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed.
-                        format!("compact-refused detail={refusal}")
-                    });
-                    crate::app::actions::record_note(epoch, refusal);
-                }
+            "file.save_compacted" | "file.reduce_size" | "file.fit_size" => {
+                self.dispatch_compact(id);
             }
             // About. Takes no `&self.status`, unlike every other dialog on
             // this list, and that asymmetry is the point rather than an

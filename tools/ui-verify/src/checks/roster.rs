@@ -419,6 +419,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(compact_save::ACompactedCopyIsActuallySmaller),
         Box::new(compact_pictures::ACompactedCopyCanMakePicturesSmaller),
         Box::new(compact_target::ACompactedCopyCanBeMadeToFitASize),
+        Box::new(compact_reach::SizeReductionIsOnTheMenus),
         Box::new(compact_fonts::ACompactedCopyCanCutFontsDown),
         Box::new(compact_content::ACompactedCopyTidiesDrawingInstructions),
         Box::new(compact_round::ACompactedCopyRoundsLinePositions),

@@ -316,10 +316,11 @@ impl Job {
             .name("compact-recompress".to_owned())
             .spawn(move || {
                 let started = std::time::Instant::now();
+                let preset = choices.preset;
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -331,6 +332,7 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.content_tidied),
                         result.as_ref().map_or(0, |r| r.content_rounded),
                         result.as_ref().is_ok_and(|r| r.linearized),
+                        preset.as_str(),
                         target_word(result.as_ref().ok().and_then(|r| r.budget.as_ref())),
                         result
                             .as_ref()

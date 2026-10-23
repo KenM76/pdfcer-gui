@@ -327,6 +327,15 @@ pub(super) fn band() -> Vec<Command> {
         command("file.save_compacted", t::file_save_compacted(), 112)
             .with_icon("save-compact")
             .enabled_when("doc.open"),
+        // The same window opened at two other starting points
+        // (`dialogs::compact_target::Start`), so the reduction the operator
+        // came for is one click. Same act, so the same glyph.
+        command("file.reduce_size", t::file_reduce_size(), 114)
+            .with_icon("save-compact")
+            .enabled_when("doc.open"),
+        command("file.fit_size", t::file_fit_size(), 115)
+            .with_icon("save-compact")
+            .enabled_when("doc.open"),
         // Both export verbs share `export`, and that is the header's
         // shared-key convention rather than an oversight: the glyph is the
         // download twin of `insert-pages`' upload art, reserved for exactly

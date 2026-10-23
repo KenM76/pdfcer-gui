@@ -44,6 +44,7 @@ pub mod bilevel_pictures;
 pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
+pub mod compact_reach;
 pub mod compact_round;
 pub mod compact_target;
 pub mod compact_web;

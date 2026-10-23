@@ -135,6 +135,30 @@ pub const fn file_save_compacted() -> CommandText {
     )
 }
 
+/// `file.reduce_size`
+#[must_use]
+pub const fn file_reduce_size() -> CommandText {
+    CommandText::new(
+        "Reduce file size…",
+        "Open Save a compacted copy starting from the Standard preset: pictures above 225 \
+         pixels per inch are scaled to 150 and page thumbnails are removed. The window shows \
+         the new size before you save, and every choice can be changed there. Your original \
+         is left untouched.",
+    )
+}
+
+/// `file.fit_size`
+#[must_use]
+pub const fn file_fit_size() -> CommandText {
+    CommandText::new(
+        "Fit to a size…",
+        "Open Save a compacted copy with Fit under switched on, at half the plain copy's \
+         size. Colour and grey pictures are stored at lower JPEG quality, then lower \
+         resolution, until the copy fits, and the window says what it took. Your original \
+         is left untouched.",
+    )
+}
+
 /// `edit.reflow_block`
 #[must_use]
 pub const fn edit_reflow_block() -> CommandText {

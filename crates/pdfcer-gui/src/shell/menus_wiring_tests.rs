@@ -85,11 +85,12 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 58 → 60: Make pictures smaller on the canvas object and Objects-row menus.
     // 60 → 66: Use as default look, Cut, Copy, Paste, Paste duplicate and
     // Manage fields on the canvas field menu.
+    // 66 → 69: the three compacted-copy commands on a tab's menu.
     // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
     // no stacking glyph exists (see `ledger`'s refused count).
     assert_eq!(
         (glyph, blank, absent),
-        (66, 5, 0),
+        (69, 5, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

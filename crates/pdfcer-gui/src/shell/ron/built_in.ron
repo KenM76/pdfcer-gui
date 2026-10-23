@@ -65,6 +65,8 @@
                         Command(id: "file.save_as"),
                         Command(id: "file.save_copy"),
                         Command(id: "file.save_compacted"),
+                        Command(id: "file.reduce_size"),
+                        Command(id: "file.fit_size"),
                     ],
                 ),
                 (
@@ -953,6 +955,10 @@
                 Command(id: "view.close_other_documents"),
                 Command(id: "view.move_to_new_window"),
                 Command(id: "view.move_to_window"),
+                Separator,
+                Command(id: "file.save_compacted"),
+                Command(id: "file.reduce_size"),
+                Command(id: "file.fit_size"),
             ],
         ),
         (

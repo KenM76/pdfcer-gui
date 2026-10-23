@@ -22,6 +22,9 @@ pub const REGION_BODY: &str = "compact.body";
 /// The button that goes on to the picker.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_SAVE: &str = "compact.commit";
+/// The button that closes the window without writing.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_CANCEL: &str = "compact.cancel";
 /// The switch that cuts embedded fonts down.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_FONTS: &str = "compact.fonts";
@@ -91,7 +94,7 @@ impl CompactDialog {
     ///
     /// `None` when the engine refuses the rewrite — see [`open_for`], which
     /// turns that into a sentence rather than into silence.
-    pub fn open(doc: &OpenDoc) -> Result<Self, String> {
+    pub fn open(doc: &OpenDoc, start: compact_target::Start) -> Result<Self, String> {
         use crate::app::settings::SettingsExt;
         // The SAME `SaveOptions` the ordinary save uses. Two settings ride on
         // it — the cross-reference entry line ending and the trailing newline —
@@ -105,6 +108,7 @@ impl CompactDialog {
             .to_full_bytes(&options)
             .map_err(|error| t::refused(&error.to_string()))?;
         let before = std::fs::metadata(&doc.path).map(|m| m.len()).unwrap_or(0);
+        let (preset, budget) = start.choices(bytes.len() as u64);
         Ok(Self {
             bytes,
             before,
@@ -121,8 +125,8 @@ impl CompactDialog {
                 content: true,
                 round: None,
                 linearize: false,
-                preset: pdfcer_core::optimize::Preset::Lossless,
-                budget: None,
+                preset,
+                budget,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -237,7 +241,9 @@ impl CompactDialog {
             if save.clicked() {
                 self.save_requested = true;
             }
-            if ui.button(t::cancel_button()).clicked() {
+            let cancel = ui.button(t::cancel_button());
+            crate::diag::ui_rect_visible(REGION_CANCEL, cancel.rect, ui.clip_rect());
+            if cancel.clicked() {
                 self.close_requested = true;
             }
         });
@@ -483,9 +489,12 @@ pub fn breakdown(now: Option<&[u8]>, copy: &[u8]) -> Option<Breakdown> {
 }
 
 /// Build it for the current document, or answer why not.
-pub fn open_for(status: &Status) -> Option<Result<CompactDialog, String>> {
+pub fn open_for(
+    status: &Status,
+    start: compact_target::Start,
+) -> Option<Result<CompactDialog, String>> {
     match status {
-        Status::Open(doc) => Some(CompactDialog::open(doc)),
+        Status::Open(doc) => Some(CompactDialog::open(doc, start)),
         _ => None,
     }
 }

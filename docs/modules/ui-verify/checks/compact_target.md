@@ -25,6 +25,13 @@ the search, opens *Start from* (`compact.preset`), picks Screen
 | 6 | picking Screen gives `resized ≥ 1` with the target still met | the starting point never reached the engine |
 | 7 | the written file's length equals that line's `bytes` and is within `max` | Save wrote a different copy |
 
+## Starting points
+
+The window opens at `dialogs::compact_target::Start`: *Save a compacted copy*
+at Lossless with no target, *Reduce file size* at Standard, *Fit to a size* at
+Lossless with the target on. This check opens it plain; the other two are
+driven by `size_reduction_is_on_the_ribbon_and_the_tab_menu`.
+
 ## Why the fixture is noise
 
 Noise does not compress, so the plain copy stays above half its own size and

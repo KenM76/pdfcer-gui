@@ -23,6 +23,29 @@ pub const REGION_TARGET_SIZE: &str = "compact.target.size";
 /// The line saying whether the copy fits.
 pub const REGION_TARGET_SAID: &str = "compact.target.said";
 
+/// Where a newly opened window starts: which command opened it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Start {
+    /// *Save a compacted copy*: Lossless, no target; nothing on a page changes.
+    Plain,
+    /// *Reduce file size*: the Standard preset.
+    Reduce,
+    /// *Fit to a size*: Lossless with the target on at its opening size.
+    Fit,
+}
+
+impl Start {
+    /// The opening preset and budget, for a plain copy of `plain` bytes.
+    #[must_use]
+    pub fn choices(self, plain: u64) -> (Preset, Option<u64>) {
+        match self {
+            Self::Plain => (Preset::Lossless, None),
+            Self::Reduce => (Preset::Standard, None),
+            Self::Fit => (Preset::Lossless, Some(opening_budget(plain))),
+        }
+    }
+}
+
 const MIB: f64 = 1024.0 * 1024.0;
 /// The smallest target offered, in MB.
 const FLOOR_MB: f64 = 0.1;

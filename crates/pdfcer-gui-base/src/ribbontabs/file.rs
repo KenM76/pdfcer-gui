@@ -84,6 +84,8 @@ pub fn tab() -> Tab {
                     command("file.save_as"),
                     command("file.save_copy"),
                     command("file.save_compacted"),
+                    command("file.reduce_size"),
+                    command("file.fit_size"),
                 ],
             ),
             // ---------------------------------------------------------------

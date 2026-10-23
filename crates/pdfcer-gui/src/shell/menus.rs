@@ -796,6 +796,12 @@ pub fn built_in() -> Menus {
             Item::command("view.close_other_documents"),
             Item::command("view.move_to_new_window"),
             Item::command("view.move_to_window"),
+            // Writing a smaller copy acts on one document, so it belongs
+            // with the others that act on the tab right-clicked.
+            Item::Separator,
+            Item::command("file.save_compacted"),
+            Item::command("file.reduce_size"),
+            Item::command("file.fit_size"),
         ]))
         .with(Menu::new(OBJECTS_ROW).with_items([
             Item::command("file.properties"),

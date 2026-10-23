@@ -222,7 +222,7 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 | Group | Commands |
 |---|---|
 | **File** | New (blank) · New from template… (page size) · New from clipboard · Open… · Recent ⌄ · Close |
-| **Save** | Save · Save as… · Save a copy… · Save compacted · Revert |
+| **Save** | Save · Save as… · Save a copy… · Save compacted · Reduce file size… · Fit to a size… · Revert |
 | **Recognise** | OCR… · Remove OCR text · Straighten scans… · Enlarge scans… · Manage OCR models… (Download inside it only in a build with model download) |
 | **Export** | Export DXF… · Export image… (PNG/JPEG/TIFF, DPI picker) · Export text… · Import text · Stamp collection · Export form data ⌄ (FDF / XFDF / CSV) · Import form data · Export for hand editing… · Compile hand edits… · Copy this page's text · Copy the whole document's text |
 | **Print** | Print… · Imposition… (n-up / booklet / poster) |

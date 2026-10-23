@@ -25,6 +25,8 @@ fn all() -> Vec<CommandText> {
         edit_paragraph_here(),
         edit_word_gap(),
         file_save_compacted(),
+        file_reduce_size(),
+        file_fit_size(),
         file_export_dxf(),
         file_export_image(),
         file_stamp_collection(),
