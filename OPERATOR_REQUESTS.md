@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O325 — **FILED** — every file-size reduction feature reachable from menus, dialogs and right-click
+## O325 — **PARTLY BUILT** — every file-size reduction feature reachable from menus, dialogs and right-click
 
 His words: *"I assume there will be appropriate menu items and dalogue boxes and right click options for all of the new size reduction features?"* Wanted in the next release.
 
@@ -663,7 +663,7 @@ His words: *"I assume there will be appropriate menu items and dalogue boxes and
 
 **Scope.** Each of those offered as Acrobat's PDF Optimizer offers it: a Reduce file size dialog with the presets and per-class panels, the plan's before/after per image (size, ppi, colour space, JPEG quality asked and used) shown before anything is written, the same settings on a selected picture's right-click menu and Format tab, and a menu item for each. Nothing lossy without the preview saying so.
 
-**Status.** Nothing built; blocked on an engine tag that resolves. NOT VERIFIED.
+**Status.** Engine v0.92.0 carries all of it. Built: Save compacted ▸ *Start from* (the engine's presets) and *Fit under* (a size target, the engine's size search, every try listed); driven by `a_compacted_copy_can_be_made_to_fit_a_size`. Not built: menu items and right-click entries, per-class colour/grey/mono rules, a compatibility chooser, quality target, before/after comparison. NOT VERIFIED by him.
 
 ## O323 — **BUILT, awaiting his check** — Overprint Preview the way Acrobat has it
 

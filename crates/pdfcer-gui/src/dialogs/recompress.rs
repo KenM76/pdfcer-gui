@@ -18,6 +18,9 @@
 //! by at most the distance chosen. [`Choices::linearize`] writes the copy
 //! for Fast Web View through `RebuildOptions::linearize`; the engine keeps
 //! that copy even when it is larger, because the layout was asked for.
+//! [`Choices::preset`] is the engine preset the switches are laid over
+//! ([`settings_for`]); [`Choices::budget`] sends the copy through
+//! `EditSession::optimize_to_budget`, reported as a [`Budget`].
 //! A signed copy proceeds: the compact window already states
 //! that the copy keeps no signatures. [`Job`] runs it off the UI thread.
 
@@ -25,13 +28,16 @@ use std::collections::BTreeMap;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use pdfcer_core::document::Document;
+use pdfcer_core::edit::EditSession;
+use pdfcer_core::optimize::budget::BudgetAttempt;
 use pdfcer_core::optimize::resubset::ResubsetFonts;
 use pdfcer_core::optimize::{
-    CleanupOptions, DiscardOptions, OptimizedFile, PlannedChange, Preset, RebuildOptions,
-    StreamAction,
+    CleanupOptions, DiscardOptions, OptimizePlan, OptimizeSettings, OptimizedFile, PlannedChange,
+    Preset, RebuildOptions, StreamAction,
 };
 use pdfcer_core::optimize::{ContentPatch, Rounding, Tolerance};
 use pdfcer_core::settings::Settings;
+use pdfcer_core::writer::{RebuildReport, SaveOptions};
 use pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER;
 
 use crate::app::settings::SettingsExt;
@@ -64,6 +70,10 @@ pub struct Choices {
     /// Lay the copy out for Fast Web View: page 1 first, then a table
     /// locating every other page. Takes the place of packing the index.
     pub linearize: bool,
+    /// The engine preset the switches above are laid over.
+    pub preset: Preset,
+    /// Make the copy no larger than this many bytes.
+    pub budget: Option<u64>,
 }
 
 impl Choices {
@@ -78,6 +88,8 @@ impl Choices {
             || self.fonts
             || self.content
             || self.linearize
+            || !matches!(self.preset, Preset::Lossless)
+            || self.budget.is_some()
     }
 }
 
@@ -116,6 +128,109 @@ pub struct Recompressed {
     pub content_rounded: u64,
     /// Why rounding left parts as they were, one line per reason.
     pub unrounded: Vec<String>,
+    /// What the size search did, when one ran.
+    pub budget: Option<Budget>,
+}
+
+/// What the size search did.
+#[derive(Debug, Clone)]
+pub struct Budget {
+    /// The target, in bytes.
+    pub max: u64,
+    /// Whether the copy fits it.
+    pub met: bool,
+    /// The try whose file is kept.
+    pub chosen: Option<BudgetAttempt>,
+    /// Every try, in the order run.
+    pub attempts: Vec<BudgetAttempt>,
+}
+
+/// The engine settings `choices` ask for: the chosen preset with the
+/// window's switches laid over it. The clean-up switches replace the
+/// preset's; its discards are kept and the window's added; pictures asked
+/// for replace the preset's picture settings and its per-class rules.
+///
+/// # Errors
+///
+/// The engine's sentence when the picture choices are refused.
+pub fn settings_for(choices: Choices) -> Result<OptimizeSettings, String> {
+    let mut preset = choices.preset.settings();
+    preset.allow_signed = true;
+    if !choices.recompress {
+        preset.streams = StreamAction::Leave;
+        preset.structure = RebuildOptions::none();
+    }
+    preset.structure.linearize = choices.linearize;
+    preset.cleanup = CleanupOptions {
+        invalid_links: choices.broken,
+        invalid_bookmarks: choices.broken,
+        unreferenced_destinations: choices.destinations,
+    };
+    let mut discard = preset.discard;
+    for kind in choices.discard.kinds() {
+        discard = discard.with(kind);
+    }
+    for object in choices.discard.objects() {
+        discard = discard.with_object(object);
+    }
+    preset.discard = discard;
+    if let Some(patch) = choices.pictures.patch() {
+        patch.validate()?;
+        preset.images = patch;
+        preset.rules.clear();
+    }
+    if choices.fonts {
+        preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
+    }
+    if choices.content {
+        let mut patch = ContentPatch::new();
+        patch.round = choices.round.map(Rounding::Within);
+        preset.content = Some(patch);
+    }
+    Ok(preset)
+}
+
+/// A finished optimize: the plan, the file, the rebuild's report and the
+/// size search, when there was one.
+type Ran = (
+    OptimizePlan,
+    OptimizedFile,
+    Option<RebuildReport>,
+    Option<Budget>,
+);
+
+/// Plan, apply and save `preset` in `session`, through the size search when
+/// `budget` is set.
+fn run(
+    session: &mut EditSession,
+    preset: &OptimizeSettings,
+    budget: Option<u64>,
+    options: &SaveOptions,
+) -> Result<Ran, String> {
+    if let Some(max) = budget {
+        let fit = session
+            .optimize_to_budget(preset, max, options)
+            .map_err(|e| e.to_string())?;
+        let chosen = fit
+            .attempts
+            .iter()
+            .rev()
+            .find(|a| a.step == fit.step)
+            .copied();
+        let budget = Budget {
+            max,
+            met: fit.met,
+            chosen,
+            attempts: fit.attempts,
+        };
+        return Ok((fit.plan, fit.file, fit.structure, Some(budget)));
+    }
+    let plan = session.plan_optimize(preset).map_err(|e| e.to_string())?;
+    session.apply_optimize(&plan).map_err(|e| e.to_string())?;
+    let (file, report) = session
+        .save_optimized(&plan, options, &preset.structure)
+        .map_err(|e| e.to_string())?;
+    Ok((plan, file, report, None))
 }
 
 /// Optimize `copy` as `choices` ask, in a session and with save options
@@ -132,37 +247,13 @@ pub fn recompress(
 ) -> Result<Recompressed, String> {
     let doc = Document::from_bytes(copy.to_vec()).map_err(|e| e.to_string())?;
     let mut session = settings.open_session(doc);
-    let options = settings.save_options();
-    let mut preset = Preset::Lossless.settings();
-    preset.allow_signed = true;
-    if !choices.recompress {
-        preset.streams = StreamAction::Leave;
-        preset.structure = RebuildOptions::none();
-    }
-    preset.structure.linearize = choices.linearize;
-    preset.cleanup = CleanupOptions {
-        invalid_links: choices.broken,
-        invalid_bookmarks: choices.broken,
-        unreferenced_destinations: choices.destinations,
-    };
-    preset.discard = choices.discard;
-    if let Some(patch) = choices.pictures.patch() {
-        patch.validate()?;
-        preset.images = patch;
-    }
-    if choices.fonts {
-        preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
-    }
-    if choices.content {
-        let mut patch = ContentPatch::new();
-        patch.round = choices.round.map(Rounding::Within);
-        preset.content = Some(patch);
-    }
-    let plan = session.plan_optimize(&preset).map_err(|e| e.to_string())?;
-    session.apply_optimize(&plan).map_err(|e| e.to_string())?;
-    let (file, report) = session
-        .save_optimized(&plan, &options, &preset.structure)
-        .map_err(|e| e.to_string())?;
+    let preset = settings_for(choices)?;
+    let (plan, file, report, budget) = run(
+        &mut session,
+        &preset,
+        choices.budget,
+        &settings.save_options(),
+    )?;
     let pictures = Tally::of(&plan);
     let mut left = BTreeMap::new();
     for skipped in &plan.skipped {
@@ -198,7 +289,17 @@ pub fn recompress(
         content_tidied: tidied.len(),
         content_rounded: tidied.iter().map(|c| c.numbers_rounded).sum(),
         unrounded: t::unrounded(tidied.iter().copied()),
+        budget,
     })
+}
+
+/// The trace's word for a size search: `none`, `met` or `missed`.
+fn target_word(budget: Option<&Budget>) -> &'static str {
+    match budget {
+        None => "none",            // ui-text-exempt: diagnostic trace
+        Some(b) if b.met => "met", // ui-text-exempt: diagnostic trace
+        Some(_) => "missed",       // ui-text-exempt: diagnostic trace
+    }
 }
 
 /// [`recompress`] on its own thread.
@@ -218,7 +319,7 @@ impl Job {
                 let result = recompress(&copy, &settings, choices);
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -230,6 +331,17 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.content_tidied),
                         result.as_ref().map_or(0, |r| r.content_rounded),
                         result.as_ref().is_ok_and(|r| r.linearized),
+                        target_word(result.as_ref().ok().and_then(|r| r.budget.as_ref())),
+                        result
+                            .as_ref()
+                            .ok()
+                            .and_then(|r| r.budget.as_ref())
+                            .map_or(0, |b| b.max),
+                        result
+                            .as_ref()
+                            .ok()
+                            .and_then(|r| r.budget.as_ref()?.chosen)
+                            .map_or(0, |a| a.step),
                         result
                             .as_ref()
                             .ok()
@@ -274,6 +386,8 @@ mod tests {
         content: false,
         round: None,
         linearize: false,
+        preset: Preset::Lossless,
+        budget: None,
     };
 
     /// A one-page file whose content stream is stored unfiltered, with one
@@ -604,31 +718,7 @@ mod tests {
     /// the copy is much smaller; with pictures off none of it happens.
     #[test]
     fn pictures_change_only_when_asked() {
-        let side = 300_usize;
-        let mut seed = 12_345_u32;
-        let pixels: String = (0..side * side)
-            .map(|_| {
-                seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
-                char::from(b'0' + ((seed >> 16) % 64) as u8)
-            })
-            .collect();
-        let content = "q 100 0 0 100 0 0 cm /Im1 Do Q\n";
-        let copy = file(&[
-            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
-            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
-            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 4 0 R \
-             /Resources << /XObject << /Im1 5 0 R >> >> >>"
-                .to_string(),
-            format!(
-                "<< /Length {} >>\nstream\n{content}endstream",
-                content.len()
-            ),
-            format!(
-                "<< /Type /XObject /Subtype /Image /Width {side} /Height {side} \
-                 /ColorSpace /DeviceGray /BitsPerComponent 8 /Length {} >>\nstream\n{pixels}\nendstream",
-                pixels.len()
-            ),
-        ]);
+        let copy = noise();
         let off = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
         assert_eq!(off.pictures, Tally::default(), "{:?}", off.pictures);
         let asked = Choices {
@@ -781,6 +871,81 @@ endstream",
             "{said}"
         );
         assert!(done.unrounded.is_empty(), "{done:?}");
+    }
+
+    /// A 300-pixel noise picture drawn 100 pt wide (216 ppi), stored
+    /// unfiltered.
+    fn noise() -> Vec<u8> {
+        let side = 300_usize;
+        let mut seed = 12_345_u32;
+        let pixels: String = (0..side * side)
+            .map(|_| {
+                seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+                char::from(b'0' + ((seed >> 16) % 64) as u8)
+            })
+            .collect();
+        let content = "q 100 0 0 100 0 0 cm /Im1 Do Q\n";
+        file(&[
+            "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Contents 4 0 R \
+             /Resources << /XObject << /Im1 5 0 R >> >> >>"
+                .to_string(),
+            format!(
+                "<< /Length {} >>\nstream\n{content}endstream",
+                content.len()
+            ),
+            format!(
+                "<< /Type /XObject /Subtype /Image /Width {side} /Height {side} \
+                 /ColorSpace /DeviceGray /BitsPerComponent 8 /Length {} >>\nstream\n{pixels}\nendstream",
+                pixels.len()
+            ),
+        ])
+    }
+
+    /// Screen as the starting point stores the noise picture as JPEG at
+    /// 96 ppi, and Lossless leaves it.
+    #[test]
+    fn the_screen_preset_shrinks_the_picture_and_lossless_does_not() {
+        let copy = noise();
+        let plain = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        assert_eq!(plain.pictures, Tally::default(), "{:?}", plain.pictures);
+        let screen = Choices {
+            preset: Preset::Screen,
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), screen).expect("optimizes");
+        let tally = done.pictures;
+        assert!(
+            tally.resized == 1 && tally.jpeg == 1 && tally.lossy,
+            "{tally:?}"
+        );
+    }
+
+    /// A target a third of the plain copy is met by the size search, which
+    /// names the try it kept, and the kept file is within the target.
+    #[test]
+    fn a_size_target_is_met_and_its_tries_are_named() {
+        let copy = noise();
+        let plain = recompress(&copy, &Settings::default(), ALL).expect("optimizes");
+        let plain_len = plain.bytes.map_or(copy.len(), |b| b.len()) as u64;
+        assert!(plain.budget.is_none());
+        let max = plain_len / 3;
+        let asked = Choices {
+            budget: Some(max),
+            ..ALL
+        };
+        let done = recompress(&copy, &Settings::default(), asked).expect("optimizes");
+        let budget = done.budget.as_ref().expect("a search ran");
+        let chosen = budget.chosen.expect("a try was kept");
+        assert!(budget.met && budget.attempts.len() >= 2, "{budget:?}");
+        assert!(
+            chosen.quality.is_some() && chosen.bytes <= max,
+            "{budget:?}"
+        );
+        let written = done.bytes.as_ref().expect("written").len() as u64;
+        assert!(written <= max, "{written} B against {max} B");
+        assert!(done.pictures.lossy, "{:?}", done.pictures);
     }
 
     fn file(bodies: &[String]) -> Vec<u8> {

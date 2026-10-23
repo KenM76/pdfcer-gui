@@ -26,6 +26,8 @@ pub mod archive;
 pub mod compact;
 /// The compact window's picture options.
 pub mod compact_images;
+/// The compact window's starting point and size target.
+pub mod compact_target;
 /// The startup offer O173 asks for - *"Ask once with a don't show me again
 /// check box option"*. Its header carries the three ways the question can be
 /// answered and which two of them stop it coming back.

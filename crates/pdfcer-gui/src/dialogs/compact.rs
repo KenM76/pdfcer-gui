@@ -11,6 +11,7 @@ use pdfcer_core::space_audit::SpaceCategory;
 use crate::app::actions::Action;
 use crate::app::state::{OpenDoc, Status};
 use crate::dialogs::compact_images::{self, Pictures};
+use crate::dialogs::compact_target;
 use crate::dialogs::recompress::{Choices, Job, Recompressed};
 use crate::text::compact as t;
 use pdfcer_core::optimize::{DiscardObject, DiscardOptions};
@@ -120,6 +121,8 @@ impl CompactDialog {
                 content: true,
                 round: None,
                 linearize: false,
+                preset: pdfcer_core::optimize::Preset::Lossless,
+                budget: None,
             },
             recompress: Recompress::Off,
             settings: doc.settings.clone(),
@@ -311,6 +314,8 @@ impl CompactDialog {
     /// the work again from the plain copy; the running job is dropped.
     fn recompress_row(&mut self, ui: &mut Ui) {
         let c = &mut self.choices;
+        let plain = self.bytes.len() as u64;
+        let aimed = compact_target::rows(ui, &mut c.preset, &mut c.budget, plain);
         let toggled = [
             (
                 &mut c.recompress,
@@ -345,7 +350,7 @@ impl CompactDialog {
         crate::diag::ui_rect_visible(REGION_LINEARIZE, web.rect, ui.clip_rect());
         let toggled = web.changed() || toggled;
         let toggled = discard_switches(ui, &mut c.discard) || toggled;
-        let toggled = compact_images::switches(ui, &mut c.pictures) || toggled;
+        let toggled = compact_images::switches(ui, &mut c.pictures) || toggled || aimed;
         if toggled {
             self.recompress = Recompress::Off;
             self.space = None;
@@ -521,6 +526,9 @@ fn round_row(
 
 /// What a finished recompression did, one small line each.
 fn done_lines(ui: &mut Ui, done: &Recompressed) {
+    if let Some(budget) = &done.budget {
+        compact_target::done_lines(ui, budget);
+    }
     // What a discarded result did is not in the copy, so only
     // the engine's notes are said then.
     if done.bytes.is_none() {

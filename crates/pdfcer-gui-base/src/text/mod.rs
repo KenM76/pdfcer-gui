@@ -73,6 +73,8 @@ pub mod commands;
 /// as the canonical one.
 pub mod compact;
 pub mod compact_images;
+/// The compact window's starting point and size target.
+pub mod compact_target;
 /// Every word File ▸ Straighten scans says. Consumed by
 /// `pdfcer_gui::dialogs::deskew`.
 pub mod deskew;
