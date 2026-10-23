@@ -86,49 +86,17 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 **GUI_ROADMAP surfaces with no route (coordinator: no engine change, no operator decision).** Insert blank pages is built (Pages ▸ Insert ▸ Insert blank…; `blank_pages_are_inserted_as_one_step`, falsified four ways). Building it found that every page insert in a continuous display left the view where it was; the insert now scrolls to the first page it added. `page_ops_round_trip`, `a_shift_drag_between_documents_moves_the_pages` and `pages_can_be_copied_and_pasted` take that landing too and SKIP under `--no-input`, so they are undriven against it until a with-input run. A page named twice in one engine insert aliases one page object (G185); `app::actions::insertruns` works around it. Bates numbering across several files is built (Tools ▸ Batch ▸ Bates number files…, `dialogs::bates_batch`; `bates_numbering_across_files`, falsified four ways): it numbers files in the listed order as copies, carries the count, refuses signed and unnumberable files in their rows, and shares `BatesForm` with Pages ▸ Stamp so the two continue one run.
 
-**Start here on `continue`.** The latest release is `v0.5.0-dev.20261006.3`
-(tree `6bb392eb`, engine v0.79.0), packaged with `--no-update`, smoke-launched
-off-screen clean, with PaddleOCR-VL copied into its slot's `models/`. It
-carries row 141 (underline and strikethrough tied to the text), row 82 (a
-letter drawn two ways named) and row 74 (the current layer). Since then G120 to G125, G127 to G131, the strike source, row 74 (every adder,
-SVG and EMF included, on the current layer) and row 85 (editing an encrypted file
-as far as its password allows) are wired and driven, the pin is v0.80.0
-(`dc39139b`), and `v0.5.0-dev.20261006.5` is published (tree `5e897a5e`).
-Since that build: G132 consumed (the engine's `best_fit.prc` drives the
-viewer's best-fit count, `the_3d_viewer_says_a_mesh_was_best_fit`); G126
-consumed (the widget dash row reads `Widget::border_dash`); the 3D viewer
-draws texture pictures through `render_model` and names any it could only
-draw flat (`the_3d_viewer_draws_a_texture`); and a read-only part list from
-`PrcFile::model_tree` sits beside the picture
-(`the_3d_viewer_lists_the_model_tree`). Filed: G134 (no mesh-to-node link, so
-the list cannot hide or pick a part) and G135 (no PRC fixture names, hides or
-suppresses a part; `model_tree()` errors on four tree-less fixtures).
-Waiting for the next engine tag: `AssembledModel::{left_out_parts,
-best_fit_parts}` to name those parts in the viewer, and G133's fix (engine
-Pass 516.0, on engine main): `ocr_reading_order` reads 7 blocks for the
-fixture's 4 paragraphs because the engine over-splits at a short last line;
-tighten the check to 4 when the tag lands. G134 and G135 are also fixed on
-engine main (`AssembledModel::mesh_placements`, `tree`,
-`fixtures/synthetic/prc/named-tree.prc`) and wait for the same tag. G137
-asks for `Field::own_quadding`; when it lands delete `states_own_quadding`. Also waiting for that tag: inserted and pasted pages carry their form fields (`InsertOutcome::{fields_carried, fields_renamed, fields_split, acroform_created}`). Then `text::pages::inserted` reports carried and renamed fields, warns on split ones only when non-zero, and the comment in `actions::pages` claiming `/AcroForm` is not merged gets deleted. Sum the new fields in `insertruns`. Next, in order: the
-rest of ENGINE_BACKLOG (17 wanted, 3 blocked). Every field redraw says what it decided about the text
-(`a_redraw_says_what_it_did_to_a_fields_text`). Document properties names a page box not
-used as written (`document_properties_say_which_page_boxes_were_not_used_as_written`). The Objects panel says where its list and
-the page disagree (`objects_panel_says_where_the_list_and_page_disagree`). A field's Alignment can go back
-to Inherited (`a_fields_alignment_can_go_back_to_inherited`). Security notes names password
-values still stored in earlier saved versions
-(`security_notes_say_old_passwords_are_kept`). A comment stored as formatted
-text (`/RC`) names its formatting under the note in the Comments panel
-(`a_formatted_comment_says_it_is_formatted`, on `fixtures/rich-comment.pdf`).
-Underlining part of a tagged
-paragraph says on the status line that the structure tree does not record it
-(`underlining_part_of_a_tagged_paragraph_says_it_is_not_recorded`, on
-`fixtures/tagged-paragraph.pdf`; `tagged-report.pdf` has no `/ParentTree`, so
-the engine finds no elements there). `v0.5.0-dev.20261015.4` (tab glyphs, mixed-look paragraphs, sideways OCR edits upright; engine v0.83.0) is published from `e4dcbb95` and sits in
-`pdfcer-gui1`, marked latest; `pdfcer-gui2` holds `.3`, and the next release replaces it. The pin is v0.83.0: v0.82.0's downloads, OCR upscale, smooth OCR magnify and G186 are wired; G170 to G173 are not.
-Releases go out when the main session judges them appropriate, and the main
-session pushes and publishes; this role commits locally and never pushes. The
-pin moves to engine tags only. In order:
+**Start here on `continue`.** The latest release is `v0.5.0-dev.20261023.2`
+(tree `3bc0926a`, engine v0.94.0); read it back with the Last-release row's
+command rather than trusting this sentence. O323 (overprint preview), O324
+(the Forms tab) and O325 (every size reduction reachable from menus, windows
+and right-click) shipped in it and await his check in `OPERATOR_REQUESTS.md`.
+The engine's main is ahead of v0.94.0; the pin moves to tags only, in its own
+commit, with full gates. A release follows each new engine tag once its
+features are wired: package with `--no-update` from a clean tree, smoke-launch
+a scratch copy off-screen, push main, then `gh release create` without
+`--prerelease`, and mirror to OneDrive. Between releases commit locally and
+never push. In order:
 
 **O279, paste from another program: plan steps P0 to P7 and P10 built and driven**
 (`docs/plans/PASTEIN_PLAN.md`; P8, P9 wait on G093, G094, and P11 on Ken, P11 deferred).
