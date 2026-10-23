@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 33805a156fba15fc445f63bb87e2d9ae129dca37
+# baseline: 77d6adcff505ecbabed6bb80a5a8228a2a17be38
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 9741
+# items: 9843
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives as the engine's own warning, shown verbatim.
@@ -502,6 +502,7 @@ pdfcer-core const pdfcer_core::ocr::vl_tokenizer::MAX_VOCAB
 pdfcer-core const pdfcer_core::offpage::BAND_MARGIN
 pdfcer-core const pdfcer_core::offpage::DEFAULT_TOLERANCE_PT
 pdfcer-core const pdfcer_core::optimize::DEFAULT_SMOOTH_TOLERANCE
+pdfcer-core const pdfcer_core::optimize::budget::LAST_STEP
 pdfcer-core const pdfcer_core::optimize::image::QUALITY_LEVELS
 pdfcer-core const pdfcer_core::optimize::image::convert::COLORS_RANGE
 pdfcer-core const pdfcer_core::optimize::profile::MAX_EXTENDS_DEPTH
@@ -763,7 +764,9 @@ pdfcer-core enum pdfcer_core::optimize::OptimizedFile
 pdfcer-core enum pdfcer_core::optimize::Refusal
 pdfcer-core enum pdfcer_core::optimize::SkipReason
 pdfcer-core enum pdfcer_core::optimize::StreamAction
+pdfcer-core enum pdfcer_core::optimize::budget::BudgetError
 pdfcer-core enum pdfcer_core::optimize::cleanup::BrokenTarget
+pdfcer-core enum pdfcer_core::optimize::compat::VersionFeature
 pdfcer-core enum pdfcer_core::optimize::content::ContentSkip
 pdfcer-core enum pdfcer_core::optimize::content::Numbers
 pdfcer-core enum pdfcer_core::optimize::content::Rounding
@@ -1625,6 +1628,7 @@ pdfcer-core field pdfcer_core::edit::NewCheckBox::required
 pdfcer-core field pdfcer_core::edit::NewCheckBox::style
 pdfcer-core field pdfcer_core::edit::NewCheckBox::tooltip
 pdfcer-core field pdfcer_core::edit::NewCheckBox::visibility
+pdfcer-core field pdfcer_core::edit::NewChoiceField::appearance
 pdfcer-core field pdfcer_core::edit::NewChoiceField::border
 pdfcer-core field pdfcer_core::edit::NewChoiceField::chrome
 pdfcer-core field pdfcer_core::edit::NewChoiceField::combo
@@ -1668,6 +1672,7 @@ pdfcer-core field pdfcer_core::edit::NewRadioButton::selected
 pdfcer-core field pdfcer_core::edit::NewRadioButton::style
 pdfcer-core field pdfcer_core::edit::NewRadioButton::tooltip
 pdfcer-core field pdfcer_core::edit::NewRadioButton::visibility
+pdfcer-core field pdfcer_core::edit::NewTextField::appearance
 pdfcer-core field pdfcer_core::edit::NewTextField::border
 pdfcer-core field pdfcer_core::edit::NewTextField::chrome
 pdfcer-core field pdfcer_core::edit::NewTextField::comb
@@ -2529,6 +2534,7 @@ pdfcer-core field pdfcer_core::optimize::OptimizePlan::skipped
 pdfcer-core field pdfcer_core::optimize::OptimizePlan::unembed
 pdfcer-core field pdfcer_core::optimize::OptimizeSettings::allow_signed
 pdfcer-core field pdfcer_core::optimize::OptimizeSettings::cleanup
+pdfcer-core field pdfcer_core::optimize::OptimizeSettings::compatibility
 pdfcer-core field pdfcer_core::optimize::OptimizeSettings::content
 pdfcer-core field pdfcer_core::optimize::OptimizeSettings::discard
 pdfcer-core field pdfcer_core::optimize::OptimizeSettings::images
@@ -2553,6 +2559,16 @@ pdfcer-core field pdfcer_core::optimize::Rule::select
 pdfcer-core field pdfcer_core::optimize::Skipped::action
 pdfcer-core field pdfcer_core::optimize::Skipped::id
 pdfcer-core field pdfcer_core::optimize::Skipped::reason
+pdfcer-core field pdfcer_core::optimize::budget::BudgetAttempt::bytes
+pdfcer-core field pdfcer_core::optimize::budget::BudgetAttempt::ppi
+pdfcer-core field pdfcer_core::optimize::budget::BudgetAttempt::quality
+pdfcer-core field pdfcer_core::optimize::budget::BudgetAttempt::step
+pdfcer-core field pdfcer_core::optimize::budget::BudgetFit::attempts
+pdfcer-core field pdfcer_core::optimize::budget::BudgetFit::file
+pdfcer-core field pdfcer_core::optimize::budget::BudgetFit::met
+pdfcer-core field pdfcer_core::optimize::budget::BudgetFit::plan
+pdfcer-core field pdfcer_core::optimize::budget::BudgetFit::step
+pdfcer-core field pdfcer_core::optimize::budget::BudgetFit::structure
 pdfcer-core field pdfcer_core::optimize::cleanup::BrokenBookmark::descendants
 pdfcer-core field pdfcer_core::optimize::cleanup::BrokenBookmark::id
 pdfcer-core field pdfcer_core::optimize::cleanup::BrokenBookmark::target
@@ -2566,6 +2582,9 @@ pdfcer-core field pdfcer_core::optimize::cleanup::CleanupOptions::unreferenced_d
 pdfcer-core field pdfcer_core::optimize::cleanup::CleanupPlan::bookmarks
 pdfcer-core field pdfcer_core::optimize::cleanup::CleanupPlan::destinations
 pdfcer-core field pdfcer_core::optimize::cleanup::CleanupPlan::links
+pdfcer-core field pdfcer_core::optimize::compat::FeatureUse::example
+pdfcer-core field pdfcer_core::optimize::compat::FeatureUse::feature
+pdfcer-core field pdfcer_core::optimize::compat::FeatureUse::objects
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::decoded_after
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::decoded_before
 pdfcer-core field pdfcer_core::optimize::content::ContentChange::encoded_as
@@ -2593,6 +2612,7 @@ pdfcer-core field pdfcer_core::optimize::image::ImagePatch::predictor
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::progressive
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::quality
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::reset
+pdfcer-core field pdfcer_core::optimize::image::ImagePatch::ssim
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::threshold
 pdfcer-core field pdfcer_core::optimize::image::ImagePatch::version_raise
 pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::above
@@ -2608,6 +2628,7 @@ pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::ppi
 pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::predictor
 pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::progressive
 pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::quality
+pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::ssim
 pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::threshold
 pdfcer-core field pdfcer_core::optimize::image::ResolvedImage::version_raise
 pdfcer-core field pdfcer_core::optimize::image::Sourced::source
@@ -2637,7 +2658,12 @@ pdfcer-core field pdfcer_core::optimize::image::pipeline::ImageChange::size_afte
 pdfcer-core field pdfcer_core::optimize::image::pipeline::ImageChange::size_before
 pdfcer-core field pdfcer_core::optimize::image::pipeline::JpegQuality::asked
 pdfcer-core field pdfcer_core::optimize::image::pipeline::JpegQuality::source_estimate
+pdfcer-core field pdfcer_core::optimize::image::pipeline::JpegQuality::ssim
 pdfcer-core field pdfcer_core::optimize::image::pipeline::JpegQuality::used
+pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::achieved
+pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::met
+pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::target
+pdfcer-core field pdfcer_core::optimize::image::ssim::SsimPick::trials
 pdfcer-core field pdfcer_core::optimize::objects::ObjectDiscard::bytes
 pdfcer-core field pdfcer_core::optimize::objects::ObjectDiscard::location
 pdfcer-core field pdfcer_core::optimize::objects::ObjectDiscard::object
@@ -4089,7 +4115,9 @@ pdfcer-core fn pdfcer_core::offpage::offpage_bands
 pdfcer-core fn pdfcer_core::offpage::scan_document
 pdfcer-core fn pdfcer_core::offpage::scan_model
 pdfcer-core fn pdfcer_core::offpage::scan_page
+pdfcer-core fn pdfcer_core::optimize::compat::features_used
 pdfcer-core fn pdfcer_core::optimize::image::jpeg_quality::estimate_jpeg_quality
+pdfcer-core fn pdfcer_core::optimize::image::ssim::structural_similarity
 pdfcer-core fn pdfcer_core::optimize::profile::parse
 pdfcer-core fn pdfcer_core::optimize::profile::parse_object
 pdfcer-core fn pdfcer_core::optimize::profile::parse_rule
@@ -4790,6 +4818,7 @@ pdfcer-core method pdfcer_core::edit::NewChoiceField::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewChoiceField::multi_select
 pdfcer-core method pdfcer_core::edit::NewChoiceField::new
 pdfcer-core method pdfcer_core::edit::NewChoiceField::sorted
+pdfcer-core method pdfcer_core::edit::NewChoiceField::with_appearance
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_background
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_border
 pdfcer-core method pdfcer_core::edit::NewChoiceField::with_border_color
@@ -4826,6 +4855,7 @@ pdfcer-core method pdfcer_core::edit::NewRadioButton::with_visibility
 pdfcer-core method pdfcer_core::edit::NewTextField::apply_defaults
 pdfcer-core method pdfcer_core::edit::NewTextField::declining_tooltip
 pdfcer-core method pdfcer_core::edit::NewTextField::new
+pdfcer-core method pdfcer_core::edit::NewTextField::with_appearance
 pdfcer-core method pdfcer_core::edit::NewTextField::with_background
 pdfcer-core method pdfcer_core::edit::NewTextField::with_border
 pdfcer-core method pdfcer_core::edit::NewTextField::with_border_color
@@ -4932,6 +4962,7 @@ pdfcer-core method pdfcer_core::edit::node_shape::EditSession::insert_node_in_fo
 pdfcer-core method pdfcer_core::edit::optimize::EditSession::apply_optimize
 pdfcer-core method pdfcer_core::edit::optimize::EditSession::plan_optimize
 pdfcer-core method pdfcer_core::edit::optimize::EditSession::save_optimized
+pdfcer-core method pdfcer_core::edit::optimize_budget::EditSession::optimize_to_budget
 pdfcer-core method pdfcer_core::edit::rc4_append::EditSession::encryption_refusal
 pdfcer-core method pdfcer_core::edit::rc4_append::EditSession::encryption_refusal_cause
 pdfcer-core method pdfcer_core::edit::rc4_append::EditSession::rc4_append
@@ -5197,6 +5228,9 @@ pdfcer-core method pdfcer_core::optimize::cleanup::CleanupOptions::all
 pdfcer-core method pdfcer_core::optimize::cleanup::CleanupOptions::is_none
 pdfcer-core method pdfcer_core::optimize::cleanup::CleanupOptions::none
 pdfcer-core method pdfcer_core::optimize::cleanup::CleanupPlan::is_empty
+pdfcer-core method pdfcer_core::optimize::compat::FeatureUse::above
+pdfcer-core method pdfcer_core::optimize::compat::VersionFeature::introduced
+pdfcer-core method pdfcer_core::optimize::compat::VersionFeature::label
 pdfcer-core method pdfcer_core::optimize::content::ContentPatch::new
 pdfcer-core method pdfcer_core::optimize::content::ContentPatch::parse
 pdfcer-core method pdfcer_core::optimize::content::Tolerance::as_units
@@ -5233,6 +5267,11 @@ pdfcer-core method pdfcer_core::optimize::image::keyed::KeyedResample::from_name
 pdfcer-core method pdfcer_core::optimize::image::pipeline::ImageChange::is_lossy
 pdfcer-core method pdfcer_core::optimize::image::predict::Predictor::as_str
 pdfcer-core method pdfcer_core::optimize::image::predict::Predictor::from_name
+pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::from_f64_floor
+pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::from_ten_thousandths
+pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::parse
+pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::ten_thousandths
+pdfcer-core method pdfcer_core::optimize::image::ssim::SsimScore::to_f64
 pdfcer-core method pdfcer_core::optimize::image::version_raise::VersionRaise::as_str
 pdfcer-core method pdfcer_core::optimize::image::version_raise::VersionRaise::from_name
 pdfcer-core method pdfcer_core::optimize::objects::DiscardObject::as_str
@@ -5258,6 +5297,7 @@ pdfcer-core method pdfcer_core::outline::DestView::zoom_is_retain
 pdfcer-core method pdfcer_core::outline::Destination::name_lossy
 pdfcer-core method pdfcer_core::outline::DestinationReader::destination
 pdfcer-core method pdfcer_core::outline::DestinationReader::destination_with_diagnostics
+pdfcer-core method pdfcer_core::outline::DestinationReader::named
 pdfcer-core method pdfcer_core::outline::DestinationReader::named_destination_count
 pdfcer-core method pdfcer_core::outline::DestinationReader::named_destinations
 pdfcer-core method pdfcer_core::outline::DestinationReader::new
@@ -6084,10 +6124,13 @@ pdfcer-core struct pdfcer_core::optimize::OptimizeSettings
 pdfcer-core struct pdfcer_core::optimize::PlannedChange
 pdfcer-core struct pdfcer_core::optimize::Rule
 pdfcer-core struct pdfcer_core::optimize::Skipped
+pdfcer-core struct pdfcer_core::optimize::budget::BudgetAttempt
+pdfcer-core struct pdfcer_core::optimize::budget::BudgetFit
 pdfcer-core struct pdfcer_core::optimize::cleanup::BrokenBookmark
 pdfcer-core struct pdfcer_core::optimize::cleanup::BrokenLink
 pdfcer-core struct pdfcer_core::optimize::cleanup::CleanupOptions
 pdfcer-core struct pdfcer_core::optimize::cleanup::CleanupPlan
+pdfcer-core struct pdfcer_core::optimize::compat::FeatureUse
 pdfcer-core struct pdfcer_core::optimize::content::ContentChange
 pdfcer-core struct pdfcer_core::optimize::content::ContentPatch
 pdfcer-core struct pdfcer_core::optimize::content::Tolerance
@@ -6098,6 +6141,8 @@ pdfcer-core struct pdfcer_core::optimize::image::Sourced
 pdfcer-core struct pdfcer_core::optimize::image::convert::Conversion
 pdfcer-core struct pdfcer_core::optimize::image::pipeline::ImageChange
 pdfcer-core struct pdfcer_core::optimize::image::pipeline::JpegQuality
+pdfcer-core struct pdfcer_core::optimize::image::ssim::SsimPick
+pdfcer-core struct pdfcer_core::optimize::image::ssim::SsimScore
 pdfcer-core struct pdfcer_core::optimize::objects::ObjectDiscard
 pdfcer-core struct pdfcer_core::optimize::profile::ProfileError
 pdfcer-core struct pdfcer_core::optimize::resubset::FontUse
@@ -6829,6 +6874,7 @@ pdfcer-core variant pdfcer_core::edit::EditError::DssUnderNoChangesCertification
 pdfcer-core variant pdfcer_core::edit::EditError::EmptyGeometry
 pdfcer-core variant pdfcer_core::edit::EditError::EmptyLayerName
 pdfcer-core variant pdfcer_core::edit::EditError::ExtensionGapOutOfRange
+pdfcer-core variant pdfcer_core::edit::EditError::FieldAppearanceOnMerge
 pdfcer-core variant pdfcer_core::edit::EditError::FieldAuthoring
 pdfcer-core variant pdfcer_core::edit::EditError::FieldAuthoringRefusedXfa
 pdfcer-core variant pdfcer_core::edit::EditError::FieldClipUntyped
@@ -7491,6 +7537,7 @@ pdfcer-core variant pdfcer_core::optimize::OptimizedFile::NotSmaller
 pdfcer-core variant pdfcer_core::optimize::OptimizedFile::Smaller
 pdfcer-core variant pdfcer_core::optimize::Refusal::Encrypted
 pdfcer-core variant pdfcer_core::optimize::Refusal::Signed
+pdfcer-core variant pdfcer_core::optimize::SkipReason::AboveCompatibility
 pdfcer-core variant pdfcer_core::optimize::SkipReason::BelowMinSaving
 pdfcer-core variant pdfcer_core::optimize::SkipReason::BrotliUnderPdfa
 pdfcer-core variant pdfcer_core::optimize::SkipReason::Content
@@ -7505,8 +7552,17 @@ pdfcer-core variant pdfcer_core::optimize::StreamAction::Content
 pdfcer-core variant pdfcer_core::optimize::StreamAction::Image
 pdfcer-core variant pdfcer_core::optimize::StreamAction::Leave
 pdfcer-core variant pdfcer_core::optimize::StreamAction::Recompress
+pdfcer-core variant pdfcer_core::optimize::budget::BudgetError::Optimize
+pdfcer-core variant pdfcer_core::optimize::budget::BudgetError::Write
 pdfcer-core variant pdfcer_core::optimize::cleanup::BrokenTarget::MissingPage
 pdfcer-core variant pdfcer_core::optimize::cleanup::BrokenTarget::UndefinedName
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::Brotli
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::CrossReferenceStreams
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::Jbig2
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::Jpx
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::ObjectStreams
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::OptionalContent
+pdfcer-core variant pdfcer_core::optimize::compat::VersionFeature::Transparency
 pdfcer-core variant pdfcer_core::optimize::content::ContentSkip::Mismatch
 pdfcer-core variant pdfcer_core::optimize::content::Numbers::Keep
 pdfcer-core variant pdfcer_core::optimize::content::Numbers::Shortest
@@ -7547,6 +7603,7 @@ pdfcer-core variant pdfcer_core::optimize::image::keyed::KeyedResample::Subsampl
 pdfcer-core variant pdfcer_core::optimize::image::predict::Predictor::Auto
 pdfcer-core variant pdfcer_core::optimize::image::predict::Predictor::Off
 pdfcer-core variant pdfcer_core::optimize::image::predict::Predictor::Png
+pdfcer-core variant pdfcer_core::optimize::image::skip::ImageSkip::AboveCompatibility
 pdfcer-core variant pdfcer_core::optimize::image::skip::ImageSkip::AlreadyJpeg
 pdfcer-core variant pdfcer_core::optimize::image::skip::ImageSkip::AutoNotSmaller
 pdfcer-core variant pdfcer_core::optimize::image::skip::ImageSkip::BadColourSpace
@@ -7730,6 +7787,7 @@ pdfcer-core variant pdfcer_core::settings::MaskResample::BoxAverage
 pdfcer-core variant pdfcer_core::settings::MaskResample::Nearest
 pdfcer-core variant pdfcer_core::settings::MeshPatchPadding::None
 pdfcer-core variant pdfcer_core::settings::MeshPatchPadding::PerRecord
+pdfcer-core variant pdfcer_core::settings::MinifyFilter::AreaAverage
 pdfcer-core variant pdfcer_core::settings::MinifyFilter::PointSample
 pdfcer-core variant pdfcer_core::settings::MinifyFilter::Smooth
 pdfcer-core variant pdfcer_core::settings::MissingAppearanceState::FirstEntry
@@ -8836,6 +8894,7 @@ pdfcer-render const pdfcer_render::profile::CLIP_BUCKET_EDGES_US
 pdfcer-render const pdfcer_render::profile::CLIP_REUSE_BUCKETS
 pdfcer-render const pdfcer_render::profile::CLIP_REUSE_EDGES
 pdfcer-render const pdfcer_render::profile::CLIP_TOP_N
+pdfcer-render const pdfcer_render::separation_preview::PROCESS_INKS
 pdfcer-render const pdfcer_render::shading::RAMP_SAMPLES
 pdfcer-render enum pdfcer_render::RenderError
 pdfcer-render enum pdfcer_render::annot::AnnotationClass
@@ -8875,6 +8934,7 @@ pdfcer-render enum pdfcer_render::mesh::Shade
 pdfcer-render enum pdfcer_render::overprint::Component
 pdfcer-render enum pdfcer_render::overprint::ComponentRule
 pdfcer-render enum pdfcer_render::overprint::SourceKind
+pdfcer-render enum pdfcer_render::overprint_preview::OverprintPreview
 pdfcer-render enum pdfcer_render::shading::Geometry
 pdfcer-render enum pdfcer_render::shading::GradientKind
 pdfcer-render enum pdfcer_render::shading::PaintRoute
@@ -8884,6 +8944,7 @@ pdfcer-render enum pdfcer_render::text::CidToGid
 pdfcer-render enum pdfcer_render::text::FontKind
 pdfcer-render enum pdfcer_render::text::UnsupportedFont
 pdfcer-render enum pdfcer_render::type3::GlyphColorSource
+pdfcer-render enum pdfcer_render::visual_diff::VisualDiffError
 pdfcer-render field pdfcer_render::PageInk::composites_in_ink
 pdfcer-render field pdfcer_render::PageInk::source
 pdfcer-render field pdfcer_render::RegionGeometry::ctm
@@ -8984,8 +9045,10 @@ pdfcer-render field pdfcer_render::font::RenderOptions::max_cmyk_buffer_bytes
 pdfcer-render field pdfcer_render::font::RenderOptions::mesh_patch_padding
 pdfcer-render field pdfcer_render::font::RenderOptions::missing_as
 pdfcer-render field pdfcer_render::font::RenderOptions::omit_annotations
+pdfcer-render field pdfcer_render::font::RenderOptions::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderOptions::page_blend_space_source
+pdfcer-render field pdfcer_render::font::RenderOptions::separation_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::spot_colorant_device_model
 pdfcer-render field pdfcer_render::font::RenderOptions::stroke_display
 pdfcer-render field pdfcer_render::font::RenderOptions::subpixel_culling
@@ -9000,6 +9063,7 @@ pdfcer-render field pdfcer_render::font::RenderPolicy::mask_resample
 pdfcer-render field pdfcer_render::font::RenderPolicy::max_cmyk_buffer_bytes
 pdfcer-render field pdfcer_render::font::RenderPolicy::mesh_patch_padding
 pdfcer-render field pdfcer_render::font::RenderPolicy::missing_as
+pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderPolicy::page_blend_space_source
 pdfcer-render field pdfcer_render::font::RenderPolicy::spot_colorant_device_model
@@ -9117,6 +9181,10 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::images_rendered
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_uncalibrated_colorimetry
 pdfcer-render field pdfcer_render::interpret::Diagnostics::images_unsupported
 pdfcer-render field pdfcer_render::interpret::Diagnostics::ink_probe
+pdfcer-render field pdfcer_render::interpret::Diagnostics::inks
+pdfcer-render field pdfcer_render::interpret::Diagnostics::inks_forced_subtractive
+pdfcer-render field pdfcer_render::interpret::Diagnostics::inks_hidden
+pdfcer-render field pdfcer_render::interpret::Diagnostics::inks_unmatched
 pdfcer-render field pdfcer_render::interpret::Diagnostics::jpx_smask_in_data_preblended
 pdfcer-render field pdfcer_render::interpret::Diagnostics::lzw_framing_anomalies
 pdfcer-render field pdfcer_render::interpret::Diagnostics::mask_applied
@@ -9214,6 +9282,7 @@ pdfcer-render field pdfcer_render::profile::Counters::clips
 pdfcer-render field pdfcer_render::profile::Counters::paints
 pdfcer-render field pdfcer_render::profile::Counters::paints_cullable
 pdfcer-render field pdfcer_render::profile::Counters::paints_unclipped
+pdfcer-render field pdfcer_render::separation_preview::SeparationPreview::hidden
 pdfcer-render field pdfcer_render::shading::GradientSpec::alpha
 pdfcer-render field pdfcer_render::shading::GradientSpec::extend
 pdfcer-render field pdfcer_render::shading::GradientSpec::kind
@@ -9294,6 +9363,18 @@ pdfcer-render field pdfcer_render::type3::Type3Font::font_matrix
 pdfcer-render field pdfcer_render::type3::Type3Font::glyph_names
 pdfcer-render field pdfcer_render::type3::Type3Font::resources
 pdfcer-render field pdfcer_render::type3::Type3Font::widths
+pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::height
+pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::width
+pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::x
+pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::y
+pdfcer-render field pdfcer_render::visual_diff::PageDiff::changed_pixels
+pdfcer-render field pdfcer_render::visual_diff::PageDiff::changed_region
+pdfcer-render field pdfcer_render::visual_diff::PageDiff::max_delta
+pdfcer-render field pdfcer_render::visual_diff::PageDiff::pixels
+pdfcer-render field pdfcer_render::visual_diff::PageDiff::ssim
+pdfcer-render field pdfcer_render::visual_diff::VisualDiffOptions::render
+pdfcer-render field pdfcer_render::visual_diff::VisualDiffOptions::scale
+pdfcer-render field pdfcer_render::visual_diff::VisualDiffOptions::threshold
 pdfcer-render fn pdfcer_render::annot::appearance_placement
 pdfcer-render fn pdfcer_render::blend_nonsep::blend
 pdfcer-render fn pdfcer_render::compositor::composite_element
@@ -9364,6 +9445,9 @@ pdfcer-render fn pdfcer_render::render_page_with_view
 pdfcer-render fn pdfcer_render::svg::export_svg
 pdfcer-render fn pdfcer_render::svg::export_svg_view
 pdfcer-render fn pdfcer_render::text::load
+pdfcer-render fn pdfcer_render::visual_diff::diff_heatmap
+pdfcer-render fn pdfcer_render::visual_diff::diff_rendered
+pdfcer-render fn pdfcer_render::visual_diff::visual_diff
 pdfcer-render fn pdfcer_render::will_composite_in_cmyk
 pdfcer-render method pdfcer_render::annot::AnnotationClass::of_subtype
 pdfcer-render method pdfcer_render::annot::AnnotationScope::paints_class
@@ -9449,8 +9533,10 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_max_cmyk_buffer_by
 pdfcer-render method pdfcer_render::font::RenderOptions::with_mesh_patch_padding
 pdfcer-render method pdfcer_render::font::RenderOptions::with_missing_as
 pdfcer-render method pdfcer_render::font::RenderOptions::with_omit_annotations
+pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_zero_tint_scope
 pdfcer-render method pdfcer_render::font::RenderOptions::with_page_blend_space_source
+pdfcer-render method pdfcer_render::font::RenderOptions::with_separation_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_spot_colorant_device_model
 pdfcer-render method pdfcer_render::font::RenderOptions::with_view_magnification
 pdfcer-render method pdfcer_render::font::augment::installed::InstalledFaceAugmenter::from_environment
@@ -9517,6 +9603,7 @@ pdfcer-render method pdfcer_render::mesh::Mesh::primitive_count
 pdfcer-render method pdfcer_render::mesh::MeshRefusal::reason
 pdfcer-render method pdfcer_render::overprint::ComponentRule::apply
 pdfcer-render method pdfcer_render::overprint::ComponentRule::preserves_backdrop
+pdfcer-render method pdfcer_render::overprint_preview::OverprintPreview::simulates
 pdfcer-render method pdfcer_render::profile::Ablation::confounds
 pdfcer-render method pdfcer_render::profile::Ablation::is_none
 pdfcer-render method pdfcer_render::profile::Ablation::label
@@ -9529,6 +9616,9 @@ pdfcer-render method pdfcer_render::profile::Counters::clip_repeat_pct
 pdfcer-render method pdfcer_render::profile::Counters::cullable_pct
 pdfcer-render method pdfcer_render::profile::Counters::mean_clip_accum_pct
 pdfcer-render method pdfcer_render::profile::Counters::mean_clip_indiv_pct
+pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::hides
+pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::new
+pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::with_hidden
 pdfcer-render method pdfcer_render::shading::ColorRamp::at
 pdfcer-render method pdfcer_render::shading::ColorRamp::at_cmyk
 pdfcer-render method pdfcer_render::shading::ColorRamp::build
@@ -9572,6 +9662,9 @@ pdfcer-render method pdfcer_render::type3::Type3Font::advance_text_space
 pdfcer-render method pdfcer_render::type3::Type3Font::bbox_is_sentinel
 pdfcer-render method pdfcer_render::type3::Type3Font::load
 pdfcer-render method pdfcer_render::type3::Type3Font::proc_for
+pdfcer-render method pdfcer_render::visual_diff::PageDiff::changed
+pdfcer-render method pdfcer_render::visual_diff::VisualDiffOptions::with_scale
+pdfcer-render method pdfcer_render::visual_diff::VisualDiffOptions::with_threshold
 pdfcer-render static pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER
 pdfcer-render struct pdfcer_render::PageInk
 pdfcer-render struct pdfcer_render::RegionGeometry
@@ -9627,6 +9720,7 @@ pdfcer-render struct pdfcer_render::mesh::Patch
 pdfcer-render struct pdfcer_render::mesh::Triangle
 pdfcer-render struct pdfcer_render::profile::Ablation
 pdfcer-render struct pdfcer_render::profile::Counters
+pdfcer-render struct pdfcer_render::separation_preview::SeparationPreview
 pdfcer-render struct pdfcer_render::shading::ColorRamp
 pdfcer-render struct pdfcer_render::shading::GradientSpec
 pdfcer-render struct pdfcer_render::shading::Shading
@@ -9642,6 +9736,9 @@ pdfcer-render struct pdfcer_render::text::SimpleFont
 pdfcer-render struct pdfcer_render::text::TextObject
 pdfcer-render struct pdfcer_render::text::TextState
 pdfcer-render struct pdfcer_render::type3::Type3Font
+pdfcer-render struct pdfcer_render::visual_diff::ChangedRegion
+pdfcer-render struct pdfcer_render::visual_diff::PageDiff
+pdfcer-render struct pdfcer_render::visual_diff::VisualDiffOptions
 pdfcer-render variant pdfcer_render::RenderError::BadRasterSize
 pdfcer-render variant pdfcer_render::RenderError::Cancelled
 pdfcer-render variant pdfcer_render::RenderError::Content
@@ -9831,6 +9928,8 @@ pdfcer-render variant pdfcer_render::overprint::SourceKind::Group
 pdfcer-render variant pdfcer_render::overprint::SourceKind::OtherProcess
 pdfcer-render variant pdfcer_render::overprint::SourceKind::ProcessCmykIndirect
 pdfcer-render variant pdfcer_render::overprint::SourceKind::SeparationOrDeviceN
+pdfcer-render variant pdfcer_render::overprint_preview::OverprintPreview::Off
+pdfcer-render variant pdfcer_render::overprint_preview::OverprintPreview::Simulate
 pdfcer-render variant pdfcer_render::shading::Geometry::Axial
 pdfcer-render variant pdfcer_render::shading::Geometry::FunctionBased
 pdfcer-render variant pdfcer_render::shading::Geometry::Mesh
@@ -9857,3 +9956,6 @@ pdfcer-render variant pdfcer_render::text::UnsupportedFont::UnusableProgram
 pdfcer-render variant pdfcer_render::text::UnsupportedFont::VerticalWriting
 pdfcer-render variant pdfcer_render::type3::GlyphColorSource::ShapeAndColor
 pdfcer-render variant pdfcer_render::type3::GlyphColorSource::ShapeOnly
+pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::MissingPage
+pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::Render
+pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::SizeChanged

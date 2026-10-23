@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **33 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `wanted` — a real gap — **44 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -128,17 +128,28 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Embed a supplied U3D/PRC model as a `/3D` annotation, with a poster … | **wired — Edit ▸ Insert ▸ 3D model…, driven (`a_3d_model_is_placed_listed_and_saved_back`); no poster yet, the engine's placeholder shows.** `EditSession::add_3d_annotation` takes the model bytes and a poster; the shell owes a file picker and a placement rectangle, reached from Insert. The engine renders no 3D scene (refused on scope), so the canvas shows the poster, which is what saved content shows too. Its refusals arrive as `EditError::ThreeD`, and the annotation it writes lists as `AnnotKind::ThreeD`. |
 | Page labels — read and set (Acrobat's Number Pages) … | **wanted — the label-keeping page verbs only.** Reading labels and the Number pages window shipped (the page-labels row under `shipped`). `pdfcer_core::page_labels` (`page_labels`, `label_ranges`, `LabelFormat`, `LabelStyle`) reads what each page shows; `EditSession::set_page_labels` / `clear_page_labels` write it as one undo entry, refusing with `EditError::InvertedPageRange`. `pageops::extract_with_labels` is offered by Pages ▸ Extract…'s *Keep the page labels*. Still wanted: the label-keeping page verbs (`reorder_pages_with_labels`, `delete_pages_with_labels`, `insert_pages_with`) matter only where Acrobat offers the choice: extract, split and page paste already keep labels by default. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
+| **Reduce to a target file size ("fit under N MB")** — `pdfcer_core::edit::optimize_budget` (`EditSession::optimize_to_budget`), `pdfcer_core::optimize::budget` (`BudgetAttempt`, `BudgetError`, `LAST_STEP`) | **wanted — O325, Save a compacted copy's *Target size*.** The engine walks picture resolution and quality down until the copy fits and reports each attempt; the dialog would take a size, show the attempts and say when the budget could not be met. |
+| **Reduce File Size by compatibility target (PDF version)** — `pdfcer_core::optimize::compat`, `SkipReason::AboveCompatibility`, `ImageSkip::AboveCompatibility` | **wanted — O325, Acrobat's *Make compatible with*.** A version chooser in Save a compacted copy; a step the version forbids is skipped and names the version as its reason. |
+| **Features used versus the target (report)** — lists … | **wanted — O325, beside the version chooser**: what the file uses that needs a newer version, with an example object, so the operator sees why a target cannot be met. Engine: `features_used`, `FeatureUse`, `VersionFeature`. |
+| **Quality target (SSIM)** — `image(ssim=0.98)` … | **wanted — O325, a *Keep pictures looking the same* level in Save a compacted copy's picture settings**, reporting the similarity each picture reached. Engine: `pdfcer_core::optimize::image::ssim` (`structural_similarity`, `SsimPick`, `SsimScore`), `ImagePatch::ssim`, `ResolvedImage::ssim`, `JpegQuality::ssim`. |
+| **Before/after visual-diff report** — `pdfcer_render::visual_diff` (`PageDiff`, `ChangedRegion`, `VisualDiffError`) | **wanted — O325, a before/after check in Save a compacted copy**: per page, how many pixels changed and where, so a lossy setting is judged on the drawing, not on the byte count. |
+| State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::with_appearance`, `NewChoiceField::with_appearance`, `EditError::FieldAppearanceOnMerge` <!--namesake:with_appearance--> (the shell's two calls are the edit verb's, not the creation builders') | **wanted — replaces the shell's add, `edit_field`, `coalesce_last` sequence in `app::actions::forms::author`** with one command; a field joining an existing name is refused with a style, and is placed in that field's own style instead, said on the status line. |
+| Encode `/BrotliDecode` streams (write side), shipped … | **wanted — O325, a Brotli choice in Save a compacted copy**, with the hover saying that readers older than PDF 2.0 cannot open the result. |
+| **Change an image's format, on all images, a class or one image** … | **wanted in part.** Save a compacted copy's picture settings offer Keep, Lossless (Flate) and Smallest (`ImageEncode::Auto`) in `dialogs::compact_images`; JPEG, JPEG 2000, CCITT, JBIG2, RunLength and LZW by choice, and per class or per picture, are not offered (O325). |
 
 ### Fonts & rendering
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
+| **Overprint preview switch** — render with overprint simulated … | **wanted — O323 part 1, View ▸ Display ▸ Overprint Preview**, on by default, canvas only; print and export keep simulating. Engine: `pdfcer_render::overprint_preview` (`OverprintPreview::Simulate`, `OverprintPreview::Off`), `RenderOptions::overprint_preview`, `RenderOptions::with_overprint_preview`, `RenderPolicy::overprint_preview`. |
+| **Separation preview (hide inks)** — render with chosen … | **wanted — O323 part 2, an Output Preview panel**: each process and spot ink with a show box, the page drawn from the shown inks, and the forced-to-CMYK and unmatched-name counts said on the panel. Engine: `pdfcer_render::separation_preview` (`SeparationPreview`, `PROCESS_INKS`), `RenderOptions::separation_preview`, `RenderOptions::with_separation_preview`, `Diagnostics::inks_hidden`, `Diagnostics::inks_unmatched`, `Diagnostics::inks_forced_subtractive`. |
+| **Area-averaged image minification** — a downscaled scan … | **wanted — O322 part 1, a third choice under Settings ▸ Images ▸ minify**, so a scan shown small does not shimmer or drop hairlines. Engine: `MinifyFilter::AreaAverage`. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `blocked` — waiting on something named — **2 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -156,7 +167,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -167,7 +178,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `declined` — deliberately no surface — **18 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -211,7 +222,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **338 of 391** <!-- counted by tools/walk-engine-backlog.py, 2026-10-22; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **338 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

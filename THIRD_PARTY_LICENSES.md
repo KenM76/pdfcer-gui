@@ -1823,8 +1823,6 @@ Used by:
 - [crypto-primes 0.7.2](https://github.com/entropyxyz/crypto-primes)
 - [self_cell 1.3.0](https://github.com/Voultapher/self_cell)
 - [ureq 3.4.2](https://github.com/algesten/ureq)
-- [zune-core 0.5.3](https://github.com/etemesi254/zune-image)
-- [zune-jpeg 0.5.15](https://github.com/etemesi254/zune-image/tree/dev/crates/zune-jpeg)
 
 ```
                                  Apache License
@@ -6019,6 +6017,8 @@ limitations under the License.
 ### Apache License 2.0
 
 Used by:
+- [zune-core 0.5.3](https://github.com/etemesi254/zune-image)
+- [zune-jpeg 0.5.16-rc3](https://github.com/etemesi254/zune-image/tree/dev/crates/zune-jpeg)
 - [accesskit 0.24.1](https://github.com/AccessKit/accesskit)
 - [accesskit_consumer 0.35.0](https://github.com/AccessKit/accesskit)
 - [accesskit_windows 0.32.1](https://github.com/AccessKit/accesskit)
