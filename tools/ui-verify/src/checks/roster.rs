@@ -190,6 +190,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(repair_form_fonts::RepairingFormFontsReachesTheDocument),
         Box::new(ocr_layer_view::OcrLayerIsShownAndBlended),
         Box::new(ocr_colour_setting::OcrColourIsReadAndReset),
+        Box::new(overprint_default::OverprintDefaultDecidesTheOpen),
         Box::new(smooth_pictures::SmoothPicturesSetting),
         Box::new(off_page_blank_overhang::BlankOverhangIsCountedNotListed),
         Box::new(off_page_wall::AnObjectOffThePageIsDrawnPastItsHaloWall),

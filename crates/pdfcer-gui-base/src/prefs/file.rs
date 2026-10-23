@@ -987,6 +987,7 @@ impl Prefs {
         trust::write_block(&self.trust, &mut out);
         pictures::write_block(&self.pictures, &mut out);
         formstyle::write_block(&self.form_style, &mut out);
+        overprint::write_block(self.overprint_default, &mut out);
 
         out
     }

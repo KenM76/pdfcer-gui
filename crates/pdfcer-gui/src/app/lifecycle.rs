@@ -480,6 +480,7 @@ impl PdfcerApp {
         // fields, but reading one inside a `&mut` of the other reads worse
         // than it compiles.
         let off_page = self.prefs.off_page.for_mode(&ribbon_mode);
+        let overprint_default = self.prefs.overprint_default;
         if let Status::Open(doc) = &mut self.status {
             let remembered = doc.stored_under().and_then(viewer::remembered::recall);
             let display = remembered
@@ -533,6 +534,7 @@ impl PdfcerApp {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("off-page-seed mode={ribbon_mode} on={off_page}")
             });
+            seed_overprint(doc, overprint_default);
         }
 
         // Forget every de-duplicated trace slot, so this document gets its
@@ -855,3 +857,26 @@ fn is_unsupported_structure(err: &DocError) -> bool {
 /// file since 2026-09-10 — see [`tests`]'s header for the seam.
 #[cfg(test)]
 mod tests;
+
+/// Settings ▸ Display's overprint default, decided once as `doc` opens. The
+/// document is read only when the choice depends on it.
+fn seed_overprint(doc: &mut OpenDoc, choice: crate::app::prefs::OverprintDefault) {
+    let claims = if choice.reads_document() {
+        let pages: Vec<_> = doc.pages.iter().map(|p| p.id).collect();
+        pdfcer_gui_base::printclaims::read(&doc.session.graph(), &pages)
+    } else {
+        pdfcer_gui_base::printclaims::PrintClaims::default()
+    };
+    let on = choice.resolve(claims);
+    doc.view.overprint_preview = on;
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "overprint-default choice={} pdfx={} asks={} on={}",
+            choice.id(),
+            u8::from(claims.pdfx),
+            u8::from(claims.overprint),
+            u8::from(on)
+        )
+    });
+}

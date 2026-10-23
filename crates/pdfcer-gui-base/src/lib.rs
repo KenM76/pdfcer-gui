@@ -274,6 +274,9 @@ pub mod displaypiece;
 /// How much memory the page cache may spend.
 pub mod prefscache;
 
+/// What a document claims about how it prints: PDF/X, overprint.
+pub mod printclaims;
+
 /// Which chord means which paste.
 pub mod pastechords;
 

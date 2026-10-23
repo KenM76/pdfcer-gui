@@ -19,6 +19,7 @@ pub mod merge_runs;
 pub mod ocr_colour_setting;
 pub mod ocr_layer_view;
 pub mod off_page_blank_overhang;
+pub mod overprint_default;
 pub mod remove_ocr;
 pub mod repair_form_fonts;
 pub mod run_width;

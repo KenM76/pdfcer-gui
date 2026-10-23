@@ -19,6 +19,8 @@ pub mod ocrlayer;
 /// The extra OCR model folders.
 pub mod ocrmodels;
 pub mod overprint;
+/// The Display page's overprint-preview default.
+pub mod overprintdefault;
 pub mod pictures;
 /// The two print-ready colour controls and the field wash. Its header says
 /// which of the three is there for a weak reason and should move out first if
@@ -38,6 +40,7 @@ pub use look::*;
 pub use nav::*;
 pub use ocrlayer::*;
 pub use overprint::*;
+pub use overprintdefault::*;
 pub use pictures::*;
 pub use print_colour::*;
 pub use redaction::*;

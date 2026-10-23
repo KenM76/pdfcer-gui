@@ -10,8 +10,8 @@ use egui::Ui;
 
 use super::widgets;
 use crate::app::prefs::{
-    MAX_SETTLE_MS, MIN_SETTLE_MS, OpeningFit, PageCache, PasteChords, Prefs, RenderQuality,
-    WheelPaging,
+    MAX_SETTLE_MS, MIN_SETTLE_MS, OpeningFit, OverprintDefault, PageCache, PasteChords, Prefs,
+    RenderQuality, WheelPaging,
 };
 use crate::text::settings as t;
 
@@ -48,6 +48,33 @@ pub fn smooth_pictures(ui: &mut Ui, prefs: &mut Prefs) {
         t::pictures_label(),
         Some(t::pictures_note()),
     );
+}
+
+/// The prefix of each overprint-default choice's region; the choice's id follows.
+pub const OVERPRINT_REGION: &str = "settings.display.overprint."; // ui-text-exempt: trace region prefix, never displayed
+
+/// Whether a document opens with overprint preview on — Acrobat's four answers.
+pub fn overprint_default(ui: &mut Ui, prefs: &mut Prefs) {
+    widgets::header(
+        ui,
+        t::overprint_title(),
+        t::overprint_silence(),
+        t::overprint_radius(),
+    );
+    for choice in OverprintDefault::ALL {
+        let radio = ui.radio_value(
+            &mut prefs.overprint_default,
+            *choice,
+            t::overprint_label(*choice),
+        );
+        let region = format!("{OVERPRINT_REGION}{}", choice.id());
+        crate::diag::ui_rect_visible(&region, radio.rect, ui.clip_rect());
+        ui.label(
+            egui::RichText::new(t::overprint_note(*choice))
+                .small()
+                .weak(),
+        );
+    }
 }
 
 /// How much memory the page cache may hold.

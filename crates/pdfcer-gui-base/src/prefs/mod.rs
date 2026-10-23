@@ -43,6 +43,7 @@ pub mod ocrmodels;
 /// file format — parser and writer together, on [`printing`]'s precedent. See
 /// its header.
 pub mod offpage;
+pub mod overprint;
 pub mod pictures;
 pub mod shortcuts;
 pub mod snapshot;
@@ -85,6 +86,7 @@ pub use formstyle::FormStylePrefs;
 pub use ocrmodels::OcrModelPrefs;
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
+pub use overprint::OverprintDefault;
 pub use pastechords::PasteChords;
 pub use pictures::PicturePrefs;
 pub use shortcuts::ShortcutPrefs;
@@ -388,6 +390,8 @@ pub struct Prefs {
     pub pictures: PicturePrefs,
     /// Forms ▸ Style's look for the next placed field. See [`formstyle`].
     pub form_style: FormStylePrefs,
+    /// Whether a document opens with overprint preview on. See [`overprint`].
+    pub overprint_default: OverprintDefault,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -844,6 +848,7 @@ impl Default for Prefs {
             trust: TrustPrefs::default(),
             pictures: PicturePrefs::default(),
             form_style: FormStylePrefs::default(),
+            overprint_default: OverprintDefault::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install
