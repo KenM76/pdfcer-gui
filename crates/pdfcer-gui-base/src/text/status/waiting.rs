@@ -37,6 +37,21 @@ pub fn tiny_details_skipped(n: usize) -> String {
     }
 }
 
+/// **Overprint preview is off and the page asks for overprint**, so the
+/// canvas is not showing those marks as they will print.
+#[must_use]
+pub fn overprint_preview_off(n: usize) -> String {
+    match n {
+        1 => "Overprint preview is off \u{2014} 1 mark meant to print on top of other ink is \
+              shown covering it instead."
+            .to_owned(),
+        _ => format!(
+            "Overprint preview is off \u{2014} {n} marks meant to print on top of other ink \
+             are shown covering it instead."
+        ),
+    }
+}
+
 /// **The line-weights mode is on and it changed NOTHING in view** —
 /// `OPERATOR_REQUESTS.md` **O137**, and the half this shell asked the engine
 /// for by name.

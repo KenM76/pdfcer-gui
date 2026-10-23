@@ -253,6 +253,13 @@ pub struct ViewState {
     /// default, canvas only, and disclosed with the count it skipped. Part of
     /// the render key for the reason [`Self::line_weights`] is.
     pub skip_tiny_details: bool,
+    /// **`view.overprint_preview`** — composite marks that ask to overprint
+    /// (`RenderOptions::overprint_preview`), as Acrobat's *Overprint Preview*
+    /// does. On by default, which is the engine's default; turning it off
+    /// shows every such mark as a knockout. Canvas only — print and export keep
+    /// the engine's default — and part of the render key like
+    /// [`Self::line_weights`].
+    pub overprint_preview: bool,
     /// **`view.off_page` — may the canvas show, and reach, the marks
     /// that sit outside the sheet?**
     ///
@@ -364,6 +371,7 @@ impl Default for ViewState {
             // named for the weights rather than for the hairline.
             line_weights: true,
             skip_tiny_details: false,
+            overprint_preview: true,
             // Off, and this is the one default that is routinely
             // *overridden* on the way in: `pdfcer_gui::app::prefs::offpage`
             // answers per ribbon mode (Read off, Review and Edit on) and

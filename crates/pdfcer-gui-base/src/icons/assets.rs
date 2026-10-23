@@ -853,6 +853,9 @@ pub(super) const LINE_WEIGHTS: &str = include_str!("assets/line-weights.svg");
 /// `skip-tiny.svg` — the art for [`super::Icon::SkipTiny`].
 pub(super) const SKIP_TINY: &str = include_str!("assets/skip-tiny.svg");
 
+/// `overprint.svg` — the art for [`super::Icon::Overprint`].
+pub(super) const OVERPRINT: &str = include_str!("assets/overprint.svg");
+
 /// `ink-picker.svg` — the art for [`super::Icon::InkPicker`].
 pub(super) const INK_PICKER: &str = include_str!("assets/ink-picker.svg");
 

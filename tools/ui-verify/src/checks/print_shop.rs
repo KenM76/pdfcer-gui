@@ -2,7 +2,9 @@
 //! pattern among them, and View ▸
 //! Display ▸ Skip tiny details leaves out what is too small to see and says
 //! how much. `ink_picker` — Tools ▸ Diagnostics ▸ Ink picker reads the inks at
-//! a click, overprint included.
+//! a click, overprint included. `overprint_preview` — View ▸ Display ▸
+//! Overprint preview starts on and turning it off reaches the render and the
+//! status bar.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/print_shop.md`.
 
@@ -27,6 +29,9 @@ const TINY: &str = "canvas-tiny"; // ui-text-exempt: a trace event name, never d
 const VIEW_TAB: &str = "ribbon.tab.view";
 const SKIP_TINY: &str = "ribbon.item.view.skip_tiny_details";
 const DISCLOSURE: &str = "status-group:tiny-details";
+const OVERPRINT: &str = "canvas-overprint"; // ui-text-exempt: a trace event name, never displayed
+const OVERPRINT_ITEM: &str = "ribbon.item.view.overprint_preview";
+const OVERPRINT_NOTE: &str = "status-group:overprint";
 /// The fixture's 0.2 pt forms, every one under half a pixel at fit.
 const SPECKS: &str = "400";
 const TOOLS_TAB: &str = "ribbon.tab.tools";
@@ -315,6 +320,97 @@ fn picker(
                  showed the reading."
             )));
         }
+    }
+    Ok(None)
+}
+
+/// See the module documentation.
+pub struct OverprintPreviewSwitch;
+
+impl Check for OverprintPreviewSwitch {
+    fn name(&self) -> &'static str {
+        "overprint_preview"
+    }
+
+    fn defect(&self) -> &'static str {
+        "View ▸ Display ▸ Overprint preview is missing, starts off, does not reach the render, \
+         or turns overprint off without the status bar saying so"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven = launch(ctx, &mut report, self.name(), None).and_then(|(session, pointer)| {
+            let outcome = overprint(&mut report, &session, &pointer);
+            let parked = pointer.gone(&session);
+            match outcome? {
+                Some(failure) => Ok(Some(failure)),
+                None => parked.map(|_| None),
+            }
+        });
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// A trace field read as a count; absent or unparsable reads as `None`.
+fn count(line: &TraceLine, key: &str) -> Option<usize> {
+    line.get(key).and_then(|v| v.parse().ok())
+}
+
+/// Simulated by default with the fixture's overprint taking effect; pressed
+/// off, the page still asks for it, none takes effect, and the status bar says so.
+fn overprint(
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    let on =
+        |l: &TraceLine| l.get("mode") == Some("1") && count(l, "requested").is_some_and(|n| n > 0);
+    let Some(before) = await_line(session, OVERPRINT, 0, on)? else {
+        let last = session.trace()?.last(OVERPRINT).map(|l| l.raw.clone());
+        return Ok(Some(format!(
+            "no `{OVERPRINT} mode=1` line with requested>0; last was {last:?}. Overprint preview \
+             must start on, and the fixture's magenta asks for overprint."
+        )));
+    };
+    report.note(format!("before: `{}`", before.raw));
+    if !count(&before, "effective").is_some_and(|n| n > 0) {
+        return Ok(Some(format!(
+            "simulated by default yet no overprint took effect: `{}`.",
+            before.raw
+        )));
+    }
+    let mark = session.trace()?.mark();
+    press(session, pointer, VIEW_TAB)?;
+    let trace = session.trace()?;
+    if declared_in(&trace, UI_RECT, OVERPRINT_ITEM).is_none() {
+        return Ok(Some(format!(
+            "`{OVERPRINT_ITEM}` is not on the View tab. Ribbon items declared: {}.",
+            list(&declared_names(&trace, UI_RECT, "ribbon.item."))
+        )));
+    }
+    press(session, pointer, OVERPRINT_ITEM)?;
+    let off = |l: &TraceLine| {
+        l.get("mode") == Some("0")
+            && count(l, "requested").is_some_and(|n| n > 0)
+            && count(l, "effective") == Some(0)
+    };
+    let Some(after) = await_line(session, OVERPRINT, mark, off)? else {
+        let last = session.trace()?.last(OVERPRINT).map(|l| l.raw.clone());
+        return Ok(Some(format!(
+            "`{OVERPRINT_ITEM}` was pressed and no `{OVERPRINT} mode=0 effective=0` with \
+             requested>0 followed; last was {last:?}. The switch never reached the render."
+        )));
+    };
+    report.note(format!("after: `{}`", after.raw));
+    if declared_in(&session.trace()?, UI_RECT, OVERPRINT_NOTE).is_none() {
+        return Ok(Some(format!(
+            "overprint preview is off on a page that asks for it and `{OVERPRINT_NOTE}` was \
+             never declared: the canvas stopped showing what will print without saying so."
+        )));
     }
     Ok(None)
 }

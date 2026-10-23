@@ -425,9 +425,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 239 → 241: `file.trust_web_sites` and `file.trust_ask_files`, Security ▸ Trust.
     // +1 with 3d: `file.trust_play_3d`, Security ▸ Trust.
     // 241 → 242: `edit.form_use_as_default`, Forms ▸ Manage.
+    // 242 → 243: `view.overprint_preview`, View ▸ Display.
     assert_eq!(
         registry().len(),
-        242 + 2 * usize::from(cfg!(feature = "signing"))
+        243 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -862,9 +863,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 208 → 210: `file.trust_web_sites` names `pick-link`, `file.trust_ask_files`
     // names `open`, both shared. +1 with 3d: `file.trust_play_3d` names `model-3d`.
     // 210 → 211: `edit.form_use_as_default` names `form-field`, shared.
+    // 211 → 212: `view.overprint_preview` names `overprint`, drawn for it.
     assert_eq!(
         named,
-        211 + 2 * usize::from(cfg!(feature = "signing"))
+        212 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

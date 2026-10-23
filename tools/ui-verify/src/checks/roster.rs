@@ -389,6 +389,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(print_shop::InkPickerReadsOverprint),
+        Box::new(print_shop::OverprintPreviewSwitch),
         Box::new(security_notes::SecurityNotesNameTheCoverAndTheActions),
         Box::new(rc4_append::Rc4EditsWaitForTheOperatorAndSayWhatTheyCost),
         Box::new(encrypted_edit::AnEncryptedFileIsEditedUnderThePasswordItOpenedWith),

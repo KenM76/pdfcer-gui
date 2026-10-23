@@ -258,6 +258,7 @@ pub(super) fn tab() -> Tab {
                     // Beside line weights: the other switch that changes the
                     // drawing itself rather than adding furniture.
                     icon_only("view.skip_tiny_details"),
+                    icon_only("view.overprint_preview"),
                     // **LAST, and it is the only member of this
                     // group that changes the LAYOUT.** The three overlays
                     // add furniture; `view.line_weights` changes the

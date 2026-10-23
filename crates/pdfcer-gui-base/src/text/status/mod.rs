@@ -46,7 +46,8 @@ pub use resize::{resize_fixed_size_marker, resize_not_rebuildable};
 /// Re-exported rather than moved-and-repathed.
 pub mod waiting;
 pub use waiting::{
-    line_weights_no_effect, line_weights_off, page_catching_up, tiny_details_skipped,
+    line_weights_no_effect, line_weights_off, overprint_preview_off, page_catching_up,
+    tiny_details_skipped,
 };
 
 pub use selection::{

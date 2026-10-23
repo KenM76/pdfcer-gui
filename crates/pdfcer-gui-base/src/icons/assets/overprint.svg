@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Two inks overlapping, the shared area hatched where one prints over the other:
+       View ▸ Display ▸ Overprint preview. Strokes only; fill is reserved for redaction. -->
+  <circle cx="18" cy="24" r="12" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="30" cy="24" r="12" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M21 18L27 18M20 24L28 24M21 30L27 30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

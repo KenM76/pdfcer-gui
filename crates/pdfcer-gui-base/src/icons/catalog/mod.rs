@@ -1171,6 +1171,9 @@ pub enum Icon {
     /// Leave out shapes too small to see — `view.skip_tiny_details`.
     SkipTiny,
 
+    /// Show overprinting ink as it will print — `view.overprint_preview`.
+    Overprint,
+
     /// Read the ink at a point — `tools.ink_picker`.
     InkPicker,
 

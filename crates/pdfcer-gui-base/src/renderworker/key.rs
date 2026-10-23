@@ -94,6 +94,9 @@ pub struct RenderKey {
     /// (`view.skip_tiny_details`). Discrete, like `stroke_display`: a raster
     /// drawn under the other answer is a different picture.
     skip_tiny: bool,
+    /// Whether overprint was simulated (`view.overprint_preview`). Discrete,
+    /// like `skip_tiny`.
+    overprint: bool,
 }
 
 impl RenderKey {
@@ -120,6 +123,7 @@ impl RenderKey {
             stroke_display,
             region_bits: None,
             skip_tiny: false,
+            overprint: true,
         }
     }
 
@@ -141,6 +145,13 @@ impl RenderKey {
     #[must_use]
     pub fn with_tiny_details_skipped(mut self, skip: bool) -> Self {
         self.skip_tiny = skip;
+        self
+    }
+
+    /// Mark this key as drawn with overprint simulated, or not.
+    #[must_use]
+    pub fn with_overprint(mut self, simulated: bool) -> Self {
+        self.overprint = simulated;
         self
     }
 
@@ -170,7 +181,16 @@ impl RenderKey {
 
     /// The inputs whose change must re-rasterize **immediately**.
     #[must_use]
-    pub fn discrete_inputs(&self) -> (usize, bool, u64, pdfcer_render::font::StrokeDisplay, bool) {
+    pub fn discrete_inputs(
+        &self,
+    ) -> (
+        usize,
+        bool,
+        u64,
+        pdfcer_render::font::StrokeDisplay,
+        bool,
+        bool,
+    ) {
         (
             self.page_index,
             self.annotations,
@@ -183,6 +203,7 @@ impl RenderKey {
             // worst available latency.
             self.stroke_display,
             self.skip_tiny,
+            self.overprint,
         )
     }
 
@@ -209,5 +230,6 @@ impl RenderKey {
         )
         .with_region(request.region)
         .with_tiny_details_skipped(request.subpixel_culling)
+        .with_overprint(request.overprint.simulates())
     }
 }

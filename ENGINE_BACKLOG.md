@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **43 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `wanted` — a real gap — **42 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -141,7 +141,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
-| **Overprint preview switch** — render with overprint simulated … | **wanted — O323 part 1, View ▸ Display ▸ Overprint Preview**, on by default, canvas only; print and export keep simulating. Engine: `pdfcer_render::overprint_preview` (`OverprintPreview::Simulate`, `OverprintPreview::Off`), `RenderOptions::overprint_preview`, `RenderOptions::with_overprint_preview`, `RenderPolicy::overprint_preview`. |
 | **Separation preview (hide inks)** — render with chosen … | **wanted — O323 part 2, an Output Preview panel**: each process and spot ink with a show box, the page drawn from the shown inks, and the forced-to-CMYK and unmatched-name counts said on the panel. Engine: `pdfcer_render::separation_preview` (`SeparationPreview`, `PROCESS_INKS`), `RenderOptions::separation_preview`, `RenderOptions::with_separation_preview`, `Diagnostics::inks_hidden`, `Diagnostics::inks_unmatched`, `Diagnostics::inks_forced_subtractive`. |
 | **Area-averaged image minification** — a downscaled scan … | **wanted — O322 part 1, a third choice under Settings ▸ Images ▸ minify**, so a scan shown small does not shimmer or drop hairlines. Engine: `MinifyFilter::AreaAverage`. |
 
@@ -221,7 +220,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **339 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **340 of 402** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -509,6 +508,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Overprint preview switch** — render with overprint simulated … | **Reachable — View ▸ Display ▸ *Overprint preview* (`view.overprint_preview`, O323 part 1)**, on by default, canvas only; print, export and thumbnails keep `OverprintPreview::Simulate`. Off sets `RenderOptions::overprint_preview` to `OverprintPreview::Off` and is part of the render key; the status bar says how many marks asked for overprint while it is off (`Diagnostics::overprint_requested`). Driven and falsified: `overprint_preview` reads requested=1 effective=1 on, effective=0 off. |
 | An RGB-to-CMYK that keeps the colour — the inverse of `pdfcer_color::color::cmyk_to_srgb` (our `G224`) (the shell calls `cmyk_to_srgb` itself; the row wants its inverse) | **Shipped** — `colourpick::Ink::convert` seeds the CMYK tab with `pdfcer_core::color::srgb_to_cmyk`, and the CMYK the picker shows draws as the colour it replaced. When `CmykFit::in_gamut` is false the picker reads "That colour is outside CMYK; the nearest CMYK colour is used." under the numbers. Driven by `a_part_of_a_placed_drawing_can_be_recoloured`: the switch traces `colour-switched … in_gamut=`, an in-gamut fill re-reads within one count and an out-of-gamut one draws the disclosure. |
 | **Render invisible text visibly** — `RenderOptions::invisible_text`, `pdfcer_render::invisible_text` | **shipped — View ▸ Display ▸ OCR text; request G169.** `canvas::ocrink` renders the visible region through `pdfcer_render::render_page_region` with `RenderOptions::with_invisible_text` in only-mode (carried as `RenderPolicy::invisible_text`; `RenderOptions::effective_backdrop` is then transparent), on a background thread, and composites the raster over the page; driven by `the_ocr_layer_draws_a_word_as_its_edit_does`. |
 | A font-coverage refusal names a working remedy instead of ending on "choose a font that covers it" — the standard-14 faces `format_text --set-font` would accept for the same character, filtered by `std14_faces_reachable`, carried in `Refusal::message` | **Shipped — the engine added `Refusal::remedy_faces` and this shell consumes it (`Pass 296.1`, requested and shipped 2026-09-11).** `textstyle::refusal_of` carries the list out of `FormatError::CoverageFailure` into `TextStyleRefusal::FaceLacksCharacters(Vec<String>)` (`app/actions/textstyle.rs:976`), and the status line names the faces that *would* show the run (`app/status/decline/line.rs`, `text/status/selection.rs`). No engine prose reaches the bar: what travels is a list of `/BaseFont` names pdfcer computed, and the words around them are this shell's. Empty is a real value — nothing pdfcer can offer covers the character — and falls back to the sentence that predates the field. The prose-parsing trap the old row named is closed rather than avoided, and nothing here calls the naive public `std14_faces_covering`. |

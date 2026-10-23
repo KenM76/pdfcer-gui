@@ -665,13 +665,15 @@ His words: *"I assume there will be appropriate menu items and dalogue boxes and
 
 **Status.** Nothing built; blocked on an engine tag that resolves. NOT VERIFIED.
 
-## O323 — **FILED** — Overprint Preview the way Acrobat has it
+## O323 — **PARTLY BUILT** — Overprint Preview the way Acrobat has it
 
 His words: *"do we have overprint preveiw like acrobat does?"*
 
 **What exists today (answered to him).** The page view always simulates overprint, as Acrobat does with *Use Overprint Preview: Always*, whenever the page is blended in CMYK ink (Settings ▸ Colour ▸ page blend space). The render notes say when the screen differs from a press (overprinted images and gradients the engine cannot yet composite are named), and Tools ▸ Diagnostics ▸ Ink picker reads the inks at a click, overprint included. Settings ▸ Colour ▸ *Grey over a spot colour* is the zero-tint rule.
 
 **Scope, whole behaviour (Acrobat: Preferences ▸ Page Display ▸ Use Overprint Preview — Only for PDF/X files, Always, Never, Automatic; Print Production ▸ Output Preview).** (1) A View-level Overprint Preview switch, pressed while on, with Acrobat's four-way default in Settings ▸ Display; screen only — print and export are unaffected. Needs an engine switch to paint overprinting marks as knock-outs: filed as `open/request_overprint_simulation_switch.md`. (2) Output Preview: each ink (process and spot) listed with a show/hide box and its coverage under the cursor, the page drawn from the shown inks only — to be argued in `DESIGNS.md` before any engine request, since it needs per-ink rendering.
+
+**Built so far.** View ▸ Display ▸ *Overprint preview*: on by default; off shows each overprinting mark covering what is beneath it, and the status bar says how many marks asked for overprint. Screen only. Driven: `overprint_preview`. Still to build: Acrobat's four-way default in Settings ▸ Display, and the Output Preview panel (the engine now has per-ink rendering).
 
 **Status.** Nothing built. NOT VERIFIED.
 

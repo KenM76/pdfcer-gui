@@ -198,6 +198,8 @@ pub(super) const REGION_DRAFT_NOTE: &str = "status-group:draft-note"; // ui-text
 pub(super) const REGION_LINE_WEIGHTS: &str = "status-group:line-weights"; // ui-text-exempt: trace region name, never displayed
 /// The "tiny details are being skipped" line, while `view.skip_tiny_details` is on.
 pub(super) const REGION_TINY_DETAILS: &str = "status-group:tiny-details"; // ui-text-exempt: trace region name, never displayed
+/// The "overprint preview is off" line, while the page asks for overprint.
+pub(super) const REGION_OVERPRINT: &str = "status-group:overprint"; // ui-text-exempt: trace region name, never displayed
 
 /// `Actual size · Fit width · Fit page`.
 const REGION_FIT: &str = "status-group:fit"; // ui-text-exempt: trace region name, never displayed

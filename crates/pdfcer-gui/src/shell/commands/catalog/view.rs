@@ -423,6 +423,11 @@ pub(super) fn band() -> Vec<Command> {
         command("view.skip_tiny_details", t::view_skip_tiny_details(), 237)
             .with_icon("skip-tiny")
             .enabled_when("doc.pages"),
+        // Acrobat's Overprint Preview, on by default. Canvas only; the status
+        // bar says when it is off and the page asks for overprint.
+        command("view.overprint_preview", t::view_overprint_preview(), 238)
+            .with_icon("overprint")
+            .enabled_when("doc.pages"),
         //
         // > *"in our view ribbon area we need an option to show the stuff
         // > that is off page or not (and when not showing the stuff that is

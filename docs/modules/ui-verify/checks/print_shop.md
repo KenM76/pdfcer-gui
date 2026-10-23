@@ -53,3 +53,22 @@ Tools ▸ Diagnostics ▸ Ink picker reads the inks at a click. Same fixture,
 Falsified: dropping `with_ink_probe` from the options fails step 2 with
 `source=failed`; mislabelling an ink reading as `screen` fails step 2's
 `kind=inks`.
+
+# `overprint_preview`, in the same file
+
+View ▸ Display ▸ Overprint preview starts on, and turning it off reaches the
+render and the status bar. Same fixture; its magenta square sets `/OP true`
+over cyan, so the engine reports one overprint request.
+
+1. Owed with no gesture: `canvas-overprint mode=1` with `requested>0` and
+   `effective>0` — on by default, and simulation changed the picture.
+2. Scripted click on `ribbon.tab.view`; `ribbon.item.view.overprint_preview`
+   must then be declared (a FAIL naming the declared items if not).
+3. Click it; owed `canvas-overprint mode=0` with `requested>0` and
+   `effective=0` — the engine's own counter says nothing was simulated, which
+   is the pixel oracle an off-screen window cannot photograph.
+4. `status-group:overprint` is declared: the status bar says the canvas no
+   longer shows what will print.
+
+Falsified: the build before the switch emits no `canvas-overprint` line and
+fails step 1.

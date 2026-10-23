@@ -11,8 +11,8 @@ use egui::{Align, Layout, Vec2};
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_DRAFT_NOTE,
     REGION_EDIT_DISCLOSURE, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES,
-    REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS,
-    ROW_HEIGHT_PTS,
+    REGION_OVERPRINT, REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED,
+    REGION_TINY_DETAILS, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -316,6 +316,23 @@ fn tiny_details_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_TINY_DETAILS, &line);
 }
 
+/// `view.overprint_preview` is off and the drawn page asked for overprint:
+/// the canvas shows those marks knocking out what is beneath. Silent when the
+/// page asks for none, since then the switch changes nothing.
+fn overprint_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    if doc.view.overprint_preview {
+        return;
+    }
+    let Some(texture) = doc.page_texture.as_ref() else {
+        return;
+    };
+    let n = texture.diagnostics.overprint_requested;
+    if n == 0 {
+        return;
+    }
+    disclosure_line(ui, REGION_OVERPRINT, &t::overprint_preview_off(n));
+}
+
 /// Draw all of them, in the order the parent expects.
 pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // First, and the order is the argument: the other three describe what an
@@ -351,4 +368,5 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // rightmost when the bar runs short, and last is where that happens.
     line_weights_disclosure(ui, doc);
     tiny_details_disclosure(ui, doc);
+    overprint_disclosure(ui, doc);
 }

@@ -120,4 +120,19 @@ pub(super) fn publish_coverage(
             u8::from(doc.view.skip_tiny_details),
         )
     });
+    // `view.overprint_preview`: what the page asked for, what changed the
+    // picture, and the mode the request carried.
+    crate::diag::trace_on_change("canvas-overprint", || {
+        let (asked, effective) = doc.page_texture.as_ref().map_or((0, 0), |t| {
+            (
+                t.diagnostics.overprint_requested,
+                t.diagnostics.overprint_effective,
+            )
+        });
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "requested={asked} effective={effective} mode={}",
+            u8::from(doc.view.overprint_preview)
+        )
+    });
 }

@@ -127,6 +127,10 @@ pub enum ViewChrome {
     /// `view.skip_tiny_details` — leave out drawn pieces too small to see at
     /// this zoom. Reaches the render request, like [`Self::LineWeights`].
     SkipTinyDetails,
+    /// `view.overprint_preview` — show marks that print over the ink beneath
+    /// as they will print. Reaches the render request, like
+    /// [`Self::LineWeights`].
+    OverprintPreview,
 }
 
 impl ViewChrome {
@@ -138,6 +142,7 @@ impl ViewChrome {
         ViewChrome::ShowPoints,
         ViewChrome::LineWeights,
         ViewChrome::SkipTinyDetails,
+        ViewChrome::OverprintPreview,
         ViewChrome::OffPage,
         ViewChrome::OcrLayer,
     ];
@@ -152,6 +157,7 @@ impl ViewChrome {
             ViewChrome::ShowPoints => view.show_points,
             ViewChrome::LineWeights => view.line_weights,
             ViewChrome::SkipTinyDetails => view.skip_tiny_details,
+            ViewChrome::OverprintPreview => view.overprint_preview,
             ViewChrome::OffPage => view.off_page,
             // The one variant whose field is not a `bool`. *Is the mode on?*
             // is `.is_some()`, and where the slider sits inside the mode is a
@@ -170,6 +176,7 @@ impl ViewChrome {
             ViewChrome::ShowPoints => view.show_points = on,
             ViewChrome::LineWeights => view.line_weights = on,
             ViewChrome::SkipTinyDetails => view.skip_tiny_details = on,
+            ViewChrome::OverprintPreview => view.overprint_preview = on,
             ViewChrome::OffPage => view.off_page = on,
             // Turning it on lands the slider at the default rather than at
             // the position it last held, and that is deliberate: the previous

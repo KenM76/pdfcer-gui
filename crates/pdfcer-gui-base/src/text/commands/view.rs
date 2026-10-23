@@ -422,6 +422,17 @@ pub const fn view_skip_tiny_details() -> CommandText {
     )
 }
 
+/// `view.overprint_preview`
+#[must_use]
+pub const fn view_overprint_preview() -> CommandText {
+    CommandText::new(
+        "Overprint preview",
+        "Show ink that is meant to print on top of other ink the way the press will print it, \
+         mixed with what is underneath. Turn it off to see each mark cover what is beneath it \
+         instead. Only the screen changes; printing and saving are not affected.",
+    )
+}
+
 /// `view.off_page`
 #[must_use]
 pub const fn view_off_page() -> CommandText {
