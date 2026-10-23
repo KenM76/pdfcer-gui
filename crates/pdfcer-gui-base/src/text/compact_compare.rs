@@ -36,13 +36,14 @@ pub fn picture(number: u32) -> String {
     format!("#{number}")
 }
 
-/// `before → after`, or the one value when they are equal.
+/// `before to after`, or the one value when they are equal. Words, not an
+/// arrow: the font stack has no arrow glyph.
 #[must_use]
 pub fn change(before: &str, after: &str) -> String {
     if before == after {
         before.to_owned()
     } else {
-        format!("{before} → {after}")
+        format!("{before} to {after}")
     }
 }
 
@@ -127,7 +128,7 @@ mod tests {
     #[test]
     fn an_unchanged_value_is_said_once() {
         assert_eq!(change("Flate", "Flate"), "Flate");
-        assert_eq!(change("Flate", "JPEG"), "Flate → JPEG");
+        assert_eq!(change("Flate", "JPEG"), "Flate to JPEG");
     }
 
     #[test]

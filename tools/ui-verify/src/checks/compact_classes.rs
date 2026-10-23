@@ -55,7 +55,7 @@ impl Check for ACompactedCopyTreatsEachKindOfPictureSeparately {
 }
 
 /// Scroll `region` into view and press it; `false` when it never drew.
-fn reach(
+pub(super) fn reach(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,

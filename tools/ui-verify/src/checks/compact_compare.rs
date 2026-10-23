@@ -4,8 +4,9 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/compact_compare.md`.
 
+use super::compact_classes::reach;
 use super::compact_target::{drawn, recompressed_after};
-use super::dimdrive::{Fixture, press, run_on_with};
+use super::dimdrive::{Fixture, run_on_with};
 use super::stroke_style::into_view_of;
 use crate::checks::{Check, CheckContext};
 use crate::coords::PageGeometry;
@@ -49,21 +50,6 @@ impl Check for ACompactedCopyListsEachPictureBeforeAndAfter {
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         run_on_with(self, ctx, &FIXTURE, INVOKE, "compact-compare", &[], body)
     }
-}
-
-/// Scroll `region` into view and press it; `false` when it never drew.
-fn reach(
-    ctx: &CheckContext,
-    session: &Session,
-    pointer: &ScriptedPointer,
-    region: &str,
-) -> Result<bool> {
-    into_view_of(ctx, session, pointer, region, BODY)?;
-    if !drawn(ctx, session, region)? {
-        return Ok(false);
-    }
-    press(ctx, session, pointer, region)?;
-    Ok(true)
 }
 
 fn body(

@@ -4,7 +4,7 @@
 //! picture it changes, and [`show`] draws them as a folded table under the
 //! finished recompression, before the copy is saved: pixel size, resolution,
 //! colours, storage, JPEG quality asked and written, closeness reached and
-//! bytes, each as `before → after`. At most [`LISTED`] rows are drawn; the
+//! bytes, each as `before to after`. At most [`LISTED`] rows are drawn; the
 //! rest are counted in a line under the table, never dropped silently.
 
 use egui::Ui;
