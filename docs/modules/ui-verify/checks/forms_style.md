@@ -18,6 +18,11 @@ read that field's look back.
    itself (`PDFCER_DIAG_FORM_ACCEPT`) and the field is left selected.
 6. Right-click the field's `form-box` centre and press
    `menu.item.canvas.field.edit.form_use_as_default`.
+7. End the process; its sandbox's `userdata/preferences.txt` must hold
+   `form_style_border_style = dashed` and `form_style_text_font = TimesRoman`.
+   Launch again over the same sandbox; its first `form-style` line must read
+   `style=dashed font=TimesRoman`. With the startup load removed it reads
+   `set=0`, which is how the step was falsified.
 
 **Oracle:** `form-look-taken width=` equals the band's width within 0.05 pt,
 `form-look-taken style=` reads `dashed` — a fresh field is solid — and

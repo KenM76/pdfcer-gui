@@ -297,6 +297,18 @@ pub struct Remembered {
 }
 
 impl Remembered {
+    /// Start with `look` remembered, as the preferences file kept it.
+    #[must_use]
+    pub const fn with_look(look: Option<FieldLook>) -> Self {
+        Self { last: None, look }
+    }
+
+    /// The look that was set, if one was; [`Self::look`] fills the gap.
+    #[must_use]
+    pub const fn chosen(&self) -> Option<FieldLook> {
+        self.look
+    }
+
     /// The draft to open the dialog with, for a field of `kind` about to be
     /// placed on a document that already has `existing` field names.
     #[must_use]

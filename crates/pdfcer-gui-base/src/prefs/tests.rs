@@ -25,6 +25,24 @@ use crate::viewer::{FitMode, ViewState};
 use pdfcer_core::export::dxf::{DxfText, DxfUnits};
 
 /// Every value round-trips through the file.
+/// A Style look differing from the defaults in every key.
+fn odd_form_style() -> crate::prefs::FormStylePrefs {
+    use pdfcer_core::forms::MkColor;
+    crate::prefs::FormStylePrefs {
+        look: Some(crate::formdraft::FieldLook {
+            border_width: 3.0,
+            border_style: pdfcer_core::edit::BorderStyle::Inset,
+            background: Some(MkColor::Gray(0.75)),
+            border_color: Some(MkColor::None),
+            text: crate::formdraft::TextLook {
+                font: pdfcer_core::fontdata::Std14::CourierBold,
+                size: 9.0,
+                colour: pdfcer_core::vartext::TextColor::Rgb(0.0, 0.5, 1.0),
+            },
+        }),
+    }
+}
+
 #[test]
 fn every_preference_round_trips_through_the_file() {
     for quality in RenderQuality::ALL {
@@ -34,6 +52,7 @@ fn every_preference_round_trips_through_the_file() {
                     pictures: crate::prefs::PicturePrefs {
                         smooth_enlarged: false,
                     },
+                    form_style: odd_form_style(),
                     trust: {
                         let mut t = crate::prefs::TrustPrefs::default();
                         t.remember_site("example.com", false);
@@ -605,6 +624,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         pictures: crate::prefs::PicturePrefs {
             smooth_enlarged: false,
         },
+        form_style: odd_form_style(),
         trust: {
             let mut t = crate::prefs::TrustPrefs::default();
             t.remember_site("example.com", false);

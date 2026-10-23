@@ -35,6 +35,7 @@ pub use crate::openingfit as opening;
 pub mod exporting;
 
 mod families;
+pub mod formstyle;
 pub mod ocrmodels;
 /// **Whether the canvas grows to show what sits off the sheet — one answer
 /// per ribbon mode.** Its own file because *why the answer is per mode at all*
@@ -80,6 +81,7 @@ pub use exporting::{
     ExportDxfPrefs, ExportImagePrefs, ExportPrefs, ExportTablePrefs, ExportTextPrefs,
     MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
 };
+pub use formstyle::FormStylePrefs;
 pub use ocrmodels::OcrModelPrefs;
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
@@ -384,6 +386,8 @@ pub struct Prefs {
     pub trust: TrustPrefs,
     /// How the page view draws an enlarged picture. See [`pictures`].
     pub pictures: PicturePrefs,
+    /// Forms ▸ Style's look for the next placed field. See [`formstyle`].
+    pub form_style: FormStylePrefs,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -839,6 +843,7 @@ impl Default for Prefs {
             ocr_models: OcrModelPrefs::default(),
             trust: TrustPrefs::default(),
             pictures: PicturePrefs::default(),
+            form_style: FormStylePrefs::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

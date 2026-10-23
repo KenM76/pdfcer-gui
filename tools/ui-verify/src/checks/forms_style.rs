@@ -47,6 +47,14 @@ const ADDED: &str = "add-form-field";
 const SPOT: (f64, f64) = (150.0, 450.0);
 /// Pixels the width is dragged; at the band's 0.1 pt per pixel, about 4 pt.
 const DRAG_PX: f32 = 40.0;
+/// The application's on-change line for the look it holds; its first line in
+/// a process is the look it started with.
+const HELD: &str = "form-style";
+/// The two lines the preferences file must hold once the drive has run.
+const KEPT: [&str; 2] = [
+    "form_style_border_style = dashed",
+    "form_style_text_font = TimesRoman",
+];
 
 /// See the module documentation.
 pub struct FormsStyleSetsTheNextField;
@@ -72,7 +80,11 @@ impl Check for FormsStyleSetsTheNextField {
     }
 }
 
-fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, ScriptedPointer)> {
+fn launch(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -82,7 +94,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("forms_style.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(repo_fixture(FIXTURE, METHOD)?);
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -97,7 +109,7 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("forms_style.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
@@ -118,7 +130,7 @@ fn width_after(session: &Session, event: &str, mark: usize) -> Result<Option<(f3
 type Step<T> = Result<std::result::Result<T, String>>;
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
-    let (session, pointer) = launch(ctx, report)?;
+    let (session, pointer) = launch(ctx, report, "forms_style")?;
     let ui_rect = ctx
         .profile
         .vocab
@@ -173,7 +185,48 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             taken_text.font, taken_text.size
         )));
     }
-    Ok(None)
+    session.settle(20);
+    drop(session);
+    Ok(kept_across_launch(ctx, report)?.err())
+}
+
+/// The look outlives the process: the preferences file holds it, and a fresh
+/// launch over that file starts holding it.
+fn kept_across_launch(ctx: &CheckContext, report: &mut CheckReport) -> Step<()> {
+    let exe = ctx
+        .resolve_exe()
+        .ok_or_else(|| Error::new("no binary to relaunch."))?;
+    let path = exe
+        .parent()
+        .map(|dir| dir.join("userdata").join("preferences.txt"))
+        .ok_or_else(|| Error::new("the binary under test has no parent directory."))?;
+    let text = std::fs::read_to_string(&path).unwrap_or_default();
+    for want in KEPT {
+        if !text.lines().any(|l| l.trim() == want) {
+            return Ok(Err(format!(
+                "after the drive {} has no `{want}` line: the Style look was not saved.",
+                path.display()
+            )));
+        }
+    }
+    report.note(format!("{} holds `{}`", path.display(), KEPT.join("`, `")));
+    let (session, _pointer) = launch(ctx, report, "forms_style.relaunch")?;
+    let trace = session.trace()?;
+    let Some(held) = trace.first(HELD) else {
+        return Ok(Err(format!(
+            "the relaunched process traced no `{HELD}` line. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    report.note(format!("relaunched: `{}`", held.raw));
+    if held.get("style") != Some("dashed") || held.get("font") != Some(TIMES) {
+        return Ok(Err(format!(
+            "the preferences file holds Dashed and {TIMES}, and the relaunched process \
+             started on `{}`: the saved Style look was not read back.",
+            held.raw
+        )));
+    }
+    Ok(Ok(()))
 }
 
 /// What *Use as default look* read off the field beyond its width.

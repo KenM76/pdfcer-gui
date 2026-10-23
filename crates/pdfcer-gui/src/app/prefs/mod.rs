@@ -5,6 +5,7 @@
 
 pub use pdfcer_gui_base::prefs::*;
 
+pub mod formstyle;
 pub mod offpage;
 
 #[cfg(test)]

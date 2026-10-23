@@ -4,7 +4,8 @@
 //! and colour for the **next** form field placed,
 //! edited in the same [`Remembered`] the placement dialog opens from, so the
 //! dialog shows what the band shows. Like the Markup pen it edits a tool
-//! setting: no command, no undo entry, nothing written to `userdata`.
+//! setting: no command and no undo entry; `prefs::formstyle` keeps it across
+//! sessions.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/formlookband.md`.
 

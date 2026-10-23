@@ -651,7 +651,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Scope.** (1) A **Forms** tab, between Markup and Measure, holding the create, manage, flatten and repair commands, with Edit ▸ Forms removed — an amendment to `RIBBON_IA.md` §4/§5.4 made on his word. (2) A **Style** group on it, the way Markup's Style group sets the next mark: fill colour, border colour, border width and style, text font, size and colour, read by the field dialog as its starting values and remembered across sessions. (3) The same commands on the right-click menu of a selected field where they apply.
 
-**Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. **Not yet:** Style is session-only rather than remembered across sessions. NOT VERIFIED by him.
+**Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
 ## O325 — **FILED** — every file-size reduction feature reachable from menus, dialogs and right-click
 

@@ -665,7 +665,8 @@ identical check boxes is one set of choices and then a row of clicks.
 font, size and colour the next
 field will get, and changing it there is the same as changing it in that
 window. To match a field already on the page, right-click it and choose **Use
-as default look**.
+as default look**. pdfcer keeps the Style settings when you close it, so the
+next session starts where you left off.
 
 **Give every field a different name.** Two fields with the same name are *one*
 field shown twice: type in either and both change. pdfcer numbers new fields for

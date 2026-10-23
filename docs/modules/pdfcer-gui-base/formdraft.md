@@ -103,11 +103,17 @@ else has a defensible default, including the tooltip — empty means
 
 ### `struct Remembered`
 
-Per **session**, deliberately not persisted to `userdata`. A remembered
-setting is a convenience within one sitting — "I am placing a row of
-identical check boxes" — and one that survived a restart would silently
-govern a different document days later, which is the shape of a setting
-nobody can find the source of.
+The last accepted draft is per **session**, deliberately not persisted. It
+is a convenience within one sitting — "I am placing a row of identical check
+boxes" — and one that survived a restart would silently govern a different
+document days later, which is the shape of a setting nobody can find the
+source of.
+
+The **look** is the exception, and is kept across sessions
+(`prefs::formstyle`): Forms ▸ Style shows it, so its source is always on
+screen, and Acrobat's *use current properties as new defaults* persists the
+same way. `with_look` seeds it at startup; `chosen` is what is saved, `None`
+until something sets it.
 
 ### `fn next`
 

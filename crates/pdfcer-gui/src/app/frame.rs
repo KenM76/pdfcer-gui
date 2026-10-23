@@ -103,6 +103,7 @@ impl eframe::App for PdfcerApp {
         crate::dialogs::host::set_owner(&ctx, self.window);
         crate::canvas::clipseq::settle(&ctx);
         crate::canvas::keys::note_popup_at_frame_start(&ctx);
+        crate::app::prefs::formstyle::keep(&ctx, &mut self.prefs, &self.form_defaults);
         crate::diag::trace_on_change("root-focus", || {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!("focused={:?}", ctx.input(|i| i.viewport().focused))

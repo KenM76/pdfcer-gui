@@ -1048,7 +1048,7 @@ impl PdfcerApp {
             // starting value and is what a test-built app keeps.
             window: None,
             pen: crate::canvas::markup::pen::Pen::default(),
-            form_defaults: crate::canvas::formfield::Remembered::default(),
+            form_defaults: crate::canvas::formfield::Remembered::with_look(prefs.form_style.look),
             // Loaded for real EXCEPT under `cfg(test)`, for exactly the
             // reason the settings and the recent list above are: a suite that
             // read the developer's own preferences would pass on this machine
