@@ -72,3 +72,20 @@ over cyan, so the engine reports one overprint request.
 
 Falsified: the build before the switch emits no `canvas-overprint` line and
 fails step 1.
+
+# `output_preview`, in the same file
+
+View ▸ Panels ▸ Output Preview lists the page's inks and hides one. Same
+fixture, whose page uses only the four process inks.
+
+1. Scripted click on `ribbon.tab.view`; `ribbon.item.view.output_preview`
+   must be declared (a FAIL naming the declared items if not). Click it.
+2. Click `output-preview.on`; owed `output-preview on=1` whose `inks` holds
+   Cyan, Magenta, Yellow and Black. The panel emits it only from a texture
+   drawn under the current preview, so the line is the engine's plate list.
+3. Click `output-preview.ink:Magenta`; owed `hidden=Magenta` — again only from
+   a texture drawn under that preview, so the render was redone.
+4. `status-group:output-preview` is declared.
+
+Falsified: the build before the panel has no `view.output_preview` and fails
+step 1.

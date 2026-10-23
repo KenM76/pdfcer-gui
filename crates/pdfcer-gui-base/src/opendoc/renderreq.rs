@@ -50,6 +50,7 @@ impl OpenDoc {
         .with_region(self.region_for(page_index))
         .with_tiny_details_skipped(self.view.skip_tiny_details)
         .with_overprint(self.view.overprint_preview)
+        .with_separations(self.separations.as_ref())
     }
 
     /// The region to rasterize for `page_index`, if the canvas set one **for
@@ -94,6 +95,7 @@ impl OpenDoc {
             } else {
                 pdfcer_render::OverprintPreview::Off
             },
+            separations: self.separations.clone(),
             image_magnify: self.prefs.pictures.magnify(),
             layers: self.layer_visibility(),
             layers_generation: self.layers.generation,

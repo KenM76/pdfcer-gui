@@ -1117,13 +1117,9 @@ pub enum Action {
     ToggleAnnotations,
     /// **The three View ▸ Display chrome toggles** — rulers, grid, guides.
     ///
-    /// One variant carrying which, rather than three variants, for the reason
-    /// [`Self::SetPageDisplay`] gives about the page-display radio: the
-    /// operand *is* the command, `crate::shell::commands::chrome_for_command`
-    /// is the single binding between an id and a [`ViewChrome`], and its
-    /// inverse is what publishes the `selected:` condition that renders each
-    /// one pressed. Three arms would be three places for that mapping to be
-    /// spelled and a fourth toggle would be added to two of them.
+    /// One variant carrying which: `chrome_for_command` is the single binding
+    /// between an id and a [`ViewChrome`], and its inverse publishes the
+    /// `selected:` condition that renders each one pressed.
     ///
     /// # Why it goes through the funnel when it changes nothing a save writes
     ///
@@ -1139,6 +1135,10 @@ pub enum Action {
     /// has changed, only what is drawn beside and over it. Bumping would throw
     /// away the decomposition and the font inventory to no purpose.
     ToggleViewChrome(ViewChrome),
+    /// The Output Preview panel's separation preview: `None` turns it off,
+    /// `Some` shows the page from its unhidden plates. A view stance, like
+    /// [`Self::ToggleAnnotations`]: render key, no epoch, nothing saved.
+    SetSeparations(Option<pdfcer_render::SeparationPreview>),
     /// **The operator's guides for this document, after a gesture changed
     /// them.**
     ///

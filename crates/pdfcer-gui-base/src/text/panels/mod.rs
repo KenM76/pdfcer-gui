@@ -46,6 +46,8 @@ pub mod models;
 
 /// The Objects panel, and the wording of every object fact.
 pub mod objects;
+/// The Output Preview panel: separations, ink by ink.
+pub mod output_preview;
 
 /// **Every sentence pdfcer says about which layer a selection is on** — the
 /// panel's long form and the status bar's short clause, generated from one

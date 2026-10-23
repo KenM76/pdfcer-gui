@@ -364,6 +364,7 @@ pub(super) fn tab() -> Tab {
                     //
                     command("view.panel_objects"),
                     command("view.panel_signatures"),
+                    command("view.output_preview"),
                     //
                     // Last in the group rather than in panel-name order:
                     // this one is a *capability* the other five are not — it

@@ -5,6 +5,8 @@
 //! a click, overprint included. `overprint_preview` — View ▸ Display ▸
 //! Overprint preview starts on and turning it off reaches the render and the
 //! status bar.
+//! `output_preview` — View ▸ Panels ▸ Output Preview lists the page's inks and
+//! hides one, and the status bar says so.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/print_shop.md`.
 
@@ -410,6 +412,95 @@ fn overprint(
         return Ok(Some(format!(
             "overprint preview is off on a page that asks for it and `{OVERPRINT_NOTE}` was \
              never declared: the canvas stopped showing what will print without saying so."
+        )));
+    }
+    Ok(None)
+}
+
+const OUTPUT_ITEM: &str = "ribbon.item.view.output_preview";
+const OUTPUT_SWITCH: &str = "output-preview.on";
+const OUTPUT_TRACE: &str = "output-preview"; // ui-text-exempt: a trace event name, never displayed
+const OUTPUT_NOTE: &str = "status-group:output-preview";
+const MAGENTA: &str = "output-preview.ink:Magenta";
+
+/// See the module documentation.
+pub struct OutputPreviewHidesAnInk;
+
+impl Check for OutputPreviewHidesAnInk {
+    fn name(&self) -> &'static str {
+        "output_preview"
+    }
+
+    fn defect(&self) -> &'static str {
+        "View ▸ Panels ▸ Output Preview is missing, lists no inks once switched on, cannot hide \
+         one, or hides one without the status bar saying the page is not what will print"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven = launch(ctx, &mut report, self.name(), None).and_then(|(session, pointer)| {
+            let outcome = output_preview(&mut report, &session, &pointer);
+            let parked = pointer.gone(&session);
+            match outcome? {
+                Some(failure) => Ok(Some(failure)),
+                None => parked.map(|_| None),
+            }
+        });
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Open the panel, switch the preview on, read the four process plates, hide
+/// Magenta, and require the hidden list and the status line to follow.
+fn output_preview(
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    press(session, pointer, VIEW_TAB)?;
+    if declared_in(&session.trace()?, UI_RECT, OUTPUT_ITEM).is_none() {
+        return Ok(Some(format!(
+            "`{OUTPUT_ITEM}` is not on the View tab. Ribbon items declared: {}.",
+            list(&declared_names(&session.trace()?, UI_RECT, "ribbon.item."))
+        )));
+    }
+    press(session, pointer, OUTPUT_ITEM)?;
+    let mark = session.trace()?.mark();
+    press(session, pointer, OUTPUT_SWITCH)?;
+    let listed = |l: &TraceLine| {
+        l.get("on") == Some("1")
+            && l.get("inks").is_some_and(|i| {
+                ["Cyan", "Magenta", "Yellow", "Black"]
+                    .iter()
+                    .all(|k| i.contains(k))
+            })
+    };
+    let Some(on) = await_line(session, OUTPUT_TRACE, mark, listed)? else {
+        let last = session.trace()?.last(OUTPUT_TRACE).map(|l| l.raw.clone());
+        return Ok(Some(format!(
+            "switched on and no `{OUTPUT_TRACE} on=1` line listed the four process inks; last \
+             was {last:?}."
+        )));
+    };
+    report.note(format!("on: `{}`", on.raw));
+    let mark = session.trace()?.mark();
+    press(session, pointer, MAGENTA)?;
+    let hidden = |l: &TraceLine| l.get("on") == Some("1") && l.get("hidden") == Some("Magenta");
+    let Some(after) = await_line(session, OUTPUT_TRACE, mark, hidden)? else {
+        let last = session.trace()?.last(OUTPUT_TRACE).map(|l| l.raw.clone());
+        return Ok(Some(format!(
+            "`{MAGENTA}` was pressed and no `hidden=Magenta` line followed; last was {last:?}."
+        )));
+    };
+    report.note(format!("after: `{}`", after.raw));
+    if declared_in(&session.trace()?, UI_RECT, OUTPUT_NOTE).is_none() {
+        return Ok(Some(format!(
+            "an ink is hidden and `{OUTPUT_NOTE}` was never declared: the canvas stopped showing \
+             what will print without saying so."
         )));
     }
     Ok(None)

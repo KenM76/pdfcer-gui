@@ -484,6 +484,15 @@ pub const fn view_panel_signatures() -> CommandText {
     )
 }
 
+/// `view.output_preview`
+#[must_use]
+pub const fn view_output_preview() -> CommandText {
+    CommandText::new(
+        "Output Preview",
+        "See the page as its printing inks, and hide any of them to check what is on each plate. Only the screen changes.",
+    )
+}
+
 /// `view.panel_objects`
 #[must_use]
 pub const fn view_panel_objects() -> CommandText {

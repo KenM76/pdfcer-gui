@@ -11,8 +11,8 @@ use egui::{Align, Layout, Vec2};
 use super::{
     NOTES_WIDTH_FRACTION, REGION_BLEND_SPACE, REGION_CATCHING_UP, REGION_DRAFT_NOTE,
     REGION_EDIT_DISCLOSURE, REGION_FILL_DISCLOSURE, REGION_LINE_WEIGHTS, REGION_LOAD_ANOMALIES,
-    REGION_OVERPRINT, REGION_PREVIEW_FALLBACK, REGION_RECOVERED, REGION_SPOTS_FLATTENED,
-    REGION_TINY_DETAILS, ROW_HEIGHT_PTS,
+    REGION_OUTPUT_PREVIEW, REGION_OVERPRINT, REGION_PREVIEW_FALLBACK, REGION_RECOVERED,
+    REGION_SPOTS_FLATTENED, REGION_TINY_DETAILS, ROW_HEIGHT_PTS,
 };
 use crate::app::state::OpenDoc;
 use crate::text::forms as t_forms;
@@ -333,6 +333,16 @@ fn overprint_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     disclosure_line(ui, REGION_OVERPRINT, &t::overprint_preview_off(n));
 }
 
+/// Output Preview is drawing the page as its inks: the canvas is no longer the
+/// ordinary picture, and with a plate hidden it is not what will print.
+fn output_preview_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
+    let Some(preview) = doc.separations.as_ref() else {
+        return;
+    };
+    let line = crate::text::panels::output_preview::status_line(preview.hidden.len());
+    disclosure_line(ui, REGION_OUTPUT_PREVIEW, &line);
+}
+
 /// Draw all of them, in the order the parent expects.
 pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     // First, and the order is the argument: the other three describe what an
@@ -369,4 +379,5 @@ pub(super) fn all(ui: &mut egui::Ui, doc: &OpenDoc) {
     line_weights_disclosure(ui, doc);
     tiny_details_disclosure(ui, doc);
     overprint_disclosure(ui, doc);
+    output_preview_disclosure(ui, doc);
 }

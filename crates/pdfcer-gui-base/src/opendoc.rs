@@ -1020,6 +1020,10 @@ pub struct OpenDoc {
     /// *Trust this document one time only* was chosen at the 3D prompt: its
     /// models show while Play 3D content is off, until the document closes.
     pub models_trusted_once: bool,
+    /// The Output Preview panel's separation preview: `None` draws the page
+    /// as usual, `Some` composites in ink and leaves the hidden plates off.
+    /// Canvas only and part of the render key; never saved.
+    pub separations: Option<pdfcer_render::SeparationPreview>,
 }
 
 /// A fresh [`OpenDoc::serial`].
@@ -1169,6 +1173,7 @@ impl OpenDoc {
             snapshot: None,
             redraw_offer: None,
             models_trusted_once: false,
+            separations: None,
         }
     }
 

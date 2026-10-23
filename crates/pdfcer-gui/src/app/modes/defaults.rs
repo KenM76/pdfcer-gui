@@ -351,6 +351,9 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // Align and Distribute, in Edit alone: its toggle is on
                     // the Edit tab, the same reason as Attachments.
                     Panel::AlignDistribute.command_id(),
+                    // Output Preview, last: print checking is asked for, not
+                    // offered. Read and Review reach it from View ▸ Panels.
+                    Panel::OutputPreview.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,

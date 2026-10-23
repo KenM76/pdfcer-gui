@@ -97,6 +97,21 @@ pub struct RenderKey {
     /// Whether overprint was simulated (`view.overprint_preview`). Discrete,
     /// like `skip_tiny`.
     overprint: bool,
+    /// The separation preview drawn: 0 for none, else a hash of the hidden
+    /// plates with the low bit set ([`separation_bits`]).
+    separations: u64,
+}
+
+/// A key component for a separation preview: 0 for none, otherwise a hash of
+/// its hidden plates, never 0.
+#[must_use]
+pub fn separation_bits(preview: Option<&pdfcer_render::SeparationPreview>) -> u64 {
+    use std::hash::{Hash, Hasher};
+    preview.map_or(0, |p| {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        p.hidden.hash(&mut h);
+        h.finish() | 1
+    })
 }
 
 impl RenderKey {
@@ -124,6 +139,7 @@ impl RenderKey {
             region_bits: None,
             skip_tiny: false,
             overprint: true,
+            separations: 0,
         }
     }
 
@@ -153,6 +169,20 @@ impl RenderKey {
     pub fn with_overprint(mut self, simulated: bool) -> Self {
         self.overprint = simulated;
         self
+    }
+
+    /// Mark this key as drawn under `preview`.
+    #[must_use]
+    pub fn with_separations(mut self, preview: Option<&pdfcer_render::SeparationPreview>) -> Self {
+        self.separations = separation_bits(preview);
+        self
+    }
+
+    /// Whether this key was drawn under `preview` — so a texture's ink list
+    /// describes the preview the operator has set now.
+    #[must_use]
+    pub fn drawn_under(&self, preview: Option<&pdfcer_render::SeparationPreview>) -> bool {
+        self.separations == separation_bits(preview)
     }
 
     /// Whether two keys describe the **same part of the page**.
@@ -190,6 +220,7 @@ impl RenderKey {
         pdfcer_render::font::StrokeDisplay,
         bool,
         bool,
+        u64,
     ) {
         (
             self.page_index,
@@ -204,6 +235,7 @@ impl RenderKey {
             self.stroke_display,
             self.skip_tiny,
             self.overprint,
+            self.separations,
         )
     }
 
@@ -231,5 +263,6 @@ impl RenderKey {
         .with_region(request.region)
         .with_tiny_details_skipped(request.subpixel_culling)
         .with_overprint(request.overprint.simulates())
+        .with_separations(request.separations.as_ref())
     }
 }

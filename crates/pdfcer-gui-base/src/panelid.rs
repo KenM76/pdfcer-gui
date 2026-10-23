@@ -80,11 +80,14 @@ pub enum Panel {
     /// Inkscape's Align and Distribute, over the selected page objects.
     /// `ALIGN_AND_DISTRIBUTE.md` maps each Inkscape control.
     AlignDistribute,
+    /// The page as its printing inks, with each plate shown or hidden —
+    /// Acrobat's Output Preview, separations half. Canvas only.
+    OutputPreview,
 }
 
 impl Panel {
     /// Every panel.
-    pub const ALL: [Self; 14] = [
+    pub const ALL: [Self; 15] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -99,6 +102,7 @@ impl Panel {
         Self::Redact,
         Self::DimensionGroups,
         Self::AlignDistribute,
+        Self::OutputPreview,
     ];
 
     /// The ribbon command that shows this panel.
@@ -129,6 +133,7 @@ impl Panel {
             Self::Redact => "edit.redact",
             Self::DimensionGroups => "measure.manage_groups",
             Self::AlignDistribute => "edit.align",
+            Self::OutputPreview => "view.output_preview",
         }
     }
 
@@ -178,6 +183,7 @@ mod tests {
                 Panel::Attachments => 11,
                 Panel::DocumentProperties => 12,
                 Panel::AlignDistribute => 13,
+                Panel::OutputPreview => 14,
             }
         }
         let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();

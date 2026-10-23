@@ -25,6 +25,7 @@ pub use pdfcer_gui_base::panelfooter as footer;
 pub mod forms;
 pub mod layers;
 pub mod objects;
+pub mod output_preview;
 pub mod pages;
 pub mod properties;
 pub mod redact;
@@ -71,6 +72,7 @@ pub fn show(
         Panel::Redact => redact::body(ui, doc, state, actions),
         Panel::DimensionGroups => dimension_groups::body(ui, doc, state, actions),
         Panel::AlignDistribute => align::body(ui, doc, &mut state.align, actions),
+        Panel::OutputPreview => output_preview::body(ui, doc, state, actions),
     }
     Vec::new()
 }

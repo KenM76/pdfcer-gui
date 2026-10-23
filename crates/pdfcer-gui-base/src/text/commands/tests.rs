@@ -64,6 +64,7 @@ fn all() -> Vec<CommandText> {
         view_panel_bookmarks(),
         view_panel_layers(),
         view_panel_signatures(),
+        view_output_preview(),
         view_panel_objects(),
         view_panel_forms(),
         view_read_mode(),

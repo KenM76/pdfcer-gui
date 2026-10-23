@@ -513,6 +513,9 @@ pub(super) fn band() -> Vec<Command> {
         command("view.panel_signatures", t::view_panel_signatures(), 243)
             .with_icon("signatures")
             .enabled_when("doc.open"),
+        command("view.output_preview", t::view_output_preview(), 239)
+            .with_icon("overprint")
+            .enabled_when("doc.pages"),
         command("view.panel_objects", t::view_panel_objects(), 244)
             .with_icon("edit-objects")
             .enabled_when("doc.pages"),

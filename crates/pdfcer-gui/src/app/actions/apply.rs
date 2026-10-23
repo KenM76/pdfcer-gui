@@ -915,6 +915,17 @@ impl PdfcerApp {
                 let showing = doc.annotations_visible();
                 doc.set_annotations_visible(!showing);
             }
+            Action::SetSeparations(preview) => {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed in the UI
+                    format!(
+                        "output-preview-set on={} hidden={}",
+                        u8::from(preview.is_some()),
+                        preview.as_ref().map_or(0, |p| p.hidden.len())
+                    )
+                });
+                doc.separations = preview;
+            }
             Action::ToggleViewChrome(chrome) => {
                 let on = !chrome.read(&doc.view);
                 chrome.write(&mut doc.view, on);

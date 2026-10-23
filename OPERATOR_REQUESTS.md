@@ -673,9 +673,9 @@ His words: *"do we have overprint preveiw like acrobat does?"*
 
 **Scope, whole behaviour (Acrobat: Preferences ▸ Page Display ▸ Use Overprint Preview — Only for PDF/X files, Always, Never, Automatic; Print Production ▸ Output Preview).** (1) A View-level Overprint Preview switch, pressed while on, with Acrobat's four-way default in Settings ▸ Display; screen only — print and export are unaffected. Needs an engine switch to paint overprinting marks as knock-outs: filed as `open/request_overprint_simulation_switch.md`. (2) Output Preview: each ink (process and spot) listed with a show/hide box and its coverage under the cursor, the page drawn from the shown inks only — to be argued in `DESIGNS.md` before any engine request, since it needs per-ink rendering.
 
-**Built so far.** View ▸ Display ▸ *Overprint preview*: on by default; off shows each overprinting mark covering what is beneath it, and the status bar says how many marks asked for overprint. Screen only. Driven: `overprint_preview`. Still to build: Acrobat's four-way default in Settings ▸ Display, and the Output Preview panel (the engine now has per-ink rendering).
+**Built so far.** View ▸ Display ▸ *Overprint preview*: on by default; off shows each overprinting mark covering what is beneath it, and the status bar says how many marks asked for overprint. Screen only. Driven: `overprint_preview`. View ▸ Panels ▸ *Output Preview*: *Preview separations* draws the page as its inks, each listed with a show box; hiding one redraws the page without that plate, and the status bar says how many are hidden. Screen only. Driven: `output_preview`. Still to build: Acrobat's four-way default in Settings ▸ Display, and the ink coverage under the cursor.
 
-**Status.** Nothing built. NOT VERIFIED.
+**Status.** Switch and panel built and driven. NOT VERIFIED by him.
 
 ## O322 — **FILED** — smoother fonts and smoother scanned (bitmap) pages
 
