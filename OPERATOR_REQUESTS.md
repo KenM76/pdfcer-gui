@@ -721,11 +721,11 @@ His words: *"Changing the font size causes the text chunk to go blank, and if I 
 - **Properties shows the restyled word's size — built and driven.** With the caret's word restyled to 24, the size field reads 24.00, not the line's first word. `scaled_text_shows_and_takes_its_drawn_size` asserts it on SW41177 and the fixture, and fails when the field does not follow the word.
 - **The re-opened mixed-size line in the stand-in font is an engine refusal — filed as G228.** The engine's matcher will not lay out a line whose words differ in size: `NoMatch` with `SplitRun { operators: 2 }` on the fixture, `NoSuchText` on SW41177 (now traced as `text-edit-preview-refused`). No squares; the open line just is not drawn in the drawing's own glyphs until the engine joins across a size change.
 
-## O311 — **BUILT, NOT DRIVEN** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
+## O311 — **BUILT AND DRIVEN, awaiting his check** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
 
 His words: *"If I type a character that doesn't exist in the embedded font I get this notice: CenturyGothic has no ‘z’, so it will be set in Helvetica when you commit. But CenturyGothic is installed on the system, so it doesn't need to substitute the font, just add the embedded missing character. Also the settings default should be to use the fonts installed on this computer."*
 
-**Built, not yet driven.** The font-folder source answered the engine's `addable` and `augment` but not `candidates`, which a composite (`/Type0`) subset is asked through, so every Identity-H subset was offered no letters and fell to a substitute. `editmodel::installedfaces` now forwards it. On SW41177 the repertoire query takes `z` with the fix and refuses it without. Installed fonts are on by default (`Preferences::use_os_fonts`).
+**Built and driven** (`a_key_the_subset_lacks_comes_from_its_installed_face --pdf SW41177.pdf --doc-point 0,1215,595`, off the desktop). Typing `z` into a CenturyGothic line, with Paragraphs on and with it off, draws no "will be set in" notice, and the commit adds the glyph to `AQHZBV+CenturyGothic` from `GOTHIC.TTF`. The font-folder source now forwards `candidates`, which is how the engine asks about a composite (`/Type0`) subset. Without it, the line route reproduces his notice: `face=Helvetica state=planned`. Installed fonts are on by default (`Preferences::use_os_fonts`); a unit test pins that for a clean settings file.
 
 ## O312 — **BUILT AND DRIVEN, awaiting his check** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
 

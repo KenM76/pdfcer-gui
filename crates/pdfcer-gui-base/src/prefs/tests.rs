@@ -616,6 +616,13 @@ fn an_empty_file_produces_defaults_and_no_notes() {
     assert!(notes.is_empty());
 }
 
+/// A clean settings file searches this computer's font folders.
+#[test]
+fn a_clean_settings_file_uses_the_installed_fonts() {
+    let (prefs, _) = Prefs::parse("");
+    assert!(prefs.use_os_fonts);
+}
+
 /// Every key the writer emits is a key the parser knows.
 #[test]
 fn the_writer_emits_no_key_the_parser_rejects() {

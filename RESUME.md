@@ -216,7 +216,9 @@ same-name installed face (`editmodel::installedfaces`, indexed on a
 background thread at start, about 3 s over 542 files here; until then the
 key is re-faced); measure with
 `ui-verify --check a_key_the_subset_lacks_comes_from_its_installed_face` on
-`fixtures/augment-subset.pdf`. Reflow names a ruled table's cell in the
+`fixtures/augment-subset.pdf`, or with `--pdf` and `--doc-point` on a drawing,
+where it types `z` through both the paragraph and the line route (SW41177 at
+`0,1215,595`). Reflow names a ruled table's cell in the
 engine's cell-aware numbering (`canvas::textedit::reflow`); Up/Down in a
 table still reads the plain recognition (G080's caret half). The notice under the editor box names the keys and the face, with one
 click to the whole line in it (`canvas::textedit::refused`); measure with
