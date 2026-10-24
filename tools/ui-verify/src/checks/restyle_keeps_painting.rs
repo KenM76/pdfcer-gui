@@ -25,16 +25,14 @@ const SIZE_REGION: &str = "properties.text.size";
 const SYNCED: &str = "text-style-synced";
 /// The restyle's verdicts.
 const VERDICTS: [&str; 2] = ["text-style-applied", "text-style-declined"]; // ui-text-exempt: trace event names, never displayed
-/// The restyle's summary: `ops= applied= slices= engine_ms= wall_ms= hurried=`.
+/// The restyle's summary: `ops= applied= calls= planned_once= wall_ms=`.
 const BATCH: &str = "text-style-batch"; // ui-text-exempt: a trace event name, never displayed
 /// A frame whose own work took 50 ms or more.
 const LONG: &str = "frame-long"; // ui-text-exempt: a trace event name, never displayed
-/// The longest frame the window may take while the restyle runs. One engine
-/// call (about 105 ms on SW41177) plus the frame's own work fits under it
-/// several times; a restyle done in one frame is tens of seconds.
+/// The longest frame the window may take while the restyle runs. The one
+/// engine call plus the frame's own work fits under it; a restyle done one
+/// operator at a time is tens of seconds.
 const HOLD_MS: usize = 800;
-/// The engine time past which the restyle must have been spread over frames.
-const SPREAD_MS: usize = 400;
 /// The fixture's line count: one text object, one show operator a line.
 const LINES: usize = 120;
 /// The fixture's drawn size, and the size typed over it.
@@ -315,7 +313,7 @@ fn held(
     if ms > HOLD_MS {
         return Some(format!(
             "★ the window stopped painting for {ms} ms while the restyle ran (limit {HOLD_MS} ms): \
-             `{}`. The restyle must run in slices across frames (`app::actions::restylejob`). \
+             `{}`. The restyle must be one engine call (`app::actions::restylebatch`). \
              Verdict: `{}`.",
             worst.raw, verdict.raw
         ));
@@ -326,8 +324,8 @@ fn held(
     None
 }
 
-/// The restyle's summary: every call applied, none run in one go, and spread
-/// over frames when the engine time calls for it.
+/// The restyle's summary: every operator applied, by the engine's one-walk
+/// path, in as few calls as the undo depth allows.
 fn batch(
     session: &Session,
     report: &mut CheckReport,
@@ -337,34 +335,24 @@ fn batch(
     let trace = session.trace()?;
     let Some(line) = trace.last_after(BATCH, mark) else {
         return Ok(Some(format!(
-            "★★ the restyle's verdict `{}` has no `{BATCH}` summary before it, so it did not run \
-             as one sliced job. Trace: {}.",
+            "★★ the restyle's verdict `{}` has no `{BATCH}` summary before it. Trace: {}.",
             verdict.raw,
             session.trace_path().display()
         )));
     };
-    let field = |k: &str| line.get_usize(k).unwrap_or(0);
-    let (ops, applied, slices, engine) = (
-        field("ops"),
-        field("applied"),
-        field("slices"),
-        field("engine_ms"),
-    );
+    let field = |k: &str| line.get_usize(k);
+    let (ops, applied) = (field("ops").unwrap_or(0), field("applied").unwrap_or(0));
     if ops == 0 || applied != ops || !verdict.event.ends_with("applied") {
         return Ok(Some(format!(
-            "★★ the restyle applied {applied} of {ops} calls: `{}`, `{}`.",
+            "★★ the restyle applied {applied} of {ops} operators: `{}`, `{}`.",
             line.raw, verdict.raw
         )));
     }
-    if line.get("hurried") != Some("-") {
+    // A size change is pinned, on one page, with no new resource: the engine
+    // plans it once. `calls` is 1 unless the batch exceeded the undo depth.
+    if field("planned_once") != Some(1) || field("calls").unwrap_or(0) == 0 {
         return Ok(Some(format!(
-            "★★ the restyle was run to its end in one frame: `{}`.",
-            line.raw
-        )));
-    }
-    if engine > SPREAD_MS && slices < 2 {
-        return Ok(Some(format!(
-            "★★ {engine} ms of engine time ran in {slices} slice: `{}`.",
+            "★★ the restyle was not one planned engine call: `{}`.",
             line.raw
         )));
     }

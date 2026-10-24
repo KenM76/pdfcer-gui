@@ -14,10 +14,10 @@ check types a size for such an object and requires:
    sends after the verdict is acknowledged only once that frame is over, which
    is what puts the line inside the window. An unacknowledged Enter is the
    freeze itself and is not an error;
-2. **the whole gesture applies, at its own pace** — a `text-style-batch` line
-   with `applied == ops` and `hurried=-`, and at least two slices whenever the
-   engine time exceeds 400 ms (`SPREAD_MS`), so a job that ran in one frame
-   cannot pass on a fast machine;
+2. **the whole gesture applies as one engine call** — a `text-style-batch`
+   line with `applied == ops`, `planned_once=1` and `calls` of at least 1. A
+   size change is pinned and creates no resource, so `EditSession::format_texts`
+   plans it once; a build restyling operator by operator has no such line;
 3. **one undo entry** — once Properties re-reads the typed size, one Ctrl+Z
    brings the re-read size back to the original.
 
@@ -31,17 +31,16 @@ Driven off the desktop through the scripted pointer, under `--no-input`.
 
 | input | doc-point | verdict |
 |---|---|---|
-| fixture | default | PASS: longest frame 112 ms; `ops=120 applied=120 slices=10 engine_ms=469 wall_ms=858 hurried=-`; one Ctrl+Z 6.00 → 4.00 |
-| `D:/Dev/pdfTests/SW41177/SW41177.pdf` (private, never checked in) | `0,1215,595` | PASS: longest frame 291 ms (the post-commit Properties re-read of the 425-run object; slice frames ≤ 169 ms); `ops=238 applied=238 slices=124 engine_ms=11012 wall_ms=17963 hurried=-`; one Ctrl+Z 6.00 → 13.23 |
+| fixture | default | PASS: no frame 50 ms or more; `ops=120 applied=120 calls=1 planned_once=1 wall_ms=7`; one Ctrl+Z 6.00 → 4.00 |
+| `D:/Dev/pdfTests/SW41177/SW41177.pdf` (private, never checked in) | `0,1215,595` | PASS: longest frame 219 ms (the post-commit Properties re-read of the 425-run object); `ops=238 applied=238 calls=1 planned_once=1 wall_ms=131`; one Ctrl+Z 6.00 → 13.23 |
 
-The frame prelude skips the page's content generation (~40 ms on SW41177) and
-the selection's split operand (~45 ms) while a job runs (`app::frame`). With
-them, slice frames on SW41177 measure 200–536 ms and the job 35–65 s of wall
-time; the check's 800 ms bound does not see that difference, the batch line's
-`wall_ms` does.
+A restyle the engine must apply one operator at a time (a decoration, a new
+font or opacity resource) above `MAX_UNDO_DEPTH` operators is refused as one
+call and split (`text-style-chunked`); no fixture reaches that branch, so it
+is not driven here.
 
 ## Falsification
 
 | control build | expected verdict |
 |---|---|
-| the v0.97.0 release (restyle in one frame), `--exe … --allow-stale`, SW41177 | FAIL at step 1: "the window stopped painting for 27951 ms (limit 800 ms)" — watched red |
+| the build published from `ac1f5e49` (per-frame slices), `--exe … --allow-stale`, SW41177 | FAIL at step 2: "the restyle was not one planned engine call: `… slices=121 engine_ms=10960 wall_ms=17835 …`" — watched red |

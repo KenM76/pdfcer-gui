@@ -23,10 +23,6 @@ impl PdfcerApp {
 
     /// Apply a single action.
     fn apply(&mut self, action: Action, pixels_per_point: f32) {
-        // No action may read or edit a document a restyle is halfway through.
-        if let Status::Open(doc) = &mut self.status {
-            super::restylejob::finish(doc, "action");
-        }
         // The three actions that are about WHICH document is open, matched
         // BEFORE the guard below.
         //

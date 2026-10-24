@@ -95,18 +95,6 @@ fn wait_for_sole_owner(session: &Arc<EditSession>) {
     });
 }
 
-/// **The session, taken without the funnel's bookkeeping**, for work that
-/// spans frames and commits through [`vector_edit`] at its end.
-///
-/// The epoch is left alone, so the picture on screen and every cache keep
-/// describing the document as it stood before the work began. `None` when a
-/// background holder will not let go.
-pub(super) fn take_quietly(doc: &mut OpenDoc) -> Option<&mut EditSession> {
-    doc.render_worker.cancel_and_wait();
-    wait_for_sole_owner(&doc.session);
-    Arc::get_mut(&mut doc.session)
-}
-
 fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     doc: &mut OpenDoc,
     label: &str,
@@ -115,7 +103,6 @@ fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     scope: EditScope,
     edit: impl FnOnce(&mut EditSession) -> Result<Vec<String>, E>,
 ) {
-    super::restylejob::finish(doc, "edit");
     doc.render_worker.cancel_and_wait();
     wait_for_sole_owner(&doc.session);
     let Some(session) = Arc::get_mut(&mut doc.session) else {

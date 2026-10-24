@@ -675,10 +675,12 @@ pub fn text_style_multi(count: usize) -> String {
     )
 }
 
-/// Status bar, while a restyle runs over several frames.
+/// Disclosure: a restyle too large for one engine call was made in steps.
 #[must_use]
-pub fn text_style_progress(done: usize, of: usize) -> String {
-    format!("Restyling text: {done} of {of} pieces done.")
+pub fn text_style_in_steps(count: usize, step: usize) -> String {
+    format!(
+        "This change has to be made one piece of text at a time, so pdfcer made its {count} pieces in steps of {step}. One Ctrl+Z still takes them all back."
+    )
 }
 
 //

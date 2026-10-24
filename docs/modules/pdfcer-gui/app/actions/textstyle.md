@@ -141,14 +141,12 @@ Ascending order would work for four of the five controls and fail for italic,
 on multi-run selections only, by restyling the wrong text — the shape of
 defect that ships because the case that breaks it is the one nobody tries.
 
-## What is NOT here, and is filed rather than hidden
+## One engine call
 
-**One batch call.** The engine has no batch format verb (`ENGINE_BACKLOG.md`
-G227), so a gesture is one `format_text` call per show operator, each
-planning against the whole stream — about 100 ms a call on a dense drawing.
-`restylejob` runs those calls in slices across frames so the window keeps
-painting, and folds them into **one undo entry** with
-`EditSession::coalesce_last`. See `restylejob.md`.
+A gesture's requests go to `EditSession::format_texts` in one call: one
+plan of the stream, one undo entry, one re-render. The engine refuses a
+batch it must apply one request at a time above the undo depth, and only
+then is the gesture split. See `restylebatch.md`.
 
 ## Item notes
 

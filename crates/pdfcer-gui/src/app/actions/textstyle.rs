@@ -125,14 +125,14 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         _ => None,
     };
 
-    // One extraction for the whole gesture, and every call in one job that
-    // keeps the window painting: `super::restylejob` carries why.
+    // One extraction for the whole gesture, and every operator in one engine
+    // call: `super::restylebatch` carries why.
     let (pins, stopped) = crate::canvas::textedit::pin::operators_of_runs(doc, page, &ordered);
     if pins.is_empty() {
         stop(doc, 0, t::TextStyleRefusal::Unpinnable);
         return;
     }
-    let requests = pins
+    let requests: Vec<FormatRequest> = pins
         .into_iter()
         .map(|pin| {
             let req = change.stamp(request(page, pin));
@@ -142,10 +142,14 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
             }
         })
         .collect();
-    super::restylejob::start(
-        doc,
-        super::restylejob::RestyleJob::new(page, policy, change.label(), requests, total, stopped),
-    );
+    let gesture = super::restylebatch::Gesture {
+        page,
+        policy,
+        change: change.label(),
+        runs: total,
+        stopped,
+    };
+    super::restylebatch::run(doc, &gesture, &requests);
 }
 
 /// **One `format_text` call through the funnel** — the notes it owes the
@@ -190,8 +194,13 @@ pub(super) fn format_in(
 ) -> Result<Vec<String>, FormatError> {
     let options = FormatOptions::default().with_style_policy(policy);
     let report = session.format_text(req, &options)?;
-    // The ladder's own sentence first, then the engine's disclosures: what
-    // happened to the text, then how.
+    Ok(report_notes(page, policy, report))
+}
+
+/// What one applied restyle owes the operator: the ladder's own sentence
+/// first, then the engine's disclosures, so what happened to the text comes
+/// before how.
+pub(super) fn report_notes(page: usize, policy: StylePolicy, report: FormatReport) -> Vec<String> {
     let mut notes: Vec<String> = Vec::new();
     if let Some(note) = ladder_note(&report, policy) {
         notes.push(note);
@@ -207,7 +216,7 @@ pub(super) fn format_in(
         });
     }
     notes.extend(report.disclosures);
-    Ok(notes)
+    notes
 }
 
 /// The trace token for where a strikethrough's line came from. The engine

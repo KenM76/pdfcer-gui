@@ -355,15 +355,9 @@ impl eframe::App for PdfcerApp {
         // Silent when a render is in flight and the `Arc` is shared. That is
         // safe rather than lucky: the digest is stored with the epoch it was
         // measured at, and is ignored once that epoch is stale.
-        //
-        // Skipped while a restyle job runs: its slices change the page without
-        // an epoch bump, the closing bump re-measures, and on a dense drawing
-        // the digest and the split operand cost ~85 ms a frame between slices.
         if let Status::Open(doc) = &mut self.status {
-            if crate::app::actions::restylejob::progress(doc).is_none() {
-                doc.refresh_content_generation();
-                crate::canvas::runsplit::refresh(doc);
-            }
+            doc.refresh_content_generation();
+            crate::canvas::runsplit::refresh(doc);
             crate::app::handsigned::refresh(&ctx, doc);
         }
 
@@ -1246,9 +1240,6 @@ impl eframe::App for PdfcerApp {
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);
-        if let Status::Open(doc) = &mut self.status {
-            crate::app::actions::restylejob::pump(&ctx, doc);
-        }
         self.remote_settle(&ctx);
         self.siblings_picker(&ctx);
         // After the actions, so the in-font draft is laid out for the text
