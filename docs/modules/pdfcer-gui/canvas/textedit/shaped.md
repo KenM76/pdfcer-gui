@@ -107,11 +107,7 @@ A render-without-this-run from the engine would remove the assumption.
 once per distinct draft text (`run=` is the block index and `tier=Block` when
 `block=1`), and `text-edit-preview-fallback page= run= reason=
 font_pt=` each time the reason for the open draft changes; `font_pt` is the
-stand-in's size in screen points. When the engine refused the layout,
-`text-edit-preview-refused page= run= tier= error=` precedes the
-`text-edit-shaped` line and carries the engine's own sentence, last because it
-holds spaces; a paragraph is laid out under `diag::muted`, so the sentence is
-held and traced by `refresh` after it. `unread=` counts the laid-out glyphs whose
+stand-in's size in screen points. `unread=` counts the laid-out glyphs whose
 code reads back as no character or another one — each draws as a square; a
 block layout's glyphs are sorted, so there only a code reading back as nothing
 counts. It is `0` when nothing was laid out (`shaped=0`). `plan::plan` is run under `diag::muted`, and the

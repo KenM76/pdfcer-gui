@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**O310 driven on SW41177, awaiting his verdict:** no blank, no squares; a size typed for a 425-run object click restyles as one engine call with one undo (`a_large_restyle_keeps_painting`, longest frame 219 ms, 238 operators in 131 ms); Properties follows the caret's word. Open: G228 (a mixed-size line refused own-font layout, so the open line shows the stand-in font).
+**O310 driven on SW41177, awaiting his verdict:** no blank, no squares; a size typed for a 425-run object click restyles as one engine call with one undo (`a_large_restyle_keeps_painting`, longest frame 219 ms, 238 operators in 131 ms); Properties follows the caret's word. The re-opened mixed-size line draws in its own font (G228, engine v0.98.0).
 
 **v0.97.0 wired:** nothing to build. A block sharing its text object (G226) now opens; its disclosure and the remaining `TextObjectNotSeparable` refusal reach the shell through the existing routes. O307 driven on SW41177. Shipped in `v0.5.0-dev.20261024.1`.
 

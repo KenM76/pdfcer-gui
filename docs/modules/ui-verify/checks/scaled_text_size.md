@@ -30,9 +30,9 @@ restyles the **word at the caret**, not the line. The check requires:
    `notdef=` is no higher than before it (a blank or squared-out redraw);
 5. **the re-open** — a Text-tool click on the line opens the same number of
    characters (`text-edit-caret len=`), and the opened line draws no squares:
-   laid out in its own font, `text-edit-shaped unread=0`; refused a layout
-   (`shaped=0`, drawn in the stand-in font over the line), no page render so
-   far above the original `notdef=`.
+   laid out in its own font, `text-edit-shaped shaped=1 unread=0`. A line
+   refused that layout (`shaped=0`) draws in the stand-in font over the
+   drawing's own glyphs, and fails.
 
 It then presses Escape and Ctrl+S, so the restyled copy is on disk for the
 engine CLI to read back.
@@ -47,16 +47,10 @@ Driven off the desktop through the scripted pointer, under `--no-input`.
 
 | input | doc-point | verdict |
 |---|---|---|
-| fixture | default | PASS: 18.00 read, 24.00 written and shown, 17 chars, notdef 0→0, re-open len 17, stand-in font |
-| `D:/Dev/pdfTests/SW41177/SW41177.pdf` (private, never checked in) | `0,1215,595` ("TRUCK", run 108, 41 chars, CenturyGothic Type0) | PASS: 13.23 read, 24.00 written and shown, notdef 0→0, re-open len 41, stand-in font |
+| fixture | default | PASS: 18.00 read, 24.00 written and shown, 17 chars, notdef 0→0, re-open len 17, own font (`shaped=1 refused=0 tier=Line unread=0`) |
+| `D:/Dev/pdfTests/SW41177/SW41177.pdf` (private, never checked in) | `0,1215,595` ("TRUCK", run 108, 41 chars, CenturyGothic Type0) | PASS: 13.23 read, 24.00 written and shown, notdef 0→0, re-open len 41, own font (`shaped=1 refused=0 tier=Line unread=0`) |
 
-On both, the re-opened line is refused an own-font layout
-(`text-edit-preview-fallback reason=refused`) once the restyle has split it
-into differently sized pieces, so it is shown in the stand-in font. The
-`text-edit-preview-refused` line names the engine's refusal: `NoMatch` with
-`SplitRun { operators: 2 }` on the fixture, and `NoSuchText` on SW41177 —
-filed as G228. The saved
-SW41177 copy read back with the engine CLI: `find-text` puts "TRUCK" 24 pt
+The saved SW41177 copy read back with the engine CLI: `find-text` puts "TRUCK" 24 pt
 tall, `render-page` reports 0 `.notdef` and 0 substituted glyphs.
 
 ## Falsification
@@ -66,3 +60,4 @@ tall, `render-page` reports 0 `.notdef` and 0 substituted glyphs.
 | `RunStyle.size` = `tf_size` instead of `GlyphProvenance::drawn_size` | FAIL at step 1, reads `1.00` |
 | `StyleChange::stamp` calls `FormatRequest::size` instead of `drawn_size` | FAIL at step 2 — watched red on SW41177, `317.52` pt |
 | the size field's `follow_letters` call removed (the field keeps the line's first word) | FAIL at step 2: "the word restyled to 24 pt and Properties never showed its size" — watched red on the fixture |
+| the build published from `ac1f5e49` (engine v0.97.0, which refused a line whose words differ in size), `--exe … --allow-stale` | FAIL at step 5: "the opened line is not laid out in its own font" — watched red on the fixture |

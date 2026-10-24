@@ -300,7 +300,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let failure = match failure {
         Some(f) => Some(f),
-        None => reopen_as_text(ctx, &session, &pointer, &subject, report, &read, baseline)?,
+        None => reopen_as_text(ctx, &session, &pointer, &subject, report, &read)?,
     };
     save(&session, &pointer, report)?;
     Ok(failure)
@@ -376,7 +376,6 @@ fn reopen_as_text(
     subject: &Subject,
     report: &mut CheckReport,
     before: &Read,
-    baseline: usize,
 ) -> Result<Option<String>> {
     // The restyle closed the open line and left the Text tool armed, so this
     // click opens the line afresh from the restyled page.
@@ -405,7 +404,7 @@ fn reopen_as_text(
                 "★★★ the Text tool opened the restyled run's {len} characters: `{}`",
                 caret.raw
             ));
-            shaped_whole(session, report, mark, baseline)
+            shaped_whole(session, report, mark)
         }
         other => Ok(Some(format!(
             "★ after the size change the Text tool opened `{}` characters where the run had \
@@ -420,13 +419,12 @@ fn reopen_as_text(
 
 /// The opened line's own-font layout pairs every glyph with its character;
 /// a glyph whose code reads back as another draws as a square. A line the
-/// engine would not lay out is drawn in the shell's stand-in font, so its
-/// squares can only come from the page render beneath it.
+/// engine would not lay out is drawn in the shell's stand-in font, which is
+/// a failure: the line no longer looks like the drawing.
 fn shaped_whole(
     session: &Session,
     report: &mut CheckReport,
     mark: usize,
-    baseline: usize,
 ) -> Result<Option<String>> {
     let shaped: Option<TraceLine> = wait(10_000, || {
         session.settle(4);
@@ -439,7 +437,15 @@ fn shaped_whole(
         )));
     };
     if shaped.get_usize("shaped") == Some(0) {
-        return stand_in(session, report, mark, baseline, &shaped.raw);
+        let why = session
+            .trace()?
+            .last_after(FALLBACK, mark)
+            .map_or_else(|| "no fallback line".to_owned(), |l| l.raw.clone());
+        return Ok(Some(format!(
+            "★★★ the opened line is not laid out in its own font (`{}`; `{why}`), so it draws in the stand-in font. Trace: {}.",
+            shaped.raw,
+            session.trace_path().display()
+        )));
     }
     match shaped.get_usize("unread") {
         Some(0) => {
@@ -456,32 +462,6 @@ fn shaped_whole(
             session.trace_path().display()
         ))),
     }
-}
-
-/// The opened line fell back to the stand-in font: say why, and require every
-/// page render so far to draw no more `.notdef` glyphs than the page did.
-fn stand_in(
-    session: &Session,
-    report: &mut CheckReport,
-    mark: usize,
-    baseline: usize,
-    shaped: &str,
-) -> Result<Option<String>> {
-    let trace = session.trace()?;
-    let why = trace
-        .last_after(FALLBACK, mark)
-        .map_or_else(|| "no fallback line".to_owned(), |l| l.raw.clone());
-    let worst = squares(&trace, 0).unwrap_or(0);
-    if worst > baseline {
-        return Ok(Some(format!(
-            "★★★ the opened line is in the stand-in font and the page beneath it drew {worst} `.notdef` glyphs where it had {baseline}: `{shaped}`. Trace: {}.",
-            session.trace_path().display()
-        )));
-    }
-    report.note(format!(
-        "★★★ the opened line is not laid out in its own font (`{shaped}`; `{why}`), so it draws in the stand-in font; every page render drew at most {worst} `.notdef` glyphs ({baseline} before)"
-    ));
-    Ok(None)
 }
 
 /// Click the Edit tab when the Text tool is not on the band, then the tool.
