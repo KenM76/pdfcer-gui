@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**v0.96.0 wired:** Insert pages, Combine files, Merge and Extract pages now say, off-canvas, when the copied pages came from a tagged file whose tags stayed behind, how many links into those tags were re-pointed at a page (and how many fell back to the source's first page), and how many links to pages not copied lost their destination (`text::structlinks`). `AssembleReport::struct_tree_dropped` was undisclosed before and is said with them.
+**v0.96.0 wired:** Insert pages, Combine files, Merge and Extract pages now say, off-canvas, when the copied pages came from a tagged file whose tags stayed behind, how many links into those tags were re-pointed at a page (and how many fell back to the source's first page), and how many links to pages not copied lost their destination (`text::structlinks`). `AssembleReport::struct_tree_dropped` was undisclosed before and is said with them. Shipped in `v0.5.0-dev.20261023.4`.
 
 **v0.95.0 wired:** nothing to build. The redaction report's structure-tree carrier now reads scrubbed or checked clean instead of disclosed, and the report's existing census lists it that way; the engine's note on stripped replacement text reaches the engine-notes fold unchanged. `TABLE_DPI` is exempt in the API snapshot. Shipped in `v0.5.0-dev.20261023.3`.
 
