@@ -598,17 +598,17 @@ Both menus list every panel this build registers, ticked when it is on screen; c
 
 His words: *"with show and hide layers, if I click to show or hide a layer that has sub items in the tree those should change to show or hide as well. also when layers and objects are hidden they shouldn't get selected when I select around things on the page. also our objects section should also put things treed into their layers if possible."*
 
-## O316 — **BUILT, NOT DRIVEN** — showing or hiding a layer shows or hides everything under it in the tree
+## O316 — **BUILT AND DRIVEN — awaiting his verdict** — showing or hiding a layer shows or hides everything under it in the tree
 
-**Where it stands.** A layer's switch sets every unlocked layer nested under it the same way; a locked sublayer keeps its state; a folder has no switch of its own, as in Acrobat. Tested by `a_parent_layers_switch_carries_its_sublayers`, falsified. Driving waits for the PC.
+**Where it stands.** A layer's switch sets every unlocked layer nested under it the same way; a locked sublayer keeps its state; a folder has no switch of its own, as in Acrobat. Tested by `a_parent_layers_switch_carries_its_sublayers` and driven by the ui-verify check `a_parent_switch_carries_its_sublayers` on `fixtures/layer-hiding.pdf` (Structure off takes its sublayer Steel off, leaves locked Survey and the top-level layers on), both falsified.
 
-## O317 — **BUILT, NOT DRIVEN** — a hidden layer's or object's content is not picked up by a selection rectangle
+## O317 — **BUILT AND DRIVEN — awaiting his verdict** — a hidden layer's or object's content is not picked up by a selection rectangle
 
-**Where it stands.** Objects, form contents and annotations on a hidden layer are not taken by a click, a band or Select All, and come back when the layer is shown. Tested by `a_band_does_not_take_what_a_hidden_layer_holds` and `an_annotation_on_a_hidden_layer_is_not_selectable`, both falsified. The GUI hides layers, not single objects, so "hidden objects" means objects on a hidden layer. Limit: the engine names only an object's innermost layer, so content in a shown layer nested inside a hidden one stays selectable. Driving waits for the PC.
+**Where it stands.** Objects, form contents and annotations on a hidden layer are not taken by a click, a band or Select All, and come back when the layer is shown. Tested by `a_band_does_not_take_what_a_hidden_layer_holds` and `an_annotation_on_a_hidden_layer_is_not_selectable`, both falsified. The GUI hides layers, not single objects, so "hidden objects" means objects on a hidden layer. Content painted inside a hidden layer's span is hidden too, whatever layer it is on itself, because the filter reads every enclosing `/OC` (`oc_chain`). Driven by the ui-verify check `a_band_takes_nothing_on_a_hidden_layer`: with Steel hidden, a band around Steel's square and the Bolts square nested in Steel's span takes 0; shown, it takes 2; falsified.
 
-## O318 — **BUILT, NOT DRIVEN** — the Objects panel groups objects under the layer they belong to, where the file says so
+## O318 — **BUILT AND DRIVEN — awaiting his verdict** — the Objects panel groups objects under the layer they belong to, where the file says so
 
-**Where it stands.** On a page whose objects are on layers, the Objects panel lists them under one folding heading per layer (name, hidden or not, count), with "Not on a layer" last; a page without layers keeps the flat list. Tested by the three `panels::objects::layered` tests, falsified. Driving waits for the PC.
+**Where it stands.** On a page whose objects are on layers, the Objects panel lists them under one folding heading per layer (name, hidden or not, count), with "Not on a layer" last; a page without layers keeps the flat list. Tested by the three `panels::objects::layered` tests and driven by the ui-verify check `objects_list_under_their_layers`, which reads the headings in order from the `objects-layers` trace; both falsified.
 
 ## O319 — **PARTS 1–2 BUILT AND DRIVEN; part 3 open** — picture compression, and object commands generally, from a right-click on the object, in the Objects tree, and on a Ctrl/Shift multi-selection
 

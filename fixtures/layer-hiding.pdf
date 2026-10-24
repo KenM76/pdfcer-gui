@@ -1,0 +1,64 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /PageMode /UseOC /OCProperties << /OCGs [5 0 R 6 0 R 7 0 R 8 0 R 9 0 R] /D << /Name (Default) /BaseState /ON /Order [5 0 R [6 0 R 9 0 R] 7 0 R 8 0 R] /ON [5 0 R 6 0 R 7 0 R 8 0 R 9 0 R] /Locked [9 0 R] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 800 800] /Resources << /Properties << /OC1 5 0 R /OC2 6 0 R /OC3 7 0 R /OC4 8 0 R /OC5 9 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 299 >>
+stream
+/OC /OC1 BDC
+0.2 0.2 0.8 rg 60 600 160 120 re f
+EMC
+/OC /OC2 BDC
+0.6 0.6 0.6 rg 300 600 160 120 re f
+/OC /OC3 BDC
+0.8 0.4 0.1 rg 300 400 160 120 re f
+EMC
+EMC
+/OC /OC4 BDC
+0.1 0.6 0.2 rg 560 600 160 120 re f
+EMC
+/OC /OC5 BDC
+0.6 0.1 0.6 rg 60 400 160 120 re f
+EMC
+0.1 0.1 0.1 rg 560 400 160 120 re f
+endstream
+endobj
+5 0 obj
+<< /Type /OCG /Name (Structure) /Intent /View >>
+endobj
+6 0 obj
+<< /Type /OCG /Name (Steel) /Intent /View >>
+endobj
+7 0 obj
+<< /Type /OCG /Name (Bolts) /Intent /View >>
+endobj
+8 0 obj
+<< /Type /OCG /Name (Notes) /Intent /View >>
+endobj
+9 0 obj
+<< /Type /OCG /Name (Survey) /Intent /View >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000272 00000 n 
+0000000329 00000 n 
+0000000506 00000 n 
+0000000855 00000 n 
+0000000919 00000 n 
+0000000979 00000 n 
+0000001039 00000 n 
+0000001099 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1160
+%%EOF

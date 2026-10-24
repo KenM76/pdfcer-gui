@@ -82,6 +82,39 @@ pub(super) fn label(
     t::object_tree_layer_row(&name, count, hidden(id))
 }
 
+/// Writes `objects-layers`: the page's headings in the order the tree lists
+/// them, `|`-separated, with `-` for the content on no layer. Written when it
+/// changes; nothing is written for a page with no headings.
+pub(super) fn trace_headings(
+    read: &pdfcer_core::layers::Layers,
+    page: usize,
+    rows: &[ObjectTreeRow],
+) {
+    let names: Vec<String> = rows
+        .iter()
+        .filter_map(|r| match r {
+            ObjectTreeRow::Layer { group, .. } => Some(group.map_or_else(
+                || "-".to_owned(),
+                |id| {
+                    crate::panels::layers::layer_name_for(read, id)
+                        .unwrap_or_default()
+                        .replace(['|', '"'], "_") // ui-text-exempt: a trace field separator, never displayed
+                },
+            )),
+            _ => None,
+        })
+        .collect();
+    crate::diag::trace_changed(HEADINGS_SLOT, || {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "objects-layers page={page} headings=\"{}\"",
+            names.join("|")
+        )
+    });
+}
+
+const HEADINGS_SLOT: &str = "objects-layers"; // ui-text-exempt: trace slot name, never displayed
+
 #[cfg(test)]
 mod tests {
     use super::*;

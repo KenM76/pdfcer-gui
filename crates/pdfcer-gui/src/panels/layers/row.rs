@@ -5,7 +5,7 @@
 //! canvas selection is on this layer. It returns the operator's tick and the
 //! name's response, which senses click and drag so the tree can start a drag
 //! from it. It emits the `layer-row` trace line every frame the
-//! row is drawn, and scrolls the row into view on the frame the highlight
+//! row is drawn, publishes the check box as `panel.layers.switch.<name>`, and scrolls the row into view on the frame the highlight
 //! moves to it.
 
 use std::collections::BTreeSet;
@@ -172,6 +172,8 @@ fn check_box(ui: &mut egui::Ui, l: &Layer, effective: bool) -> Option<(ObjId, bo
             t::layer_toggle_tooltip()
         })
         .on_disabled_hover_text(t::layer_locked_tooltip());
+    // ui-text-exempt: trace region name prefix, never displayed.
+    super::authoring::publish_keyed("panel.layers.switch", &super::row_name(l), cb.rect);
     ui.label(if effective {
         t::layer_visible_marker()
     } else {

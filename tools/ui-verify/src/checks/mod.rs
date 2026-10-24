@@ -444,6 +444,8 @@ pub mod layer_authoring;
 pub mod layer_combine;
 /// Folders and moves in the Layers panel's tree.
 pub mod layer_folders;
+/// A parent switch carries its sublayers; a band skips hidden layers; Objects headings.
+pub mod layer_hiding;
 /// Make a markup part of the page from its right-click menu.
 pub mod markup_flatten;
 /// Markup ▸ Media clip: a dragged region carries the clip, its type and its choices.

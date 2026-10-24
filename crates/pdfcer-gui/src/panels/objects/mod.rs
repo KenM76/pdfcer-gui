@@ -139,6 +139,9 @@ pub fn body(
         let view = doc.session.view();
         (pdfcer_core::layers::read_layers(&view), doc.hidden_layers())
     });
+    if let Some((read, _)) = &layers_read {
+        layered::trace_headings(read, page_index, &rows);
+    }
     let total_rows = rows.len();
     let object_count = objects.len();
     crate::diag::trace(|| {
