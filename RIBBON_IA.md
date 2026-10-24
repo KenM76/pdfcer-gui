@@ -518,7 +518,7 @@ inferred.
 | Group | Commands |
 |---|---|
 | **Batch** | Merge files… · Bates number files… · Split files… · Batch print… |
-| **Compare** | Compare documents… |
+| **Compare** | Compare documents… (`tools.compare`; the results are the Compare panel) |
 | **Fonts** | Font folders… · Embed fonts · Unembed fonts |
 | **Validate** | PDF/A validate & convert… · Optimise… |
 | **Diagnostics** | Render diagnostics · Ink picker |
@@ -882,8 +882,8 @@ returning one remembers: *Copy text*, *Redact* (Security ▸ Protect) and *Rotat
    revision, so a recovery timer is an addition rather than a prerequisite. Is
    one wanted, and does `file.revert` mean *back to the last save* or *back to
    the revision the file was opened at*? The two are different commands.
-2. **Compare** — worth building, or out of scope? It is the one absence an AEC
-   reviewer names first, and it is a large build.
+2. **Compare** — closed: built (O326) as Tools ▸ Compare ▸ Compare documents…,
+   with its results in the Compare panel.
 3. **Multi-run text editing** (`GUI_ROADMAP.md` Phase 5d) — is *edit one run at
    a time, clearly disclosed* an acceptable resting state, or is this the thing
    that has to be right?

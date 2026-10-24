@@ -326,11 +326,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — printing a set of files unattended, with one print setup.",
     ),
-    (
-        "tools.compare",
-        "N — document comparison. A large build, and an OPEN QUESTION in RIBBON_IA.md §8 \
-         rather than a scheduled item: it is the one absence an AEC reviewer names first.",
-    ),
     // ⚠ **OCR is `file.ocr`, in File ▸ Recognise rather than Tools ▸
     // Recognise** — `super::tools`' header gives the reason.
     //

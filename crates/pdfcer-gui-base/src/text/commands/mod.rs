@@ -957,6 +957,16 @@ pub const fn tools_render_diagnostics() -> CommandText {
     )
 }
 
+/// `tools.compare`
+#[must_use]
+pub const fn tools_compare() -> CommandText {
+    CommandText::new(
+        "Compare documents…",
+        "Compare this document with an older version of it: list what changed and \
+         mark the changes as comments.",
+    )
+}
+
 /// `tools.ink_picker`
 #[must_use]
 pub const fn tools_ink_picker() -> CommandText {

@@ -83,11 +83,14 @@ pub enum Panel {
     /// The page as its printing inks, with each plate shown or hidden —
     /// Acrobat's Output Preview, separations half. Canvas only.
     OutputPreview,
+    /// What changed from an older version of the open document — Acrobat's
+    /// Compare Files, listed with a jump per change.
+    Compare,
 }
 
 impl Panel {
     /// Every panel.
-    pub const ALL: [Self; 15] = [
+    pub const ALL: [Self; 16] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -103,6 +106,7 @@ impl Panel {
         Self::DimensionGroups,
         Self::AlignDistribute,
         Self::OutputPreview,
+        Self::Compare,
     ];
 
     /// The ribbon command that shows this panel.
@@ -134,6 +138,8 @@ impl Panel {
             Self::DimensionGroups => "measure.manage_groups",
             Self::AlignDistribute => "edit.align",
             Self::OutputPreview => "view.output_preview",
+            // Tools, beside Batch: the other command that reads files from disk.
+            Self::Compare => "tools.compare",
         }
     }
 
@@ -184,6 +190,7 @@ mod tests {
                 Panel::DocumentProperties => 12,
                 Panel::AlignDistribute => 13,
                 Panel::OutputPreview => 14,
+                Panel::Compare => 15,
             }
         }
         let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();

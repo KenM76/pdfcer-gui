@@ -42,10 +42,11 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     // SECURITY — the file-level band is the tab; redaction folds first.
     ("security", "trust", 1),
     ("security", "protect", 2),
-    // TOOLS — no group here outranks another, so all three may collapse.
+    // TOOLS — no group here outranks another, so all four may collapse.
     ("tools", "diagnostics", 1),
     ("tools", "fonts", 2),
     ("tools", "batch", 3),
+    ("tools", "compare", 4),
 ];
 
 /// Apply [`LADDER`] to a built shell.

@@ -419,10 +419,11 @@ amended. **It does not block the design** — the split, the sync rule, the
 overlay and merge/split are identical either way, and are argued in
 `DESIGNS.md`. Build those first and place the entry point last.
 
-**Document comparison — build it, or rule it out of scope?** It is the feature
-an AEC reviewer asks for first and it is a large build. *Blocks:* a phase of its
-own and probably a view mode of its own. Nothing else waits on it, which is why
-it can sit here unanswered without stalling anything.
+**Document comparison — build it, or rule it out of scope?** Closed: **built**
+(O326). Tools ▸ Compare ▸ Compare documents… compares the open document with
+an older version through the engine, by text and by appearance, lists the
+changes in the Compare panel, jumps to one on click and marks them as comments.
+It is a panel, not a view mode.
 
 **How much of cross-run text editing?** Is *edit one run at a time, refused in a
 sentence when the caret lands on a seam* an acceptable resting state for another

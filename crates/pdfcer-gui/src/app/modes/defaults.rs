@@ -354,6 +354,8 @@ fn spec(mode_id: &str) -> ModeSpec {
                     // Output Preview, last: print checking is asked for, not
                     // offered. Read and Review reach it from View ▸ Panels.
                     Panel::OutputPreview.command_id(),
+                    // Compare, after it: another check that is asked for.
+                    Panel::Compare.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,

@@ -10,6 +10,7 @@ use crate::canvas::textannot::TextAnnotKind;
 /// Author `comment` in the pen's colour and opacity for its kind.
 pub(super) fn apply(doc: &mut OpenDoc, prefs: &Prefs, pen: Pen, comment: NewComment) {
     match comment {
+        NewComment::ComparisonMarks(marks) => super::comparemark::apply(doc, prefs, &marks),
         NewComment::Attachment {
             page,
             rect,

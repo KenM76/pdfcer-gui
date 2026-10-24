@@ -24,6 +24,14 @@ pub fn tab() -> Tab {
                 [large("tools.merge_files"), large("tools.bates_files")],
             ),
             // ---------------------------------------------------------------
+            // Compare — the open document against an older version of it.
+            // ---------------------------------------------------------------
+            group(
+                "compare",
+                ribbon::group_tools_compare(),
+                [large("tools.compare")],
+            ),
+            // ---------------------------------------------------------------
             // Fonts — configured once, rarely touched.
             //
             // Font folders is a session-scoped setting (the folders are

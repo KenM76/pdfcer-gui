@@ -859,6 +859,9 @@ pub(super) const OVERPRINT: &str = include_str!("assets/overprint.svg");
 /// `ink-picker.svg` — the art for [`super::Icon::InkPicker`].
 pub(super) const INK_PICKER: &str = include_str!("assets/ink-picker.svg");
 
+/// `compare.svg` — the art for [`super::Icon::Compare`].
+pub(super) const COMPARE: &str = include_str!("assets/compare.svg");
+
 /// `align-before.svg` — the art for [`super::Icon::AlignBefore`].
 pub(super) const ALIGN_BEFORE: &str = include_str!("assets/align-before.svg");
 

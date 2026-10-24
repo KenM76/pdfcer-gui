@@ -556,6 +556,11 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(colour_clicked_text::ClickingTextOffersItsColour),
         Box::new(scaled_text_size::ScaledTextShowsAndTakesItsDrawnSize),
         Box::new(restyle_keeps_painting::ALargeRestyleKeepsPainting),
+        // Tools > Compare: the list first, because a jump or a mark failure
+        // reads only after the list is known to be right.
+        Box::new(compare_documents::ComparingListsEveryChange),
+        Box::new(compare_documents::ACompareRowShowsItsChange),
+        Box::new(compare_documents::MarkingAComparisonWritesComments),
         Box::new(multi_node::MultiNodeMoveMovesEveryPickedAnchor),
         Box::new(align_left::AlignLeftMovesEveryBoxInOneUndo),
         Box::new(shape_preview::DraggingANodeBendsTheLine),

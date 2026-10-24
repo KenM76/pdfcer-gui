@@ -1177,6 +1177,9 @@ pub enum Icon {
     /// Read the ink at a point — `tools.ink_picker`.
     InkPicker,
 
+    /// Compare with an older version — `tools.compare`.
+    Compare,
+
     // The Align panel's buttons (O264), one per control, Inkscape's layout.
     /// Align: objects placed to the left of the anchor, touching it.
     AlignBefore,

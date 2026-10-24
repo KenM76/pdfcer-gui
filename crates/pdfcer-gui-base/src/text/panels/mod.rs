@@ -44,6 +44,8 @@ pub mod meshfit;
 /// The 3D models section of the Attachments panel.
 pub mod models;
 
+/// The Compare panel: what changed from an older version.
+pub mod compare;
 /// The Objects panel, and the wording of every object fact.
 pub mod objects;
 /// The Output Preview panel: separations, ink by ink.

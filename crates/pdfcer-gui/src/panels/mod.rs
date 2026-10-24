@@ -15,6 +15,7 @@ pub mod align;
 pub mod attachments;
 pub mod bookmarks;
 pub mod comments;
+pub mod compare;
 pub mod dimension_groups;
 /// **The document's own properties**, a panel of its own rather than a
 /// permanently-drawn section of [`properties`]. Its header carries the
@@ -73,6 +74,7 @@ pub fn show(
         Panel::DimensionGroups => dimension_groups::body(ui, doc, state, actions),
         Panel::AlignDistribute => align::body(ui, doc, &mut state.align, actions),
         Panel::OutputPreview => output_preview::body(ui, doc, state, actions),
+        Panel::Compare => compare::body(ui, doc, state, actions),
     }
     Vec::new()
 }
@@ -340,6 +342,9 @@ pub struct PanelsState {
     /// would offer to write one document's comment onto another document's
     /// shape.
     comments: comments::note::CommentsUi,
+    /// The Compare panel: the older version, the options and the last
+    /// result. Reset with the document: a result describes one document.
+    compare: compare::CompareUi,
 }
 
 /// What the operator has opened and picked in the Objects tree.
@@ -595,6 +600,11 @@ impl PanelsState {
     /// The Bookmarks panel's authoring state.
     pub fn bookmarks_mut(&mut self) -> &mut bookmarks::BookmarksUi {
         &mut self.bookmarks
+    }
+
+    /// The Compare panel's state.
+    pub fn compare_mut(&mut self) -> &mut compare::CompareUi {
+        &mut self.compare
     }
 
     /// The Attachments panel's authoring state — the optional description.

@@ -141,6 +141,7 @@ fn all() -> Vec<CommandText> {
         tools_unembed_fonts(),
         tools_render_diagnostics(),
         tools_ink_picker(),
+        tools_compare(),
         format_delete(),
         format_merge_text_runs(),
         format_split_text_lines(),

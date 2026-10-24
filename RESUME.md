@@ -49,6 +49,8 @@ grepping it — a count only goes stale, a name can be born false.
 
 **O310 driven on SW41177, awaiting his verdict:** no blank, no squares; a size typed for a 425-run object click restyles as one engine call with one undo (`a_large_restyle_keeps_painting`, longest frame 219 ms, 238 operators in 131 ms); Properties follows the caret's word. The re-opened mixed-size line draws in its own font (G228, engine v0.98.0).
 
+**O326 built and driven on the fixture pair, awaiting his check:** Tools ▸ Compare ▸ Compare documents… and the Compare panel (engine v0.98.0's comparison). Not yet driven on one of his drawings; marking is folded to one undo by the shell until G229.
+
 **v0.97.0 wired:** nothing to build. A block sharing its text object (G226) now opens; its disclosure and the remaining `TextObjectNotSeparable` refusal reach the shell through the existing routes. O307 driven on SW41177. Shipped in `v0.5.0-dev.20261024.1`.
 
 **`v0.5.0-dev.20261024.2`** carries O300 and the O310 follow-ups (a large restyle keeps painting; Properties follows the restyled word) on the same engine.

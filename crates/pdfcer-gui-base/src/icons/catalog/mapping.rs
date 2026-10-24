@@ -196,6 +196,7 @@ impl Icon {
         Icon::SkipTiny,
         Icon::Overprint,
         Icon::InkPicker,
+        Icon::Compare,
         Icon::AlignBefore,
         Icon::AlignLeft,
         Icon::AlignCentreH,
@@ -321,6 +322,7 @@ impl Icon {
             Icon::SkipTiny => assets::SKIP_TINY,
             Icon::Overprint => assets::OVERPRINT,
             Icon::InkPicker => assets::INK_PICKER,
+            Icon::Compare => assets::COMPARE,
             Icon::Markup => assets::MARKUP,
             Icon::Text => assets::TEXT,
             Icon::EditText => assets::EDIT,
@@ -533,6 +535,8 @@ impl Icon {
             Icon::Overprint => "overprint",
             // ui-text-exempt: icon key, never displayed
             Icon::InkPicker => "ink-picker",
+            // ui-text-exempt: icon key, never displayed
+            Icon::Compare => "compare",
             Icon::Markup => "markup",
             Icon::Text => "text",
             Icon::EditText => "edit-text",

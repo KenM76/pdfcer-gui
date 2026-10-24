@@ -428,9 +428,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 242 → 243: `view.overprint_preview`, View ▸ Display.
     // 243 → 244: `view.output_preview`, View ▸ Panels.
     // 244 → 246: `file.reduce_size` and `file.fit_size`, File ▸ Save.
+    // 246 → 247: `tools.compare`, Tools ▸ Compare.
     assert_eq!(
         registry().len(),
-        246 + 2 * usize::from(cfg!(feature = "signing"))
+        247 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -868,9 +869,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 211 → 212: `view.overprint_preview` names `overprint`, drawn for it.
     // 212 → 213: `view.output_preview` shares `overprint`.
     // 213 → 215: `file.reduce_size` and `file.fit_size` share `save-compact`.
+    // 215 → 216: `tools.compare` names `compare`, drawn for it.
     assert_eq!(
         named,
-        215 + 2 * usize::from(cfg!(feature = "signing"))
+        216 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

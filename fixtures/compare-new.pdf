@@ -1,0 +1,49 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 106 >>
+stream
+BT /F1 14 Tf 72 700 Td (General notes) Tj ET
+BT /F1 14 Tf 72 650 Td (All dimensions in millimetres) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 264 >>
+stream
+BT /F1 14 Tf 72 700 Td (Pump station drawing revision B) Tj ET
+BT /F1 14 Tf 72 650 Td (Pipe diameter 250 mm) Tj ET
+BT /F1 14 Tf 72 550 Td (Contractor to verify levels) Tj ET
+BT /F1 14 Tf 72 500 Td (Add a check valve at the outlet) Tj ET
+0.2 g 400 100 100 100 re f
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000127 00000 n 
+0000000224 00000 n 
+0000000350 00000 n 
+0000000506 00000 n 
+0000000632 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+946
+%%EOF

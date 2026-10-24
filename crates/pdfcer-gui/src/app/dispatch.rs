@@ -56,6 +56,8 @@ use super::PdfcerApp;
 pub(crate) mod arrange;
 pub(crate) mod batch;
 mod compactopen;
+/// `tools.compare`: pick the older version and compare.
+mod compare;
 /// `markup.flatten` — make the selected markup part of the page.
 pub(crate) mod dimdisplay;
 /// The File > Security band's commands — O119 plus signing; see its header.
@@ -832,6 +834,8 @@ impl PdfcerApp {
             // registered, drawn, enabled control tracing
             // `command-unimplemented` while nothing is actually in the way.
             id if batch::handles(id) => batch::dispatch(self, id, actions),
+            // Before the panel guard below, which would only show the panel.
+            id if compare::handles(id) => compare::dispatch(self, ctx),
             // **The keyboard reference**, and the design it obeys: *derive
             // the list from the keyboard map so it cannot drift again*. The old
             // shell's hand-maintained `shortcuts_reference()` omits six live

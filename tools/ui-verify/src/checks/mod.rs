@@ -964,6 +964,10 @@ pub mod scaled_text_size;
 /// and is one undo entry.
 pub mod restyle_keeps_painting;
 
+/// **O326** — Tools > Compare lists an older version's changes, jumps to one
+/// and marks them as comments.
+pub mod compare_documents;
+
 pub mod stamp_size_properties;
 
 pub mod text_annot;

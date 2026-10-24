@@ -631,3 +631,13 @@ pub mod protect;
 pub mod formfield;
 /// The Forms ▸ Style band's words.
 pub mod formlook;
+
+/// `1 field` / `4 fields`: a count with its noun, without a `{n} field(s)`
+/// in operator copy.
+pub(crate) fn plural(n: usize, one: &str, many: &str) -> String {
+    if n == 1 {
+        format!("1 {one}")
+    } else {
+        format!("{n} {many}")
+    }
+}

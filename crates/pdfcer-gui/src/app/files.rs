@@ -792,6 +792,32 @@ fn pick_key_file_target(
     answer
 }
 
+/// The seam for [`pick_compare_source`].
+pub const DIAG_COMPARE_PATH: &str = "PDFCER_DIAG_COMPARE_PATH"; // ui-text-exempt: an environment variable name, never displayed
+
+/// **Ask for the older version** Tools > Compare compares the open document to.
+#[must_use]
+pub fn pick_compare_source() -> Picked {
+    if let Some(answer) = from_env(std::env::var_os(DIAG_COMPARE_PATH)) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("compare-picked source=env answer={answer:?}")
+        });
+        return answer;
+    }
+    let answer = rfd::FileDialog::new()
+        .set_title(crate::text::panels::compare::pick_title())
+        .add_filter(crate::text::files::filter_pdf(), &["pdf"])
+        .add_filter(crate::text::files::filter_all(), &["*"])
+        .pick_file()
+        .map_or(Picked::Cancelled, Picked::Path);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed.
+        format!("compare-picked source=native answer={answer:?}")
+    });
+    answer
+}
+
 #[must_use]
 pub fn pick_insert_source() -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_INSERT_PATH)) {

@@ -590,6 +590,14 @@
                     collapse: 3,
                 ),
                 (
+                    id: "compare",
+                    caption: "Compare",
+                    items: [
+                        Command(id: "tools.compare", size: Large),
+                    ],
+                    collapse: 4,
+                ),
+                (
                     id: "fonts",
                     caption: "Fonts",
                     items: [

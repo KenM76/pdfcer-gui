@@ -414,6 +414,12 @@ pub fn group_tools_batch() -> &'static str {
     "Batch"
 }
 
+/// Tools ▸ Compare.
+#[must_use]
+pub fn group_tools_compare() -> &'static str {
+    "Compare"
+}
+
 /// Tools ▸ Fonts.
 #[must_use]
 pub fn group_tools_fonts() -> &'static str {

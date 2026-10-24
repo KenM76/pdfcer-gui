@@ -6,6 +6,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/forms/groups.md`.
 
+use crate::text::plural;
 use pdfcer_core::document::EncryptedRefusal;
 use pdfcer_core::edit::EditError;
 
@@ -186,15 +187,6 @@ pub fn field_group_deleted(name: &str, fields: usize, boxes: usize, groups: usiz
     }
     line.push('.');
     line
-}
-
-/// `1 field` / `4 fields`, without a `{n} field(s)` in operator copy.
-fn plural(n: usize, one: &str, many: &str) -> String {
-    if n == 1 {
-        format!("1 {one}")
-    } else {
-        format!("{n} {many}")
-    }
 }
 
 #[cfg(test)]

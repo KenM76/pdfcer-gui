@@ -51,6 +51,8 @@ pub mod bookmarks;
 /// A push button's picture: the picker, then `edit_widget`.
 mod buttonicon;
 mod caretannot;
+/// A comparison's changes, written as comments.
+mod comparemark;
 mod links;
 /// Where a Review mark lands: an annotation, or the page's own content.
 mod markupdest;

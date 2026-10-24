@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O326 — **BUILT AND DRIVEN, awaiting his check** — document comparison
+
+Filed from the engine release under his standing directive: *"one the new pdfcer engine is released finish up any work to support any new features then make a release"* and *"Always add new features. never ask. just do."* Engine v0.98.0 added text comparison, marking a comparison as comments and comparison by appearance.
+
+**Scope.** Acrobat's Compare Files: a command that picks the older version; text, formatting and appearance choices and page ranges; a results panel listing each change, a click on one turning to it; the changes written into the open document as comments, one Undo.
+
+**Status.** Built: Tools ▸ Compare ▸ *Compare documents…* and the Compare panel. Driven on the fixture pair: `comparing_lists_every_change`, `a_compare_row_shows_its_change`, `marking_a_comparison_writes_comments` (9 comments read back by the engine's CLI; one Undo removes all 9). Not driven on one of his drawings. NOT VERIFIED by him.
+
 ## O325 — **SHIPPED in v0.5.0-dev.20261023.2, awaiting his check** — every file-size reduction feature reachable from menus, dialogs and right-click
 
 His words: *"I assume there will be appropriate menu items and dalogue boxes and right click options for all of the new size reduction features?"* Wanted in the next release.

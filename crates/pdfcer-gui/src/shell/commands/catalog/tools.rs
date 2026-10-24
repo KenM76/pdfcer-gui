@@ -22,6 +22,9 @@ pub(super) fn band() -> Vec<Command> {
         // ===================================================================
         command("tools.merge_files", t::tools_merge_files(), 700).with_icon("combine"),
         command("tools.bates_files", t::tools_bates_files(), 701).with_icon("stamp"),
+        command("tools.compare", t::tools_compare(), 705)
+            .with_icon("compare")
+            .enabled_when("doc.pages"),
         //
         // `tools.split_files` is not registered: `pages.split`'s window splits
         // the open document, and splitting files chosen on disk needs a file

@@ -84,4 +84,20 @@ pub enum NewComment {
         /// The selected lines' boxes, in content order.
         struck: Vec<pdfcer_core::annot_author::Quad>,
     },
+    /// **Mark a comparison's changes as comments** on the newer document,
+    /// through `pdfcer_core::compare::mark_regions` and `mark_changes`.
+    ComparisonMarks(Box<ComparisonMarks>),
+}
+
+/// What the Compare panel's *Mark changes as comments* writes.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ComparisonMarks {
+    /// The text comparison, when one ran; `None` marks only the regions.
+    pub report: Option<pdfcer_core::compare::CompareReport>,
+    /// The appearance comparison's marks, in the newer document's pages.
+    pub regions: Vec<pdfcer_core::compare::RegionMark>,
+    /// How the comments name the two versions: `(older, newer)`.
+    pub labels: (String, String),
+    /// Whether a summary page is appended after the last page.
+    pub summary_page: bool,
 }
