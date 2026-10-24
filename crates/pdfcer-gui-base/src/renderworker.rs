@@ -60,6 +60,18 @@ pub struct RenderedPixels {
 }
 
 /// What a worker sends back: pixels, a failure, or nothing at all.
+/// Glyphs a finished render drew as `.notdef` — the squares an operator sees
+/// when a run's codes name no glyph — for the render trace lines; `-1` when
+/// there is no raster.
+fn notdef_of(outcome: &Outcome) -> i64 {
+    match outcome {
+        Outcome::Done(pixels) => {
+            i64::try_from(pixels.diagnostics.glyphs_notdef).unwrap_or(i64::MAX)
+        }
+        Outcome::Cancelled | Outcome::Failed(_) => -1,
+    }
+}
+
 enum Outcome {
     Done(Box<RenderedPixels>),
     Failed(RenderRefusal),
@@ -382,9 +394,12 @@ impl RenderWorker {
                 // thread outlives the call, and return inline.
                 let _ = handle.join();
                 let elapsed_ms = started.elapsed().as_millis();
+                let notdef = notdef_of(&outcome);
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 crate::diag::trace(|| {
-                    format!("render-inline gen={generation} ms={elapsed_ms} async=0")
+                    format!(
+                        "render-inline gen={generation} ms={elapsed_ms} async=0 notdef={notdef}"
+                    )
                 });
                 Self::outcome_to_result(outcome)
             }
@@ -443,11 +458,12 @@ impl RenderWorker {
                     Outcome::Done(pixels) => i32::from(ink::sampled_tone_count(&pixels.pixmap)),
                     Outcome::Cancelled | Outcome::Failed(_) => -1,
                 };
+                let notdef = notdef_of(&outcome);
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 crate::diag::trace(|| {
                     format!(
                         "render-async-done gen={generation} ms={elapsed_ms} outcome={kind} \
-                         ink={ink}"
+                         ink={ink} notdef={notdef}"
                     )
                 });
                 Self::outcome_to_result(outcome)

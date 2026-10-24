@@ -359,3 +359,11 @@ freeze this whole module exists to remove; snapshotting the
 session would need a public deep-copy impl on `EditSession`
 (which is not `Clone`) and would copy the document per edit.
 Cancel-then-mutate costs the measured **28.9 ms** of teardown.
+
+## Trace
+
+`render-inline gen= ms= async=0 notdef=` for a page small enough to render on
+the frame, `render-async-done gen= ms= outcome= ink= notdef=` for one rendered
+off it. `notdef=` is the raster's `glyphs_notdef` — glyphs drawn as `.notdef`,
+the squares an operator sees — and `-1` when there is no raster (cancelled or
+failed).

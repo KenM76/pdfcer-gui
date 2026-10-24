@@ -103,10 +103,13 @@ A render-without-this-run from the engine would remove the assumption.
 
 ## Trace
 
-`text-edit-shaped page= run= block=0|1 chars= shaped=0|1 refused=0|1 tier=`,
+`text-edit-shaped page= run= block=0|1 chars= shaped=0|1 refused=0|1 tier= unread=`,
 once per distinct draft text (`run=` is the block index and `tier=Block` when
 `block=1`), and `text-edit-preview-fallback page= run= reason=
 font_pt=` each time the reason for the open draft changes; `font_pt` is the
-stand-in's size in screen points. `plan::plan` is run under `diag::muted`, and the
+stand-in's size in screen points. `unread=` counts the laid-out glyphs whose
+code reads back as no character or another one — each draws as a square; a
+block layout's glyphs are sorted, so there only a code reading back as nothing
+counts. It is `0` when nothing was laid out (`shaped=0`). `plan::plan` is run under `diag::muted`, and the
 previous `last_commit` is restored, so the preview does not emit a second
 `edit-text-pin` or change what a commit reports.

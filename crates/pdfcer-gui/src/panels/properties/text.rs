@@ -286,10 +286,21 @@ impl TextStyleDraft {
         // is the actionable part — a slow sync whose forecast is 2 ms is not
         // this code's problem, and saying so takes one subtraction.
         let whole_ms = started.elapsed().as_millis();
+        // `chars` and `text_hash` name the run's extracted characters, so a
+        // check can tell a restyle that kept them from one that re-encoded
+        // them (a composite run's two-byte codes written one byte each reads
+        // back as other characters and draws as squares).
+        let chars = read.style.text.chars().count();
+        let text_hash = {
+            use std::hash::{Hash, Hasher};
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            read.style.text.hash(&mut h);
+            h.finish()
+        };
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
-                "text-style-synced page={page} run={run} whole_ms={whole_ms} forecast_ms={forecast_ms} resolved=1 size={:.2} faces={} bold={} italic={}",
+                "text-style-synced page={page} run={run} whole_ms={whole_ms} forecast_ms={forecast_ms} resolved=1 size={:.2} faces={} bold={} italic={} chars={chars} text_hash={text_hash:016x}",
                 self.size,
                 self.faces.len(),
                 u8::from(self.bold_outlook.is_some()),

@@ -47,6 +47,8 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
+**O310 driven on SW41177, awaiting his verdict:** no blank, no squares on the Text-tool route (`scaled_text_shows_and_takes_its_drawn_size --pdf … --doc-point 0,1215,595`). Next from it: a size typed for an object click on that sheet restyles all 425 runs on the UI thread (tens of seconds frozen) — move `app::actions::textstyle`'s loop off the frame; Properties shows the line's first word's size after a word restyle; a re-opened mixed-size line falls back to the stand-in font (engine reason untraced).
+
 **v0.97.0 wired:** nothing to build. A block sharing its text object (G226) now opens; its disclosure and the remaining `TextObjectNotSeparable` refusal reach the shell through the existing routes. O307 driven on SW41177. Shipped in `v0.5.0-dev.20261024.1`.
 
 **v0.96.0 wired:** Insert pages, Combine files, Merge and Extract pages now say, off-canvas, when the copied pages came from a tagged file whose tags stayed behind, how many links into those tags were re-pointed at a page (and how many fell back to the source's first page), and how many links to pages not copied lost their destination (`text::structlinks`). `AssembleReport::struct_tree_dropped` was undisclosed before and is said with them. Shipped in `v0.5.0-dev.20261023.4`.

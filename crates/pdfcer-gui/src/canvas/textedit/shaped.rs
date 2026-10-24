@@ -106,6 +106,10 @@ pub struct Shaped {
     /// replacement covers, when the preview is spliced from a narrowed edit
     /// (`splice`); `None` blanks the whole body.
     pub(super) blank: Option<[f32; 4]>,
+    /// Glyphs whose code reads back as no character, or as another one than
+    /// the text holds there. Such a glyph draws some other shape, typically
+    /// the font's `.notdef` square.
+    pub(super) unread: usize,
 }
 
 impl Shaped {
@@ -226,7 +230,7 @@ fn store(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed.
         format!(
-            "text-edit-shaped page={} run={} block={} recognised={} chars={} shaped={} refused={} tier={tier}",
+            "text-edit-shaped page={} run={} block={} recognised={} chars={} shaped={} refused={} tier={tier} unread={}",
             key.page,
             key.run,
             u8::from(key.block),
@@ -234,6 +238,7 @@ fn store(
             key.text.chars().count(),
             u8::from(shaped.is_some()),
             u8::from(refused),
+            shaped.as_ref().map_or(0, |s| s.unread),
         )
     });
     ctx.data_mut(|d| {
@@ -324,6 +329,12 @@ pub(super) fn shape(
         .map(|(x, y)| (Pos2::new(x, y) - from).dot(unit))
         .fold(0.0_f32, f32::max);
     stops.push(from + unit * reach);
+    let unread = preview
+        .glyphs
+        .iter()
+        .zip(text.chars())
+        .filter(|(g, c)| !g.fallback && g.ch != Some(*c))
+        .count();
     Ok(Shaped {
         outlines: outlines.glyphs,
         stops,
@@ -334,6 +345,7 @@ pub(super) fn shape(
         bbox: preview.bbox,
         text: text.to_owned(),
         blank: None,
+        unread,
     })
 }
 

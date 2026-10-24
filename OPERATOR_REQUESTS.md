@@ -707,13 +707,19 @@ His words: *"If I try to italicize, bold, underline, change font etc it doesn't 
 
 His words: *"when I am in the text with the I cursor, in the Format and Properties section it shows me the font as 1.0pt high instead of the actual height. This might be because it does not match a whole point measurement, but we should be able to handle that."* (`SW41177.pdf`)
 
-**Built; re-wired onto the engine, not yet re-driven.** Properties and the Font group show `GlyphProvenance::drawn_size`, and a typed size is sent as `FormatRequest::drawn_size`, which solves each operator's `Tf` operand (engine v0.88.0, G208). The shell's own matrix arithmetic is deleted. Driven on the engine's arithmetic, off the desktop: `scaled_text_shows_and_takes_its_drawn_size` (a `1 Tf` line under an 18-pt matrix reads 18.00; a typed 24 re-reads 24.00) passes, and fails when 30 is typed instead. Not yet driven on `SW41177.pdf` itself.
+**Built and driven.** Properties and the Font group show `GlyphProvenance::drawn_size`, and a typed size is sent as `FormatRequest::drawn_size`, which solves each operator's `Tf` operand (engine v0.88.0, G208). The shell's own matrix arithmetic is deleted. Driven on the engine's arithmetic, off the desktop: `scaled_text_shows_and_takes_its_drawn_size` (a `1 Tf` line under an 18-pt matrix reads 18.00; a typed 24 re-reads 24.00) passes, and fails when 30 is typed instead. Driven on `SW41177.pdf` too: "TRUCK" reads 13.23 and a typed 24 writes 24.00 (see O310).
 
-## O310 — **BUILT, NOT DRIVEN** — changing the size of that text redraws it, and clicking a line never shows squares
+## O310 — **BUILT AND DRIVEN, awaiting his verdict** — changing the size of that text redraws it, and clicking a line never shows squares
 
 His words: *"Changing the font size causes the text chunk to go blank, and if I click on a line the text is replaced with squares."* (`SW41177.pdf`)
 
-**Half built.** The blanking was the O309 defect: a typed size became the Tf operand under a 13.2× matrix and the text was drawn off the page. That half is fixed by O309. The squares were an engine defect, a composite run's two-byte codes written one byte each after a size change; engine v0.88.0 fixes it (G207) and this build links it. Not yet driven on `SW41177.pdf`.
+**Built and driven on `SW41177.pdf`; neither symptom reproduces on the Text-tool route.** `scaled_text_shows_and_takes_its_drawn_size --pdf D:/Dev/pdfTests/SW41177/SW41177.pdf --doc-point 0,1215,595` opens "AND TO TOP SIDE OF TRUCK BED IN 2 PLACES." with the Text tool, types 24 into Properties and presses Enter: the word at the caret ("TRUCK") is restyled to 24.00 pt, the page redraws with 0 `.notdef` glyphs (0 before), re-opening the line opens all 41 characters, and the saved copy read back with the engine CLI renders "TRUCK" 24 pt tall with 0 `.notdef` and 0 substituted glyphs. The check fails, at 317.52 pt, when the size is written as the `Tf` operand (the O309 defect, planted).
+
+**Three things found while driving it, none yet built:**
+
+- **Clicking the line as an object freezes the program.** In Edit mode an object click on this sheet selects all 425 text runs as one object; a size typed into Properties then restyles them one by one on the UI thread, about 100 ms each — tens of seconds with the window frozen (the drive gave up on the Enter at 30 s). That is the most likely "goes blank". The restyle loop has to run off the frame.
+- **After a restyle the re-opened line is not shown in its own font.** The engine refuses to lay out the now mixed-size line (`text-edit-preview-fallback reason=refused`), so the open line is drawn in the stand-in font, with the status-line notice. No squares, but not the drawing's own glyphs. Why the engine refuses is not yet traced.
+- **Properties shows the line's first word's size, not the restyled word's.** After "TRUCK" becomes 24, with it still selected, the size field reads 13.23.
 
 ## O311 — **BUILT, NOT DRIVEN** — a letter missing from an embedded subset comes from the installed font, not Helvetica; installed fonts by default
 

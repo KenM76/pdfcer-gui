@@ -138,6 +138,9 @@ pub(super) fn shape(
         .map(|g| Vec2::new(g.matrix[2] as f32, g.matrix[3] as f32))
         .max_by(|a, b| a.length().total_cmp(&b.length()))
         .ok_or(PreviewFallback::Unpaired)?;
+    // Sorted into reading order, so not paired with `text`: only a code that
+    // reads back as nothing is counted here.
+    let unread = glyphs.iter().filter(|g| g.ch.is_none()).count();
     let (inks, outlines) = glyphs.into_iter().map(|g| (g.ink, g.path)).unzip();
     Ok(Shaped {
         outlines,
@@ -154,6 +157,7 @@ pub(super) fn shape(
         ],
         text: text.to_owned(),
         blank: None,
+        unread,
     })
 }
 
