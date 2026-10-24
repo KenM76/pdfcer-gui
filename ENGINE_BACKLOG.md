@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `wanted` — a real gap — **40 of 408** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -145,7 +145,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `blocked` — waiting on something named — **2 of 408** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -163,7 +163,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 408** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -174,7 +174,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `declined` — deliberately no surface — **18 of 408** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -218,7 +218,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **347 of 407** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **348 of 408** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -335,6 +335,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **OCR word-list choice** — `RunOptions::with_dictionaries` | **shipped — File ▸ Recognise text… *No word lists* and *Add word file…*.** `dialogs::ocr_reading` builds the `Dictionaries` sent with the run; *No word lists* is drawn only where the engine accepts it (`ocr::can_drop_word_lists`) and word files only for a program add-on (`ocr::takes_word_files`), restating the engine's private `check_dictionaries`; `pdfcer_ocr_host::check_options` answers G170 at the pin since v0.82.0, not yet wired. Driven by `word_lists_reach_the_program_that_reads_them` against the engine's stand-in Tesseract. |
 | **OCR at a dpi above the scan's own resolution reads smoothed pixels, not square blocks** — `pdfcer_core::settings::MagnifyFilter`, `RenderOptions::image_magnify` | **shipped (engine Pass 580.0).** Every OCR raster is drawn through `ocr::raster_options`, which takes the settings funnel's options and sets `RenderOptions::with_image_magnify(ocr::magnify(model))`: `MagnifyFilter::Smooth`, as the engine CLI's OCR does, except PaddleOCR-VL, which reads `MagnifyFilter::PointSample` because its whole-page read of a smoothed scan does not finish (request G196; the exception keys on the `paddle-vl` token and goes when the engine answers); the canvas keeps the funnel's `MagnifyFilter::PointSample`. `UnknownMagnifyFilter` is the engine's error for a mistyped token; this shell holds the enum, never a token. The run's `ocr-started` line carries `magnify=` from `ocr::magnify`, asserted `smooth` by `enlarging_pages_reaches_the_recogniser`; `paddle_vl_text_is_in_the_saved_file` fails with VL smoothed; the pixels of a smoothed raster are the engine's and are not measured here. |
 | **Upscale a poor scan before recognition** — `ocr::upscale`, `RunOptions::with_upscale`, `OcrRunner::set_upscale` | **shipped (engine Pass 566.0, an operator request with no G number).** File ▸ Recognise text… *Enlarge each page before reading*, off by default: factor 1.5 to `MAX_FACTOR` in steps of 0.5 and bicubic or Lanczos (`Upscale::new`, `UpscaleFilter`), sent with the run through `RunOptions::with_upscale`; the words come back in page space through the engine. The window shows the first page's size before and after (`Upscale::output_size`) and warns above `MAX_OUTPUT_PIXELS`; the result's notes give the factor, kernel and sizes from `OcrRunner::upscale`. Not drawn for PaddleOCR-VL (`RunnerError::UpscaleUnsupported`). A refusal is the engine's `RunnerError::Upscale` sentence. Driven by `enlarging_pages_reaches_the_recogniser`. |
+| **PaddleOCR-VL table reading is stable across render resolution** — `pdfcer_core::ocr::vl_page::TABLE_DPI`, `read_page_with_layout`'s `dpi` | **shipped, nothing to build.** The engine downsamples a table region to its own fixed resolution inside the OCR run; this shell already hands the page's dpi to `recognize_page` through `pdfcer-gui-base::ocr`, which is the whole contract. No option: the resolution is the engine's measured choice, not the operator's. |
 | **Skew detection and deskew of a scanned image** — `detect_skew`, `pdfcer_core::deskew`, `pdfcer_core::edit::deskew` | **shipped — File ▸ Recognise ▸ Straighten scans… (O289 item 13).** `app::actions::deskew` measures each chosen page's scan (`EditSession::page_scan_image`, `detect_image_skew`) or each selected picture, straightens it with `deskew_image` through the edit funnel when the confidence and angle clear the engine's floors, and folds the run into one `CommandKind::DeskewImage` undo entry. Pages that already draw text are skipped by default; a refusal such as `EditError::DeskewUnsupported` is listed in the engine's own sentence. Paced a page per frame because the measure needs the session exclusively (G171; answered at the pin since v0.82.0 by the free functions `edit::deskew::page_scan_image` and `detect_image_skew` over a `DocumentView`, and `EditSession::coalesce_last_same` in `pdfcer_core::edit::undo_fold`; not yet wired). Driven by `straighten_scans_turns_tilted_pages_and_leaves_the_rest`. |
 | **Upscale a placed image** — `EditSession::upscale_image`, `pdfcer_core::edit::upscale_image` | **shipped — File ▸ Recognise ▸ Enlarge scans… (O296).** The verb replaces one picture with a larger FlateDecode image at the same place and size, one `CommandKind::UpscaleImage` undo entry, and refuses what it cannot resample with `EditError::ImageUpscaleUnsupported` and a sentence. The shell runs it through the Straighten scans window and its page-per-frame pacing, at the OCR upscale's factor and filter choices, and folds the run into one undo entry (G198). Driven by `enlarge_scans_doubles_every_pages_picture_as_one_undo_step`. |
 

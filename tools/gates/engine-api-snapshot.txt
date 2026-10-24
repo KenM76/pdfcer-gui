@@ -41,7 +41,7 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 95df46a2512fa8bbff8a526dd534e15d1e70d3e0
+# baseline: 5ca5eeebdcd0b8e6609d5f7c3650c0bdf43db83c
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
 # items: 9947
 # ---------------------------------------------------------------------------
@@ -51,6 +51,7 @@ exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_PERIODIC_SPAN -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_PERIOD_REPEATS -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_REPEATED_TAIL -- the other half of the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it.
+exempt pdfcer-core const pdfcer_core::ocr::vl_page::TABLE_DPI -- the resolution the engine re-renders a PaddleOCR-VL table region at, inside `recognize_page`; the shell passes the page's own dpi and nothing here chooses or compares against the table's.
 exempt pdfcer-core const pdfcer_core::vector::decompose::MAX_TEXT_PREVIEW_PAGE_CHARS -- the engine's memory ceiling on one decomposition's preview text. Nothing here chooses or compares against it: a run cut by it arrives as `truncated`, which `panels::objects::summary` already carries into the row's ellipsis, and `text::panels::objects::quoted_text_preview` elides every preview at display time whatever its length.
 exempt pdfcer-core enum pdfcer_core::ocr::vl_page::EdgeSource -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
 exempt pdfcer-core field pdfcer_core::build::BuildInfo::icccer -- the About box reads the colour engine's version and revision from Cargo.lock in `build.rs` (`icccer-cmm`), the same fact BuildInfo carries for the engine's own build.
