@@ -53,6 +53,8 @@ grepping it — a count only goes stale, a name can be born false.
 
 **v0.97.0 wired:** nothing to build. A block sharing its text object (G226) now opens; its disclosure and the remaining `TextObjectNotSeparable` refusal reach the shell through the existing routes. O307 driven on SW41177. Shipped in `v0.5.0-dev.20261024.1`.
 
+**`v0.5.0-dev.20261024.3`** is engine v0.98.0 (2f4badbb): G227 (one `format_texts` call per restyle), G228 (a mixed-size line in its own font) and O326 (Compare documents). Zip `pdfcergui-20261024-0958-2f4badb-a830a9e7.zip`, OneDrive slot `pdfcer-gui2`.
+
 **`v0.5.0-dev.20261024.2`** carries O300 and the O310 follow-ups (a large restyle keeps painting; Properties follows the restyled word) on the same engine.
 
 **v0.96.0 wired:** Insert pages, Combine files, Merge and Extract pages now say, off-canvas, when the copied pages came from a tagged file whose tags stayed behind, how many links into those tags were re-pointed at a page (and how many fell back to the source's first page), and how many links to pages not copied lost their destination (`text::structlinks`). `AssembleReport::struct_tree_dropped` was undisclosed before and is said with them. Shipped in `v0.5.0-dev.20261023.4`.
