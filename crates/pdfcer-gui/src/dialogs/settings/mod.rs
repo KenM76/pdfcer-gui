@@ -119,7 +119,25 @@ pub fn show(
         // which of the two homes is live cannot follow the update
         // instructions, and those instructions are the one place a wrong
         // guess costs them their configuration.
-        ui.label(RichText::new(t::store_location(store)).small().weak());
+        // Laid out here rather than by `ui.label`, so the trace reads the size
+        // of the galley actually drawn: every `small()` text shares this style.
+        let store_line =
+            egui::WidgetText::from(RichText::new(t::store_location(store)).small().weak())
+                .into_galley(
+                    ui,
+                    Some(egui::TextWrapMode::Wrap),
+                    ui.available_width(),
+                    egui::FontSelection::Default,
+                );
+        let small_pts = store_line
+            .job
+            .sections
+            .first()
+            .map_or(0.0, |s| s.format.font_id.size);
+        crate::diag::trace_changed("settings-small-text", || {
+            format!("settings-small-text pts={small_pts}") // ui-text-exempt: diagnostic trace
+        });
+        ui.label(store_line);
         ui.separator();
 
         // The bottom bar is a separator and one row of buttons.

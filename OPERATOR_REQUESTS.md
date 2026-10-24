@@ -574,11 +574,11 @@ His words: *"the hide arrow on the right side is sometimes hidden behind the mor
 
 **Where it stands.** Each dock's hide arrow sits on its inner edge, the one facing the page, and its tab bar starts clear of it, so no tab or *more* button covers it. Driven by `the_hide_arrow_sits_clear_of_the_tabs`, falsified.
 
-## O303 — **BUILT — seen, not yet asserted by a check** — the Settings descriptions, and every text as small, are larger
+## O303 — **BUILT AND DRIVEN — awaiting your verdict** — the Settings descriptions, and every text as small, are larger
 
 His words: *"increase the font size of the settings descriptions and any other font that is also this small size should be increased."*
 
-**Where it stands.** Every small text in the program (Settings descriptions, captions, disclosures under the 3D viewer and elsewhere) is now the ribbon caption size — 11 pt, 12 in the roomier theme — instead of 9 pt.
+**Where it stands.** Every small text in the program (Settings descriptions, captions, disclosures under the 3D viewer and elsewhere) is now the ribbon caption size — 11 pt, 12 in the roomier theme — instead of 9 pt. Driven by `small_text_is_the_caption_size` in the default theme, falsified.
 
 ## O304 — **BUILT AND DRIVEN — release pending** — the engine's new 3D mesh and OCR features reach the program, then a release
 

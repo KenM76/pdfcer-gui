@@ -174,6 +174,9 @@ impl eframe::App for PdfcerApp {
             egui_shell::theme::Theme::new(preset)
         };
         theme.apply(&ctx);
+        crate::diag::trace_changed("theme-caption", || {
+            format!("theme-caption pts={}", theme.metrics.ribbon_caption_pts) // ui-text-exempt: diagnostic trace
+        });
         crate::app::caption::sync(&ctx);
         // Step 0a-bis — publish the application's own colour roles.
         //

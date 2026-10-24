@@ -354,6 +354,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(layer_hiding::ABandTakesNothingOnAHiddenLayer),
         Box::new(layer_hiding::ObjectsListUnderTheirLayers),
         Box::new(tab_tips::AGlyphOnlyTabNamesItselfOnHover),
+        Box::new(small_text::SmallTextIsTheCaptionSize),
         Box::new(layer_assign::LayerAssignMovesTheSelection),
         Box::new(forms_style::FormsStyleSetsTheNextField),
         Box::new(layer_assign::PasteGoesOnTheCurrentLayer),
