@@ -697,11 +697,11 @@ His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text i
 
 **Engine fixed, shell aligned, not driven.** Engine v0.88.0 (G205, G206) reads the paragraph under 1.6.1 as one block, each heading as its own block, and each note in a drawing frame as its own block. The draft's click, Enter and commit, the Select tool's paragraph, Reflow and Align now all number paragraphs exactly as the engine does, including a paragraph pdfcer itself wrote with a blank line in it (unit test against the engine's own lookup). Not yet driven on either file.
 
-## O308 — **BUILT, NOT DRIVEN** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
+## O308 — **BUILT AND DRIVEN, awaiting his check** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
 
 His words: *"If I try to italicize, bold, underline, change font etc it doesn't appear to work if I select an area within a block of text with the I cursor."*
 
-**Built, not yet driven.** Ribbon Bold, Italic, Underline and Strikethrough already acted on the I-beam range; the Properties panel's face, size, Bold, Italic and colour, and the ribbon's Font, Size and Colour, restyled the whole line. All now take the same route (`app::dispatch::textformat::restyle`): the selected characters, else the word at the caret, else the caret alone, which records the style for what is typed next. A paragraph opened as one block and already retyped still refuses until it is committed (`ParagraphEdited`).
+**Built and driven** (`ctrl_b_bolds_the_word_at_the_caret` for the ribbon; `properties_italic_restyles_the_word_at_the_caret` for the Properties panel, which while the I-beam's caret was in a block drew no Text section at all until the panel learned to read the open edit's line). Ribbon Bold, Italic, Underline and Strikethrough already acted on the I-beam range; the Properties panel's face, size, Bold, Italic and colour, and the ribbon's Font, Size and Colour, restyled the whole line. All now take the same route (`app::dispatch::textformat::restyle`): the selected characters, else the word at the caret, else the caret alone, which records the style for what is typed next. A paragraph opened as one block and already retyped still refuses until it is committed (`ParagraphEdited`).
 
 ## O309 — **BUILT AND DRIVEN, awaiting his check** — the font size shows the size the text is drawn at, fractional sizes included
 

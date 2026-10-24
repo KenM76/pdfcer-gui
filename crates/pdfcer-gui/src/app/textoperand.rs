@@ -15,6 +15,10 @@ pub(crate) enum Source {
     /// The single selected text object, by its index in the page's paint
     /// order.
     Object(usize),
+    /// The line an open text edit was opened on: the I-beam's caret is in it,
+    /// and a restyle goes to the selected characters or the word at the caret
+    /// (`app::dispatch::textformat::restyle`).
+    Caret,
 }
 
 /// The page, the runs, and where they came from.
@@ -68,6 +72,29 @@ pub(crate) fn swept(doc: &OpenDoc) -> Option<Operand> {
         page: selection.page,
         runs,
         source: Source::Swept,
+    })
+}
+
+/// **The line an open text edit was opened on**, or `None` with no draft, or a
+/// draft placing new text or reading recognised (invisible) text, which has no
+/// look to show.
+#[must_use]
+pub(crate) fn caret(ctx: &egui::Context) -> Option<Operand> {
+    use crate::canvas::textedit::{self, Anchor};
+    let draft = textedit::read(ctx)?;
+    let run = match draft.anchor {
+        Anchor::Run { run, .. } => run,
+        Anchor::Block {
+            run,
+            recognised: false,
+            ..
+        } => run,
+        _ => return None,
+    };
+    Some(Operand {
+        page: draft.page,
+        runs: vec![run],
+        source: Source::Caret,
     })
 }
 

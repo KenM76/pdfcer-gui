@@ -382,7 +382,8 @@ pub fn section(
     // `false`, not a sentence. Nothing text-shaped is selected, and a panel
     // that explained its own silence in that state would be explaining it on
     // most frames of most sessions.
-    let Some(operand) = draft.operand(doc) else {
+    let Some(operand) = crate::app::textoperand::caret(ui.ctx()).or_else(|| draft.operand(doc))
+    else {
         return false;
     };
     let page = operand.page;
@@ -394,8 +395,13 @@ pub fn section(
     // a clicked object's ink is classified by [`super::textobject`], which can
     // tell `Mixed` from `Agreed` from a spot ink and refuses a swatch over the
     // third. A sweep has no such problem — every run in it was swept
-    // deliberately — so this section keeps its own row for that case.
-    let owns_colour = operand.source == crate::app::textoperand::Source::Swept;
+    // deliberately — so this section keeps its own row for that case, and for
+    // an open edit's caret unless an object is also selected and draws its own.
+    let owns_colour = match operand.source {
+        crate::app::textoperand::Source::Swept => true,
+        crate::app::textoperand::Source::Caret => doc.selection.object_indices_on(page).is_empty(),
+        crate::app::textoperand::Source::Object(_) => false,
+    };
 
     if !draft.sync(doc, page, first) {
         // The selection is real and the run would not pin. Saying nothing here

@@ -44,6 +44,18 @@ Rung 1 first, always, because a sweep is the narrower and more deliberate
 statement: an operator who swept three words and then happened to have an
 object selected meant the three words.
 
+A third source sits outside the ladder: `caret(ctx)` answers the line an open
+text edit was opened on (`Source::Caret`), read from the draft in egui memory,
+so it takes a context where the ladder takes only the document. The Properties
+panel's Text section asks it first, because with the I-beam's caret in a block
+the operator means the characters he is editing; without it the section drew
+nothing while a draft was open, and its controls could not reach the I-beam's
+range. The section only displays that line's look: what a press restyles is
+decided by `app::dispatch::textformat::restyle`, which reads the same draft
+(selected characters, else the word at the caret, else the caret). A draft
+placing new text or reading recognised text has no line on the page and
+answers `None`.
+
 ## No new selection unit was invented, and that is the safety argument
 
 Rung 2's operand is `first_run..=last_run` derived from the object's
