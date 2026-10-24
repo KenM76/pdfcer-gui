@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `wanted` — a real gap — **45 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,6 +66,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Compare the text of two documents** — `pdfcer compare OLD NEW`, the module `pdfcer_core::compare` | **wanted — being built at this pin.** A Compare command that picks the older file, a results panel listing each change that jumps to it on click, and the engine's own `truncated` and refusal sentences off-canvas. |
+| **Annotated comparison result** — `pdfcer compare OLD NEW --output RESULT.pdf`, the marking verb in `pdfcer_core::compare` | **wanted — being built at this pin.** *Mark changes as comments* on the results panel writes the engine's review annotations into the open (new) document as undoable edits; changes it cannot mark are listed, not fatal. |
+| **Visual comparison and page matching** — `pdfcer compare OLD NEW --visual`, the module `pdfcer_render::visual_compare` | **wanted — being built at this pin.** The Compare dialog's *By appearance* choice; each matched page pair's changed regions list in the results panel, and an unmatched or size-differing pair is stated, never silent. |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
@@ -74,6 +77,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Restyle many pieces of text as one undoable step** — `EditSession::format_texts`, the modules `pdfcer_core::edit::format_batch` and `pdfcer_core::text_edit::format_plan` (our `G227`) | **wanted — being wired at this pin.** Replaces the shell's per-frame restyle slicing with one call and one undo entry. |
+| **Edit a line whose pieces differ only in text size** — `edit_text_preview` <!--namesake:edit_text_preview--> `edit_text` <!--namesake:edit_text--> (the shell calls both; the row is the engine's fix to them, our `G228`) | **wanted — being wired at this pin.** No new verb; the shell re-drives the mixed-size line and drops its refusal-only trace. |
 | Restyle text whose own face cannot take a style, falling through to a donor the shell supplies — `FormatRequest::style_donor`, `FormatRequest::style_donors`, `EditSession::preview_style_ladder_with_donors`, `StyleRung::SuppliedFaceEmbedded` | **wanted.** <!--namesake:SuppliedFaceEmbedded--> the shell names the variant only to give the ladder's trace line a token for every rung; it never passes a donor, so the rung cannot be reached from here. Rung 3 of the style ladder: when neither the page nor the standard fourteen have the bold or italic sibling, the engine embeds a subset of a donor face the caller names. The shell passes none today, so Bold on such text still ends at synthesis or a refusal. The donor is a file the operator picks, as *Font file…* already does for a face change (that path attaches `FormatRequest::embed_font` through `embedded_font`); the preview must go through `preview_style_ladder_with_donors` with the same donors so the tooltip and the result agree. |
 | List the form XObjects a page paints, and how many places … | **wanted.** The engine answers *how many places paint this form?* only where this shell already asks it: `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. The argument for declining is real and is kept here so it is not re-derived — the number matters most exactly where it is already shown — but on a thirty-six-sheet SolidWorks set, where one title block is a single form, the operator wants the blast radius **before** picking up the tool, not in the disclosure afterwards. |
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
@@ -145,7 +150,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `blocked` — waiting on something named — **2 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -163,7 +168,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -174,7 +179,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `declined` — deliberately no surface — **18 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -218,7 +223,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **350 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **350 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
