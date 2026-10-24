@@ -136,3 +136,26 @@ impl TabLabel {
         self != Self::Glyph || !has_glyph
     }
 }
+
+/// Attach a tab's tooltip, tracing `tab-tip` on each frame it is drawn.
+///
+/// The trace is written inside the tooltip's own closure, which `egui` runs
+/// only when the tip is actually on screen, so a driven check reads what the
+/// operator saw rather than what was offered. `surface` is `ribbon` or
+/// `dock`; `text` is the tip as drawn.
+pub(crate) fn tip(
+    response: egui::Response,
+    surface: &str,
+    tab: &str,
+    text: String,
+) -> egui::Response {
+    response.on_hover_ui(|ui| {
+        crate::verify::event("tab-tip")
+            .kv("surface", surface)
+            .kv("tab", tab)
+            .kv("text", format_args!("\"{}\"", text.replace('"', "'"))) // ui-text-exempt: a trace field.
+            .emit();
+        ui.set_max_width(ui.spacing().tooltip_width);
+        ui.add(egui::Label::new(text));
+    })
+}

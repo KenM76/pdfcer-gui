@@ -556,11 +556,11 @@ Two settings, one for the ribbon's tabs and one for the dock panels' tabs, each 
 
 **Where it stands.** Settings ▸ Display ▸ *Ribbon tabs show* and *Panel tabs show*, each Picture and name, Picture only or Name only. Driven by `ribbon_and_dock_tabs_follow_their_own_face_setting`, falsified.
 
-## O300 — **BUILT — not yet driven** — a glyph-only tab names itself on hover
+## O300 — **BUILT AND DRIVEN — awaiting his verdict** — a glyph-only tab names itself on hover
 
 His words: *"make it so a hover over the tabs brings up their label as well if only glyphs are being shown."*
 
-**Where it stands.** A tab drawn as its picture alone, ribbon or dock, leads its hover tip with its name. No driven check reads the tip yet.
+**Where it stands.** A tab drawn as its picture alone, ribbon or dock, leads its hover tip with its name. Driven by `a_glyph_only_tab_names_itself_on_hover`, falsified on each surface.
 
 ## O301 — **BUILT AND DRIVEN — awaiting your verdict** — the right dock has one row of tabs by default
 

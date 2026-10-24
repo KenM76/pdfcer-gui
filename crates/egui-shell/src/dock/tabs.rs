@@ -339,7 +339,7 @@ fn announce(
     } else {
         format!("{label} — {announced}")
     };
-    let response = response.on_hover_text(hover);
+    let response = crate::tabshape::tip(response, "dock", panel.as_str(), hover);
     response.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::WidgetType::SelectableLabel,

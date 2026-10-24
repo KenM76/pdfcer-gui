@@ -109,6 +109,7 @@ use egui::{Atoms, RichText, Stroke, TextStyle, Vec2, vec2};
 
 use crate::commands::ConditionSet;
 use crate::manifest::{Shell, Tab};
+use crate::tabshape::tip;
 
 use super::a11y;
 use super::ctx::{Ctx, IconRequest, condition_holds};
@@ -384,10 +385,10 @@ fn draw_tab(
     // `RIBBON_IA.md` §4 keeps it as the test of whether a tab is coherent.
     // A tab drawn without its name leads with the name.
     let response = match (named, tab.question.as_deref()) {
-        (true, Some(q)) => response.on_hover_text(q),
+        (true, Some(q)) => tip(response, "ribbon", &tab.id, q.to_owned()),
         (true, None) => response,
-        (false, Some(q)) => response.on_hover_text(format!("{label} — {q}")),
-        (false, None) => response.on_hover_text(label),
+        (false, Some(q)) => tip(response, "ribbon", &tab.id, format!("{label} — {q}")),
+        (false, None) => tip(response, "ribbon", &tab.id, label.to_owned()),
     };
 
     ctx.reporter.report(response.rect, || report::tab(&tab.id));
