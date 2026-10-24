@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 409** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `wanted` — a real gap — **40 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -145,7 +145,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 409** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `blocked` — waiting on something named — **2 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -163,7 +163,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 409** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -174,7 +174,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 409** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `declined` — deliberately no surface — **18 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -218,7 +218,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **349 of 409** <!-- counted by tools/walk-engine-backlog.py, 2026-10-23; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **350 of 410** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -287,6 +287,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Exact break marker for pdfcer's own block text** — `pdfcer_core::text_edit::model::line_marks`, `LineEndSource::Marked` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` builds the model `with_line_marks(LineMarks::scan(..))`; `hand_breaks_are_read_from_marks` re-opens a pdfcer-rewritten paragraph as `source=marked` with a break after its longest line kept. Add text's marks are answered at the pin since v0.82.0 (G182); see the wanted row. |
 | **Per-line break-vs-wrap on recognised text blocks** — `pdfcer_core::text_edit::model::line_ends`, `block_text_with_breaks` | **Reachable — re-opening a paragraph (G163).** `canvas::textedit::promote` joins each line end as `line_ends` says, and an `Inferred` source raises the `breaks-inferred` draft note (`hand_breaks_are_read_from_marks`). A marked blank line re-opens as one break until `line_gaps` is read (G183, at the pin since v0.82.0; see the wanted row). |
 | **Where a strikethrough's placement came from, and codes kept beside a letter drawn two ways** — the strike source on the format report; the carrying encoder (our G129 and the strike-source request) | **shipped.** `pdfcer_core::text_edit::format::FormatReport::strike_source` is traced per strike as `text-strike-source source=font_table\|x_height\|quarter_em` (`textstyle::strike_token`), and the engine's per-source clause in `FormatReport::disclosures` reaches the status bar verbatim; the shell composes no strikethrough sentence. Driven: `a_strikethrough_says_where_its_line_came_from`. `pdfcer_core::text_edit::encoding::CompositeEncoding::encode_str_carrying` is the engine's own lower level under G129's `edit_text` carry; the shell reaches it through `edit_text` and never encodes. |
+| **Open and edit a paragraph whose text object it shares with other content** — `edit_block_text_preview`, `edit_block_text`, `reflow_block`, `UnsupportedCause::TextObjectNotSeparable` (our `G226`) | **shipped — a click with Paragraphs on.** The shell's paragraph widening previews the block through `edit_block_text_preview` and commits through `edit_block_text`; the engine's "now paints after that content" disclosure reaches the status line from the report's `disclosures`, and `TextObjectNotSeparable`'s `detail` reaches the draft's note through the generic refusal route. Driven: `a_paragraph_on_his_drawing_opens_as_one` on the operator's SOLIDWORKS drawing opens a 124-character block against a 40-character line. |
 | **Links into a tagged source's structure, re-pointed when its pages are copied** — `InsertOutcome::structure_links_to_pages`, `structure_links_to_first_page`, `links_to_pages_left_behind`, `source_tags_dropped`; the same on `MergeOutcome` and `AssembleReport` (with `struct_tree_dropped`) | **shipped — Insert pages, Combine files, Merge and Extract pages.** `text::structlinks::repointed` turns the counts into one off-canvas sentence on each receipt: the tags stayed behind, how many links now go to the page their element marked or to the source's first page, and how many links to pages not copied lost their destination. Nothing on the canvas changes (R8b). Pinned by `merging_a_tagged_file_says_its_tags_stayed_behind` on `fixtures/tagged-report.pdf`. |
 | **Place a PDF page's own content directly onto another page, not behind a Stamp** — `EditSession::place_page_content` (our `G100`, Pass 450.0) | **shipped.** `app::actions::pagecontent::place` calls `place_page_content` once through the funnel and selects the placed form; its scale, a stretch, and source comments or fields not carried go to the status line. A snapshot pasted back in Edit (`dispatch::ospaste::drawing`) and a dropped PDF's Place in Edit (`dialogs::drop_pdf`) take it; Review keeps the stamp, as does Paste as Stamp. It is the paste-back half of `O272`. <!--namesake:place_page_artwork--> Driven by `a_snapshot_pastes_back_as_a_drawing` and `a_dropped_pdf_asks_open_insert_or_place`. |
 | **Opt-in disclosed workaround for a refused text edit** — `EditOptions::with_workarounds`, `EditOptions::workarounds`, `WorkaroundPolicy::{Refuse, Apply}`, the module `pdfcer_core::text_edit::workaround`, `EditError::WorkaroundRefused` (Pass 436.0) | **shipped — offered in Properties.** A refused text edit whose `EditError::workaround` names one is offered there, worded per `Workaround` variant with whether the result is exact; *Make the edit this way* re-commits the same edit with `WorkaroundPolicy::Apply`, never by default. The engine's disclosure (`EditReport::workaround`) reaches the status line; `EditError::WorkaroundRefused` replaces the button with the engine's reason. Driven: `a_refused_edit_offers_its_workaround` on `fixtures/quote-operator.pdf`. |
@@ -688,7 +689,7 @@ channel. They join a verdict section when the engine answers.
 - **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face. Consumed at commit by `app::actions::reface::try_commit`; the placeholder route remains for a match across several show operators.
 - **G162** — a paragraph rewrite at the default wrap split its own widest line. Answered as `FIT_TOLERANCE`; the shell's wrap slack is deleted.
 - **G163** — a block did not say which of its line ends are hard breaks. Answered as `LineMarks`, `line_ends` and `line_end_source`; the shell's `joint` is deleted and an inferred paragraph is disclosed.
-- **G226** — a block that shares its `BT … ET` with other text refuses `edit_block_text_preview` (`SharedTextObject`), so a SOLIDWORKS note opens line by line (O307 on SW41177). Answered on the engine's main (Pass 644.0), not yet in a tag: the block is lifted into its own `BT … ET` with a disclosure, and what still refuses is `UnsupportedCause::TextObjectNotSeparable`. Both reach the shell through its existing generic routes; at the next tag, re-drive `a_paragraph_on_his_drawing_opens_as_one` on SW41177 (the engine found the note on page index 2).
+- **G226** — a block that shares its `BT … ET` with other text refuses `edit_block_text_preview` (`SharedTextObject`), so a SOLIDWORKS note opens line by line (O307 on SW41177). Answered in v0.97.0: the block is lifted into its own `BT … ET` with a disclosure, and what still refuses is `UnsupportedCause::TextObjectNotSeparable`, whose `detail` sentence reaches the draft's note through the generic refusal route. Driven: `a_paragraph_on_his_drawing_opens_as_one` on SW41177 opens a 124-character block against a 40-character line.
 
 ## Filed requests for Ken's Batch 2 (O289) — not verdict rows
 

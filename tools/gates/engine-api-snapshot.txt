@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 3a60a0b6a5dd3f5f3839c6abd4846343787ba117
+# baseline: 6157f1f1841b7158e6ad6e1cc61de5244136475a
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 9956
+# items: 9957
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -8237,6 +8237,7 @@ pdfcer-core variant pdfcer_core::text_edit::cause::UnsupportedCause::ShowOperato
 pdfcer-core variant pdfcer_core::text_edit::cause::UnsupportedCause::ShowOutsideTextObject
 pdfcer-core variant pdfcer_core::text_edit::cause::UnsupportedCause::ShowWithoutFont
 pdfcer-core variant pdfcer_core::text_edit::cause::UnsupportedCause::StateNotRestorable
+pdfcer-core variant pdfcer_core::text_edit::cause::UnsupportedCause::TextObjectNotSeparable
 pdfcer-core variant pdfcer_core::text_edit::cause::UnsupportedCause::VerticalWriting
 pdfcer-core variant pdfcer_core::text_edit::decoration::DecorationMetrics::FontTables
 pdfcer-core variant pdfcer_core::text_edit::decoration::DecorationMetrics::Standard

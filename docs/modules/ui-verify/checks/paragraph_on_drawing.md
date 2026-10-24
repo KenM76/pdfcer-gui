@@ -26,7 +26,8 @@ text.
 | drawing, point | verdict |
 |---|---|
 | `Code 4 - Final.pdf` page 4 alone, `0,309,275` | PASS: block of 749 characters against a 105-character line |
-| `SW41177.pdf`, `0,1140,713` | FAIL: `run=120 len=40` both ways; the engine refuses the block (`SharedTextObject`, G226) |
+| `SW41177.pdf`, `0,1140,713` | PASS: block of 124 characters against a 40-character line |
+| `SW41177.pdf`, `0,1140,713`, on an engine that refuses `SharedTextObject` | FAIL: `run=120 len=40` both ways |
 
-The SW41177 failure is the falsification: the check reddens on a paragraph
-that opens line by line.
+The last row is the falsification: the check reddens on a paragraph that
+opens line by line.

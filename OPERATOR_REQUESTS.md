@@ -691,11 +691,11 @@ His words: *"is there some sort of anti-aliasing that can be enabled to improve 
 
 His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*
 
-## O307 — **HALF DRIVEN: Code 4 opens whole; SW41177 waits on the engine (G226)** — a paragraph that reads as a paragraph edits as one
+## O307 — **BUILT AND DRIVEN on both drawings — awaiting his verdict** — a paragraph that reads as a paragraph edits as one
 
 His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text is still shown as individual lines. Some paragraphs work fine, but for some reason this one isn't detected as a paragraph."* (`ROPS-FOPS\Code 4 - Final.pdf`) and *"FRONT EDGE OF FOPS PLATE SHOULD BE / APPROXIMATELY 1/2" FROM THE FRONT OF THE / TRUCK BED. These also don't get detected as a paragraph."* (`SW41177.pdf`).
 
-**Driven on both files** (`a_paragraph_on_his_drawing_opens_as_one`, off the desktop, each file clicked with Paragraphs on and then off). *Code 4 - Final.pdf* page 4: the paragraph under 1.6.1 opens as one block of 749 characters, against 105 for the clicked line. Fixed. *SW41177.pdf*: the note still opens one line at a time. The engine recognises it as a block, but refuses to rewrite it because SOLIDWORKS wrote it in one text object with other labels (filed as G226). Until the engine answers, the app opens the line and says why in the draft's note.
+**Driven on both files** (`a_paragraph_on_his_drawing_opens_as_one`, off the desktop, each file clicked with Paragraphs on and then off). *Code 4 - Final.pdf* page 4: the paragraph under 1.6.1 opens as one block of 749 characters, against 105 for the clicked line. Fixed. *SW41177.pdf*: the note opens as one block of 124 characters, against 40 for the clicked line. SOLIDWORKS writes the note in one text object with other labels; the engine now lifts the note into its own text object when it is rewritten, leaving every other label where it was, and says so off-canvas. A note the engine still cannot separate opens line by line, with the engine's reason in the draft's note.
 
 ## O308 — **BUILT AND DRIVEN, awaiting his check** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
 
