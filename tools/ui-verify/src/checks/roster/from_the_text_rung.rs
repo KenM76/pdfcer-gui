@@ -29,6 +29,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(selection_gestures::TheTextToolSelectsAsAWordProcessorDoes),
         Box::new(word_styles::CtrlBBoldsTheWordAtTheCaret),
         Box::new(properties_restyle_word::PropertiesItalicRestylesTheWordAtTheCaret),
+        Box::new(paragraph_on_drawing::AParagraphOnHisDrawingOpensAsOne),
         Box::new(word_styles::TheRibbonAlignsTheParagraphAtTheCaret),
         Box::new(repeated_word::CtrlBBoldsTheSecondCopyOfARepeatedWord),
         Box::new(synthetic_bold::BoldDrawnByAStrokeReadsAsBold),

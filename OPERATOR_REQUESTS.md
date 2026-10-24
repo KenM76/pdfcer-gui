@@ -691,11 +691,11 @@ His words: *"is there some sort of anti-aliasing that can be enabled to improve 
 
 His words: *"I'd made some requests and I'm not sure they got implemented into pdfcer and just didn't implemented into pdfcer-gui."* … *"In short, editing should try to work the same way as it would in most Word Processors."*
 
-## O307 — **ENGINE FIXED, SHELL PART WIRED, NOT DRIVEN** — a paragraph that reads as a paragraph edits as one
+## O307 — **HALF DRIVEN: Code 4 opens whole; SW41177 waits on the engine (G226)** — a paragraph that reads as a paragraph edits as one
 
 His words: *"If I click on the paragraph below 1.6.1 Reference plane, the text is still shown as individual lines. Some paragraphs work fine, but for some reason this one isn't detected as a paragraph."* (`ROPS-FOPS\Code 4 - Final.pdf`) and *"FRONT EDGE OF FOPS PLATE SHOULD BE / APPROXIMATELY 1/2" FROM THE FRONT OF THE / TRUCK BED. These also don't get detected as a paragraph."* (`SW41177.pdf`).
 
-**Engine fixed, shell aligned, not driven.** Engine v0.88.0 (G205, G206) reads the paragraph under 1.6.1 as one block, each heading as its own block, and each note in a drawing frame as its own block. The draft's click, Enter and commit, the Select tool's paragraph, Reflow and Align now all number paragraphs exactly as the engine does, including a paragraph pdfcer itself wrote with a blank line in it (unit test against the engine's own lookup). Not yet driven on either file.
+**Driven on both files** (`a_paragraph_on_his_drawing_opens_as_one`, off the desktop, each file clicked with Paragraphs on and then off). *Code 4 - Final.pdf* page 4: the paragraph under 1.6.1 opens as one block of 749 characters, against 105 for the clicked line. Fixed. *SW41177.pdf*: the note still opens one line at a time. The engine recognises it as a block, but refuses to rewrite it because SOLIDWORKS wrote it in one text object with other labels (filed as G226). Until the engine answers, the app opens the line and says why in the draft's note.
 
 ## O308 — **BUILT AND DRIVEN, awaiting his check** — Bold, Italic, Underline and Font apply to text selected with the I-beam inside a block
 
