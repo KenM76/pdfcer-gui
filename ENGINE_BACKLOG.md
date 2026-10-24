@@ -688,7 +688,7 @@ channel. They join a verdict section when the engine answers.
 - **G078** — a character the run's font cannot take refuses the edit instead of being set in a fallback face. Consumed at commit by `app::actions::reface::try_commit`; the placeholder route remains for a match across several show operators.
 - **G162** — a paragraph rewrite at the default wrap split its own widest line. Answered as `FIT_TOLERANCE`; the shell's wrap slack is deleted.
 - **G163** — a block did not say which of its line ends are hard breaks. Answered as `LineMarks`, `line_ends` and `line_end_source`; the shell's `joint` is deleted and an inferred paragraph is disclosed.
-- **G226** — a block that shares its `BT … ET` with other text refuses `edit_block_text_preview` (`SharedTextObject`), so a SOLIDWORKS note opens line by line (O307 on SW41177). Open; the shell discloses the refusal and does not split the text object itself.
+- **G226** — a block that shares its `BT … ET` with other text refuses `edit_block_text_preview` (`SharedTextObject`), so a SOLIDWORKS note opens line by line (O307 on SW41177). Answered on the engine's main (Pass 644.0), not yet in a tag: the block is lifted into its own `BT … ET` with a disclosure, and what still refuses is `UnsupportedCause::TextObjectNotSeparable`. Both reach the shell through its existing generic routes; at the next tag, re-drive `a_paragraph_on_his_drawing_opens_as_one` on SW41177 (the engine found the note on page index 2).
 
 ## Filed requests for Ken's Batch 2 (O289) — not verdict rows
 
