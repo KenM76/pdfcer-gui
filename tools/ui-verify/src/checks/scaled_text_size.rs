@@ -30,6 +30,8 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const SIZE_REGION: &str = "properties.text.size";
 /// The panel's read of the clicked run; `size=` is the drawn size.
 const SYNCED: &str = "text-style-synced";
+/// The size the panel shows for the letters at the caret or in the sweep.
+const LETTERS: &str = "text-style-letters"; // ui-text-exempt: a trace event name, never displayed
 /// The restyle's summary line.
 const APPLIED_EVENT: &str = "text-style-applied";
 /// The I-beam restyle's summary line: what it owes the operator.
@@ -178,7 +180,10 @@ fn subject(ctx: &CheckContext) -> Result<Subject> {
 }
 
 /// Poll up to `ceiling_ms` for `ready` to answer `Some`.
-fn wait<T>(ceiling_ms: u128, mut ready: impl FnMut() -> Result<Option<T>>) -> Result<Option<T>> {
+pub(super) fn wait<T>(
+    ceiling_ms: u128,
+    mut ready: impl FnMut() -> Result<Option<T>>,
+) -> Result<Option<T>> {
     let started = std::time::Instant::now();
     loop {
         if let Some(v) = ready()? {
@@ -568,25 +573,8 @@ fn type_size(
             session.trace_path().display()
         )));
     };
-    // The I-beam restyles the word at the caret, and the panel re-reads the
-    // run's first glyph, which on a multi-word line is another word. The
-    // engine's own `Tf size was changed from A to B` note measures the restyled word.
-    let written = session
-        .trace()?
-        .last_after(DISCLOSED_EVENT, mark)
-        .and_then(|l| tf_change(&l.raw));
-    let drawn_now = written.map_or(after.size, |(from, to)| before.size * to / from);
-    if (drawn_now - wanted).abs() > 0.05 {
-        return Ok(Some(format!(
-            "★ {wanted:.0} was typed and the restyled text now draws at `{:.2}` pt. A reading of {:.0} is \
-             the typed size written as the Tf operand under the {:.0}-point matrix, which \
-             redraws the text off the page. `StyleChange::stamp` must call `FormatRequest::drawn_size`, which divides by the \
-             run's `em_scale`. Trace: {}.",
-            drawn_now,
-            wanted * before.size,
-            before.size,
-            session.trace_path().display()
-        )));
+    if let Some(failure) = shows_wanted(session, report, mark, before, &after, wanted)? {
+        return Ok(Some(failure));
     }
     if (after.chars, &after.text_hash) != (before.chars, &before.text_hash) {
         return Ok(Some(format!(
@@ -601,11 +589,92 @@ fn type_size(
         )));
     }
     report.note(format!(
-        "★★ typed {wanted:.0}; the restyled text now draws at {drawn_now:.2} pt ({}) and the run keeps its {} characters",
-        written.map_or("the panel's re-read", |_| "the engine's Tf note"),
+        "★★ typed {wanted:.0}; the run keeps its {} characters",
         after.chars
     ));
     Ok(None)
+}
+
+/// The restyled text draws at `wanted` and Properties shows `wanted`. A word
+/// restyle (the engine's `Tf size was changed` note) leaves a run of several
+/// sizes, so the panel's figure is its `text-style-letters` line for the
+/// restyled word, never the run's first letter.
+fn shows_wanted(
+    session: &Session,
+    report: &mut CheckReport,
+    mark: usize,
+    before: &Read,
+    after: &Read,
+    wanted: f64,
+) -> Result<Option<String>> {
+    let trace = session.trace()?;
+    let note = trace.last_after(DISCLOSED_EVENT, mark).cloned();
+    let Some(note) = note else {
+        return Ok(off_size(
+            session,
+            wanted,
+            before,
+            after.size,
+            "the panel's re-read",
+        ));
+    };
+    if let Some((from, to)) = tf_change(&note.raw) {
+        let drawn = before.size * to / from;
+        if let Some(failure) = off_size(session, wanted, before, drawn, "the engine's Tf note") {
+            return Ok(Some(failure));
+        }
+    }
+    let shown = wait(10_000, || {
+        session.settle(4);
+        Ok(session
+            .trace()?
+            .events(LETTERS)
+            .filter(|l| l.lineno > note.lineno)
+            .last()
+            .and_then(|l| l.get("size")?.parse::<f64>().ok()))
+    })?;
+    let Some(shown) = shown else {
+        return Ok(Some(format!(
+            "★ the word restyled to {wanted:.0} pt and Properties never showed its size: no \
+             `{LETTERS}` line followed, so the field reads the line's first word ({:.2} pt). \
+             `properties::text::section` must follow `fontlook::current` for a caret or a sweep. \
+             Trace: {}.",
+            after.size,
+            session.trace_path().display()
+        )));
+    };
+    if (shown - wanted).abs() > 0.05 {
+        return Ok(Some(format!(
+            "★ the word restyled to {wanted:.0} pt and Properties shows `{shown:.2}` pt for it. \
+             `fontlook::look` must report each letter's drawn size. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    report.note(format!(
+        "★ the restyled word draws at {wanted:.0} pt and Properties shows {shown:.2} pt for it"
+    ));
+    Ok(None)
+}
+
+/// A failure sentence when `drawn`, read from `source`, is not `wanted`.
+fn off_size(
+    session: &Session,
+    wanted: f64,
+    before: &Read,
+    drawn: f64,
+    source: &str,
+) -> Option<String> {
+    ((drawn - wanted).abs() > 0.05).then(|| {
+        format!(
+            "★ {wanted:.0} was typed and the restyled text now draws at `{drawn:.2}` pt ({source}). A \
+             reading of {:.0} is the typed size written as the Tf operand under the {:.0}-point \
+             matrix, which redraws the text off the page. `StyleChange::stamp` must call \
+             `FormatRequest::drawn_size`, which divides by the run's `em_scale`. Trace: {}.",
+            wanted * before.size,
+            before.size,
+            session.trace_path().display()
+        )
+    })
 }
 
 /// The `(from, to)` operands of the engine's `Tf size was changed from A to B pt`

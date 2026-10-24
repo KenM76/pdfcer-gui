@@ -89,6 +89,7 @@ pub use selection::{
     text_style_multi,
     text_style_off_face,
     text_style_off_unsynthesised,
+    text_style_progress,
     text_style_used_other_family,
     text_style_used_sibling_face,
     text_style_used_standard_face,

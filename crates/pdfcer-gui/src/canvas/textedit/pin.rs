@@ -187,17 +187,43 @@ pub struct Inspected {
     pub style: RunStyle,
 }
 
-/// Every show operator of `run` on `page`, in ONE extraction.
+/// **Every show operator `runs` are made of, from ONE extraction**, in the
+/// order a batch of edits must apply them, and whether the gather stopped at a
+/// run with glyphs that would not pin.
+///
+/// The order is per stream, span start descending. A format edit moves only
+/// bytes at or after its own operator, so applying in this order keeps every
+/// pin still to come valid without re-reading the page. An operator two runs
+/// share appears once.
 #[must_use]
-pub fn operators(doc: &OpenDoc, page: usize, run: usize) -> Vec<Operator> {
-    // The shared extraction — see `crate::app::cache::provenance`. `None`
-    // covers both "no such page" and "the text could not be read", which are
-    // one answer here: there are no operators to restyle either way.
+pub fn operators_of_runs(doc: &OpenDoc, page: usize, runs: &[usize]) -> (Vec<Pinned>, bool) {
     let Some(text) = doc.provenance_page_text(page) else {
-        return Vec::new();
+        return (Vec::new(), !runs.is_empty());
     };
     let model = EditableTextModel::recognize(&text, &BlockRecognitionOptions::default());
-    operators_in_run(&model, &text, run)
+    let mut pins: Vec<Pinned> = Vec::new();
+    let mut stopped = false;
+    for &run in runs {
+        let ops = operators_in_run(&model, &text, run);
+        if ops.is_empty() {
+            stopped = true;
+            break;
+        }
+        pins.extend(ops.into_iter().map(|op| op.pin));
+    }
+    let key = |p: &Pinned| (stream_key(p.target), p.span);
+    pins.sort_by_key(|p| std::cmp::Reverse(key(p)));
+    pins.dedup_by_key(|p| key(p));
+    (pins, stopped)
+}
+
+/// Which content stream a target names, as a sortable key.
+const fn stream_key(target: EditTarget) -> (u8, u32) {
+    match target {
+        EditTarget::PageContents => (0, 0),
+        EditTarget::Form { object } => (1, object),
+        _ => (2, 0),
+    }
 }
 
 /// **Which faces on this page `set_font` would actually ACCEPT for this run**,

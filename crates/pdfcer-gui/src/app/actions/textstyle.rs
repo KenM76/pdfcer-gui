@@ -36,13 +36,13 @@ pub(super) fn apply(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &Sty
         }
         return;
     }
+    // The re-sweep runs when the restyle's job closes.
     restyle(doc, page, runs, change);
-    resweep(doc, page);
 }
 
 /// **Keep the operator's sweep alive across the edit that just happened** —
 /// `OPERATOR_REQUESTS.md` **O198**.
-fn resweep(doc: &mut OpenDoc, page: usize) {
+pub(super) fn resweep(doc: &mut OpenDoc, page: usize) {
     let Some(previous) = doc.text_selection.take() else {
         return;
     };
@@ -74,37 +74,16 @@ fn resweep(doc: &mut OpenDoc, page: usize) {
     });
 }
 
-/// The restyle itself. See [`apply`], which is this plus the re-sweep.
+/// The restyle itself: gather the operators, then hand them to a job.
 fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange) {
-    // **The operator's posture, sampled before the borrow.**
-    //
-    // `super::apply::vector_edit` takes `&mut doc`, so nothing inside the
-    // closure can read `doc.settings`. Reading it here is not a convenience:
-    // it is the same rule `OpenDoc::settings` itself documents — a setting
-    // sampled once per gesture cannot change halfway through a multi-run
+    // Sampled once, so a setting cannot change halfway through a multi-run
     // restyle and leave two runs decided by two different answers.
     let policy = doc.settings.style_policy;
-    // **Derived-whitespace runs are skipped**, and skipping them is a
-    // different act from tolerating a failed pin.
-    //
-    // A sweep across a title block covers many runs, and the ones the
-    // extraction *derived* — the word spaces and line breaks between show
-    // operators — carry no glyphs. No glyphs means no `GlyphProvenance`, which
-    // means no pin, which means nothing to restyle. That is correct: there is
-    // no show operator behind them.
-    //
-    // ⚠ The loop below treats an unpinnable run as a **stop**, because
-    // half-applying and carrying on is worse than half-applying and saying so.
-    // That is right for a run that has text in it and will not pin, and
-    // catastrophic if it also catches the derived spaces: the **first** word
-    // space then ends the gesture, and a swept label restyles one run out of
-    // however many it had.
-    //
-    // ⇒ Filtering on `glyphs.is_empty()` rather than on "the pin failed" is
-    // what keeps the two states apart. A glyphless run is *not text* and is
-    // skipped silently; a run with glyphs that will not pin is a real refusal
-    // and still stops. `page_text()` is the **shared** cache — no provenance,
-    // no second extraction, no cost.
+    // Derived-whitespace runs carry no glyphs, so no show operator stands
+    // behind them: they are skipped, never treated as an unpinnable run, which
+    // stops the gesture. Filtering on `glyphs.is_empty()` rather than on a
+    // failed pin keeps the two apart; otherwise the first word space of a swept
+    // label ends the restyle.
     let glyphless: std::collections::BTreeSet<usize> =
         doc.page_text()
             .map_or_else(std::collections::BTreeSet::new, |text| {
@@ -146,82 +125,27 @@ fn restyle(doc: &mut OpenDoc, page: usize, runs: &[usize], change: &StyleChange)
         _ => None,
     };
 
-    // Accumulated across the whole gesture and surfaced on the LAST successful
-    // step, because `super::apply::vector_edit` records the disclosure slot per
-    // call and the last write wins. Collecting and emitting once is what stops
-    // a three-run restyle showing only the third run's sentence.
-    let mut carried: Vec<String> = Vec::new();
-    let mut applied = 0_usize;
-
-    for (position, run) in ordered.into_iter().enumerate() {
-        let last = position + 1 == total;
-        // A **fresh** read per run, and the unit inside it is the show
-        // **operator**, not the run. `pin::operators_in_run`'s header carries
-        // the argument: a run is closed on geometry and an operator is closed
-        // on whatever its producer felt like, so a title-block cell can be one
-        // run made of three `Tj`s. Pin the first and pass the run's whole text
-        // as `find` and the engine correctly refuses, on a page where an
-        // unpinned search for the same string succeeds instantly.
-        //
-        // Descending here too, for the same reason the runs are: an edit only
-        // moves bytes at or after itself.
-        let mut ops = crate::canvas::textedit::pin::operators(doc, page, run);
-        if ops.is_empty() {
-            stop(doc, applied, t::TextStyleRefusal::Unpinnable);
-            return;
-        }
-        ops.reverse();
-        let final_op = ops.len();
-        for (which, op) in ops.into_iter().enumerate() {
-            let mut req = change.stamp(request(page, op.pin));
-            if let Some(plan) = &plan {
-                req = req.embedded_font(plan.clone());
-            }
-            let outcome = format_op(doc, page, policy, &req);
-            let notes = match outcome {
-                Ok(notes) => notes,
-                Err(error) => {
-                    // A refusal that reaches the operator and not the trace is a
-                    // refusal nobody debugging can see. Without this line a
-                    // gesture that applied eleven runs and then stopped on purpose
-                    // leaves a trace holding eleven completed edits, no summary
-                    // and no decline — which reads to whoever is driving it as
-                    // *"Bold was pressed and nothing happened"*.
-                    if applied > 0 {
-                        decline::record_text_style(t::TextStyleRefusal::PartOnly);
-                        emit_carried(doc, page, applied, total, &carried);
-                    }
-                    let detail = error.to_string();
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed in the UI
-                        format!(
-                            "text-style-declined page={page} run={run} applied={applied} runs={total} detail={detail}"
-                        )
-                    });
-                    return;
-                }
-            };
-            applied += 1;
-            carried.extend(notes);
-
-            if last && which + 1 == final_op {
-                emit_carried(doc, page, applied, total, &carried);
-            }
-        }
+    // One extraction for the whole gesture, and every call in one job that
+    // keeps the window painting: `super::restylejob` carries why.
+    let (pins, stopped) = crate::canvas::textedit::pin::operators_of_runs(doc, page, &ordered);
+    if pins.is_empty() {
+        stop(doc, 0, t::TextStyleRefusal::Unpinnable);
+        return;
     }
-
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!(
-            // `applied` counts show **operators** and `runs` counts runs, and
-            // they are different numbers: a trace reading `applied=19 of=14`
-            // is nonsense because it puts two units under one comparison. A
-            // count is only readable beside a total of the same thing, so both
-            // names are spelled out.
-            "text-style-applied page={page} change={} applied={applied} runs={total}",
-            change.label()
-        )
-    });
+    let requests = pins
+        .into_iter()
+        .map(|pin| {
+            let req = change.stamp(request(page, pin));
+            match &plan {
+                Some(plan) => req.embedded_font(plan.clone()),
+                None => req,
+            }
+        })
+        .collect();
+    super::restylejob::start(
+        doc,
+        super::restylejob::RestyleJob::new(page, policy, change.label(), requests, total, stopped),
+    );
 }
 
 /// **One `format_text` call through the funnel** — the notes it owes the
@@ -235,44 +159,10 @@ pub(super) fn format_op(
     let mut outcome: Option<FormatError> = None;
     let mut notes: Vec<String> = Vec::new();
     super::apply::vector_edit(doc, "format-text", page, 1, |session| {
-        // **The operator's posture, passed straight through** —
-        // never pinned to a value here to provoke an informative
-        // refusal.
-        //
-        // `set_style` walks all four rungs itself, so there is no
-        // question left to ask by forcing one, and the posture goes
-        // where it belongs: to the engine, as the operator set it.
-        // Under `Auto` the ladder decides and discloses; under `Warn`
-        // it does the same and [`ladder_note`] raises the synthetic
-        // case to a sentence of its own; under `Refuse` the ladder's
-        // **fourth** rung returns `SynthesisRefusedByPosture` — the
-        // wide reading of *"never fake it"*, decided by the side that
-        // knows what it tried.
-        //
-        // ⇒ One engine call per operator, and one only. A probe to ask
-        // which face is available, plus a pre-check to predict the
-        // posture refusal, plus the commit, is three reads of a page
-        // whose answer can change between them.
-        let options = FormatOptions::default().with_style_policy(policy);
-        match session.format_text(req, &options) {
-            Ok(report) => {
-                // The ladder's own sentence first, then the engine's
-                // disclosures: what happened to the text, then how.
-                if let Some(note) = ladder_note(&report, policy) {
-                    notes.push(note);
-                }
-                if let Some(note) = render_mode_note(&report) {
-                    notes.push(note);
-                }
-                if let Some(source) = report.strike_source {
-                    let source = strike_token(source);
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed
-                        format!("text-strike-source page={page} source={source}")
-                    });
-                }
-                notes.extend(report.disclosures);
-                Ok(notes.clone())
+        match format_in(session, page, policy, req) {
+            Ok(said) => {
+                notes.clone_from(&said);
+                Ok(said)
             }
             Err(error) => {
                 decline::record_text_style(refusal_of(&error));
@@ -282,6 +172,42 @@ pub(super) fn format_op(
         }
     });
     outcome.map_or(Ok(notes), Err)
+}
+
+/// **One `format_text` call on a session already taken** — the notes it owes
+/// the operator, or the engine's refusal unrecorded.
+///
+/// The operator's posture goes straight to the engine: `set_style` walks all
+/// four rungs itself, so one call answers what a probe, a pre-check and a
+/// commit would ask three times of a page whose answer can change between
+/// them. Under `Refuse` the ladder's fourth rung returns
+/// `SynthesisRefusedByPosture`.
+pub(super) fn format_in(
+    session: &mut pdfcer_core::edit::EditSession,
+    page: usize,
+    policy: StylePolicy,
+    req: &FormatRequest,
+) -> Result<Vec<String>, FormatError> {
+    let options = FormatOptions::default().with_style_policy(policy);
+    let report = session.format_text(req, &options)?;
+    // The ladder's own sentence first, then the engine's disclosures: what
+    // happened to the text, then how.
+    let mut notes: Vec<String> = Vec::new();
+    if let Some(note) = ladder_note(&report, policy) {
+        notes.push(note);
+    }
+    if let Some(note) = render_mode_note(&report) {
+        notes.push(note);
+    }
+    if let Some(source) = report.strike_source {
+        let source = strike_token(source);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("text-strike-source page={page} source={source}")
+        });
+    }
+    notes.extend(report.disclosures);
+    Ok(notes)
 }
 
 /// The trace token for where a strikethrough's line came from. The engine
@@ -325,7 +251,13 @@ fn donor_plan(
 }
 
 /// Re-record the whole gesture's disclosures, on the last step.
-fn emit_carried(doc: &OpenDoc, page: usize, applied: usize, total: usize, carried: &[String]) {
+pub(super) fn emit_carried(
+    doc: &OpenDoc,
+    page: usize,
+    applied: usize,
+    total: usize,
+    carried: &[String],
+) {
     let mut notes: Vec<String> = carried.to_vec();
     if total > 1 {
         notes.push(t::text_style_multi(applied));
@@ -345,7 +277,7 @@ fn emit_carried(doc: &OpenDoc, page: usize, applied: usize, total: usize, carrie
 }
 
 /// Record that the gesture stopped, and how far it got.
-fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) {
+pub(super) fn stop(doc: &mut OpenDoc, applied: usize, why: t::TextStyleRefusal) {
     let _ = doc;
     decline::record_text_style(why);
     crate::diag::trace(|| {
@@ -533,7 +465,7 @@ fn trace_rung(ladder: &StyleLadder, why: &'static str) {
 /// obeyed.
 ///
 /// [`FormatError::SynthesisRefusedByPosture`]: pdfcer_core::text_edit::FormatError::SynthesisRefusedByPosture
-fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
+pub(super) fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
     match error {
         FormatError::TargetFontMissing(_) => t::TextStyleRefusal::FaceNotOnPage,
         FormatError::ShearUnsupported(_) => t::TextStyleRefusal::ItalicWouldMove,

@@ -19,6 +19,11 @@ restyles the **word at the caret**, not the line. The check requires:
    `read × B / A`, is the typed size. The panel's re-read is the fallback when
    no such note is traced. It cannot be the primary oracle: it reads the
    run's first glyph, which on a multi-word line is not the restyled word;
+   **and the field shows it** — a `text-style-letters size=` line after the
+   note, within 0.05 pt of the typed size. That line is the size field
+   following the letters at the caret or selection
+   (`properties::text::section` reading `fontlook::current`), not the run's
+   first word;
 3. **the characters** — the re-read's `chars=` and `text_hash=` are unchanged
    (re-encoded codes draw as squares);
 4. **the redraw** — a page render finishes after the change and its
@@ -42,12 +47,15 @@ Driven off the desktop through the scripted pointer, under `--no-input`.
 
 | input | doc-point | verdict |
 |---|---|---|
-| fixture | default | PASS: 18.00 read, 24.00 written, 17 chars, notdef 0→0, re-open len 17, stand-in font |
-| `D:/Dev/pdfTests/SW41177/SW41177.pdf` (private, never checked in) | `0,1215,595` ("TRUCK", run 108, 41 chars, CenturyGothic Type0) | PASS: 13.23 read, 24.00 written, notdef 0→0, re-open len 41, stand-in font |
+| fixture | default | PASS: 18.00 read, 24.00 written and shown, 17 chars, notdef 0→0, re-open len 17, stand-in font |
+| `D:/Dev/pdfTests/SW41177/SW41177.pdf` (private, never checked in) | `0,1215,595` ("TRUCK", run 108, 41 chars, CenturyGothic Type0) | PASS: 13.23 read, 24.00 written and shown, notdef 0→0, re-open len 41, stand-in font |
 
 On both, the re-opened line is refused an own-font layout
 (`text-edit-preview-fallback reason=refused`) once the restyle has split it
-into differently sized pieces, so it is shown in the stand-in font. The saved
+into differently sized pieces, so it is shown in the stand-in font. The
+`text-edit-preview-refused` line names the engine's refusal: `NoMatch` with
+`SplitRun { operators: 2 }` on the fixture, and `NoSuchText` on SW41177 —
+filed as G228. The saved
 SW41177 copy read back with the engine CLI: `find-text` puts "TRUCK" 24 pt
 tall, `render-page` reports 0 `.notdef` and 0 substituted glyphs.
 
@@ -57,3 +65,4 @@ tall, `render-page` reports 0 `.notdef` and 0 substituted glyphs.
 |---|---|
 | `RunStyle.size` = `tf_size` instead of `GlyphProvenance::drawn_size` | FAIL at step 1, reads `1.00` |
 | `StyleChange::stamp` calls `FormatRequest::size` instead of `drawn_size` | FAIL at step 2 — watched red on SW41177, `317.52` pt |
+| the size field's `follow_letters` call removed (the field keeps the line's first word) | FAIL at step 2: "the word restyled to 24 pt and Properties never showed its size" — watched red on the fixture |

@@ -555,6 +555,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // while this asserts the control. Read a sentence failure first.
         Box::new(colour_clicked_text::ClickingTextOffersItsColour),
         Box::new(scaled_text_size::ScaledTextShowsAndTakesItsDrawnSize),
+        Box::new(restyle_keeps_painting::ALargeRestyleKeepsPainting),
         Box::new(multi_node::MultiNodeMoveMovesEveryPickedAnchor),
         Box::new(align_left::AlignLeftMovesEveryBoxInOneUndo),
         Box::new(shape_preview::DraggingANodeBendsTheLine),

@@ -671,8 +671,14 @@ pub const fn text_run_width_held() -> &'static str {
 #[must_use]
 pub fn text_style_multi(count: usize) -> String {
     format!(
-        "That selection covered {count} separate pieces of text on the page, so pdfcer restyled each one. Ctrl+Z takes them back one at a time."
+        "That selection covered {count} separate pieces of text on the page, so pdfcer restyled each one. One Ctrl+Z takes them all back."
     )
+}
+
+/// Status bar, while a restyle runs over several frames.
+#[must_use]
+pub fn text_style_progress(done: usize, of: usize) -> String {
+    format!("Restyling text: {done} of {of} pieces done.")
 }
 
 //

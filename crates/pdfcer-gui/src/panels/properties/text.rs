@@ -62,8 +62,16 @@ pub struct TextStyleDraft {
     /// The run's `/BaseFont`, subset tag and all, or `None` when the
     /// provenance carried no font resource.
     face: Option<String>,
-    /// The `Tf` size in points.
+    /// The drawn size in points: the `Tf` operand times the text matrix's
+    /// scale.
     size: f64,
+    /// The one size the caret's or the sweep's letters share, once shown in
+    /// place of the run's first letter; `None` until then and after a re-read.
+    letters: Option<f64>,
+    /// The typed size already sent as a restyle, until the next re-read. A
+    /// restyle runs over several frames before the document changes, and a
+    /// field that loses focus after committing would otherwise send it again.
+    sent: Option<f64>,
     /// The fill colour in its own device space, or `None` when the run is
     /// painted in a space the picker cannot edit (spot, ICC-based).
     ///
@@ -165,6 +173,22 @@ use style::{bold_hint, italic_hint};
 use super::face::FaceChoice;
 
 impl TextStyleDraft {
+    /// Show `size`, the size every letter at the caret or in the sweep shares,
+    /// in place of the run's first letter: a word restyle leaves a run of
+    /// several sizes, and the field describes the letters a press acts on.
+    pub(crate) fn follow_letters(&mut self, page: usize, size: f64) {
+        if self.letters == Some(size) {
+            return;
+        }
+        self.letters = Some(size);
+        self.size = size;
+        self.typed_size = size;
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("text-style-letters page={page} size={size:.2}")
+        });
+    }
+
     /// **Which runs a restyle would act on** — swept, or the single
     /// selected text object. `OPERATOR_REQUESTS.md` O198.
     pub(crate) fn operand(&mut self, doc: &OpenDoc) -> Option<crate::app::textoperand::Operand> {
@@ -184,6 +208,8 @@ impl TextStyleDraft {
         let started = std::time::Instant::now();
         self.face = None;
         self.size = 0.0;
+        self.letters = None;
+        self.sent = None;
         self.colour = None;
         self.bold_outlook = None;
         self.italic_outlook = None;
@@ -345,6 +371,16 @@ impl TextStyleDraft {
         self.typed_size
     }
 
+    /// Whether the typed size is a new request, marking it sent: `false` for
+    /// a size already sent since the last re-read.
+    pub(crate) fn send_typed_size(&mut self) -> bool {
+        if self.sent == Some(self.typed_size) {
+            return false;
+        }
+        self.sent = Some(self.typed_size);
+        true
+    }
+
     /// The size the operator is typing, for a widget to write into.
     pub(crate) fn typed_size_mut(&mut self) -> &mut f64 {
         &mut self.typed_size
@@ -423,6 +459,12 @@ pub fn section(
         ui.label(t::text_unreadable());
         crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
         return true;
+    }
+    if !matches!(operand.source, crate::app::textoperand::Source::Object(_))
+        && let Some(crate::app::fontlook::Shown::One(size)) =
+            crate::app::fontlook::current(ui.ctx(), doc).and_then(|look| look.size)
+    {
+        draft.follow_letters(page, size);
     }
 
     ui.heading(t::text_heading());
@@ -513,6 +555,7 @@ fn size_row(
         crate::diag::ui_rect_visible(SIZE_REGION, response.rect, ui.clip_rect());
         if (response.drag_stopped() || response.lost_focus())
             && (draft.typed_size - draft.size).abs() > f64::EPSILON
+            && draft.send_typed_size()
         {
             crate::app::dispatch::textformat::restyle_or_runs(
                 ui.ctx(),

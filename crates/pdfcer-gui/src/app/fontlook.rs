@@ -44,7 +44,8 @@ pub(crate) enum Shown<T> {
 pub(crate) struct Look {
     /// The `/BaseFont`, subset tag and all.
     pub face: Option<Shown<String>>,
-    /// The `Tf` size in points.
+    /// The drawn size in points: the `Tf` operand times the text matrix's
+    /// scale, the size a typed value is read in.
     pub size: Option<Shown<f64>>,
 }
 
@@ -178,7 +179,7 @@ pub(crate) fn look(doc: &OpenDoc, subject: Subject) -> Option<Look> {
                 .iter()
                 .filter_map(|p| p.font_resource.as_deref().and_then(face_of)),
         ),
-        size: common(provenance.iter().map(|p| f64::from(p.tf_size))),
+        size: common(provenance.iter().map(|p| f64::from(p.drawn_size()))),
     })
 }
 

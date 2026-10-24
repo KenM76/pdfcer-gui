@@ -690,6 +690,8 @@ channel. They join a verdict section when the engine answers.
 - **G162** — a paragraph rewrite at the default wrap split its own widest line. Answered as `FIT_TOLERANCE`; the shell's wrap slack is deleted.
 - **G163** — a block did not say which of its line ends are hard breaks. Answered as `LineMarks`, `line_ends` and `line_end_source`; the shell's `joint` is deleted and an inferred paragraph is disclosed.
 - **G226** — a block that shares its `BT … ET` with other text refuses `edit_block_text_preview` (`SharedTextObject`), so a SOLIDWORKS note opens line by line (O307 on SW41177). Answered in v0.97.0: the block is lifted into its own `BT … ET` with a disclosure, and what still refuses is `UnsupportedCause::TextObjectNotSeparable`, whose `detail` sentence reaches the draft's note through the generic refusal route. Driven: `a_paragraph_on_his_drawing_opens_as_one` on SW41177 opens a 124-character block against a 40-character line.
+- **G227** — restyling a text object is one `format_text` call per show operator, each planning the whole stream (238 calls, 11.5 s of engine time on SW41177's 425-run object). Worked around by `app::actions::restylejob`, which slices the calls across frames and folds them into one undo entry with `coalesce_last`; asks for one batch call.
+- **G228** — a line whose words differ only in size (one word restyled) refuses `edit_text_preview` with `NoMatch { SplitRun }` on our fixture and with an unclassified `NoMatch { NoSuchText }` on SW41177, so it opens in the stand-in font (O310). Traced as `text-edit-preview-refused`; asks the matcher to join a one-line match across a size change and narrow it.
 
 ## Filed requests for Ken's Batch 2 (O289) — not verdict rows
 

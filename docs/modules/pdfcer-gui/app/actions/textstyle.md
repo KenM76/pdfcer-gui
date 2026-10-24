@@ -126,20 +126,16 @@ it is therefore the field to use.
 The load-bearing decision in the file, and invisible until it is wrong.
 
 `format_text` rewrites one **show operator**. A sweep can cover several, so
-a restyle is several calls. Each call rewrites the content stream, so every
-pin taken before it is stale afterwards — which is why
-[`crate::canvas::textedit::pin::resolve`] is re-run between steps instead of
-the pins being batched up front.
+a restyle is several calls, and each call rewrites the content stream at
+and after its own operator. Synthetic italic brackets its run with two
+absolute `Tm` operators, and a `Tm` can split a run, so an edit may move or
+renumber everything after it.
 
-Re-resolving fixes the *spans*. It does not fix the **indices**: synthetic
-italic brackets its run with two absolute `Tm` operators, and a `Tm` can
-split a run, so an edit at index *k* may renumber everything after it.
-
-Descending order makes that harmless by construction. Editing run *k* can
-only insert operators at or after *k*'s position in the buffer, so runs
-`0..k` keep both their bytes and their ordinals. Working downwards, every run
-still to be done is always *before* the one just done, and its index is still
-the index it was measured at.
+Descending order makes that harmless by construction, which is why the pins
+are taken **once, up front**, by `pin::operators_of_runs`: per stream, span
+start descending. Editing the operator at span *s* only moves bytes at or
+after *s*, so every pin still to come — always *before* the one just done —
+still names the bytes it was measured at.
 
 Ascending order would work for four of the five controls and fail for italic,
 on multi-run selections only, by restyling the wrong text — the shape of
@@ -147,16 +143,12 @@ defect that ships because the case that breaks it is the one nobody tries.
 
 ## What is NOT here, and is filed rather than hidden
 
-**One gesture is N undo entries** when the selection covers N runs.
-`EditSession` has no grouping verb; the engine solves multi-verb undo by
-adding a *combined* verb per case, which is how markup authoring got its
-opacity in one entry rather than two. A restyle across a paragraph therefore
-takes several `Ctrl+Z` presses to take back.
-
-Disclosed by the count rather than left to be discovered, and filed on the
-request channel. **Not** worked around here: a shell-side coalesce would
-work and would leave every other consumer with the same defect, which is the
-boundary rule above stated from the other side.
+**One batch call.** The engine has no batch format verb (`ENGINE_BACKLOG.md`
+G227), so a gesture is one `format_text` call per show operator, each
+planning against the whole stream — about 100 ms a call on a dense drawing.
+`restylejob` runs those calls in slices across frames so the window keeps
+painting, and folds them into **one undo entry** with
+`EditSession::coalesce_last`. See `restylejob.md`.
 
 ## Item notes
 
@@ -168,8 +160,8 @@ control cannot be added without appearing in it.
 
 ### `fn request`
 
-Built fresh per run per step; see the module header on why a batch of these
-taken up front would be wrong.
+Built once per operator, up front, in the order `pin::operators_of_runs`
+gives; see *Why the runs are edited in descending order*.
 
 # Why there is no `find` string
 

@@ -254,6 +254,7 @@ fn size(
     if live
         && (response.drag_stopped() || response.lost_focus())
         && (draft.typed_size() - was).abs() > f64::EPSILON
+        && draft.send_typed_size()
     {
         *parked = Some(StyleChange::Size(draft.typed_size()));
         return true;

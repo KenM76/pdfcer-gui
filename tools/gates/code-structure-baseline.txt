@@ -237,7 +237,6 @@ fn crates/pdfcer-gui/src/app/actions/redactsel.rs::mark_selection
 fn crates/pdfcer-gui/src/app/actions/sign.rs::run
 fn crates/pdfcer-gui/src/app/actions/textannot.rs::commit
 fn crates/pdfcer-gui/src/app/actions/textcommit.rs::commit_text_edit
-fn crates/pdfcer-gui/src/app/actions/textstyle.rs::restyle
 fn crates/pdfcer-gui/src/app/actions/vector.rs::apply
 fn crates/pdfcer-gui/src/app/conditions/armed.rs::armed_conditions
 fn crates/pdfcer-gui/src/app/conditions/mod.rs::conditions

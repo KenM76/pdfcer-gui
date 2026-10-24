@@ -494,6 +494,10 @@ pub fn show(
             // answer to a question he is asking right now, the second to one he
             // may not have thought to ask yet.
             ocrlayer::show(ui, doc);
+            if let Some((done, of)) = crate::app::actions::restylejob::progress(doc) {
+                ui.label(crate::text::status::text_style_progress(done, of));
+                ui.separator();
+            }
 
             decline::show(ui, doc, commands, actions);
         });

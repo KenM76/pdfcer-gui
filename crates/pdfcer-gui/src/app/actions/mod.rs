@@ -151,6 +151,8 @@ mod onestep;
 /// The three arms that mark content for removal. Its header carries the seam
 /// argument and names the one thing deliberately absent from it.
 mod redact;
+/// A restyle spread over frames, committed once.
+pub(crate) mod restylejob;
 /// Line width, dash and opacity of page objects, in points.
 mod strokestyle;
 pub(crate) use strokestyle::{object_of as styled_object, scale_of as stroke_scale};

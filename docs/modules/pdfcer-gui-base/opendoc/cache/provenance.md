@@ -34,7 +34,7 @@ lines, each paying that in full:
 | `app::cache::ensure_form_runs` | every click on the canvas, to ask whether the clicked run has an anchor |
 | `canvas::textedit::pin::inspect` | opening the properties panel on a text run |
 | `canvas::textedit::pin::resolve` | every restyle |
-| `canvas::textedit::pin::operators` | every `textstyle` action |
+| `canvas::textedit::pin::operators_of_runs` | every `textstyle` action, once per gesture |
 | `canvas::textedit::plan` | every committed text edit |
 | `canvas::textedit::reflow::block_of_run` | every reflow |
 

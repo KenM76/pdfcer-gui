@@ -959,6 +959,10 @@ pub mod stamp_size;
 /// drawn size.
 pub mod scaled_text_size;
 
+/// **O310** — a restyle of a many-run text object keeps the window painting
+/// and is one undo entry.
+pub mod restyle_keeps_painting;
+
 pub mod stamp_size_properties;
 
 pub mod text_annot;

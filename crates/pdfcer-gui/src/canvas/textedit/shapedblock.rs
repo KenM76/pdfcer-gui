@@ -66,12 +66,18 @@ fn layout(
     if recognised {
         let p = session
             .edit_recognised_block_text_preview(page, block, text, &options.edit)
-            .map_err(|_| PreviewFallback::Refused)?;
+            .map_err(|e| {
+                super::shaped::refusal(page, block, "Block", &e);
+                PreviewFallback::Refused
+            })?;
         Ok((p.lines, p.runs, p.old_bbox, p.new_bbox))
     } else {
         let p = session
             .edit_block_text_preview(page, block, text, &options)
-            .map_err(|_| PreviewFallback::Refused)?;
+            .map_err(|e| {
+                super::shaped::refusal(page, block, "Block", &e);
+                PreviewFallback::Refused
+            })?;
         Ok((p.lines, p.runs, p.old_bbox, p.new_bbox))
     }
 }

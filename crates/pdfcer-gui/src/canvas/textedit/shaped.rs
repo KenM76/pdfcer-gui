@@ -181,6 +181,7 @@ pub fn refresh(ctx: &egui::Context, doc: &OpenDoc) {
     } else {
         layout_run(ctx, doc, &key)
     };
+    trace_refusal();
     store(ctx, key, shaped, refused, &tier);
 }
 
@@ -204,12 +205,41 @@ fn layout_run(
         doc.session.edit_text_preview(request, &plan.options)
     });
     let refused = laid.is_err();
+    if let Err(error) = &laid {
+        refusal(key.page, key.run, &format!("{tier:?}"), error);
+    }
     let shaped = match laid {
         Ok(p) => shape_any(doc, &p, key, tier, &plan),
         Err(_) if super::reface::is_planned(ctx, key.page, key.run) => Err(PreviewFallback::Reface),
         Err(_) => Err(PreviewFallback::Refused),
     };
     (shaped, refused, format!("{tier:?}"))
+}
+
+thread_local! {
+    /// The refusal behind the layout being built, held until [`refresh`]
+    /// traces it: a paragraph is laid out under `diag::muted`.
+    static REFUSAL: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+/// Hold the engine's own sentence for a preview it refused, so a stand-in
+/// font can be traced to the refusal behind it.
+pub(super) fn refusal(page: usize, run: usize, tier: &str, error: &dyn std::fmt::Display) {
+    if crate::diag::enabled() {
+        // `error` is last on the line because it holds spaces.
+        let line = format!("page={page} run={run} tier={tier} error={error}"); // ui-text-exempt: diagnostic trace
+        REFUSAL.set(Some(line));
+    }
+}
+
+/// Trace the refusal [`refusal`] held, if any.
+fn trace_refusal() {
+    if let Some(line) = REFUSAL.take() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("text-edit-preview-refused {line}")
+        });
+    }
 }
 
 /// Hold `shaped` as the layout of `key`, with its trace line.
