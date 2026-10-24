@@ -43,6 +43,17 @@ pub(super) fn draw(
         return None;
     }
     let used = page.map(|(ratio, measured)| t::word_gap_on_page(ratio, measured));
+    crate::diag::trace_changed("word-gap-band", || {
+        let page = page.map_or_else(
+            || "unbuilt".to_owned(),
+            |(ratio, measured)| format!("{ratio:.3} measured={measured}"),
+        );
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "word-gap-band auto={} ratio={:.3} page={page}",
+            at.auto, at.ratio
+        )
+    });
     let hover = |note: &str| match &used {
         Some(used) => format!(
             "{note}
@@ -55,6 +66,7 @@ pub(super) fn draw(
     let switch = ui
         .checkbox(&mut auto, t::word_gap_auto_label())
         .on_hover_text(hover(t::word_gap_auto_note()));
+    crate::diag::ui_rect(&format!("{}.auto", band_item_name()), switch.rect);
     if switch.changed() {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -71,10 +83,7 @@ pub(super) fn draw(
             .text(t::word_gap_slider_label())
             .max_decimals(2),
     );
-    crate::diag::ui_rect(
-        &egui_shell::ribbon::report::band_item(crate::shell::manifest::WORD_GAP),
-        response.rect,
-    );
+    crate::diag::ui_rect(&band_item_name(), response.rect);
     let response = response.on_hover_text(hover(t::word_gap_note()));
     if response.dragged() {
         ui.data_mut(|d| d.insert_temp(held, ratio));
@@ -89,6 +98,11 @@ pub(super) fn draw(
         format!("word-gap set={ratio:.3}")
     });
     Some(WordGap { ratio, ..at })
+}
+
+/// The slider's region name; the switch's is this plus `.auto`.
+fn band_item_name() -> String {
+    egui_shell::ribbon::report::band_item(crate::shell::manifest::WORD_GAP)
 }
 
 #[cfg(test)]
@@ -145,6 +159,53 @@ mod tests {
         ] {
             assert_eq!(laid_out(kind, &registered()), 0.0, "{kind}");
         }
+    }
+
+    /// A click on the track (press and release, no movement) commits the
+    /// value under the pointer.
+    #[test]
+    fn a_click_on_the_track_commits() {
+        let ctx = egui::Context::default();
+        let registry = registered();
+        let at = WordGap {
+            ratio: 0.2,
+            auto: false,
+        };
+        let mut committed = None;
+        let mut frame = |events: Vec<egui::Event>| {
+            let input = egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(800.0, 200.0),
+                )),
+                events,
+                ..Default::default()
+            };
+            let _ = ctx.run_ui(input, |ui| {
+                ui.horizontal(|ui| {
+                    if let Some(set) =
+                        draw(ui, crate::shell::manifest::WORD_GAP, &registry, at, None)
+                    {
+                        committed = Some(set);
+                    }
+                });
+            });
+        };
+        frame(vec![]);
+        frame(vec![]);
+        // The switch is about 50 pt wide; the slider's track follows it.
+        let point = egui::pos2(150.0, 10.0);
+        let button = |pressed| egui::Event::PointerButton {
+            pos: point,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(vec![egui::Event::PointerMoved(point), button(true)]);
+        frame(vec![button(false)]);
+        frame(vec![]);
+        let set = committed.expect("a click on the track commits");
+        assert!((set.ratio - at.ratio).abs() > f32::EPSILON, "{set:?}");
     }
 
     /// The edit tab holds the slider, so the ribbon asks for it at all.

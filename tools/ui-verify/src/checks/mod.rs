@@ -666,6 +666,7 @@ pub mod panel_toggles;
 pub mod ribbon_order;
 pub mod tab_faces;
 /// Word gap… on the text menu lands on its slider.
+pub mod word_gap_band;
 pub mod word_gap_here;
 
 /// A Select click on recognised text takes its whole block.

@@ -721,11 +721,11 @@ His words: *"If I type a character that doesn't exist in the embedded font I get
 
 **Built, not yet driven.** The font-folder source answered the engine's `addable` and `augment` but not `candidates`, which a composite (`/Type0`) subset is asked through, so every Identity-H subset was offered no letters and fell to a substitute. `editmodel::installedfaces` now forwards it. On SW41177 the repertoire query takes `z` with the fix and refuses it without. Installed fonts are on by default (`Preferences::use_os_fonts`).
 
-## O312 — **BUILT, NOT DRIVEN** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
+## O312 — **BUILT AND DRIVEN, awaiting his check** — *Where extracted text gets its spaces* sits on the Content section of the ribbon, with Auto
 
 His words: *"Also the setting Where extracted text gets its spaces should be available right in the Content menu section, and I think we have an auto option for this?"*
 
-**Built, not yet driven.** Edit ▸ Content carries an *Auto* switch and a *Gap width* slider beside *Word gap…*; Settings ▸ Text has the same switch. Auto measures each page's own threshold (engine v0.88.0, G209), and *Gap width* is the fallback for a page too sparse to measure. Hovering either control says what the current page used and whether it was measured. Either control saves to the settings file and re-extracts the text of every open document.
+**Built and driven** (`word_gap_band_re_extracts_the_page`, off the desktop on `fixtures/word-gap.pdf`: the slider, then Auto on and off, each re-extract the page, read from what the page's text was built under). Edit ▸ Content carries an *Auto* switch and a *Gap width* slider beside *Word gap…*; Settings ▸ Text has the same switch. Auto measures each page's own threshold (engine v0.88.0, G209), and *Gap width* is the fallback for a page too sparse to measure. Hovering either control says what the current page used and whether it was measured. Either control saves to the settings file and re-extracts the text of every open document.
 
 ## O313 — **BUILT AND DRIVEN, awaiting his check** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
 
