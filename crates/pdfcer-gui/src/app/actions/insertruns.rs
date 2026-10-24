@@ -151,6 +151,10 @@ fn add(total: &mut InsertOutcome, more: &InsertOutcome) {
     total.source_page_labels_dropped |= more.source_page_labels_dropped;
     total.page_labels_stale |= more.page_labels_stale;
     total.page_label_ranges += more.page_label_ranges;
+    total.links_to_pages_left_behind += more.links_to_pages_left_behind;
+    total.structure_links_to_pages += more.structure_links_to_pages;
+    total.structure_links_to_first_page += more.structure_links_to_first_page;
+    total.source_tags_dropped |= more.source_tags_dropped;
 }
 
 #[cfg(test)]

@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 5ca5eeebdcd0b8e6609d5f7c3650c0bdf43db83c
+# baseline: 3a60a0b6a5dd3f5f3839c6abd4846343787ba117
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 9947
+# items: 9956
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -1543,6 +1543,7 @@ pdfcer-core field pdfcer_core::edit::InsertOutcome::acroform_created
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_carried
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_renamed
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_split
+pdfcer-core field pdfcer_core::edit::InsertOutcome::links_to_pages_left_behind
 pdfcer-core field pdfcer_core::edit::InsertOutcome::orphaned_widgets
 pdfcer-core field pdfcer_core::edit::InsertOutcome::orphaned_widgets_unrecoverable
 pdfcer-core field pdfcer_core::edit::InsertOutcome::page_label_ranges
@@ -1550,6 +1551,9 @@ pdfcer-core field pdfcer_core::edit::InsertOutcome::page_labels_stale
 pdfcer-core field pdfcer_core::edit::InsertOutcome::pages_inserted
 pdfcer-core field pdfcer_core::edit::InsertOutcome::source_outline_dropped
 pdfcer-core field pdfcer_core::edit::InsertOutcome::source_page_labels_dropped
+pdfcer-core field pdfcer_core::edit::InsertOutcome::source_tags_dropped
+pdfcer-core field pdfcer_core::edit::InsertOutcome::structure_links_to_first_page
+pdfcer-core field pdfcer_core::edit::InsertOutcome::structure_links_to_pages
 pdfcer-core field pdfcer_core::edit::LayerDeleteOutcome::annotations
 pdfcer-core field pdfcer_core::edit::LayerDeleteOutcome::changed
 pdfcer-core field pdfcer_core::edit::LayerDeleteOutcome::paints
@@ -1641,6 +1645,9 @@ pdfcer-core field pdfcer_core::edit::MergeOutcome::named_destinations_renamed
 pdfcer-core field pdfcer_core::edit::MergeOutcome::outline_items_carried
 pdfcer-core field pdfcer_core::edit::MergeOutcome::page_label_ranges
 pdfcer-core field pdfcer_core::edit::MergeOutcome::pages_merged
+pdfcer-core field pdfcer_core::edit::MergeOutcome::source_tags_dropped
+pdfcer-core field pdfcer_core::edit::MergeOutcome::structure_links_to_first_page
+pdfcer-core field pdfcer_core::edit::MergeOutcome::structure_links_to_pages
 pdfcer-core field pdfcer_core::edit::NewCheckBox::border
 pdfcer-core field pdfcer_core::edit::NewCheckBox::checked
 pdfcer-core field pdfcer_core::edit::NewCheckBox::chrome
@@ -2831,6 +2838,8 @@ pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::page_labels_st
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::pages
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::separations
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::struct_tree_dropped
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::structure_links_to_first_page
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::structure_links_to_pages
 pdfcer-core field pdfcer_core::pageops::references::DanglingReport::links
 pdfcer-core field pdfcer_core::pageops::references::DanglingReport::named_destinations
 pdfcer-core field pdfcer_core::pageops::references::DanglingReport::non_link_annotations

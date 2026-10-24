@@ -581,6 +581,12 @@ pub fn merged(outcome: &pdfcer_core::edit::MergeOutcome) -> Vec<String> {
             outcome.layer_configs_dropped
         ));
     }
+    notes.extend(crate::text::structlinks::repointed(
+        outcome.structure_links_to_pages,
+        outcome.structure_links_to_first_page,
+        0,
+        outcome.source_tags_dropped,
+    ));
     notes
 }
 

@@ -338,6 +338,12 @@ pub(super) fn insert_from_view(
                     outcome.fields_split,
                     outcome.acroform_created,
                 ));
+                notes.extend(crate::text::structlinks::repointed(
+                    outcome.structure_links_to_pages,
+                    outcome.structure_links_to_first_page,
+                    outcome.links_to_pages_left_behind,
+                    outcome.source_tags_dropped,
+                ));
                 if let Some(refusal) = done.stopped {
                     notes.push(crate::text::insertblank::insert_stopped(
                         outcome.pages_inserted,
@@ -807,6 +813,29 @@ mod tests {
         });
         assert!(
             notes.iter().any(|n| n.contains("layer(s) came across")),
+            "{notes:?}"
+        );
+    }
+
+    /// **A merge from a tagged file says its tags stayed behind.** The flag
+    /// is the engine's; this pins that the receipt reads it.
+    #[test]
+    fn merging_a_tagged_file_says_its_tags_stayed_behind() {
+        let mut doc = open_fixture(FOUR_PAGES);
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/tagged-report.pdf");
+        let source = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let view = source.view();
+        let mut notes = Vec::new();
+        edit(&mut doc, |s| {
+            let outcome = s
+                .merge_document(&view, pdfcer_core::pageops::InsertPosition::End)
+                .expect("a plain merge succeeds");
+            assert!(outcome.source_tags_dropped, "{outcome:?}");
+            notes = crate::text::pages::merged(&outcome);
+        });
+        assert!(
+            notes.iter().any(|n| n.contains("came from a tagged PDF")),
             "{notes:?}"
         );
     }

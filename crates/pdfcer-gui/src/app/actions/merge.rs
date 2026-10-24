@@ -155,9 +155,16 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
     //    page view of the open document is untouched by a merge and must
     //    remain so, and what the operator is owed is a sentence rather than a
     //    mark on a page that has nothing to do with the file just written.
-    say(crate::text::merge::merged(
-        sources.len(),
-        report.pages,
-        report.page_label_ranges,
-    ));
+    let mut note =
+        crate::text::merge::merged(sources.len(), report.pages, report.page_label_ranges);
+    if let Some(links) = crate::text::structlinks::repointed(
+        report.structure_links_to_pages,
+        report.structure_links_to_first_page,
+        0,
+        report.struct_tree_dropped,
+    ) {
+        note.push(' ');
+        note.push_str(&links);
+    }
+    say(note);
 }

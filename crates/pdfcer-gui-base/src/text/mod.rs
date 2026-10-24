@@ -258,6 +258,7 @@ pub mod split_pages;
 /// The line-width, dash and opacity rows of Properties.
 pub mod strokestyle;
 /// Every word the hand-editing round trip (QDF) shows.
+pub mod structlinks;
 pub mod structure;
 /// Every word the tools say: the one-line status strip, the Properties
 /// panel's armed-tool section, and the canvas refusals.

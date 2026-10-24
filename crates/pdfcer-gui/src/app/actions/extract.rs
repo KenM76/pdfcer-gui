@@ -127,6 +127,15 @@ fn receipt(doc: &OpenDoc, report: &AssembleReport, target: &Path) -> String {
         note.push(' ');
         note.push_str(t::labels_kept());
     }
+    if let Some(links) = crate::text::structlinks::repointed(
+        report.structure_links_to_pages,
+        report.structure_links_to_first_page,
+        0,
+        report.struct_tree_dropped,
+    ) {
+        note.push(' ');
+        note.push_str(&links);
+    }
     note
 }
 
