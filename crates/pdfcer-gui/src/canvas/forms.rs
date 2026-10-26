@@ -198,9 +198,9 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
             .len();
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "form-boxes n={} pages={pages} screen_drawn={} unreachable={}",
+            "form-boxes n={} pages={pages} undrawn={} unreachable={}",
             list.boxes.len(),
-            list.routing.screen_drawn,
+            list.routing.undrawn,
             list.routing.unreachable,
         )
     });

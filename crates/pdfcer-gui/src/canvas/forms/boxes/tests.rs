@@ -159,19 +159,20 @@ fn page(rotate: u16) -> Page {
     )
 }
 
-/// **A field with no `/AP` is offered on the page**: the canvas draws it from
-/// the display copy, as Acrobat does.
+/// **A field with no `/AP` is not offered on the page.**
 #[test]
-fn an_undrawn_widget_is_offered_on_the_canvas() {
+fn an_undrawn_widget_is_not_offered_on_the_canvas() {
     let field = text_field();
     let mut widget = drawn_widget();
     widget.has_normal_appearance = false;
     assert_eq!(
         classify(&field, &widget, 0),
-        classify(&field, &drawn_widget(), 0),
-        "whether the file stores a drawing must not change what a click means"
+        Err(NotOnCanvas::NoAppearance),
+        "a widget the page draws nothing for must not be clickable"
     );
-    assert!(classify(&field, &widget, 0).is_ok());
+    // …and the drawn twin IS offered, or the assertion above passes on a
+    // build where nothing is ever offered.
+    assert!(classify(&field, &drawn_widget(), 0).is_ok());
 }
 
 /// **A rotated page withholds the EDITOR, not the click.**
@@ -322,7 +323,7 @@ fn a_widget_no_page_lists_is_unreachable_and_counted() {
     assert_eq!(
         placed.routing,
         Routing {
-            screen_drawn: 0,
+            undrawn: 0,
             unreachable: 1
         }
     );
@@ -545,23 +546,21 @@ fn a_real_form_produces_boxes_inside_its_own_pages() {
         );
     }
 
-    // And the fixture's undrawn text fields are on the list too: the canvas
-    // draws them, so they can be clicked.
+    // And the fixture's undrawn field really is absent from the list —
+    // the panel already discloses that this document has one, so this is
+    // the same fact asserted from the other end.
     let undrawn: Vec<&str> = form
         .fields
         .iter()
-        .filter(|f| f.field_type == Some(FieldType::Text) && !f.has_appearance())
-        .filter(|f| crate::panels::forms::rows::block_reason(f).is_none() && !f.is_rich_text())
+        .filter(|f| !f.has_appearance())
         .map(|f| f.fully_qualified_name.as_str())
         .collect();
-    assert!(!undrawn.is_empty(), "demo-form has undrawn text fields");
     for name in undrawn {
         assert!(
-            boxes.iter().any(|b| b.field == name),
-            "{name} has no stored appearance and must still be clickable"
+            !boxes.iter().any(|b| b.field == name),
+            "{name} has no drawn appearance and must not be clickable"
         );
     }
-    assert!(placed.routing.screen_drawn > 0, "and the panel is told so");
 }
 
 /// **The fixture O204’s driven check aims at really has three clickable text
@@ -622,7 +621,7 @@ fn the_three_field_fixture_offers_three_clickable_text_boxes() {
 /// What it produces: `demo-form.pdf` with `Full name` filled. Filling is
 /// what draws it — `fill_text_field` writes `/V` **and** regenerates every
 /// widget's `/AP` — which is also the remedy
-/// *Redraw values* applies.
+/// [`crate::text::forms::forms_canvas_undrawn_note`] names.
 #[test]
 #[ignore = "generator: writes a PDF for driving the binary; run deliberately"]
 fn a_drawn_text_field_fixture() {
@@ -716,24 +715,19 @@ fn a_choice_field_with_no_options_is_not_fillable_but_is_still_selectable() {
     );
 }
 
-/// **A widget with no appearance is fillable and selectable.**
+/// **A widget with no appearance is selectable too.**
 #[test]
-fn an_undrawn_widget_is_fillable_and_selectable() {
+fn an_undrawn_widget_is_still_selectable() {
     let mut field = text_field();
     field.widgets[0].has_normal_appearance = false;
     let widget = field.widgets[0].clone();
     let placed = place(&form_of(field), &[page(0)], &annots_listing(&widget));
 
-    assert_eq!(
-        placed.boxes.len(),
-        1,
-        "the canvas draws it, so it can be typed into"
+    assert!(
+        placed.boxes.is_empty(),
+        "nothing is drawn there to type into"
     );
-    assert_eq!(
-        placed.routing.screen_drawn, 1,
-        "and the panel says the canvas drew it"
-    );
-    assert_eq!(placed.routing.unreachable, 0);
+    assert_eq!(placed.routing.undrawn, 1, "and the panel is told why");
     assert_eq!(
         placed.targets.len(),
         1,

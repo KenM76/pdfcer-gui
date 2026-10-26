@@ -678,7 +678,7 @@ const POLL_EVERY: Duration = Duration::from_millis(30);
 /// toggle may change that answer.
 fn thumbnail_request(doc: &OpenDoc, page_index: usize, page: &Page, scale: f32) -> RenderRequest {
     RenderRequest {
-        session: doc.display_session(page_index),
+        session: std::sync::Arc::clone(&doc.session),
         page: page.clone(),
         page_index,
         raster_scale: scale,

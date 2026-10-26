@@ -78,8 +78,6 @@ use crate::layeroverride::LayerOverride;
 /// What the render tier needs to know about a page's colour.
 mod ink;
 pub use crate::pageepoch;
-/// Form values the file asks the viewer to draw, drawn for the screen only.
-pub mod drawnvalues;
 /// What this view is asking the renderer for: the render key, the region and
 /// the request.
 mod renderreq;
@@ -961,9 +959,6 @@ pub struct OpenDoc {
     /// The current page's font inventory. Read through
     /// [`Self::font_inventory`]; see [`crate::opendoc::cache`].
     pub fonts: FontCache,
-    /// The display copy that draws widgets with no `/AP`; read through
-    /// [`Self::display_session`]. See [`crate::opendoc::drawnvalues`].
-    pub drawn_values: drawnvalues::DrawnValues,
     /// The current page's extracted text. Read through [`Self::page_text`];
     /// see [`crate::opendoc::cache`] for the cost measurement that made it a cache
     /// and for why it is per-page where a search is per-document.
@@ -1163,7 +1158,6 @@ impl OpenDoc {
             guides,
             page_objects: PageObjectCache::default(),
             fonts: FontCache::default(),
-            drawn_values: drawnvalues::DrawnValues::default(),
             page_text: PageTextCache::default(),
             provenance_text: crate::doccache::ProvenanceTextCache::default(),
             form_runs: crate::doccache::FormRunCache::default(),

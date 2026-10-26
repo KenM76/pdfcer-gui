@@ -655,11 +655,11 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 ## O327 — **FILED** — form fields with no drawn value show and click on the page, as in Acrobat
 
-His words, opening `D:\Dev\PdfCrafteprouto-size.pdf`: *"when I open I get the error : 3 field(s), 3 you can fill here. ⚠ This form asks viewers to draw field values themselves. Some viewers do and some don't, so a filled value may look different — or not appear — depending on what opens the file. 3 field(s) are not drawn on the page, so they cannot be clicked there. Fill one here and it becomes drawn — and clickable on the page from then on. “Redraw values” does the same for fields that already hold a value.   Acrobat and other readers show them and we should do the same."*
+His words, opening `D:\Dev\PdfCraft\repro\auto-size.pdf`: *"when I open I get the error : 3 field(s), 3 you can fill here. ⚠ This form asks viewers to draw field values themselves. Some viewers do and some don't, so a filled value may look different — or not appear — depending on what opens the file. 3 field(s) are not drawn on the page, so they cannot be clicked there. Fill one here and it becomes drawn — and clickable on the page from then on. “Redraw values” does the same for fields that already hold a value.   Acrobat and other readers show them and we should do the same."*
 
 **Scope.** A form that asks viewers to draw its values (NeedAppearances, or a field with no appearance) shows each value, border and background on the page as Acrobat does, and each field opens for filling on a click — without the document becoming modified. The status line keeps saying the file asks viewers to draw values; *Redraw values* stays the way to write them into the file. Engine side: `request_G230_*`.
 
-**Status.** Filed. NOT VERIFIED by him.
+**Status.** Filed with the engine as G230; waiting for it. By his call (*"don't spend tokens making workarounds. I can wait for the engine to be updated."*), no GUI workaround is built. NOT VERIFIED by him.
 
 ## O326 — **BUILT AND DRIVEN, awaiting his check** — document comparison
 

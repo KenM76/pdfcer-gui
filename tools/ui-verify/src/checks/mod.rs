@@ -395,8 +395,6 @@ pub mod scale_ratio_units;
 pub mod scale_reads_the_group;
 
 pub mod tab_navigation;
-/// O327: a form whose values the viewer draws is drawn and clickable.
-pub mod undrawn_fields;
 
 pub mod tab_object_ring;
 

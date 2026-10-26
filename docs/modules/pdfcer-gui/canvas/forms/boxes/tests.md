@@ -26,10 +26,12 @@ therefore also an assertion that neither is consulted. If someone
 reintroduces a `/P` lookup or a `Widget::rect` read, these tests stop
 passing here rather than stopping working in the field.
 
-### `fn an_undrawn_widget_is_offered_on_the_canvas`
+### `fn an_undrawn_widget_is_not_offered_on_the_canvas`
 
-A widget with no `/AP` `/N` is classified exactly as its drawn twin: the
-page draws it from the display copy, so the canvas offers it.
+The decision the module header §5.1 argues for, pinned. `demo-form.pdf`
+carries this case, and the failure if it regressed is the worst kind:
+an invisible click target over blank paper, which an operator can only
+find by accident and cannot find again.
 
 ### `fn a_rotated_page_withholds_a_text_editor_but_not_a_button`
 
@@ -149,11 +151,13 @@ The two assertions are deliberately opposite, because a test that only
 checked the target would pass against a change that made every widget
 fillable — which is a different bug with the same symptom on this test.
 
-### `fn an_undrawn_widget_is_fillable_and_selectable`
+### `fn an_undrawn_widget_is_still_selectable`
 
-One undrawn field yields one fill box and one selection target, and is
-counted in `screen_drawn`, not `unreachable`, so the panel discloses it as
-drawn for the screen rather than as unreachable.
+`NoAppearance` routes a field to the panel for FILLING because the page
+draws nothing there — but pdfcer authors widgets, and a widget it made
+and then failed to draw is exactly the one an operator needs to reach in
+order to delete it. The rectangle is real even when the appearance is
+not.
 
 ### `fn a_background_is_read_and_stating_none_is_not_the_same_as_stating_nothing`
 
