@@ -13,22 +13,20 @@ the other needs a window — applied one level down. It is a subject and not
 a line count: [`super`] contains no decision at all, only the wiring that
 spends the decisions below.
 
-## "Redraw appearances" is only half the remedy for an undrawn field
+## A field with no stored drawing is offered like any other
 
-[`super`]'s §5 reason 1 offers `RegenerateAppearances` to an operator whose
-field draws nothing. `EditSession::regenerate_appearances` writes an `/AP`
-for a text field only when that field holds a `/V`, so it does nothing at
-all for an **empty** undrawn one. The remedy that always works is a fill:
-`fill_text_field` writes the value and regenerates every widget's `/AP`, so
-filling once in the panel makes the field clickable on the page from then
-on. [`crate::text::forms::forms_canvas_undrawn_note`] is where the panel
-says that to the operator.
+A widget with no `/AP` `/N` is drawn on the page from the document's
+display copy (`pdfcer_gui_base::opendoc::drawnvalues`), so the canvas
+offers it exactly as it offers a drawn one. [`place`] counts such fields in
+[`Routing::screen_drawn`] so the panel can say the file stores no drawing
+for them; [`crate::text::forms::forms_canvas_screen_drawn_note`] is that
+sentence.
 
 Read [`super`]'s header first. It carries the whole argument — why this is
 not a [`CanvasTool`] variant, why the panel is not replaced, what the
 editor cannot promise, how input layers, why the hit test takes no
-tolerance, and the four reasons a field is routed to the panel instead.
-This file is where those four reasons are actually decided
+tolerance, and the three reasons a field is routed to the panel instead.
+This file is where those three reasons are actually decided
 ([`classify`]), where the geometry is done
 ([`crate::canvas::mapping::annot_canvas_rect`], which serves annotation
 selection too) and
@@ -188,13 +186,13 @@ building one.
 
 # The order of the questions is the rule
 
-Appearance first, because a field nothing draws cannot be pointed at
-whatever else is true of it. Then the panel's own
+The panel's own
 [`block_reason`](crate::panels::forms::rows::block_reason), **asked rather
 than re-derived** — a read-only field must be refused here for the same
 reason and in the same words it is refused there, and two statements of one
 rule is how the two surfaces come to disagree about which fields are
-fillable.
+fillable. Whether the widget has a stored appearance is not asked: the
+display copy draws one that lacks it.
 
 Rotation is asked **last, and only for text**, which is the whole of the
 rotated-page decision: the box is placed correctly at every rotation, and

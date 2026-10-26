@@ -57,10 +57,9 @@ reasons, and the first is not a preference:
    a picture with no text alternative. An operator who cannot see the page
    cannot discover that a field exists here, let alone which one it is.
 2. **Everything this surface declines is still fillable there.** §5 lists
-   four reasons a field is not offered on the page. Every one of them has
+   three reasons a field is not offered on the page. Every one of them has
    the panel as its answer, and the panel says so
-   ([`crate::text::forms::forms_canvas_undrawn_note`] and
-   [`crate::text::forms::forms_canvas_unreachable_note`]).
+   ([`crate::text::forms::forms_canvas_unreachable_note`]).
 
 The canvas is an **additional** way in. If it ever becomes the only one,
 this build has lost a capability it currently has.
@@ -213,23 +212,16 @@ nobody "fixes" it by adding the tolerance every neighbouring call site uses.
 
 ---
 
-## 5. Four reasons a field is not offered here — and all four keep the panel
+## 5. Three reasons a field is not offered here — and all three keep the panel
 
 [`NotOnCanvas`] is the complete list, and each entry is a fact the *file*
-states rather than a limit this module chose:
+states rather than a limit this module chose. A widget with no `/AP` `/N`
+is **not** on it: the page draws that field from the display copy
+(`pdfcer_gui_base::opendoc::drawnvalues`), as Acrobat does, so the canvas
+still offers exactly what the page draws. The panel discloses that the file
+stores no drawing ([`crate::text::forms::forms_canvas_screen_drawn_note`]).
 
-1. **[`NotOnCanvas::NoAppearance`] — the widget has no `/AP` `/N`.** It is
-   therefore drawn as *nothing*, and a click target over blank paper is an
-   invisible affordance. The rule this module holds to is **the canvas
-   offers exactly what the page draws**; anything else means either an
-   unhittable target or a painted placeholder, and the "no placeholders"
-   invariant forbids the second. The remedy already exists and is one
-   button away: `FormEdit::RegenerateAppearances` draws every field's
-   current value, after which the field is visible **and** clickable. The
-   panel says so ([`crate::text::forms::forms_canvas_undrawn_note`]).
-   `D:\Dev\pdfcer\fixtures\synthetic\forms\demo-form.pdf` carries exactly
-   this case.
-2. **[`NotOnCanvas::RotatedPage`] — the page's `/Rotate` is not 0.** The
+1. **[`NotOnCanvas::RotatedPage`]2. **[`NotOnCanvas::RotatedPage`] — the page's `/Rotate` is not 0.** The
    geometry is fine ([`widget_canvas_rect`] goes through the renderer's own
    transform, so the box lands in the right place at every rotation) — what
    breaks is the *editor*. `egui` cannot rotate a `TextEdit`, so on a
@@ -237,7 +229,7 @@ states rather than a limit this module chose:
    `/AP` draws vertically. **Text fields only**: a check box has no text
    direction, so a button on a rotated page is offered exactly as it is
    anywhere else, and only the editor is withheld.
-3. **[`NotOnCanvas::NotPlaced`] — no page's `/Annots` lists this widget
+2. **[`NotOnCanvas::NotPlaced`] — no page's `/Annots` lists this widget
    with a usable rectangle.** One reason rather than two, and the merge is
    the point: [`boxes::place`] answers *"which page is this widget on?"* by
    walking each page's `/Annots`, so there is no `/P` to be absent and no
@@ -245,7 +237,7 @@ states rather than a limit this module chose:
    rectangle has no area — has no place on the page whatever its own
    dictionary says. (§12.7.4.5 makes a zero-area `/Rect` *deliberate*
    invisibility for a signature field, which is not offered here anyway.)
-4. **[`NotOnCanvas::NotOffered`] — this kind has no canvas gesture.**
+3. **[`NotOnCanvas::NotOffered`] — this kind has no canvas gesture.**
    Read-only, signature and push-button fields (the panel's
    [`crate::panels::forms::rows::block_reason`], asked here rather than
    re-derived), rich text (which the panel offers a *conversion* rather

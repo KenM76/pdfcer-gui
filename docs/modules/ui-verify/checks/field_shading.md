@@ -58,18 +58,15 @@ onto this one.
 
 # `boxes=` is the CANVAS CENSUS, not the document's field count
 
-Measured on `demo-form.pdf`, which carries **two** widgets: a text field and
-a check box. The trace says `boxes=1`, and that is correct rather than a
-defect — the text field has no `/AP` `/N`, so the page draws nothing there,
-and the census deliberately excludes it (`NotOnCanvas::NoAppearance`). It is
-**disclosed off-canvas** in the Forms panel, with the remedy named:
-*"N field(s) are not drawn on the page, so they cannot be clicked there.
-Fill one here and it becomes drawn."*
+A field the canvas declines (rotated page, no page lists it, a kind with
+no canvas gesture) is not in the census; it is counted in
+`form-boxes … unreachable=`. A field with no `/AP` `/N` **is** in it: the
+page draws it from the display copy, and `form-boxes … screen_drawn=`
+counts those.
 
 ⇒ So nobody reading a future trace should take `boxes=` for *"how many
 fields this form has"*. It is *"how many the canvas is in a position to
-draw on"*, and the difference is exactly the undrawn set, which
-`form-boxes … undrawn=` reports separately.
+draw on"*.
 
 ⬜ Whether the wash *ought* to cover an undrawn field is a real open
 question, and this check deliberately does not decide it. The request said

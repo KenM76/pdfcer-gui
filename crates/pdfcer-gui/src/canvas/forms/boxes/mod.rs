@@ -182,8 +182,6 @@ pub enum BoxKind {
 /// makes this a routing decision rather than a refusal.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NotOnCanvas {
-    /// The widget carries no `/AP` `/N`, so the page draws nothing there.
-    NoAppearance,
     /// The page's `/Rotate` is not 0 and this is a text field, so an
     /// unrotatable `egui::TextEdit` would run across the appearance's text.
     RotatedPage,
@@ -203,11 +201,13 @@ pub enum NotOnCanvas {
 /// and why.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Routing {
-    /// Fields with no drawn appearance anywhere. The remedy is "Redraw
-    /// appearances", which is why this is counted separately from the rest.
-    pub undrawn: usize,
-    /// Fields that are drawn but still cannot be typed into on the page — a
-    /// rotated sheet, or a widget no page lists.
+    /// Fields fillable on the page through a widget with no `/AP` `/N`: the
+    /// file asks the viewer to draw them, and the canvas draws them from
+    /// `pdfcer_gui_base::opendoc::drawnvalues`. Counted for the panel's
+    /// disclosure, not because they are routed to it.
+    pub screen_drawn: usize,
+    /// Fields that cannot be typed into on the page — a rotated sheet, or a
+    /// widget no page lists.
     pub unreachable: usize,
 }
 
@@ -316,9 +316,6 @@ pub fn editor_fill(widget: &Widget) -> Option<[f32; 3]> {
 
 /// What a click on `widget` would mean, or why nothing.
 pub fn classify(field: &Field, widget: &Widget, rotate: u16) -> Result<BoxKind, NotOnCanvas> {
-    if !widget.has_normal_appearance {
-        return Err(NotOnCanvas::NoAppearance);
-    }
     if crate::panels::forms::rows::block_reason(field).is_some() {
         return Err(NotOnCanvas::NotOffered);
     }
@@ -438,6 +435,7 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
         // clicked — see [`Routing`].
         let mut reachable = false;
         let mut reasons: Vec<NotOnCanvas> = Vec::new();
+        let mut screen_drawn = false;
         for (widget_index, widget) in field.widgets.iter().enumerate() {
             let Some((page_index, rect)) = placement.get(&widget.id).copied() else {
                 reasons.push(NotOnCanvas::NotPlaced);
@@ -478,16 +476,9 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
             //
             // `reachable` means *"some widget of this field can be FILLED on
             // the page"*, and it is what suppresses the panel's
-            // `routing.undrawn` disclosure — the sentence that tells an
-            // operator a field exists but has to be filled in the side panel.
-            // Setting it beside the rectangle makes every drawn-nothing field
-            // look reachable, silently deleting that disclosure for the exact
-            // documents it was written for.
-            //
-            // So: a rectangle makes a widget SELECTABLE; a successful
-            // `classify` makes it FILLABLE; and only the second answers
-            // `reachable`. `an_undrawn_widget_is_still_selectable` holds the
-            // first half of that.
+            // `routing.unreachable` disclosure. A rectangle makes a widget
+            // SELECTABLE; a successful `classify` makes it FILLABLE; only the
+            // second answers `reachable`.
             let kind = match classify(field, widget, page.rotate) {
                 Ok(kind) => kind,
                 Err(reason) => {
@@ -496,6 +487,7 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                 }
             };
             reachable = true;
+            screen_drawn |= !widget.has_normal_appearance;
             out.push((
                 rank.get(&widget.id).copied().unwrap_or(0),
                 WidgetBox {
@@ -509,15 +501,11 @@ pub fn place(form: &AcroForm, pages: &[Page], annots: &[Vec<(ObjId, [f64; 4])>])
                 },
             ));
         }
+        routing.screen_drawn += usize::from(screen_drawn);
         if reachable || reasons.is_empty() {
             continue;
         }
-        // The most SPECIFIC reason wins when a field's widgets disagree, and
-        // "not drawn" is the specific one because it is the one with a remedy
-        // the operator can act on.
-        if reasons.contains(&NotOnCanvas::NoAppearance) {
-            routing.undrawn += 1;
-        } else if reasons
+        if reasons
             .iter()
             .any(|r| matches!(r, NotOnCanvas::RotatedPage | NotOnCanvas::NotPlaced))
         {

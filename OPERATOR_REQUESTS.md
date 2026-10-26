@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O327 — **FILED** — form fields with no drawn value show and click on the page, as in Acrobat
+
+His words, opening `D:\Dev\PdfCrafteprouto-size.pdf`: *"when I open I get the error : 3 field(s), 3 you can fill here. ⚠ This form asks viewers to draw field values themselves. Some viewers do and some don't, so a filled value may look different — or not appear — depending on what opens the file. 3 field(s) are not drawn on the page, so they cannot be clicked there. Fill one here and it becomes drawn — and clickable on the page from then on. “Redraw values” does the same for fields that already hold a value.   Acrobat and other readers show them and we should do the same."*
+
+**Scope.** A form that asks viewers to draw its values (NeedAppearances, or a field with no appearance) shows each value, border and background on the page as Acrobat does, and each field opens for filling on a click — without the document becoming modified. The status line keeps saying the file asks viewers to draw values; *Redraw values* stays the way to write them into the file. Engine side: `request_G230_*`.
+
+**Status.** Filed. NOT VERIFIED by him.
+
 ## O326 — **BUILT AND DRIVEN, awaiting his check** — document comparison
 
 Filed from the engine release under his standing directive: *"one the new pdfcer engine is released finish up any work to support any new features then make a release"* and *"Always add new features. never ask. just do."* Engine v0.98.0 added text comparison, marking a comparison as comments and comparison by appearance.

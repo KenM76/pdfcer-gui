@@ -312,7 +312,7 @@ pub const REGION_STORE_PASSWORD: &str = "forms.fill.store_password";
 /// The *Redraw values* button.
 pub const REGION_REGENERATE: &str = "forms.regenerate";
 
-/// **Where the fields that cannot be clicked on the page went.**
+/// **How the page shows the form's fields, and which cannot be clicked there.**
 fn canvas_routing(ui: &mut egui::Ui, doc: &OpenDoc, fill_refusal: Option<&'static str>) {
     if fill_refusal.is_some() {
         // Nothing can be filled anywhere, which the header has already said in
@@ -322,12 +322,21 @@ fn canvas_routing(ui: &mut egui::Ui, doc: &OpenDoc, fill_refusal: Option<&'stati
     }
     let routing = crate::canvas::forms::placed(ui.ctx(), doc).routing;
 
-    if routing.undrawn > 0 {
-        ui.label(
-            egui::RichText::new(t::forms_canvas_undrawn_note(routing.undrawn))
-                .small()
-                .weak(),
-        );
+    if routing.screen_drawn > 0 {
+        let note = if doc.display_copy().is_some() {
+            t::forms_canvas_screen_drawn_note(routing.screen_drawn)
+        } else {
+            t::forms_canvas_undrawable_note(routing.screen_drawn)
+        };
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        crate::diag::trace_changed("forms-canvas-note", || {
+            // ui-text-exempt
+            format!(
+                "forms-canvas-note count={} text={note:?}", // ui-text-exempt
+                routing.screen_drawn
+            )
+        });
+        ui.label(egui::RichText::new(note).small().weak());
     }
     if routing.unreachable > 0 {
         ui.label(

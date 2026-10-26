@@ -20,8 +20,6 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/opendoc/renderreq.md`.
 
-use std::sync::Arc;
-
 use super::OpenDoc;
 use crate::renderworker::{RenderKey, RenderRequest};
 
@@ -78,7 +76,9 @@ impl OpenDoc {
             region: self.region_for(page_index),
             // The `Arc` is handed over rather than a `DocumentView`, which is
             // what lets the borrow stay local to the worker thread.
-            session: Arc::clone(&self.session),
+            // A page holding a widget with no `/AP` draws from the display
+            // copy; see `drawnvalues`.
+            session: self.display_session(page_index),
             page: page.clone(),
             page_index,
             raster_scale,
