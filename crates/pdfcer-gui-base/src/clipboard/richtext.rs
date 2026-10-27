@@ -71,8 +71,9 @@ fn build(
 ) -> RichText {
     let model = EditableTextModel::recognize(text, &reflow_recognition_options());
     let fonts = PageFonts::read(view, page);
-    // A page whose decorations do not read still copies, without underline
-    // and strikethrough; the engine has no counter for that loss.
+    // A page whose decorations do not read at all still copies, without
+    // underline and strikethrough. Form XObjects skipped inside a readable
+    // page are counted by the engine as `decoration_forms_unread`.
     let decorations = page_decorations(view, page).ok();
     let mut sources = RichTextSources::default().with_fonts(&fonts);
     if let Some(decorations) = &decorations {
@@ -89,6 +90,7 @@ fn append(all: &mut RichText, more: RichText) {
     a.weights_derived += b.weights_derived;
     a.families_missing += b.families_missing;
     a.colours_dropped += b.colours_dropped;
+    a.decoration_forms_unread += b.decoration_forms_unread;
 }
 
 /// Place `rich` as HTML, RTF and plain text in one transaction. Returns the

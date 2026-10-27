@@ -447,6 +447,7 @@ pub fn rich_copied(
     weights_derived: usize,
     families_missing: usize,
     colours_dropped: usize,
+    decoration_forms_unread: usize,
 ) -> Option<String> {
     use super::plural;
     let mut parts = Vec::new();
@@ -466,6 +467,12 @@ pub fn rich_copied(
         parts.push(format!(
             "{} are in a colour the copy cannot carry and paste in the default colour",
             plural(colours_dropped, "character", "characters")
+        ));
+    }
+    if decoration_forms_unread > 0 {
+        parts.push(format!(
+            "{} could not be read for underline and strikethrough, so their text pastes without them",
+            plural(decoration_forms_unread, "embedded drawing", "embedded drawings")
         ));
     }
     if parts.is_empty() {
