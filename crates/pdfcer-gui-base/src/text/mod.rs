@@ -174,6 +174,8 @@ pub mod ocr;
 pub mod ocrfetch;
 pub mod ocrmanage;
 pub mod ocrmodels;
+/// Recognise text's output choice: searchable image or editable text.
+pub mod ocroutput;
 /// Recognise text's enlarge-before-reading option and its disclosure.
 pub mod ocrupscale;
 /// The words for **content that is in the file but not on the

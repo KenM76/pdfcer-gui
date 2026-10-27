@@ -51,18 +51,23 @@ pub struct RemoveOcrDialog {
 }
 
 impl RemoveOcrDialog {
-    /// `None` when the document holds no pdfcer OCR layer, or its page tree
+    /// `None` when the document holds no removable pdfcer OCR layer, or its page tree
     /// cannot be walked: the caller sends the unfiltered removal, whose
     /// refusal sentence says why.
     fn open(doc: &OpenDoc, picked: Vec<usize>) -> Option<Self> {
-        let found = doc.session.find_ocr_layers().ok()?;
-        if found.is_empty() {
-            return None;
-        }
-        let layers: Vec<(usize, Option<String>)> = found
+        // Editable layers never come off (their words left the scan), so they
+        // are not counted; only those found, the removal refuses with that.
+        let layers: Vec<(usize, Option<String>)> = doc
+            .session
+            .find_ocr_layers()
+            .ok()?
             .into_iter()
+            .filter(|l| !l.editable)
             .map(|l| (l.page_index, l.engine))
             .collect();
+        if layers.is_empty() {
+            return None;
+        }
         let mut engines: Vec<Engine> = Vec::new();
         for (_, token) in &layers {
             if !engines.iter().any(|e| &e.token == token) {

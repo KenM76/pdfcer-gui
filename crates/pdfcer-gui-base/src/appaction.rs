@@ -158,6 +158,8 @@ pub enum Action {
         /// The engine token of the recogniser that read them, recorded in
         /// the layer's marker.
         engine: String,
+        /// Searchable image or editable text and images.
+        output: pdfcer_core::ocr::editable::OcrOutput,
     },
     /// File ▸ Remove OCR text: the OCR layers pdfcer wrote come off, as one
     /// undo entry. See `super::ocrlayers`.

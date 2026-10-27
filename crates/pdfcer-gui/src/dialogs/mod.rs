@@ -101,6 +101,8 @@ pub mod new_document;
 pub mod ocr;
 /// Recognise text's model list.
 mod ocr_model;
+/// Recognise text's output: searchable image or editable text.
+mod ocr_output;
 /// Recognise text's word lists and read-by-layout choice.
 mod ocr_reading;
 mod ocr_upscale;

@@ -555,6 +555,15 @@ pub fn layers_removed_partly(removed: usize, of: usize) -> String {
     )
 }
 
+/// Beside a removal that left editable layers alone.
+#[must_use]
+pub fn editable_left(pages: usize) -> String {
+    let noun = if pages == 1 { "page" } else { "pages" };
+    format!(
+        "Left the editable OCR text on {pages} {noun}: its words were taken out of the scan, so removing it would leave a blank."
+    )
+}
+
 /// Why an OCR-layer write or removal did nothing — the status-bar decline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OcrLayerRefusal {
@@ -565,6 +574,12 @@ pub enum OcrLayerRefusal {
     LayerGone,
     /// Remove OCR text found no layer pdfcer wrote.
     NoneFound,
+    /// `OcrLayerError::EditableLayerPresent`, or Remove OCR text found only
+    /// editable layers: the words were erased from the scan, so the page
+    /// cannot be read again or have its text taken off.
+    EditableText,
+    /// `OcrLayerError::ImageEncodeFailed`: an erased scan could not be saved.
+    ImageNotRewritten,
 }
 
 impl OcrLayerRefusal {
@@ -582,6 +597,12 @@ impl OcrLayerRefusal {
             // and is left alone.
             Self::NoneFound => {
                 "This document has no OCR text written by pdfcer, so nothing was removed. Text recognised by other programs is left alone."
+            }
+            Self::EditableText => {
+                "These pages carry editable OCR text: the words were taken out of the scan, so they cannot be read again or have their text removed. Press Ctrl+Z to go back to the scan as it was."
+            }
+            Self::ImageNotRewritten => {
+                "A scanned image could not be saved again after its words were taken out, so nothing was written."
             }
         }
     }
@@ -635,6 +656,9 @@ mod tests {
             OcrLayerRefusal::AlreadyPresent.line().to_owned(),
             OcrLayerRefusal::LayerGone.line().to_owned(),
             OcrLayerRefusal::NoneFound.line().to_owned(),
+            OcrLayerRefusal::EditableText.line().to_owned(),
+            OcrLayerRefusal::ImageNotRewritten.line().to_owned(),
+            editable_left(2),
         ];
         for line in &prose {
             let lower = line.to_lowercase();

@@ -940,6 +940,8 @@ pub mod draft_selection;
 
 pub mod marquee_table;
 
+/// Recognise text's editable output takes the words out of the scan.
+pub mod ocr_editable;
 pub mod ocr_text_select;
 /// A recognised line on a turned page previews upright while edited.
 pub mod ocr_turned_edit;

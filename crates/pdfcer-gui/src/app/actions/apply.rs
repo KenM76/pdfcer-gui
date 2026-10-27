@@ -453,7 +453,11 @@ impl PdfcerApp {
             //
             // **A completed recognition, applied as one edit.**
             //
-            Action::ApplyOcr { pages, engine } => super::ocrlayers::apply(doc, &pages, &engine),
+            Action::ApplyOcr {
+                pages,
+                engine,
+                output,
+            } => super::ocrlayers::apply(doc, &pages, &engine, output),
             Action::RemoveOcrLayers { pages, engines } => {
                 super::ocrlayers::remove(doc, pages.as_deref(), engines.as_deref());
             }

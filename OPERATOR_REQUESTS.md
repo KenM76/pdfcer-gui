@@ -685,13 +685,13 @@ His words: *"did our ability to delete points regress? We have it set so you nee
 
 **Status.** Not a regression: a one-click delete never existed. Before this, a point went by right-click ▸ *Remove this point*, Ctrl+Shift+drag on a markup shape's point, or a click on a path's point and then Delete. Built: with the Points tool armed (`A`), **Ctrl+Alt+click** on a shown point deletes it, as in Inkscape's node tool, on markup shapes and on page content alike. A plain click still selects and a drag still moves; Ctrl and Shift already mean add to or extend the selection, so a bare click cannot also mean delete. Along the way the Points tool in Review now selects a markup shape when clicked, as its status line always said it would. Driven: `ctrl_alt_click_deletes_a_markup_point`, `ctrl_alt_click_deletes_a_page_point` (both fail on the previous build). NOT VERIFIED by him.
 
-## O331 — **WAITING ON THE ENGINE** — OCR that makes the scan's text editable, as Acrobat's "Editable Text and Images"
+## O331 — **IN THIS BUILD, awaiting his check** — OCR that makes the scan's text editable, as Acrobat's "Editable Text and Images"
 
 His words: *"when I OCRed a document in Acrobat Pro there was a option where it did the ocr in such a way that when you edit the ocr text it edits the bitmap to reflect the changes as well. I tried opening it in pdfcer-gui and it supported the editing feature that Acrobat had created the ocr document with, but I don't see an option for us to create and ocr document with the same capability. Does it exist in the pdfcer engine and just not implemented in our GUI?"*
 
 **Scope.** A second OCR output beside the invisible text layer: the recognised words are taken out of the scanned picture and written as real, visible text in a matched font, so editing a word changes what is seen. Offered as a choice in Recognise, as Acrobat offers it.
 
-**Status.** Not in the engine. Its OCR writes only the invisible layer under an untouched scan, and its recognised-text editing changes only that invisible text. Requested as `request_G234_ocr_visible_editable_text.md`. No GUI workaround, by his standing ruling.
+**Status.** Built. File ▸ Recognise text… has an *Output* choice: *Searchable image* (the default, unchanged) or *Editable text and images*. The editable output takes each word read with enough confidence out of the scan and writes it as visible text; low-confidence words stay in the picture, and the result says how many of each. A page made this way cannot be recognised again or have its OCR text removed (Remove leaves it and says so); Ctrl+Z puts the scan back. Engine v0.101.0 (G234). Driven by `editable_ocr_takes_the_words_out_of_the_scan`. Only he closes the row.
 
 ## O330 — **IN THIS BUILD, awaiting his check** — a thin line keeps one width around a rounded corner, as in Acrobat
 

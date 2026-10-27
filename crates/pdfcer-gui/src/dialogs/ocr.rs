@@ -136,6 +136,8 @@ pub struct OcrDialog {
     reading: super::ocr_reading::Reading,
     /// Enlarge before reading.
     enlarge: super::ocr_upscale::Enlarge,
+    /// Searchable image or editable text.
+    output: super::ocr_output::Output,
     /// The engine token of the run this dialog started, for the preference.
     engine: String,
     /// The model a run just started with; [`Self::show`] stores it and its
@@ -201,6 +203,7 @@ impl OcrDialog {
             models,
             reading: super::ocr_reading::Reading::default(),
             enlarge: super::ocr_upscale::Enlarge::default(),
+            output: super::ocr_output::Output::default(),
             engine,
             remember: None,
             traced_progress: usize::MAX,
@@ -366,6 +369,9 @@ impl OcrDialog {
                 actions.push(crate::app::actions::Action::ApplyOcr {
                     pages: recognised.pages,
                     engine: recognised.engine,
+                    // Drawn only while Ready, so it is the choice the run
+                    // started with.
+                    output: self.output.chosen(),
                 });
                 phase
             }
@@ -658,6 +664,7 @@ impl OcrDialog {
             self.models.chosen().map(|c| &c.model),
             first.and_then(|i| crate::ocr::raster_size(&doc.pages[i])),
         );
+        self.output.show(ui);
         ui.add_space(10.0);
 
         // **The button is unavailable when the scope names no page** —
@@ -725,7 +732,7 @@ impl OcrDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={} upscale={factor} filter={filter} magnify={}",
+                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={} upscale={factor} filter={filter} magnify={} output={}",
                 model.engine,
                 self.scope.page_index,
                 folder.display(),
@@ -733,6 +740,7 @@ impl OcrDialog {
                 self.reading.dictionaries(&model).user_words().len(),
                 self.reading.by_layout(&model),
                 crate::ocr::magnify(&model).token(),
+                self.output.token(),
             )
         });
         self.phase = Phase::Working(Job::spawn(Request {

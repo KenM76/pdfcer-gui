@@ -7,8 +7,10 @@
 //!
 //! Contract:
 //! - [`options`] is what [`super::Action::ApplyOcr`] writes with:
-//!   `ExistingLayers::Replace`, so a re-run is one copy of every word, and the
-//!   recogniser's key in the marker.
+//!   `ExistingLayers::Replace`, so a re-run is one copy of every word, the
+//!   recogniser's key in the marker, and the dialog's `OcrOutput`. Totals of
+//!   the editable output are traced `ocr-layer-output editable= visible=
+//!   suspect= images-rewritten=`.
 //! - [`recognised_disclosures`] adds one sentence totalling `layers_replaced`
 //!   ahead of the engine's per-page lines, and traces
 //!   `ocr-layer-structure lines= blocks= structure=`: the reading structure
@@ -24,7 +26,12 @@
 //!   page and engine filters name comes off, and each layer (group) that
 //!   leaves with nothing on it is deleted, as ONE undo entry
 //!   (`CommandKind::RemoveOcrLayer`), through the funnel.
-//! - `LayerPresent`, `LayerNotFound` and "none found" reach the status bar as
+//! - Editable layers (`OcrLayerRef::editable`) never come off: their words
+//!   are no longer in the scan. Remove leaves them, says so, and traces
+//!   `remove-ocr-layers-editable-left n=`; when nothing else matched it is
+//!   refused.
+//! - `LayerPresent`, `LayerNotFound`, `EditableLayerPresent`,
+//!   `ImageEncodeFailed` and "none found" reach the status bar as
 //!   [`crate::text::ocr::OcrLayerRefusal`] sentences.
 
 use crate::app::unlock::Refusal;
@@ -32,6 +39,7 @@ use pdfcer_core::edit::{
     CommandKind, EditError, EditSession, LayerContentPolicy, LayerEdit, OcrPageLayer,
 };
 use pdfcer_core::object::ObjId;
+use pdfcer_core::ocr::editable::OcrOutput;
 use pdfcer_core::ocr::layer::{ExistingLayers, OcrLayerError, OcrLayerOptions, OcrLayerReport};
 use pdfcer_core::ocr::layout::{LayoutClass, RegionGroup};
 use pdfcer_core::ocr::{OcrPage, OcrStructureSource};
@@ -42,10 +50,11 @@ use crate::text::ocr::{self as t, OcrLayerRefusal};
 use pdfcer_gui_base::layerorder as order;
 
 /// The options a recognition by `engine` is applied with.
-pub(super) fn options(engine: &str) -> OcrLayerOptions {
+pub(super) fn options(engine: &str, output: OcrOutput) -> OcrLayerOptions {
     OcrLayerOptions::new()
         .with_existing(ExistingLayers::Replace)
         .with_engine(engine)
+        .with_output(output)
 }
 
 /// Why a recognition was not applied.
@@ -74,10 +83,15 @@ impl Refusal for WriteError {
 
 /// [`super::Action::ApplyOcr`]: the run's words written on the
 /// [`t::group_name`] layer, made when the document has none, as one undo step.
-pub(super) fn apply(doc: &mut OpenDoc, pages: &[(usize, OcrPage)], engine: &str) {
+pub(super) fn apply(
+    doc: &mut OpenDoc,
+    pages: &[(usize, OcrPage)],
+    engine: &str,
+    output: OcrOutput,
+) {
     let first = pages.first().map_or(0, |(index, _)| *index);
     super::apply::vector_edit(doc, "ocr-layer", first, pages.len(), |session| {
-        write(session, pages, engine)
+        write(session, pages, engine, output)
     });
 }
 
@@ -85,6 +99,7 @@ fn write(
     session: &mut EditSession,
     pages: &[(usize, OcrPage)],
     engine: &str,
+    output: OcrOutput,
 ) -> Result<Vec<String>, WriteError> {
     let layers: Vec<OcrPageLayer<'_>> = pages
         .iter()
@@ -101,7 +116,7 @@ fn write(
     let with = |group| {
         regions
             .iter()
-            .fold(options(engine).on_layer(group), |o, (r, id)| {
+            .fold(options(engine, output).on_layer(group), |o, (r, id)| {
                 o.on_region_layer(*r, *id)
             })
     };
@@ -283,6 +298,19 @@ pub(super) fn recognised_disclosures(reports: &[OcrLayerReport]) -> Vec<String> 
             reports.iter().map(|r| r.blocks_written).sum::<usize>(),
         )
     });
+    crate::diag::trace(|| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "ocr-layer-output editable={} visible={} suspect={} images-rewritten={}",
+            reports.iter().filter(|r| r.editable).count(),
+            reports.iter().map(|r| r.words_visible).sum::<usize>(),
+            reports.iter().map(|r| r.words_suspect).sum::<usize>(),
+            reports
+                .iter()
+                .map(|r| r.images_rewritten.len())
+                .sum::<usize>(),
+        )
+    });
     let mut out = Vec::new();
     if layers > 0 {
         out.push(t::layers_replaced(layers, pages));
@@ -307,6 +335,8 @@ pub(super) fn word_refusal(error: &OcrLayerError) {
     let why = match error {
         OcrLayerError::LayerPresent { .. } => OcrLayerRefusal::AlreadyPresent,
         OcrLayerError::LayerNotFound { .. } => OcrLayerRefusal::LayerGone,
+        OcrLayerError::EditableLayerPresent { .. } => OcrLayerRefusal::EditableText,
+        OcrLayerError::ImageEncodeFailed => OcrLayerRefusal::ImageNotRewritten,
         _ => return,
     };
     decline::record_ocr_layer(why);
@@ -317,6 +347,8 @@ enum RemoveError {
     PageTree(pdfcer_core::page_tree::PageTreeError),
     Layer(OcrLayerError),
     NoneFound,
+    /// Every matching layer is editable output, which cannot come off.
+    OnlyEditable,
 }
 
 impl Refusal for RemoveError {
@@ -332,6 +364,8 @@ impl std::fmt::Display for RemoveError {
             Self::Layer(e) => write!(f, "{e}"),
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             Self::NoneFound => f.write_str("no pdfcer OCR layer in the document"),
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            Self::OnlyEditable => f.write_str("every OCR layer found is editable output"),
         }
     }
 }
@@ -346,6 +380,7 @@ pub(super) fn remove(
     super::apply::vector_edit(doc, "remove-ocr-layers", 0, 0, |session| {
         remove_in(session, pages, engines).inspect_err(|e| match e {
             RemoveError::NoneFound => decline::record_ocr_layer(OcrLayerRefusal::NoneFound),
+            RemoveError::OnlyEditable => decline::record_ocr_layer(OcrLayerRefusal::EditableText),
             RemoveError::Layer(e) => word_refusal(e),
             RemoveError::PageTree(_) => {}
         })
@@ -357,15 +392,21 @@ fn remove_in(
     on: Option<&[usize]>,
     by: Option<&[Option<String>]>,
 ) -> Result<Vec<String>, RemoveError> {
-    let layers: Vec<_> = session
+    let (editable, layers): (Vec<_>, Vec<_>) = session
         .find_ocr_layers()
         .map_err(RemoveError::PageTree)?
         .into_iter()
         .filter(|l| on.is_none_or(|p| p.contains(&l.page_index)))
         .filter(|l| by.is_none_or(|e| e.contains(&l.engine)))
-        .collect();
+        .partition(|l| l.editable);
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace(|| format!("remove-ocr-layers-editable-left n={}", editable.len()));
     if layers.is_empty() {
-        return Err(RemoveError::NoneFound);
+        return Err(if editable.is_empty() {
+            RemoveError::NoneFound
+        } else {
+            RemoveError::OnlyEditable
+        });
     }
     let mut pages: Vec<usize> = Vec::new();
     let mut emptied: Vec<ObjId> = Vec::new();
@@ -426,6 +467,12 @@ fn remove_in(
     }];
     if !groups.is_empty() {
         out.push(t::groups_deleted(&groups));
+    }
+    if !editable.is_empty() {
+        let mut on: Vec<usize> = editable.iter().map(|l| l.page_index).collect();
+        on.sort_unstable();
+        on.dedup();
+        out.push(t::editable_left(on.len()));
     }
     Ok(out)
 }

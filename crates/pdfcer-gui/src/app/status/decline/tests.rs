@@ -265,6 +265,8 @@ fn no_two_declines_share_a_sentence() {
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::AlreadyPresent),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::LayerGone),
         Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::NoneFound),
+        Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::EditableText),
+        Declined::OcrLayer(crate::text::ocr::OcrLayerRefusal::ImageNotRewritten),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::EmptyName),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::NotFound),
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::InMembership),
