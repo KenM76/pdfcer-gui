@@ -248,7 +248,6 @@ fn crates/pdfcer-gui/src/app/dispatch/markupnodes.rs::dispatch
 fn crates/pdfcer-gui/src/app/dispatch/measure.rs::dispatch
 fn crates/pdfcer-gui/src/app/dispatch/navigate.rs::dispatch
 fn crates/pdfcer-gui/src/app/dispatch/pages.rs::dispatch
-fn crates/pdfcer-gui/src/app/dispatch/textcopy.rs::dispatch
 fn crates/pdfcer-gui/src/app/dispatch/textformat.rs::dispatch
 fn crates/pdfcer-gui/src/app/doctabs.rs::document_tabs
 fn crates/pdfcer-gui/src/app/floats.rs::floating_panels

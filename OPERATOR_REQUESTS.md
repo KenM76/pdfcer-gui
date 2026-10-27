@@ -653,13 +653,29 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O327 — **FILED** — form fields with no drawn value show and click on the page, as in Acrobat
+## O329 — **BUILT AND DRIVEN, awaiting his check** — marquee copy keeps highlights see-through, can keep text as text or copy a picture
+
+His words, relayed in the engine's notice: *"When I use the marquee tool to copy and paste, the highlight tool's transparency becomes opaque and hides text. We should also have an option to keep text as text when copying that way, and also the option to copy as a bitmap (using the resolution setting we have for screen capture in our settings). We can also remove the Word gap setting shortcut that opens the settings window, since we have a way to set it from the Content area now."*
+
+**Scope.** (1) A highlight pasted from a marquee copy stays see-through in Word, in both the EMF and the SVG. (2) A setting that copies text as text instead of outlines. (3) A setting that copies a picture only, at the screen-capture resolution. (4) The Word gap command that opened Settings is removed.
+
+**Status.** Built on engine v0.99.0. (1) The clipboard SVG asks the engine to flatten blends (the EMF always does), and the status line counts what was flattened. (2) and (3) are one setting, Settings ▸ Images and transparency ▸ *Snapshot copies as*: outlines, text, or a picture; text kept and runs left as outlines are counted on the status line. (4) Removed from the Content band, menus and the command list. Driven: `a_snapshot_set_to_picture_copies_no_vectors`. Keep-text and the highlight flattening are not driven. NOT VERIFIED by him.
+
+## O328 — **BUILT AND DRIVEN, awaiting his check** — copied text pastes into Word with its formatting and paragraphs
+
+His words, relayed in the engine's notice: *"If I am in read mode and go to copy text, then paste it into Word, I lose formatting (bold, font size, etc.) and it doesn't have the paragraphs flowed as paragraphs. In Acrobat this works as expected."*
+
+**Scope.** A copied selection, page or document goes on the clipboard as HTML, RTF and plain text together, with family, size, bold, italic, underline and colour, one paragraph per paragraph. Anything not carried (a derived weight, a missing family, a dropped colour) is counted on the status line.
+
+**Status.** Built on engine v0.99.0, for a canvas text selection and for *Copy page text* / *Copy document text*. Driven: `a_copied_paragraph_pastes_as_one_formatted_paragraph`. Not pasted into real Word by this session. NOT VERIFIED by him.
+
+## O327 — **BUILT AND DRIVEN, awaiting his check** — form fields with no drawn value show and click on the page, as in Acrobat
 
 His words, opening `D:\Dev\PdfCraft\repro\auto-size.pdf`: *"when I open I get the error : 3 field(s), 3 you can fill here. ⚠ This form asks viewers to draw field values themselves. Some viewers do and some don't, so a filled value may look different — or not appear — depending on what opens the file. 3 field(s) are not drawn on the page, so they cannot be clicked there. Fill one here and it becomes drawn — and clickable on the page from then on. “Redraw values” does the same for fields that already hold a value.   Acrobat and other readers show them and we should do the same."*
 
 **Scope.** A form that asks viewers to draw its values (NeedAppearances, or a field with no appearance) shows each value, border and background on the page as Acrobat does, and each field opens for filling on a click — without the document becoming modified. The status line keeps saying the file asks viewers to draw values; *Redraw values* stays the way to write them into the file. Engine side: `request_G230_*`.
 
-**Status.** Filed with the engine as G230; waiting for it. By his call (*"don't spend tokens making workarounds. I can wait for the engine to be updated."*), no GUI workaround is built. NOT VERIFIED by him.
+**Status.** Built on engine v0.99.0, which draws a field with no stored drawing from its value when the page is shown (G230). The fields show their values, borders and backgrounds and open on a click; opening the file does not modify it. The Forms panel keeps an off-canvas note: the fields store no drawn value in the file, another reader may show them empty, and *Redraw values* stores the drawings. Driven: `a_form_without_drawn_values_draws_and_clicks`, which fails on the previous release. Not driven on his `auto-size.pdf`. NOT VERIFIED by him.
 
 ## O326 — **BUILT AND DRIVEN, awaiting his check** — document comparison
 
