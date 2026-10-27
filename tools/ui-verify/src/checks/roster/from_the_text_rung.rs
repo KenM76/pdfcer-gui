@@ -671,7 +671,6 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(paragraphs_off::WithParagraphsOffAClickOpensOneLine),
         Box::new(paragraphs_page::ParagraphsOffOnOnePageLeavesTheNext),
         Box::new(paragraph_here::OneParagraphOpensAsLinesWhileItsNeighbourOpensWhole),
-        Box::new(word_gap_here::WordGapOpensFromTheTextBeingEdited),
         Box::new(word_gap_band::WordGapBandReExtractsThePage),
         Box::new(ribbon_order::RibbonPutsClipboardFirstAndSaveBesideFile),
         Box::new(panel_toggles::ADockRightClickHidesAndShowsAnyPanel),

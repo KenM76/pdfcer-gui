@@ -674,9 +674,8 @@ pub mod panel_toggles;
 /// Clipboard leads Edit, Save follows File, the highlight band is yellow.
 pub mod ribbon_order;
 pub mod tab_faces;
-/// Word gap… on the text menu lands on its slider.
+/// The Content band's word gap re-extracts the page.
 pub mod word_gap_band;
-pub mod word_gap_here;
 
 /// A Select click on recognised text takes its whole block.
 pub mod ocr_select_block;

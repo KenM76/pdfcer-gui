@@ -747,7 +747,7 @@ His words: *"If I type a character that doesn't exist in the embedded font I get
 
 His words: *"Also the setting Where extracted text gets its spaces should be available right in the Content menu section, and I think we have an auto option for this?"*
 
-**Built and driven** (`word_gap_band_re_extracts_the_page`, off the desktop on `fixtures/word-gap.pdf`: the slider, then Auto on and off, each re-extract the page, read from what the page's text was built under). Edit ▸ Content carries an *Auto* switch and a *Gap width* slider beside *Word gap…*; Settings ▸ Text has the same switch. Auto measures each page's own threshold (engine v0.88.0, G209), and *Gap width* is the fallback for a page too sparse to measure. Hovering either control says what the current page used and whether it was measured. Either control saves to the settings file and re-extracts the text of every open document.
+**Built and driven** (`word_gap_band_re_extracts_the_page`, off the desktop on `fixtures/word-gap.pdf`: the slider, then Auto on and off, each re-extract the page, read from what the page's text was built under). Edit ▸ Content carries an *Auto* switch and a *Gap width* slider; Settings ▸ Text has the same switch. Auto measures each page's own threshold (engine v0.88.0, G209), and *Gap width* is the fallback for a page too sparse to measure. Hovering either control says what the current page used and whether it was measured. Either control saves to the settings file and re-extracts the text of every open document.
 
 ## O313 — **BUILT AND DRIVEN, awaiting his check** — ribbon: Clipboard leftmost on Edit; the highlight icon filled yellow; Save beside File
 

@@ -2,8 +2,8 @@
 //!
 //! ## The seam, and why two ids share one arm
 //!
-//! `file.settings`, `tools.font_folders` and `edit.word_gap` open **one
-//! window, one draft, one Save**. They differ in one thing: *where the window lands*.
+//! `file.settings` and `tools.font_folders` open **one window, one draft,
+//! one Save**. They differ in one thing: *where the window lands*.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/settings.md`.
 
@@ -15,7 +15,7 @@ use crate::dialogs::settings::Draft;
 #[must_use]
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
-    matches!(id, "file.settings" | "tools.font_folders" | "edit.word_gap")
+    matches!(id, "file.settings" | "tools.font_folders")
 }
 
 /// Which settings group an id asks to land on, or `None` for the whole window.
@@ -24,8 +24,6 @@ fn focus(id: &str) -> Option<&'static str> {
     // ui-text-exempt: a command id and a settings group key, never displayed.
     match id {
         "tools.font_folders" => Some("fonts"),
-        // Word gap is the first setting on the Text page.
-        "edit.word_gap" => Some("text"),
         _ => None,
     }
 }
@@ -57,8 +55,6 @@ mod tests {
         assert_eq!(focus("tools.font_folders"), Some("fonts"));
         assert!(handles("file.settings"));
         assert!(handles("tools.font_folders"));
-        assert_eq!(focus("edit.word_gap"), Some("text"));
-        assert!(crate::dialogs::settings::nav::has_page("text"));
         assert!(!handles("file.print"));
 
         assert!(

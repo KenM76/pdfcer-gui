@@ -6,8 +6,9 @@
 //! go of the slider. Under Auto the slider is the fallback for a page too
 //! sparse to measure; the threshold the current page used is on hover.
 //!
-//! Contract: drawn only while `edit.word_gap` is registered (R8), so a build
-//! without the capability loses the slider with the button. The position
+//! Contract: drawn only while `edit.text` is registered (R8): the gap decides
+//! how a line opens for editing, so a build without text editing has no use
+//! for it. The position
 //! under the pointer lives in egui memory until release, because every commit
 //! drops each open document's extracted text and a drag would otherwise
 //! re-extract once per frame. A click or keyboard step commits at once.
@@ -39,7 +40,7 @@ pub(super) fn draw(
     at: WordGap,
     page: Option<(f32, bool)>,
 ) -> Option<WordGap> {
-    if kind != crate::shell::manifest::WORD_GAP || registry.get("edit.word_gap").is_none() {
+    if kind != crate::shell::manifest::WORD_GAP || registry.get("edit.text").is_none() {
         return None;
     }
     let used = page.map(|(ratio, measured)| t::word_gap_on_page(ratio, measured));

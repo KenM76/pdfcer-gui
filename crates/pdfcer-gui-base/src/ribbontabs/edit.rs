@@ -126,10 +126,8 @@ pub fn tab() -> Tab {
                     command("edit.paragraphs_page"),
                     command("edit.paragraph_here"),
                     // The gap itself, where the text it spaces is edited
-                    // (O312); the command beside it opens the full
-                    // explanation in Settings.
+                    // (O312). Settings ▸ Text holds the same setting.
                     Item::custom(super::WORD_GAP),
-                    command("edit.word_gap"),
                 ],
             ),
             // ---------------------------------------------------------------

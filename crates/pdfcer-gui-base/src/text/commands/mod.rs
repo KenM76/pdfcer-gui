@@ -207,17 +207,6 @@ pub const fn edit_paragraph_here() -> CommandText {
     )
 }
 
-/// `edit.word_gap`
-#[must_use]
-pub const fn edit_word_gap() -> CommandText {
-    CommandText::new(
-        "Word gap…",
-        "How wide a gap between letters must be before pdfcer counts it as a space. A line \
-         with wider gaps opens in pieces; raise it to open the whole line. Opens Settings at \
-         this one setting.",
-    )
-}
-
 /// `file.export_dxf`
 #[must_use]
 pub const fn file_export_dxf() -> CommandText {
