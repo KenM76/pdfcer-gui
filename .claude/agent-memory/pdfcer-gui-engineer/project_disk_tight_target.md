@@ -407,3 +407,5 @@ in `Cargo.toml`), so it regrows. Deleting both incremental dirs took D: from 30 
 linker's name for a full disk. The two incremental dirs were 31 GB (release) and
 20 GB (debug); deleting both took D: to 96 GB free. Two weeks after the 2026-10-08
 cut it was larger, so plan on doing it about once a week.
+
+2026-10-27: D: hit 2 MB free; the release build died as **rustc exit 101** (os error 112 underneath). Release incremental 39 GB + debug incremental 8.8 GB; deleting both gave 47 GB free. Five days after the last cut — the weekly cadence is now too slow during OCR work.

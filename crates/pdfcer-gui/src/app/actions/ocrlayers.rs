@@ -42,6 +42,7 @@ use pdfcer_core::object::ObjId;
 use pdfcer_core::ocr::editable::OcrOutput;
 use pdfcer_core::ocr::layer::{ExistingLayers, OcrLayerError, OcrLayerOptions, OcrLayerReport};
 use pdfcer_core::ocr::layout::{LayoutClass, RegionGroup};
+use pdfcer_core::ocr::marker::OcrLayerRef;
 use pdfcer_core::ocr::{OcrPage, OcrStructureSource};
 
 use crate::app::state::OpenDoc;
@@ -392,22 +393,7 @@ fn remove_in(
     on: Option<&[usize]>,
     by: Option<&[Option<String>]>,
 ) -> Result<Vec<String>, RemoveError> {
-    let (editable, layers): (Vec<_>, Vec<_>) = session
-        .find_ocr_layers()
-        .map_err(RemoveError::PageTree)?
-        .into_iter()
-        .filter(|l| on.is_none_or(|p| p.contains(&l.page_index)))
-        .filter(|l| by.is_none_or(|e| e.contains(&l.engine)))
-        .partition(|l| l.editable);
-    // ui-text-exempt: diagnostic trace, never displayed in the UI
-    crate::diag::trace(|| format!("remove-ocr-layers-editable-left n={}", editable.len()));
-    if layers.is_empty() {
-        return Err(if editable.is_empty() {
-            RemoveError::NoneFound
-        } else {
-            RemoveError::OnlyEditable
-        });
-    }
+    let (editable, layers) = select(session, on, by)?;
     let mut pages: Vec<usize> = Vec::new();
     let mut emptied: Vec<ObjId> = Vec::new();
     let mut removed = 0usize;
@@ -468,13 +454,40 @@ fn remove_in(
     if !groups.is_empty() {
         out.push(t::groups_deleted(&groups));
     }
-    if !editable.is_empty() {
-        let mut on: Vec<usize> = editable.iter().map(|l| l.page_index).collect();
-        on.sort_unstable();
-        on.dedup();
-        out.push(t::editable_left(on.len()));
+    if editable > 0 {
+        out.push(t::editable_left(editable));
     }
     Ok(out)
+}
+
+/// The layers `on`/`by` match that can be removed, and how many pages carry a
+/// matched editable layer, which is never removed: its words were taken out of
+/// the scan, so the layer is the page's only copy of them.
+fn select(
+    session: &EditSession,
+    on: Option<&[usize]>,
+    by: Option<&[Option<String>]>,
+) -> Result<(usize, Vec<OcrLayerRef>), RemoveError> {
+    let (editable, layers): (Vec<_>, Vec<_>) = session
+        .find_ocr_layers()
+        .map_err(RemoveError::PageTree)?
+        .into_iter()
+        .filter(|l| on.is_none_or(|p| p.contains(&l.page_index)))
+        .filter(|l| by.is_none_or(|e| e.contains(&l.engine)))
+        .partition(|l| l.editable);
+    // ui-text-exempt: diagnostic trace, never displayed in the UI
+    crate::diag::trace(|| format!("remove-ocr-layers-editable-left n={}", editable.len()));
+    if layers.is_empty() {
+        return Err(if editable.is_empty() {
+            RemoveError::NoneFound
+        } else {
+            RemoveError::OnlyEditable
+        });
+    }
+    let mut pages: Vec<usize> = editable.iter().map(|l| l.page_index).collect();
+    pages.sort_unstable();
+    pages.dedup();
+    Ok((pages.len(), layers))
 }
 
 /// Delete each layer the removal left with nothing on it, returning the names
