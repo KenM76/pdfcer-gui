@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O330 — **OPEN, waiting on the engine** — a thin line keeps one width around a rounded corner, as in Acrobat
+
+His words, on `C:\Users\Ken\OneDrive\pdfTests\test-line radius.pdf`: *"at the radius on this pdf's orange box the thickness of the line changes in our rendering, but it shouldn't and acrobat reader shows it as a line with the same width throughout"*
+
+**Scope.** A thin stroked outline (here 0.34 pt, under one screen pixel at normal zoom) draws with the same weight on its curves as on its straight runs, at every zoom, as Acrobat draws it.
+
+**Status.** Measured on the engine CLI at 100%, 133%, 200% and 300%: the rounded corners carry 12–22% less ink per unit length than the straight sides, spread over two pixels, so they read thinner and paler. Rendering is the engine's: `request_G233_thin_stroke_weight_drops_on_curves.md`. No GUI workaround, by his instruction. His file is not checked in. NOT FIXED.
+
 ## O329 — **BUILT AND DRIVEN, awaiting his check** — marquee copy keeps highlights see-through, can keep text as text or copy a picture
 
 His words, relayed in the engine's notice: *"When I use the marquee tool to copy and paste, the highlight tool's transparency becomes opaque and hides text. We should also have an option to keep text as text when copying that way, and also the option to copy as a bitmap (using the resolution setting we have for screen capture in our settings). We can also remove the Word gap setting shortcut that opens the settings window, since we have a way to set it from the Content area now."*
