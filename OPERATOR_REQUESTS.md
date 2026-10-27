@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O331 — **WAITING ON THE ENGINE** — OCR that makes the scan's text editable, as Acrobat's "Editable Text and Images"
+
+His words: *"when I OCRed a document in Acrobat Pro there was a option where it did the ocr in such a way that when you edit the ocr text it edits the bitmap to reflect the changes as well. I tried opening it in pdfcer-gui and it supported the editing feature that Acrobat had created the ocr document with, but I don't see an option for us to create and ocr document with the same capability. Does it exist in the pdfcer engine and just not implemented in our GUI?"*
+
+**Scope.** A second OCR output beside the invisible text layer: the recognised words are taken out of the scanned picture and written as real, visible text in a matched font, so editing a word changes what is seen. Offered as a choice in Recognise, as Acrobat offers it.
+
+**Status.** Not in the engine. Its OCR writes only the invisible layer under an untouched scan, and its recognised-text editing changes only that invisible text. Requested as `request_G234_ocr_visible_editable_text.md`. No GUI workaround, by his standing ruling.
+
 ## O330 — **IN THIS BUILD, awaiting his check** — a thin line keeps one width around a rounded corner, as in Acrobat
 
 His words, on `C:\Users\Ken\OneDrive\pdfTests\test-line radius.pdf`: *"at the radius on this pdf's orange box the thickness of the line changes in our rendering, but it shouldn't and acrobat reader shows it as a line with the same width throughout"*
