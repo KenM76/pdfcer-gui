@@ -973,7 +973,9 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
     // it from this flag, because this flag is true for two different reasons.
     PressMeaning {
         drag,
-        click: caps.edit_content || text,
+        // The Points tool clicks wherever a markup shape can be reshaped:
+        // a click shows a shape's points, and Ctrl+Alt+click deletes one.
+        click: caps.edit_content || text || (tool.is_node() && caps.author_markup),
     }
 }
 

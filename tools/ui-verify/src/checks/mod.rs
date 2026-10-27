@@ -62,6 +62,7 @@ pub mod freehand_detail;
 pub mod link_cmyk;
 pub mod objects_multiselect;
 pub mod pen_cmyk;
+pub mod point_click_delete;
 pub mod shrink_pictures;
 pub mod weblink_prompt;
 

@@ -148,6 +148,9 @@ pub struct Frame<'a> {
     pub double: bool,
     /// The third click of a triple.
     pub triple: bool,
+    /// Ctrl+Alt held: with the Points tool, delete the point clicked
+    /// ([`crate::canvas::pointdelete`]).
+    pub delete_point: bool,
 }
 
 /// **Route one completed click.**
@@ -174,6 +177,7 @@ pub fn click(
         shift,
         double,
         triple,
+        delete_point,
     } = frame;
 
     // **This frame's Smart-Selector scope**, read once — O70.
@@ -217,13 +221,18 @@ pub fn click(
     //
     // **The pick filter's annotation rows**, and the mode once more for a link:
     // a link is selected only in Edit, where it is not followed.
-    let annot_hit =
-        if matches!(active_tool, crate::canvas::tool::CanvasTool::Select) && caps.author_markup {
-            crate::canvas::selection::annot::under_pointer(doc, page_index, point, map)
-                .filter(|hit| crate::canvas::selection::annot::pickable(&pick, &caps, &hit.target))
-        } else {
-            None
-        };
+    //
+    // **The Points tool too, where it cannot address page content**: there a
+    // click on a markup shape selects it and shows its points, as its status
+    // line says. Where it can (Edit), page content keeps the click.
+    let picks_annots = matches!(active_tool, crate::canvas::tool::CanvasTool::Select)
+        || (active_tool.is_node() && !caps.edit_content);
+    let annot_hit = if picks_annots && caps.author_markup {
+        crate::canvas::selection::annot::under_pointer(doc, page_index, point, map)
+            .filter(|hit| crate::canvas::selection::annot::pickable(&pick, &caps, &hit.target))
+    } else {
+        None
+    };
     //
     // The operator: *"I could add a yellow sticky note but even in read mode I
     // don't think I could figure out how to read it."*
@@ -285,7 +294,12 @@ pub fn click(
     // a click on blank paper — which reads as the selection being
     // stuck rather than as the click having missed.
     // A Shift-click that misses keeps them: it extends, it does not replace.
-    if annot_hit.is_none() && caps.author_markup && !shift {
+    // Before the deselect below, which would take the shape whose point it is.
+    let deleted_markup_point = active_tool.is_node()
+        && delete_point
+        && caps.author_markup
+        && crate::canvas::pointdelete::markup(doc, map, selection, point, actions);
+    if annot_hit.is_none() && caps.author_markup && !shift && !deleted_markup_point {
         selection.clear_annot();
     }
     // A click is a measure pick, a **text** gesture, or a content
@@ -338,14 +352,27 @@ pub fn click(
         (active_tool.is_text() && caps.edit_content)
             .then_some(crate::canvas::textedit::TextEditKind::Edit)
     });
-    if active_tool.is_node() && caps.edit_content {
+    if deleted_markup_point {
+        // The node is gone or the engine refused; either way the click is spent.
+    } else if active_tool.is_node() && caps.edit_content {
         let hit = targets
             // Depth 0: the Node tool addresses anchors within an object it
             // has already entered, so "the object underneath" is not a
             // question it asks.
             .map(|t| probe(t, selection, page_index, point, map, pick, 0, scope))
             .unwrap_or_default();
-        selection.click_direct(page_index, hit, shift);
+        if !(delete_point
+            && crate::canvas::pointdelete::anchor(
+                selection,
+                page_index,
+                targets,
+                hit,
+                doc.edit_epoch,
+                actions,
+            ))
+        {
+            selection.click_direct(page_index, hit, shift);
+        }
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             format!(

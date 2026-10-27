@@ -677,13 +677,13 @@ Relayed from a Reddit user by him: *"I really like it but all files annotated or
 
 **Status.** Likely cause, unconfirmed without a real Edge file: Edge saves ink and highlights without their own drawing (an appearance stream), and the engine deliberately draws an annotation only from that drawing. Measured on built samples: with the drawing, ink, highlights and text boxes show; without it they do not, and the status line says *"N annotations carry no appearance and are not drawn"*. Requested as G236: draw these from the annotation's own points and colour, as Acrobat and Chrome do. A real Edge-saved file from the user would confirm it. No GUI workaround.
 
-## O332 — **INVESTIGATING** — once a shape's points are shown, a single click on one deletes it, as in Inkscape
+## O332 — **BUILT** — once a shape's points are shown, a single click on one deletes it, as in Inkscape
 
 His words: *"did our ability to delete points regress? We have it set so you need to double click a point to delete, which once they are shown should be a single click on them like it is in inkscape."*
 
 **Scope.** With points shown, one click on a point removes it, without disturbing click-to-select or drag-to-move. Also answers whether the double click is a regression.
 
-**Status.** Being established: every route that deletes a point today and its history.
+**Status.** Not a regression: a one-click delete never existed. Before this, a point went by right-click ▸ *Remove this point*, Ctrl+Shift+drag on a markup shape's point, or a click on a path's point and then Delete. Built: with the Points tool armed (`A`), **Ctrl+Alt+click** on a shown point deletes it, as in Inkscape's node tool, on markup shapes and on page content alike. A plain click still selects and a drag still moves; Ctrl and Shift already mean add to or extend the selection, so a bare click cannot also mean delete. Along the way the Points tool in Review now selects a markup shape when clicked, as its status line always said it would. Driven: `ctrl_alt_click_deletes_a_markup_point`, `ctrl_alt_click_deletes_a_page_point` (both fail on the previous build). NOT VERIFIED by him.
 
 ## O331 — **WAITING ON THE ENGINE** — OCR that makes the scan's text editable, as Acrobat's "Editable Text and Images"
 

@@ -150,6 +150,8 @@ pub mod dragroute;
 pub mod fieldclip;
 pub mod grid;
 pub mod handledrag;
+/// Ctrl+Alt+click on a shown point deletes it, as in Inkscape (O332).
+pub mod pointdelete;
 pub use pdfcer_gui_base::handles;
 #[cfg(test)]
 mod handles_body_tests;

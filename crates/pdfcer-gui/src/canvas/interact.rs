@@ -408,6 +408,7 @@ pub(super) fn interact(
                 shift: shift || ctrl,
                 double,
                 triple,
+                delete_point: ctrl && ctx.input(|i| i.modifiers.alt),
             },
             &mut selection,
             &mut text_selection,

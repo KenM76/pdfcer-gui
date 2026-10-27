@@ -294,9 +294,24 @@ pub fn action_for(
     selection: &SelectionState,
     insert: bool,
 ) -> Option<Action> {
+    raise(doc, selection, insert, parked(ctx))
+}
+
+/// **The action a one-click delete of node `index` raises** (O332): the same
+/// plan *Remove this point* raises, for a node the click itself picked.
+#[must_use]
+pub fn remove_node(doc: &OpenDoc, selection: &SelectionState, index: usize) -> Option<Action> {
+    raise(doc, selection, false, NodePick::Node(index))
+}
+
+fn raise(
+    doc: &OpenDoc,
+    selection: &SelectionState,
+    insert: bool,
+    pick: NodePick,
+) -> Option<Action> {
     let shape = super::geometry(doc, selection)?;
     let id = shape.id;
-    let pick = parked(ctx);
     let states = rows(doc, selection, pick);
     // Built through the SAME `planned` the row's state was asked with, so the
     // action a press raises is the edit the engine said yes to — for an `/Ink`
