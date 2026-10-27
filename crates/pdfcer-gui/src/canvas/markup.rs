@@ -177,8 +177,8 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
             vertices: vertices.clone(),
             color,
             width,
-            // Plain ends; arrowheads are a style edit afterwards.
-            endings: (LineEnding::None, LineEnding::None),
+            // The pen's arrowheads; a freehand stroke with any is routed here.
+            endings: pen.ends,
             interior: None,
         }),
         (MarkupKind::Polygon, Geometry::Vertices(vertices)) => Some(MarkupSpec::Polygon {

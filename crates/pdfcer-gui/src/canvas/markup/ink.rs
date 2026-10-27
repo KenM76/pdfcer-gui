@@ -134,7 +134,13 @@ pub(in crate::canvas) fn drag(
         };
         points.push(point);
     }
-    match super::action(kind, page_index, Geometry::Strokes(vec![points]), pen) {
+    // `/Ink` has no `/LE`, so a stroke with arrowheads is a `/PolyLine`.
+    let (kind, geometry) = if pen.has_arrowheads() {
+        (MarkupKind::PolyLine, Geometry::Vertices(points))
+    } else {
+        (kind, Geometry::Strokes(vec![points]))
+    };
+    match super::action(kind, page_index, geometry, pen) {
         Ok(raised) => {
             super::trace_commit(
                 kind,
@@ -146,7 +152,7 @@ pub(in crate::canvas) fn drag(
                 // only external evidence that this feature works is the two
                 // numbers differing. It is also how the *real* retention figure
                 // in §3.3 is obtained, as opposed to the synthetic one.
-                &format!("raw={raw} kept={}", kept.len()),
+                &format!("raw={raw} kept={} freehand=1", kept.len()),
             );
             actions.push(raised);
         }

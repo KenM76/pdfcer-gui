@@ -385,6 +385,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(band_cmyk::AMarksOutlineFromTheFormatTabIsStoredInCmyk),
         Box::new(pen_cmyk::AMarkDrawnWithACmykPenIsStoredInCmyk),
         Box::new(freehand_detail::FreehandDetailSetsHowManySegmentsAStrokeKeeps),
+        Box::new(freehand_arrowheads::AFreehandLineCanEndInAnArrowhead),
         Box::new(point_click_delete::CtrlAltClickDeletesAMarkupPoint),
         Box::new(point_click_delete::CtrlAltClickDeletesAPagePoint),
         Box::new(link_cmyk::ALinksBorderColourIsStoredInCmyk),

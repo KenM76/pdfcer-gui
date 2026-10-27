@@ -317,9 +317,9 @@ struct Current {
     /// The `/LE` pair the mark currently draws, when [`Self::support`] says it
     /// has one.
     ///
-    /// This is a **value**, and it comes from `MarkupSpec::Line`'s own field
-    /// because only that arm has one — a fact the compiler checks and the
-    /// engine publishes no API for. Whether the control is offered at all is
+    /// This is a **value**, and it comes from the `MarkupSpec::Line` and
+    /// `MarkupSpec::PolyLine` arms' own fields because only they have one — a
+    /// fact the compiler checks and the engine publishes no API for. Whether the control is offered at all is
     /// `support.takes_endings`, which is a different question with a different
     /// owner. The header's table draws the line.
     endings: Option<(LineEnding, LineEnding)>,
@@ -490,7 +490,19 @@ impl Current {
                 current.width = Some(width);
                 current.endings = Some(endings);
             }
-            MarkupSpec::PolyLine { color, width, .. } | MarkupSpec::Ink { color, width, .. } => {
+            MarkupSpec::PolyLine {
+                color,
+                width,
+                endings,
+                interior,
+                ..
+            } => {
+                current.stroke = Some(color);
+                current.interior = interior;
+                current.width = Some(width);
+                current.endings = Some(endings);
+            }
+            MarkupSpec::Ink { color, width, .. } => {
                 current.stroke = Some(color);
                 current.width = Some(width);
             }
@@ -720,7 +732,7 @@ fn dash(
     true
 }
 
-/// Which ends of a `/Line` carry an arrowhead.
+/// Which ends of a `/Line` or `/PolyLine` carry an arrowhead.
 fn endings(
     ui: &mut Ui,
     current: Current,

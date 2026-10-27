@@ -12,7 +12,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui-base/markuppen.md`.
 
 use egui::Color32;
-use pdfcer_core::annot_author::Color;
+use pdfcer_core::annot_author::{Color, LineEnding};
 
 use crate::markupkind::MarkupKind;
 use crate::markuppalette as palette;
@@ -212,6 +212,13 @@ pub struct Pen {
     /// touches the control authors the same bytes. See
     /// [`Self::simplify_tolerance_pts`] for the mapping and its bound.
     pub detail: u8,
+    /// **The arrowheads the next freehand stroke or polyline ends in**, as
+    /// the `/LE` pair (start, end).
+    ///
+    /// A freehand stroke with any head is authored as a `/PolyLine` of its
+    /// simplified points, because `/Ink` carries no `/LE` (ISO 32000-1
+    /// Table 182); with none it stays `/Ink`.
+    pub ends: (LineEnding, LineEnding),
 }
 
 /// The smoothest freehand stroke offered: tolerance of half the width.
@@ -267,11 +274,18 @@ impl Default for Pen {
             dash: crate::linestyle::LineStyle::Solid,
             on_page: false,
             detail: DEFAULT_DETAIL,
+            ends: (LineEnding::None, LineEnding::None),
         }
     }
 }
 
 impl Pen {
+    /// Whether either end of the next stroke carries an arrowhead.
+    #[must_use]
+    pub fn has_arrowheads(self) -> bool {
+        self.ends != (LineEnding::None, LineEnding::None)
+    }
+
     /// **The freehand simplification tolerance this pen implies**, in PDF
     /// points: a quarter of the stroke width at [`DEFAULT_DETAIL`], scaling
     /// linearly to zero at [`MAX_DETAIL`] and to half the width at

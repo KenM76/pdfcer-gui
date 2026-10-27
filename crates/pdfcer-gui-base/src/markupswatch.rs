@@ -24,6 +24,16 @@ pub const REGION_WIDTH: &str = "markup.style.width"; // ui-text-exempt: trace re
 pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the freehand detail.
 pub const REGION_DETAIL: &str = "markup.style.detail"; // ui-text-exempt: trace region name, never displayed
+/// As [`REGION_INK`], for the arrowhead chooser.
+pub const REGION_ENDS: &str = "markup.style.ends"; // ui-text-exempt: trace region name, never displayed
+/// The arrowhead chooser's four entries, published while its list is open.
+pub const REGION_ENDS_NONE: &str = "markup.style.ends.none"; // ui-text-exempt: trace region name, never displayed
+/// See [`REGION_ENDS_NONE`].
+pub const REGION_ENDS_START: &str = "markup.style.ends.start"; // ui-text-exempt: trace region name, never displayed
+/// See [`REGION_ENDS_NONE`].
+pub const REGION_ENDS_END: &str = "markup.style.ends.end"; // ui-text-exempt: trace region name, never displayed
+/// See [`REGION_ENDS_NONE`].
+pub const REGION_ENDS_BOTH: &str = "markup.style.ends.both"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the line-style chooser.
 pub const REGION_DASH: &str = "markup.style.dash"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the draw-on-the-page switch.
@@ -151,6 +161,13 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
             trace(*pen);
         }
 
+        let before = pen.ends;
+        let ends_response = ends(ui, pen).on_hover_text(t::pen_ends_tooltip());
+        crate::diag::ui_rect(REGION_ENDS, ends_response.rect);
+        if pen.ends != before {
+            trace(*pen);
+        }
+
         // LINE STYLE — `RIBBON_IA.md` §5.8's eighth control, and the last
         // of the eight to get an engine verb.
         //
@@ -201,6 +218,40 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         }
     });
 }
+
+/// **The arrowhead chooser**: which ends of the next stroke carry an open
+/// arrowhead, the shape Markup's Arrow draws. A closed head is a restyle on
+/// the Format tab, where the drawn line is selected.
+fn ends(ui: &mut Ui, pen: &mut Pen) -> egui::Response {
+    use crate::text::ribbon as r;
+    use pdfcer_core::annot_author::LineEnding::{None as No, OpenArrow as Head};
+    let options = [
+        ((No, No), r::markup_endings_none(), REGION_ENDS_NONE),
+        ((Head, No), r::markup_endings_start(), REGION_ENDS_START),
+        ((No, Head), r::markup_endings_end(), REGION_ENDS_END),
+        ((Head, Head), r::markup_endings_both(), REGION_ENDS_BOTH),
+    ];
+    let shown = options
+        .iter()
+        .find(|(pair, _, _)| *pair == pen.ends)
+        .map_or(r::markup_endings_none(), |(_, label, _)| *label);
+    egui::ComboBox::from_id_salt(REGION_ENDS)
+        .width(ENDS_WIDTH)
+        .selected_text(shown)
+        .show_ui(ui, |ui| {
+            for (pair, label, region) in options {
+                let item = ui.selectable_label(pen.ends == pair, label);
+                crate::diag::ui_rect(region, item.rect);
+                if item.clicked() {
+                    pen.ends = pair;
+                }
+            }
+        })
+        .response
+}
+
+/// The width of the arrowhead chooser, in points.
+const ENDS_WIDTH: f32 = 104.0;
 
 /// The width of the line-style chooser, in points.
 const DASH_WIDTH: f32 = 92.0;
@@ -338,7 +389,7 @@ fn trace(pen: Pen) {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "markup-pen ink={} highlighter={} width_pts={} opacity={} ca={:?} \
-             dash={:?} d={:?} on_page={} detail={} tolerance_pts={}",
+             dash={:?} d={:?} on_page={} detail={} tolerance_pts={} ends={:?},{:?}",
             crate::colourpick::trace_key(pen.ink),
             crate::colourpick::trace_key(pen.highlighter),
             pen.width_pts,
@@ -361,6 +412,8 @@ fn trace(pen: Pen) {
             pen.on_page,
             pen.detail,
             pen.simplify_tolerance_pts(),
+            pen.ends.0,
+            pen.ends.1,
         )
     });
 }
@@ -378,6 +431,7 @@ mod tests {
             REGION_WIDTH,
             REGION_OPACITY,
             REGION_DETAIL,
+            REGION_ENDS,
             REGION_DASH,
             REGION_PALETTE,
             REGION_MORE_COLOURS,

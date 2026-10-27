@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O335 — **WAITING ON THE ENGINE** — a freehand line can end in an arrowhead
+## O335 — **BUILT** — a freehand line can end in an arrowhead
 
 Relayed from a Reddit user by him: *"Also would love to edit how many segmentations a drawn line has (quality) and a drawn arrow (basically a line and two angled lines automatically added at the end)"*
 
 **Scope.** Drawing an arrow: a drawn line that ends in two angled head lines added automatically.
 
-**Status.** Markup ▸ Shapes ▸ Arrow draws a straight arrow today, and Format ▸ Markup's Arrowheads sets heads on a selected line. A freehand or multi-segment path cannot carry heads: the engine writes `/LE` only on a straight `/Line`, and freehand ink has no arrowheads in the PDF standard. Requested as G235: arrowheads on a polyline, which a drawn stroke can then become. No GUI workaround.
+**Status.** Markup ▸ Shapes ▸ Arrow draws a straight arrow today, and Format ▸ Markup's Arrowheads sets heads on a selected line. A freehand or multi-segment path cannot carry heads: the engine writes `/LE` only on a straight `/Line`, and freehand ink has no arrowheads in the PDF standard. The engine added arrowheads on a polyline (G235). Built: Markup ▸ Style ▸ *Arrowheads* (none, start, end, both) sets heads on the next freehand line or polyline; a freehand stroke with heads is saved as a polyline, since freehand ink cannot carry them. Format ▸ Markup's Arrowheads now also reaches a selected polyline. Driven: `a_freehand_line_can_end_in_an_arrowhead` (the saved polyline carries `/LE[/None/OpenArrow]`). NOT VERIFIED by him.
 
 ## O334 — **BUILT** — choose how finely a freehand stroke is kept (its quality)
 

@@ -31,6 +31,7 @@ are different in kind:
 | **Line width** | ✅ | a drag value in points, over the pen's own range |
 | **Fill** | ⬜ | **a design decision about the PEN, and only about the pen** — see the row's own correction below |
 | **Opacity** | ✅ | **shipped 2026-08-28** — a percentage drag value writing `/CA`. This row said *"blocked on the engine"* for four months after it stopped being true; see below |
+| **Arrowheads** | ✅ | none, start, end or both (open arrow) on the next freehand line or polyline. A freehand stroke with any head is committed as `/PolyLine`, because `/Ink` has no `/LE` (ISO 32000-2 Table 182) |
 | **Freehand detail** | ✅ | a percentage drag value: how closely the next freehand stroke keeps to the hand, from half-width tolerance (0) through the quarter-width default (50) to every sample (100). See `Pen::simplify_tolerance_pts` |
 | **Line style** | ✅ | **shipped 2026-09-06** — a four-entry chooser writing `/BS` `/S` and `/D`. §5.5 does not list it; it is here because it is a property of the next mark exactly as the four above are, and because the engine shipped the author-time half (`MarkupOptions::dash`) beside the restyle half on the day the Format tab got its own copy. See [`super::linestyle`] |
 
