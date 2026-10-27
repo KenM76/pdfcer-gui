@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 446cd3a11cfa4b7419c25e08492fa0e5b9d6e76e
+# baseline: 47140cdbe86c290e6d16edab2a7ac910147e0300
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 10226
+# items: 10271
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -397,6 +397,7 @@ pdfcer-core const pdfcer_core::annot::MAX_ANNOTS_PER_PAGE
 pdfcer-core const pdfcer_core::annot::MAX_VE_DEPTH
 pdfcer-core const pdfcer_core::annot_author::DEFAULT_STAMP_FONT_SIZE
 pdfcer-core const pdfcer_core::annot_author::PUSH_BUTTON_PLATE_GRAY
+pdfcer-core const pdfcer_core::annot_author::derived::DERIVED_SUBTYPES
 pdfcer-core const pdfcer_core::attachments::FALLBACK_SAFE_NAME
 pdfcer-core const pdfcer_core::attachments::MAX_ATTACHMENTS
 pdfcer-core const pdfcer_core::attachments::MAX_SAFE_NAME_CHARS
@@ -619,6 +620,7 @@ pdfcer-core enum pdfcer_core::annot_author::TextMarkupKind
 pdfcer-core enum pdfcer_core::annot_author::button_icon::CaptionPosition
 pdfcer-core enum pdfcer_core::annot_author::button_icon::IconScaleWhen
 pdfcer-core enum pdfcer_core::annot_author::button_icon::IconScaling
+pdfcer-core enum pdfcer_core::annot_author::derived::FreeTextC
 pdfcer-core enum pdfcer_core::attachments::AttachmentError
 pdfcer-core enum pdfcer_core::attachments::AttachmentKind
 pdfcer-core enum pdfcer_core::attachments::DeclaredSizeCheck
@@ -1108,6 +1110,14 @@ pdfcer-core field pdfcer_core::annot_author::button_icon::IconFit::align
 pdfcer-core field pdfcer_core::annot_author::button_icon::IconFit::full_bounds
 pdfcer-core field pdfcer_core::annot_author::button_icon::IconFit::scale_when
 pdfcer-core field pdfcer_core::annot_author::button_icon::IconFit::scaling
+pdfcer-core field pdfcer_core::annot_author::derived::DerivedAppearance::ap_content
+pdfcer-core field pdfcer_core::annot_author::derived::DerivedAppearance::ap_dict
+pdfcer-core field pdfcer_core::annot_author::derived::DerivedAppearance::notes
+pdfcer-core field pdfcer_core::annot_author::derived::DerivedAppearance::rect
+pdfcer-core field pdfcer_core::annot_author::derived::NotDerived::reason
+pdfcer-core field pdfcer_core::annot_author::derived::PlacedAppearance::ap_dict
+pdfcer-core field pdfcer_core::annot_author::derived::PlacedAppearance::rect
+pdfcer-core field pdfcer_core::annot_author::derived::PlacedAppearance::rect_changed
 pdfcer-core field pdfcer_core::attachments::Attachment::checksum
 pdfcer-core field pdfcer_core::attachments::Attachment::created
 pdfcer-core field pdfcer_core::attachments::Attachment::declared_size
@@ -2009,6 +2019,16 @@ pdfcer-core field pdfcer_core::edit::annot_restyle::MarkerStyleChange::annot_id
 pdfcer-core field pdfcer_core::edit::annot_restyle::MarkerStyleChange::appearance
 pdfcer-core field pdfcer_core::edit::annot_restyle::MarkerStyleChange::appearance_was_foreign
 pdfcer-core field pdfcer_core::edit::annot_restyle::MarkerStyleChange::subtype
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakeAppearancesOutcome::baked
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakeAppearancesOutcome::skipped
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakedAppearance::annot_id
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakedAppearance::ap_id
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakedAppearance::notes
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakedAppearance::rect_changed
+pdfcer-core field pdfcer_core::edit::bake_appearances::BakedAppearance::subtype
+pdfcer-core field pdfcer_core::edit::bake_appearances::SkippedAppearance::annot_id
+pdfcer-core field pdfcer_core::edit::bake_appearances::SkippedAppearance::reason
+pdfcer-core field pdfcer_core::edit::bake_appearances::SkippedAppearance::subtype
 pdfcer-core field pdfcer_core::edit::batch_transform::AnnotationBatchOutcome::results
 pdfcer-core field pdfcer_core::edit::checkpoint::Rollback::history_lost
 pdfcer-core field pdfcer_core::edit::checkpoint::Rollback::undone
@@ -4139,6 +4159,7 @@ pdfcer-core fn pdfcer_core::annot::page_link_destinations
 pdfcer-core fn pdfcer_core::annot::rich_text_in
 pdfcer-core fn pdfcer_core::annot::rotation_degrees
 pdfcer-core fn pdfcer_core::annot::stamp_label_parameters_in
+pdfcer-core fn pdfcer_core::annot_author::appearance_options_from_dict
 pdfcer-core fn pdfcer_core::annot_author::build_appearance
 pdfcer-core fn pdfcer_core::annot_author::build_appearance_opts
 pdfcer-core fn pdfcer_core::annot_author::build_appearance_with
@@ -4152,8 +4173,10 @@ pdfcer-core fn pdfcer_core::annot_author::build_text_annotation
 pdfcer-core fn pdfcer_core::annot_author::color_entry
 pdfcer-core fn pdfcer_core::annot_author::decode_carry
 pdfcer-core fn pdfcer_core::annot_author::decode_spec
+pdfcer-core fn pdfcer_core::annot_author::derived::derive_appearance
 pdfcer-core fn pdfcer_core::annot_author::encode_carry
 pdfcer-core fn pdfcer_core::annot_author::encode_spec
+pdfcer-core fn pdfcer_core::annot_author::rect_inside_differences
 pdfcer-core fn pdfcer_core::annot_author::spec_from_dict
 pdfcer-core fn pdfcer_core::annot_author::text_spec_from_dict
 pdfcer-core fn pdfcer_core::annot_author::transform_spec
@@ -4521,6 +4544,7 @@ pdfcer-core method pdfcer_core::annot_author::Color::to_device_rgb
 pdfcer-core method pdfcer_core::annot_author::ColorEntry::color
 pdfcer-core method pdfcer_core::annot_author::FileAttachmentSpec::new
 pdfcer-core method pdfcer_core::annot_author::MediaTempAccess::as_bytes
+pdfcer-core method pdfcer_core::annot_author::Quad::from_quad_points
 pdfcer-core method pdfcer_core::annot_author::Quad::from_rect
 pdfcer-core method pdfcer_core::annot_author::RedactAppearance::to_spec
 pdfcer-core method pdfcer_core::annot_author::ScreenSpec::new
@@ -4546,6 +4570,7 @@ pdfcer-core method pdfcer_core::annot_author::button_icon::CaptionPosition::show
 pdfcer-core method pdfcer_core::annot_author::button_icon::CaptionPosition::to_tp
 pdfcer-core method pdfcer_core::annot_author::button_icon::IconFit::from_dict
 pdfcer-core method pdfcer_core::annot_author::button_icon::IconFit::to_dict
+pdfcer-core method pdfcer_core::annot_author::derived::DerivedAppearance::place
 pdfcer-core method pdfcer_core::attachments::Attachment::safe_name
 pdfcer-core method pdfcer_core::attachments::AttachmentClip::is_empty
 pdfcer-core method pdfcer_core::attachments::AttachmentClip::len
@@ -5117,6 +5142,7 @@ pdfcer-core method pdfcer_core::edit::annot_restyle::EditSession::marker_color
 pdfcer-core method pdfcer_core::edit::annot_restyle::EditSession::set_annot_opacity
 pdfcer-core method pdfcer_core::edit::annot_restyle::EditSession::set_marker_style
 pdfcer-core method pdfcer_core::edit::annot_restyle::MarkerStyle::new
+pdfcer-core method pdfcer_core::edit::bake_appearances::EditSession::bake_missing_appearances
 pdfcer-core method pdfcer_core::edit::batch::EditSession::delete_annotations
 pdfcer-core method pdfcer_core::edit::batch::EditSession::delete_widgets
 pdfcer-core method pdfcer_core::edit::batch::EditSession::dimension_for_annotation
@@ -6091,6 +6117,9 @@ pdfcer-core struct pdfcer_core::annot_author::SoundSpec
 pdfcer-core struct pdfcer_core::annot_author::StampStyle
 pdfcer-core struct pdfcer_core::annot_author::WidgetChrome
 pdfcer-core struct pdfcer_core::annot_author::button_icon::IconFit
+pdfcer-core struct pdfcer_core::annot_author::derived::DerivedAppearance
+pdfcer-core struct pdfcer_core::annot_author::derived::NotDerived
+pdfcer-core struct pdfcer_core::annot_author::derived::PlacedAppearance
 pdfcer-core struct pdfcer_core::attachments::Attachment
 pdfcer-core struct pdfcer_core::attachments::AttachmentClip
 pdfcer-core struct pdfcer_core::attachments::AttachmentNotes
@@ -6249,6 +6278,9 @@ pdfcer-core struct pdfcer_core::edit::annot_restyle::AnnotOpacityChange
 pdfcer-core struct pdfcer_core::edit::annot_restyle::MarkerColor
 pdfcer-core struct pdfcer_core::edit::annot_restyle::MarkerStyle
 pdfcer-core struct pdfcer_core::edit::annot_restyle::MarkerStyleChange
+pdfcer-core struct pdfcer_core::edit::bake_appearances::BakeAppearancesOutcome
+pdfcer-core struct pdfcer_core::edit::bake_appearances::BakedAppearance
+pdfcer-core struct pdfcer_core::edit::bake_appearances::SkippedAppearance
 pdfcer-core struct pdfcer_core::edit::batch_transform::AnnotationBatchOutcome
 pdfcer-core struct pdfcer_core::edit::checkpoint::Checkpoint
 pdfcer-core struct pdfcer_core::edit::checkpoint::Rollback
@@ -6776,6 +6808,8 @@ pdfcer-core variant pdfcer_core::annot_author::button_icon::IconScaleWhen::Never
 pdfcer-core variant pdfcer_core::annot_author::button_icon::IconScaleWhen::Smaller
 pdfcer-core variant pdfcer_core::annot_author::button_icon::IconScaling::Anamorphic
 pdfcer-core variant pdfcer_core::annot_author::button_icon::IconScaling::Proportional
+pdfcer-core variant pdfcer_core::annot_author::derived::FreeTextC::Border
+pdfcer-core variant pdfcer_core::annot_author::derived::FreeTextC::Fill
 pdfcer-core variant pdfcer_core::attachments::AttachmentError::Decode
 pdfcer-core variant pdfcer_core::attachments::AttachmentError::NoEmbeddedStream
 pdfcer-core variant pdfcer_core::attachments::AttachmentError::SpanUnservable
@@ -6973,6 +7007,7 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::AddText
 pdfcer-core variant pdfcer_core::edit::CommandKind::AddValidationMaterial
 pdfcer-core variant pdfcer_core::edit::CommandKind::AdoptWidget
 pdfcer-core variant pdfcer_core::edit::CommandKind::AttachFile
+pdfcer-core variant pdfcer_core::edit::CommandKind::BakeAppearances
 pdfcer-core variant pdfcer_core::edit::CommandKind::ClearInfoField
 pdfcer-core variant pdfcer_core::edit::CommandKind::ClearPageLabels
 pdfcer-core variant pdfcer_core::edit::CommandKind::ConvertNode
@@ -9242,6 +9277,7 @@ pdfcer-render const pdfcer_render::shading::RAMP_SAMPLES
 pdfcer-render enum pdfcer_render::RenderError
 pdfcer-render enum pdfcer_render::annot::AnnotationClass
 pdfcer-render enum pdfcer_render::annot::AnnotationScope
+pdfcer-render enum pdfcer_render::annot::markup::MarkupWithoutAp
 pdfcer-render enum pdfcer_render::annot::widget::WidgetsWithoutAp
 pdfcer-render enum pdfcer_render::blend_nonsep::NonSeparableBlend
 pdfcer-render enum pdfcer_render::color::ColorSpace
@@ -9382,11 +9418,13 @@ pdfcer-render field pdfcer_render::font::RenderOptions::cancel
 pdfcer-render field pdfcer_render::font::RenderOptions::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderOptions::cmyk_jpeg_polarity
 pdfcer-render field pdfcer_render::font::RenderOptions::fonts
+pdfcer-render field pdfcer_render::font::RenderOptions::free_text_c
 pdfcer-render field pdfcer_render::font::RenderOptions::image_magnify
 pdfcer-render field pdfcer_render::font::RenderOptions::image_minify
 pdfcer-render field pdfcer_render::font::RenderOptions::ink_probe
 pdfcer-render field pdfcer_render::font::RenderOptions::invisible_text
 pdfcer-render field pdfcer_render::font::RenderOptions::layers
+pdfcer-render field pdfcer_render::font::RenderOptions::markup_without_ap
 pdfcer-render field pdfcer_render::font::RenderOptions::mask_resample
 pdfcer-render field pdfcer_render::font::RenderOptions::max_cmyk_buffer_bytes
 pdfcer-render field pdfcer_render::font::RenderOptions::mesh_patch_padding
@@ -9403,10 +9441,12 @@ pdfcer-render field pdfcer_render::font::RenderOptions::view_magnification
 pdfcer-render field pdfcer_render::font::RenderOptions::widgets_without_ap
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_jpeg_polarity
+pdfcer-render field pdfcer_render::font::RenderPolicy::free_text_c
 pdfcer-render field pdfcer_render::font::RenderPolicy::image_magnify
 pdfcer-render field pdfcer_render::font::RenderPolicy::image_minify
 pdfcer-render field pdfcer_render::font::RenderPolicy::invisible_text
 pdfcer-render field pdfcer_render::font::RenderPolicy::layers
+pdfcer-render field pdfcer_render::font::RenderPolicy::markup_without_ap
 pdfcer-render field pdfcer_render::font::RenderPolicy::mask_resample
 pdfcer-render field pdfcer_render::font::RenderPolicy::max_cmyk_buffer_bytes
 pdfcer-render field pdfcer_render::font::RenderPolicy::mesh_patch_padding
@@ -9482,6 +9522,7 @@ pdfcer-render field pdfcer_render::image::SpotTexel::colorant
 pdfcer-render field pdfcer_render::image::SpotTexel::tint
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotation_notes
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_appearance_state_missing
+pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_geometry_drawn
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_hidden
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_icon_painted
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_out_of_scope
@@ -9901,11 +9942,13 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_backdrop
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cancel
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cmyk_intent
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cmyk_jpeg_polarity
+pdfcer-render method pdfcer_render::font::RenderOptions::with_free_text_c
 pdfcer-render method pdfcer_render::font::RenderOptions::with_image_magnify
 pdfcer-render method pdfcer_render::font::RenderOptions::with_image_minify
 pdfcer-render method pdfcer_render::font::RenderOptions::with_ink_probe
 pdfcer-render method pdfcer_render::font::RenderOptions::with_invisible_text
 pdfcer-render method pdfcer_render::font::RenderOptions::with_layers
+pdfcer-render method pdfcer_render::font::RenderOptions::with_markup_without_ap
 pdfcer-render method pdfcer_render::font::RenderOptions::with_mask_resample
 pdfcer-render method pdfcer_render::font::RenderOptions::with_max_cmyk_buffer_bytes
 pdfcer-render method pdfcer_render::font::RenderOptions::with_mesh_patch_padding
@@ -10147,6 +10190,8 @@ pdfcer-render variant pdfcer_render::annot::AnnotationScope::Document
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::DocumentAndMarkups
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::DocumentAndStamps
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::FormFieldsOnly
+pdfcer-render variant pdfcer_render::annot::markup::MarkupWithoutAp::Blank
+pdfcer-render variant pdfcer_render::annot::markup::MarkupWithoutAp::FromGeometry
 pdfcer-render variant pdfcer_render::annot::widget::WidgetsWithoutAp::Blank
 pdfcer-render variant pdfcer_render::annot::widget::WidgetsWithoutAp::Draw
 pdfcer-render variant pdfcer_render::blend_nonsep::NonSeparableBlend::Color
