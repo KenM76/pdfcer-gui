@@ -19,7 +19,7 @@ PDFCER_DIAG=1 PDFCER_DIAG_VIEWPORT="-4200,-4200,1400,900" \
 `PDFCER_DIAG_VIEWPORT` sets `with_active(false)` and positions the window off
 screen, so it takes **neither focus nor pointer** — safe while Ken is working.
 The fixture goes in **`argv[1]`**; `PDFCER_DIAG_OPEN_PATH` does not open it.
-The trace goes to **stdout**, not to the filename in `PDFCER_DIAG`.
+The trace goes to **stderr** (2026-10-27: stdout stayed 0 bytes), not to the filename in `PDFCER_DIAG`. Redirect both.
 
 **Why:** on 2026-09-05, eight tracks had landed, `cargo test --workspace` was
 2,677 passing / 0 failing, all 29 gates were green and
