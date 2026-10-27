@@ -432,16 +432,10 @@ pub fn unmarked(count: usize) -> String {
     format!("{count} change(s) could not be marked; the comparison panel still lists them.")
 }
 
-/// The text marks failed after the area marks were written.
+/// Marking stopped after some marks were written.
 #[must_use]
 pub fn mark_failed(why: &str) -> String {
-    format!("The changed areas were marked, but the text changes could not be: {why}")
-}
-
-/// The marks could not be folded into one undo step.
-#[must_use]
-pub fn mark_many_undos() -> &'static str {
-    "There were too many marks to undo in one step; undo removes them a few at a time."
+    format!("Marking stopped part way, and the marks made so far were kept: {why}. One Undo removes them.")
 }
 
 /// Status line after marking.

@@ -19,6 +19,6 @@ Each launch presses Tools > Compare and waits (about ten seconds) for
   page 1; requires `compare-jump … page=2` and then
   `min-reveal-solved page=1 why=compare-row`.
 - `marking_a_comparison_writes_comments` — presses `compare.mark`; requires
-  `compare-marked annotations>=4 folded=1`; saves a copy and requires page 1
+  `compare-marked annotations>=4 top=mark-comparison`; saves a copy and requires page 1
   of it to list no annotation and page 2 to list as many as were written;
   one `Ctrl+Z`, saves again, and requires page 2 to list none.

@@ -272,9 +272,9 @@ fn mark_body(
         .get("annotations")
         .and_then(|n| n.parse().ok())
         .unwrap_or(0);
-    if written < 4 || marked.get("folded") != Some("1") {
+    if written < 4 || marked.get("top") != Some("mark-comparison") {
         return Ok(Some(format!(
-            "`{}`: at least the four text changes as comments, folded into one undo step, was \
+            "`{}`: at least the four text changes as comments, as one undo entry on top of the stack, was \
              wanted.",
             marked.raw
         )));

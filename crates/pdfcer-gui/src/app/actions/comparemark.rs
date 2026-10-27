@@ -1,15 +1,14 @@
 //! # `app::actions::comparemark` — a comparison's changes as comments
 //!
-//! `pdfcer_core::compare::mark_regions` then `mark_changes`, as the engine's
-//! own `compare --output` runs them, on the open document through the edit
-//! funnel. Each mark is its own engine command; the gesture is one, so the
-//! commands it pushed are folded into one undo entry. A fold the stack cannot
-//! make is said, not hidden.
+//! `pdfcer_core::compare::mark_comparison` on the open document through the
+//! edit funnel: the area marks, then the text marks and the summary page, as
+//! ONE undo entry the engine folds while it commits. Area marks alone go
+//! through `mark_regions`, which is one entry by itself.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/comparemark.md`.
 
-use pdfcer_core::compare::{ResultError, ResultOptions, mark_changes, mark_regions};
-use pdfcer_core::edit::{EditSession, MAX_UNDO_DEPTH};
+use pdfcer_core::compare::{ResultError, ResultOptions, mark_comparison, mark_regions};
+use pdfcer_core::edit::{CommandKind, EditSession};
 use pdfcer_gui_base::newcomment::ComparisonMarks;
 
 use crate::app::prefs::Prefs;
@@ -26,76 +25,62 @@ pub(super) fn apply(doc: &mut OpenDoc, prefs: &Prefs, marks: &ComparisonMarks) {
     });
 }
 
-/// Run both marking verbs and fold what they pushed. The sentences returned
-/// reach the status line through the funnel.
+/// Mark the comparison. The sentences returned reach the status line through
+/// the funnel.
+///
+/// [`ResultError::Summary`] comes after the marks, which the engine keeps
+/// as one undo entry; it is returned as `Ok` with the failure as a sentence,
+/// because the funnel refreshes the pages only on `Ok`.
 fn mark(
     session: &mut EditSession,
     prefs: &Prefs,
     marks: &ComparisonMarks,
 ) -> Result<Vec<String>, ResultError> {
-    let before = session.undo_depth();
     let (older, newer) = marks.labels.clone();
     let options = ResultOptions::default()
         .with_summary_page(marks.summary_page)
         .with_author(prefs.author_name.clone())
         .with_labels(older, newer);
-    let mut notes = Vec::new();
-    let mut annotations = 0;
-    let mut unmarked = 0;
-    if !marks.regions.is_empty() {
-        let report = mark_regions(session, &marks.regions, &options)?;
-        annotations += report.annotations;
-        unmarked += report.unmarked.len();
-    }
-    if let Some(changes) = &marks.report {
-        match mark_changes(session, changes, &options) {
-            Ok(report) => {
-                annotations += report.annotations;
-                unmarked += report.unmarked.len();
-            }
-            // The area marks are already applied; keep them and say why the
-            // text marks are not there.
-            Err(e) if annotations > 0 => notes.push(t::mark_failed(&e.to_string())),
-            Err(e) => return Err(e),
+    let regions = (!marks.regions.is_empty()).then_some(marks.regions.as_slice());
+    let outcome = match &marks.report {
+        Some(changes) => mark_comparison(session, regions, changes, &options).map(|done| {
+            let (a, u) = done
+                .regions
+                .as_ref()
+                .map_or((0, 0), |r| (r.annotations, r.unmarked.len()));
+            (
+                a + done.changes.annotations,
+                u + done.changes.unmarked.len(),
+            )
+        }),
+        None => mark_regions(session, &marks.regions, &options)
+            .map(|r| (r.annotations, r.unmarked.len())),
+    };
+    let top = match session.undo_kinds().next() {
+        Some(CommandKind::MarkComparison) => "mark-comparison", // ui-text-exempt: a trace token
+        Some(_) => "other", // ui-text-exempt: a trace token
+        None => "none",     // ui-text-exempt: a trace token
+    };
+    let (annotations, unmarked) = match outcome {
+        Ok(counts) => counts,
+        Err(e @ ResultError::Summary(_)) if !crate::app::unlock::Refusal::encrypted(&e) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("compare-marked partial=1 top={top}")
+            });
+            return Ok(vec![t::mark_failed(&e.to_string())]);
         }
-    }
-    let folded = fold(session, before);
+        Err(e) => return Err(e),
+    };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!(
-            "compare-marked annotations={annotations} unmarked={unmarked} folded={}",
-            u8::from(folded)
-        )
+        format!("compare-marked annotations={annotations} unmarked={unmarked} top={top}")
     });
-    notes.push(t::marked(annotations));
+    let mut notes = vec![t::marked(annotations)];
     if unmarked > 0 {
         notes.push(t::unmarked(unmarked));
     }
-    if !folded {
-        notes.push(t::mark_many_undos().to_owned());
-    }
     Ok(notes)
-}
-
-/// Fold every command pushed since the stack stood at `before` into one.
-///
-/// The count is read off the stack rather than off the reports, because the
-/// summary page and a mark spanning lines push commands the reports do not
-/// count one for one. A stack at its cap may have dropped the oldest entries,
-/// which makes the difference a lie, so a full stack is never folded.
-fn fold(session: &mut EditSession, before: usize) -> bool {
-    let after = session.undo_depth();
-    if after >= MAX_UNDO_DEPTH {
-        return false;
-    }
-    let pushed = after.saturating_sub(before);
-    if pushed < 2 {
-        return true;
-    }
-    let Some(kind) = session.undo_kinds().nth(pushed - 1) else {
-        return false;
-    };
-    session.coalesce_last(pushed, kind)
 }
 
 impl crate::app::unlock::Refusal for ResultError {
