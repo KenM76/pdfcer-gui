@@ -49,9 +49,11 @@ grepping it — a count only goes stale, a name can be born false.
 
 **O310 driven on SW41177, awaiting his verdict:** no blank, no squares; a size typed for a 425-run object click restyles as one engine call with one undo (`a_large_restyle_keeps_painting`, longest frame 219 ms, 238 operators in 131 ms); Properties follows the caret's word. The re-opened mixed-size line draws in its own font (G228, engine v0.98.0).
 
-**O326 built and driven on the fixture pair, awaiting his check:** Tools ▸ Compare ▸ Compare documents… and the Compare panel (engine v0.98.0's comparison). Not yet driven on one of his drawings; marking is folded to one undo by the shell until G229.
+**O326 built and driven on the fixture pair, awaiting his check:** Tools ▸ Compare ▸ Compare documents… and the Compare panel (engine v0.98.0's comparison). Not yet driven on one of his drawings; marking is one undo entry made by the engine (G229, v0.99.0).
 
 **v0.97.0 wired:** nothing to build. A block sharing its text object (G226) now opens; its disclosure and the remaining `TextObjectNotSeparable` refusal reach the shell through the existing routes. O307 driven on SW41177. Shipped in `v0.5.0-dev.20261024.1`.
+
+**`v0.5.0-dev.20261027.1`** is engine v0.99.0 (14cc5ee6): O327 (form fields with no stored drawing drawn and clickable, G230), O328 (formatted text copy), O329 (snapshot copies keep highlights see-through; *Snapshot copies as* outlines, text or picture; the Word gap command removed) and G229 (the shell's undo fold deleted). Zip `pdfcergui-20261027-0010-14cc5ee-1ec07159.zip`, OneDrive slot `pdfcer-gui1`; `pdfcer-gui2` keeps v0.5.0-dev.20261024.3. Filed and waiting: G231 (which stage a comparison-marking error came from), G232 (an undecodable form's decorations dropped uncounted). Not driven: Snapshot keep-text, a flattened highlight pasted into Word, the formatted copy pasted into real Word.
 
 **`v0.5.0-dev.20261024.3`** is engine v0.98.0 (2f4badbb): G227 (one `format_texts` call per restyle), G228 (a mixed-size line in its own font) and O326 (Compare documents). Zip `pdfcergui-20261024-0958-2f4badb-a830a9e7.zip`, OneDrive slot `pdfcer-gui2`.
 
