@@ -322,7 +322,7 @@ fn a_real_drawing_sheet_with_an_embedded_font_is_applied_rather_than_refused() {
     assert_eq!(
         prepared.verification.residuals,
         vec![proof::Residual {
-            text: " construction".to_owned(),
+            text: "construction".to_owned(),
             site: proof::ResidualSite::FontProgram,
         }],
         "★★ the byte run IS in the file, inside the embedded font's own \
