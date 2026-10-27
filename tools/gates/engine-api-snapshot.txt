@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: d3996c099c28e624cadbd187a8e8868d8acd8e7e
+# baseline: 446cd3a11cfa4b7419c25e08492fa0e5b9d6e76e
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 10181
+# items: 10226
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -766,13 +766,16 @@ pdfcer-core enum pdfcer_core::ocr::addon_manifest::AddonKind
 pdfcer-core enum pdfcer_core::ocr::addon_manifest::ManifestError
 pdfcer-core enum pdfcer_core::ocr::addons::DiscoveryNote
 pdfcer-core enum pdfcer_core::ocr::addons::VerifyError
+pdfcer-core enum pdfcer_core::ocr::editable::EditableImageCodec
+pdfcer-core enum pdfcer_core::ocr::editable::OcrOutput
+pdfcer-core enum pdfcer_core::ocr::editable::SuspectReason
 pdfcer-core enum pdfcer_core::ocr::engine_ocrs::OcrsEngineError
 pdfcer-core enum pdfcer_core::ocr::engine_paddle::DictionarySource
 pdfcer-core enum pdfcer_core::ocr::engine_paddle::PaddleEngineError
 pdfcer-core enum pdfcer_core::ocr::engine_paddle_vl::PaddleVlError
 pdfcer-core enum pdfcer_core::ocr::json_lite::Json
 pdfcer-core enum pdfcer_core::ocr::layer::ExistingLayers
-pdfcer-core enum pdfcer_core::ocr::layer::OcrLayerError
+pdfcer-core enum pdfcer_core::ocr::layer_error::OcrLayerError
 pdfcer-core enum pdfcer_core::ocr::layout::LayoutClass
 pdfcer-core enum pdfcer_core::ocr::layout::RegionGroup
 pdfcer-core enum pdfcer_core::ocr::models::ModelSource
@@ -2498,6 +2501,17 @@ pdfcer-core field pdfcer_core::ocr::addons::OcrModel::name
 pdfcer-core field pdfcer_core::ocr::addons::OcrModel::root
 pdfcer-core field pdfcer_core::ocr::addons::OcrModelDiscovery::models
 pdfcer-core field pdfcer_core::ocr::addons::OcrModelDiscovery::notes
+pdfcer-core field pdfcer_core::ocr::editable::EditableTextOptions::image_codec
+pdfcer-core field pdfcer_core::ocr::editable::EditableTextOptions::min_confidence_percent
+pdfcer-core field pdfcer_core::ocr::editable::EditableTextOptions::unscored_visible
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::bytes_after
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::bytes_before
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::cloned
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::filter_after
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::filter_before
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::image
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::source
+pdfcer-core field pdfcer_core::ocr::editable::ImageRewrite::words_erased
 pdfcer-core field pdfcer_core::ocr::engine_paddle_vl::RegionReading::image_tokens
 pdfcer-core field pdfcer_core::ocr::engine_paddle_vl::RegionReading::ink_box
 pdfcer-core field pdfcer_core::ocr::engine_paddle_vl::RegionReading::lines
@@ -2511,6 +2525,7 @@ pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOptions::engine
 pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOptions::existing
 pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOptions::font
 pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOptions::optional_content
+pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOptions::output
 pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOptions::region_layers
 pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOutcome::bytes
 pdfcer-core field pdfcer_core::ocr::layer::OcrLayerOutcome::report
@@ -2522,20 +2537,27 @@ pdfcer-core field pdfcer_core::ocr::layer_removal::RegionLayerRemoval::group
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::blocks_written
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::confidence_available
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::content_object
+pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::editable
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::font_object
+pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::images_rewritten
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::layers_replaced
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::lines_written
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::mean_confidence
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::structure
+pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::suspects
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_scale_clamped
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_skipped
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_substituted
+pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_suspect
+pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_unscored_visible
+pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_visible
 pdfcer-core field pdfcer_core::ocr::layer_report::OcrLayerReport::words_written
 pdfcer-core field pdfcer_core::ocr::layout::LayoutRegion::bbox
 pdfcer-core field pdfcer_core::ocr::layout::LayoutRegion::class
 pdfcer-core field pdfcer_core::ocr::layout::LayoutRegion::order
 pdfcer-core field pdfcer_core::ocr::layout::LayoutRegion::score
 pdfcer-core field pdfcer_core::ocr::marker::OcrLayerRef::content
+pdfcer-core field pdfcer_core::ocr::marker::OcrLayerRef::editable
 pdfcer-core field pdfcer_core::ocr::marker::OcrLayerRef::engine
 pdfcer-core field pdfcer_core::ocr::marker::OcrLayerRef::font_names
 pdfcer-core field pdfcer_core::ocr::marker::OcrLayerRef::optional_content
@@ -5346,6 +5368,12 @@ pdfcer-core method pdfcer_core::ocr::addons::OcrModel::program
 pdfcer-core method pdfcer_core::ocr::addons::OcrModel::verify
 pdfcer-core method pdfcer_core::ocr::addons::OcrModelDiscovery::by_name
 pdfcer-core method pdfcer_core::ocr::addons::OcrModelDiscovery::for_engine
+pdfcer-core method pdfcer_core::ocr::editable::EditableTextOptions::new
+pdfcer-core method pdfcer_core::ocr::editable::EditableTextOptions::with_image_codec
+pdfcer-core method pdfcer_core::ocr::editable::EditableTextOptions::with_min_confidence_percent
+pdfcer-core method pdfcer_core::ocr::editable::EditableTextOptions::with_unscored_visible
+pdfcer-core method pdfcer_core::ocr::editable::OcrLayerOptions::with_output
+pdfcer-core method pdfcer_core::ocr::editable::SuspectReason::describe
 pdfcer-core method pdfcer_core::ocr::engine_layout::LayoutEngine::detect
 pdfcer-core method pdfcer_core::ocr::engine_layout::LayoutEngine::from_model_dir
 pdfcer-core method pdfcer_core::ocr::engine_layout::LayoutEngine::score_threshold
@@ -6311,6 +6339,8 @@ pdfcer-core struct pdfcer_core::ocr::addon_manifest::OcrModelManifest
 pdfcer-core struct pdfcer_core::ocr::addons::EngineMatch
 pdfcer-core struct pdfcer_core::ocr::addons::OcrModel
 pdfcer-core struct pdfcer_core::ocr::addons::OcrModelDiscovery
+pdfcer-core struct pdfcer_core::ocr::editable::EditableTextOptions
+pdfcer-core struct pdfcer_core::ocr::editable::ImageRewrite
 pdfcer-core struct pdfcer_core::ocr::engine_layout::LayoutEngine
 pdfcer-core struct pdfcer_core::ocr::engine_ocrcer::OcrcerEngine
 pdfcer-core struct pdfcer_core::ocr::engine_ocrs::OcrsEngine
@@ -7662,6 +7692,19 @@ pdfcer-core variant pdfcer_core::ocr::addons::DiscoveryNote::UnknownKeys
 pdfcer-core variant pdfcer_core::ocr::addons::DiscoveryNote::Unreadable
 pdfcer-core variant pdfcer_core::ocr::addons::VerifyError::Mismatch
 pdfcer-core variant pdfcer_core::ocr::addons::VerifyError::Unreadable
+pdfcer-core variant pdfcer_core::ocr::editable::EditableImageCodec::Flate
+pdfcer-core variant pdfcer_core::ocr::editable::EditableImageCodec::MatchSource
+pdfcer-core variant pdfcer_core::ocr::editable::OcrOutput::EditableText
+pdfcer-core variant pdfcer_core::ocr::editable::OcrOutput::SearchableImage
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::BusyBackground
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::ImageDrawnTwice
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::ImageUnsupported
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::LowConfidence
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::NoGlyph
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::NoInk
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::NotOverImage
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::OverlappingImages
+pdfcer-core variant pdfcer_core::ocr::editable::SuspectReason::Unscored
 pdfcer-core variant pdfcer_core::ocr::engine_ocrs::OcrsEngineError::Image
 pdfcer-core variant pdfcer_core::ocr::engine_ocrs::OcrsEngineError::ImageSize
 pdfcer-core variant pdfcer_core::ocr::engine_ocrs::OcrsEngineError::ModelLoad
@@ -7690,19 +7733,21 @@ pdfcer-core variant pdfcer_core::ocr::json_lite::Json::Str
 pdfcer-core variant pdfcer_core::ocr::layer::ExistingLayers::Refuse
 pdfcer-core variant pdfcer_core::ocr::layer::ExistingLayers::Replace
 pdfcer-core variant pdfcer_core::ocr::layer::ExistingLayers::Stack
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::CertificationForbidsChange
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::DuplicatePage
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::Encrypted
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::HiddenObjects
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::LayerNotFound
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::LayerPresent
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::NotALayerGroup
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::NothingToWrite
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::ObjectNumbersExhausted
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::PageIndex
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::PageTree
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::Unsupported
-pdfcer-core variant pdfcer_core::ocr::layer::OcrLayerError::Write
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::CertificationForbidsChange
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::DuplicatePage
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::EditableLayerPresent
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::Encrypted
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::HiddenObjects
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::ImageEncodeFailed
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::LayerNotFound
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::LayerPresent
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::NotALayerGroup
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::NothingToWrite
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::ObjectNumbersExhausted
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::PageIndex
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::PageTree
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::Unsupported
+pdfcer-core variant pdfcer_core::ocr::layer_error::OcrLayerError::Write
 pdfcer-core variant pdfcer_core::ocr::layout::LayoutClass::Abstract
 pdfcer-core variant pdfcer_core::ocr::layout::LayoutClass::Algorithm
 pdfcer-core variant pdfcer_core::ocr::layout::LayoutClass::AsideText
