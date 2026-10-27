@@ -653,6 +653,38 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O335 — **WAITING ON THE ENGINE** — a freehand line can end in an arrowhead
+
+Relayed from a Reddit user by him: *"Also would love to edit how many segmentations a drawn line has (quality) and a drawn arrow (basically a line and two angled lines automatically added at the end)"*
+
+**Scope.** Drawing an arrow: a drawn line that ends in two angled head lines added automatically.
+
+**Status.** Markup ▸ Shapes ▸ Arrow draws a straight arrow today, and Format ▸ Markup's Arrowheads sets heads on a selected line. A freehand or multi-segment path cannot carry heads: the engine writes `/LE` only on a straight `/Line`, and freehand ink has no arrowheads in the PDF standard. Requested as G235: arrowheads on a polyline, which a drawn stroke can then become. No GUI workaround.
+
+## O334 — **BUILT** — choose how finely a freehand stroke is kept (its quality)
+
+Same message as O335, first half.
+
+**Scope.** A setting for how many points (segments) a freehand stroke keeps: fewer for a lighter, straighter line, more for a closer follow of the hand.
+
+**Status.** Built: Markup ▸ Style ▸ *Detail*, a percentage. 100% keeps every point the mouse reported; lower values straighten wobble into fewer segments, never further from the hand than half the line's width; 50% is the setting strokes always had. Driven: `freehand_detail_sets_how_many_segments_a_stroke_keeps` (the same wave kept 51 of 60 points at 50% and 60 of 60 at 100%). NOT VERIFIED by him.
+
+## O333 — **WAITING ON THE ENGINE** — files annotated or drawn on in Microsoft Edge show no annotations
+
+Relayed from a Reddit user by him: *"I really like it but all files annotated or drawn on with edge don't show. Is that only happening for me?"*
+
+**Scope.** Ink, highlights and notes saved by Edge's PDF viewer show on the page as they do in Edge and Acrobat.
+
+**Status.** Likely cause, unconfirmed without a real Edge file: Edge saves ink and highlights without their own drawing (an appearance stream), and the engine deliberately draws an annotation only from that drawing. Measured on built samples: with the drawing, ink, highlights and text boxes show; without it they do not, and the status line says *"N annotations carry no appearance and are not drawn"*. Requested as G236: draw these from the annotation's own points and colour, as Acrobat and Chrome do. A real Edge-saved file from the user would confirm it. No GUI workaround.
+
+## O332 — **INVESTIGATING** — once a shape's points are shown, a single click on one deletes it, as in Inkscape
+
+His words: *"did our ability to delete points regress? We have it set so you need to double click a point to delete, which once they are shown should be a single click on them like it is in inkscape."*
+
+**Scope.** With points shown, one click on a point removes it, without disturbing click-to-select or drag-to-move. Also answers whether the double click is a regression.
+
+**Status.** Being established: every route that deletes a point today and its history.
+
 ## O331 — **WAITING ON THE ENGINE** — OCR that makes the scan's text editable, as Acrobat's "Editable Text and Images"
 
 His words: *"when I OCRed a document in Acrobat Pro there was a option where it did the ocr in such a way that when you edit the ocr text it edits the bitmap to reflect the changes as well. I tried opening it in pdfcer-gui and it supported the editing feature that Acrobat had created the ocr document with, but I don't see an option for us to create and ocr document with the same capability. Does it exist in the pdfcer engine and just not implemented in our GUI?"*

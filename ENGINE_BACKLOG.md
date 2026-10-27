@@ -712,6 +712,8 @@ channel. They join a verdict section when the engine answers.
 - **G232** — `page_decorations` drops an undecodable form's decorations without a count, so the formatted copy cannot disclose missing underline. Answered in v0.100.0 as `RichTextOutcome::decoration_forms_unread` (the per-page `pdfcer_core::text_edit::decoration::PageDecorations::forms_unread`, summed by the engine; the shell reads the outcome, not the page count), counted on the status line by `text::clipboard::rich_copied` and traced on `text-copied`.
 - **G233** — a stroke a device pixel wide or thinner inked curves and diagonals at 0.71–0.96 of its straight weight, and the CMYK buffer outlined strokes at scale 1 (O330). Answered in v0.100.0: every paint route outlines and dashes at the zoom's resolution. No GUI action; the renderer is reached through `pdfcer_render`.
 - **G234** — OCR writes only an invisible layer over an untouched scan; nothing removes recognised words from the image and writes them as visible, editable text, as Acrobat's *Editable Text and Images* does (O331). Wanted; no GUI workaround.
+- **G235** — line endings exist only on a straight `/Line`; a polyline (and so a drawn stroke) cannot end in an arrowhead, though the standard allows `/LE` on `/PolyLine` (O335). Wanted; no GUI workaround.
+- **G236** — an ink, highlight or text-box annotation with no `/AP` is not drawn (`R43`), though its own `/InkList`, `/QuadPoints` or `/DA` supplies the geometry; Edge-annotated files show blank (O333). An engine policy decision; no GUI workaround.
 
 ## Filed requests for Ken's Batch 2 (O289) — not verdict rows
 

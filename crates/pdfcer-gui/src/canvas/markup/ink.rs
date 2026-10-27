@@ -569,6 +569,29 @@ mod tests {
         }
     }
 
+    /// **The guarantee holds at EVERY detail setting**: the loosest tolerance
+    /// is the half-width, never beyond it.
+    #[test]
+    fn the_guarantee_holds_at_every_detail_setting() {
+        use super::super::pen::{MAX_DETAIL, MAX_WIDTH_PTS, MIN_DETAIL, MIN_WIDTH_PTS, Pen};
+        for width in [MIN_WIDTH_PTS, super::super::PEN_WIDTH_PTS, MAX_WIDTH_PTS] {
+            for detail in MIN_DETAIL..=MAX_DETAIL {
+                let pen = Pen {
+                    width_pts: width,
+                    detail,
+                    ..Pen::default()
+                };
+                #[allow(clippy::cast_possible_truncation)]
+                let half_width = (width as f32) / 2.0;
+                let tolerance = pen.simplify_tolerance_pts();
+                assert!(
+                    (0.0..=half_width + 1e-6).contains(&tolerance),
+                    "detail {detail} at {width} pt gives {tolerance} pt, outside 0..={half_width}"
+                );
+            }
+        }
+    }
+
     /// The shipped constant and the shipped pen agree.
     #[test]
     fn the_shipped_constant_matches_the_shipped_pen() {

@@ -9,7 +9,9 @@ use egui::Ui;
 
 use crate::entry;
 use crate::markuppalette as palette;
-use crate::markuppen::{MAX_WIDTH_PTS, MIN_OPACITY, MIN_WIDTH_PTS, Pen, PenSlot};
+use crate::markuppen::{
+    MAX_DETAIL, MAX_WIDTH_PTS, MIN_DETAIL, MIN_OPACITY, MIN_WIDTH_PTS, Pen, PenSlot,
+};
 use crate::text::markup as t;
 
 /// The region this control publishes, so a check can find and drive it.
@@ -20,6 +22,8 @@ pub const REGION_HIGHLIGHTER: &str = "markup.style.highlighter"; // ui-text-exem
 pub const REGION_WIDTH: &str = "markup.style.width"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the opacity.
 pub const REGION_OPACITY: &str = "markup.style.opacity"; // ui-text-exempt: trace region name, never displayed
+/// As [`REGION_INK`], for the freehand detail.
+pub const REGION_DETAIL: &str = "markup.style.detail"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the line-style chooser.
 pub const REGION_DASH: &str = "markup.style.dash"; // ui-text-exempt: trace region name, never displayed
 /// As [`REGION_INK`], for the draw-on-the-page switch.
@@ -124,6 +128,26 @@ pub fn show(ui: &mut Ui, pen: &mut Pen) {
         crate::diag::ui_rect(REGION_OPACITY, opacity_response.rect);
         pen.opacity = (percent / 100.0).clamp(MIN_OPACITY, 1.0);
         if (pen.opacity - before).abs() > f64::EPSILON {
+            trace(*pen);
+        }
+
+        // Freehand detail: how many segments a drawn stroke keeps. Only the
+        // freehand pen simplifies, so the tooltip says it touches nothing else.
+        let before = pen.detail;
+        let (widget, refusal) = entry::drag_value(ui, &mut pen.detail, entry::Kind::Number(&["%"]));
+        let detail_response = refusal
+            .show(
+                ui.add(
+                    widget
+                        .speed(1.0)
+                        .range(MIN_DETAIL..=MAX_DETAIL)
+                        .prefix(t::detail_prefix())
+                        .suffix(t::opacity_suffix()),
+                ),
+            )
+            .on_hover_text(t::pen_detail_tooltip());
+        crate::diag::ui_rect(REGION_DETAIL, detail_response.rect);
+        if pen.detail != before {
             trace(*pen);
         }
 
@@ -314,7 +338,7 @@ fn trace(pen: Pen) {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             "markup-pen ink={} highlighter={} width_pts={} opacity={} ca={:?} \
-             dash={:?} d={:?} on_page={}",
+             dash={:?} d={:?} on_page={} detail={} tolerance_pts={}",
             crate::colourpick::trace_key(pen.ink),
             crate::colourpick::trace_key(pen.highlighter),
             pen.width_pts,
@@ -335,6 +359,8 @@ fn trace(pen: Pen) {
             pen.dash,
             pen.dash_option().map(|d| d.pattern().to_vec()),
             pen.on_page,
+            pen.detail,
+            pen.simplify_tolerance_pts(),
         )
     });
 }
@@ -351,6 +377,7 @@ mod tests {
             REGION_HIGHLIGHTER,
             REGION_WIDTH,
             REGION_OPACITY,
+            REGION_DETAIL,
             REGION_DASH,
             REGION_PALETTE,
             REGION_MORE_COLOURS,

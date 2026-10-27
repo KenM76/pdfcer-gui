@@ -58,6 +58,7 @@ pub mod compact_target;
 pub mod compact_version;
 pub mod compact_web;
 pub mod filelink_prompt;
+pub mod freehand_detail;
 pub mod link_cmyk;
 pub mod objects_multiselect;
 pub mod pen_cmyk;

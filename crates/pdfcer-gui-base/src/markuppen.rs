@@ -203,7 +203,25 @@ pub struct Pen {
     /// ordinary page objects the object tool moves and deletes. Text boxes,
     /// sticky notes and stamps have no such form and stay comments.
     pub on_page: bool,
+    /// **How closely a freehand stroke keeps to the hand's path**, as a
+    /// percentage from [`MIN_DETAIL`] (smoothest, fewest segments) to
+    /// [`MAX_DETAIL`] (every distinct pointer sample kept).
+    ///
+    /// [`DEFAULT_DETAIL`] reproduces the quarter-width tolerance freehand
+    /// strokes have always been simplified with, so an operator who never
+    /// touches the control authors the same bytes. See
+    /// [`Self::simplify_tolerance_pts`] for the mapping and its bound.
+    pub detail: u8,
 }
+
+/// The smoothest freehand stroke offered: tolerance of half the width.
+pub const MIN_DETAIL: u8 = 0;
+
+/// Every distinct pointer sample kept: zero tolerance.
+pub const MAX_DETAIL: u8 = 100;
+
+/// The quarter-width tolerance, at the middle of the range.
+pub const DEFAULT_DETAIL: u8 = 50;
 
 /// The thinnest pen offered.
 pub const MIN_WIDTH_PTS: f64 = 0.25;
@@ -248,16 +266,25 @@ impl Default for Pen {
             // existed.
             dash: crate::linestyle::LineStyle::Solid,
             on_page: false,
+            detail: DEFAULT_DETAIL,
         }
     }
 }
 
 impl Pen {
     /// **The freehand simplification tolerance this pen implies**, in PDF
-    /// points — a quarter of the stroke width.
+    /// points: a quarter of the stroke width at [`DEFAULT_DETAIL`], scaling
+    /// linearly to zero at [`MAX_DETAIL`] and to half the width at
+    /// [`MIN_DETAIL`].
+    ///
+    /// Half the width is the bound: a simplified centreline within half the
+    /// stroke width of every sample still lies inside the line the hand drew,
+    /// so the smoothest setting straightens wobble without leaving the stroke.
     #[must_use]
     pub fn simplify_tolerance_pts(self) -> f32 {
-        (self.width_pts as f32) / 4.0
+        let detail = f32::from(self.detail.min(MAX_DETAIL));
+        let quarter = (self.width_pts as f32) / 4.0;
+        quarter * (f32::from(MAX_DETAIL) - detail) / f32::from(DEFAULT_DETAIL)
     }
 
     /// The colour this kind is authored in.
@@ -516,6 +543,33 @@ mod tests {
                 pen.simplify_tolerance_pts()
             );
         }
+    }
+
+    /// **DETAIL SPANS ZERO TO HALF THE WIDTH**, and the default is unchanged.
+    #[test]
+    fn detail_spans_every_sample_to_half_the_width() {
+        let at = |detail| {
+            Pen {
+                width_pts: 2.0,
+                detail,
+                ..Pen::default()
+            }
+            .simplify_tolerance_pts()
+        };
+        assert!(
+            at(MAX_DETAIL).abs() < 1e-6,
+            "full detail keeps every sample"
+        );
+        assert!(
+            (at(DEFAULT_DETAIL) - 0.5).abs() < 1e-6,
+            "default is a quarter width"
+        );
+        assert!(
+            (at(MIN_DETAIL) - 1.0).abs() < 1e-6,
+            "smoothest is half the width"
+        );
+        assert!(at(25) > at(75), "less detail means a looser tolerance");
+        assert_eq!(Pen::default().detail, DEFAULT_DETAIL);
     }
 
     /// A pen with eight distinguishable colours, one per slot.
