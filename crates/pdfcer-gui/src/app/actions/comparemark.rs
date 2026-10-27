@@ -28,9 +28,11 @@ pub(super) fn apply(doc: &mut OpenDoc, prefs: &Prefs, marks: &ComparisonMarks) {
 /// Mark the comparison. The sentences returned reach the status line through
 /// the funnel.
 ///
-/// [`ResultError::Summary`] comes after the marks, which the engine keeps
-/// as one undo entry; it is returned as `Ok` with the failure as a sentence,
-/// because the funnel refreshes the pages only on `Ok`.
+/// A failure after the engine authored marks (`MarkComparisonError::authored`,
+/// measured on the undo stack, never inferred from the variant) is returned
+/// as `Ok` with the failure as a sentence, because the funnel refreshes the
+/// pages only on `Ok`; one Undo removes the partial marking. `mark_regions`
+/// is one entry by itself and authors nothing when it fails.
 fn mark(
     session: &mut EditSession,
     prefs: &Prefs,
@@ -43,18 +45,21 @@ fn mark(
         .with_labels(older, newer);
     let regions = (!marks.regions.is_empty()).then_some(marks.regions.as_slice());
     let outcome = match &marks.report {
-        Some(changes) => mark_comparison(session, regions, changes, &options).map(|done| {
-            let (a, u) = done
-                .regions
-                .as_ref()
-                .map_or((0, 0), |r| (r.annotations, r.unmarked.len()));
-            (
-                a + done.changes.annotations,
-                u + done.changes.unmarked.len(),
-            )
-        }),
+        Some(changes) => mark_comparison(session, regions, changes, &options)
+            .map(|done| {
+                let (a, u) = done
+                    .regions
+                    .as_ref()
+                    .map_or((0, 0), |r| (r.annotations, r.unmarked.len()));
+                (
+                    a + done.changes.annotations,
+                    u + done.changes.unmarked.len(),
+                )
+            })
+            .map_err(|e| (e.error, e.authored)),
         None => mark_regions(session, &marks.regions, &options)
-            .map(|r| (r.annotations, r.unmarked.len())),
+            .map(|r| (r.annotations, r.unmarked.len()))
+            .map_err(|e| (e, false)),
     };
     let top = match session.undo_kinds().next() {
         Some(CommandKind::MarkComparison) => "mark-comparison", // ui-text-exempt: a trace token
@@ -63,14 +68,14 @@ fn mark(
     };
     let (annotations, unmarked) = match outcome {
         Ok(counts) => counts,
-        Err(e @ ResultError::Summary(_)) if !crate::app::unlock::Refusal::encrypted(&e) => {
+        Err((e, true)) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("compare-marked partial=1 top={top}")
             });
             return Ok(vec![t::mark_failed(&e.to_string())]);
         }
-        Err(e) => return Err(e),
+        Err((e, false)) => return Err(e),
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI

@@ -16,11 +16,13 @@ a stack at `MAX_UNDO_DEPTH`. The shell folds nothing.
 
 ## Partial failure
 
-The engine's error says where it stopped. `ResultError::Summary` comes after
-every mark, and the engine keeps them as one entry, so the shell refreshes the
-pages and the status line says marking stopped and that one Undo removes the
-marks. `ResultError::Pages` comes before anything is authored and is the
-funnel's ordinary refusal, as is an encrypted document.
+The shell reads `MarkComparisonError::authored`, which the engine measures on
+the undo stack, never the error's variant (`ResultError::Pages` can come from
+either stage). When it is true the marks made so far are one entry, so the
+shell refreshes the pages and the status line says marking stopped and that
+one Undo removes the marks. When it is false the error is the funnel's
+ordinary refusal, as is an encrypted document. `mark_regions` authors nothing
+when it fails.
 
 ## Trace
 
