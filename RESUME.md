@@ -53,7 +53,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 **v0.97.0 wired:** nothing to build. A block sharing its text object (G226) now opens; its disclosure and the remaining `TextObjectNotSeparable` refusal reach the shell through the existing routes. O307 driven on SW41177. Shipped in `v0.5.0-dev.20261024.1`.
 
-**`v0.5.0-dev.20261027.2`** is engine v0.100.0 (d3996c09), shell 3cf4927a: G231, G232, G233, BMP pixel-offset repair; O331/G234 filed. Zip `pdfcergui-20261027-1226-d3996c0-3cf4927a.zip`; OneDrive slot `pdfcer-gui2` holds it, `pdfcer-gui1` holds `.20261027.1`. Driven: the six `affected-checks.py` selected, all pass; `a_copied_paragraph_pastes_as_one_formatted_paragraph` passes and traces `decoration_forms_unread=0`. Gates 86/86 after the backlog headings were re-walked.
+**`v0.5.0-dev.20261027.2`** is engine v0.100.0 (d3996c09), shell 3cf4927a: G231, G232, G233, BMP pixel-offset repair; O331/G234 filed. Zip `pdfcergui-20261027-1226-d3996c0-3cf4927a.zip`; OneDrive slot `pdfcer-gui2` holds it, `pdfcer-gui1` holds `.20261027.1`. Driven: the six `affected-checks.py` selected, all pass; `a_copied_paragraph_pastes_as_one_formatted_paragraph` passes and traces `decoration_forms_unread=0`. Full gate run 85/86; the one FAIL, `walk-engine-backlog` (stale headings), re-run alone green after re-walking, with the other backlog gates.
 
 **v0.100.0 wired:** G231 (`app::actions::comparemark` reads `MarkComparisonError::authored`), G232 (copied text counts embedded drawings whose underline could not be read), the BMP pixel-offset repair named in the picture notes, and G233 (thin strokes, engine-only; O330 awaits his check on his file). Not driven: none of the three GUI changes has a fixture that triggers it.
 
