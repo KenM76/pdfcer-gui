@@ -122,7 +122,10 @@ pub fn copy_snapshot(doc: &crate::opendoc::OpenDoc) -> Result<SnapshotCopy, Refu
             Ok((bytes, report)) => cut_payload(bytes, &report, &options, dpi_f, keep_text)?,
             Err(error) => {
                 let rendered = render_region(&view, &region, &options, dpi_f)?;
-                (picture(rendered, dpi_f)?, Vectors::Refused(error.to_string()))
+                (
+                    picture(rendered, dpi_f)?,
+                    Vectors::Refused(error.to_string()),
+                )
             }
         }
     };
@@ -214,7 +217,10 @@ fn cut_payload(
     let vectors = Vectors::Cut {
         glyphs_removed: report.glyphs_removed,
         notes: report.notes.clone(),
-        blends_flattened: svg.outcome.blends_flattened.max(emf.outcome.blends_flattened),
+        blends_flattened: svg
+            .outcome
+            .blends_flattened
+            .max(emf.outcome.blends_flattened),
         text,
     };
     let mut payload = raster_at(svg.svg, emf.emf, rendered.pixmap, dpi)?;
@@ -333,8 +339,9 @@ mod tests {
         };
         let region = cropped(&pages[0], blank).expect("the box is on the page");
         let options = RenderOptions::default();
-        let clipped = pdfcer_render::svg::export_svg(&doc, &region, &options, &svg_options(72.0, false))
-            .expect("the cropped page exports");
+        let clipped =
+            pdfcer_render::svg::export_svg(&doc, &region, &options, &svg_options(72.0, false))
+                .expect("the cropped page exports");
         assert!(
             paths(&clipped.svg) > 0,
             "the uncut page still carries its drawing"

@@ -12,12 +12,12 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/clipboard/richtext.md`.
 
-use pdfcer_core::view::DocumentView;
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::text_edit::decoration::page_decorations;
 use pdfcer_core::text_edit::model::{PageFonts, RichText, RichTextSources};
 use pdfcer_core::text_edit::{EditableTextModel, TextPosition, reflow_recognition_options};
 use pdfcer_core::text_extract::PageText;
+use pdfcer_core::view::DocumentView;
 
 use super::place::{Refusal, put_entries};
 use crate::opendoc::OpenDoc;

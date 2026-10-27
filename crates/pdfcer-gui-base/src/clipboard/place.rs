@@ -85,7 +85,11 @@ pub(super) fn svg_options(dpi: f32, keep_text: bool) -> pdfcer_render::svg::SvgO
     pdfcer_render::svg::SvgOptions::default()
         .with_raster_dpi(dpi)
         .with_background(None)
-        .with_text(if keep_text { SvgText::KeepText } else { SvgText::Outlines })
+        .with_text(if keep_text {
+            SvgText::KeepText
+        } else {
+            SvgText::Outlines
+        })
         // Word ignores `mix-blend-mode`, so a highlight would paste opaque
         // over its text; the clipboard's SVG is for Word.
         .with_flatten_blends(true)
@@ -98,7 +102,11 @@ pub(super) fn emf_options(dpi: f32, keep_text: bool) -> pdfcer_render::emf::EmfO
     pdfcer_render::emf::EmfOptions::default()
         .with_raster_dpi(dpi)
         .with_background(None)
-        .with_text(if keep_text { EmfText::KeepText } else { EmfText::Outlines })
+        .with_text(if keep_text {
+            EmfText::KeepText
+        } else {
+            EmfText::Outlines
+        })
 }
 
 /// The whole current page, in every format [`ORDER`] names.
@@ -116,10 +124,12 @@ fn page_payload(
     // surface showing the file as it was on disk.
     let view = doc.session.view();
 
-    let svg = pdfcer_render::svg::export_svg_view(&view, page, options, &svg_options(COPY_DPI, false))
-        .map_err(|error| Refusal::Render(error.to_string()))?;
-    let emf = pdfcer_render::emf::export_emf_view(&view, page, options, &emf_options(COPY_DPI, false))
-        .map_err(|error| Refusal::Render(error.to_string()))?;
+    let svg =
+        pdfcer_render::svg::export_svg_view(&view, page, options, &svg_options(COPY_DPI, false))
+            .map_err(|error| Refusal::Render(error.to_string()))?;
+    let emf =
+        pdfcer_render::emf::export_emf_view(&view, page, options, &emf_options(COPY_DPI, false))
+            .map_err(|error| Refusal::Render(error.to_string()))?;
     let rendered = pdfcer_render::render_page_with_view(
         &view,
         page,
@@ -177,10 +187,12 @@ fn selection_bytes(
     // The SAME options the page route uses — see [`render_options`] for why
     // the clip is not exempt from the settings funnel even though it carries no
     // annotations and no layers for two of those fields to describe.
-    let svg = pdfcer_render::svg::export_svg(&clipped, page, options, &svg_options(COPY_DPI, false))
-        .map_err(|error| Refusal::Render(error.to_string()))?;
-    let emf = pdfcer_render::emf::export_emf(&clipped, page, options, &emf_options(COPY_DPI, false))
-        .map_err(|error| Refusal::Render(error.to_string()))?;
+    let svg =
+        pdfcer_render::svg::export_svg(&clipped, page, options, &svg_options(COPY_DPI, false))
+            .map_err(|error| Refusal::Render(error.to_string()))?;
+    let emf =
+        pdfcer_render::emf::export_emf(&clipped, page, options, &emf_options(COPY_DPI, false))
+            .map_err(|error| Refusal::Render(error.to_string()))?;
     // `render_page_with`, the four-argument form, NOT the three-argument
     // `render_page` that `canvas::clipimage` uses on the same clip. That one
     // makes a thumbnail for an internal paste, where the operator's colour

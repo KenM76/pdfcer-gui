@@ -435,7 +435,9 @@ pub fn unmarked(count: usize) -> String {
 /// Marking stopped after some marks were written.
 #[must_use]
 pub fn mark_failed(why: &str) -> String {
-    format!("Marking stopped part way, and the marks made so far were kept: {why}. One Undo removes them.")
+    format!(
+        "Marking stopped part way, and the marks made so far were kept: {why}. One Undo removes them."
+    )
 }
 
 /// Status line after marking.

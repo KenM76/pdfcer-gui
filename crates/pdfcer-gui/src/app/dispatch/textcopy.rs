@@ -7,7 +7,6 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/textcopy.md`.
 
-
 use crate::app::PdfcerApp;
 use crate::app::state::Status;
 use crate::clipboard::richtext;
@@ -35,9 +34,9 @@ pub fn dispatch(app: &mut PdfcerApp, id: &str) {
                 let detail = doc.page_text_failure().map(|e| e.clone());
                 crate::diag::trace(|| match &detail {
                     // ui-text-exempt: diagnostic trace, never displayed
-                    Some(reason) => format!(
-                        "command-declined id={id} reason=extract-failed detail={reason:?}"
-                    ),
+                    Some(reason) => {
+                        format!("command-declined id={id} reason=extract-failed detail={reason:?}")
+                    }
                     // ui-text-exempt: diagnostic trace, never displayed
                     None => format!("command-declined id={id} reason=no-such-page"),
                 });

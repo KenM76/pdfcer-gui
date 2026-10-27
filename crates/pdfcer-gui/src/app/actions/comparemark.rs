@@ -58,8 +58,8 @@ fn mark(
     };
     let top = match session.undo_kinds().next() {
         Some(CommandKind::MarkComparison) => "mark-comparison", // ui-text-exempt: a trace token
-        Some(_) => "other", // ui-text-exempt: a trace token
-        None => "none",     // ui-text-exempt: a trace token
+        Some(_) => "other",                                     // ui-text-exempt: a trace token
+        None => "none",                                         // ui-text-exempt: a trace token
     };
     let (annotations, unmarked) = match outcome {
         Ok(counts) => counts,

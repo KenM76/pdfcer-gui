@@ -65,12 +65,7 @@ pub fn dpi(ui: &mut Ui, prefs: &mut Prefs) {
 
 /// The choice of forms a snapshot copy places.
 pub fn form(ui: &mut Ui, prefs: &mut Prefs) {
-    widgets::header(
-        ui,
-        t::form_title(),
-        t::form_silence(),
-        t::radius(),
-    );
+    widgets::header(ui, t::form_title(), t::form_silence(), t::radius());
     let mut form = prefs.snapshot.form();
     let response = ui
         .vertical(|ui| {
@@ -86,8 +81,7 @@ pub fn form(ui: &mut Ui, prefs: &mut Prefs) {
         })
         .response;
     prefs.snapshot.set_form(form);
-    if ui.is_visible() && crate::diag::ui_rect_visible(FORM_REGION, response.rect, ui.clip_rect())
-    {
+    if ui.is_visible() && crate::diag::ui_rect_visible(FORM_REGION, response.rect, ui.clip_rect()) {
         let token = form.token();
         // ui-text-exempt: diagnostic trace, never displayed.
         crate::diag::trace_on_change("snapshot-form-setting", || format!("form={token}"));

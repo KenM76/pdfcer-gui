@@ -141,7 +141,10 @@ fn kept_text(kept: KeptText) -> String {
         if kept.svg_text == 0 && kept.emf_text == 0 {
             return String::new();
         }
-        return format!(" The text was kept as text ({}).", runs(kept.svg_text.max(kept.emf_text)));
+        return format!(
+            " The text was kept as text ({}).",
+            runs(kept.svg_text.max(kept.emf_text))
+        );
     }
     format!(
         " Some text could not be kept as text and stays as outlines: {} of {} in the SVG form, \
