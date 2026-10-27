@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 2f4badbb3d682eb21aff11dbbd89c18c9d5f98a6
+# baseline: 14cc5ee6480662e44a10e8992ec751c9fc1edc71
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 9957
+# items: 10173
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -64,11 +64,15 @@ exempt pdfcer-core field pdfcer_core::ocr::vl_page::TableEdges::source -- how th
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::kept -- the value pdfcer kept under the policy in force. Reached here as `LoadAnomaly::DuplicateDictKey::kept`; see the two lines above. It is the half the operator sees in the disclosure sentence -- `pdfcer kept /UseOutlines` -- and the shell renders it from the tagged anomaly, never from the parser.
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::key -- the repeated key without its solidus. Reached here as `LoadAnomaly::DuplicateDictKey::key` and printed in Document properties today; see the struct's exemption above for why the parser-level copy is the wrong one to hold. Exempted per field rather than wildcarded on the struct, deliberately: if the engine ever adds a fourth fact to the record that `LoadAnomaly` does NOT mirror, that is exactly the divergence this project wants to cost one line and one look.
+exempt pdfcer-core field pdfcer_core::redact::RedactOptions::overlay_off_page -- the switch that restores overlay boxes off the page; the shell keeps the default, because an off-page box is the off-page content the off-page flow exists to remove.
 exempt pdfcer-core field pdfcer_core::redact::RedactionReport::content_streams_decoupled -- the engine words this count itself in `RedactionReport::notes`, which `dialogs::redact::disclosures::engine_notes` lists in full; reading the counter too would be a second sentence for one fact.
+exempt pdfcer-core field pdfcer_core::redact::RedactionReport::overlay_off_page_skipped -- the engine words this count itself in `RedactionReport::notes`, which `dialogs::redact::disclosures::engine_notes` lists in full; reading the counter too would be a second sentence for one fact.
+exempt pdfcer-core field pdfcer_core::redact::RedactionReport::overlay_trimmed_to_page -- the engine words this count itself in `RedactionReport::notes`, which `dialogs::redact::disclosures::engine_notes` lists in full; reading the counter too would be a second sentence for one fact.
 exempt pdfcer-core field pdfcer_core::redact::RedactionReport::shadings_cut -- the engine words this count itself in `RedactionReport::notes`, which `dialogs::redact::disclosures::engine_notes` lists in full; reading the counter too would be a second sentence for one fact.
 exempt pdfcer-core field pdfcer_core::text_edit::block_text::BlockEditReport::inherited_characters -- the count behind the engine's own disclosure sentence ("the block's N looks are kept ... M new character(s) take the look of the character before them"), which `app::actions::blocktext` shows verbatim from `report.disclosures`.
 exempt pdfcer-core field pdfcer_core::text_edit::edit::TextEditPreview::cid_to_gid -- the glyph map for drawing an augmented composite font from `font_program`. This shell's text preview places the typed text at the engine's glyph positions and reads neither `font_program` nor this map, so there is nothing here for it to feed.
 exempt pdfcer-core field pdfcer_core::text_edit::format::FormatRequest::set_drawn_size -- the field under `FormatRequest::drawn_size`, which `StyleChange::stamp` calls for every size the operator types; the shell sets it through the builder and never reads it back.
+exempt pdfcer-core field pdfcer_core::text_edit::model::BlockDiagnostics::paragraph_breaks_by_blank_line -- one of paragraph recognition's internal counts; this shell reads no `BlockDiagnostics` field, and a recognised paragraph reaches the operator as the paragraph itself.
 exempt pdfcer-core field pdfcer_core::text_edit::reflow::ReflowDiagnostics::derived_word_breaks -- the count behind the engine's own disclosure sentence ("reflow: N word break(s) inferred from glyph spacing ..."), which reaches the operator through the diagnostics' `disclosures`.
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::hidden -- the object numbers whose winning xref entry came from the /XRefStm stream. This is the ONE fact in the hybrid cluster that `WriteError::HybridFullRewrite` does not already carry, and it is still not actionable: an operator cannot do anything with a set of object numbers, and the surface that would need them -- a structure report saying WHICH parts of a hybrid file a full rewrite would drop -- does not exist and is not planned. See the struct's exemption above, which names the condition for deleting both.
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::stream_unreadable -- a did-the-XRefStm-parse flag. Its ONLY consumer is `is_reproducible()`, which is the gate on `writer::save`'s full rewrite, and this shell already renders the outcome of that gate as `WriteError::HybridFullRewrite` (O157). Reading the flag would let the shell predict the refusal one step earlier; it would not let it say anything new, and a prediction that disagreed with the writer's own check would be a second description of the rule.
@@ -92,6 +96,7 @@ exempt pdfcer-core method pdfcer_core::ocr::vl_page::TableEdges::new -- how the 
 exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys -- every duplicate key one `Parser` resolved. This shell never constructs a `Parser` and never will: it opens documents through `Document::load`, which drives the parser internally, tags each record with its object and hands the result out as `Document::load_anomalies()` -- the call `app::status::anomalies` actually makes. Reading the parser's own list would require standing up a second parse of the same bytes, and would produce a report that disagreed with the one on screen the moment the two parses were given different `LoadOptions`.
 exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys_resolved -- the count of the list above. The shell's census clause in the status bar counts the same thing, derived from `load_anomalies()` by matching on the variant, so the number an operator reads is a count of the anomalies actually being itemised in Document properties -- which is the property that matters and the one a separate counter would eventually break. Same `Parser`-receiver argument as the line above.
 exempt pdfcer-core method pdfcer_core::parser::Parser::with_duplicate_key_policy -- the parser-level opt-in to `DuplicateKeyPolicy`. The capability behind it IS wanted here and is filed as such: ENGINE_BACKLOG.md carries `Offer the operator the value pdfcer discarded` under `wanted`, naming `LoadOptions::with_duplicate_keys(policy)` -- the DOCUMENT-level builder, which is the one a re-load of the same bytes goes through. This parser-level twin is the same switch one layer down, on a type this shell never holds, and wiring it would mean re-implementing `Document::load` to reach a policy the loader already forwards. NOTE the trap the backlog row also records: `DuplicateKeyPolicy`'s own `Default` is `Refuse`, which is the behaviour that cost the operator his 46 KB drawing -- so neither builder may ever be called with `DuplicateKeyPolicy::default()`.
+exempt pdfcer-core method pdfcer_core::redact::RedactOptions::with_overlay_off_page -- the builder for the switch that restores overlay boxes off the page; the shell keeps the default, because an off-page box is new off-page content.
 exempt pdfcer-core method pdfcer_core::signature_verify::SuppliedRevocation::crls -- the builder for revocation evidence the operator supplies by hand, taken by `verify_all_with_revocation`. The Signatures panel reads the document's own `/DSS` evidence through `verify_all_with_trust` and offers no hand-supplied file yet (ENGINE_BACKLOG.md, the CRL and OCSP row); delete this exemption when that route is built.
 exempt pdfcer-core method pdfcer_core::signature_verify::SuppliedRevocation::ocsps -- the builder for revocation evidence the operator supplies by hand, taken by `verify_all_with_revocation`. The Signatures panel reads the document's own `/DSS` evidence through `verify_all_with_trust` and offers no hand-supplied file yet (ENGINE_BACKLOG.md, the CRL and OCSP row); delete this exemption when that route is built.
 exempt pdfcer-core method pdfcer_core::signature_verify::SuppliedRevocation::with_crl -- the builder for revocation evidence the operator supplies by hand, taken by `verify_all_with_revocation`. The Signatures panel reads the document's own `/DSS` evidence through `verify_all_with_trust` and offers no hand-supplied file yet (ENGINE_BACKLOG.md, the CRL and OCSP row); delete this exemption when that route is built.
@@ -396,6 +401,11 @@ pdfcer-core const pdfcer_core::attachments::FALLBACK_SAFE_NAME
 pdfcer-core const pdfcer_core::attachments::MAX_ATTACHMENTS
 pdfcer-core const pdfcer_core::attachments::MAX_SAFE_NAME_CHARS
 pdfcer-core const pdfcer_core::bates::MAX_DIGITS
+pdfcer-core const pdfcer_core::compare::DEFAULT_STEP_BUDGET
+pdfcer-core const pdfcer_core::compare::result::DELETED_COLOR
+pdfcer-core const pdfcer_core::compare::result::FORMATTING_COLOR
+pdfcer-core const pdfcer_core::compare::result::INSERTED_COLOR
+pdfcer-core const pdfcer_core::compare::result::REPLACED_COLOR
 pdfcer-core const pdfcer_core::deskew::MAX_SKEW_DEGREES
 pdfcer-core const pdfcer_core::dimension::author::AUTHORED_ANNOT_KEYS
 pdfcer-core const pdfcer_core::dimension::author::AUTHORED_MEASURE_KEY
@@ -616,6 +626,11 @@ pdfcer-core enum pdfcer_core::attachments::NameHazard
 pdfcer-core enum pdfcer_core::attachments::NameSource
 pdfcer-core enum pdfcer_core::bates::BatesError
 pdfcer-core enum pdfcer_core::bates::BatesPosition
+pdfcer-core enum pdfcer_core::compare::ChangeKind
+pdfcer-core enum pdfcer_core::compare::CompareError
+pdfcer-core enum pdfcer_core::compare::Side
+pdfcer-core enum pdfcer_core::compare::region_marks::RegionKind
+pdfcer-core enum pdfcer_core::compare::result::ResultError
 pdfcer-core enum pdfcer_core::dimension::group::DimStandard
 pdfcer-core enum pdfcer_core::dimension::group::DimensionEnd
 pdfcer-core enum pdfcer_core::dimension::group::DimensionKind
@@ -915,6 +930,7 @@ pdfcer-core enum pdfcer_core::text_edit::format::Std14Presence
 pdfcer-core enum pdfcer_core::text_edit::format::StyleOutcome
 pdfcer-core enum pdfcer_core::text_edit::format::StyleRung
 pdfcer-core enum pdfcer_core::text_edit::format::TextRenderMode
+pdfcer-core enum pdfcer_core::text_edit::format_plan::FormatBatchError
 pdfcer-core enum pdfcer_core::text_edit::forms::ResourceTier
 pdfcer-core enum pdfcer_core::text_edit::merge::MergeFit
 pdfcer-core enum pdfcer_core::text_edit::merge::MergeSeparator
@@ -976,6 +992,7 @@ pdfcer-core enum pdfcer_core::vector::snap::AxisConstraint
 pdfcer-core enum pdfcer_core::vector::snap::SnapKind
 pdfcer-core enum pdfcer_core::vector::stroke_style::StrokeUnits
 pdfcer-core enum pdfcer_core::vector::text_locate::TextRunRef
+pdfcer-core enum pdfcer_core::widget_draw::SynthesizedKind
 pdfcer-core field pdfcer_core::annot::Annotation::action_chains
 pdfcer-core field pdfcer_core::annot::Annotation::action_type
 pdfcer-core field pdfcer_core::annot::Annotation::appearance
@@ -1140,6 +1157,50 @@ pdfcer-core field pdfcer_core::build::BuildInfo::built_at
 pdfcer-core field pdfcer_core::build::BuildInfo::committed_at
 pdfcer-core field pdfcer_core::build::BuildInfo::revision
 pdfcer-core field pdfcer_core::build::BuildInfo::version
+pdfcer-core field pdfcer_core::compare::Change::anchor
+pdfcer-core field pdfcer_core::compare::Change::formatting
+pdfcer-core field pdfcer_core::compare::Change::kind
+pdfcer-core field pdfcer_core::compare::Change::new_places
+pdfcer-core field pdfcer_core::compare::Change::new_text
+pdfcer-core field pdfcer_core::compare::Change::new_words
+pdfcer-core field pdfcer_core::compare::Change::old_places
+pdfcer-core field pdfcer_core::compare::Change::old_text
+pdfcer-core field pdfcer_core::compare::Change::old_words
+pdfcer-core field pdfcer_core::compare::CompareOptions::formatting
+pdfcer-core field pdfcer_core::compare::CompareOptions::include_artifacts
+pdfcer-core field pdfcer_core::compare::CompareOptions::new_pages
+pdfcer-core field pdfcer_core::compare::CompareOptions::old_pages
+pdfcer-core field pdfcer_core::compare::CompareOptions::step_budget
+pdfcer-core field pdfcer_core::compare::CompareReport::changes
+pdfcer-core field pdfcer_core::compare::CompareReport::new_pages
+pdfcer-core field pdfcer_core::compare::CompareReport::new_word_count
+pdfcer-core field pdfcer_core::compare::CompareReport::old_pages
+pdfcer-core field pdfcer_core::compare::CompareReport::old_word_count
+pdfcer-core field pdfcer_core::compare::CompareReport::truncated
+pdfcer-core field pdfcer_core::compare::CompareReport::unreadable_pages
+pdfcer-core field pdfcer_core::compare::FormattingDelta::color
+pdfcer-core field pdfcer_core::compare::FormattingDelta::size
+pdfcer-core field pdfcer_core::compare::FormattingDelta::weight
+pdfcer-core field pdfcer_core::compare::Place::page
+pdfcer-core field pdfcer_core::compare::Place::rect
+pdfcer-core field pdfcer_core::compare::mark_all::ComparisonMarks::changes
+pdfcer-core field pdfcer_core::compare::mark_all::ComparisonMarks::regions
+pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::kind
+pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::note
+pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::page
+pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::rect
+pdfcer-core field pdfcer_core::compare::region_marks::RegionReport::annotations
+pdfcer-core field pdfcer_core::compare::region_marks::RegionReport::unmarked
+pdfcer-core field pdfcer_core::compare::result::ResultOptions::author
+pdfcer-core field pdfcer_core::compare::result::ResultOptions::labels
+pdfcer-core field pdfcer_core::compare::result::ResultOptions::summary_note
+pdfcer-core field pdfcer_core::compare::result::ResultOptions::summary_page
+pdfcer-core field pdfcer_core::compare::result::ResultReport::annotations
+pdfcer-core field pdfcer_core::compare::result::ResultReport::changes_marked
+pdfcer-core field pdfcer_core::compare::result::ResultReport::summary
+pdfcer-core field pdfcer_core::compare::result::ResultReport::unmarked
+pdfcer-core field pdfcer_core::compare::result::Unmarked::change
+pdfcer-core field pdfcer_core::compare::result::Unmarked::reason
 pdfcer-core field pdfcer_core::deskew::SkewEstimate::angle_degrees
 pdfcer-core field pdfcer_core::deskew::SkewEstimate::confidence
 pdfcer-core field pdfcer_core::dimension::author::AuthoredDimension::annot
@@ -3552,6 +3613,9 @@ pdfcer-core field pdfcer_core::text_edit::format::StyleResolution::run_font
 pdfcer-core field pdfcer_core::text_edit::format::StyleResolution::want
 pdfcer-core field pdfcer_core::text_edit::format::style_target::StyleTarget::bold
 pdfcer-core field pdfcer_core::text_edit::format::style_target::StyleTarget::italic
+pdfcer-core field pdfcer_core::text_edit::format_plan::FormatBatch::disclosures
+pdfcer-core field pdfcer_core::text_edit::format_plan::FormatBatch::planned_once
+pdfcer-core field pdfcer_core::text_edit::format_plan::FormatBatch::reports
 pdfcer-core field pdfcer_core::text_edit::forms::FormRef::depth
 pdfcer-core field pdfcer_core::text_edit::forms::FormRef::dict
 pdfcer-core field pdfcer_core::text_edit::forms::FormRef::id
@@ -3620,6 +3684,28 @@ pdfcer-core field pdfcer_core::text_edit::model::cells::CellRegion::rect
 pdfcer-core field pdfcer_core::text_edit::model::cells::CellRegion::row
 pdfcer-core field pdfcer_core::text_edit::model::cells::CellRegion::row_span
 pdfcer-core field pdfcer_core::text_edit::model::cells::CellRegion::table
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichParagraph::size
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichParagraph::space_after
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichParagraph::spans
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichSpan::style
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichSpan::text
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichText::outcome
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichText::paragraphs
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::colours_dropped
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::families_missing
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::paragraphs
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::weights_derived
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextSources::decorations
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextSources::fonts
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::bold
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::color
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::family
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::italic
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::size
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::strikethrough
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::underline
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::fonts::FontFace::family
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::fonts::FontFace::italic
 pdfcer-core field pdfcer_core::text_edit::placetext::PageTemplate::alignment
 pdfcer-core field pdfcer_core::text_edit::placetext::PageTemplate::color
 pdfcer-core field pdfcer_core::text_edit::placetext::PageTemplate::face
@@ -4008,6 +4094,9 @@ pdfcer-core field pdfcer_core::vector::stroke_style::StrokeStyle::fill_alpha
 pdfcer-core field pdfcer_core::vector::stroke_style::StrokeStyle::stroke_alpha
 pdfcer-core field pdfcer_core::vector::stroke_style::StrokeStyle::units
 pdfcer-core field pdfcer_core::vector::stroke_style::StrokeStyle::width
+pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::ap_dict
+pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::content
+pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::kind
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::is_wrapper
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::payload_count
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::payload_name
@@ -4045,6 +4134,10 @@ pdfcer-core fn pdfcer_core::attachments::list_attachments
 pdfcer-core fn pdfcer_core::attachments::list_attachments_with_notes
 pdfcer-core fn pdfcer_core::attachments::sanitize_attachment_name
 pdfcer-core fn pdfcer_core::bates::label_matrix
+pdfcer-core fn pdfcer_core::compare::compare_documents
+pdfcer-core fn pdfcer_core::compare::mark_all::mark_comparison
+pdfcer-core fn pdfcer_core::compare::region_marks::mark_regions
+pdfcer-core fn pdfcer_core::compare::result::mark_changes
 pdfcer-core fn pdfcer_core::deskew::detect_skew
 pdfcer-core fn pdfcer_core::dimension::area::area_places
 pdfcer-core fn pdfcer_core::dimension::area::area_unit_label
@@ -4438,6 +4531,18 @@ pdfcer-core method pdfcer_core::bates::BatesStamp::new
 pdfcer-core method pdfcer_core::build::BuildInfo::current
 pdfcer-core method pdfcer_core::build::BuildInfo::is_complete
 pdfcer-core method pdfcer_core::build::BuildInfo::is_dirty
+pdfcer-core method pdfcer_core::compare::CompareOptions::with_artifacts
+pdfcer-core method pdfcer_core::compare::CompareOptions::with_formatting
+pdfcer-core method pdfcer_core::compare::CompareOptions::with_pages
+pdfcer-core method pdfcer_core::compare::CompareOptions::with_step_budget
+pdfcer-core method pdfcer_core::compare::CompareReport::count
+pdfcer-core method pdfcer_core::compare::CompareReport::is_identical
+pdfcer-core method pdfcer_core::compare::region_marks::RegionMark::changed
+pdfcer-core method pdfcer_core::compare::region_marks::RegionMark::inserted_page
+pdfcer-core method pdfcer_core::compare::result::ResultOptions::with_author
+pdfcer-core method pdfcer_core::compare::result::ResultOptions::with_labels
+pdfcer-core method pdfcer_core::compare::result::ResultOptions::with_summary_note
+pdfcer-core method pdfcer_core::compare::result::ResultOptions::with_summary_page
 pdfcer-core method pdfcer_core::dimension::author::AuthoredDimension::label_rect
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::breaks_line_for_text
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::extension_metrics
@@ -5017,6 +5122,7 @@ pdfcer-core method pdfcer_core::edit::form_paint::EditSession::set_object_paint_
 pdfcer-core method pdfcer_core::edit::form_paint::EditSession::set_object_stroke_style_in_form
 pdfcer-core method pdfcer_core::edit::form_transform::EditSession::transform_objects_each_in_form
 pdfcer-core method pdfcer_core::edit::form_transform::EditSession::transform_objects_in_form
+pdfcer-core method pdfcer_core::edit::format_batch::EditSession::format_texts
 pdfcer-core method pdfcer_core::edit::group_unit::EditSession::set_group_unit
 pdfcer-core method pdfcer_core::edit::history_transfer::EditSession::export_history
 pdfcer-core method pdfcer_core::edit::history_transfer::EditSession::import_history
@@ -5677,6 +5783,7 @@ pdfcer-core method pdfcer_core::text_edit::format::style_target::StyleTarget::ad
 pdfcer-core method pdfcer_core::text_edit::format::style_target::StyleTarget::is_keep
 pdfcer-core method pdfcer_core::text_edit::format::style_target::StyleTarget::new
 pdfcer-core method pdfcer_core::text_edit::format::style_target::StyleTarget::removes
+pdfcer-core method pdfcer_core::text_edit::format_plan::FormatBatchError::index
 pdfcer-core method pdfcer_core::text_edit::forms::FormRef::inherits_resources
 pdfcer-core method pdfcer_core::text_edit::forms::FormRef::owns_font
 pdfcer-core method pdfcer_core::text_edit::forms::FormScan::find
@@ -5728,6 +5835,15 @@ pdfcer-core method pdfcer_core::text_edit::model::navigate::EditableTextModel::l
 pdfcer-core method pdfcer_core::text_edit::model::navigate::EditableTextModel::line_range_at
 pdfcer-core method pdfcer_core::text_edit::model::navigate::EditableTextModel::resolve_range
 pdfcer-core method pdfcer_core::text_edit::model::navigate::EditableTextModel::word_range_at
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::EditableTextModel::rich_text
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::RichTextSources::with_decorations
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::RichTextSources::with_fonts
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::fonts::PageFonts::face
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::fonts::PageFonts::read
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::write::RichText::plain_text
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::write::RichText::to_cf_html
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::write::RichText::to_html
+pdfcer-core method pdfcer_core::text_edit::model::rich_copy::write::RichText::to_rtf
 pdfcer-core method pdfcer_core::text_edit::placetext::PageTemplate::new
 pdfcer-core method pdfcer_core::text_edit::placetext::PageTemplate::text_column
 pdfcer-core method pdfcer_core::text_edit::placetext::PageTemplate::with_alignment
@@ -5913,6 +6029,8 @@ pdfcer-core method pdfcer_core::vector::stroke_style::StrokeStyle::fades
 pdfcer-core method pdfcer_core::vector::stroke_style::StrokeStyle::is_empty
 pdfcer-core method pdfcer_core::vector::stroke_style::StrokeStyle::sets_alpha
 pdfcer-core method pdfcer_core::vector::stroke_style::StrokeStyle::validate
+pdfcer-core method pdfcer_core::widget_draw::WidgetAppearances::appearance
+pdfcer-core method pdfcer_core::widget_draw::WidgetAppearances::read
 pdfcer-core method pdfcer_core::wrapper::WrapperInfo::message
 pdfcer-core struct pdfcer_core::annot::AnnotFlags
 pdfcer-core struct pdfcer_core::annot::Annotation
@@ -5948,6 +6066,17 @@ pdfcer-core struct pdfcer_core::bates::BatesOutcome
 pdfcer-core struct pdfcer_core::bates::BatesRemoval
 pdfcer-core struct pdfcer_core::bates::BatesStamp
 pdfcer-core struct pdfcer_core::build::BuildInfo
+pdfcer-core struct pdfcer_core::compare::Change
+pdfcer-core struct pdfcer_core::compare::CompareOptions
+pdfcer-core struct pdfcer_core::compare::CompareReport
+pdfcer-core struct pdfcer_core::compare::FormattingDelta
+pdfcer-core struct pdfcer_core::compare::Place
+pdfcer-core struct pdfcer_core::compare::mark_all::ComparisonMarks
+pdfcer-core struct pdfcer_core::compare::region_marks::RegionMark
+pdfcer-core struct pdfcer_core::compare::region_marks::RegionReport
+pdfcer-core struct pdfcer_core::compare::result::ResultOptions
+pdfcer-core struct pdfcer_core::compare::result::ResultReport
+pdfcer-core struct pdfcer_core::compare::result::Unmarked
 pdfcer-core struct pdfcer_core::deskew::SkewEstimate
 pdfcer-core struct pdfcer_core::dimension::author::AuthoredDimension
 pdfcer-core struct pdfcer_core::dimension::author::DimensionPreview
@@ -6390,6 +6519,7 @@ pdfcer-core struct pdfcer_core::text_edit::format::Std14Entry
 pdfcer-core struct pdfcer_core::text_edit::format::StyleLadder
 pdfcer-core struct pdfcer_core::text_edit::format::StyleResolution
 pdfcer-core struct pdfcer_core::text_edit::format::style_target::StyleTarget
+pdfcer-core struct pdfcer_core::text_edit::format_plan::FormatBatch
 pdfcer-core struct pdfcer_core::text_edit::forms::FormRef
 pdfcer-core struct pdfcer_core::text_edit::forms::FormScan
 pdfcer-core struct pdfcer_core::text_edit::forms::InvocationSet
@@ -6405,6 +6535,14 @@ pdfcer-core struct pdfcer_core::text_edit::model::Line
 pdfcer-core struct pdfcer_core::text_edit::model::TextPosition
 pdfcer-core struct pdfcer_core::text_edit::model::cells::CellRegion
 pdfcer-core struct pdfcer_core::text_edit::model::line_marks::LineMarks
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::RichParagraph
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::RichSpan
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::RichText
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::RichTextOutcome
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::RichTextSources
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::SpanStyle
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::fonts::FontFace
+pdfcer-core struct pdfcer_core::text_edit::model::rich_copy::fonts::PageFonts
 pdfcer-core struct pdfcer_core::text_edit::placetext::PageTemplate
 pdfcer-core struct pdfcer_core::text_edit::placetext::PlaceTextReport
 pdfcer-core struct pdfcer_core::text_edit::program_glyphs::ProgramGlyph
@@ -6481,6 +6619,8 @@ pdfcer-core struct pdfcer_core::vector::snap::SnapCandidate
 pdfcer-core struct pdfcer_core::vector::snap::SnapConfig
 pdfcer-core struct pdfcer_core::vector::stroke_style::Dash
 pdfcer-core struct pdfcer_core::vector::stroke_style::StrokeStyle
+pdfcer-core struct pdfcer_core::widget_draw::SynthesizedAppearance
+pdfcer-core struct pdfcer_core::widget_draw::WidgetAppearances
 pdfcer-core struct pdfcer_core::wrapper::WrapperInfo
 pdfcer-core trait pdfcer_core::ocr::OcrEngine
 pdfcer-core trait pdfcer_core::optimize::resubset::FontResubsetter
@@ -6638,6 +6778,19 @@ pdfcer-core variant pdfcer_core::bates::BatesPosition::BottomRight
 pdfcer-core variant pdfcer_core::bates::BatesPosition::TopCenter
 pdfcer-core variant pdfcer_core::bates::BatesPosition::TopLeft
 pdfcer-core variant pdfcer_core::bates::BatesPosition::TopRight
+pdfcer-core variant pdfcer_core::compare::ChangeKind::Deleted
+pdfcer-core variant pdfcer_core::compare::ChangeKind::Formatting
+pdfcer-core variant pdfcer_core::compare::ChangeKind::Inserted
+pdfcer-core variant pdfcer_core::compare::ChangeKind::Replaced
+pdfcer-core variant pdfcer_core::compare::CompareError::CopyNotPermitted
+pdfcer-core variant pdfcer_core::compare::CompareError::Extract
+pdfcer-core variant pdfcer_core::compare::CompareError::NoSuchPage
+pdfcer-core variant pdfcer_core::compare::Side::New
+pdfcer-core variant pdfcer_core::compare::Side::Old
+pdfcer-core variant pdfcer_core::compare::region_marks::RegionKind::Changed
+pdfcer-core variant pdfcer_core::compare::region_marks::RegionKind::InsertedPage
+pdfcer-core variant pdfcer_core::compare::result::ResultError::Pages
+pdfcer-core variant pdfcer_core::compare::result::ResultError::Summary
 pdfcer-core variant pdfcer_core::dimension::group::DimStandard::Ansi
 pdfcer-core variant pdfcer_core::dimension::group::DimStandard::Iso
 pdfcer-core variant pdfcer_core::dimension::group::DimensionEnd::A
@@ -6816,6 +6969,7 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::FlattenLayers
 pdfcer-core variant pdfcer_core::edit::CommandKind::FormatText
 pdfcer-core variant pdfcer_core::edit::CommandKind::InsertNode
 pdfcer-core variant pdfcer_core::edit::CommandKind::InsertPages
+pdfcer-core variant pdfcer_core::edit::CommandKind::MarkComparison
 pdfcer-core variant pdfcer_core::edit::CommandKind::MergeDocument
 pdfcer-core variant pdfcer_core::edit::CommandKind::MergeLayers
 pdfcer-core variant pdfcer_core::edit::CommandKind::MergeTextRuns
@@ -8352,6 +8506,8 @@ pdfcer-core variant pdfcer_core::text_edit::format::TextRenderMode::FillStrokeCl
 pdfcer-core variant pdfcer_core::text_edit::format::TextRenderMode::Invisible
 pdfcer-core variant pdfcer_core::text_edit::format::TextRenderMode::Stroke
 pdfcer-core variant pdfcer_core::text_edit::format::TextRenderMode::StrokeClip
+pdfcer-core variant pdfcer_core::text_edit::format_plan::FormatBatchError::Request
+pdfcer-core variant pdfcer_core::text_edit::format_plan::FormatBatchError::TooManyForOneUndo
 pdfcer-core variant pdfcer_core::text_edit::forms::ResourceTier::EnclosingForm
 pdfcer-core variant pdfcer_core::text_edit::forms::ResourceTier::Own
 pdfcer-core variant pdfcer_core::text_edit::forms::ResourceTier::Page
@@ -8592,6 +8748,11 @@ pdfcer-core variant pdfcer_core::vector::stroke_style::StrokeUnits::Page
 pdfcer-core variant pdfcer_core::vector::stroke_style::StrokeUnits::UserSpace
 pdfcer-core variant pdfcer_core::vector::text_locate::TextRunRef::Form
 pdfcer-core variant pdfcer_core::vector::text_locate::TextRunRef::Page
+pdfcer-core variant pdfcer_core::widget_draw::SynthesizedKind::CheckBox
+pdfcer-core variant pdfcer_core::widget_draw::SynthesizedKind::Choice
+pdfcer-core variant pdfcer_core::widget_draw::SynthesizedKind::PushButton
+pdfcer-core variant pdfcer_core::widget_draw::SynthesizedKind::RadioButton
+pdfcer-core variant pdfcer_core::widget_draw::SynthesizedKind::Text
 pdfcer-fetch const pdfcer_fetch::DOWNLOAD_ANSWER_TIMEOUT
 pdfcer-fetch const pdfcer_fetch::MAX_ARTIFACT_BYTES
 pdfcer-fetch const pdfcer_fetch::MAX_TIME_STAMP_RESPONSE_BYTES
@@ -9028,6 +9189,7 @@ pdfcer-render const pdfcer_render::shading::RAMP_SAMPLES
 pdfcer-render enum pdfcer_render::RenderError
 pdfcer-render enum pdfcer_render::annot::AnnotationClass
 pdfcer-render enum pdfcer_render::annot::AnnotationScope
+pdfcer-render enum pdfcer_render::annot::widget::WidgetsWithoutAp
 pdfcer-render enum pdfcer_render::blend_nonsep::NonSeparableBlend
 pdfcer-render enum pdfcer_render::color::ColorSpace
 pdfcer-render enum pdfcer_render::color::Colorant
@@ -9073,6 +9235,8 @@ pdfcer-render enum pdfcer_render::text::CidToGid
 pdfcer-render enum pdfcer_render::text::FontKind
 pdfcer-render enum pdfcer_render::text::UnsupportedFont
 pdfcer-render enum pdfcer_render::type3::GlyphColorSource
+pdfcer-render enum pdfcer_render::visual_compare::PageMatch
+pdfcer-render enum pdfcer_render::visual_compare::VisualCompareError
 pdfcer-render enum pdfcer_render::visual_diff::VisualDiffError
 pdfcer-render field pdfcer_render::PageInk::composites_in_ink
 pdfcer-render field pdfcer_render::PageInk::source
@@ -9123,6 +9287,7 @@ pdfcer-render field pdfcer_render::emf::EmfOptions::background
 pdfcer-render field pdfcer_render::emf::EmfOptions::raster_dpi
 pdfcer-render field pdfcer_render::emf::EmfOptions::text
 pdfcer-render field pdfcer_render::emf::EmfOutcome::blend_modes_dropped
+pdfcer-render field pdfcer_render::emf::EmfOutcome::blends_flattened
 pdfcer-render field pdfcer_render::emf::EmfOutcome::dashed_strokes_pre_applied
 pdfcer-render field pdfcer_render::emf::EmfOutcome::diagnostics
 pdfcer-render field pdfcer_render::emf::EmfOutcome::gradients_rasterised
@@ -9182,6 +9347,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::spot_colorant_device_mod
 pdfcer-render field pdfcer_render::font::RenderOptions::stroke_display
 pdfcer-render field pdfcer_render::font::RenderOptions::subpixel_culling
 pdfcer-render field pdfcer_render::font::RenderOptions::view_magnification
+pdfcer-render field pdfcer_render::font::RenderOptions::widgets_without_ap
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_jpeg_polarity
 pdfcer-render field pdfcer_render::font::RenderPolicy::image_magnify
@@ -9198,6 +9364,7 @@ pdfcer-render field pdfcer_render::font::RenderPolicy::page_blend_space_source
 pdfcer-render field pdfcer_render::font::RenderPolicy::spot_colorant_device_model
 pdfcer-render field pdfcer_render::font::RenderPolicy::subpixel_culling
 pdfcer-render field pdfcer_render::font::RenderPolicy::view_magnification
+pdfcer-render field pdfcer_render::font::RenderPolicy::widgets_without_ap
 pdfcer-render field pdfcer_render::gstate::GStateStack::current
 pdfcer-render field pdfcer_render::gstate::GraphicsState::blend_mode
 pdfcer-render field pdfcer_render::gstate::GraphicsState::clip
@@ -9269,6 +9436,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_painted
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_placement_degenerate
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_total
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_widget
+pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_widget_synthesized
 pdfcer-render field pdfcer_render::interpret::Diagnostics::annotations_without_ap
 pdfcer-render field pdfcer_render::interpret::Diagnostics::blend_modes_applied
 pdfcer-render field pdfcer_render::interpret::Diagnostics::blend_modes_ignored
@@ -9444,9 +9612,11 @@ pdfcer-render field pdfcer_render::shading::ShadingDiagnostics::via_sh
 pdfcer-render field pdfcer_render::svg::SvgExport::outcome
 pdfcer-render field pdfcer_render::svg::SvgExport::svg
 pdfcer-render field pdfcer_render::svg::SvgOptions::background
+pdfcer-render field pdfcer_render::svg::SvgOptions::flatten_blends
 pdfcer-render field pdfcer_render::svg::SvgOptions::raster_dpi
 pdfcer-render field pdfcer_render::svg::SvgOptions::text
 pdfcer-render field pdfcer_render::svg::SvgOutcome::blend_modes_used
+pdfcer-render field pdfcer_render::svg::SvgOutcome::blends_flattened
 pdfcer-render field pdfcer_render::svg::SvgOutcome::dashed_strokes_pre_applied
 pdfcer-render field pdfcer_render::svg::SvgOutcome::diagnostics
 pdfcer-render field pdfcer_render::svg::SvgOutcome::height_pt
@@ -9492,6 +9662,31 @@ pdfcer-render field pdfcer_render::type3::Type3Font::font_matrix
 pdfcer-render field pdfcer_render::type3::Type3Font::glyph_names
 pdfcer-render field pdfcer_render::type3::Type3Font::resources
 pdfcer-render field pdfcer_render::type3::Type3Font::widths
+pdfcer-render field pdfcer_render::visual_compare::PagePair::error
+pdfcer-render field pdfcer_render::visual_compare::PagePair::how
+pdfcer-render field pdfcer_render::visual_compare::PagePair::new
+pdfcer-render field pdfcer_render::visual_compare::PagePair::old
+pdfcer-render field pdfcer_render::visual_compare::PagePair::regions
+pdfcer-render field pdfcer_render::visual_compare::PagePair::similarity
+pdfcer-render field pdfcer_render::visual_compare::PagePair::size_differs
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::mapping
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::match_threshold
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::merge_gap
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::min_pixels
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::pages
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::render
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::scale
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareOptions::threshold
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::match_threshold
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::matched_automatically
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::merge_gap
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::min_pixels
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::pairs
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::scale
+pdfcer-render field pdfcer_render::visual_compare::VisualCompareReport::threshold
+pdfcer-render field pdfcer_render::visual_compare::VisualRegion::changed_pixels
+pdfcer-render field pdfcer_render::visual_compare::VisualRegion::pixels
+pdfcer-render field pdfcer_render::visual_compare::VisualRegion::rect
 pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::height
 pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::width
 pdfcer-render field pdfcer_render::visual_diff::ChangedRegion::x
@@ -9574,6 +9769,7 @@ pdfcer-render fn pdfcer_render::render_page_with_view
 pdfcer-render fn pdfcer_render::svg::export_svg
 pdfcer-render fn pdfcer_render::svg::export_svg_view
 pdfcer-render fn pdfcer_render::text::load
+pdfcer-render fn pdfcer_render::visual_compare::visual_compare
 pdfcer-render fn pdfcer_render::visual_diff::diff_heatmap
 pdfcer-render fn pdfcer_render::visual_diff::diff_rendered
 pdfcer-render fn pdfcer_render::visual_diff::visual_diff
@@ -9668,6 +9864,7 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_page_blend_space_s
 pdfcer-render method pdfcer_render::font::RenderOptions::with_separation_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_spot_colorant_device_model
 pdfcer-render method pdfcer_render::font::RenderOptions::with_view_magnification
+pdfcer-render method pdfcer_render::font::RenderOptions::with_widgets_without_ap
 pdfcer-render method pdfcer_render::font::augment::installed::InstalledFaceAugmenter::from_environment
 pdfcer-render method pdfcer_render::font::augment::installed::InstalledFaceAugmenter::insert
 pdfcer-render method pdfcer_render::font::augment::installed::InstalledFaceAugmenter::is_empty
@@ -9767,6 +9964,7 @@ pdfcer-render method pdfcer_render::shading::ShadingDiagnostics::mesh
 pdfcer-render method pdfcer_render::shading::ShadingDiagnostics::reached
 pdfcer-render method pdfcer_render::shading::ShadingFunction::outputs
 pdfcer-render method pdfcer_render::svg::SvgOptions::with_background
+pdfcer-render method pdfcer_render::svg::SvgOptions::with_flatten_blends
 pdfcer-render method pdfcer_render::svg::SvgOptions::with_raster_dpi
 pdfcer-render method pdfcer_render::svg::SvgOptions::with_text
 pdfcer-render method pdfcer_render::svg::SvgTextOutcome::runs_as_outlines
@@ -9791,6 +9989,15 @@ pdfcer-render method pdfcer_render::type3::Type3Font::advance_text_space
 pdfcer-render method pdfcer_render::type3::Type3Font::bbox_is_sentinel
 pdfcer-render method pdfcer_render::type3::Type3Font::load
 pdfcer-render method pdfcer_render::type3::Type3Font::proc_for
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_mapping
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_match_threshold
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_merge_gap
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_min_pixels
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_pages
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_scale
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareOptions::with_threshold
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareReport::nothing_matched
+pdfcer-render method pdfcer_render::visual_compare::VisualCompareReport::region_count
 pdfcer-render method pdfcer_render::visual_diff::PageDiff::changed
 pdfcer-render method pdfcer_render::visual_diff::VisualDiffOptions::with_scale
 pdfcer-render method pdfcer_render::visual_diff::VisualDiffOptions::with_threshold
@@ -9865,6 +10072,10 @@ pdfcer-render struct pdfcer_render::text::SimpleFont
 pdfcer-render struct pdfcer_render::text::TextObject
 pdfcer-render struct pdfcer_render::text::TextState
 pdfcer-render struct pdfcer_render::type3::Type3Font
+pdfcer-render struct pdfcer_render::visual_compare::PagePair
+pdfcer-render struct pdfcer_render::visual_compare::VisualCompareOptions
+pdfcer-render struct pdfcer_render::visual_compare::VisualCompareReport
+pdfcer-render struct pdfcer_render::visual_compare::VisualRegion
 pdfcer-render struct pdfcer_render::visual_diff::ChangedRegion
 pdfcer-render struct pdfcer_render::visual_diff::PageDiff
 pdfcer-render struct pdfcer_render::visual_diff::VisualDiffOptions
@@ -9883,6 +10094,8 @@ pdfcer-render variant pdfcer_render::annot::AnnotationScope::Document
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::DocumentAndMarkups
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::DocumentAndStamps
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::FormFieldsOnly
+pdfcer-render variant pdfcer_render::annot::widget::WidgetsWithoutAp::Blank
+pdfcer-render variant pdfcer_render::annot::widget::WidgetsWithoutAp::Draw
 pdfcer-render variant pdfcer_render::blend_nonsep::NonSeparableBlend::Color
 pdfcer-render variant pdfcer_render::blend_nonsep::NonSeparableBlend::Hue
 pdfcer-render variant pdfcer_render::blend_nonsep::NonSeparableBlend::Luminosity
@@ -10085,6 +10298,14 @@ pdfcer-render variant pdfcer_render::text::UnsupportedFont::UnusableProgram
 pdfcer-render variant pdfcer_render::text::UnsupportedFont::VerticalWriting
 pdfcer-render variant pdfcer_render::type3::GlyphColorSource::ShapeAndColor
 pdfcer-render variant pdfcer_render::type3::GlyphColorSource::ShapeOnly
+pdfcer-render variant pdfcer_render::visual_compare::PageMatch::Deleted
+pdfcer-render variant pdfcer_render::visual_compare::PageMatch::InOrder
+pdfcer-render variant pdfcer_render::visual_compare::PageMatch::Inserted
+pdfcer-render variant pdfcer_render::visual_compare::PageMatch::Mapped
+pdfcer-render variant pdfcer_render::visual_compare::PageMatch::Moved
+pdfcer-render variant pdfcer_render::visual_compare::VisualCompareError::NoSuchPage
+pdfcer-render variant pdfcer_render::visual_compare::VisualCompareError::Pages
+pdfcer-render variant pdfcer_render::visual_compare::VisualCompareError::Signature
 pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::MissingPage
 pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::Render
 pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::SizeChanged

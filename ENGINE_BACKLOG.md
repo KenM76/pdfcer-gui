@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `wanted` — a real gap — **43 of 418** <!-- counted by tools/walk-engine-backlog.py, 2026-10-26; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -74,6 +74,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Copy text with its formatting and paragraphs** — `EditableTextModel::rich_text`, the module `pdfcer_core::text_edit::model::rich_copy` | **wanted — being wired at this pin.** Read-mode Copy puts the selection's `RichText` on the clipboard as HTML Format, Rich Text Format and plain text in one transaction, and the status line states `RichText::outcome`'s non-zero counts. |
 | Restyle text whose own face cannot take a style, falling through to a donor the shell supplies — `FormatRequest::style_donor`, `FormatRequest::style_donors`, `EditSession::preview_style_ladder_with_donors`, `StyleRung::SuppliedFaceEmbedded` | **wanted.** <!--namesake:SuppliedFaceEmbedded--> the shell names the variant only to give the ladder's trace line a token for every rung; it never passes a donor, so the rung cannot be reached from here. Rung 3 of the style ladder: when neither the page nor the standard fourteen have the bold or italic sibling, the engine embeds a subset of a donor face the caller names. The shell passes none today, so Bold on such text still ends at synthesis or a refusal. The donor is a file the operator picks, as *Font file…* already does for a face change (that path attaches `FormatRequest::embed_font` through `embedded_font`); the preview must go through `preview_style_ladder_with_donors` with the same donors so the tooltip and the result agree. |
 | List the form XObjects a page paints, and how many places … | **wanted.** The engine answers *how many places paint this form?* only where this shell already asks it: `canvas::textedit::report` prints `invocations=` and `pages=` at the moment of an in-form **text** edit, via `text_edit::invocation_set`. There is no standing listing. The argument for declining is real and is kept here so it is not re-derived — the number matters most exactly where it is already shown — but on a thirty-six-sheet SolidWorks set, where one title block is a single form, the operator wants the blast radius **before** picking up the tool, not in the disclosure afterwards. |
 | **Edit text across show operators** — a `find` matches across consecutive … | **wanted, and what it costs now is re-measurement.** The capability is in the build this shell compiles: a document written one glyph per show operator is what `EditRefusal::SplitAcrossPieces` exists to explain, and the engine no longer refuses it. `EditReport::operators_spanned` is new and wants disclosing under rule 4, and `Plan::one_operator` stops being the thing that routes `SplitAcrossPieces`, so the operator-facing sentence must be re-derived from the engine's answer rather than deleted on the assumption it is dead. |
@@ -115,6 +116,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Draw form widgets that carry no appearance** — `RenderOptions::with_widgets_without_ap`, `RenderOptions::widgets_without_ap`, `RenderPolicy::widgets_without_ap`, the modules `pdfcer_render::annot::widget` and `pdfcer_core::widget_draw`, `Diagnostics::annotations_widget_synthesized` (our `G230`) | **wanted — being wired at this pin (O327).** The renderer draws such widgets by default and the shell keeps `WidgetsWithoutAp::Draw`. The canvas offers each one on a click by its `/Rect`, and the Forms panel says the file stores no drawing for those fields and that *Redraw values* writes one. `widget_draw::WidgetAppearances` is not called: nothing here needs the picture without a render. |
 | **Paste a radio button as another member of its group** — `FieldPasteOutcome::radio_on_state` | **wanted, at the pin since v0.82.0; request G187.** `paste_field` with `AdditionalWidget` gives a pasted radio member a free on-state and reports it; `app::actions::forms::radiogroup::add_member` goes back to `paste_field` and its `add_radio_button` workaround is deleted. |
 | **Copy and paste several form fields as one** — `copy_fields`, `paste_fields`, `FieldSetPastePolicy`, `FieldClipSet` | **wanted, at the pin since v0.82.0; request G193.** `app::actions::forms::paste::many` (`FieldAction::PasteMany`) calls `copy_fields` and `paste_fields` (`pdfcer_core::edit::field_set`, over the clip format in `pdfcer_core::formclip::set`) once instead of one `paste_field` per field; the layout, batch-unique names and radio export values become the engine's, reported in `FieldSetPasteOutcome`. Policies: `FieldSetPastePolicy::NewFields`, `FieldSetPastePolicy::AdditionalWidgets`; a set holds at most `MAX_CLIP_SET_FIELDS`. |
 | **Move a radio button into another radio group** — `move_widget_to_field`, `WidgetRegroup` | **wanted, at the pin since v0.82.0; request G188.** `app::actions::forms::radiogroup::move_to` calls it (`pdfcer_core::edit::regroup`) instead of add, `delete_widget` and `coalesce_last`; one `CommandKind::MoveWidgetToField`. `WidgetRegroup::action_targets_orphaned` and its disclosures reach the status line. Refusals to word: `EditError::NotARadioGroup`, `EditError::WidgetAlreadyInField`. |
@@ -142,10 +144,16 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Reusable parsed page handle (display list) — record a page … | **wanted — the largest single felt improvement available to a CAD sheet, and the engine has already paid for it.** No display list exists anywhere in this crate, so every frame re-interprets the page and a pan at fixed zoom pays full interpretation over and over. A recorded page replays in a small fraction of a first interpretation on the engine's own benchmark; re-measure there rather than quoting a figure. The key is `(page, epoch, scale)`, and this shell already tracks all three. |
 | **Area-averaged image minification** — a downscaled scan … | **wanted — O322 part 1, a third choice under Settings ▸ Images ▸ minify**, so a scan shown small does not shimmer or drop hairlines. Engine: `MinifyFilter::AreaAverage`. |
 
+### Export
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Blend flattening for EMF and Word-bound SVG** — `SvgOptions::with_flatten_blends`, `SvgOptions::flatten_blends`, `SvgOutcome::blends_flattened`, `EmfOutcome::blends_flattened` | **wanted — being wired at this pin.** The marquee copy's clipboard SVG passes the flag, because its paste target is Word; the EMF flattens on its own. |
+
 ---
 
 
-## `blocked` — waiting on something named — **2 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `blocked` — waiting on something named — **2 of 418** <!-- counted by tools/walk-engine-backlog.py, 2026-10-26; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -163,7 +171,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 418** <!-- counted by tools/walk-engine-backlog.py, 2026-10-26; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -174,7 +182,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `declined` — deliberately no surface — **18 of 418** <!-- counted by tools/walk-engine-backlog.py, 2026-10-26; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -218,7 +226,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **355 of 415** <!-- counted by tools/walk-engine-backlog.py, 2026-10-24; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **355 of 418** <!-- counted by tools/walk-engine-backlog.py, 2026-10-26; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -227,7 +235,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
 | **Compare the text of two documents** — `pdfcer compare OLD NEW`, the module `pdfcer_core::compare` | **shipped — Tools ▸ Compare ▸ Compare documents…; driven by `comparing_lists_every_change` and `a_compare_row_shows_its_change`.** `panels::compare::job` runs `compare_documents` off the UI thread on the open document (its path, or its incremental-save bytes when edited) against the picked older file; `panels::compare::rows` lists each change, a click turning to its page and revealing its rectangle. The engine's notes (`truncated` among them) list in the panel, off-canvas. |
-| **Annotated comparison result** — `pdfcer compare OLD NEW --output RESULT.pdf`, the marking verb in `pdfcer_core::compare` | **shipped — the Compare panel's *Mark changes as comments*; driven by `marking_a_comparison_writes_comments`.** `app::actions::comparemark` runs `mark_regions` then `mark_changes` through the edit funnel and folds what they pushed into one undo entry with `coalesce_last` (request G229 asks the engine to push one; the fold is the workaround). Unmarked changes are counted on the status line, not fatal. |
+| **Annotated comparison result** — `pdfcer compare OLD NEW --output RESULT.pdf`, the marking verb in `pdfcer_core::compare` | **shipped — the Compare panel's *Mark changes as comments*; driven by `marking_a_comparison_writes_comments`.** `app::actions::comparemark` runs `mark_regions` then `mark_changes` through the edit funnel and pushes one undo entry for the whole marking (`compare::mark_comparison`, `CommandKind::MarkComparison`; G229 — the shell's fold is deleted at this pin). Unmarked changes are counted on the status line, not fatal. |
 | **Visual comparison and page matching** — `pdfcer compare OLD NEW --visual`, the module `pdfcer_render::visual_compare` | **shipped — the Compare panel's *Appearance* choice; driven by `comparing_lists_every_change`.** `panels::compare::job` calls `visual_compare` beside the text comparison; each changed region lists as an area row, and an added, removed or size-differing page pair is stated in the panel. |
 | **Lossless structure rebuild** — `writer::rebuild`, `EditSession::save_optimized` with `RebuildOptions`, `RebuildReport` | **shipped — File ▸ Save a compacted copy, under the same *Also recompress the drawing data* switch; unit-tested, not yet driven.** `dialogs::recompress` passes `Preset::Lossless`'s `structure` (every option on) to `save_optimized`, and `text::compact::restructured` words each non-zero `RebuildReport` count. One switch for streams and structure, one lossless trade. The navigation clean-up has two switches of its own, because it deletes things the operator can see: *Remove links and bookmarks that go nowhere* (on, `invalid_links`, `invalid_bookmarks`) and *Remove named places nothing in the file links to* (off, `unreferenced_destinations`); `text::compact::cleaned` names each removed bookmark. A clean-up or discard that leaves the file no smaller is still written, `OptimizedFile::NotSmaller` (answering G213), and the window says it was kept for what it removes. |
 | **Linearization (Fast Web View)** — `RebuildOptions::linearize`, `RebuildReport::linearized` | **shipped — File ▸ Save a compacted copy, *Fast Web View: show the first page before the rest has downloaded*, off by default; driven by `a_compacted_copy_is_laid_out_for_fast_web_view`.** `dialogs::recompress` sets `linearize` from `Choices::linearize` on the `RebuildOptions` it passes to `save_optimized`, with or without *Also recompress the drawing data*. The switch's hover says the copy is always a full rewrite, its index is not packed and it is kept even when larger; `text::compact::restructured` says the copy is laid out for Fast Web View and names Fast Web View when the header version is raised, and `kept_not_smaller` gives the layout, not a removal, as the reason a larger copy is kept. |
