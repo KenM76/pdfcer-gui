@@ -925,10 +925,10 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // reaches; a run where only this one fails is the press reaching egui
         // before the canvas sees it, which is O204's whole subject.
         //
-        // It opens its own document. Not one form fixture in the engine corpus
-        // carries a text field with a drawn appearance, and an undrawn field is
-        // not on the canvas to click.
+        // It opens its own document: three text fields with drawn appearances.
         Box::new(tab_navigation::TabMovesBetweenFormFields),
+        // The same click on fields whose values the viewer draws (O327).
+        Box::new(undrawn_fields::AFormWithoutDrawnValuesDrawsAndClicks),
         // Immediately after it, and the adjacency is the point: both are
         // "what does a click on the canvas mean?", read through two different
         // off-canvas oracles. A run where both fail says the click is not

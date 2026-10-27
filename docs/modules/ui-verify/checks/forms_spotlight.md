@@ -60,23 +60,10 @@ but sits on a page that is not on screen (not a defect).
 
 ### `const FIXTURE`
 
-Not one form fixture in `D:\Dev\pdfcer\fixtures\synthetic\forms\` carries a
-plain text field with an `/AP` `/N` appearance stream. Measured 2026-09-02
-across all eighteen: `demo-form` and `radio-choice-form` have text fields
-with **no** appearance, `rich-field-form`'s one paint-ready text field is
-**rich text** (which the canvas declines by design), and every other
-paint-ready widget is a 12 x 12 check box or radio.
-
-That matters because the canvas census refuses a widget with no appearance
-(`NotOnCanvas::NoAppearance`) — the page draws nothing there, so there is
-nothing to outline. On every engine fixture the spotlight is therefore
-*unable* to light the one row the panel offers, and the check could only
-ever have failed. It is the check being unable to reach the feature, not
-the feature being broken: exactly the shape this whole afternoon has been
-about.
-
-So this is 1,129 hand-written bytes: one page, one text field, one real
-appearance stream. `fixtures/off-page-object.pdf` is the precedent.
+A hand-written fixture of 1,129 bytes: one page, one text field, one real
+appearance stream, so the spotlight is measured on a field whose pixels
+come from the file rather than from the renderer drawing a field with no
+appearance from its value. `fixtures/off-page-object.pdf` is the precedent.
 
 ### `fn select_tool`
 

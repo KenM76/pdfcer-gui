@@ -526,14 +526,14 @@ pub fn forms_flatten_needs_redraw_note(count: usize) -> String {
 // What the page can and cannot be filled from — see `pdfcer_gui::canvas::forms`
 // ---------------------------------------------------------------------------
 
-/// The panel's note for fields that **cannot be clicked on the page** because
-/// nothing is drawn for them.
+/// The panel's note for fields that store no drawing: the page draws them
+/// from their values, and another reader may not.
 #[must_use]
-pub fn forms_canvas_undrawn_note(count: usize) -> String {
+pub fn forms_canvas_screen_drawn_note(count: usize) -> String {
     format!(
-        "{count} field(s) are not drawn on the page, so they cannot be clicked there. Fill one \
-         here and it becomes drawn — and clickable on the page from then on. “{}” does the same \
-         for fields that already hold a value.",
+        "{count} field(s) store no drawn value in the file. pdfcer draws them from their values \
+         and they can be clicked; another reader may show them empty. “{}” stores the drawings \
+         in the file.",
         forms_regenerate_button()
     )
 }

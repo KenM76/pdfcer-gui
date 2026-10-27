@@ -504,45 +504,19 @@ The remedy is [`forms_regenerate_button`], which is why the two controls
 sit side by side and why this sentence names it. Core's own guidance is
 the same: regenerate first, then flatten.
 
-### `fn forms_canvas_undrawn_note`
+### `fn forms_canvas_screen_drawn_note`
 
-# Why this sentence exists at all
+Disclosure, not a refusal. The engine draws a field with no stored drawing
+from its value at render time, and the page clicks it by its `/Rect`, so the
+field looks and behaves like any other. Another reader may draw it empty, and
+nothing on the canvas may say so. The sentence says the file stores no drawing
+and that pdfcer draws it anyway, and it names [`forms_regenerate_button`] as
+the way to store one.
 
-`crate::canvas::forms` lets an operator click a field where it is drawn.
-The word *drawn* is load-bearing: a widget with no `/AP` `/N` paints
-nothing, so a click target over it would be an invisible affordance — the
-operator can only find it by accident and cannot find it again. The canvas
-therefore declines it, and this is the panel telling them **where the field
-went**, which is the whole difference between a routing decision and a
-capability that quietly disappeared.
-
-# The remedy sentence was wrong on its first draft, and driving the
-binary is what caught it
-
-It read: *"Use “Redraw values” to draw them, and they can then be clicked
-where they sit."* That is **false for the case the sentence is about.**
-
-Measured on `demo-form.pdf`, which carries exactly one undrawn field
-(`Full name`, with no value): pressing Redraw values traced
-`form-regenerate-appearances commands=0 (nothing to do)` and the field
-stayed undrawn. `EditSession::regenerate_appearances` walks the fields and
-`continue`s on any text field whose `/V` is not `FieldValue::Text` — an
-**absent** value has nothing to draw, so an empty field is skipped by
-design. Redraw only helps a field that is undrawn *and already holds a
-value*, which is a real and common case (a form filled by another program
-that never generated appearances, which is what `/NeedAppearances`
-announces) but is not this one.
-
-The remedy that always works is the one this panel is: `fill_text_field`
-writes `/V` **and** regenerates the `/AP` of every widget of the field, so
-filling an undrawn field here once makes it drawn — and therefore clickable
-on the page from then on. So the sentence names both, in the order they
-apply.
-
-The rejected first draft is worth naming because of its SHAPE: it was
-plausible, it read well, no test could contradict it, and it was a promise
-to the operator that the engine would not keep. **A sentence no test can
-contradict is the one to check against the engine by hand.**
+*Redraw values* only stores a drawing for a field that holds a value
+(`EditSession::regenerate_appearances` skips a text field with no `/V`).
+Filling the field stores one too, because `fill_text_field` regenerates
+every widget of the field.
 
 ### `fn forms_canvas_unreachable_note`
 
