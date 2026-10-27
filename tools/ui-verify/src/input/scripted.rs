@@ -374,7 +374,8 @@ fn parse_ppm(bytes: &[u8]) -> Option<(u32, u32, &[u8])> {
     ok.then_some((w, h, pixels))
 }
 
-fn xy(p: WindowPoint) -> String {
+/// `"x y"` to one decimal, as the scripted-pointer protocol reads a point.
+pub fn xy(p: WindowPoint) -> String {
     format!("{:.1} {:.1}", p.x(), p.y())
 }
 

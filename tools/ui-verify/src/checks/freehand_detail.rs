@@ -9,7 +9,7 @@ use crate::checks::driving::declared_in;
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry, WindowPoint};
 use crate::error::Result;
-use crate::input::scripted::ScriptedPointer;
+use crate::input::scripted::{ScriptedPointer, xy};
 use crate::launch::Session;
 use crate::report::CheckReport;
 
@@ -52,10 +52,6 @@ impl Check for FreehandDetailSetsHowManySegmentsAStrokeKeeps {
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         run_on(self, ctx, &FIXTURE, INVOKE, STEM, steps)
     }
-}
-
-fn xy(p: WindowPoint) -> String {
-    format!("{:.1} {:.1}", p.x(), p.y())
 }
 
 /// Draw one wave at page height `y` and answer the commit's `(raw, kept)`.

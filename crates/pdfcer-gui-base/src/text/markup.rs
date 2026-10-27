@@ -35,7 +35,10 @@ pub const fn pen_width_tooltip() -> &'static str {
 /// Hover text for the freehand detail control.
 #[must_use]
 pub const fn pen_detail_tooltip() -> &'static str {
-    "How closely the next freehand line follows your hand. 100% keeps every      point the mouse reported; lower values straighten wobble into fewer,      longer segments, never straying outside the line's own thickness. 50% is      the standard setting. Other shapes are unaffected."
+    "How closely the next freehand line follows your hand. 100% keeps every point the mouse \
+     reported; lower values straighten wobble into fewer, longer segments, never straying \
+     outside the line's own thickness. 50% is the standard setting. Other shapes are \
+     unaffected."
 }
 
 /// The label in front of the freehand detail value.
