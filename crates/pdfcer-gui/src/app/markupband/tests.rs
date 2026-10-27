@@ -206,7 +206,7 @@ fn the_engines_answer_is_what_hides_a_control_not_the_spec_arm() {
         (b"Circle", true, true, false),
         (b"Polygon", true, true, false),
         (b"Line", true, true, true),
-        (b"PolyLine", false, true, false),
+        (b"PolyLine", true, true, true),
         (b"Ink", false, true, false),
         (b"Highlight", false, false, false),
         (b"Underline", false, false, false),

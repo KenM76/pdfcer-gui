@@ -97,6 +97,20 @@ pub fn diagnostics_annots_no_appearance(n: usize) -> String {
     }
 }
 
+/// Annotations the file stores no picture for, which pdfcer drew from their
+/// own shape and colour. Some other viewers show nothing for them.
+#[must_use]
+pub fn diagnostics_annots_drawn_from_shape(n: usize) -> String {
+    if n == 1 {
+        "1 annotation has no stored picture; pdfcer drew it from its shape, other viewers may          not (Markup > Store appearances)"
+            .to_owned()
+    } else {
+        format!(
+            "{n} annotations have no stored picture; pdfcer drew them from their shape, other              viewers may not (Markup > Store appearances)"
+        )
+    }
+}
+
 /// Operators recognised but not yet implemented.
 #[must_use]
 pub fn diagnostics_ops_deferred(n: usize) -> String {

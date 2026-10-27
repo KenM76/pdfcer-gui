@@ -76,6 +76,26 @@ pub(in crate::app::actions) fn flatten_page(doc: &mut OpenDoc, page: usize) {
     doc.selection.clear_annot();
 }
 
+/// Store the picture pdfcer draws for each appearance-less markup as its
+/// `/AP`. A FreeText `/C` is read as its fill, as the renderer reads it, so
+/// the page draws the same before and after.
+pub(in crate::app::actions) fn store_appearances(doc: &mut OpenDoc, page: usize) {
+    let free_text_c = pdfcer_core::annot_author::FreeTextC::default();
+    super::super::apply::vector_edit(doc, "store-appearances", page, 1, |session| {
+        let out = session.bake_missing_appearances(free_text_c)?;
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!(
+                "appearances-stored baked={} rect_changed={} skipped={}",
+                out.baked.len(),
+                out.baked.iter().filter(|b| b.rect_changed).count(),
+                out.skipped.len()
+            )
+        });
+        Ok::<_, EditError>(crate::text::bakeappear::stored(&out))
+    });
+}
+
 /// Why the engine would refuse to flatten `id` on `page`, or `None` when it
 /// would accept. A document-level refusal (encrypted, certified) counts as a
 /// refusal with no per-annotation reason.

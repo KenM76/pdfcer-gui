@@ -13,6 +13,25 @@ pub(crate) const ID: &str = "markup.flatten"; // ui-text-exempt: a command id, n
 /// The page-wide command this module also owns.
 pub(crate) const PAGE_ID: &str = "markup.flatten_page"; // ui-text-exempt: a command id, never displayed
 
+/// The document-wide store of derived appearances.
+pub(crate) const STORE_ID: &str = "markup.store_appearances"; // ui-text-exempt: a command id, never displayed
+
+/// Raise the store of every appearance-less markup's derived picture.
+pub(super) fn dispatch_store(app: &mut PdfcerApp, actions: &mut Vec<Action>) {
+    if !app.capabilities().author_markup {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            format!("command-declined id={STORE_ID} reason=mode-cannot-author-markup")
+        });
+        return;
+    }
+    if let Status::Open(doc) = &app.status {
+        actions.push(Action::Annot(AnnotAction::StoreAppearances {
+            page: doc.view.page_index,
+        }));
+    }
+}
+
 /// Raise the burn of every markup on the page in view.
 pub(super) fn dispatch_page(app: &mut PdfcerApp, actions: &mut Vec<Action>) {
     if !app.capabilities().author_markup {

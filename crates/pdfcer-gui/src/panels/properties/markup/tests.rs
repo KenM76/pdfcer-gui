@@ -262,7 +262,7 @@ fn the_engines_answer_is_what_hides_a_row_not_the_spec_arm() {
         (b"Circle", true, true, false, false),
         (b"Polygon", true, true, false, true),
         (b"Line", true, true, true, false),
-        (b"PolyLine", false, true, false, false),
+        (b"PolyLine", true, true, true, false),
         (b"Ink", false, true, false, false),
         (b"Highlight", false, false, false, false),
         (b"Underline", false, false, false, false),

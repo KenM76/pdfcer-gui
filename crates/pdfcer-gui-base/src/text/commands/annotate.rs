@@ -180,6 +180,15 @@ pub const fn markup_flatten_page() -> CommandText {
     )
 }
 
+/// `markup.store_appearances`
+#[must_use]
+pub const fn markup_store_appearances() -> CommandText {
+    CommandText::new(
+        "Store appearances",
+        "Write the picture pdfcer draws for markups that carry none (such as ones drawn in Microsoft Edge) into the file, so other viewers show them too. They stay markups. The status bar says which it could not store. Ctrl+Z undoes it.",
+    )
+}
+
 // ---------------------------------------------------------------------------
 // The three kinds that mark a SELECTION rather than a drag.
 //

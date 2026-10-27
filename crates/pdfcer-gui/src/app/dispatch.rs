@@ -987,6 +987,7 @@ impl PdfcerApp {
             "markup.flatten" => flatten::dispatch(self, actions),
             id if dimdisplay::claims(id) => dimdisplay::dispatch(self, id, actions),
             "markup.flatten_page" => flatten::dispatch_page(self, actions),
+            "markup.store_appearances" => flatten::dispatch_store(self, actions),
             // The three text-bearing kinds, ABOVE the geometric markup arm.
             //
             // Ordering is a statement rather than a tie-break — the two

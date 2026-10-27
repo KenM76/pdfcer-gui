@@ -101,7 +101,19 @@ fn annotations_not_drawn(d: &pdfcer_render::Diagnostics) -> usize {
     // an icon paint without the census entry would otherwise panic a release
     // build's status bar. Zero is the right answer to "how many were invisible"
     // when the two numbers disagree in that direction.
-    without_ap.saturating_sub(d.annotations_icon_painted)
+    without_ap.saturating_sub(drawn_anyway(d))
+}
+
+/// Appearance-less annotations pdfcer drew all the same: standard icons,
+/// form widgets from their field data, and markup from its own geometry. The
+/// engine counts each alongside `annotations_without_ap`, not instead of it.
+fn drawn_anyway(d: &pdfcer_render::Diagnostics) -> usize {
+    d.annotations_icon_painted + d.annotations_widget_synthesized + geometry_drawn(d)
+}
+
+/// Markup drawn from its own geometry because the file stores no `/AP`.
+fn geometry_drawn(d: &pdfcer_render::Diagnostics) -> usize {
+    d.annotations_geometry_drawn.values().copied().sum()
 }
 
 /// **The renderer's report as an ordered list of sentences**, one per finding
@@ -126,7 +138,7 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
         out.push(t::diagnostics_resources_defaulted().to_owned());
     }
 
-    let entries: [NoteEntry; 10] = [
+    let entries: [NoteEntry; 11] = [
         (
             d.contents_streams_unresolved,
             t::diagnostics_contents_missing,
@@ -140,6 +152,9 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
             annotations_not_drawn(d),
             t::diagnostics_annots_no_appearance,
         ),
+        // Drawn, so below the invisible ones; still above the font lines,
+        // because it is the one finding about what ANOTHER viewer will show.
+        (geometry_drawn(d), t::diagnostics_annots_drawn_from_shape),
         (d.fonts_unsupported, t::diagnostics_fonts_skipped),
         (d.images_unsupported, t::diagnostics_images_skipped),
         (d.glyphs_notdef, t::diagnostics_glyphs_notdef),
@@ -248,6 +263,33 @@ mod tests {
 
         assert_eq!(annotations_not_drawn(&d), 0);
         assert_eq!(notes_line(&d), t::diagnostics_clean());
+    }
+
+    /// **Markup drawn from its shape is not reported as invisible**, and is
+    /// reported as drawn without a stored picture.
+    #[test]
+    fn geometry_drawn_markup_is_drawn_not_missing() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Ink".to_owned(), 3);
+        d.annotations_without_ap.insert("Square".to_owned(), 1);
+        d.annotations_geometry_drawn.insert("Ink".to_owned(), 3);
+
+        assert_eq!(annotations_not_drawn(&d), 1, "only the /Square is unseen");
+        let found = findings(&d);
+        assert!(
+            found.contains(&t::diagnostics_annots_drawn_from_shape(3)),
+            "the three drawn from their shape must be disclosed: {found:?}"
+        );
+    }
+
+    /// Widgets drawn from their field data are not reported as invisible.
+    #[test]
+    fn synthesized_widgets_are_not_reported_as_missing() {
+        let mut d = pdfcer_render::Diagnostics::default();
+        d.annotations_without_ap.insert("Widget".to_owned(), 2);
+        d.annotations_widget_synthesized = 2;
+
+        assert_eq!(annotations_not_drawn(&d), 0);
     }
 
     /// **A narrowed scope suppresses the finding rather than shrinking it.**

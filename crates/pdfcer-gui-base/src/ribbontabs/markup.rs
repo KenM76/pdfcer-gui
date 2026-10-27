@@ -199,7 +199,11 @@ pub fn tab() -> Tab {
             group(
                 "comments",
                 ribbon::group_markup_comments(),
-                [large("markup.comments"), command("markup.flatten_page")],
+                [
+                    large("markup.comments"),
+                    command("markup.flatten_page"),
+                    command("markup.store_appearances"),
+                ],
             ),
         ])
 }

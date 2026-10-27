@@ -54,6 +54,8 @@ pub mod attachannot;
 /// The attachment clipboard's words, including the one question a paste must
 /// ask before the press: the engine REPLACES a same-named attachment.
 pub mod attachclip;
+/// What making a markup part of the page says.
+pub mod bakeappear;
 /// Pages ▸ Stamp ▸ Bates numbering…: its window and its receipt.
 /// Consumed by `pdfcer_gui::dialogs::bates`.
 pub mod bates;
@@ -122,7 +124,6 @@ pub mod files;
 /// Every string the Find bar shows, plus the status bar's Find toggle.
 /// Consumed by `find::bar` and `pdfcer_gui::app::status`.
 pub mod find;
-/// What making a markup part of the page says.
 pub mod flattenannot;
 pub mod formfonts;
 pub mod forms;

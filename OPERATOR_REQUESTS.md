@@ -669,13 +669,13 @@ Same message as O335, first half.
 
 **Status.** Built: Markup ▸ Style ▸ *Detail*, a percentage. 100% keeps every point the mouse reported; lower values straighten wobble into fewer segments, never further from the hand than half the line's width; 50% is the setting strokes always had. Driven: `freehand_detail_sets_how_many_segments_a_stroke_keeps` (the same wave kept 51 of 60 points at 50% and 60 of 60 at 100%). NOT VERIFIED by him.
 
-## O333 — **WAITING ON THE ENGINE** — files annotated or drawn on in Microsoft Edge show no annotations
+## O333 — **BUILT** — files annotated or drawn on in Microsoft Edge show no annotations
 
 Relayed from a Reddit user by him: *"I really like it but all files annotated or drawn on with edge don't show. Is that only happening for me?"*
 
-**Scope.** Ink, highlights and notes saved by Edge's PDF viewer show on the page as they do in Edge and Acrobat.
+**Scope.** Ink, highlights and notes saved by Edge's PDF viewer show on the page as they do in Edge and Acrobat, and can be made to show in other viewers too.
 
-**Status.** Likely cause, unconfirmed without a real Edge file: Edge saves ink and highlights without their own drawing (an appearance stream), and the engine deliberately draws an annotation only from that drawing. Measured on built samples: with the drawing, ink, highlights and text boxes show; without it they do not, and the status line says *"N annotations carry no appearance and are not drawn"*. Requested as G236: draw these from the annotation's own points and colour, as Acrobat and Chrome do. A real Edge-saved file from the user would confirm it. No GUI workaround.
+**Status.** Edge saves ink and highlights without a stored picture (an appearance stream). pdfcer now draws such markup from its own points and colour, as Acrobat and Chrome do, and the status line says *"N annotations have no stored picture; pdfcer drew them from their shape, other viewers may not"* instead of the false *"not drawn"*. **Markup ▸ Comments ▸ Store appearances** writes that picture into the file, so other viewers show them; one undo entry, and the status line says which it could not store. Driven: `store_appearances_writes_a_picture_into_the_file` (fails on the previous build). Not confirmed on a real Edge-saved file: one from the user would settle it. NOT VERIFIED by him.
 
 ## O332 — **BUILT** — once a shape's points are shown, a single click on one deletes it, as in Inkscape
 

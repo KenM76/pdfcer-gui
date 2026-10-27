@@ -65,6 +65,7 @@ pub mod objects_multiselect;
 pub mod pen_cmyk;
 pub mod point_click_delete;
 pub mod shrink_pictures;
+pub mod store_appearances;
 pub mod weblink_prompt;
 
 pub mod compact_save;

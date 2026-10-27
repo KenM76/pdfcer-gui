@@ -302,6 +302,9 @@ pub enum AnnotAction {
         /// The page.
         page: usize,
     },
+    /// Store every appearance-less markup's derived picture as its `/AP`
+    /// (one undo entry); `page` is the page in view, for the refresh.
+    StoreAppearances { page: usize },
     /// **Write the note on an annotation that already exists** —
     /// `/Contents`, and conditionally `/T` and `/M` — as one undoable command.
     ///

@@ -430,9 +430,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 244 → 246: `file.reduce_size` and `file.fit_size`, File ▸ Save.
     // 246 → 247: `tools.compare`, Tools ▸ Compare.
     // 247 → 246: `edit.word_gap` removed; the Content band sets the gap.
+    // 246 → 247: `markup.store_appearances`, Markup ▸ Comments.
     assert_eq!(
         registry().len(),
-        246 + 2 * usize::from(cfg!(feature = "signing"))
+        247 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -872,9 +873,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 213 → 215: `file.reduce_size` and `file.fit_size` share `save-compact`.
     // 215 → 216: `tools.compare` names `compare`, drawn for it.
     // 216 → 215: `edit.word_gap` removed.
+    // 215 → 216: `markup.store_appearances` shares `save`.
     assert_eq!(
         named,
-        215 + 2 * usize::from(cfg!(feature = "signing"))
+        216 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

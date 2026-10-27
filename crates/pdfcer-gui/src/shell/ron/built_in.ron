@@ -432,6 +432,7 @@
                     items: [
                         Command(id: "markup.comments", size: Large),
                         Command(id: "markup.flatten_page"),
+                        Command(id: "markup.store_appearances"),
                     ],
                     collapse: 1,
                 ),

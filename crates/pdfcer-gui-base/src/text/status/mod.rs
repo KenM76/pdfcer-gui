@@ -12,10 +12,10 @@
 /// report can produce.
 mod diagnostics;
 pub use diagnostics::{
-    diagnostics_annots_no_appearance, diagnostics_clean, diagnostics_contents_missing,
-    diagnostics_fonts_skipped, diagnostics_glyphs_notdef, diagnostics_glyphs_substituted,
-    diagnostics_glyphs_supplied, diagnostics_images_skipped, diagnostics_join,
-    diagnostics_layers_hidden, diagnostics_ops_deferred, diagnostics_ops_unknown,
+    diagnostics_annots_drawn_from_shape, diagnostics_annots_no_appearance, diagnostics_clean,
+    diagnostics_contents_missing, diagnostics_fonts_skipped, diagnostics_glyphs_notdef,
+    diagnostics_glyphs_substituted, diagnostics_glyphs_supplied, diagnostics_images_skipped,
+    diagnostics_join, diagnostics_layers_hidden, diagnostics_ops_deferred, diagnostics_ops_unknown,
     diagnostics_resources_defaulted, diagnostics_toggle, diagnostics_tooltip,
 };
 

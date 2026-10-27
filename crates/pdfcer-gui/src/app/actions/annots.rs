@@ -758,6 +758,7 @@ pub(super) fn apply_action(
         } => deletemany::delete_many(doc, page, &ids, kept_locked),
         A::Flatten { page, id } => flatten::flatten(doc, page, id),
         A::FlattenPage { page } => flatten::flatten_page(doc, page),
+        A::StoreAppearances { page } => flatten::store_appearances(doc, page),
         A::SetNote {
             id,
             text,
