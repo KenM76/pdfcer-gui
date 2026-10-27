@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 14cc5ee6480662e44a10e8992ec751c9fc1edc71
+# baseline: d3996c099c28e624cadbd187a8e8868d8acd8e7e
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 10173
+# items: 10181
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -1185,6 +1185,9 @@ pdfcer-core field pdfcer_core::compare::Place::page
 pdfcer-core field pdfcer_core::compare::Place::rect
 pdfcer-core field pdfcer_core::compare::mark_all::ComparisonMarks::changes
 pdfcer-core field pdfcer_core::compare::mark_all::ComparisonMarks::regions
+pdfcer-core field pdfcer_core::compare::mark_all::MarkComparisonError::authored
+pdfcer-core field pdfcer_core::compare::mark_all::MarkComparisonError::error
+pdfcer-core field pdfcer_core::compare::mark_all::MarkComparisonError::regions
 pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::kind
 pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::note
 pdfcer-core field pdfcer_core::compare::region_marks::RegionMark::page
@@ -1549,6 +1552,7 @@ pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::applied_compression
 pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::aspect_distorted
 pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::below_screen_resolution
 pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::bmp_fourth_byte_ignored
+pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::bmp_pixel_offset_repaired
 pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::cmyk_polarity_unverifiable
 pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::colour_key_mask_written
 pdfcer-core field pdfcer_core::edit::ImageAuthorDisclosures::colour_profile_dropped
@@ -2377,6 +2381,7 @@ pdfcer-core field pdfcer_core::hand_sig::HandSignatureMark::objects
 pdfcer-core field pdfcer_core::image_import::ImportNotes::alpha_to_soft_mask
 pdfcer-core field pdfcer_core::image_import::ImportNotes::applied_compression
 pdfcer-core field pdfcer_core::image_import::ImportNotes::bmp_fourth_byte_ignored
+pdfcer-core field pdfcer_core::image_import::ImportNotes::bmp_pixel_offset_repaired
 pdfcer-core field pdfcer_core::image_import::ImportNotes::cmyk_polarity_unverifiable
 pdfcer-core field pdfcer_core::image_import::ImportNotes::colour_profile_dropped
 pdfcer-core field pdfcer_core::image_import::ImportNotes::dpi_source
@@ -3401,6 +3406,7 @@ pdfcer-core field pdfcer_core::text_edit::decoration::DecoratedSpan::set
 pdfcer-core field pdfcer_core::text_edit::decoration::DecorationSet::strikethrough
 pdfcer-core field pdfcer_core::text_edit::decoration::DecorationSet::underline
 pdfcer-core field pdfcer_core::text_edit::decoration::PageDecorations::forms
+pdfcer-core field pdfcer_core::text_edit::decoration::PageDecorations::forms_unread
 pdfcer-core field pdfcer_core::text_edit::decoration::PageDecorations::spans
 pdfcer-core field pdfcer_core::text_edit::edit::EditOptions::cid_font_program
 pdfcer-core field pdfcer_core::text_edit::edit::EditOptions::disposition
@@ -3692,6 +3698,7 @@ pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichSpan::text
 pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichText::outcome
 pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichText::paragraphs
 pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::colours_dropped
+pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::decoration_forms_unread
 pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::families_missing
 pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::paragraphs
 pdfcer-core field pdfcer_core::text_edit::model::rich_copy::RichTextOutcome::weights_derived
@@ -6072,6 +6079,7 @@ pdfcer-core struct pdfcer_core::compare::CompareReport
 pdfcer-core struct pdfcer_core::compare::FormattingDelta
 pdfcer-core struct pdfcer_core::compare::Place
 pdfcer-core struct pdfcer_core::compare::mark_all::ComparisonMarks
+pdfcer-core struct pdfcer_core::compare::mark_all::MarkComparisonError
 pdfcer-core struct pdfcer_core::compare::region_marks::RegionMark
 pdfcer-core struct pdfcer_core::compare::region_marks::RegionReport
 pdfcer-core struct pdfcer_core::compare::result::ResultOptions

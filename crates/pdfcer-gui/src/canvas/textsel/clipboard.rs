@@ -164,7 +164,8 @@ pub fn copy_rich(epoch: u64, rich: &RichText, source: &str) {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
             "text-copied source={source} chars={chars} paragraphs={} weights_derived={} \
-             families_missing={} colours_dropped={} decoration_forms_unread={}              formats={formats}",
+             families_missing={} colours_dropped={} decoration_forms_unread={} \
+             formats={formats}",
             o.paragraphs,
             o.weights_derived,
             o.families_missing,

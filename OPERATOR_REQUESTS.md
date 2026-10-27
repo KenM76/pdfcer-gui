@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O330 — **OPEN, waiting on the engine** — a thin line keeps one width around a rounded corner, as in Acrobat
+## O330 — **IN THIS BUILD, awaiting his check** — a thin line keeps one width around a rounded corner, as in Acrobat
 
 His words, on `C:\Users\Ken\OneDrive\pdfTests\test-line radius.pdf`: *"at the radius on this pdf's orange box the thickness of the line changes in our rendering, but it shouldn't and acrobat reader shows it as a line with the same width throughout"*
 
 **Scope.** A thin stroked outline (here 0.34 pt, under one screen pixel at normal zoom) draws with the same weight on its curves as on its straight runs, at every zoom, as Acrobat draws it.
 
-**Status.** Measured on the engine CLI at 100%, 133%, 200% and 300%: the rounded corners carry 12–22% less ink per unit length than the straight sides, spread over two pixels, so they read thinner and paler. Rendering is the engine's: `request_G233_thin_stroke_weight_drops_on_curves.md`. No GUI workaround, by his instruction. His file is not checked in. NOT FIXED.
+**Status.** Measured on the engine CLI at 100%, 133%, 200% and 300%: the rounded corners carry 12–22% less ink per unit length than the straight sides, spread over two pixels, so they read thinner and paler. Rendering is the engine's: `request_G233_thin_stroke_weight_drops_on_curves.md`, fixed in engine v0.100.0, which this build carries. The engine measured his file at scale 4 with the arcs at the weight of the sides, and thin curves and diagonals at 0.96–1.02 of straight on RGB and CMYK pages. Not re-measured in this program. His file is not checked in. NOT VERIFIED by him.
 
 ## O329 — **BUILT AND DRIVEN, awaiting his check** — marquee copy keeps highlights see-through, can keep text as text or copy a picture
 

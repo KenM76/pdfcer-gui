@@ -287,7 +287,8 @@ pub fn placement_disclosures(
     out
 }
 
-/// What decoding a GIF or TIFF left out or reinterpreted, one sentence each.
+/// What decoding a GIF, TIFF or BMP left out, reinterpreted or repaired, one
+/// sentence each.
 #[must_use]
 pub fn source_decoding_notes(d: &pdfcer_core::edit::ImageAuthorDisclosures) -> Vec<String> {
     let mut out = Vec::new();
@@ -338,6 +339,11 @@ pub fn source_decoding_notes(d: &pdfcer_core::edit::ImageAuthorDisclosures) -> V
             "The TIFF's colour table was read as 8-bit because every value fits; if its colours look wrong, that guess is why."
                 .to_owned(),
         );
+    }
+    if let Some((declared, used)) = d.bmp_pixel_offset_repaired {
+        out.push(format!(
+            "The BMP said its pixels start at byte {declared}, which overlaps its header or colour table, so pdfcer read them from byte {used}, where those end."
+        ));
     }
     out
 }
