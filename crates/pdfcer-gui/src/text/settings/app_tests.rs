@@ -80,7 +80,7 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 49;
+    const SETTINGS_COUNT: usize = 50;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -287,6 +287,12 @@ mod tests {
             (keys::title(), keys::silence(), keys::radius()),
             // Settings ▸ Images: the resolution View ▸ Snapshot copies at.
             (snapshot::title(), snapshot::silence(), snapshot::radius()),
+            // …and the forms it copies as.
+            (
+                snapshot::form_title(),
+                snapshot::form_silence(),
+                snapshot::radius(),
+            ),
             // Settings ▸ OCR models: the extra folders Recognise text searches.
             (
                 ocrmodels::title(),

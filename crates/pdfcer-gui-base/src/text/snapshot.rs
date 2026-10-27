@@ -1,6 +1,6 @@
 //! # `text::snapshot` — what the snapshot box says on the status row
 
-use crate::clipboard::snapshot::{SnapshotCopy, Vectors};
+use crate::clipboard::snapshot::{KeptText, SnapshotCopy, Vectors};
 use pdfcer_core::pageops::RegionReport;
 
 /// The save dialog's title.
@@ -82,17 +82,37 @@ pub fn copied(copy: &SnapshotCopy) -> String {
         Vectors::Cut {
             glyphs_removed,
             notes,
+            blends_flattened,
+            text,
         } => {
             let edge = match glyphs_removed {
                 0 => String::new(),
                 1 => " One character crossing its edge was left out.".to_owned(),
                 n => format!(" {n} characters crossing its edge were left out."),
             };
+            let blends = match blends_flattened {
+                0 => String::new(),
+                1 => " One see-through area, such as a highlight, was copied as its \
+                      blended pixels so it stays see-through when pasted."
+                    .to_owned(),
+                n => format!(
+                    " {n} see-through areas, such as highlights, were copied as their \
+                     blended pixels so they stay see-through when pasted."
+                ),
+            };
+            let kept = text.map(kept_text).unwrap_or_default();
             let said = format!(
                 "Copied the snapshot box as vectors and as {picture}. Everything outside the \
-                 box was cut away.{edge}"
+                 box was cut away.{edge}{blends}{kept}"
             );
             (said, notes.as_slice())
+        }
+        Vectors::PictureOnly => {
+            let said = format!(
+                "Copied the snapshot box as {picture} only, as the Snapshot copies as \
+                 setting asks."
+            );
+            (said, &[][..])
         }
         Vectors::Withheld { notes } => {
             let said = format!(
@@ -114,6 +134,25 @@ pub fn copied(copy: &SnapshotCopy) -> String {
         .fold(said, |text, note| format!("{text} {note}"))
 }
 
+/// What became of the text when it was to be kept as text.
+fn kept_text(kept: KeptText) -> String {
+    let runs = |n: usize| super::plural(n, "run", "runs");
+    if kept.svg_outlines == 0 && kept.emf_outlines == 0 {
+        if kept.svg_text == 0 && kept.emf_text == 0 {
+            return String::new();
+        }
+        return format!(" The text was kept as text ({}).", runs(kept.svg_text.max(kept.emf_text)));
+    }
+    format!(
+        " Some text could not be kept as text and stays as outlines: {} of {} in the SVG form, \
+         {} of {} in the EMF form.",
+        runs(kept.svg_outlines),
+        kept.svg_outlines + kept.svg_text,
+        runs(kept.emf_outlines),
+        kept.emf_outlines + kept.emf_text,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -133,6 +172,8 @@ mod tests {
         Vectors::Cut {
             glyphs_removed,
             notes: Vec::new(),
+            blends_flattened: 0,
+            text: None,
         }
     }
 
@@ -154,5 +195,24 @@ mod tests {
         assert!(said.contains("not copied as vectors") && said.ends_with("could not be cut."));
         let refused = copied(&copy(300, 300, Vectors::Refused("encrypted".to_owned())));
         assert!(refused.contains("only") && refused.contains("encrypted"));
+        assert!(copied(&copy(300, 300, Vectors::PictureOnly)).contains("only"));
+    }
+
+    #[test]
+    fn flattened_blends_and_kept_text_are_said() {
+        let vectors = Vectors::Cut {
+            glyphs_removed: 0,
+            notes: Vec::new(),
+            blends_flattened: 2,
+            text: Some(KeptText {
+                svg_text: 3,
+                svg_outlines: 1,
+                emf_text: 4,
+                emf_outlines: 0,
+            }),
+        };
+        let said = copied(&copy(300, 300, vectors));
+        assert!(said.contains("2 see-through areas"), "{said}");
+        assert!(said.contains("1 run of 4 in the SVG"), "{said}");
     }
 }

@@ -80,11 +80,10 @@ selection is otherwise invisible from outside the process — see
 
 ### `fn copy`
 
-The one place this shell writes the clipboard. Three verbs reach it — the
-canvas selection's Ctrl+C, `file.copy_page_text` and
-`file.copy_document_text` — and routing all of them through one function is
-what makes the trace line below a complete record of what pdfcer has copied
-rather than one of three partial ones.
+Plain text only. It is the fallback for a selection whose page will not
+extract with provenance, so a copy is never silently nothing. The formatted
+route is [`copy_rich`]; both trace `text-copied`, which keeps that line a
+complete record of what pdfcer has copied.
 
 It raises no [`crate::app::actions::Action`], and that is the same call
 `file.print` makes for the same reason: the funnel exists for work that
@@ -97,3 +96,14 @@ silently destroy whatever the operator had on their clipboard — which is
 their data, from another application, and not pdfcer's to discard — and the
 decline is traced so the difference between "copied nothing" and "did not
 run" is on the record.
+
+### `fn copy_rich`
+
+The canvas selection's Ctrl+C, `file.copy_page_text` and
+`file.copy_document_text` all place formatted text here: HTML, RTF and plain
+text in one clipboard transaction (`pdfcer_gui_base::clipboard::richtext`).
+What the engine guessed or dropped (weights derived from a font name,
+families missing, colours dropped) is one status-row note. A clipboard
+refusal is traced `text-copy-declined reason=clipboard` and noted, and
+nothing is placed: falling back to plain text would hide that the formatted
+copy failed.

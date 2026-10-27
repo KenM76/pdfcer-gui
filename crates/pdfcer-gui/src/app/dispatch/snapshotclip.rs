@@ -23,10 +23,19 @@ pub fn copy(app: &PdfcerApp) {
     let epoch = doc.edit_epoch;
     match crate::clipboard::snapshot::copy_snapshot(doc) {
         Ok(copied) => {
+            let (blends, kept) = match &copied.vectors {
+                crate::clipboard::snapshot::Vectors::Cut {
+                    blends_flattened,
+                    text,
+                    ..
+                } => (*blends_flattened, text.map_or(0, |t| t.svg_text)),
+                _ => (0, 0),
+            };
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed.
-                    "clipboard-snapshot-copy dpi={} asked={} w={} h={} vectors={} formats={}",
+                    "clipboard-snapshot-copy dpi={} asked={} w={} h={} vectors={} formats={} \
+                     blends={blends} text_runs={kept}",
                     copied.dpi,
                     copied.asked_dpi,
                     copied.width_px,

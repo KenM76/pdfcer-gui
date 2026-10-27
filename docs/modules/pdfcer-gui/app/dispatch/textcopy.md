@@ -13,11 +13,11 @@ sequence) are cut on — a subject, not a size.
 
 ## Both read the SAME extraction, and that is the load-bearing fact
 
-`OpenDoc::page_text()` and the document-level `extract_*_view`, which is
-also what a canvas text selection copies from. Two paths to *"the text of
-this page"* is how a ribbon Copy and a swept selection come to disagree
-about what is on it — and they would disagree **silently**, because both
-answers look like text.
+Both read the page's provenance extraction, the one the reflow editor's model
+is built from, through `clipboard::richtext`. A canvas text selection copies
+from that extraction too. Two paths to *"the text of this page"* is how a
+ribbon Copy and a swept selection come to disagree about what is on it, and
+they would disagree **silently**, because both answers look like text.
 
 ## Neither raises an `Action`, and that is not an oversight
 
@@ -26,9 +26,9 @@ the same call `file.print` makes, for the same stated reason: the action
 funnel exists for work that changes a document or that must not happen
 mid-frame, and a copy is neither.
 
-`crate::canvas::textsel::copy` is the one place the clipboard is written and
-the one place a copy is traced, so a copy from the ribbon and a copy from a
-sweep leave the same evidence.
+`crate::canvas::textsel::copy_rich` is the one place formatted text is placed
+and traced, so a copy from the ribbon and a copy from a sweep leave the same
+evidence: `text-copied source=… chars=… paragraphs=… formats=…`.
 
 ## Item notes
 
@@ -41,6 +41,5 @@ than two.
 
 ### `fn dispatch`
 
-Takes the whole application rather than a `&Status`, because one of the two
-bodies records a decline and both read caches that live on the open
-document.
+Takes the whole application rather than a `&Status`, because both bodies
+read caches that live on the open document.

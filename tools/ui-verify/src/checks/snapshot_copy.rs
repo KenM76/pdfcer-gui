@@ -30,8 +30,8 @@ const PX_TOLERANCE: f64 = 1.0;
 const PT_TOLERANCE: f64 = 0.5;
 /// The box's corners as fractions of the page: blank paper, clear of the
 /// fixture's drawing, which lies inside x 6–50 %, y 50–92.5 %.
-const FROM: (f64, f64) = (0.70, 0.10);
-const TO: (f64, f64) = (0.90, 0.30);
+pub(super) const FROM: (f64, f64) = (0.70, 0.10);
+pub(super) const TO: (f64, f64) = (0.90, 0.30);
 /// SVG elements that paint.
 const PAINTING: [&str; 10] = [
     "path", "use", "image", "text", "rect", "line", "polyline", "polygon", "circle", "ellipse",

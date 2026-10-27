@@ -438,6 +438,46 @@ impl ModeRefusal {
     }
 }
 
+/// The status-row sentence after a formatted text copy, or `None` when the
+/// copy guessed and dropped nothing. The counts are the engine's
+/// `RichTextOutcome` fields, in characters.
+#[must_use]
+pub fn rich_copied(
+    paragraphs: usize,
+    weights_derived: usize,
+    families_missing: usize,
+    colours_dropped: usize,
+) -> Option<String> {
+    use super::plural;
+    let mut parts = Vec::new();
+    if weights_derived > 0 {
+        parts.push(format!(
+            "bold or regular was judged from the font name for {}",
+            plural(weights_derived, "character", "characters")
+        ));
+    }
+    if families_missing > 0 {
+        parts.push(format!(
+            "{} name no font and paste in the default one",
+            plural(families_missing, "character", "characters")
+        ));
+    }
+    if colours_dropped > 0 {
+        parts.push(format!(
+            "{} are in a colour the copy cannot carry and paste in the default colour",
+            plural(colours_dropped, "character", "characters")
+        ));
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "Copied {} with formatting; {}.",
+        plural(paragraphs, "paragraph", "paragraphs"),
+        parts.join("; ")
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

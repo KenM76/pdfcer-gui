@@ -1154,7 +1154,7 @@ impl PdfcerApp {
             // clipboard* — is its own.
             // That module's header carries the argument, including why
             // neither of them raises an `Action`.
-            id if textcopy::handles(id) => textcopy::dispatch(self, ctx, id),
+            id if textcopy::handles(id) => textcopy::dispatch(self, id),
             // Find. `Ctrl+F`, and the status bar's Find toggle.
             //
             // A **toggle**, not a show: Ctrl+F is the chord every application

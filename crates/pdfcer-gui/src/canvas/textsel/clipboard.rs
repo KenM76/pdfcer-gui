@@ -19,6 +19,10 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/textsel/clipboard.md`.
 
+use pdfcer_core::text_edit::model::RichText;
+use pdfcer_gui_base::clipboard::richtext;
+use pdfcer_gui_base::textselection::ordered;
+
 use super::{PageContext, TextSelection, select_all};
 
 /// One of the two keyboard verbs a text selection has, as read off the frame's
@@ -79,6 +83,7 @@ pub fn pending_key(ui_ctx: &egui::Context) -> Option<TextKey> {
 /// **Act on the chord [`pending_key`] found.**
 pub fn apply_key(
     ui_ctx: &egui::Context,
+    doc: &crate::app::state::OpenDoc,
     ctx: &PageContext<'_>,
     key: TextKey,
     current: &mut Option<TextSelection>,
@@ -86,7 +91,13 @@ pub fn apply_key(
     match key {
         TextKey::Copy => {
             if let Some(selection) = current.as_ref().filter(|s| s.live(ctx.epoch)) {
-                copy(ui_ctx, &selection.text, "selection");
+                let range = ordered(selection.anchor(), selection.focus());
+                // The plain words when the page will not extract with
+                // provenance: a copy is never silently nothing.
+                match richtext::page(doc, selection.page, Some(range)) {
+                    Some(rich) => copy_rich(ctx.epoch, &rich, "selection"),
+                    None => copy(ui_ctx, &selection.text, "selection"),
+                }
             } else {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed in the UI.
@@ -120,6 +131,51 @@ pub fn copy(ui_ctx: &egui::Context, text: &str, source: &str) {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!("text-copied source={source} chars={}", text.len())
     });
+}
+
+/// **Put formatted text on the clipboard, and say so.** HTML, RTF and plain
+/// text in one transaction (`pdfcer_gui_base::clipboard::richtext`), so a
+/// word processor pastes bold, sizes and paragraphs and a plain target still
+/// gets the words. What the copy guessed or dropped goes to the status row;
+/// a clipboard refusal goes there too, and nothing is placed.
+pub fn copy_rich(epoch: u64, rich: &RichText, source: &str) {
+    use crate::text::clipboard as t;
+    let chars = rich.plain_text().len();
+    if chars == 0 {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            format!("text-copy-declined source={source} reason=nothing-to-copy")
+        });
+        return;
+    }
+    let formats = match richtext::place(rich) {
+        Ok(names) => names.join(","),
+        Err(why) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                format!("text-copy-declined source={source} reason=clipboard detail={why:?}")
+            });
+            crate::app::actions::record_note(epoch, t::copy_out_refusal(&why));
+            return;
+        }
+    };
+    let o = rich.outcome;
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "text-copied source={source} chars={chars} paragraphs={} weights_derived={} \
+             families_missing={} colours_dropped={} formats={formats}",
+            o.paragraphs, o.weights_derived, o.families_missing, o.colours_dropped
+        )
+    });
+    if let Some(note) = t::rich_copied(
+        o.paragraphs,
+        o.weights_derived,
+        o.families_missing,
+        o.colours_dropped,
+    ) {
+        crate::app::actions::record_note(epoch, note);
+    }
 }
 
 #[cfg(test)]

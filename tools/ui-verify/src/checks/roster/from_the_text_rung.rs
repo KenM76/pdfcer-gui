@@ -666,6 +666,8 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(reflow::ReflowingAParagraphRewrapsIt),
         Box::new(reflow_width::DraggingAParagraphsEdgeRewrapsIt),
         Box::new(paragraph_select::AFourthClickSelectsTheParagraph),
+        // The same four clicks in Read mode, then Copy: formatted text on the clipboard.
+        Box::new(rich_copy::ACopiedParagraphPastesAsOneFormattedParagraph),
         Box::new(paragraphs_off::WithParagraphsOffAClickOpensOneLine),
         Box::new(paragraphs_page::ParagraphsOffOnOnePageLeavesTheNext),
         Box::new(paragraph_here::OneParagraphOpensAsLinesWhileItsNeighbourOpensWhole),
@@ -744,6 +746,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(snapshot_box::ASnapshotBoxStaysOnThePageThroughAZoom),
         Box::new(snapshot_grips::ASnapshotBoxMovesResizesAndClears),
         Box::new(snapshot_copy::ASnapshotCopyIsCroppedAtTheSetDpi),
+        Box::new(snapshot_picture::ASnapshotSetToPictureCopiesNoVectors),
         Box::new(snapshot_save::ASnapshotSavesAsAOnePagePdf),
         Box::new(snapshot_paste::ASnapshotPastesBackAsADrawing),
         Box::new(snapshot_ants::ASnapshotBoxOutlineMarches),
@@ -918,6 +921,8 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // first: he arms a tool and looks at the page before he commits to a
         // placement. It runs on the shared fixture and aim point.
         Box::new(form_ghost::TheOutlineFollowsThePointerAndIsWhatGetsPlaced),
+        // A click on fields whose values the viewer draws (O327).
+        Box::new(undrawn_fields::AFormWithoutDrawnValuesDrawsAndClicks),
         Box::new(form_selection::AClickInsideAFormSelectsWhatIsDrawnThere),
         // Straight after the click check, and the order is the argument this
         // feature makes: a click puts the keyboard IN a field, and Tab is what
@@ -927,8 +932,6 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         //
         // It opens its own document: three text fields with drawn appearances.
         Box::new(tab_navigation::TabMovesBetweenFormFields),
-        // The same click on fields whose values the viewer draws (O327).
-        Box::new(undrawn_fields::AFormWithoutDrawnValuesDrawsAndClicks),
         // Immediately after it, and the adjacency is the point: both are
         // "what does a click on the canvas mean?", read through two different
         // off-canvas oracles. A run where both fail says the click is not

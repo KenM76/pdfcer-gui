@@ -283,6 +283,8 @@ fn page_body(
             images::minify(ui, draft);
             ui.add_space(10.0);
             pdfcer_gui_base::settingspages::snapshot::dpi(ui, &mut draft.working_prefs);
+            ui.add_space(10.0);
+            pdfcer_gui_base::settingspages::snapshot::form(ui, &mut draft.working_prefs);
         }
         "text" => {
             text::word_gap(ui, draft);

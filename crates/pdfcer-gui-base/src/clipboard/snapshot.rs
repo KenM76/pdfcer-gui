@@ -17,6 +17,7 @@ use super::CopyPayload;
 use super::place::{
     Refusal, emf_options, place, place_withheld, raster_at, render_options, svg_options,
 };
+use crate::prefs::snapshot::SnapshotForm;
 
 /// The largest picture a snapshot makes, in pixels.
 pub const MAX_PIXELS: f64 = 50_000_000.0;
@@ -50,7 +51,16 @@ pub enum Vectors {
         /// The engine's sentences about anything it removed or could not
         /// flatten.
         notes: Vec<String>,
+        /// Blended areas (a highlight) written as their composited pixels so
+        /// they stay see-through where blend modes are ignored; the larger of
+        /// the SVG's and the EMF's counts.
+        blends_flattened: usize,
+        /// What became of the text when the operator asked to keep it as
+        /// text; `None` when it was drawn as outlines.
+        text: Option<KeptText>,
     },
+    /// The picture alone, because the operator set the copy to a picture.
+    PictureOnly,
     /// Withheld, the picture placed alone: drawing outside the box could not
     /// be cut away, so a vector form would have carried it.
     Withheld {
@@ -69,8 +79,22 @@ impl Vectors {
             Self::Cut { .. } => "cut", // ui-text-exempt: a trace token, never displayed
             Self::Withheld { .. } => "withheld", // ui-text-exempt: a trace token, never displayed
             Self::Refused(_) => "refused", // ui-text-exempt: a trace token, never displayed
+            Self::PictureOnly => "picture-only", // ui-text-exempt: a trace token, never displayed
         }
     }
+}
+
+/// Runs of text kept as text and left as outlines, per vector form.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct KeptText {
+    /// Runs the SVG wrote as `<text>`.
+    pub svg_text: usize,
+    /// Runs the SVG left as outlines, every reason summed.
+    pub svg_outlines: usize,
+    /// Runs the EMF wrote as text records.
+    pub emf_text: usize,
+    /// Runs the EMF left as outlines, every reason summed.
+    pub emf_outlines: usize,
 }
 
 /// **Copy the document's snapshot box to the clipboard.** `NoPage` when there
@@ -88,18 +112,18 @@ pub fn copy_snapshot(doc: &crate::opendoc::OpenDoc) -> Result<SnapshotCopy, Refu
     let state = region_state(doc, &options);
     // The view, so unsaved edits are what is copied — as `place::page_payload`.
     let view = doc.session.view();
-    let (payload, vectors) = match extract_region(&view, laid.page, region.crop_box, &state) {
-        Ok((bytes, report)) => cut_payload(bytes, &report, &options, dpi_f)?,
-        Err(error) => {
-            let rendered = pdfcer_render::render_page_with_view(
-                &view,
-                &region,
-                crate::imageexport::scale_for(dpi_f),
-                &options,
-            )
-            .map_err(|error| Refusal::Render(error.to_string()))?;
-            let picture = picture(rendered.pixmap, dpi_f)?;
-            (picture, Vectors::Refused(error.to_string()))
+    let form = doc.prefs.snapshot.form();
+    let (payload, vectors) = if form == SnapshotForm::Picture {
+        let rendered = render_region(&view, &region, &options, dpi_f)?;
+        (picture(rendered, dpi_f)?, Vectors::PictureOnly)
+    } else {
+        let keep_text = form == SnapshotForm::KeepText;
+        match extract_region(&view, laid.page, region.crop_box, &state) {
+            Ok((bytes, report)) => cut_payload(bytes, &report, &options, dpi_f, keep_text)?,
+            Err(error) => {
+                let rendered = render_region(&view, &region, &options, dpi_f)?;
+                (picture(rendered, dpi_f)?, Vectors::Refused(error.to_string()))
+            }
         }
     };
     let (width_px, height_px) = payload
@@ -132,6 +156,18 @@ pub fn snapshot_pdf(doc: &crate::opendoc::OpenDoc) -> Result<(Vec<u8>, RegionRep
         .map_err(|error| Refusal::Render(error.to_string()))
 }
 
+/// The region of the page under the box, rendered with unsaved edits at `dpi`.
+fn render_region(
+    view: &pdfcer_core::view::DocumentView<'_>,
+    region: &Page,
+    options: &RenderOptions,
+    dpi: f32,
+) -> Result<Pixmap, Refusal> {
+    pdfcer_render::render_page_with_view(view, region, crate::imageexport::scale_for(dpi), options)
+        .map(|rendered| rendered.pixmap)
+        .map_err(|error| Refusal::Render(error.to_string()))
+}
+
 /// The engine's region settings for the viewer's annotation and layer state.
 fn region_state(doc: &crate::opendoc::OpenDoc, options: &RenderOptions) -> RegionExport {
     let mut state = RegionExport::new().with_annotations(options.annotations);
@@ -148,6 +184,7 @@ fn cut_payload(
     report: &RegionReport,
     options: &RenderOptions,
     dpi: f32,
+    keep_text: bool,
 ) -> Result<(CopyPayload, Vectors), Refusal> {
     let render = |error: &dyn std::fmt::Display| Refusal::Render(error.to_string());
     let pdf = bytes.clone();
@@ -164,13 +201,21 @@ fn cut_payload(
         let notes = report.notes.clone();
         return Ok((picture(rendered.pixmap, dpi)?, Vectors::Withheld { notes }));
     }
-    let svg = pdfcer_render::svg::export_svg(&cut, page, &options, &svg_options(dpi))
+    let svg = pdfcer_render::svg::export_svg(&cut, page, &options, &svg_options(dpi, keep_text))
         .map_err(|e| render(&e))?;
-    let emf = pdfcer_render::emf::export_emf(&cut, page, &options, &emf_options(dpi))
+    let emf = pdfcer_render::emf::export_emf(&cut, page, &options, &emf_options(dpi, keep_text))
         .map_err(|e| render(&e))?;
+    let text = keep_text.then(|| KeptText {
+        svg_text: svg.outcome.text.runs_as_text,
+        svg_outlines: svg.outcome.text.runs_as_outlines(),
+        emf_text: emf.outcome.text.runs_as_text,
+        emf_outlines: emf.outcome.text.runs_as_outlines(),
+    });
     let vectors = Vectors::Cut {
         glyphs_removed: report.glyphs_removed,
         notes: report.notes.clone(),
+        blends_flattened: svg.outcome.blends_flattened.max(emf.outcome.blends_flattened),
+        text,
     };
     let mut payload = raster_at(svg.svg, emf.emf, rendered.pixmap, dpi)?;
     payload.pdf = Some(pdf);
@@ -288,7 +333,7 @@ mod tests {
         };
         let region = cropped(&pages[0], blank).expect("the box is on the page");
         let options = RenderOptions::default();
-        let clipped = pdfcer_render::svg::export_svg(&doc, &region, &options, &svg_options(72.0))
+        let clipped = pdfcer_render::svg::export_svg(&doc, &region, &options, &svg_options(72.0, false))
             .expect("the cropped page exports");
         assert!(
             paths(&clipped.svg) > 0,
@@ -302,7 +347,7 @@ mod tests {
         )
         .expect("the region exports");
         let (payload, vectors) =
-            cut_payload(bytes, &report, &options, 72.0).expect("the cut places");
+            cut_payload(bytes, &report, &options, 72.0, false).expect("the cut places");
         assert!(matches!(vectors, Vectors::Cut { .. }), "{vectors:?}");
         let svg = payload.svg.expect("the vectors are placed");
         assert!(

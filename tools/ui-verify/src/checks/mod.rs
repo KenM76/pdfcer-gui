@@ -23,13 +23,16 @@ pub mod overprint_default;
 pub mod paragraph_on_drawing;
 pub mod properties_restyle_word;
 pub mod remove_ocr;
+pub mod rich_copy;
 pub mod repair_form_fonts;
 pub mod run_width;
 /// A selection dropped on another window is pasted there; Shift moves it.
 pub mod selection_drop;
 pub mod smooth_pictures;
+pub mod snapshot_picture;
 /// One text object split into one per line, and a split the engine refuses.
 pub mod split_lines;
+pub mod undrawn_fields;
 pub mod spots_flattened;
 /// A document tab dragged off the strip moves or tears off, keeping its page.
 pub mod tab_drag;
@@ -395,8 +398,6 @@ pub mod scale_ratio_units;
 pub mod scale_reads_the_group;
 
 pub mod tab_navigation;
-/// O327: a form whose values the viewer draws is drawn and clickable.
-pub mod undrawn_fields;
 
 pub mod tab_object_ring;
 

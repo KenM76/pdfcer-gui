@@ -36,7 +36,7 @@ use pdfcer_gui_base::textselection::ordered;
 #[cfg(test)]
 pub mod fixture;
 
-pub use clipboard::{TextKey, apply_key, copy, pending_key};
+pub use clipboard::{TextKey, apply_key, copy, copy_rich, pending_key};
 
 /// Re-exported flat, so every call site still writes `textsel::takes_the_press`
 /// and nothing outside `canvas/` learns that the module was split. The same
@@ -570,7 +570,7 @@ pub fn keys(
             index: page_index,
             epoch: doc.edit_epoch,
         };
-        apply_key(ctx, &text_ctx, key, selection);
+        apply_key(ctx, doc, &text_ctx, key, selection);
     }
 }
 
