@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 420** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `wanted` — a real gap — **40 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -150,7 +150,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 420** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -168,7 +168,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 420** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -179,7 +179,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 420** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `declined` — deliberately no surface — **18 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -223,7 +223,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **360 of 420** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **363 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -442,6 +442,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Restyling a FreeText text box no longer unwraps, flattens or ignores it** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is the engine's fix to it) | **shipped — a text box is restyled in place; G148.** Both refusals become a `RedrawOffer`, and *Redraw as plain text* retries with `TextAnnotStyle::redraw_as_plain`; `rich_text_dropped` and `appearance_was_foreign` are disclosed on the status line. The foreign-look refusal is driven; the rich-text one is built and not driven. |
 | **A placed stamp's words can be changed** — `set_stamp_label` | **shipped — a stamp's Properties carry its words and a Default words button; G151.** The shell calls `set_text_annot_style` with `TextAnnotStyle::label`, which `set_stamp_label` is shorthand for. An empty field is not sent, so `EditError::StampLabelEmpty` cannot arise from this route. Driven by `a_stamps_opacity_and_words_change`. |
 | **A line's interior colour fills its closed arrowheads** — `MarkupSpec::Line.interior` | **shipped — a line's Fill swatch fills its closed arrowheads; G153.** `MarkupStyleSupport::for_subtype(b"Line")` answers `takes_interior`, so Properties and the Format band both draw Fill and read `/IC` back. One pick of the swatch is one `set_markup_style`, traced as `set-markup-style-applied` with the interior and both endings read back from the file. Driven by `a_lines_fill_colours_its_closed_arrowheads`. |
+| **PolyLine arrowheads and interior colour; a dashed Line or PolyLine draws a dashed shaft** — `MarkupSpec::PolyLine` `endings`, `interior` | **shipped — Markup ▸ Style ▸ Arrowheads on the next freehand line or polyline (a stroke with heads is committed as `/PolyLine`), and the Format tab's arrowhead chooser and Fill swatch on a selected polyline through `MarkupStyleSupport`; G235, O335.** Driven: `a_freehand_line_can_end_in_an_arrowhead`. |
+| **Draw a markup annotation with no `/AP` from its own geometry** — `RenderOptions::with_markup_without_ap`, `Diagnostics::annotations_geometry_drawn` | **shipped — on by default; the render notes report the geometry-drawn count instead of "not drawn"; G236, O333.** The FreeText `/C` reading stays at the engine default (fill); the engine `Settings` has no field for a preference. |
+| **Bake the geometry-drawn look into `/AP`** — `EditSession::bake_missing_appearances` | **shipped — Markup ▸ Comments ▸ Store appearances, one undo entry, disclosing what was stored, widened and skipped; G236, O333.** Driven: `store_appearances_writes_a_picture_into_the_file`. |
 | **A text markup can be re-spanned** — `respan_text_markup`, `pdfcer_core::edit::markup_respan` | **shipped — a text mark's end grips re-span it; G152.** `canvas::respan` draws a grip at each end of a selected `/Highlight`, `/Underline`, `/StrikeOut` or `/Squiggly`; the release re-runs the text selection and raises `AnnotAction::RespanTextMarkup`, applied as one `CommandKind::RespanTextMarkup`. A release over no text is declined before the verb. `EditError::TextMarkupVerbOnOther` cannot arise from this route: the grips are drawn only on the four subtypes. Driven by `a_highlights_end_drags_onto_the_next_line`. |
 | **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **shipped — Edit ▸ Insert ▸ Link, and a selected link's Properties; G161.** `edit.insert_link` arms `PlaceKind::Link` and `dialogs::link` raises `add_link`; in Edit a click selects a link (Links pick row live), its grips resize it, and `panels::properties::link` raises `set_link_target` and `set_link_border`. Read and Review still follow it. `replaced_action` and `appearance_replaced` reach the status line; `EditError::LinkUriInvalid`, `LinkBorderWidthInvalid`, `NamedDestinationNotFound` and `EmptyGeometry` are worded, `EditError::LinkVerbOnOther` is unreachable (the verbs are raised on a selected link only). `CommandKind::SetLinkTarget`, `CommandKind::SetLinkBorder` and `AnnotKind::Link` are the engine's undo labels; nothing here reads them. Reading a link back is a workaround (`linkread`) until `EditSession::link` is called, and named destinations are typed until `named_destinations` is offered (G178, G179, at the pin since v0.82.0). Driven: `a_link_is_drawn_and_given_an_address`, `a_selected_link_is_repointed_from_properties`, `a_review_click_follows_a_link_and_does_not_select_it`. |
 | **Pasted raw annotation moves all its geometry** — `paste_raw_annotation` | **shipped — the engine's paste moves every geometry key, and the shell sends the clip as copied** (request G186, at the pin since v0.82.0). A pasted link, line, polygon or ink mark has its `/L`, `/Vertices`, `/QuadPoints`, `/CL` and `/InkList` moved with `/Rect`. Driven: `a_link_is_moved_resized_copied_and_deleted`, which fails at step 5 when the shell also translates them. |

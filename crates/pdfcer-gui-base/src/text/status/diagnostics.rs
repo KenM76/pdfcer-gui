@@ -102,11 +102,11 @@ pub fn diagnostics_annots_no_appearance(n: usize) -> String {
 #[must_use]
 pub fn diagnostics_annots_drawn_from_shape(n: usize) -> String {
     if n == 1 {
-        "1 annotation has no stored picture; pdfcer drew it from its shape, other viewers may          not (Markup > Store appearances)"
+        "1 annotation has no stored picture; pdfcer drew it from its shape, other viewers may not (Markup > Store appearances)"
             .to_owned()
     } else {
         format!(
-            "{n} annotations have no stored picture; pdfcer drew them from their shape, other              viewers may not (Markup > Store appearances)"
+            "{n} annotations have no stored picture; pdfcer drew them from their shape, other viewers may not (Markup > Store appearances)"
         )
     }
 }

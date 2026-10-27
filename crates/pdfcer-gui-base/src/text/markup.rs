@@ -50,7 +50,7 @@ pub const fn detail_prefix() -> &'static str {
 /// Hover text for the arrowhead chooser.
 #[must_use]
 pub const fn pen_ends_tooltip() -> &'static str {
-    "Arrowheads on the next freehand line or polyline. A freehand line with arrowheads is      saved as a polyline, because a freehand ink mark cannot carry them. Change a drawn      line's arrowheads from the Format tab."
+    "Arrowheads on the next freehand line or polyline. A freehand line with arrowheads is saved as a polyline, because a freehand ink mark cannot carry them. Change a drawn line's arrowheads from the Format tab."
 }
 
 /// Hover text for the opacity control.
