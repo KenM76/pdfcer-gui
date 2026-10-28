@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O336 — **OPEN** — a signed lease opens as a "Please wait…" page
+
+His words: *"I get a generic Please wait... message when trying to open it. What do we need to add to get this to work?"* The file is a private signed lease, to be tested in place and never copied.
+
+**Scope.** Open the document and show its pages.
+
+**Status.** Measured with the engine CLI: the file is a dynamic XFA form (the Ontario standard lease). Its one PDF page is the placeholder Adobe writes for readers that cannot build XFA; the lease itself exists only in the XFA template and data, and the AcroForm half holds just the three signature fields. Showing it needs a dynamic XFA layout engine, which the engine rules out of scope (pdfcer decision 020 §3.2.1, open question (p)); that is his call, now with a real-world case. Filed G237 so the program can at least say on open that this is a dynamic XFA form, instead of showing the placeholder silently.
+
 ## O335 — **BUILT** — a freehand line can end in an arrowhead
 
 Relayed from a Reddit user by him: *"Also would love to edit how many segmentations a drawn line has (quality) and a drawn arrow (basically a line and two angled lines automatically added at the end)"*
