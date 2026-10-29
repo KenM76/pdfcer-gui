@@ -48,6 +48,7 @@ pub fn exists(name: &str) -> bool {
 #[derive(Debug)]
 pub struct PipeServer {
     name: String,
+    #[cfg_attr(not(windows), allow(dead_code))]
     created_first: bool,
 }
 

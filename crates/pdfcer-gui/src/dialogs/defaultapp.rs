@@ -50,7 +50,7 @@ pub const REGION_LATER: &str = "defaultapp.later";
 /// same rule [`crate::app::assoc::Status`] states at length.
 #[must_use]
 pub fn should_offer(prefs: &crate::app::prefs::Prefs) -> bool {
-    prefs.ask_default_app && !assoc::probe().is_default()
+    cfg!(windows) && prefs.ask_default_app && !assoc::probe().is_default()
 }
 
 /// The offer.

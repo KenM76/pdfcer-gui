@@ -313,7 +313,6 @@ egui-shell.workspace = true
 # pdfcer's lockfile and already licence-vetted. That is what the workspace
 # root's rule asks for: a crate this workspace adds which is NOT already in
 # pdfcer's lockfile is an operator decision, and this one is not that.
-rfd = "0.17.2"
 
 # ---------------------------------------------------------------------------
 # DEPENDENCIES ON THE READ-ONLY ENGINE (PROJECT_PLAN.md §2)
@@ -514,3 +513,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # would be a silent hole in the check rather than a compile error. No new crate:
 # `visit` is generated code inside `syn` itself.
 syn = { version = "2.0.119", features = ["full", "visit"] }
+
+# rfd has no Android backend; `src/filedialog.rs` answers picks there.
+[target.'cfg(not(target_os = "android"))'.dependencies]
+rfd = "0.17.2"

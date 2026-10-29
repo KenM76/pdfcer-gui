@@ -9,6 +9,12 @@
                 "view",
                 "security",
             ],
+            bottom_bar: [
+                "view.panel_pages",
+                "edit.find",
+                "markup.comments",
+                "file.sign",
+            ],
         ),
         (
             id: "review",
@@ -568,7 +574,7 @@
                     items: [
                         Command(id: "file.trust_web_sites", size: Large),
                         Command(id: "file.trust_ask_files"),
-                        Command(id: "file.trust_play_3d"),
+                        Command(id: "file.trust_play_3d", capability: "3d"),
                     ],
                     collapse: 1,
                 ),

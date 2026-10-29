@@ -149,6 +149,7 @@ pub mod siblings;
 pub mod state;
 pub mod status;
 
+mod phone;
 /// **The three regions the application draws** — the ribbon band, the docks
 /// and the central area.
 ///
@@ -249,6 +250,9 @@ pub struct PdfcerApp {
     /// Which tab and which mode are showing. Survives frames; does not
     /// survive a restart until layout persistence lands at S3.
     pub ribbon: egui_shell::ribbon::RibbonState,
+
+    /// The phone layout's tool sheet. See [`egui_shell::ribbon::phone`].
+    pub phone: egui_shell::ribbon::phone::PhoneState,
 
     /// Which panels exist, and what they are called.
     ///
@@ -996,6 +1000,7 @@ impl PdfcerApp {
             shell,
             commands,
             ribbon,
+            phone: egui_shell::ribbon::phone::PhoneState::default(),
             panel_registry,
             dock,
             // No panel is parked until a tab menu chooses one.

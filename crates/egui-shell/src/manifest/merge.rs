@@ -206,9 +206,17 @@ fn prune_absent_capabilities(
     // layer, exactly the programming error this module's header says must
     // reach `validate_against` and fail loudly. The two filters share
     // `absence_reason`; only this one narrows what it acts on.
+    let mut absent: Vec<(String, String)> = Vec::new();
     let mut retain_conditional = |items: &mut Vec<Item>, site: &Site| {
         items.retain(|item| match absence_reason(item, catalog) {
             Some(reason @ SkipReason::CapabilityAbsent { .. }) => {
+                if let SkipReason::CapabilityAbsent {
+                    capability,
+                    command,
+                } = &reason
+                {
+                    absent.push((command.clone(), capability.clone()));
+                }
                 report.push(Layer::BuiltIn, site.clone(), reason);
                 false
             }
@@ -233,6 +241,33 @@ fn prune_absent_capabilities(
 
     if let Some(trailing) = shell.trailing.as_mut() {
         retain_conditional(&mut trailing.0, &Site::Trailing);
+    }
+
+    // A bottom bar names commands by id alone, so it inherits the capability
+    // of the item that names the same command elsewhere: absent there, absent
+    // here. An id no conditional item explains still reaches validation.
+    for mode in shell.modes.iter_mut().flatten() {
+        let site = Site::Mode {
+            mode: mode.id.clone(),
+        };
+        if let Some(ids) = mode.bottom_bar.as_mut() {
+            ids.retain(
+                |id| match absent.iter().find(|(command, _)| command == id) {
+                    Some((command, capability)) => {
+                        report.push(
+                            Layer::BuiltIn,
+                            site.clone(),
+                            SkipReason::CapabilityAbsent {
+                                capability: capability.clone(),
+                                command: command.clone(),
+                            },
+                        );
+                        false
+                    }
+                    None => true,
+                },
+            );
+        }
     }
 }
 
@@ -523,6 +558,9 @@ fn merge_modes(
         };
         if omode.label.is_some() {
             mode.label.clone_from(&omode.label);
+        }
+        if omode.bottom_bar.is_some() {
+            mode.bottom_bar.clone_from(&omode.bottom_bar);
         }
         if omode.tabs.is_some() {
             mode.tabs.clone_from(&omode.tabs);
@@ -1161,6 +1199,38 @@ mod tests {
             skips[0].layer,
             Layer::Operator,
             "at THEIR layer, so the disclosure names the file they edited"
+        );
+    }
+
+    /// **A bottom-bar id goes with the item that names its capability**, and
+    /// an id no conditional item explains is left for validation to refuse.
+    #[test]
+    fn a_bottom_bar_drops_the_commands_of_an_absent_capability() {
+        let built_in = Shell::new()
+            .with_mode(Mode::new("read", "Read", ["file"]).with_bottom_bar([
+                "file.open",
+                "file.sign",
+                "file.typo",
+            ]))
+            .with_tab(Tab::new("file", "File").with_groups([
+                Group::new("security", "Security").with_items([
+                    Item::command("file.open"),
+                    Item::command("file.sign").provided_by("signing"),
+                ]),
+            ]));
+
+        let merged = merge(MergeInput::built_in(&built_in), &CATALOG);
+
+        assert_eq!(
+            merged.shell.modes()[0].bottom_bar(),
+            ["file.open", "file.typo"]
+        );
+        let skipped: Vec<&Site> = merged.report.skips().iter().map(|s| &s.site).collect();
+        assert!(
+            skipped.contains(&&Site::Mode {
+                mode: "read".to_owned()
+            }),
+            "{skipped:?}"
         );
     }
 }

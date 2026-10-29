@@ -474,12 +474,14 @@ mod tests {
             id: "x".to_owned(),
             label: Some("  ".to_owned()),
             tabs: None,
+            bottom_bar: None,
         };
         assert_eq!(mode_label(&blank), "x");
         let nameless = Mode {
             id: String::new(),
             label: None,
             tabs: None,
+            bottom_bar: None,
         };
         assert_eq!(mode_label(&nameless), "(unnamed mode)");
     }

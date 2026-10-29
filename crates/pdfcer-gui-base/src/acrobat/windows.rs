@@ -45,6 +45,7 @@ const CLASSES_PDF: &str = r"HKLM\SOFTWARE\Classes\.pdf";
 const CLASSES: &str = r"HKLM\SOFTWARE\Classes";
 
 /// `CREATE_NO_WINDOW` — see this module's header note on the console flash.
+#[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// The real machine.

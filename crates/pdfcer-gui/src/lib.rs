@@ -31,7 +31,11 @@ pub mod dialogs;
 // that decides what the position readout says, and the bar itself. See FIND's
 // own header for the `find_text` wildcard trap it exists to avoid, for why the
 // bar is docked rather than floating, and for what an edit does to a hit list.
+// The system file pickers: rfd on the desktop, the platform's picker on Android.
+pub mod filedialog;
 pub mod find;
+// The system bars' insets, which eframe reports only on iOS.
+pub mod insets;
 // The dock's panel bodies — Bookmarks, Layers, Signatures, Fonts, Objects and
 // the properties panel. See PANELS' own header for the reachability contract
 // every one of them has to satisfy.
@@ -148,7 +152,20 @@ pub fn run(initial: Option<PathBuf>, page: Option<usize>) -> eframe::Result {
         viewport,
         ..Default::default()
     };
+    launch(native_options, initial, page)
+}
 
+/// Starts the application with platform options the caller has built.
+///
+/// [`run`] is the desktop caller. The Android entry point (`crates/pdfcer-android`)
+/// is the other: it supplies the `AndroidApp` handle in
+/// `NativeOptions::android_app`, which only exists on that target, so the type
+/// never has to be named here.
+pub fn launch(
+    native_options: eframe::NativeOptions,
+    initial: Option<PathBuf>,
+    page: Option<usize>,
+) -> eframe::Result {
     diag::trace(|| format!("start argv1={initial:?}"));
 
     eframe::run_native(

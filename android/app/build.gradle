@@ -1,0 +1,37 @@
+// The APK wrapper around libpdfcer_android.so. `tools/android/build-apk.sh`
+// builds the Rust library into src/main/jniLibs first; this file only packages it.
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'io.github.kenm76.pdfcer'
+    compileSdk 34
+    ndkVersion '27.2.12479018'
+
+    defaultConfig {
+        applicationId 'io.github.kenm76.pdfcer'
+        minSdk 28
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0'
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Signed with the debug key until a release key exists (MOBILE_DESIGN.md section 10).
+            signingConfig signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    // android-activity 0.6.1 supports GameActivity 4.0.0 through 4.4.0. Its C glue
+    // is compiled by the Rust crate, so prefab stays off.
+    implementation 'androidx.games:games-activity:4.0.0'
+}

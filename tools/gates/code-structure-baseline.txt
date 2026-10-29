@@ -378,7 +378,6 @@ fn crates/pdfcer-gui/src/dialogs/textannot.rs::open
 fn crates/pdfcer-gui/src/dialogs/textannot.rs::show
 fn crates/pdfcer-gui/src/dialogs/textannot.rs::sizes
 fn crates/pdfcer-gui/src/dialogs/unsaved.rs::body
-fn crates/pdfcer-gui/src/lib.rs::run
 fn crates/pdfcer-gui/src/panels/align.rs::align_tab
 fn crates/pdfcer-gui/src/panels/align.rs::measure
 fn crates/pdfcer-gui/src/panels/align.rs::moves_action

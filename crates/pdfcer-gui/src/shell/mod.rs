@@ -83,11 +83,20 @@ mod tests {
 
         let merged = merge(MergeInput::built_in(&built_in), &catalog);
 
-        // 1 + 2: exactly those items, each with the right reason.
+        // A mode's phone bottom bar may name a conditional command too, and
+        // each place it is named is a separate skip site.
+        let bar_sites = built_in
+            .modes()
+            .iter()
+            .flat_map(egui_shell::manifest::Mode::bottom_bar)
+            .filter(|id| conditional.iter().any(|(c, _)| c == *id))
+            .count();
+
+        // 1 + 2: exactly those sites, each with the right reason.
         assert_eq!(
             merged.report.skips().len(),
-            conditional.len(),
-            "one skip per conditional command and nothing else: {:?}",
+            conditional.len() + bar_sites,
+            "one skip per site naming a conditional command and nothing else: {:?}",
             merged.report.skips()
         );
         for (id, capability) in &conditional {

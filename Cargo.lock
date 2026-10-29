@@ -176,6 +176,7 @@ dependencies = [
  "ndk-context",
  "ndk-sys",
  "num_enum",
+ "simd_cesu8",
  "thiserror 2.0.21",
 ]
 
@@ -2714,6 +2715,16 @@ dependencies = [
  "png 0.17.16",
  "thiserror 2.0.21",
  "zune-jpeg 0.5.16-rc3",
+]
+
+[[package]]
+name = "pdfcer-android"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "jni",
+ "pdfcer-gui",
+ "winit",
 ]
 
 [[package]]

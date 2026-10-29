@@ -1,0 +1,31 @@
+# pdfcer-android: the Android entry point, and nothing else.
+#
+# A separate crate because Android loads the program as a shared library
+# (`libpdfcer_android.so`) and calls `android_main`, which needs
+# `#[unsafe(no_mangle)]`; `pdfcer-gui` forbids unsafe code. Every Android-only
+# dependency sits under the target table, so a desktop or workspace build
+# compiles this crate as an empty library and enables nothing extra. See
+# MOBILE_DESIGN.md section 8.
+[package]
+name = "pdfcer-android"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[target.'cfg(target_os = "android")'.dependencies]
+pdfcer-gui = { path = "../pdfcer-gui", default-features = false }
+# GameActivity, not NativeActivity: eframe refuses `accesskit` together with
+# `android-native-activity`, and the workspace keeps `accesskit`.
+eframe = { workspace = true, features = ["android-game-activity"] }
+# The `AndroidApp` type; eframe does not re-export winit. Same version as the lock.
+# Calls the activity's document picker. Same version the lock already holds.
+jni = "0.22.4"
+winit = { version = "0.30.13", default-features = false, features = ["android-game-activity"] }
+
+[lints.rust]
+missing_docs = "deny"

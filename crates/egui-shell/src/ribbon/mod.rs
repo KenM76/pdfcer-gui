@@ -105,6 +105,7 @@ pub(crate) mod control;
 pub mod ctx;
 pub mod frame_report;
 pub mod mode_selector;
+pub mod phone;
 // The four width primitives every ribbon row plans with -- button padding,
 // the truncation floor, a separator's cost and text measurement. See that
 // module's header for why they belong to no one row.

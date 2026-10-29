@@ -57,6 +57,8 @@ members = [
     # test: the module references no other module of `pdfcer-gui`. See that
     # crate's `Cargo.toml` and DESIGNS.md's staged plan.
     "crates/pdfcer-gui-base",
+    # pdfcer-android — the Android entry point; empty on every other target.
+    "crates/pdfcer-android",
     "tools/ui-verify",
 ]
 

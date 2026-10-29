@@ -174,30 +174,8 @@ impl<'a> Ribbon<'a> {
         registry: &'a CommandRegistry,
         state: &mut RibbonState,
     ) -> Vec<HandlerToken> {
-        // The stand-in for an application that supplied no conditions.
-        //
-        // A `static` rather than a local because `Ctx` holds `&'a
-        // ConditionSet` for the same `'a` as the application's callbacks,
-        // and a local would not live that long. It is an immutable empty
-        // set, built at most once per process, and reading it says exactly
-        // what it means: nothing is true, so every `Enable::When` command
-        // is disabled and every contextual tab is hidden.
-        static NO_CONDITIONS: std::sync::OnceLock<ConditionSet> = std::sync::OnceLock::new();
-        let conditions = self
-            .conditions
-            .unwrap_or_else(|| NO_CONDITIONS.get_or_init(ConditionSet::new));
-
-        let mut ctx = Ctx {
-            registry,
-            conditions,
-            theme: Theme::of(ui.ctx()),
-            reporter: Reporter::new(self.rects),
-            icons: self.icons,
-            tab_label: self.tab_label,
-            custom: self.custom,
-            base_id: state.base_id,
-            invoked: Vec::new(),
-        };
+        let mut ctx = self.into_ctx(ui.ctx(), registry, state.base_id);
+        let conditions = ctx.conditions;
 
         // Resolve what is on screen BEFORE anything is drawn, so the tab
         // strip and the band cannot disagree about it.
@@ -344,6 +322,39 @@ impl<'a> Ribbon<'a> {
             band_show: show,
         };
         invoked
+    }
+
+    /// The per-frame context every ribbon layout draws through.
+    pub(super) fn into_ctx(
+        self,
+        egui_ctx: &egui::Context,
+        registry: &'a CommandRegistry,
+        base_id: egui::Id,
+    ) -> Ctx<'a> {
+        // The stand-in for an application that supplied no conditions.
+        //
+        // A `static` rather than a local because `Ctx` holds `&'a
+        // ConditionSet` for the same `'a` as the application's callbacks,
+        // and a local would not live that long. It is an immutable empty
+        // set, built at most once per process, and reading it says exactly
+        // what it means: nothing is true, so every `Enable::When` command
+        // is disabled and every contextual tab is hidden.
+        static NO_CONDITIONS: std::sync::OnceLock<ConditionSet> = std::sync::OnceLock::new();
+        let conditions = self
+            .conditions
+            .unwrap_or_else(|| NO_CONDITIONS.get_or_init(ConditionSet::new));
+
+        Ctx {
+            registry,
+            conditions,
+            theme: Theme::of(egui_ctx),
+            reporter: Reporter::new(self.rects),
+            icons: self.icons,
+            tab_label: self.tab_label,
+            custom: self.custom,
+            base_id,
+            invoked: Vec::new(),
+        }
     }
 }
 

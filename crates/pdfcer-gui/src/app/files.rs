@@ -249,7 +249,7 @@ pub fn raise(picked: Picked, actions: &mut Vec<crate::app::actions::Action>) {
 
 /// The platform's own picker, with multi-selection on.
 fn native_pick_many() -> Vec<Picked> {
-    let chosen = rfd::FileDialog::new()
+    let chosen = crate::filedialog::FileDialog::new()
         .set_title(crate::text::files::open_dialog_title())
         .add_filter(crate::text::files::filter_pdf(), &["pdf"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -264,7 +264,7 @@ fn native_pick_many() -> Vec<Picked> {
 
 /// Ask the platform for its own file picker.
 fn native_pick() -> Picked {
-    rfd::FileDialog::new()
+    crate::filedialog::FileDialog::new()
         .set_title(crate::text::files::open_dialog_title())
         .add_filter(crate::text::files::filter_pdf(), &["pdf"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -282,7 +282,7 @@ pub fn pick_image_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::images::window_title())
         .add_filter(
             crate::text::files::filter_image(),
@@ -308,7 +308,7 @@ pub fn pick_form_data_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::export_form::import_dialog_title())
         .add_filter(
             crate::text::files::filter_form_data(),
@@ -334,7 +334,7 @@ pub fn pick_text_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::import_text::window_title())
         .add_filter(crate::text::files::filter_text(), &["txt"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -357,7 +357,7 @@ pub fn pick_attachment_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::attachments::attach_dialog_title())
         .add_filter(crate::text::files::filter_all(), &["*"])
         .pick_file()
@@ -379,7 +379,7 @@ pub fn pick_sound_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::soundannot::pick_title())
         .add_filter(crate::text::soundannot::filter_wav(), &["wav"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -402,7 +402,7 @@ pub fn pick_media_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::screenannot::pick_title())
         .add_filter(
             crate::text::screenannot::filter_media(),
@@ -428,7 +428,7 @@ pub fn pick_model_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::models::insert_dialog_title())
         .add_filter(
             crate::text::panels::models::insert_filter(),
@@ -454,7 +454,7 @@ pub fn pick_attachment_target(suggested: &std::path::Path) -> Picked {
         });
         return answer;
     }
-    let mut dialog = rfd::FileDialog::new()
+    let mut dialog = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::attachments::save_dialog_title())
         .add_filter(crate::text::files::filter_all(), &["*"]);
     if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {
@@ -482,7 +482,7 @@ pub fn pick_mesh_target(suggested: &std::path::Path) -> Picked {
         });
         return answer;
     }
-    let mut dialog = rfd::FileDialog::new()
+    let mut dialog = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::models::mesh_dialog_title())
         .add_filter(crate::text::panels::models::mesh_filter_stl(), &["stl"])
         .add_filter(crate::text::panels::models::mesh_filter_obj(), &["obj"]);
@@ -510,7 +510,7 @@ pub fn pick_picture_target(suggested: &std::path::Path) -> Picked {
         });
         return answer;
     }
-    let mut dialog = rfd::FileDialog::new()
+    let mut dialog = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::models::picture_dialog_title())
         .add_filter(crate::text::panels::models::picture_filter_png(), &["png"]);
     if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {
@@ -537,7 +537,7 @@ pub fn pick_font_file() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::face::font_file_dialog_title())
         .add_filter(
             crate::text::panels::face::font_file_filter(),
@@ -563,7 +563,7 @@ pub fn pick_font_folder() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::settings::font_folder_dialog_title())
         .pick_folder()
         .map_or(Picked::Cancelled, Picked::Path);
@@ -592,7 +592,7 @@ pub fn pick_ocr_addon_zip() -> Picked {
         crate::diag::trace(|| format!("ocr-addon-zip-picked source=env answer={answer:?}"));
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::ocrmanage::pick_zip_title())
         .add_filter(crate::text::ocrmanage::zip_filter(), &["zip"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -629,7 +629,7 @@ fn pick_folder_traced(env: &str, title: &str, event: &str) -> Picked {
     let (answer, source) = match from_env(std::env::var_os(env)) {
         Some(answer) => (answer, "env"), // ui-text-exempt: trace token
         None => (
-            rfd::FileDialog::new()
+            crate::filedialog::FileDialog::new()
                 .set_title(title)
                 .pick_folder()
                 .map_or(Picked::Cancelled, Picked::Path),
@@ -658,7 +658,7 @@ pub fn pick_acrobat() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::acrobat::path_dialog_title())
         .add_filter(crate::text::acrobat::path_filter_name(), &["exe"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -682,7 +682,7 @@ pub fn pick_trust_store() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::trust::store_path_browse())
         .add_filter(crate::text::trust::store_path_filter(), &["acrodata"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -715,7 +715,7 @@ pub fn pick_certificate() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::sign::certificate_picker_title())
         .add_filter(crate::text::sign::certificate_filter(), &["pfx", "p12"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -770,7 +770,7 @@ fn pick_key_file_target(
     let (source, answer) = if let Some(answer) = from_env(std::env::var_os(seam)) {
         ("env", answer) // ui-text-exempt: a trace token, never displayed
     } else {
-        let mut dialog = rfd::FileDialog::new()
+        let mut dialog = crate::filedialog::FileDialog::new()
             .set_title(title)
             .add_filter(filter, &[ext]);
         if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {
@@ -805,7 +805,7 @@ pub fn pick_compare_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::compare::pick_title())
         .add_filter(crate::text::files::filter_pdf(), &["pdf"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -829,7 +829,7 @@ pub fn pick_insert_source() -> Picked {
         });
         return answer;
     }
-    let answer = rfd::FileDialog::new()
+    let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::pages::insert_dialog_title())
         .add_filter(crate::text::files::filter_pdf(), &["pdf"])
         .add_filter(crate::text::files::filter_all(), &["*"])
@@ -863,7 +863,7 @@ pub fn pick_validation_evidence() -> Vec<PathBuf> {
         ("env", paths)
     } else {
         let t = crate::text::evidence::picker_title();
-        let paths = rfd::FileDialog::new()
+        let paths = crate::filedialog::FileDialog::new()
             .set_title(t)
             .add_filter(
                 crate::text::evidence::picker_filter(),
@@ -924,7 +924,7 @@ fn pick_pdfs_traced(env: &str, title: &str, event: &str) -> Vec<PathBuf> {
             .collect();
         (answer, "env") // ui-text-exempt: trace token
     } else {
-        let answer = rfd::FileDialog::new()
+        let answer = crate::filedialog::FileDialog::new()
             .set_title(title)
             .add_filter(crate::text::files::filter_pdf(), &["pdf"])
             .add_filter(crate::text::files::filter_all(), &["*"])
@@ -966,7 +966,7 @@ pub fn pick_save_path(suggested: &std::path::Path, title: &str) -> Picked {
 
 /// The platform save dialog, pre-filled from `suggested` and headed `title`.
 fn native_save(suggested: &std::path::Path, title: &str) -> Picked {
-    let mut dialog = rfd::FileDialog::new()
+    let mut dialog = crate::filedialog::FileDialog::new()
         .set_title(title)
         .add_filter(crate::text::files::filter_pdf(), &["pdf"]);
     if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {

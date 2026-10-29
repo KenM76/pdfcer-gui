@@ -489,6 +489,10 @@ pub struct Mode {
     /// minus one entry is better than the mode failing to load.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tabs: Option<Vec<String>>,
+    /// The commands the phone layout's bottom bar holds in this mode, in
+    /// order. Unset, the bar takes the first group of the mode's second tab.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bottom_bar: Option<Vec<String>>,
 }
 
 impl Mode {
@@ -503,7 +507,25 @@ impl Mode {
             id: id.into(),
             label: Some(label.into()),
             tabs: Some(tabs.into_iter().map(Into::into).collect()),
+            bottom_bar: None,
         }
+    }
+
+    /// This mode with the phone bottom bar set to `ids`.
+    #[must_use]
+    pub fn with_bottom_bar<I, S>(mut self, ids: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        self.bottom_bar = Some(ids.into_iter().map(Into::into).collect());
+        self
+    }
+
+    /// The phone bottom bar's commands, or an empty slice if unstated.
+    #[must_use]
+    pub fn bottom_bar(&self) -> &[String] {
+        self.bottom_bar.as_deref().unwrap_or(&[])
     }
 
     /// A mode reference for a layer: names the id and overrides nothing.

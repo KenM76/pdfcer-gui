@@ -81,7 +81,7 @@ pub fn tab() -> Tab {
                 [
                     large("file.trust_web_sites"),
                     command("file.trust_ask_files"),
-                    command("file.trust_play_3d"),
+                    command("file.trust_play_3d").provided_by("3d"),
                 ],
             ),
         ])

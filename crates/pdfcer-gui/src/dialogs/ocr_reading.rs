@@ -137,7 +137,7 @@ fn pick_word_list() -> Picked {
     let (answer, source) = match from_env(std::env::var_os(DIAG_WORDS_PATH)) {
         Some(answer) => (answer, "env"), // ui-text-exempt: trace token
         None => (
-            rfd::FileDialog::new()
+            crate::filedialog::FileDialog::new()
                 .set_title(t::add_word_file())
                 .add_filter(crate::text::files::filter_text(), &["txt"])
                 .add_filter(crate::text::files::filter_all(), &["*"])

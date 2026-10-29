@@ -374,6 +374,16 @@ impl Shell {
                 }
             }
         }
+        for mode in self.modes() {
+            for id in mode.bottom_bar() {
+                out.push((
+                    Site::Mode {
+                        mode: mode.id.clone(),
+                    },
+                    id.clone(),
+                ));
+            }
+        }
         if let Some(keymap) = &self.keymap {
             for (chord, command) in keymap.iter() {
                 out.push((

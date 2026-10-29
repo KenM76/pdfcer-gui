@@ -57,6 +57,10 @@ fn scripted_invoke() -> Option<String> {
 }
 
 impl eframe::App for PdfcerApp {
+    fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
+        crate::insets::apply(ctx, raw_input);
+    }
+
     /// **Flush what the debounce is still holding, before the process
     /// goes** — `OPERATOR_REQUESTS.md` O80.
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
@@ -79,6 +83,7 @@ impl eframe::App for PdfcerApp {
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         crate::diag::begin_ui_frame();
         let ctx = ui.ctx().clone();
+        crate::insets::reserve(ui);
         // FIRST — read the OpenGL error flag, before this frame does any
         // GL work of its own.
         //
@@ -537,6 +542,13 @@ impl eframe::App for PdfcerApp {
             _ => None,
         };
         let mut actions = keyboard::collect(&ctx, page_count);
+        // Documents Android's picker returned since the last frame; see `filedialog`.
+        #[cfg(target_os = "android")]
+        actions.extend(
+            crate::filedialog::take_picked(&ctx)
+                .into_iter()
+                .map(crate::app::actions::Action::Open),
+        );
 
         // Step 1 — **files dragged onto the window**, read before anything
         // is drawn.
@@ -681,7 +693,10 @@ impl eframe::App for PdfcerApp {
         // below stays and how the operator gets back out are all in [`window`];
         // a composition step deciding any of that would be a second rule.
         let chrome = window::draws_chrome(&ctx);
-        if chrome {
+        let phone = egui_shell::ribbon::phone::is_phone(&ctx);
+        if chrome && phone {
+            self.phone_bars(ui, &mut actions);
+        } else if chrome {
             self.ribbon_band(ui, &mut actions);
         }
         // Drawn in Read mode too: a question nobody can see is a refusal.
@@ -712,7 +727,7 @@ impl eframe::App for PdfcerApp {
         // do, and the alternative costs the feature its discoverability: an
         // operator who has never seen a tab has no reason to believe a second
         // document is possible. `app::doctabs` §2 carries the argument.
-        if chrome && self.document_count() > 0 {
+        if chrome && !phone && self.document_count() > 0 {
             egui::Panel::top("document-tabs")
                 .exact_size(egui_shell::tabstrip::STRIP_HEIGHT)
                 .show(ui, |ui| {
@@ -850,7 +865,7 @@ impl eframe::App for PdfcerApp {
         // the dock's edge instead of spanning the window. The canvas must
         // be added *after* both, because a `CentralPanel` takes whatever is
         // left and there must be something left for it to take.
-        if chrome {
+        if chrome && !phone {
             self.docks(ui, &mut actions);
             crate::diag::frame_phase("docks");
         }

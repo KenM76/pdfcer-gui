@@ -223,6 +223,7 @@ pub mod pagetree;
 pub mod paint;
 /// Every string the dock's panel bodies show. Consumed by `pdfcer_gui::panels`.
 pub mod panels;
+pub mod phone;
 /// Every word the Markup ▸ Style group shows — three tooltips and a unit.
 pub mod placing;
 /// Every word the print dialog shows. Consumed by `pdfcer_gui::dialogs::print`.

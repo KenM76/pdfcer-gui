@@ -27,7 +27,8 @@ Consequences:
   needs no new domain knowledge, so R7 holds.
 - The manifest gains nothing for mobile beyond one optional, per-mode list
   `bottom_bar`, which names the phone's primary commands for each mode. Without
-  it, the first group of the mode's first tab is used.
+  it, the first group of the mode's second tab is used (the first is File,
+  which the app bar's overflow menu already carries).
 
 ## 2. Two layouts, chosen by width
 
@@ -161,11 +162,39 @@ The GUI side:
      and the `PDFCER_DIAG` trace.
 4. **D. Tablet layout** (section 4), after the phone ships.
 
+**Stage A status.** Built and driven by hand on the emulator: launch, the
+phone app bar, the mode row, the Read bottom bar (Pages, Find, Comments, All
+tools), Open through SAF, the page rendering, and long press opening the
+context menu. Not yet done:
+- **Drag selects text instead of panning.** One-finger drag is the desktop's
+  text-select gesture; a phone needs it to pan, with selection behind a long press.
+- **The status bar is the desktop's.** At phone width its fields overprint
+  one another; the chip strip replaces it.
+- **The context menu shows desktop shortcuts** ("Ctrl+C"); a phone hides them.
+- **The overflow menu is the whole File tab**, not section 3's short list, and
+  its popup is not kept out of the system bars.
+- **The empty-canvas hint is desktop wording** ("press Ctrl+O").
+- Open-with (the VIEW intent), saving back to the content URI, Android fonts.
+
+**How the system bars are kept clear.** eframe fills
+`RawInput::safe_area_insets` only on iOS, and its root `Ui` spans the whole
+viewport, so a safe area alone moves nothing. `MainActivity.systemBarInsets`
+reports the bars over JNI, `insets::apply` sets the safe area in
+`raw_input_hook`, and `insets::reserve` claims the covered bands with empty
+panels before anything else lays out.
+
 **Toolchain.**
-- The Android SDK (platform 34, build-tools 34.0.0, `adb`, emulator) and the
-  `aarch64-linux-android` Rust target are installed.
-- Still missing: the NDK, the `x86_64-linux-android` target that the emulator
-  needs, and `cargo-ndk`.
+- Installed: the Android SDK (platform 34, build-tools 34.0.0, `adb`,
+  emulator), NDK 27.2.12479018, `cargo-ndk`, and the `aarch64-linux-android`
+  and `x86_64-linux-android` Rust targets.
+- `tools/android/build-apk.sh` builds both ABIs and the APK. It strips debug
+  info, because an unstripped `.so` is about 290 MB per ABI and Gradle's
+  packaging step runs out of memory on it.
+- The emulator is the AVD `pdfcer_Pixel3a_API34_x86_64`. An older AVD named
+  for API 34 holds a different image; do not use it.
+- Diagnostics: `adb shell setprop debug.pdfcer.diag 1`, then read logcat tag
+  `RustStdoutStderr`. From Git Bash, set `MSYS_NO_PATHCONV=1` before `adb`, or
+  device paths are rewritten as Windows paths.
 
 Each stage keeps the desktop build unchanged and green.
 

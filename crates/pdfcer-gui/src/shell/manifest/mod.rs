@@ -78,11 +78,14 @@ pub fn built_in() -> Shell {
         // The contextual Format tab is in NO mode's list, and is present
         // in all three. See `format.rs`.
         // -------------------------------------------------------------------
-        .with_mode(Mode::new(
-            "read",
-            ribbon::mode_read(),
-            ["file", "view", "security"],
-        ))
+        .with_mode(
+            Mode::new("read", ribbon::mode_read(), ["file", "view", "security"]).with_bottom_bar([
+                "view.panel_pages",
+                "edit.find",
+                "markup.comments",
+                "file.sign",
+            ]),
+        )
         .with_mode(Mode::new(
             "review",
             ribbon::mode_review(),
