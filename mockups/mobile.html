@@ -1,0 +1,575 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>pdfcer on Android: proposed interface</title>
+<!-- Proposal mockup for MOBILE_DESIGN.md. Typed, not derived: it shows layout
+     and interaction, not which commands ship. The command set is the registry's. -->
+<style>
+  :root{
+    --bg:#f2f2f3; --surface:#fafafa; --panel:#e9e9ea; --line:#c9c9cd;
+    --text:#1d1f24; --muted:#5e6066; --accent:#2f6fb5; --accentsoft:#dbe8f6;
+    --paper:#fff; --bench:#8a8d93; --shadow:rgba(0,0,0,.14); --hot:#d1452b;
+    --red:#d33; --hl:rgba(255,214,0,.45);
+  }
+  @media (prefers-color-scheme: dark){ :root{
+    --bg:#1b1d21; --surface:#24262b; --panel:#2b2e34; --line:#3d4148;
+    --text:#e8e9ec; --muted:#9ba0a8; --accent:#6aa6e8; --accentsoft:#243a52;
+    --bench:#16171a; --shadow:rgba(0,0,0,.5);
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);padding:28px 20px 70px;
+    font:14px/1.5 "Segoe UI",Roboto,system-ui,sans-serif}
+  .wrap{max-width:1500px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 26px;max-width:92ch}
+  h2{font-size:18px;margin:44px 0 4px}
+  .q{color:var(--muted);font-size:13.5px;margin:0 0 16px;max-width:96ch}
+  .row{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+  .shot{display:flex;flex-direction:column;gap:10px;width:340px}
+  .cap{font-size:12.5px;color:var(--muted);line-height:1.45}
+  .cap b{color:var(--text)}
+
+  /* ---- phone frame ---- */
+  .phone{width:340px;height:720px;border-radius:34px;border:10px solid #111;
+    background:var(--surface);position:relative;overflow:hidden;
+    box-shadow:0 10px 30px var(--shadow);display:flex;flex-direction:column}
+  .sysbar{height:24px;flex:none;display:flex;justify-content:space-between;align-items:center;
+    padding:0 16px;font-size:11px;color:var(--muted)}
+  .appbar{height:48px;flex:none;display:flex;align-items:center;gap:6px;padding:0 6px 0 4px;
+    border-bottom:1px solid var(--line)}
+  .appbar .title{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .appbar .title small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+  .ib{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:20px}
+  .ib svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
+  .ib.on{background:var(--accentsoft);color:var(--accent)}
+  .mode{display:inline-flex;border:1px solid var(--line);border-radius:16px;padding:2px;
+    background:var(--panel);font-size:11px;flex:none}
+  .mode span{padding:3px 9px;border-radius:14px;color:var(--muted)}
+  .mode span.on{background:var(--accent);color:#fff;font-weight:600}
+
+  .canvas{flex:1;background:var(--bench);position:relative;overflow:hidden}
+  .page{position:absolute;background:var(--paper);box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .page .t{position:absolute;height:5px;background:#c8c8c8;border-radius:2px}
+  .page .h{position:absolute;height:8px;background:#9a9a9a;border-radius:2px}
+  .draw{position:absolute;border:1.5px solid #444}
+
+  .status{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;
+    font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);background:var(--surface)}
+  .status .pg{margin-left:auto;color:var(--text);font-weight:600}
+  .chip{font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);white-space:nowrap}
+  .chip.warn{border-color:#d9a13a;background:#fbf0da;color:#6b4a0c}
+
+  .bottombar{height:58px;flex:none;display:flex;justify-content:space-around;align-items:center;
+    border-top:1px solid var(--line);background:var(--surface)}
+  .bb{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;
+    color:var(--muted);width:60px}
+  .bb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round}
+  .bb.on{color:var(--accent);font-weight:600}
+  .gesture{height:16px;flex:none;display:grid;place-items:center}
+  .gesture i{width:110px;height:4px;border-radius:2px;background:var(--muted);opacity:.5}
+
+  /* ---- sheets, menus ---- */
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,.32)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);
+    border-radius:18px 18px 0 0;box-shadow:0 -6px 22px var(--shadow);padding:6px 0 10px}
+  .grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 8px}
+  .stabs{display:flex;gap:4px;padding:0 10px 8px;overflow:hidden;border-bottom:1px solid var(--line)}
+  .stabs span{padding:5px 11px;border-radius:14px;font-size:12px;color:var(--muted);white-space:nowrap}
+  .stabs span.on{background:var(--accentsoft);color:var(--accent);font-weight:600}
+  .grp{padding:8px 12px 2px}
+  .grp h4{margin:0 0 6px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .tool{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;border-radius:10px;
+    font-size:10.5px;text-align:center;line-height:1.2}
+  .tool svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round}
+  .tool.on{background:var(--accentsoft);color:var(--accent);font-weight:600}
+  .swatches{display:flex;gap:9px;align-items:center;padding:4px 0 2px}
+  .sw{width:26px;height:26px;border-radius:13px;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+  .sw.on{box-shadow:0 0 0 2px var(--accent)}
+  .slider{flex:1;height:4px;border-radius:2px;background:var(--line);position:relative}
+  .slider i{position:absolute;left:35%;top:-7px;width:18px;height:18px;border-radius:9px;background:var(--accent)}
+
+  .menu{position:absolute;background:var(--surface);border-radius:12px;box-shadow:0 8px 26px var(--shadow);
+    padding:6px 0;min-width:196px;font-size:13.5px;border:1px solid var(--line)}
+  .menu div{padding:9px 16px;display:flex;gap:10px;align-items:center}
+  .menu div small{margin-left:auto;color:var(--muted);font-size:11px}
+  .menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+  .pill{position:absolute;display:flex;gap:2px;background:#24262b;color:#fff;border-radius:20px;
+    padding:4px 6px;font-size:12px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .pill span{padding:5px 10px;border-radius:14px}
+  .handle{position:absolute;width:14px;height:14px;border-radius:7px;background:#fff;border:2px solid var(--accent)}
+  .selbox{position:absolute;border:1.5px solid var(--accent)}
+  .loupe{position:absolute;width:96px;height:96px;border-radius:48px;border:3px solid #fff;
+    box-shadow:0 6px 18px rgba(0,0,0,.45);background:var(--paper);overflow:hidden}
+  .finger{position:absolute;width:34px;height:34px;border-radius:17px;background:rgba(47,111,181,.25);
+    border:2px solid rgba(47,111,181,.7)}
+
+  .list .it{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .list .it .dot{width:10px;height:10px;border-radius:5px;margin-top:5px;flex:none}
+  .list .it small{display:block;color:var(--muted);font-size:11px}
+
+  /* ---- tablet ---- */
+  .tablet{width:1040px;height:660px;border-radius:26px;border:12px solid #111;background:var(--surface);
+    overflow:hidden;box-shadow:0 10px 30px var(--shadow);display:flex;flex-direction:column}
+  .tabs{display:flex;align-items:center;gap:2px;padding:6px 10px 0;border-bottom:1px solid var(--line)}
+  .tabs span{padding:7px 14px;font-size:13px;border-radius:8px 8px 0 0;color:var(--muted)}
+  .tabs span.on{background:var(--accentsoft);color:var(--text);font-weight:600}
+  .tabs span.ctx{color:var(--accent);font-style:italic}
+  .band{display:flex;gap:0;padding:6px 8px;border-bottom:1px solid var(--line);height:86px}
+  .bgrp{display:flex;flex-direction:column;border-right:1px solid var(--line);padding:0 10px}
+  .bgrp .items{display:flex;gap:4px;flex:1}
+  .bgrp .lbl{font-size:10.5px;color:var(--muted);text-align:center}
+  .big{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    width:58px;border-radius:8px;font-size:10.5px;text-align:center;line-height:1.15}
+  .big svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .big.on{background:var(--accentsoft);color:var(--accent)}
+  .body{flex:1;display:flex;min-height:0}
+  .rail{width:52px;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px}
+  .side{width:250px;border-left:1px solid var(--line);background:var(--surface)}
+  .side h5{margin:0;padding:10px 14px;font-size:12.5px;border-bottom:1px solid var(--line)}
+  .kv{display:flex;justify-content:space-between;padding:9px 14px;font-size:12.5px;border-bottom:1px solid var(--line)}
+  .kv span:first-child{color:var(--muted)}
+
+  table.map{border-collapse:collapse;font-size:13px;max-width:1100px;margin-top:6px}
+  table.map td,table.map th{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  table.map th{background:var(--panel)}
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 010 10h-3"/></symbol>
+    <symbol id="i-pages" viewBox="0 0 24 24"><rect x="4" y="3" width="7" height="9" rx="1"/><rect x="13" y="3" width="7" height="9" rx="1"/><rect x="4" y="14" width="7" height="7" rx="1"/><rect x="13" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></symbol>
+    <symbol id="i-comment" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></symbol>
+    <symbol id="i-hl" viewBox="0 0 24 24"><path d="M5 19h14"/><path d="M8 15l7-10 4 3-7 10H8z"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/></symbol>
+    <symbol id="i-shape" viewBox="0 0 24 24"><rect x="4" y="4" width="10" height="10"/><circle cx="16" cy="16" r="5"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1A3.5 3.5 0 0117 18z"/></symbol>
+    <symbol id="i-stamp" viewBox="0 0 24 24"><path d="M9 4h6l-1 7h-4z"/><path d="M5 15h14v3H5z"/><path d="M4 21h16"/></symbol>
+    <symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></symbol>
+    <symbol id="i-sign" viewBox="0 0 24 24"><path d="M3 17c3-6 5-6 6-2s3 3 5-1 4-3 7 2"/><path d="M3 21h18"/></symbol>
+    <symbol id="i-form" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="5" rx="1"/><rect x="3" y="14" width="18" height="5" rx="1"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V6a1.5 1.5 0 013 0v5V4.5a1.5 1.5 0 013 0V11V6a1.5 1.5 0 013 0v8a7 7 0 01-7 7c-3 0-4.5-2-6-4l-2-3a1.5 1.5 0 012.5-1.5z"/></symbol>
+    <symbol id="i-select" viewBox="0 0 24 24"><path d="M5 3l13 8-6 1.5L9 19z"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="17" cy="6" r="2.5"/><circle cx="17" cy="18" r="2.5"/><path d="M8.3 11l6.4-3.7M8.3 13l6.4 3.7"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+    <symbol id="i-erase" viewBox="0 0 24 24"><path d="M4 16l9-9 6 6-6 6H8z"/><path d="M10 20h10"/></symbol>
+    <symbol id="i-lasso" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="8" ry="5"/><path d="M8 13c-1 3 1 5 3 6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 20L20 4"/><path d="M11 4h9v9"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<h1>pdfcer on Android: proposed interface</h1>
+<p class="sub">A proposal, not yet approved. The commands, the Read / Review / Edit modes and the off-canvas
+disclosure rule are the desktop program's, unchanged. What changes is where commands are placed and how
+gestures map onto them. A phone gets its own layout; a tablet gets the desktop ribbon resized for fingers.
+The design argument is in <code>MOBILE_DESIGN.md</code>.</p>
+
+<!-- ================================================================== -->
+<h2>1 · Phone, Read: what someone opening an emailed drawing sees</h2>
+<p class="q">The page fills the screen. One finger pans, two fingers zoom, a double-tap fits the width.
+The bottom bar holds the four things a reader reaches for. The mode switch sits in the top bar and is
+the only door to authoring. One tap on the page hides the bars; another brings them back.</p>
+<div class="row">
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 82%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">A-201 Site Plan.pdf<small>Read · 3 of 12</small></div>
+    <div class="mode"><span class="on">Read</span><span>Review</span><span>Edit</span></div>
+    <div class="ib"><svg><use href="#i-more"/></svg></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:14px;top:18px;width:292px;height:206px">
+      <div class="draw" style="left:12px;top:12px;width:200px;height:150px"></div>
+      <div class="draw" style="left:40px;top:40px;width:90px;height:60px;border-style:dashed"></div>
+      <div class="draw" style="left:150px;top:70px;width:46px;height:70px"></div>
+      <div class="draw" style="left:222px;top:12px;width:58px;height:182px"></div>
+      <div class="t" style="left:228px;top:150px;width:46px"></div>
+      <div class="t" style="left:228px;top:160px;width:38px"></div>
+      <div class="h" style="left:228px;top:176px;width:46px"></div>
+    </div>
+    <div class="page" style="left:14px;top:238px;width:292px;height:206px">
+      <div class="draw" style="left:20px;top:20px;width:180px;height:120px"></div>
+      <div class="draw" style="left:222px;top:12px;width:58px;height:182px"></div>
+    </div>
+  </div>
+  <div class="status"><span class="chip">Fit width</span><span>87%</span><span class="pg">3 / 12</span></div>
+  <div class="bottombar">
+    <div class="bb"><svg><use href="#i-pages"/></svg>Pages</div>
+    <div class="bb"><svg><use href="#i-search"/></svg>Find</div>
+    <div class="bb"><svg><use href="#i-comment"/></svg>Comments</div>
+    <div class="bb"><svg><use href="#i-form"/></svg>Fill &amp; sign</div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Bottom bar in Read:</b> Pages (thumbnails and bookmarks), Find, Comments (list and reply),
+Fill &amp; sign. Everything else is in the ⋮ menu: share, save a copy, print, document properties,
+layers, attachments, signatures.</div>
+</div>
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 82%</span></div>
+  <div class="canvas" style="background:var(--bench)">
+    <div class="page" style="left:-120px;top:-40px;width:620px;height:440px">
+      <div class="draw" style="left:30px;top:30px;width:420px;height:320px"></div>
+      <div class="draw" style="left:90px;top:90px;width:190px;height:130px;border-style:dashed"></div>
+      <div class="draw" style="left:320px;top:150px;width:100px;height:150px"></div>
+      <div class="t" style="left:150px;top:250px;width:70px"></div>
+      <div class="t" style="left:150px;top:262px;width:50px"></div>
+    </div>
+    <div class="finger" style="left:110px;top:300px"></div>
+    <div class="finger" style="left:200px;top:220px"></div>
+  </div>
+  <div class="status"><span class="chip">Find: “DUCT”  4 of 9  ‹ ›</span><span class="pg">310%</span></div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Immersive:</b> one tap on the page hides the bars; the zoom and Find strip stays
+because Find is in progress. Pinch shown. It reuses the deep-zoom renderer the desktop has, with the
+same rule: the old picture stays until the new one is ready, so the screen never blanks.</div>
+</div>
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 82%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">Lease.pdf<small>Read · 1 of 1</small></div>
+    <div class="mode"><span class="on">Read</span><span>Review</span><span>Edit</span></div>
+    <div class="ib"><svg><use href="#i-more"/></svg></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:30px;top:18px;width:260px;height:336px">
+      <div class="h" style="left:20px;top:22px;width:120px"></div>
+      <div class="t" style="left:20px;top:44px;width:200px"></div>
+      <div class="t" style="left:20px;top:54px;width:180px"></div>
+    </div>
+  </div>
+  <div class="status" style="height:auto;padding:8px 12px;flex-wrap:wrap;gap:6px">
+    <span class="chip warn">Dynamic XFA form: only Adobe can build its pages</span>
+    <span class="chip">3 signatures · 1 note</span>
+  </div>
+  <div class="bottombar">
+    <div class="bb"><svg><use href="#i-pages"/></svg>Pages</div>
+    <div class="bb"><svg><use href="#i-search"/></svg>Find</div>
+    <div class="bb"><svg><use href="#i-comment"/></svg>Comments</div>
+    <div class="bb"><svg><use href="#i-form"/></svg>Fill &amp; sign</div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Disclosure stays off the page.</b> The status line becomes a strip of chips above
+the bottom bar; tapping one opens the full note as a sheet. Nothing is drawn on the canvas and nothing
+blocks. This is the rule the desktop already follows, carried over unchanged.</div>
+</div>
+</div>
+
+<!-- ================================================================== -->
+<h2>2 · Phone, Review: marking up with a finger or a stylus</h2>
+<p class="q">Choosing Review changes the bottom bar to markup tools. The desktop's ribbon tabs become the
+<b>tool sheet</b>: drag up from the bottom bar. Its tab chips are the manifest's tabs in the same order,
+with the same groups and commands, laid out in a four-column grid. A stylus draws and a finger pans, so
+someone can mark up while scrolling, which is how Samsung Notes and Xodo behave.</p>
+<div class="row">
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 80%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">A-201 Site Plan.pdf<small>Review · 3 of 12</small></div>
+    <div class="ib"><svg><use href="#i-undo"/></svg></div>
+    <div class="mode"><span>Read</span><span class="on">Review</span><span>Edit</span></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:-30px;top:10px;width:420px;height:300px">
+      <div class="draw" style="left:30px;top:20px;width:300px;height:220px"></div>
+      <div class="draw" style="left:80px;top:60px;width:130px;height:90px;border-style:dashed"></div>
+      <svg style="position:absolute;left:70px;top:48px" width="160" height="116"><path d="M8 20 q12 -16 26 -2 q14 -16 28 0 q14 -16 28 0 q14 -16 28 0 q14 -14 26 4 q16 12 0 26 q16 14 0 28 q14 16 -2 26 q-14 14 -28 0 q-14 14 -28 0 q-14 14 -28 0 q-14 14 -28 0 q-16 -14 -2 -28 q-14 -12 0 -26 q-14 -14 8 -28z" fill="none" stroke="#d33" stroke-width="2"/></svg>
+      <div style="position:absolute;left:236px;top:56px;background:#fff6c4;border:1px solid #d9b100;font-size:10px;padding:3px 6px;color:#222">Duct clashes with beam</div>
+    </div>
+    <div class="pill" style="left:58px;top:330px"><span>Cloud</span><span style="background:#3a3d44">Red</span><span>2 pt</span><span>✕</span></div>
+  </div>
+  <div class="bottombar">
+    <div class="bb"><svg><use href="#i-hand"/></svg>Pan</div>
+    <div class="bb"><svg><use href="#i-pen"/></svg>Pen</div>
+    <div class="bb"><svg><use href="#i-hl"/></svg>Highlight</div>
+    <div class="bb on"><svg><use href="#i-cloud"/></svg>Cloud</div>
+    <div class="bb"><svg><use href="#i-tools"/></svg>All tools</div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Bottom bar in Review:</b> pan, then the operator's three most recent tools (they
+change as tools are used), then All tools. The floating pill shows the active tool's style and is the
+only control floating over the page. It can be dragged out of the way and closes with ✕.</div>
+</div>
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 80%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">A-201 Site Plan.pdf<small>Review · 3 of 12</small></div>
+    <div class="ib"><svg><use href="#i-undo"/></svg></div>
+    <div class="mode"><span>Read</span><span class="on">Review</span><span>Edit</span></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:-30px;top:10px;width:420px;height:300px">
+      <div class="draw" style="left:30px;top:20px;width:300px;height:220px"></div>
+    </div>
+    <div class="scrim" style="background:rgba(0,0,0,.12)"></div>
+    <div class="sheet" style="height:440px">
+      <div class="grab"></div>
+      <div class="stabs"><span>Pages</span><span class="on">Markup</span><span>Measure</span><span>View</span><span>File</span></div>
+      <div class="grp"><h4>Draw</h4>
+        <div class="grid">
+          <div class="tool"><svg><use href="#i-pen"/></svg>Pen</div>
+          <div class="tool"><svg><use href="#i-hl"/></svg>Highlight</div>
+          <div class="tool"><svg><use href="#i-shape"/></svg>Shapes</div>
+          <div class="tool on"><svg><use href="#i-cloud"/></svg>Cloud</div>
+          <div class="tool"><svg><use href="#i-arrow"/></svg>Arrow</div>
+          <div class="tool"><svg><use href="#i-erase"/></svg>Eraser</div>
+        </div></div>
+      <div class="grp"><h4>Comment</h4>
+        <div class="grid">
+          <div class="tool"><svg><use href="#i-comment"/></svg>Note</div>
+          <div class="tool"><svg><use href="#i-text"/></svg>Text box</div>
+          <div class="tool"><svg><use href="#i-stamp"/></svg>Stamp</div>
+          <div class="tool"><svg><use href="#i-sign"/></svg>Signature</div>
+        </div></div>
+      <div class="grp"><h4>Style of the next mark</h4>
+        <div class="swatches"><span class="sw on" style="background:#d33"></span><span class="sw" style="background:#2f6fb5"></span><span class="sw" style="background:#2a9d4b"></span><span class="sw" style="background:#111"></span><span class="sw" style="background:#f5c400"></span>
+        <span style="font-size:11px;color:var(--muted);margin-left:6px">Width</span><span class="slider"><i></i></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>The tool sheet is the ribbon.</b> Same tabs, groups and commands, read from the same
+manifest. Only the tabs the current mode holds appear, so Read shows none and Edit adds Edit, Forms
+and Tools. A command left out of this build has nothing to draw, exactly as on the desktop.</div>
+</div>
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 80%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">A-201 Site Plan.pdf<small>Review · Measure</small></div>
+    <div class="ib"><svg><use href="#i-undo"/></svg></div>
+    <div class="mode"><span>Read</span><span class="on">Review</span><span>Edit</span></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:-60px;top:0;width:480px;height:360px">
+      <div class="draw" style="left:60px;top:40px;width:330px;height:260px"></div>
+      <div class="draw" style="left:150px;top:120px;width:150px;height:0;border-width:1px 0 0 0;border-color:#2f6fb5"></div>
+    </div>
+    <div class="handle" style="left:83px;top:113px"></div>
+    <div class="loupe" style="left:180px;top:28px">
+      <div style="position:absolute;left:0;top:44px;width:96px;border-top:2px solid #444"></div>
+      <div style="position:absolute;left:46px;top:0;height:96px;border-left:2px solid #444"></div>
+      <div style="position:absolute;left:40px;top:38px;width:14px;height:14px;border:2px solid #2f6fb5;border-radius:7px"></div>
+    </div>
+    <div class="finger" style="left:222px;top:200px"></div>
+    <div class="pill" style="left:50px;top:420px"><span>Length</span><span style="background:#3a3d44">12.48 m</span><span>Snap: endpoint</span></div>
+  </div>
+  <div class="bottombar">
+    <div class="bb"><svg><use href="#i-hand"/></svg>Pan</div>
+    <div class="bb on"><svg><use href="#i-ruler"/></svg>Length</div>
+    <div class="bb"><svg><use href="#i-shape"/></svg>Area</div>
+    <div class="bb"><svg><use href="#i-tools"/></svg>All tools</div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Precision without a mouse.</b> While a finger is dragging a point, a magnifier above
+it shows what is under the finger and where it will snap. The point is placed when the finger
+lifts. The magnifier is part of the cursor and is never saved into the file.</div>
+</div>
+</div>
+
+<!-- ================================================================== -->
+<h2>3 · Phone, selecting and changing something already on the page</h2>
+<p class="q">Tap selects. A long press opens the context menu, the same menu a desktop right-click opens.
+A selected item gets handles big enough for a finger, and its properties open as a sheet that
+holds the desktop's Format tab and Properties panel.</p>
+<div class="row">
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 79%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">A-201 Site Plan.pdf<small>Review · 1 selected</small></div>
+    <div class="ib"><svg><use href="#i-undo"/></svg></div>
+    <div class="mode"><span>Read</span><span class="on">Review</span><span>Edit</span></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:-30px;top:10px;width:420px;height:300px">
+      <div class="draw" style="left:30px;top:20px;width:300px;height:220px"></div>
+      <div style="position:absolute;left:170px;top:90px;background:#fff6c4;border:1px solid #d9b100;font-size:10px;padding:5px 8px;color:#222;width:120px">Duct clashes with beam</div>
+    </div>
+    <div class="selbox" style="left:136px;top:96px;width:126px;height:32px"></div>
+    <div class="handle" style="left:129px;top:89px"></div><div class="handle" style="left:255px;top:89px"></div>
+    <div class="handle" style="left:129px;top:121px"></div><div class="handle" style="left:255px;top:121px"></div>
+    <div class="menu" style="left:70px;top:150px">
+      <div>Edit text</div><div>Style…</div><div>Reply</div>
+      <hr><div>Cut</div><div>Copy</div><div>Duplicate</div>
+      <hr><div>Bring to front</div><div style="color:var(--hot)">Delete</div>
+    </div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Long press opens the context menu.</b> The menu is the desktop's, read from the same
+<code>menus</code> table in the manifest. Handles are drawn small but respond to a touch 48 dp across,
+Android's recommended minimum touch target.</div>
+</div>
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 79%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">A-201 Site Plan.pdf<small>Review · 1 selected</small></div>
+    <div class="ib"><svg><use href="#i-undo"/></svg></div>
+    <div class="mode"><span>Read</span><span class="on">Review</span><span>Edit</span></div>
+  </div>
+  <div class="canvas">
+    <div class="page" style="left:-30px;top:10px;width:420px;height:300px">
+      <div style="position:absolute;left:170px;top:90px;background:#fff6c4;border:1px solid #d9b100;font-size:10px;padding:5px 8px;color:#222;width:120px">Duct clashes with beam</div>
+    </div>
+    <div class="selbox" style="left:136px;top:96px;width:126px;height:32px"></div>
+    <div class="sheet" style="height:330px">
+      <div class="grab"></div>
+      <div class="stabs"><span class="on">Format</span><span>Properties</span></div>
+      <div class="grp"><h4>Fill</h4><div class="swatches"><span class="sw on" style="background:#fff6c4"></span><span class="sw" style="background:#fff"></span><span class="sw" style="background:#dbe8f6"></span><span class="sw" style="background:#fde2dd"></span><span class="sw" style="background:transparent"></span></div></div>
+      <div class="grp"><h4>Border</h4><div class="swatches"><span class="sw on" style="background:#d9b100"></span><span class="sw" style="background:#d33"></span><span class="sw" style="background:#111"></span><span style="font-size:11px;color:var(--muted);margin-left:6px">Width</span><span class="slider"><i></i></span></div></div>
+      <div class="grp"><h4>Text</h4><div class="grid"><div class="tool">Helvetica</div><div class="tool">10 pt</div><div class="tool on">Left</div><div class="tool">Colour</div></div></div>
+      <div class="grp"><h4>Opacity</h4><div class="swatches"><span class="slider"><i style="left:85%"></i></span><span style="font-size:11px">100%</span></div></div>
+    </div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Format and Properties share one sheet.</b> At half height the selected item stays visible
+above it, and each change shows on the page as it is made. Every change is one undo step, as on the
+desktop.</div>
+</div>
+
+<div class="shot">
+<div class="phone">
+  <div class="sysbar"><span>9:41</span><span>▲ ▮ 79%</span></div>
+  <div class="appbar">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="title">Comments<small>A-201 Site Plan.pdf · 6</small></div>
+    <div class="ib"><svg><use href="#i-search"/></svg></div>
+    <div class="ib"><svg><use href="#i-more"/></svg></div>
+  </div>
+  <div class="canvas" style="background:var(--surface)">
+    <div class="list">
+      <div class="it"><span class="dot" style="background:#d33"></span><div>Cloud · p. 3<small>Ken · today 9:38</small>Duct clashes with beam</div></div>
+      <div class="it"><span class="dot" style="background:#f5c400"></span><div>Highlight · p. 3<small>Ken · today 9:31</small>“REVISED GRID LINE C”</div></div>
+      <div class="it"><span class="dot" style="background:#2f6fb5"></span><div>Note · p. 5<small>R. Patel · yesterday</small>Confirm slab thickness with structural</div></div>
+      <div class="it"><span class="dot" style="background:#2a9d4b"></span><div>Stamp · p. 1<small>R. Patel · yesterday</small>APPROVED AS NOTED</div></div>
+      <div class="it"><span class="dot" style="background:#111"></span><div>Length · p. 7<small>Ken · Oct 27</small>12.48 m</div></div>
+    </div>
+  </div>
+  <div class="gesture"><i></i></div>
+</div>
+<div class="cap"><b>Panels become full screens on a phone.</b> Each of the sixteen desktop panels opens as a
+page with a back arrow. Tapping a comment goes back to the page and selects it. On a tablet the same
+panel docks at the side instead.</div>
+</div>
+</div>
+
+<!-- ================================================================== -->
+<h2>4 · Tablet, landscape: the desktop layout, sized for fingers</h2>
+<p class="q">At 840 dp and wider the program uses the desktop layout: ribbon, rail and docks. Items are taller,
+groups fold sooner, the Quick Access Toolbar moves into the tab row, and the right dock is one tabbed
+column rather than a split. The pen-draws, finger-pans rule and the magnifier still apply.</p>
+<div class="row">
+<div class="tablet">
+  <div class="tabs">
+    <div class="ib"><svg><use href="#i-back"/></svg></div>
+    <div class="ib"><svg><use href="#i-undo"/></svg></div>
+    <span>File</span><span>View</span><span>Pages</span><span>Edit</span><span class="on">Markup</span><span>Forms</span><span>Measure</span><span>Security</span><span class="ctx">Format</span>
+    <div style="margin-left:auto" class="mode"><span>Read</span><span>Review</span><span class="on">Edit</span></div>
+  </div>
+  <div class="band">
+    <div class="bgrp"><div class="items">
+      <div class="big"><svg><use href="#i-select"/></svg>Select</div>
+      <div class="big"><svg><use href="#i-lasso"/></svg>Lasso</div>
+      <div class="big"><svg><use href="#i-hand"/></svg>Pan</div></div><div class="lbl">Navigate</div></div>
+    <div class="bgrp"><div class="items">
+      <div class="big"><svg><use href="#i-pen"/></svg>Pen</div>
+      <div class="big"><svg><use href="#i-hl"/></svg>Highlight</div>
+      <div class="big"><svg><use href="#i-shape"/></svg>Shapes</div>
+      <div class="big on"><svg><use href="#i-cloud"/></svg>Cloud</div>
+      <div class="big"><svg><use href="#i-arrow"/></svg>Arrow</div></div><div class="lbl">Draw</div></div>
+    <div class="bgrp"><div class="items">
+      <div class="big"><svg><use href="#i-comment"/></svg>Note</div>
+      <div class="big"><svg><use href="#i-text"/></svg>Text box</div>
+      <div class="big"><svg><use href="#i-stamp"/></svg>Stamp</div></div><div class="lbl">Comment</div></div>
+    <div class="bgrp" style="border:0"><div class="items" style="align-items:center;gap:8px">
+      <span class="sw on" style="background:#d33"></span><span class="sw" style="background:#2f6fb5"></span><span class="sw" style="background:#111"></span>
+      <div class="big">2 pt</div></div><div class="lbl">Style</div></div>
+  </div>
+  <div class="body">
+    <div class="rail">
+      <div class="ib on"><svg><use href="#i-pages"/></svg></div>
+      <div class="ib"><svg><use href="#i-book"/></svg></div>
+      <div class="ib"><svg><use href="#i-layers"/></svg></div>
+      <div class="ib"><svg><use href="#i-sign"/></svg></div>
+    </div>
+    <div class="canvas">
+      <div class="page" style="left:40px;top:20px;width:620px;height:380px">
+        <div class="draw" style="left:30px;top:30px;width:440px;height:300px"></div>
+        <div class="draw" style="left:110px;top:90px;width:180px;height:120px;border-style:dashed"></div>
+        <div class="draw" style="left:490px;top:20px;width:110px;height:340px"></div>
+        <div style="position:absolute;left:300px;top:96px;background:#fff6c4;border:1px solid #d9b100;font-size:11px;padding:5px 8px;color:#222">Duct clashes with beam</div>
+      </div>
+    </div>
+    <div class="side">
+      <h5>Properties · Text box</h5>
+      <div class="kv"><span>Author</span><span>Ken</span></div>
+      <div class="kv"><span>Fill</span><span>#FFF6C4</span></div>
+      <div class="kv"><span>Border</span><span>1 pt</span></div>
+      <div class="kv"><span>Font</span><span>Helvetica 10</span></div>
+      <div class="kv"><span>Opacity</span><span>100%</span></div>
+      <div class="kv"><span>Page</span><span>3</span></div>
+    </div>
+  </div>
+  <div class="status"><span class="chip">1 annotation stored without its own appearance, drawn from its shape</span><span class="pg">3 / 12 · 87%</span></div>
+</div>
+</div>
+
+<!-- ================================================================== -->
+<h2>5 · How each desktop gesture and surface maps</h2>
+<table class="map">
+<tr><th>Desktop</th><th>Phone</th><th>Tablet</th></tr>
+<tr><td>Ribbon tabs and groups</td><td>Tool sheet: tab chips, groups as grids</td><td>Ribbon, taller items, earlier folding</td></tr>
+<tr><td>Quick Access Toolbar (Open, Save, Undo, Redo)</td><td>Back and Undo in the top bar; Save and Open in ⋮</td><td>In the tab row</td></tr>
+<tr><td>Mode selector</td><td>Top bar, always visible</td><td>Tab row, right</td></tr>
+<tr><td>Left and right docks, 16 panels</td><td>Each panel a full screen; Properties shares the Format sheet</td><td>Docked side columns, one tab bar per side</td></tr>
+<tr><td>Status bar and its disclosures</td><td>Chip strip above the bottom bar; tap opens the full note</td><td>Status bar</td></tr>
+<tr><td>Right-click</td><td>Long press</td><td>Long press, or a stylus button</td></tr>
+<tr><td>Hover highlight and tooltip</td><td>None; a press-and-hold on a tool shows its name</td><td>Stylus hover where the device reports it</td></tr>
+<tr><td>Wheel zoom, middle-drag pan</td><td>Pinch, two-finger pan; one finger pans in Read and with the Pan tool</td><td>Same</td></tr>
+<tr><td>Drag to move, Shift for constrained, Ctrl to add to selection</td><td>Drag moves; a second finger held down constrains; a Select-several toggle in the selection bar</td><td>Same, or a hardware keyboard's modifiers</td></tr>
+<tr><td>Mouse-precision snapping</td><td>Magnifier while dragging, placed on lift</td><td>Same</td></tr>
+<tr><td>Keyboard shortcuts</td><td>Only with a hardware keyboard</td><td>Same keymap with a keyboard</td></tr>
+<tr><td>Document tabs (several files open)</td><td>Android Recents: one task per document</td><td>Tab row of documents</td></tr>
+<tr><td>Open / Save dialogs</td><td colspan="2">Android's system file picker (Storage Access Framework); open-with from email and Files; Save writes back to the same file</td></tr>
+</table>
+</div>

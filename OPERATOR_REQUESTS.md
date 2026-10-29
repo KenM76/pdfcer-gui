@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O337 — **OPEN** — a proposed interface for Android, phone and tablet
+
+His words: *"can you use your design skill and get a proposed interface made for mobile? I'd like to get this working on Android too after the next engine release."*
+
+**Scope.** A proposed phone and tablet interface, then an Android build after engine v0.103.0.
+
+**Status.** Proposed: `MOBILE_DESIGN.md`, pictured in `mockups/mobile.html`. Same command registry and modes; a width-chosen phone or tablet layout; gestures, a precision magnifier, SAF file access, build blockers and a three-stage plan. Awaiting his approval and his answers to its three questions. Nothing built.
+
 ## O336 — **OPEN** — a signed lease opens as a "Please wait…" page
 
 His words: *"I get a generic Please wait... message when trying to open it. What do we need to add to get this to work?"* The file is a private signed lease, to be tested in place and never copied.
