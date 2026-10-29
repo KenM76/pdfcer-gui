@@ -435,6 +435,38 @@ mod tests {
     use super::*;
     use egui::{Context, Event, Modifiers, RawInput};
 
+    /// **A finger pans in Read; a mouse still sweeps text, and Review keeps
+    /// its select tool under a finger.**
+    #[test]
+    fn a_finger_borrows_the_hand_only_where_nothing_is_authored() {
+        let manifest = crate::shell::manifest::built_in();
+        let finger = || RawInput {
+            events: vec![Event::Touch {
+                device_id: egui::TouchDeviceId(1),
+                id: egui::TouchId(1),
+                phase: egui::TouchPhase::Start,
+                pos: egui::pos2(10.0, 10.0),
+                force: None,
+            }],
+            ..RawInput::default()
+        };
+        for (mode, touched, expected) in [
+            ("read", true, CanvasTool::Hand),
+            ("read", false, CanvasTool::Select),
+            ("review", true, CanvasTool::Select),
+        ] {
+            let ctx = Context::default();
+            store_capabilities(&ctx, Capabilities::for_mode(Some(&manifest), Some(mode)));
+            ctx.begin_pass(if touched {
+                finger()
+            } else {
+                RawInput::default()
+            });
+            assert_eq!(active(&ctx), expected, "{mode}, touched={touched}");
+            let _ = ctx.end_pass();
+        }
+    }
+
     /// **Space borrows the hand and gives it back** — the requirement,
     /// stated as the pure rule it is implemented as.
     #[test]

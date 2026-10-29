@@ -10,14 +10,15 @@
 //! deadlocks on its own pause. So `pick_files` on a PDF filter starts the
 //! picker on a thread of its own and returns `None` at once; the chosen files
 //! arrive later through [`take_picked`], which the frame turns into opens,
-//! exactly like a drop. Every other pick (single file, folder, save) returns
+//! exactly like a drop. A document another app opens in pdfcer arrives the
+//! same way, through [`deliver`]. Every other pick (single file, folder, save) returns
 //! `None` on Android until it has an asynchronous route of its own.
 
 #[cfg(not(target_os = "android"))]
 pub use rfd::FileDialog;
 
 #[cfg(target_os = "android")]
-pub use android::{FileDialog, Picker, install, take_picked};
+pub use android::{FileDialog, Picker, deliver, install, take_picked};
 
 #[cfg(target_os = "android")]
 mod android {
@@ -41,6 +42,19 @@ mod android {
     pub fn take_picked(ctx: &egui::Context) -> Vec<PathBuf> {
         let _ = CONTEXT.set(ctx.clone());
         std::mem::take(&mut *PICKED.lock().unwrap_or_else(|e| e.into_inner()))
+    }
+
+    /// Queues documents another app handed over (Android's *open with*) to
+    /// be opened like picked ones. Callable from any thread, before or after
+    /// the first frame.
+    pub fn deliver(paths: Vec<PathBuf>) {
+        PICKED
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .extend(paths);
+        if let Some(ctx) = CONTEXT.get() {
+            ctx.request_repaint();
+        }
     }
 
     /// Installs the platform picker; called once, before the app starts.
@@ -95,13 +109,7 @@ mod android {
                     if paths.is_empty() {
                         return;
                     }
-                    PICKED
-                        .lock()
-                        .unwrap_or_else(|e| e.into_inner())
-                        .extend(paths);
-                    if let Some(ctx) = CONTEXT.get() {
-                        ctx.request_repaint();
-                    }
+                    deliver(paths);
                 });
             }
             None

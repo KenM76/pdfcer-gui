@@ -162,19 +162,31 @@ The GUI side:
      and the `PDFCER_DIAG` trace.
 4. **D. Tablet layout** (section 4), after the phone ships.
 
-**Stage A status.** Built and driven by hand on the emulator: launch, the
-phone app bar, the mode row, the Read bottom bar (Pages, Find, Comments, All
-tools), Open through SAF, the page rendering, and long press opening the
-context menu. Not yet done:
-- **Drag selects text instead of panning.** One-finger drag is the desktop's
-  text-select gesture; a phone needs it to pan, with selection behind a long press.
-- **The status bar is the desktop's.** At phone width its fields overprint
-  one another; the chip strip replaces it.
-- **The context menu shows desktop shortcuts** ("Ctrl+C"); a phone hides them.
-- **The overflow menu is the whole File tab**, not section 3's short list, and
-  its popup is not kept out of the system bars.
-- **The empty-canvas hint is desktop wording** ("press Ctrl+O").
-- Open-with (the VIEW intent), saving back to the content URI, Android fonts.
+**Stage A status.** Built and driven by hand on the emulator:
+- launch, the phone app bar, the mode row and the Read bottom bar (Pages,
+  Find, Comments, All tools);
+- Open through SAF, and *open with* from another app, both on a cold start and
+  into the running app;
+- the page rendering; one-finger drag panning in Read; long press opening the
+  context menu, with no keyboard shortcuts shown;
+- the overflow menu scrolling inside the safe area, with Recent in it;
+- the status bar scrolling sideways rather than overprinting;
+- the phone's empty-canvas hint.
+
+Not yet done: the chip strip proper (the status bar is still the desktop's,
+made scrollable), the overflow's short list (it is the whole File tab),
+saving back to the content URI, Android fonts.
+
+**How the phone layout reaches the app's controls.** `ribbon_band` builds one
+`Ribbon` for both layouts — conditions, rect reports, glyphs and the
+custom-item renderer — and calls `render_phone` instead of `render` on a phone.
+A custom item drawn with no renderer is a reserved blank by design, so a second
+construction path that forgot the renderer shows as a gap, not an error.
+
+**Open with.** The manifest declares a `VIEW` filter for `application/pdf` and
+`launchMode="singleTask"`. `MainActivity.receive` copies the URI into
+`cache/open/` off the UI thread and calls `nativeViewed`, which queues the path
+through `filedialog::deliver`, the same queue the picker fills.
 
 **How the system bars are kept clear.** eframe fills
 `RawInput::safe_area_insets` only on iOS, and its root `Ui` spans the whole

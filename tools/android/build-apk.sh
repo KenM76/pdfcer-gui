@@ -20,6 +20,10 @@ TARGETS=(-t arm64-v8a)
 [[ "${1:-}" == "--emulator" ]] && TARGETS+=(-t x86_64)
 
 cd "$ROOT"
+# An ABI this run does not build must not ship its previous library: the APK
+# would carry a stale .so, and on that ABI a newly added native method is an
+# UnsatisfiedLinkError.
+rm -rf android/app/src/main/jniLibs
 # No debug info in the shipped library: unstripped it is near 300 MB per ABI,
 # and Gradle's packager runs out of memory on it.
 export CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_PROFILE_RELEASE_STRIP=debuginfo

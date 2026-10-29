@@ -1,28 +1,27 @@
 //! # The phone layout's bars (`MOBILE_DESIGN.md` §3)
 //!
 //! Drawn in place of the ribbon, the document tabs and the docks when the
-//! window is narrower than [`egui_shell::ribbon::phone::PHONE_MAX_WIDTH`]. The
-//! commands, conditions, glyphs and rect reports are the ribbon's own; only
-//! the placement differs.
+//! window is narrower than [`egui_shell::ribbon::phone::PHONE_MAX_WIDTH`].
+//! [`PdfcerApp::ribbon_band`] builds one `Ribbon` for both layouts — the
+//! conditions, rect reports, glyphs and custom-item renderer are the ribbon's
+//! own — and hands it here when the window is a phone's; only the placement
+//! differs.
 
 use egui_shell::ribbon::phone::PhoneText;
 
 use crate::app::PdfcerApp;
-use crate::app::actions::Action;
 use crate::app::state::Status;
 use crate::text::phone as t;
 
+/// The app bar's title and the page line under it.
+pub(super) struct Heading {
+    title: String,
+    subtitle: String,
+}
+
 impl PdfcerApp {
-    /// The app bar, bottom bar and tool sheet, dispatching what was invoked.
-    pub(super) fn phone_bars(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
-        let Some(shell) = self.shell.as_ref() else {
-            return;
-        };
-        let conditions = self.conditions(ui.ctx());
-        let mut report_rect = |name: &str, rect: egui::Rect| {
-            crate::diag::ui_rect(name, rect);
-        };
-        let mut icons = crate::icons::paint_ribbon_icon;
+    /// The active document's [`Heading`], or the no-document title.
+    pub(super) fn phone_heading(&self) -> Heading {
         let title = self
             .active_path()
             .map(|path| crate::text::doctabs::tab_label(path, false))
@@ -33,28 +32,18 @@ impl PdfcerApp {
             }
             _ => String::new(),
         };
-        let text = PhoneText {
-            title: &title,
-            subtitle: &subtitle,
-            more: t::MORE,
-            all_tools: t::ALL_TOOLS,
-            all_tools_icon: Some(pdfcer_gui_base::icons::Icon::Grid.name()),
-        };
-        let tokens = egui_shell::ribbon::Ribbon::new()
-            .with_conditions(&conditions)
-            .reporting_rects_to(&mut report_rect)
-            .with_icon_painter(&mut icons)
-            .with_tab_label(self.prefs.ribbon_tab_face)
-            .render_phone(
-                ui,
-                shell,
-                &self.commands,
-                &mut self.ribbon,
-                &mut self.phone,
-                text,
-            );
-        for token in tokens {
-            self.dispatch_token(ui.ctx(), token, actions);
-        }
+        Heading { title, subtitle }
+    }
+}
+
+/// The text the phone bars draw that is not a command's: the heading, the
+/// overflow button's name, and the All tools cell.
+pub(super) fn text(heading: &Heading) -> PhoneText<'_> {
+    PhoneText {
+        title: &heading.title,
+        subtitle: &heading.subtitle,
+        more: t::MORE,
+        all_tools: t::ALL_TOOLS,
+        all_tools_icon: Some(pdfcer_gui_base::icons::Icon::Grid.name()),
     }
 }

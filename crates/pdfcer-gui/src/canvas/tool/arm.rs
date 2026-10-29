@@ -559,7 +559,24 @@ pub fn space_held(ctx: &egui::Context) -> bool {
 /// result and nothing downstream reads the space bar for itself.
 #[must_use]
 pub fn active(ctx: &egui::Context) -> CanvasTool {
-    resolve(selected(ctx), space_held(ctx))
+    let selected = selected(ctx);
+    resolve(
+        selected,
+        space_held(ctx) || touch_borrows_the_hand(ctx, selected),
+    )
+}
+
+/// **A finger on the page pans in a mode that authors nothing**, the way every
+/// touch reader behaves (`MOBILE_DESIGN.md` section 5). Only the Select tool
+/// yields: an armed tool's drag is still that tool's, and a mouse still sweeps
+/// text, because a mouse press is not a touch.
+fn touch_borrows_the_hand(ctx: &egui::Context, selected: CanvasTool) -> bool {
+    let caps = capabilities(ctx);
+    selected == CanvasTool::Select
+        && !caps.edit_content
+        && !caps.author_markup
+        && !caps.author_measure
+        && ctx.input(egui::InputState::any_touches)
 }
 
 /// The `egui::Memory` key the mode's capabilities are parked under.

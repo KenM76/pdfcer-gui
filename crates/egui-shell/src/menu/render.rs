@@ -182,7 +182,7 @@ impl<'a> ContextMenu<'a> {
         let popup_id = egui::Popup::default_response_id(response);
         let ctx = response.ctx.clone();
 
-        let shortcuts = self.resolved_shortcuts(catalog);
+        let shortcuts = self.resolved_shortcuts(&ctx, catalog);
         let Some(menu) = catalog.menu_for(context_id) else {
             // No menu for this context at all. Not an error: an
             // application may attach the same helper to a surface that has
@@ -224,7 +224,7 @@ impl<'a> ContextMenu<'a> {
         context_id: &str,
         conditions: &ConditionSet,
     ) -> Vec<HandlerToken> {
-        let shortcuts = self.resolved_shortcuts(catalog);
+        let shortcuts = self.resolved_shortcuts(ui.ctx(), catalog);
         let Some(menu) = catalog.menu_for(context_id) else {
             close_containing_menu(ui);
             return Vec::new();
@@ -240,9 +240,17 @@ impl<'a> ContextMenu<'a> {
         self.body(ui, context_id, &slots)
     }
 
-    /// The chords this menu will show: the override if one was given, the
+    /// The chords this menu will show: none in the phone layout, which has no
+    /// keyboard to press them on; else the override if one was given, the
     /// document's keymap otherwise.
-    fn resolved_shortcuts<L: MenuLookup + ?Sized>(&self, catalog: &L) -> Shortcuts {
+    fn resolved_shortcuts<L: MenuLookup + ?Sized>(
+        &self,
+        ctx: &egui::Context,
+        catalog: &L,
+    ) -> Shortcuts {
+        if crate::ribbon::phone::is_phone(ctx) {
+            return Shortcuts::default();
+        }
         self.shortcuts
             .clone()
             .unwrap_or_else(|| catalog.shortcuts())

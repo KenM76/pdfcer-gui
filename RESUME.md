@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**Android (O337), stage A built, not committed to a release:** the phone layout launches on the emulator, opens a PDF through SAF, renders it and long-presses to the context menu. `MOBILE_DESIGN.md` section 9, "Stage A status", lists what is left (drag pans instead of selecting, chip strip, overflow list, open-with, save-back) and the toolchain, AVD and diagnostics recipe. Build: `bash tools/android/build-apk.sh`. Not on GitHub yet; the APK release waits for stage A's gaps.
+**Android (O337), stage A built and driven, not released:** the phone layout opens a PDF through SAF or *open with*, renders it, pans with one finger in Read, long-presses to the context menu, and draws the File overflow (Recent included) and the empty hint in phone form. `MOBILE_DESIGN.md` section 9, "Stage A status", lists what is left (chip strip, short overflow list, save-back, Android fonts) and the toolchain, AVD and diagnostics recipe. Build: `bash tools/android/build-apk.sh --emulator` for the emulator; without the flag the APK carries arm64 only. Not on GitHub yet.
 
 **O310 driven on SW41177, awaiting his verdict:** no blank, no squares; a size typed for a 425-run object click restyles as one engine call with one undo (`a_large_restyle_keeps_painting`, longest frame 219 ms, 238 operators in 131 ms); Properties follows the caret's word. The re-opened mixed-size line draws in its own font (G228, engine v0.98.0).
 

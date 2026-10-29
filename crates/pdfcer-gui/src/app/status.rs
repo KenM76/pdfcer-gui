@@ -392,8 +392,7 @@ pub fn show(
         // click on it lands on the zoom.
         let budget =
             (ui.available_width() - fitting::floor_width(&fitting_widths(ui.ctx()))).max(0.0);
-        ui.scope(|ui| {
-            ui.set_max_width(budget);
+        let mut disclosures = |ui: &mut egui::Ui| {
             selected::show(ui, doc);
 
             // Left: the narrator, demoted behind a disclosure.
@@ -496,7 +495,19 @@ pub fn show(
             ocrlayer::show(ui, doc);
 
             decline::show(ui, doc, commands, actions);
-        });
+        };
+        if egui_shell::ribbon::phone::is_phone(ui.ctx()) {
+            // A phone cannot fit the notes beside the controls: they scroll
+            // sideways inside their budget instead of overprinting the zoom.
+            egui::ScrollArea::horizontal()
+                .max_width(budget)
+                .show(ui, |ui| ui.horizontal(disclosures));
+        } else {
+            ui.scope(|ui| {
+                ui.set_max_width(budget);
+                disclosures(ui);
+            });
+        }
 
         // Right: the controls that must never move.
         //

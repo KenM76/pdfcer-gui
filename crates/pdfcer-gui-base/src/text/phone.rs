@@ -14,3 +14,7 @@ pub const ALL_TOOLS: &str = "All tools";
 pub fn page_subtitle(page_1_based: usize, total: usize) -> String {
     format!("Page {page_1_based} of {total}")
 }
+
+/// Shown on the canvas when nothing is open, in place of the desktop's
+/// keyboard and command-line advice.
+pub const CANVAS_NO_DOCUMENT: &str = "No document open. Tap the folder at the top to open a PDF, or open one from Files, email or Drive.";

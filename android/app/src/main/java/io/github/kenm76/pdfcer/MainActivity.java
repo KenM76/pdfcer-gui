@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.OpenableColumns;
 
 import androidx.core.graphics.Insets;
@@ -20,7 +21,8 @@ import java.util.concurrent.SynchronousQueue;
 /**
  * Hosts the Rust program, which lives in libpdfcer_android.so. The only Java
  * behaviour is what Android allows only an Activity to do: run the system
- * document picker, and report where the system bars cover the window. The Rust side calls {@link #pickDocuments} from its own
+ * document picker, receive a document another app opens in pdfcer, and report
+ * where the system bars cover the window. The Rust side calls {@link #pickDocuments} from its own
  * thread and blocks until the operator picks or cancels.
  */
 public class MainActivity extends GameActivity {
@@ -56,6 +58,32 @@ public class MainActivity extends GameActivity {
             Thread.currentThread().interrupt();
             return "";
         }
+    }
+
+    /** Queues a document copied from a VIEW intent; see crate pdfcer-android, module viewed. */
+    private static native void nativeViewed(String path);
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState == null) receive(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        receive(intent);
+    }
+
+    /** Copies a VIEW intent's document into the cache, off the UI thread, and hands it over. */
+    private void receive(Intent intent) {
+        if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) return;
+        final Uri uri = intent.getData();
+        if (uri == null) return;
+        new Thread(() -> {
+            String path = copyToCache(uri);
+            if (path != null) nativeViewed(path);
+        }).start();
     }
 
     /**

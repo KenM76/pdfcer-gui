@@ -694,9 +694,7 @@ impl eframe::App for PdfcerApp {
         // a composition step deciding any of that would be a second rule.
         let chrome = window::draws_chrome(&ctx);
         let phone = egui_shell::ribbon::phone::is_phone(&ctx);
-        if chrome && phone {
-            self.phone_bars(ui, &mut actions);
-        } else if chrome {
+        if chrome {
             self.ribbon_band(ui, &mut actions);
         }
         // Drawn in Read mode too: a question nobody can see is a refusal.

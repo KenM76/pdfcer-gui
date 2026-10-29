@@ -43,6 +43,8 @@ impl PdfcerApp {
             return;
         };
         let conditions = self.conditions(ui.ctx());
+        // The phone bars take the same `Ribbon`, custom items included.
+        let phone = egui_shell::ribbon::phone::is_phone(ui.ctx()).then(|| self.phone_heading());
 
         // The rect sink. Every group caption and mode segment publishes its
         // rect under a stable name, which is what lets `ui-verify` assert
@@ -278,17 +280,29 @@ impl PdfcerApp {
         self.ribbon
             .sync_auto_hide(crate::app::prefs::auto_hide(self.prefs.ribbon_auto_hide));
 
-        let tokens = egui::Panel::top("ribbon")
-            .show(ui, |ui| {
-                egui_shell::ribbon::Ribbon::new()
-                    .with_conditions(&conditions)
-                    .reporting_rects_to(&mut report_rect)
-                    .with_custom_items(&mut custom)
-                    .with_icon_painter(&mut icons)
-                    .with_tab_label(self.prefs.ribbon_tab_face)
-                    .render(ui, shell, &self.commands, &mut self.ribbon)
-            })
-            .inner;
+        let ribbon = egui_shell::ribbon::Ribbon::new()
+            .with_conditions(&conditions)
+            .reporting_rects_to(&mut report_rect)
+            .with_custom_items(&mut custom)
+            .with_icon_painter(&mut icons)
+            .with_tab_label(self.prefs.ribbon_tab_face);
+        let tokens = match &phone {
+            Some(heading) => ribbon.render_phone(
+                ui,
+                shell,
+                &self.commands,
+                &mut self.ribbon,
+                &mut self.phone,
+                super::phone::text(heading),
+            ),
+            None => {
+                egui::Panel::top("ribbon")
+                    .show(ui, |ui| {
+                        ribbon.render(ui, shell, &self.commands, &mut self.ribbon)
+                    })
+                    .inner
+            }
+        };
 
         // Park the operand BEFORE dispatching the token that consumes it.
         // Reversing these two lines would make the `file.recent` arm find an
@@ -886,9 +900,13 @@ impl PdfcerApp {
             // ui-text-exempt: a panic message, read from a stack trace by
             // whoever broke the two-statement structure above. Never rendered.
             Status::Open(_) => unreachable!("handled above, before the borrow ended"),
-            Status::Empty => {
-                ui.centered_and_justified(|ui| ui.label(crate::text::canvas_no_document()))
-            }
+            Status::Empty => ui.centered_and_justified(|ui| {
+                ui.label(if egui_shell::ribbon::phone::is_phone(ui.ctx()) {
+                    crate::text::phone::CANVAS_NO_DOCUMENT
+                } else {
+                    crate::text::canvas_no_document()
+                })
+            }),
             Status::Failed { path, message } => {
                 let text = crate::text::open_failed(path, message);
                 ui.centered_and_justified(|ui| ui.colored_label(ui.visuals().error_fg_color, text))

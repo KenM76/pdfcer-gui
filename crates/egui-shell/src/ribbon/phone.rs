@@ -40,6 +40,9 @@ const BOTTOM_BAR_MAX: usize = 4;
 /// 48 dp minimum touch target with room for a one-line label.
 const CELL_HEIGHT: f32 = 56.0;
 
+/// Space kept between the overflow list and the bottom of the safe area, in points.
+const OVERFLOW_MARGIN: f32 = 16.0;
+
 /// Columns in the tool sheet's grid.
 const SHEET_COLUMNS: usize = 4;
 
@@ -175,12 +178,30 @@ fn app_bar(
 fn overflow_menu(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, tab: &Tab, more: &str) {
     let size = ctx.theme.metrics.icon_pts;
     let slot = ctx.id("phone-overflow", "");
+    // The File tab is longer than a phone is tall: the list scrolls inside
+    // the safe area rather than running under the navigation bar.
+    let below = ui.ctx().content_rect().max.y - ui.max_rect().max.y;
     let response = ui.menu_button(egui::Atom::custom(slot, vec2(size, size)), |ui| {
-        for group in tab.groups() {
-            for item in group.items() {
-                control::render_item_at(ui, ctx, &tab.id, &group.id, item, ItemSize::Medium, 0.0);
-            }
-        }
+        egui::ScrollArea::vertical()
+            .max_height((below - OVERFLOW_MARGIN).max(CELL_HEIGHT))
+            .show(ui, |ui| {
+                for (k, group) in tab.groups().iter().enumerate() {
+                    if k > 0 {
+                        ui.separator();
+                    }
+                    for item in group.items() {
+                        control::render_item_at(
+                            ui,
+                            ctx,
+                            &tab.id,
+                            &group.id,
+                            item,
+                            ItemSize::Medium,
+                            0.0,
+                        );
+                    }
+                }
+            });
     });
     let button = &response.response;
     let ink = ui.style().interact(button).fg_stroke.color;

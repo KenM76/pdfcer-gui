@@ -3,7 +3,8 @@
 //! Android starts the program by loading `libpdfcer_android.so` from the APK
 //! and calling [`android_main`] on the GameActivity's native thread. It installs
 //! the document picker (`MainActivity.pickDocuments`, reached through JNI) and
-//! the system-bar insets (`MainActivity.systemBarInsets`),
+//! the system-bar insets (`MainActivity.systemBarInsets`), and exports
+//! `nativeViewed` for documents opened from another app,
 //! hands the `AndroidApp` to eframe through `NativeOptions::android_app`, and
 //! then runs the same application the desktop runs, through
 //! `pdfcer_gui::launch`. On any other target this crate is empty.
@@ -12,6 +13,8 @@
 mod activity;
 #[cfg(target_os = "android")]
 mod picker;
+#[cfg(target_os = "android")]
+mod viewed;
 
 #[cfg(target_os = "android")]
 use activity::Activity;
