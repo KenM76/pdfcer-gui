@@ -173,6 +173,6 @@ Each stage keeps the desktop build unchanged and green.
 
 - Phone first, tablet afterwards. (Ken)
 - Glyphs everywhere the desktop has one. (Ken)
-- Open: should Edit be available on a phone, or only Read and Review?
-- Open: distribution, a sideloaded APK on GitHub releases or the Play Store
-  (which needs a developer account and a review)?
+- Edit is available on a phone, with all three modes. (Ken)
+- Distribution: a sideloaded APK on GitHub releases first. The Play Store
+  follows once its developer account, signing key and review are set up. (Ken)
