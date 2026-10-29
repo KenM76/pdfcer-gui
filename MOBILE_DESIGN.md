@@ -1,8 +1,15 @@
 # pdfcer on Android: proposed interface
 
-Status: **proposal, not approved** (O337). The picture is `mockups/mobile.html`.
-Once Ken approves it, this document becomes the spec for the mobile profile and
-the mockup becomes its reference, the same way `RIBBON_IA.md` works.
+Status: **approved, phone first** (O337). The picture is `mockups/mobile.html`.
+This document is the spec for the mobile layouts; where the mockup and this
+document disagree, this document wins. Building starts after engine v0.103.0.
+
+**Glyphs.** Every command draws its shipped glyph from
+`crates/pdfcer-gui-base/src/icons/assets/`, resolved through the same role keys
+as the desktop, in the bottom bar, the tool sheet, the context menu and the
+app bar alike. The mockup's icons are hand-drawn stand-ins. The icon-adoption
+rule in `RIBBON_IA.md` applies unchanged: a phone surface adopts no glyph the
+desktop does not ship.
 
 ## 1. The principle: same program, a different layout
 
@@ -139,26 +146,33 @@ The GUI side:
 6. **ui-verify** drives an emulator through `adb` (touch injection, screencap).
    Until then, a phone phase is NOT VERIFIED (R1).
 
-## 9. Staging
+## 9. Staging: phone first
 
-1. **A. Launch.**
-   - An Android tablet build opens a PDF through SAF, in the tablet layout.
-   - Pinch, pan and long press work.
-   - It is driven on an emulator by hand.
-2. **B. Phone layout.**
-   - The width-chosen profile, the bottom bar, the tool sheet, panels as
-     full screens, the chip strip and the magnifier.
+1. **A. Phone launch.**
+   - An Android phone build opens a PDF through SAF and open-with.
+   - It uses the phone layout's app bar, canvas and chip strip, with pinch, pan and long press.
+   - The Read bottom bar is in place.
+   - It is driven by hand on the Pixel 3a (API 34, x86_64) emulator already installed.
+2. **B. The rest of the phone layout.**
+   - Review and Edit bottom bars, the tool sheet, panels as full screens, the
+     Format and Properties sheet, and the magnifier.
 3. **C. Driven checks.**
    - ui-verify's `adb` backend, with the phone checks asserted on screenshots
      and the `PDFCER_DIAG` trace.
+4. **D. Tablet layout** (section 4), after the phone ships.
 
-The order puts something Ken can install first. Each stage keeps the desktop
-build unchanged and green.
+**Toolchain.**
+- The Android SDK (platform 34, build-tools 34.0.0, `adb`, emulator) and the
+  `aarch64-linux-android` Rust target are installed.
+- Still missing: the NDK, the `x86_64-linux-android` target that the emulator
+  needs, and `cargo-ndk`.
 
-## 10. Questions for Ken
+Each stage keeps the desktop build unchanged and green.
 
-1. Phone and tablet both, or tablet first (the engine docs call a tablet "far
-   more plausible than a phone")?
-2. Should Edit be available on a phone at all, or only Read and Review?
-3. Distribution: a sideloaded APK on GitHub releases, or the Play Store
-   (which needs a developer account and a review)?
+## 10. Rulings and open questions
+
+- Phone first, tablet afterwards. (Ken)
+- Glyphs everywhere the desktop has one. (Ken)
+- Open: should Edit be available on a phone, or only Read and Review?
+- Open: distribution, a sideloaded APK on GitHub releases or the Play Store
+  (which needs a developer account and a review)?

@@ -659,7 +659,7 @@ His words: *"can you use your design skill and get a proposed interface made for
 
 **Scope.** A proposed phone and tablet interface, then an Android build after engine v0.103.0.
 
-**Status.** Proposed: `MOBILE_DESIGN.md`, pictured in `mockups/mobile.html`. Same command registry and modes; a width-chosen phone or tablet layout; gestures, a precision magnifier, SAF file access, build blockers and a three-stage plan. Awaiting his approval and his answers to its three questions. Nothing built.
+**Status.** Design approved by him: `MOBILE_DESIGN.md`, pictured in `mockups/mobile.html`. His rulings: phone first, then tablet; glyphs everywhere the desktop has one. Building starts after engine v0.103.0, beginning with stage A, a phone launch on the installed Pixel 3a emulator. Still to install: the NDK, the x86_64 Android target and cargo-ndk. Nothing built.
 
 ## O336 — **OPEN** — a signed lease opens as a "Please wait…" page
 

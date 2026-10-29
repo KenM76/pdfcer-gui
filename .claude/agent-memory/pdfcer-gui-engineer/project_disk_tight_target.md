@@ -409,3 +409,13 @@ linker's name for a full disk. The two incremental dirs were 31 GB (release) and
 cut it was larger, so plan on doing it about once a week.
 
 2026-10-27: D: hit 2 MB free; the release build died as **rustc exit 101** (os error 112 underneath). Release incremental 39 GB + debug incremental 8.8 GB; deleting both gave 47 GB free. Five days after the last cut — the weekly cadence is now too slow during OCR work.
+
+## 2026-10-28 cleanup, for scale
+
+Seven weeks after the last one: `target/debug` 64 GB, 118 stale engine-pin
+trees, 3,121 dead `release/deps` files (17 GB of 24). The live-set prune
+(`--locked`, so the branch pin cannot move) was followed by a `0.93 s`
+no-op build. D: 44 → 137 GB free, C: 65 → 209 GB. ⚠ A path built with
+`os.path.join` on Windows carries a backslash, so a `startswith('target/release/deps/')`
+filter matched nothing and the first delete pass removed 0 files; compare
+`os.path.dirname(os.path.normpath(p))` instead.
