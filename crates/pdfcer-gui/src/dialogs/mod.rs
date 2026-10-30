@@ -155,11 +155,14 @@ pub mod model_trust;
 /// itself names as a residual it does not have.
 pub mod page_crop;
 pub mod page_size;
+pub mod printmarks;
+pub mod running;
 /// The Save-as-stamp-collection window — this document's pages, named, in
 /// the file Acrobat reads its custom stamps out of. `OPERATOR_REQUESTS.md`
 /// O169.
 pub mod stamp_collection;
 
+pub mod netprint;
 /// The census of everything drawn OUTSIDE a page boundary — the half of
 /// "view and edit objects that are off the page" that no amount of looking at a
 /// document could answer, because off-page content does not render.
@@ -295,6 +298,18 @@ pub struct DialogsState {
     /// The Bates form the last window left, kept across documents so a
     /// batch continues its numbering.
     bates_form: Option<bates::BatesForm>,
+    /// The open Header & footer window; it holds the operand pages.
+    running: Option<running::RunningDialog>,
+    /// The line the last Header & footer window left.
+    running_form: Option<running::RunningForm>,
+    /// The open Printer's marks window; it holds the operand pages.
+    printmarks: Option<printmarks::MarksDialog>,
+    /// The marks the last Printer's marks window left.
+    printmarks_form: Option<printmarks::MarksForm>,
+    /// The open Send to network printer window; it holds the document's bytes.
+    netprint: Option<netprint::NetPrintDialog>,
+    /// The printer address the last such window left.
+    netprint_form: Option<netprint::NetForm>,
     /// The Bates-number-files window. **Application-scoped**: it works on
     /// files, not the open document, and a run in progress must outlive one.
     bates_batch: Option<bates_batch::BatesBatchDialog>,
@@ -1048,6 +1063,15 @@ impl DialogsState {
         if self.bates.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.bates_form = self.bates.take().map(|d| d.remembered());
         }
+        if self.running.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.running_form = self.running.take().map(|d| d.remembered());
+        }
+        if self.printmarks.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.printmarks_form = self.printmarks.take().map(|d| d.remembered());
+        }
+        if self.netprint.as_mut().map(|d| d.show(ctx)) == Some(false) {
+            self.netprint_form = self.netprint.take().map(|d| d.remembered());
+        }
         if self.labels.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.labels = None;
         }
@@ -1310,6 +1334,15 @@ impl DialogsState {
         self.page_crop = None;
         if let Some(d) = self.bates.take() {
             self.bates_form = Some(d.remembered());
+        }
+        if let Some(d) = self.running.take() {
+            self.running_form = Some(d.remembered());
+        }
+        if let Some(d) = self.printmarks.take() {
+            self.printmarks_form = Some(d.remembered());
+        }
+        if let Some(d) = self.netprint.take() {
+            self.netprint_form = Some(d.remembered());
         }
         self.labels = None;
         #[cfg(feature = "3d")]

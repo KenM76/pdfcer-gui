@@ -115,6 +115,9 @@ signing = ["pdfcer-core/signing"]
 timestamp = ["signing", "dep:pdfcer-fetch", "pdfcer-fetch/download"]
 # Downloading the engine's pinned OCR model files (`ocr::fetch`).
 model-download = ["dep:pdfcer-fetch", "pdfcer-fetch/download"]
+# `ipps://` printer addresses: IPP over TLS through the engine's network crate.
+# Off, `ipp://` still works over plain HTTP and `ipps://` is refused by name.
+ipps = ["dep:pdfcer-fetch", "pdfcer-fetch/download"]
 # `test-fixtures` — `opendoc::fixtures`, for `pdfcer-gui`'s tests. Its
 # dev-dependency turns it on; the shipped program never does.
 test-fixtures = []

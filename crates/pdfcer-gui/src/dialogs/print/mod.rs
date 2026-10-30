@@ -111,6 +111,8 @@ use pdfcer_gui_base::printregions::{REGION_PROPERTIES, REGION_RESOLUTION, REGION
 /// settings. Split out at O185 under R2; see the module header for why
 /// the seam is there and not somewhere cheaper.
 mod dismissal;
+/// Staple, punch and output tray, as the driver offers them.
+pub(crate) mod finishing;
 
 // Re-exported so the footer can keep naming it `super::Dismissal`. The
 // enum is part of this module's vocabulary; only its argument lives
@@ -216,6 +218,8 @@ pub struct PrintDialog {
     device_pending: bool,
     /// Device geometry, read off the UI thread.
     caps: spooler::probe::CapsCache,
+    /// Staple, punch and output tray.
+    finishing: finishing::Choice,
     /// Which pages.
     range: PrintRange,
     /// The typed range, live even when [`PrintRange::Custom`] is not selected,
@@ -493,6 +497,7 @@ impl PrintDialog {
             features_for: None,
             device_pending: false,
             caps: spooler::probe::CapsCache::default(),
+            finishing: finishing::Choice::default(),
             // NOT remembered, and this is the boundary O166 turns on: a
             // range names pages of *this* document. `PrintRange::All` is the
             // only honest answer for a file the last job never saw.
@@ -1055,6 +1060,7 @@ impl PrintDialog {
         self.features = features;
         self.forms = forms;
         self.config = None;
+        self.finishing.printer_changed();
         // A POLICY SURVIVES A CHANGE OF PRINTER; A SHEET DOES NOT.
         //
         // The reset above this line exists because `Form(257)` means one thing

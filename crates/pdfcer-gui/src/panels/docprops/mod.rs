@@ -41,6 +41,8 @@ use crate::text::panels::docprops as t;
 
 /// Page boxes the file wrote and pdfcer did not use as written.
 mod boxes;
+/// The PDF/X level the file claims.
+mod pdfx;
 /// Security notes: the wrapper warning and the action census.
 mod security;
 /// The stamp-collection disclosure section — `OPERATOR_REQUESTS.md` **O169**.
@@ -206,6 +208,7 @@ fn facts(ui: &mut Ui, doc: &OpenDoc) {
         fact(ui, t::page_size_label(), &size);
     }
     boxes::lines(ui, doc);
+    pdfx::lines(ui, doc);
 
     let encrypted = base.encryption().is_some();
     fact(

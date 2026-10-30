@@ -6,9 +6,9 @@
 use super::{
     DialogsState, about, bates, bates_batch, compact, diagnostics, embed, export_dxf, export_image,
     export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_blank,
-    insert_image, insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print,
-    protect, redact, scale, shortcuts, split_pages, stamp_collection, textannot, unembed,
-    xfa_preview,
+    insert_image, insert_pages, labels, netprint, new_document, ocr, offpage, page_crop, page_size,
+    print, printmarks, protect, redact, running, scale, shortcuts, split_pages, stamp_collection,
+    textannot, unembed, xfa_preview,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -27,6 +27,35 @@ impl DialogsState {
             return;
         }
         self.print = Some(print::PrintDialog::open(doc, remembered));
+    }
+
+    /// **Open Send to network printer** on the document in `status`: its
+    /// current edits as an incremental save, or the reason there are none.
+    pub(crate) fn open_netprint(&mut self, status: &Status) {
+        use crate::app::settings::SettingsExt;
+        let Status::Open(doc) = status else {
+            return;
+        };
+        if self.netprint.is_some() {
+            return;
+        }
+        let bytes = doc
+            .session
+            .to_incremental_bytes(&doc.settings.save_options())
+            .map(|(bytes, _report)| bytes)
+            .map_err(|e| e.to_string());
+        let name = doc
+            .path
+            .file_name()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let pages = u32::try_from(doc.pages.len()).unwrap_or(u32::MAX);
+        self.netprint = Some(netprint::NetPrintDialog::open(
+            &name,
+            bytes,
+            pages,
+            self.netprint_form.as_ref(),
+        ));
     }
 
     /// Open the Recognise-text dialog for the document in `status`.
@@ -430,6 +459,25 @@ impl DialogsState {
             return;
         }
         self.bates = bates::BatesDialog::open(picked, of, self.bates_form.as_ref());
+    }
+
+    /// **Open the Header & footer window** on a document of `of` pages,
+    /// offering the rail's `picked` pages as an alternative to all of them.
+    pub fn open_running(&mut self, picked: &[usize], of: usize) {
+        if self.running.is_some() {
+            return;
+        }
+        self.running = running::RunningDialog::open(picked, of, self.running_form.as_ref());
+    }
+
+    /// **Open the Printer's marks window** on a document of `of` pages whose
+    /// page-information line starts with `label`.
+    pub fn open_printmarks(&mut self, picked: &[usize], of: usize, label: &str) {
+        if self.printmarks.is_some() {
+            return;
+        }
+        self.printmarks =
+            printmarks::MarksDialog::open(picked, of, label, self.printmarks_form.as_ref());
     }
 
     /// **Open the Bates-number-files window** on `sources`, continuing the

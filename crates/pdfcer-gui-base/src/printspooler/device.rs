@@ -155,6 +155,11 @@ impl DriverConfig {
         }
     }
 
+    /// Carry a configuration the engine produced.
+    pub(super) const fn from_engine(inner: pdfcer_print::PrinterConfiguration) -> Self {
+        Self { inner }
+    }
+
     /// The engine's value, for the two calls that take one.
     pub const fn engine(&self) -> &pdfcer_print::PrinterConfiguration {
         &self.inner

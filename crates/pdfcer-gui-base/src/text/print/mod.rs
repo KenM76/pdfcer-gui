@@ -699,8 +699,12 @@ mod poster;
 pub use poster::*;
 
 pub mod colour;
+/// Staple, punch and output tray.
+pub mod finishing;
 /// **Fixed line width** — operator request O233.
 mod lines;
+/// Send to network printer.
+pub mod network;
 pub mod presets;
 
 // Glob re-exported, for the reason argued over `footer` above.

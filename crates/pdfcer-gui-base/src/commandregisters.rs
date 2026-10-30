@@ -184,12 +184,7 @@ pub const PLANNED: &[(&str, &str)] = &[
     (
         "pages.watermark",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — not built; Bates numbering is the only item in its Pages ▸ Stamp group.",
-    ),
-    (
-        "pages.header_footer",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — not built, as `pages.watermark`.",
+        "N — the engine has no watermark verb; `ENGINE_BACKLOG.md` carries the row.",
     ),
     // -- Edit -- `RIBBON_IA.md` §5.4 ----------------------------------------
     (

@@ -93,6 +93,8 @@ pub mod extract_pages_labels;
 pub mod labels_scripted;
 pub mod measure_area_scripted;
 pub mod measure_place_scripted;
+pub mod netprint_scripted;
+pub mod pagestamps_scripted;
 pub mod purge_passwords_scripted;
 /// Pages ▸ Split… writes the files its preview listed, by each rule.
 pub mod split_pages;
@@ -470,6 +472,7 @@ pub mod open_many;
 pub mod page_boxes;
 pub mod page_print_boxes;
 pub mod password_fill;
+pub mod pdfx_claim;
 /// A slow default printer does not hold the Print window shut.
 pub mod print_colour;
 pub mod print_presets;
@@ -857,6 +860,7 @@ pub mod attachment_clip;
 pub mod attachments;
 
 /// A 3D model placed from the ribbon, listed, and saved back byte for byte.
+pub mod model_gltf;
 pub mod models;
 
 /// A part-coloured 3D model draws in its colours, in the viewer and on the page.

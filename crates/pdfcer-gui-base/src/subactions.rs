@@ -484,6 +484,17 @@ pub enum PageAction {
         /// The number on the first stamped page.
         first: u64,
     },
+    /// Write a header or footer line on `stamp.pages`, as one undo step.
+    StampRunningText {
+        /// The line, its edge, alignment, margin, size and pages.
+        stamp: pdfcer_core::running_text::RunningText,
+    },
+    /// Grow the sheets of `marks.pages` and draw printer's marks outside
+    /// their trim, as one undo step.
+    AddPrinterMarks {
+        /// Which marks, their sizes, the label and the pages.
+        marks: pdfcer_core::printer_marks::PrinterMarks,
+    },
     /// Remove the Bates labels pdfcer stamped, as one undo step. `None` is
     /// every page.
     RemoveBates {

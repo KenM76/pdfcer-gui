@@ -408,6 +408,8 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.add_space(8.0);
     super::colour::radios(ui, dialog);
     ui.add_space(8.0);
+    let printer = dialog.printers.get(dialog.selected).map(|p| p.name.clone());
+    dialog.finishing.controls(ui, printer.as_deref());
 
     // R83: no duplex control for a device that cannot duplex. pdfcer does
     // NOT simulate it by reordering pages and asking the operator to reinsert

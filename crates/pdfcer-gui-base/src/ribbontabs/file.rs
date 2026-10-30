@@ -210,7 +210,15 @@ pub fn tab() -> Tab {
             // ---------------------------------------------------------------
             // Print. Imposition (n-up / booklet / poster) is **C**.
             // ---------------------------------------------------------------
-            group("print", ribbon::group_file_print(), [large("file.print")]),
+            group(
+                "print",
+                ribbon::group_file_print(),
+                [
+                    large("file.print"),
+                    command("file.printer_marks"),
+                    command("file.network_print"),
+                ],
+            ),
             // ---------------------------------------------------------------
             // Document — inspection of what is inside the file.
             //

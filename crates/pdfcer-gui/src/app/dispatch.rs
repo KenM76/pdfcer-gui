@@ -418,6 +418,27 @@ impl PdfcerApp {
             // window's closure has returned. Paper is as irreversible as it
             // gets; it is the rule being kept, not the mechanism.
             "file.print" => self.dialogs.open_print(&self.status, &self.prefs.print),
+            "file.network_print" => self.dialogs.open_netprint(&self.status),
+            // Printer's marks: the Bates scope rule; the page-information
+            // label starts as the file's name.
+            "file.printer_marks" => {
+                if let Status::Open(doc) = &self.status {
+                    let of = doc.pages.len();
+                    let picked: Vec<usize> = self
+                        .panels
+                        .selected_pages()
+                        .iter()
+                        .copied()
+                        .filter(|p| *p < of)
+                        .collect();
+                    let label = doc
+                        .path
+                        .file_stem()
+                        .map(|s| s.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    self.dialogs.open_printmarks(&picked, of, &label);
+                }
+            }
             // Save a compacted copy — `OPERATOR_REQUESTS.md` O48.
             //
             // The only `open_*` on this list that can fail rather than decline:

@@ -112,6 +112,8 @@
                     caption: "Print",
                     items: [
                         Command(id: "file.print", size: Large),
+                        Command(id: "file.printer_marks"),
+                        Command(id: "file.network_print"),
                     ],
                 ),
                 (
@@ -297,6 +299,7 @@
                     caption: "Stamp",
                     items: [
                         Command(id: "pages.bates"),
+                        Command(id: "pages.header_footer"),
                         Command(id: "pages.bates_remove"),
                         Command(id: "pages.labels"),
                     ],

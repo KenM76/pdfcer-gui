@@ -155,6 +155,45 @@ pub fn insert_filter() -> &'static str {
     "3D models (U3D, PRC)"
 }
 
+/// The Insert 3D model file filter where glTF is read too.
+#[must_use]
+pub fn insert_filter_with_gltf() -> &'static str {
+    "3D models (U3D, PRC, glTF)"
+}
+
+/// A glTF model could not be converted to PRC.
+#[must_use]
+pub fn gltf_refused(detail: &str) -> String {
+    format!("The glTF model could not be converted: {detail}")
+}
+
+/// The conversion receipt: how the glTF became PRC, and what it lost.
+#[must_use]
+pub fn gltf_converted(triangles: usize) -> String {
+    format!(
+        "Converted the glTF model to PRC ({triangles} triangles): colours encoded to sRGB, \
+         turned so +Z is up. Textures are not carried."
+    )
+}
+
+/// One thing the glTF reader inferred rather than read.
+#[must_use]
+pub fn gltf_inferred(what: &str) -> String {
+    format!("Inferred: {what}")
+}
+
+/// Parts with no surface directions were given flat ones.
+#[must_use]
+pub fn gltf_flat_normals(parts: usize) -> String {
+    format!("Inferred: {parts} part(s) had no surface directions and were given flat shading.")
+}
+
+/// Parts with no triangles were left out.
+#[must_use]
+pub fn gltf_empty_primitives(parts: usize) -> String {
+    format!("{parts} part(s) held no triangles and were left out.")
+}
+
 /// The chosen file could not be read.
 #[must_use]
 pub fn insert_unreadable(detail: &str) -> String {

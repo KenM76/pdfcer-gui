@@ -57,7 +57,7 @@ path = "src/main.rs"
 # `Cargo.lock` pins and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "model-download", "3d", "svg-import"]
+default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "model-download", "ipps", "3d", "svg-import"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 
 # `3d` — the PRC reader in `pdfcer-3d`, for the Attachments panel's
@@ -125,6 +125,11 @@ timestamp = ["signing", "pdfcer-gui-base/timestamp"]
 # the program. Off, the manager still lists, installs and removes; it offers
 # no Download. Network code, like `timestamp`.
 model-download = ["pdfcer-gui-base/model-download"]
+
+# `ipps` — Send to network printer may reach an `ipps://` address (IPP over
+# TLS). Off, `ipp://` addresses still print; an `ipps://` one is refused by
+# name. Network code, like `timestamp`.
+ipps = ["pdfcer-gui-base/ipps"]
 
 # ---------------------------------------------------------------------------
 # `ocrs` — the OCR RECOGNISER, and only the recogniser.

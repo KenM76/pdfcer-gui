@@ -43,6 +43,7 @@ pub(crate) fn handles(id: &str) -> bool {
             | "pages.resize"
             | "pages.crop"
             | "pages.bates"
+            | "pages.header_footer"
             | "pages.bates_remove"
             | "pages.labels"
     )
@@ -109,6 +110,22 @@ pub(super) fn dispatch(app: &mut PdfcerApp, id: &str, actions: &mut Vec<Action>)
                 .filter(|p| *p < of)
                 .collect();
             app.dialogs.open_bates(&picked, of);
+        }
+        // **Header & footer.** The Bates scope rule: the whole document unless
+        // two or more pages are picked in the rail.
+        "pages.header_footer" => {
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            let of = doc.pages.len();
+            let picked: Vec<usize> = app
+                .panels
+                .selected_pages()
+                .iter()
+                .copied()
+                .filter(|p| *p < of)
+                .collect();
+            app.dialogs.open_running(&picked, of);
         }
         // **Remove the stamped labels.** The Bates scope rule, with no window:
         // a rail pick of two or more pages, else the whole document.

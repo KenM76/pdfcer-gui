@@ -228,6 +228,8 @@ pub mod phone;
 pub mod placing;
 /// Every word the print dialog shows. Consumed by `pdfcer_gui::dialogs::print`.
 pub mod print;
+/// File ▸ Print ▸ Printer's marks…: its window and its receipt.
+pub mod printmarks;
 /// Every word Security ▸ Remove old passwords… shows, and its receipt.
 pub mod purge_passwords;
 /// The left rail's own words — O123 part 7.
@@ -247,6 +249,8 @@ pub mod richtext;
 pub mod rotating;
 /// Why merging text runs was declined, and the width it wrote.
 pub mod runmerge;
+/// Pages ▸ Stamp ▸ Header & footer…: its window and its receipt.
+pub mod running;
 /// Why splitting a text object into its lines was declined, and the piece count.
 pub mod runsplit;
 /// Every word the Set-scale dialog shows. The hardest job in this catalog:

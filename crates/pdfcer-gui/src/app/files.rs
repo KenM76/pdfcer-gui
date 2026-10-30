@@ -418,6 +418,21 @@ pub fn pick_media_source() -> Picked {
     answer
 }
 
+/// The Insert 3D model filter: glTF too where the `3d` feature converts it.
+fn model_filter() -> (&'static str, &'static [&'static str]) {
+    if cfg!(feature = "3d") {
+        (
+            crate::text::panels::models::insert_filter_with_gltf(),
+            &["u3d", "prc", "gltf", "glb"],
+        )
+    } else {
+        (
+            crate::text::panels::models::insert_filter(),
+            &["u3d", "prc"],
+        )
+    }
+}
+
 /// **Ask which 3D model file to place on the page.**
 #[must_use]
 pub fn pick_model_source() -> Picked {
@@ -430,10 +445,7 @@ pub fn pick_model_source() -> Picked {
     }
     let answer = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::models::insert_dialog_title())
-        .add_filter(
-            crate::text::panels::models::insert_filter(),
-            &["u3d", "prc"],
-        )
+        .add_filter(model_filter().0, model_filter().1)
         .add_filter(crate::text::files::filter_all(), &["*"])
         .pick_file()
         .map_or(Picked::Cancelled, Picked::Path);

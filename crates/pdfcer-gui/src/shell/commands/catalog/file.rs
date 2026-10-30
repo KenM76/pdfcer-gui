@@ -822,6 +822,15 @@ pub(super) fn band() -> Vec<Command> {
         command("file.print", t::file_print(), 130)
             .with_icon("print")
             .enabled_when("doc.open"),
+        // Token 137. `print` is shared with `file.print`, its neighbour in the
+        // same group, drawn small beside the large Print.
+        command("file.printer_marks", t::file_printer_marks(), 137)
+            .with_icon("print")
+            .enabled_when("doc.pages"),
+        // Token 138. `print` again: the third way to print, in the same group.
+        command("file.network_print", t::file_network_print(), 138)
+            .with_icon("print")
+            .enabled_when("doc.open"),
         command("file.properties", t::file_properties(), 140)
             .with_icon("properties")
             .enabled_when("doc.open"),

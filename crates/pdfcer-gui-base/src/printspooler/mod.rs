@@ -13,6 +13,8 @@
 use std::fmt;
 
 mod device;
+pub mod finishing;
+pub mod network;
 pub mod probe;
 
 // Re-exported rather than left as `spooler::device::…`.

@@ -126,6 +126,7 @@ pub fn tab() -> Tab {
                 ribbon::group_pages_stamp(),
                 [
                     command("pages.bates"),
+                    command("pages.header_footer"),
                     command("pages.bates_remove"),
                     command("pages.labels"),
                 ],

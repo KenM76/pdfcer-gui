@@ -582,6 +582,20 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
             return;
         }
     };
+    #[cfg(feature = "3d")]
+    let (data, converted) = match super::gltf::to_embed(&source, data) {
+        Ok(done) => done,
+        Err(why) => {
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                "model-insert-gltf-refused".to_owned()
+            });
+            super::record_note(doc.edit_epoch, why);
+            return;
+        }
+    };
+    #[cfg(not(feature = "3d"))]
+    let converted: Vec<String> = Vec::new();
     let Some(crop) = doc.pages.get(page).map(|p| p.crop_box) else {
         return;
     };
@@ -614,6 +628,7 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
             .add_3d_annotation(page, &spec, &options)
             .map(|outcome| {
                 let mut notes = vec![t::inserted(&format, page)];
+                notes.extend(converted.iter().cloned());
                 notes.extend(poster_note(&outcome.poster));
                 if outcome.below_required_version() {
                     notes.push(t::below_version(

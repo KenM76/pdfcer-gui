@@ -91,6 +91,24 @@ impl ScriptedPointer {
         }
     }
 
+    /// Click the centre of the region `name` as last declared, in its own
+    /// viewport, then settle 15 frames. Absent, it errs naming the regions its
+    /// prefix did declare.
+    pub fn click_region(&self, session: &Session, ui_rect: &str, name: &str) -> Result<()> {
+        use crate::checks::driving::{declared_in, declared_names, list};
+        let trace = session.trace()?;
+        let (rect, viewport) = declared_in(&trace, ui_rect, name).ok_or_else(|| {
+            let prefix = name.rsplit_once('.').map_or(name, |(head, _)| head);
+            Error::new(format!(
+                "no `{name}` region. Declared under `{prefix}`: {}.",
+                list(&declared_names(&trace, ui_rect, prefix))
+            ))
+        })?;
+        self.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
+        session.settle(15);
+        Ok(())
+    }
+
     /// A primary click at `at` with modifiers held, `mods` as the pointer
     /// script spells them (`ctrl`, `shift`, `ctrl|shift`).
     pub fn click_with(&self, session: &Session, at: WindowPoint, mods: &str) -> Result<TraceLine> {

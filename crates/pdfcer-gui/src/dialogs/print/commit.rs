@@ -65,6 +65,7 @@ impl PrintDialog {
         for sheet in &mut bitmaps {
             super::colour::recolour(&mut sheet.rgba, self.output_color, "sheet"); // ui-text-exempt: trace token
         }
+        let config = self.finishing.config(printer, self.config.as_ref())?;
         spooler::spool(
             printer,
             &bitmaps,
@@ -73,7 +74,7 @@ impl PrintDialog {
             // silently print on whatever the machine was standing on while the
             // disclosure line above claimed a matched sheet.
             self.effective_device(),
-            self.config.as_ref(),
+            config.as_ref(),
             first_page_pt,
         )
         .map_err(|error| error.to_string())

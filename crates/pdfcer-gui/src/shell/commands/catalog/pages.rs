@@ -158,6 +158,11 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.bates", t::pages_bates(), 330)
             .with_icon("stamp")
             .enabled_when("doc.pages"),
+        // `text` is shared with the text tools: the command writes a line of
+        // text. Different tabs.
+        command("pages.header_footer", t::pages_header_footer(), 333)
+            .with_icon("text")
+            .enabled_when("doc.pages"),
         command("pages.bates_remove", t::pages_bates_remove(), 331)
             .with_icon("delete")
             .enabled_when("doc.pages"),

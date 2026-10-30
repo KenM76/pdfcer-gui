@@ -275,6 +275,26 @@ pub const fn file_print() -> CommandText {
     )
 }
 
+/// `file.printer_marks`
+#[must_use]
+pub const fn file_printer_marks() -> CommandText {
+    CommandText::new(
+        "Printer's marks…",
+        "Add crop, bleed and registration marks, colour bars and a page-information line \
+         outside the trimmed page. Each sheet grows to hold them.",
+    )
+}
+
+/// `file.network_print`
+#[must_use]
+pub const fn file_network_print() -> CommandText {
+    CommandText::new(
+        "Send to network printer…",
+        "Send this document straight to a network printer by its address. The printer \
+         lays the pages out itself; staple, punch, fold and tray appear when it offers them.",
+    )
+}
+
 /// `file.properties`
 #[must_use]
 pub const fn file_properties() -> CommandText {
@@ -497,6 +517,16 @@ pub const fn pages_bates() -> CommandText {
     CommandText::new(
         "Bates numbering…",
         "Stamp a running number, with an optional prefix and suffix, on every page or on the pages picked in the page rail.",
+    )
+}
+
+/// `pages.header_footer`
+#[must_use]
+pub const fn pages_header_footer() -> CommandText {
+    CommandText::new(
+        "Header & footer…",
+        "Write a line of text, with the page number and count if you like, along the top \
+         or bottom of every page or of the pages picked in the page rail.",
     )
 }
 

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `wanted` — a real gap — **47 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -153,28 +153,21 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Printer's marks** — crop, registration, colour bars and page-info marks … | **wanted, at the pin since v0.106.0.** An undoable edit (`add_printer_marks`) reached from the print-production surfaces; it writes into the bleed band, so it needs a page with room outside the trim box and must say when there is none. |
-| **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **wanted, at the pin since v0.106.0.** A choice in the Print dialog, reusing the ink list Output Preview already reads; the dialog must repeat the engine's caution that plate greys approximate ink density. |
-| **Vector printing** — pages the EMF writer carries whole print as vector … | **wanted, at the pin since v0.106.0.** The Print dialog prints through the image path today. Taking the vector path needs its per-page fallback (transparency, blend, shading, overprint, tiling) reported in the print receipt. |
 | **Print with a header and/or footer** — `pdfcer print --header TEXT --footer TEXT` … | **wanted, at the pin since v0.106.0.** The print-time sibling of the row below: header and footer fields in the Print dialog, with the `{page}` and `{pages}` tokens, stamped on the printed copy only. |
-| **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **wanted, at the pin since v0.106.0.** Acrobat's Add Header & Footer; belongs beside Bates numbering on the Pages tab, as one undo entry, and the print-time variant in the Print dialog. |
 | **Imposition — N-up and booklet** — `pdfcer_print::imposition::plan_n_up`, `plan_booklet` (engine row: Imposition — N-up, booklet, poster, —/[x]/[ ]) | **wanted, at the pin since v0.106.0.** Poster is built (Print dialog ▸ Poster). Multiple pages per sheet and Booklet belong beside it in the Page sizing choice, with the preview showing the imposed sheet. |
 | **Print several files in one command** (engine row: —/[x]/[ ]) | **wanted, at the pin since v0.106.0.** The CLI prints several inputs in one job; the shell prints the open document only. File ▸ Print several files… with the Print dialog's settings applied to each. |
-| **Show the PDF/X claim** — `pdfcer_core::prepress::pdfx_claim` <!--namesake:pdfx_claim--> (called only to seed the overprint-preview default, never shown) (`PdfxClaim::is_recognised`, `carriers_agree`, `has_output_intent`) | **wanted, at the pin since v0.106.0.** The claim is consumed internally (the overprint-preview default, shipped row below) but never shown: Document Properties should state the claimed level and say when XMP and Info disagree, the claim is unrecognised, or the output intent is missing. |
 
 ### 3D
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
-| **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **wanted, at the pin since v0.106.0.** Edit ▸ Insert ▸ 3D model takes PRC and U3D; glTF and GLB join its file filter once the import's notes have a place in the results panel. |
-| **Write a PRC from a triangle-mesh scene** — `pdfcer_3d::write_prc` … | **wanted, at the pin since v0.106.0.** The writer behind the glTF row above; no surface of its own. |
 | **3D view lighting (`/LS`)** — `ThreeDLighting` (ISO 32000-1 Table 309) … | **wanted, at the pin since v0.106.0.** A lighting choice for the 3D insert, shown in the 3D model's properties; read-back also belongs in the 3D models list. |
 | **Read back a 3D annotation's activation condition** — `ThreeDArtwork.activation` … | **wanted, at the pin since v0.106.0.** The channel notice asks the canvas to show the poster until the click for `Click` artwork; the 3D models list should show the condition. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `blocked` — waiting on something named — **4 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -188,6 +181,8 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
+| **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **blocked on G242: the plate rendering (`render_plates`, `to_plate_grey`, the ink label) is private to `pdfcer-cli`.** Restating it here would be a second definition of plate grey and of where the label sits beside a marks band. Once public, it becomes a choice in the Print dialog using the ink list Output Preview already reads, repeating the engine's caution that plate greys approximate ink density. |
+| **Vector printing** — pages the EMF writer carries whole print as vector … | **blocked on G241: the rule deciding whether a page's EMF is the whole page (`print_vector::raster_reason`) is private to `pdfcer-cli`.** A copy of its eleven counters here would drift from the CLI's the first time `EmfOutcome` grows one. Once public, the Print dialog sends safe pages as EMF and the receipt names each image page's reason. |
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
 ---
@@ -248,7 +243,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **371 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **376 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -256,6 +251,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **shipped — Pages ▸ Stamp ▸ Header & footer…; driven by `header_footer_and_printer_marks`.** `dialogs::running` collects the text and `app::actions::pagestamp` calls `stamp_running_text` through the edit funnel as one undo entry, with the `{page}` and `{pages}` tokens; text the font cannot print is refused before the engine is called. The print-time variant stays `wanted` (its own row). |
+| **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **shipped — Edit ▸ Insert ▸ 3D model… takes `.gltf` and `.glb`; driven by `a_gltf_model_is_converted_and_placed`.** `app::actions::gltf::to_embed` converts through `pdfcer_3d::gltf` and `app::actions::models` places the PRC; the import's notes go to the status line (`model-insert-gltf triangles=`), and the placed model saves back out as PRC. |
+| **Write a PRC from a triangle-mesh scene** — `pdfcer_3d::write_prc` … | **shipped — reached through the glTF row above; driven by `a_gltf_model_is_converted_and_placed`**, whose saved-back model starts with the PRC signature. No surface of its own. |
 | **Compare the text of two documents** — `pdfcer compare OLD NEW`, the module `pdfcer_core::compare` | **shipped — Tools ▸ Compare ▸ Compare documents…; driven by `comparing_lists_every_change` and `a_compare_row_shows_its_change`.** `panels::compare::job` runs `compare_documents` off the UI thread on the open document (its path, or its incremental-save bytes when edited) against the picked older file; `panels::compare::rows` lists each change, a click turning to its page and revealing its rectangle. The engine's notes (`truncated` among them) list in the panel, off-canvas. |
 | **Annotated comparison result** — `pdfcer compare OLD NEW --output RESULT.pdf`, the marking verb in `pdfcer_core::compare` | **shipped — the Compare panel's *Mark changes as comments*; driven by `marking_a_comparison_writes_comments`.** `app::actions::comparemark` runs `mark_regions` then `mark_changes` through the edit funnel and pushes one undo entry for the whole marking (`compare::mark_comparison`, `CommandKind::MarkComparison`; G229 — the shell's fold is deleted at this pin). Unmarked changes are counted on the status line, not fatal. An appearance comparison also writes the summary-page paragraph (`ResultOptions::with_summary_note`, traced `note=1`); its text and the marks are re-built in the shell because the CLI keeps them crate-private (G239). |
 | **Visual comparison and page matching** — `pdfcer compare OLD NEW --visual`, the module `pdfcer_render::visual_compare` | **shipped — the Compare panel's *Appearance* choice; driven by `comparing_lists_every_change`.** `panels::compare::job` calls `visual_compare` beside the text comparison; each changed region lists as an area row, and an added, removed or size-differing page pair is stated in the panel. |
@@ -597,6 +595,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Printer's marks** — crop, registration, colour bars and page-info marks … | **shipped — File ▸ Print ▸ Printer's marks…; driven by `header_footer_and_printer_marks`.** `dialogs::printmarks` collects the marks and `app::actions::pagestamp` calls `add_printer_marks` through the edit funnel as one undo entry on the pages picked in the rail, or every page; the sheet grows to hold the marks and a page with no trim box is said to have had one assumed (`printmarks-applied … trim_assumed=`). |
+| **Show the PDF/X claim** — `pdfcer_core::prepress::pdfx_claim` <!--namesake:pdfx_claim--> (called only to seed the overprint-preview default, never shown) (`PdfxClaim::is_recognised`, `carriers_agree`, `has_output_intent`) | **shipped — Document Properties, after the page boxes; driven by `document_properties_say_which_pdfx_level_the_file_claims`.** `panels::docprops::pdfx` states the claimed level and says when the claim is unrecognised, when XMP and Info disagree, the printing condition, and when the `/GTS_PDFX` output intent is missing; a file with an intent and no claim draws nothing (the check's control). |
 | **Printer list that never waits on a device** — `list_printer_names`, `printer_detail` … | **shipped — the Print dialog lists printers from `list_printer_names` at once and reads the chosen printer's caps on a worker (`printspooler::probe::CapsCache`); a printer still answering shows a spinner and holds back nothing else (X013). Driven by `print_dialog_never_waits_on_a_printer`.** |
 | **Background printer probe** — `pdfcer_print::PrinterProbe` … | **shipped — started at launch (`printspooler::probe::start`), so the Print dialog finds each printer's features and forms already read (X013b). Driven by `print_dialog_never_waits_on_a_printer` with `PDFCER_DIAG_SLOW_PRINTER`.** |
 | **Print honours the document's presets** — `pdfcer print` fills unset options from the viewer preferences … | **shipped — File ▸ Print; driven by `print_opens_on_the_documents_own_settings`.** `dialogs::print::presets::apply` reads `pdfcer_core::print_presets::print_presets` when the dialog opens and puts actual size, the page range, copies, duplex and tray-by-size in place of the remembered settings; each is listed under the scale choices as the document's. `/Enforce [/PrintScaling]` greys the scale choices with the reason on hover. `/PrintArea` and `/PrintClip` naming another box are disclosed, not honoured. A preset left unchanged is not saved as a habit (`keep_own_habits`). The merge policy is the CLI's, duplicated here: reported as G238. |
@@ -815,7 +815,7 @@ What these releases added and this shell has an opinion on. A wired item names
 where it is wired; the rest say why they wait.
 
 - **Dynamic XFA forms** — `pdfcer_core::xfa` (`form_kind`, `read_xdp`, `read_template`, `layout_template`) and `pdfcer_render::xfa` (`render_xfa_page`). **Wired**: the open-time sentence for a dynamic form (G237) and the View tab's form preview. The data merge has not landed, so the preview draws the form without its filled-in values and says so.
-- **Print presets, printer's marks, running headers and footers** — `pdfcer_core::print_presets`, `pdfcer_core::printer_marks`, `pdfcer_core::edit::printer_marks` (`add_printer_marks`, `CommandKind::AddPrinterMarks`, `EditError::PrinterMarks`), `pdfcer_core::running_text`, `pdfcer_core::edit::running_text` (`stamp_running_text`, `CommandKind::StampRunningText`, `EditError::RunningText`). **wanted.** Running text belongs in the Page tab's header-and-footer group and printer's marks in Print production; presets in the Print dialog. Each needs its own dialog and a drive on a real printer; not in this release.
-- **Print finishing, IPP, printer probing, listing and output colour** — `pdfcer_print::finishing`, `pdfcer_print::ipp`, `pdfcer_print::probe`, `pdfcer_print::listing`, `pdfcer_print::output_color`, `PrintError::FinishingRefused`, `PrintError::Metafile`, `PrintError::PrintTicket`, `pdfcer_fetch::post_ipp`, `pdfcer_fetch::MAX_IPP_RESPONSE_BYTES`, `FetchError::NetworkUnsupported`. **wanted.** They reach the operator through the Print dialog, whose adapter is `pdfcer-gui-base`'s print spooler; wiring them changes what goes to the physical printer and is driven on one before it ships.
-- **glTF import and PRC writing** — `pdfcer_3d::gltf`, `pdfcer_3d::write`, `pdfcer_core::threed::lighting`, `ThreeDSavedView::with_lighting`, `ThreeDActivation::from_name`. **wanted.** The Insert tab's 3D model command takes PRC and U3D today; glTF joins its file filter once the import's `notes` have a place in the results panel.
+- **Print presets, printer's marks, running headers and footers** — `pdfcer_core::print_presets`, `pdfcer_core::printer_marks`, `pdfcer_core::edit::printer_marks` (`add_printer_marks`, `CommandKind::AddPrinterMarks`, `EditError::PrinterMarks`), `pdfcer_core::running_text`, `pdfcer_core::edit::running_text` (`stamp_running_text`, `CommandKind::StampRunningText`, `EditError::RunningText`). **Wired**: presets in the Print dialog; printer's marks under File ▸ Print; the header and footer as a document edit under Pages ▸ Stamp. The print-time header and footer waits (its own row).
+- **Print finishing, IPP, printer probing, listing and output colour** — `pdfcer_print::finishing`, `pdfcer_print::ipp`, `pdfcer_print::probe`, `pdfcer_print::listing`, `pdfcer_print::output_color`, `PrintError::FinishingRefused`, `PrintError::Metafile`, `PrintError::PrintTicket`, `pdfcer_fetch::post_ipp`, `pdfcer_fetch::MAX_IPP_RESPONSE_BYTES`, `FetchError::NetworkUnsupported`. **Wired**: the Print dialog lists printers at once and probes the chosen one on a worker, offers grey and black-only output, and offers the staple, punch and tray the driver lists; File ▸ Print ▸ Send to network printer sends to an IPP address with the finishings and bin that printer reports.
+- **glTF import and PRC writing** — `pdfcer_3d::gltf`, `pdfcer_3d::write`, `pdfcer_core::threed::lighting`, `ThreeDSavedView::with_lighting`, `ThreeDActivation::from_name`. **Wired**: Edit ▸ Insert ▸ 3D model takes `.gltf` and `.glb`, converts to PRC and puts the import's notes on the status line. Lighting and activation are their own rows.
 - **Overprint ink pairs and grey image sources** — `pdfcer_render::overprint::InkPair` (`InkPair::Calibrated`, `InkPair::Naive`) and `DecodedImage::gray_source`. **declined for now**: the overprint preview uses the renderer's default pairing, and nothing here decodes images itself.

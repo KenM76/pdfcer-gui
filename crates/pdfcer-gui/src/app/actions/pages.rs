@@ -566,6 +566,20 @@ pub(super) fn apply(
                 super::pagesize::bates(session, &stamp, first)
             });
         }
+        PageAction::StampRunningText { stamp } => {
+            let page = stamp.pages.as_ref().and_then(|p| p.first().copied());
+            let n = stamp.pages.as_ref().map_or(0, Vec::len);
+            super::apply::vector_edit(doc, "running-stamped", page.unwrap_or(0), n, |session| {
+                super::pagestamp::running_text(session, &stamp)
+            });
+        }
+        PageAction::AddPrinterMarks { marks } => {
+            let page = marks.pages.as_ref().and_then(|p| p.first().copied());
+            let n = marks.pages.as_ref().map_or(0, Vec::len);
+            super::apply::vector_edit(doc, "printer-marks", page.unwrap_or(0), n, |session| {
+                super::pagestamp::printer_marks(session, &marks)
+            });
+        }
         PageAction::RemoveBates { pages } => {
             let page = pages.as_ref().and_then(|p| p.first().copied());
             let n = pages.as_ref().map_or(0, Vec::len);

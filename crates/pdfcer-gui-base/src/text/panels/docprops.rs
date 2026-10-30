@@ -220,6 +220,50 @@ pub fn page_box_unusable(which: usize, pages: &str) -> String {
     )
 }
 
+/// The label on the PDF/X claim row.
+#[must_use]
+pub const fn pdfx_label() -> &'static str {
+    "PDF/X"
+}
+
+/// The level the file claims, verbatim.
+#[must_use]
+pub fn pdfx_level(level: &str) -> String {
+    format!("claims {level}")
+}
+
+/// What the claim is and is not.
+#[must_use]
+pub const fn pdfx_claim_only() -> &'static str {
+    "The file says this about itself; pdfcer has not checked that it conforms."
+}
+
+/// The claimed level is not one the PDF/X registry lists.
+#[must_use]
+pub const fn pdfx_unregistered() -> &'static str {
+    "That is not a registered PDF/X level; it is shown as the file wrote it."
+}
+
+/// The XMP and Info dictionary claim different levels.
+#[must_use]
+pub fn pdfx_disagree(xmp: &str, info: &str) -> String {
+    format!(
+        "The file's two claims differ: its XMP metadata says {xmp} and its document information says {info}. The XMP one is shown."
+    )
+}
+
+/// The press conditions the file names in its PDF/X output intents.
+#[must_use]
+pub fn pdfx_intents(names: &[&str]) -> String {
+    format!("Printing condition: {}.", names.join(", "))
+}
+
+/// No `/GTS_PDFX` output intent, which every PDF/X part requires.
+#[must_use]
+pub const fn pdfx_no_intent() -> &'static str {
+    "It names no printing condition (output intent), which every PDF/X level requires."
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
