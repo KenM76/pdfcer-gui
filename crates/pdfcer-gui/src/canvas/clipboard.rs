@@ -427,7 +427,7 @@ pub fn cut(
             // Every one passed the gate above, so none is kept as locked.
             let annots = doc.selection.annots();
             debug_assert_eq!(annots.len(), annot_ids.len());
-            if let Some(delete) = pdfcer_gui_base::annotaction::delete_selected(&annots) {
+            if let Some(delete) = pdfcer_gui_base::annotselection::delete_selected(&annots) {
                 actions.push(Action::Annot(delete));
             }
         }

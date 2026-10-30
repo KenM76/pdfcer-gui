@@ -140,3 +140,7 @@ behind it, ask *"what would the repair alone have produced here?"* If it is the
 same value, move the fixture off the boundary — middle of the list, not the end.
 Then plant the rule's deletion and watch it go red; this one had to be found by
 the plant, because reading the test could not tell.
+
+## The variant where a modifier is already taken: assert both axes
+
+The whole-stroke ink move was first put on Shift+drag. A (40,20) drag moved the stroke dx=40 dy=0, because `vertexroute` runs `constrain::reposition(ctx, shift, …)`, which makes Shift the axis lock on every point drag. A check asserting only "a stroke moved" passes on that defect. **How to apply:** before giving a gesture a modifier, map what Shift, Ctrl and Alt already do on that route (`constrain`, `dimdrag::intent`, `alt_held`, `cycle_depth`). Then drive the gesture diagonally and assert both components.

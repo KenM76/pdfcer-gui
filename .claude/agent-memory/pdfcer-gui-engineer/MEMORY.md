@@ -96,7 +96,7 @@
 - [Named everywhere, registered nowhere](feedback_checker_named_every.md) — grep the runner, not the prose.
 - [A gate crashing after its headline](feedback_gate_crashes_after.md) — the named row sat unfixed.
 - [One remedy banner on any failure](feedback_one_remedy_banner_any.md) — it told him to rewrite right figures.
-- [An assertion both outcomes satisfy](feedback_assertion_both.md) — name what the WRONG one can't produce.
+- [An assertion both outcomes satisfy](feedback_assertion_both.md) — name what the WRONG one can't produce; drag diagonally.
 - [A hit inside the repo is no outside mandate](feedback_gate_hit_inside_repo.md) — a half-renamed archive is worse.
 - [A branch pin moves on its own](feedback_branch_pinned.md) — it changed mid-session with no command.
 - [Python-to-a-file does not protect an escape](feedback_write_python_file.md) — a 700-line heredoc never spawns; an LF anchor misses a CRLF file.

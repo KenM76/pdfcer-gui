@@ -3,6 +3,7 @@
 use egui::{Pos2, Rect};
 use pdfcer_core::object::ObjId;
 
+use crate::annotaction::AnnotAction;
 use crate::annotkind::AnnotKind;
 
 /// One annotation, addressed the way the engine addresses it.
@@ -67,4 +68,31 @@ pub struct AnnotSelection {
     /// in the very mode that authors dimensions. One value, one decision, every
     /// consumer.
     pub oriented: Option<[Pos2; 4]>,
+}
+
+/// The delete a selection of annotations earns: [`AnnotAction::Delete`] for
+/// one, [`AnnotAction::DeleteMany`] of the unlocked ones for several. `None`
+/// when nothing is selected or every one of several is locked; a single
+/// locked annotation is refused by the caller's gate, which names the reason.
+#[must_use]
+pub fn delete_selected(annots: &[&AnnotSelection]) -> Option<AnnotAction> {
+    match annots {
+        [] => None,
+        [one] => Some(AnnotAction::Delete {
+            page: one.target.page,
+            id: one.target.id,
+        }),
+        several => {
+            let ids: Vec<_> = several
+                .iter()
+                .filter(|a| !a.target.locked)
+                .map(|a| a.target.id)
+                .collect();
+            (!ids.is_empty()).then(|| AnnotAction::DeleteMany {
+                page: several[0].target.page,
+                kept_locked: several.len() - ids.len(),
+                ids,
+            })
+        }
+    }
 }

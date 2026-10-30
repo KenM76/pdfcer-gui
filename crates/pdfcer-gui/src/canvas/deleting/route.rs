@@ -76,7 +76,7 @@ pub(crate) fn route<'a>(ask: &Ask<'a>) -> Route<'a> {
             return Route::AnnotRefused(annot.target.id);
         }
         return Route::Annots(
-            pdfcer_gui_base::annotaction::delete_selected(&ask.selection.annots())
+            pdfcer_gui_base::annotselection::delete_selected(&ask.selection.annots())
                 .map(Action::Annot),
         );
     }

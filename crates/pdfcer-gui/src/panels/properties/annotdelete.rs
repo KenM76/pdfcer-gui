@@ -110,7 +110,7 @@ pub fn refuses(doc: &OpenDoc, selection: &crate::canvas::selection::SelectionSta
     // Several: the locked ones are kept and the rest deleted, so only a
     // document-wide refusal or every one being locked refuses the press.
     doc.session.annotation_deletion_refusal().is_some()
-        || pdfcer_gui_base::annotaction::delete_selected(&annots).is_none()
+        || pdfcer_gui_base::annotselection::delete_selected(&annots).is_none()
 }
 
 /// Which sentence an `EditError` from `annotation_deletion_refusal` earns.
