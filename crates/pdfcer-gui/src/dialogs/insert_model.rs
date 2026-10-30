@@ -200,7 +200,7 @@ pub fn open_for(
     });
     Some(InsertModelDialog {
         page,
-        name: crate::dialogs::sign::file_name_of(&source),
+        name: crate::dialogs::filename::file_name_of(&source),
         gltf: cfg!(feature = "3d") && is_gltf(&source),
         placement: ModelPlacement {
             source,

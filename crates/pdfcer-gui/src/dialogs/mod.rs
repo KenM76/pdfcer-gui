@@ -73,6 +73,8 @@ pub mod export_text;
 pub mod export_word;
 /// Pages ▸ Extract…: which pages, their labels, and whether they leave.
 pub mod extract_pages;
+/// A path's file name, for any dialog that names a file.
+pub mod filename;
 pub mod formfield;
 /// The *Sign here* window: a signature drawn by hand, placed in a box.
 pub mod handsign;

@@ -1116,6 +1116,10 @@ elif [ "$RUN_CARGO" -eq 1 ]; then
         # is not. Both crates are named because `-p pdfcer-gui --all-targets`
         # does not compile base's own tests.
         run "cargo clippy (ocrs removed)" cargo clippy -p pdfcer-gui -p pdfcer-gui-base --no-default-features --features pdfcer-gui/jpx,pdfcer-gui/signing --all-targets -- -D warnings
+        # The Android APK takes `pdfcer-gui` with no features at all; the run
+        # above keeps `signing`, so a dialog borrowing from `sign` passes it
+        # and breaks only the phone build.
+        run "cargo clippy (no features, as Android)" cargo clippy -p pdfcer-gui --no-default-features -- -D warnings
     fi
 else
     SKIPPED+=("cargo fmt (--no-cargo)")

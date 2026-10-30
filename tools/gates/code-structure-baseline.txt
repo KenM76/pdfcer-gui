@@ -1,6 +1,5 @@
 dup crates/pdfcer-gui-base::absolute in crates/pdfcer-gui-base/src/guidestore.rs, crates/pdfcer-gui-base/src/viewer/remembered.rs
 dup crates/pdfcer-gui-base::id in crates/pdfcer-gui-base/src/filedrag.rs, crates/pdfcer-gui-base/src/smartselect.rs
-dup crates/pdfcer-gui::file_name_of in crates/pdfcer-gui/src/dialogs/protect.rs, crates/pdfcer-gui/src/dialogs/redact.rs
 dup crates/pdfcer-gui::id in crates/pdfcer-gui/src/canvas/chunks.rs, crates/pdfcer-gui/src/canvas/placing.rs
 dup crates/pdfcer-gui::id in crates/pdfcer-gui/src/canvas/textedit/history.rs, crates/pdfcer-gui/src/canvas/textedit/note.rs
 dup crates/pdfcer-gui::mm_box in crates/pdfcer-gui/src/dialogs/new_document.rs, crates/pdfcer-gui/src/dialogs/page_size.rs

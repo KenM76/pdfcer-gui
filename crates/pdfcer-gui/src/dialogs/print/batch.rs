@@ -22,7 +22,7 @@ use pdfcer_gui_base::settings::SettingsExt as _;
 
 use super::PrintDialog;
 use crate::app::state::OpenDoc;
-use crate::dialogs::sign::file_name_of as name_of;
+use crate::dialogs::filename::file_name_of as name_of;
 use crate::text::print::batch as t;
 
 /// The files a batch print is working through.

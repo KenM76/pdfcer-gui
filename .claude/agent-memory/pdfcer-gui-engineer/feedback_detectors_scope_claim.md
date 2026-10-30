@@ -108,3 +108,7 @@ version forbids the convention and gets switched off. The rule that shipped
 reddens only when the dead name **nearly** matches a live one. A scope widened
 past what the convention allows is not a stricter gate; it is a gate with a
 short life.
+
+## A feature set is a scope too
+
+The gate's `cargo clippy (ocrs removed)` run turned features off but kept `signing`. Three dialogs then imported `dialogs::sign::file_name_of`, a module that exists only with `signing`; every gate stayed green, the release shipped, and only the Android APK (`pdfcer-gui` with no features at all) failed to compile. A build that removes some features tests what it removes, not what it keeps. run-all now has `cargo clippy (no features, as Android)`, falsified by planting the borrow back (2 errors). A helper two dialogs share goes in an always-compiled module (`dialogs::filename`), never borrowed from a feature-gated sibling.

@@ -6,7 +6,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/protect.md`.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+use super::filename::file_name_of;
 
 use egui_shell::theme::Theme;
 use pdfcer_core::crypto::PermissionBit;
@@ -797,15 +799,6 @@ const fn task_token(task: Task) -> &'static str {
         Task::Password => "password", // ui-text-exempt: trace token, never displayed
         Task::Permissions => "permissions", // ui-text-exempt: trace token, never displayed
     }
-}
-
-/// **The file name a sentence should use for `path`.**
-#[must_use]
-fn file_name_of(path: &Path) -> String {
-    path.file_name().map_or_else(
-        || path.display().to_string(),
-        |n| n.to_string_lossy().into_owned(),
-    )
 }
 
 /// Open the dialog for the document in `status`, if there is one.

@@ -659,7 +659,7 @@ His words: *"Can you try building an android version again when you have a chanc
 
 **Scope.** A fresh pdfcer APK built for his Fairphone 5 (arm64), and a minimal hello-world APK built and signed the same way, so an install refusal can be pinned on the toolchain/signing or on pdfcer itself. Follows the "package appears to be invalid" refusal under O337.
 
-**Status.** Filed; queued after release `v0.5.0-dev.20261030.4`.
+**Status.** Built: a fresh pdfcer APK on engine v0.108.0 and `hello-pdfcer.apk` (no native code, no libraries), both signed with the same debug key, minSdk 28, in OneDrive `pdfTests` with their SHA-256 in `android-apks-SHA256.txt`. The October 29 APK checked clean here (v2 signature, arm64 only, library 16 KB-aligned, manifest valid), so the refusal is not yet explained; if hello-world also refuses, the cause is the phone or the download, not pdfcer. The rebuild found the phone build broken since `.3` (three dialogs borrowed a helper from the signing window, which Android leaves out); fixed, and a no-features build added to the gates. NOT VERIFIED by him.
 
 ## O337 — **OPEN** — a proposed interface for Android, phone and tablet
 

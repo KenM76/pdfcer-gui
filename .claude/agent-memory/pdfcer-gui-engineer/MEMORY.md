@@ -124,7 +124,7 @@
 - [An inherited summary is not a source](feedback_inherited_session.md) — quotes AND formulas cross it unmeasured.
 - [Scope a use-measurement as the language does](feedback_use_measurement.md) — a namesake discharges a twin.
 - [A guarded capability is not the file's](feedback_guarded_capability.md) — count when true: 15 files in 4,012.
-- [A detector's scope is a claim](feedback_detectors_scope_claim.md) — a green `clippy -p X` is not a green gate.
+- [A detector's scope is a claim](feedback_detectors_scope_claim.md) — `-p X` or a partial feature set: green over less than the gate.
 - [An injected file is a dated snapshot](feedback_injected_file_dated.md) — 13 of 26 anchors weren't on disk; size warnings too.
 - [A rewrite of a cell deletes what it held](feedback_rewrite_cell_deletes.md) — it held the only copy.
 - [A gesture named without its outcome](feedback_gesture_without.md) — drag copies, Shift moves; wrong 4h44m later.

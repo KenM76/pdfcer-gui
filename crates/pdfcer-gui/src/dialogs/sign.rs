@@ -3,7 +3,9 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/dialogs/sign.md`.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+use super::filename::file_name_of;
 
 use egui_shell::theme::Theme;
 
@@ -773,14 +775,6 @@ const fn refusal_token(refusal: Option<Refusal>) -> &'static str {
         Some(Refusal::RecoveredBase) => "recovered-base", // ui-text-exempt: trace token, never displayed
         Some(Refusal::NotOnDisk) => "not-on-disk", // ui-text-exempt: trace token, never displayed
     }
-}
-
-/// A path's file name, for a sentence that names a file.
-pub(super) fn file_name_of(path: &Path) -> String {
-    path.file_name().map_or_else(
-        || path.display().to_string(),
-        |n| n.to_string_lossy().into_owned(),
-    )
 }
 
 /// Build the window for `doc`, or nothing when there is no document.

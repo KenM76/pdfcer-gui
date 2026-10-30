@@ -20,7 +20,7 @@ use egui::Ui;
 use pdfcer_core::optimize::{OptimizeSettings, profile};
 
 use crate::app::files::{Picked, from_env};
-use crate::dialogs::sign::file_name_of;
+use crate::dialogs::filename::file_name_of;
 use crate::text::compact_profile as t;
 
 /// The file Load settings… reads, for `ui-verify`; empty is a cancel.

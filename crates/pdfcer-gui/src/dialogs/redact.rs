@@ -14,6 +14,8 @@ use pdfcer_gui_base::redact::disclosures;
 
 use std::path::{Path, PathBuf};
 
+use super::filename::file_name_of;
+
 use egui_shell::theme::Theme;
 
 use crate::app::prefs::RedactionReach;
@@ -891,15 +893,6 @@ impl RedactDialog {
             }
         };
     }
-}
-
-/// **The file name a sentence should use for `path`.**
-#[must_use]
-fn file_name_of(path: &Path) -> String {
-    path.file_name().map_or_else(
-        || path.display().to_string(),
-        |n| n.to_string_lossy().into_owned(),
-    )
 }
 
 /// **The sentence shown once bytes are on disk.**
