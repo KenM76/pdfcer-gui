@@ -64,10 +64,12 @@ fn compose(
 ) -> Option<Pixmap> {
     let px_per_pt = f64::from(super::raster_scale(printable_pt));
     let options = crate::dialogs::print::commit::render_options(dialog.scope, &inputs.doc.settings);
-    let view = inputs.doc.session.view();
+    let copy = dialog.running.copy();
+    let source = crate::dialogs::print::running::Source::of(inputs.doc, copy.as_deref());
+    let view = source.session.view();
     let mut pages: Vec<(Pixmap, Cell)> = Vec::with_capacity(sheet.cells.len());
     for cell in &sheet.cells {
-        let Some(page) = inputs.doc.pages.get(cell.page) else {
+        let Some(page) = source.pages.get(cell.page) else {
             continue;
         };
         let scale = base::render_scale(&cell.fit, px_per_pt);

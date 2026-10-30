@@ -708,6 +708,8 @@ mod lines;
 /// Send to network printer.
 pub mod network;
 pub mod presets;
+/// A header or footer on the printed copy only.
+pub mod running;
 
 // Glob re-exported, for the reason argued over `footer` above.
 pub use lines::*;

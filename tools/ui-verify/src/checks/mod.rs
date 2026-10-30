@@ -478,6 +478,8 @@ pub mod print_colour;
 /// Several pages per sheet, and booklets.
 pub mod print_impose;
 pub mod print_presets;
+/// A print-only header or footer reaches the printed copy.
+pub mod print_running;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;
 pub mod print_slow_printer;

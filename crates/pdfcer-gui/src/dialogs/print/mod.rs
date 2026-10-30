@@ -101,6 +101,8 @@ mod colour;
 mod lines;
 /// The document's own `/ViewerPreferences` print settings.
 mod presets;
+/// A header or footer on the printed copy only.
+mod running;
 
 // The names this dialog publishes for `tools/ui-verify`. A private glob keeps
 // `super::REGION_*` resolving from `tabs` and `position`; the three named
@@ -277,6 +279,8 @@ pub struct PrintDialog {
     poster_caption: Option<String>,
     /// Multiple and Booklet; see [`impose`].
     impose: impose::State,
+    /// The print-only header and footer, and the stamped copy they need.
+    running: running::State,
     /// One fixed line width; see [`lines`].
     lines: crate::app::prefs::printing::LineWidthPrefs,
     /// Copy count.
@@ -548,6 +552,7 @@ impl PrintDialog {
             poster: remembered.poster,
             poster_caption: None,
             impose: impose::State::new(remembered.impose, remembered.poster.on),
+            running: running::State::default(),
             lines: remembered.lines,
             copies: remembered.copies,
             uncollated: remembered.uncollated,
@@ -840,6 +845,8 @@ impl PrintDialog {
         // than at each of the three sites that need it. `None` exactly when
         // there is no job — the printable rectangle comes from the planned
         // geometry, and with no device there is no clip to report.
+        self.running.ensure(doc);
+        let stamp = self.running.stamp();
         let context = job.as_ref().map(|job| {
             verdicts::Context::new(
                 self.scope,
@@ -847,6 +854,7 @@ impl PrintDialog {
                 job.device.printable_pt,
                 lines::paper_pt(self.lines, job.resolution.dpi),
             )
+            .with_stamp(stamp)
         });
 
         //
@@ -978,7 +986,13 @@ impl PrintDialog {
             // settings the window did not open with, and a Cancel after it has
             // something real to put back.
             saved_on_commit = self.remember(prefs);
-            let outcome = self.commit(&printer, doc, &job, &page_sizes);
+            // A header or footer still being typed prints as typed.
+            self.running.apply_draft();
+            self.running.ensure(doc);
+            let outcome = match self.running.error() {
+                Some(why) => Err(t::running::refused(why)),
+                None => self.commit(&printer, doc, &job, &page_sizes),
+            };
             //
             // The operator: *"it doesn't close after I hit the print button
             // [...] it looks greyed out as though it doesn't do anything even

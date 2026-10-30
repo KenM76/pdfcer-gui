@@ -255,17 +255,17 @@ pub(super) fn apply(
 /// Render one imposed sheet for the spool: each page at its cell's density,
 /// composed onto the printable area.
 pub(super) fn render_sheet(
-    doc: &crate::app::state::OpenDoc,
+    source: super::running::Source<'_>,
     sheet: &ImposedSheet,
     job: &Job,
     options: &pdfcer_render::RenderOptions,
     lines_pt: Option<f64>,
 ) -> Result<PageBitmap, String> {
     let px_per_pt = f64::from(job.resolution.dpi) / 72.0;
-    let view = doc.session.view();
+    let view = source.session.view();
     let mut pages = Vec::with_capacity(sheet.cells.len());
     for cell in &sheet.cells {
-        let Some(page) = doc.pages.get(cell.page) else {
+        let Some(page) = source.pages.get(cell.page) else {
             continue;
         };
         let scale = base::render_scale(&cell.fit, px_per_pt);

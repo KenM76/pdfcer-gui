@@ -27,6 +27,8 @@ pub struct Context {
     printable_pt: (f64, f64),
     /// The fixed line width on paper, points (O233); `None` when off.
     lines_pt: Option<f64>,
+    /// The print-only header and footer copy the preview renders; 0: none.
+    stamp: u64,
 }
 
 impl Context {
@@ -42,7 +44,14 @@ impl Context {
             settings: settings.clone(),
             printable_pt,
             lines_pt,
+            stamp: 0,
         }
+    }
+
+    /// The same context, rendering the stamped copy `stamp` (0: none).
+    #[must_use]
+    pub fn with_stamp(self, stamp: u64) -> Self {
+        Self { stamp, ..self }
     }
 
     /// The preview texture's cache key for `page`.
@@ -53,6 +62,7 @@ impl Context {
             &self.settings,
             self.lines_pt.map(|pt| (pt, placement)),
         )
+        .with_stamp(self.stamp)
     }
 }
 

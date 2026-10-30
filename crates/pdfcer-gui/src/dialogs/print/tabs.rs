@@ -502,6 +502,7 @@ pub(super) fn comments(ui: &mut Ui, dialog: &mut PrintDialog) {
             dialog.scope = scope;
         }
     }
+    super::running::controls(ui, &mut dialog.running);
 }
 
 /// The resolution each page is rendered at, on the Pages tab.

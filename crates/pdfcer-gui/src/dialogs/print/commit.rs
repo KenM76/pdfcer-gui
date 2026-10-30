@@ -93,18 +93,22 @@ impl PrintDialog {
         // the preview's purpose.
         let options = render_options(self.scope, &doc.settings);
         let lines_pt = super::lines::paper_pt(self.lines, job.resolution.dpi);
-        let view = doc.session.view();
+        // The stamped copy when a print-only header or footer is set.
+        let copy = self.running.copy();
+        let source = super::running::Source::of(doc, copy.as_deref());
+        let view = source.session.view();
         let name = super::poster::document_name(doc);
 
         let mut bitmaps = Vec::with_capacity(job.plans.len());
         for (i, plan) in job.plans.iter().enumerate() {
             if let Some(sheet) = self.impose.out.get(i) {
                 bitmaps.push(super::impose::render_sheet(
-                    doc, sheet, job, &options, lines_pt,
+                    source, sheet, job, &options, lines_pt,
                 )?);
                 continue;
             }
-            let (Some(page), Some(&size)) = (doc.pages.get(plan.index), page_sizes.get(plan.index))
+            let (Some(page), Some(&size)) =
+                (source.pages.get(plan.index), page_sizes.get(plan.index))
             else {
                 // A plan naming a page the document no longer has. Skipped
                 // rather than refused, matching `plan_job`'s own posture: *"a

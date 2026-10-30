@@ -95,6 +95,8 @@ impl Drop for Detail {
 /// What one frame hands the detail layer.
 pub(super) struct Frame<'a> {
     pub(super) doc: &'a crate::app::state::OpenDoc,
+    /// The print-only header and footer's copy, rendered instead when set.
+    pub(super) copy: Option<std::sync::Arc<crate::dialogs::print::running::Copy>>,
     pub(super) key: PreviewKey,
     /// Document page index.
     pub(super) page: usize,
@@ -122,6 +124,13 @@ fn wanted_scale(screen_px_per_pt: f32, base_scale: f32, print_scale: f32) -> Opt
     let stepped = (need.log2() * STEPS_PER_OCTAVE).ceil() / STEPS_PER_OCTAVE;
     let scale = stepped.exp2().min(print_scale);
     (scale > base_scale * WORTH_IT).then_some(scale)
+}
+
+impl Frame<'_> {
+    /// What renders: the stamped copy when set, else the document.
+    fn source(&self) -> crate::dialogs::print::running::Source<'_> {
+        crate::dialogs::print::running::Source::of(self.doc, self.copy.as_deref())
+    }
 }
 
 impl Detail {
@@ -154,7 +163,7 @@ impl Detail {
             && shown.key == frame.key
             && want.is_some()
         {
-            let pdf = &frame.doc.pages[frame.page];
+            let pdf = &frame.source().pages[frame.page];
             let at = crate::render::region::region_on_screen(
                 shown.region,
                 (frame.size.0 as f32, frame.size.1 as f32),
@@ -211,7 +220,7 @@ impl Detail {
         };
         let (x0, y0) = to_page(visible.min.x, visible.min.y);
         let (x1, y1) = to_page(visible.max.x, visible.max.y);
-        let pdf = frame.doc.pages.get(frame.page)?;
+        let pdf = frame.source().pages.get(frame.page)?;
         let region = crate::render::region::page_region(
             (x0.max(0.0), y0.max(0.0), x1.min(w), y1.min(h)),
             crate::render::region::PageFrame::of(pdf),
@@ -228,14 +237,14 @@ impl Detail {
         if let Some((_, cancel, _)) = self.pending.take() {
             cancel.cancel();
         }
-        let Some(page) = frame.doc.pages.get(frame.page).cloned() else {
+        let Some(page) = frame.source().pages.get(frame.page).cloned() else {
             return;
         };
         let cancel = pdfcer_render::cancel::RenderCancel::new();
         let mut options = super::super::commit::render_options(frame.scope, &frame.doc.settings);
         frame.key.apply_lines(&mut options, f64::from(want.scale));
         options.cancel = Some(cancel.clone());
-        let session = std::sync::Arc::clone(&frame.doc.session);
+        let session = std::sync::Arc::clone(frame.source().session);
         let (tx, rx) = mpsc::channel();
         let job = want.clone();
         let repaint = ctx.clone();

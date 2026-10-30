@@ -39,6 +39,8 @@ pub struct PreviewKey {
     /// The fixed line width on paper and the page's placement scale (O233);
     /// `None` when the document's own weights print.
     lines: Option<(f64, f64)>,
+    /// Which print-only header and footer copy renders; 0 for the document.
+    stamp: u64,
 }
 
 impl PreviewKey {
@@ -54,7 +56,14 @@ impl PreviewKey {
             scope,
             settings: settings.clone(),
             lines,
+            stamp: 0,
         }
+    }
+
+    /// The same key for a render of the stamped copy `stamp` (0: none).
+    #[must_use]
+    pub fn with_stamp(self, stamp: u64) -> Self {
+        Self { stamp, ..self }
     }
 
     /// Set the fixed line width, if any, on a render at `scale` pixels per

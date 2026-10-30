@@ -614,6 +614,7 @@ fn paint(
     if texture.is_some() {
         let frame = detail::Frame {
             doc: inputs.doc,
+            copy: dialog.running.copy(),
             key: inputs.context.preview_key(plan.index, plan.placement.scale),
             page: plan.index,
             size,
@@ -878,7 +879,10 @@ fn texture_for(
     {
         return Some(texture.id());
     }
-    let page_obj = inputs.doc.pages.get(page)?;
+    // The print-only header and footer's copy when one is set.
+    let copy = dialog.running.copy();
+    let source = super::running::Source::of(inputs.doc, copy.as_deref());
+    let page_obj = source.pages.get(page)?;
     let size = *inputs.page_sizes.get(page)?;
     // The SAME builder the spooler calls. See `super::render_options` for the
     // choices it encodes and why a second copy of them here would defeat the
@@ -888,13 +892,16 @@ fn texture_for(
     // `session.view()`, NOT `session.document()` — the view composes the
     // overlay and the staging buffer, so unsaved edits are what the operator
     // is about to print.
-    let view = inputs.doc.session.view();
+    let view = source.session.view();
     let rendered =
         pdfcer_render::render_page_with_view(&view, page_obj, raster_scale(size), &options).ok();
     let Some(mut rendered) = rendered else {
         dialog.preview_texture = None;
         return None;
     };
+    // `stamp=` is what rendered, not what the key asked for; 0 is the document.
+    // ui-text-exempt: diagnostic trace
+    crate::diag::trace(|| format!("print-preview-render page={page} stamp={}", source.stamp));
     super::colour::recolour(rendered.pixmap.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
     // The ink mask is built HERE, from the same pixmap, on the same miss —
     // operator request O113. Once per raster and never per frame: it is a pure
