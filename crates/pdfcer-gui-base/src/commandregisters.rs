@@ -316,11 +316,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         "N — as `measure.takeoff_schedule`; a schedule to export must exist first.",
     ),
     // -- Tools -- `RIBBON_IA.md` §5.7 ---------------------------------------
-    (
-        "tools.batch_print",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — printing a set of files unattended, with one print setup.",
-    ),
     // ⚠ **OCR is `file.ocr`, in File ▸ Recognise rather than Tools ▸
     // Recognise** — `super::tools`' header gives the reason.
     //

@@ -480,6 +480,18 @@ impl DialogsState {
             printmarks::MarksDialog::open(picked, of, label, self.printmarks_form.as_ref());
     }
 
+    /// **Open the Print window on a batch of files**, replacing any Print
+    /// window already open. Opens nothing when no file could be opened.
+    pub(crate) fn open_batch_print(
+        &mut self,
+        batch: print::batch::Batch,
+        remembered: &crate::app::prefs::PrintPrefs,
+    ) {
+        if let Some(dialog) = print::PrintDialog::open_batch(batch, remembered) {
+            self.print = Some(dialog);
+        }
+    }
+
     /// **Open the Bates-number-files window** on `sources`, continuing the
     /// numbering the last Bates window left.
     pub fn open_bates_batch(

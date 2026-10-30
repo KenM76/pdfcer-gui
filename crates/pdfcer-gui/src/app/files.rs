@@ -86,6 +86,9 @@ pub const DIAG_MERGE_SOURCES: &str = "PDFCER_DIAG_MERGE_SOURCES"; // ui-text-exe
 /// The multi-file picker seam for Tools ▸ Batch ▸ Bates numbering…, `;`-separated.
 pub const DIAG_BATES_SOURCES: &str = "PDFCER_DIAG_BATES_SOURCES"; // ui-text-exempt: an environment variable name, never displayed
 
+/// The multi-file picker seam for Tools ▸ Batch ▸ Batch print…, `;`-separated.
+pub const DIAG_BATCH_PRINT_SOURCES: &str = "PDFCER_DIAG_BATCH_PRINT_SOURCES"; // ui-text-exempt: an environment variable name, never displayed
+
 /// The folder picker seam for the Bates batch's copies.
 pub const DIAG_BATES_FOLDER: &str = "PDFCER_DIAG_BATES_FOLDER"; // ui-text-exempt: an environment variable name, never displayed
 
@@ -911,6 +914,16 @@ pub fn pick_bates_sources() -> Vec<PathBuf> {
         DIAG_BATES_SOURCES,
         crate::text::bates_batch::pick_title(),
         "bates-batch-picked", // ui-text-exempt: a trace event name, never displayed
+    )
+}
+
+/// Ask for the PDFs Tools ▸ Batch ▸ Batch print… prints.
+#[must_use]
+pub fn pick_batch_print_sources() -> Vec<PathBuf> {
+    pick_pdfs_traced(
+        DIAG_BATCH_PRINT_SOURCES,
+        crate::text::print::batch::pick_title(),
+        "print-batch-picked", // ui-text-exempt: a trace event name, never displayed
     )
 }
 

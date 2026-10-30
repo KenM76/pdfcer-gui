@@ -1,6 +1,6 @@
 //! # `app::dispatch::batch` — the Tools ▸ Batch band's arms
 //!
-//! `tools.merge_files` and `tools.bates_files`, kept out of
+//! `tools.merge_files`, `tools.bates_files` and `tools.batch_print`, kept out of
 //! [`crate::app::dispatch`] under **R2**.
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/batch.md`.
@@ -11,7 +11,10 @@ use crate::app::actions::Action;
 /// Whether this module owns `id`.
 pub(crate) fn handles(id: &str) -> bool {
     // ui-text-exempt: registered command ids, never displayed.
-    matches!(id, "tools.merge_files" | "tools.bates_files")
+    matches!(
+        id,
+        "tools.merge_files" | "tools.bates_files" | "tools.batch_print"
+    )
 }
 
 /// Do whatever this build does about a Batch command.
@@ -19,6 +22,7 @@ pub(crate) fn dispatch(app: &mut PdfcerApp, id: &str, _actions: &mut [Action]) {
     match id {
         "tools.merge_files" => merge_files(app),
         "tools.bates_files" => bates_files(app),
+        "tools.batch_print" => batch_print(app),
         // See `handles`: loud in a developer build, and never reached in a
         // release one because the guard and this match state the same set.
         other => unreachable!(
@@ -40,6 +44,25 @@ fn bates_files(app: &mut PdfcerApp) {
         return;
     }
     app.dialogs.open_bates_batch(sources, app.settings.clone());
+}
+
+/// `tools.batch_print` — ask for the files, open each, and open the Print
+/// window on them. An empty pick opens nothing.
+fn batch_print(app: &mut PdfcerApp) {
+    let sources = crate::app::files::pick_batch_print_sources();
+    if sources.is_empty() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "print-batch-cancelled reason=no-sources-chosen".to_owned()
+        });
+        return;
+    }
+    let epoch = match &app.status {
+        crate::app::state::Status::Open(doc) => Some(doc.edit_epoch),
+        _ => None,
+    };
+    let batch = crate::dialogs::print::batch::Batch::load(&sources, &app.settings, epoch);
+    app.dialogs.open_batch_print(batch, &app.prefs.print);
 }
 
 /// `tools.merge_files` — ask for the sources, ask where it goes, write it.

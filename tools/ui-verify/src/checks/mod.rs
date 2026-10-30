@@ -475,6 +475,8 @@ pub mod password_fill;
 pub mod pdfx_claim;
 /// A slow default printer does not hold the Print window shut.
 pub mod print_colour;
+/// Batch print sends each picked file as its own job.
+pub mod print_batch;
 /// Several pages per sheet, and booklets.
 pub mod print_impose;
 pub mod print_presets;

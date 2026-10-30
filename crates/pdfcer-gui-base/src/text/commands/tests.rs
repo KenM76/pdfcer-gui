@@ -134,6 +134,7 @@ fn all() -> Vec<CommandText> {
         measure_manage_groups(),
         tools_merge_files(),
         tools_bates_files(),
+        tools_batch_print(),
         tools_split_files(),
         tools_font_folders(),
         tools_embed_fonts(),

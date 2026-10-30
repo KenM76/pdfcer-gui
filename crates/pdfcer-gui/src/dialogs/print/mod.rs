@@ -95,10 +95,14 @@ mod impose;
 /// **Poster printing** — O238: one page across many sheets, as Acrobat does.
 mod poster;
 
+/// Several files printed with one setup.
+pub(crate) mod batch;
 /// Colour, grey or black-only output.
 mod colour;
 /// **Fixed line width** — O233: every line printed at one width.
 mod lines;
+/// One document's job, planned from the window's settings.
+mod plan;
 /// The document's own `/ViewerPreferences` print settings.
 mod presets;
 /// A header or footer on the printed copy only.
@@ -281,6 +285,8 @@ pub struct PrintDialog {
     impose: impose::State,
     /// The print-only header and footer, and the stamped copy they need.
     running: running::State,
+    /// The files a batch print is working through; `None` for one document.
+    batch: Option<batch::Batch>,
     /// One fixed line width; see [`lines`].
     lines: crate::app::prefs::printing::LineWidthPrefs,
     /// Copy count.
@@ -553,6 +559,7 @@ impl PrintDialog {
             poster_caption: None,
             impose: impose::State::new(remembered.impose, remembered.poster.on),
             running: running::State::default(),
+            batch: None,
             lines: remembered.lines,
             copies: remembered.copies,
             uncollated: remembered.uncollated,
@@ -740,90 +747,11 @@ impl PrintDialog {
     ) -> bool {
         self.refresh_device();
 
-        // Page sizes come from the ROTATED device extent, not from the raw
-        // `/MediaBox`.
-        //
-        // A divergence from the salvaged source, and a fix rather than a
-        // preference. The placement is applied to a *rendered pixmap*, and
-        // `pdfcer-render` rasterises a page at its rotated extent — so a page
-        // carrying `/Rotate 90` renders landscape while its MediaBox reads
-        // portrait. Planning from the MediaBox would place a landscape bitmap
-        // into a portrait rectangle: the scale would be wrong on both axes and
-        // the clip report would be wrong with it. `viewer::page_extent_pts` is
-        // the same function the canvas measures with, so the preview, the
-        // canvas and the paper agree by construction rather than by three
-        // hand-written box subtractions.
-        let page_sizes: Vec<(f64, f64)> = doc
-            .pages
-            .iter()
-            .map(|page| {
-                let (w, h) = crate::viewer::page_extent_pts(page);
-                (f64::from(w), f64::from(h))
-            })
-            .collect();
-
-        let spec = self.job_spec(&page_sizes, doc.view.page_index);
-        self.impose.first_landscape = spec
-            .pages
-            .first()
-            .and_then(|&i| page_sizes.get(i))
-            .is_some_and(|&(w, h)| w > h);
-
-        //
-        // The position in this function is the whole of its correctness. It is
-        // after `page_sizes` (the input) and before `plan` (the first reader),
-        // so every surface below — the plan, the preview drawn from it, the
-        // disclosure line, the trace, and the commit at the bottom of this
-        // same function — sees one decision made once. See
-        // [`Self::auto_paper`] for why this is a field.
-        //
-        // ⚠ It is resolved against the WHOLE document rather than the selected
-        // range. That is deliberate and it is the one judgement in this
-        // feature worth arguing with: a range narrowed to page 1 of a mixed
-        // set would otherwise pick A4 and then, when the operator widened the
-        // range back, silently re-pick A3 and re-plan the job under them. A
-        // sheet that changes as a side effect of choosing pages is a control
-        // the operator is not driving. Choosing for the document means the
-        // answer is stable, and the disclosure names the largest page so the
-        // reasoning is visible either way.
-        self.auto_paper = match self.device.paper {
-            PaperChoice::AutoFromPages => autopaper::choose(&self.forms, &page_sizes),
-            PaperChoice::DeviceDefault | PaperChoice::Form(_) => autopaper::AutoPaper::NotChosen,
-        };
-        let device = self.effective_device();
-
-        let printer_name = self.printers.get(self.selected).map(|p| p.name.clone());
-        let job = printer_name
-            .as_deref()
-            .filter(|_| !self.device_pending)
-            .and_then(
-                |name| match self.caps.get(name, self.config.as_ref(), device.paper) {
-                    spooler::probe::CapsState::Ready(caps) => {
-                        Some(spooler::plan_from_caps(&caps, device, &page_sizes, &spec))
-                    }
-                    spooler::probe::CapsState::Pending => {
-                        self.device_pending = true;
-                        None
-                    }
-                    spooler::probe::CapsState::Failed(_) => None,
-                },
-            )
-            // O208: the operator's chosen positions are applied HERE, on the
-            // value the plan returned, before any reader. Not inside
-            // [`spooler`], whose header rules that nothing in it computes a
-            // placement — the displacement is a shell decision. Applying it at
-            // one point rather than at each reader is what makes the preview,
-            // the per-edge readout, the clip count, the ink-verdict cache key
-            // and the spooled job agree by construction.
-            .map(|job| {
-                if self.poster.on || self.impose.on() {
-                    job
-                } else {
-                    self.page_positions.displace(job, &page_sizes)
-                }
-            });
-        let job = poster::apply(self, job, &page_sizes);
-        let job = impose::apply(self, job, &page_sizes, &spec);
+        let plan::Planned {
+            page_sizes,
+            printer_name,
+            job,
+        } = self.plan(doc);
         if self.device_pending {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
@@ -908,6 +836,9 @@ impl PrintDialog {
                 ui.label(t::no_printers());
                 return;
             }
+            if let Some(batch) = &self.batch {
+                batch::controls(ui, batch);
+            }
             self.body(ui, doc, job.as_ref(), &page_sizes, context.as_ref());
             ui.separator();
             self.footer(ui, job.as_ref(), &page_sizes, context.as_ref());
@@ -988,6 +919,11 @@ impl PrintDialog {
             saved_on_commit = self.remember(prefs);
             // A header or footer still being typed prints as typed.
             self.running.apply_draft();
+            if let Some(mut batch) = self.batch.take() {
+                let outcome = self.print_batch(&mut batch, &printer);
+                self.batch = Some(batch);
+                return self.batch_outcome(ctx, outcome, prefs, frame.closed);
+            }
             self.running.ensure(doc);
             let outcome = match self.running.error() {
                 Some(why) => Err(t::running::refused(why)),

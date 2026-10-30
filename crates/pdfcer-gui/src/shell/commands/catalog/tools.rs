@@ -22,6 +22,7 @@ pub(super) fn band() -> Vec<Command> {
         // ===================================================================
         command("tools.merge_files", t::tools_merge_files(), 700).with_icon("combine"),
         command("tools.bates_files", t::tools_bates_files(), 701).with_icon("stamp"),
+        command("tools.batch_print", t::tools_batch_print(), 702).with_icon("print"),
         command("tools.compare", t::tools_compare(), 705)
             .with_icon("compare")
             .enabled_when("doc.pages"),

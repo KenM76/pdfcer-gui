@@ -842,6 +842,20 @@ impl DialogsState {
         if self.ocr_models.as_mut().map(|d| d.show(ctx, prefs)) == Some(false) {
             self.ocr_models = None;
         }
+        // A batch print previews its own first file, so it is shown whether
+        // or not a document is open, and closing one does not drop it.
+        if let Some(first) = self
+            .print
+            .as_ref()
+            .and_then(print::PrintDialog::batch_first)
+            && self
+                .print
+                .as_mut()
+                .map(|d| d.show(ctx, &first, window, prefs))
+                == Some(false)
+        {
+            self.print = None;
+        }
         let Status::Open(doc) = status else {
             self.close_document_scoped();
             return;
@@ -852,7 +866,9 @@ impl DialogsState {
         // they press Print; see `print::PrintDialog::remember`. It is not the
         // only writer; `Frame::prefs` lists them and says why that list cannot
         // be trusted to stay current.
-        if self.print.as_mut().map(|d| d.show(ctx, doc, window, prefs)) == Some(false) {
+        if self.print.as_ref().is_some_and(|d| !d.is_batch())
+            && self.print.as_mut().map(|d| d.show(ctx, doc, window, prefs)) == Some(false)
+        {
             self.print = None;
         }
         if self.ocr.as_mut().map(|d| d.show(ctx, doc, actions, prefs)) == Some(false) {
@@ -1318,8 +1334,14 @@ impl DialogsState {
         // arguments — for one path that ends with the operator's own settings
         // saved rather than lost. If that ever stops being acceptable, the fix
         // is a `restore` call here and a `&mut Prefs` parameter, not a special
-        // case somewhere else.
-        self.print = None;
+        // case somewhere else. A batch print is not this document's.
+        if !self
+            .print
+            .as_ref()
+            .is_some_and(print::PrintDialog::is_batch)
+        {
+            self.print = None;
+        }
         self.ocr = None;
         self.diagnostics = None;
         self.xfa_preview = None;

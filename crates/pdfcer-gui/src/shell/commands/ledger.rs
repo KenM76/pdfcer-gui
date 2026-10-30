@@ -434,9 +434,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 247 → 248: `view.form_preview`, View ▸ Panels.
     // 248 → 250: `pages.header_footer`, Pages ▸ Stamp; `file.printer_marks`, File ▸ Print.
     // 250 → 251: `file.network_print`, File ▸ Print.
+    // 251 → 252: `tools.batch_print`, Tools ▸ Batch.
     assert_eq!(
         registry().len(),
-        251 + 2 * usize::from(cfg!(feature = "signing"))
+        252 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -880,9 +881,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 216 → 217: `view.form_preview` shares `forms`.
     // 217 → 219: `pages.header_footer` shares `text`; `file.printer_marks` shares `print`.
     // 219 → 220: `file.network_print` shares `print`.
+    // 220 → 221: `tools.batch_print` shares `print`.
     assert_eq!(
         named,
-        220 + 2 * usize::from(cfg!(feature = "signing"))
+        221 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

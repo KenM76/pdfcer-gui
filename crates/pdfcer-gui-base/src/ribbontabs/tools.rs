@@ -13,7 +13,7 @@ pub fn tab() -> Tab {
         .with_question(ribbon::question_tools())
         .with_groups([
             // ---------------------------------------------------------------
-            // Batch — jobs that produce new files. `Batch print…` is **N**.
+            // Batch — jobs that run across files chosen on disk.
             // ---------------------------------------------------------------
             group(
                 "batch",
@@ -21,7 +21,11 @@ pub fn tab() -> Tab {
                 // Commands over files on disk, not the open document.
                 // `tools.split_files` is unregistered until the split window
                 // takes files from disk (R9, O68).
-                [large("tools.merge_files"), large("tools.bates_files")],
+                [
+                    large("tools.merge_files"),
+                    large("tools.bates_files"),
+                    large("tools.batch_print"),
+                ],
             ),
             // ---------------------------------------------------------------
             // Compare — the open document against an older version of it.

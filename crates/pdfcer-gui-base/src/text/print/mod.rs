@@ -708,6 +708,8 @@ mod lines;
 /// Send to network printer.
 pub mod network;
 pub mod presets;
+/// Printing several files with one setup.
+pub mod batch;
 /// A header or footer on the printed copy only.
 pub mod running;
 

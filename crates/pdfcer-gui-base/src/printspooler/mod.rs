@@ -711,7 +711,8 @@ pub fn spool(
 
     let pages: Vec<pdfcer_print::PageBitmap> = bitmaps.iter().map(to_engine_bitmap).collect();
 
-    // `DryRun::No` and `output: None`, both hard-coded, both deliberate.
+    // `DryRun::No` (unless the diagnostic switch below is set) and
+    // `output: None`, both deliberate.
     //
     // The CLI defaults to a dry run and requires `--send`, and that is right
     // *there*: a command line has no confirmation step of its own, so the
@@ -728,7 +729,7 @@ pub fn spool(
     let outcome = pdfcer_print::spool_with_config(
         printer,
         &pages,
-        pdfcer_print::DryRun::No,
+        dry_run(),
         None,
         to_engine_settings(settings),
         first_page_pt,
@@ -769,6 +770,21 @@ pub fn spool(
             });
             Err(Unavailable::Spooler(detail))
         }
+    }
+}
+
+/// The diagnostic switch that makes every spool a dry run: the engine does
+/// everything but start the job, so a driven check can press Print without
+/// paper. Never set in normal use.
+pub const DIAG_DRY_RUN: &str = "PDFCER_DIAG_PRINT_DRY_RUN"; // ui-text-exempt: an environment variable name, never displayed
+
+/// `DryRun::Yes` when [`DIAG_DRY_RUN`] is set to `1`, else `DryRun::No`.
+fn dry_run() -> pdfcer_print::DryRun {
+    if std::env::var(DIAG_DRY_RUN).is_ok_and(|v| v == "1") {
+        crate::diag::trace(|| "print-dry-run".to_owned()); // ui-text-exempt: diagnostic trace
+        pdfcer_print::DryRun::Yes
+    } else {
+        pdfcer_print::DryRun::No
     }
 }
 

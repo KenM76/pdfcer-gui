@@ -926,6 +926,15 @@ pub const fn tools_bates_files() -> CommandText {
     )
 }
 
+/// `tools.batch_print`
+#[must_use]
+pub const fn tools_batch_print() -> CommandText {
+    CommandText::new(
+        "Batch print…",
+        "Print several PDFs, one after another, with one print setup. The files are not changed.",
+    )
+}
+
 /// `tools.split_files`
 #[must_use]
 pub const fn tools_split_files() -> CommandText {

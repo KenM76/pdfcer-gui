@@ -344,6 +344,7 @@ fn with_no_document_only_the_document_free_commands_are_enabled() {
         "tools.font_folders",
         "tools.merge_files",
         "tools.bates_files",
+        "tools.batch_print",
         // Security ▸ Trust: preferences, which apply to whatever is opened next.
         "file.trust_web_sites",
         "file.trust_ask_files",
