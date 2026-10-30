@@ -437,6 +437,7 @@ pub mod field_extras;
 /// A text field calculated from others and given a range, from Properties.
 pub mod field_scripts;
 pub mod field_text_cmyk;
+pub mod form_preview;
 pub mod forms_spotlight;
 /// Forms ▸ Style's width reaches the next placed field.
 pub mod forms_style;

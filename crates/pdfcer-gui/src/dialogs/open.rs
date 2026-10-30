@@ -8,6 +8,7 @@ use super::{
     export_tables, export_text, export_word, extract_pages, formfield, import_text, insert_blank,
     insert_image, insert_pages, labels, new_document, ocr, offpage, page_crop, page_size, print,
     protect, redact, scale, shortcuts, split_pages, stamp_collection, textannot, unembed,
+    xfa_preview,
 };
 use crate::app::prefs::RedactionReach;
 use crate::app::state::Status;
@@ -324,6 +325,20 @@ impl DialogsState {
             return;
         }
         self.diagnostics = Some(diagnostics::DiagnosticsDialog::open());
+    }
+
+    /// Open the Form-preview window for the dynamic form in `status`.
+    pub fn open_xfa_preview(&mut self, ctx: &egui::Context, status: &Status) {
+        let Status::Open(doc) = status else {
+            return;
+        };
+        if self.xfa_preview.is_none() {
+            self.xfa_preview = Some(xfa_preview::XfaPreviewDialog::open(
+                ctx,
+                std::sync::Arc::clone(&doc.session),
+                crate::app::settings::SettingsExt::render_options(&doc.settings),
+            ));
+        }
     }
 
     /// Open the About dialog.

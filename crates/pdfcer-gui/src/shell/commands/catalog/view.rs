@@ -513,6 +513,10 @@ pub(super) fn band() -> Vec<Command> {
         command("view.panel_signatures", t::view_panel_signatures(), 243)
             .with_icon("signatures")
             .enabled_when("doc.open"),
+        // Visible only on a dynamic XFA form, the one file it can draw (R9).
+        command("view.form_preview", t::view_form_preview(), 240)
+            .with_icon("forms")
+            .enabled_when("doc.open"),
         command("view.output_preview", t::view_output_preview(), 239)
             .with_icon("overprint")
             .enabled_when("doc.pages"),

@@ -282,6 +282,7 @@ fn every_predicate_names_a_documented_condition() {
         "selection.layer_assignable",
         // Published by `PdfcerApp::conditions` while a form field is selected.
         "selection.field",
+        "doc.xfa_dynamic",
         // Published by `app::rc4::publish` while the document uses RC4.
         "doc.rc4",
         // Published by `app::unlock::publish`.

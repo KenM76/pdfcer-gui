@@ -264,7 +264,7 @@ Panels, where nobody will find it.
 | **Rotate view** | Rotate view left / right |
 | **Zoom** | Zoom to selection · Zoom to region (marquee) · Actual size · Fit page · Fit width · Fit height |
 | **Display** | Line weights · Skip tiny details · Show annotations · Show points · Off-page · Rulers · Grid · Guides |
-| **Panels** | Sidebar ⌄ · Pages · Bookmarks · Layers · Objects · Signatures · Forms |
+| **Panels** | Sidebar ⌄ · Pages · Bookmarks · Layers · Objects · Signatures · Forms · Form preview (dynamic XFA forms only) |
 | **Window** | Previous / Next document · Close other documents · Move to new window · Move to other window · Read mode · Full screen · Dock all panels · Auto-hide ribbon · Auto-hide left strip · Floating panels: Off · Allowed · App initiative: Never · Ask · Allowed · Save workspace… · Load workspace ⌄ · Reset layout… |
 
 **Single page is the default** and stays so: paging one drawing sheet at a time
@@ -295,6 +295,11 @@ for zoom finds zoom.
 
 **Panels order puts Forms last**, so the operator meets the read-only surfaces
 first, and Objects before Signatures.
+
+**Form preview is present only on a dynamic XFA form**, whose PDF pages are a
+stand-in such as "Please wait...". It opens a window drawing the form's own
+computed pages beside a list of what the preview leaves out; the canvas keeps
+showing the file's pages, because those are what every other verb acts on.
 
 **Window is ordered in two tiers**: the reversible remedies first, and the one
 that discards the operator's own arrangement — Reset layout — last. The two

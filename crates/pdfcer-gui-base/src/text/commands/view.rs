@@ -493,6 +493,15 @@ pub const fn view_output_preview() -> CommandText {
     )
 }
 
+/// `view.form_preview`
+#[must_use]
+pub const fn view_form_preview() -> CommandText {
+    CommandText::new(
+        "Form Preview",
+        "Draw this dynamic form's own pages, which the file's stand-in page replaces in programs without a form engine. Filled-in values are not shown yet.",
+    )
+}
+
 /// `view.panel_objects`
 #[must_use]
 pub const fn view_panel_objects() -> CommandText {

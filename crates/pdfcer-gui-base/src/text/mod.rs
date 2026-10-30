@@ -272,6 +272,8 @@ pub mod tool;
 /// see on the canvas.
 pub mod unembed;
 pub mod workaround;
+/// A dynamic XFA form: its open-time sentence and the form preview window.
+pub mod xfapreview;
 
 /// Every word the Settings window shows — the thirteen spec-ambiguity choices,
 /// what each leaves open, and what each costs.

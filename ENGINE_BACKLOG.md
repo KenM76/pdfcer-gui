@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **40 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `wanted` — a real gap — **53 of 439** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -147,10 +147,33 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 
+### Printing
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Printer list that never waits on a device** — `list_printer_names`, `printer_detail` … | **wanted, at the pin since v0.106.0.** X013: the Print dialog asks the spooler for every printer on the UI thread, so an unreachable printer freezes the window. List names at once, read the chosen printer's detail on a worker. |
+| **Background printer probe** — `pdfcer_print::PrinterProbe` … | **wanted, at the pin since v0.106.0.** X013b: probe every printer on its own thread when the program opens, so the Print dialog opens with each printer's features already read and a slow printer holds back no other. |
+| **Print honours the document's presets** — `pdfcer print` fills unset options from the viewer preferences … | **wanted, at the pin since v0.106.0.** The Print dialog should open on the file's own scaling, duplex, tray, range and copies (`pdfcer_core::print_presets`), with each preset named as the file's. |
+| **Grayscale and black-only printing** — `pdfcer print --color` … | **wanted, at the pin since v0.106.0.** A colour choice in the Print dialog, disclosed in its summary line, beside the existing ink and overprint choices. |
+| **Printer's marks** — crop, registration, colour bars and page-info marks … | **wanted, at the pin since v0.106.0.** An undoable edit (`add_printer_marks`) reached from the print-production surfaces; it writes into the bleed band, so it needs a page with room outside the trim box and must say when there is none. |
+| **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **wanted, at the pin since v0.106.0.** A choice in the Print dialog, reusing the ink list Output Preview already reads; the dialog must repeat the engine's caution that plate greys approximate ink density. |
+| **Vector printing** — pages the EMF writer carries whole print as vector … | **wanted, at the pin since v0.106.0.** The Print dialog prints through the image path today. Taking the vector path needs its per-page fallback (transparency, blend, shading, overprint, tiling) reported in the print receipt. |
+| **Print with a header and/or footer** — `pdfcer print --header TEXT --footer TEXT` … | **wanted, at the pin since v0.106.0.** The print-time sibling of the row below: header and footer fields in the Print dialog, with the `{page}` and `{pages}` tokens, stamped on the printed copy only. |
+| **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **wanted, at the pin since v0.106.0.** Acrobat's Add Header & Footer; belongs beside Bates numbering on the Pages tab, as one undo entry, and the print-time variant in the Print dialog. |
+
+### 3D
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **wanted, at the pin since v0.106.0.** Edit ▸ Insert ▸ 3D model takes PRC and U3D; glTF and GLB join its file filter once the import's notes have a place in the results panel. |
+| **Write a PRC from a triangle-mesh scene** — `pdfcer_3d::write_prc` … | **wanted, at the pin since v0.106.0.** The writer behind the glTF row above; no surface of its own. |
+| **3D view lighting (`/LS`)** — `ThreeDLighting` (ISO 32000-1 Table 309) … | **wanted, at the pin since v0.106.0.** A lighting choice for the 3D insert, shown in the 3D model's properties; read-back also belongs in the 3D models list. |
+| **Read back a 3D annotation's activation condition** — `ThreeDArtwork.activation` … | **wanted, at the pin since v0.106.0.** The channel notice asks the canvas to show the poster until the click for `Click` artwork; the 3D models list should show the condition. |
+
 ---
 
 
-## `blocked` — waiting on something named — **2 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `blocked` — waiting on something named — **2 of 439** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -168,7 +191,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 439** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -179,7 +202,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **18 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `declined` — deliberately no surface — **18 of 439** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -223,7 +246,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **363 of 423** <!-- counted by tools/walk-engine-backlog.py, 2026-10-27; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **366 of 439** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -436,6 +459,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | `pdfcer_core::edit::VertexEditKind::as_str` | **Consumed.** `app::actions::annots::reshape`'s trace prints `edit={}` through it rather than `{:?}`, so the shell's line spells a reshape `move`/`insert`/`remove` exactly as `pdfcer annotation-vertex` does. The `Debug` spelling would have been `Moved`/`Inserted`/`Removed` — two vocabularies for one fact, across a boundary a driven check reads. |
 | Read `/RC` rich content and `/DS` default style on a markup annotation, any subtype — `Annotation::rich_contents`/`default_style`, `annot::rich_text_in`, `RichText::Inline`/`RichText::Stream` | **shipped.** <!--namesake:default_style--> the forms panel's `default_style` is a form field's, not this annotation accessor. `commentmodel::collect` resolves each row's `/RC` through `annot::rich_text_in` (string or stream) into `CommentRow::rich`; `panels::comments::rich::line` parses it with `richtext::parse` and draws one line under the note naming the formatting, each formatted part on hover, and that editing keeps the words and drops the formatting — or that the formatted copy could not be read. Driven by `a_formatted_comment_says_it_is_formatted` on `fixtures/rich-comment.pdf`. Rendering the runs themselves, and the Properties panel's note field, are not built. |
 | **Named 3D views and up-axis public; write 3D views with a default view into a 3D annotation** — `pdfcer_core::edit::threed_views` | **shipped — the 3D viewer's *Save views in the file* (O289 item 12).** Writes the five named views about the window's axes, and the view on screen, through `ThreeDSavedView::from_camera` and `EditSession::set_3d_views`, one `CommandKind::SetThreeDViews`, the view on screen the default; request G168. The viewer keeps its own named-view table (`Orbit::named`) rather than `pdfcer_3d::NamedView`: its views turn about any signed up axis and a chosen front, where `pdfcer_3d::UpAxis` offers +x, +y or +z up with a fixed front. |
+| **Saved 3D view from a render camera** — `ThreeDSavedView::from_camera` … | **shipped — the 3D viewer's *Save views in the file*.** `file_views` in the 3D viewer builds every named view and the view on screen through it. |
 | **Opacity (`/CA`) on any annotation subtype** — `EditSession::set_annot_opacity` | **shipped — every annotation that is not a markup has Opacity in Properties; G150.** `panels::properties::markup::anyannot::opacity_row` → `AnnotAction::SetOpacity`; one `CommandKind::SetAnnotOpacity` per change. Driven by `a_stamps_opacity_and_words_change`. |
 | **Recolour marker annotations (caret, file attachment, sound, screen)** — `set_marker_style` | **shipped — a caret, attachment, sound or media mark has Icon colour in Properties; G150.** `AnnotAction::SetMarkerColour`; one `CommandKind::SetMarkerStyle` per change. The verbs, `set_annot_opacity` and `set_marker_style` alike, live in `pdfcer_core::edit::annot_restyle`, which this row and the one above account for. `EditError::MarkerAppearanceForeign` becomes a `RedrawOffer`, and *Redraw with pdfcer's icon* retries with `MarkerStyle::redraw_as_plain`. Driven by `a_markers_icon_is_recoloured_on_request`. The current colour comes from the shell's own `/C` reader until `marker_color` is called (G176, at the pin since v0.82.0). |
 | **A text box's fill, border width** — `set_text_annot_style` <!--namesake:set_text_annot_style--> (the shell calls the pinned version; the row is its new fields) | **shipped — a text box's Properties carry border colour and width, background, text colour, font and size; G149.** `panels::properties::markup::textbox`. The width row carries the box's dash through unchanged. Driven by `a_text_box_another_program_drew_is_restyled_on_request`. |
@@ -453,6 +477,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Dynamic XFA, reading** — read the XDP packets behind `/AcroForm /XFA` … | **shipped — View ▸ Panels ▸ Form preview, present only on a dynamic form (G237).** `read_xdp`, `read_template` and `layout_template` lay the form out; driven by `form_preview_draws_a_dynamic_form`. The data merge has not landed, so filled-in values are not shown, and the window says so. |
+| **Dynamic XFA, image values** — a field, draw or caption holding an `<image>` is drawn … | **shipped — Form preview draws through `render_xfa_page_with_images` with `XfaImages::from_view`.** Each image the renderer could not draw is a `PaintNote`, counted in the window's list. |
 | **Draw form widgets that carry no appearance** — `RenderOptions::with_widgets_without_ap`, `RenderOptions::widgets_without_ap`, `RenderPolicy::widgets_without_ap`, the modules `pdfcer_render::annot::widget` and `pdfcer_core::widget_draw`, `Diagnostics::annotations_widget_synthesized` (our `G230`) | **shipped — the canvas draws and clicks them; driven by `a_form_without_drawn_values_draws_and_clicks`.** The renderer draws such widgets by default and the shell keeps `WidgetsWithoutAp::Draw`. The canvas offers each one on a click by its `/Rect`, and the Forms panel says the file stores no drawing for those fields and that *Redraw values* writes one (O327). `widget_draw::WidgetAppearances` is not called: nothing here needs the picture without a render. |
 | State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::appearance`, `NewChoiceField::appearance`, `EditError::FieldAppearanceOnMerge` | **shipped — `app::actions::forms::author` states Forms ▸ Style's text look on the spec, one command and one undo entry;** a name joining an existing field is refused with a look, so the box is placed again without one and the status line says it takes that field's style. Driven by `forms_style_sets_the_next_field`. |
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **shipped.** One formatter, `text::forms::redraw_notes`, turns `LayoutDisclosure` into status-line sentences on `status-group:edit-disclosure`: the auto size and, where the bound is `Width` or `Floor`, what chose it; a `/DA` colour drawn black; characters drawn as `?`. Called by Properties (`app::actions::forms::edit_properties`), the box edit (`edit_widget`), Turn (`forms::widget::rotate`), and Reset and Redraw values in the Forms panel, which name no field because the engine reports the last auto-sized one. Regenerate reads `RegenOutcome`'s own four fields. Driven by `a_redraw_says_what_it_did_to_a_fields_text`. |

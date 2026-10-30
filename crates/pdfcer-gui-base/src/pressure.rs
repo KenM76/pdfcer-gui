@@ -33,6 +33,8 @@ pub enum Surface {
     ModelView,
     /// A signature picture in the *Sign here* window, at a fixed size.
     SignaturePicture,
+    /// A dynamic XFA form's page in the Form preview window, at a fixed scale.
+    FormPreview,
 }
 
 /// The page-shaped part of an upload, present only when there is one.

@@ -1,0 +1,45 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /NeedsRendering true /AcroForm << /Fields [] /XFA 4 0 R >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1037 >>
+stream
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/"><template xmlns="http://www.xfa.org/schema/xfa-template/3.3/"><subform name="form1" layout="tb"><pageSet><pageArea name="P1"><contentArea x="0.5in" y="0.5in" w="7.5in" h="10in"/><medium stock="letter" short="8.5in" long="11in"/></pageArea></pageSet>
+<subform name="body" w="7.5in" layout="position" h="4in">
+<draw name="title" x="0in" y="0in" w="7.5in" h="0.5in"><value><text>Synthetic Rental Form</text></value><font typeface="Arial" size="18pt"/></draw>
+<field name="tenant" x="0in" y="0.8in" w="5in" h="0.35in"><caption reserve="1.5in"><value><text>Tenant name</text></value></caption><ui><textEdit/></ui><border><edge/></border></field>
+<field name="rent" x="0in" y="1.4in" w="3in" h="0.35in"><caption reserve="1.5in"><value><text>Monthly rent</text></value></caption><ui><numericEdit/></ui><border><edge/></border></field>
+<draw name="box" x="0in" y="2.2in" w="7in" h="1.2in"><value><rectangle><edge thickness="1pt"/></rectangle></value></draw>
+</subform></subform></template></xdp:xdp>
+endstream
+endobj
+5 0 obj
+<< /Length 72 >>
+stream
+BT /F1 14 Tf 72 700 Td (Please wait... this is the stand-in page.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000117 00000 n 
+0000000174 00000 n 
+0000000300 00000 n 
+0000001389 00000 n 
+0000001511 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1581
+%%EOF

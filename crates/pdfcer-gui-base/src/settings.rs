@@ -72,6 +72,7 @@ impl SettingsExt for Settings {
             // shape, so there is nothing for this shell to resolve and no
             // second place for a default to be decided.
             .with_max_cmyk_buffer_bytes(self.max_cmyk_buffer_bytes)
+            .with_free_text_c(self.free_text_c)
     }
 
     /// Every save in the application starts here — **except one, on purpose.**

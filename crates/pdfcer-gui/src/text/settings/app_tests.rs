@@ -80,7 +80,7 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 50;
+    const SETTINGS_COUNT: usize = 51;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -108,6 +108,11 @@ mod tests {
                 author_name_title(),
                 author_name_silence(),
                 author_name_radius(),
+            ),
+            (
+                free_text_c_title(),
+                free_text_c_silence(),
+                free_text_c_radius(),
             ),
             (
                 blend_space_title(),

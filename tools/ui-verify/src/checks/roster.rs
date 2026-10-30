@@ -398,6 +398,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(widget_dash::AWidgetBordersDashCanBeChosen),
         Box::new(choice_defaults::AMultiSelectListsDefaultsCanBeChosen),
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
+        Box::new(form_preview::FormPreviewDrawsADynamicForm),
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(print_shop::InkPickerReadsOverprint),
         Box::new(print_shop::OverprintPreviewSwitch),

@@ -299,7 +299,11 @@ fn page_body(
         }
         "ocr" => ocr::folders(ui, &mut draft.working_prefs),
         "measuring" => measuring::parallel(ui, draft),
-        "comments" => comments::author_name(ui, &mut draft.working_prefs),
+        "comments" => {
+            comments::author_name(ui, &mut draft.working_prefs);
+            ui.add_space(10.0);
+            comments::free_text_c(ui, draft);
+        }
         "forms" => {
             forms::tab_tail(ui, draft);
             ui.add_space(10.0);

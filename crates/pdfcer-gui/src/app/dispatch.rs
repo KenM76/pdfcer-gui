@@ -1347,6 +1347,7 @@ impl PdfcerApp {
             // control is gated on `doc.open` and a chord bound to the same id is
             // not.
             "tools.render_diagnostics" => self.dialogs.open_diagnostics(&self.status),
+            "view.form_preview" => self.dialogs.open_xfa_preview(ctx, &self.status),
             "tools.ink_picker" => {
                 let _ = crate::canvas::inkpick::toggle(ctx);
             }

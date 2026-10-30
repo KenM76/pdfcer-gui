@@ -77,10 +77,10 @@ pub(in crate::app::actions) fn flatten_page(doc: &mut OpenDoc, page: usize) {
 }
 
 /// Store the picture pdfcer draws for each appearance-less markup as its
-/// `/AP`. A FreeText `/C` is read as its fill, as the renderer reads it, so
-/// the page draws the same before and after.
+/// `/AP`. A FreeText `/C` is read per `Settings::free_text_c`, as the
+/// renderer reads it, so the page draws the same before and after.
 pub(in crate::app::actions) fn store_appearances(doc: &mut OpenDoc, page: usize) {
-    let free_text_c = pdfcer_core::annot_author::FreeTextC::default();
+    let free_text_c = doc.settings.free_text_c;
     super::super::apply::vector_edit(doc, "store-appearances", page, 1, |session| {
         let out = session.bake_missing_appearances(free_text_c)?;
         crate::diag::trace(|| {

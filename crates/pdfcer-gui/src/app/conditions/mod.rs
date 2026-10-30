@@ -69,6 +69,9 @@ impl PdfcerApp {
         }
         if let Status::Open(doc) = &self.status {
             set.set("doc.open");
+            if pdfcer_core::xfa::form_kind(&*doc.session).is_dynamic() {
+                set.set("doc.xfa_dynamic");
+            }
             crate::app::rc4::publish(doc, &mut set);
             crate::app::unlock::publish(doc, &mut set);
             if !doc.pages.is_empty() {

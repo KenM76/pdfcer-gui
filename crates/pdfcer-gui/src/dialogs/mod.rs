@@ -50,6 +50,8 @@ pub mod export_image;
 /// File ▸ Recognise ▸ Manage OCR models….
 pub mod ocr_models;
 pub mod recompress;
+/// A dynamic XFA form's computed pages, `view.form_preview`.
+pub mod xfa_preview;
 /// The WRITING half of what the three export windows remember --
 /// `OPERATOR_REQUESTS.md` O196. Shared by all three because the argument
 /// (the no-op guard, the swallowed failure, the position of the call, the
@@ -248,6 +250,9 @@ pub struct DialogsState {
     /// forgets nothing — but it must still close, for the same reason print
     /// does.
     diagnostics: Option<diagnostics::DiagnosticsDialog>,
+
+    /// The Form-preview window, when one is open. Document-scoped.
+    xfa_preview: Option<xfa_preview::XfaPreviewDialog>,
 
     /// The Set-scale dialog, when one is open.
     ///
@@ -835,6 +840,9 @@ impl DialogsState {
         if self.diagnostics.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.diagnostics = None;
         }
+        if self.xfa_preview.as_mut().map(|d| d.show(ctx)) == Some(false) {
+            self.xfa_preview = None;
+        }
         // `actions`: the apply dialog's default destination edits the OPEN
         // document, so it pushes through the funnel — §5.
         if self.redact.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
@@ -1280,6 +1288,7 @@ impl DialogsState {
         self.print = None;
         self.ocr = None;
         self.diagnostics = None;
+        self.xfa_preview = None;
         self.redact = None;
         self.protect = None;
         self.scale = None;

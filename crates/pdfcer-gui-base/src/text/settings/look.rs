@@ -267,6 +267,36 @@ pub const fn author_name_note() -> &'static str {
     "Leave it blank to stay anonymous. pdfcer does not take your Windows login for this: the name goes into files you send to other people, so it is yours to choose."
 }
 
+/// FreeText colour: what it is.
+#[must_use]
+pub const fn free_text_c_title() -> &'static str {
+    "The colour of a text box someone else drew"
+}
+
+/// What happens if you never touch it.
+#[must_use]
+pub const fn free_text_c_silence() -> &'static str {
+    "A text box saved without its own picture takes its colour as a fill behind the words, as Acrobat draws it."
+}
+
+/// What it costs, and what it does not affect.
+#[must_use]
+pub const fn free_text_c_radius() -> &'static str {
+    "Only text boxes that carry no stored picture, on screen, in print, and when Store appearances writes one into the file. pdfcer's own text boxes always store theirs."
+}
+
+/// The Fill option.
+#[must_use]
+pub const fn free_text_c_fill_label() -> &'static str {
+    "Fill the box (as Acrobat)"
+}
+
+/// The Border option.
+#[must_use]
+pub const fn free_text_c_border_label() -> &'static str {
+    "Colour the border only"
+}
+
 // ===========================================================================
 // Images and transparency — mask resampling
 // ===========================================================================

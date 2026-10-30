@@ -8,8 +8,12 @@
 //!    silently, it reads as the drawing. `wrapper::detect` is one catalog
 //!    lookup.
 //! 2. **Does the file reach outside itself?** `app::reachout`.
+//! 3. **Is the page a dynamic form's stand-in?** A dynamic XFA form's PDF
+//!    pages are written for programs without a form engine; its own pages are
+//!    in `view.form_preview`. `pdfcer_core::xfa::form_kind` is one catalog
+//!    lookup.
 //!
-//! Both are sentences, never dialogs: pdfcer executes no action, so nothing
+//! All are sentences, never dialogs: pdfcer executes no action, so nothing
 //! is about to happen. Silent on an ordinary file. Each sentence is traced in
 //! full (`wrapper-disclosed`, `reach-out-disclosed`), because the status row
 //! traces nothing and the wording is the feature.
@@ -41,6 +45,13 @@ pub fn disclose(doc: &OpenDoc) {
             format!("reach-out-disclosed text={sentence:?}")
         });
         notes.push(sentence);
+    }
+    if pdfcer_core::xfa::form_kind(&*doc.session).is_dynamic() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed.
+            "xfa-dynamic-disclosed".to_owned()
+        });
+        notes.push(crate::text::xfapreview::opened_dynamic().to_owned());
     }
     notes.extend(crate::app::rc4::on_open(doc));
     if !notes.is_empty() {
