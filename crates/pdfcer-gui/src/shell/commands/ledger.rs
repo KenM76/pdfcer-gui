@@ -435,9 +435,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 248 → 250: `pages.header_footer`, Pages ▸ Stamp; `file.printer_marks`, File ▸ Print.
     // 250 → 251: `file.network_print`, File ▸ Print.
     // 251 → 252: `tools.batch_print`, Tools ▸ Batch.
+    // 252 → 253: `markup.remove_stroke`, canvas markup menu.
     assert_eq!(
         registry().len(),
-        252 + 2 * usize::from(cfg!(feature = "signing"))
+        253 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -882,9 +883,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 217 → 219: `pages.header_footer` shares `text`; `file.printer_marks` shares `print`.
     // 219 → 220: `file.network_print` shares `print`.
     // 220 → 221: `tools.batch_print` shares `print`.
+    // 221 → 222: `markup.remove_stroke` shares `show-points`.
     assert_eq!(
         named,
-        221 + 2 * usize::from(cfg!(feature = "signing"))
+        222 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

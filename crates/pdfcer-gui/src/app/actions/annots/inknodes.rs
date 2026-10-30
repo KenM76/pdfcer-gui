@@ -27,6 +27,18 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AnnotAction) {
         AnnotAction::RemoveInkPoint { id, stroke, point } => {
             remove_ink_point(doc, id, stroke, point);
         }
+        AnnotAction::MoveInkStroke { id, stroke, dx, dy } => reshape_ink(
+            doc,
+            id,
+            &pdfcer_core::edit::InkEdit::MoveStroke { stroke, dx, dy },
+            "move-ink-stroke",
+        ),
+        AnnotAction::RemoveInkStroke { id, stroke } => reshape_ink(
+            doc,
+            id,
+            &pdfcer_core::edit::InkEdit::RemoveStroke { stroke },
+            "remove-ink-stroke",
+        ),
         other => crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
             //

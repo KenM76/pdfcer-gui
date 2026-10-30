@@ -493,6 +493,11 @@ pub const TAB_SCOPED: &[(&str, &str)] = &[
         "The mirror of `markup.add_node`, with the same operand and the same argument — this corner, the one under the pointer. It is additionally the more dangerous of the two to give a ribbon home: a button that removed some invented default corner would silently reshape a drawing on a press the operator read as harmless.",
     ),
     (
+        "markup.remove_stroke",
+        // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
+        "Its operand is THE STROKE OF THE FREEHAND MARK UNDER THE POINTER. A ribbon button has no such stroke and would remove one the operator did not point at. Moving a stroke is the Points tool's Alt+drag.",
+    ),
+    (
         "view.snapshot_save_pdf",
         // ui-text-exempt: a register reason for a reviewer and a test; never rendered.
         "Its operand is THE SNAPSHOT BOX THE OPERATOR RIGHT-CLICKED INSIDE. A ribbon button would act on a box drawn earlier and perhaps scrolled out of view. The capability is discoverable from View ▸ Navigate's `view.tool_snapshot`, which draws the box whose menu offers it.",

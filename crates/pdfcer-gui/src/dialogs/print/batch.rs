@@ -92,7 +92,7 @@ fn load_one(path: &Path, settings: &pdfcer_core::settings::Settings) -> Result<O
 
 /// The file list, above the tabs.
 pub(super) fn controls(ui: &mut Ui, batch: &Batch) {
-    ui.label(egui::RichText::new(t::heading(batch.docs.len())).strong())
+    ui.label(t::heading(batch.docs.len()))
         .on_hover_text(t::heading_tooltip());
     egui::ScrollArea::vertical()
         .id_salt("print.batch.files") // ui-text-exempt: a widget id, never displayed

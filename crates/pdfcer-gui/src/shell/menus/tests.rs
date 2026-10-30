@@ -406,6 +406,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.properties",
                 "markup.add_node",
                 "markup.remove_node",
+                "markup.remove_stroke",
                 "edit.cut",
                 "edit.copy",
                 "edit.paste",

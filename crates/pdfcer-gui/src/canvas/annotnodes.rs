@@ -356,14 +356,15 @@ impl Plan {
             Self::Ink(InkEdit::RemovePoint { stroke, point }) => {
                 AnnotAction::RemoveInkPoint { id, stroke, point }
             }
-            // `InkEdit` is `#[non_exhaustive]` and carries three whole-stroke
-            // variants this shell does not build — `ReplaceStroke`,
-            // `MoveStroke`, `RemoveStroke`. [`planned`] is the only
-            // constructor of a `Plan::Ink` and it builds only the three point
-            // variants above, so this arm is unreachable by construction;
-            // mapped to the general decline rather than a panic, for the same
-            // reason every other "cannot happen" in a drag is: a wrong sentence
-            // on release is recoverable and a crash mid-gesture is not.
+            Self::Ink(InkEdit::MoveStroke { stroke, dx, dy }) => {
+                AnnotAction::MoveInkStroke { id, stroke, dx, dy }
+            }
+            Self::Ink(InkEdit::RemoveStroke { stroke }) => {
+                AnnotAction::RemoveInkStroke { id, stroke }
+            }
+            // `ReplaceStroke`, and whatever `#[non_exhaustive]` adds: nothing
+            // here builds one. The general decline rather than a panic: a wrong
+            // sentence on release is recoverable, a crash mid-gesture is not.
             Self::Ink(_) => AnnotAction::DeclineNodeEdit {
                 why: crate::text::markup::NodeEditRefusal::Refused,
             },
@@ -549,6 +550,18 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     let (target, snap) =
         crate::canvas::measure::snap_point(ctx, annot.target.page, free, alt_held, targets, map);
 
+    if stroke::whole(ctx, &shape) {
+        return Some(stroke::moved(stroke::Move {
+            session: &doc.session,
+            shape: &shape,
+            index,
+            old,
+            target,
+            phase,
+            snap,
+            actions,
+        }));
+    }
     let intent = crate::canvas::dimdrag::intent(ctx);
     Some(resolved(Resolve {
         session: &doc.session,
@@ -787,6 +800,9 @@ pub fn explain_unreshapable(
 /// why a menu row needs no armed tool where the chord does, and for where the
 /// *which node did they mean* operand is parked for the life of the popup.
 pub mod menu;
+
+/// Whole-stroke move and delete on a freehand mark.
+pub mod stroke;
 
 /// **The stroke table of an `/Ink`** — flat anchor index ↔ `(stroke, point)`,
 /// the within-stroke segment list, and why every point is an anchor for now.

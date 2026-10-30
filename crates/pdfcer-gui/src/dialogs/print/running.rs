@@ -203,12 +203,12 @@ fn build(doc: &OpenDoc, stamps: &[RunningText], id: u64) -> Result<Copy, String>
 /// The section on the Comments tab.
 pub(super) fn controls(ui: &mut Ui, state: &mut State) {
     ui.add_space(12.0);
-    ui.label(egui::RichText::new(t::heading()).strong());
+    ui.label(t::heading());
     ui.label(t::intro());
     let mut focused = false;
     let rows = [(t::header(), REGION_HEADER), (t::footer(), REGION_FOOTER)];
     for (line, (label, region)) in state.draft.iter_mut().zip(rows) {
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             ui.label(label);
             // escape-disposition: keeps-draft — the line lives in `draft`, so
             // Escape leaves the box with the words in it, and applies them.

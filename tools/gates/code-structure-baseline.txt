@@ -90,7 +90,6 @@ file crates/pdfcer-gui/src/canvas/interact.rs
 file crates/pdfcer-gui/src/canvas/painting.rs
 file crates/pdfcer-gui/src/canvas/present.rs
 file crates/pdfcer-gui/src/dialogs/mod.rs
-file crates/pdfcer-gui/src/dialogs/model3d.rs
 file crates/pdfcer-gui/src/dialogs/ocr.rs
 file crates/pdfcer-gui/src/dialogs/print/mod.rs
 file crates/pdfcer-gui/src/dialogs/print/preview/mod.rs

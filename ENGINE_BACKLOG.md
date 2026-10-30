@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **41 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `wanted` — a real gap — **44 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -110,7 +110,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Read a marker's colour** — `EditSession::marker_color`, `MarkerColor`, `ColorEntry` | **wanted, at the pin since v0.82.0; request G176.** A marker's Icon colour row reads it instead of `panels::properties::markup::read_colour`; `ColorEntry::Absent`, `ColorEntry::Empty` and `ColorEntry::Malformed` separate no colour from a bad one, and `ColorEntry::Device` carries the colour; the free function `color_entry` reads the same from a dictionary. |
 | **Read a link's as-written target and border** — `EditSession::link`, `LinkReading` | **wanted, at the pin since v0.82.0; request G178.** `panels::properties::link` reads a link through it, `LinkReading::border_color` as a `ColorEntry`; calling it deletes `pdfcer_gui_base::linkread`. |
 | **List the document's named destinations** — `DestinationReader::named_destinations` <!--namesake:named_destinations--> (the shell's hit is an unrelated count field) | **wanted, at the pin since v0.82.0; request G179.** `dialogs::link` offers the document's named destinations as a list instead of a typed name. |
-| **Edit one stroke of an ink mark** — `EditSession::move_ink_stroke`, `remove_ink_stroke`, `replace_ink_stroke` | **wanted, at the pin since v0.106.0.** Recorded as "not yet" in `EDITABLE_SURFACES.md`. Needs a stroke-level selection inside an ink annotation: Delete removes the stroke, a drag moves it, each one undo entry. |
 
 ### Forms (AcroForm)
 
@@ -148,10 +147,19 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 
+### Reading, navigation & printing
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **wanted — unblocked at v0.107.0: `pdfcer_render::plates::render_plates` is public (G242).** Restating it here would be a second definition of plate grey and of where the label sits beside a marks band. Once public, it becomes a choice in the Print dialog using the ink list Output Preview already reads, repeating the engine's caution that plate greys approximate ink density. |
+| **Vector printing** — pages the EMF writer carries whole print as vector … | **wanted — unblocked at v0.107.0: `pdfcer_render::emf::print_metafile` returns the EMF or a `RasterReason` (G241).** A copy of its eleven counters here would drift from the CLI's the first time `EmfOutcome` grows one. Once public, the Print dialog sends safe pages as EMF and the receipt names each image page's reason. |
+| **Separation plates as engine API** — `pdfcer_render::plates::render_plates` … | **wanted.** The engine half of *Print separations* above; that row says what the Print dialog does with it. |
+| **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **wanted.** The engine half of *Vector printing* above; that row says what the Print dialog does with it. |
+
 ---
 
 
-## `blocked` — waiting on something named — **4 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -165,13 +173,11 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
-| **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **blocked on G242: the plate rendering (`render_plates`, `to_plate_grey`, the ink label) is private to `pdfcer-cli`.** Restating it here would be a second definition of plate grey and of where the label sits beside a marks band. Once public, it becomes a choice in the Print dialog using the ink list Output Preview already reads, repeating the engine's caution that plate greys approximate ink density. |
-| **Vector printing** — pages the EMF writer carries whole print as vector … | **blocked on G241: the rule deciding whether a page's EMF is the whole page (`print_vector::raster_reason`) is private to `pdfcer-cli`.** A copy of its eleven counters here would drift from the CLI's the first time `EmfOutcome` grows one. Once public, the Print dialog sends safe pages as EMF and the receipt names each image page's reason. |
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -182,7 +188,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **19 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `declined` — deliberately no surface — **19 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -227,7 +233,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **382 of 446** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **387 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -267,6 +273,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Render 3D diffuse textures on an uncompressed mesh** … | **shipped.** The 3D viewer, its page picture and *Use this view on the page* draw through `pdfcer_3d::render_model`, which samples each mesh's texture; the viewer counts textured parts and words each `texture_notes` entry (a texture drawn in its base colour, with the engine's reason) off-canvas. Driven by `the_3d_viewer_draws_a_texture` on `textured.prc` (at least three hues). |
 | **Draw a compressed mesh no fit rebuilds in part** — `AssembleOptions::mesh_fit`, `MeshFit::Partial` / `MeshFit::Continue`, `AssembledModel::partial_triangles` / `partial_why` / `partial_parts`, the module `pdfcer_3d::compressed` (engine Pass 602.0) | **shipped, v0.84.0.** The 3D viewer offers *Mesh fit* (`dialogs::model3d::fit`) and re-assembles under the fit picked, keeping the camera; a fit that leaves nothing to draw is refused and said. A model the default fit leaves empty opens drawn in part (`app::actions::models::assemble_for_view`) and says so. Partial meshes, their reasons and the parts lists are worded off-canvas in the engine's sentences. Driven by `the_3d_viewer_draws_a_mesh_in_part`. `pdfcer_3d::compressed`'s `PartialMesh` is not read here: the shell draws through `render_model`, and drawing the sound and continued triangles differently would mark applied content on the canvas. |
 | **PRC assembly colour/visibility overrides (entity references)** — `EntityOverrides::{Subtree, Everywhere, Ignore}` (`pdfcer-3d`, engine Pass 510.0) | **shipped.** `assemble` applies entity references by default, and the viewer counts and says the parts the assembly recoloured or hid (`t::view_overridden`). Driven by `the_3d_viewer_says_the_assembly_coloured_it` on `overridden.prc`. |
+| **3D product tree survives PMI, views, lights and clipping planes** — `placements()`, `model_tree()`, `ModelNode::markups` / `views` | **shipped.** The 3D viewer's part list opens files carrying PRC markups and views, and each part shows its count of markups and views (`dialogs::model3d::parts`). |
+| **Textures on a glTF/GLB 3D model** — each material's base-colour image … | **shipped.** Edit ▸ Insert ▸ 3D model… carries a glTF's textures into the PRC and the insert's notes say how many meshes are textured (`PrcWriteReport::textured`, `app::actions::gltf`); undrawable textures are disclosed in the same notes. |
 | **`merge_document` carrying optional-content group (`/OCProperties`) configuration** — layers now merge with the pages | **shipped.** <!--namesake:merge_document--> File ▸ Merge and Insert from file call `EditSession::merge_document` (`app::actions::pages`), so a merged file's layers arrive with no shell change. Whether the Layers panel shows them after the merge is not yet driven. |
 | Transform several selected objects, each by its own matrix, as one command | **consumed** — Align and Distribute › Circular with *Rotate objects*. `pdfcer_core::vector::edit::plan_transform_each` is the engine's own planning half of that verb; the shell calls the verb, which runs it. `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
 | **Set or remove a page's `/CropBox`** — `EditSession::set_crop_boxes`, `CropBoxEdit::{Set, Reset}`, disclosing `overhangs_media_box` and the `CropBoxEntry` written | **shipped — Pages ▸ Transform ▸ Crop….** Four margins in millimetres, measured from the edges as the sheet is seen after `/Rotate`, become one `CropBoxEdit::Set`; all four at zero, or *Show whole sheet*, is `CropBoxEdit::Reset`. One `CommandKind::SetCropBoxes` undo entry however many sheets; a pick of mixed sizes or rotations offers only the whole sheet. Margins that leave nothing hide the commit button, so `EditError::CropBoxEmpty` is not reachable from the window. `app::actions::pagesize::crop` traces every `CropBoxEntry::ExplicitWritten`, `CropBoxEntry::BaseSpellingKept`, `CropBoxEntry::InheritedSoOwnEntryRemoved` and `CropBoxEntry::Absent` count and reports `overhangs_media_box` and an inherited removal off-canvas. `CropBoxChange`'s `page_index`, `before` and `after` are unread: the status line reports counts. Our request `G056`. |
@@ -406,6 +414,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Edit one stroke of an ink mark** — `EditSession::move_ink_stroke`, `remove_ink_stroke`, `replace_ink_stroke` | **shipped, in part; driven by `a_freehand_marks_strokes_move_and_delete`.** With the Points tool, an Alt+drag on any point of a freehand mark moves its whole stroke (`InkEdit::MoveStroke`), and the markup menu's *Delete this stroke* removes the right-clicked one (`InkEdit::RemoveStroke`), each one undo entry through `inknodes::reshape_ink`; the engine refuses the last stroke and the row is then absent. Owed: `replace_ink_stroke`, redrawing one stroke in place, which needs a freehand tool that edits an existing mark. |
 | **Resize or rotate several annotations in one command** — `resize_annotations`, `rotate_annotations` | **shipped, past the v0.83.0 tag; request G202.** `app::actions::annots::many` calls each once for a grip or rotate drag over several markups (module `pdfcer_core::edit::batch_transform`; the `_preview` twins are not called, because the drag's own outline is the preview); the engine folds the applied members into one undo entry, and the status line counts a partial result. Driven by `several_annotations_resize_and_turn_as_one_step`. |
 | **Write an annotation's whole `/F` flag word** — `set_annotation_flags` | **shipped — Properties' *Visibility and lock* section** (`panels::properties::annotflags`): Show on screen, Print and Locked for any selected annotation, each one `AnnotAction::SetFlag` through `app::actions::annots::flags::set_flag`, which reads the current word and writes it whole. `LockedContents` is not offered, so no control clears a contents lock the operator was never told about; a note edit on such a mark is refused by `set_markup_note`. A hidden mark is not canvas-selectable, so its Comments row carries *Show on screen* (`panels::comments::shown`). Widgets get no section (the verb refuses them). Driven: `an_annotation_can_be_hidden_and_shown_again`. |
 | `pdfcer_core::edit::EditSession::set_annotation_flags` | **shipped** — the call site is `app::actions::annots::flags::set_flag`, reached from Properties' *Visibility and lock* switches and the Comments row's *Show on screen*. `LockedContents` is not written, so the sequencing concern (an unlock offered before the lock is disclosed) does not arise. Full row: *Write an annotation's whole `/F` flag word*. |
@@ -599,6 +608,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Print with a header and/or footer** — `pdfcer print --header TEXT --footer TEXT` … | **shipped — the Print window's Comments tab; driven by `print_header_footer_reaches_the_printed_copy`.** `dialogs::print::running` reopens the document from `to_incremental_bytes` and calls `stamp_running_text` on that copy, as the CLI stamps a session it never saves; the preview and the commit render the copy (`print-running built`, `print-preview-render stamp=`). The open document is untouched. Workaround reported: `EditSession` is not `Clone`, so a print-only copy costs a full serialise and reparse; our request `G243`. |
 | **Imposition — N-up and booklet** — `pdfcer_print::imposition::plan_n_up`, `plan_booklet` (engine row: Imposition — N-up, booklet, poster, —/[x]/[ ]) | **shipped — Print ▸ Pages ▸ Multiple and Booklet, beside Poster.** `pdfcer_gui_base::imposition` calls `plan_n_up` / `plan_booklet` and composes each sheet from the pages rendered at their cell scale; the preview composes the same way at preview density. Driven by `print_several_pages_per_sheet_and_booklets`. |
 | **Print several files in one command** (engine row: —/[x]/[ ]) | **shipped — Tools ▸ Batch ▸ Batch print….** `dialogs::print::batch` opens each file as a document, plans it with the Print window's settings (`PrintDialog::plan`) and spools it as its own job through the same commit as the open document's print. Driven by `batch_print_prints_each_file` under `PDFCER_DIAG_PRINT_DRY_RUN`. |
+| **Print to a network printer by `ipp://` / `ipps://` URI** — `pdfcer_print::ipp::{query_printer, plan_ipp_job, send_ipp}` … | **shipped — File ▸ Print ▸ *Send to network printer…*; driven by `network_print_reaches_the_printer`.** `printspooler::network` still asks and sends through the engine's lower IPP primitives (`get_printer_attributes`, `post_ipp_http`); moving it onto `query_printer` / `plan_ipp_job` / `send_ipp` is owed (G240, listed under the v0.107.0 arrivals). |
+| **Print finishing** — engine API `pdfcer_print::ipp::check_finishing` … | **shipped for network printers — the same window offers only the staples, punches, folds and output trays the printer lists, checked through `pdfcer_print::finishing::ipp_finishings`.** Owed with the move above: `check_finishing`, and finishing on a Windows queue. |
 
 ### Shell & UX
 

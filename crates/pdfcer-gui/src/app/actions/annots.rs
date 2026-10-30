@@ -810,7 +810,11 @@ pub(super) fn apply_action(
         // The ink point verbs — O158 — carry a `(stroke, point)` address and
         // reach a different planner; [`inknodes::apply`] destructures them.
         // One arm here so this file stays under R2.
-        A::MoveInkPoint { .. } | A::InsertInkPoint { .. } | A::RemoveInkPoint { .. } => {
+        A::MoveInkPoint { .. }
+        | A::InsertInkPoint { .. }
+        | A::RemoveInkPoint { .. }
+        | A::MoveInkStroke { .. }
+        | A::RemoveInkStroke { .. } => {
             inknodes::apply(doc, action);
         }
         // **The only report a refused node edit produces.** The gesture

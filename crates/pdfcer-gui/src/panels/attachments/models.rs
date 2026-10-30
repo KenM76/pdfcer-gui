@@ -41,9 +41,10 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
     for said in t::listing_notes(&notes) {
         ui.label(egui::RichText::new(said).small().weak());
     }
-    #[cfg(feature = "3d")]
-    let mut first_mesh = true;
-    let mut first_poster = true;
+    let mut firsts = Firsts {
+        mesh: true,
+        poster: true,
+    };
     for (ordinal, artwork) in listed.iter().enumerate() {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -57,52 +58,72 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
             ui.label(egui::RichText::new(said).small().weak());
         }
         ui.horizontal(|ui| {
-            let save = ui.button(t::save_button()).on_hover_text(t::save_tooltip());
-            if ordinal == 0 {
-                crate::diag::ui_rect_visible(REGION_SAVE, save.rect, ui.clip_rect());
-            }
-            if save.clicked() {
-                actions.push(Action::Attachment(AttachmentAction::SaveModel {
-                    artwork: artwork.clone(),
-                }));
-            }
-            // Only PRC is decoded; a U3D row offers its bytes alone.
-            #[cfg(feature = "3d")]
-            if artwork.declared == Some(pdfcer_core::threed::ThreeDFormat::Prc) {
-                let view = ui.button(t::view_button()).on_hover_text(t::view_tooltip());
-                let mesh = ui.button(t::mesh_button()).on_hover_text(t::mesh_tooltip());
-                if first_mesh {
-                    crate::diag::ui_rect_visible(REGION_VIEW, view.rect, ui.clip_rect());
-                    crate::diag::ui_rect_visible(REGION_MESH, mesh.rect, ui.clip_rect());
-                    first_mesh = false;
-                }
-                if view.clicked() {
-                    actions.push(Action::Attachment(AttachmentAction::ViewModel {
-                        artwork: artwork.clone(),
-                    }));
-                }
-                if mesh.clicked() {
-                    actions.push(Action::Attachment(AttachmentAction::SaveMesh {
-                        artwork: artwork.clone(),
-                    }));
-                }
-            }
-            if has_own_poster(artwork) {
-                let poster = ui
-                    .button(t::poster_button())
-                    .on_hover_text(t::poster_tooltip());
-                if std::mem::take(&mut first_poster) {
-                    crate::diag::ui_rect_visible(REGION_POSTER, poster.rect, ui.clip_rect());
-                }
-                if poster.clicked() {
-                    actions.push(Action::Attachment(AttachmentAction::PickModelPoster {
-                        artwork: artwork.clone(),
-                    }));
-                }
-            }
+            buttons(ui, ordinal, artwork, &mut firsts, actions);
         });
     }
     ui.separator();
+}
+
+/// Whether the first View/Mesh pair and the first poster button are still to
+/// be drawn: only the first of each publishes its region.
+struct Firsts {
+    #[cfg_attr(not(feature = "3d"), allow(dead_code))]
+    mesh: bool,
+    poster: bool,
+}
+
+/// One model's row of buttons: save its bytes, view or export a PRC mesh, and
+/// replace its page picture.
+fn buttons(
+    ui: &mut Ui,
+    ordinal: usize,
+    artwork: &pdfcer_core::threed::ThreeDArtwork,
+    firsts: &mut Firsts,
+    actions: &mut Vec<Action>,
+) {
+    let save = ui.button(t::save_button()).on_hover_text(t::save_tooltip());
+    if ordinal == 0 {
+        crate::diag::ui_rect_visible(REGION_SAVE, save.rect, ui.clip_rect());
+    }
+    if save.clicked() {
+        actions.push(Action::Attachment(AttachmentAction::SaveModel {
+            artwork: artwork.clone(),
+        }));
+    }
+    // Only PRC is decoded; a U3D row offers its bytes alone.
+    #[cfg(feature = "3d")]
+    if artwork.declared == Some(pdfcer_core::threed::ThreeDFormat::Prc) {
+        let view = ui.button(t::view_button()).on_hover_text(t::view_tooltip());
+        let mesh = ui.button(t::mesh_button()).on_hover_text(t::mesh_tooltip());
+        if firsts.mesh {
+            crate::diag::ui_rect_visible(REGION_VIEW, view.rect, ui.clip_rect());
+            crate::diag::ui_rect_visible(REGION_MESH, mesh.rect, ui.clip_rect());
+            firsts.mesh = false;
+        }
+        if view.clicked() {
+            actions.push(Action::Attachment(AttachmentAction::ViewModel {
+                artwork: artwork.clone(),
+            }));
+        }
+        if mesh.clicked() {
+            actions.push(Action::Attachment(AttachmentAction::SaveMesh {
+                artwork: artwork.clone(),
+            }));
+        }
+    }
+    if has_own_poster(artwork) {
+        let poster = ui
+            .button(t::poster_button())
+            .on_hover_text(t::poster_tooltip());
+        if std::mem::take(&mut firsts.poster) {
+            crate::diag::ui_rect_visible(REGION_POSTER, poster.rect, ui.clip_rect());
+        }
+        if poster.clicked() {
+            actions.push(Action::Attachment(AttachmentAction::PickModelPoster {
+                artwork: artwork.clone(),
+            }));
+        }
+    }
 }
 
 /// A `/3D` annotation of its own, whose page picture `set_3d_poster` can

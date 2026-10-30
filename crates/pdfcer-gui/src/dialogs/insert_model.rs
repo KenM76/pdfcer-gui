@@ -79,7 +79,7 @@ impl InsertModelDialog {
     }
 
     fn body(&mut self, ui: &mut Ui) {
-        ui.label(egui::RichText::new(t::insert_file(&self.name)).strong());
+        ui.label(t::insert_file(&self.name));
         ui.label(t::insert_where(self.page));
         ui.add_space(8.0);
         egui::Grid::new("insert-model.grid") // ui-text-exempt: a widget id, never displayed
@@ -101,7 +101,7 @@ impl InsertModelDialog {
             });
         if self.gltf {
             ui.add_space(8.0);
-            ui.label(egui::RichText::new(t::gltf_heading()).strong());
+            ui.label(t::gltf_heading());
             ui.checkbox(&mut self.placement.gltf_linear, t::gltf_linear())
                 .on_hover_text(t::gltf_linear_tooltip());
             ui.checkbox(&mut self.placement.gltf_z_up, t::gltf_z_up())

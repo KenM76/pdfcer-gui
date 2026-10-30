@@ -120,6 +120,8 @@ pub struct Rows {
     pub insert: RowState,
     /// *Remove this point.*
     pub remove: RowState,
+    /// *Delete this stroke*, on a freehand mark of two or more strokes.
+    pub stroke: RowState,
 }
 
 impl Default for Rows {
@@ -127,6 +129,7 @@ impl Default for Rows {
         Self {
             insert: RowState::Absent,
             remove: RowState::Absent,
+            stroke: RowState::Absent,
         }
     }
 }
@@ -238,14 +241,17 @@ pub fn rows(doc: &OpenDoc, selection: &SelectionState, pick: NodePick) -> Rows {
             Err(_) => RowState::Absent,
         }
     };
+    let stroke = super::stroke::removal(session, &shape, pick);
     match pick {
         NodePick::Node(index) => Rows {
             insert: RowState::Absent,
             remove: state(VertexIntent::Remove, index, Point::new(0.0, 0.0)),
+            stroke,
         },
         NodePick::Segment { after, at } => Rows {
             insert: state(VertexIntent::Insert, after, at),
             remove: RowState::Absent,
+            stroke,
         },
         // Both absent, and this is the common case rather than an edge one: a
         // right-click on a markup shape's INTERIOR is a right-click on the
@@ -277,11 +283,12 @@ pub fn trace(id: ObjId, pick: NodePick, rows: Rows) {
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         // Placed directly above the literal — see `canvas::trace_layout`.
         format!(
-            "{TRACE_MENU} id={} pick={} insert={} remove={}",
+            "{TRACE_MENU} id={} pick={} insert={} remove={} stroke={}",
             id.num,
             pick.word(),
             rows.insert.word(),
             rows.remove.word(),
+            rows.stroke.word(),
         )
     });
 }
@@ -295,6 +302,18 @@ pub fn action_for(
     insert: bool,
 ) -> Option<Action> {
     raise(doc, selection, insert, parked(ctx))
+}
+
+/// **The action *Delete this stroke* raises** for the parked pick, or `None`
+/// when the engine no longer allows it.
+#[must_use]
+pub fn remove_stroke(
+    ctx: &egui::Context,
+    doc: &OpenDoc,
+    selection: &SelectionState,
+) -> Option<Action> {
+    let shape = super::geometry(doc, selection)?;
+    super::stroke::remove(&doc.session, &shape, parked(ctx))
 }
 
 /// **The action a one-click delete of node `index` raises** (O332): the same

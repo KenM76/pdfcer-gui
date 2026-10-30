@@ -631,8 +631,8 @@ pub enum AnnotAction {
     /// The engine refuses below a floor of **two points per stroke** — one
     /// point is not a path — and this shell asks it before the gesture
     /// previews anything, so a release that reaches this variant is one the
-    /// preflight already allowed. Removing a whole stroke is a different verb
-    /// (`InkEdit::RemoveStroke`) this shell does not raise yet.
+    /// preflight already allowed. Removing a whole stroke is
+    /// [`Self::RemoveInkStroke`].
     RemoveInkPoint {
         /// The annotation, by stable object id.
         id: pdfcer_core::object::ObjId,
@@ -640,6 +640,27 @@ pub enum AnnotAction {
         stroke: usize,
         /// Which point within it.
         point: usize,
+    },
+    /// **Move one whole stroke of a freehand mark** by a page-space delta.
+    /// `InkEdit::MoveStroke`, raised by an Alt+drag on any point of the
+    /// stroke with the Points tool.
+    MoveInkStroke {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which stroke.
+        stroke: usize,
+        /// Horizontal displacement, PDF points.
+        dx: f64,
+        /// Vertical displacement, PDF points, y-up.
+        dy: f64,
+    },
+    /// **Take one whole stroke out of a freehand mark.** `InkEdit::RemoveStroke`;
+    /// the engine refuses the mark's last stroke. Raised by *Delete this stroke*.
+    RemoveInkStroke {
+        /// The annotation, by stable object id.
+        id: pdfcer_core::object::ObjId,
+        /// Which stroke.
+        stroke: usize,
     },
     /// **A node edit did not happen, and the operator is owed the sentence.**
     ///

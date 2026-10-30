@@ -235,6 +235,10 @@ pub(super) fn band() -> Vec<Command> {
         command("markup.remove_node", t::markup_remove_node(), 531)
             .with_icon("show-points")
             .enabled_when("markup.node_removable"),
+        // Drawn only when the engine would remove the right-clicked stroke.
+        command("markup.remove_stroke", t::markup_remove_stroke(), 533)
+            .with_icon("show-points")
+            .enabled_when("doc.pages"),
         // Offered only on the canvas.markup menu, where the engine's
         // per-annotation answer decides whether the row is drawn.
         command("markup.flatten", t::markup_flatten(), 532)

@@ -162,6 +162,17 @@ pub const fn markup_remove_node() -> CommandText {
     )
 }
 
+/// `markup.remove_stroke`
+#[must_use]
+pub const fn markup_remove_stroke() -> CommandText {
+    CommandText::new(
+        "Delete this stroke",
+        "Take away the stroke of the freehand mark you right-clicked, keeping its other \
+         strokes. Not offered on a mark's only stroke: delete the mark instead. To move one \
+         stroke, hold Alt and drag any of its points with the Points tool.",
+    )
+}
+
 /// `markup.flatten`
 #[must_use]
 pub const fn markup_flatten() -> CommandText {

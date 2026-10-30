@@ -389,6 +389,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(freehand_arrowheads::AFreehandLineCanEndInAnArrowhead),
         Box::new(store_appearances::StoreAppearancesWritesAPictureIntoTheFile),
         Box::new(point_click_delete::CtrlAltClickDeletesAMarkupPoint),
+        Box::new(ink_stroke_edit::AFreehandMarksStrokesMoveAndDelete),
         Box::new(point_click_delete::CtrlAltClickDeletesAPagePoint),
         Box::new(link_cmyk::ALinksBorderColourIsStoredInCmyk),
         Box::new(inherited_alignment::AFieldsAlignmentCanGoBackToInherited),

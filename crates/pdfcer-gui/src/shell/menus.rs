@@ -78,6 +78,10 @@ pub const NODE_REMOVE_OFFERED: &str = "markup.node_remove_offered";
 /// `enabled_when` of `markup.remove_node`.
 pub const NODE_REMOVABLE: &str = "markup.node_removable";
 
+/// **The engine would remove the right-clicked stroke of a freehand mark** —
+/// the `visible_when` of `markup.remove_stroke`.
+pub const STROKE_REMOVE_OFFERED: &str = "markup.stroke_remove_offered";
+
 /// **The engine would burn the right-clicked markup into its page** — the
 /// `visible_when` of `markup.flatten`, asked from
 /// `EditSession::annotation_flatten_refusals` when the menu opens.
@@ -643,6 +647,7 @@ pub fn built_in() -> Menus {
             Item::Separator,
             Item::command("markup.add_node").shown_when(NODE_INSERT_OFFERED),
             Item::command("markup.remove_node").shown_when(NODE_REMOVE_OFFERED),
+            Item::command("markup.remove_stroke").shown_when(STROKE_REMOVE_OFFERED),
             Item::Separator,
             Item::command("edit.cut"),
             Item::command("edit.copy"),

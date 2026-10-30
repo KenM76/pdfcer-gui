@@ -14,7 +14,7 @@ use crate::app::state::Status;
 pub(crate) fn claims(id: &str) -> bool {
     matches!(
         id,
-        "markup.finish" | "markup.add_node" | "markup.remove_node"
+        "markup.finish" | "markup.add_node" | "markup.remove_node" | "markup.remove_stroke"
     )
 }
 
@@ -97,6 +97,16 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
             ) {
                 actions.push(action);
             }
+        }
+        "markup.remove_stroke" => {
+            let Status::Open(doc) = &app.status else {
+                return;
+            };
+            actions.extend(crate::canvas::annotnodes::menu::remove_stroke(
+                ctx,
+                doc,
+                &doc.selection,
+            ));
         }
         // No catch-all that does anything: [`claims`] is the only route in,
         // and it and this `match` are the two statements of one set the header

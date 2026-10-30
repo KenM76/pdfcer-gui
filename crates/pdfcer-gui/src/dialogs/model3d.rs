@@ -438,7 +438,7 @@ impl ModelView {
             orbit: self.orbit,
             size,
             background,
-            accent: ui.visuals().selection.bg_fill,
+            accent: egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
             parts: self.parts.version,
         };
         if self.rendered != Some(wanted) {

@@ -516,6 +516,7 @@ pub fn attach(frame: Attach<'_>) -> Vec<HandlerToken> {
             (menus::NODE_INSERTABLE, rows.insert.enabled()),
             (menus::NODE_REMOVE_OFFERED, rows.remove.shown()),
             (menus::NODE_REMOVABLE, rows.remove.enabled()),
+            (menus::STROKE_REMOVE_OFFERED, rows.stroke.shown()),
         ]);
         let flatten = selection.annot().is_some_and(|a| {
             crate::app::actions::annots::flatten_refusal(doc, a.target.page, a.target.id).is_none()

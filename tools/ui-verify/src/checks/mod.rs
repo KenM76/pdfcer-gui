@@ -62,6 +62,7 @@ pub mod compact_web;
 pub mod filelink_prompt;
 pub mod freehand_arrowheads;
 pub mod freehand_detail;
+pub mod ink_stroke_edit;
 pub mod link_cmyk;
 pub mod objects_multiselect;
 pub mod pen_cmyk;

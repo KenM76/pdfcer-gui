@@ -198,7 +198,8 @@ mod tests {
 
     #[test]
     fn a_saved_file_reads_back_and_refuses_signed_inputs() {
-        let dir = std::env::temp_dir().join("pdfcer-gui-compact-profile");
+        let dir =
+            std::env::temp_dir().join(format!("pdfcer-gui-compact-profile-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("mine.toml");
         let mut settings = Preset::Screen.settings();
@@ -215,7 +216,10 @@ mod tests {
 
     #[test]
     fn extends_names_a_file_beside_it() {
-        let dir = std::env::temp_dir().join("pdfcer-gui-compact-profile-extends");
+        let dir = std::env::temp_dir().join(format!(
+            "pdfcer-gui-compact-profile-extends-{}",
+            std::process::id()
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(
             dir.join("base.toml"),

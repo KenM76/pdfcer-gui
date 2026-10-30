@@ -908,6 +908,7 @@
                 Separator,
                 Command(id: "markup.add_node", visible_when: "markup.node_insert_offered"),
                 Command(id: "markup.remove_node", visible_when: "markup.node_remove_offered"),
+                Command(id: "markup.remove_stroke", visible_when: "markup.stroke_remove_offered"),
                 Separator,
                 Command(id: "edit.cut"),
                 Command(id: "edit.copy"),

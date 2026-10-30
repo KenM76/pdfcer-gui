@@ -141,7 +141,8 @@ fn listed(session: &Session, report: &mut CheckReport) -> Result<Option<String>>
     report.note(format!("listed: {}", row.raw));
     if row.get("activation") != Some("PageOpen") || row.get("views") != Some("1") {
         return Ok(Some(format!(
-            "★★★ the 3D models list reads `{}` back; the model was placed to start when the page              opens, with one view.",
+            "★★★ the 3D models list reads `{}` back; the model was placed to start when the page \
+             opens, with one view.",
             row.raw
         )));
     }
