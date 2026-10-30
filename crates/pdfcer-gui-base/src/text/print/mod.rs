@@ -701,6 +701,8 @@ pub use poster::*;
 pub mod colour;
 /// Staple, punch and output tray.
 pub mod finishing;
+/// Several pages per sheet, and booklets.
+pub mod impose;
 /// **Fixed line width** — operator request O233.
 mod lines;
 /// Send to network printer.

@@ -154,7 +154,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Print with a header and/or footer** — `pdfcer print --header TEXT --footer TEXT` … | **wanted, at the pin since v0.106.0.** The print-time sibling of the row below: header and footer fields in the Print dialog, with the `{page}` and `{pages}` tokens, stamped on the printed copy only. |
-| **Imposition — N-up and booklet** — `pdfcer_print::imposition::plan_n_up`, `plan_booklet` (engine row: Imposition — N-up, booklet, poster, —/[x]/[ ]) | **wanted, at the pin since v0.106.0.** Poster is built (Print dialog ▸ Poster). Multiple pages per sheet and Booklet belong beside it in the Page sizing choice, with the preview showing the imposed sheet. |
+| **Imposition — N-up and booklet** — `pdfcer_print::imposition::plan_n_up`, `plan_booklet` (engine row: Imposition — N-up, booklet, poster, —/[x]/[ ]) | **shipped — Print ▸ Pages ▸ Multiple and Booklet, beside Poster.** `pdfcer_gui_base::imposition` calls `plan_n_up` / `plan_booklet` and composes each sheet from the pages rendered at their cell scale; the preview composes the same way at preview density. Driven by `print_several_pages_per_sheet_and_booklets`. |
 | **Print several files in one command** (engine row: —/[x]/[ ]) | **wanted, at the pin since v0.106.0.** The CLI prints several inputs in one job; the shell prints the open document only. File ▸ Print several files… with the Print dialog's settings applied to each. |
 
 ### 3D

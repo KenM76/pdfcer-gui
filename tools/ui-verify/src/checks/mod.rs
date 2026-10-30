@@ -475,6 +475,8 @@ pub mod password_fill;
 pub mod pdfx_claim;
 /// A slow default printer does not hold the Print window shut.
 pub mod print_colour;
+/// Several pages per sheet, and booklets.
+pub mod print_impose;
 pub mod print_presets;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;

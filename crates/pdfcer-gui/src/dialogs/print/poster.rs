@@ -26,6 +26,7 @@ use pdfcer_gui_base::poster::{self as base, Imposed, Options, Tile};
 
 use super::PrintDialog;
 use super::spooler::{Job, PagePlan, Placement};
+use crate::app::prefs::print_impose::ImposeMode;
 use crate::app::prefs::printing::{POSTER_OVERLAP_MM_RANGE, POSTER_PERCENT_RANGE, PosterPrefs};
 use crate::text::print as t;
 
@@ -137,14 +138,17 @@ pub(super) fn trace_fields(job: Option<&Job>) -> String {
     )
 }
 
-/// The Size/Poster choice, and in Poster mode its controls in place of the
-/// scale radios. Returns whether Size mode is on, so the caller draws those.
+/// The Size/Poster/Multiple/Booklet choice, and the chosen mode's controls in
+/// place of the scale radios. Returns whether Size mode is on, so the caller
+/// draws those.
 pub(super) fn mode_row(ui: &mut Ui, dialog: &mut PrintDialog) -> bool {
     ui.horizontal_wrapped(|ui| {
         ui.label(t::sizing_heading())
             .on_hover_text(t::sizing_tooltip());
-        if ui.radio(!dialog.poster.on, t::sizing_mode_size()).clicked() {
+        let size = !dialog.poster.on && !dialog.impose.on();
+        if ui.radio(size, t::sizing_mode_size()).clicked() {
             dialog.poster.on = false;
+            dialog.impose.prefs.mode = ImposeMode::Off;
         }
         let poster = ui
             .radio(dialog.poster.on, t::sizing_mode_poster())
@@ -152,9 +156,16 @@ pub(super) fn mode_row(ui: &mut Ui, dialog: &mut PrintDialog) -> bool {
         crate::diag::ui_rect(REGION_POSTER_MODE, poster.rect);
         if poster.clicked() {
             dialog.poster.on = true;
+            dialog.impose.prefs.mode = ImposeMode::Off;
         }
+        super::impose::radio(ui, dialog, ImposeMode::NUp);
+        super::impose::radio(ui, dialog, ImposeMode::Booklet);
     });
     if !dialog.poster.on {
+        if dialog.impose.on() {
+            super::impose::controls(ui, &mut dialog.impose);
+            return false;
+        }
         return true;
     }
     let prefs = &mut dialog.poster;

@@ -236,6 +236,14 @@ fn every_preference_round_trips_through_the_file() {
                             auto: false,
                             width_mm: 0.35,
                         },
+                        impose: crate::prefs::print_impose::ImposePrefs {
+                            mode: crate::prefs::print_impose::ImposeMode::NUp,
+                            count: 6,
+                            order: pdfcer_print::imposition::PageOrder::Vertical,
+                            border: true,
+                            rotate: false,
+                            binding: pdfcer_print::imposition::Binding::Right,
+                        },
                     },
                     // Off-page display, and every one of these three is
                     // the OPPOSITE of what that mode ships — Read ships off,
@@ -780,6 +788,14 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 fixed: true,
                 auto: true,
                 width_mm: 5.0,
+            },
+            impose: crate::prefs::print_impose::ImposePrefs {
+                mode: crate::prefs::print_impose::ImposeMode::Booklet,
+                count: 16,
+                order: pdfcer_print::imposition::PageOrder::HorizontalReversed,
+                border: false,
+                rotate: true,
+                binding: pdfcer_print::imposition::Binding::LeftTall,
             },
         },
         // Off-page display. A DIFFERENT set from the round-trip test

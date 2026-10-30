@@ -85,6 +85,8 @@ pub struct PrintPrefs {
     pub poster: PosterPrefs,
     /// One fixed line width instead of the document's weights (O233).
     pub lines: LineWidthPrefs,
+    /// N-up and booklet.
+    pub impose: super::print_impose::ImposePrefs,
 }
 
 /// Print every line at one width.
@@ -175,6 +177,7 @@ impl Default for PrintPrefs {
             reverse: false,
             poster: PosterPrefs::default(),
             lines: LineWidthPrefs::default(),
+            impose: super::print_impose::ImposePrefs::default(),
         }
     }
 }
@@ -513,7 +516,7 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
                 .map(|n| n.clamp(*LINE_WIDTH_MM_RANGE.start(), *LINE_WIDTH_MM_RANGE.end())),
             prefs.lines.width_mm
         ),
-        _ => KeyOutcome::NotMine,
+        _ => super::print_impose::parse_key(prefs, key, value),
     }
 }
 
@@ -707,6 +710,7 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
         out.push_str(&value);
         out.push('\n');
     }
+    super::print_impose::write_block(prefs, out);
 }
 
 #[cfg(test)]

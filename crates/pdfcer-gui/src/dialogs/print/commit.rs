@@ -80,7 +80,8 @@ impl PrintDialog {
         .map_err(|error| error.to_string())
     }
 
-    /// Render every planned page (or poster tile) as one sheet bitmap.
+    /// Render every planned page (or poster tile, or imposed sheet) as one
+    /// sheet bitmap.
     fn render_sheets(
         &self,
         doc: &OpenDoc,
@@ -96,7 +97,13 @@ impl PrintDialog {
         let name = super::poster::document_name(doc);
 
         let mut bitmaps = Vec::with_capacity(job.plans.len());
-        for plan in &job.plans {
+        for (i, plan) in job.plans.iter().enumerate() {
+            if let Some(sheet) = self.impose.out.get(i) {
+                bitmaps.push(super::impose::render_sheet(
+                    doc, sheet, job, &options, lines_pt,
+                )?);
+                continue;
+            }
             let (Some(page), Some(&size)) = (doc.pages.get(plan.index), page_sizes.get(plan.index))
             else {
                 // A plan naming a page the document no longer has. Skipped
@@ -152,7 +159,7 @@ impl PrintDialog {
                  claim={}:{} \
                  dpi={:?} capped={:?} uncapped_mb={:?} orientation={:?} duplex={:?} \
                  paper={:?} pick={} auto={} sheet={} largest={} mixed={} config={} \
-                 scale={:?} tab={:?} {}",
+                 scale={:?} tab={:?} {} {}",
                 self.device_pending,
                 self.printers.get(self.selected).map(|p| &p.driver),
                 self.printers.get(self.selected).map(|p| &p.port),
@@ -210,6 +217,7 @@ impl PrintDialog {
                 job.and_then(|j| j.plans.first()).map(|p| p.placement.scale),
                 self.active_tab,
                 super::poster::trace_fields(job),
+                super::impose::trace_fields(&self.impose, self.effective_device().duplex),
             )
         });
     }

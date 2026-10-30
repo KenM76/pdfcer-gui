@@ -403,6 +403,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_slow_printer::PrintDialogNeverWaitsOnAPrinter),
         Box::new(print_presets::PrintOpensOnTheDocumentsOwnSettings),
         Box::new(print_colour::PrintInGreyOrBlackOnly),
+        Box::new(print_impose::PrintSeveralPagesPerSheetAndBooklets),
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(print_shop::InkPickerReadsOverprint),
         Box::new(print_shop::OverprintPreviewSwitch),

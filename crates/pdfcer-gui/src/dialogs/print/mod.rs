@@ -90,6 +90,8 @@ mod commit;
 /// dialogue box needs to remember our last settings."*
 mod remembered;
 
+/// Multiple and Booklet over a planned job.
+mod impose;
 /// **Poster printing** — O238: one page across many sheets, as Acrobat does.
 mod poster;
 
@@ -273,6 +275,8 @@ pub struct PrintDialog {
     poster: crate::app::prefs::printing::PosterPrefs,
     /// What poster mode made of the sheet on the preview, this frame.
     poster_caption: Option<String>,
+    /// Multiple and Booklet; see [`impose`].
+    impose: impose::State,
     /// One fixed line width; see [`lines`].
     lines: crate::app::prefs::printing::LineWidthPrefs,
     /// Copy count.
@@ -543,6 +547,7 @@ impl PrintDialog {
             reverse: remembered.reverse,
             poster: remembered.poster,
             poster_caption: None,
+            impose: impose::State::new(remembered.impose, remembered.poster.on),
             lines: remembered.lines,
             copies: remembered.copies,
             uncollated: remembered.uncollated,
@@ -753,6 +758,11 @@ impl PrintDialog {
             .collect();
 
         let spec = self.job_spec(&page_sizes, doc.view.page_index);
+        self.impose.first_landscape = spec
+            .pages
+            .first()
+            .and_then(|&i| page_sizes.get(i))
+            .is_some_and(|&(w, h)| w > h);
 
         //
         // The position in this function is the whole of its correctness. It is
@@ -801,13 +811,14 @@ impl PrintDialog {
             // the per-edge readout, the clip count, the ink-verdict cache key
             // and the spooled job agree by construction.
             .map(|job| {
-                if self.poster.on {
+                if self.poster.on || self.impose.on() {
                     job
                 } else {
                     self.page_positions.displace(job, &page_sizes)
                 }
             });
         let job = poster::apply(self, job, &page_sizes);
+        let job = impose::apply(self, job, &page_sizes, &spec);
         if self.device_pending {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
@@ -1086,7 +1097,11 @@ impl PrintDialog {
         if device.paper == PaperChoice::AutoFromPages {
             device.paper = self.auto_paper.resolved();
         }
-        device
+        if self.poster.on {
+            device
+        } else {
+            self.impose.forced(device)
+        }
     }
 
     /// Open the driver's own properties dialog and keep what it produces.
@@ -1255,6 +1270,9 @@ impl PrintDialog {
             PrintTab::Comments => tabs::comments(ui, self),
             PrintTab::Position if self.poster.on => {
                 ui.label(t::poster_positions_fixed());
+            }
+            PrintTab::Position if self.impose.on() => {
+                ui.label(crate::text::print::impose::impose_positions_fixed());
             }
             PrintTab::Position => position::group(ui, self, job, page_sizes),
         }

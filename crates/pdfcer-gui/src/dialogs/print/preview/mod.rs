@@ -262,7 +262,7 @@ pub(super) fn column(
     let page_rect = job
         .plans
         .get(shown)
-        .filter(|plan| plan.tile.is_none())
+        .filter(|plan| plan.tile.is_none() && dialog.impose.out.is_empty())
         .and_then(|plan| {
             inputs.page_sizes.get(plan.index).map(|&size| {
                 let (_, printable) = frames(job, rect, dialog.preview_pan, scale);
@@ -318,6 +318,7 @@ pub(super) fn column(
     if response.has_focus()
         && let (Some((dx, dy)), Some(plan)) = (position::arrow_nudge(ui), job.plans.get(shown))
         && plan.tile.is_none()
+        && dialog.impose.out.is_empty()
     {
         dialog.page_positions.nudge(plan.index, dx, dy);
         ui.ctx().request_repaint();
@@ -540,6 +541,10 @@ fn paint(
     // The sheet and printable rectangles are already drawn, which is the
     // honest picture; there is no page to place and therefore no clip to
     // report, so the overhang is `Fits` rather than a warning about nothing.
+    if let Some(sheet) = dialog.impose.out.get(shown).cloned() {
+        let texture = imposed::paint(ui, inputs, dialog, &sheet, printable);
+        return (texture, Overhang::Fits, [false; 4]);
+    }
     let (Some(&plan), Some(&size)) = (
         job.plans.get(shown),
         job.plans
@@ -941,6 +946,9 @@ use pdfcer_gui_base::printgeometry as geometry;
 
 /// The zoomed-in preview, rendered sharp up to the print resolution.
 pub(super) mod detail;
+
+/// The preview of a Multiple or Booklet sheet.
+mod imposed;
 
 // Glob re-exported rather than named one by one. A hand-written list here is a
 // list inside the mechanism whose whole purpose is to make the split invisible,

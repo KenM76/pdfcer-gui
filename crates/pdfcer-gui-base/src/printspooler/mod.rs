@@ -453,7 +453,7 @@ const fn to_engine_paper(paper: PaperChoice) -> pdfcer_print::PaperSelection {
 }
 
 /// The arithmetic half of a job, into the engine's.
-fn to_engine_spec(spec: &JobSpec) -> pdfcer_print::JobSpec {
+pub(crate) fn to_engine_spec(spec: &JobSpec) -> pdfcer_print::JobSpec {
     pdfcer_print::JobSpec {
         pages: spec.pages.clone(),
         mode: to_engine_scale(spec.mode),

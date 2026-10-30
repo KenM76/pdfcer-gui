@@ -52,6 +52,8 @@ pub mod trust;
 /// Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
 pub use crate::pastechords;
+/// The Print window's N-up and booklet answers.
+pub mod print_impose;
 /// **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**.
 /// Its own file because deciding *which* of that window's controls may be
 /// remembered is a judgement worth keeping, and because it carries this group's

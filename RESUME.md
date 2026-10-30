@@ -298,8 +298,9 @@ embed, then the crate split.
 3. **Run the integration tests.** `cargo test --workspace` beyond `--lib` was
    skipped for RAM. Run it in the foreground with `CARGO_BUILD_JOBS=1`.
 4. **Wire the add-text half of G034:** a render mode for newly inserted text.
-5. **Print, still to build:** N-up and booklet, plus an Acrobat print-dialog
-   parity table (poster is done).
+5. **Print, still to build:** print-time header and footer, printing several
+   files, and an Acrobat print-dialog parity table (poster, N-up and booklet
+   are done).
 6. **Crate split Stage 3.** Standing work between tasks, approved. `OpenDoc`,
    prefs, `clipboard`, `protect` and the whole Find bar are in
    `pdfcer-gui-base`. `render` is a leaf (only `pressure`, which needs eframe's

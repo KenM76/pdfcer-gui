@@ -318,10 +318,6 @@ standard — is the differentiator here, and nothing below should dilute it.
 
 Each is small, independently shippable, and can fill a gap in any sprint.
 
-| Capability | What it waits for |
-|---|---|
-| Imposition in the print dialog | Sheet composition lifted into `pdfcer-print` so both shells share one implementation, including the mutual-exclusion guard that is CLI-local today. A control before that is an affordance for something that cannot happen. |
-
 Two capabilities are **built and undriven** — they exist, they are registered,
 and no check in `tools/ui-verify` drives them. Until one does, a UI change is
 not done:

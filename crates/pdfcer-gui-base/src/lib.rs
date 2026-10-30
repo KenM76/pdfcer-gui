@@ -104,6 +104,10 @@ pub mod text;
 /// of both. The tiling is `pdfcer_print::imposition::plan_poster`'s.
 pub mod poster;
 
+/// N-up and booklet printing: several pages on one sheet, and the drawing
+/// of that sheet. The layouts are `pdfcer_print::imposition`'s.
+pub mod imposition;
+
 pub mod pressure;
 
 /// The icon set: SVG path data, a subset parser, a tiny-skia rasterizer and

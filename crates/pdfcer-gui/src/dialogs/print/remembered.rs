@@ -28,6 +28,7 @@ impl PrintDialog {
             subset: self.subset,
             reverse: self.reverse,
             poster: self.poster,
+            impose: self.impose.prefs,
             lines: self.lines,
         };
         super::presets::keep_own_habits(&self.presets, &mut habits, &self.opened_with);
