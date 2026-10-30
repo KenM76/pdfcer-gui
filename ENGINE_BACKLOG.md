@@ -775,3 +775,14 @@ The request O272's vector copy waits on.
 The request O280 is built on, answered and consumed.
 
 - **G098** — a ce dimension cannot measure an area; `DimensionKind` has no area kind and `/A` in `build_measure_dict` is a placeholder. Also asks for a public `polygon_area`, the area twin of `polyline_length`, so the live readout during the pick and the committed label are one function. Answered (`DimensionKind::Perimeter { area: true }`, `vector::polygon_area`, `set_dimension_area`) and consumed by O280; the GUI computes no area of its own.
+
+## Engine arrivals at v0.103.0 to v0.106.0 — not verdict rows
+
+What these releases added and this shell has an opinion on. A wired item names
+where it is wired; the rest say why they wait.
+
+- **Dynamic XFA forms** — `pdfcer_core::xfa` (`form_kind`, `read_xdp`, `read_template`, `layout_template`) and `pdfcer_render::xfa` (`render_xfa_page`). **Wired**: the open-time sentence for a dynamic form (G237) and the View tab's form preview. The data merge has not landed, so the preview draws the form without its filled-in values and says so.
+- **Print presets, printer's marks, running headers and footers** — `pdfcer_core::print_presets`, `pdfcer_core::printer_marks`, `pdfcer_core::edit::printer_marks` (`add_printer_marks`, `CommandKind::AddPrinterMarks`, `EditError::PrinterMarks`), `pdfcer_core::running_text`, `pdfcer_core::edit::running_text` (`stamp_running_text`, `CommandKind::StampRunningText`, `EditError::RunningText`). **wanted.** Running text belongs in the Page tab's header-and-footer group and printer's marks in Print production; presets in the Print dialog. Each needs its own dialog and a drive on a real printer; not in this release.
+- **Print finishing, IPP, printer probing, listing and output colour** — `pdfcer_print::finishing`, `pdfcer_print::ipp`, `pdfcer_print::probe`, `pdfcer_print::listing`, `pdfcer_print::output_color`, `PrintError::FinishingRefused`, `PrintError::Metafile`, `PrintError::PrintTicket`, `pdfcer_fetch::post_ipp`, `pdfcer_fetch::MAX_IPP_RESPONSE_BYTES`, `FetchError::NetworkUnsupported`. **wanted.** They reach the operator through the Print dialog, whose adapter is `pdfcer-gui-base`'s print spooler; wiring them changes what goes to the physical printer and is driven on one before it ships.
+- **glTF import and PRC writing** — `pdfcer_3d::gltf`, `pdfcer_3d::write`, `pdfcer_core::threed::lighting`, `ThreeDSavedView::with_lighting`, `ThreeDActivation::from_name`. **wanted.** The Insert tab's 3D model command takes PRC and U3D today; glTF joins its file filter once the import's `notes` have a place in the results panel.
+- **Overprint ink pairs and grey image sources** — `pdfcer_render::overprint::InkPair` (`InkPair::Calibrated`, `InkPair::Naive`) and `DecodedImage::gray_source`. **declined for now**: the overprint preview uses the renderer's default pairing, and nothing here decodes images itself.
