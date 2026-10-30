@@ -84,6 +84,8 @@ pub struct CompactDialog {
     /// places starts off, since a link from another file may name one.
     choices: Choices,
     recompress: Recompress,
+    /// A loaded settings file, run in place of [`Self::choices`].
+    profile: crate::dialogs::compact_profile::State,
     /// *Make compatible with*; `None` keeps the copy's version.
     version: Option<PdfVersion>,
     /// Lowering the copy to [`Self::version`], last of the work on it.
@@ -136,6 +138,7 @@ impl CompactDialog {
                 budget,
             },
             recompress: Recompress::Off,
+            profile: crate::dialogs::compact_profile::State::default(),
             version: None,
             lowering: Lowering::Off,
             settings: doc.settings.clone(),
@@ -315,8 +318,15 @@ fn chosen<'a>(plain: &'a [u8], recompress: &'a Recompress, lowering: &'a Lowerin
 impl CompactDialog {
     /// Start the recompression when it is wanted, and take its result.
     fn recompress_step(&mut self, ctx: &egui::Context) {
-        if self.choices.any() && matches!(self.recompress, Recompress::Off) {
-            let job = Job::start(ctx, self.bytes.clone(), self.settings.clone(), self.choices);
+        let profile = self.profile.settings();
+        if (self.choices.any() || profile.is_some()) && matches!(self.recompress, Recompress::Off) {
+            let job = Job::start(
+                ctx,
+                self.bytes.clone(),
+                self.settings.clone(),
+                self.choices,
+                profile.cloned(),
+            );
             self.recompress = Recompress::Working(job);
         }
         let landed = match &self.recompress {
@@ -354,45 +364,15 @@ impl CompactDialog {
     /// The switches, and what the work on the copy did. Any change starts
     /// the work again from the plain copy; the running job is dropped.
     fn recompress_row(&mut self, ui: &mut Ui) {
-        let c = &mut self.choices;
-        let plain = self.bytes.len() as u64;
-        let aimed = compact_target::rows(ui, &mut c.preset, &mut c.budget, plain);
-        let toggled = [
-            (
-                &mut c.recompress,
-                t::recompress_toggle(),
-                t::recompress_tooltip(),
-            ),
-            (&mut c.broken, t::broken_toggle(), t::broken_tooltip()),
-            (
-                &mut c.destinations,
-                t::destinations_toggle(),
-                t::destinations_tooltip(),
-            ),
-        ]
-        .into_iter()
-        .fold(false, |any, (on, label, tip)| {
-            ui.checkbox(on, label).on_hover_text(tip).changed() || any
-        });
-        let fonts = ui
-            .checkbox(&mut c.fonts, t::fonts_toggle())
-            .on_hover_text(t::fonts_tooltip());
-        crate::diag::ui_rect_visible(REGION_FONTS, fonts.rect, ui.clip_rect());
-        let toggled = fonts.changed() || toggled;
-        let content = ui
-            .checkbox(&mut c.content, t::content_toggle())
-            .on_hover_text(t::content_tooltip());
-        crate::diag::ui_rect_visible(REGION_CONTENT, content.rect, ui.clip_rect());
-        let toggled = content.changed() || toggled;
-        let toggled = round_row(ui, c.content, &mut c.round) || toggled;
-        let web = ui
-            .checkbox(&mut c.linearize, t::linearize_toggle())
-            .on_hover_text(t::linearize_tooltip());
-        crate::diag::ui_rect_visible(REGION_LINEARIZE, web.rect, ui.clip_rect());
-        let toggled = web.changed() || toggled;
-        let toggled = discard_switches(ui, &mut c.discard) || toggled;
-        let toggled =
-            compact_images::switches(ui, &mut c.pictures, &mut c.classes) || toggled || aimed;
+        let choices = self.choices;
+        let mut toggled = self
+            .profile
+            .row(ui, || crate::dialogs::recompress::settings_for(choices));
+        toggled |= if self.profile.settings().is_some() {
+            self.fonts_switch(ui)
+        } else {
+            self.switches(ui)
+        };
         if toggled {
             self.recompress = Recompress::Off;
             self.lowering = Lowering::Off;
@@ -418,6 +398,54 @@ impl CompactDialog {
             Recompress::Done(done) => done_lines(ui, done),
         }
         compact_version::lines(ui, &self.lowering);
+    }
+
+    /// The starting point, size target and switches; whether one changed.
+    fn switches(&mut self, ui: &mut Ui) -> bool {
+        let c = &mut self.choices;
+        let plain = self.bytes.len() as u64;
+        let aimed = compact_target::rows(ui, &mut c.preset, &mut c.budget, plain);
+        let toggled = [
+            (
+                &mut c.recompress,
+                t::recompress_toggle(),
+                t::recompress_tooltip(),
+            ),
+            (&mut c.broken, t::broken_toggle(), t::broken_tooltip()),
+            (
+                &mut c.destinations,
+                t::destinations_toggle(),
+                t::destinations_tooltip(),
+            ),
+        ]
+        .into_iter()
+        .fold(false, |any, (on, label, tip)| {
+            ui.checkbox(on, label).on_hover_text(tip).changed() || any
+        });
+        let toggled = self.fonts_switch(ui) || toggled;
+        let c = &mut self.choices;
+        let content = ui
+            .checkbox(&mut c.content, t::content_toggle())
+            .on_hover_text(t::content_tooltip());
+        crate::diag::ui_rect_visible(REGION_CONTENT, content.rect, ui.clip_rect());
+        let toggled = content.changed() || toggled;
+        let toggled = round_row(ui, c.content, &mut c.round) || toggled;
+        let web = ui
+            .checkbox(&mut c.linearize, t::linearize_toggle())
+            .on_hover_text(t::linearize_tooltip());
+        crate::diag::ui_rect_visible(REGION_LINEARIZE, web.rect, ui.clip_rect());
+        let toggled = web.changed() || toggled;
+        let toggled = discard_switches(ui, &mut c.discard) || toggled;
+        compact_images::switches(ui, &mut c.pictures, &mut c.classes) || toggled || aimed
+    }
+
+    /// The fonts switch, which a settings file cannot carry.
+    fn fonts_switch(&mut self, ui: &mut Ui) -> bool {
+        let fonts = ui
+            .checkbox(&mut self.choices.fonts, t::fonts_toggle())
+            .on_hover_text(t::fonts_tooltip());
+        crate::diag::ui_rect_visible(REGION_FONTS, fonts.rect, ui.clip_rect());
+        fonts.changed()
     }
 
     /// The bytes [`chosen`] names, moved out for the write.

@@ -29,6 +29,7 @@ pub mod compact_classes;
 pub mod compact_compare;
 pub mod compact_images;
 /// The compact window's starting point and size target.
+pub mod compact_profile;
 pub mod compact_target;
 /// The compact window's *Make compatible with* list.
 pub mod compact_version;

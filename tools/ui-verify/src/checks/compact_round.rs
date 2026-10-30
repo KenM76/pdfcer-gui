@@ -82,6 +82,7 @@ fn body(
         )));
     }
     let mark = session.trace()?.mark();
+    into_view_of(ctx, session, pointer, LIST, BODY)?;
     press(ctx, session, pointer, LIST)?;
     session.settle(10);
     press(ctx, session, pointer, HUNDREDTH)?;

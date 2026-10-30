@@ -698,6 +698,8 @@ mod poster;
 // Glob re-exported, for the reason argued over `footer` above.
 pub use poster::*;
 
+/// Printing several files with one setup.
+pub mod batch;
 pub mod colour;
 /// Staple, punch and output tray.
 pub mod finishing;
@@ -708,8 +710,6 @@ mod lines;
 /// Send to network printer.
 pub mod network;
 pub mod presets;
-/// Printing several files with one setup.
-pub mod batch;
 /// A header or footer on the printed copy only.
 pub mod running;
 

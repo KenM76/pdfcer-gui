@@ -256,15 +256,37 @@ pub fn recompress(
     settings: &Settings,
     choices: Choices,
 ) -> Result<Recompressed, String> {
+    recompress_with(copy, settings, choices, None)
+}
+
+/// [`recompress`], running a loaded settings file's `profile` in place of
+/// the preset, switches and size target when there is one. The fonts switch
+/// is laid over it: a settings file cannot say it.
+///
+/// # Errors
+///
+/// As [`recompress`].
+pub fn recompress_with(
+    copy: &[u8],
+    settings: &Settings,
+    choices: Choices,
+    profile: Option<&OptimizeSettings>,
+) -> Result<Recompressed, String> {
     let doc = Document::from_bytes(copy.to_vec()).map_err(|e| e.to_string())?;
     let mut session = settings.open_session(doc);
-    let preset = settings_for(choices)?;
-    let (plan, file, report, budget) = run(
-        &mut session,
-        &preset,
-        choices.budget,
-        &settings.save_options(),
-    )?;
+    let (preset, budget) = match profile {
+        Some(loaded) => {
+            let mut preset = loaded.clone();
+            preset.allow_signed = true;
+            if choices.fonts {
+                preset.resubset = Some(ResubsetFonts::new(&GLYPH_ZERO_RESUBSETTER));
+            }
+            (preset, None)
+        }
+        None => (settings_for(choices)?, choices.budget),
+    };
+    let (plan, file, report, budget) =
+        run(&mut session, &preset, budget, &settings.save_options())?;
     let pictures = Tally::of(&plan);
     let compared = crate::dialogs::compact_compare::rows(&plan);
     let mut left = BTreeMap::new();
@@ -322,7 +344,13 @@ pub struct Job {
 
 impl Job {
     /// Start recompressing `copy`; the window repaints when it is done.
-    pub fn start(ctx: &egui::Context, copy: Vec<u8>, settings: Settings, choices: Choices) -> Self {
+    pub fn start(
+        ctx: &egui::Context,
+        copy: Vec<u8>,
+        settings: Settings,
+        choices: Choices,
+        profile: Option<OptimizeSettings>,
+    ) -> Self {
         let (tx, rx) = channel();
         let ctx = ctx.clone();
         let spawned = std::thread::Builder::new()
@@ -330,10 +358,10 @@ impl Job {
             .spawn(move || {
                 let started = std::time::Instant::now();
                 let preset = choices.preset;
-                let result = recompress(&copy, &settings, choices);
+                let result = recompress_with(&copy, &settings, choices, profile.as_ref());
                 crate::diag::trace(|| {
                     format!(
-                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} compared={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
+                        "compact-recompressed ok={} smaller={} changed={} resized={} jpeg={} matched={} short={} compared={} converted={} lossy={} fonts_cut={} content={} rounded={} linearized={} preset={} profile={} target={} max={} step={} bytes={} ms={}", // ui-text-exempt: diagnostic trace
                         result.is_ok(),
                         result.as_ref().is_ok_and(|r| r.bytes.is_some()),
                         result.as_ref().map_or(0, |r| r.changed),
@@ -349,6 +377,7 @@ impl Job {
                         result.as_ref().map_or(0, |r| r.content_rounded),
                         result.as_ref().is_ok_and(|r| r.linearized),
                         preset.as_str(),
+                        profile.is_some(),
                         target_word(result.as_ref().ok().and_then(|r| r.budget.as_ref())),
                         result
                             .as_ref()

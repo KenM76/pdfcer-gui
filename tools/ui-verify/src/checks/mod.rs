@@ -53,6 +53,7 @@ pub mod compact_compare;
 pub mod compact_content;
 pub mod compact_fonts;
 pub mod compact_pictures;
+pub mod compact_profile;
 pub mod compact_reach;
 pub mod compact_round;
 pub mod compact_target;
@@ -473,10 +474,10 @@ pub mod page_boxes;
 pub mod page_print_boxes;
 pub mod password_fill;
 pub mod pdfx_claim;
-/// A slow default printer does not hold the Print window shut.
-pub mod print_colour;
 /// Batch print sends each picked file as its own job.
 pub mod print_batch;
+/// A slow default printer does not hold the Print window shut.
+pub mod print_colour;
 /// Several pages per sheet, and booklets.
 pub mod print_impose;
 pub mod print_presets;

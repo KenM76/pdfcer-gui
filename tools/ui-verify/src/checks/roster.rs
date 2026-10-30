@@ -442,6 +442,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(compact_content::ACompactedCopyTidiesDrawingInstructions),
         Box::new(compact_round::ACompactedCopyRoundsLinePositions),
         Box::new(compact_web::ACompactedCopyIsLaidOutForFastWebView),
+        Box::new(compact_profile::CompactSettingsFilesLoadAndSave),
         Box::new(compact_version::ACompactedCopyIsMadeCompatibleWithAnOlderVersion),
         Box::new(compact_classes::ACompactedCopyTreatsEachKindOfPictureSeparately),
         Box::new(compact_closeness::AClosenessTargetPicksEachPicturesQuality),

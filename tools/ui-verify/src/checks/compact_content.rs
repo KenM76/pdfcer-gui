@@ -81,6 +81,7 @@ fn body(
         )));
     }
     let mark = session.trace()?.mark();
+    into_view_of(ctx, session, pointer, SWITCH, BODY)?;
     press(ctx, session, pointer, SWITCH)?;
     let Some(off) = recompressed_after(session, mark)? else {
         return Ok(Some(format!(
@@ -97,6 +98,7 @@ fn body(
         )));
     }
     let mark = session.trace()?.mark();
+    into_view_of(ctx, session, pointer, SWITCH, BODY)?;
     press(ctx, session, pointer, SWITCH)?;
     let Some(on) = recompressed_after(session, mark)? else {
         return Ok(Some(format!(
