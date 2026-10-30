@@ -93,8 +93,12 @@ mod remembered;
 /// **Poster printing** — O238: one page across many sheets, as Acrobat does.
 mod poster;
 
+/// Colour, grey or black-only output.
+mod colour;
 /// **Fixed line width** — O233: every line printed at one width.
 mod lines;
+/// The document's own `/ViewerPreferences` print settings.
+mod presets;
 
 // The names this dialog publishes for `tools/ui-verify`. A private glob keeps
 // `super::REGION_*` resolving from `tabs` and `position`; the three named
@@ -208,6 +212,10 @@ pub struct PrintDialog {
     /// than per frame, so the discipline about not pestering the spooler is
     /// kept.
     features_for: Option<usize>,
+    /// The selected printer's report has not arrived yet.
+    device_pending: bool,
+    /// Device geometry, read off the UI thread.
+    caps: spooler::probe::CapsCache,
     /// Which pages.
     range: PrintRange,
     /// The typed range, live even when [`PrintRange::Custom`] is not selected,
@@ -441,6 +449,10 @@ pub struct PrintDialog {
     /// of the dialog, which is the same object [`Self::remember`] needs
     /// mutably.
     opened_with: crate::app::prefs::PrintPrefs,
+    /// The document's own print settings this dialog opened on.
+    presets: presets::Applied,
+    /// Colour, grey or black only, applied to every rendered sheet.
+    output_color: pdfcer_print::output_color::OutputColor,
 }
 
 impl PrintDialog {
@@ -450,7 +462,7 @@ impl PrintDialog {
         // below spells every remembered value exactly as the file spells it.
         use crate::app::prefs::printing as p;
 
-        let (unavailable, printers) = match spooler::list_printers() {
+        let (unavailable, printers) = match spooler::probe::printers() {
             Ok(printers) => (None, printers),
             Err(error) => (Some(error), Vec::new()),
         };
@@ -469,7 +481,7 @@ impl PrintDialog {
             .and_then(|name| printers.iter().position(|p| p.name == name))
             .or_else(|| printers.iter().position(|p| p.is_default))
             .unwrap_or(0);
-        let dialog = Self {
+        let mut dialog = Self {
             unavailable,
             printers,
             selected,
@@ -479,6 +491,8 @@ impl PrintDialog {
             properties_error: None,
             properties_requested: false,
             features_for: None,
+            device_pending: false,
+            caps: spooler::probe::CapsCache::default(),
             // NOT remembered, and this is the boundary O166 turns on: a
             // range names pages of *this* document. `PrintRange::All` is the
             // only honest answer for a file the last job never saw.
@@ -562,7 +576,27 @@ impl PrintDialog {
             // pressed Cancel, which is a write nobody asked for on the one
             // route that is supposed to write nothing new.
             opened_with: remembered.clone(),
+            presets: presets::Applied::default(),
+            output_color: pdfcer_print::output_color::OutputColor::Color,
         };
+        presets::apply(
+            &mut dialog,
+            &pdfcer_core::print_presets::print_presets(&doc.session.view()),
+            doc.pages.len(),
+        );
+        crate::diag::trace(|| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "print-presets used={} locked={} range={}",
+                dialog.presets.notes.len(),
+                dialog.presets.scale_locked,
+                if dialog.range_text.is_empty() {
+                    "-"
+                } else {
+                    &dialog.range_text
+                },
+            )
+        });
 
         // **Traced from the BUILT dialog, and the position of these
         // lines is the whole point of them.**
@@ -741,8 +775,19 @@ impl PrintDialog {
         let printer_name = self.printers.get(self.selected).map(|p| p.name.clone());
         let job = printer_name
             .as_deref()
-            .map(|name| spooler::plan(name, device, self.config.as_ref(), &page_sizes, &spec))
-            .and_then(Result::ok)
+            .filter(|_| !self.device_pending)
+            .and_then(
+                |name| match self.caps.get(name, self.config.as_ref(), device.paper) {
+                    spooler::probe::CapsState::Ready(caps) => {
+                        Some(spooler::plan_from_caps(&caps, device, &page_sizes, &spec))
+                    }
+                    spooler::probe::CapsState::Pending => {
+                        self.device_pending = true;
+                        None
+                    }
+                    spooler::probe::CapsState::Failed(_) => None,
+                },
+            )
             // O208: the operator's chosen positions are applied HERE, on the
             // value the plan returned, before any reader. Not inside
             // [`spooler`], whose header rules that nothing in it computes a
@@ -758,6 +803,9 @@ impl PrintDialog {
                 }
             });
         let job = poster::apply(self, job, &page_sizes);
+        if self.device_pending {
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
 
         // Keep the stepper inside the job. A range narrowed while the dialog
         // is open can leave `preview_page` past the end, and a preview that
@@ -969,17 +1017,28 @@ impl PrintDialog {
     /// Re-read everything that belongs to the selected device.
     fn refresh_device(&mut self) {
         if self.features_for == Some(self.selected) {
+            self.device_pending = false;
             return;
         }
         let name = self.printers.get(self.selected).map(|p| p.name.clone());
-        let features = name
-            .as_deref()
-            .and_then(|name| spooler::device_features(name).ok())
-            .unwrap_or_default();
-        let forms = name
-            .as_deref()
-            .and_then(|name| spooler::printer_forms(name).ok())
-            .unwrap_or_default();
+        let report = match name.as_deref().map(spooler::probe::report) {
+            Some(None) => {
+                self.device_pending = true;
+                return;
+            }
+            Some(Some(report)) => report,
+            None => spooler::probe::DeviceReport::default(),
+        };
+        self.device_pending = false;
+        // Driver and port arrived with the report; the list was taken before.
+        if let (Some(name), Ok(fresh)) = (name.as_deref(), spooler::probe::printers())
+            && let Some(now) = fresh.into_iter().find(|p| p.name == name)
+            && let Some(slot) = self.printers.get_mut(self.selected)
+        {
+            slot.driver = now.driver;
+            slot.port = now.port;
+        }
+        let (features, forms) = (report.features, report.forms);
 
         crate::diag::trace(|| {
             format!(

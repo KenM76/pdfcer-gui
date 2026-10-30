@@ -1,11 +1,12 @@
 //! Security ▸ Add validation evidence…: embed operator-chosen
 //! certificates, CRLs and OCSP responses in the signed document's `/DSS`
-//! (PAdES B-LT), through `EditSession::add_validation_material`.
+//! (PAdES B-LT), through `EditSession::add_validation_material`. The options
+//! come from `dialogs::evidence`.
 //!
 //! One undo entry (`CommandKind::AddValidationMaterial`), applied to the open document; the shell's Save appends an
 //! incremental update, which is what keeps the existing signatures valid.
 //! The engine fetches nothing and this shell fetches nothing: the operator
-//! supplies the files. The signers' own certificates are always included.
+//! supplies the files.
 //!
 //! Refusals are pre-checked from `signature_census` so each gets its own
 //! sentence; the engine's own checks still run and remain authoritative.
@@ -19,13 +20,16 @@ use pdfcer_gui_base::sign::evidence::{self, Unreadable};
 use crate::app::state::OpenDoc;
 use crate::text::evidence as t;
 
-/// Pick files, read them, and embed what they hold.
-pub(super) fn add(doc: &mut OpenDoc) {
+/// Pick files, read them, and embed what they hold, with the signers' own
+/// certificates when `own_certs`. Under a no-changes certification the write
+/// goes ahead only when `allow_no_changes`: the operator accepted the warning.
+pub(super) fn add(doc: &mut OpenDoc, own_certs: bool, allow_no_changes: bool) {
     let census = doc.session.signature_census();
     if census.signatures == 0 {
         return refuse(doc, "unsigned", t::unsigned().to_owned());
     }
-    if census.certifications > 0 && census.certification_permission == Some(1) {
+    if census.certifications > 0 && census.certification_permission == Some(1) && !allow_no_changes
+    {
         return refuse(
             doc,
             "no-changes-certified",
@@ -41,6 +45,9 @@ pub(super) fn add(doc: &mut OpenDoc) {
         Ok(read) => read,
         Err(note) => return refuse(doc, "unreadable", note),
     };
+    let material = material
+        .include_signature_certificates(own_certs)
+        .allow_under_no_changes_certification(allow_no_changes);
     let epoch = doc.edit_epoch;
     super::funnel::vector_edit(doc, "evidence-added", 0, paths.len(), |session| {
         match session.add_validation_material(&material) {

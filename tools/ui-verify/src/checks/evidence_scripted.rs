@@ -1,8 +1,10 @@
 //! `validation_evidence_added_without_the_mouse` — Security ▸ Add
 //! validation evidence… embeds a supplied certificate and CRL, plus the
-//! signer's own certificate, in a signed document, and refuses an unsigned one
-//! with its own reason. The window is off the desktop and driven through the
-//! scripted pointer.
+//! signer's own certificate, in a signed document; leaves the signer's out
+//! when its checkbox is cleared; on a document certified with no changes
+//! permitted, goes on only once "Add it anyway" is ticked; and refuses an
+//! unsigned one with its own reason. The window is off the desktop and driven
+//! through the scripted pointer.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/evidence_scripted.md`.
 
@@ -19,6 +21,10 @@ const REFUSED: &str = "evidence-refused"; // ui-text-exempt: a trace event name,
 const TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name, never displayed
 const ITEM: &str = "ribbon.item.file.add_validation_evidence"; // ui-text-exempt: a trace region name, never displayed
 const COLLAPSED: &str = "ribbon.group.security.security.collapsed"; // ui-text-exempt: a trace region name, never displayed
+const OWN: &str = "evidence.own-certs"; // ui-text-exempt: a trace region name, never displayed
+const ALLOW: &str = "evidence.allow"; // ui-text-exempt: a trace region name, never displayed
+const CHOOSE: &str = "evidence.commit"; // ui-text-exempt: a trace region name, never displayed
+const OPTIONS: &str = "evidence-options"; // ui-text-exempt: a trace event name, never displayed
 const FILES_ENV: &str = "PDFCER_DIAG_EVIDENCE_FILES"; // ui-text-exempt: an environment variable name
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 
@@ -61,13 +67,32 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .collect::<Vec<_>>()
         .join(";");
 
-    // Signed: one supplied certificate, one CRL, and the signer's own.
+    if let Some(failure) = with_own(ctx, report, &fixtures, &joined)? {
+        return Ok(Some(failure));
+    }
+    if let Some(failure) = without_own(ctx, report, &fixtures, &joined)? {
+        return Ok(Some(failure));
+    }
+    if let Some(failure) = under_no_changes(ctx, report, &fixtures, &joined)? {
+        return Ok(Some(failure));
+    }
+    unsigned(ctx, report, &fixtures, &joined)
+}
+
+/// Signed: one supplied certificate, one CRL, and the signer's own.
+fn with_own(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixtures: &std::path::Path,
+    joined: &str,
+) -> Result<Option<String>> {
     let signed = run_once(
         ctx,
         report,
         &fixtures.join("signed-revocation-urls.pdf"),
         "evidence-signed",
-        &joined,
+        joined,
+        &[CHOOSE],
     )?;
     let Some(line) = signed.last(APPLIED) else {
         return Ok(Some(format!(
@@ -91,14 +116,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note(format!("signed: `{}`", line.raw));
+    Ok(None)
+}
 
-    // Unsigned: refused before the picker, for its own reason.
+/// Unsigned: refused before the picker, for its own reason.
+fn unsigned(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixtures: &std::path::Path,
+    joined: &str,
+) -> Result<Option<String>> {
     let unsigned = run_once(
         ctx,
         report,
         &fixtures.join("four-pages.pdf"),
         "evidence-unsigned",
-        &joined,
+        joined,
+        &[],
     )?;
     if let Some(wrong) = unsigned.last(APPLIED) {
         return Ok(Some(format!(
@@ -124,6 +158,7 @@ fn run_once(
     pdf: &std::path::Path,
     stem: &str,
     files: &str,
+    then: &[&str],
 ) -> Result<crate::trace::Trace> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -187,7 +222,78 @@ fn run_once(
         click(COLLAPSED)?;
     }
     click(ITEM)?;
+    for region in then {
+        click(region)?;
+    }
     session.settle(20);
     pointer.gone(&session)?;
     session.trace()
+}
+
+/// The signer's certificate checkbox cleared: only the supplied one goes in.
+fn without_own(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixtures: &std::path::Path,
+    files: &str,
+) -> Result<Option<String>> {
+    let trace = run_once(
+        ctx,
+        report,
+        &fixtures.join("signed-revocation-urls.pdf"),
+        "evidence-without-own",
+        files,
+        &[OWN, CHOOSE],
+    )?;
+    match trace.last(APPLIED) {
+        Some(l) if l.get("certs") == Some("1") && l.get("own") == Some("0") => {
+            report.note(format!("without own: `{}`", l.raw));
+            Ok(None)
+        }
+        other => Ok(Some(format!(
+            "with the signers' certificates cleared, expected certs=1 own=0; traced {}.",
+            other.map_or("nothing".to_owned(), |l| format!("`{}`", l.raw))
+        ))),
+    }
+}
+
+/// Certified with no changes permitted: Choose files… does nothing until
+/// "Add it anyway" is ticked, then the evidence goes in.
+fn under_no_changes(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    fixtures: &std::path::Path,
+    files: &str,
+) -> Result<Option<String>> {
+    let pdf = fixtures.join("certified-no-changes.pdf");
+    let held = run_once(ctx, report, &pdf, "evidence-p1-held", files, &[CHOOSE])?;
+    if let Some(wrong) = held.last(OPTIONS) {
+        return Ok(Some(format!(
+            "under a no-changes certification Choose files… went on before \"Add it anyway\" was ticked: `{}`.",
+            wrong.raw
+        )));
+    }
+    let allowed = run_once(
+        ctx,
+        report,
+        &pdf,
+        "evidence-p1-allowed",
+        files,
+        &[ALLOW, CHOOSE],
+    )?;
+    let options = allowed.last(OPTIONS).map(|l| l.raw.clone());
+    match allowed.last(APPLIED) {
+        Some(l) if l.get("crls") == Some("1") => {
+            report.note(format!("no-changes certified, allowed: `{}`", l.raw));
+            Ok(None)
+        }
+        other => Ok(Some(format!(
+            "with \"Add it anyway\" ticked, expected the CRL embedded; options {}, applied {}, refused {}.",
+            options.unwrap_or_else(|| "none".to_owned()),
+            other.map_or("none".to_owned(), |l| format!("`{}`", l.raw)),
+            allowed
+                .last(REFUSED)
+                .map_or("none".to_owned(), |l| format!("`{}`", l.raw))
+        ))),
+    }
 }

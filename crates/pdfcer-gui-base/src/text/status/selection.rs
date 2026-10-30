@@ -279,6 +279,11 @@ pub enum TextStyleRefusal {
     /// The caret is in an opened paragraph between words, with nothing
     /// selected: a paragraph keeps no style for text still to be typed.
     ParagraphNeedsRange,
+    /// Word spacing on text in a composite font, where it has no effect
+    /// (`FormatError::WordSpacingComposite`).
+    WordSpacingComposite,
+    /// A width percentage of zero or less (`FormatError::BadHorizScale`).
+    ScaleNotPositive,
 }
 
 impl TextStyleRefusal {
@@ -389,6 +394,10 @@ impl TextStyleRefusal {
             Self::ParagraphNeedsRange => {
                 "Put the caret inside a word or select some text to style it. Nothing changed."
             }
+            Self::WordSpacingComposite => {
+                "This text's font stores each character in more than one byte, and PDF word spacing only applies to single-byte spaces, so it would change nothing. Use character spacing instead. Nothing changed."
+            }
+            Self::ScaleNotPositive => "Type a width percentage greater than zero. Nothing changed.",
         };
         std::borrow::Cow::Borrowed(fixed)
     }

@@ -461,3 +461,17 @@ pub fn area_note(old_page: usize, pixels: u64) -> String {
 pub fn page_added_note() -> &'static str {
     "Inserted page: no page of the older version looks like it."
 }
+
+/// The appearance comparison's paragraph on the summary page: how many
+/// areas changed, how each is marked, then every `note` the panel lists.
+#[must_use]
+pub fn summary_note(areas: usize, notes: &[String]) -> String {
+    let mut text = format!(
+        "Appearance comparison: {areas} changed area(s), each an orange cloud with a note; a blue frame marks a page with no match in the older version."
+    );
+    for note in notes {
+        text.push('\n');
+        text.push_str(note);
+    }
+    text
+}

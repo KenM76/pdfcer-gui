@@ -474,6 +474,7 @@ pub fn section(
     size_row(ui, doc, draft, page, &runs, actions);
     weight_row(ui, doc, draft, page, &runs, actions);
     render_row(ui, page, &runs, actions);
+    super::textspacing::fold(ui, page, &runs, actions);
     align_row(ui, actions);
     if owns_colour {
         colour_row(ui, doc, draft, page, &runs, actions);

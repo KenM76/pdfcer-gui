@@ -13,6 +13,7 @@
 use std::fmt;
 
 mod device;
+pub mod probe;
 
 // Re-exported rather than left as `spooler::device::…`.
 //
@@ -535,8 +536,37 @@ pub fn plan(
     page_sizes: &[(f64, f64)],
     spec: &JobSpec,
 ) -> Result<Job, Unavailable> {
-    let engine_spec = to_engine_spec(spec);
+    let caps = read_caps_traced(printer, settings, config, page_sizes, spec)?;
+    Ok(plan_from_caps(&caps, settings, page_sizes, spec))
+}
 
+/// The device's geometry for the sheet `paper` selects under `config`.
+/// **Blocks on the device** — call it from a worker ([`probe::CapsCache`]).
+///
+/// # Errors
+///
+/// [`Unavailable::Device`] when this device would not describe itself.
+pub fn read_caps(
+    printer: &str,
+    config: Option<&DriverConfig>,
+    paper: PaperChoice,
+) -> Result<pdfcer_print::PrinterCaps, Unavailable> {
+    pdfcer_print::printer_caps_for(
+        printer,
+        config.map(DriverConfig::engine),
+        to_engine_paper(paper),
+    )
+    .map_err(|e| Unavailable::Device(e.to_string()))
+}
+
+/// [`plan`]'s caps read, tracing a refusal with the job it refused.
+fn read_caps_traced(
+    printer: &str,
+    settings: DeviceSettings,
+    config: Option<&DriverConfig>,
+    page_sizes: &[(f64, f64)],
+    spec: &JobSpec,
+) -> Result<pdfcer_print::PrinterCaps, Unavailable> {
     // 1. CAPABILITIES, FOR THE SHEET THIS JOB WILL ACTUALLY USE.
     //
     //
@@ -583,6 +613,17 @@ pub fn plan(
             return Err(Unavailable::Device(detail));
         }
     };
+    Ok(caps)
+}
+
+/// Plan `spec` against `caps`. Arithmetic only; never touches the device.
+pub fn plan_from_caps(
+    caps: &pdfcer_print::PrinterCaps,
+    settings: DeviceSettings,
+    page_sizes: &[(f64, f64)],
+    spec: &JobSpec,
+) -> Job {
+    let engine_spec = to_engine_spec(spec);
 
     // 2. TURN THE GEOMETRY FIRST. Steps 3 and 4 both take `&device`, so a
     //    geometry turned after them would leave the dialog previewing a sheet
@@ -596,7 +637,7 @@ pub fn plan(
     //    Taking an index of our own here is how the two come to disagree, so
     //    the engine's own accessor is used rather than an index.
     let device = pdfcer_print::DeviceGeometry::from_caps(
-        &caps,
+        caps,
         to_engine_orientation(settings.orientation),
         engine_spec.first_page_pt(page_sizes),
     );
@@ -607,7 +648,7 @@ pub fn plan(
     // 4. Every page placed, against the same turned geometry.
     let plans = pdfcer_print::plan_job(&device, page_sizes, &engine_spec);
 
-    Ok(Job {
+    Job {
         device: DeviceGeometry {
             dpi: device.dpi,
             printable_pt: device.printable_pt,
@@ -631,7 +672,7 @@ pub fn plan(
                 tile: None,
             })
             .collect(),
-    })
+    }
 }
 
 /// Hand the rendered sheets to the spooler.

@@ -34,3 +34,17 @@ pub const fn editable_tooltip() -> &'static str {
      and the page can then not be read again or have its OCR text removed. \
      Ctrl+Z puts the scan back."
 }
+
+/// Under the editable choice: store the rewritten scan without loss.
+#[must_use]
+pub const fn lossless() -> &'static str {
+    "Keep the scan lossless"
+}
+
+/// Its tooltip. States the cost.
+#[must_use]
+pub const fn lossless_tooltip() -> &'static str {
+    "With the words taken out, the scanned picture is stored again. By default a \
+     JPEG scan is stored as JPEG, which loses a little detail each time. Ticked, \
+     it is stored without any loss, at the cost of a larger file."
+}

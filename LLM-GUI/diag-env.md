@@ -16,6 +16,7 @@ picker with "Cancelled".
 | `PDFCER_DIAG_POINTER` | step-file path | Pointer, keys, text and screenshots (pointer-script.md) |
 | `PDFCER_DIAG_SELECT_FIELD` | field name | Selects that form field once |
 | `PDFCER_DIAG_FORM_ACCEPT` | non-empty, not `0` | The form-field dialog accepts itself |
+| `PDFCER_DIAG_SLOW_PRINTER` | `name=seconds` | Every read of that printer sleeps first; `<default>` names the default printer. Stands in for an unreachable device |
 
 ## Ungated: windowing and input
 

@@ -36,6 +36,7 @@ pub mod spots_flattened;
 /// A document tab dragged off the strip moves or tears off, keeping its page.
 pub mod tab_drag;
 pub mod text_render_mode;
+pub mod text_spacing;
 pub mod undrawn_fields;
 
 pub mod checkbox_resize;
@@ -469,8 +470,12 @@ pub mod open_many;
 pub mod page_boxes;
 pub mod page_print_boxes;
 pub mod password_fill;
+/// A slow default printer does not hold the Print window shut.
+pub mod print_colour;
+pub mod print_presets;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;
+pub mod print_slow_printer;
 pub mod properties_pane;
 /// Edits to an RC4 file wait for the operator, and a save says what they cost.
 pub mod rc4_append;

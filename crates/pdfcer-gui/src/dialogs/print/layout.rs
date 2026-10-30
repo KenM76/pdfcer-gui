@@ -365,6 +365,14 @@ impl PrintDialog {
                                 // that description, and a guessed rectangle is
                                 // exactly the confidently wrong preview the
                                 // feature exists to prevent.
+                                None if self.device_pending => {
+                                    ui.horizontal_wrapped(|ui| {
+                                        let colour =
+                                            egui_shell::theme::Theme::of(ui.ctx()).palette.text;
+                                        ui.add(egui::Spinner::new().color(colour));
+                                        ui.label(t::device_pending());
+                                    });
+                                }
                                 None => {
                                     ui.label(t::device_unavailable());
                                 }

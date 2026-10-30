@@ -507,6 +507,12 @@ pub use removed::{
     removed_text_more, removed_text_none, removed_text_undecodable,
 };
 
+use crate::text::redactoverlay as overlay;
+pub use overlay::{
+    overlay_fill_not_rgb, overlay_off_page, overlay_ro_not_drawn, overlay_text_burned,
+    overlay_transparent, overlay_trimmed,
+};
+
 use crate::text::redactdestcopy as destination;
 pub use destination::{
     cancel_button_staged, cancel_button_staged_tooltip, confirm_button_into_document,

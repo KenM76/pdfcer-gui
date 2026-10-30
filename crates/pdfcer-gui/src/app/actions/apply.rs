@@ -465,9 +465,14 @@ impl PdfcerApp {
             Action::RepairFormFonts => super::formfonts::repair(doc),
             Action::ToggleRc4Append => crate::app::rc4::toggle(doc),
             // Registered only with `signing`; without it nothing raises this.
-            Action::AddValidationEvidence => {
+            Action::AddValidationEvidence {
+                own_certs,
+                allow_no_changes,
+            } => {
                 #[cfg(feature = "signing")]
-                super::evidence::add(doc);
+                super::evidence::add(doc, own_certs, allow_no_changes);
+                #[cfg(not(feature = "signing"))]
+                let _ = (own_certs, allow_no_changes);
             }
             // Registered only with `timestamp`; without it nothing raises this.
             Action::ArchiveTimestamp { server } => {

@@ -561,6 +561,13 @@ fn every_actionable_format_refusal_keeps_its_own_sentence() {
         ),
         (E::WidthFitKerned, R::WidthKerned),
         (
+            E::WordSpacingComposite {
+                base_font: "MS-Mincho".to_owned(),
+            },
+            R::WordSpacingComposite,
+        ),
+        (E::BadHorizScale("0".to_owned()), R::ScaleNotPositive),
+        (
             E::TextRun(pdfcer_core::vector::VectorEditError::TextRunHasNoWidth { index: 0 }),
             R::WidthNoBaseline,
         ),

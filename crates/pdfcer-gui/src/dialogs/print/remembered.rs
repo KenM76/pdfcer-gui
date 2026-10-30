@@ -10,7 +10,7 @@ impl PrintDialog {
     /// **This dialog's state, reduced to what a different document would still
     /// want** — the producing half of `OPERATOR_REQUESTS.md` **O166**.
     pub(super) fn habits(&self) -> crate::app::prefs::PrintPrefs {
-        crate::app::prefs::PrintPrefs {
+        let mut habits = crate::app::prefs::PrintPrefs {
             printer: self.printers.get(self.selected).map(|p| p.name.clone()),
             orientation: self.device.orientation,
             duplex: self.device.duplex,
@@ -29,7 +29,9 @@ impl PrintDialog {
             reverse: self.reverse,
             poster: self.poster,
             lines: self.lines,
-        }
+        };
+        super::presets::keep_own_habits(&self.presets, &mut habits, &self.opened_with);
+        habits
     }
 
     /// Write [`Self::habits`] into the preferences file.

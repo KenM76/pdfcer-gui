@@ -39,10 +39,14 @@ fn mark(
     marks: &ComparisonMarks,
 ) -> Result<Vec<String>, ResultError> {
     let (older, newer) = marks.labels.clone();
-    let options = ResultOptions::default()
+    let mut options = ResultOptions::default()
         .with_summary_page(marks.summary_page)
         .with_author(prefs.author_name.clone())
         .with_labels(older, newer);
+    if let Some(note) = &marks.summary_note {
+        options = options.with_summary_note(note.clone());
+    }
+    let note = u8::from(marks.summary_note.is_some());
     let regions = (!marks.regions.is_empty()).then_some(marks.regions.as_slice());
     let outcome = match &marks.report {
         Some(changes) => mark_comparison(session, regions, changes, &options)
@@ -79,7 +83,9 @@ fn mark(
     };
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
-        format!("compare-marked annotations={annotations} unmarked={unmarked} top={top}")
+        format!(
+            "compare-marked annotations={annotations} unmarked={unmarked} top={top} note={note}"
+        )
     });
     let mut notes = vec![t::marked(annotations)];
     if unmarked > 0 {

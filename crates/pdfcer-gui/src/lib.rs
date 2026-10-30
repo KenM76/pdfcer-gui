@@ -148,6 +148,10 @@ pub fn run(initial: Option<PathBuf>, page: Option<usize>) -> eframe::Result {
         }
     }
 
+    // Every printer is read on its own thread from launch, so the Print
+    // dialog finds its answers waiting rather than asking a dead device.
+    pdfcer_gui_base::printspooler::probe::start();
+
     let native_options = eframe::NativeOptions {
         viewport,
         ..Default::default()

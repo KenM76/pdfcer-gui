@@ -82,17 +82,32 @@ pub fn list_printers() -> Result<Vec<Printer>, Unavailable> {
 
 /// Read one device's non-geometric capabilities.
 pub fn device_features(printer: &str) -> Result<DeviceFeatures, Unavailable> {
-    match pdfcer_print::device_features(printer) {
-        Ok(features) => Ok(DeviceFeatures {
-            supports_duplex: features.supports_duplex,
-            max_copies: features.max_copies,
-            form_source: match features.form_source_bin {
-                pdfcer_print::FormSourceSupport::Listed => FormSourceSupport::Listed,
-                pdfcer_print::FormSourceSupport::NotListed => FormSourceSupport::NotListed,
-                pdfcer_print::FormSourceSupport::Unknown => FormSourceSupport::Unknown,
-            },
-        }),
-        Err(error) => Err(Unavailable::Spooler(error.to_string())),
+    pdfcer_print::device_features(printer)
+        .map(|f| features_from_engine(&f))
+        .map_err(|error| Unavailable::Spooler(error.to_string()))
+}
+
+/// The engine's feature report, in this crate's terms.
+pub(super) const fn features_from_engine(
+    features: &pdfcer_print::DeviceFeatures,
+) -> DeviceFeatures {
+    DeviceFeatures {
+        supports_duplex: features.supports_duplex,
+        max_copies: features.max_copies,
+        form_source: match features.form_source_bin {
+            pdfcer_print::FormSourceSupport::Listed => FormSourceSupport::Listed,
+            pdfcer_print::FormSourceSupport::NotListed => FormSourceSupport::NotListed,
+            pdfcer_print::FormSourceSupport::Unknown => FormSourceSupport::Unknown,
+        },
+    }
+}
+
+/// One of the engine's paper forms, in this crate's terms.
+pub(super) fn form_from_engine(form: &pdfcer_print::PaperForm) -> PaperForm {
+    PaperForm {
+        id: form.id,
+        name: form.name.clone(),
+        size_pt: form.size_pt,
     }
 }
 
@@ -175,17 +190,9 @@ pub struct ConfigSummary {
 
 /// Every sheet size this device offers.
 pub fn printer_forms(printer: &str) -> Result<Vec<PaperForm>, Unavailable> {
-    match pdfcer_print::printer_forms(printer) {
-        Ok(forms) => Ok(forms
-            .into_iter()
-            .map(|form| PaperForm {
-                id: form.id,
-                name: form.name,
-                size_pt: form.size_pt,
-            })
-            .collect()),
-        Err(error) => Err(Unavailable::Spooler(error.to_string())),
-    }
+    pdfcer_print::printer_forms(printer)
+        .map(|forms| forms.iter().map(form_from_engine).collect())
+        .map_err(|error| Unavailable::Spooler(error.to_string()))
 }
 
 /// Open the driver's **own** properties dialog.

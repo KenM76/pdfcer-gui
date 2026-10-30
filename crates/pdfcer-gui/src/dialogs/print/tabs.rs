@@ -227,6 +227,7 @@ pub(super) fn pages_layout(
 
     if super::poster::mode_row(ui, dialog) {
         scale_radios(ui, dialog);
+        super::presets::notes(ui, &dialog.presets);
     }
     ui.add_space(8.0);
     super::lines::row(ui, dialog);
@@ -405,6 +406,8 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.checkbox(&mut dialog.reverse, t::reverse())
         .on_hover_text(t::reverse_tooltip());
     ui.add_space(8.0);
+    super::colour::radios(ui, dialog);
+    ui.add_space(8.0);
 
     // R83: no duplex control for a device that cannot duplex. pdfcer does
     // NOT simulate it by reordering pages and asking the operator to reinsert
@@ -533,7 +536,16 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
 }
 
 /// The Size mode's four scale choices.
+/// The scale choices; greyed, with the reason on hover, while the document
+/// requires actual size.
 fn scale_radios(ui: &mut Ui, dialog: &mut PrintDialog) {
+    let locked = dialog.presets.scale_locked;
+    ui.add_enabled_ui(!locked, |ui| scale_choices(ui, dialog))
+        .response
+        .on_disabled_hover_text(crate::text::print::presets::scale_locked_tooltip());
+}
+
+fn scale_choices(ui: &mut Ui, dialog: &mut PrintDialog) {
     // Four modes, not three. `place_page`'s own test exists because
     // collapsing Fit and Shrink is the natural simplification and it silently
     // blows a business card up to fill a Letter sheet.

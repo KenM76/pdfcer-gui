@@ -886,10 +886,11 @@ fn texture_for(
     let view = inputs.doc.session.view();
     let rendered =
         pdfcer_render::render_page_with_view(&view, page_obj, raster_scale(size), &options).ok();
-    let Some(rendered) = rendered else {
+    let Some(mut rendered) = rendered else {
         dialog.preview_texture = None;
         return None;
     };
+    super::colour::recolour(rendered.pixmap.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
     // The ink mask is built HERE, from the same pixmap, on the same miss —
     // operator request O113. Once per raster and never per frame: it is a pure
     // function of these bytes, so recomputing it while the operator pans would

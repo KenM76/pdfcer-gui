@@ -511,6 +511,8 @@ pub(super) fn refusal_of(error: &FormatError) -> t::TextStyleRefusal {
         }
         FormatError::DecorationOnInvisibleText { .. } => t::TextStyleRefusal::DecorationInvisible,
         FormatError::OpacityUnrestorable => t::TextStyleRefusal::OpacityUnreadable,
+        FormatError::WordSpacingComposite { .. } => t::TextStyleRefusal::WordSpacingComposite,
+        FormatError::BadHorizScale(_) => t::TextStyleRefusal::ScaleNotPositive,
         FormatError::TextRun(VectorEditError::TextRunHasNoWidth { .. }) => {
             t::TextStyleRefusal::WidthNoBaseline
         }

@@ -178,7 +178,13 @@ pub enum Action {
     RepairFormFonts,
     /// Security ▸ Add validation evidence…: pick files, embed them in
     /// `/DSS`, as one undo entry. See `super::evidence`.
-    AddValidationEvidence,
+    AddValidationEvidence {
+        /// Also embed every certificate in each signature's CMS.
+        own_certs: bool,
+        /// The operator accepted the warning on a document certified with
+        /// no changes permitted.
+        allow_no_changes: bool,
+    },
     /// Security ▸ Allow edits under RC4: flip this document's RC4
     /// append policy. A session setting, not an edit. See `app::rc4`.
     ToggleRc4Append,
@@ -554,14 +560,8 @@ pub enum Action {
     ///
     /// # Why an action carries the geometry rather than deriving it
     ///
-    /// The old shell had the other arrangement and it produced the defect the
-    /// markup work exists to fix: its `Action::AddMarkupShape` derived a
-    /// rectangle from the page's own media-box centre and inserted it, so the
-    /// shape appeared in the middle of the page *"no matter where the operator
-    /// had been pointing"*. The operator's report was exact — **"they just drop
-    /// things into the center of the pdf window."** An action that carries
-    /// geometry the operator never supplied is not a shortcut; it is the
-    /// feature not working, and it passes any test that asks whether an
+    /// Geometry the operator never supplied (a page-centre default) is the
+    /// feature not working, and passes any test that asks only whether an
     /// annotation was added.
     ///
     /// # Units, and why the endpoints are RAW

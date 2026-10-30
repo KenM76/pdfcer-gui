@@ -556,6 +556,7 @@ impl RedactDialog {
                 // Last, and collapsed. `residual_sweep_line` promises the
                 // operator that the object numbers are "at the foot of this
                 // report"; this is the foot, and this is where they are.
+                disclosures::overlays(ui, theme, report);
                 disclosures::engine_notes(ui, theme, report);
             });
     }

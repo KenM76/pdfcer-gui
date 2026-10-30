@@ -251,6 +251,57 @@ pub fn removed_text_lines(report: &RedactionReport) -> RemovedText {
     }
 }
 
+// ---------------------------------------------------------------------------
+// 6. How each overlay mark was drawn
+// ---------------------------------------------------------------------------
+
+/// **The overlay counts**: marks trimmed to the page, marks wholly off it,
+/// marks with no fill, overlay pictures not drawn, fills not given in RGB,
+/// overlay text printed.
+/// Each is an inference about what the redacted page shows that the operator
+/// cannot see from the counts above, so each non-zero one is said.
+pub fn overlays(ui: &mut egui::Ui, theme: &Theme, report: &RedactionReport) {
+    let lines = overlay_lines(report);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "redact-overlays trimmed={} off_page={} transparent={} ro={} not_rgb={} text={} lines={}",
+            report.overlay_trimmed_to_page,
+            report.overlay_off_page_skipped,
+            report.overlay_transparent,
+            report.overlay_ro_not_drawn,
+            report.overlay_fill_not_rgb,
+            report.overlay_text_burned,
+            lines.len()
+        )
+    });
+    for line in lines {
+        ui.add_space(4.0);
+        ui.label(egui::RichText::new(line).color(theme.palette.text_muted));
+    }
+}
+
+/// One overlay count's sentence.
+type Say = fn(u64) -> String;
+
+/// Every sentence [`overlays`] draws, in order.
+#[must_use]
+pub fn overlay_lines(report: &RedactionReport) -> Vec<String> {
+    let words: [(u64, Say); 6] = [
+        (report.overlay_trimmed_to_page, t::overlay_trimmed),
+        (report.overlay_off_page_skipped, t::overlay_off_page),
+        (report.overlay_transparent, t::overlay_transparent),
+        (report.overlay_ro_not_drawn, t::overlay_ro_not_drawn),
+        (report.overlay_fill_not_rgb, t::overlay_fill_not_rgb),
+        (report.overlay_text_burned, t::overlay_text_burned),
+    ];
+    words
+        .into_iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, say)| say(n))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -489,5 +540,17 @@ mod tests {
             t::MAX_CHARS * 2,
             "the character cap reached the count of what is going"
         );
+    }
+
+    #[test]
+    fn an_overlay_count_is_said_only_when_it_is_not_zero() {
+        assert!(overlay_lines(&RedactionReport::default()).is_empty());
+        let mut report = RedactionReport::default();
+        report.overlay_trimmed_to_page = 2;
+        report.overlay_off_page_skipped = 1;
+        let lines = overlay_lines(&report);
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].starts_with("2 "), "{lines:?}");
+        assert!(lines[1].starts_with("1 "), "{lines:?}");
     }
 }

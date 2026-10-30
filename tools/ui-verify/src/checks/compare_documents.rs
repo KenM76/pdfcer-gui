@@ -272,6 +272,13 @@ fn mark_body(
         .get("annotations")
         .and_then(|n| n.parse().ok())
         .unwrap_or(0);
+    // Appearance is compared by default, so its paragraph goes with the marks.
+    if marked.get("note") != Some("1") {
+        return Ok(Some(format!(
+            "`{}`: the appearance comparison ran, so its summary note was wanted (note=1).",
+            marked.raw
+        )));
+    }
     if written < 4 || marked.get("top") != Some("mark-comparison") {
         return Ok(Some(format!(
             "`{}`: at least the four text changes as comments, as one undo entry on top of the stack, was \

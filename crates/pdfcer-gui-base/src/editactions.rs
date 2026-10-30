@@ -6,7 +6,7 @@ use pdfcer_core::dimension::{
     StyleOverrides, Unit,
 };
 use pdfcer_core::edit::GroupDeletion;
-use pdfcer_core::text_edit::{FormatRequest, NewFill, StyleTarget};
+use pdfcer_core::text_edit::{FormatRequest, MetricSpec, NewFill, ScriptPosition, StyleTarget};
 
 /// One property of a text run, and the value the operator chose for it.
 #[derive(Debug, Clone, PartialEq)]
@@ -61,7 +61,45 @@ pub enum StyleChange {
         /// The width wanted, in PDF points.
         width: f64,
     },
+    /// Character spacing (`Tc`), in thousandths of an em — the tracking unit,
+    /// re-derived by the engine at each run's own size.
+    CharSpacing(f64),
+    /// Word spacing (`Tw`), in thousandths of an em. The engine refuses it on
+    /// a composite-font run, where `Tw` does nothing.
+    WordSpacing(f64),
+    /// Horizontal scaling (`Tz`), in percent of normal width; 100 is normal.
+    HScale(f64),
+    /// Superscript, subscript or back to the baseline, at the engine's
+    /// documented script metrics (rise and size together).
+    Script(ScriptShift),
+    /// A free baseline shift (`Ts`), in thousandths of an em; positive raises.
+    Rise(f64),
 }
+
+/// The three baseline positions, as the shell's own `PartialEq` value
+/// (`ScriptPosition` is `#[non_exhaustive]`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScriptShift {
+    /// On the baseline at the run's own size.
+    Normal,
+    /// Raised and reduced.
+    Superscript,
+    /// Lowered and reduced.
+    Subscript,
+}
+
+impl ScriptShift {
+    /// The engine's position.
+    #[must_use]
+    pub const fn position(self) -> ScriptPosition {
+        match self {
+            Self::Normal => ScriptPosition::Normal,
+            Self::Superscript => ScriptPosition::Superscript,
+            Self::Subscript => ScriptPosition::Subscript,
+        }
+    }
+}
+
 impl StyleChange {
     /// Stamp this change onto a request that is already pinned.
     pub fn stamp(&self, req: FormatRequest) -> FormatRequest {
@@ -84,6 +122,11 @@ impl StyleChange {
             // press is one verb.
             Self::Weight { bold, italic } => req.style(StyleTarget::new(*bold, *italic)),
             Self::RenderMode(mode) => req.render_mode(*mode),
+            Self::CharSpacing(m) => req.char_spacing(MetricSpec::Relative(*m)),
+            Self::WordSpacing(m) => req.word_spacing(MetricSpec::Relative(*m)),
+            Self::HScale(percent) => req.h_scale(*percent),
+            Self::Script(shift) => req.script(shift.position()),
+            Self::Rise(m) => req.rise(MetricSpec::Relative(*m)),
             // Never stamped: `apply` routes it to `runwidth` first, and a
             // font file's plan is built once per gesture by `textstyle`,
             // which attaches it after this call.
@@ -102,6 +145,11 @@ impl StyleChange {
             Self::Weight { .. } => "weight",
             Self::RenderMode(_) => "render-mode",
             Self::RunWidth { .. } => "run-width",
+            Self::CharSpacing(_) => "char-spacing",
+            Self::WordSpacing(_) => "word-spacing",
+            Self::HScale(_) => "h-scale",
+            Self::Script(_) => "script",
+            Self::Rise(_) => "rise",
         }
     }
 }

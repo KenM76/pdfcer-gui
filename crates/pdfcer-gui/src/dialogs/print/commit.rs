@@ -52,6 +52,40 @@ impl PrintDialog {
         job: &Job,
         page_sizes: &[(f64, f64)],
     ) -> Result<SpoolReport, String> {
+        let mut bitmaps = self.render_sheets(doc, job, page_sizes)?;
+        // The orientation page is the FIRST PLANNED page — the one `plan`
+        // resolved orientation from. Not `pages[0]`: the sequence may be
+        // reversed or range-filtered. Not the first bitmap either: a poster
+        // sheet's bitmap is a tile, not the page.
+        let first_page_pt = job
+            .plans
+            .first()
+            .and_then(|plan| page_sizes.get(plan.index).copied())
+            .unwrap_or(US_LETTER_PORTRAIT_PT);
+        for sheet in &mut bitmaps {
+            super::colour::recolour(&mut sheet.rgba, self.output_color, "sheet"); // ui-text-exempt: trace token
+        }
+        spooler::spool(
+            printer,
+            &bitmaps,
+            // The RESOLVED device, never `self.device`. `AutoFromPages` is
+            // not a value `pdfcer-print` can act on, and handing it over would
+            // silently print on whatever the machine was standing on while the
+            // disclosure line above claimed a matched sheet.
+            self.effective_device(),
+            self.config.as_ref(),
+            first_page_pt,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    /// Render every planned page (or poster tile) as one sheet bitmap.
+    fn render_sheets(
+        &self,
+        doc: &OpenDoc,
+        job: &Job,
+        page_sizes: &[(f64, f64)],
+    ) -> Result<Vec<PageBitmap>, String> {
         // The SAME builder the preview calls. See `render_options` for the
         // choices it encodes and why a second copy of them here would defeat
         // the preview's purpose.
@@ -100,28 +134,7 @@ impl PrintDialog {
                 page_pt: size,
             });
         }
-
-        // The orientation page is the FIRST PLANNED page — the one `plan`
-        // resolved orientation from. Not `pages[0]`: the sequence may be
-        // reversed or range-filtered. Not the first bitmap either: a poster
-        // sheet's bitmap is a tile, not the page.
-        let first_page_pt = job
-            .plans
-            .first()
-            .and_then(|plan| page_sizes.get(plan.index).copied())
-            .unwrap_or(US_LETTER_PORTRAIT_PT);
-        spooler::spool(
-            printer,
-            &bitmaps,
-            // The RESOLVED device, never `self.device`. `AutoFromPages` is
-            // not a value `pdfcer-print` can act on, and handing it over would
-            // silently print on whatever the machine was standing on while the
-            // disclosure line above claimed a matched sheet.
-            self.effective_device(),
-            self.config.as_ref(),
-            first_page_pt,
-        )
-        .map_err(|error| error.to_string())
+        Ok(bitmaps)
     }
 
     /// One trace line describing the job the dialog is currently showing.
@@ -134,11 +147,12 @@ impl PrintDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "print-plan printer={printer:?} driver={:?} port={:?} sheets={:?} clipped={:?} \
+                "print-plan printer={printer:?} pending={} driver={:?} port={:?} sheets={:?} clipped={:?} \
                  claim={}:{} \
                  dpi={:?} capped={:?} uncapped_mb={:?} orientation={:?} duplex={:?} \
                  paper={:?} pick={} auto={} sheet={} largest={} mixed={} config={} \
                  scale={:?} tab={:?} {}",
+                self.device_pending,
                 self.printers.get(self.selected).map(|p| &p.driver),
                 self.printers.get(self.selected).map(|p| &p.port),
                 job.map(|j| j.plans.len()),

@@ -621,6 +621,17 @@ impl DialogsState {
         }
     }
 
+    /// Open the Add validation evidence window on the open document.
+    /// `false` when the document carries no signature, which the caller
+    /// leaves to `app::actions::evidence` to refuse in its own words.
+    #[cfg(feature = "signing")]
+    pub fn open_evidence(&mut self, status: &Status) -> bool {
+        if self.evidence.is_none() {
+            self.evidence = super::evidence::open_for(status);
+        }
+        self.evidence.is_some()
+    }
+
     /// Open the compacted-copy window, or answer why the engine refused.
     pub fn open_compact(
         &mut self,

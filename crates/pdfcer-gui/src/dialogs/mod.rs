@@ -41,6 +41,9 @@ pub mod defaultapp;
 /// elided line does not have.
 pub mod diagnostics;
 pub mod embed;
+/// Security ▸ Add validation evidence….
+#[cfg(feature = "signing")]
+pub mod evidence;
 /// The Insert-image window — a picture placed on the page as content, by a
 /// rectangle in millimetres.
 pub mod export_dxf;
@@ -482,6 +485,9 @@ pub struct DialogsState {
     /// open document's signatures.
     #[cfg(feature = "timestamp")]
     archive: Option<archive::ArchiveDialog>,
+    /// The Add validation evidence window. Document-scoped.
+    #[cfg(feature = "signing")]
+    evidence: Option<evidence::EvidenceDialog>,
     /// The Manage OCR models window. Application-scoped: it changes the
     /// models folder, not a document, so closing a document leaves it open
     /// and a running job finishes.
@@ -980,6 +986,10 @@ impl DialogsState {
         if self.archive.as_mut().map(|d| d.show(ctx, actions, prefs)) == Some(false) {
             self.archive = None;
         }
+        #[cfg(feature = "signing")]
+        if self.evidence.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.evidence = None;
+        }
         if self.unembed.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.unembed = None;
         }
@@ -1342,6 +1352,10 @@ impl DialogsState {
         #[cfg(feature = "timestamp")]
         {
             self.archive = None;
+        }
+        #[cfg(feature = "signing")]
+        {
+            self.evidence = None;
         }
     }
 

@@ -77,6 +77,14 @@ pub const fn device_unavailable() -> &'static str {
      what the sheet will look like. Choose another printer."
 }
 
+/// The selected printer has not answered yet; its reads run in the
+/// background, so the window stays usable meanwhile.
+#[must_use]
+pub const fn device_pending() -> &'static str {
+    "Asking this printer what it can do. A printer that is off or out of reach can take \
+     about a minute; you can choose another printer meanwhile."
+}
+
 /// The dialog was asked to draw with no document open.
 #[must_use]
 pub const fn no_document() -> &'static str {
@@ -690,8 +698,10 @@ mod poster;
 // Glob re-exported, for the reason argued over `footer` above.
 pub use poster::*;
 
+pub mod colour;
 /// **Fixed line width** — operator request O233.
 mod lines;
+pub mod presets;
 
 // Glob re-exported, for the reason argued over `footer` above.
 pub use lines::*;

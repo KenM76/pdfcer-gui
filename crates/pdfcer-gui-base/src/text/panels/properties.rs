@@ -229,8 +229,10 @@ mod markup;
 pub use markup::*;
 
 /// Render mode and single-run width words.
+mod runspacing;
 mod runtext;
 
+pub use runspacing::*;
 pub use runtext::*;
 
 // ===========================================================================

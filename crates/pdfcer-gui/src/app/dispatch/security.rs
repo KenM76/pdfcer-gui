@@ -50,8 +50,14 @@ impl PdfcerApp {
             actions.push(crate::app::actions::Action::ToggleRc4Append);
             return;
         }
+        #[cfg(feature = "signing")]
         if id == "file.add_validation_evidence" {
-            actions.push(crate::app::actions::Action::AddValidationEvidence);
+            if !self.dialogs.open_evidence(&self.status) {
+                actions.push(crate::app::actions::Action::AddValidationEvidence {
+                    own_certs: true,
+                    allow_no_changes: false,
+                });
+            }
             return;
         }
         if id == "file.purge_password_values" {

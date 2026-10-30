@@ -360,6 +360,11 @@ fn mark_row(
                 t::label_newer(&results.newer_name),
             ),
             summary_page: options.summary_page,
+            summary_note: results
+                .found
+                .visual
+                .as_ref()
+                .map(|v| t::summary_note(v.region_count(), &rows::visual_notes(v))),
         };
         actions.push(Action::NewComment(NewComment::ComparisonMarks(Box::new(
             marks,

@@ -1,0 +1,74 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [10 0 R] /SigFlags 3 >> /Perms << /DocMDP 12 0 R >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> /Contents 5 0 R /Annots [11 0 R 20 0 R 21 0 R 22 0 R] >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << >> /Contents 6 0 R >>
+endobj
+5 0 obj
+<< /Length 33 >>
+stream
+1 w 0 0 0 RG 80 500 200 250 re S
+endstream
+endobj
+6 0 obj
+<< /Length 33 >>
+stream
+1 w 0 0 0 RG 80 300 400 120 re S
+endstream
+endobj
+10 0 obj
+<< /FT /Sig /T (Certifier) /V 12 0 R /Kids [11 0 R] >>
+endobj
+11 0 obj
+<< /Parent 10 0 R /Subtype /Widget /Rect [60 60 300 120] /P 3 0 R /F 132 >>
+endobj
+12 0 obj
+<< /Type /Sig /Filter /Adobe.PPKLite /SubFilter /adbe.pkcs7.detached /Name (A. Certifier) /M (D:20260829120000Z) /Reference [ << /Type /SigRef /TransformMethod /DocMDP /TransformParams << /Type /TransformParams /P 1 /V /1.2 >> >> ] /ByteRange [0 1082 1594 1056                           ] /Contents <00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000> >>
+endobj
+20 0 obj
+<< /Type /Annot /Subtype /Square /Rect [120 560 320 700] /P 3 0 R /F 4 /T (A. Reviewer) /M (D:20260829090000Z) /Contents (Check this dimension.) /C [1 0 0] /CA 1 /Popup 21 0 R /NM (square-under-test) >>
+endobj
+21 0 obj
+<< /Type /Annot /Subtype /Popup /Rect [330 560 530 700] /P 3 0 R /Parent 20 0 R /Open false >>
+endobj
+22 0 obj
+<< /Type /Annot /Subtype /Text /Rect [120 520 140 540] /P 3 0 R /F 4 /T (B. Reviewer) /M (D:20260829100000Z) /Contents (Agreed, it is wrong.) /IRT 20 0 R /Name /Comment >>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000000015 00000 n 
+0000000137 00000 n 
+0000000200 00000 n 
+0000000342 00000 n 
+0000000446 00000 n 
+0000000528 00000 n 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000610 00000 n 
+0000000681 00000 n 
+0000000773 00000 n 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000001606 00000 n 
+0000001825 00000 n 
+0000001936 00000 n 
+trailer
+<< /Size 23 /Root 1 0 R >>
+startxref
+2124
+%%EOF

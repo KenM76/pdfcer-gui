@@ -48,3 +48,6 @@ pub const REGION_TAB_PREFIX: &str = "print.tab.";
 /// The highest-resolution field on the Pages tab. Drawn on every open, capped
 /// or not.
 pub const REGION_RESOLUTION: &str = "print.resolution";
+
+/// One region per colour choice, suffixed with the choice's trace word.
+pub const REGION_COLOUR_PREFIX: &str = "print.colour.";

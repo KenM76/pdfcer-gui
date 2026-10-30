@@ -94,6 +94,8 @@ pub mod text;
 /// **The colour of the text the operator CLICKED** — `OPERATOR_REQUESTS.md`
 /// O89, piece 1.
 pub mod textobject;
+/// Tracking, word spacing, width and baseline of the selected text.
+pub mod textspacing;
 /// **The armed tool's own settings** — the text pen's face, size and
 /// colour, the circular measure's pick list, and the three resize switches.
 pub mod tool;

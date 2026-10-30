@@ -732,7 +732,7 @@ impl OcrDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed.
-                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={} upscale={factor} filter={filter} magnify={} output={}",
+                "ocr-started engine={} page={} models={} source={source} model={name} builtin-lists={} user-words={} by-layout={} upscale={factor} filter={filter} magnify={} output={} codec={}",
                 model.engine,
                 self.scope.page_index,
                 folder.display(),
@@ -741,6 +741,7 @@ impl OcrDialog {
                 self.reading.by_layout(&model),
                 crate::ocr::magnify(&model).token(),
                 self.output.token(),
+                self.output.codec_token(),
             )
         });
         self.phase = Phase::Working(Job::spawn(Request {

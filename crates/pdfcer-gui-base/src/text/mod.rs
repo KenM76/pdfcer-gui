@@ -375,6 +375,9 @@ pub mod redactdestcopy;
 /// The removed words themselves, not the count of them.
 pub mod redactremoved;
 
+/// How each redaction's overlay mark was drawn.
+pub mod redactoverlay;
+
 /// **What a push button DOES** — every word the placement dialog's action
 /// chooser says, including the submit disclosure. Its own module because two of
 /// the seven choices write an address into the document that some other program

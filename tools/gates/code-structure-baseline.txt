@@ -172,7 +172,6 @@ fn crates/pdfcer-gui-base/src/prefs/mod.rs::default
 fn crates/pdfcer-gui-base/src/prefs/printing.rs::parse_key
 fn crates/pdfcer-gui-base/src/prefs/printing.rs::write_block
 fn crates/pdfcer-gui-base/src/printink.rs::from_rgba_premultiplied
-fn crates/pdfcer-gui-base/src/printspooler/mod.rs::plan
 fn crates/pdfcer-gui-base/src/printspooler/mod.rs::spool
 fn crates/pdfcer-gui-base/src/rail.rs::entry
 fn crates/pdfcer-gui-base/src/rail.rs::show
@@ -759,7 +758,6 @@ fn tools/ui-verify/src/checks/text_edit.rs::drive
 fn tools/ui-verify/src/checks/text_edit_real.rs::drive
 fn tools/ui-verify/src/checks/text_in_own_font.rs::drive
 fn tools/ui-verify/src/checks/text_markup.rs::drive
-fn tools/ui-verify/src/checks/text_render_mode.rs::drive
 fn tools/ui-verify/src/checks/text_selection.rs::drive
 fn tools/ui-verify/src/checks/text_tool.rs::drive
 fn tools/ui-verify/src/checks/theme_page.rs::measure_preset

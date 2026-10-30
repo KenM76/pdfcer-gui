@@ -100,4 +100,7 @@ pub struct ComparisonMarks {
     pub labels: (String, String),
     /// Whether a summary page is appended after the last page.
     pub summary_page: bool,
+    /// What the appearance comparison found and how it measured, for the
+    /// summary page; `None` when it did not run.
+    pub summary_note: Option<String>,
 }

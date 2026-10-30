@@ -12,7 +12,7 @@ pub const fn file_add_validation_evidence() -> CommandText {
         "Embed certificates, revocation lists (CRLs) and OCSP responses in this \
          signed document, so its signatures can still be checked years from now \
          without going online. Choose the files; the signers' own certificates \
-         are added too. pdfcer downloads nothing. Save afterwards to keep it: \
+         can be added too. pdfcer downloads nothing. Save afterwards to keep it: \
          the signatures stay valid. Refused on an unsigned document.",
     )
 }
@@ -68,15 +68,6 @@ pub const fn unsigned() -> &'static str {
      to support. The document is unchanged."
 }
 
-/// Refused: certified with no changes permitted.
-#[must_use]
-pub const fn no_changes_certified() -> &'static str {
-    "This document is certified with no changes permitted. The standard allows \
-     adding validation evidence even so, but Acrobat is reported to count it as a \
-     change and mark the certification broken, so pdfcer does not add it. The \
-     document is unchanged."
-}
-
 /// Refused: one file could not be read.
 #[must_use]
 pub fn file_unreadable(file: &str, why: &str) -> String {
@@ -117,4 +108,66 @@ pub const fn why_unterminated() -> &'static str {
 #[must_use]
 pub const fn why_empty() -> &'static str {
     "the file is empty"
+}
+
+/// The options window's title.
+#[must_use]
+pub const fn window_title() -> &'static str {
+    "Add validation evidence"
+}
+
+/// What the window does, above its options.
+#[must_use]
+pub fn intro(signatures: usize) -> String {
+    format!(
+        "This document has {signatures} signature(s). Choose the certificate, \
+         revocation list (CRL) and OCSP response files to embed; pdfcer downloads \
+         nothing. Save afterwards to keep them: the signatures stay valid."
+    )
+}
+
+/// The checkbox that includes the signers' own certificates.
+#[must_use]
+pub const fn own_certs() -> &'static str {
+    "Include the signers' own certificates"
+}
+
+/// Hover on the signers' certificates checkbox.
+#[must_use]
+pub const fn own_certs_hover() -> &'static str {
+    "Copy every certificate already inside each signature into the evidence as \
+     well, so the whole chain sits in one place, as the PDF standard describes. \
+     Leave this on unless you supply those certificates yourself."
+}
+
+/// The warning shown on a document certified with no changes permitted.
+#[must_use]
+pub const fn no_changes_certified() -> &'static str {
+    "This document is certified with no changes permitted. The PDF standard \
+     allows adding validation evidence even so, but Acrobat is reported to count \
+     it as a change and show the certification as broken."
+}
+
+/// The checkbox that accepts that warning.
+#[must_use]
+pub const fn allow_anyway() -> &'static str {
+    "Add it anyway"
+}
+
+/// Hover on Choose files… while the warning is not accepted.
+#[must_use]
+pub const fn needs_allow() -> &'static str {
+    "Tick \"Add it anyway\" first: this document is certified with no changes permitted."
+}
+
+/// The button that goes on to the file picker.
+#[must_use]
+pub const fn choose_button() -> &'static str {
+    "Choose files…"
+}
+
+/// The button that closes the window.
+#[must_use]
+pub const fn cancel_button() -> &'static str {
+    "Cancel"
 }
