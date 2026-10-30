@@ -4,7 +4,7 @@
 //! preview window `pdfcer_gui::dialogs::xfa_preview` draws for
 //! `view.form_preview`.
 
-use pdfcer_core::xfa::{LayoutWarning, PaintNoteKind};
+use pdfcer_core::xfa::{LayoutWarning, MergeWarningKind, PaintNoteKind};
 
 /// The status-line sentence when a dynamic XFA form opens: the pages shown
 /// are the file's stand-in, and where the computed ones are.
@@ -23,8 +23,8 @@ pub fn title() -> &'static str {
 /// The standing caveat above the pages.
 #[must_use]
 pub fn caveat() -> &'static str {
-    "These are the form's own pages, drawn from its layout. Filled-in values are \
-     not shown yet, and nothing here is saved to the file."
+    "These are the form's own pages, drawn from its layout with the values its data \
+     holds. Nothing here is saved to the file."
 }
 
 /// Shown while the layout is computed.
@@ -60,7 +60,7 @@ pub fn notes_heading() -> &'static str {
 /// Nothing was left out.
 #[must_use]
 pub fn notes_clean() -> &'static str {
-    "Nothing beyond the filled-in values."
+    "Nothing."
 }
 
 /// One kind of drawing note, with how many items it touched.
@@ -80,6 +80,7 @@ pub fn paint_note(kind: PaintNoteKind, count: usize) -> String {
         }
         PaintNoteKind::Image => "pictures not found in the file or not readable",
         PaintNoteKind::ImageTransparency => "picture transparency flattened onto white",
+        PaintNoteKind::StrokeApproximated => "3-D borders drawn as plain lines",
         _ => "drawn differently from the form",
     };
     format!("{count} × {what}")
@@ -120,6 +121,92 @@ pub fn layout_warning(warning: &LayoutWarning) -> &'static str {
         LayoutWarning::PageLimit => "The preview stops at its page limit.",
         LayoutWarning::ItemLimit => "The preview stops at its item limit.",
         _ => "The layout differs from the form in a way this preview cannot name.",
+    }
+}
+
+/// How many values the form's data filled in, above the notes.
+#[must_use]
+pub fn values_merged(values: usize, has_data: bool) -> String {
+    match (has_data, values) {
+        (false, _) => {
+            "The form carries no filled-in data, so its fields are drawn empty.".to_owned()
+        }
+        (true, 0) => {
+            "The form's data fills none of the fields this preview can match yet.".to_owned()
+        }
+        (true, 1) => "1 value filled in from the form's data.".to_owned(),
+        (true, n) => format!("{n} values filled in from the form's data."),
+    }
+}
+
+/// One kind of data reference that was not followed, with how many fields
+/// it left at their default value.
+#[must_use]
+pub fn merge_warning(kind: MergeWarningKind, count: usize) -> String {
+    let what = match kind {
+        MergeWarningKind::Unresolved => "fields whose data reference finds no data",
+        MergeWarningKind::WrongType => "fields whose data reference finds the wrong kind of data",
+        MergeWarningKind::Unsupported => {
+            "fields whose data reference uses a form this preview cannot follow yet"
+        }
+        MergeWarningKind::TooLong => "fields whose data reference is too long to follow",
+        _ => "fields whose data reference could not be followed",
+    };
+    format!("{count} × {what}, drawn with their default value")
+}
+
+/// The heading over the choices XFA leaves open.
+#[must_use]
+pub fn choices_heading() -> &'static str {
+    "Reading choices"
+}
+
+/// What the choices are, under their heading.
+#[must_use]
+pub fn choices_caveat() -> &'static str {
+    "Where the XFA standard leaves a choice open. The first answer of each follows \
+     the standard's own text; changing one redraws the form."
+}
+
+/// The five choices the XFA standard leaves open.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChoiceKey {
+    /// `MergeOptions::scope_search`.
+    ScopeSearch,
+    /// `MergeOptions::bare_ref`.
+    BareRef,
+    /// `MergeOptions::data_attributes`.
+    DataAttributes,
+    /// `PaintOptions::three_d_stroke`.
+    ThreeDStroke,
+    /// `PaintOptions::check_caption`.
+    CheckCaption,
+}
+
+/// One open choice: its label and its two answers, the default first.
+#[must_use]
+pub fn choice(key: ChoiceKey) -> (&'static str, [&'static str; 2]) {
+    match key {
+        ChoiceKey::ScopeSearch => (
+            "A short data name is looked for",
+            [
+                "In its group, then each enclosing one",
+                "In its own group only",
+            ],
+        ),
+        ChoiceKey::BareRef => (
+            "A binding with a reference but no match",
+            ["Is ignored", "Is followed as a data reference"],
+        ),
+        ChoiceKey::DataAttributes => (
+            "Attributes in the form's data",
+            ["Are values", "Are not data"],
+        ),
+        ChoiceKey::ThreeDStroke => ("3-D borders", ["Bevelled", "Plain lines"]),
+        ChoiceKey::CheckCaption => (
+            "A check box caption with no set width",
+            ["Fits its text", "Takes everything but the box"],
+        ),
     }
 }
 

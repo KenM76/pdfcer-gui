@@ -3,9 +3,13 @@
 a "Please wait..." stand-in, as a LiveCycle-authored form ships.
 
 The catalog says `/NeedsRendering true` and `/AcroForm /XFA` is a single XDP
-stream holding a template: a title draw, two captioned fields (text and
-numeric) and a rectangle. The engine lays it out as one page of five items
-with no warnings. No `datasets` packet: filled-in values are not merged yet.
+stream holding a template and its data: a title draw, three captioned fields
+and a rectangle. The engine lays it out as one page of six items with no
+warnings. `tenant` and `rent` bind `$.Tenant` and `$.Rent` by
+`match="dataRef"` and take "Jane Example" and "1250" from the datasets
+packet; `deposit` binds `$.Deposit`, which the data lacks, so the merge
+reports one unresolved reference. `tenant`'s border is lowered (a 3-D edge),
+so drawing it with plain strokes earns one approximated-stroke note.
 
 Run: python fixtures/dynamic-xfa.PROVENANCE.py
 """
@@ -17,10 +21,13 @@ XDP = (
     '<medium stock="letter" short="8.5in" long="11in"/></pageArea></pageSet>\n'
     '<subform name="body" w="7.5in" layout="position" h="4in">\n'
     '<draw name="title" x="0in" y="0in" w="7.5in" h="0.5in"><value><text>Synthetic Rental Form</text></value><font typeface="Arial" size="18pt"/></draw>\n'
-    '<field name="tenant" x="0in" y="0.8in" w="5in" h="0.35in"><caption reserve="1.5in"><value><text>Tenant name</text></value></caption><ui><textEdit/></ui><border><edge/></border></field>\n'
-    '<field name="rent" x="0in" y="1.4in" w="3in" h="0.35in"><caption reserve="1.5in"><value><text>Monthly rent</text></value></caption><ui><numericEdit/></ui><border><edge/></border></field>\n'
+    '<field name="tenant" x="0in" y="0.8in" w="5in" h="0.35in"><caption reserve="1.5in"><value><text>Tenant name</text></value></caption><ui><textEdit/></ui><border><edge stroke="lowered"/></border><bind match="dataRef" ref="$.Tenant"/></field>\n'
+    '<field name="rent" x="0in" y="1.4in" w="3in" h="0.35in"><caption reserve="1.5in"><value><text>Monthly rent</text></value></caption><ui><numericEdit/></ui><border><edge/></border><bind match="dataRef" ref="$.Rent"/></field>\n'
+    '<field name="deposit" x="3.5in" y="1.4in" w="3.5in" h="0.35in"><caption reserve="1.5in"><value><text>Deposit</text></value></caption><ui><textEdit/></ui><border><edge/></border><bind match="dataRef" ref="$.Deposit"/></field>\n'
     '<draw name="box" x="0in" y="2.2in" w="7in" h="1.2in"><value><rectangle><edge thickness="1pt"/></rectangle></value></draw>\n'
-    '</subform></subform></template></xdp:xdp>'
+    '</subform></subform></template>'
+    '<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><form1>'
+    '<Tenant>Jane Example</Tenant><Rent>1250</Rent></form1></xfa:data></xfa:datasets></xdp:xdp>'
 ).encode()
 STAND_IN = b"BT /F1 14 Tf 72 700 Td (Please wait... this is the stand-in page.) Tj ET"
 
