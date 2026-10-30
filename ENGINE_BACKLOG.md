@@ -809,6 +809,18 @@ The request O280 is built on, answered and consumed.
 
 - **G098** — a ce dimension cannot measure an area; `DimensionKind` has no area kind and `/A` in `build_measure_dict` is a placeholder. Also asks for a public `polygon_area`, the area twin of `polyline_length`, so the live readout during the pick and the committed label are one function. Answered (`DimensionKind::Perimeter { area: true }`, `vector::polygon_area`, `set_dimension_area`) and consumed by O280; the GUI computes no area of its own.
 
+## Engine arrivals at v0.107.0 — not verdict rows
+
+The answers to G238–G242 and X018. Each replaces a copy this shell keeps or unblocks a row above.
+
+- **Print decoration** — `pdfcer_core::edit::print_decoration` (`EditSession::decorate_for_print`). **wanted**: it composes marks and running text in one call; `dialogs::print::running` still reopens a copy to stamp, which G243 asks the engine to spare.
+- **Print preset merge** — `pdfcer_core::print_presets::merge` (`merge_print_presets`, `EffectivePrint`). **wanted**: replaces `dialogs::print::presets::apply`, the shell's copy of the merge (G238).
+- **IPP offer check and send** — `pdfcer_print::ipp::offer`, `pdfcer_print::ipp::send`, `TransportError::NeedsTls`, `TransportError::Other`. **wanted**: replaces `printspooler::network`'s query and send (G240).
+- **Vector-or-image print route** — `pdfcer_render::emf::print` (`print_metafile`, `RasterReason`, `EmfOutcome::print_fallback`). **wanted**: unblocks the Vector printing row (G241).
+- **Separation plates** — `pdfcer_render::plates` (`render_plates`, `to_plate_grey`). **wanted**: unblocks the Print separations row (G242).
+- **Visual-compare marks and notes** — `pdfcer_render::visual_compare::notes` (`region_marks`, `summary_note`, `settings_text`, `match_text`). **wanted**: replaces `panels::compare::rows::region_marks` and the shell's summary sentence (G239).
+- **Textures in a written PRC** — `SceneTexture` (its `SceneTexture::alpha` and `SceneTexture::wrap` are filled by `read_gltf`, never by this shell), `MeshScene::textures`, `SceneMaterial::texture`, `ScenePrimitive::uvs`, `PrcWriteReport::textured`, `PrcWriteError::BadTexture`. **wanted**: glTF insert reports `PrcWriteReport::textured` in place of saying textures are not carried.
+
 ## Engine arrivals at v0.103.0 to v0.106.0 — not verdict rows
 
 What these releases added and this shell has an opinion on. A wired item names
