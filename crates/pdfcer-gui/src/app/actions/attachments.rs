@@ -23,7 +23,9 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
         AttachmentAction::SaveCopy { at, name } => save_copy(doc, &at, &name),
         AttachmentAction::Paste { clip, replacing } => paste(doc, &clip, replacing),
         AttachmentAction::SaveModel { artwork } => super::models::save(doc, &artwork),
-        AttachmentAction::InsertModel { page } => super::models::insert(doc, page),
+        AttachmentAction::InsertModel { page, placement } => {
+            super::model_insert::insert(doc, page, &placement);
+        }
         AttachmentAction::SaveMesh { artwork } => super::models::save_mesh(doc, &artwork),
         // Opened in `apply`, which holds the dialogs; without `3d` there is
         // no button.

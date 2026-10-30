@@ -5,8 +5,8 @@
 //! *View…*. The `model-view-parts` line must list the engine's tree for it
 //! (`PrcFile::model_tree`): [`EXPECTED_NODES`] nodes at [`EXPECTED_DEPTHS`],
 //! all unnamed, and the `model3d.parts` region must be drawn inside the
-//! window. No corpus PRC names a part or stores one hidden (G135), so names
-//! and visibility are not asserted.
+//! window. Names and stored visibility are asserted on `named-tree.prc` by
+//! `the_3d_viewer_shows_and_hides_parts`.
 
 use crate::checks::driving::declared_in;
 use crate::checks::model_inferences::open_viewer;

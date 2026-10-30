@@ -1,10 +1,10 @@
 //! # `app::actions::gltf` — **a glTF model becomes PRC before it is placed**
 //!
 //! Insert 3D model accepts glTF (`.gltf`, `.glb`): `pdfcer_3d::read_gltf`
-//! reads it with the engine's defaults (linear base colours encoded to sRGB,
-//! +Y up turned to +Z up), `write_prc` writes the PRC that `ThreeDSpec`
-//! embeds, and every note and inference both calls make reaches the status
-//! line with the receipt. Textures are not carried, and the receipt says so.
+//! reads it with the window's colour and up-axis switches, `write_prc`
+//! writes the PRC that `ThreeDSpec` embeds, textures included, and every
+//! note and inference both calls make reaches the status line with the
+//! receipt.
 //!
 //! External buffers are read only from beside the model file: a URI that is
 //! absolute, names a drive or scheme, or climbs out with `..` resolves to
@@ -13,7 +13,7 @@
 
 use std::path::{Component, Path, PathBuf};
 
-use pdfcer_3d::{GltfOptions, read_gltf, write_prc};
+use pdfcer_3d::{GltfColours, GltfOptions, GltfUpAxis, read_gltf, write_prc};
 
 use crate::text::panels::models as t;
 
@@ -38,34 +38,49 @@ fn beside(dir: &Path, uri: &str) -> Option<PathBuf> {
     plain.then(|| dir.join(rel))
 }
 
-/// The bytes to embed for the model at `path`, and the notes its conversion
-/// owes the status line. Anything not glTF passes through unchanged with no
-/// notes; a glTF the engine cannot read or write is `Err` with the reason.
+/// The bytes to embed for the model at `path`, the notes its conversion
+/// owes the status line, and whether it was converted. Anything not glTF
+/// passes through unchanged with no notes; a glTF the engine cannot read or
+/// write is `Err` with the reason.
 ///
 /// # Errors
 ///
 /// The engine's `GltfError` or `PrcWriteError`, worded for the status line.
-pub(super) fn to_embed(path: &Path, data: Vec<u8>) -> Result<(Vec<u8>, Vec<String>), String> {
+pub(super) fn to_embed(
+    path: &Path,
+    data: Vec<u8>,
+    options: GltfOptions,
+) -> Result<(Vec<u8>, Vec<String>, bool), String> {
     if !is_gltf(path, &data) {
-        return Ok((data, Vec::new()));
+        return Ok((data, Vec::new(), false));
     }
     let dir = path.parent().unwrap_or(Path::new("."));
     let mut resolve = |uri: &str| beside(dir, uri).and_then(|p| std::fs::read(p).ok());
-    let import = read_gltf(&data, &mut resolve, GltfOptions::default())
-        .map_err(|e| t::gltf_refused(&e.to_string()))?;
+    let import =
+        read_gltf(&data, &mut resolve, options).map_err(|e| t::gltf_refused(&e.to_string()))?;
     let report = write_prc(&import.scene).map_err(|e| t::gltf_refused(&e.to_string()))?;
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(
-            "model-insert-gltf triangles={} notes={} inferred={} flat_normals={} empty={}",
+            "model-insert-gltf triangles={} notes={} inferred={} flat_normals={} empty={} textured={} colours={:?} up={:?}",
             report.triangles,
             import.notes.len(),
             import.inferred.len(),
             report.flat_normals,
-            report.empty_primitives
+            report.empty_primitives,
+            report.textured,
+            options.colours,
+            options.up_axis
         )
     });
-    let mut notes = vec![t::gltf_converted(report.triangles)];
+    let mut notes = vec![t::gltf_converted(
+        report.triangles,
+        options.colours == GltfColours::Linear,
+        options.up_axis == GltfUpAxis::ZUp,
+    )];
+    if report.textured > 0 {
+        notes.push(crate::text::model3d::gltf_textured(report.textured));
+    }
     notes.extend(import.inferred.iter().map(|i| t::gltf_inferred(i)));
     notes.extend(import.notes.iter().cloned());
     if report.flat_normals > 0 {
@@ -74,7 +89,7 @@ pub(super) fn to_embed(path: &Path, data: Vec<u8>) -> Result<(Vec<u8>, Vec<Strin
     if report.empty_primitives > 0 {
         notes.push(t::gltf_empty_primitives(report.empty_primitives));
     }
-    Ok((report.prc, notes))
+    Ok((report.prc, notes, true))
 }
 
 #[cfg(test)]
@@ -94,7 +109,13 @@ mod tests {
     /// A PRC file passes through unchanged and adds no notes.
     #[test]
     fn a_prc_passes_through() {
-        let (data, notes) = to_embed(Path::new("m.prc"), b"PRC....".to_vec()).unwrap();
+        let (data, notes, converted) = to_embed(
+            Path::new("m.prc"),
+            b"PRC....".to_vec(),
+            GltfOptions::default(),
+        )
+        .unwrap();
+        assert!(!converted);
         assert_eq!(data, b"PRC....");
         assert!(notes.is_empty());
     }

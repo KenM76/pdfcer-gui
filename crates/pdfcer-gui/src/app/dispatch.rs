@@ -73,6 +73,7 @@ mod forms;
 /// `markup.finish` belongs with them rather than here; see its header for why
 /// the operand — *which* corner — is the seam.
 pub(crate) mod markupnodes;
+mod models;
 /// Format ▸ Nodes — add a node and change the kind of nodes and segments.
 pub(crate) mod nodeshape;
 /// **The four verbs whose subject is a PANEL** — float it, dock it back,
@@ -785,7 +786,7 @@ impl PdfcerApp {
                     self.dialogs.link.request(doc.pages.len());
                 }
             }
-            // Insert ▸ 3D model: the picker runs in the apply arm, as Attach's does.
+            // Insert ▸ 3D model: pick the file, then the options window.
             "edit.insert_3d" => {
                 if !self.capabilities().edit_content {
                     crate::diag::trace(|| {
@@ -794,13 +795,7 @@ impl PdfcerApp {
                     });
                     return;
                 }
-                if let Status::Open(doc) = &self.status {
-                    actions.push(Action::Attachment(
-                        crate::app::actions::attachments::AttachmentAction::InsertModel {
-                            page: doc.view.page_index,
-                        },
-                    ));
-                }
+                models::insert(&mut self.dialogs, &self.status);
             }
             // **Export to DXF.** The FIRST entry in `reach`'s scaffold list
             // and one of three whose recorded reason was *"No recorded reason

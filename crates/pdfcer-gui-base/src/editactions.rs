@@ -1079,6 +1079,25 @@ pub enum RedactAction {
 /// See the module header for what makes them a family, and [`AttachmentRef`]
 /// for why the operand is neither an index nor an object id.
 ///
+/// How Insert 3D model places a model.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelPlacement {
+    /// The U3D, PRC, STEP or glTF file.
+    pub source: std::path::PathBuf,
+    /// When a reader starts the model.
+    pub activation: pdfcer_core::threed::ThreeDActivation,
+    /// The opening view's lighting; `None` is automatic: CAD lights for a
+    /// model converted from glTF, and no view written for any other.
+    pub lighting: Option<pdfcer_core::threed::ThreeDLighting>,
+    /// Draw a picture of the model as its poster; `false` draws the
+    /// engine's plain placeholder.
+    pub render_poster: bool,
+    /// glTF base colours read as linear (the standard), else as stored.
+    pub gltf_linear: bool,
+    /// glTF's +Y up turned to +Z up, else the axes kept as stored.
+    pub gltf_z_up: bool,
+}
+
 /// `PartialEq` only: a 3D view's camera is floating point.
 #[derive(Debug, Clone, PartialEq)]
 pub enum AttachmentAction {
@@ -1227,12 +1246,13 @@ pub enum AttachmentAction {
         /// The row as the panel listed it.
         artwork: pdfcer_core::threed::ThreeDArtwork,
     },
-    /// **Pick a U3D, PRC or STEP file and place it on `page`** as a 3D
-    /// annotation, centred, one undo entry. The picker runs in the apply arm,
-    /// as it does for [`Self::Attach`].
+    /// **Place the model Insert 3D model's window chose on `page`** as a 3D
+    /// annotation, centred, one undo entry.
     InsertModel {
         /// The 0-based page, frozen when the command ran.
         page: usize,
+        /// The file and the window's choices.
+        placement: ModelPlacement,
     },
     /// **Decode a listed PRC model and write its triangles as STL or OBJ**
     /// to a file the operator picks.

@@ -74,8 +74,25 @@ error `Assembled::tree_error` holds the engine's sentence and stands in for
 the list. One row per node in the engine's order, indented 12 pt per depth:
 the name, or *unnamed*; weak when the node is not drawn; a hover note when
 the name is borrowed from its prototype or part (`NameSource`); *hidden*,
-*suppressed* or *not drawn* as stored. Read-only: an assembled mesh carries
-no link back to its node (G134).
+*suppressed* or *not drawn* as stored, and a count of its markups and
+views. The viewer assembles with `StoredVisibility::DrawAll`, so every part is
+meshed and `ModelNode::placements` with `AssembledModel::mesh_placements`
+say which meshes a node draws. `parts::Visibility` holds the hidden set
+(opening on the stored state: every node not `drawn`) and one highlighted
+node. Each row has a show box and a selectable name that highlights the part;
+its context menu isolates it (keeping its ancestors and descendants), shows
+every part, or returns to the stored state. `Visibility::painted` lends the
+model a paint for one render: hidden meshes alpha 0 (the renderer skips
+them), the highlighted node's in the selection colour with its textures
+cleared, restored after. Posters and saved pictures take the hiding, never
+the highlight. Nothing is written into the file; the trace is
+`model-view-parts-state why= hidden= highlight= version=`.
+
+## Lighting for saved views
+
+Beside *Save views in the file*, a list of the engine's lighting schemes
+(`ThreeDLighting`, region `model3d.views_lighting`), unset by default. When
+set, every view written carries it (`ThreeDSavedView::with_lighting`).
 
 ## Use this view on the page; Save picture…
 

@@ -46,6 +46,8 @@ const MODEL_ENV: &str = "PDFCER_DIAG_MODEL_PATH";
 const DOC: &str = "D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf";
 pub(crate) const MODEL: &str = "D:/Dev/pdfcer/fixtures/synthetic/prc/assembly.prc";
 const RENDERED: &str = "model-view-rendered";
+const INSERT_OPENED: &str = "insert-model-opened";
+const INSERT_PLACE: &str = "insert-model.place";
 
 /// See the module documentation.
 pub struct TheModelViewerZoomsAtThePointerAndFillsTheScreen;
@@ -148,12 +150,61 @@ pub(crate) fn launch_with_model_env(
     Ok((session, pointer))
 }
 
-/// Press the ribbon's 3D model button, raising the Edit tab first if needed.
+/// Place the model the picker answers with the Insert 3D model window's
+/// defaults: the ribbon's 3D model button, then Place.
 pub(crate) fn press_insert(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
 ) -> Result<bool> {
+    press_insert_with(ctx, session, pointer, &[])
+}
+
+/// The ribbon's 3D model button, then each of `choices` (regions in the
+/// Insert 3D model window) and Place. `false` when the button was not found.
+/// When the window never opens (the picker answered nothing) nothing more is
+/// pressed, and the caller's oracle reports the missing placement.
+pub(crate) fn press_insert_with(
+    ctx: &CheckContext,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    choices: &[&str],
+) -> Result<bool> {
+    let opened = session.trace()?.events(INSERT_OPENED).count();
+    if !press_ribbon(ctx, session, pointer)? {
+        return Ok(false);
+    }
+    let ui_rect = ui_rect(ctx)?;
+    let mut drawn = false;
+    for _ in 0..20 {
+        let trace = session.trace()?;
+        if trace.events(INSERT_OPENED).count() > opened
+            && declared_in(&trace, ui_rect, INSERT_PLACE).is_some()
+        {
+            drawn = true;
+            break;
+        }
+        session.settle(10);
+    }
+    if !drawn {
+        return Ok(true);
+    }
+    session.settle(5);
+    for region in choices.iter().chain(std::iter::once(&INSERT_PLACE)) {
+        let trace = session.trace()?;
+        let Some((rect, vp)) = declared_in(&trace, ui_rect, region) else {
+            return Err(Error::new(format!(
+                "the Insert 3D model window drew no `{region}`."
+            )));
+        };
+        pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
+        session.settle(15);
+    }
+    Ok(true)
+}
+
+/// Press the ribbon's 3D model button, raising the Edit tab first if needed.
+fn press_ribbon(ctx: &CheckContext, session: &Session, pointer: &ScriptedPointer) -> Result<bool> {
     let ui_rect = ui_rect(ctx)?;
     let mut trace = session.trace()?;
     if declared_in(&trace, ui_rect, RIBBON_ITEM).is_none()

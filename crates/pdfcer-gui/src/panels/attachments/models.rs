@@ -45,6 +45,13 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) {
     let mut first_mesh = true;
     let mut first_poster = true;
     for (ordinal, artwork) in listed.iter().enumerate() {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "models-row page={} views={} activation={:?}",
+                artwork.page_index, artwork.view_count, artwork.activation
+            )
+        });
         ui.label(t::row(artwork));
         if let Some(said) = t::source(artwork) {
             ui.label(egui::RichText::new(said).small().weak());

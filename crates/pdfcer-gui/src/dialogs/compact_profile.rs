@@ -158,7 +158,8 @@ fn write_file(mut settings: OptimizeSettings) -> Result<Option<String>, String> 
     };
     settings.allow_signed = false;
     let text = profile::to_profile(&settings);
-    std::fs::write(&path, &text).map_err(|e| t::file_problem(&path.display().to_string(), &e.to_string()))?;
+    std::fs::write(&path, &text)
+        .map_err(|e| t::file_problem(&path.display().to_string(), &e.to_string()))?;
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace

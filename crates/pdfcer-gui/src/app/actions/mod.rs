@@ -59,6 +59,7 @@ mod gltf;
 mod links;
 /// Where a Review mark lands: an annotation, or the page's own content.
 mod markupdest;
+mod model_insert;
 /// Saving an embedded 3D model out to a file.
 pub(crate) mod models;
 mod newcomment;

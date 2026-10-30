@@ -1,11 +1,8 @@
 //! Placing a 3D model on a page, and saving an embedded one's data out to a file.
 
-use pdfcer_core::edit::MarkupOptions;
 use pdfcer_core::image_import::ImportedImage;
-use pdfcer_core::page_tree::Rect;
 use pdfcer_core::threed::{
-    PlaceholderReason, ThreeDArtwork, ThreeDFormat, ThreeDPoster, ThreeDSavedView, ThreeDSpec,
-    extract_3d, list_3d_with_notes,
+    ThreeDArtwork, ThreeDFormat, ThreeDSavedView, extract_3d, list_3d_with_notes,
 };
 
 use crate::app::state::OpenDoc;
@@ -160,9 +157,21 @@ pub(crate) enum Unassembled {
 /// `fit` allows.
 #[cfg(feature = "3d")]
 pub(crate) fn assemble(data: &[u8], fit: pdfcer_3d::MeshFit) -> Result<Assembled, Unassembled> {
+    assemble_as(data, fit, pdfcer_3d::StoredVisibility::Honour)
+}
+
+/// [`assemble`], drawing the parts the file stores hidden or suppressed
+/// when `stored` is `DrawAll`: the viewer's part list shows and hides them.
+#[cfg(feature = "3d")]
+fn assemble_as(
+    data: &[u8],
+    fit: pdfcer_3d::MeshFit,
+    stored: pdfcer_3d::StoredVisibility,
+) -> Result<Assembled, Unassembled> {
     use pdfcer_3d::AssembleError;
     let mut options = pdfcer_3d::AssembleOptions::default();
     options.mesh_fit = fit;
+    options.stored_visibility = stored;
     let model = pdfcer_3d::assemble_with_options(data, &options).map_err(|why| match why {
         AssembleError::NotPrc => Unassembled::NotPrc,
         AssembleError::CompressedOnly { count, .. } => Unassembled::Empty { compressed: count },
@@ -190,7 +199,7 @@ pub(crate) fn assemble(data: &[u8], fit: pdfcer_3d::MeshFit) -> Result<Assembled
 /// [`load_view`] read beside the meshes.
 #[cfg(feature = "3d")]
 pub(crate) fn refit(model: &Assembled, fit: pdfcer_3d::MeshFit) -> Result<Assembled, Unassembled> {
-    let mut again = assemble(&model.data, fit)?;
+    let mut again = assemble_as(&model.data, fit, pdfcer_3d::StoredVisibility::DrawAll)?;
     again.data.clone_from(&model.data);
     again.aspect = model.aspect;
     again.opening.clone_from(&model.opening);
@@ -249,14 +258,15 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
     Ok(model)
 }
 
-/// [`assemble`] at the default fit, or, when that draws nothing because
+/// [`assemble_as`] with every part drawn, the stored-hidden ones too, at the default fit, or, when that draws nothing because
 /// every mesh is compressed, in part, so the viewer has something to show
 /// and says how it was drawn.
 #[cfg(feature = "3d")]
 fn assemble_for_view(data: &[u8]) -> Result<Assembled, Unassembled> {
-    match assemble(data, pdfcer_3d::MeshFit::default()) {
+    use pdfcer_3d::StoredVisibility::DrawAll;
+    match assemble_as(data, pdfcer_3d::MeshFit::default(), DrawAll) {
         Err(Unassembled::Empty { compressed }) if compressed > 0 => {
-            let mut model = assemble(data, pdfcer_3d::MeshFit::Partial)
+            let mut model = assemble_as(data, pdfcer_3d::MeshFit::Partial, DrawAll)
                 .map_err(|_| Unassembled::Empty { compressed })?;
             model.opened_in_part = true;
             Ok(model)
@@ -560,141 +570,6 @@ fn still_listed(doc: &OpenDoc, artwork: &ThreeDArtwork) -> bool {
             && row.stream_id == artwork.stream_id
             && row.source == artwork.source
     })
-}
-
-/// Pick a U3D or PRC file and place it, centred, on `page`: one undo entry.
-pub(super) fn insert(doc: &mut OpenDoc, page: usize) {
-    let crate::app::files::Picked::Path(source) = crate::app::files::pick_model_source() else {
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            "model-insert-cancelled".to_owned()
-        });
-        return;
-    };
-    let data = match std::fs::read(&source) {
-        Ok(data) => data,
-        Err(error) => {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!("model-insert-unreadable kind={:?}", error.kind())
-            });
-            super::record_note(doc.edit_epoch, t::insert_unreadable(&error.to_string()));
-            return;
-        }
-    };
-    #[cfg(feature = "3d")]
-    let (data, converted) = match super::gltf::to_embed(&source, data) {
-        Ok(done) => done,
-        Err(why) => {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                "model-insert-gltf-refused".to_owned()
-            });
-            super::record_note(doc.edit_epoch, why);
-            return;
-        }
-    };
-    #[cfg(not(feature = "3d"))]
-    let converted: Vec<String> = Vec::new();
-    let Some(crop) = doc.pages.get(page).map(|p| p.crop_box) else {
-        return;
-    };
-    let spec = match ThreeDSpec::new(centred(crop), data) {
-        Ok(spec) => spec,
-        Err(error) => {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!("model-insert-refused error={error:?}")
-            });
-            super::record_note(doc.edit_epoch, t::insert_refused(&error));
-            return;
-        }
-    };
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed
-        format!(
-            "model-insert-requested page={page} format={:?} bytes={}",
-            spec.format,
-            spec.data.len()
-        )
-    });
-    let format = spec.format.clone();
-    let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-3d", MarkupOptions::default())
-    else {
-        return;
-    };
-    super::apply::vector_edit(doc, "add-3d", page, 1, |session| {
-        session
-            .add_3d_annotation(page, &spec, &options)
-            .map(|outcome| {
-                let mut notes = vec![t::inserted(&format, page)];
-                notes.extend(converted.iter().cloned());
-                notes.extend(poster_note(&outcome.poster));
-                if outcome.below_required_version() {
-                    notes.push(t::below_version(
-                        &outcome.required_version.to_string(),
-                        &outcome.document_version.to_string(),
-                    ));
-                }
-                notes.extend(receipt);
-                notes
-            })
-    });
-}
-
-/// The poster the engine drew, traced and worded for the status line: a
-/// rendered one is an inference about the model's look and is disclosed.
-fn poster_note(poster: &ThreeDPoster) -> Option<String> {
-    let (drawn, reason) = match poster {
-        ThreeDPoster::Supplied => ("supplied", "-"),
-        ThreeDPoster::Rendered(_) => ("rendered", "-"),
-        ThreeDPoster::Placeholder(why) => ("placeholder", placeholder_token(why)),
-        _ => ("other", "-"),
-    };
-    crate::diag::trace(|| {
-        // ui-text-exempt: diagnostic trace, never displayed
-        let uncoloured = match poster {
-            ThreeDPoster::Rendered(r) => r.uncoloured_meshes,
-            _ => 0,
-        };
-        format!("model-insert-poster drawn={drawn} reason={reason} uncoloured={uncoloured}")
-    });
-    match poster {
-        ThreeDPoster::Rendered(r) => Some(t::poster_rendered(
-            r.compressed_skipped > 0 || r.wires_skipped > 0 || r.unplaced.is_some(),
-            r.uncoloured_meshes,
-            r.meshes,
-        )),
-        ThreeDPoster::Placeholder(why) => Some(t::poster_placeholder(&why.to_string())),
-        _ => None,
-    }
-}
-
-/// A trace token for `why`.
-fn placeholder_token(why: &PlaceholderReason) -> &'static str {
-    match why {
-        PlaceholderReason::Requested => "requested",
-        PlaceholderReason::NotDecoded { .. } => "not-decoded",
-        PlaceholderReason::NoDecoder => "no-decoder",
-        PlaceholderReason::Undecodable { .. } => "undecodable",
-        _ => "other",
-    }
-}
-
-/// A 4:3 box, half the page's width (capped by its height), centred on it.
-fn centred(page: Rect) -> Rect {
-    let width = (page.urx - page.llx).abs();
-    let height = (page.ury - page.lly).abs();
-    let w = (width / 2.0).min(height * 0.75 * 4.0 / 3.0);
-    let h = w * 0.75;
-    let cx = (page.llx + page.urx) / 2.0;
-    let cy = (page.lly + page.ury) / 2.0;
-    Rect {
-        llx: cx - w / 2.0,
-        lly: cy - h / 2.0,
-        urx: cx + w / 2.0,
-        ury: cy + h / 2.0,
-    }
 }
 
 #[cfg(test)]

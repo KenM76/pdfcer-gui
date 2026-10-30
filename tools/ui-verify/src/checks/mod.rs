@@ -886,6 +886,7 @@ pub mod model_view_poster;
 pub mod button_icon;
 /// A picture pasted while a push button is selected becomes its picture.
 pub mod button_icon_paste;
+pub mod model_options;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
 /// The 3D viewer opens on the file's own saved view, and *File's view* returns

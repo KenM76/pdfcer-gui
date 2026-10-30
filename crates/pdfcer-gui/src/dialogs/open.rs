@@ -765,4 +765,11 @@ impl DialogsState {
         }
         self.insert_image = insert_image::open_for(status, image, name);
     }
+
+    /// Open Insert 3D model on `source`, to place it on `page`.
+    pub fn open_insert_model(&mut self, status: &Status, source: std::path::PathBuf, page: usize) {
+        if self.insert_model.is_none() {
+            self.insert_model = super::insert_model::open_for(status, source, page);
+        }
+    }
 }

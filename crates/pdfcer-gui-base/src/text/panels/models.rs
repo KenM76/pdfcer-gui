@@ -4,7 +4,8 @@
 //! `pdfcer_gui::app::actions::models`.
 
 use pdfcer_core::threed::{
-    MAX_3D_ARTWORKS, ThreeDArtwork, ThreeDEmbedError, ThreeDFormat, ThreeDNotes, ThreeDSource,
+    MAX_3D_ARTWORKS, ThreeDActivation, ThreeDArtwork, ThreeDEmbedError, ThreeDFormat, ThreeDNotes,
+    ThreeDSource,
 };
 
 /// The section's heading.
@@ -38,6 +39,11 @@ pub fn row(artwork: &ThreeDArtwork) -> String {
     }
     if !artwork.has_poster {
         said.push_str(", no preview picture");
+    }
+    match artwork.activation {
+        ThreeDActivation::PageOpen => said.push_str(", starts when the page opens"),
+        ThreeDActivation::PageVisible => said.push_str(", starts when the page comes into view"),
+        _ => {}
     }
     said
 }
@@ -167,13 +173,20 @@ pub fn gltf_refused(detail: &str) -> String {
     format!("The glTF model could not be converted: {detail}")
 }
 
-/// The conversion receipt: how the glTF became PRC, and what it lost.
+/// The conversion receipt: how the glTF became PRC.
 #[must_use]
-pub fn gltf_converted(triangles: usize) -> String {
-    format!(
-        "Converted the glTF model to PRC ({triangles} triangles): colours encoded to sRGB, \
-         turned so +Z is up. Textures are not carried."
-    )
+pub fn gltf_converted(triangles: usize, linear: bool, z_up: bool) -> String {
+    let colours = if linear {
+        "colours encoded to sRGB"
+    } else {
+        "colours kept as stored"
+    };
+    let axes = if z_up {
+        "turned so +Z is up"
+    } else {
+        "axes kept as stored"
+    };
+    format!("Converted the glTF model to PRC ({triangles} triangles): {colours}, {axes}.")
 }
 
 /// One thing the glTF reader inferred rather than read.

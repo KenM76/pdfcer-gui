@@ -98,6 +98,8 @@ pub mod import_text;
 /// Pages ▸ Insert blank pages… — size, count and position.
 pub mod insert_blank;
 pub mod insert_image;
+/// Insert ▸ 3D model….
+pub mod insert_model;
 pub mod insert_pages;
 /// The four "where do the pages land" radios both insert dialogs share.
 pub(crate) mod insert_where;
@@ -472,6 +474,8 @@ pub struct DialogsState {
     /// which is the right answer rather than a loss, for [`Self::ocr`]'s reason
     /// applied to an operand instead of to a result.
     insert_image: Option<insert_image::InsertImageDialog>,
+    /// The Insert 3D model window. Document-scoped.
+    insert_model: Option<insert_model::InsertModelDialog>,
 
     /// The Add-link round trip. Document-scoped: it places a link on a page
     /// of the open file.
@@ -918,6 +922,9 @@ impl DialogsState {
         }
         if self.insert_image.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.insert_image = None;
+        }
+        if self.insert_model.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+            self.insert_model = None;
         }
         self.link.show(ctx, actions);
         // `prefs` on all three export windows — O196, *"the export windows
@@ -1374,6 +1381,7 @@ impl DialogsState {
             self.model_trust = None;
         }
         self.insert_image = None;
+        self.insert_model = None;
         self.insert_pages = None;
         self.insert_blank = None;
         self.import_text = None;
