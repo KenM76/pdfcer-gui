@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 14774b1fe7ced4056e1a14e7e2d2464c8940edb1
+# baseline: fa9af1796b9e36481fd7320cd19a2609763138cd
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 10930
+# items: 10982
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -1085,14 +1085,20 @@ pdfcer-core enum pdfcer_core::xfa::layout::LayoutWarning
 pdfcer-core enum pdfcer_core::xfa::layout::NegativeCoordinates
 pdfcer-core enum pdfcer_core::xfa::layout::NestedOverflow
 pdfcer-core enum pdfcer_core::xfa::layout::adhere::PageAreaKeep
+pdfcer-core enum pdfcer_core::xfa::merge::BareRef
+pdfcer-core enum pdfcer_core::xfa::merge::DataAttributes
+pdfcer-core enum pdfcer_core::xfa::merge::MergeWarningKind
+pdfcer-core enum pdfcer_core::xfa::merge::ScopeSearch
 pdfcer-core enum pdfcer_core::xfa::packets::XfaError
 pdfcer-core enum pdfcer_core::xfa::paint::CaptionFont
+pdfcer-core enum pdfcer_core::xfa::paint::CheckCaption
 pdfcer-core enum pdfcer_core::xfa::paint::EdgePlacement
 pdfcer-core enum pdfcer_core::xfa::paint::FontWeight
 pdfcer-core enum pdfcer_core::xfa::paint::ImageOverflow
 pdfcer-core enum pdfcer_core::xfa::paint::ImagePlacement
 pdfcer-core enum pdfcer_core::xfa::paint::MissingFill
 pdfcer-core enum pdfcer_core::xfa::paint::PaintNoteKind
+pdfcer-core enum pdfcer_core::xfa::paint::ThreeDStroke
 pdfcer-core enum pdfcer_core::xfa::template::AnchorType
 pdfcer-core enum pdfcer_core::xfa::template::ContainerKind
 pdfcer-core enum pdfcer_core::xfa::template::LayoutStrategy
@@ -4104,6 +4110,8 @@ pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::fit
 pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::name
 pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::orthographic
 pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::up
+pdfcer-core field pdfcer_core::threed::view_list::SavedViews::default
+pdfcer-core field pdfcer_core::threed::view_list::SavedViews::views
 pdfcer-core field pdfcer_core::threed::view_write::ThreeDViewsOutcome::annot_id
 pdfcer-core field pdfcer_core::threed::view_write::ThreeDViewsOutcome::default
 pdfcer-core field pdfcer_core::threed::view_write::ThreeDViewsOutcome::disclosures
@@ -4319,18 +4327,32 @@ pdfcer-core field pdfcer_core::xfa::layout::LayoutRect::x
 pdfcer-core field pdfcer_core::xfa::layout::LayoutRect::y
 pdfcer-core field pdfcer_core::xfa::layout::XfaLayout::pages
 pdfcer-core field pdfcer_core::xfa::layout::XfaLayout::warnings
+pdfcer-core field pdfcer_core::xfa::merge::BoundValue::path
+pdfcer-core field pdfcer_core::xfa::merge::BoundValue::value
+pdfcer-core field pdfcer_core::xfa::merge::MergeOptions::bare_ref
+pdfcer-core field pdfcer_core::xfa::merge::MergeOptions::data_attributes
+pdfcer-core field pdfcer_core::xfa::merge::MergeOptions::scope_search
+pdfcer-core field pdfcer_core::xfa::merge::MergeWarning::kind
+pdfcer-core field pdfcer_core::xfa::merge::MergeWarning::path
+pdfcer-core field pdfcer_core::xfa::merge::MergeWarning::reference
+pdfcer-core field pdfcer_core::xfa::merge::MergedForm::bound
+pdfcer-core field pdfcer_core::xfa::merge::MergedForm::has_data
+pdfcer-core field pdfcer_core::xfa::merge::MergedForm::template
+pdfcer-core field pdfcer_core::xfa::merge::MergedForm::warnings
 pdfcer-core field pdfcer_core::xfa::packets::XdpPacket::name
 pdfcer-core field pdfcer_core::xfa::packets::XdpPacket::namespace
 pdfcer-core field pdfcer_core::xfa::packets::XdpPacket::range
 pdfcer-core field pdfcer_core::xfa::paint::PaintNote::kind
 pdfcer-core field pdfcer_core::xfa::paint::PaintNote::path
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::caption_font
+pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::check_caption
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::edge_placement
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::font_weight
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::image_dpi
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::image_overflow
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::image_placement
 pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::missing_fill
+pdfcer-core field pdfcer_core::xfa::paint::PaintOptions::three_d_stroke
 pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::content
 pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::notes
 pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::resources
@@ -4638,6 +4660,7 @@ pdfcer-core fn pdfcer_core::threed::list_3d
 pdfcer-core fn pdfcer_core::threed::list_3d_with_notes
 pdfcer-core fn pdfcer_core::threed::sniff_3d_format
 pdfcer-core fn pdfcer_core::threed::view::default_3d_view
+pdfcer-core fn pdfcer_core::threed::view_list::saved_3d_views
 pdfcer-core fn pdfcer_core::vector::centerline::derive_from_path
 pdfcer-core fn pdfcer_core::vector::centerline::page_candidates
 pdfcer-core fn pdfcer_core::vector::clip::paste_resource_dict
@@ -4705,6 +4728,7 @@ pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_runs
 pdfcer-core fn pdfcer_core::wrapper::detect
 pdfcer-core fn pdfcer_core::xfa::form_kind
 pdfcer-core fn pdfcer_core::xfa::layout::layout_template
+pdfcer-core fn pdfcer_core::xfa::merge::merge_data
 pdfcer-core fn pdfcer_core::xfa::packets::read_xdp
 pdfcer-core fn pdfcer_core::xfa::paint::paint_page
 pdfcer-core fn pdfcer_core::xfa::paint::paint_page_with_images
@@ -6318,18 +6342,26 @@ pdfcer-core method pdfcer_core::xfa::layout::LayoutOptions::new
 pdfcer-core method pdfcer_core::xfa::layout::LayoutOptions::with_negative_coordinates
 pdfcer-core method pdfcer_core::xfa::layout::LayoutOptions::with_nested_overflow
 pdfcer-core method pdfcer_core::xfa::layout::LayoutOptions::with_page_area_keep
+pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::new
+pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::with_bare_ref
+pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::with_data_attributes
+pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::with_scope_search
+pdfcer-core method pdfcer_core::xfa::merge::MergeWarningKind::as_str
+pdfcer-core method pdfcer_core::xfa::merge::MergedForm::value_at
 pdfcer-core method pdfcer_core::xfa::packets::XdpDocument::packet_text
 pdfcer-core method pdfcer_core::xfa::packets::XdpDocument::packets
 pdfcer-core method pdfcer_core::xfa::packets::XdpDocument::parse
 pdfcer-core method pdfcer_core::xfa::packets::XdpDocument::text
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::new
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_caption_font
+pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_check_caption
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_edge_placement
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_font_weight
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_image_dpi
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_image_overflow
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_image_placement
 pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_missing_fill
+pdfcer-core method pdfcer_core::xfa::paint::PaintOptions::with_three_d_stroke
 pdfcer-core method pdfcer_core::xfa::template::Measurement::parse
 pdfcer-core method pdfcer_core::xfa::template::Measurement::points
 pdfcer-core method pdfcer_core::xfa::template::Template::element
@@ -6906,6 +6938,7 @@ pdfcer-core struct pdfcer_core::threed::poster::RenderedPoster
 pdfcer-core struct pdfcer_core::threed::poster::ThreeDPosterOutcome
 pdfcer-core struct pdfcer_core::threed::view::ThreeDSavedView
 pdfcer-core struct pdfcer_core::threed::view_aim::SavedViewAim
+pdfcer-core struct pdfcer_core::threed::view_list::SavedViews
 pdfcer-core struct pdfcer_core::threed::view_write::ThreeDViewsOutcome
 pdfcer-core struct pdfcer_core::vector::centerline::CenterlineCandidate
 pdfcer-core struct pdfcer_core::vector::clip::ClipBinding
@@ -6958,6 +6991,10 @@ pdfcer-core struct pdfcer_core::xfa::layout::LayoutOptions
 pdfcer-core struct pdfcer_core::xfa::layout::LayoutPage
 pdfcer-core struct pdfcer_core::xfa::layout::LayoutRect
 pdfcer-core struct pdfcer_core::xfa::layout::XfaLayout
+pdfcer-core struct pdfcer_core::xfa::merge::BoundValue
+pdfcer-core struct pdfcer_core::xfa::merge::MergeOptions
+pdfcer-core struct pdfcer_core::xfa::merge::MergeWarning
+pdfcer-core struct pdfcer_core::xfa::merge::MergedForm
 pdfcer-core struct pdfcer_core::xfa::packets::XdpDocument
 pdfcer-core struct pdfcer_core::xfa::packets::XdpPacket
 pdfcer-core struct pdfcer_core::xfa::paint::PaintNote
@@ -9188,6 +9225,16 @@ pdfcer-core variant pdfcer_core::xfa::layout::NestedOverflow::EachAsserting
 pdfcer-core variant pdfcer_core::xfa::layout::NestedOverflow::Innermost
 pdfcer-core variant pdfcer_core::xfa::layout::adhere::PageAreaKeep::Adobe
 pdfcer-core variant pdfcer_core::xfa::layout::adhere::PageAreaKeep::Spec
+pdfcer-core variant pdfcer_core::xfa::merge::BareRef::DataRef
+pdfcer-core variant pdfcer_core::xfa::merge::BareRef::Ignore
+pdfcer-core variant pdfcer_core::xfa::merge::DataAttributes::Ignore
+pdfcer-core variant pdfcer_core::xfa::merge::DataAttributes::Load
+pdfcer-core variant pdfcer_core::xfa::merge::MergeWarningKind::TooLong
+pdfcer-core variant pdfcer_core::xfa::merge::MergeWarningKind::Unresolved
+pdfcer-core variant pdfcer_core::xfa::merge::MergeWarningKind::Unsupported
+pdfcer-core variant pdfcer_core::xfa::merge::MergeWarningKind::WrongType
+pdfcer-core variant pdfcer_core::xfa::merge::ScopeSearch::Children
+pdfcer-core variant pdfcer_core::xfa::merge::ScopeSearch::Upward
 pdfcer-core variant pdfcer_core::xfa::packets::XfaError::Malformed
 pdfcer-core variant pdfcer_core::xfa::packets::XfaError::NotText
 pdfcer-core variant pdfcer_core::xfa::packets::XfaError::TooDeep
@@ -9196,6 +9243,8 @@ pdfcer-core variant pdfcer_core::xfa::packets::XfaError::Undecodable
 pdfcer-core variant pdfcer_core::xfa::packets::XfaError::Xml
 pdfcer-core variant pdfcer_core::xfa::paint::CaptionFont::Field
 pdfcer-core variant pdfcer_core::xfa::paint::CaptionFont::Own
+pdfcer-core variant pdfcer_core::xfa::paint::CheckCaption::Fit
+pdfcer-core variant pdfcer_core::xfa::paint::CheckCaption::Remainder
 pdfcer-core variant pdfcer_core::xfa::paint::EdgePlacement::Grammar
 pdfcer-core variant pdfcer_core::xfa::paint::EdgePlacement::Inward
 pdfcer-core variant pdfcer_core::xfa::paint::FontWeight::Bold
@@ -9215,7 +9264,10 @@ pdfcer-core variant pdfcer_core::xfa::paint::PaintNoteKind::Image
 pdfcer-core variant pdfcer_core::xfa::paint::PaintNoteKind::ImageTransparency
 pdfcer-core variant pdfcer_core::xfa::paint::PaintNoteKind::OpenBreak
 pdfcer-core variant pdfcer_core::xfa::paint::PaintNoteKind::Stroke
+pdfcer-core variant pdfcer_core::xfa::paint::PaintNoteKind::StrokeApproximated
 pdfcer-core variant pdfcer_core::xfa::paint::PaintNoteKind::Text
+pdfcer-core variant pdfcer_core::xfa::paint::ThreeDStroke::Bevel
+pdfcer-core variant pdfcer_core::xfa::paint::ThreeDStroke::Plain
 pdfcer-core variant pdfcer_core::xfa::template::AnchorType::BottomCenter
 pdfcer-core variant pdfcer_core::xfa::template::AnchorType::BottomLeft
 pdfcer-core variant pdfcer_core::xfa::template::AnchorType::BottomRight

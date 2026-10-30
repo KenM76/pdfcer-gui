@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **44 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `wanted` — a real gap — **44 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -159,7 +159,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -177,7 +177,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -188,7 +188,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **19 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `declined` — deliberately no surface — **19 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -233,7 +233,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **387 of 452** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **390 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -474,7 +474,10 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
-| **Dynamic XFA, reading** — read the XDP packets behind `/AcroForm /XFA` … | **shipped — View ▸ Panels ▸ Form preview, present only on a dynamic form (G237).** `read_xdp`, `read_template` and `layout_template` lay the form out; driven by `form_preview_draws_a_dynamic_form`. The data merge has not landed, so filled-in values are not shown, and the window says so. |
+| **Dynamic XFA, reading** — read the XDP packets behind `/AcroForm /XFA` … | **shipped — View ▸ Panels ▸ Form preview, present only on a dynamic form (G237).** `read_xdp`, `read_template` and `layout_template` lay the form out; driven by `form_preview_draws_a_dynamic_form`. |
+| **Dynamic XFA, data merge for explicit data references** — `merge_data` sets each field bound by `dataRef` from the datasets packet … | **shipped — Form preview merges through `pdfcer_core::xfa::merge` (`merge_data`) and lays out `MergedForm::template`.** The window says how many values were filled in and counts each `MergeWarningKind`; its *Reading choices* set `ScopeSearch`, `BareRef`, `DataAttributes`, `ThreeDStroke` and `CheckCaption`. Driven by `form_preview_draws_a_dynamic_form`. Only `dataRef` binding exists in the engine, so a form that binds by name shows no values (G248). |
+| **Dynamic XFA, check buttons and 3-D edges** — round and square check buttons drawn, 3-D borders bevelled or plain … | **shipped — Form preview draws them; its *Reading choices* set `ThreeDStroke` and `CheckCaption`, and a plain 3-D border is disclosed (`PaintNoteKind::StrokeApproximated`).** Driven by `form_preview_draws_a_dynamic_form` (Plain → `approximated=1`). |
+| **List every saved 3D view** — `threed::saved_3d_views` returns each `/VA` view in file order with the default's index … | **shipped — the 3D viewer's *Saved views* menu lists them, the default marked, and looks from the one chosen.** Driven by `the_3d_viewer_opens_on_the_files_view`. |
 | **Dynamic XFA, image values** — a field, draw or caption holding an `<image>` is drawn … | **shipped — Form preview draws through `render_xfa_page_with_images` with `XfaImages::from_view`.** Each image the renderer could not draw is a `PaintNote`, counted in the window's list. |
 | **Draw form widgets that carry no appearance** — `RenderOptions::with_widgets_without_ap`, `RenderOptions::widgets_without_ap`, `RenderPolicy::widgets_without_ap`, the modules `pdfcer_render::annot::widget` and `pdfcer_core::widget_draw`, `Diagnostics::annotations_widget_synthesized` (our `G230`) | **shipped — the canvas draws and clicks them; driven by `a_form_without_drawn_values_draws_and_clicks`.** The renderer draws such widgets by default and the shell keeps `WidgetsWithoutAp::Draw`. The canvas offers each one on a click by its `/Rect`, and the Forms panel says the file stores no drawing for those fields and that *Redraw values* writes one (O327). `widget_draw::WidgetAppearances` is not called: nothing here needs the picture without a render. |
 | State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::appearance`, `NewChoiceField::appearance`, `EditError::FieldAppearanceOnMerge` | **shipped — `app::actions::forms::author` states Forms ▸ Style's text look on the spec, one command and one undo entry;** a name joining an existing field is refused with a look, so the box is placed again without one and the status line says it takes that field's style. Driven by `forms_style_sets_the_next_field`. |
@@ -813,8 +816,13 @@ The request O280 is built on, answered and consumed.
 ## Filed requests for the 3D viewer — not verdict rows
 
 - **G245** — no 3D measuring: point-to-point distance, edge length, radius and angle on the model, as Acrobat's 3D Measurement Tool, and storing a measurement. The renderer returns no depth and nothing picks a surface point, so the viewer offers none. The page's 2D ce dimensions are unaffected.
-- **G246** — no list of a file's saved 3D views: only `threed::default_3d_view` and `ThreeDArtwork::view_count`. The viewer shows the count, and *Save views in the file* replaces them all.
+- **G246** — no list of a file's saved 3D views. Answered at v0.108.0 by `pdfcer_core::threed::view_list` (`saved_3d_views`) and consumed: the viewer's *Saved views* menu.
 - **G247** — the lit opening view written at insert lives only in the CLI (`threed_cmd::embed`'s `light_view`, `scheme_of`, `poster_view`); `app::actions::model_insert` restates it from public API.
+
+## Engine arrivals at v0.108.0 — not verdict rows
+
+- **XFA data merge** — `pdfcer_core::xfa::merge` (`merge_data`, `MergeOptions`, `MergedForm`, `MergeWarningKind`) and the paint choices `ThreeDStroke`, `CheckCaption`, `PaintNoteKind::StrokeApproximated`. **Wired**: Form preview (its row under shipped). Normal binding by name and repeated instances from data are not in the engine; filed as **G248**, which is why a LiveCycle form that binds by name still shows no values.
+- **A file's saved 3D views** — `pdfcer_core::threed::view_list` (`saved_3d_views`, `SavedViews`). **Wired**: the 3D viewer's *Saved views* menu, every `/VA` view with the default marked; choosing one looks from it. Driven by `the_3d_viewer_opens_on_the_files_view`.
 
 ## Engine arrivals at v0.107.0 — not verdict rows
 
@@ -833,7 +841,7 @@ The answers to G238–G242 and X018. Each replaces a copy this shell keeps or un
 What these releases added and this shell has an opinion on. A wired item names
 where it is wired; the rest say why they wait.
 
-- **Dynamic XFA forms** — `pdfcer_core::xfa` (`form_kind`, `read_xdp`, `read_template`, `layout_template`) and `pdfcer_render::xfa` (`render_xfa_page`). **Wired**: the open-time sentence for a dynamic form (G237) and the View tab's form preview. The data merge has not landed, so the preview draws the form without its filled-in values and says so.
+- **Dynamic XFA forms** — `pdfcer_core::xfa` (`form_kind`, `read_xdp`, `read_template`, `layout_template`) and `pdfcer_render::xfa` (`render_xfa_page`). **Wired**: the open-time sentence for a dynamic form (G237) and the View tab's form preview, which merges the form's data since v0.108.0.
 - **Print presets, printer's marks, running headers and footers** — `pdfcer_core::print_presets`, `pdfcer_core::printer_marks`, `pdfcer_core::edit::printer_marks` (`add_printer_marks`, `CommandKind::AddPrinterMarks`, `EditError::PrinterMarks`), `pdfcer_core::running_text`, `pdfcer_core::edit::running_text` (`stamp_running_text`, `CommandKind::StampRunningText`, `EditError::RunningText`). **Wired**: presets in the Print dialog; printer's marks under File ▸ Print; the header and footer as a document edit under Pages ▸ Stamp, and on the printed copy only on the Print window's Comments tab.
 - **Print finishing, IPP, printer probing, listing and output colour** — `pdfcer_print::finishing`, `pdfcer_print::ipp`, `pdfcer_print::probe`, `pdfcer_print::listing`, `pdfcer_print::output_color`, `PrintError::FinishingRefused`, `PrintError::Metafile`, `PrintError::PrintTicket`, `pdfcer_fetch::post_ipp`, `pdfcer_fetch::MAX_IPP_RESPONSE_BYTES`, `FetchError::NetworkUnsupported`. **Wired**: the Print dialog lists printers at once and probes the chosen one on a worker, offers grey and black-only output, and offers the staple, punch and tray the driver lists; File ▸ Print ▸ Send to network printer sends to an IPP address with the finishings and bin that printer reports.
 - **glTF import and PRC writing** — `pdfcer_3d::gltf`, `pdfcer_3d::write`, `pdfcer_core::threed::lighting`, `ThreeDSavedView::with_lighting`, `ThreeDActivation::from_name`. **Wired**: Edit ▸ Insert ▸ 3D model takes `.gltf` and `.glb`, converts to PRC and puts the import's notes on the status line. Lighting and activation are their own rows.

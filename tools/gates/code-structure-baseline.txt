@@ -34,7 +34,6 @@ dup tools/ui-verify::list_str in tools/ui-verify/src/checks/add_text.rs, tools/u
 dup tools/ui-verify::local_fixture in tools/ui-verify/src/checks/form_groups.rs, tools/ui-verify/src/checks/smart_select.rs
 dup tools/ui-verify::open_properties in tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/recovery_losses.rs, tools/ui-verify/src/checks/stamp_collection.rs
 dup tools/ui-verify::open_window in tools/ui-verify/src/checks/remove_metadata.rs, tools/ui-verify/src/checks/remove_ocr_pages.rs
-dup tools/ui-verify::pdf_bytes in tools/ui-verify/src/checks/model_saved_view.rs, tools/ui-verify/src/checks/model_views_saved.rs
 dup tools/ui-verify::press in tools/ui-verify/src/checks/attach_file.rs, tools/ui-verify/src/checks/attach_sound.rs, tools/ui-verify/src/checks/insert_text.rs, tools/ui-verify/src/checks/media_clip.rs, tools/ui-verify/src/checks/replace_text.rs
 dup tools/ui-verify::press in tools/ui-verify/src/checks/clip_pages.rs, tools/ui-verify/src/checks/print_shop.rs
 dup tools/ui-verify::resolve_exe in tools/ui-verify/src/checks/graphics_pressure.rs, tools/ui-verify/src/checks/load_anomalies.rs, tools/ui-verify/src/checks/off_page_ceiling.rs, tools/ui-verify/src/checks/scripted_keys.rs, tools/ui-verify/src/checks/stamp_collection.rs
