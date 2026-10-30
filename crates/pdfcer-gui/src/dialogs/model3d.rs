@@ -25,6 +25,7 @@ mod fit;
 mod orbit;
 mod parts;
 mod picture;
+mod saved;
 
 use axes::{Axis, Upright};
 use orbit::{Orbit, PITCH_LIMIT};
@@ -110,6 +111,14 @@ pub(crate) struct ModelView {
     /// The file's opening view (`default_3d_view`), the camera it opens on
     /// when that view carries one.
     opening: Option<ThreeDSavedView>,
+    /// The saved view whose framing the camera follows while
+    /// `orbit.framed`: the opening view, or the one last chosen from
+    /// *Saved views*.
+    aimed: Option<ThreeDSavedView>,
+    /// Every saved view in the file and its default (`saved_3d_views`).
+    saved: pdfcer_core::threed::SavedViews,
+    /// The saved view last chosen, marked in the menu.
+    saved_chosen: Option<usize>,
     texture: Option<TextureHandle>,
     rendered: Option<Rendered>,
     failed: Option<String>,
@@ -145,6 +154,8 @@ impl ModelView {
         });
         let opening = model.opening.clone();
         let saved = opening.as_ref().and_then(Orbit::saved);
+        saved::trace_listed(&model.saved);
+        let saved_list = model.saved.clone();
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
@@ -179,6 +190,9 @@ impl ModelView {
             orbit: saved.unwrap_or_else(|| Orbit::named(0, true, Upright::default())),
             upright: Upright::default(),
             named: 0,
+            aimed: opening.clone(),
+            saved: saved_list,
+            saved_chosen: None,
             opening,
             texture: None,
             rendered: None,
@@ -240,6 +254,8 @@ impl ModelView {
         crate::diag::ui_rect_visible(REGION_FILE_VIEW, button.rect, ui.clip_rect());
         if button.clicked() {
             self.orbit = saved;
+            self.aimed = self.opening.clone();
+            self.saved_chosen = None;
         }
     }
 
@@ -252,7 +268,7 @@ impl ModelView {
         let aspect = self.rendered.map_or(1.0, |r| {
             f64::from(r.size[0].max(1)) / f64::from(r.size[1].max(1))
         });
-        if let Some(aim) = self.opening.as_ref().and_then(|v| v.aim(aspect)) {
+        if let Some(aim) = self.aimed.as_ref().and_then(|v| v.aim(aspect)) {
             ui.small(t::view_file_note(&aim.source()));
         }
     }
@@ -377,6 +393,7 @@ impl ModelView {
     fn body(&mut self, ui: &mut Ui) {
         ui.horizontal_wrapped(|ui| {
             self.file_view_control(ui);
+            self.saved_views_control(ui);
             for (i, name) in t::view_names().into_iter().enumerate() {
                 let button = ui.button(name);
                 crate::diag::ui_rect_visible(
@@ -600,7 +617,7 @@ impl ModelView {
         }
         let camera = self
             .orbit
-            .camera(&self.bounds, aspect, self.opening.as_ref())
+            .camera(&self.bounds, aspect, self.aimed.as_ref())
             .ok()?;
         views.push(self.lit(ThreeDSavedView::from_camera(
             t::view_custom(),
@@ -669,7 +686,7 @@ impl ModelView {
                 let aspect = f64::from(rect.width().max(1.0)) / height;
                 let factor = f64::from(scroll / 200.0).exp();
                 self.orbit
-                    .zoom_at(&self.bounds, aspect, factor, offset, self.opening.as_ref());
+                    .zoom_at(&self.bounds, aspect, factor, offset, self.aimed.as_ref());
             }
         }
     }

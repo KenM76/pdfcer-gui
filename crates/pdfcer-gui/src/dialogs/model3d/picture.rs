@@ -27,7 +27,7 @@ impl ModelView {
         };
         let camera = self
             .orbit
-            .camera(&self.bounds, aspect, self.opening.as_ref())
+            .camera(&self.bounds, aspect, self.aimed.as_ref())
             .map_err(|e| e.to_string())?;
         let image = self
             .parts
@@ -64,7 +64,7 @@ impl ModelView {
         let camera = self.orbit.camera(
             &self.bounds,
             f64::from(width) / f64::from(height),
-            self.opening.as_ref(),
+            self.aimed.as_ref(),
         );
         let aimed = camera.as_ref().map(aim_of).unwrap_or_default();
         let accent = Some(wanted.accent.to_array());

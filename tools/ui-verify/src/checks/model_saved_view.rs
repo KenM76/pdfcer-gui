@@ -1,5 +1,6 @@
 //! `checks::model_saved_view` — **the 3D viewer opens on the file's own
-//! saved view, and *File's view* returns to it from a named one**
+//! saved view, *File's view* returns to it from a named one, and *Saved
+//! views* lists every view the file saves and looks from the one chosen**
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/model_saved_view.md`.
 
@@ -20,12 +21,22 @@ const INVOKE: &str = "mode.edit,edit.attachments";
 const VIEW_REGION: &str = "models.view";
 const ISOMETRIC_REGION: &str = "model3d.view.0";
 const FILE_VIEW_REGION: &str = "model3d.view.file";
+/// *Saved views* (`dialogs::model3d::saved::REGION_MENU`).
+const SAVED_MENU: &str = "model3d.saved_views";
+/// Its second item, "Side" (`dialogs::model3d::saved::REGION_ITEM_PREFIX`).
+const SAVED_SIDE: &str = "model3d.saved_view.1";
+/// The listing the viewer traces as it opens: three views, the third saving
+/// no camera, the first the default.
+const LISTED: &str = "model-view-saved-views count=3 cameras=2 default=Some(0)";
 const MODEL: &str = "D:/Dev/pdfcer/fixtures/synthetic/prc/assembly.prc";
 /// The saved view's camera: it looks along its z column and its y column is
 /// up (ISO 32000-1 Table 304 `/C2W`). Neither is a named view's axis.
 const C2W: &str = "-0.8 0 -0.6 0 1 0 0.6 0 -0.8 -6 0 8";
 const LOOK: [f64; 3] = [0.6, 0.0, -0.8];
 const UP: [f64; 3] = [0.0, 1.0, 0.0];
+/// The second saved view's camera: from +x looking along -x, y up.
+const SIDE_C2W: &str = "0 0 1 0 1 0 -1 0 0 8 0 0";
+const SIDE_LOOK: [f64; 3] = [-1.0, 0.0, 0.0];
 /// The cosine two directions must reach to count as the same.
 const SAME: f64 = 0.999;
 
@@ -55,12 +66,13 @@ impl Check for TheViewerOpensOnTheFilesView {
     }
 }
 
-/// One page carrying a 3D annotation whose PRC stream saves one view, the
-/// stream's default.
+/// One page carrying a 3D annotation whose PRC stream saves three views:
+/// "Corner" (the stream's default), "Side", and "Bare", which saves no camera.
 fn pdf_bytes(prc: &[u8]) -> Vec<u8> {
     let mut stream = format!(
-        "<< /Type /3D /Subtype /PRC /VA [<< /Type /3DView /XN (Corner) /MS /M /C2W [{C2W}] >>] \
-         /DV 0 /Length {} >>\nstream\n",
+        "<< /Type /3D /Subtype /PRC /VA [<< /Type /3DView /XN (Corner) /MS /M /C2W [{C2W}] >> \
+         << /Type /3DView /XN (Side) /MS /M /C2W [{SIDE_C2W}] >> \
+         << /Type /3DView /XN (Bare) >>] /DV 0 /Length {} >>\nstream\n",
         prc.len()
     )
     .into_bytes();
@@ -199,6 +211,16 @@ fn steps(
     let turned = aimed(session)?;
     let back = press(session, pointer, ui_rect, FILE_VIEW_REGION)?;
     let returned = aimed(session)?;
+    let listed = session
+        .trace()?
+        .last("model-view-saved-views")
+        .map(|l| l.raw.clone());
+    let menu = press(session, pointer, ui_rect, SAVED_MENU)?;
+    let side = menu && press(session, pointer, ui_rect, SAVED_SIDE)?;
+    let sided = aimed(session)?;
+    report.note(format!(
+        "listed: {listed:?}; Saved views opened={menu}, Side pressed={side} -> {sided:?}"
+    ));
     report.note(format!(
         "opened: {opened:?}; first (dir, up)={first:?}; Isometric pressed={iso} -> {turned:?}; \
          File's view pressed={back} -> {returned:?}"
@@ -227,6 +249,21 @@ fn steps(
         findings.push(format!(
             "File's view left the camera at {returned:?}; along {LOOK:?} with {UP:?} up was \
              expected."
+        ));
+    }
+    if !listed.as_deref().is_some_and(|l| l.contains(LISTED)) {
+        findings.push(format!(
+            "the viewer listed the file's saved views as {listed:?}; `{LISTED}` was expected."
+        ));
+    }
+    if !side {
+        findings.push(format!(
+            "no `{SAVED_MENU}` menu or no `{SAVED_SIDE}` item in it (menu declared: {menu})."
+        ));
+    } else if !sided.is_some_and(|(d, u)| same(d, SIDE_LOOK) && same(u, UP)) {
+        findings.push(format!(
+            "choosing the saved view \"Side\" left the camera at {sided:?}; along {SIDE_LOOK:?} \
+             with {UP:?} up was expected."
         ));
     }
     Ok((!findings.is_empty()).then(|| findings.join("\n")))

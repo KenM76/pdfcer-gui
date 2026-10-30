@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O338 — **OPEN** — an Android build that installs, and a hello-world APK beside it
+
+His words: *"Can you try building an android version again when you have a chance, and also just a hello world program too? That way if I have the install failure I have a simple program to try installing too!"*
+
+**Scope.** A fresh pdfcer APK built for his Fairphone 5 (arm64), and a minimal hello-world APK built and signed the same way, so an install refusal can be pinned on the toolchain/signing or on pdfcer itself. Follows the "package appears to be invalid" refusal under O337.
+
+**Status.** Filed; queued after release `v0.5.0-dev.20261030.4`.
+
 ## O337 — **OPEN** — a proposed interface for Android, phone and tablet
 
 His words: *"can you use your design skill and get a proposed interface made for mobile? I'd like to get this working on Android too after the next engine release."*
@@ -667,7 +675,7 @@ His words: *"I get a generic Please wait... message when trying to open it. What
 
 **Scope.** Open the document and show its pages.
 
-**Status.** Measured with the engine CLI: the file is a dynamic XFA form (the Ontario standard lease). Its one PDF page is the placeholder Adobe writes for readers that cannot build XFA; the lease itself exists only in the XFA template and data, and the AcroForm half holds just the three signature fields. Showing it needs a dynamic XFA layout engine, which the engine rules out of scope (pdfcer decision 020 §3.2.1, open question (p)); that is his call, now with a real-world case. Filed G237 so the program can at least say on open that this is a dynamic XFA form, instead of showing the placeholder silently.
+**Status.** Measured with the engine CLI: the file is a dynamic XFA form (the Ontario standard lease). Its one PDF page is the placeholder Adobe writes for readers that cannot build XFA; the lease itself exists only in the XFA template and data, and the AcroForm half holds just the three signature fields. Showing it needs a dynamic XFA layout engine, which the engine rules out of scope (pdfcer decision 020 §3.2.1, open question (p)); that is his call, now with a real-world case. Filed G237 so the program can at least say on open that this is a dynamic XFA form, instead of showing the placeholder silently. The engine has since added dynamic XFA layout and a data merge: on open the status line says it is a dynamic form, and View ▸ Panels ▸ *Form preview* draws the lease's own pages. Its values are not yet filled in: the lease binds its fields by name, and the engine merges only fields that bind by data reference (G248 filed). Driven on a fixture: `form_preview_draws_a_dynamic_form`. NOT VERIFIED by him.
 
 ## O335 — **BUILT** — a freehand line can end in an arrowhead
 

@@ -110,6 +110,9 @@ pub(crate) struct Assembled {
     pub aspect: Option<f64>,
     /// The file's opening view (`default_3d_view`), set by [`load_view`].
     pub opening: Option<pdfcer_core::threed::ThreeDSavedView>,
+    /// Every saved view and the file's default (`saved_3d_views`), set by
+    /// [`load_view`].
+    pub saved: pdfcer_core::threed::SavedViews,
     /// The assembly tree (`PrcFile::model_tree`), set by [`load_view`].
     pub tree: Vec<pdfcer_3d::ModelNode>,
     /// Why [`Self::tree`] could not be read, set by [`load_view`].
@@ -187,6 +190,7 @@ fn assemble_as(
         drawn: model,
         aspect: None,
         opening: None,
+        saved: pdfcer_core::threed::SavedViews::default(),
         tree: Vec::new(),
         tree_error: None,
         data: Vec::new(),
@@ -249,6 +253,7 @@ pub(crate) fn load_view(doc: &OpenDoc, artwork: &ThreeDArtwork) -> Result<Assemb
         Unassembled::Empty { compressed } => t::view_empty(compressed),
     })?;
     model.opening = pdfcer_core::threed::default_3d_view(&view, artwork);
+    model.saved = pdfcer_core::threed::saved_3d_views(&view, artwork);
     model.aspect = annot_aspect(doc, artwork);
     match pdfcer_3d::PrcFile::parse(&data).and_then(|prc| prc.model_tree()) {
         Ok(tree) => model.tree = tree,
