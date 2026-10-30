@@ -22,5 +22,5 @@ assertion is on what the engine wrote, not on what the picker showed.
 A tab switch counts as a change: it is the operator choosing the space the
 file stores. Black on the grey tab is written as the CMYK that draws the
 same colour (a rich black, not `0 0 0 1`), ending in `k`. The engine writes
-a rewritten `/DA` as a hex string `< … >`, so the reader decodes both string
+a rewritten `/DA` as a hex string `< â€¦ >`, so the reader decodes both string
 forms and collapses whitespace before testing the last operator.

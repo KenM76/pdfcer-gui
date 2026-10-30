@@ -210,7 +210,7 @@ pub(super) fn controls(ui: &mut Ui, state: &mut State) {
     for (line, (label, region)) in state.draft.iter_mut().zip(rows) {
         ui.horizontal(|ui| {
             ui.label(label);
-            // escape-disposition: keeps-draft — the line lives in `draft`, so
+            // escape-disposition: keeps-draft â€” the line lives in `draft`, so
             // Escape leaves the box with the words in it, and applies them.
             let edit = ui
                 .add(egui::TextEdit::singleline(&mut line.text).desired_width(220.0))
