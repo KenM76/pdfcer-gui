@@ -6,6 +6,7 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/settings/mod.md`.
 
+pub mod blackpoint;
 pub mod bytes;
 pub mod extract;
 pub mod keys;
@@ -34,6 +35,7 @@ pub mod shell;
 pub mod snapshot;
 pub mod tabface;
 
+pub use blackpoint::*;
 pub use bytes::*;
 pub use extract::*;
 pub use look::*;

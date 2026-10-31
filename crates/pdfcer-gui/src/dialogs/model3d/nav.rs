@@ -7,7 +7,7 @@
 //! opened walks the same way.
 
 use egui::{Pos2, Rect, Response, Ui};
-use pdfcer_3d::{AssembledModel, Camera, Hit, Ray, RenderError, TriangleMesh};
+use pdfcer_3d::{AssembledModel, Camera, Hit, PickIndex, Ray, RenderError};
 use pdfcer_gui_base::icons::{self, Icon};
 
 use super::gimbal::Gimbal;
@@ -67,32 +67,32 @@ impl Prefs {
     }
 }
 
-/// The meshes a walker meets: the shown ones, copied while any is hidden.
+/// The model's surface a walker meets: the engine's pick index, built once
+/// per model, and the shown-mesh mask, read again when visibility changes.
 #[derive(Default)]
 struct Solids {
+    /// The model the index was built from: its mesh list's address and length.
+    model: Option<(usize, usize)>,
+    index: Option<PickIndex>,
     version: Option<u32>,
-    shown: Option<Vec<TriangleMesh>>,
+    shown: Option<Vec<bool>>,
 }
 
 impl Solids {
-    fn meshes<'a>(
-        &'a mut self,
-        model: &'a AssembledModel,
-        parts: &Visibility,
-    ) -> &'a [TriangleMesh] {
+    fn hit(&mut self, model: &AssembledModel, parts: &Visibility, ray: &Ray) -> Option<Hit> {
+        let key = (model.meshes.as_ptr() as usize, model.meshes.len());
+        if self.model != Some(key) {
+            self.index = Some(PickIndex::new(&model.meshes));
+            (self.model, self.version) = (Some(key), None);
+        }
         if self.version != Some(parts.version) {
-            self.shown = parts.shown_meshes(model).map(|mask| {
-                model
-                    .meshes
-                    .iter()
-                    .zip(mask)
-                    .filter(|(_, shown)| *shown)
-                    .map(|(m, _)| m.clone())
-                    .collect()
-            });
+            self.shown = parts.shown_meshes(model);
             self.version = Some(parts.version);
         }
-        self.shown.as_deref().unwrap_or(&model.meshes)
+        let shown = self.shown.as_deref();
+        self.index.as_ref()?.pick_where(ray, f64::INFINITY, |mesh| {
+            shown.is_none_or(|mask| mask.get(mesh).copied().unwrap_or(true))
+        })
     }
 }
 
@@ -340,7 +340,7 @@ impl ModelView {
 
     /// The model's shown surface along `ray`, nearest first.
     pub(super) fn hit(&mut self, ray: &Ray) -> Option<Hit> {
-        pdfcer_3d::pick(self.nav.solids.meshes(&self.model.drawn, &self.parts), ray)
+        self.nav.solids.hit(&self.model.drawn, &self.parts, ray)
     }
 
     /// The model's shown surface under `at` on the picture `rect`.

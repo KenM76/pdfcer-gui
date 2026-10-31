@@ -204,6 +204,17 @@ pub fn cmyk_ceiling(ui: &mut Ui, draft: &mut Draft) {
     );
 }
 
+/// Black point compensation where the file leaves it open (§8.6.5.9).
+pub fn black_point(ui: &mut Ui, draft: &mut Draft) {
+    widgets::header(ui, t::bpc_title(), t::bpc_silence(), t::bpc_radius());
+    widgets::toggle(
+        ui,
+        &mut draft.working.black_point_compensation,
+        t::bpc_label(),
+        Some(t::bpc_note()),
+    );
+}
+
 /// How a mesh-shading patch record is byte-padded (spec ambiguity `MSH-A1`).
 pub fn mesh_patch_padding(ui: &mut Ui, draft: &mut Draft) {
     widgets::header(

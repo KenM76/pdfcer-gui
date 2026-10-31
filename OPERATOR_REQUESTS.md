@@ -685,13 +685,13 @@ His words: *"Please add a walkthrough mode for 3D. Really focus on improving the
 
 **Status.** Built: Walk beside orbit; double-tap (double-click) goes to the point tapped while walking and centres on it while orbiting; a speed slider; keys in both. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view`, and on the Android emulator. NOT VERIFIED by him.
 
-## O340 — **OPEN** — conformance patch 17.2 (JPEG 2000, ICC-based RGB) shows an X
+## O340 — **BUILT** — conformance patch 17.2 (JPEG 2000, ICC-based RGB) shows an X
 
 His words, the suite's name withheld per the 2026-08-25 ruling: *"[suite] 17.2 jpeg2000 compression ICC Compressed has an X fail in the [suite] X 4 pdf"*
 
 **Scope.** Patch 17.2 on page 5 of the licensed print-conformance suite's X-4 file (named in the private map directory) shows no X.
 
-**Status.** Diagnosed as engine colour management: the JPEG 2000 image's RGB comes out a few levels off the CMYK square it should match, so the X shows faintly. Filed as G249. The GUI cannot fix it; it lands with the engine fix and a pin move.
+**Status.** Diagnosed as engine colour management: the JPEG 2000 image's RGB comes out a few levels off the CMYK square it should match, so the X shows faintly. Filed as G249. The GUI cannot fix it; it lands with the engine fix and a pin move. Built on engine v0.113.0: the engine applies black point compensation, and measured patch 17.2 inside and outside the X at the same colour, (71..72, 184, 71..73), on the default blending route this build draws with. It is on by default, with a switch in Settings ▸ Colour. With Settings ▸ Colour's blending space set to the device's own, the X still shows strongly, by design: that route does no proofing. Not yet looked at here on the licensed file. Patch 17.3 (JBIG2) is a separate cause; tell me if it still shows an X. NOT VERIFIED by him.
 
 ## O339 — **BUILT** — 3D models in the Android app
 
@@ -707,7 +707,7 @@ His words: *"Can you try building an android version again when you have a chanc
 
 **Scope.** A fresh pdfcer APK built for his Fairphone 5 (arm64), and a minimal hello-world APK built and signed the same way, so an install refusal can be pinned on the toolchain/signing or on pdfcer itself. Follows the "package appears to be invalid" refusal under O337.
 
-**Status.** Built: a fresh pdfcer APK on engine v0.108.0 and `hello-pdfcer.apk` (no native code, no libraries), both signed with the same debug key, minSdk 28, in OneDrive `pdfTests` with their SHA-256 in `android-apks-SHA256.txt`. The October 29 APK checked clean here (v2 signature, arm64 only, library 16 KB-aligned, manifest valid), so the refusal is not yet explained; if hello-world also refuses, the cause is the phone or the download, not pdfcer. The rebuild found the phone build broken since `.3` (three dialogs borrowed a helper from the signing window, which Android leaves out); fixed, and a no-features build added to the gates. NOT VERIFIED by him.
+**Status.** Built: a fresh pdfcer APK on engine v0.108.0 and `hello-pdfcer.apk` (no native code, no libraries), both signed with the same debug key, minSdk 28, in OneDrive `pdfTests` with their SHA-256 in `android-apks-SHA256.txt`. The October 29 APK checked clean here (v2 signature, arm64 only, library 16 KB-aligned, manifest valid), so the refusal is not yet explained; if hello-world also refuses, the cause is the phone or the download, not pdfcer. The rebuild found the phone build broken since `.3` (three dialogs borrowed a helper from the signing window, which Android leaves out); fixed, and a no-features build added to the gates. The October 31 APK (engine v0.113.0, both ABIs) was refused on his phone the same way. It checks clean here: v2 signature verifies, both native libraries stored and page-aligned, no duplicate entries, a valid manifest with every component's `exported` stated, and it installs on the API 34 emulator. Waiting on whether `hello-pdfcer.apk` installs on his phone and which Android version it runs. NOT VERIFIED by him.
 
 ## O337 — **OPEN** — a proposed interface for Android, phone and tablet
 
