@@ -18,7 +18,7 @@ use egui::{Vec2, vec2};
 
 use crate::app::state::OpenDoc;
 use crate::canvas::geometry;
-use crate::canvas::input::pan_delta;
+use crate::canvas::input::{pan_delta, pointer_on_canvas};
 use crate::canvas::tool::CanvasTool;
 use crate::canvas::trace;
 use crate::canvas::zoom;
@@ -176,7 +176,7 @@ pub(super) fn track(
                 ui.ctx().set_cursor_icon(egui::CursorIcon::Grabbing);
             }
             let wheel = ui.input(|i| i.smooth_scroll_delta);
-            if wheel != egui::Vec2::ZERO {
+            if wheel != egui::Vec2::ZERO && pointer_on_canvas(ui) {
                 moved = moved.panned((wheel.x, wheel.y), zoom);
             }
             doc.frame.deep_anchor = Some(moved);

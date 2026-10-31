@@ -25,10 +25,7 @@ impl ModelView {
             height: (height.round() as u32).max(1),
             ..ModelRenderOptions::default()
         };
-        let camera = self
-            .orbit
-            .camera(&self.bounds, aspect, self.aimed.as_ref())
-            .map_err(|e| e.to_string())?;
+        let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
         let image = self
             .parts
             .painted(&mut self.model.drawn, None, |model| {
@@ -61,11 +58,8 @@ impl ModelView {
             background: wanted.background.to_array(),
             ..ModelRenderOptions::default()
         };
-        let camera = self.orbit.camera(
-            &self.bounds,
-            f64::from(width) / f64::from(height),
-            self.aimed.as_ref(),
-        );
+        let camera = self.view_camera(f64::from(width) / f64::from(height));
+        let started = std::time::Instant::now();
         let aimed = camera.as_ref().map(aim_of).unwrap_or_default();
         let accent = Some(wanted.accent.to_array());
         let parts = &self.parts;
@@ -75,6 +69,8 @@ impl ModelView {
                 render_model(model, &camera, &options)
             })
         });
+        let ms = started.elapsed().as_secs_f64() * 1000.0;
+        let eye = camera_eye(wanted.walk.as_ref());
         self.rendered = Some(wanted);
         match drawn {
             Ok(image) => {
@@ -90,7 +86,7 @@ impl ModelView {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
+                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{eye} ms={ms:.1} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
                         self.orbit.yaw,
                         self.orbit.pitch,
                         self.orbit.zoom,
@@ -150,6 +146,17 @@ fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let look = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
     // ui-text-exempt: diagnostic trace, never displayed
     format!("dir={} up={}", unit(look), unit(camera.up))
+}
+
+/// ` walk=1 eye=x,y,z` while walking, empty while orbiting, for the trace.
+fn camera_eye(walk: Option<&super::walk::Walk>) -> String {
+    walk.map_or_else(String::new, |w| {
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed
+            " walk=1 eye={:.4},{:.4},{:.4}",
+            w.eye[0], w.eye[1], w.eye[2]
+        )
+    })
 }
 
 /// A channel spread at or above this is a colour, not a shade of grey.

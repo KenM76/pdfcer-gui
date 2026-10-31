@@ -996,3 +996,33 @@ pub(super) const WINDOW_NEW: &str = include_str!("assets/window-new.svg");
 
 /// `window-move.svg` — the art for [`super::Icon::WindowMove`].
 pub(super) const WINDOW_MOVE: &str = include_str!("assets/window-move.svg");
+
+/// `walk.svg` — the art for [`super::Icon::Walk`].
+///
+/// Walk through the 3D model in the first person.
+pub(super) const WALK: &str = include_str!("assets/walk.svg");
+
+/// `orbit.svg` — the art for [`super::Icon::Orbit`].
+///
+/// Turn the 3D model about its centre.
+pub(super) const ORBIT: &str = include_str!("assets/orbit.svg");
+
+/// `ghost.svg` — the art for [`super::Icon::Ghost`].
+///
+/// Ghost mode: walk through walls and floors.
+pub(super) const GHOST: &str = include_str!("assets/ghost.svg");
+
+/// `level-view.svg` — the art for [`super::Icon::LevelView`].
+///
+/// Keep the 3D view level and walking flat.
+pub(super) const LEVEL_VIEW: &str = include_str!("assets/level-view.svg");
+
+/// `gimbal.svg` — the art for [`super::Icon::Gimbal`].
+///
+/// Show the navigation gimbal on the 3D picture.
+pub(super) const GIMBAL: &str = include_str!("assets/gimbal.svg");
+
+/// `exit-fullscreen.svg` — the art for [`super::Icon::ExitFullscreen`].
+///
+/// Leave full screen.
+pub(super) const EXIT_FULLSCREEN: &str = include_str!("assets/exit-fullscreen.svg");

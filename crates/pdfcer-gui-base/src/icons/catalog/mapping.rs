@@ -242,6 +242,12 @@ impl Icon {
         Icon::Strikethrough,
         Icon::WindowNew,
         Icon::WindowMove,
+        Icon::Walk,
+        Icon::Orbit,
+        Icon::Ghost,
+        Icon::LevelView,
+        Icon::Gimbal,
+        Icon::ExitFullscreen,
     ];
 
     /// The asset's SVG source.
@@ -446,6 +452,12 @@ impl Icon {
             Icon::Strikethrough => assets::STRIKETHROUGH,
             Icon::WindowNew => assets::WINDOW_NEW,
             Icon::WindowMove => assets::WINDOW_MOVE,
+            Icon::Walk => assets::WALK,
+            Icon::Orbit => assets::ORBIT,
+            Icon::Ghost => assets::GHOST,
+            Icon::LevelView => assets::LEVEL_VIEW,
+            Icon::ExitFullscreen => assets::EXIT_FULLSCREEN,
+            Icon::Gimbal => assets::GIMBAL,
         }
     }
 
@@ -669,6 +681,12 @@ impl Icon {
             Icon::Strikethrough => "strikethrough",
             Icon::WindowNew => "window-new",
             Icon::WindowMove => "window-move",
+            Icon::Walk => "walk",
+            Icon::Orbit => "orbit",
+            Icon::Ghost => "ghost",
+            Icon::LevelView => "level-view",
+            Icon::ExitFullscreen => "exit-fullscreen",
+            Icon::Gimbal => "gimbal",
         }
     }
 

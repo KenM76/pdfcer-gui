@@ -183,26 +183,6 @@ pub fn cancel_button() -> &'static str {
     "Cancel"
 }
 
-/// The opening view's name, as a reader lists it.
-#[must_use]
-pub fn default_view_name() -> &'static str {
-    "Default"
-}
-
-/// The receipt for a written opening view.
-#[must_use]
-pub fn lit(scheme: ThreeDLighting, framed: bool) -> String {
-    let camera = if framed {
-        "seen as its picture shows it"
-    } else {
-        "the camera left to the reader"
-    };
-    format!(
-        "The model opens on the view \"Default\", {camera}, lit with {}.",
-        lighting(scheme).to_lowercase()
-    )
-}
-
 /// glTF textures carried into the PRC.
 #[must_use]
 pub fn gltf_textured(primitives: usize) -> String {

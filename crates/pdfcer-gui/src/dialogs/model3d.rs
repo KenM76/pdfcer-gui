@@ -23,11 +23,19 @@ use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
 mod axes;
 mod fit;
+mod gimbal;
+mod immersive;
+mod nav;
+mod navorbit;
+mod navwalk;
 mod orbit;
 mod parts;
 mod phone;
 mod picture;
 mod saved;
+mod stick;
+mod walk;
+mod window;
 
 use axes::{Axis, Upright};
 use orbit::{Orbit, PITCH_LIMIT};
@@ -90,6 +98,8 @@ const POSTER_SIDE: f64 = 1200.0;
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Rendered {
     orbit: Orbit,
+    /// The walker's camera, when walking.
+    walk: Option<walk::Walk>,
     size: [u32; 2],
     background: egui::Color32,
     /// The highlighted part's colour, the theme's selection fill.
@@ -142,6 +152,8 @@ pub(crate) struct ModelView {
     parts: parts::Visibility,
     /// The lighting every saved view asks for; `None` writes none.
     view_lighting: Option<ThreeDLighting>,
+    /// Orbiting or walking, the switches, and the fingers on the picture.
+    nav: nav::Nav,
 }
 
 impl ModelView {
@@ -208,22 +220,30 @@ impl ModelView {
             views: None,
             parts,
             view_lighting: None,
+            nav: nav::Nav::default(),
         }
     }
 
     /// Draw it, queueing a picture for the page when one was asked for.
     /// Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
-        let (frame, ()) = crate::dialogs::host::Host::new(
-            VIEWPORT_KEY,
-            &self.title,
-            egui::vec2(720.0, 600.0),
-            egui::vec2(360.0, 320.0),
-        )
-        .maximizable()
-        .minimizable()
-        .show(ctx, |ui| self.body(ui));
-        self.native = frame.class == egui::ViewportClass::Immediate;
+        self.nav.load(ctx);
+        let closed = if self.nav.immersive && ctx.embed_viewports() {
+            self.show_immersive(ctx);
+            false
+        } else {
+            let (frame, ()) = crate::dialogs::host::Host::new(
+                VIEWPORT_KEY,
+                &self.title,
+                egui::vec2(720.0, 600.0),
+                egui::vec2(360.0, 320.0),
+            )
+            .maximizable()
+            .minimizable()
+            .show(ctx, |ui| self.body(ui));
+            self.native = frame.class == egui::ViewportClass::Immediate;
+            frame.closed
+        };
         if let Some((purpose, drawn)) = self.picture.take() {
             self.queue(purpose, drawn, actions);
         }
@@ -234,7 +254,7 @@ impl ModelView {
                 default,
             }));
         }
-        let closed = frame.closed && !std::mem::take(&mut self.escape_left_full_screen);
+        let closed = closed && !std::mem::take(&mut self.escape_left_full_screen);
         let button = std::mem::take(&mut self.close_requested);
         if closed || button {
             let how = if button { "button" } else { "window" };
@@ -255,6 +275,7 @@ impl ModelView {
             .on_hover_text(t::view_file_tooltip());
         crate::diag::ui_rect_visible(REGION_FILE_VIEW, button.rect, ui.clip_rect());
         if button.clicked() {
+            self.orbiting();
             self.orbit = saved;
             self.aimed = self.opening.clone();
             self.saved_chosen = None;
@@ -272,84 +293,6 @@ impl ModelView {
         });
         if let Some(aim) = self.aimed.as_ref().and_then(|v| v.aim(aspect)) {
             ui.small(t::view_file_note(&aim.source()));
-        }
-    }
-
-    /// Full screen from the button or F11, and Escape out of it: the
-    /// conventional viewer keys. Only on a real OS window; an embedded
-    /// fallback has no screen of its own to fill.
-    fn full_screen_control(&mut self, ui: &mut Ui) {
-        use pdfcer_gui_base::windowshape;
-        if !self.native {
-            return;
-        }
-        let ctx = ui.ctx().clone();
-        self.minimize_control(ui);
-        let full = windowshape::fullscreen_believed(&ctx);
-        let (label, tip) = if full {
-            (
-                t::view_full_screen_leave(),
-                t::view_full_screen_leave_tooltip(),
-            )
-        } else {
-            (t::view_full_screen(), t::view_full_screen_tooltip())
-        };
-        let button = ui.button(label).on_hover_text(tip);
-        crate::diag::ui_rect_visible(REGION_FULL_SCREEN, button.rect, ui.clip_rect());
-        let (f11, escape, closing) = ui.input(|i| {
-            (
-                i.key_pressed(egui::Key::F11),
-                i.key_pressed(egui::Key::Escape),
-                i.viewport().close_requested(),
-            )
-        });
-        let wanted = if button.clicked() || f11 {
-            Some(!full)
-        } else if full && escape && !closing {
-            self.escape_left_full_screen = true;
-            Some(false)
-        } else {
-            None
-        };
-        if let Some(on) = wanted {
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!(
-                    "model-view-full-screen asked={on} escape={}",
-                    full && escape
-                )
-            });
-            windowshape::set_fullscreen(&ctx, on);
-        }
-    }
-
-    /// A Minimize button, since full screen has no title bar, and a trace of
-    /// the window's minimised state as the OS reports it, with the camera.
-    fn minimize_control(&mut self, ui: &mut Ui) {
-        let button = ui
-            .button(t::view_minimize())
-            .on_hover_text(t::view_minimize_tooltip());
-        crate::diag::ui_rect_visible(REGION_MINIMIZE, button.rect, ui.clip_rect());
-        if button.clicked() {
-            ui.ctx()
-                .send_viewport_cmd(egui::ViewportCommand::Minimized(true));
-        }
-        let minimized = ui.input(|i| i.viewport().minimized);
-        if minimized.is_some() && minimized != self.minimized {
-            self.minimized = minimized;
-            let o = &self.orbit;
-            crate::diag::trace(|| {
-                // ui-text-exempt: diagnostic trace, never displayed
-                format!(
-                    "model-view-window minimized={} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4}",
-                    minimized == Some(true),
-                    o.yaw,
-                    o.pitch,
-                    o.zoom,
-                    o.pan[0],
-                    o.pan[1]
-                )
-            });
         }
     }
 
@@ -380,6 +323,7 @@ impl ModelView {
             return;
         }
         self.upright = chosen;
+        self.orbiting();
         self.orbit = Orbit::named(self.named, self.orbit.perspective, chosen);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -393,12 +337,16 @@ impl ModelView {
     }
 
     fn body(&mut self, ui: &mut Ui) {
+        if self.filling_screen(ui.ctx()) {
+            self.immersive_body(ui, ui.max_rect());
+            return;
+        }
         if egui_shell::ribbon::phone::is_phone(ui.ctx()) {
             self.phone_body(ui);
             return;
         }
         self.controls(ui);
-        ui.small(t::view_hint());
+        ui.small(self.nav_hint(ui.ctx(), t::view_hint()));
         self.file_view_note(ui);
         egui::Panel::left(egui::Id::new("model3d-parts")) // ui-text-exempt: an egui id, never displayed
             .resizable(true)
@@ -442,6 +390,7 @@ impl ModelView {
                 );
                 if button.clicked() {
                     self.named = i;
+                    self.orbiting();
                     self.orbit = Orbit::named(i, self.orbit.perspective, self.upright);
                 }
             }
@@ -449,14 +398,13 @@ impl ModelView {
                 phone::glyph_button(ui, Icon::FitPage, t::view_reset(), t::view_reset_tooltip());
             crate::diag::ui_rect_visible(REGION_FIT, fit.rect, ui.clip_rect());
             if fit.clicked() {
-                self.orbit.zoom = 1.0;
-                self.orbit.pan = [0.0, 0.0];
-                self.orbit.framed = false;
+                self.home();
             }
             ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
                 .on_hover_text(t::view_perspective_tooltip());
             self.axes_control(ui);
             self.mesh_fit_control(ui);
+            self.nav_controls(ui);
             self.full_screen_control(ui);
         });
     }
@@ -465,14 +413,21 @@ impl ModelView {
     fn picture(&mut self, ui: &mut Ui, area: egui::Vec2) {
         let (rect, response) = ui.allocate_exact_size(area, Sense::click_and_drag());
         crate::diag::ui_rect_visible(REGION_IMAGE, rect, ui.clip_rect());
-        self.steer(ui, &response);
+        if self.nav.walk.is_some() {
+            self.walk_input(ui, &response);
+        } else {
+            self.orbit_input(ui, &response);
+        }
 
         let background = ui.visuals().extreme_bg_color;
-        let scale = ui.ctx().pixels_per_point();
+        // Half the pixels while the camera moves, so it keeps up; the full
+        // picture is drawn the frame it stops.
+        let scale = ui.ctx().pixels_per_point() * if self.nav.moving { 0.5 } else { 1.0 };
         let side = |points: f32| (points * scale).clamp(1.0, MAX_SIDE).round() as u32;
         let size = [side(rect.width()), side(rect.height())];
         let wanted = Rendered {
             orbit: self.orbit,
+            walk: self.nav.walk,
             size,
             background,
             accent: egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
@@ -495,10 +450,12 @@ impl ModelView {
             }
             (None, None) => {}
         }
+        self.paint_overlay(ui, rect);
     }
 
     /// What the picture leaves out or inferred, said under it.
     fn notes(&mut self, ui: &mut Ui) {
+        self.nav_note(ui);
         ui.small(t::view_census(
             self.model.drawn.meshes.len(),
             self.model.triangles,
@@ -642,13 +599,12 @@ impl ModelView {
             let camera = orbit.camera(&self.bounds, aspect, None).ok()?;
             views.push(self.lit(ThreeDSavedView::from_camera(name, &camera, aspect)?));
         }
-        if self.orbit == Orbit::named(self.named, perspective, self.upright) {
+        if self.nav.walk.is_none()
+            && self.orbit == Orbit::named(self.named, perspective, self.upright)
+        {
             return Some((views, self.named));
         }
-        let camera = self
-            .orbit
-            .camera(&self.bounds, aspect, self.aimed.as_ref())
-            .ok()?;
+        let camera = self.view_camera(aspect).ok()?;
         views.push(self.lit(ThreeDSavedView::from_camera(
             t::view_custom(),
             &camera,
@@ -686,56 +642,6 @@ impl ModelView {
             },
         };
         actions.push(Action::Attachment(action));
-    }
-
-    /// Turn the camera from this frame's pointer on the picture. On a touch
-    /// screen one finger orbits, and two fingers pinch to zoom and drag to pan;
-    /// a two-finger gesture never orbits, though its first finger is also the
-    /// pointer.
-    fn steer(&mut self, ui: &Ui, response: &egui::Response) {
-        let delta = response.drag_delta();
-        let touch = response
-            .hover_pos()
-            .and_then(|_| ui.input(egui::InputState::multi_touch));
-        if let Some(touch) = touch {
-            let rect = response.rect;
-            let per_point = 2.0 / f64::from(rect.height().max(1.0)) / self.orbit.zoom;
-            self.orbit.pan[0] -= f64::from(touch.translation_delta.x) * per_point;
-            self.orbit.pan[1] += f64::from(touch.translation_delta.y) * per_point;
-        }
-        if touch.is_none()
-            && response.dragged_by(egui::PointerButton::Primary)
-            && delta != egui::Vec2::ZERO
-        {
-            self.orbit.yaw -= f64::from(delta.x) * ORBIT_RATE;
-            self.orbit.pitch = (self.orbit.pitch + f64::from(delta.y) * ORBIT_RATE)
-                .clamp(-PITCH_LIMIT, PITCH_LIMIT);
-        }
-        if (response.dragged_by(egui::PointerButton::Secondary)
-            || response.dragged_by(egui::PointerButton::Middle))
-            && delta != egui::Vec2::ZERO
-        {
-            let per_point = 2.0 / f64::from(response.rect.height().max(1.0)) / self.orbit.zoom;
-            self.orbit.pan[0] -= f64::from(delta.x) * per_point;
-            self.orbit.pan[1] += f64::from(delta.y) * per_point;
-        }
-        if let Some(at) = response.hover_pos() {
-            let scroll = ui.input(|i| i.smooth_scroll_delta.y);
-            // A pinch, or Ctrl with the wheel, as a factor; 1.0 when neither.
-            let pinch = ui.input(egui::InputState::zoom_delta);
-            if scroll != 0.0 || pinch != 1.0 {
-                let rect = response.rect;
-                let height = f64::from(rect.height().max(1.0));
-                let offset = [
-                    f64::from(at.x - rect.center().x) / height,
-                    f64::from(rect.center().y - at.y) / height,
-                ];
-                let aspect = f64::from(rect.width().max(1.0)) / height;
-                let factor = f64::from(scroll / 200.0).exp() * f64::from(pinch);
-                self.orbit
-                    .zoom_at(&self.bounds, aspect, factor, offset, self.aimed.as_ref());
-            }
-        }
     }
 }
 

@@ -1271,6 +1271,18 @@ pub enum Icon {
     WindowNew,
     /// Move to other window: an arrow from one window into another.
     WindowMove,
+    /// Walk through the 3D model in the first person.
+    Walk,
+    /// Turn the 3D model about its centre.
+    Orbit,
+    /// Ghost mode: walk through walls and floors.
+    Ghost,
+    /// Keep the 3D view level and walking flat.
+    LevelView,
+    /// Show the navigation gimbal on the 3D picture.
+    Gimbal,
+    /// Leave full screen: four arrows pointing in from the corners.
+    ExitFullscreen,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

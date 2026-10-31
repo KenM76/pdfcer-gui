@@ -81,6 +81,8 @@ pub fn paint_note(kind: PaintNoteKind, count: usize) -> String {
         PaintNoteKind::Image => "pictures not found in the file or not readable",
         PaintNoteKind::ImageTransparency => "picture transparency flattened onto white",
         PaintNoteKind::StrokeApproximated => "3-D borders drawn as plain lines",
+        PaintNoteKind::Shape => "line slopes, arc angles or line ends not understood, drawn plain",
+        PaintNoteKind::Rotate => "turns other than quarter turns, or on sections, not applied",
         _ => "drawn differently from the form",
     };
     format!("{count} × {what}")
@@ -124,9 +126,20 @@ pub fn layout_warning(warning: &LayoutWarning) -> &'static str {
     }
 }
 
-/// How many values the form's data filled in, above the notes.
+/// How many values the form's data filled in, above the notes, with the
+/// fields left empty and the data nothing took when there are any.
 #[must_use]
-pub fn values_merged(values: usize, has_data: bool) -> String {
+pub fn values_merged(values: usize, has_data: bool, unfilled: usize, unbound: usize) -> String {
+    let filled = filled_count(values, has_data);
+    match (has_data, unfilled, unbound) {
+        (false, _, _) | (true, 0, 0) => filled,
+        (true, u, d) => {
+            format!("{filled} {u} field(s) took no value; {d} data value(s) fill nothing.")
+        }
+    }
+}
+
+fn filled_count(values: usize, has_data: bool) -> String {
     match (has_data, values) {
         (false, _) => {
             "The form carries no filled-in data, so its fields are drawn empty.".to_owned()
@@ -143,7 +156,20 @@ pub fn values_merged(values: usize, has_data: bool) -> String {
 /// it left at their default value.
 #[must_use]
 pub fn merge_warning(kind: MergeWarningKind, count: usize) -> String {
-    let what = match kind {
+    let unfollowed = match kind {
+        MergeWarningKind::MixedGlobal => {
+            return format!(
+                "{count} × values shared between global and ordinary copies of a field, shared anyway"
+            );
+        }
+        MergeWarningKind::ExcessData => {
+            return format!(
+                "{count} × data groups left over once a repeating section reached its most copies, not shown"
+            );
+        }
+        MergeWarningKind::InstanceLimit => {
+            return format!("{count} × repeating sections stopped at the preview's copy limit");
+        }
         MergeWarningKind::Unresolved => "fields whose data reference finds no data",
         MergeWarningKind::WrongType => "fields whose data reference finds the wrong kind of data",
         MergeWarningKind::Unsupported => {
@@ -152,7 +178,7 @@ pub fn merge_warning(kind: MergeWarningKind, count: usize) -> String {
         MergeWarningKind::TooLong => "fields whose data reference is too long to follow",
         _ => "fields whose data reference could not be followed",
     };
-    format!("{count} × {what}, drawn with their default value")
+    format!("{count} × {unfollowed}, drawn with their default value")
 }
 
 /// The heading over the choices XFA leaves open.

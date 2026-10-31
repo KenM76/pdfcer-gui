@@ -98,6 +98,20 @@ impl Visibility {
             .all(|&i| nodes.get(i).is_none_or(|n| !n.placements.contains(&p)))
     }
 
+    /// Which of `model`'s meshes are drawn, or `None` when every one is.
+    pub fn shown_meshes(&self, model: &AssembledModel) -> Option<Vec<bool>> {
+        if model.mesh_placements.is_empty() || self.hidden.is_empty() {
+            return None;
+        }
+        Some(
+            model
+                .mesh_placements
+                .iter()
+                .map(|&p| self.draws(&model.tree, p))
+                .collect(),
+        )
+    }
+
     /// Draw with `model` painted for this state, the highlight in `accent`
     /// when given, and restore the model's own paint afterwards.
     pub fn painted<R>(

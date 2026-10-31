@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Three axes from one corner, each ending in a dot: the tripod the gimbal draws, whose ends are tapped to look along an axis. -->
+  <path d="M18 30V8M18 30l20 0M18 30L6 42" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="18" cy="8" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="38" cy="30" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="6" cy="42" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+</svg>

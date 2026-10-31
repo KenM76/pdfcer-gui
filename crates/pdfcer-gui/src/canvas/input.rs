@@ -315,10 +315,15 @@ pub(crate) fn abandon_gesture(ctx: &egui::Context) -> bool {
 
 /// The pointer movement of an in-progress pan over this canvas, or `None` when
 /// no pan is happening.
+///
+/// The drag must have started on the canvas's own layer and still be over it:
+/// a window drawn over the canvas (the 3D viewer on Android, where windows
+/// are drawn inside the application's) takes its own drags, and a rectangle
+/// test alone would pan the page under it.
 pub(super) fn pan_delta(ui: &egui::Ui, tool: CanvasTool) -> Option<Vec2> {
-    let rect = ui.max_rect();
+    let origin = ui.input(|i| i.pointer.press_origin());
+    let over = pointer_on_canvas(ui) && origin.is_none_or(|p| on_canvas(ui, p));
     ui.input(|i| {
-        let over = i.pointer.latest_pos().is_some_and(|p| rect.contains(p));
         let panning =
             i.pointer.middle_down() || (tool.pans_with_primary() && i.pointer.primary_down());
         if panning && over {
@@ -328,6 +333,18 @@ pub(super) fn pan_delta(ui: &egui::Ui, tool: CanvasTool) -> Option<Vec2> {
             None
         }
     })
+}
+
+/// Whether `p` is on this canvas and no window drawn over it.
+fn on_canvas(ui: &egui::Ui, p: egui::Pos2) -> bool {
+    ui.max_rect().contains(p) && ui.ctx().layer_id_at(p) == Some(ui.layer_id())
+}
+
+/// Whether the pointer is on this canvas and no window drawn over it, so the
+/// wheel and drags there are the canvas's.
+pub(super) fn pointer_on_canvas(ui: &egui::Ui) -> bool {
+    ui.input(|i| i.pointer.latest_pos())
+        .is_some_and(|p| on_canvas(ui, p))
 }
 
 /// **The direct-hits-first rule, in the three states it can be in.**

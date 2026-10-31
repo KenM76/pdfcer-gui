@@ -653,6 +653,46 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O344 — **BUILT** — a tappable navigation gimbal on the 3D picture
+
+His words: *"Include the option to show a navigation control gimbal area you can tap on."*
+
+**Scope.** An optional on-picture gimbal showing the model's axes as the camera sees them. Tapping an axis looks along it, and tapping the centre goes back to the fitted view. It works in orbit and walkthrough, on the phone and the desktop. Shown or hidden by a setting that persists.
+
+**Status.** Built: a gimbal glyph switch beside Walk shows it, remembered across sessions; a tap on an axis end looks along it, the centre returns to the fitted view; in orbit and walk, window and full screen. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view` (desktop), and on the Android emulator. NOT VERIFIED by him.
+
+## O343 — **BUILT** — navigating the 3D window also moves the page under it
+
+His words: *"Currently when I navigate in the 3D window navigation in the page underneath the window is also affected."*
+
+**Scope.** No gesture made on the 3D viewer reaches the page canvas: drag, pinch, wheel or keys.
+
+**Status.** Cause found: on a touch screen the canvas pans when a drag is anywhere inside its rectangle, even under a window drawn over it (Android draws the viewer inside the app's window). Fix written (the pan requires the drag to start and stay on the canvas's own layer; the wheel pans only when the pointer is on it). Driven: `the_page_stays_still_while_the_3d_viewer_is_steered` and `the_page_stays_still_under_the_embedded_3d_viewer` (the drawn-inside case, as on the phone), which fails with the fix removed. NOT VERIFIED by him.
+
+## O342 — **BUILT** — a game-style full-screen 3D view, with collision, ghost mode and a level view
+
+His words: *"Give the option for making the 3D window full screen with controls that are easy to use like games would have. Ideally walkthrough mode can optionally detect floors and objects so you don't just move through them, but can toggle it off and on (ghost mode). There should be an option to level the view so walk through mode doesn't slowly drift you up or down."*
+
+**Scope.** A full-screen 3D view on Android as well as the desktop. On-screen controls work like a phone game: a move stick, a look area, and up and down. The desktop gets WASD, mouse-look and run. The walkthrough stands on floors and stops at walls, and Ghost turns that off. Level keeps movement horizontal and levels the view.
+
+**Status.** Built: a full-screen button (the OS window full screen on the desktop; an area over the whole app on Android) with one row of thumb-sized glyphs — leave, Walk/Orbit, Ghost, Level, gimbal, Fit. Phone: left thumb moves, right thumb looks, arrows rise and sink. Desktop: WASD, mouse-look, Shift runs, Q/E rise and sink. The walk stands on floors, steps up low ledges and stops at walls through the engine's ray pick; Ghost turns that off; Level keeps the walk horizontal. The walk's up is the viewer's *Up* setting. Driven on the desktop and on the Android emulator. Open engine asks: G250 (the model's unit, for a real eye height) and G251 (a pick index, for collision on large models).
+
+## O341 — **BUILT** — a walkthrough mode for 3D, and better 3D navigation
+
+His words: *"Please add a walkthrough mode for 3D. Really focus on improving the navigation controls for 3D."*
+
+**Scope.** A first-person walkthrough mode beside orbit. Better navigation in both: keys, double-tap to go to or centre on a point, and adjustable speed.
+
+**Status.** Built: Walk beside orbit; double-tap (double-click) goes to the point tapped while walking and centres on it while orbiting; a speed slider; keys in both. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view`, and on the Android emulator. NOT VERIFIED by him.
+
+## O340 — **OPEN** — conformance patch 17.2 (JPEG 2000, ICC-based RGB) shows an X
+
+His words, the suite's name withheld per the 2026-08-25 ruling: *"[suite] 17.2 jpeg2000 compression ICC Compressed has an X fail in the [suite] X 4 pdf"*
+
+**Scope.** Patch 17.2 on page 5 of the licensed print-conformance suite's X-4 file (named in the private map directory) shows no X.
+
+**Status.** Diagnosed as engine colour management: the JPEG 2000 image's RGB comes out a few levels off the CMYK square it should match, so the X shows faintly. Filed as G249. The GUI cannot fix it; it lands with the engine fix and a pin move.
+
 ## O339 — **BUILT** — 3D models in the Android app
 
 His words: *"Please add 3D support to the android app."*

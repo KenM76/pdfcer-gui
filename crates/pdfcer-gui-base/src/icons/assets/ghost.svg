@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A ghost: a rounded head, two eyes and a wavy hem. The conventional game sign for passing through walls. -->
+  <path d="M12 40V22a12 12 0 0 1 24 0v18l-4-3-4 3-4-3-4 3-4-3z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="20" cy="22" r="1.25" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="28" cy="22" r="1.25" stroke="currentColor" stroke-width="2.5"/>
+</svg>

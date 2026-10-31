@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **44 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `wanted` — a real gap — **45 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -120,6 +120,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Move a radio button into another radio group** — `move_widget_to_field`, `WidgetRegroup` | **wanted, at the pin since v0.82.0; request G188.** `app::actions::forms::radiogroup::move_to` calls it (`pdfcer_core::edit::regroup`) instead of add, `delete_widget` and `coalesce_last`; one `CommandKind::MoveWidgetToField`. `WidgetRegroup::action_targets_orphaned` and its disclosures reach the status line. Refusals to word: `EditError::NotARadioGroup`, `EditError::WidgetAlreadyInField`. |
 | **Move or delete several form-field boxes in one command** — `move_widgets_each`, `delete_widgets` | **wanted, at the pin since v0.82.0; requests G189 and G192.** `app::actions::movemixed` calls `move_widgets_each` instead of `move_widget` per widget, and `app::actions::forms::delete::widgets` calls `delete_widgets` instead of its highest-index-first loop folded with `coalesce_last`. Both live in `pdfcer_core::edit::batch`. Reports: `WidgetMove`, `FieldDeletion`. |
 | **Read a form field's free angle and opacity** — `forms::Widget::free_angle`, `forms::Widget::opacity` | **wanted, at the pin since v0.82.0; request G177.** `canvas::widgetturn` and Properties' Stand upright and Opacity rows read them instead of `pdfcer_gui_base::widgetread`, which parses the appearance `/Matrix` and `/CA`. The shell's `forms::Widget` literals already set both to `None`. |
+| **Dynamic XFA, form fill saved to the datasets packet** — `EditSession::fill_xfa_field`, the modules `pdfcer_core::edit::xfa_fill` and `pdfcer_core::xfa::merge::fill` (`XfaFillOutcome`, `XfaFillError`), `CommandKind::FillXfaField`, `EditError::XfaFill` | **wanted.** The surface is the Form preview made editable: a click on a drawn field opens its value, Enter calls `fill_xfa_field` with the field's data path, the preview redraws, and `XfaFillOutcome::shared_with` and `XfaFillOutcome::created` are disclosed off-canvas (a value shared by several copies, a data node created). One undo entry per fill. This is what makes O336's lease fillable. |
 
 ### Redaction & security
 
@@ -159,7 +160,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `blocked` — waiting on something named — **2 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -177,7 +178,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -188,7 +189,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **19 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `declined` — deliberately no surface — **19 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -233,7 +234,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **390 of 455** <!-- counted by tools/walk-engine-backlog.py, 2026-10-30; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **399 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -275,6 +276,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **PRC assembly colour/visibility overrides (entity references)** — `EntityOverrides::{Subtree, Everywhere, Ignore}` (`pdfcer-3d`, engine Pass 510.0) | **shipped.** `assemble` applies entity references by default, and the viewer counts and says the parts the assembly recoloured or hid (`t::view_overridden`). Driven by `the_3d_viewer_says_the_assembly_coloured_it` on `overridden.prc`. |
 | **3D product tree survives PMI, views, lights and clipping planes** — `placements()`, `model_tree()`, `ModelNode::markups` / `views` | **shipped.** The 3D viewer's part list opens files carrying PRC markups and views, and each part shows its count of markups and views (`dialogs::model3d::parts`). |
 | **Textures on a glTF/GLB 3D model** — each material's base-colour image … | **shipped.** Edit ▸ Insert ▸ 3D model… carries a glTF's textures into the PRC and the insert's notes say how many meshes are textured (`PrcWriteReport::textured`, `app::actions::gltf`); undrawable textures are disclosed in the same notes. |
+| **Pick a point on a 3D model** — `pdfcer_3d::pick` (`pick`, `Hit`), `Camera::ray_through` | **shipped — the 3D viewer's Walk mode.** `dialogs::model3d::nav` casts rays through `pdfcer_3d::pick` for the floor under the walker and the wall ahead (*Ghost* off) and for a double-tap's destination. Measurements on the model remain G245. |
+| **A placed 3D model's lit opening view, from one engine verb** — `EditSession::set_3d_opening_view`, the modules `pdfcer_core::edit::threed_opening` and `pdfcer_core::threed::opening` (`ThreeDOpeningView`, `OPENING_VIEW_NAME`) | **shipped — Edit ▸ Insert ▸ 3D model… writes its opening view through it** (`app::actions::model_insert::place`), and shows `ThreeDOpeningView::disclosure`. `pdfcer_3d::model::default_view_camera` is the camera under it; the viewer's own first view is its `Orbit`, which also follows the file's saved default, so the shell does not call it. |
+| **Text strings decode UTF-8 and UTF-16LE as well as UTF-16BE and PDFDocEncoding** — `decode_text_string` | **shipped with no surface of its own.** Every reader the shell shows — layer names, bookmark titles, Info fields, field names — goes through the engine's decoding, so a UTF-8 or UTF-16LE string now reads right everywhere at once; there is no choice for the operator to make. |
 | **`merge_document` carrying optional-content group (`/OCProperties`) configuration** — layers now merge with the pages | **shipped.** <!--namesake:merge_document--> File ▸ Merge and Insert from file call `EditSession::merge_document` (`app::actions::pages`), so a merged file's layers arrive with no shell change. Whether the Layers panel shows them after the merge is not yet driven. |
 | Transform several selected objects, each by its own matrix, as one command | **consumed** — Align and Distribute › Circular with *Rotate objects*. `pdfcer_core::vector::edit::plan_transform_each` is the engine's own planning half of that verb; the shell calls the verb, which runs it. `EditSession::transform_objects_each` is what Align and Distribute › Circular with *Rotate objects* needs: each object translated onto the ellipse and turned about its own centre, one command and one undo step, all-or-nothing. The shell asked for it (`request_transform_objects_each.md`) rather than fold N `transform_objects` calls with `coalesce_last`, which is not all-or-nothing. |
 | **Set or remove a page's `/CropBox`** — `EditSession::set_crop_boxes`, `CropBoxEdit::{Set, Reset}`, disclosing `overhangs_media_box` and the `CropBoxEntry` written | **shipped — Pages ▸ Transform ▸ Crop….** Four margins in millimetres, measured from the edges as the sheet is seen after `/Rotate`, become one `CropBoxEdit::Set`; all four at zero, or *Show whole sheet*, is `CropBoxEdit::Reset`. One `CommandKind::SetCropBoxes` undo entry however many sheets; a pick of mixed sizes or rotations offers only the whole sheet. Margins that leave nothing hide the commit button, so `EditError::CropBoxEmpty` is not reachable from the window. `app::actions::pagesize::crop` traces every `CropBoxEntry::ExplicitWritten`, `CropBoxEntry::BaseSpellingKept`, `CropBoxEntry::InheritedSoOwnEntryRemoved` and `CropBoxEntry::Absent` count and reports `overhangs_media_box` and an inherited removal off-canvas. `CropBoxChange`'s `page_index`, `before` and `after` are unread: the status line reports counts. Our request `G056`. |
@@ -479,6 +483,12 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Dynamic XFA, check buttons and 3-D edges** — round and square check buttons drawn, 3-D borders bevelled or plain … | **shipped — Form preview draws them; its *Reading choices* set `ThreeDStroke` and `CheckCaption`, and a plain 3-D border is disclosed (`PaintNoteKind::StrokeApproximated`).** Driven by `form_preview_draws_a_dynamic_form` (Plain → `approximated=1`). |
 | **List every saved 3D view** — `threed::saved_3d_views` returns each `/VA` view in file order with the default's index … | **shipped — the 3D viewer's *Saved views* menu lists them, the default marked, and looks from the one chosen.** Driven by `the_3d_viewer_opens_on_the_files_view`. |
 | **Dynamic XFA, image values** — a field, draw or caption holding an `<image>` is drawn … | **shipped — Form preview draws through `render_xfa_page_with_images` with `XfaImages::from_view`.** Each image the renderer could not draw is a `PaintNote`, counted in the window's list. |
+| **Dynamic XFA, normal name-matching data merge** — default (`once`) binding by name | **shipped — Form preview merges through `merge_data`, so a same-named value fills its field**; a wrong-type node arrives as a merge warning, worded by `text::xfapreview::merge_warning`. |
+| **Dynamic XFA, `match="global"` binding** — a global field or exclGroup binds a same-named value elsewhere: `GlobalScope`, `GlobalExclGroup`, `MergeOptions::with_global_scope`, `MergeOptions::with_global_exclgroup`, `MergeOptions::global_scope`, `MergeOptions::global_exclgroup`, `MergeWarningKind::MixedGlobal` | **shipped — Form preview draws every global copy with the shared value**; `MixedGlobal` is worded. The two settings keep the engine's defaults (`GlobalScope::Document`, `GlobalExclGroup::Honour`) and are not yet Reading choices: wanted on the Form preview's *Reading choices* beside `ThreeDStroke`, as is `GlobalScope::Records` and `GlobalExclGroup::AsOnce`. |
+| **Dynamic XFA, instances created from data and unfilled counts** — `MergedForm::unfilled`, `MergedForm::unbound_values`, `DataCreation`, `MergeOptions::with_data_creation`, `MergeOptions::data_creation`, `MergeWarningKind::ExcessData`, `MergeWarningKind::InstanceLimit`, `BoundValue::data` | **shipped — Form preview draws one copy per data group and its summary line counts the fields that took no value and the data nothing took** (`text::xfapreview::values_merged`); `ExcessData` and `InstanceLimit` are worded. `DataCreation` (`DataCreation::Create`, `DataCreation::Refuse`) governs the fill verb below, not the preview. |
+| **Dynamic XFA, growable field/draw splits between text lines at a content-area break** — `LayoutItem::fragment`, the module `pdfcer_core::xfa::layout::lines` (`Fragment`) | **shipped — Form preview lays out and draws through the engine, so a long field splits across pages there.** The shell reads no fragment; the pieces arrive drawn. |
+| **Dynamic XFA, fields and draws sized from their text** | **shipped — Form preview, through the engine's layout; no setting.** |
+| **Dynamic XFA, geometric draws, dashed edges and rotate** — the modules `pdfcer_core::xfa::paint::dash` (`DashCaps`, `DashLengths`), `pdfcer_core::xfa::paint::shape` (`ArcCircle`, `ArcFill`) and `pdfcer_core::xfa::layout::options` (`OddRotate`, `NegativeCoordinates`, `NestedOverflow`), `PaintOptions::with_arc_circle`, `PaintOptions::with_arc_fill`, `PaintOptions::with_dash_caps`, `PaintOptions::with_dash_lengths`, `PaintOptions::arc_circle`, `PaintOptions::arc_fill`, `PaintOptions::dash_caps`, `PaintOptions::dash_lengths`, `LayoutItem::rotate`, `PaintNoteKind::Shape`, `PaintNoteKind::Rotate` | **shipped — Form preview draws lines, arcs, rectangles, dashed edges and quarter-turned items**; `Shape` and `Rotate` notes are worded. The settings keep the engine's defaults; offering `ArcCircle`, `ArcFill`, `DashLengths`, `DashCaps` and `OddRotate` as *Reading choices* is wanted, with the global settings above. |
 | **Draw form widgets that carry no appearance** — `RenderOptions::with_widgets_without_ap`, `RenderOptions::widgets_without_ap`, `RenderPolicy::widgets_without_ap`, the modules `pdfcer_render::annot::widget` and `pdfcer_core::widget_draw`, `Diagnostics::annotations_widget_synthesized` (our `G230`) | **shipped — the canvas draws and clicks them; driven by `a_form_without_drawn_values_draws_and_clicks`.** The renderer draws such widgets by default and the shell keeps `WidgetsWithoutAp::Draw`. The canvas offers each one on a click by its `/Rect`, and the Forms panel says the file stores no drawing for those fields and that *Redraw values* writes one (O327). `widget_draw::WidgetAppearances` is not called: nothing here needs the picture without a render. |
 | State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::appearance`, `NewChoiceField::appearance`, `EditError::FieldAppearanceOnMerge` | **shipped — `app::actions::forms::author` states Forms ▸ Style's text look on the spec, one command and one undo entry;** a name joining an existing field is refused with a look, so the box is placed again without one and the status line says it takes that field's style. Driven by `forms_style_sets_the_next_field`. |
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **shipped.** One formatter, `text::forms::redraw_notes`, turns `LayoutDisclosure` into status-line sentences on `status-group:edit-disclosure`: the auto size and, where the bound is `Width` or `Floor`, what chose it; a `/DA` colour drawn black; characters drawn as `?`. Called by Properties (`app::actions::forms::edit_properties`), the box edit (`edit_widget`), Turn (`forms::widget::rotate`), and Reset and Redraw values in the Forms panel, which name no field because the engine reports the last auto-sized one. Regenerate reads `RegenOutcome`'s own four fields. Driven by `a_redraw_says_what_it_did_to_a_fields_text`. |
@@ -817,7 +827,7 @@ The request O280 is built on, answered and consumed.
 
 - **G245** — no 3D measuring: point-to-point distance, edge length, radius and angle on the model, as Acrobat's 3D Measurement Tool, and storing a measurement. The renderer returns no depth and nothing picks a surface point, so the viewer offers none. The page's 2D ce dimensions are unaffected.
 - **G246** — no list of a file's saved 3D views. Answered at v0.108.0 by `pdfcer_core::threed::view_list` (`saved_3d_views`) and consumed: the viewer's *Saved views* menu.
-- **G247** — the lit opening view written at insert lives only in the CLI (`threed_cmd::embed`'s `light_view`, `scheme_of`, `poster_view`); `app::actions::model_insert` restates it from public API.
+- **G247** — the lit opening view written at insert. Answered at v0.112.0 by `EditSession::set_3d_opening_view` and consumed by `app::actions::model_insert`.
 
 ## Engine arrivals at v0.108.0 — not verdict rows
 

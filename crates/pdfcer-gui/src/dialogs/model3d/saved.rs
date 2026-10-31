@@ -70,8 +70,10 @@ impl ModelView {
         let Some(orbit) = orbit.filter(|_| item.clicked()) else {
             return;
         };
+        let view = view.clone();
+        self.orbiting();
         self.orbit = orbit;
-        self.aimed = Some(view.clone());
+        self.aimed = Some(view);
         self.saved_chosen = Some(i);
         let (perspective, framed) = (orbit.perspective, orbit.framed);
         crate::diag::trace(|| {

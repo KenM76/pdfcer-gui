@@ -63,9 +63,11 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 196 → 197: `paragraphs`, the pilcrow, drawn for `edit.paragraphs`.
     // 197 → 198: `overprint`, two overlapping inks, drawn for `view.overprint_preview`.
     // 198 → 199: `compare`, two sheets with opposed arrows, drawn for `tools.compare`.
+    // 199 → 204: `walk`, `orbit`, `ghost`, `level-view`, `gimbal`, the 3D viewer's navigation.
+    // 204 → 205: `exit-fullscreen`, the full-screen 3D viewer's way back.
     assert_eq!(
         Icon::ALL.len(),
-        199,
+        205,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

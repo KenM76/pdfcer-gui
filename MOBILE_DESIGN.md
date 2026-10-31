@@ -95,7 +95,7 @@ works on a phone but is designed for a tablet.
 | long press | the context menu, i.e. right-click |
 | stylus | always the active tool; a finger pans while a stylus is in use |
 | stylus barrel button | right-click |
-| in the 3D viewer | one finger turns the model, a pinch zooms, two fingers move it |
+| in the 3D viewer | one finger turns the model, a pinch zooms, two fingers move it; walking, the left thumb moves, the right thumb looks and the on-picture arrows rise and sink; double-tap goes to (walking) or centres on (orbiting) the point; full screen gives one row of thumb-sized glyphs |
 | second finger held during a drag | the constraint modifier (Shift) |
 
 Precision comes from a **magnifier**. While a finger drags a point or a handle,

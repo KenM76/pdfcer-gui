@@ -431,7 +431,12 @@ fn draw(
     Ok(Drawn {
         pages,
         total_pages: layout.pages.len(),
-        values: t::values_merged(merged.bound.len(), merged.has_data),
+        values: t::values_merged(
+            merged.bound.len(),
+            merged.has_data,
+            merged.unfilled,
+            merged.unbound_values,
+        ),
         value_count: merged.bound.len(),
         merge_warning_count: merged.warnings.len(),
         approximated,

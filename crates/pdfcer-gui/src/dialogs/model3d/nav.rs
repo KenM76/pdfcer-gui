@@ -1,0 +1,424 @@
+//! The viewer's navigation state and switches: orbiting or walking, ghost
+//! mode, level walking, the gimbal and the walking speed, and the model's
+//! surfaces a walker and a double-tap meet. `navorbit` and `navwalk` read
+//! the input for each mode; `immersive` lays the viewer over the screen.
+//!
+//! The switches live for the session in egui's memory, so the next model
+//! opened walks the same way.
+
+use egui::{Pos2, Rect, Response, Ui};
+use pdfcer_3d::{AssembledModel, Camera, Hit, Ray, RenderError, TriangleMesh};
+use pdfcer_gui_base::icons::{self, Icon};
+
+use super::gimbal::Gimbal;
+use super::orbit::radius;
+use super::parts::Visibility;
+use super::stick::Sticks;
+use super::walk::{Rules, Walk};
+use super::{ModelView, PITCH_LIMIT};
+use crate::text::panels::modelnav as t;
+
+/// The Walk / Orbit switch.
+pub const REGION_WALK: &str = "model3d.walk"; // ui-text-exempt: trace region name, never displayed
+/// Ghost mode.
+pub const REGION_GHOST: &str = "model3d.ghost"; // ui-text-exempt: trace region name, never displayed
+/// Level walking.
+pub const REGION_LEVEL: &str = "model3d.level"; // ui-text-exempt: trace region name, never displayed
+/// The gimbal switch.
+pub const REGION_GIMBAL: &str = "model3d.gimbal"; // ui-text-exempt: trace region name, never displayed
+/// Gimbal tip `n` (+x, +y, +z, -x, -y, -z), then `6` for its centre.
+pub const REGION_GIMBAL_TIP: &str = "model3d.gimbal.tip."; // ui-text-exempt: trace region name, never displayed
+/// The full-screen switch where the viewer is drawn inside the application.
+pub const REGION_IMMERSIVE: &str = "model3d.immersive"; // ui-text-exempt: trace region name, never displayed
+
+/// The egui memory key of the switches.
+const PREFS_KEY: &str = "model3d-nav-prefs"; // ui-text-exempt: an egui id, never displayed
+/// A walking step's collision time above which the slowness is said, in
+/// milliseconds.
+pub(super) const SLOW_MS: f64 = 40.0;
+
+/// The navigation switches.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) struct Prefs {
+    pub ghost: bool,
+    pub level: bool,
+    pub gimbal: bool,
+    pub speed: f64,
+}
+
+impl Default for Prefs {
+    fn default() -> Self {
+        Self {
+            ghost: false,
+            level: true,
+            gimbal: true,
+            speed: 1.0,
+        }
+    }
+}
+
+impl Prefs {
+    pub fn rules(self) -> Rules {
+        Rules {
+            solid: !self.ghost,
+            level: self.level,
+            speed: self.speed,
+        }
+    }
+}
+
+/// The meshes a walker meets: the shown ones, copied while any is hidden.
+#[derive(Default)]
+struct Solids {
+    version: Option<u32>,
+    shown: Option<Vec<TriangleMesh>>,
+}
+
+impl Solids {
+    fn meshes<'a>(
+        &'a mut self,
+        model: &'a AssembledModel,
+        parts: &Visibility,
+    ) -> &'a [TriangleMesh] {
+        if self.version != Some(parts.version) {
+            self.shown = parts.shown_meshes(model).map(|mask| {
+                model
+                    .meshes
+                    .iter()
+                    .zip(mask)
+                    .filter(|(_, shown)| *shown)
+                    .map(|(m, _)| m.clone())
+                    .collect()
+            });
+            self.version = Some(parts.version);
+        }
+        self.shown.as_deref().unwrap_or(&model.meshes)
+    }
+}
+
+/// Navigation state kept between frames.
+#[derive(Default)]
+pub(super) struct Nav {
+    /// Walking, or `None` orbiting.
+    pub walk: Option<Walk>,
+    pub prefs: Prefs,
+    pub sticks: Sticks,
+    /// Filling the screen where the viewer is drawn inside the application.
+    pub immersive: bool,
+    /// The last tap on the picture, for a double tap: when and where.
+    pub last_tap: Option<(f64, Pos2)>,
+    solids: Solids,
+    /// The camera moved this frame, so the picture renders at the moving
+    /// size.
+    pub moving: bool,
+    /// Areas over the picture whose own buttons take a finger.
+    pub hud: Vec<Rect>,
+    /// The move stick's centre and tilt, to draw.
+    pub stick: Option<(Pos2, egui::Vec2)>,
+    /// The rise and sink pads, to draw, when a touch screen is in use.
+    pub pads: Option<[Rect; 2]>,
+    /// This walk's frames and its slowest collision, milliseconds.
+    pub walked: (u32, f64),
+    /// The slowest collision of the last walk, milliseconds, said when slow.
+    pub slow: Option<f64>,
+    /// The session's switches have been taken up.
+    loaded: bool,
+}
+
+impl Nav {
+    /// Take up the session's switches, once.
+    pub fn load(&mut self, ctx: &egui::Context) {
+        if std::mem::replace(&mut self.loaded, true) {
+            return;
+        }
+        if let Some(prefs) = ctx.data(|d| d.get_temp(egui::Id::new(PREFS_KEY))) {
+            self.prefs = prefs;
+        }
+    }
+
+    fn store(&self, ctx: &egui::Context) {
+        ctx.data_mut(|d| d.insert_temp(egui::Id::new(PREFS_KEY), self.prefs));
+    }
+}
+
+/// A switch showing `icon`, with `label` beside it except on a phone.
+pub(super) fn toggle(ui: &mut Ui, icon: Icon, label: &str, tip: &str, on: bool) -> Response {
+    let image = if on {
+        icons::selected_image(ui, icon)
+    } else {
+        icons::image(ui, icon)
+    };
+    let button = if egui_shell::ribbon::phone::is_phone(ui.ctx()) {
+        egui::Button::image(image)
+    } else {
+        egui::Button::image_and_text(image, label)
+    };
+    ui.add(button.selected(on))
+        .on_hover_text(label)
+        .on_hover_text(tip)
+}
+
+impl ModelView {
+    /// The camera the picture is drawn from, in an image of `aspect`.
+    pub(super) fn view_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
+        match &self.nav.walk {
+            Some(walk) => Ok(walk.camera()),
+            None => self.orbit.camera(&self.bounds, aspect, self.aimed.as_ref()),
+        }
+    }
+
+    /// The picture's aspect, width / height, as last drawn.
+    pub(super) fn aspect(&self) -> f64 {
+        let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
+        f64::from(w.max(1)) / f64::from(h.max(1))
+    }
+
+    /// Walk, Ghost, Level, the gimbal, the speed, and the full-screen switch
+    /// where the viewer has no OS window to fill the screen with.
+    pub(super) fn nav_controls(&mut self, ui: &mut Ui) {
+        let walking = self.nav.walk.is_some();
+        let (icon, label, tip) = if walking {
+            (Icon::Orbit, t::orbit(), t::orbit_tooltip())
+        } else {
+            (Icon::Walk, t::walk(), t::walk_tooltip())
+        };
+        let walk = toggle(ui, icon, label, tip, false);
+        crate::diag::ui_rect_visible(REGION_WALK, walk.rect, ui.clip_rect());
+        if walk.clicked() {
+            self.set_walking(!walking);
+        }
+        if walking {
+            self.walk_switches(ui, false);
+        }
+        let gimbal = toggle(
+            ui,
+            Icon::Gimbal,
+            t::gimbal(),
+            t::gimbal_tooltip(),
+            self.nav.prefs.gimbal,
+        );
+        crate::diag::ui_rect_visible(REGION_GIMBAL, gimbal.rect, ui.clip_rect());
+        if gimbal.clicked() {
+            self.nav.prefs.gimbal = !self.nav.prefs.gimbal;
+            self.switched(ui.ctx());
+        }
+        if !self.native && !self.nav.immersive {
+            let full = toggle(
+                ui,
+                Icon::Fullscreen,
+                t::immersive(),
+                t::immersive_tooltip(),
+                false,
+            );
+            crate::diag::ui_rect_visible(REGION_IMMERSIVE, full.rect, ui.clip_rect());
+            if full.clicked() {
+                self.set_immersive(true);
+            }
+        }
+    }
+
+    /// Ghost, Level and (in a window) the speed; `hud` draws them as the
+    /// full-screen row's thumb-sized glyphs.
+    pub(super) fn walk_switches(&mut self, ui: &mut Ui, hud: bool) {
+        let prefs = self.nav.prefs;
+        let switch = |ui: &mut Ui, icon, label, tip, on| {
+            if hud {
+                super::immersive::glyph(ui, icon, label, on).on_hover_text(tip)
+            } else {
+                toggle(ui, icon, label, tip, on)
+            }
+        };
+        let ghost = switch(ui, Icon::Ghost, t::ghost(), t::ghost_tooltip(), prefs.ghost);
+        crate::diag::ui_rect_visible(REGION_GHOST, ghost.rect, ui.clip_rect());
+        if ghost.clicked() {
+            self.nav.prefs.ghost = !prefs.ghost;
+            self.switched(ui.ctx());
+        }
+        let level = switch(
+            ui,
+            Icon::LevelView,
+            t::level(),
+            t::level_tooltip(),
+            prefs.level,
+        );
+        crate::diag::ui_rect_visible(REGION_LEVEL, level.rect, ui.clip_rect());
+        if level.clicked() {
+            self.nav.prefs.level = !prefs.level;
+            if let (true, Some(walk)) = (self.nav.prefs.level, &mut self.nav.walk) {
+                walk.level();
+            }
+            self.switched(ui.ctx());
+        }
+        if !hud {
+            let speed = ui
+                .add(
+                    egui::Slider::new(&mut self.nav.prefs.speed, 0.25..=4.0)
+                        .logarithmic(true)
+                        .custom_formatter(|v, _| t::speed_value(v))
+                        .text(t::speed()),
+                )
+                .on_hover_text(t::speed_tooltip());
+            if speed.drag_stopped() || speed.lost_focus() {
+                self.switched(ui.ctx());
+            }
+        }
+    }
+
+    /// Keep the switches and trace them.
+    pub(super) fn switched(&mut self, ctx: &egui::Context) {
+        self.nav.store(ctx);
+        let p = self.nav.prefs;
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "model-nav-prefs ghost={} level={} gimbal={} speed={:.2}",
+                p.ghost, p.level, p.gimbal, p.speed
+            )
+        });
+    }
+
+    /// Start walking from the orbit's eye, or go back to orbiting the way
+    /// the walker looked. The walker's up is the operator's *Up*, never the
+    /// file camera's: a file view's up is often tilted, and a walk on it
+    /// would climb or sink while level.
+    pub(super) fn set_walking(&mut self, on: bool) {
+        if on {
+            let Ok(camera) = self
+                .orbit
+                .camera(&self.bounds, self.aspect(), self.aimed.as_ref())
+            else {
+                return;
+            };
+            self.nav.walk = Some(Walk::from_camera(
+                &camera,
+                super::orbit::Axes::upright(self.upright),
+                radius(&self.bounds),
+            ));
+        } else if let Some(walk) = self.nav.walk.take() {
+            self.orbit.look_along(walk.direction());
+            self.orbit.pitch = self.orbit.pitch.clamp(-PITCH_LIMIT, PITCH_LIMIT);
+        }
+        self.nav.stick = None;
+        self.nav.pads = None;
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| format!("model-walk on={on}"));
+    }
+
+    /// Back to orbiting, for a view chosen by name; the chooser then sets
+    /// the orbit.
+    pub(super) fn orbiting(&mut self) {
+        if self.nav.walk.take().is_some() {
+            self.nav.stick = None;
+            self.nav.pads = None;
+            // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| "model-walk on=false".to_owned());
+        }
+    }
+
+    /// The hint under the controls: `orbiting` while orbiting, how to walk
+    /// while walking.
+    pub(super) fn nav_hint<'a>(
+        &self,
+        ctx: &egui::Context,
+        orbiting: &'a str,
+    ) -> std::borrow::Cow<'a, str> {
+        let touch = self.nav.sticks.touch() || egui_shell::ribbon::phone::is_phone(ctx);
+        match (self.nav.walk.is_some(), touch) {
+            (true, true) => t::walk_hint_touch().into(),
+            (true, false) => t::walk_hint().into(),
+            (false, true) => orbiting.into(),
+            (false, false) => t::orbit_hint_with_keys(orbiting).into(),
+        }
+    }
+
+    /// Fill the screen, or stop.
+    pub(super) fn set_immersive(&mut self, on: bool) {
+        self.nav.immersive = on;
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| format!("model-view-immersive on={on}"));
+    }
+
+    /// The model's shown surface along `ray`, nearest first.
+    pub(super) fn hit(&mut self, ray: &Ray) -> Option<Hit> {
+        pdfcer_3d::pick(self.nav.solids.meshes(&self.model.drawn, &self.parts), ray)
+    }
+
+    /// The model's shown surface under `at` on the picture `rect`.
+    pub(super) fn hit_at(&mut self, rect: Rect, at: Pos2) -> Option<Hit> {
+        let (w, h) = (rect.width().max(1.0), rect.height().max(1.0));
+        let camera = self.view_camera(f64::from(w / h)).ok()?;
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let ray = camera
+            .ray_through(
+                f64::from(at.x - rect.left()),
+                f64::from(at.y - rect.top()),
+                w.round() as u32,
+                h.round() as u32,
+            )
+            .ok()?;
+        self.hit(&ray)
+    }
+
+    /// A tap on gimbal zone `zone` ([`Gimbal::zones`] order).
+    pub(super) fn gimbal_tap(&mut self, gimbal: &Gimbal, zone: usize) {
+        let axis = gimbal.tips.get(zone).map(|tip| tip.axis);
+        match (&mut self.nav.walk, axis) {
+            (Some(walk), Some(axis)) => walk.face(axis),
+            (Some(walk), None) => walk.level(),
+            (None, Some(axis)) => self.orbit.look_along(axis.map(|c| -c)),
+            (None, None) => self.home(),
+        }
+        let walking = self.nav.walk.is_some();
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| format!("model-gimbal zone={zone} walking={walking}"));
+    }
+
+    /// The gimbal over `rect` for the current camera, when shown.
+    pub(super) fn gimbal(&self, rect: Rect) -> Option<Gimbal> {
+        if !self.nav.prefs.gimbal {
+            return None;
+        }
+        let camera = self
+            .view_camera(f64::from(rect.width().max(1.0) / rect.height().max(1.0)))
+            .ok()?;
+        Gimbal::layout(rect, &camera)
+    }
+
+    /// The gimbal, the move stick and the rise and sink pads over the
+    /// picture `rect`, and the gimbal's tips for a driven check.
+    pub(super) fn paint_overlay(&self, ui: &Ui, rect: Rect) {
+        let painter = ui.painter().with_clip_rect(rect);
+        let visuals = ui.visuals();
+        if let Some(gimbal) = self.gimbal(rect) {
+            gimbal.paint(&painter, visuals);
+            for (i, zone) in gimbal.zones().into_iter().enumerate() {
+                crate::diag::ui_rect_visible(
+                    // ui-text-exempt: trace region name, never displayed
+                    &format!("{REGION_GIMBAL_TIP}{i}"),
+                    zone,
+                    rect,
+                );
+            }
+        }
+        if let Some((centre, tilt)) = self.nav.stick {
+            let ring = visuals.widgets.inactive.fg_stroke;
+            painter.circle_stroke(centre, super::stick::STICK_RADIUS, ring);
+            let knob = centre + egui::vec2(tilt.x, -tilt.y) * super::stick::STICK_RADIUS;
+            let (accent, _) = egui_shell::theme::Theme::accent_pair(ui.ctx());
+            painter.circle_filled(knob, 18.0, accent.gamma_multiply(0.8));
+        }
+        if let Some(pads) = self.nav.pads {
+            for (pad, icon) in pads.into_iter().zip([Icon::ChevronUp, Icon::ChevronDown]) {
+                painter.rect_filled(pad, 8.0, visuals.window_fill.gamma_multiply(0.6));
+                icons::image(ui, icon).paint_at(ui, pad.shrink(10.0));
+            }
+        }
+    }
+
+    /// Said under the picture when walls and floors make walking slow.
+    pub(super) fn nav_note(&self, ui: &mut Ui) {
+        if let (Some(ms), Some(_), false) = (self.nav.slow, &self.nav.walk, self.nav.prefs.ghost) {
+            ui.small(t::slow_collision(ms, self.model.triangles));
+        }
+    }
+}

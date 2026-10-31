@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Leave full screen: fullscreen.svg's four arrows turned to point in from
+       the corners, the arrowheads at the centre block. The universal pair to
+       the full-screen glyph; generic, no trademark risk. -->
+  <path d="M10 10L20 20M20 12v8h-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38 10L28 20M28 12v8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M38 38L28 28M28 36v-8h8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 38L20 28M20 36v-8h-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

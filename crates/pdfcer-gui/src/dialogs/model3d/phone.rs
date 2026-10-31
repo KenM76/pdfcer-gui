@@ -41,7 +41,7 @@ impl ModelView {
             ui.set_max_width(width - ui.spacing().scroll.allocated_width());
             ui.horizontal_wrapped(|ui| self.buttons(ui));
             self.controls(ui);
-            ui.small(t::view_hint_touch());
+            ui.small(self.nav_hint(ui.ctx(), t::view_hint_touch()));
             self.file_view_note(ui);
             let width = ui.available_width();
             let height = (ui.ctx().content_rect().height() * PICTURE_SHARE).min(width.max(64.0));

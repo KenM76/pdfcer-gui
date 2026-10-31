@@ -1,23 +1,17 @@
 //! Placing a 3D model on a page with Insert 3D model's choices: when it
 //! starts, its poster, and the opening view's lighting, in one undo entry.
 //!
-//! The lit opening view is the CLI's `pdfcer 3d embed --lighting` composed
-//! from public API (`light_view`, `poster_view` and `scheme_of` in
-//! `pdfcer-cli`'s `threed_cmd::embed`): automatic lighting writes CAD lights
-//! for a model converted from glTF, which carries no lights of its own, and
-//! no view for any other; a chosen scheme always writes one. The view is
-//! framed as the rendered poster frames the model when the model is PRC the
-//! engine can assemble, and leaves the camera to the reader otherwise.
+//! The lit opening view is the engine's `EditSession::set_3d_opening_view`:
+//! automatic lighting writes CAD lights for a model converted from glTF and
+//! no view for any other; a chosen scheme always writes one, framed as the
+//! poster frames the model where the engine can mesh it.
 
 use pdfcer_core::edit::MarkupOptions;
 use pdfcer_core::page_tree::Rect;
-use pdfcer_core::threed::{
-    PlaceholderReason, ThreeDLighting, ThreeDPoster, ThreeDSavedView, ThreeDSpec,
-};
+use pdfcer_core::threed::{PlaceholderReason, ThreeDLighting, ThreeDPoster, ThreeDSpec};
 use pdfcer_gui_base::editactions::ModelPlacement;
 
 use crate::app::state::OpenDoc;
-use crate::text::model3d as m;
 use crate::text::panels::models as t;
 
 /// Read `placement.source` and place it, centred, on `page`.
@@ -53,8 +47,7 @@ pub(super) fn insert(doc: &mut OpenDoc, page: usize, placement: &ModelPlacement)
     spec.activation = placement.activation;
     spec.render_poster = placement.render_poster;
     trace_requested(page, &spec, placement);
-    let view = opening_view(&spec, placement.lighting, converted);
-    place(doc, page, &spec, view, notes);
+    place(doc, page, &spec, placement.lighting, (notes, converted));
 }
 
 /// The bytes to embed and the conversion's notes, glTF converted to PRC
@@ -116,57 +109,13 @@ fn trace_requested(page: usize, spec: &ThreeDSpec, placement: &ModelPlacement) {
     });
 }
 
-/// The opening view to write, lit by `lighting` (automatic: CAD for a
-/// converted model, nothing otherwise).
-fn opening_view(
-    spec: &ThreeDSpec,
-    lighting: Option<ThreeDLighting>,
-    converted: bool,
-) -> Option<ThreeDSavedView> {
-    let scheme = match lighting {
-        Some(scheme) => scheme,
-        None if converted => ThreeDLighting::Cad,
-        None => return None,
-    };
-    let mut view = framed_view(spec).unwrap_or_default().with_lighting(scheme);
-    view.name = m::default_view_name().to_owned();
-    Some(view)
-}
-
-/// The view the rendered poster shows: the engine's default direction,
-/// fitted to the annotation's aspect. PRC only.
-#[cfg(feature = "3d")]
-fn framed_view(spec: &ThreeDSpec) -> Option<ThreeDSavedView> {
-    use pdfcer_3d::{Camera, DEFAULT_VIEW_DIRECTION, DEFAULT_VIEW_UP, assemble};
-    if spec.format != pdfcer_core::threed::ThreeDFormat::Prc {
-        return None;
-    }
-    let model = assemble(&spec.data).ok()?;
-    let r = spec.rect;
-    let aspect = (r.urx - r.llx).abs() / (r.ury - r.lly).abs();
-    let camera = Camera::fit_meshes(
-        &model.meshes,
-        DEFAULT_VIEW_DIRECTION,
-        DEFAULT_VIEW_UP,
-        true,
-        aspect,
-    )
-    .ok()?;
-    ThreeDSavedView::from_camera(m::default_view_name(), &camera, aspect)
-}
-
-#[cfg(not(feature = "3d"))]
-fn framed_view(_spec: &ThreeDSpec) -> Option<ThreeDSavedView> {
-    None
-}
-
 /// Add the annotation and, when there is one, its opening view: one entry.
 fn place(
     doc: &mut OpenDoc,
     page: usize,
     spec: &ThreeDSpec,
-    view: Option<ThreeDSavedView>,
-    converted: Vec<String>,
+    lighting: Option<ThreeDLighting>,
+    (converted, was_converted): (Vec<String>, bool),
 ) {
     let format = spec.format.clone();
     let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-3d", MarkupOptions::default())
@@ -178,21 +127,19 @@ fn place(
         let mut notes = vec![t::inserted(&format, page)];
         notes.extend(converted);
         notes.extend(poster_note(&outcome.poster));
-        if let Some(view) = view {
-            let framed = view.camera_to_world.is_some();
-            let scheme = view.lighting;
-            let lit = session.set_3d_views(page, outcome.annot_id, &[view], Some(0))?;
+        let opened =
+            session.set_3d_opening_view(page, outcome.annot_id, spec, lighting, was_converted)?;
+        if let Some(opened) = opened {
+            let (scheme, framed) = (Some(opened.lighting), opened.framed);
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
                     "model-insert-lit page={page} scheme={scheme:?} framed={framed} views={}",
-                    lit.views_after
+                    opened.outcome.views_after
                 )
             });
-            if let Some(scheme) = scheme {
-                notes.push(m::lit(scheme, framed));
-            }
-            notes.extend(lit.disclosures);
+            notes.push(opened.disclosure());
+            notes.extend(opened.outcome.disclosures);
         }
         if outcome.below_required_version() {
             notes.push(t::below_version(
@@ -257,32 +204,5 @@ fn centred(page: Rect) -> Rect {
         lly: cy - h / 2.0,
         urx: cx + w / 2.0,
         ury: cy + h / 2.0,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn spec() -> ThreeDSpec {
-        let rect = Rect {
-            llx: 0.0,
-            lly: 0.0,
-            urx: 400.0,
-            ury: 300.0,
-        };
-        ThreeDSpec::new(rect, b"PRC\x08\x00 not a real model".to_vec()).expect("PRC magic")
-    }
-
-    /// Automatic lighting writes a view only for a converted model; a chosen
-    /// scheme always writes one.
-    #[test]
-    fn automatic_lighting_lights_only_a_converted_model() {
-        assert!(opening_view(&spec(), None, false).is_none());
-        let view = opening_view(&spec(), None, true).expect("a converted model is lit");
-        assert_eq!(view.lighting, Some(ThreeDLighting::Cad));
-        assert_eq!(view.name, "Default");
-        let chosen = opening_view(&spec(), Some(ThreeDLighting::Night), false).expect("chosen");
-        assert_eq!(chosen.lighting, Some(ThreeDLighting::Night));
     }
 }

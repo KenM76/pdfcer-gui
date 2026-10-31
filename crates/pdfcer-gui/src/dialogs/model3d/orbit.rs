@@ -30,14 +30,14 @@ const ZOOM_RANGE: (f64, f64) = (0.05, 50.0);
 /// The axes a turn is measured in: yaw 0, pitch 0 looks along `front`, and
 /// `up` appears upward. Both unit length and perpendicular.
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct Axes {
-    front: [f64; 3],
-    up: [f64; 3],
+pub(super) struct Axes {
+    pub front: [f64; 3],
+    pub up: [f64; 3],
 }
 
 impl Axes {
     /// The operator's choice; perpendicular by construction.
-    fn upright(upright: Upright) -> Self {
+    pub(super) fn upright(upright: Upright) -> Self {
         Self {
             front: upright.front.vector(),
             up: upright.up.vector(),
@@ -54,8 +54,25 @@ impl Axes {
     }
 
     /// Image right at yaw 0, pitch 0.
-    fn right(&self) -> [f64; 3] {
+    pub fn right(&self) -> [f64; 3] {
         cross(self.front, self.up)
+    }
+
+    /// The unit direction `yaw` round and `pitch` down from `front`.
+    pub fn look(&self, yaw: f64, pitch: f64) -> [f64; 3] {
+        let (sy, cy) = yaw.sin_cos();
+        let (sp, cp) = pitch.sin_cos();
+        let (r, f, u) = (self.right(), self.front, self.up);
+        std::array::from_fn(|i| -sy * cp * r[i] + cy * cp * f[i] - sp * u[i])
+    }
+
+    /// The yaw and pitch [`Axes::look`] turns into `direction`, the pitch
+    /// held inside [`PITCH_LIMIT`]; `None` for a zero direction.
+    pub fn angles(&self, direction: [f64; 3]) -> Option<(f64, f64)> {
+        let d = unit(direction)?;
+        let pitch = (-dot(d, self.up)).clamp(-1.0, 1.0).asin();
+        let yaw = (-dot(d, self.right())).atan2(dot(d, self.front));
+        Some((yaw, pitch.clamp(-PITCH_LIMIT, PITCH_LIMIT)))
     }
 }
 
@@ -109,10 +126,29 @@ impl Orbit {
 
     /// The unit direction the camera looks along.
     pub fn direction(&self) -> [f64; 3] {
-        let (sy, cy) = self.yaw.sin_cos();
-        let (sp, cp) = self.pitch.sin_cos();
-        let (r, f, u) = (self.axes.right(), self.axes.front, self.axes.up);
-        std::array::from_fn(|i| -sy * cp * r[i] + cy * cp * f[i] - sp * u[i])
+        self.axes.look(self.yaw, self.pitch)
+    }
+
+    /// Turn to look along `direction` from the side it points away from,
+    /// fitted again; a direction along the up axis stops just short of it.
+    pub fn look_along(&mut self, direction: [f64; 3]) {
+        if let Some((yaw, pitch)) = self.axes.angles(direction) {
+            (self.yaw, self.pitch) = (yaw, pitch);
+            (self.zoom, self.pan, self.framed) = (1.0, [0.0, 0.0], false);
+        }
+    }
+
+    /// Pan so `point` sits at the picture's centre, keeping the turn and
+    /// the zoom.
+    pub fn centre_on(&mut self, bounds: &Bounds, point: [f64; 3]) {
+        let dir = self.direction();
+        let right = normalise(cross(dir, self.axes.up));
+        let image_up = cross(right, dir);
+        let centre = bounds.centre();
+        let off: [f64; 3] = std::array::from_fn(|i| point[i] - centre[i]);
+        let r = radius(bounds);
+        self.pan = [dot(off, right) / r, dot(off, image_up) / r];
+        self.framed = false;
     }
 
     /// Multiply the zoom by `factor`, keeping the model point under the
@@ -185,7 +221,7 @@ impl Orbit {
 }
 
 /// The model's radius, or 1 for a model with no extent.
-fn radius(bounds: &Bounds) -> f64 {
+pub(super) fn radius(bounds: &Bounds) -> f64 {
     match bounds.radius() {
         r if r.is_finite() && r > 0.0 => r,
         _ => 1.0,
@@ -206,11 +242,11 @@ fn visible_height(camera: &Camera) -> f64 {
     }
 }
 
-fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+pub(super) fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+pub(super) fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -219,7 +255,7 @@ fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
 }
 
 /// `v` at unit length, or `None` for a zero or non-finite vector.
-fn unit(v: [f64; 3]) -> Option<[f64; 3]> {
+pub(super) fn unit(v: [f64; 3]) -> Option<[f64; 3]> {
     let length = dot(v, v).sqrt();
     (length.is_finite() && length > 1e-12).then(|| v.map(|c| c / length))
 }

@@ -51,7 +51,18 @@ impl Check for AModelOpensFromThePageAndTurnsAboutTheChosenUp {
     }
 }
 
-fn launch(ctx: &CheckContext) -> Result<(Session, ScriptedPointer)> {
+/// Launch on a copy of the four-page document with the assembly placeable,
+/// off-screen, its files named after `stem`.
+pub(crate) fn launch(ctx: &CheckContext, stem: &str) -> Result<(Session, ScriptedPointer)> {
+    launch_with(ctx, stem, &[])
+}
+
+/// [`launch`], with `extra` added to the program's environment.
+pub(crate) fn launch_with(
+    ctx: &CheckContext,
+    stem: &str,
+    extra: &[(&str, &str)],
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -69,11 +80,11 @@ fn launch(ctx: &CheckContext) -> Result<(Session, ScriptedPointer)> {
         }
     }
     // Driven on copies: the sources belong to the engine repository.
-    let doc = ctx.out("model-axes-source.pdf");
+    let doc = ctx.out(&format!("{stem}-source.pdf"));
     std::fs::copy(DOC, &doc).map_err(|e| Error::new(format!("copying {DOC}: {e}")))?;
-    let model = ctx.out("model-axes-input.prc");
+    let model = ctx.out(&format!("{stem}-input.prc"));
     std::fs::copy(MODEL, &model).map_err(|e| Error::new(format!("copying {MODEL}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("model-axes.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
@@ -87,10 +98,15 @@ fn launch(ctx: &CheckContext) -> Result<(Session, ScriptedPointer)> {
         .push(("PDFCER_DIAG_INVOKE".to_owned(), INVOKE.to_owned()));
     spec.env
         .push((MODEL_ENV.to_owned(), model.to_string_lossy().into_owned()));
+    spec.env.extend(
+        extra
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned())),
+    );
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("model-axes.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     Ok((session, pointer))
 }
@@ -101,7 +117,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let (session, pointer) = launch(ctx)?;
+    let (session, pointer) = launch(ctx, "model-axes")?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
     session.settle(45);
@@ -116,7 +132,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
 /// Place the model in Edit, switch to Read, click the page's centre where
 /// the model sits, and require the viewer to open from that click.
-fn opened_from_page(
+pub(crate) fn opened_from_page(
     ctx: &CheckContext,
     report: &mut CheckReport,
     session: &Session,

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A ring around a dot with an arrowhead on the ring: the camera going round the model. -->
+  <circle cx="24" cy="24" r="4" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M38 18A15 9 0 1 0 39 27" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M34 15l4 3-4 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
