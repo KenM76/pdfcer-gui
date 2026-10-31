@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O339 — **BUILT** — 3D models in the Android app
+
+His words: *"Please add 3D support to the android app."*
+
+**Scope.** Everything the desktop does with a 3D model, on the phone: open a page's model in the viewer, turn, zoom and move it by touch, choose views, show and hide parts, save its view as a picture or into the file, and insert a new model.
+
+**Status.** Built and driven on the Pixel 3a emulator: tapping a model opens the viewer in a phone layout (one scrolling column; Close, Use this view, Save views and Save picture as glyphs with their words in the tooltip; the picture the full width); one finger turns the model, a pinch zooms, two fingers move it; Save picture goes through Android's save picker and landed in Downloads byte for byte; Edit ▸ Insert ▸ 3D model picks a file through Android's picker and places it. Dialogs on Android are now held to the screen's width. The 12 desktop 3D checks still pass. Not tested on a real phone. NOT VERIFIED by him.
+
 ## O338 — **OPEN** — an Android build that installs, and a hello-world APK beside it
 
 His words: *"Can you try building an android version again when you have a chance, and also just a hello world program too? That way if I have the install failure I have a simple program to try installing too!"*

@@ -73,7 +73,7 @@ mod forms;
 /// `markup.finish` belongs with them rather than here; see its header for why
 /// the operand — *which* corner — is the seam.
 pub(crate) mod markupnodes;
-mod models;
+pub(crate) mod models;
 /// Format ▸ Nodes — add a node and change the kind of nodes and segments.
 pub(crate) mod nodeshape;
 /// **The four verbs whose subject is a PANEL** — float it, dock it back,

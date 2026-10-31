@@ -18,7 +18,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [target.'cfg(target_os = "android")'.dependencies]
-pdfcer-gui = { path = "../pdfcer-gui", default-features = false }
+pdfcer-gui = { path = "../pdfcer-gui", default-features = false, features = ["3d"] }
 # GameActivity, not NativeActivity: eframe refuses `accesskit` together with
 # `android-native-activity`, and the workspace keeps `accesskit`.
 eframe = { workspace = true, features = ["android-game-activity"] }

@@ -1119,7 +1119,7 @@ elif [ "$RUN_CARGO" -eq 1 ]; then
         # The Android APK takes `pdfcer-gui` with no features at all; the run
         # above keeps `signing`, so a dialog borrowing from `sign` passes it
         # and breaks only the phone build.
-        run "cargo clippy (no features, as Android)" cargo clippy -p pdfcer-gui --no-default-features -- -D warnings
+        run "cargo clippy (Android feature set)" cargo clippy -p pdfcer-gui --no-default-features --features 3d -- -D warnings
     fi
 else
     SKIPPED+=("cargo fmt (--no-cargo)")

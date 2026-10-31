@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.webkit.MimeTypeMap;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsCompat;
@@ -13,6 +14,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.androidgamesdk.GameActivity;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,9 +23,11 @@ import java.util.concurrent.SynchronousQueue;
 /**
  * Hosts the Rust program, which lives in libpdfcer_android.so. The only Java
  * behaviour is what Android allows only an Activity to do: run the system
- * document picker, receive a document another app opens in pdfcer, and report
- * where the system bars cover the window. The Rust side calls {@link #pickDocuments} from its own
- * thread and blocks until the operator picks or cancels.
+ * document picker, place a saved file where the operator chooses, receive a
+ * document another app opens in pdfcer, and report where the system bars cover
+ * the window. The Rust side calls {@link #pickDocuments} and
+ * {@link #placeDocument} from threads of its own and blocks until the operator
+ * answers.
  */
 public class MainActivity extends GameActivity {
     static {
@@ -32,6 +36,54 @@ public class MainActivity extends GameActivity {
 
     private static final int PICK = 1;
     private final SynchronousQueue<String> picked = new SynchronousQueue<>();
+    private static final int PLACE = 2;
+    private final SynchronousQueue<Boolean> placed = new SynchronousQueue<>();
+    /** The file the open create-document picker is placing. */
+    private volatile String placing;
+
+    /**
+     * Shows the create-document picker suggesting {@code name} and copies the
+     * local file {@code path} to the document chosen.
+     *
+     * @return true once copied; false when cancelled or the copy failed
+     */
+    public boolean placeDocument(String path, String name) {
+        runOnUiThread(() -> {
+            placing = path;
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType(mimeOf(name));
+            intent.putExtra(Intent.EXTRA_TITLE, name);
+            startActivityForResult(intent, PLACE);
+        });
+        try {
+            return placed.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /** The MIME type Android knows for the name's extension, else a generic one. */
+    private static String mimeOf(String name) {
+        int dot = name.lastIndexOf('.');
+        String ext = dot < 0 ? "" : name.substring(dot + 1).toLowerCase(java.util.Locale.ROOT);
+        String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+        return mime != null ? mime : "application/octet-stream";
+    }
+
+    /** Copies {@code path} into the content URI; false on any failure. */
+    private boolean copyOut(String path, Uri uri) {
+        try (InputStream in = new FileInputStream(path);
+             OutputStream os = getContentResolver().openOutputStream(uri, "wt")) {
+            if (os == null) return false;
+            byte[] buf = new byte[1 << 16];
+            for (int n; (n = in.read(buf)) > 0; ) os.write(buf, 0, n);
+            return true;
+        } catch (java.io.IOException | RuntimeException e) {
+            return false;
+        }
+    }
 
     /**
      * Shows the document picker and copies each chosen document into the
@@ -98,6 +150,18 @@ public class MainActivity extends GameActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PLACE) {
+            final Uri target = resultCode == RESULT_OK && data != null ? data.getData() : null;
+            final String source = placing;
+            new Thread(() -> {
+                boolean ok = target != null && source != null && copyOut(source, target);
+                try {
+                    placed.put(ok);
+                } catch (InterruptedException ignored) {
+                }
+            }).start();
+            return;
+        }
         if (requestCode != PICK) return;
         StringBuilder paths = new StringBuilder();
         if (resultCode == RESULT_OK && data != null) {

@@ -13,6 +13,7 @@
 
 use egui::{Sense, TextureHandle, Ui};
 use pdfcer_3d::Bounds;
+use pdfcer_gui_base::icons::Icon;
 
 use crate::app::actions::Action;
 use crate::app::actions::attachments::AttachmentAction;
@@ -24,6 +25,7 @@ mod axes;
 mod fit;
 mod orbit;
 mod parts;
+mod phone;
 mod picture;
 mod saved;
 
@@ -391,6 +393,42 @@ impl ModelView {
     }
 
     fn body(&mut self, ui: &mut Ui) {
+        if egui_shell::ribbon::phone::is_phone(ui.ctx()) {
+            self.phone_body(ui);
+            return;
+        }
+        self.controls(ui);
+        ui.small(t::view_hint());
+        self.file_view_note(ui);
+        egui::Panel::left(egui::Id::new("model3d-parts")) // ui-text-exempt: an egui id, never displayed
+            .resizable(true)
+            .default_size(180.0)
+            .show(ui, |ui| self.parts_list(ui));
+
+        let footer = ui.spacing().interact_size.y * 3.0;
+        let area = egui::vec2(
+            ui.available_width(),
+            (ui.available_height() - footer).max(64.0),
+        );
+        self.picture(ui, area);
+        self.notes(ui);
+        ui.horizontal(|ui| self.buttons(ui));
+    }
+
+    /// The parts list, with show and hide.
+    fn parts_list(&mut self, ui: &mut Ui) {
+        let steerable = !self.model.drawn.tree.is_empty();
+        parts::show(
+            ui,
+            shown_tree(&self.model),
+            self.model.tree_error.as_deref(),
+            &mut self.parts,
+            steerable,
+        );
+    }
+
+    /// The view buttons and the camera settings, wrapping to the width.
+    fn controls(&mut self, ui: &mut Ui) {
         ui.horizontal_wrapped(|ui| {
             self.file_view_control(ui);
             self.saved_views_control(ui);
@@ -407,9 +445,8 @@ impl ModelView {
                     self.orbit = Orbit::named(i, self.orbit.perspective, self.upright);
                 }
             }
-            let fit = ui
-                .button(t::view_reset())
-                .on_hover_text(t::view_reset_tooltip());
+            let fit =
+                phone::glyph_button(ui, Icon::FitPage, t::view_reset(), t::view_reset_tooltip());
             crate::diag::ui_rect_visible(REGION_FIT, fit.rect, ui.clip_rect());
             if fit.clicked() {
                 self.orbit.zoom = 1.0;
@@ -422,27 +459,10 @@ impl ModelView {
             self.mesh_fit_control(ui);
             self.full_screen_control(ui);
         });
-        ui.small(t::view_hint());
-        self.file_view_note(ui);
-        egui::Panel::left(egui::Id::new("model3d-parts")) // ui-text-exempt: an egui id, never displayed
-            .resizable(true)
-            .default_size(180.0)
-            .show(ui, |ui| {
-                let steerable = !self.model.drawn.tree.is_empty();
-                parts::show(
-                    ui,
-                    shown_tree(&self.model),
-                    self.model.tree_error.as_deref(),
-                    &mut self.parts,
-                    steerable,
-                );
-            });
+    }
 
-        let footer = ui.spacing().interact_size.y * 3.0;
-        let area = egui::vec2(
-            ui.available_width(),
-            (ui.available_height() - footer).max(64.0),
-        );
+    /// The model drawn into `area`, steered by the pointer or fingers on it.
+    fn picture(&mut self, ui: &mut Ui, area: egui::Vec2) {
         let (rect, response) = ui.allocate_exact_size(area, Sense::click_and_drag());
         crate::diag::ui_rect_visible(REGION_IMAGE, rect, ui.clip_rect());
         self.steer(ui, &response);
@@ -475,7 +495,10 @@ impl ModelView {
             }
             (None, None) => {}
         }
+    }
 
+    /// What the picture leaves out or inferred, said under it.
+    fn notes(&mut self, ui: &mut Ui) {
         ui.small(t::view_census(
             self.model.drawn.meshes.len(),
             self.model.triangles,
@@ -497,36 +520,40 @@ impl ModelView {
         for (reason, parts) in &self.model.drawn.texture_notes {
             ui.small(t::view_texture_note(reason, *parts));
         }
-        ui.horizontal(|ui| {
-            let close = ui.button(t::view_close());
-            crate::diag::ui_rect_visible(REGION_CLOSE, close.rect, ui.clip_rect());
-            if close.clicked() {
-                self.close_requested = true;
-            }
-            if crate::panels::attachments::models::has_own_poster(&self.artwork) {
-                self.picture_control(ui, PictureFor::Page);
-                self.views_control(ui);
-            }
-            self.picture_control(ui, PictureFor::File);
-        });
+    }
+
+    /// *Close*, and what the view can be written to.
+    fn buttons(&mut self, ui: &mut Ui) {
+        let close = phone::glyph_button(ui, Icon::Close, t::view_close(), t::view_close());
+        crate::diag::ui_rect_visible(REGION_CLOSE, close.rect, ui.clip_rect());
+        if close.clicked() {
+            self.close_requested = true;
+        }
+        if crate::panels::attachments::models::has_own_poster(&self.artwork) {
+            self.picture_control(ui, PictureFor::Page);
+            self.views_control(ui);
+        }
+        self.picture_control(ui, PictureFor::File);
     }
 
     /// *Use this view on the page* or *Save picture…*: draw this view and
     /// queue it for `purpose`.
     fn picture_control(&mut self, ui: &mut Ui, purpose: PictureFor) {
-        let (label, tip, region) = match purpose {
+        let (icon, label, tip, region) = match purpose {
             PictureFor::Page => (
+                Icon::ReplaceImage,
                 t::view_use_on_page(),
                 t::view_use_on_page_tooltip(),
                 REGION_USE_ON_PAGE,
             ),
             PictureFor::File => (
+                Icon::ExportImage,
                 t::view_save_picture(),
                 t::view_save_picture_tooltip(),
                 REGION_SAVE_PICTURE,
             ),
         };
-        let button = ui.button(label).on_hover_text(tip);
+        let button = phone::glyph_button(ui, icon, label, tip);
         crate::diag::ui_rect_visible(region, button.rect, ui.clip_rect());
         if !button.clicked() {
             return;
@@ -541,9 +568,12 @@ impl ModelView {
     /// this view when it is none of them, written into the model's file so a
     /// PDF reader lists them and opens the model on this one.
     fn views_control(&mut self, ui: &mut Ui) {
-        let button = ui
-            .button(t::view_save_views())
-            .on_hover_text(t::view_save_views_tooltip());
+        let button = phone::glyph_button(
+            ui,
+            Icon::Save,
+            t::view_save_views(),
+            t::view_save_views_tooltip(),
+        );
         crate::diag::ui_rect_visible(REGION_SAVE_VIEWS, button.rect, ui.clip_rect());
         self.view_lighting_control(ui);
         if !button.clicked() {
@@ -658,10 +688,25 @@ impl ModelView {
         actions.push(Action::Attachment(action));
     }
 
-    /// Turn the camera from this frame's pointer on the picture.
+    /// Turn the camera from this frame's pointer on the picture. On a touch
+    /// screen one finger orbits, and two fingers pinch to zoom and drag to pan;
+    /// a two-finger gesture never orbits, though its first finger is also the
+    /// pointer.
     fn steer(&mut self, ui: &Ui, response: &egui::Response) {
         let delta = response.drag_delta();
-        if response.dragged_by(egui::PointerButton::Primary) && delta != egui::Vec2::ZERO {
+        let touch = response
+            .hover_pos()
+            .and_then(|_| ui.input(egui::InputState::multi_touch));
+        if let Some(touch) = touch {
+            let rect = response.rect;
+            let per_point = 2.0 / f64::from(rect.height().max(1.0)) / self.orbit.zoom;
+            self.orbit.pan[0] -= f64::from(touch.translation_delta.x) * per_point;
+            self.orbit.pan[1] += f64::from(touch.translation_delta.y) * per_point;
+        }
+        if touch.is_none()
+            && response.dragged_by(egui::PointerButton::Primary)
+            && delta != egui::Vec2::ZERO
+        {
             self.orbit.yaw -= f64::from(delta.x) * ORBIT_RATE;
             self.orbit.pitch = (self.orbit.pitch + f64::from(delta.y) * ORBIT_RATE)
                 .clamp(-PITCH_LIMIT, PITCH_LIMIT);
@@ -676,7 +721,9 @@ impl ModelView {
         }
         if let Some(at) = response.hover_pos() {
             let scroll = ui.input(|i| i.smooth_scroll_delta.y);
-            if scroll != 0.0 {
+            // A pinch, or Ctrl with the wheel, as a factor; 1.0 when neither.
+            let pinch = ui.input(egui::InputState::zoom_delta);
+            if scroll != 0.0 || pinch != 1.0 {
                 let rect = response.rect;
                 let height = f64::from(rect.height().max(1.0));
                 let offset = [
@@ -684,7 +731,7 @@ impl ModelView {
                     f64::from(rect.center().y - at.y) / height,
                 ];
                 let aspect = f64::from(rect.width().max(1.0)) / height;
-                let factor = f64::from(scroll / 200.0).exp();
+                let factor = f64::from(scroll / 200.0).exp() * f64::from(pinch);
                 self.orbit
                     .zoom_at(&self.bounds, aspect, factor, offset, self.aimed.as_ref());
             }

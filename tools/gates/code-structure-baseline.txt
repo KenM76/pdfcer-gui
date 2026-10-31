@@ -337,7 +337,6 @@ fn crates/pdfcer-gui/src/dialogs/insert_image.rs::body
 fn crates/pdfcer-gui/src/dialogs/labels.rs::body
 fn crates/pdfcer-gui/src/dialogs/mod.rs::close_document_scoped
 fn crates/pdfcer-gui/src/dialogs/mod.rs::show
-fn crates/pdfcer-gui/src/dialogs/model3d.rs::body
 fn crates/pdfcer-gui/src/dialogs/new_document.rs::body
 fn crates/pdfcer-gui/src/dialogs/ocr.rs::body
 fn crates/pdfcer-gui/src/dialogs/ocr.rs::poll_worker

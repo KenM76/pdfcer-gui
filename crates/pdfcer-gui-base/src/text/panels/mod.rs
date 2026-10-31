@@ -81,6 +81,8 @@ pub mod fonts;
 /// field's flags, its tooltip, its maximum length, its default value and its
 /// alignment.
 pub mod formfield;
+/// The 3D viewer's phone layout.
+pub mod modelphone;
 /// The Properties panel.
 pub mod properties;
 /// The 3D viewer's *Saved views* menu.

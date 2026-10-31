@@ -95,6 +95,7 @@ works on a phone but is designed for a tablet.
 | long press | the context menu, i.e. right-click |
 | stylus | always the active tool; a finger pans while a stylus is in use |
 | stylus barrel button | right-click |
+| in the 3D viewer | one finger turns the model, a pinch zooms, two fingers move it |
 | second finger held during a drag | the constraint modifier (Shift) |
 
 Precision comes from a **magnifier**. While a finger drags a point or a handle,
@@ -110,8 +111,15 @@ Handles are drawn at their desktop size, but each one responds to a touch
 - **Open:**
   - the Storage Access Framework picker (`ACTION_OPEN_DOCUMENT`);
   - *open with* from email, Files and Drive (a `VIEW` intent for `application/pdf`).
-- **Save:** writes back to the same content URI.
-- **Save a copy:** `ACTION_CREATE_DOCUMENT`.
+- **Save:** writes the copy pdfcer opened into its own storage; writing back to
+  the document's content URI is not built yet.
+- **Save as, Save a copy and every export** (a picture, a 3D model's view, an
+  attachment): the file is written into the app's own storage under the
+  suggested name, then handed to `ACTION_CREATE_DOCUMENT`, which copies it
+  wherever the operator chooses. Cancelling leaves it only in the app's storage.
+- **A file picked for a command** (Insert 3D model): the picker answers on a
+  thread of its own and the command continues when it does; the frame never
+  waits on it.
 - **Share:** a `SEND` intent.
 - **Print:** Android's print service, in place of the Windows print crates.
 
@@ -121,7 +129,6 @@ Each is a command not registered in the Android build, so it renders nothing (R8
 
 - **Batch Tools** (folders of files), until SAF directory access is designed.
 - **Windows printing.** Android's print service replaces it.
-- **3D models.**
 - **OCR models** move to an optional download. OCR commands register only once
   the download is present.
 

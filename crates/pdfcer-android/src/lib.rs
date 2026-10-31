@@ -30,7 +30,8 @@ fn android_main(app: AndroidApp) {
     diag_from_property();
     let activity = Activity::new(&app);
     pdfcer_gui::insets::install(Box::new(activity.clone()));
-    pdfcer_gui::filedialog::install(Box::new(picker::ActivityPicker::new(activity)));
+    let save_dir = app.internal_data_path().map(|p| p.join("save"));
+    pdfcer_gui::filedialog::install(Box::new(picker::ActivityPicker::new(activity, save_dir)));
     let options = eframe::NativeOptions {
         android_app: Some(app),
         ..Default::default()

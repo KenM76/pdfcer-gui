@@ -422,7 +422,7 @@ pub fn pick_media_source() -> Picked {
 }
 
 /// The Insert 3D model filter: glTF too where the `3d` feature converts it.
-fn model_filter() -> (&'static str, &'static [&'static str]) {
+pub(crate) fn model_filter() -> (&'static str, &'static [&'static str]) {
     if cfg!(feature = "3d") {
         (
             crate::text::panels::models::insert_filter_with_gltf(),

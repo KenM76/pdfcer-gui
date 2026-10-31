@@ -321,10 +321,11 @@ impl Host {
         // immediate mode places on every other widget in the process. If a
         // future body genuinely cannot be run twice, the fix is to move what it
         // consumes out of the closure, not to reinstate the panic.
+        let (inner, min, max) = fitted(ctx, self.default_size, self.min_size);
         let mut builder = ViewportBuilder::default()
             .with_title(self.title.clone())
-            .with_inner_size(self.default_size)
-            .with_min_inner_size(self.min_size)
+            .with_inner_size(inner)
+            .with_min_inner_size(min)
             // No minimize or maximize unless asked for.
             // A dialog is one transaction; the
             // operator finishes it or abandons it, and a minimised dialog is a
@@ -338,6 +339,9 @@ impl Host {
             // unavailable (see the module header) this is the only route back
             // to a dialog that has fallen behind the parent.
             .with_taskbar(true);
+        if let Some(max) = max {
+            builder = builder.with_max_inner_size(max);
+        }
         // A scripted run's keys need no OS keyboard; a new window the OS
         // activates takes the operator's typing.
         if crate::pointerscripted::scripted() {
@@ -894,6 +898,22 @@ impl Host {
         });
         (accepted, cancelled, kept)
     }
+}
+
+/// Room the embedded window's frame and title bar take, in points.
+const EMBEDDED_CHROME: Vec2 = Vec2::new(16.0, 48.0);
+
+/// The dialog's size, minimum and maximum. Where dialogs are drawn inside the
+/// application's window (Android, which has one window) all three are held to
+/// that window, else a desktop size puts the dialog's right side and its
+/// buttons off the screen. The maximum is what holds every frame: egui uses
+/// the size only the first time and remembers the window's size after that.
+fn fitted(ctx: &egui::Context, size: Vec2, min: Vec2) -> (Vec2, Vec2, Option<Vec2>) {
+    if !ctx.embed_viewports() {
+        return (size, min, None);
+    }
+    let room = (ctx.content_rect().size() - EMBEDDED_CHROME).max(Vec2::splat(64.0));
+    (size.min(room), min.min(room), Some(room))
 }
 
 #[cfg(test)]
