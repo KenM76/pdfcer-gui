@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 0a19909feffcd23dee509819f469cc32cac4c778
+# baseline: ca9aa1dd9df44075b31dfd86dc6ad6df1c104252
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11076
+# items: 11136
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -175,6 +175,8 @@ pdfcer-3d field pdfcer_3d::container::FileStructure::authoring_version
 pdfcer-3d field pdfcer_3d::container::FileStructure::id
 pdfcer-3d field pdfcer_3d::container::FileStructure::min_version_for_read
 pdfcer-3d field pdfcer_3d::container::FileStructure::pictures
+pdfcer-3d field pdfcer_3d::container::ModelUnits::from_cad_file
+pdfcer-3d field pdfcer_3d::container::ModelUnits::mm_per_unit
 pdfcer-3d field pdfcer_3d::container::PrcFile::file_structures
 pdfcer-3d field pdfcer_3d::container::PrcFile::header
 pdfcer-3d field pdfcer_3d::container::PrcFile::model_file
@@ -217,6 +219,7 @@ pdfcer-3d field pdfcer_3d::model::AssembledModel::textured
 pdfcer-3d field pdfcer_3d::model::AssembledModel::textures
 pdfcer-3d field pdfcer_3d::model::AssembledModel::tree
 pdfcer-3d field pdfcer_3d::model::AssembledModel::triangles
+pdfcer-3d field pdfcer_3d::model::AssembledModel::units
 pdfcer-3d field pdfcer_3d::model::AssembledModel::unplaced
 pdfcer-3d field pdfcer_3d::model::AssembledModel::wires
 pdfcer-3d field pdfcer_3d::pick::Hit::distance
@@ -341,6 +344,7 @@ pdfcer-3d method pdfcer_3d::container::PrcFile::parse_with_limit
 pdfcer-3d method pdfcer_3d::container::PrcFile::placements
 pdfcer-3d method pdfcer_3d::container::PrcFile::placements_with
 pdfcer-3d method pdfcer_3d::container::PrcFile::stores_tree
+pdfcer-3d method pdfcer_3d::container::PrcFile::units
 pdfcer-3d method pdfcer_3d::container::SectionKind::name
 pdfcer-3d method pdfcer_3d::named_view::NamedView::as_str
 pdfcer-3d method pdfcer_3d::named_view::NamedView::direction
@@ -349,6 +353,9 @@ pdfcer-3d method pdfcer_3d::named_view::UpAxis::as_str
 pdfcer-3d method pdfcer_3d::named_view::UpAxis::orient
 pdfcer-3d method pdfcer_3d::named_view::UpAxis::vector
 pdfcer-3d method pdfcer_3d::pick::Camera::ray_through
+pdfcer-3d method pdfcer_3d::pick_index::PickIndex::new
+pdfcer-3d method pdfcer_3d::pick_index::PickIndex::pick
+pdfcer-3d method pdfcer_3d::pick_index::PickIndex::pick_where
 pdfcer-3d method pdfcer_3d::render::Bounds::centre
 pdfcer-3d method pdfcer_3d::render::Bounds::of
 pdfcer-3d method pdfcer_3d::render::Bounds::radius
@@ -367,6 +374,7 @@ pdfcer-3d method pdfcer_3d::tree::node::ModelNode::label
 pdfcer-3d struct pdfcer_3d::bits::BitReader
 pdfcer-3d struct pdfcer_3d::compressed::partial::PartialMesh
 pdfcer-3d struct pdfcer_3d::container::FileStructure
+pdfcer-3d struct pdfcer_3d::container::ModelUnits
 pdfcer-3d struct pdfcer_3d::container::PrcFile
 pdfcer-3d struct pdfcer_3d::container::PrcHeader
 pdfcer-3d struct pdfcer_3d::container::UniqueId
@@ -377,6 +385,7 @@ pdfcer-3d struct pdfcer_3d::model::AssembledModel
 pdfcer-3d struct pdfcer_3d::named_view::UnknownName
 pdfcer-3d struct pdfcer_3d::pick::Hit
 pdfcer-3d struct pdfcer_3d::pick::Ray
+pdfcer-3d struct pdfcer_3d::pick_index::PickIndex
 pdfcer-3d struct pdfcer_3d::render::Bounds
 pdfcer-3d struct pdfcer_3d::render::Camera
 pdfcer-3d struct pdfcer_3d::render::Image
@@ -657,6 +666,7 @@ pdfcer-core const pdfcer_core::text_edit::synth::MIN_DETECT_STROKE_RATIO
 pdfcer-core const pdfcer_core::text_edit::synth::OBLIQUE_TAN
 pdfcer-core const pdfcer_core::threed::MAX_3D_ARTWORKS
 pdfcer-core const pdfcer_core::threed::MAX_RICH_MEDIA_ENTRIES
+pdfcer-core const pdfcer_core::threed::measure::MAX_3D_MEASUREMENTS
 pdfcer-core const pdfcer_core::threed::opening::OPENING_VIEW_NAME
 pdfcer-core const pdfcer_core::threed::view_write::MAX_3D_VIEWS
 pdfcer-core const pdfcer_core::vector::centerline::CENTERLINE_ASPECT_THRESHOLD
@@ -1053,12 +1063,13 @@ pdfcer-core enum pdfcer_core::text_edit::synth::StyleSynthesis
 pdfcer-core enum pdfcer_core::text_edit::synth::SynthesisPath
 pdfcer-core enum pdfcer_core::text_edit::workaround::Workaround
 pdfcer-core enum pdfcer_core::text_edit::workaround::WorkaroundPolicy
-pdfcer-core enum pdfcer_core::threed::ThreeDActivation
 pdfcer-core enum pdfcer_core::threed::ThreeDEmbedError
 pdfcer-core enum pdfcer_core::threed::ThreeDError
 pdfcer-core enum pdfcer_core::threed::ThreeDFormat
 pdfcer-core enum pdfcer_core::threed::ThreeDSource
+pdfcer-core enum pdfcer_core::threed::activation::ThreeDActivation
 pdfcer-core enum pdfcer_core::threed::lighting::ThreeDLighting
+pdfcer-core enum pdfcer_core::threed::measure::ThreeDMeasureKind
 pdfcer-core enum pdfcer_core::threed::poster::PlaceholderReason
 pdfcer-core enum pdfcer_core::threed::poster::ThreeDPoster
 pdfcer-core enum pdfcer_core::threed::view::OrthoBinding
@@ -3265,6 +3276,7 @@ pdfcer-core field pdfcer_core::settings::LoadReport::notes
 pdfcer-core field pdfcer_core::settings::LoadReport::stated
 pdfcer-core field pdfcer_core::settings::Settings::acrobat_trust_store
 pdfcer-core field pdfcer_core::settings::Settings::actual_text
+pdfcer-core field pdfcer_core::settings::Settings::black_point_compensation
 pdfcer-core field pdfcer_core::settings::Settings::cmyk_intent
 pdfcer-core field pdfcer_core::settings::Settings::cmyk_jpeg_polarity
 pdfcer-core field pdfcer_core::settings::Settings::edited_stream_compression
@@ -4102,6 +4114,32 @@ pdfcer-core field pdfcer_core::threed::ThreeDSpec::format
 pdfcer-core field pdfcer_core::threed::ThreeDSpec::poster
 pdfcer-core field pdfcer_core::threed::ThreeDSpec::rect
 pdfcer-core field pdfcer_core::threed::ThreeDSpec::render_poster
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::a1
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::a2
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::a3
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::a4
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::color
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::d1
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::d2
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::degrees
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::extension
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::has_comment
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::kind
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::name
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::node1
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::node2
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::places
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::plane
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::radius
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::show_circle
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::text_anchor
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::text_box
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::text_size
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::text_up
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::text_x
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::units
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::user_text
+pdfcer-core field pdfcer_core::threed::measure::ThreeDMeasurement::value
 pdfcer-core field pdfcer_core::threed::opening::ThreeDOpeningView::automatic
 pdfcer-core field pdfcer_core::threed::opening::ThreeDOpeningView::framed
 pdfcer-core field pdfcer_core::threed::opening::ThreeDOpeningView::lighting
@@ -4127,6 +4165,7 @@ pdfcer-core field pdfcer_core::threed::poster::ThreeDPosterOutcome::poster_image
 pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::camera_to_world
 pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::field_of_view
 pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::lighting
+pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::measurements
 pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::name
 pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::orbit_distance
 pdfcer-core field pdfcer_core::threed::view::ThreeDSavedView::ortho_binding
@@ -5476,6 +5515,8 @@ pdfcer-core method pdfcer_core::edit::optimize::EditSession::plan_optimize
 pdfcer-core method pdfcer_core::edit::optimize::EditSession::save_optimized
 pdfcer-core method pdfcer_core::edit::optimize_budget::EditSession::optimize_to_budget
 pdfcer-core method pdfcer_core::edit::print_decoration::EditSession::decorate_for_print
+pdfcer-core method pdfcer_core::edit::print_decoration::EditSession::decorated_for_print
+pdfcer-core method pdfcer_core::edit::print_decoration::EditSession::fork_for_print
 pdfcer-core method pdfcer_core::edit::print_decoration::PrintDecoration::is_empty
 pdfcer-core method pdfcer_core::edit::printer_marks::EditSession::add_printer_marks
 pdfcer-core method pdfcer_core::edit::rc4_append::EditSession::encryption_refusal
@@ -5739,6 +5780,7 @@ pdfcer-core method pdfcer_core::optimize::OptimizePlan::removes_content
 pdfcer-core method pdfcer_core::optimize::OptimizePlan::stream_saving
 pdfcer-core method pdfcer_core::optimize::OptimizePlan::uses_brotli
 pdfcer-core method pdfcer_core::optimize::OptimizePlan::version_raise
+pdfcer-core method pdfcer_core::optimize::OptimizeSettings::install_resubsetter
 pdfcer-core method pdfcer_core::optimize::OptimizeSettings::new
 pdfcer-core method pdfcer_core::optimize::StreamAction::is_lossy
 pdfcer-core method pdfcer_core::optimize::StreamAction::parse
@@ -5804,7 +5846,10 @@ pdfcer-core method pdfcer_core::optimize::resubset::FontResubsetter::merge
 pdfcer-core method pdfcer_core::optimize::resubset::FontResubsetter::present_glyphs
 pdfcer-core method pdfcer_core::optimize::resubset::FontResubsetter::resubset
 pdfcer-core method pdfcer_core::optimize::resubset::FontUse::new
+pdfcer-core method pdfcer_core::optimize::resubset::ResubsetFonts::is_bound
 pdfcer-core method pdfcer_core::optimize::resubset::ResubsetFonts::new
+pdfcer-core method pdfcer_core::optimize::resubset::ResubsetFonts::unbound
+pdfcer-core method pdfcer_core::optimize::resubset::ResubsetFonts::with_source
 pdfcer-core method pdfcer_core::optimize::resubset::ResubsetFonts::without_merge
 pdfcer-core method pdfcer_core::optimize::resubset::ResubsetPlan::saving
 pdfcer-core method pdfcer_core::optimize::resubset::ResubsetProgram::new
@@ -6255,8 +6300,6 @@ pdfcer-core method pdfcer_core::text_edit::workaround::UnsupportedCause::workaro
 pdfcer-core method pdfcer_core::text_edit::workaround::Workaround::is_exact
 pdfcer-core method pdfcer_core::text_edit::workaround::Workaround::label
 pdfcer-core method pdfcer_core::threed::Extracted3D::contradicts
-pdfcer-core method pdfcer_core::threed::ThreeDActivation::from_name
-pdfcer-core method pdfcer_core::threed::ThreeDActivation::name
 pdfcer-core method pdfcer_core::threed::ThreeDEmbedOutcome::below_required_version
 pdfcer-core method pdfcer_core::threed::ThreeDFormat::extension
 pdfcer-core method pdfcer_core::threed::ThreeDFormat::label
@@ -6264,8 +6307,13 @@ pdfcer-core method pdfcer_core::threed::ThreeDSpec::new
 pdfcer-core method pdfcer_core::threed::ThreeDSpec::required_version
 pdfcer-core method pdfcer_core::threed::ThreeDSpec::validate
 pdfcer-core method pdfcer_core::threed::ThreeDSpec::with_format
+pdfcer-core method pdfcer_core::threed::activation::ThreeDActivation::from_name
+pdfcer-core method pdfcer_core::threed::activation::ThreeDActivation::name
 pdfcer-core method pdfcer_core::threed::lighting::ThreeDLighting::as_name
 pdfcer-core method pdfcer_core::threed::lighting::ThreeDLighting::from_name
+pdfcer-core method pdfcer_core::threed::measure::ThreeDMeasurement::linear
+pdfcer-core method pdfcer_core::threed::measure::ThreeDMeasurement::new
+pdfcer-core method pdfcer_core::threed::measure::ThreeDMeasurement::value_text
 pdfcer-core method pdfcer_core::threed::opening::ThreeDOpeningView::disclosure
 pdfcer-core method pdfcer_core::threed::view_aim::SavedViewAim::camera
 pdfcer-core method pdfcer_core::threed::view_aim::SavedViewAim::frame
@@ -6274,6 +6322,7 @@ pdfcer-core method pdfcer_core::threed::view_aim::ThreeDSavedView::aim
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::from_camera
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::new
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::with_lighting
+pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::with_measurement
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::with_orbit_distance
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::with_orthographic
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::with_perspective
@@ -6438,6 +6487,7 @@ pdfcer-core method pdfcer_core::xfa::template::XfaNode::measurement
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::name
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::occur
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::presence
+pdfcer-core static pdfcer_core::optimize::resubset::NO_RESUBSETTER
 pdfcer-core struct pdfcer_core::annot::AnnotFlags
 pdfcer-core struct pdfcer_core::annot::Annotation
 pdfcer-core struct pdfcer_core::annot::LinkDestination
@@ -6784,6 +6834,7 @@ pdfcer-core struct pdfcer_core::optimize::lower_version::LoweredVersion
 pdfcer-core struct pdfcer_core::optimize::objects::ObjectDiscard
 pdfcer-core struct pdfcer_core::optimize::profile::ProfileError
 pdfcer-core struct pdfcer_core::optimize::resubset::FontUse
+pdfcer-core struct pdfcer_core::optimize::resubset::NoResubsetter
 pdfcer-core struct pdfcer_core::optimize::resubset::ResubsetFonts
 pdfcer-core struct pdfcer_core::optimize::resubset::ResubsetPlan
 pdfcer-core struct pdfcer_core::optimize::resubset::ResubsetProgram
@@ -6995,6 +7046,7 @@ pdfcer-core struct pdfcer_core::threed::ThreeDArtwork
 pdfcer-core struct pdfcer_core::threed::ThreeDEmbedOutcome
 pdfcer-core struct pdfcer_core::threed::ThreeDNotes
 pdfcer-core struct pdfcer_core::threed::ThreeDSpec
+pdfcer-core struct pdfcer_core::threed::measure::ThreeDMeasurement
 pdfcer-core struct pdfcer_core::threed::opening::ThreeDOpeningView
 pdfcer-core struct pdfcer_core::threed::poster::RenderedPoster
 pdfcer-core struct pdfcer_core::threed::poster::ThreeDPosterOutcome
@@ -9090,9 +9142,6 @@ pdfcer-core variant pdfcer_core::text_edit::workaround::Workaround::Retype
 pdfcer-core variant pdfcer_core::text_edit::workaround::Workaround::RewriteQuoteOperator
 pdfcer-core variant pdfcer_core::text_edit::workaround::WorkaroundPolicy::Apply
 pdfcer-core variant pdfcer_core::text_edit::workaround::WorkaroundPolicy::Refuse
-pdfcer-core variant pdfcer_core::threed::ThreeDActivation::Click
-pdfcer-core variant pdfcer_core::threed::ThreeDActivation::PageOpen
-pdfcer-core variant pdfcer_core::threed::ThreeDActivation::PageVisible
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::DefaultViewOutOfRange
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::Empty
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::Mismatch
@@ -9113,6 +9162,9 @@ pdfcer-core variant pdfcer_core::threed::ThreeDFormat::Step
 pdfcer-core variant pdfcer_core::threed::ThreeDFormat::U3d
 pdfcer-core variant pdfcer_core::threed::ThreeDSource::RichMediaAsset
 pdfcer-core variant pdfcer_core::threed::ThreeDSource::Stream
+pdfcer-core variant pdfcer_core::threed::activation::ThreeDActivation::Click
+pdfcer-core variant pdfcer_core::threed::activation::ThreeDActivation::PageOpen
+pdfcer-core variant pdfcer_core::threed::activation::ThreeDActivation::PageVisible
 pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::Artwork
 pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::Blue
 pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::Cad
@@ -9125,6 +9177,11 @@ pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::None
 pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::Primary
 pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::Red
 pdfcer-core variant pdfcer_core::threed::lighting::ThreeDLighting::White
+pdfcer-core variant pdfcer_core::threed::measure::ThreeDMeasureKind::Angular
+pdfcer-core variant pdfcer_core::threed::measure::ThreeDMeasureKind::Comment
+pdfcer-core variant pdfcer_core::threed::measure::ThreeDMeasureKind::Linear
+pdfcer-core variant pdfcer_core::threed::measure::ThreeDMeasureKind::Perpendicular
+pdfcer-core variant pdfcer_core::threed::measure::ThreeDMeasureKind::Radial
 pdfcer-core variant pdfcer_core::threed::poster::PlaceholderReason::NoDecoder
 pdfcer-core variant pdfcer_core::threed::poster::PlaceholderReason::NotDecoded
 pdfcer-core variant pdfcer_core::threed::poster::PlaceholderReason::Requested
@@ -10187,6 +10244,7 @@ pdfcer-render field pdfcer_render::font::InkProbe::y
 pdfcer-render field pdfcer_render::font::RenderOptions::annotation_scope
 pdfcer-render field pdfcer_render::font::RenderOptions::annotations
 pdfcer-render field pdfcer_render::font::RenderOptions::backdrop
+pdfcer-render field pdfcer_render::font::RenderOptions::black_point_compensation
 pdfcer-render field pdfcer_render::font::RenderOptions::cancel
 pdfcer-render field pdfcer_render::font::RenderOptions::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderOptions::cmyk_jpeg_polarity
@@ -10212,6 +10270,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::stroke_display
 pdfcer-render field pdfcer_render::font::RenderOptions::subpixel_culling
 pdfcer-render field pdfcer_render::font::RenderOptions::view_magnification
 pdfcer-render field pdfcer_render::font::RenderOptions::widgets_without_ap
+pdfcer-render field pdfcer_render::font::RenderPolicy::black_point_compensation
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_jpeg_polarity
 pdfcer-render field pdfcer_render::font::RenderPolicy::free_text_c
@@ -10724,6 +10783,7 @@ pdfcer-render method pdfcer_render::font::RenderOptions::policy
 pdfcer-render method pdfcer_render::font::RenderOptions::with_annotation_scope
 pdfcer-render method pdfcer_render::font::RenderOptions::with_annotations
 pdfcer-render method pdfcer_render::font::RenderOptions::with_backdrop
+pdfcer-render method pdfcer_render::font::RenderOptions::with_black_point_compensation
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cancel
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cmyk_intent
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cmyk_jpeg_polarity

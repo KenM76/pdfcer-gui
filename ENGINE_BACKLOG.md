@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **45 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `wanted` — a real gap — **49 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -156,11 +156,15 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Vector printing** — pages the EMF writer carries whole print as vector … | **wanted — unblocked at v0.107.0: `pdfcer_render::emf::print_metafile` returns the EMF or a `RasterReason` (G241).** A copy of its eleven counters here would drift from the CLI's the first time `EmfOutcome` grows one. Once public, the Print dialog sends safe pages as EMF and the receipt names each image page's reason. |
 | **Separation plates as engine API** — `pdfcer_render::plates::render_plates` … | **wanted.** The engine half of *Print separations* above; that row says what the Print dialog does with it. |
 | **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **wanted.** The engine half of *Vector printing* above; that row says what the Print dialog does with it. |
+| **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
+| **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
+| **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **wanted; our request G250, shipped at v0.113.0.** Walking would stand at a real eye height in place of a fraction of the model's size. |
+| **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `blocked` — waiting on something named — **2 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -178,7 +182,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -189,7 +193,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **19 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `declined` — deliberately no surface — **19 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -234,7 +238,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **399 of 465** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **401 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -599,6 +603,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Per-standard render presets (`Pass 128.1`) — a settings … | **Consumed — O100.** The presets are read through `entries()` and each set entry's `why` is printed, because `disclosures()` emitted a `why` only for keys a preset leaves alone. That work went back to the engine as a note, and it is the reason a preset's reasoning now leaves the crate at all. |
 | **"Line weights off" hairline display mode** — `RenderOptions::stroke_display` … | **Reachable — `view.line_weights`, View ▸ Display, O137**, asked for by name. Its predecessor `view.thin_lines` was inert and was rightly unregistered under R8, no `RenderOptions` field existing; the engine then shipped one, so the command returned on a **new token (235)** — 210-214 stay retired, because a token is a saved keybinding. **The convention is AutoCAD's, not Acrobat's**: off caps every stroke at one device pixel, thick → thin, rather than *enhance thin lines*. `line_weights_off_puts_less_ink_on_a_real_drawing` asserts strictly less ink and its twin pins scale 1.0 identical — this is a ceiling. Print, preview and export keep real widths by mechanism: the field is set in `render::worker::render_on_worker` alone, and a `syn` test fails the build on a second assignment. Fills untouched. The driven check `line_weights` is written, not run. Wanted: `Diagnostics::strokes_hairlined`, which upgrades the disclosure from a claim to a measurement. |
 | **Enumerate every DIVERGENCE counter by name, zeros included** — `Diagnostics::DIVERGENCE_KEYS`, `Diagnostics::divergences()` | **shipped**, from `pdfcer_render::divergence`. `app::status::notes::ink` walks `Diagnostics::divergences()` for the render notes and the `render-findings` trace, keyed by the engine's metrics names; the hand roster and `check-ink-roster` are deleted. A key with no sentence is still disclosed (`ink_unworded`). Driven in `print_shop`. |
+| **Black point compensation for ICC conversions** — a profile-to-profile ICC conversion … | **Reachable — Settings ▸ Colour ▸ *Black point compensation*, on by default**, passed through `Settings::render_options` (G249, O340). |
+| **A reusable pick index over a 3D model** — `pdfcer_3d::PickIndex::new(&meshes)` … | **Consumed — the 3D walkthrough's walls, floors and double-click go-to** pick through one index per model (G251). |
 
 ### Reading, navigation & printing
 
@@ -828,6 +834,18 @@ The request O280 is built on, answered and consumed.
 - **G245** — no 3D measuring: point-to-point distance, edge length, radius and angle on the model, as Acrobat's 3D Measurement Tool, and storing a measurement. The renderer returns no depth and nothing picks a surface point, so the viewer offers none. The page's 2D ce dimensions are unaffected.
 - **G246** — no list of a file's saved 3D views. Answered at v0.108.0 by `pdfcer_core::threed::view_list` (`saved_3d_views`) and consumed: the viewer's *Saved views* menu.
 - **G247** — the lit opening view written at insert. Answered at v0.112.0 by `EditSession::set_3d_opening_view` and consumed by `app::actions::model_insert`.
+
+## Engine arrivals at v0.113.0 — not verdict rows
+
+The answers to G243, G244, G245 part 2 and G249–G251.
+
+- **Black point compensation** — `RenderOptions::with_black_point_compensation`, `Settings::black_point_compensation`. **Wired**: `Settings::render_options` passes it and Settings ▸ Colour carries the switch (G249, O340). `pdfcer_render::font::RenderPolicy::black_point_compensation` is the same flag inside the renderer and is reached only through `RenderOptions`.
+- **Pick index** — `pdfcer_3d::pick_index` (`PickIndex::new`, `pick`, `pick_where`). **Wired**: walkthrough collision and double-click go-to (G251).
+- **Model units** — `pdfcer_3d::container::ModelUnits` (`ModelUnits::mm_per_unit`, `ModelUnits::from_cad_file`), `AssembledModel::units`. **wanted**: a walking eye height in real units in place of a fraction of the model's size (G250).
+- **Print fork** — `pdfcer_core::edit::print_decoration::EditSession::fork_for_print`, `pdfcer_core::edit::print_decoration::EditSession::decorated_for_print`. **wanted**: replaces the serialise-and-reopen copy `dialogs::print::running` stamps (G243).
+- **Font resubsetting** — `pdfcer_core::optimize::OptimizeSettings::install_resubsetter`, `pdfcer_core::optimize::resubset::ResubsetFonts::with_source`, `pdfcer_core::optimize::resubset::ResubsetFonts::is_bound`, `pdfcer_core::optimize::resubset::NO_RESUBSETTER`, `pdfcer_core::optimize::resubset::NoResubsetter`. **wanted**: Compact installs the renderer's glyph resubsetter so subset fonts shrink (G244).
+- **3D measurements** — `pdfcer_core::threed::measure` (`ThreeDMeasurement`, `ThreeDMeasureKind`, `MAX_3D_MEASUREMENTS`) and `pdfcer_core::threed::view_write::ThreeDSavedView::with_measurement`. **wanted**: the viewer's measure tool — two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure `ThreeDViewsOutcome::disclosures` carries (G245).
+- **3D activation** — `pdfcer_core::threed::activation` is where `ThreeDActivation` now lives; the type is consumed by Insert 3D model through its `pdfcer_core::threed` re-export. Reading it to show the poster until a click is the Click-to-activate row.
 
 ## Engine arrivals at v0.108.0 — not verdict rows
 
