@@ -18,13 +18,16 @@ use pdfcer_gui_base::icons::Icon;
 use crate::app::actions::Action;
 use crate::app::actions::attachments::AttachmentAction;
 use crate::app::actions::models::Assembled;
+use crate::app::actions::prefs::PrefAction;
 use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
 mod axes;
 mod drone;
+mod eye;
 mod fit;
 mod gimbal;
+mod gpu;
 mod immersive;
 mod lights;
 mod nav;
@@ -139,6 +142,8 @@ pub(crate) struct ModelView {
     /// The saved view last chosen, marked in the menu.
     saved_chosen: Option<usize>,
     texture: Option<TextureHandle>,
+    /// The live picture on the graphics card, when it can draw it.
+    gpu: gpu::Gpu,
     rendered: Option<Rendered>,
     failed: Option<String>,
     close_requested: bool,
@@ -164,13 +169,15 @@ pub(crate) struct ModelView {
     lights_turn: bool,
     /// Orbiting or walking, the switches, and the fingers on the picture.
     nav: nav::Nav,
+    /// The eye height was set or reset, for the preferences file.
+    eye_changed: bool,
 }
 
 impl ModelView {
     /// Open on `model`, decoded from `artwork`, at the file's opening view
     /// when it carries a camera, else at the isometric view.
     #[must_use]
-    pub(crate) fn open(artwork: ThreeDArtwork, model: Assembled) -> Self {
+    pub(crate) fn open(artwork: ThreeDArtwork, model: Assembled, eye_mm: Option<u32>) -> Self {
         let page_index = artwork.page_index;
         let bounds = Bounds::of(&model.drawn.meshes).unwrap_or(Bounds {
             min: [0.0; 3],
@@ -221,6 +228,7 @@ impl ModelView {
             saved_chosen: None,
             opening,
             texture: None,
+            gpu: gpu::Gpu::default(),
             rendered: None,
             failed: None,
             close_requested: false,
@@ -233,7 +241,8 @@ impl ModelView {
             parts,
             view_lighting: None,
             lights_turn: true,
-            nav: nav::Nav::default(),
+            nav: nav::Nav::with_eye(eye_mm),
+            eye_changed: false,
         }
     }
 
@@ -259,6 +268,10 @@ impl ModelView {
         };
         if let Some((purpose, drawn)) = self.picture.take() {
             self.queue(purpose, drawn, actions);
+        }
+        if std::mem::take(&mut self.eye_changed) {
+            let mm = self.nav.prefs.eye_mm.map(|mm| mm.round().max(1.0) as u32);
+            actions.push(Action::Pref(PrefAction::WalkEyeHeight(mm)));
         }
         if let Some((views, default)) = self.views.take() {
             actions.push(Action::Attachment(AttachmentAction::SetModelViews {
@@ -405,9 +418,15 @@ impl ModelView {
         self.nav.hud.clear();
 
         let background = ui.visuals().extreme_bg_color;
-        // Half the pixels while the camera moves, so it keeps up; the full
-        // picture is drawn the frame it stops.
-        let scale = ui.ctx().pixels_per_point() * if self.nav.moving { 0.5 } else { 1.0 };
+        let gpu = self.gpu.live();
+        if !gpu && self.texture.is_none() && self.failed.is_none() {
+            // The GPU stopped before the CPU drew anything.
+            self.rendered = None;
+        }
+        // On the CPU, half the pixels while the camera moves, so it keeps
+        // up; the full picture is drawn the frame it stops.
+        let halve = self.nav.moving && !gpu;
+        let scale = ui.ctx().pixels_per_point() * if halve { 0.5 } else { 1.0 };
         let side = |points: f32| (points * scale).clamp(1.0, MAX_SIDE).round() as u32;
         let size = [side(rect.width()), side(rect.height())];
         let wanted = Rendered {
@@ -421,12 +440,21 @@ impl ModelView {
             light_frame: self.lighting().1,
         };
         if self.rendered != Some(wanted) {
-            self.render(ui.ctx(), wanted);
+            if gpu {
+                self.rendered = Some(wanted);
+                self.failed = self
+                    .gpu_frame(wanted)
+                    .err()
+                    .map(|e| t::view_render_failed(&e.to_string()));
+            } else {
+                self.render(ui.ctx(), wanted);
+            }
         }
         match (&self.texture, &self.failed) {
             (_, Some(said)) => {
                 ui.put(rect, egui::Label::new(said.as_str()));
             }
+            _ if gpu => self.gpu.paint(ui.painter(), rect),
             (Some(texture), None) => {
                 ui.painter().image(
                     texture.id(),
@@ -500,13 +528,22 @@ impl ModelView {
         };
         let button = phone::glyph_button(ui, icon, label, tip);
         crate::diag::ui_rect_visible(region, button.rect, ui.clip_rect());
-        if !button.clicked() {
-            return;
+        if button.clicked() {
+            self.queue_picture(purpose);
         }
+    }
+
+    /// Draw this view, without the controls, and queue it for `purpose`.
+    fn queue_picture(&mut self, purpose: PictureFor) {
         match self.poster() {
             Ok(drawn) => self.picture = Some((purpose, drawn)),
             Err(said) => self.failed = Some(t::poster_not_drawn(&said)),
         }
+    }
+
+    /// *Save picture…* of this view, from a double tap on the gimbal.
+    pub(super) fn save_scene(&mut self) {
+        self.queue_picture(PictureFor::File);
     }
 
     /// *Save views in the file*: the named views about the chosen axes, and

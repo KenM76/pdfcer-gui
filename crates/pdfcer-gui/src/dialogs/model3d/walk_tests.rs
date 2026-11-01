@@ -36,6 +36,7 @@ fn walker(eye: [f64; 3]) -> Walk {
         pitch: 0.0,
         zoom: 1.0,
         axes,
+        height: None,
         scale: 10.0,
         fall: 0.0,
     }

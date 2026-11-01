@@ -988,6 +988,7 @@ impl Prefs {
         pictures::write_block(&self.pictures, &mut out);
         formstyle::write_block(&self.form_style, &mut out);
         overprint::write_block(self.overprint_default, &mut out);
+        walkeye::write_block(self.walk_eye_mm, &mut out);
 
         out
     }

@@ -90,6 +90,7 @@ impl ModelView {
                     self.bounds = bounds;
                 }
                 self.rendered = None;
+                self.gpu.forget_model();
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(

@@ -255,6 +255,7 @@ native-pipe = { path = "../native-pipe" }
 # skew from it. `native-gl` names `glow` directly because its subject IS the
 # context; `cargo tree -d -p glow` must stay empty for the two to agree.
 native-gl = { path = "../native-gl" }
+native-mesh = { path = "../native-mesh" }
 
 # pdfcer-gui-base = the floor of this crate's own stack: `diag`, `units`,
 # `secret` and `acrobat`. Not a third-party library and not a reusable

@@ -54,6 +54,7 @@ fn every_preference_round_trips_through_the_file() {
                     },
                     form_style: odd_form_style(),
                     overprint_default: crate::prefs::OverprintDefault::Automatic,
+                    walk_eye_mm: Some(1676),
                     trust: {
                         let mut t = crate::prefs::TrustPrefs::default();
                         t.remember_site("example.com", false);
@@ -642,6 +643,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         },
         form_style: odd_form_style(),
         overprint_default: crate::prefs::OverprintDefault::PdfxOnly,
+        walk_eye_mm: Some(1520),
         trust: {
             let mut t = crate::prefs::TrustPrefs::default();
             t.remember_site("example.com", false);

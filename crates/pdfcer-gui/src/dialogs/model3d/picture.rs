@@ -66,13 +66,7 @@ impl ModelView {
         };
         let camera = self.view_camera(f64::from(width) / f64::from(height));
         let started = std::time::Instant::now();
-        let aimed = camera.as_ref().map(aim_of).unwrap_or_default();
-        let pivot = camera
-            .as_ref()
-            .ok()
-            .zip(self.orbit.anchor)
-            .map(|(c, a)| pivot_shown(c, a.point))
-            .unwrap_or_default();
+        let head = self.trace_head(&wanted, camera.as_ref(), options.lighting);
         let accent = Some(wanted.accent.to_array());
         let parts = &self.parts;
         let model = &mut self.model.drawn;
@@ -82,33 +76,11 @@ impl ModelView {
             })
         });
         let ms = started.elapsed().as_secs_f64() * 1000.0;
-        let lit = self.lighting_trace(options.lighting);
-        let eye = camera_eye(wanted.walk.as_ref());
         self.rendered = Some(wanted);
         match drawn {
             Ok(image) => {
-                let covered = image
-                    .rgba
-                    .chunks_exact(4)
-                    .filter(|px| *px != options.background)
-                    .count();
-                let (chromatic, hues) = colourfulness(&image.rgba);
-                let hash = image.rgba.iter().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
-                    (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
-                });
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed
-                    format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye}{lit} ms={ms:.1} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
-                        self.orbit.yaw,
-                        self.orbit.pitch,
-                        self.orbit.zoom,
-                        self.orbit.pan[0],
-                        self.orbit.pan[1],
-                        self.orbit.perspective,
-                        self.orbit.framed
-                    )
-                });
+                let fields = pixel_fields(&image.rgba, options.background);
+                crate::diag::trace(|| format!("{head} ms={ms:.1}{fields}")); // ui-text-exempt: diagnostic trace, never displayed
                 self.show_image(ctx, [width, height], &image.rgba);
             }
             Err(error) => {
@@ -119,6 +91,36 @@ impl ModelView {
                 self.failed = Some(t::view_render_failed(&error.to_string()));
             }
         }
+    }
+
+    /// The `model-view-rendered` trace line up to its timing: the size, the
+    /// orbit, the aim, the pivot, the walker's eye and the lighting.
+    pub(super) fn trace_head(
+        &self,
+        wanted: &Rendered,
+        camera: Result<&pdfcer_3d::Camera, &pdfcer_3d::RenderError>,
+        lighting: pdfcer_3d::LightingScheme,
+    ) -> String {
+        let [width, height] = wanted.size;
+        let aimed = camera.map(aim_of).unwrap_or_default();
+        let pivot = camera
+            .ok()
+            .zip(self.orbit.anchor)
+            .map(|(c, a)| pivot_shown(c, a.point))
+            .unwrap_or_default();
+        let lit = self.lighting_trace(lighting);
+        let eye = camera_eye(wanted.walk.as_ref());
+        format!(
+            // ui-text-exempt: diagnostic trace, never displayed
+            "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye}{lit}",
+            self.orbit.yaw,
+            self.orbit.pitch,
+            self.orbit.zoom,
+            self.orbit.pan[0],
+            self.orbit.pan[1],
+            self.orbit.perspective,
+            self.orbit.framed
+        )
     }
 
     /// Puts a drawn `[width, height]` RGBA picture on screen.
@@ -220,6 +222,18 @@ fn camera_eye(walk: Option<&super::walk::Walk>) -> String {
             w.eye[0], w.eye[1], w.eye[2]
         )
     })
+}
+
+/// ` covered=n chromatic=n hues=n hash=h` of a drawn picture on
+/// `background`, for the trace a driven check reads.
+pub(super) fn pixel_fields(rgba: &[u8], background: [u8; 4]) -> String {
+    let covered = rgba.chunks_exact(4).filter(|px| *px != background).count();
+    let (chromatic, hues) = colourfulness(rgba);
+    let hash = rgba.iter().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
+        (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
+    });
+    // ui-text-exempt: diagnostic trace fields, never displayed
+    format!(" covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}")
 }
 
 /// A channel spread at or above this is a colour, not a shade of grey.

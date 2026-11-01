@@ -862,6 +862,9 @@ pub enum PrefAction {
         /// place, `pdfcer_gui::panels::pages::thumbnails::budget_from_millis`.
         budget_ms: u64,
     },
+    /// **Persist the 3D walker's eye height** (O356), whole millimetres;
+    /// `None` for *Auto*.
+    WalkEyeHeight(Option<u32>),
 }
 /// **Where an Arrange command puts the selected mark.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

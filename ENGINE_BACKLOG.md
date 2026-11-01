@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **51 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `wanted` — a real gap — **48 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -158,9 +158,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **wanted.** The engine half of *Vector printing* above; that row says what the Print dialog does with it. |
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
-| **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **wanted; our request G250, shipped at v0.113.0.** Walking would stand at a real eye height in place of a fraction of the model's size. |
-| **Interactive 3D frame rate (CPU)** — `pdfcer_3d::PreparedModel`, and a GPU path (draw buffers for eframe's glow context) and a prepared model the viewer can keep … | **wanted; our requests G253 (GPU half) and G255, shipped at v0.115.0.** `RenderOptions::threads` is consumed (every core); `PreparedModel` is now owned, and `DrawData`, the GLSL ES 3.00 shaders and `FrameLights` give the viewer a glow drawing path (O348, O355). <!--namesake:PreparedModel--> |
-| **GPU-ready 3D draw data, matrices and shader** — `PreparedModel::draw_data`, `Camera::view_matrix`, `FrameLights`, `GLSL_ES_300_*` … | **wanted; our request G253 (GPU half), shipped at v0.115.0.** The 3D viewer draws its live picture through eframe's glow context with these (O348, O355); the CPU renderer stays for every picture written out and where the driver refuses the shader. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
 
 ---
@@ -241,7 +238,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **403 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **406 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -615,6 +612,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **shipped.** Our request G250. Walking stands at a real eye height, set in feet and inches in the options menu with ghost off, and the model's unit (or the disclosed assumption of millimetres) converts it (O356). |
+| **Interactive 3D frame rate (CPU)** — `pdfcer_3d::PreparedModel`, and a GPU path (draw buffers for eframe's glow context) and a prepared model the viewer can keep … | **shipped.** Our requests G253 and G255. `RenderOptions::threads` draws every written picture on every core; the viewer keeps a `PreparedModel` for the model's life and draws the live picture on the GPU from it (O348, O355). <!--namesake:PreparedModel--> |
+| **GPU-ready 3D draw data, matrices and shader** — `PreparedModel::draw_data`, `Camera::view_matrix`, `FrameLights`, `GLSL_ES_300_*` … | **shipped.** Our request G253. `dialogs::model3d::gpu` draws the live picture through eframe's glow context with these (O348, O355); the CPU renderer stays for every picture written out and where the driver refuses the shader. |
 | **Printer's marks** — crop, registration, colour bars and page-info marks … | **shipped — File ▸ Print ▸ Printer's marks…; driven by `header_footer_and_printer_marks`.** `dialogs::printmarks` collects the marks and `app::actions::pagestamp` calls `add_printer_marks` through the edit funnel as one undo entry on the pages picked in the rail, or every page; the sheet grows to hold the marks and a page with no trim box is said to have had one assumed (`printmarks-applied … trim_assumed=`). |
 | **Show the PDF/X claim** — `pdfcer_core::prepress::pdfx_claim` <!--namesake:pdfx_claim--> (called only to seed the overprint-preview default, never shown) (`PdfxClaim::is_recognised`, `carriers_agree`, `has_output_intent`) | **shipped — Document Properties, after the page boxes; driven by `document_properties_say_which_pdfx_level_the_file_claims`.** `panels::docprops::pdfx` states the claimed level and says when the claim is unrecognised, when XMP and Info disagree, the printing condition, and when the `/GTS_PDFX` output intent is missing; a file with an intent and no claim draws nothing (the check's control). |
 | **Printer list that never waits on a device** — `list_printer_names`, `printer_detail` … | **shipped — the Print dialog lists printers from `list_printer_names` at once and reads the chosen printer's caps on a worker (`printspooler::probe::CapsCache`); a printer still answering shows a spinner and holds back nothing else (X013). Driven by `print_dialog_never_waits_on_a_printer`.** |
@@ -846,7 +846,7 @@ The answers to G243, G244, G245 part 2 and G249–G251.
 
 - **Black point compensation** — `RenderOptions::with_black_point_compensation`, `Settings::black_point_compensation`. **Wired**: `Settings::render_options` passes it and Settings ▸ Colour carries the switch (G249, O340). `pdfcer_render::font::RenderPolicy::black_point_compensation` is the same flag inside the renderer and is reached only through `RenderOptions`.
 - **Pick index** — `pdfcer_3d::pick_index` (`PickIndex::new`, `pick`, `pick_where`). **Wired**: walkthrough collision and double-click go-to (G251).
-- **Model units** — `pdfcer_3d::container::ModelUnits` (`ModelUnits::mm_per_unit`, `ModelUnits::from_cad_file`), `AssembledModel::units`. **wanted**: a walking eye height in real units in place of a fraction of the model's size (G250).
+- **Model units** — `pdfcer_3d::container::ModelUnits` (`ModelUnits::mm_per_unit`, `ModelUnits::from_cad_file`), `AssembledModel::units`. **Wired**: the walking eye height in feet and inches (G250, O356).
 - **Print fork** — `pdfcer_core::edit::print_decoration::EditSession::fork_for_print`, `pdfcer_core::edit::print_decoration::EditSession::decorated_for_print`. **wanted**: replaces the serialise-and-reopen copy `dialogs::print::running` stamps (G243).
 - **Font resubsetting** — `pdfcer_core::optimize::OptimizeSettings::install_resubsetter`, `pdfcer_core::optimize::resubset::ResubsetFonts::with_source`, `pdfcer_core::optimize::resubset::ResubsetFonts::is_bound`, `pdfcer_core::optimize::resubset::NO_RESUBSETTER`, `pdfcer_core::optimize::resubset::NoResubsetter`. **wanted**: Compact installs the renderer's glyph resubsetter so subset fonts shrink (G244).
 - **3D measurements** — `pdfcer_core::threed::measure` (`ThreeDMeasurement`, `ThreeDMeasureKind`, `MAX_3D_MEASUREMENTS`) and `pdfcer_core::threed::view_write::ThreeDSavedView::with_measurement`. **wanted**: the viewer's measure tool — two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure `ThreeDViewsOutcome::disclosures` carries (G245).

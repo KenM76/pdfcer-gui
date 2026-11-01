@@ -653,29 +653,29 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O357 — **OPEN** — a double tap on the gimbal's centre saves a picture of the 3D scene
+## O357 — **BUILT** — a double tap on the gimbal's centre saves a picture of the 3D scene
 
 His words: *"And make it when I double tap the center of the camera gimble it saves an image of the scene (no controls showing)."*
 
 **Scope, whole behaviour.** A double tap (or double click) on the centre of the navigation gimbal saves the scene as a picture, in orbit and in walk, windowed and full screen. The picture is the model only: no gimbal, sticks, buttons, menus or overlays. It is saved where the operator chooses (or the platform's pictures folder on Android), and the status line says where. A single tap on the centre keeps whatever it does now.
 
-**Status.** Open.
+**Status.** Built: two taps on the gimbal's centre within the double-tap time save the view as a PNG through the same picker as *Save picture…*, drawn by the engine without any control on it, and the status line names the file; the view does not move. A single tap still levels the look. On Android the picker is the system's save dialog, not a fixed pictures folder. Driven: `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap` (tilts the look, double-taps, checks the file and that the view did not change). NOT VERIFIED by him.
 
-## O356 — **OPEN** — walk eye height set in feet or inches when ghost is off
+## O356 — **BUILT** — walk eye height set in feet or inches when ghost is off
 
 His words: *"Also we should be able to set the height in ft or inches when ghost mode is turned off."*
 
 **Scope, whole behaviour.** With ghost mode off, the walk menu offers an eye-height field in feet or inches (unit chosen beside it), applied at once to the walker; floors, stair climbing (a third of the eye height) and falling use it. The value is converted through the model's units, and remembered across sessions. Hidden in ghost mode, where there is no floor to stand on.
 
-**Status.** Open.
+**Status.** Built: walking with ghost off, the options menu holds *Eye height* as a feet field and an inches field side by side (no unit switch: both at once), with *Auto* returning to the height derived from the model; the walker, floors and step climbing use it at once. It goes through the model's own unit, or millimetres disclosed as assumed when the file names none (G250). Remembered in the preferences file (`walk_eye_height_mm`). Driven: the same check sets it by a drag, reads it from the file and from a second launch; falsified by not saving it. NOT VERIFIED by him.
 
-## O355 — **OPEN** — walk mode draws much slower than orbit
+## O355 — **BUILT** — walk mode draws much slower than orbit
 
 His words: *"The frame rate seems to be a lot slower in walk through mode compared to the other mode. The frame rate in the non walk through mode is much improved."*
 
 **Scope.** Walking through a real model (Bancroft) moves as smoothly as orbiting it. Measure both first; fix the cause, whether fill, resolution or repaint pacing; report any engine share to the engine.
 
-**Status.** Open.
+**Status.** Built: the cause was the CPU renderer, which draws a walk's close, wall-filling view about twice as slowly as an orbit's. The live picture is now drawn on the GPU. Measured on Bancroft (109,358 triangles, 185 textured parts) on the desktop: orbit 3.0–3.5 ms and walk 2.7–3.2 ms a frame at full size on the GPU, against 30–39 ms (orbit) and 67–77 ms (walk) at half size on the CPU. Not measured on the phone. NOT VERIFIED by him.
 
 ## O354 — **BUILT** — a mouse drag turns the 3D model about the point pressed, as SolidWorks does
 
@@ -719,11 +719,11 @@ Same message as O350. **Scope.** Turning the model must not change how big it lo
 
 
 **Status.** Built: the fitted view frames the sphere round the model's centre that holds every vertex, so turning keeps the size and only the picture's shorter side sets it; the windowed viewer no longer grows a few pixels every frame (its footer was guessed, now measured), which had redrawn the model at a new size continually. Unit tests pin turning and widening; `the_3d_viewer_turns_about_the_point_pressed` asserts the idle viewer draws nothing. NOT VERIFIED by him.
-## O348 — **PART BUILT** — 3D drawing is very slow; use the GPU, and optimise
+## O348 — **BUILT** — 3D drawing is very slow; use the GPU, and optimise
 
 Same message as O350. **Scope.** (1) Drawing never blocks the window: the last picture stays up while the next one is drawn off the UI thread. (2) While moving, draw at a resolution that keeps up, then sharpen when still. (3) The drawing itself on the GPU, or made much faster: that is the engine's renderer, filed as a request with measured times.
 
-**Status.** Part built. The viewer draws on every core (the engine's threaded renderer, G253), and keeps drawing at half resolution while the camera moves. Not built: (1) drawing off the UI thread, and the engine's prepared model kept between frames, both wait on G255 (the prepared model borrows the model the viewer repaints, so it cannot be kept); the GPU path waits on the engine's GPU buffers (G253's GPU half). NOT VERIFIED by him.
+**Status.** Built: the live picture is drawn on the GPU (the engine's draw data and shaders, G253 and G255), about 3 ms a frame on Bancroft at full size where the CPU took 30–120 ms; a camera move sends only new matrices, and the vertices are rebuilt only when shown parts, highlight or lighting change. The CPU renderer, on every core, still draws every picture written out and the live one where the driver refuses the shaders (half size while moving). Not built: drawing off the UI thread, which the GPU path makes unnecessary on this desktop. NOT VERIFIED by him.
 
 ## O347 — **BUILT** — the 3D lighting options do nothing
 

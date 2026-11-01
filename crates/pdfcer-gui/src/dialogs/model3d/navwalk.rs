@@ -146,6 +146,7 @@ impl ModelView {
         let Some(mut walk) = self.nav.walk else {
             return;
         };
+        walk.height = self.eye_height();
         let rules = self.nav.prefs.rules();
         let started = std::time::Instant::now();
         let mut world = |ray: &pdfcer_3d::Ray| self.hit(ray);

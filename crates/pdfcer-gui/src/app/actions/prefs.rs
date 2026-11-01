@@ -32,5 +32,11 @@ pub fn apply(action: PrefAction, prefs: &mut Prefs) {
                 format!("page-previews-persisted on={on} budget_ms={budget_ms}")
             });
         }
+        PrefAction::WalkEyeHeight(mm) => {
+            prefs.walk_eye_mm = mm;
+            let _ = prefs.save();
+            let mm = mm.map_or_else(|| "auto".to_owned(), |mm| mm.to_string()); // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| format!("walk-eye-persisted mm={mm}")); // ui-text-exempt: diagnostic trace, never displayed
+        }
     }
 }

@@ -1,0 +1,25 @@
+# `native-mesh` — draw a triangle mesh with depth into an egui_glow paint
+# callback, behind a safe signature.
+#
+# The fourth `native-*` quarantine: `pdfcer-gui` carries
+# `#![forbid(unsafe_code)]` and every `glow` entry point is `unsafe fn`.
+# The subject is a `glow::Context` the caller already holds, so `glow` is the
+# one dependency, and it must resolve to the same version eframe links
+# (`cargo tree -d -p glow` reports no duplicate).
+#
+# Never in here: a PDF or 3D-file concept. The caller hands over plain vertex
+# floats, draw ranges, pictures and uniforms; what they mean is its business.
+
+[package]
+name = "native-mesh"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Draw a depth-tested triangle mesh with a caller's shaders into an offscreen buffer and onto the screen, behind a safe signature."
+license = "MIT"
+
+[dependencies]
+glow = "0.17"
+
+[lints.rust]
+missing_docs = "deny"

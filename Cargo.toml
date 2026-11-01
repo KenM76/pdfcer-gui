@@ -50,6 +50,9 @@ members = [
     # build the operator runs, a texture upload that fails for want of memory
     # is completely silent and presents as a blank canvas.
     "crates/native-gl",
+    # native-mesh — the 3D viewer's GPU drawing, quarantined for the same
+    # reason as native-gl: every `glow` call is `unsafe`.
+    "crates/native-mesh",
     "crates/native-window",
     "crates/pdfcer-gui",
     # pdfcer-gui-base — the floor of the pdfcer-gui crate stack, and the first

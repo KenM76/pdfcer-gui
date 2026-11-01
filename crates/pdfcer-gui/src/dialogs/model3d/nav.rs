@@ -44,6 +44,8 @@ const PREFS_KEY: &str = "model3d-nav-prefs"; // ui-text-exempt: an egui id, neve
 /// A walking step's collision time above which the slowness is said, in
 /// milliseconds.
 pub(super) const SLOW_MS: f64 = 40.0;
+/// A double tap on the gimbal's centre: its most time between taps, seconds.
+const CENTRE_DOUBLE: f64 = 0.4;
 
 /// The navigation switches.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -54,6 +56,9 @@ pub(super) struct Prefs {
     pub speed: f64,
     /// Climb obstacles under a third of the eye height.
     pub stairs: bool,
+    /// The eye height the operator set, millimetres; `None` for a share of
+    /// the model's size.
+    pub eye_mm: Option<f64>,
 }
 
 impl Default for Prefs {
@@ -64,6 +69,7 @@ impl Default for Prefs {
             gimbal: true,
             speed: 1.0,
             stairs: false,
+            eye_mm: None,
         }
     }
 }
@@ -119,6 +125,9 @@ pub(super) struct Nav {
     pub immersive: bool,
     /// The last tap on the picture, for a double tap: when and where.
     pub last_tap: Option<(f64, Pos2)>,
+    /// The last tap on the gimbal's centre, for a double tap: when, and the
+    /// view before it, which the double tap puts back to picture.
+    centre_tap: Option<(std::time::Instant, super::orbit::Orbit, Option<Walk>)>,
     solids: Solids,
     /// The camera moved this frame, so the picture renders at the moving
     /// size.
@@ -139,6 +148,13 @@ pub(super) struct Nav {
 }
 
 impl Nav {
+    /// Default switches with the remembered eye height, millimetres.
+    pub fn with_eye(eye_mm: Option<u32>) -> Self {
+        let mut nav = Self::default();
+        nav.prefs.eye_mm = eye_mm.map(f64::from);
+        nav
+    }
+
     /// Take up the session's switches, once.
     pub fn load(&mut self, ctx: &egui::Context) {
         if std::mem::replace(&mut self.loaded, true) {
@@ -305,8 +321,14 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-nav-prefs ghost={} level={} gimbal={} speed={:.2} stairs={}",
-                p.ghost, p.level, p.gimbal, p.speed, p.stairs
+                "model-nav-prefs ghost={} level={} gimbal={} speed={:.2} stairs={} eye_mm={}",
+                p.ghost,
+                p.level,
+                p.gimbal,
+                p.speed,
+                p.stairs,
+                p.eye_mm
+                    .map_or_else(|| "auto".to_owned(), |mm| format!("{mm:.1}"))
             )
         });
     }
@@ -328,6 +350,10 @@ impl ModelView {
                 super::orbit::Axes::upright(self.upright),
                 radius(&self.bounds),
             ));
+            let height = self.eye_height();
+            if let Some(walk) = &mut self.nav.walk {
+                walk.height = height;
+            }
         } else if let Some(walk) = self.nav.walk.take() {
             self.orbit.look_along(walk.direction());
             self.orbit.pitch = self.orbit.pitch.clamp(-PITCH_LIMIT, PITCH_LIMIT);
@@ -391,9 +417,27 @@ impl ModelView {
         self.hit(&ray)
     }
 
-    /// A tap on gimbal zone `zone` ([`Gimbal::zones`] order).
+    /// A tap on gimbal zone `zone` ([`Gimbal::zones`] order). A second tap
+    /// on its centre within [`CENTRE_DOUBLE`] puts back the view the first
+    /// one fitted or levelled and saves a picture of it, drawn without the
+    /// controls (O357).
     pub(super) fn gimbal_tap(&mut self, gimbal: &Gimbal, zone: usize) {
         let axis = gimbal.tips.get(zone).map(|tip| tip.axis);
+        if axis.is_none() {
+            let now = std::time::Instant::now();
+            match self.nav.centre_tap.take() {
+                Some((then, orbit, walk))
+                    if now.duration_since(then).as_secs_f64() <= CENTRE_DOUBLE =>
+                {
+                    (self.orbit, self.nav.walk) = (orbit, walk);
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    crate::diag::trace(|| "model-gimbal-snapshot".to_owned());
+                    self.save_scene();
+                    return;
+                }
+                _ => self.nav.centre_tap = Some((now, self.orbit, self.nav.walk)),
+            }
+        }
         match (&mut self.nav.walk, axis) {
             (Some(walk), Some(axis)) => walk.face(axis),
             (Some(walk), None) => walk.level(),

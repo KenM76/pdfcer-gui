@@ -12,7 +12,8 @@
 //! turn from it. `pitch` is the camera's alone; the body never tilts.
 //!
 //! Scale: every distance is a share of the model's radius, so a building
-//! and a bracket walk alike. Model units throughout.
+//! and a bracket walk alike, except the eye height where the operator set
+//! one ([`Walk::height`]). Model units throughout.
 
 use pdfcer_3d::{Camera, Hit, Projection, Ray};
 
@@ -93,6 +94,9 @@ pub(super) struct Walk {
     /// The camera's zoom, a multiple of the [`FOV`] view.
     pub zoom: f64,
     axes: Axes,
+    /// The eye height the operator set, model units; `None` for the
+    /// radius's share.
+    pub height: Option<f64>,
     /// The model's radius, which every distance is a share of.
     scale: f64,
     /// Falling speed, model units per second; 0 on a floor.
@@ -112,6 +116,7 @@ impl Walk {
             pitch,
             zoom: 1.0,
             axes,
+            height: None,
             scale: radius,
             fall: 0.0,
         }
@@ -119,7 +124,9 @@ impl Walk {
 
     /// The eye's height above a floor, model units.
     pub fn body(&self) -> f64 {
-        self.scale * BODY_SHARE
+        self.height
+            .filter(|h| h.is_finite() && *h > 0.0)
+            .unwrap_or(self.scale * BODY_SHARE)
     }
 
     /// Whether it is still falling, so the picture must keep redrawing.

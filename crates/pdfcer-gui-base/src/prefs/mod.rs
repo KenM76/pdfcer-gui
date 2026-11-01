@@ -48,6 +48,7 @@ pub mod pictures;
 pub mod shortcuts;
 pub mod snapshot;
 pub mod trust;
+pub mod walkeye;
 
 /// Which chord means which form-field paste — O58. Its own file because
 /// neither order is obviously right and the argument for each is worth keeping.
@@ -394,6 +395,9 @@ pub struct Prefs {
     pub form_style: FormStylePrefs,
     /// Whether a document opens with overprint preview on. See [`overprint`].
     pub overprint_default: OverprintDefault,
+    /// The 3D walker's eye height, whole millimetres; `None` follows the
+    /// model's size. See [`walkeye`].
+    pub walk_eye_mm: Option<u32>,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -851,6 +855,7 @@ impl Default for Prefs {
             pictures: PicturePrefs::default(),
             form_style: FormStylePrefs::default(),
             overprint_default: OverprintDefault::default(),
+            walk_eye_mm: None,
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

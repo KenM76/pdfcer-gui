@@ -78,7 +78,7 @@ pub fn gimbal() -> &'static str {
 /// Its tip.
 #[must_use]
 pub fn gimbal_tooltip() -> &'static str {
-    "Show the axes in the picture's corner. Tap an axis end to view from that side, or to face that way when walking; tap the centre to fit, or to level the view."
+    "Show the axes in the picture's corner. Tap an axis end to view from that side, or to face that way when walking; tap the centre to fit, or to level the view; tap it twice to save a picture of the scene."
 }
 
 /// The walking speed.
@@ -172,4 +172,52 @@ pub fn slow_collision(ms: f64, triangles: usize) -> String {
 #[must_use]
 pub fn options_tooltip() -> &'static str {
     "View options: views, projection, axes, mesh fit, navigation and full screen."
+}
+
+/// The walker's eye height, set with ghost mode off.
+#[must_use]
+pub fn eye_height() -> &'static str {
+    "Eye height"
+}
+
+/// Its tip.
+#[must_use]
+pub fn eye_height_tooltip() -> &'static str {
+    "How high above the floor you walk. Steps you climb and the floor you land on follow it."
+}
+
+/// The feet field's unit.
+#[must_use]
+pub fn feet_suffix() -> &'static str {
+    " ft"
+}
+
+/// The inches field's unit.
+#[must_use]
+pub fn inches_suffix() -> &'static str {
+    " in"
+}
+
+/// The model's file names no unit of its own.
+#[must_use]
+pub fn unit_assumed() -> &'static str {
+    "unit assumed"
+}
+
+/// Its tip.
+#[must_use]
+pub fn unit_assumed_tooltip() -> &'static str {
+    "The file does not say the model's real unit, so heights use the exporter's default and may be off by its scale."
+}
+
+/// Go back to the automatic eye height.
+#[must_use]
+pub fn eye_auto() -> &'static str {
+    "Auto"
+}
+
+/// Its tip.
+#[must_use]
+pub fn eye_auto_tooltip() -> &'static str {
+    "Walk at a height set from the model's size again."
 }

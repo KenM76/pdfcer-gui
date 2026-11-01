@@ -2224,6 +2224,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "native-mesh"
+version = "0.1.0"
+dependencies = [
+ "glow",
+]
+
+[[package]]
 name = "native-pipe"
 version = "0.1.0"
 
@@ -2812,6 +2819,7 @@ dependencies = [
  "flate2",
  "native-clipboard",
  "native-gl",
+ "native-mesh",
  "native-pipe",
  "native-window",
  "pdfcer-3d",

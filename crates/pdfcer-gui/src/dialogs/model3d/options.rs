@@ -105,6 +105,7 @@ impl ModelView {
             ui.separator();
             ui.horizontal_wrapped(|ui| self.nav_controls(ui));
         }
+        ui.horizontal_wrapped(|ui| self.eye_height_control(ui));
         ui.horizontal_wrapped(|ui| self.full_screen_control(ui));
         if full {
             ui.separator();
