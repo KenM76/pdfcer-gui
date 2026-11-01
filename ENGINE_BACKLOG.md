@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **50 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `wanted` — a real gap — **51 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -159,13 +159,14 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **wanted; our request G250, shipped at v0.113.0.** Walking would stand at a real eye height in place of a fraction of the model's size. |
-| **Interactive 3D frame rate (CPU)** — `pdfcer_3d::PreparedModel`, and a GPU path (draw buffers for eframe's glow context) and a prepared model the viewer can keep … | **wanted; our requests G253 (GPU half) and G255.** `RenderOptions::threads` is consumed (every core); `PreparedModel` borrows the model the viewer repaints for hidden and highlighted parts, so it cannot be kept between frames and the texture scan still runs every frame (G255). Drawing stays on the UI thread until then (O348). <!--namesake:PreparedModel--> the shell cannot hold it; the row is the owned form it asks for. |
+| **Interactive 3D frame rate (CPU)** — `pdfcer_3d::PreparedModel`, and a GPU path (draw buffers for eframe's glow context) and a prepared model the viewer can keep … | **wanted; our requests G253 (GPU half) and G255, shipped at v0.115.0.** `RenderOptions::threads` is consumed (every core); `PreparedModel` is now owned, and `DrawData`, the GLSL ES 3.00 shaders and `FrameLights` give the viewer a glow drawing path (O348, O355). <!--namesake:PreparedModel--> |
+| **GPU-ready 3D draw data, matrices and shader** — `PreparedModel::draw_data`, `Camera::view_matrix`, `FrameLights`, `GLSL_ES_300_*` … | **wanted; our request G253 (GPU half), shipped at v0.115.0.** The 3D viewer draws its live picture through eframe's glow context with these (O348, O355); the CPU renderer stays for every picture written out and where the driver refuses the shader. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `blocked` — waiting on something named — **2 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -183,7 +184,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -194,7 +195,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `declined` — deliberately no surface — **20 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -240,7 +241,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **403 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **403 of 476** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

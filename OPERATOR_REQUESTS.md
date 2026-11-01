@@ -653,6 +653,30 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O357 — **OPEN** — a double tap on the gimbal's centre saves a picture of the 3D scene
+
+His words: *"And make it when I double tap the center of the camera gimble it saves an image of the scene (no controls showing)."*
+
+**Scope, whole behaviour.** A double tap (or double click) on the centre of the navigation gimbal saves the scene as a picture, in orbit and in walk, windowed and full screen. The picture is the model only: no gimbal, sticks, buttons, menus or overlays. It is saved where the operator chooses (or the platform's pictures folder on Android), and the status line says where. A single tap on the centre keeps whatever it does now.
+
+**Status.** Open.
+
+## O356 — **OPEN** — walk eye height set in feet or inches when ghost is off
+
+His words: *"Also we should be able to set the height in ft or inches when ghost mode is turned off."*
+
+**Scope, whole behaviour.** With ghost mode off, the walk menu offers an eye-height field in feet or inches (unit chosen beside it), applied at once to the walker; floors, stair climbing (a third of the eye height) and falling use it. The value is converted through the model's units, and remembered across sessions. Hidden in ghost mode, where there is no floor to stand on.
+
+**Status.** Open.
+
+## O355 — **OPEN** — walk mode draws much slower than orbit
+
+His words: *"The frame rate seems to be a lot slower in walk through mode compared to the other mode. The frame rate in the non walk through mode is much improved."*
+
+**Scope.** Walking through a real model (Bancroft) moves as smoothly as orbiting it. Measure both first; fix the cause, whether fill, resolution or repaint pacing; report any engine share to the engine.
+
+**Status.** Open.
+
 ## O354 — **BUILT** — a mouse drag turns the 3D model about the point pressed, as SolidWorks does
 
 His words: *"I didn't know double click did that so I never tried, but single click and rotate should be the default rotate around a clicked point behaviour just like in SolidWorks."*
