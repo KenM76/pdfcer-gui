@@ -1,7 +1,7 @@
 //! Reaching a 3D viewer control that lives in its options menu.
 //!
 //! The viewer keeps its views, projection, axes, mesh fit, navigation and
-//! window switches behind one glyph at the picture's top-right
+//! window switches behind one glyph at the picture's top-left
 //! (`dialogs::model3d::options::REGION_OPTIONS`). A control in that menu is
 //! drawn only while the menu is open, so a check that wants one opens the
 //! menu first. The menu stays open while its switches are used, and covers
@@ -72,11 +72,11 @@ pub fn close(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Res
 
 /// The viewer's picture: `dialogs::model3d::REGION_IMAGE`.
 const IMAGE: &str = "model3d.image";
-/// How far the glyph may sit from the picture's top-right corner, points.
+/// How far the glyph may sit from the picture's top-left corner, points.
 const CORNER: f32 = 64.0;
 
 /// The sentence for an options glyph that is missing or away from the
-/// picture's top-right corner; `None` when it is there.
+/// picture's top-left corner; `None` when it is there.
 pub fn misplaced(session: &Session, ui_rect: &str) -> Result<Option<String>> {
     let trace = session.trace()?;
     let Some((glyph, _)) = declared_in(&trace, ui_rect, OPTIONS) else {
@@ -88,12 +88,12 @@ pub fn misplaced(session: &Session, ui_rect: &str) -> Result<Option<String>> {
         )));
     };
     let inside = image.contains_rect(glyph);
-    let right = image.max.x - glyph.max.x;
+    let left = glyph.min.x - image.min.x;
     let top = glyph.min.y - image.min.y;
-    Ok((!inside || right > CORNER || top > CORNER).then(|| {
+    Ok((!inside || left > CORNER || top > CORNER).then(|| {
         format!(
-            "★★★ the options glyph {glyph:?} is not at the top-right of the picture {image:?} \
-             (right gap {right}, top gap {top})."
+            "★★★ the options glyph {glyph:?} is not at the top-left of the picture {image:?} \
+             (left gap {left}, top gap {top})."
         )
     }))
 }

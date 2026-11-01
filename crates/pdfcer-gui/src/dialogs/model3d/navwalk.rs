@@ -1,25 +1,24 @@
-//! Walking's input: the drone sticks and their buttons, the keys (W A S D,
-//! the arrows, E and Q, Shift), a drag to look, a pinch or Ctrl with the
-//! wheel to zoom, the wheel to step, the gimbal's taps, and a double tap
-//! that goes to the surface tapped.
+//! Walking's input: the drone sticks and their buttons, the keys that stand
+//! in for them (W A S D, the arrows or keypad, I J K L, U and O, Shift), a
+//! drag to look, a pinch or Ctrl with the wheel to zoom, the wheel to step,
+//! the gimbal's taps, and a double tap that goes to the surface tapped.
 //!
 //! The drone sticks are offered on a touch screen and whenever the viewer
 //! fills the screen. With them, a drag turns the camera apart from the
 //! heading, as the camera stick does; without them (a mouse in a window) a
-//! drag turns the body, as a desktop game's mouse-look does, so W always
-//! goes where the view faces.
+//! drag turns the body, as a desktop game's mouse-look does, so going
+//! forward goes where the view faces.
 
 use egui::{Key, Pos2, Rect, Response, Ui, Vec2};
 
 use super::ModelView;
 use super::drone::{self, CAMERA, Drone, LEFT, RIGHT, shaped};
+use super::gimbal::{Gimbal, ZONES as GIMBAL_ZONES};
 use super::stick::Bases;
 use super::walk::Intent;
 
 /// Radians the look turns per point dragged.
 const LOOK_RATE: f64 = 0.005;
-/// Radians a held arrow key turns per second.
-const KEY_TURN: f64 = 1.8;
 /// Eye heights a wheel notch's 50 points steps.
 const WHEEL_STEP: f64 = 0.5;
 /// A double tap's most time between taps, seconds, and distance, points.
@@ -37,10 +36,15 @@ impl ModelView {
         let gimbal = self.gimbal(rect);
         let offered = self.nav.sticks.touch() || self.filling_screen(ui.ctx());
         let drone = offered.then(|| Drone::layout(rect));
-        let mut zones: Vec<Rect> = drone.map(|d| d.buttons.to_vec()).unwrap_or_default();
-        let gimbal_from = zones.len();
-        if let Some(g) = &gimbal {
-            zones.extend(g.zones());
+        // The gimbal's areas first, a fixed count of them, so an area's index
+        // means the same thing when the finger lifts as when it landed: the
+        // first touch is what offers the drone and adds its buttons.
+        let mut zones: Vec<Rect> = gimbal
+            .as_ref()
+            .map_or_else(|| vec![Rect::NOTHING; GIMBAL_ZONES], Gimbal::zones);
+        let buttons_from = zones.len();
+        if let Some(d) = &drone {
+            zones.extend(d.buttons);
         }
         let centres = drone.map(|d| d.centres);
         let bases = Bases {
@@ -50,19 +54,21 @@ impl ModelView {
         let hud = std::mem::take(&mut self.nav.hud);
         let reading = self.nav.sticks.read(ui, rect, bases, &zones, &hud);
         self.nav.hud = hud;
-        let tilts: [Vec2; 3] =
-            std::array::from_fn(|i| reading.sticks.get(i).copied().unwrap_or_default());
+        let (keyed, keys, wheel) = self.walk_keys(ui, response);
+        let tilts: [Vec2; 3] = std::array::from_fn(|i| {
+            let held = reading.sticks.get(i).copied().unwrap_or_default();
+            (held + keys[i]).clamp(Vec2::splat(-1.0), Vec2::splat(1.0))
+        });
         self.nav.drone = drone.map(|d| (d, tilts));
 
         // Mode 2: left is throttle and yaw, right is pitch and roll.
-        let mut intent = Intent {
+        let intent = Intent {
             forward: shaped(tilts[RIGHT].y),
             right: shaped(tilts[RIGHT].x),
             rise: shaped(tilts[LEFT].y),
-            run: false,
+            run: ui.input(|i| i.modifiers.shift),
         };
         let dt = f64::from(ui.input(|i| i.stable_dt.min(0.1)));
-        let (keyed, turn, wheel) = self.walk_keys(ui, response, &mut intent);
         let pinch = if self.nav.sticks.touch() {
             reading.pinch
         } else {
@@ -79,10 +85,7 @@ impl ModelView {
             } else {
                 walk.turn(drag_yaw, drag_pitch);
             }
-            walk.turn(
-                -(shaped(tilts[LEFT].x) * STICK_TURN + turn * KEY_TURN) * dt,
-                0.0,
-            );
+            walk.turn(-shaped(tilts[LEFT].x) * STICK_TURN * dt, 0.0);
             walk.look(
                 -shaped(tilts[CAMERA].x) * CAMERA_TURN.0 * dt,
                 -shaped(tilts[CAMERA].y) * CAMERA_TURN.1 * dt,
@@ -92,9 +95,9 @@ impl ModelView {
             }
         }
         for &z in &reading.tapped_zones {
-            match (z < gimbal_from, &gimbal) {
-                (true, _) => self.drone_button(ui.ctx(), z),
-                (false, Some(g)) => self.gimbal_tap(g, z - gimbal_from),
+            match (z >= buttons_from, &gimbal) {
+                (true, _) => self.drone_button(ui.ctx(), z - buttons_from),
+                (false, Some(g)) => self.gimbal_tap(g, z),
                 (false, None) => {}
             }
         }
@@ -108,37 +111,49 @@ impl ModelView {
         }
     }
 
-    /// The walking keys into `intent`, while the pointer is over the
-    /// picture or it fills the screen and no text box has the keys: whether
-    /// any was held, the arrows' turn (right positive), and the wheel.
-    fn walk_keys(&self, ui: &Ui, response: &Response, intent: &mut Intent) -> (bool, f64, f64) {
+    /// The walking keys as stick tilts, while the keyboard is the viewer's
+    /// (its own window, full screen, or the pointer over the picture) and no
+    /// text box has it: whether any was held, the three tilts, and the wheel.
+    /// W A S D are the left stick, the arrows or the keypad's 8 4 2 6 the
+    /// right, I J K L the camera's; U and O tap the two centring buttons.
+    /// Shift runs.
+    fn walk_keys(&mut self, ui: &Ui, response: &Response) -> (bool, [Vec2; 3], f64) {
         let wheel = if response.hovered() {
             f64::from(ui.input(|i| i.smooth_scroll_delta.y))
         } else {
             0.0
         };
-        if !(response.hovered() || self.nav.immersive)
-            || crate::canvas::textedit::composing(ui.ctx())
-        {
-            return (false, 0.0, wheel);
+        let ours = response.hovered() || self.nav.immersive || self.native;
+        if !ours || crate::canvas::textedit::composing(ui.ctx()) {
+            return (false, [Vec2::ZERO; 3], wheel);
         }
-        let (keys, run) = ui.input(|i| {
-            let down = |ks: &[Key]| f64::from(u8::from(ks.iter().any(|k| i.key_down(*k))));
+        let (tilts, centre) = ui.input(|i| {
+            let down = |ks: &[Key]| f32::from(u8::from(ks.iter().any(|k| i.key_down(*k))));
+            let stick = |up: &[Key], left: &[Key], down_: &[Key], right: &[Key]| {
+                Vec2::new(down(right) - down(left), down(up) - down(down_))
+            };
             (
                 [
-                    down(&[Key::W, Key::ArrowUp]) - down(&[Key::S, Key::ArrowDown]),
-                    down(&[Key::D]) - down(&[Key::A]),
-                    down(&[Key::E, Key::Space]) - down(&[Key::Q, Key::C]),
-                    down(&[Key::ArrowRight]) - down(&[Key::ArrowLeft]),
+                    stick(&[Key::W], &[Key::A], &[Key::S], &[Key::D]),
+                    stick(
+                        &[Key::ArrowUp, Key::Num8],
+                        &[Key::ArrowLeft, Key::Num4],
+                        &[Key::ArrowDown, Key::Num2],
+                        &[Key::ArrowRight, Key::Num6],
+                    ),
+                    stick(&[Key::I], &[Key::J], &[Key::K], &[Key::L]),
                 ],
-                i.modifiers.shift,
+                [i.key_pressed(Key::U), i.key_pressed(Key::O)],
             )
         });
-        intent.forward = (intent.forward + keys[0]).clamp(-1.0, 1.0);
-        intent.right = (intent.right + keys[1]).clamp(-1.0, 1.0);
-        intent.rise = (intent.rise + keys[2]).clamp(-1.0, 1.0);
-        intent.run |= run;
-        (keys != [0.0; 4], keys[3], wheel)
+        if centre[0] {
+            self.drone_button(ui.ctx(), drone::CENTRE_YAW);
+        }
+        if centre[1] {
+            self.drone_button(ui.ctx(), drone::CENTRE_PITCH);
+        }
+        let held = tilts.iter().any(|t| *t != Vec2::ZERO);
+        (held || centre.contains(&true), tilts, wheel)
     }
 
     /// Step the walker, timing what it meets.

@@ -2,7 +2,9 @@
 //! walking with ghost mode off, a drag on the feet field sets the walker's
 //! eye height (O356), which is written to the preferences file and comes
 //! back in a second launch; and two quick taps on the gimbal's centre save
-//! a picture of the view as it was before the taps (O357).
+//! a picture of the view as it was before the taps (O357), both facing
+//! along X, whose tip is then drawn over the centre (O358), and from a
+//! tilted view.
 
 use std::path::Path;
 
@@ -24,6 +26,8 @@ const GHOST: &str = "model3d.ghost";
 const EYE: &str = "model3d.eye-height";
 /// The gimbal's centre: the zone after its six ends.
 const CENTRE: &str = "model3d.gimbal.tip.6";
+/// The gimbal's +X tip.
+const TIP_X: &str = "model3d.gimbal.tip.0";
 /// `prefs::walkeye`'s file key.
 const KEY: &str = "walk_eye_height_mm";
 /// The picture picker's diagnostic answer, read by `app::files::pick_picture_target`.
@@ -159,6 +163,10 @@ impl Stage<'_> {
         self.pointer
             .drag_in(self.session, vp.as_deref(), from, to, 10, "l")?;
         self.session.settle(30);
+        let dragged = self.last("walk-eye-persisted", "mm");
+        if let Some(failure) = self.typed(report, vp.as_deref(), dragged.as_deref())? {
+            return Ok(Err(failure));
+        }
         crate::checks::viewer_options::close(self.session, self.pointer, self.ui_rect)?;
         let traced = self.last("model-nav-prefs", "eye_mm");
         let persisted = self.last("walk-eye-persisted", "mm");
@@ -183,12 +191,88 @@ impl Stage<'_> {
         self.double_tap(report, target).map(|r| r.map(|()| mm))
     }
 
+    /// Click the inches field, type 7 over what it holds and press Enter:
+    /// the persisted height must change from `before` and end on 7 inches.
+    /// `Some` names the failure.
+    fn typed(
+        &self,
+        report: &mut CheckReport,
+        vp: Option<&str>,
+        before: Option<&str>,
+    ) -> Result<Option<String>> {
+        let Some((now, _)) = declared_in(&self.session.trace()?, self.ui_rect, EYE) else {
+            return Ok(Some(format!("`{EYE}` went away after the drag.")));
+        };
+        let mut inch = now;
+        inch.min.x = now.max.x - now.width() * 0.25;
+        self.pointer
+            .click_in(self.session, vp, WindowPoint::centre_of(inch))?;
+        self.session.settle(10);
+        self.pointer.key(self.session, vp, "A", Some("ctrl"))?;
+        self.pointer.type_text(self.session, vp, "7")?;
+        self.pointer.key(self.session, vp, "Enter", None)?;
+        self.session.settle(30);
+        let after = self.last("walk-eye-persisted", "mm");
+        report.note(format!("typed 7 in: persisted {before:?} -> {after:?}"));
+        let inches = after
+            .as_deref()
+            .and_then(|m| m.parse::<f64>().ok())
+            .map(|mm| (mm / 25.4) % 12.0);
+        if after.as_deref() == before || inches.is_none_or(|i| (i - 7.0).abs() > 0.06) {
+            return Ok(Some(format!(
+                "typing 7 into the inches field did not set the height: persisted \
+                 {before:?} -> {after:?}."
+            )));
+        }
+        Ok(None)
+    }
+
+    /// Two quick taps on the gimbal's centre; `false` when it is not drawn.
+    fn tap_centre_twice(&self) -> Result<bool> {
+        let Some((rect, vp)) = declared_in(&self.session.trace()?, self.ui_rect, CENTRE) else {
+            return Ok(false);
+        };
+        let at = WindowPoint::centre_of(rect);
+        self.pointer.click_in(self.session, vp.as_deref(), at)?;
+        self.pointer.click_in(self.session, vp.as_deref(), at)?;
+        self.session.settle(60);
+        Ok(true)
+    }
+
+    /// How many `model-gimbal-snapshot` lines the trace holds.
+    fn snapshots(&self) -> Result<usize> {
+        Ok(self
+            .session
+            .trace()?
+            .events("model-gimbal-snapshot")
+            .count())
+    }
+
     /// Two taps on the gimbal's centre save a picture of the view before them.
     fn double_tap(
         &self,
         report: &mut CheckReport,
         target: &Path,
     ) -> Result<std::result::Result<(), String>> {
+        // Facing along X puts that axis's tip over the centre, as the level
+        // view walking opens on does with its forward axis.
+        let Some((tip, vp)) = declared_in(&self.session.trace()?, self.ui_rect, TIP_X) else {
+            return Ok(Err(format!(
+                "no `{TIP_X}` region: the gimbal is not drawn."
+            )));
+        };
+        self.pointer
+            .click_in(self.session, vp.as_deref(), WindowPoint::centre_of(tip))?;
+        self.session.settle(30);
+        let level = self.snapshots()?;
+        self.tap_centre_twice()?;
+        if self.snapshots()? <= level {
+            return Ok(Err(
+                "two taps on the gimbal's centre while facing along X traced no \
+                 `model-gimbal-snapshot`: the axis the view looks along took them."
+                    .to_owned(),
+            ));
+        }
         // Tilt the look first, so a centre tap's levelling would show.
         let Some((image, vp)) = declared_in(&self.session.trace()?, self.ui_rect, IMAGE) else {
             return Ok(Err(format!("no `{IMAGE}` region.")));
@@ -200,15 +284,11 @@ impl Stage<'_> {
             .drag_in(self.session, vp.as_deref(), from, to, 8, "l")?;
         self.session.settle(30);
         let before = self.last("model-view-rendered", "dir");
-        let Some((rect, vp)) = declared_in(&self.session.trace()?, self.ui_rect, CENTRE) else {
+        if !self.tap_centre_twice()? {
             return Ok(Err(format!(
                 "no `{CENTRE}` region: the gimbal is not drawn."
             )));
-        };
-        let at = WindowPoint::centre_of(rect);
-        self.pointer.click_in(self.session, vp.as_deref(), at)?;
-        self.pointer.click_in(self.session, vp.as_deref(), at)?;
-        self.session.settle(60);
+        }
         let trace = self.session.trace()?;
         let snapshot = trace.events("model-gimbal-snapshot").last().is_some();
         let saved = trace

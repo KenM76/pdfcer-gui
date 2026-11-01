@@ -132,7 +132,7 @@ pub fn home() -> &'static str {
 /// How to walk with keys and a mouse.
 #[must_use]
 pub fn walk_hint() -> &'static str {
-    "W A S D or the arrows move and turn, E and Q rise and sink, Shift runs; drag to look; the wheel steps, Ctrl with the wheel zooms; double-click to go there."
+    "W and S rise and sink, A and D turn; the arrows or keypad fly and strafe; I J K L turn the camera, U centres it and O levels it; Shift runs; drag to look; the wheel steps, Ctrl with the wheel zooms; double-click to go there."
 }
 
 /// How to walk with fingers.

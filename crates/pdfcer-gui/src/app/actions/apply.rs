@@ -1154,8 +1154,12 @@ impl PdfcerApp {
                 }
                 match super::models::load_view(doc, &artwork) {
                     Ok(model) => {
-                        self.dialogs
-                            .open_model_view(artwork, model, self.prefs.walk_eye_mm);
+                        self.dialogs.open_model_view(
+                            artwork,
+                            model,
+                            self.prefs.walk_eye_mm,
+                            self.prefs.model_start_walk,
+                        );
                     }
                     Err(said) => {
                         crate::diag::trace(|| {

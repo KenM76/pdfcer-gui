@@ -175,9 +175,15 @@ pub(crate) struct ModelView {
 
 impl ModelView {
     /// Open on `model`, decoded from `artwork`, at the file's opening view
-    /// when it carries a camera, else at the isometric view.
+    /// when it carries a camera, else at the isometric view; `walk` opens it
+    /// walking from that view's eye, with ghost on.
     #[must_use]
-    pub(crate) fn open(artwork: ThreeDArtwork, model: Assembled, eye_mm: Option<u32>) -> Self {
+    pub(crate) fn open(
+        artwork: ThreeDArtwork,
+        model: Assembled,
+        eye_mm: Option<u32>,
+        walk: bool,
+    ) -> Self {
         let page_index = artwork.page_index;
         let bounds = Bounds::of(&model.drawn.meshes).unwrap_or(Bounds {
             min: [0.0; 3],
@@ -241,7 +247,7 @@ impl ModelView {
             parts,
             view_lighting: None,
             lights_turn: true,
-            nav: nav::Nav::with_eye(eye_mm),
+            nav: nav::Nav::with_eye(eye_mm, walk),
             eye_changed: false,
         }
     }
@@ -250,6 +256,10 @@ impl ModelView {
     /// Returns `false` when it should close.
     pub fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         self.nav.load(ctx);
+        if std::mem::take(&mut self.nav.start_walking) {
+            self.set_walking(true);
+            self.switched(ctx);
+        }
         let closed = if self.nav.immersive && ctx.embed_viewports() {
             self.show_immersive(ctx);
             false

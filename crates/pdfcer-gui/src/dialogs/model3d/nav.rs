@@ -145,13 +145,18 @@ pub(super) struct Nav {
     pub slow: Option<f64>,
     /// The session's switches have been taken up.
     loaded: bool,
+    /// Start walking on the next frame: the viewer opens walking.
+    pub start_walking: bool,
 }
 
 impl Nav {
-    /// Default switches with the remembered eye height, millimetres.
-    pub fn with_eye(eye_mm: Option<u32>) -> Self {
+    /// Default switches with the remembered eye height, millimetres. `walk`
+    /// starts walking on the first frame, with ghost on.
+    pub fn with_eye(eye_mm: Option<u32>, walk: bool) -> Self {
         let mut nav = Self::default();
         nav.prefs.eye_mm = eye_mm.map(f64::from);
+        nav.prefs.ghost = walk;
+        nav.start_walking = walk;
         nav
     }
 

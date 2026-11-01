@@ -526,8 +526,11 @@ impl DialogsState {
         artwork: pdfcer_core::threed::ThreeDArtwork,
         model: crate::app::actions::models::Assembled,
         eye_mm: Option<u32>,
+        walk: bool,
     ) {
-        self.model3d = Some(super::model3d::ModelView::open(artwork, model, eye_mm));
+        self.model3d = Some(super::model3d::ModelView::open(
+            artwork, model, eye_mm, walk,
+        ));
     }
 
     /// Raise the 3D prompt for `artwork`, unless one is already up.

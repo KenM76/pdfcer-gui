@@ -653,6 +653,44 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O363 — **BUILT** — the 3D options drop-down on the left side
+
+His words (one message with O358–O362): *"The rendering speed it now excellent! Just a few bugs to fix - double tap for the screenshot didn't seem to do anything and I couldn't enter different numbers for the view height - boxes show but I couldn't type in them - keystrokes might be getting rejected entirely but I'm not sure. Also the texture mapping was flawless in the previous version but with this one sometimes when moving or in certain positions the underlying surface shows through the texture mapping - the board room feature wall is a perfect example where this happens. Also I'd like the default mode when the 3D view comes up to be walk through and ghost mode. Also for the desktop version with walkthrough mode we need keyboard shortcuts - wasd for the left joystick, cursor keys or numpad for the right joystick, ijkl for the camera and uo for recentering the camera. Also move the menu drop down to the left side."*
+
+**Scope.** The options glyph and its drop-down move from the picture's top-right to its top-left, windowed and full screen, without covering the gimbal or the sticks.
+
+**Status.** Built. The glyph sits at the picture's top-left in the window, on the phone and full screen; full screen, the button row starts right of it, and the gimbal keeps the top-right. Driven by `the_model_viewer_zooms_at_the_pointer_and_fills_the_screen` through `viewer_options::misplaced`, now asserting the top-left.
+
+## O362 — **BUILT** — keyboard driving for walk mode on the desktop
+
+Same message as O363. **Scope, whole behaviour.** While walking, with the 3D viewer focused and no text field being typed in: W/A/S/D act as the left stick, the arrow keys or numpad 8/4/2/6 as the right stick, I/J/K/L as the camera stick, U and O as the two recentre buttons (left/right and up/down). Held keys move continuously like a held stick; several at once combine. The keys never reach the page underneath.
+
+**Status.** Built as specified, keys feeding the same stick tilts and buttons as the drone controls, with Shift to run. They work whenever the viewer's own window has the keyboard (or it fills the screen, or the pointer is over the picture) and no text box is focused; the viewer's window holds the keyboard, so they cannot reach the page. The old W-forward scheme and E/Q are gone. Driven by `the_3d_viewer_opens_walking_with_ghost_on_and_walks_by_keys`: D, Up, W, L, U, K and O each move or zero what their stick or button does.
+
+## O361 — **BUILT** — the 3D viewer opens in walk mode with ghost on
+
+Same message as O363. **Scope.** Opening a model's viewer starts in walk mode with ghost mode on, in the window and full screen; Orbit and Ghost remain one press away.
+
+**Status.** Built. A new preference `model_view_start` (`walk` | `orbit`, default `walk`) opens the viewer walking from the opening view's eye with ghost on; ghost stays as he last set it within a session. Driven by `the_3d_viewer_opens_walking_with_ghost_on_and_walks_by_keys`; the other 3D checks seed `orbit`.
+
+## O360 — **WAITING ON ENGINE** — textures flicker: the surface underneath shows through
+
+Same message as O363. **Scope.** A textured face lying on (or just in front of) another surface draws as it did on the CPU renderer, in every position and while moving; the boardroom feature wall in Bancroft is the case. A regression of the GPU path (O348).
+
+**Status.** Diagnosed: 24-bit depth with the walker's near plane at a fraction of a millimetre, so a texture on a wall depth-fights it. The phone draws with the same 24-bit depth and full-precision shaders as the desktop, so it is not a phone-only fault. Filed as G256; no GUI workaround, per his standing instruction.
+
+## O359 — **BUILT** — the eye-height boxes cannot be typed into
+
+Same message as O363. **Scope.** The feet and inches boxes accept typed numbers (click, type, Enter or click away), on the desktop and the phone's keyboard; dragging still works. Regression of O356.
+
+**Status.** He tested on the phone. Typing works on the desktop (driven: `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap` types 7 into the inches box). On Android, winit 0.30 drops the on-screen keyboard's text, so no text box in the app could be typed into; `softkeys` now reads the committed text from the activity and hands it to egui. The keyboard is asked for multi-line text so its Enter key types a line break, which becomes Enter; on a single-line field the keyboard sends Enter as an editor action that GameActivity does not forward. Verified on the Android emulator: tap the feet box, type 5, the keyboard's Enter; the box shows 5 ft, the height is stored (1524 mm) and the keyboard closes; digits and Backspace both arrive. Needs his phone to confirm.
+
+## O358 — **BUILT** — a double tap on the gimbal's centre saves nothing
+
+Same message as O363. **Scope.** The double tap of O357 works for him: with a finger and with the mouse, windowed and full screen. Find what his gesture does that the driven check's does not.
+
+**Status.** Two defects, both reproduced on the Android emulator. (1) The first touch in the viewer is what offers the drone controls, which put their three buttons at the front of the list of tap areas between the finger landing and lifting; the gimbal's area numbers shifted by three, so the first tap on the centre was read as an axis tip and turned the view. The gimbal's areas now come first, a fixed seven of them, so their numbers never move. (2) Facing along an axis, or the level view walking opens on, puts that axis's tip over the centre, and the tip was searched first, so the centre could not be tapped at all. The centre's area now belongs to the centre and tips keep only their outer side. On the emulator two taps on the centre now save the picture through Android's save dialog. Driven on the desktop: `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap` taps the X tip, then double-taps the centre; red with the old tip areas. The first defect needs a touch screen, and `ui-verify` cannot script touches, so it is checked on the emulator only. NOT VERIFIED by him.
+
 ## O357 — **BUILT** — a double tap on the gimbal's centre saves a picture of the 3D scene
 
 His words: *"And make it when I double tap the center of the camera gimble it saves an image of the scene (no controls showing)."*

@@ -59,6 +59,7 @@ fn scripted_invoke() -> Option<String> {
 impl eframe::App for PdfcerApp {
     fn raw_input_hook(&mut self, ctx: &egui::Context, raw_input: &mut egui::RawInput) {
         crate::insets::apply(ctx, raw_input);
+        crate::softkeys::apply(raw_input);
     }
 
     /// **Flush what the debounce is still holding, before the process

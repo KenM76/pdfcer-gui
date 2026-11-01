@@ -54,6 +54,8 @@ pub use pdfcer_gui_base::protect;
 pub mod render;
 // The documents open last run, reopened on a host that ends the process.
 pub mod reopen;
+// Text an on-screen keyboard typed that the window system drops (Android).
+pub mod softkeys;
 // The pdfcer shell definition — the seven-tab ribbon, three modes, QAT and
 // keymap, expressed as DATA over `egui-shell`'s manifest types rather than
 // as rendering code. See SHELL_FRAMEWORK.md; this module is the sole

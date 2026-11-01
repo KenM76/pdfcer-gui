@@ -3,7 +3,8 @@
 //! Android starts the program by loading `libpdfcer_android.so` from the APK
 //! and calling [`android_main`] on the GameActivity's native thread. It installs
 //! the document picker (`MainActivity.pickDocuments`, reached through JNI) and
-//! the system-bar insets (`MainActivity.systemBarInsets`), and exports
+//! the system-bar insets (`MainActivity.systemBarInsets`) and the soft
+//! keyboard's text (which winit drops), and exports
 //! `nativeViewed` for documents opened from another app,
 //! hands the `AndroidApp` to eframe through `NativeOptions::android_app`, and
 //! then runs the same application the desktop runs, through
@@ -13,6 +14,8 @@
 mod activity;
 #[cfg(target_os = "android")]
 mod picker;
+#[cfg(target_os = "android")]
+mod softkeys;
 #[cfg(target_os = "android")]
 mod viewed;
 
@@ -30,6 +33,7 @@ fn android_main(app: AndroidApp) {
     diag_from_property();
     let activity = Activity::new(&app);
     pdfcer_gui::insets::install(Box::new(activity.clone()));
+    pdfcer_gui::softkeys::install(Box::new(softkeys::GameKeys::new(app.clone())));
     settings_home(&app);
     let save_dir = app.internal_data_path().map(|p| p.join("save"));
     pdfcer_gui::filedialog::install(Box::new(picker::ActivityPicker::new(activity, save_dir)));

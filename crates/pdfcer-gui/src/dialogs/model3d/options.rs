@@ -1,4 +1,4 @@
-//! The viewer's options behind one glyph at the picture's top-right corner,
+//! The viewer's options behind one glyph at the picture's top-left corner,
 //! in a window, on a phone and full screen alike: the views, projection,
 //! axes, mesh fit, navigation and window switches, and, full screen where
 //! the footer is gone, the picture and save buttons. The menu stays open
@@ -19,11 +19,14 @@ pub const REGION_OPTIONS: &str = "model3d.options"; // ui-text-exempt: trace reg
 const INSET: f32 = 8.0;
 /// The glyph's side in a desktop window, and where a thumb uses it.
 const SIDE: (f32, f32) = (28.0, 44.0);
+/// The width the glyph takes from the picture's left edge where a thumb
+/// uses it, so a row beside it starts clear of it.
+pub(super) const THUMB_CLEAR: f32 = INSET + SIDE.1;
 /// The menu's width, in points.
 const WIDTH: f32 = 300.0;
 
 impl ModelView {
-    /// The options glyph over `rect`'s top-right corner and its menu.
+    /// The options glyph over `rect`'s top-left corner and its menu.
     ///
     /// The menu's open state is the viewer's own, not egui's remembered
     /// popup: egui remembers one popup per viewport, so a drop-down opened
@@ -33,7 +36,7 @@ impl ModelView {
         let thumb = self.filling_screen(ui.ctx()) || egui_shell::ribbon::phone::is_phone(ui.ctx());
         let side = if thumb { SIDE.1 } else { SIDE.0 };
         let at = Rect::from_min_size(
-            egui::pos2(rect.right() - INSET - side, rect.top() + INSET),
+            egui::pos2(rect.left() + INSET, rect.top() + INSET),
             Vec2::splat(side),
         );
         let mut child = ui.new_child(UiBuilder::new().max_rect(at));

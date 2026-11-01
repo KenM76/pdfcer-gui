@@ -144,6 +144,10 @@ const PREFS_HEADER: &str = "\
 # seeding one key cannot silently restore the offer. A check that DRIVES the
 # offer must delete this file; see `checks/default_app_offer.rs`.
 ask_default_app = false
+#
+# `model_view_start = orbit` opens the 3D viewer orbiting, the state the 3D
+# checks start from; `checks/model_start.rs` seeds `walk` to drive the default.
+model_view_start = orbit
 ";
 
 /// **Write a preferences file for a sandboxed run, with the startup offer

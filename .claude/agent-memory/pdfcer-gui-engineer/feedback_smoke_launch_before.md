@@ -120,3 +120,10 @@ No pointer, no focus, and the print dialog's own regions and body geometry land
 in the trace. That is how the 2026-09-16 layout regression was found **and** its
 fix confirmed while he worked. Mechanism:
 `D:/dev/rag/egui/an_env_var_command_seam_is_how_you_verify_a_gui_on_a_machine_whose_desktop_is_occupied.md`.
+
+**3. A leftover smoke process makes the copy fail, and the launch then runs the
+old exe.** The running copy holds the file open, `cp` fails with "Device or
+resource busy", and the launch still goes ahead, printing a healthy
+`canvas-coverage` line from the previous build. Before copying, stop any process
+whose ExecutablePath is under the smoke folder (by PID), chain `cp … &&`, and
+`cmp` the copy against `target/release/pdfcer-gui.exe`.

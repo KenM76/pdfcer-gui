@@ -53,9 +53,11 @@ impl ModelView {
             self.leave_immersive(ui.ctx());
         }
         self.picture(ui, rect.size());
+        // The row starts right of the options glyph in the corner.
+        let clear = super::options::THUMB_CLEAR;
         let bar = Rect::from_min_size(
-            rect.min + Vec2::splat(INSET),
-            rect.size() - Vec2::splat(INSET * 2.0),
+            rect.min + egui::vec2(clear + INSET, INSET),
+            rect.size() - egui::vec2(clear + INSET * 2.0, INSET * 2.0),
         );
         let mut row = ui.new_child(
             UiBuilder::new()

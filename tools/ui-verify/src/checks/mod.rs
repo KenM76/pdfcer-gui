@@ -470,6 +470,7 @@ pub mod model_drone;
 pub mod model_eye;
 pub mod model_page_still;
 pub mod model_pivot;
+pub mod model_start;
 pub mod model_walk;
 pub mod new_radio_mark;
 /// The Objects panel says where its list and the page disagree.
