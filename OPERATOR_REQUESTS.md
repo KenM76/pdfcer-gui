@@ -673,11 +673,11 @@ Same message as O363. **Scope.** Opening a model's viewer starts in walk mode wi
 
 **Status.** Built. A new preference `model_view_start` (`walk` | `orbit`, default `walk`) opens the viewer walking from the opening view's eye with ghost on; ghost stays as he last set it within a session. Driven by `the_3d_viewer_opens_walking_with_ghost_on_and_walks_by_keys`; the other 3D checks seed `orbit`.
 
-## O360 — **WAITING ON ENGINE** — textures flicker: the surface underneath shows through
+## O360 — **BUILT** — textures flicker: the surface underneath shows through
 
 Same message as O363. **Scope.** A textured face lying on (or just in front of) another surface draws as it did on the CPU renderer, in every position and while moving; the boardroom feature wall in Bancroft is the case. A regression of the GPU path (O348).
 
-**Status.** Diagnosed: 24-bit depth with the walker's near plane at a fraction of a millimetre, so a texture on a wall depth-fights it. The phone draws with the same 24-bit depth and full-precision shaders as the desktop, so it is not a phone-only fault. Filed as G256; no GUI workaround, per his standing instruction.
+**Status.** Diagnosed: 24-bit depth with the walker's near plane at a fraction of a millimetre, so a texture on a wall depth-fights it. The phone draws with the same 24-bit depth and full-precision shaders as the desktop, so it is not a phone-only fault. Filed as G256; the engine shipped logarithmic depth at v0.116.0, and the viewer passes the camera's `depth_range` to the shader. Built on his ask to release without testing: not driven, not seen on the phone or desktop. Needs his eyes on the boardroom wall.
 
 ## O359 — **BUILT** — the eye-height boxes cannot be typed into
 

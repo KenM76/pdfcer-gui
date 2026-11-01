@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **49 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `wanted` — a real gap — **48 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -159,7 +159,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
-| **Depth that holds coplanar 3D textures on the GPU** — log or linear-view depth in `GLSL_ES_300_FRAGMENT`, a reversed-Z variant, or a near plane from the model's geometry in `Camera::projection_matrix` <!--namesake:projection_matrix--> (the shell calls the pinned version; the row is the engine's change to it) … | **wanted; our request G256.** Walking puts the near plane at a fraction of a millimetre, so the 24-bit depth step at room distances is millimetres and a texture lying on a wall fights it (O360). No GUI workaround: the shader and projection are the engine's. |
 
 ---
 
@@ -239,7 +238,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **406 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **407 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -705,6 +704,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **`candidates` takes the first name-matched face that can serve** — `InstalledFaceAugmenter::candidates` (our `G212`, Pass 617.0) | **shipped.** No shell change: `editmodel::installedfaces` forwards `candidates`. `a_composite_subset_is_offered_the_installed_faces_letters` now reads the engine's fixture folder as installed, same-named subsets included, instead of a copy of the full face alone. |
 | **Automatic word gap for extracted text** — `ExtractOptions::with_word_gap_auto`, `PageText::word_gap_ratio`/`word_gap_measured` (our `G209`, Pass 610.0) | **shipped.** `Settings::word_gap_auto` reaches extraction through `SettingsExt::extract_options`; Edit ▸ Content has an *Auto* switch beside *Gap width* (`app::wordgapband`), Settings ▸ Text has the same switch, and the threshold the current page used, measured or not, is on hover. |
 | **Paragraph and cell-aware block recognition on spaced pages** — a blank-line gap ends a paragraph, a column of heading numbers is not a column, a drawing frame's cell splits into its notes (our `G205`, `G206`, Pass 611.0/612.0) | **shipped — engine v0.88.0.** Every block index the shell sends to a block verb comes from `canvas::textedit::engine_model::recognise`: cell-aware, `reflow_recognition_options`, the page's `LineMarks` attached, as `EditSession::block_at_point` builds it. The draft's paragraph, the Select tool's paragraph objects, Reflow and Align all read it. Driven by `a_written_blank_line_paragraph_is_numbered_as_the_engine_numbers_it` (a blank line written with `edit_block_text`, every block checked against `block_at_point`), falsified by dropping the marks. |
+| **Depth that holds coplanar 3D textures on the GPU** — logarithmic depth in `GLSL_ES_300_FRAGMENT`, `Camera::depth_range` … | **shipped; our request G256, at v0.116.0.** `dialogs::model3d::gpu::frame_uniforms` passes `depth_range` as `u_depth_range`, beside `u_orthographic`, into the 24-bit depth buffer `native-mesh` already allocates; a texture lying on a wall no longer fights it (O360). |
 
 ## Filed requests for OCR — not verdict rows
 

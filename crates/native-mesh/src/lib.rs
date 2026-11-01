@@ -45,6 +45,8 @@ pub struct Picture<'a> {
 pub enum Value {
     /// `int` or `bool`.
     Int(i32),
+    /// `vec2`.
+    Vec2([f32; 2]),
     /// `vec3`.
     Vec3([f32; 3]),
     /// `vec4`.
@@ -332,6 +334,7 @@ impl Mesh {
         unsafe {
             match value {
                 Value::Int(v) => gl.uniform_1_i32(location, *v),
+                Value::Vec2(v) => gl.uniform_2_f32_slice(location, v),
                 Value::Vec3(v) => gl.uniform_3_f32_slice(location, v),
                 Value::Vec4(v) => gl.uniform_4_f32_slice(location, v),
                 Value::Mat4(v) => gl.uniform_matrix_4_f32_slice(location, false, v),

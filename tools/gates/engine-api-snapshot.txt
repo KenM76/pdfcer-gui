@@ -41,7 +41,7 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 89f3ee58767ba1542a4c4bd11a66e5201a013914
+# baseline: 56f0a7fb664d8576e71fbbdc45d9141516cc7a62
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
 # items: 11140
 # ---------------------------------------------------------------------------

@@ -223,6 +223,10 @@ fn frame_uniforms(
             "u_projection",
             Value::Mat4(camera.projection_matrix(aspect, bounds)?),
         ),
+        (
+            "u_depth_range",
+            Value::Vec2(camera.depth_range(aspect, bounds)?),
+        ),
         ("u_mode", Value::Int(lights.mode.code())),
         ("u_ambient", Value::Vec3(lights.ambient)),
         ("u_count", Value::Int(count as i32)),
