@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O354 — **OPEN** — a mouse drag turns the 3D model about the point pressed, as SolidWorks does
+## O354 — **BUILT** — a mouse drag turns the 3D model about the point pressed, as SolidWorks does
 
 His words: *"I didn't know double click did that so I never tried, but single click and rotate should be the default rotate around a clicked point behaviour just like in SolidWorks."*
 
@@ -681,7 +681,7 @@ Same message as O353. **Scope.** The app shows a pdfcer icon in the launcher, th
 
 **Status.** Built: a launcher icon at every density from the desktop icon, plus round and adaptive icons on a white background. NOT VERIFIED by him.
 
-## O350 — **OPEN** — a finger orbit spins about the model point under the screen centre
+## O350 — **BUILT** — a finger orbit spins about the model point under the screen centre
 
 His words (one message with O346–O349): *"The navigation works excellent. In full screen mode the menu options should be available in a small drop down accessable from the top right corner. This should also be the case in non full screen mode. I noticed the lighting options don't do anything. We should get those working next. Also can we get the rending to work through the GPU and find other optimizations? It is very slow. Also the scale and/or perspective of the view sometimes changes when the model is rotated or the window is resized. Also when rotating the model using fingers the center point of the spin should be the center of the screen on the point of the item that is closest to the viewer. That point should stay the rotation point until the fingers are released."*
 
@@ -689,19 +689,23 @@ His words (one message with O346–O349): *"The navigation works excellent. In f
 
 
 **Status.** Built: one finger picks the nearest model point under the picture's centre and turns about it until it lifts; the view does not jump at the start or the end. The touch path is not driven on the desktop harness. NOT VERIFIED by him.
-## O349 — **OPEN** — the 3D view's scale or perspective jumps when the model turns or the window resizes
+## O349 — **BUILT** — the 3D view's scale or perspective jumps when the model turns or the window resizes
 
 Same message as O350. **Scope.** Turning the model must not change how big it looks, and resizing the viewer must keep the model the same size relative to the shorter side, with the same perspective. Find every place the camera is refitted or its aspect re-derived, and keep only the deliberate ones (fit, a named view).
 
 
 **Status.** Built: the fitted view frames the sphere round the model's centre that holds every vertex, so turning keeps the size and only the picture's shorter side sets it; the windowed viewer no longer grows a few pixels every frame (its footer was guessed, now measured), which had redrawn the model at a new size continually. Unit tests pin turning and widening; `the_3d_viewer_turns_about_the_point_pressed` asserts the idle viewer draws nothing. NOT VERIFIED by him.
-## O348 — **OPEN** — 3D drawing is very slow; use the GPU, and optimise
+## O348 — **PART BUILT** — 3D drawing is very slow; use the GPU, and optimise
 
 Same message as O350. **Scope.** (1) Drawing never blocks the window: the last picture stays up while the next one is drawn off the UI thread. (2) While moving, draw at a resolution that keeps up, then sharpen when still. (3) The drawing itself on the GPU, or made much faster: that is the engine's renderer, filed as a request with measured times.
 
-## O347 — **OPEN** — the 3D lighting options do nothing
+**Status.** Part built. The viewer draws on every core (the engine's threaded renderer, G253), and keeps drawing at half resolution while the camera moves. Not built: (1) drawing off the UI thread, and the engine's prepared model kept between frames, both wait on G255 (the prepared model borrows the model the viewer repaints, so it cannot be kept); the GPU path waits on the engine's GPU buffers (G253's GPU half). NOT VERIFIED by him.
+
+## O347 — **BUILT** — the 3D lighting options do nothing
 
 Same message as O350. **Scope.** Choosing a lighting scheme changes the live picture as it will look in a reader that honours it (the PDF's lighting schemes), in orbit, walkthrough and full screen; the choice is saved with a view as it is now. The live picture is drawn by the engine, which has only a headlight: filed as an engine request.
+
+**Status.** Built: the Lighting list in the options menu (and beside Save views in the file) lights the live picture with the chosen scheme, in orbit, walk and full screen; with nothing chosen, the view on screen's own scheme from the file lights it, else the engine's light at the camera. *Lights turn with the view* fixes the lights to the camera or, cleared, to the model. A line under the list says which scheme drew the picture and why. Driven: `the_3d_viewer_is_lit_as_chosen` (falsified by drawing every frame unlit). The model's own lights (*Artwork*) are not read by the engine yet and draw as a light at the camera. NOT VERIFIED by him.
 
 ## O346 — **BUILT** — the 3D viewer's options in a small drop-down at the top right
 

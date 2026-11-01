@@ -13,6 +13,19 @@ const FILE: &str = "open-documents.txt"; // ui-text-exempt: file name, never dis
 /// The folder the list lives in and what it last held, once [`keep`] ran.
 static KEPT: Mutex<Option<(PathBuf, Vec<PathBuf>)>> = Mutex::new(None);
 
+/// Keeps settings, recent files and the reopen list in `dir`, for a host
+/// whose platform has no settings folder the engine can find (Android).
+/// Call once, before anything loads settings; `false` when the engine
+/// refused it (the store was already resolved, or another folder was set).
+pub fn store_in(dir: &Path) -> bool {
+    let set = pdfcer_core::settings::set_store_dir(dir);
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!("settings-store-dir ok={}", set.is_ok())
+    });
+    set.is_ok()
+}
+
 /// Starts keeping the open documents and returns those open last time that
 /// still exist, in tab order. Empty when there is no settings folder.
 pub fn keep() -> Vec<PathBuf> {

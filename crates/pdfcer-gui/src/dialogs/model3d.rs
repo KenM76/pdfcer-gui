@@ -26,6 +26,7 @@ mod drone;
 mod fit;
 mod gimbal;
 mod immersive;
+mod lights;
 mod nav;
 mod navorbit;
 mod navwalk;
@@ -108,6 +109,8 @@ struct Rendered {
     accent: egui::Color32,
     /// [`parts::Visibility::version`].
     parts: u32,
+    lighting: pdfcer_3d::LightingScheme,
+    light_frame: pdfcer_3d::LightFrame,
 }
 
 /// The 3D viewer's state.
@@ -154,8 +157,11 @@ pub(crate) struct ModelView {
     views: Option<(Vec<ThreeDSavedView>, usize)>,
     /// Which parts are shown and which is highlighted.
     parts: parts::Visibility,
-    /// The lighting every saved view asks for; `None` writes none.
+    /// The lighting every saved view asks for and the live picture is lit
+    /// by; `None` writes none and lights it as the view asks.
     view_lighting: Option<ThreeDLighting>,
+    /// The lights turn with the view (`LightFrame::Camera`), else stay put.
+    lights_turn: bool,
     /// Orbiting or walking, the switches, and the fingers on the picture.
     nav: nav::Nav,
 }
@@ -226,6 +232,7 @@ impl ModelView {
             views: None,
             parts,
             view_lighting: None,
+            lights_turn: true,
             nav: nav::Nav::default(),
         }
     }
@@ -410,6 +417,8 @@ impl ModelView {
             background,
             accent: egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
             parts: self.parts.version,
+            lighting: self.lighting().0,
+            light_frame: self.lighting().1,
         };
         if self.rendered != Some(wanted) {
             self.render(ui.ctx(), wanted);
@@ -511,7 +520,7 @@ impl ModelView {
             t::view_save_views_tooltip(),
         );
         crate::diag::ui_rect_visible(REGION_SAVE_VIEWS, button.rect, ui.clip_rect());
-        self.view_lighting_control(ui);
+        self.lighting_combo(ui, REGION_VIEWS_LIGHTING);
         if !button.clicked() {
             return;
         }
@@ -533,33 +542,6 @@ impl ModelView {
             Some(views) => self.views = Some(views),
             None => self.failed = Some(t::views_not_built().to_owned()),
         }
-    }
-
-    /// The lighting the saved views ask a reader for, beside their button.
-    fn view_lighting_control(&mut self, ui: &mut Ui) {
-        use crate::text::model3d as m;
-        let shown = self
-            .view_lighting
-            .map_or_else(m::lighting_unset, m::lighting);
-        let combo = egui::ComboBox::from_id_salt(REGION_VIEWS_LIGHTING)
-            .selected_text(shown)
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut self.view_lighting, None, m::lighting_unset());
-                for scheme in m::lighting_schemes() {
-                    let item = ui.selectable_value(
-                        &mut self.view_lighting,
-                        Some(scheme),
-                        m::lighting(scheme),
-                    );
-                    if scheme == ThreeDLighting::Cad {
-                        // ui-text-exempt: trace region name, never displayed
-                        let region = format!("{REGION_VIEWS_LIGHTING}.cad");
-                        crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
-                    }
-                }
-            });
-        crate::diag::ui_rect_visible(REGION_VIEWS_LIGHTING, combo.response.rect, ui.clip_rect());
-        combo.response.on_hover_text(m::views_lighting_tooltip());
     }
 
     /// Each named view fitted to the model as the page frames it, then this

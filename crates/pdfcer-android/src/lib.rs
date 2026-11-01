@@ -47,18 +47,13 @@ fn android_main(app: AndroidApp) {
     }
 }
 
-/// Point the engine's settings store at the app's own data folder, which it
-/// cannot find on Android by itself: settings, recent files and the reopen
-/// list live there. A workaround for engine request G254, reaching
-/// `settings::resolve_store`'s documented `XDG_CONFIG_HOME` input.
+/// Keep settings, recent files and the reopen list in the app's own data
+/// folder, which the engine cannot find on Android by itself.
 #[cfg(target_os = "android")]
 fn settings_home(app: &AndroidApp) {
-    let Some(dir) = app.internal_data_path() else {
-        return;
-    };
-    // SAFETY: as `diag_from_property`: called from `android_main` before any
-    // thread of ours exists or anything resolves the store.
-    unsafe { std::env::set_var("XDG_CONFIG_HOME", dir) };
+    if let Some(dir) = app.internal_data_path() {
+        pdfcer_gui::reopen::store_in(&dir.join("pdfcer"));
+    }
 }
 
 /// The system property that switches on the `PDFCER_DIAG` trace, which an

@@ -66,6 +66,31 @@ pub fn views_lighting_tooltip() -> &'static str {
     "The lighting every saved view asks a PDF reader for. As the reader chooses writes none."
 }
 
+/// The switch for lights that turn with the view, in the 3D viewer.
+#[must_use]
+pub fn lights_turn() -> &'static str {
+    "Lights turn with the view"
+}
+
+/// Its tip.
+#[must_use]
+pub fn lights_turn_tooltip() -> &'static str {
+    "On, the lights stay where you look from, so the side facing you is always lit. Off, they stay fixed to the model, so turning it shows its shaded sides. The PDF standard does not say which a reader does."
+}
+
+/// Which lighting draws the 3D viewer's picture and why: `file` when the
+/// view on screen asks for it, `chosen` when picked in the viewer.
+#[must_use]
+pub fn lit_by(scheme: &str, file: bool, chosen: bool) -> String {
+    if chosen {
+        format!("Drawn with {scheme}, as you chose.")
+    } else if file {
+        format!("Drawn with {scheme}, as this view in the file asks.")
+    } else {
+        "Drawn lit from the camera; the file asks for no lighting.".to_owned()
+    }
+}
+
 /// The automatic choice on the Insert window.
 #[must_use]
 pub fn lighting_auto() -> &'static str {

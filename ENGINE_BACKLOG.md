@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **52 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `wanted` — a real gap — **50 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -159,15 +159,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **wanted; our request G250, shipped at v0.113.0.** Walking would stand at a real eye height in place of a fraction of the model's size. |
-| **3D lighting schemes in the live picture** — `render_model` lit by a `ThreeDLighting` scheme … | **wanted; our request G252.** The viewer's Lighting list only writes `/LS` into saved views; the live picture keeps the engine's single headlight until `RenderOptions` takes a scheme (O347). <!--namesake:ThreeDLighting--> the shell names the scheme only to write `/LS`; <!--namesake:render_model--> the shell calls it unlit; the row is the scheme it cannot take. |
-| **3D drawing fast enough to orbit a building** — a GPU path (draw buffers for eframe's glow context) and a threaded CPU path … | **wanted; our request G253.** About 0.5 s a frame at 1400×900 on 109k triangles; the GUI draws off the UI thread meanwhile (O348). |
-| **A settings folder on Android** — `settings::resolve_store` returns `StoreKind::None` there (no `XDG_CONFIG_HOME`, no `HOME`, the exe beside `app_process64`) … | **wanted; our request G254. Workaround, reported:** `android_main` sets `XDG_CONFIG_HOME` to the activity's internal data path before anything resolves the store, so settings, recents and the reopen list are kept (O352, O353). Asked for `settings::set_store_dir(path)`. <!--namesake:resolve_store--> the shell calls it; the row is the folder it cannot find on Android. |
+| **Interactive 3D frame rate (CPU)** — `pdfcer_3d::PreparedModel`, and a GPU path (draw buffers for eframe's glow context) and a prepared model the viewer can keep … | **wanted; our requests G253 (GPU half) and G255.** `RenderOptions::threads` is consumed (every core); `PreparedModel` borrows the model the viewer repaints for hidden and highlighted parts, so it cannot be kept between frames and the texture scan still runs every frame (G255). Drawing stays on the UI thread until then (O348). <!--namesake:PreparedModel--> the shell cannot hold it; the row is the owned form it asks for. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `blocked` — waiting on something named — **2 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -185,7 +183,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -196,7 +194,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **19 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `declined` — deliberately no surface — **20 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -208,6 +206,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A strict open** — `LoadOptions::strict()`, `UnreadableObjectPolicy::{TreatAsUndefined, Refuse}` and `unreadable_objects` … | **declined as a load mode — this project's decision 145, *fail-clean never meant refuse*.** `strict()`'s audience is a conformance checker, a fuzz harness or a gate, not this shell's job on a file the operator opens; a strict switch here would be a control whose only effect is that his CAD drawings stop opening. `UnreadableObjectPolicy::TreatAsUndefined`, the default already in force, is §7.3.10's own answer: an undefined reference *"shall not be considered an error by a conforming reader"*. Named rather than exempted — `LoadAnomaly::ObjectUnreadable` is disclosed off-canvas, so the consequence is already visible; what is refused is the *control*, not the capability. What would overturn this: a **report** rather than a mode — a throwaway second `strict()` load whose only output is the refusal sentence, filed as its own feature and not smuggled onto the Open dialog. |
 | **A choice about recovered stream extents and missing `endobj`** — the `stream_lengths` and `terminators` fields of `LoadOptions` … | **declined, on the engine's own finding that there is nothing to choose between.** The alternative to the scanned extent recorded by `LoadAnomaly::StreamLengthRecovered` is **no object at all**, and `LoadAnomaly::MissingEndobjRecovered` is the same shape — an unambiguous end with no second reading. Setting either field to its `Strict` value offers no alternative reading; it converts a document that opens into one that does not, which is the row above's argument and the same decision-145 answer. The operator-facing half is the disclosure and it is built: both are censused into the status-bar clause and itemised in Document properties by `app::status::anomalies`, so *pdfcer had to work out where an object's stream ended* reaches him without a mark being drawn on the page. `StreamLengthPolicy` and `TerminatorPolicy` are older than the pin; only the `LoadOptions` fields are new surface. |
 | **Discard user data during optimize, by kind** — `OptimizeSettings.discard`, `DiscardOptions` … | **declined in the compacted copy; the capability is reachable through File ▸ Remove metadata.** The engine runs the same code as `metadata remove`, and that dialog already lists every item by kind and removes the ticked ones as one undo step. A second set of switches in the compact window would offer the same removals on a copy, under a name the operator would have to match to the first. Revisit if the operator asks for a smaller copy without thumbnails or private application data in one step. |
+| **Portable settings file + opt-in OS font-folder discovery** — `pdfcer-settings.txt` keys and `--settings` … | **declined here; the file's keys, parsing and flags are the CLI's by the engine's own row.** The half the engine puts in core, the store directory, is the host-supplied-directory row above. A GUI keeps its choices in its own settings page; if the engine moves a key into core, this row becomes `wanted`. |
 
 ### Annotations & markup
 
@@ -241,7 +240,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **401 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **403 of 475** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -251,6 +250,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 |---|---|
 | **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **shipped — Pages ▸ Stamp ▸ Header & footer…; driven by `header_footer_and_printer_marks`.** `dialogs::running` collects the text and `app::actions::pagestamp` calls `stamp_running_text` through the edit funnel as one undo entry, with the `{page}` and `{pages}` tokens; text the font cannot print is refused before the engine is called. The print-time variant is its own row. |
 | **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **shipped — Edit ▸ Insert ▸ 3D model… takes `.gltf` and `.glb`; driven by `a_gltf_model_is_converted_and_placed`.** `app::actions::gltf::to_embed` converts through `pdfcer_3d::gltf` and `app::actions::models` places the PRC; the import's notes go to the status line (`model-insert-gltf triangles=`), and the placed model saves back out as PRC. |
+| **Render a 3D model under a lighting scheme** — `RenderOptions::lighting` and `light_frame` … | **shipped — the 3D viewer's Lighting list and *Lights turn with the view* light the live picture (G252, O347); driven by `the_3d_viewer_is_lit_as_chosen`.** |
+| **A host-supplied settings directory** — `pdfcer_core::settings::set_store_dir` and `StoreKind::HostSupplied` … | **shipped — `android_main` hands the engine the app's data folder through `reopen::store_in`, so settings, recents and the reopen list are kept (G254, O352, O353); the settings page says where.** |
 | **Write a PRC from a triangle-mesh scene** — `pdfcer_3d::write_prc` … | **shipped — reached through the glTF row above; driven by `a_gltf_model_is_converted_and_placed`**, whose saved-back model starts with the PRC signature. No surface of its own. |
 | **Compare the text of two documents** — `pdfcer compare OLD NEW`, the module `pdfcer_core::compare` | **shipped — Tools ▸ Compare ▸ Compare documents…; driven by `comparing_lists_every_change` and `a_compare_row_shows_its_change`.** `panels::compare::job` runs `compare_documents` off the UI thread on the open document (its path, or its incremental-save bytes when edited) against the picked older file; `panels::compare::rows` lists each change, a click turning to its page and revealing its rectangle. The engine's notes (`truncated` among them) list in the panel, off-canvas. |
 | **Annotated comparison result** — `pdfcer compare OLD NEW --output RESULT.pdf`, the marking verb in `pdfcer_core::compare` | **shipped — the Compare panel's *Mark changes as comments*; driven by `marking_a_comparison_writes_comments`.** `app::actions::comparemark` runs `mark_regions` then `mark_changes` through the edit funnel and pushes one undo entry for the whole marking (`compare::mark_comparison`, `CommandKind::MarkComparison`; G229 — the shell's fold is deleted at this pin). Unmarked changes are counted on the status line, not fatal. An appearance comparison also writes the summary-page paragraph (`ResultOptions::with_summary_note`, traced `note=1`); its text and the marks are re-built in the shell because the CLI keeps them crate-private (G239). |

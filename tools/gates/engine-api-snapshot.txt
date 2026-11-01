@@ -41,11 +41,13 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: ca9aa1dd9df44075b31dfd86dc6ad6df1c104252
+# baseline: c0cc54655f3606be4bbe343acb33b74d6675162b
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11136
+# items: 11140
 # ---------------------------------------------------------------------------
 
+exempt pdfcer-3d module pdfcer_3d::lighting -- a private module whose `LightingScheme` and `LightFrame` the engine re-exports from `pdfcer_3d`; `dialogs::model3d::lights` sets both on `RenderOptions` through that path, and the private path cannot be named from here.
+exempt pdfcer-3d module pdfcer_3d::prepared -- a private module whose `PreparedModel` the engine re-exports from `pdfcer_3d`; ENGINE_BACKLOG.md's 3D-speed row (G255) argues why the viewer cannot keep it yet, and the private path cannot be named from here.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives as the engine's own warning, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_PERIODIC_SPAN -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -110,6 +112,7 @@ exempt pdfcer-core module pdfcer_core::edit::editable_source -- a private module
 exempt pdfcer-core module pdfcer_core::edit::page_artwork -- a private module whose `PlacedPageContent` the engine re-exports from `pdfcer_core::edit`; `app::actions::pagecontent` reads it through that path after `place_page_content`, and the private path cannot be named from here.
 exempt pdfcer-core module pdfcer_core::editable::fingerprint -- a private module whose three items the engine re-exports from `pdfcer_core::editable`; `app::actions::structure` calls `editable::fingerprint` and `editable::recorded_base` through that path for the stale-base guard, and the private path cannot be named from here.
 exempt pdfcer-core module pdfcer_core::editable::source -- a private module whose `EditableSource` the engine re-exports from `pdfcer_core::editable`; `app::actions::structure` reads `editable::EditableSource::object_ids` through that path for the export receipt, and the private path cannot be named from here.
+exempt pdfcer-core module pdfcer_core::settings::host_dir -- a private module whose `set_store_dir` and `StoreDirError` the engine re-exports from `pdfcer_core::settings`; `reopen::store_in` calls it through that path for Android, and the private path cannot be named from here.
 exempt pdfcer-core struct pdfcer_core::ocr::vl_page::TableEdges -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
 exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
 exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
@@ -242,6 +245,9 @@ pdfcer-3d field pdfcer_3d::render::Image::width
 pdfcer-3d field pdfcer_3d::render::RenderOptions::background
 pdfcer-3d field pdfcer_3d::render::RenderOptions::colour
 pdfcer-3d field pdfcer_3d::render::RenderOptions::height
+pdfcer-3d field pdfcer_3d::render::RenderOptions::light_frame
+pdfcer-3d field pdfcer_3d::render::RenderOptions::lighting
+pdfcer-3d field pdfcer_3d::render::RenderOptions::threads
 pdfcer-3d field pdfcer_3d::render::RenderOptions::width
 pdfcer-3d field pdfcer_3d::tess::TriangleMesh::faces
 pdfcer-3d field pdfcer_3d::tess::TriangleMesh::normals
@@ -8646,6 +8652,7 @@ pdfcer-core variant pdfcer_core::settings::SettingNote::UnknownKey
 pdfcer-core variant pdfcer_core::settings::SettingNote::Unreadable
 pdfcer-core variant pdfcer_core::settings::SpotColorantDeviceModel::AlternateSpaceSubstitution
 pdfcer-core variant pdfcer_core::settings::SpotColorantDeviceModel::SimulateSeparations
+pdfcer-core variant pdfcer_core::settings::StoreKind::HostSupplied
 pdfcer-core variant pdfcer_core::settings::StoreKind::None
 pdfcer-core variant pdfcer_core::settings::StoreKind::PlatformFallback
 pdfcer-core variant pdfcer_core::settings::StoreKind::Portable

@@ -23,6 +23,9 @@ impl ModelView {
         let options = ModelRenderOptions {
             width: (width.round() as u32).max(1),
             height: (height.round() as u32).max(1),
+            lighting: self.lighting().0,
+            light_frame: self.lighting().1,
+            threads: 0,
             ..ModelRenderOptions::default()
         };
         let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
@@ -56,6 +59,9 @@ impl ModelView {
             width,
             height,
             background: wanted.background.to_array(),
+            lighting: wanted.lighting,
+            light_frame: wanted.light_frame,
+            threads: 0,
             ..ModelRenderOptions::default()
         };
         let camera = self.view_camera(f64::from(width) / f64::from(height));
@@ -76,6 +82,7 @@ impl ModelView {
             })
         });
         let ms = started.elapsed().as_secs_f64() * 1000.0;
+        let lit = self.lighting_trace(options.lighting);
         let eye = camera_eye(wanted.walk.as_ref());
         self.rendered = Some(wanted);
         match drawn {
@@ -92,7 +99,7 @@ impl ModelView {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye} ms={ms:.1} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
+                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye}{lit} ms={ms:.1} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
                         self.orbit.yaw,
                         self.orbit.pitch,
                         self.orbit.zoom,
@@ -102,24 +109,7 @@ impl ModelView {
                         self.orbit.framed
                     )
                 });
-                crate::render::pressure::record_other(
-                    ctx,
-                    crate::render::pressure::Surface::ModelView,
-                    width,
-                    height,
-                );
-                let colour = egui::ColorImage::from_rgba_unmultiplied(
-                    [width as usize, height as usize],
-                    &image.rgba,
-                );
-                match &mut self.texture {
-                    Some(texture) => texture.set(colour, TextureOptions::LINEAR),
-                    None => {
-                        self.texture =
-                            Some(ctx.load_texture("model-3d", colour, TextureOptions::LINEAR)); // ui-text-exempt: texture id, never displayed
-                    }
-                }
-                self.failed = None;
+                self.show_image(ctx, [width, height], &image.rgba);
             }
             Err(error) => {
                 crate::diag::trace(|| {
@@ -129,6 +119,25 @@ impl ModelView {
                 self.failed = Some(t::view_render_failed(&error.to_string()));
             }
         }
+    }
+
+    /// Puts a drawn `[width, height]` RGBA picture on screen.
+    fn show_image(&mut self, ctx: &egui::Context, [width, height]: [u32; 2], rgba: &[u8]) {
+        let colour =
+            egui::ColorImage::from_rgba_unmultiplied([width as usize, height as usize], rgba);
+        crate::render::pressure::record_other(
+            ctx,
+            crate::render::pressure::Surface::ModelView,
+            width,
+            height,
+        );
+        match &mut self.texture {
+            Some(texture) => texture.set(colour, TextureOptions::LINEAR),
+            None => {
+                self.texture = Some(ctx.load_texture("model-3d", colour, TextureOptions::LINEAR)); // ui-text-exempt: texture id, never displayed
+            }
+        }
+        self.failed = None;
     }
 }
 

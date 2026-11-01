@@ -92,6 +92,15 @@ pub fn store_location(store: &StoreLocation) -> String {
             "Kept in your system settings folder, because pdfcer's own folder is not writable."
                 .to_owned()
         }
+        (StoreKind::HostSupplied, Some(path)) => {
+            format!(
+                "Kept in {}, the app's own folder on this device.",
+                path.display()
+            )
+        }
+        (StoreKind::HostSupplied, None) => {
+            "Kept in the app's own folder on this device.".to_owned()
+        }
         _ => "No writable location was found, so anything you change here lasts only \
               until you close pdfcer."
             .to_owned(),
