@@ -118,8 +118,8 @@ set is `grep '^## O' OPERATOR_REQUESTS.md`.
 
 **GUI_ROADMAP surfaces with no route (coordinator: no engine change, no operator decision).** Insert blank pages is built (Pages ▸ Insert ▸ Insert blank…; `blank_pages_are_inserted_as_one_step`, falsified four ways). Building it found that every page insert in a continuous display left the view where it was; the insert now scrolls to the first page it added. `page_ops_round_trip`, `a_shift_drag_between_documents_moves_the_pages` and `pages_can_be_copied_and_pasted` take that landing too and SKIP under `--no-input`, so they are undriven against it until a with-input run. A page named twice in one engine insert aliases one page object (G185); `app::actions::insertruns` works around it. Bates numbering across several files is built (Tools ▸ Batch ▸ Bates number files…, `dialogs::bates_batch`; `bates_numbering_across_files`, falsified four ways): it numbers files in the listed order as copies, carries the count, refuses signed and unnumberable files in their rows, and shares `BatesForm` with Pages ▸ Stamp so the two continue one run.
 
-**Start here on `continue`.** The latest release is `v0.5.0-dev.20261031.2`
-(tree `f0186e32`, engine v0.113.0, Windows zip and arm64 APK: O345's drone sticks); read it back with the Last-release row's
+**Start here on `continue`.** The latest release is `v0.5.0-dev.20261101.1`
+(tree `9f9eecd8`, engine v0.113.0, Windows zip and arm64 APK: O346 options drop-down, O349/O350/O354 pivot and steady size, O351-O353 Android icon, recents and reopen). The emulator needs `build-apk.sh --emulator`: an arm64-only APK aborts at start under translation there (a JNI `ExceptionCheck` panic), the released one included. Read it back with the Last-release row's
 command rather than trusting this sentence. O323 (overprint preview), O324
 (the Forms tab) and O325 (every size reduction reachable from menus, windows
 and right-click) shipped in it and await his check in `OPERATOR_REQUESTS.md`.
