@@ -86,6 +86,7 @@ impl ModelView {
                 self.model = model;
                 self.fit_refused = None;
                 if let Some(bounds) = pdfcer_3d::Bounds::of(&self.model.drawn.meshes) {
+                    self.reach = super::orbit::reach(&self.model.drawn.meshes, &bounds);
                     self.bounds = bounds;
                 }
                 self.rendered = None;

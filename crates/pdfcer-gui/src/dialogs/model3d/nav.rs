@@ -173,7 +173,9 @@ impl ModelView {
     pub(super) fn view_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
         match &self.nav.walk {
             Some(walk) => Ok(walk.camera()),
-            None => self.orbit.camera(&self.bounds, aspect, self.aimed.as_ref()),
+            None => self
+                .orbit
+                .camera(&self.bounds, self.reach, aspect, self.aimed.as_ref()),
         }
     }
 
@@ -312,9 +314,9 @@ impl ModelView {
     /// would climb or sink while level.
     pub(super) fn set_walking(&mut self, on: bool) {
         if on {
-            let Ok(camera) = self
-                .orbit
-                .camera(&self.bounds, self.aspect(), self.aimed.as_ref())
+            let Ok(camera) =
+                self.orbit
+                    .camera(&self.bounds, self.reach, self.aspect(), self.aimed.as_ref())
             else {
                 return;
             };

@@ -653,6 +653,54 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O354 — **OPEN** — a mouse drag turns the 3D model about the point pressed, as SolidWorks does
+
+His words: *"I didn't know double click did that so I never tried, but single click and rotate should be the default rotate around a clicked point behaviour just like in SolidWorks."*
+
+**Scope, whole behaviour.** Pressing the primary button on the model and dragging turns the view about the model point under the press (the first surface the ray through it meets), and that point stays where it was pressed on the picture for the whole drag. Each drag picks its own point. A press on empty space falls back to the point under the picture's centre, then to the previous pivot. The view does not jump when the drag starts or ends, and a fit or a named view returns to turning about the model. Fingers keep O350's rule. Double-click still centres on the point clicked.
+
+
+**Status.** Built and driven: `the_3d_viewer_turns_about_the_point_pressed` presses on a part off-centre and checks the pivot shows where it pressed and holds through the drag; falsified by removing the pivot. NOT VERIFIED by him.
+## O353 — **OPEN** — Android remembers recent files
+
+His words (one message with O351 and O352): *"Also on Android the app icon is missing and if I navigate away from the app it reloads when I come back and my files are no longer open in it. It also doesn't remember recents."*
+
+**Scope, whole behaviour.** Files opened on the phone appear in Recent the next time the app starts, the same as on the desktop, and each opens again from there. A file the phone has revoked access to is reported off-canvas, not silently dropped.
+
+## O352 — **OPEN** — Android keeps the open files when the app is left and resumed
+
+Same message as O353. **Scope.** Switching to another app and coming back returns to the same documents, page and zoom. When Android has killed the process in the background, the app restores them on the next start. Unsaved edits are not silently lost: they are either kept, or the operator is told.
+
+## O351 — **OPEN** — the Android app has no launcher icon
+
+Same message as O353. **Scope.** The app shows a pdfcer icon in the launcher, the recent-apps list and the app info screen, at every density, including an adaptive icon.
+
+## O350 — **OPEN** — a finger orbit spins about the model point under the screen centre
+
+His words (one message with O346–O349): *"The navigation works excellent. In full screen mode the menu options should be available in a small drop down accessable from the top right corner. This should also be the case in non full screen mode. I noticed the lighting options don't do anything. We should get those working next. Also can we get the rending to work through the GPU and find other optimizations? It is very slow. Also the scale and/or perspective of the view sometimes changes when the model is rotated or the window is resized. Also when rotating the model using fingers the center point of the spin should be the center of the screen on the point of the item that is closest to the viewer. That point should stay the rotation point until the fingers are released."*
+
+**Scope, whole behaviour.** When fingers start an orbit, the pivot is the nearest model surface under the centre of the picture (the first hit of the ray through the centre). The pivot is held for the whole gesture, until every finger lifts, and the view turns about it without the pivot moving on the screen. If nothing is under the centre, the orbit falls back to the model's centre. The mouse turns about the point it presses on instead: O354.
+
+
+**Status.** Built: one finger picks the nearest model point under the picture's centre and turns about it until it lifts; the view does not jump at the start or the end. The touch path is not driven on the desktop harness. NOT VERIFIED by him.
+## O349 — **OPEN** — the 3D view's scale or perspective jumps when the model turns or the window resizes
+
+Same message as O350. **Scope.** Turning the model must not change how big it looks, and resizing the viewer must keep the model the same size relative to the shorter side, with the same perspective. Find every place the camera is refitted or its aspect re-derived, and keep only the deliberate ones (fit, a named view).
+
+
+**Status.** Built: the fitted view frames the sphere round the model's centre that holds every vertex, so turning keeps the size and only the picture's shorter side sets it; the windowed viewer no longer grows a few pixels every frame (its footer was guessed, now measured), which had redrawn the model at a new size continually. Unit tests pin turning and widening; `the_3d_viewer_turns_about_the_point_pressed` asserts the idle viewer draws nothing. NOT VERIFIED by him.
+## O348 — **OPEN** — 3D drawing is very slow; use the GPU, and optimise
+
+Same message as O350. **Scope.** (1) Drawing never blocks the window: the last picture stays up while the next one is drawn off the UI thread. (2) While moving, draw at a resolution that keeps up, then sharpen when still. (3) The drawing itself on the GPU, or made much faster: that is the engine's renderer, filed as a request with measured times.
+
+## O347 — **OPEN** — the 3D lighting options do nothing
+
+Same message as O350. **Scope.** Choosing a lighting scheme changes the live picture as it will look in a reader that honours it (the PDF's lighting schemes), in orbit, walkthrough and full screen; the choice is saved with a view as it is now. The live picture is drawn by the engine, which has only a headlight: filed as an engine request.
+
+## O346 — **OPEN** — the 3D viewer's options in a small drop-down at the top right
+
+Same message as O350. **Scope.** In full screen and in the window, the viewer's options (the rows of switches and lists that now sit above the picture) are reached from one small button at the picture's top-right corner that opens a drop-down; the picture gets the room they took. Every option stays reachable, by touch and mouse.
+
 ## O345 — **BUILT** — drone-style walkthrough controls
 
 His words: *"The controls in walk through are difficult to control. I'm proposing new controls. Put a joystick control on the left bottom and right bottom corner of the screen and have them match the controls of a DJI drone. Another joystick in the center bottom controls the rotation of the camera. Below the center joystick there is a button to center the left/right camera view and another to Center the up/down camera view. There is also the button at the bottom to enable stair climbing mode where objects that are shorter than 1/3 the height of the camera causes the view to climb over them instead of when they are bumped into. Pinching the screen zooms the camera in or out."*

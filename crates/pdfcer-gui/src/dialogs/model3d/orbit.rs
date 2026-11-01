@@ -1,5 +1,10 @@
 //! The viewer's camera: a turn about an up axis, a zoom and a pan, each
-//! relative to the view that fits the model. A named view turns about the
+//! relative to the view that fits the model, or, once a finger or the mouse
+//! has turned it, relative to the model point it turns about ([`Anchor`]).
+//!
+//! The fitted view frames the sphere round the model's centre that holds
+//! every vertex, so turning the model or reshaping the picture never changes
+//! its size or perspective. A named view turns about the
 //! operator's chosen up ([`Upright`], z by default);
 //! the file's own opening view (`ThreeDSavedView::aim`) turns about its own
 //! up from its own direction, and an orthographic view that fixes its framing
@@ -26,6 +31,31 @@ const VIEWS: [(f64, f64); 5] = [
 pub(super) const PITCH_LIMIT: f64 = FRAC_PI_2 - 0.01;
 /// The zoom range, as a multiple of the fitted view.
 const ZOOM_RANGE: (f64, f64) = (0.05, 50.0);
+/// The perspective field of view, degrees, vertically: the engine's.
+const FOV_Y: f64 = 30.0;
+/// The clear space round the fitted sphere, as a multiple of its radius.
+const MARGIN: f64 = 1.05;
+
+/// The model point an orbit turns about, its depth along the look and where
+/// it sits off the picture's centre; an orthographic view shows the height a
+/// perspective one would at that depth, so switching projection keeps the
+/// scale. The point keeps its place on the picture however the view turns.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) struct Anchor {
+    pub point: [f64; 3],
+    pub distance: f64,
+    /// The point's offset from the look's axis, right and up in the
+    /// picture, model units.
+    pub offset: [f64; 2],
+}
+
+impl Anchor {
+    /// The point on the look's axis level with [`Anchor::point`], for a
+    /// view whose picture right and up are `right` and `up`.
+    fn base(&self, right: [f64; 3], up: [f64; 3]) -> [f64; 3] {
+        std::array::from_fn(|i| self.point[i] - right[i] * self.offset[0] - up[i] * self.offset[1])
+    }
+}
 
 /// The axes a turn is measured in: yaw 0, pitch 0 looks along `front`, and
 /// `up` appears upward. Both unit length and perpendicular.
@@ -92,6 +122,9 @@ pub(super) struct Orbit {
     /// The file's view fixes the centre and scale, applied while the
     /// projection is orthographic.
     pub framed: bool,
+    /// The point turned about, in place of the fitted view, from the first
+    /// turn by hand until a fit or a named view.
+    pub anchor: Option<Anchor>,
 }
 
 impl Orbit {
@@ -106,6 +139,7 @@ impl Orbit {
             perspective,
             axes: Axes::upright(upright),
             framed: false,
+            anchor: None,
         }
     }
 
@@ -121,6 +155,7 @@ impl Orbit {
             perspective: !aim.orthographic,
             axes: Axes::of(aim.direction, aim.up)?,
             framed: matches!(aim.fit, ViewFit::Framed { .. }),
+            anchor: None,
         })
     }
 
@@ -134,6 +169,36 @@ impl Orbit {
     pub fn look_along(&mut self, direction: [f64; 3]) {
         if let Some((yaw, pitch)) = self.axes.angles(direction) {
             (self.yaw, self.pitch) = (yaw, pitch);
+            self.refit();
+        }
+    }
+
+    /// Back to the view that fits the whole model, keeping the direction:
+    /// no zoom, pan, file framing or point turned about.
+    pub fn refit(&mut self) {
+        (self.zoom, self.pan, self.framed) = (1.0, [0.0, 0.0], false);
+        self.anchor = None;
+    }
+
+    /// Turn about `point` from now on, without moving the picture; `camera`
+    /// is this orbit's camera, and `point` stays where it shows on it.
+    pub fn anchor_at(&mut self, camera: &Camera, point: [f64; 3]) {
+        let dir = self.direction();
+        let right = normalise(cross(dir, self.axes.up));
+        let image_up = cross(right, dir);
+        let v: [f64; 3] = std::array::from_fn(|i| point[i] - camera.eye[i]);
+        let depth = dot(v, dir);
+        let offset = [dot(v, right), dot(v, image_up)];
+        let distance = match camera.projection {
+            Projection::Orthographic { height } => height / 2.0 / half_fov().tan(),
+            Projection::Perspective { .. } => depth,
+        };
+        if distance.is_finite() && distance > 0.0 {
+            self.anchor = Some(Anchor {
+                point,
+                distance,
+                offset,
+            });
             (self.zoom, self.pan, self.framed) = (1.0, [0.0, 0.0], false);
         }
     }
@@ -144,7 +209,9 @@ impl Orbit {
         let dir = self.direction();
         let right = normalise(cross(dir, self.axes.up));
         let image_up = cross(right, dir);
-        let centre = bounds.centre();
+        let centre = self
+            .anchor
+            .map_or_else(|| bounds.centre(), |a| a.base(right, image_up));
         let off: [f64; 3] = std::array::from_fn(|i| point[i] - centre[i]);
         let r = radius(bounds);
         self.pan = [dot(off, right) / r, dot(off, image_up) / r];
@@ -160,6 +227,7 @@ impl Orbit {
     pub fn zoom_at(
         &mut self,
         bounds: &Bounds,
+        reach: f64,
         aspect: f64,
         factor: f64,
         offset: [f64; 2],
@@ -175,7 +243,7 @@ impl Orbit {
         // The fitted view's visible height, in model radii: what one picture
         // height spans at zoom 1.
         let span = fitted
-            .camera(bounds, aspect, view)
+            .camera(bounds, reach, aspect, view)
             .map_or(2.0, |c| visible_height(&c))
             / radius(bounds);
         for (pan, off) in self.pan.iter_mut().zip(offset) {
@@ -184,19 +252,25 @@ impl Orbit {
         self.zoom = after;
     }
 
-    /// The camera for `bounds` in an image of `aspect` (width / height);
-    /// `view` is the file's opening view, whose framing applies while
-    /// [`Orbit::framed`] and orthographic.
+    /// The camera for `bounds`, whose every vertex is within `reach` of its
+    /// centre, in an image of `aspect` (width / height); `view` is the file's
+    /// opening view, whose framing applies while [`Orbit::framed`] and
+    /// orthographic.
     pub fn camera(
         &self,
         bounds: &Bounds,
+        reach: f64,
         aspect: f64,
         view: Option<&ThreeDSavedView>,
     ) -> Result<Camera, pdfcer_3d::RenderError> {
         let dir = self.direction();
         let up = self.axes.up;
-        let mut camera = Camera::fit(bounds, dir, up, self.perspective, aspect)?;
-        if self.framed
+        let mut camera = match self.anchor {
+            Some(a) => about(a, dir, up, self.perspective),
+            None => fitted(bounds.centre(), reach, dir, up, self.perspective, aspect),
+        };
+        if self.anchor.is_none()
+            && self.framed
             && !self.perspective
             && let Some(aim) = view.and_then(|v| v.aim(aspect))
         {
@@ -218,6 +292,85 @@ impl Orbit {
         }
         Ok(camera)
     }
+}
+
+/// Half the vertical field of view, radians.
+fn half_fov() -> f64 {
+    (FOV_Y / 2.0).to_radians()
+}
+
+/// The camera looking along `dir` that holds the sphere of `reach` round
+/// `centre` in an image of `aspect`, whichever way it looks: so turning
+/// never changes the model's size, and only the picture's shorter side does.
+fn fitted(
+    centre: [f64; 3],
+    reach: f64,
+    dir: [f64; 3],
+    up: [f64; 3],
+    perspective: bool,
+    aspect: f64,
+) -> Camera {
+    let r = reach * MARGIN;
+    let aspect = if aspect.is_finite() && aspect > 0.0 {
+        aspect
+    } else {
+        1.0
+    };
+    let half = half_fov().min((half_fov().tan() * aspect).atan());
+    let (distance, projection) = if perspective {
+        (r / half.sin(), Projection::Perspective { fov_y: FOV_Y })
+    } else {
+        let height = 2.0 * r / aspect.min(1.0);
+        (2.0 * r, Projection::Orthographic { height })
+    };
+    Camera {
+        eye: std::array::from_fn(|i| centre[i] - dir[i] * distance),
+        target: centre,
+        up,
+        projection,
+    }
+}
+
+/// The camera looking along `dir` that shows `anchor`'s point at its depth
+/// and offset.
+fn about(anchor: Anchor, dir: [f64; 3], up: [f64; 3], perspective: bool) -> Camera {
+    let right = normalise(cross(dir, up));
+    let base = anchor.base(right, cross(right, dir));
+    let projection = if perspective {
+        Projection::Perspective { fov_y: FOV_Y }
+    } else {
+        Projection::Orthographic {
+            height: 2.0 * anchor.distance * half_fov().tan(),
+        }
+    };
+    Camera {
+        eye: std::array::from_fn(|i| base[i] - dir[i] * anchor.distance),
+        target: base,
+        up,
+        projection,
+    }
+}
+
+/// How far the farthest vertex the meshes' triangles use lies from
+/// `bounds`' centre: the fitted sphere's radius; [`radius`] when none.
+pub(super) fn reach(meshes: &[pdfcer_3d::TriangleMesh], bounds: &Bounds) -> f64 {
+    let c = bounds.centre();
+    let far = meshes
+        .iter()
+        .flat_map(|m| {
+            m.triangles
+                .iter()
+                .flatten()
+                .filter_map(|&i| m.positions.get(i as usize))
+        })
+        .map(|p| {
+            let d: [f64; 3] = std::array::from_fn(|i| p[i] - c[i]);
+            dot(d, d)
+        })
+        .filter(|d| d.is_finite())
+        .fold(0.0_f64, f64::max)
+        .sqrt();
+    if far > 0.0 { far } else { radius(bounds) }
 }
 
 /// The model's radius, or 1 for a model with no extent.
@@ -318,7 +471,7 @@ mod tests {
         let orbit = Orbit::saved(&view).expect("a camera matrix");
         assert!(orbit.perspective && !orbit.framed);
         let camera = orbit
-            .camera(&cube(), 1.5, Some(&view))
+            .camera(&cube(), radius(&cube()), 1.5, Some(&view))
             .expect("a view forms");
         let look: [f64; 3] = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
         assert!(parallel(look, [0.6, 0.0, -0.8]), "{look:?}");
@@ -330,7 +483,9 @@ mod tests {
         let upright = Upright::default().with_up(super::super::axes::Axis::PosY);
         for (i, perspective) in [(0, true), (1, false), (3, true), (4, false)] {
             let orbit = Orbit::named(i, perspective, upright);
-            let camera = orbit.camera(&cube(), 1.5, None).expect("a view forms");
+            let camera = orbit
+                .camera(&cube(), radius(&cube()), 1.5, None)
+                .expect("a view forms");
             let view = ThreeDSavedView::from_camera("v", &camera, 1.5).expect("a view writes");
             let back = Orbit::saved(&view).expect("the written view has a camera");
             assert!(
@@ -359,16 +514,18 @@ mod tests {
         let mut orbit = Orbit::saved(&view).expect("a camera matrix");
         assert!(orbit.framed && !orbit.perspective);
         let framed = orbit
-            .camera(&cube(), 2.0, Some(&view))
+            .camera(&cube(), radius(&cube()), 2.0, Some(&view))
             .expect("a view forms");
-        let fitted = orbit.camera(&cube(), 2.0, None).expect("a view forms");
+        let fitted = orbit
+            .camera(&cube(), radius(&cube()), 2.0, None)
+            .expect("a view forms");
         assert_ne!(
             framed.projection, fitted.projection,
             "the view's height applies"
         );
         orbit.perspective = true;
         let free = orbit
-            .camera(&cube(), 2.0, Some(&view))
+            .camera(&cube(), radius(&cube()), 2.0, Some(&view))
             .expect("a view forms");
         assert!(matches!(free.projection, Projection::Perspective { .. }));
     }
@@ -377,10 +534,14 @@ mod tests {
     fn zoom_brings_the_eye_closer_and_pan_moves_the_target() {
         let bounds = cube();
         let mut orbit = Orbit::named(1, true, Upright::default());
-        let fitted = orbit.camera(&bounds, 1.0, None).expect("a view forms");
+        let fitted = orbit
+            .camera(&bounds, radius(&bounds), 1.0, None)
+            .expect("a view forms");
         orbit.zoom = 2.0;
         orbit.pan = [0.5, 0.0];
-        let moved = orbit.camera(&bounds, 1.0, None).expect("a view forms");
+        let moved = orbit
+            .camera(&bounds, radius(&bounds), 1.0, None)
+            .expect("a view forms");
         let gap = |c: &Camera| {
             (0..3)
                 .map(|i| (c.eye[i] - c.target[i]).powi(2))
@@ -398,7 +559,9 @@ mod tests {
     /// The model point on the target plane at `offset` (picture heights,
     /// right and up from the centre).
     fn under(orbit: &Orbit, bounds: &Bounds, aspect: f64, offset: [f64; 2]) -> [f64; 3] {
-        let camera = orbit.camera(bounds, aspect, None).expect("a view forms");
+        let camera = orbit
+            .camera(bounds, radius(bounds), aspect, None)
+            .expect("a view forms");
         let dir = orbit.direction();
         let right = normalise(cross(dir, orbit.axes.up));
         let up = cross(right, dir);
@@ -422,7 +585,7 @@ mod tests {
             orbit.pan = [0.1, -0.2];
             let (aspect, offset) = (1.6, [0.3, -0.15]);
             let before = under(&orbit, &bounds, aspect, offset);
-            orbit.zoom_at(&bounds, aspect, 2.5, offset, None);
+            orbit.zoom_at(&bounds, radius(&bounds), aspect, 2.5, offset, None);
             let after = under(&orbit, &bounds, aspect, offset);
             for i in 0..3 {
                 assert!(
@@ -437,7 +600,119 @@ mod tests {
     #[test]
     fn a_wheel_zoom_at_the_centre_does_not_pan() {
         let mut orbit = Orbit::named(1, true, Upright::default());
-        orbit.zoom_at(&cube(), 1.0, 3.0, [0.0, 0.0], None);
+        orbit.zoom_at(&cube(), radius(&cube()), 1.0, 3.0, [0.0, 0.0], None);
         assert_eq!(orbit.pan, [0.0, 0.0]);
+    }
+
+    fn gap(c: &Camera) -> f64 {
+        (0..3)
+            .map(|i| (c.eye[i] - c.target[i]).powi(2))
+            .sum::<f64>()
+            .sqrt()
+    }
+
+    #[test]
+    fn turning_or_widening_the_picture_keeps_the_models_size() {
+        let bounds = Bounds {
+            min: [-4.0, -1.0, 0.0],
+            max: [4.0, 1.0, 0.5],
+        };
+        let mut orbit = Orbit::named(0, true, Upright::default());
+        let first = orbit.camera(&bounds, 4.0, 1.5, None).expect("a view forms");
+        for yaw in [0.3, 1.1, 2.0] {
+            orbit.yaw = yaw;
+            for aspect in [1.2, 1.5, 3.0] {
+                let c = orbit
+                    .camera(&bounds, 4.0, aspect, None)
+                    .expect("a view forms");
+                assert!((gap(&c) - gap(&first)).abs() < 1e-9, "{yaw} {aspect}");
+                assert_eq!(c.target, first.target);
+            }
+        }
+    }
+
+    #[test]
+    fn an_anchor_keeps_the_picture_then_turns_about_its_point() {
+        let bounds = cube();
+        for perspective in [true, false] {
+            let mut orbit = Orbit::named(0, perspective, Upright::default());
+            orbit.zoom = 1.7;
+            orbit.pan = [0.2, -0.1];
+            let before = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+            let dir = orbit.direction();
+            let point: [f64; 3] = std::array::from_fn(|i| before.target[i] + dir[i] * 0.4);
+            orbit.anchor_at(&before, point);
+            let after = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+            if perspective {
+                for i in 0..3 {
+                    assert!((after.eye[i] - before.eye[i]).abs() < 1e-9, "{perspective}");
+                }
+            } else {
+                assert!((visible_height(&after) - visible_height(&before)).abs() < 1e-9);
+            }
+            orbit.yaw += 0.8;
+            orbit.pitch = 0.4;
+            let turned = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+            for (t, p) in turned.target.iter().zip(point) {
+                assert!((t - p).abs() < 1e-9);
+            }
+        }
+    }
+
+    #[test]
+    fn a_refit_forgets_the_point_turned_about() {
+        let bounds = cube();
+        let mut orbit = Orbit::named(0, true, Upright::default());
+        let fitted = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+        let point = [0.3, 0.2, 0.1];
+        orbit.anchor_at(&fitted, point);
+        orbit.zoom = 2.0;
+        orbit.refit();
+        assert_eq!(orbit.anchor, None);
+        let again = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+        assert_eq!(again, fitted);
+    }
+
+    /// Where `p` shows on `c`'s picture: right and up of the centre, as a
+    /// share of the visible height at `p`'s depth.
+    fn shown(c: &Camera, p: [f64; 3]) -> [f64; 2] {
+        let f = normalise(std::array::from_fn(|i| c.target[i] - c.eye[i]));
+        let r = normalise(cross(f, c.up));
+        let u = cross(r, f);
+        let v: [f64; 3] = std::array::from_fn(|i| p[i] - c.eye[i]);
+        let h = match c.projection {
+            Projection::Perspective { fov_y } => 2.0 * dot(v, f) * (fov_y / 2.0).to_radians().tan(),
+            Projection::Orthographic { height } => height,
+        };
+        [dot(v, r) / h, dot(v, u) / h]
+    }
+
+    #[test]
+    fn a_pressed_point_off_centre_keeps_its_place_as_the_view_turns() {
+        let bounds = cube();
+        for perspective in [true, false] {
+            let mut orbit = Orbit::named(0, perspective, Upright::default());
+            orbit.zoom = 1.3;
+            let before = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+            let f = orbit.direction();
+            let r = normalise(cross(f, orbit.axes.up));
+            let u = cross(r, f);
+            let point: [f64; 3] =
+                std::array::from_fn(|i| before.target[i] + r[i] * 0.3 + u[i] * 0.2 + f[i] * 0.4);
+            let at = shown(&before, point);
+            orbit.anchor_at(&before, point);
+            for (yaw, pitch) in [(0.0, 0.0), (0.8, 0.4), (-1.9, -0.7)] {
+                orbit.yaw += yaw;
+                orbit.pitch = pitch;
+                let c = orbit.camera(&bounds, 1.5, 1.4, None).expect("a view forms");
+                let now = shown(&c, point);
+                for i in 0..2 {
+                    assert!(
+                        (now[i] - at[i]).abs() < 1e-9,
+                        "{perspective} {now:?} {at:?}"
+                    );
+                }
+            }
+        }
     }
 }

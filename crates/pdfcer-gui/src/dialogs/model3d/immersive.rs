@@ -88,6 +88,7 @@ impl ModelView {
             self.switched(ui.ctx());
         }
         let home = glyph(ui, Icon::FitPage, t::home(), false);
+        crate::diag::ui_rect_visible(super::REGION_FIT, home.rect, ui.clip_rect());
         if home.clicked() {
             self.home();
         }
@@ -98,7 +99,7 @@ impl ModelView {
         if self.nav.walk.is_some() {
             self.set_walking(false);
         }
-        (self.orbit.zoom, self.orbit.pan, self.orbit.framed) = (1.0, [0.0, 0.0], false);
+        self.orbit.refit();
     }
 
     /// Back to the viewer's window: the OS window out of full screen, or the

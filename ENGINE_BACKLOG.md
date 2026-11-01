@@ -159,6 +159,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **wanted; our request G250, shipped at v0.113.0.** Walking would stand at a real eye height in place of a fraction of the model's size. |
+| **3D lighting schemes in the live picture** — `render_model` lit by a `ThreeDLighting` scheme … | **wanted; our request G252.** The viewer's Lighting list only writes `/LS` into saved views; the live picture keeps the engine's single headlight until `RenderOptions` takes a scheme (O347). |
+| **3D drawing fast enough to orbit a building** — a GPU path (draw buffers for eframe's glow context) and a threaded CPU path … | **wanted; our request G253.** About 0.5 s a frame at 1400×900 on 109k triangles; the GUI draws off the UI thread meanwhile (O348). |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
 
 ---

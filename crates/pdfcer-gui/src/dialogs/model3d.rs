@@ -116,6 +116,8 @@ pub(crate) struct ModelView {
     artwork: ThreeDArtwork,
     model: Assembled,
     bounds: Bounds,
+    /// [`orbit::reach`] of the model: the fitted sphere's radius.
+    reach: f64,
     orbit: Orbit,
     /// The axes the named views are measured in.
     upright: Upright,
@@ -167,6 +169,7 @@ impl ModelView {
             min: [0.0; 3],
             max: [0.0; 3],
         });
+        let reach = orbit::reach(&model.drawn.meshes, &bounds);
         let opening = model.opening.clone();
         let saved = opening.as_ref().and_then(Orbit::saved);
         saved::trace_listed(&model.saved);
@@ -202,6 +205,7 @@ impl ModelView {
             artwork,
             model,
             bounds,
+            reach,
             orbit: saved.unwrap_or_else(|| Orbit::named(0, true, Upright::default())),
             upright: Upright::default(),
             named: 0,
@@ -354,14 +358,17 @@ impl ModelView {
             .default_size(180.0)
             .show(ui, |ui| self.parts_list(ui));
 
-        let footer = ui.spacing().interact_size.y * 3.0;
-        let area = egui::vec2(
-            ui.available_width(),
-            (ui.available_height() - footer).max(64.0),
-        );
+        // The notes and buttons take their own height first and the picture
+        // exactly what is left: a guessed footer the content overran made the
+        // window grow every frame, redrawing the model at each new size.
+        egui::Panel::bottom(egui::Id::new("model3d-footer")) // ui-text-exempt: an egui id, never displayed
+            .resizable(false)
+            .show(ui, |ui| {
+                self.notes(ui);
+                ui.horizontal_wrapped(|ui| self.buttons(ui));
+            });
+        let area = ui.available_size().max(egui::vec2(64.0, 64.0));
         self.picture(ui, area);
-        self.notes(ui);
-        ui.horizontal(|ui| self.buttons(ui));
     }
 
     /// The parts list, with show and hide.
@@ -597,7 +604,7 @@ impl ModelView {
         let mut views = Vec::new();
         for (i, name) in t::view_names().into_iter().enumerate() {
             let orbit = Orbit::named(i, perspective, self.upright);
-            let camera = orbit.camera(&self.bounds, aspect, None).ok()?;
+            let camera = orbit.camera(&self.bounds, self.reach, aspect, None).ok()?;
             views.push(self.lit(ThreeDSavedView::from_camera(name, &camera, aspect)?));
         }
         if self.nav.walk.is_none()

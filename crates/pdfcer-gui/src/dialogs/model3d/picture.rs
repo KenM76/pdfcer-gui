@@ -61,6 +61,12 @@ impl ModelView {
         let camera = self.view_camera(f64::from(width) / f64::from(height));
         let started = std::time::Instant::now();
         let aimed = camera.as_ref().map(aim_of).unwrap_or_default();
+        let pivot = camera
+            .as_ref()
+            .ok()
+            .zip(self.orbit.anchor)
+            .map(|(c, a)| pivot_shown(c, a.point))
+            .unwrap_or_default();
         let accent = Some(wanted.accent.to_array());
         let parts = &self.parts;
         let model = &mut self.model.drawn;
@@ -86,7 +92,7 @@ impl ModelView {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
-                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{eye} ms={ms:.1} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
+                        "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye} ms={ms:.1} covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}",
                         self.orbit.yaw,
                         self.orbit.pitch,
                         self.orbit.zoom,
@@ -126,7 +132,8 @@ impl ModelView {
     }
 }
 
-/// A camera's unit look direction and up, as `dir=x,y,z up=x,y,z`, for the
+/// A camera's unit look direction and up, the point it looks at and its
+/// distance from it, as `dir=x,y,z up=x,y,z target=x,y,z gap=d`, for the
 /// trace a driven check reads.
 fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let unit = |v: [f64; 3]| {
@@ -144,8 +151,56 @@ fn aim_of(camera: &pdfcer_3d::Camera) -> String {
         )
     };
     let look = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
+    let gap = look.iter().map(|c: &f64| c * c).sum::<f64>().sqrt();
+    let t = camera.target;
     // ui-text-exempt: diagnostic trace, never displayed
-    format!("dir={} up={}", unit(look), unit(camera.up))
+    format!(
+        "dir={} up={} target={:.4},{:.4},{:.4} gap={gap:.4}",
+        unit(look),
+        unit(camera.up),
+        t[0],
+        t[1],
+        t[2]
+    )
+}
+
+/// ` pivot=x,y,z pivot-shown=r,u`: the point an orbit turns about and where
+/// it shows, right and up of the picture's centre as a share of the visible
+/// height at its depth, for the trace a driven check reads.
+fn pivot_shown(camera: &pdfcer_3d::Camera, p: [f64; 3]) -> String {
+    let sub = |a: [f64; 3], b: [f64; 3]| -> [f64; 3] { std::array::from_fn(|i| a[i] - b[i]) };
+    let dot = |a: [f64; 3], b: [f64; 3]| a.iter().zip(b).map(|(x, y)| x * y).sum::<f64>();
+    let unit = |v: [f64; 3]| {
+        let l = dot(v, v).sqrt().max(f64::MIN_POSITIVE);
+        v.map(|c| c / l)
+    };
+    let cross = |a: [f64; 3], b: [f64; 3]| {
+        [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0],
+        ]
+    };
+    let f = unit(sub(camera.target, camera.eye));
+    let r = unit(cross(f, camera.up));
+    let u = cross(r, f);
+    let v = sub(p, camera.eye);
+    let h = match camera.projection {
+        pdfcer_3d::Projection::Perspective { fov_y } => {
+            2.0 * dot(v, f) * (fov_y / 2.0).to_radians().tan()
+        }
+        pdfcer_3d::Projection::Orthographic { height } => height,
+    }
+    .max(f64::MIN_POSITIVE);
+    format!(
+        // ui-text-exempt: diagnostic trace, never displayed
+        " pivot={:.4},{:.4},{:.4} pivot-shown={:.5},{:.5}",
+        p[0],
+        p[1],
+        p[2],
+        dot(v, r) / h,
+        dot(v, u) / h
+    )
 }
 
 /// ` walk=1 eye=x,y,z` while walking, empty while orbiting, for the trace.

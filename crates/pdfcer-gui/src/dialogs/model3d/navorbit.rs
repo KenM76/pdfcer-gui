@@ -87,6 +87,7 @@ impl ModelView {
             let factor = (keys[2] * KEY_ZOOM.ln() * dt).exp();
             self.orbit.zoom_at(
                 &self.bounds,
+                self.reach,
                 aspect,
                 factor,
                 [0.0, 0.0],
@@ -95,6 +96,41 @@ impl ModelView {
         }
         ui.ctx().request_repaint();
         true
+    }
+
+    /// Pick the point this turn is about, held until the pointer or every
+    /// finger lifts: the mouse turns about the model point it pressed on, as
+    /// SolidWorks does, and a finger about the nearest model point under the
+    /// picture's centre, which a thumb would hide. Either falls back to the
+    /// centre's point, then to the point before.
+    fn pivot(&mut self, ui: &Ui, rect: egui::Rect) {
+        let aspect = f64::from(rect.width().max(1.0) / rect.height().max(1.0));
+        let Ok(camera) = self.view_camera(aspect) else {
+            return;
+        };
+        let pressed = ui
+            .input(|i| {
+                (!i.any_touches())
+                    .then(|| i.pointer.press_origin())
+                    .flatten()
+            })
+            .filter(|p| rect.contains(*p));
+        let hit = pressed
+            .and_then(|at| self.hit_at(rect, at))
+            .or_else(|| self.hit_at(rect, rect.center()));
+        let Some(hit) = hit else {
+            // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| "model-orbit-pivot at=none".to_owned());
+            return;
+        };
+        self.orbit.anchor_at(&camera, hit.point);
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                "model-orbit-pivot at={:.4},{:.4},{:.4}",
+                hit.point[0], hit.point[1], hit.point[2]
+            )
+        });
     }
 
     /// Turn the camera from this frame's pointer on the picture. On a touch
@@ -111,6 +147,9 @@ impl ModelView {
             let per_point = 2.0 / f64::from(rect.height().max(1.0)) / self.orbit.zoom;
             self.orbit.pan[0] -= f64::from(touch.translation_delta.x) * per_point;
             self.orbit.pan[1] += f64::from(touch.translation_delta.y) * per_point;
+        }
+        if touch.is_none() && response.drag_started_by(egui::PointerButton::Primary) {
+            self.pivot(ui, response.rect);
         }
         if touch.is_none()
             && response.dragged_by(egui::PointerButton::Primary)
@@ -141,8 +180,14 @@ impl ModelView {
                 ];
                 let aspect = f64::from(rect.width().max(1.0)) / height;
                 let factor = f64::from(scroll / 200.0).exp() * f64::from(pinch);
-                self.orbit
-                    .zoom_at(&self.bounds, aspect, factor, offset, self.aimed.as_ref());
+                self.orbit.zoom_at(
+                    &self.bounds,
+                    self.reach,
+                    aspect,
+                    factor,
+                    offset,
+                    self.aimed.as_ref(),
+                );
             }
         }
     }

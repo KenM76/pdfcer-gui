@@ -379,6 +379,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(model_axes::AModelOpensFromThePageAndTurnsAboutTheChosenUp),
         Box::new(model_walk::TheViewerWalksAndItsGimbalTurnsTheView),
         Box::new(model_drone::TheDroneSticksFlyAndTurnTheCamera),
+        Box::new(model_pivot::TheViewerTurnsAboutThePointPressed),
         Box::new(model_page_still::ThePageStaysStill { embed: false }),
         Box::new(model_page_still::ThePageStaysStill { embed: true }),
         Box::new(attach_sound::ASoundAttachesAsAnIcon),
