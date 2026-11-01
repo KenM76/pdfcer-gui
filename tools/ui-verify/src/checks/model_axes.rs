@@ -4,7 +4,7 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/model_axes.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, declared_in};
+use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
 use crate::error::{Error, Result};
@@ -226,8 +226,9 @@ fn press_and_look(
     expected: [f64; 3],
 ) -> Result<Option<String>> {
     for region in regions {
-        let trace = session.trace()?;
-        let Some((rect, vp)) = declared_in(&trace, ui_rect, region) else {
+        let Some((rect, vp)) =
+            crate::checks::viewer_options::reach(session, pointer, ui_rect, region)?
+        else {
             return Ok(Some(format!("no `{region}` region in the viewer.")));
         };
         pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;

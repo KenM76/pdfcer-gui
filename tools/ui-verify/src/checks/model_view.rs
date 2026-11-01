@@ -228,8 +228,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some("scrolling over the picture did not zoom.".to_owned()));
     }
 
-    let trace = session.trace()?;
-    let Some((top, tvp)) = declared_in(&trace, ui_rect, TOP_REGION) else {
+    let Some((top, tvp)) =
+        crate::checks::viewer_options::reach(&session, &pointer, ui_rect, TOP_REGION)?
+    else {
         pointer.gone(&session)?;
         return Ok(Some(format!("no `{TOP_REGION}` (Top view) button.")));
     };

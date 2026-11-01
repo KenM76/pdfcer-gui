@@ -388,7 +388,9 @@ fn minimize_and_back(
     session: &Session,
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
-    let Some((button, vp)) = declared_in(&session.trace()?, ui_rect(ctx)?, MINIMIZE_REGION) else {
+    let Some((button, vp)) =
+        crate::checks::viewer_options::reach(session, pointer, ui_rect(ctx)?, MINIMIZE_REGION)?
+    else {
         return Ok(Some(format!(
             "★★★ no `{MINIMIZE_REGION}` button in the viewer's toolbar."
         )));
@@ -442,7 +444,12 @@ fn full_screen(
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
     let ui_rect = ui_rect(ctx)?;
-    let Some((button, bvp)) = declared_in(&session.trace()?, ui_rect, FULL_SCREEN_REGION) else {
+    if let Some(failure) = crate::checks::viewer_options::misplaced(session, ui_rect)? {
+        return Ok(Some(format!("in a window: {failure}")));
+    }
+    let Some((button, bvp)) =
+        crate::checks::viewer_options::reach(session, pointer, ui_rect, FULL_SCREEN_REGION)?
+    else {
         return Ok(Some(format!(
             "★★★ no `{FULL_SCREEN_REGION}` button in the viewer's toolbar."
         )));
@@ -462,6 +469,9 @@ fn full_screen(
         return Ok(Some(format!(
             "★★★ Full screen did not render a larger picture: {before:?} → {full:?}."
         )));
+    }
+    if let Some(failure) = crate::checks::viewer_options::misplaced(session, ui_rect)? {
+        return Ok(Some(format!("full screen: {failure}")));
     }
     if let Some(failure) = fit(report, ui_rect, session, pointer)? {
         return Ok(Some(failure));

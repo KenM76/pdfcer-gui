@@ -30,8 +30,13 @@ fn android_main(app: AndroidApp) {
     diag_from_property();
     let activity = Activity::new(&app);
     pdfcer_gui::insets::install(Box::new(activity.clone()));
+    settings_home(&app);
     let save_dir = app.internal_data_path().map(|p| p.join("save"));
     pdfcer_gui::filedialog::install(Box::new(picker::ActivityPicker::new(activity, save_dir)));
+    let reopened = pdfcer_gui::reopen::keep();
+    if !reopened.is_empty() {
+        pdfcer_gui::filedialog::deliver(reopened);
+    }
     let options = eframe::NativeOptions {
         android_app: Some(app),
         ..Default::default()
@@ -40,6 +45,20 @@ fn android_main(app: AndroidApp) {
         // Logcat shows a native activity's stderr under `RustStdoutStderr`.
         eprintln!("pdfcer: launch failed: {e}");
     }
+}
+
+/// Point the engine's settings store at the app's own data folder, which it
+/// cannot find on Android by itself: settings, recent files and the reopen
+/// list live there. A workaround for engine request G254, reaching
+/// `settings::resolve_store`'s documented `XDG_CONFIG_HOME` input.
+#[cfg(target_os = "android")]
+fn settings_home(app: &AndroidApp) {
+    let Some(dir) = app.internal_data_path() else {
+        return;
+    };
+    // SAFETY: as `diag_from_property`: called from `android_main` before any
+    // thread of ours exists or anything resolves the store.
+    unsafe { std::env::set_var("XDG_CONFIG_HOME", dir) };
 }
 
 /// The system property that switches on the `PDFCER_DIAG` trace, which an

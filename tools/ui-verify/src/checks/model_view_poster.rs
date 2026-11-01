@@ -15,7 +15,7 @@
 //! Its oracle is the page gaining at least `MIN_CHANGED` red pixels, a colour
 //! the engine's grey-and-white default poster of `assembly.prc` never draws.
 
-use crate::checks::driving::{declared, declared_in};
+use crate::checks::driving::declared;
 use crate::checks::model_view_window::{
     MODEL, VIEW_REGION, launch_with_model, launch_with_model_env, press_insert, ui_rect,
 };
@@ -92,8 +92,8 @@ pub(crate) fn click(
     ui_rect: &str,
     name: &str,
 ) -> Result<bool> {
-    let trace = session.trace()?;
-    let Some((rect, vp)) = declared_in(&trace, ui_rect, name) else {
+    let Some((rect, vp)) = crate::checks::viewer_options::reach(session, pointer, ui_rect, name)?
+    else {
         return Ok(false);
     };
     pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;

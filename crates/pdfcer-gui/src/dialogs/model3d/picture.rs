@@ -153,9 +153,8 @@ fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let look = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
     let gap = look.iter().map(|c: &f64| c * c).sum::<f64>().sqrt();
     let t = camera.target;
-    // ui-text-exempt: diagnostic trace, never displayed
     format!(
-        "dir={} up={} target={:.4},{:.4},{:.4} gap={gap:.4}",
+        "dir={} up={} target={:.4},{:.4},{:.4} gap={gap:.4}", // ui-text-exempt: diagnostic trace
         unit(look),
         unit(camera.up),
         t[0],

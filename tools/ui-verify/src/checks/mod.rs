@@ -514,6 +514,7 @@ pub mod straighten_scans;
 pub mod tab_tips;
 /// The page thumbnails zoom without a blank tile.
 pub mod thumbnail_zoom;
+pub mod viewer_options;
 pub mod widget_bg_cmyk;
 
 pub mod layers_membership;

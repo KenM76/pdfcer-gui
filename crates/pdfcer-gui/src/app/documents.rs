@@ -34,6 +34,18 @@ impl PdfcerApp {
         }
     }
 
+    /// Hand the opened documents' paths, in tab order, to
+    /// [`crate::reopen::note`].
+    pub(crate) fn note_open_documents(&self) {
+        let open: Vec<&std::path::Path> = (0..self.document_count())
+            .filter_map(|slot| match self.slot(slot) {
+                Some(Status::Open(doc)) if doc.origin == Origin::Opened => Some(doc.path.as_path()),
+                _ => None,
+            })
+            .collect();
+        crate::reopen::note(&open);
+    }
+
     /// **Flatten the two fields into one tab-ordered vector**, leaving the
     /// application document-less.
     fn take_slots(&mut self) -> Vec<Status> {

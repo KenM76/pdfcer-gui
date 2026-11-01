@@ -190,13 +190,7 @@ impl Walker<'_> {
 
     /// Click `name`'s centre; `false` when it is not drawn.
     fn press(&self, name: &str) -> Result<bool> {
-        let Some((rect, vp)) = self.region(name)? else {
-            return Ok(false);
-        };
-        self.pointer
-            .click_in(self.session, vp.as_deref(), WindowPoint::centre_of(rect))?;
-        self.session.settle(20);
-        Ok(true)
+        crate::checks::viewer_options::press(self.session, self.pointer, self.ui_rect, name)
     }
 
     /// `key` on the last `event` line.

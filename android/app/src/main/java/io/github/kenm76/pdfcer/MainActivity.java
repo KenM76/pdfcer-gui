@@ -121,6 +121,16 @@ public class MainActivity extends GameActivity {
         if (savedInstanceState == null) receive(getIntent());
     }
 
+    /**
+     * Back at the top of the app leaves it running behind the launcher, as
+     * Home does, instead of finishing the activity: finishing ends the native
+     * program and the next launch would start with nothing open.
+     */
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+    }
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);

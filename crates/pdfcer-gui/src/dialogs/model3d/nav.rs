@@ -125,6 +125,9 @@ pub(super) struct Nav {
     pub moving: bool,
     /// Areas over the picture whose own buttons take a finger.
     pub hud: Vec<Rect>,
+    /// The options menu is open: the viewer holds it, not egui's one
+    /// remembered popup, so a drop-down inside it keeps it open.
+    pub options_open: bool,
     /// The drone sticks and their tilts, to draw, while they are offered.
     pub drone: Option<(Drone, [egui::Vec2; 3])>,
     /// This walk's frames and its slowest collision, milliseconds.

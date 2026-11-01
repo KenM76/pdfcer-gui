@@ -167,3 +167,9 @@ pub fn slow_collision(ms: f64, triangles: usize) -> String {
         "Walls and floors take {ms:.0} ms a step on this model's {triangles} triangles, so walking is jerky; Ghost mode moves freely."
     )
 }
+
+/// The options glyph's tip.
+#[must_use]
+pub fn options_tooltip() -> &'static str {
+    "View options: views, projection, axes, mesh fit, navigation and full screen."
+}

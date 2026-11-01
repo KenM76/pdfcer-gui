@@ -661,19 +661,25 @@ His words: *"I didn't know double click did that so I never tried, but single cl
 
 
 **Status.** Built and driven: `the_3d_viewer_turns_about_the_point_pressed` presses on a part off-centre and checks the pivot shows where it pressed and holds through the drag; falsified by removing the pivot. NOT VERIFIED by him.
-## O353 — **OPEN** — Android remembers recent files
+## O353 — **BUILT** — Android remembers recent files
 
 His words (one message with O351 and O352): *"Also on Android the app icon is missing and if I navigate away from the app it reloads when I come back and my files are no longer open in it. It also doesn't remember recents."*
 
 **Scope, whole behaviour.** Files opened on the phone appear in Recent the next time the app starts, the same as on the desktop, and each opens again from there. A file the phone has revoked access to is reported off-canvas, not silently dropped.
 
-## O352 — **OPEN** — Android keeps the open files when the app is left and resumed
+**Status.** Built: the app now keeps its settings folder in its own data folder (the engine finds none on Android; engine request G254, worked around meanwhile), so Recent, settings and the reopen list survive a restart. A file the phone has since removed is left out of the reopen list. Not driven: the desktop harness cannot run the Android store. NOT VERIFIED by him.
+
+## O352 — **PART BUILT** — Android keeps the open files when the app is left and resumed
 
 Same message as O353. **Scope.** Switching to another app and coming back returns to the same documents, page and zoom. When Android has killed the process in the background, the app restores them on the next start. Unsaved edits are not silently lost: they are either kept, or the operator is told.
 
-## O351 — **OPEN** — the Android app has no launcher icon
+**Status.** Built: Back sends the app to the background instead of ending it; a rotation, keyboard, density, theme or font-scale change no longer restarts it; when Android has ended it anyway, the files open last time (that still exist) open again on the next start. Not built: the page and zoom of each are not restored, and unsaved edits of a killed process are lost without a word. NOT VERIFIED by him.
+
+## O351 — **BUILT** — the Android app has no launcher icon
 
 Same message as O353. **Scope.** The app shows a pdfcer icon in the launcher, the recent-apps list and the app info screen, at every density, including an adaptive icon.
+
+**Status.** Built: a launcher icon at every density from the desktop icon, plus round and adaptive icons on a white background. NOT VERIFIED by him.
 
 ## O350 — **OPEN** — a finger orbit spins about the model point under the screen centre
 
@@ -697,9 +703,11 @@ Same message as O350. **Scope.** (1) Drawing never blocks the window: the last p
 
 Same message as O350. **Scope.** Choosing a lighting scheme changes the live picture as it will look in a reader that honours it (the PDF's lighting schemes), in orbit, walkthrough and full screen; the choice is saved with a view as it is now. The live picture is drawn by the engine, which has only a headlight: filed as an engine request.
 
-## O346 — **OPEN** — the 3D viewer's options in a small drop-down at the top right
+## O346 — **BUILT** — the 3D viewer's options in a small drop-down at the top right
 
 Same message as O350. **Scope.** In full screen and in the window, the viewer's options (the rows of switches and lists that now sit above the picture) are reached from one small button at the picture's top-right corner that opens a drop-down; the picture gets the room they took. Every option stays reachable, by touch and mouse.
+
+**Status.** Built and driven: one glyph at the picture's top-right opens every option, in the window and full screen; lists inside the menu keep it open; Escape closes the menu before it leaves full screen. Every 3D viewer check reaches its controls through it; the corner is asserted in both modes and falsified. NOT VERIFIED by him.
 
 ## O345 — **BUILT** — drone-style walkthrough controls
 

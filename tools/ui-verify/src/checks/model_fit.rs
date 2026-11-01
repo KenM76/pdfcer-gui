@@ -3,7 +3,6 @@
 //! of its decode, and *Exact only* is refused rather than leaving an empty
 //! picture. See `docs/modules/ui-verify/checks/model_fit.md`.
 
-use crate::checks::driving::declared_in;
 use crate::checks::model_inferences::open_viewer;
 use crate::checks::model_view_window::{launch_with_model_file, ui_rect};
 use crate::checks::{Check, CheckContext};
@@ -77,8 +76,9 @@ fn pick(
     item: &str,
 ) -> Result<Option<String>> {
     for region in [FIT, item] {
-        let trace = session.trace()?;
-        let Some((rect, vp)) = declared_in(&trace, ui_rect, region) else {
+        let Some((rect, vp)) =
+            crate::checks::viewer_options::reach(session, pointer, ui_rect, region)?
+        else {
             return Ok(Some(format!("no `{region}` region in the viewer.")));
         };
         pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;

@@ -40,7 +40,6 @@ impl ModelView {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.set_max_width(width - ui.spacing().scroll.allocated_width());
             ui.horizontal_wrapped(|ui| self.buttons(ui));
-            self.controls(ui);
             ui.small(self.nav_hint(ui.ctx(), t::view_hint_touch()));
             self.file_view_note(ui);
             let width = ui.available_width();

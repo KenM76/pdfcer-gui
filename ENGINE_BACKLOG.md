@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **49 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `wanted` — a real gap — **52 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -159,14 +159,15 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **wanted; our request G250, shipped at v0.113.0.** Walking would stand at a real eye height in place of a fraction of the model's size. |
-| **3D lighting schemes in the live picture** — `render_model` lit by a `ThreeDLighting` scheme … | **wanted; our request G252.** The viewer's Lighting list only writes `/LS` into saved views; the live picture keeps the engine's single headlight until `RenderOptions` takes a scheme (O347). |
+| **3D lighting schemes in the live picture** — `render_model` lit by a `ThreeDLighting` scheme … | **wanted; our request G252.** The viewer's Lighting list only writes `/LS` into saved views; the live picture keeps the engine's single headlight until `RenderOptions` takes a scheme (O347). <!--namesake:ThreeDLighting--> the shell names the scheme only to write `/LS`; <!--namesake:render_model--> the shell calls it unlit; the row is the scheme it cannot take. |
 | **3D drawing fast enough to orbit a building** — a GPU path (draw buffers for eframe's glow context) and a threaded CPU path … | **wanted; our request G253.** About 0.5 s a frame at 1400×900 on 109k triangles; the GUI draws off the UI thread meanwhile (O348). |
+| **A settings folder on Android** — `settings::resolve_store` returns `StoreKind::None` there (no `XDG_CONFIG_HOME`, no `HOME`, the exe beside `app_process64`) … | **wanted; our request G254. Workaround, reported:** `android_main` sets `XDG_CONFIG_HOME` to the activity's internal data path before anything resolves the store, so settings, recents and the reopen list are kept (O352, O353). Asked for `settings::set_store_dir(path)`. <!--namesake:resolve_store--> the shell calls it; the row is the folder it cannot find on Android. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `blocked` — waiting on something named — **2 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -184,7 +185,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -195,7 +196,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **19 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `declined` — deliberately no surface — **19 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -240,7 +241,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **401 of 471** <!-- counted by tools/walk-engine-backlog.py, 2026-10-31; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **401 of 474** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

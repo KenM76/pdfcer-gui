@@ -6,7 +6,7 @@
 
 use std::path::PathBuf;
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared_in};
+use crate::checks::driving::SHELL_DIAG_ENV;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
@@ -163,8 +163,8 @@ fn press(
     ui_rect: &str,
     region: &str,
 ) -> Result<bool> {
-    let trace = session.trace()?;
-    let Some((rect, vp)) = declared_in(&trace, ui_rect, region) else {
+    let Some((rect, vp)) = crate::checks::viewer_options::reach(session, pointer, ui_rect, region)?
+    else {
         return Ok(false);
     };
     pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;

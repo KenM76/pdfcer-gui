@@ -29,6 +29,7 @@ mod immersive;
 mod nav;
 mod navorbit;
 mod navwalk;
+mod options;
 mod orbit;
 mod parts;
 mod phone;
@@ -342,6 +343,7 @@ impl ModelView {
     }
 
     fn body(&mut self, ui: &mut Ui) {
+        self.window_keys(ui);
         if self.filling_screen(ui.ctx()) {
             self.immersive_body(ui, ui.max_rect());
             return;
@@ -350,7 +352,6 @@ impl ModelView {
             self.phone_body(ui);
             return;
         }
-        self.controls(ui);
         ui.small(self.nav_hint(ui.ctx(), t::view_hint()));
         self.file_view_note(ui);
         egui::Panel::left(egui::Id::new("model3d-parts")) // ui-text-exempt: an egui id, never displayed
@@ -383,40 +384,6 @@ impl ModelView {
         );
     }
 
-    /// The view buttons and the camera settings, wrapping to the width.
-    fn controls(&mut self, ui: &mut Ui) {
-        ui.horizontal_wrapped(|ui| {
-            self.file_view_control(ui);
-            self.saved_views_control(ui);
-            for (i, name) in t::view_names().into_iter().enumerate() {
-                let button = ui.button(name);
-                crate::diag::ui_rect_visible(
-                    // ui-text-exempt: trace region name, never displayed
-                    &format!("{REGION_VIEW_PREFIX}{i}"),
-                    button.rect,
-                    ui.clip_rect(),
-                );
-                if button.clicked() {
-                    self.named = i;
-                    self.orbiting();
-                    self.orbit = Orbit::named(i, self.orbit.perspective, self.upright);
-                }
-            }
-            let fit =
-                phone::glyph_button(ui, Icon::FitPage, t::view_reset(), t::view_reset_tooltip());
-            crate::diag::ui_rect_visible(REGION_FIT, fit.rect, ui.clip_rect());
-            if fit.clicked() {
-                self.home();
-            }
-            ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
-                .on_hover_text(t::view_perspective_tooltip());
-            self.axes_control(ui);
-            self.mesh_fit_control(ui);
-            self.nav_controls(ui);
-            self.full_screen_control(ui);
-        });
-    }
-
     /// The model drawn into `area`, steered by the pointer or fingers on it.
     fn picture(&mut self, ui: &mut Ui, area: egui::Vec2) {
         let (rect, response) = ui.allocate_exact_size(area, Sense::click_and_drag());
@@ -426,6 +393,9 @@ impl ModelView {
         } else {
             self.orbit_input(ui, &response);
         }
+        // Rebuilt below and by the full-screen row, for the next frame's
+        // fingers.
+        self.nav.hud.clear();
 
         let background = ui.visuals().extreme_bg_color;
         // Half the pixels while the camera moves, so it keeps up; the full
@@ -459,6 +429,7 @@ impl ModelView {
             (None, None) => {}
         }
         self.paint_overlay(ui, rect);
+        self.options_button(ui, rect);
     }
 
     /// What the picture leaves out or inferred, said under it.

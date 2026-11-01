@@ -43,7 +43,13 @@ impl ModelView {
                 i.viewport().close_requested(),
             )
         });
-        if escape && !closing && !crate::canvas::textedit::composing(ui.ctx()) {
+        // Escape with the options open closes them only.
+        if escape
+            && !closing
+            && !crate::canvas::textedit::composing(ui.ctx())
+            && !self.nav.options_open
+            && !egui::Popup::is_any_open(ui.ctx())
+        {
             self.leave_immersive(ui.ctx());
         }
         self.picture(ui, rect.size());
@@ -57,7 +63,7 @@ impl ModelView {
                 .layout(egui::Layout::left_to_right(egui::Align::Min)),
         );
         self.hud(&mut row);
-        self.nav.hud = vec![row.min_rect().expand(4.0)];
+        self.nav.hud.push(row.min_rect().expand(4.0));
     }
 
     /// The button row.
