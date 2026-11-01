@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Two arrows pointing in from left and right to an upright centre line: bring the camera back to straight ahead. -->
+  <path d="M24 8v32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M4 24h14M13 19l5 5-5 5M44 24H30M35 19l-5 5 5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

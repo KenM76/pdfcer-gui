@@ -1,10 +1,15 @@
 //! Walking through the model: a first-person camera at a body's eye height.
 //!
 //! Solid (ghost mode off), the walker stops at what it meets, slides along
-//! it, climbs steps up to [`STEP`] of its height, and falls onto the floor
-//! under it; with nothing under it, it keeps its height. Ghosting, it flies
+//! it, and falls onto the floor under it; with nothing under it, it keeps its
+//! height. With stair climbing on it climbs anything lower than [`CLIMB`] of
+//! its eye height; off, only a floor seam under [`BUMP`]. Ghosting, it flies
 //! through everything. Moving is horizontal when solid or level, so it
 //! never drifts up or down; a ghost that is not level flies where it looks.
+//!
+//! The body and the camera turn apart, as a drone and its gimbal do: `yaw`
+//! is the body's heading, which moving follows, and `look_yaw` the camera's
+//! turn from it. `pitch` is the camera's alone; the body never tilts.
 //!
 //! Scale: every distance is a share of the model's radius, so a building
 //! and a bracket walk alike. Model units throughout.
@@ -21,8 +26,17 @@ const BODY_SHARE: f64 = 0.08;
 const PACE: f64 = 0.25;
 /// Running speed, as a multiple of walking.
 const RUN: f64 = 3.0;
-/// The highest step climbed without rising, as a share of eye height.
-const STEP: f64 = 0.35;
+/// The highest obstacle climbed with stair climbing on, as a share of eye
+/// height: the operator's "a third of the camera's height".
+pub(super) const CLIMB: f64 = 1.0 / 3.0;
+/// The highest step climbed with it off: a seam or a threshold, never an
+/// object.
+const BUMP: f64 = 0.05;
+/// The camera's zoom range, as a multiple of [`FOV`]'s view.
+const ZOOM: (f64, f64) = (0.5, 6.0);
+/// A hit whose normal is this close to the up axis is a floor or a ramp,
+/// stood on rather than walked into.
+const WALKABLE: f64 = 0.7;
 /// How close a wall stops the eye, as a share of eye height.
 const REACH: f64 = 0.25;
 /// Gravity, in eye heights per second squared: about Earth's for a
@@ -54,16 +68,30 @@ pub(super) struct Rules {
     pub level: bool,
     /// A multiple of the walking pace.
     pub speed: f64,
+    /// Climb obstacles lower than [`CLIMB`] of the eye height.
+    pub stairs: bool,
+}
+
+impl Rules {
+    /// The highest step climbed, as a share of eye height.
+    fn step(self) -> f64 {
+        if self.stairs { CLIMB } else { BUMP }
+    }
 }
 
 /// The walker.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) struct Walk {
     pub eye: [f64; 3],
-    /// Radians round the up axis, as [`Axes::look`] measures it.
+    /// The body's heading: radians round the up axis, as [`Axes::look`]
+    /// measures it.
     pub yaw: f64,
-    /// Radians below the horizon.
+    /// The camera's turn from the heading, radians, the same way.
+    pub look_yaw: f64,
+    /// The camera's radians below the horizon.
     pub pitch: f64,
+    /// The camera's zoom, a multiple of the [`FOV`] view.
+    pub zoom: f64,
     axes: Axes,
     /// The model's radius, which every distance is a share of.
     scale: f64,
@@ -80,7 +108,9 @@ impl Walk {
         Self {
             eye: camera.eye,
             yaw,
+            look_yaw: 0.0,
             pitch,
+            zoom: 1.0,
             axes,
             scale: radius,
             fall: 0.0,
@@ -97,8 +127,9 @@ impl Walk {
         self.fall != 0.0
     }
 
+    /// Where the camera looks.
     pub fn direction(&self) -> [f64; 3] {
-        self.axes.look(self.yaw, self.pitch)
+        self.axes.look(self.yaw + self.look_yaw, self.pitch)
     }
 
     pub fn camera(&self) -> Camera {
@@ -108,21 +139,43 @@ impl Walk {
             eye: self.eye,
             target: std::array::from_fn(|i| self.eye[i] + d[i] * ahead),
             up: self.axes.up,
-            projection: Projection::Perspective { fov_y: FOV },
+            projection: Projection::Perspective {
+                fov_y: FOV / self.zoom,
+            },
         }
     }
 
-    /// Turn by `yaw` and `pitch` radians; pitch stops short of straight up
-    /// or down.
+    /// Turn the body by `yaw` and the camera's pitch by `pitch` radians;
+    /// pitch stops short of straight up or down.
     pub fn turn(&mut self, yaw: f64, pitch: f64) {
         self.yaw += yaw;
+        self.tilt(pitch);
+    }
+
+    /// Turn the camera alone by `yaw` and `pitch` radians, the heading kept.
+    pub fn look(&mut self, yaw: f64, pitch: f64) {
+        self.look_yaw = wrap(self.look_yaw + yaw);
+        self.tilt(pitch);
+    }
+
+    fn tilt(&mut self, pitch: f64) {
         self.pitch = (self.pitch + pitch).clamp(-PITCH_LIMIT, PITCH_LIMIT);
     }
 
-    /// Look along `direction`.
+    /// Turn the camera back to the heading.
+    pub fn centre_look(&mut self) {
+        self.look_yaw = 0.0;
+    }
+
+    /// Multiply the camera's zoom by `factor`, within [`ZOOM`].
+    pub fn zoom_by(&mut self, factor: f64) {
+        self.zoom = (self.zoom * factor).clamp(ZOOM.0, ZOOM.1);
+    }
+
+    /// Look and head along `direction`.
     pub fn face(&mut self, direction: [f64; 3]) {
         if let Some((yaw, pitch)) = self.axes.angles(direction) {
-            (self.yaw, self.pitch) = (yaw, pitch);
+            (self.yaw, self.look_yaw, self.pitch) = (yaw, 0.0, pitch);
         }
     }
 
@@ -161,12 +214,12 @@ impl Walk {
         let ahead = if rules.solid || rules.level {
             flat
         } else {
-            self.direction()
+            self.axes.look(self.yaw, self.pitch)
         };
         let side = cross(flat, up);
         let mut motion: [f64; 3] = std::array::from_fn(|i| ahead[i] * forward + side[i] * right);
         if rules.solid {
-            motion = self.slide(motion, world);
+            motion = self.slide(motion, rules.step(), world);
         }
         self.eye = std::array::from_fn(|i| self.eye[i] + motion[i]);
     }
@@ -174,13 +227,18 @@ impl Walk {
     /// `motion` cut where it would bring the eye or the top of a step within
     /// reach of a wall: the part into the wall dropped, then stopped
     /// outright if the rest meets one too.
-    fn slide(&self, motion: [f64; 3], world: &mut impl FnMut(&Ray) -> Option<Hit>) -> [f64; 3] {
-        let Some(wall) = self.blocked(motion, world) else {
+    fn slide(
+        &self,
+        motion: [f64; 3],
+        step: f64,
+        world: &mut impl FnMut(&Ray) -> Option<Hit>,
+    ) -> [f64; 3] {
+        let Some(wall) = self.blocked(motion, step, world) else {
             return motion;
         };
         let into = dot(motion, wall);
         let along: [f64; 3] = std::array::from_fn(|i| motion[i] - wall[i] * into);
-        if self.blocked(along, world).is_some() {
+        if self.blocked(along, step, world).is_some() {
             [0.0; 3]
         } else {
             along
@@ -188,17 +246,20 @@ impl Walk {
     }
 
     /// The horizontal unit normal, facing the walker, of the nearest wall
-    /// `motion` comes within reach of, at eye height or a step above the
-    /// floor; `None` when the way is clear.
+    /// `motion` comes within reach of, at eye height or `step` of it above
+    /// the floor; `None` when the way is clear. A floor or ramp met is no
+    /// wall: [`Walk::settle`] stands on it.
     fn blocked(
         &self,
         motion: [f64; 3],
+        step: f64,
         world: &mut impl FnMut(&Ray) -> Option<Hit>,
     ) -> Option<[f64; 3]> {
         let length = dot(motion, motion).sqrt();
         let direction = unit(motion)?;
         let reach = self.body() * REACH;
-        let knee = along(self.eye, self.axes.up, -self.body() * (1.0 - STEP));
+        let up = self.axes.up;
+        let knee = along(self.eye, up, -self.body() * (1.0 - step));
         [self.eye, knee]
             .into_iter()
             .filter_map(|origin| {
@@ -208,10 +269,9 @@ impl Walk {
                     min_distance: 0.0,
                 })
             })
-            .filter(|hit| hit.distance < length + reach)
+            .filter(|hit| hit.distance < length + reach && dot(hit.normal, up).abs() < WALKABLE)
             .min_by(|a, b| a.distance.total_cmp(&b.distance))
             .map(|hit| {
-                let up = self.axes.up;
                 let lift = dot(hit.normal, up);
                 let flat: [f64; 3] = std::array::from_fn(|i| hit.normal[i] - up[i] * lift);
                 let n = unit(flat).unwrap_or(direction.map(|c| -c));
@@ -287,6 +347,12 @@ impl Walk {
     pub fn level(&mut self) {
         self.pitch = 0.0;
     }
+}
+
+/// `angle` in [-π, π).
+fn wrap(angle: f64) -> f64 {
+    let turn = std::f64::consts::TAU;
+    angle - turn * ((angle + std::f64::consts::PI) / turn).floor()
 }
 
 fn along(point: [f64; 3], direction: [f64; 3], distance: f64) -> [f64; 3] {

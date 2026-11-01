@@ -1283,6 +1283,12 @@ pub enum Icon {
     Gimbal,
     /// Leave full screen: four arrows pointing in from the corners.
     ExitFullscreen,
+    /// Stair climbing: walking climbs obstacles under a third of the eye height.
+    Stairs,
+    /// Turn the walking camera back to straight ahead.
+    CentreYaw,
+    /// Tilt the walking camera back to level.
+    CentrePitch,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

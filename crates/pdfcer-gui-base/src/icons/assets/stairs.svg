@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Three steps rising left to right, an arrow climbing over them: walking climbs low obstacles. -->
+  <path d="M4 42h12v-10h12v-10h12v-10h4" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M8 26L24 10M24 10h-8M24 10v8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

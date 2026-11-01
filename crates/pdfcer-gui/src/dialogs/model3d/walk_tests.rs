@@ -32,7 +32,9 @@ fn walker(eye: [f64; 3]) -> Walk {
     Walk {
         eye,
         yaw: 0.0,
+        look_yaw: 0.0,
         pitch: 0.0,
+        zoom: 1.0,
         axes,
         scale: 10.0,
         fall: 0.0,
@@ -43,7 +45,35 @@ const SOLID: Rules = Rules {
     solid: true,
     level: true,
     speed: 1.0,
+    stairs: false,
 };
+
+/// [`room`] with a box across x = 2..3 of height `height`.
+fn room_with_box(height: f64) -> Vec<TriangleMesh> {
+    let mut meshes = room();
+    let mut block = TriangleMesh::default();
+    let (a, b) = (2.0, 3.0);
+    block.positions = vec![
+        [a, -10.0, 0.0],
+        [a, 10.0, 0.0],
+        [a, 10.0, height],
+        [a, -10.0, height],
+        [b, -10.0, height],
+        [b, 10.0, height],
+        [b, 10.0, 0.0],
+        [b, -10.0, 0.0],
+    ];
+    block.triangles = vec![
+        [0, 1, 2],
+        [0, 2, 3],
+        [3, 2, 5],
+        [3, 5, 4],
+        [4, 5, 6],
+        [4, 6, 7],
+    ];
+    meshes.push(block);
+    meshes
+}
 
 fn ahead(seconds: usize, walk: &mut Walk, rules: Rules, meshes: &[TriangleMesh]) {
     let intent = Intent {
@@ -90,6 +120,7 @@ fn a_level_walker_keeps_its_height_looking_down() {
         solid: false,
         level: true,
         speed: 1.0,
+        stairs: false,
     };
     let mut walk = walker([-5.0, 0.0, 3.0]);
     walk.turn(0.0, 0.5);
@@ -117,4 +148,54 @@ fn turning_round_the_axes_and_facing_agree() {
     assert!((d[1] - 1.0).abs() < 1e-9, "{d:?}");
     walk.turn(0.0, 10.0);
     assert!(walk.pitch <= PITCH_LIMIT);
+}
+
+#[test]
+fn stair_climbing_climbs_under_a_third_of_the_eye_height_and_off_it_bumps() {
+    // Eye height 0.8: a 0.2 box is under a third of it, a 0.4 box over.
+    let low = room_with_box(0.2);
+    let climbing = Rules {
+        stairs: true,
+        ..SOLID
+    };
+    let mut over = walker([0.0, 0.0, 0.8]);
+    ahead(3, &mut over, climbing, &low);
+    assert!(over.eye[0] > 3.0, "{:?}", over.eye);
+    let mut bumped = walker([0.0, 0.0, 0.8]);
+    ahead(3, &mut bumped, SOLID, &low);
+    assert!(bumped.eye[0] < 2.0, "{:?}", bumped.eye);
+    let high = room_with_box(0.4);
+    let mut stopped = walker([0.0, 0.0, 0.8]);
+    ahead(3, &mut stopped, climbing, &high);
+    assert!(stopped.eye[0] < 2.0, "{:?}", stopped.eye);
+}
+
+#[test]
+fn the_camera_turns_apart_from_the_heading_and_centres_back() {
+    let meshes = room();
+    let mut walk = walker([-5.0, 0.0, 0.8]);
+    walk.look(std::f64::consts::FRAC_PI_2, 0.3);
+    ahead(1, &mut walk, SOLID, &meshes);
+    assert!(
+        walk.eye[0] > -5.0 && walk.eye[1].abs() < 1e-9,
+        "{:?}",
+        walk.eye
+    );
+    assert!(walk.direction()[1].abs() > 0.9, "{:?}", walk.direction());
+    walk.centre_look();
+    walk.level();
+    let d = walk.direction();
+    assert!((d[0] - 1.0).abs() < 1e-9, "{d:?}");
+}
+
+#[test]
+fn zoom_narrows_the_view_within_its_range() {
+    let mut walk = walker([0.0; 3]);
+    walk.zoom_by(2.0);
+    let Projection::Perspective { fov_y } = walk.camera().projection else {
+        unreachable!();
+    };
+    assert!((fov_y - FOV / 2.0).abs() < 1e-9, "{fov_y}");
+    walk.zoom_by(1000.0);
+    assert!((walk.zoom - ZOOM.1).abs() < 1e-9);
 }

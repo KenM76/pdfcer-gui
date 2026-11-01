@@ -1,27 +1,30 @@
 //! Game-style touch controls over the 3D picture, read from the raw touch
 //! events so that every finger counts: egui's own pointer follows only the
-//! first, which cannot both steer and look.
+//! first, which cannot both steer and look, and egui's pinch counts every
+//! finger, a thumb on a stick included.
 //!
-//! A finger put down on a zone (a rise or sink button, a gimbal tip) holds
-//! that zone; on the picture's left half it is a floating move stick
-//! centred where it landed; anywhere else it drags the look. A finger lifted
-//! soon after landing, having barely moved, is a tap. Without a touch
-//! screen the mouse is one finger with no stick, so a drag anywhere looks.
+//! A finger put down on a stick's base holds that stick, its tilt measured
+//! from where it landed so a thumb set down off-centre does not jump; on a
+//! zone (a button, a gimbal tip) it holds that zone; anywhere else it drags
+//! the look, and two such fingers pinch. A finger lifted soon after landing,
+//! having barely moved, is a tap. The mouse is one more finger, so it can
+//! work a stick too.
 
 use egui::{Event, Pos2, Rect, TouchPhase, Ui, Vec2};
 
-/// The stick's full tilt, in points from where the finger landed.
-pub(super) const STICK_RADIUS: f32 = 56.0;
 /// The most a tap may move, in points.
 const TAP_SLOP: f32 = 12.0;
 /// The longest a tap may last, in seconds.
 const TAP_TIME: f64 = 0.35;
 /// The mouse's finger id, apart from any touch's.
 const MOUSE: u64 = u64::MAX;
+/// How far beyond a stick's drawn base a finger still takes it, as a
+/// multiple of its radius: a thumb lands roughly.
+const GRAB: f32 = 1.3;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Role {
-    Move,
+    Stick(usize),
     Look,
     Zone(usize),
 }
@@ -46,13 +49,23 @@ pub(super) struct Sticks {
     touched: bool,
 }
 
+/// The sticks offered: their bases' centres and their common radius, points.
+#[derive(Debug, Clone, Copy, Default)]
+pub(super) struct Bases<'a> {
+    pub centres: &'a [Pos2],
+    pub radius: f32,
+}
+
 /// One frame's reading.
 #[derive(Debug, Default)]
 pub(super) struct Reading {
-    /// The move stick's tilt: x right, y forward, each -1 to 1.
-    pub stick: Option<(Pos2, Vec2)>,
-    /// Points the look was dragged.
+    /// Each offered stick's tilt, in [`Bases::centres`] order: x right, y up,
+    /// each -1 to 1, zero when let go.
+    pub sticks: Vec<Vec2>,
+    /// Points the look was dragged by a single finger.
     pub look: Vec2,
+    /// Two fingers off the sticks pinching, as a factor; 1 when not.
+    pub pinch: f32,
     /// The zones a finger holds.
     pub held: Vec<usize>,
     /// Zones tapped.
@@ -62,8 +75,7 @@ pub(super) struct Reading {
 }
 
 impl Sticks {
-    /// Whether this is a touch screen, so the stick and the touch buttons
-    /// are offered.
+    /// Whether this is a touch screen, so the sticks are offered.
     pub fn touch(&self) -> bool {
         self.touched
     }
@@ -75,7 +87,14 @@ impl Sticks {
 
     /// Read this frame's fingers on `rect`. `zones` are hot areas over it, in
     /// order; `ignored` are areas whose own widgets take the finger.
-    pub fn read(&mut self, ui: &Ui, rect: Rect, zones: &[Rect], ignored: &[Rect]) -> Reading {
+    pub fn read(
+        &mut self,
+        ui: &Ui,
+        rect: Rect,
+        bases: Bases<'_>,
+        zones: &[Rect],
+        ignored: &[Rect],
+    ) -> Reading {
         let ctx = ui.ctx();
         let layer = ui.layer_id();
         let starts_here = |p: Pos2| {
@@ -84,30 +103,54 @@ impl Sticks {
                 && !ignored.iter().any(|r| r.contains(p))
         };
         let (events, now) = ui.input(|i| (i.events.clone(), i.time));
-        let mut reading = Reading::default();
+        let mut reading = Reading {
+            pinch: 1.0,
+            ..Reading::default()
+        };
+        let spread = self.spread();
         for event in events {
             let Some((id, phase, pos)) = self.contact_of(event) else {
                 continue;
             };
             match phase {
-                TouchPhase::Start if starts_here(pos) => self.begin(id, pos, now, rect, zones),
+                TouchPhase::Start if starts_here(pos) => self.begin(id, pos, now, bases, zones),
                 TouchPhase::Start => {}
-                TouchPhase::Move => {
-                    if let Some(c) = self.contacts.iter_mut().find(|c| c.id == id) {
-                        if c.role == Role::Look {
-                            reading.look += pos - c.pos;
-                        }
-                        c.pos = pos;
-                        c.moved |= (pos - c.start).length() > TAP_SLOP;
-                    }
-                }
+                TouchPhase::Move => self.moved(id, pos, &mut reading),
                 TouchPhase::End | TouchPhase::Cancel => {
                     self.end(id, phase == TouchPhase::End, now, &mut reading);
                 }
             }
         }
-        self.held(&mut reading);
+        if let (Some(before), Some(after)) = (spread, self.spread()) {
+            reading.pinch = after / before.max(1.0);
+        }
+        self.held(bases, &mut reading);
         reading
+    }
+
+    /// The distance between the two looking fingers, when exactly two are.
+    fn spread(&self) -> Option<f32> {
+        let mut looking = self.contacts.iter().filter(|c| c.role == Role::Look);
+        match (looking.next(), looking.next(), looking.next()) {
+            (Some(a), Some(b), None) => Some((a.pos - b.pos).length()),
+            _ => None,
+        }
+    }
+
+    /// A finger moved: a lone looking finger drags the look.
+    fn moved(&mut self, id: u64, pos: Pos2, reading: &mut Reading) {
+        let looking = self
+            .contacts
+            .iter()
+            .filter(|c| c.role == Role::Look)
+            .count();
+        if let Some(c) = self.contacts.iter_mut().find(|c| c.id == id) {
+            if c.role == Role::Look && looking == 1 {
+                reading.look += pos - c.pos;
+            }
+            c.pos = pos;
+            c.moved |= (pos - c.start).length() > TAP_SLOP;
+        }
     }
 
     /// The finger an event is about: a touch, or the mouse until a touch has
@@ -138,14 +181,22 @@ impl Sticks {
         })
     }
 
-    /// A finger down: on a zone it is that zone's; elsewhere a touch on the
-    /// left half moves and anything else looks.
-    fn begin(&mut self, id: u64, pos: Pos2, now: f64, rect: Rect, zones: &[Rect]) {
+    /// A finger down: on a zone it is that zone's, on a free stick's base
+    /// that stick's, and anything else looks.
+    fn begin(&mut self, id: u64, pos: Pos2, now: f64, bases: Bases<'_>, zones: &[Rect]) {
         self.contacts.retain(|c| c.id != id);
-        let role = match zones.iter().position(|z| z.contains(pos)) {
-            Some(z) => Role::Zone(z),
-            None if self.touched && pos.x < rect.center().x => Role::Move,
-            None => Role::Look,
+        let taken = |s: usize| self.contacts.iter().any(|c| c.role == Role::Stick(s));
+        let stick = bases
+            .centres
+            .iter()
+            .enumerate()
+            .filter(|&(s, c)| !taken(s) && (pos - *c).length() <= bases.radius * GRAB)
+            .min_by(|a, b| (pos - *a.1).length().total_cmp(&(pos - *b.1).length()))
+            .map(|(s, _)| s);
+        let role = match (zones.iter().position(|z| z.contains(pos)), stick) {
+            (Some(z), _) => Role::Zone(z),
+            (None, Some(s)) => Role::Stick(s),
+            (None, None) => Role::Look,
         };
         self.contacts.push(Contact {
             id,
@@ -166,24 +217,27 @@ impl Sticks {
         let tap = lifted && !c.moved && now - c.since <= TAP_TIME;
         match (tap, c.role) {
             (true, Role::Zone(z)) => reading.tapped_zones.push(z),
-            (true, _) => reading.taps.push(c.start),
+            (true, Role::Look) => reading.taps.push(c.start),
             _ => {}
         }
     }
 
-    /// The fingers still down: zones held, and the stick's tilt.
-    fn held(&self, reading: &mut Reading) {
+    /// The fingers still down: zones held, and the sticks' tilts.
+    fn held(&self, bases: Bases<'_>, reading: &mut Reading) {
+        reading.sticks = vec![Vec2::ZERO; bases.centres.len()];
         for c in &self.contacts {
             match c.role {
                 Role::Zone(z) => reading.held.push(z),
-                Role::Move => {
-                    let tilt = (c.pos - c.start) / STICK_RADIUS;
+                Role::Stick(s) => {
+                    let tilt = (c.pos - c.start) / bases.radius.max(1.0);
                     let tilt = if tilt.length() > 1.0 {
                         tilt.normalized()
                     } else {
                         tilt
                     };
-                    reading.stick = Some((c.start, Vec2::new(tilt.x, -tilt.y)));
+                    if let Some(slot) = reading.sticks.get_mut(s) {
+                        *slot = Vec2::new(tilt.x, -tilt.y);
+                    }
                 }
                 Role::Look => {}
             }

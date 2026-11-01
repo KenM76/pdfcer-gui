@@ -57,6 +57,18 @@ pub fn level_tooltip() -> &'static str {
     "Keep moving level, wherever you look, so you never drift up or down. Turning it on levels the view."
 }
 
+/// Stair climbing.
+#[must_use]
+pub fn stairs() -> &'static str {
+    "Stairs"
+}
+
+/// Its tip.
+#[must_use]
+pub fn stairs_tooltip() -> &'static str {
+    "Climb over anything lower than a third of your eye height. Off, everything you meet stops you."
+}
+
 /// Show the gimbal.
 #[must_use]
 pub fn gimbal() -> &'static str {
@@ -120,13 +132,13 @@ pub fn home() -> &'static str {
 /// How to walk with keys and a mouse.
 #[must_use]
 pub fn walk_hint() -> &'static str {
-    "W A S D or the arrows move and turn, E and Q rise and sink, Shift runs; drag to look; the wheel steps; double-click to go there."
+    "W A S D or the arrows move and turn, E and Q rise and sink, Shift runs; drag to look; the wheel steps, Ctrl with the wheel zooms; double-click to go there."
 }
 
 /// How to walk with fingers.
 #[must_use]
 pub fn walk_hint_touch() -> &'static str {
-    "Left thumb moves, right thumb looks; the arrows rise and sink; double-tap to go there."
+    "As a drone's remote: the left stick rises, sinks and turns, the right flies and strafes, the middle turns the camera; pinch to zoom; double-tap to go there."
 }
 
 /// How the orbit keys work, beside the existing pointer hint.

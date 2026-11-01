@@ -466,6 +466,7 @@ pub mod markup_flatten;
 pub mod media_clip;
 /// A 3D model opens from the page and turns about the chosen up.
 pub mod model_axes;
+pub mod model_drone;
 pub mod model_page_still;
 pub mod model_walk;
 pub mod new_radio_mark;

@@ -22,6 +22,7 @@ use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
 mod axes;
+mod drone;
 mod fit;
 mod gimbal;
 mod immersive;

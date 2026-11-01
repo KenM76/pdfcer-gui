@@ -1026,3 +1026,18 @@ pub(super) const GIMBAL: &str = include_str!("assets/gimbal.svg");
 ///
 /// Leave full screen.
 pub(super) const EXIT_FULLSCREEN: &str = include_str!("assets/exit-fullscreen.svg");
+
+/// `stairs.svg` — the art for [`super::Icon::Stairs`].
+///
+/// Walking climbs obstacles under a third of the eye height.
+pub(super) const STAIRS: &str = include_str!("assets/stairs.svg");
+
+/// `centre-yaw.svg` — the art for [`super::Icon::CentreYaw`].
+///
+/// Turn the walking camera back to straight ahead.
+pub(super) const CENTRE_YAW: &str = include_str!("assets/centre-yaw.svg");
+
+/// `centre-pitch.svg` — the art for [`super::Icon::CentrePitch`].
+///
+/// Tilt the walking camera back to level.
+pub(super) const CENTRE_PITCH: &str = include_str!("assets/centre-pitch.svg");

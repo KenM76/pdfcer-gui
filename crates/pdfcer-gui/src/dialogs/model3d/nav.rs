@@ -10,6 +10,7 @@ use egui::{Pos2, Rect, Response, Ui};
 use pdfcer_3d::{AssembledModel, Camera, Hit, PickIndex, Ray, RenderError};
 use pdfcer_gui_base::icons::{self, Icon};
 
+use super::drone::Drone;
 use super::gimbal::Gimbal;
 use super::orbit::radius;
 use super::parts::Visibility;
@@ -22,6 +23,13 @@ use crate::text::panels::modelnav as t;
 pub const REGION_WALK: &str = "model3d.walk"; // ui-text-exempt: trace region name, never displayed
 /// Ghost mode.
 pub const REGION_GHOST: &str = "model3d.ghost"; // ui-text-exempt: trace region name, never displayed
+/// Stair climbing, where it is a switch in the row rather than under the
+/// camera stick.
+pub const REGION_STAIRS: &str = "model3d.stairs"; // ui-text-exempt: trace region name, never displayed
+/// The drone sticks' buttons, `n` in [`super::drone::BUTTONS`] order.
+pub const REGION_DRONE_BUTTON: &str = "model3d.drone.button."; // ui-text-exempt: trace region name, never displayed
+/// The drone sticks, `n` in [`super::drone::Drone::centres`] order.
+pub const REGION_DRONE_STICK: &str = "model3d.drone.stick."; // ui-text-exempt: trace region name, never displayed
 /// Level walking.
 pub const REGION_LEVEL: &str = "model3d.level"; // ui-text-exempt: trace region name, never displayed
 /// The gimbal switch.
@@ -44,6 +52,8 @@ pub(super) struct Prefs {
     pub level: bool,
     pub gimbal: bool,
     pub speed: f64,
+    /// Climb obstacles under a third of the eye height.
+    pub stairs: bool,
 }
 
 impl Default for Prefs {
@@ -53,6 +63,7 @@ impl Default for Prefs {
             level: true,
             gimbal: true,
             speed: 1.0,
+            stairs: false,
         }
     }
 }
@@ -63,6 +74,7 @@ impl Prefs {
             solid: !self.ghost,
             level: self.level,
             speed: self.speed,
+            stairs: self.stairs,
         }
     }
 }
@@ -113,10 +125,8 @@ pub(super) struct Nav {
     pub moving: bool,
     /// Areas over the picture whose own buttons take a finger.
     pub hud: Vec<Rect>,
-    /// The move stick's centre and tilt, to draw.
-    pub stick: Option<(Pos2, egui::Vec2)>,
-    /// The rise and sink pads, to draw, when a touch screen is in use.
-    pub pads: Option<[Rect; 2]>,
+    /// The drone sticks and their tilts, to draw, while they are offered.
+    pub drone: Option<(Drone, [egui::Vec2; 3])>,
     /// This walk's frames and its slowest collision, milliseconds.
     pub walked: (u32, f64),
     /// The slowest collision of the last walk, milliseconds, said when slow.
@@ -249,6 +259,19 @@ impl ModelView {
             }
             self.switched(ui.ctx());
         }
+        if self.nav.drone.is_none() {
+            let stairs = switch(
+                ui,
+                Icon::Stairs,
+                t::stairs(),
+                t::stairs_tooltip(),
+                prefs.stairs,
+            );
+            crate::diag::ui_rect_visible(REGION_STAIRS, stairs.rect, ui.clip_rect());
+            if stairs.clicked() {
+                self.toggle_stairs(ui.ctx());
+            }
+        }
         if !hud {
             let speed = ui
                 .add(
@@ -264,6 +287,12 @@ impl ModelView {
         }
     }
 
+    /// Switch stair climbing.
+    pub(super) fn toggle_stairs(&mut self, ctx: &egui::Context) {
+        self.nav.prefs.stairs = !self.nav.prefs.stairs;
+        self.switched(ctx);
+    }
+
     /// Keep the switches and trace them.
     pub(super) fn switched(&mut self, ctx: &egui::Context) {
         self.nav.store(ctx);
@@ -271,8 +300,8 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-nav-prefs ghost={} level={} gimbal={} speed={:.2}",
-                p.ghost, p.level, p.gimbal, p.speed
+                "model-nav-prefs ghost={} level={} gimbal={} speed={:.2} stairs={}",
+                p.ghost, p.level, p.gimbal, p.speed, p.stairs
             )
         });
     }
@@ -298,8 +327,7 @@ impl ModelView {
             self.orbit.look_along(walk.direction());
             self.orbit.pitch = self.orbit.pitch.clamp(-PITCH_LIMIT, PITCH_LIMIT);
         }
-        self.nav.stick = None;
-        self.nav.pads = None;
+        self.nav.drone = None;
         // ui-text-exempt: diagnostic trace, never displayed
         crate::diag::trace(|| format!("model-walk on={on}"));
     }
@@ -308,8 +336,7 @@ impl ModelView {
     /// the orbit.
     pub(super) fn orbiting(&mut self) {
         if self.nav.walk.take().is_some() {
-            self.nav.stick = None;
-            self.nav.pads = None;
+            self.nav.drone = None;
             // ui-text-exempt: diagnostic trace, never displayed
             crate::diag::trace(|| "model-walk on=false".to_owned());
         }
@@ -384,8 +411,8 @@ impl ModelView {
         Gimbal::layout(rect, &camera)
     }
 
-    /// The gimbal, the move stick and the rise and sink pads over the
-    /// picture `rect`, and the gimbal's tips for a driven check.
+    /// The gimbal and the drone sticks over the picture `rect`, and their
+    /// hot areas for a driven check.
     pub(super) fn paint_overlay(&self, ui: &Ui, rect: Rect) {
         let painter = ui.painter().with_clip_rect(rect);
         let visuals = ui.visuals();
@@ -400,17 +427,16 @@ impl ModelView {
                 );
             }
         }
-        if let Some((centre, tilt)) = self.nav.stick {
-            let ring = visuals.widgets.inactive.fg_stroke;
-            painter.circle_stroke(centre, super::stick::STICK_RADIUS, ring);
-            let knob = centre + egui::vec2(tilt.x, -tilt.y) * super::stick::STICK_RADIUS;
-            let (accent, _) = egui_shell::theme::Theme::accent_pair(ui.ctx());
-            painter.circle_filled(knob, 18.0, accent.gamma_multiply(0.8));
-        }
-        if let Some(pads) = self.nav.pads {
-            for (pad, icon) in pads.into_iter().zip([Icon::ChevronUp, Icon::ChevronDown]) {
-                painter.rect_filled(pad, 8.0, visuals.window_fill.gamma_multiply(0.6));
-                icons::image(ui, icon).paint_at(ui, pad.shrink(10.0));
+        if let Some((drone, tilts)) = &self.nav.drone {
+            drone.paint(ui, &painter, *tilts, self.nav.prefs.stairs);
+            for (i, button) in drone.buttons.into_iter().enumerate() {
+                // ui-text-exempt: trace region name, never displayed
+                crate::diag::ui_rect_visible(&format!("{REGION_DRONE_BUTTON}{i}"), button, rect);
+            }
+            for (i, centre) in drone.centres.into_iter().enumerate() {
+                let base = Rect::from_center_size(centre, egui::Vec2::splat(drone.radius * 2.0));
+                // ui-text-exempt: trace region name, never displayed
+                crate::diag::ui_rect_visible(&format!("{REGION_DRONE_STICK}{i}"), base, rect);
             }
         }
     }

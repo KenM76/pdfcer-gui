@@ -1,10 +1,19 @@
-//! Walking's input: the touch sticks and pads, the keys (W A S D, the
-//! arrows, E and Q, Shift), a drag to look, the wheel to step, the gimbal's
-//! taps, and a double tap that goes to the surface tapped.
+//! Walking's input: the drone sticks and their buttons, the keys (W A S D,
+//! the arrows, E and Q, Shift), a drag to look, a pinch or Ctrl with the
+//! wheel to zoom, the wheel to step, the gimbal's taps, and a double tap
+//! that goes to the surface tapped.
+//!
+//! The drone sticks are offered on a touch screen and whenever the viewer
+//! fills the screen. With them, a drag turns the camera apart from the
+//! heading, as the camera stick does; without them (a mouse in a window) a
+//! drag turns the body, as a desktop game's mouse-look does, so W always
+//! goes where the view faces.
 
 use egui::{Key, Pos2, Rect, Response, Ui, Vec2};
 
 use super::ModelView;
+use super::drone::{self, CAMERA, Drone, LEFT, RIGHT, shaped};
+use super::stick::Bases;
 use super::walk::Intent;
 
 /// Radians the look turns per point dragged.
@@ -15,56 +24,83 @@ const KEY_TURN: f64 = 1.8;
 const WHEEL_STEP: f64 = 0.5;
 /// A double tap's most time between taps, seconds, and distance, points.
 const DOUBLE_TAP: (f64, f32) = (0.4, 32.0);
-/// A rise or sink pad's side, in points.
-const PAD: f32 = 56.0;
+/// Radians a fully tilted left stick turns the body per second.
+const STICK_TURN: f64 = 1.6;
+/// Radians a fully tilted camera stick turns the camera per second: left
+/// and right, up and down.
+const CAMERA_TURN: (f64, f64) = (1.6, 1.0);
 
 impl ModelView {
     /// Move the walker from this frame's input on the picture.
     pub(super) fn walk_input(&mut self, ui: &Ui, response: &Response) {
         let rect = response.rect;
         let gimbal = self.gimbal(rect);
-        let pads = self.nav.sticks.touch().then(|| pads(rect));
-        let mut zones: Vec<Rect> = pads.map(Vec::from).unwrap_or_default();
+        let offered = self.nav.sticks.touch() || self.filling_screen(ui.ctx());
+        let drone = offered.then(|| Drone::layout(rect));
+        let mut zones: Vec<Rect> = drone.map(|d| d.buttons.to_vec()).unwrap_or_default();
         let gimbal_from = zones.len();
         if let Some(g) = &gimbal {
             zones.extend(g.zones());
         }
+        let centres = drone.map(|d| d.centres);
+        let bases = Bases {
+            centres: centres.as_ref().map_or(&[], |c| c.as_slice()),
+            radius: drone.map_or(0.0, |d| d.radius),
+        };
         let hud = std::mem::take(&mut self.nav.hud);
-        let reading = self.nav.sticks.read(ui, rect, &zones, &hud);
+        let reading = self.nav.sticks.read(ui, rect, bases, &zones, &hud);
         self.nav.hud = hud;
-        self.nav.pads = pads;
-        self.nav.stick = reading.stick;
+        let tilts: [Vec2; 3] =
+            std::array::from_fn(|i| reading.sticks.get(i).copied().unwrap_or_default());
+        self.nav.drone = drone.map(|d| (d, tilts));
 
-        let mut intent = Intent::default();
-        if let Some((_, tilt)) = reading.stick {
-            (intent.forward, intent.right) = (f64::from(tilt.y), f64::from(tilt.x));
-        }
-        for &z in &reading.held {
-            match z {
-                0 if pads.is_some() => intent.rise += 1.0,
-                1 if pads.is_some() => intent.rise -= 1.0,
-                _ => {}
-            }
-        }
+        // Mode 2: left is throttle and yaw, right is pitch and roll.
+        let mut intent = Intent {
+            forward: shaped(tilts[RIGHT].y),
+            right: shaped(tilts[RIGHT].x),
+            rise: shaped(tilts[LEFT].y),
+            run: false,
+        };
         let dt = f64::from(ui.input(|i| i.stable_dt.min(0.1)));
         let (keyed, turn, wheel) = self.walk_keys(ui, response, &mut intent);
+        let pinch = if self.nav.sticks.touch() {
+            reading.pinch
+        } else {
+            ui.input(egui::InputState::zoom_delta)
+        };
         let before = self.nav.walk;
         if let Some(walk) = &mut self.nav.walk {
-            walk.turn(
-                -f64::from(reading.look.x) * LOOK_RATE - turn * KEY_TURN * dt,
+            let (drag_yaw, drag_pitch) = (
+                -f64::from(reading.look.x) * LOOK_RATE,
                 f64::from(reading.look.y) * LOOK_RATE,
             );
+            if drone.is_some() {
+                walk.look(drag_yaw, drag_pitch);
+            } else {
+                walk.turn(drag_yaw, drag_pitch);
+            }
+            walk.turn(
+                -(shaped(tilts[LEFT].x) * STICK_TURN + turn * KEY_TURN) * dt,
+                0.0,
+            );
+            walk.look(
+                -shaped(tilts[CAMERA].x) * CAMERA_TURN.0 * dt,
+                -shaped(tilts[CAMERA].y) * CAMERA_TURN.1 * dt,
+            );
+            if pinch != 1.0 {
+                walk.zoom_by(f64::from(pinch));
+            }
         }
-        if let Some(g) = &gimbal {
-            for &z in &reading.tapped_zones {
-                if z >= gimbal_from {
-                    self.gimbal_tap(g, z - gimbal_from);
-                }
+        for &z in &reading.tapped_zones {
+            match (z < gimbal_from, &gimbal) {
+                (true, _) => self.drone_button(ui.ctx(), z),
+                (false, Some(g)) => self.gimbal_tap(g, z - gimbal_from),
+                (false, None) => {}
             }
         }
         self.walk_taps(ui, rect, &reading.taps);
         self.walk_step(intent, dt, wheel);
-        let busy = self.nav.sticks.active() || keyed || wheel != 0.0;
+        let busy = self.nav.sticks.active() || keyed || wheel != 0.0 || pinch != 1.0;
         self.nav.moving = self.nav.walk != before && busy;
         self.walk_trace(busy);
         if busy || self.nav.walk.is_some_and(|w| w.falling()) {
@@ -128,6 +164,22 @@ impl ModelView {
         }
     }
 
+    /// A drone button tapped: centre the camera left and right, or up and
+    /// down, or switch stair climbing.
+    fn drone_button(&mut self, ctx: &egui::Context, button: usize) {
+        match (button, &mut self.nav.walk) {
+            (drone::CENTRE_YAW, Some(walk)) => walk.centre_look(),
+            (drone::CENTRE_PITCH, Some(walk)) => walk.level(),
+            (drone::STAIRS, _) => self.toggle_stairs(ctx),
+            _ => {}
+        }
+        let (look_yaw, pitch) = self.nav.walk.map_or((0.0, 0.0), |w| (w.look_yaw, w.pitch));
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("model-drone-button n={button} look-yaw={look_yaw:.3} pitch={pitch:.3}")
+        });
+    }
+
     /// A double tap on the picture goes to the surface under it.
     fn walk_taps(&mut self, ui: &Ui, rect: Rect, taps: &[Pos2]) {
         let now = ui.input(|i| i.time);
@@ -173,17 +225,9 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-walk-moved eye={:.4},{:.4},{:.4} yaw={:.3} pitch={:.3} frames={frames} slowest-ms={slowest:.2}",
-                e[0], e[1], e[2], walk.yaw, walk.pitch
+                "model-walk-moved eye={:.4},{:.4},{:.4} yaw={:.3} look-yaw={:.3} pitch={:.3} zoom={:.3} frames={frames} slowest-ms={slowest:.2}",
+                e[0], e[1], e[2], walk.yaw, walk.look_yaw, walk.pitch, walk.zoom
             )
         });
     }
-}
-
-/// The rise and sink pads, stacked at the picture's bottom right.
-fn pads(rect: Rect) -> [Rect; 2] {
-    let size = Vec2::splat(PAD);
-    let sink = Rect::from_min_size(rect.right_bottom() - size - Vec2::splat(16.0), size);
-    let rise = sink.translate(Vec2::new(0.0, -(PAD + 12.0)));
-    [rise, sink]
 }

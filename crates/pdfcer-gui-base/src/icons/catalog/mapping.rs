@@ -248,6 +248,9 @@ impl Icon {
         Icon::LevelView,
         Icon::Gimbal,
         Icon::ExitFullscreen,
+        Icon::Stairs,
+        Icon::CentreYaw,
+        Icon::CentrePitch,
     ];
 
     /// The asset's SVG source.
@@ -458,6 +461,9 @@ impl Icon {
             Icon::LevelView => assets::LEVEL_VIEW,
             Icon::ExitFullscreen => assets::EXIT_FULLSCREEN,
             Icon::Gimbal => assets::GIMBAL,
+            Icon::Stairs => assets::STAIRS,
+            Icon::CentreYaw => assets::CENTRE_YAW,
+            Icon::CentrePitch => assets::CENTRE_PITCH,
         }
     }
 
@@ -687,6 +693,9 @@ impl Icon {
             Icon::LevelView => "level-view",
             Icon::ExitFullscreen => "exit-fullscreen",
             Icon::Gimbal => "gimbal",
+            Icon::Stairs => "stairs",
+            Icon::CentreYaw => "centre-yaw",
+            Icon::CentrePitch => "centre-pitch",
         }
     }
 
