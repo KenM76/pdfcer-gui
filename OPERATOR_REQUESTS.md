@@ -667,7 +667,7 @@ Same message as O366.
 
 **Scope.** Widening the viewer must not stretch the edges of the picture.
 
-**Status.** Built. Walking held its 60-degree vertical field at every width, so a wide picture saw far sideways and stretched its edges. It now keeps a 16:9 screen's sideways field and narrows the vertical one in anything wider. Orbiting uses a 30-degree field, narrow enough not to show it, and is unchanged. Unit test `a_wide_window_keeps_a_16_9_sideways_field`; driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`, whose picture is 516x443, so the drive proves the field at that size and the unit test the wide case.
+**Status.** Built. Walking held its 60-degree vertical field at every width, so a wide picture saw far sideways and stretched its edges. It now keeps a 16:9 screen's sideways field and narrows the vertical one in anything wider. Orbiting uses a 30-degree field, narrow enough not to show it, and is unchanged. Unit test `a_wide_window_keeps_a_16_9_sideways_field`; driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`, whose picture is 516x443, so the drive proves the field at that size and the unit test the wide case. **His verdict on `v0.5.0-dev.20261102.1`:** *"It's not perfect, but better. We'll leave it for now and carry on with the rest of the 3D stuff."* Left open at his word; not closed.
 
 ## O364 — **BUILT** — the Perspective switch does nothing while walking
 
