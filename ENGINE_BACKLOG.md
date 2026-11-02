@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **48 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `wanted` — a real gap — **50 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -121,6 +121,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Move or delete several form-field boxes in one command** — `move_widgets_each`, `delete_widgets` | **wanted, at the pin since v0.82.0; requests G189 and G192.** `app::actions::movemixed` calls `move_widgets_each` instead of `move_widget` per widget, and `app::actions::forms::delete::widgets` calls `delete_widgets` instead of its highest-index-first loop folded with `coalesce_last`. Both live in `pdfcer_core::edit::batch`. Reports: `WidgetMove`, `FieldDeletion`. |
 | **Read a form field's free angle and opacity** — `forms::Widget::free_angle`, `forms::Widget::opacity` | **wanted, at the pin since v0.82.0; request G177.** `canvas::widgetturn` and Properties' Stand upright and Opacity rows read them instead of `pdfcer_gui_base::widgetread`, which parses the appearance `/Matrix` and `/CA`. The shell's `forms::Widget` literals already set both to `None`. |
 | **Dynamic XFA, form fill saved to the datasets packet** — `EditSession::fill_xfa_field`, the modules `pdfcer_core::edit::xfa_fill` and `pdfcer_core::xfa::merge::fill` (`XfaFillOutcome`, `XfaFillError`), `CommandKind::FillXfaField`, `EditError::XfaFill` | **wanted.** The surface is the Form preview made editable: a click on a drawn field opens its value, Enter calls `fill_xfa_field` with the field's data path, the preview redraws, and `XfaFillOutcome::shared_with` and `XfaFillOutcome::created` are disclosed off-canvas (a value shared by several copies, a data node created). One undo entry per fill. This is what makes O336's lease fillable. |
+| **Splitting a tiled XFA subform** — `pdfcer_core::xfa::layout::options::TiledSplit` (`TiledSplit::Split`, `TiledSplit::TbOnly`), `LayoutOptions::tiled_split`, `LayoutOptions::with_tiled_split` | **wanted, not built.** Form preview keeps the engine's default, `TiledSplit::Split`; offering it as a *Reading choice* belongs with `OddRotate` and the other layout settings above. |
 
 ### Redaction & security
 
@@ -159,11 +160,12 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
+| **Cast shadows and ambient occlusion in the 3D picture** — the modules `pdfcer_3d::shadow` (`LightSense`, `DEFAULT_SHADOW_MAP_SIZE`, `MAX_SHADOW_MAP_SIZE`), `pdfcer_3d::gpu_shadow` (`FrameShadow`, `GLSL_ES_300_SHADOW_VERTEX`, `GLSL_ES_300_SHADOW_FRAGMENT`) and `pdfcer_3d::gpu_ao` (`FrameAmbientOcclusion`, `GLSL_ES_300_SCREEN_VERTEX`, `GLSL_ES_300_AO_FRAGMENT`, `GLSL_ES_300_AO_COMPOSITE_FRAGMENT`), `RenderOptions::shadows`, `RenderOptions::light_sense`, `RenderOptions::shadow_map_size`, `RenderOptions::ambient_occlusion` | **wanted; our requests G257 and G258, at v0.117.0 (O366).** The viewer's options menu takes Shadows, Ambient occlusion and the light sense, on the CPU path through `RenderOptions` and on the GPU path through a shadow-map pass and an occlusion pass in `native-mesh`. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `blocked` — waiting on something named — **2 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -181,7 +183,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -192,7 +194,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `declined` — deliberately no surface — **20 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -238,7 +240,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **407 of 477** <!-- counted by tools/walk-engine-backlog.py, 2026-11-01; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **407 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

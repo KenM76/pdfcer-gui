@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 56f0a7fb664d8576e71fbbdc45d9141516cc7a62
+# baseline: e12dd3b38e17ad79a5921b39f722cfcef5caf11f
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11140
+# items: 11176
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
@@ -145,9 +145,16 @@ exempt pdfcer-render variant pdfcer_render::mesh::Shade::Spot -- a mesh vertex c
 pdfcer-3d const pdfcer_3d::container::MAX_FILE_STRUCTURES
 pdfcer-3d const pdfcer_3d::container::MAX_INFLATED_BYTES
 pdfcer-3d const pdfcer_3d::container::PRC_READER_VERSION
+pdfcer-3d const pdfcer_3d::gpu_ao::GLSL_ES_300_AO_COMPOSITE_FRAGMENT
+pdfcer-3d const pdfcer_3d::gpu_ao::GLSL_ES_300_AO_FRAGMENT
+pdfcer-3d const pdfcer_3d::gpu_ao::GLSL_ES_300_SCREEN_VERTEX
+pdfcer-3d const pdfcer_3d::gpu_shadow::GLSL_ES_300_SHADOW_FRAGMENT
+pdfcer-3d const pdfcer_3d::gpu_shadow::GLSL_ES_300_SHADOW_VERTEX
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_DIRECTION
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_UP
 pdfcer-3d const pdfcer_3d::render::MAX_RENDER_PIXELS
+pdfcer-3d const pdfcer_3d::shadow::DEFAULT_SHADOW_MAP_SIZE
+pdfcer-3d const pdfcer_3d::shadow::MAX_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::texture::MAX_TEXTURE_PIXELS
 pdfcer-3d const pdfcer_3d::tree::geometry::IDENTITY
 pdfcer-3d const pdfcer_3d::write::MAX_DEPTH
@@ -163,6 +170,7 @@ pdfcer-3d enum pdfcer_3d::named_view::NamedView
 pdfcer-3d enum pdfcer_3d::named_view::UpAxis
 pdfcer-3d enum pdfcer_3d::render::Projection
 pdfcer-3d enum pdfcer_3d::render::RenderError
+pdfcer-3d enum pdfcer_3d::shadow::LightSense
 pdfcer-3d enum pdfcer_3d::tess::Tessellation
 pdfcer-3d enum pdfcer_3d::texture::TextureFunction
 pdfcer-3d enum pdfcer_3d::texture::TextureOrigin
@@ -196,6 +204,19 @@ pdfcer-3d field pdfcer_3d::gltf::GltfImport::notes
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::scene
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::colours
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::up_axis
+pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::depth_range
+pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::orthographic
+pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::pixels
+pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::radius
+pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::size
+pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::unproject
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::bias
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::dim
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::light
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::matrix
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::normal_offset
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::size
+pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::to_light
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::entity_overrides
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::mesh_fit
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::picture_files
@@ -245,11 +266,15 @@ pdfcer-3d field pdfcer_3d::render::Camera::up
 pdfcer-3d field pdfcer_3d::render::Image::height
 pdfcer-3d field pdfcer_3d::render::Image::rgba
 pdfcer-3d field pdfcer_3d::render::Image::width
+pdfcer-3d field pdfcer_3d::render::RenderOptions::ambient_occlusion
 pdfcer-3d field pdfcer_3d::render::RenderOptions::background
 pdfcer-3d field pdfcer_3d::render::RenderOptions::colour
 pdfcer-3d field pdfcer_3d::render::RenderOptions::height
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_frame
+pdfcer-3d field pdfcer_3d::render::RenderOptions::light_sense
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lighting
+pdfcer-3d field pdfcer_3d::render::RenderOptions::shadow_map_size
+pdfcer-3d field pdfcer_3d::render::RenderOptions::shadows
 pdfcer-3d field pdfcer_3d::render::RenderOptions::threads
 pdfcer-3d field pdfcer_3d::render::RenderOptions::width
 pdfcer-3d field pdfcer_3d::tess::TriangleMesh::faces
@@ -355,6 +380,8 @@ pdfcer-3d method pdfcer_3d::container::PrcFile::placements_with
 pdfcer-3d method pdfcer_3d::container::PrcFile::stores_tree
 pdfcer-3d method pdfcer_3d::container::PrcFile::units
 pdfcer-3d method pdfcer_3d::container::SectionKind::name
+pdfcer-3d method pdfcer_3d::gpu_ao::FrameAmbientOcclusion::new
+pdfcer-3d method pdfcer_3d::gpu_shadow::FrameShadow::new
 pdfcer-3d method pdfcer_3d::named_view::NamedView::as_str
 pdfcer-3d method pdfcer_3d::named_view::NamedView::direction
 pdfcer-3d method pdfcer_3d::named_view::NamedView::label
@@ -389,6 +416,8 @@ pdfcer-3d struct pdfcer_3d::container::PrcHeader
 pdfcer-3d struct pdfcer_3d::container::UniqueId
 pdfcer-3d struct pdfcer_3d::gltf::GltfImport
 pdfcer-3d struct pdfcer_3d::gltf::GltfOptions
+pdfcer-3d struct pdfcer_3d::gpu_ao::FrameAmbientOcclusion
+pdfcer-3d struct pdfcer_3d::gpu_shadow::FrameShadow
 pdfcer-3d struct pdfcer_3d::model::AssembleOptions
 pdfcer-3d struct pdfcer_3d::model::AssembledModel
 pdfcer-3d struct pdfcer_3d::named_view::UnknownName
@@ -456,6 +485,8 @@ pdfcer-3d variant pdfcer_3d::render::Projection::Orthographic
 pdfcer-3d variant pdfcer_3d::render::Projection::Perspective
 pdfcer-3d variant pdfcer_3d::render::RenderError::Camera
 pdfcer-3d variant pdfcer_3d::render::RenderError::Size
+pdfcer-3d variant pdfcer_3d::shadow::LightSense::Emitted
+pdfcer-3d variant pdfcer_3d::shadow::LightSense::TowardsLight
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Compressed
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Markup
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Mesh
@@ -1120,6 +1151,7 @@ pdfcer-core enum pdfcer_core::xfa::layout::adhere::PageAreaKeep
 pdfcer-core enum pdfcer_core::xfa::layout::options::NegativeCoordinates
 pdfcer-core enum pdfcer_core::xfa::layout::options::NestedOverflow
 pdfcer-core enum pdfcer_core::xfa::layout::options::OddRotate
+pdfcer-core enum pdfcer_core::xfa::layout::options::TiledSplit
 pdfcer-core enum pdfcer_core::xfa::merge::BareRef
 pdfcer-core enum pdfcer_core::xfa::merge::DataAttributes
 pdfcer-core enum pdfcer_core::xfa::merge::DataCreation
@@ -4408,6 +4440,7 @@ pdfcer-core field pdfcer_core::xfa::layout::options::LayoutOptions::negative_coo
 pdfcer-core field pdfcer_core::xfa::layout::options::LayoutOptions::nested_overflow
 pdfcer-core field pdfcer_core::xfa::layout::options::LayoutOptions::odd_rotate
 pdfcer-core field pdfcer_core::xfa::layout::options::LayoutOptions::page_area_keep
+pdfcer-core field pdfcer_core::xfa::layout::options::LayoutOptions::tiled_split
 pdfcer-core field pdfcer_core::xfa::merge::BoundValue::data
 pdfcer-core field pdfcer_core::xfa::merge::BoundValue::path
 pdfcer-core field pdfcer_core::xfa::merge::BoundValue::value
@@ -6454,6 +6487,7 @@ pdfcer-core method pdfcer_core::xfa::layout::options::LayoutOptions::with_negati
 pdfcer-core method pdfcer_core::xfa::layout::options::LayoutOptions::with_nested_overflow
 pdfcer-core method pdfcer_core::xfa::layout::options::LayoutOptions::with_odd_rotate
 pdfcer-core method pdfcer_core::xfa::layout::options::LayoutOptions::with_page_area_keep
+pdfcer-core method pdfcer_core::xfa::layout::options::LayoutOptions::with_tiled_split
 pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::new
 pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::with_bare_ref
 pdfcer-core method pdfcer_core::xfa::merge::MergeOptions::with_data_attributes
@@ -9360,6 +9394,8 @@ pdfcer-core variant pdfcer_core::xfa::layout::options::NestedOverflow::EachAsser
 pdfcer-core variant pdfcer_core::xfa::layout::options::NestedOverflow::Innermost
 pdfcer-core variant pdfcer_core::xfa::layout::options::OddRotate::Ignore
 pdfcer-core variant pdfcer_core::xfa::layout::options::OddRotate::Nearest
+pdfcer-core variant pdfcer_core::xfa::layout::options::TiledSplit::Split
+pdfcer-core variant pdfcer_core::xfa::layout::options::TiledSplit::TbOnly
 pdfcer-core variant pdfcer_core::xfa::merge::BareRef::DataRef
 pdfcer-core variant pdfcer_core::xfa::merge::BareRef::Ignore
 pdfcer-core variant pdfcer_core::xfa::merge::DataAttributes::Ignore
