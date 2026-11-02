@@ -11,6 +11,10 @@
 //! redraw with `approximated=1 choices=00010`: the lowered `tenant` border is
 //! drawn plain and disclosed, so a choice the window shows but the draw
 //! ignores is caught.
+//!
+//! `a_dynamic_form_opens_on_its_own_pages` drives the same file with no
+//! command rung: the window must open by itself and draw the same page, since
+//! the stand-in alone reads as a file that did not open.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
@@ -44,7 +48,7 @@ impl Check for FormPreviewDrawsADynamicForm {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        match drive(ctx, &mut report) {
+        match drive(ctx, &mut report, true) {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
             Err(why) => report.from_error(&why),
@@ -52,7 +56,30 @@ impl Check for FormPreviewDrawsADynamicForm {
     }
 }
 
-fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+/// See the module documentation.
+pub struct ADynamicFormOpensOnItsOwnPages;
+
+impl Check for ADynamicFormOpensOnItsOwnPages {
+    fn name(&self) -> &'static str {
+        "a_dynamic_form_opens_on_its_own_pages"
+    }
+
+    fn defect(&self) -> &'static str {
+        "a dynamic XFA form opens at its \"Please wait...\" stand-in alone, so it reads as a file that did not open"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        match drive(ctx, &mut report, false) {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Open the fixture, ringing `view.form_preview` only when `invoke`.
+fn drive(ctx: &CheckContext, report: &mut CheckReport, invoke: bool) -> Result<Option<String>> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -67,27 +94,50 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let doc = ctx.out("form-preview.pdf");
+    let stem = if invoke {
+        "form_preview"
+    } else {
+        "form_preview_on_open"
+    };
+    let doc = ctx.out(&format!("{stem}.pdf"));
     std::fs::copy(repo_fixture(FIXTURE, METHOD)?, &doc)
         .map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("form_preview.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
         (viewport_env, OFFSCREEN),
-        ("PDFCER_DIAG_INVOKE", "view.form_preview"),
     ] {
         spec.env.push((k.to_owned(), v.to_owned()));
+    }
+    if invoke {
+        spec.env.push((
+            "PDFCER_DIAG_INVOKE".to_owned(),
+            "view.form_preview".to_owned(),
+        ));
     }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("form_preview.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     session.settle(90);
+    if let Some(failure) = first_draw(ui_rect, &session, report, invoke)? {
+        return Ok(Some(failure));
+    }
+    plain_borders(ui_rect, &session, &pointer)
+}
 
+/// The open was disclosed, the form drawn with the fixture's figures, and the
+/// window's region declared.
+fn first_draw(
+    ui_rect: &str,
+    session: &Session,
+    report: &mut CheckReport,
+    invoke: bool,
+) -> Result<Option<String>> {
     let trace = session.trace()?;
     if trace.last(DISCLOSED).is_none() {
         return Ok(Some(format!(
@@ -98,8 +148,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     let Some(line) = trace.last(DRAWN) else {
         return Ok(Some(format!(
-            "★★★ `view.form_preview` was rung and no `{DRAWN}` line followed: the form was never \
-             drawn. Trace: {}.",
+            "★★★ no `{DRAWN}` line followed the open (Form preview rung: {invoke}): the form was \
+             never drawn. Trace: {}.",
             session.trace_path().display()
         )));
     };
@@ -123,7 +173,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "★★★ the form was drawn but no `{REGION}` region was declared: the window never showed."
         )));
     }
-    plain_borders(ui_rect, &session, &pointer)
+    Ok(None)
 }
 
 /// Click "3-D borders: Plain lines" and require the redraw to disclose the

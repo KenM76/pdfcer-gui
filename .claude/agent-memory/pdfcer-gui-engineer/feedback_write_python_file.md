@@ -223,3 +223,5 @@ followed by `python file.py` came through intact the same evening. And
 `check-string-gaps` missed the fixtures, because a PDF literal resumes on `/`;
 its right-hand class is now widened to a backtick, a quote, `/`, `<`, `[` and
 digits (nine more live defects found).
+
+**Recurs even when known.** In 2026-11-02 one session lost three Python edits to it, two of them after the lesson had been re-read. Rule: any script with a backslash goes through Write, never a heredoc, with no exceptions for small ones.

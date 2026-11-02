@@ -8,13 +8,23 @@
 //! named, so this crate knows no shader. A [`Mesh`] owns GL objects and must
 //! be [`Mesh::destroy`]ed with the same context.
 //!
+//! Two optional passes surround the main one ([`Passes`]): a square depth
+//! map drawn first with its own program and bound to the main program as a
+//! sampler, and a two-pass effect over the finished frame's colour and depth.
+//!
 //! State left behind: the destination framebuffer bound, no program, no
 //! vertex array, depth test, blending and culling off, scissor on with the
 //! clip box. `egui_glow` re-prepares its own state after a callback.
 
-use std::collections::HashMap;
+mod buffers;
+mod passes;
+mod program;
 
 use glow::HasContext as _;
+
+use buffers::{Buffers, ScreenTextures};
+use passes::{DepthTarget, ScreenPrograms};
+use program::Program;
 
 /// How a picture's coordinates outside 0–1 are drawn.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,8 +53,12 @@ pub struct Picture<'a> {
 /// A uniform's value.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    /// `int` or `bool`.
+    /// `int`, `bool` or a sampler's texture unit.
     Int(i32),
+    /// `float`.
+    Float(f32),
+    /// `ivec2`.
+    IVec2([i32; 2]),
     /// `vec2`.
     Vec2([f32; 2]),
     /// `vec3`.
@@ -91,25 +105,61 @@ pub struct Target {
     pub read_back: bool,
 }
 
-/// The offscreen buffers a frame is drawn into.
-struct Buffers {
-    size: [i32; 2],
-    multisampled: glow::Framebuffer,
-    ms_colour: glow::Renderbuffer,
-    ms_depth: glow::Renderbuffer,
-    resolved: glow::Framebuffer,
-    colour: glow::Renderbuffer,
+/// A depth map drawn before the frame, from the viewpoint its uniforms set,
+/// with the program [`Mesh::set_depth_program`] linked.
+#[derive(Debug, Clone, Copy)]
+pub struct DepthMap<'a> {
+    /// Pixels a side.
+    pub size: i32,
+    /// Set on the depth map's program.
+    pub uniforms: &'a [(&'static str, Value)],
+    /// The main program's sampler the map is bound to.
+    pub sampler: &'static str,
+    /// Draw it this frame. A map is also drawn when it is new, resized, or
+    /// the vertices changed since it was last drawn; otherwise it is reused.
+    pub redraw: bool,
+}
+
+/// A two-pass effect over the finished frame, with the programs
+/// [`Mesh::set_screen_programs`] linked; each draws one triangle covering
+/// the viewport. The first reads the frame's depth and writes a texture the
+/// size of the viewport; the second reads the frame's colour and depth and
+/// that texture, and writes the picture.
+#[derive(Debug, Clone, Copy)]
+pub struct ScreenEffect<'a> {
+    /// Set on both programs.
+    pub uniforms: &'a [(&'static str, Value)],
+    /// Both programs' sampler for the frame's depth, 24 bits, read `NEAREST`.
+    pub depth: &'static str,
+    /// The second program's sampler for the frame's colour.
+    pub colour: &'static str,
+    /// The second program's sampler for the first's output.
+    pub first_output: &'static str,
+}
+
+/// The optional passes around the main one.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Passes<'a> {
+    /// Drawn before the main pass.
+    pub depth_map: Option<DepthMap<'a>>,
+    /// Drawn over the main pass.
+    pub screen: Option<ScreenEffect<'a>>,
 }
 
 /// A compiled program, its geometry and pictures, and its buffers.
 pub struct Mesh {
-    program: glow::Program,
+    main: Program,
     vao: glow::VertexArray,
     vbo: glow::Buffer,
     pictures: Vec<glow::Texture>,
-    locations: HashMap<&'static str, Option<glow::UniformLocation>>,
     buffers: Option<Buffers>,
     samples: i32,
+    depth_program: Option<Program>,
+    depth_target: Option<DepthTarget>,
+    /// The vertices changed since the depth map was drawn.
+    depth_stale: bool,
+    screen_programs: Option<ScreenPrograms>,
+    screen_textures: Option<ScreenTextures>,
 }
 
 /// The most samples a pixel takes; the driver's limit if lower.
@@ -128,10 +178,10 @@ impl Mesh {
         fragment: &str,
         attributes: &[i32],
     ) -> Result<Self, String> {
+        let main = Program::new(gl, vertex, fragment)?;
         // SAFETY: every call is on the caller's current context; objects
-        // created here are owned by the returned `Mesh` or deleted on error.
+        // created here are owned by the returned `Mesh`.
         unsafe {
-            let program = link(gl, vertex, fragment)?;
             let vao = gl.create_vertex_array()?;
             let vbo = gl.create_buffer()?;
             gl.bind_vertex_array(Some(vao));
@@ -147,15 +197,57 @@ impl Mesh {
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
             let samples = gl.get_parameter_i32(glow::MAX_SAMPLES).clamp(0, SAMPLES);
             Ok(Self {
-                program,
+                main,
                 vao,
                 vbo,
                 pictures: Vec::new(),
-                locations: HashMap::new(),
                 buffers: None,
                 samples,
+                depth_program: None,
+                depth_target: None,
+                depth_stale: true,
+                screen_programs: None,
+                screen_textures: None,
             })
         }
+    }
+
+    /// Link the program a [`DepthMap`] is drawn with; it reads the same
+    /// vertex attributes as the main program.
+    ///
+    /// # Errors
+    ///
+    /// The driver's compile or link log.
+    pub fn set_depth_program(
+        &mut self,
+        gl: &glow::Context,
+        vertex: &str,
+        fragment: &str,
+    ) -> Result<(), String> {
+        let program = Program::new(gl, vertex, fragment)?;
+        if let Some(old) = self.depth_program.replace(program) {
+            old.delete(gl);
+        }
+        Ok(())
+    }
+
+    /// Link a [`ScreenEffect`]'s two programs, both with `vertex`, which
+    /// reads no attributes and places three vertices.
+    ///
+    /// # Errors
+    ///
+    /// The driver's compile or link log, or the object it could not create.
+    pub fn set_screen_programs(
+        &mut self,
+        gl: &glow::Context,
+        vertex: &str,
+        fragments: [&str; 2],
+    ) -> Result<(), String> {
+        let programs = ScreenPrograms::new(gl, vertex, fragments)?;
+        if let Some(old) = self.screen_programs.replace(programs) {
+            old.delete(gl);
+        }
+        Ok(())
     }
 
     /// Replace the vertices every [`Draw`] indexes.
@@ -167,6 +259,7 @@ impl Mesh {
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, &bytes, glow::STATIC_DRAW);
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
         }
+        self.depth_stale = true;
     }
 
     /// Replace the pictures [`Draw::picture`] indexes.
@@ -223,16 +316,19 @@ impl Mesh {
         Ok(())
     }
 
-    /// Draw `draws` with `uniforms` set once, into `target`.
+    /// Draw `draws` with `uniforms` set once, and the `passes` asked for,
+    /// into `target`.
     ///
     /// # Errors
     ///
-    /// An offscreen buffer the driver could not create or complete.
+    /// An offscreen buffer the driver could not create or complete, or a
+    /// pass asked for whose program is not linked.
     pub fn draw(
         &mut self,
         gl: &glow::Context,
         uniforms: &[(&'static str, Value)],
         draws: &[Draw],
+        passes: &Passes<'_>,
         target: &Target,
     ) -> Result<Option<Vec<u8>>, String> {
         let [_, _, w, h] = target.viewport;
@@ -240,16 +336,94 @@ impl Mesh {
             return Ok(None);
         }
         self.ensure_buffers(gl, [w, h])?;
+        if let Some(map) = &passes.depth_map {
+            self.depth_pass(gl, map, draws)?;
+        }
         let Some(b) = &self.buffers else {
             return Ok(None);
         };
-        let (multisampled, resolved) = (b.multisampled, b.resolved);
-        self.begin(gl, multisampled, [w, h], target.background);
+        self.begin(gl, b.multisampled, [w, h], target.background);
         for (name, value) in uniforms {
-            self.set(gl, name, value);
+            self.main.set(gl, name, value);
+        }
+        if let (Some(map), Some(t)) = (&passes.depth_map, &self.depth_target) {
+            t.bind(gl, &mut self.main, map.sampler);
         }
         self.draw_runs(gl, draws);
-        Ok(present(gl, [multisampled, resolved], [w, h], target))
+        self.finish(gl, passes.screen.as_ref(), [w, h])?;
+        let Some(b) = &self.buffers else {
+            return Ok(None);
+        };
+        Ok(buffers::present(gl, b, target))
+    }
+
+    /// Draw the depth map when it is asked for or out of date.
+    fn depth_pass(
+        &mut self,
+        gl: &glow::Context,
+        map: &DepthMap<'_>,
+        draws: &[Draw],
+    ) -> Result<(), String> {
+        let Some(program) = self.depth_program.as_mut() else {
+            return Err("depth map asked for with no depth program".to_owned());
+        };
+        let size = map.size.max(1);
+        let fresh = self.depth_target.as_ref().is_none_or(|t| t.size != size);
+        if fresh {
+            if let Some(old) = self.depth_target.take() {
+                old.delete(gl);
+            }
+            self.depth_target = Some(DepthTarget::new(gl, size)?);
+        }
+        if !(fresh || map.redraw || self.depth_stale) {
+            return Ok(());
+        }
+        let Some(target) = &self.depth_target else {
+            return Ok(());
+        };
+        // SAFETY: the vertex array is this mesh's own.
+        unsafe { gl.bind_vertex_array(Some(self.vao)) };
+        program.use_with(gl, map.uniforms);
+        target.draw(gl, draws);
+        self.depth_stale = false;
+        Ok(())
+    }
+
+    /// Resolve the frame into the plain buffer, through the screen effect
+    /// when one is asked for.
+    fn finish(
+        &mut self,
+        gl: &glow::Context,
+        screen: Option<&ScreenEffect<'_>>,
+        size: [i32; 2],
+    ) -> Result<(), String> {
+        // SAFETY: unbinds the depth map's unit.
+        unsafe {
+            gl.active_texture(glow::TEXTURE1);
+            gl.bind_texture(glow::TEXTURE_2D, None);
+            gl.active_texture(glow::TEXTURE0);
+        }
+        let Some(effect) = screen else {
+            if let Some(b) = &self.buffers {
+                b.resolve(gl);
+            }
+            return Ok(());
+        };
+        if self.screen_textures.as_ref().is_none_or(|t| t.size != size) {
+            if let Some(old) = self.screen_textures.take() {
+                old.delete(gl);
+            }
+            self.screen_textures = Some(ScreenTextures::new(gl, size)?);
+        }
+        let (Some(programs), Some(b), Some(t)) = (
+            self.screen_programs.as_mut(),
+            &self.buffers,
+            &self.screen_textures,
+        ) else {
+            return Err("screen effect asked for with no screen programs".to_owned());
+        };
+        programs.run(gl, effect, b, t);
+        Ok(())
     }
 
     /// Bind the multisampled buffer, clear it to `background`, and set the
@@ -277,7 +451,7 @@ impl Mesh {
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
             gl.enable(glow::DEPTH_TEST);
             gl.depth_func(glow::LESS);
-            gl.use_program(Some(self.program));
+            gl.use_program(Some(self.main.id));
             gl.bind_vertex_array(Some(self.vao));
         }
     }
@@ -302,7 +476,7 @@ impl Mesh {
                 }
             }
             for (name, value) in &d.uniforms {
-                self.set(gl, name, value);
+                self.main.set(gl, name, value);
             }
             let texture = d.picture.and_then(|i| self.pictures.get(i).copied());
             // SAFETY: the texture is this mesh's own or none; the range is
@@ -318,87 +492,15 @@ impl Mesh {
         unsafe { gl.bind_texture(glow::TEXTURE_2D, None) };
     }
 
-    /// Set the uniform `name`, when the linked program has it.
-    fn set(&mut self, gl: &glow::Context, name: &'static str, value: &Value) {
-        let program = self.program;
-        let location = self
-            .locations
-            .entry(name)
-            // SAFETY: a query on this mesh's own linked program.
-            .or_insert_with(|| unsafe { gl.get_uniform_location(program, name) })
-            .as_ref();
-        if location.is_none() {
-            return;
-        }
-        // SAFETY: the location belongs to the program in use.
-        unsafe {
-            match value {
-                Value::Int(v) => gl.uniform_1_i32(location, *v),
-                Value::Vec2(v) => gl.uniform_2_f32_slice(location, v),
-                Value::Vec3(v) => gl.uniform_3_f32_slice(location, v),
-                Value::Vec4(v) => gl.uniform_4_f32_slice(location, v),
-                Value::Mat4(v) => gl.uniform_matrix_4_f32_slice(location, false, v),
-                Value::Vec3s(v) => gl.uniform_3_f32_slice(location, v),
-                Value::Vec4s(v) => gl.uniform_4_f32_slice(location, v),
-            }
-        }
-    }
-
     /// Make the offscreen buffers `size` pixels, keeping them when they are.
     fn ensure_buffers(&mut self, gl: &glow::Context, size: [i32; 2]) -> Result<(), String> {
         if self.buffers.as_ref().is_some_and(|b| b.size == size) {
             return Ok(());
         }
         if let Some(old) = self.buffers.take() {
-            delete_buffers(gl, &old);
+            old.delete(gl);
         }
-        let [w, h] = size;
-        // SAFETY: objects created here are kept in `self.buffers` or
-        // deleted before returning an error.
-        unsafe {
-            let ms_colour = gl.create_renderbuffer()?;
-            let ms_depth = gl.create_renderbuffer()?;
-            let colour = gl.create_renderbuffer()?;
-            let multisampled = gl.create_framebuffer()?;
-            let resolved = gl.create_framebuffer()?;
-            let buffers = Buffers {
-                size,
-                multisampled,
-                ms_colour,
-                ms_depth,
-                resolved,
-                colour,
-            };
-            for (rb, samples, format) in [
-                (ms_colour, self.samples, glow::RGBA8),
-                (ms_depth, self.samples, glow::DEPTH_COMPONENT24),
-                (colour, 0, glow::RGBA8),
-            ] {
-                gl.bind_renderbuffer(glow::RENDERBUFFER, Some(rb));
-                gl.renderbuffer_storage_multisample(glow::RENDERBUFFER, samples, format, w, h);
-            }
-            gl.bind_renderbuffer(glow::RENDERBUFFER, None);
-            let attach = [
-                (multisampled, glow::COLOR_ATTACHMENT0, ms_colour),
-                (multisampled, glow::DEPTH_ATTACHMENT, ms_depth),
-                (resolved, glow::COLOR_ATTACHMENT0, colour),
-            ];
-            for (fb, point, rb) in attach {
-                gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fb));
-                gl.framebuffer_renderbuffer(glow::FRAMEBUFFER, point, glow::RENDERBUFFER, Some(rb));
-            }
-            for fb in [multisampled, resolved] {
-                gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fb));
-                let status = gl.check_framebuffer_status(glow::FRAMEBUFFER);
-                if status != glow::FRAMEBUFFER_COMPLETE {
-                    gl.bind_framebuffer(glow::FRAMEBUFFER, None);
-                    delete_buffers(gl, &buffers);
-                    return Err(format!("offscreen buffer {w}x{h} incomplete: {status:#x}"));
-                }
-            }
-            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
-            self.buffers = Some(buffers);
-        }
+        self.buffers = Some(Buffers::new(gl, size, self.samples)?);
         Ok(())
     }
 
@@ -414,158 +516,25 @@ impl Mesh {
     pub fn destroy(mut self, gl: &glow::Context) {
         self.drop_pictures(gl);
         if let Some(b) = self.buffers.take() {
-            delete_buffers(gl, &b);
+            b.delete(gl);
+        }
+        if let Some(t) = self.depth_target.take() {
+            t.delete(gl);
+        }
+        if let Some(t) = self.screen_textures.take() {
+            t.delete(gl);
+        }
+        if let Some(p) = self.depth_program.take() {
+            p.delete(gl);
+        }
+        if let Some(p) = self.screen_programs.take() {
+            p.delete(gl);
         }
         // SAFETY: these objects are this mesh's own.
         unsafe {
             gl.delete_buffer(self.vbo);
             gl.delete_vertex_array(self.vao);
-            gl.delete_program(self.program);
         }
-    }
-}
-
-/// Resolve the multisampled buffer, read it back when asked, and copy it to
-/// the target's viewport, clipped; leaves the destination bound.
-fn present(
-    gl: &glow::Context,
-    [multisampled, resolved]: [glow::Framebuffer; 2],
-    [w, h]: [i32; 2],
-    target: &Target,
-) -> Option<Vec<u8>> {
-    // SAFETY: the framebuffers are the mesh's own and complete, and the
-    // resolved one is bound for reading when `read` runs; the destination
-    // is the caller's framebuffer.
-    unsafe {
-        gl.depth_mask(true);
-        gl.disable(glow::DEPTH_TEST);
-        gl.disable(glow::BLEND);
-        gl.bind_vertex_array(None);
-        gl.use_program(None);
-        gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(multisampled));
-        gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, Some(resolved));
-        gl.blit_framebuffer(
-            0,
-            0,
-            w,
-            h,
-            0,
-            0,
-            w,
-            h,
-            glow::COLOR_BUFFER_BIT,
-            glow::NEAREST,
-        );
-        gl.bind_framebuffer(glow::READ_FRAMEBUFFER, Some(resolved));
-        let pixels = target.read_back.then(|| read(gl, w, h));
-        let [x, y, _, _] = target.viewport;
-        let [cx, cy, cw, ch] = target.clip;
-        gl.enable(glow::SCISSOR_TEST);
-        gl.scissor(cx, cy, cw, ch);
-        gl.bind_framebuffer(glow::DRAW_FRAMEBUFFER, target.destination);
-        gl.blit_framebuffer(
-            0,
-            0,
-            w,
-            h,
-            x,
-            y,
-            x + w,
-            y + h,
-            glow::COLOR_BUFFER_BIT,
-            glow::NEAREST,
-        );
-        gl.bind_framebuffer(glow::FRAMEBUFFER, target.destination);
-        pixels
-    }
-}
-
-/// The bound read framebuffer's `w × h` pixels, top row first.
-///
-/// # Safety
-///
-/// A complete framebuffer at least `w × h` is bound for reading.
-unsafe fn read(gl: &glow::Context, w: i32, h: i32) -> Vec<u8> {
-    let row = w as usize * 4;
-    let mut pixels = vec![0_u8; row * h as usize];
-    // SAFETY: the slice is exactly `w × h × 4` bytes at pack alignment 4.
-    unsafe {
-        gl.pixel_store_i32(glow::PACK_ALIGNMENT, 4);
-        gl.read_pixels(
-            0,
-            0,
-            w,
-            h,
-            glow::RGBA,
-            glow::UNSIGNED_BYTE,
-            glow::PixelPackData::Slice(Some(&mut pixels)),
-        );
-    }
-    let mut flipped = Vec::with_capacity(pixels.len());
-    for r in pixels.chunks_exact(row).rev() {
-        flipped.extend_from_slice(r);
-    }
-    flipped
-}
-
-/// Delete one set of offscreen buffers.
-fn delete_buffers(gl: &glow::Context, b: &Buffers) {
-    // SAFETY: the objects are the caller's mesh's own.
-    unsafe {
-        gl.delete_framebuffer(b.multisampled);
-        gl.delete_framebuffer(b.resolved);
-        gl.delete_renderbuffer(b.ms_colour);
-        gl.delete_renderbuffer(b.ms_depth);
-        gl.delete_renderbuffer(b.colour);
-    }
-}
-
-/// Compile both shaders and link them.
-///
-/// # Safety
-///
-/// Called on the caller's current context.
-unsafe fn link(gl: &glow::Context, vertex: &str, fragment: &str) -> Result<glow::Program, String> {
-    // SAFETY: objects created here are deleted or returned.
-    unsafe {
-        let program = gl.create_program()?;
-        let mut shaders = Vec::new();
-        for (kind, source) in [
-            (glow::VERTEX_SHADER, vertex),
-            (glow::FRAGMENT_SHADER, fragment),
-        ] {
-            let shader = gl.create_shader(kind)?;
-            gl.shader_source(shader, source);
-            gl.compile_shader(shader);
-            if !gl.get_shader_compile_status(shader) {
-                let log = gl.get_shader_info_log(shader);
-                gl.delete_shader(shader);
-                for s in shaders {
-                    gl.delete_shader(s);
-                }
-                gl.delete_program(program);
-                let which = if kind == glow::VERTEX_SHADER {
-                    "vertex"
-                } else {
-                    "fragment"
-                };
-                return Err(format!("{which} shader: {log}"));
-            }
-            gl.attach_shader(program, shader);
-            shaders.push(shader);
-        }
-        gl.link_program(program);
-        let linked = gl.get_program_link_status(program);
-        let log = gl.get_program_info_log(program);
-        for s in shaders {
-            gl.detach_shader(program, s);
-            gl.delete_shader(s);
-        }
-        if linked {
-            Ok(program)
-        } else {
-            gl.delete_program(program);
-            Err(format!("link: {log}"))
-        }
+        self.main.delete(gl);
     }
 }

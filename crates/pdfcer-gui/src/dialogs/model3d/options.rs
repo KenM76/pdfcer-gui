@@ -114,6 +114,7 @@ impl ModelView {
         ui.horizontal_wrapped(|ui| self.mesh_fit_control(ui));
         ui.separator();
         self.lighting_control(ui);
+        self.effects_control(ui);
         // Full screen has the navigation switches on its own row of glyphs.
         if !full {
             ui.separator();

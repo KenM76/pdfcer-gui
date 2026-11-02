@@ -358,7 +358,7 @@ impl PdfcerApp {
                 )
             });
 
-            crate::app::opennotes::disclose(doc);
+            self.form_preview_due = crate::app::opennotes::disclose(doc);
         }
 
         // Forget the panels' own view state, because a NEW DOCUMENT is

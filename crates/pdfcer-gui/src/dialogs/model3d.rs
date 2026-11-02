@@ -24,6 +24,7 @@ use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
 mod axes;
 mod drone;
+mod effects;
 mod eye;
 mod fit;
 mod gimbal;
@@ -112,8 +113,7 @@ struct Rendered {
     accent: egui::Color32,
     /// [`parts::Visibility::version`].
     parts: u32,
-    lighting: pdfcer_3d::LightingScheme,
-    light_frame: pdfcer_3d::LightFrame,
+    look: effects::Look,
 }
 
 /// The 3D viewer's state.
@@ -167,6 +167,12 @@ pub(crate) struct ModelView {
     view_lighting: Option<ThreeDLighting>,
     /// The lights turn with the view (`LightFrame::Camera`), else stay put.
     lights_turn: bool,
+    /// One light casts shadows.
+    shadows: bool,
+    /// Ambient occlusion darkens creases and corners.
+    occlusion: bool,
+    /// Which way the scheme's light directions point, for shadows.
+    light_sense: pdfcer_3d::LightSense,
     /// Orbiting or walking, the switches, and the fingers on the picture.
     nav: nav::Nav,
     /// The eye height was set or reset, for the preferences file.
@@ -247,6 +253,9 @@ impl ModelView {
             parts,
             view_lighting: None,
             lights_turn: true,
+            shadows: true,
+            occlusion: true,
+            light_sense: pdfcer_3d::LightSense::default(),
             nav: nav::Nav::with_eye(eye_mm, walk),
             eye_changed: false,
         }
@@ -446,8 +455,7 @@ impl ModelView {
             background,
             accent: egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
             parts: self.parts.version,
-            lighting: self.lighting().0,
-            light_frame: self.lighting().1,
+            look: self.look(),
         };
         if self.rendered != Some(wanted) {
             if gpu {

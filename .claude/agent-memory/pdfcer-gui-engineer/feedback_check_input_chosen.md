@@ -41,3 +41,11 @@ single-line branch already does the right thing"* from reading its code. Their
 test failed on **four** cases, not the three I predicted — the branch was
 correct given real newline bytes and never received any. **Reading code
 carefully and not running it produced four wrong claims in one day.**
+
+**The fixture must exhibit the effect.** `the_3d_viewer_casts_shadows` failed on
+`assembly.prc`, where shadows off hashed the same as on. The wiring was right:
+that assembly's parts cast nothing onto each other. `fixtures/floor-box.prc`
+(a cube on a floor) passed. Before an "X changes the picture" check, render the
+fixture with `pdfcer 3d-render` with X on and off and count the differing pixels
+(floor-box: 23,025 for `--no-shadows`). Zero means the fixture is wrong, not the
+GUI. Then falsify it with a control build that disables X.

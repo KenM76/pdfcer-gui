@@ -6,6 +6,7 @@ use egui::TextureOptions;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::render_model;
 
+use super::effects::Effects;
 use super::{Drawn, ModelView, POSTER_SIDE, Rendered};
 use crate::text::panels::models as t;
 
@@ -23,10 +24,8 @@ impl ModelView {
         let options = ModelRenderOptions {
             width: (width.round() as u32).max(1),
             height: (height.round() as u32).max(1),
-            lighting: self.lighting().0,
-            light_frame: self.lighting().1,
             threads: 0,
-            ..ModelRenderOptions::default()
+            ..self.look().options()
         };
         let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
         let image = self
@@ -59,14 +58,12 @@ impl ModelView {
             width,
             height,
             background: wanted.background.to_array(),
-            lighting: wanted.lighting,
-            light_frame: wanted.light_frame,
             threads: 0,
-            ..ModelRenderOptions::default()
+            ..wanted.look.options()
         };
         let camera = self.view_camera(f64::from(width) / f64::from(height));
         let started = std::time::Instant::now();
-        let head = self.trace_head(&wanted, camera.as_ref(), options.lighting);
+        let head = self.trace_head(&wanted, camera.as_ref(), &options);
         let accent = Some(wanted.accent.to_array());
         let parts = &self.parts;
         let model = &mut self.model.drawn;
@@ -94,12 +91,13 @@ impl ModelView {
     }
 
     /// The `model-view-rendered` trace line up to its timing: the size, the
-    /// orbit, the aim, the pivot, the walker's eye and the lighting.
+    /// orbit, the aim, the pivot, the walker's eye, the lighting, and the
+    /// shadow and occlusion `options` draws.
     pub(super) fn trace_head(
         &self,
         wanted: &Rendered,
         camera: Result<&pdfcer_3d::Camera, &pdfcer_3d::RenderError>,
-        lighting: pdfcer_3d::LightingScheme,
+        options: &ModelRenderOptions,
     ) -> String {
         let [width, height] = wanted.size;
         let aimed = camera.map(aim_of).unwrap_or_default();
@@ -108,7 +106,11 @@ impl ModelView {
             .zip(self.orbit.anchor)
             .map(|(c, a)| pivot_shown(c, a.point))
             .unwrap_or_default();
-        let lit = self.lighting_trace(lighting);
+        let effects = camera
+            .ok()
+            .and_then(|c| Effects::new(c, options, &self.bounds, wanted.size).ok())
+            .map_or_else(String::new, |e| e.trace(options.light_sense));
+        let lit = self.lighting_trace(options.lighting) + &effects;
         let eye = camera_eye(wanted.walk.as_ref());
         format!(
             // ui-text-exempt: diagnostic trace, never displayed

@@ -7,11 +7,11 @@
 use pdfcer_core::xfa::{LayoutWarning, MergeWarningKind, PaintNoteKind};
 
 /// The status-line sentence when a dynamic XFA form opens: the pages shown
-/// are the file's stand-in, and where the computed ones are.
+/// are the file's stand-in, and the computed ones are open beside them.
 #[must_use]
 pub fn opened_dynamic() -> &'static str {
     "This is a dynamic form: the page shown is the file's stand-in for programs \
-     without a form engine. View > Form preview draws the form's own pages."
+     without a form engine. The form's own pages are open in Form preview."
 }
 
 /// The window's title.

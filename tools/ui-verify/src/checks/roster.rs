@@ -408,6 +408,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(choice_defaults::AMultiSelectListsDefaultsCanBeChosen),
         Box::new(annot_flags::AnAnnotationCanBeHiddenAndShownAgain),
         Box::new(form_preview::FormPreviewDrawsADynamicForm),
+        Box::new(form_preview::ADynamicFormOpensOnItsOwnPages),
         Box::new(print_slow_printer::PrintDialogNeverWaitsOnAPrinter),
         Box::new(print_presets::PrintOpensOnTheDocumentsOwnSettings),
         Box::new(print_colour::PrintInGreyOrBlackOnly),

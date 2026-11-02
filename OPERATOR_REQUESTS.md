@@ -653,13 +653,21 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O366 — **WAITING ON ENGINE** — shadows in the 3D picture
+## O367 — **BUILT** — a government dynamic form "doesn't open"
+
+His report, relayed by the engine session (note E064): *imm1344e.pdf "doesn't open"*. The file is an IRCC dynamic XFA form at `C:\Users\Ken\OneDrive\pdfTests\imm1344e.pdf`. It is not rights-cleared, so it is not a fixture.
+
+**Scope, whole behaviour.** A dynamic form opens showing its own pages, not the "Please wait..." stand-in that the file carries for programs without a form engine.
+
+**Status.** The engine opens the file (12 computed pages, 233 values). Built: opening a dynamic form now opens Form preview by itself. The status line still says the canvas shows the stand-in. Driven: `a_dynamic_form_opens_on_its_own_pages`. What the engine still leaves out (rich-text captions, some check boxes, a tiled root subform) is on its side. NOT VERIFIED by him.
+
+## O366 — **BUILT** — shadows in the 3D picture
 
 His words (one message with O365, O364): *"3D pdfs work great. But a couple of things - is is possible to get shadows working? If I open "D:\Dev\EmilysOffice\render\Bancroft.glb" in other software it looks a lot nicer than our netral showdows. Also I notice the perspective shanges depending on how wide I make the window. Is that normal? Sometimes things look really skewed. I think this seems more apparent in walkthrough mode. Also the checkbox to change to perspective doesn't do anything in walkthrough mode. not sure if that is expected behaviour."*
 
 **Scope, whole behaviour.** Surfaces cast shadows on each other, and corners and contacts darken, so a model such as Bancroft looks as it does in other glTF viewers; a switch to turn it off.
 
-**Status.** The shading is drawn by the engine's shaders and CPU renderer, which have no shadows or occlusion. Filed as G257 (cast shadows) and G258 (ambient occlusion, glTF `occlusionTexture`). The switch goes beside *Lighting* when they land.
+**Status.** The engine added cast shadows (G257) and ambient occlusion (G258) in v0.117.0. Built: the 3D options menu has *Shadows* and *Shade corners and creases*, both on by default, on the graphics card and in software. While shadows are on, *Scheme lights point* is offered. Driven: `the_3d_viewer_casts_shadows` (both drawn at open; clearing each changes the picture). Not yet: a glTF model's own occlusion texture, which the engine has still to read. NOT VERIFIED by him.
 
 ## O365 — **BUILT** — a wide window stretches the 3D picture, worst walking
 

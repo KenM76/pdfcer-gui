@@ -259,3 +259,72 @@ pub fn part_extras(markups: usize, views: usize) -> String {
 pub fn parts_note() -> &'static str {
     "Showing and hiding parts changes this window, its pictures and saved pictures, not the file."
 }
+
+/// The shadows switch, in the 3D viewer.
+#[must_use]
+pub fn shadows() -> &'static str {
+    "Shadows"
+}
+
+/// Its tip.
+#[must_use]
+pub fn shadows_tooltip() -> &'static str {
+    "One light casts shadows: the lighting's brightest light on your side, or, where every light is at the camera, a light above and to the left of the view. The PDF standard defines no shadows, so another reader may draw this model without them."
+}
+
+/// The ambient occlusion switch.
+#[must_use]
+pub fn occlusion() -> &'static str {
+    "Shade corners and creases"
+}
+
+/// Its tip.
+#[must_use]
+pub fn occlusion_tooltip() -> &'static str {
+    "Ambient occlusion: darkens creases, inside corners and where parts meet, as soft room light would. The PDF standard does not define it, so another reader may draw this model without it."
+}
+
+/// The label of the drop-down for which way a lighting scheme's
+/// directions point.
+#[must_use]
+pub fn light_sense_label() -> &'static str {
+    "Scheme lights point"
+}
+
+/// One way they point: `emitted` the way the light travels, else towards
+/// the light.
+#[must_use]
+pub fn light_sense(emitted: bool) -> &'static str {
+    if emitted {
+        "The way the light travels"
+    } else {
+        "Towards the light"
+    }
+}
+
+/// Its tip.
+#[must_use]
+pub fn light_sense_tooltip() -> &'static str {
+    "The PDF standard does not say which way a lighting scheme's directions point. It changes only the side shadows fall on; the shading is the same either way."
+}
+
+/// What the viewer's picture shows of shadows and ambient occlusion:
+/// `shadows` is `None` switched off, else `Some(None)` when nothing casts,
+/// `Some(Some(true))` when a light of the scheme casts and
+/// `Some(Some(false))` when the fixed light does; `drawn` when either
+/// effect is drawn.
+#[must_use]
+pub fn effects_said(shadows: Option<Option<bool>>, drawn: bool) -> String {
+    if !drawn {
+        return "This lighting is unlit, so neither shadows nor shaded corners are drawn."
+            .to_owned();
+    }
+    let cast = match shadows {
+        Some(Some(true)) => "Shadows fall from the lighting's brightest light on your side. ",
+        Some(Some(false)) => {
+            "This lighting is all at the camera, so shadows fall from a light above and to the left of the view. "
+        }
+        _ => "",
+    };
+    format!("{cast}Other PDF readers may not draw shadows or shaded corners.")
+}

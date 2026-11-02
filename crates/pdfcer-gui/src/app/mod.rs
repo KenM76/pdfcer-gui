@@ -656,6 +656,10 @@ pub struct PdfcerApp {
     /// behind it.
     pub settings_draft: Option<crate::dialogs::settings::Draft>,
 
+    /// A dynamic XFA form has just opened, so Form preview opens on the next
+    /// frame, where there is a context to open it with.
+    pub form_preview_due: bool,
+
     /// This application's own top-level window, as a raw `HWND` cast to
     /// `isize`. `None` when the platform did not report one.
     ///
@@ -1050,6 +1054,7 @@ impl PdfcerApp {
             settings,
             settings_store,
             settings_draft: None,
+            form_preview_due: false,
             // Filled by `crate::run` the moment the window exists — the
             // constructor runs before it does. `None` here is the honest
             // starting value and is what a test-built app keeps.
