@@ -193,10 +193,33 @@ fn the_camera_turns_apart_from_the_heading_and_centres_back() {
 fn zoom_narrows_the_view_within_its_range() {
     let mut walk = walker([0.0; 3]);
     walk.zoom_by(2.0);
-    let Projection::Perspective { fov_y } = walk.camera().projection else {
+    let Projection::Perspective { fov_y } = walk.camera(1.0).projection else {
         unreachable!();
     };
     assert!((fov_y - FOV / 2.0).abs() < 1e-9, "{fov_y}");
     walk.zoom_by(1000.0);
     assert!((walk.zoom - ZOOM.1).abs() < 1e-9);
+}
+
+#[test]
+fn a_wide_window_keeps_a_16_9_sideways_field() {
+    let walk = walker([0.0; 3]);
+    let across = |aspect: f64| {
+        let Projection::Perspective { fov_y } = walk.camera(aspect).projection else {
+            unreachable!();
+        };
+        2.0 * ((fov_y.to_radians() / 2.0).tan() * aspect)
+            .atan()
+            .to_degrees()
+    };
+    let screen = across(WIDEST);
+    assert!((across(3.0) - screen).abs() < 1e-9, "{}", across(3.0));
+    assert!((across(5.0) - screen).abs() < 1e-9, "{}", across(5.0));
+    let Projection::Perspective { fov_y } = walk.camera(4.0 / 3.0).projection else {
+        unreachable!();
+    };
+    assert!(
+        (fov_y - FOV).abs() < 1e-9,
+        "a narrower window keeps the vertical field" // ui-text-exempt: test assertion message
+    );
 }

@@ -653,6 +653,30 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O366 — **WAITING ON ENGINE** — shadows in the 3D picture
+
+His words (one message with O365, O364): *"3D pdfs work great. But a couple of things - is is possible to get shadows working? If I open "D:\Dev\EmilysOffice\render\Bancroft.glb" in other software it looks a lot nicer than our netral showdows. Also I notice the perspective shanges depending on how wide I make the window. Is that normal? Sometimes things look really skewed. I think this seems more apparent in walkthrough mode. Also the checkbox to change to perspective doesn't do anything in walkthrough mode. not sure if that is expected behaviour."*
+
+**Scope, whole behaviour.** Surfaces cast shadows on each other, and corners and contacts darken, so a model such as Bancroft looks as it does in other glTF viewers; a switch to turn it off.
+
+**Status.** The shading is drawn by the engine's shaders and CPU renderer, which have no shadows or occlusion. Filed as G257 (cast shadows) and G258 (ambient occlusion, glTF `occlusionTexture`). The switch goes beside *Lighting* when they land.
+
+## O365 — **BUILT** — a wide window stretches the 3D picture, worst walking
+
+Same message as O366.
+
+**Scope.** Widening the viewer must not stretch the edges of the picture.
+
+**Status.** Built. Walking held its 60-degree vertical field at every width, so a wide picture saw far sideways and stretched its edges. It now keeps a 16:9 screen's sideways field and narrows the vertical one in anything wider. Orbiting uses a 30-degree field, narrow enough not to show it, and is unchanged. Unit test `a_wide_window_keeps_a_16_9_sideways_field`; driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`, whose picture is 516x443, so the drive proves the field at that size and the unit test the wide case.
+
+## O364 — **BUILT** — the Perspective switch does nothing while walking
+
+Same message as O366.
+
+**Scope.** The switch must not look live where it has no effect.
+
+**Status.** Built. Walking is always in perspective; the switch sets the orbit you return to. It is greyed while walking, and its hover says so. Driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`, which clicks it while walking and asserts the projection holds; falsified with the switch re-enabled (red).
+
 ## O363 — **BUILT** — the 3D options drop-down on the left side
 
 His words (one message with O358–O362): *"The rendering speed it now excellent! Just a few bugs to fix - double tap for the screenshot didn't seem to do anything and I couldn't enter different numbers for the view height - boxes show but I couldn't type in them - keystrokes might be getting rejected entirely but I'm not sure. Also the texture mapping was flawless in the previous version but with this one sometimes when moving or in certain positions the underlying surface shows through the texture mapping - the board room feature wall is a perfect example where this happens. Also I'd like the default mode when the 3D view comes up to be walk through and ghost mode. Also for the desktop version with walkthrough mode we need keyboard shortcuts - wasd for the left joystick, cursor keys or numpad for the right joystick, ijkl for the camera and uo for recentering the camera. Also move the menu drop down to the left side."*

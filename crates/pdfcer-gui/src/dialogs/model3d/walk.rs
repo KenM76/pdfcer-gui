@@ -19,8 +19,13 @@ use pdfcer_3d::{Camera, Hit, Projection, Ray};
 
 use super::orbit::{Axes, PITCH_LIMIT, cross, dot, unit};
 
-/// The walking field of view, degrees: a game's, wider than the orbit's.
+/// The walking field of view, degrees, vertically: a game's, wider than the
+/// orbit's.
 const FOV: f64 = 60.0;
+/// The widest aspect the vertical field holds for. A wider window keeps a
+/// 16:9 window's sideways field and narrows the vertical one instead, so
+/// stretching the window never stretches the picture's edges.
+const WIDEST: f64 = 16.0 / 9.0;
 /// Eye height, as a share of the model's radius.
 const BODY_SHARE: f64 = 0.08;
 /// Walking speed at speed 1, in model radii per second.
@@ -139,7 +144,8 @@ impl Walk {
         self.axes.look(self.yaw + self.look_yaw, self.pitch)
     }
 
-    pub fn camera(&self) -> Camera {
+    /// The camera for a picture of `aspect`, width / height.
+    pub fn camera(&self, aspect: f64) -> Camera {
         let d = self.direction();
         let ahead = self.body() * 4.0;
         Camera {
@@ -147,7 +153,7 @@ impl Walk {
             target: std::array::from_fn(|i| self.eye[i] + d[i] * ahead),
             up: self.axes.up,
             projection: Projection::Perspective {
-                fov_y: FOV / self.zoom,
+                fov_y: fov_y(FOV / self.zoom, aspect),
             },
         }
     }
@@ -369,3 +375,13 @@ fn along(point: [f64; 3], direction: [f64; 3], distance: f64) -> [f64; 3] {
 #[cfg(test)]
 #[path = "walk_tests.rs"]
 mod tests;
+
+/// `natural`'s vertical field, narrowed past [`WIDEST`] so the sideways
+/// field stops growing with the window's width.
+fn fov_y(natural: f64, aspect: f64) -> f64 {
+    if aspect <= WIDEST {
+        return natural;
+    }
+    let half = (natural.to_radians() / 2.0).tan() * WIDEST / aspect;
+    2.0 * half.atan().to_degrees()
+}

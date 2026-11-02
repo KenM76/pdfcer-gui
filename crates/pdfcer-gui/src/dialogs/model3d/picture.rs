@@ -164,8 +164,12 @@ fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let look = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
     let gap = look.iter().map(|c: &f64| c * c).sum::<f64>().sqrt();
     let t = camera.target;
+    let fov = match camera.projection {
+        pdfcer_3d::Projection::Perspective { fov_y } => format!(" fov-y={fov_y:.3}"), // ui-text-exempt: diagnostic trace
+        pdfcer_3d::Projection::Orthographic { .. } => String::new(),
+    };
     format!(
-        "dir={} up={} target={:.4},{:.4},{:.4} gap={gap:.4}", // ui-text-exempt: diagnostic trace
+        "dir={} up={} target={:.4},{:.4},{:.4} gap={gap:.4}{fov}", // ui-text-exempt: diagnostic trace
         unit(look),
         unit(camera.up),
         t[0],

@@ -511,6 +511,12 @@ pub fn view_perspective_tooltip() -> &'static str {
     "On, nearer parts look bigger, as to the eye. Off, sizes stay true at every depth, as in a drawing."
 }
 
+/// Its tip while walking, when it is greyed.
+#[must_use]
+pub fn view_perspective_walking_tooltip() -> &'static str {
+    "Walking always looks in perspective, as the eye does. This switch sets the view you return to when you stop walking."
+}
+
 /// The picture could not be drawn.
 #[must_use]
 pub fn view_render_failed(detail: &str) -> String {

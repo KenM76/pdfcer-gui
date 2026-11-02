@@ -8,6 +8,9 @@ use egui::{Rect, Ui, UiBuilder, Vec2};
 use pdfcer_gui_base::icons::{self, Icon};
 
 use super::{ModelView, REGION_FIT, REGION_VIEW_PREFIX, phone};
+
+/// The Perspective switch, greyed while walking.
+pub const REGION_PERSPECTIVE: &str = "model3d.perspective"; // ui-text-exempt: trace region name, never displayed
 use crate::text::panels::modelnav as tn;
 use crate::text::panels::models as t;
 
@@ -97,8 +100,16 @@ impl ModelView {
                 }
             }
         });
-        ui.checkbox(&mut self.orbit.perspective, t::view_perspective())
-            .on_hover_text(t::view_perspective_tooltip());
+        // Walking is always in perspective; the switch is the orbit's.
+        let orbiting = self.nav.walk.is_none();
+        let switch = ui
+            .add_enabled(
+                orbiting,
+                egui::Checkbox::new(&mut self.orbit.perspective, t::view_perspective()),
+            )
+            .on_hover_text(t::view_perspective_tooltip())
+            .on_disabled_hover_text(t::view_perspective_walking_tooltip());
+        crate::diag::ui_rect_visible(REGION_PERSPECTIVE, switch.rect, ui.clip_rect());
         ui.horizontal_wrapped(|ui| self.axes_control(ui));
         ui.horizontal_wrapped(|ui| self.mesh_fit_control(ui));
         ui.separator();

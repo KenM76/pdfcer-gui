@@ -196,7 +196,7 @@ impl ModelView {
     /// The camera the picture is drawn from, in an image of `aspect`.
     pub(super) fn view_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
         match &self.nav.walk {
-            Some(walk) => Ok(walk.camera()),
+            Some(walk) => Ok(walk.camera(aspect)),
             None => self
                 .orbit
                 .camera(&self.bounds, self.reach, aspect, self.aimed.as_ref()),

@@ -16,6 +16,8 @@ const IMAGE: &str = "model3d.image";
 /// The gimbal's +X end.
 const TIP_X: &str = "model3d.gimbal.tip.0";
 const WALK: &str = "model3d.walk";
+/// `dialogs::model3d::options::REGION_PERSPECTIVE`.
+const PERSPECTIVE: &str = "model3d.perspective";
 const GHOST: &str = "model3d.ghost";
 /// How close a traced unit direction must come to the expected one.
 const TOLERANCE: f64 = 0.02;
@@ -85,6 +87,9 @@ impl Walker<'_> {
         if self.last("model-walk", "on").as_deref() != Some("true") {
             return Ok(Some("Walk traced no `model-walk on=true`.".to_owned()));
         }
+        if let Some(failure) = self.field_of_view(report)? {
+            return Ok(Some(failure));
+        }
         let start = self.last("model-view-rendered", "eye");
         report.note(format!("walk starts at eye {start:?}"));
         if start.is_none() {
@@ -147,6 +152,49 @@ impl Walker<'_> {
             return Ok(Some(
                 "Orbit did not end the walk (`model-walk on=false`).".to_owned(),
             ));
+        }
+        Ok(None)
+    }
+
+    /// Walking, the vertical field is 60 degrees up to a 16:9 picture and
+    /// narrows past it so the sideways field stops growing; and the greyed
+    /// Perspective switch ignores a click.
+    fn field_of_view(&self, report: &mut CheckReport) -> Result<Option<String>> {
+        let num = |key: &str| {
+            self.last("model-view-rendered", key)
+                .and_then(|v| v.parse::<f64>().ok())
+        };
+        let (Some(w), Some(h), Some(fov)) = (num("w"), num("h"), num("fov-y")) else {
+            return Ok(Some(
+                "the picture drawn while walking traced no `w`, `h` or `fov-y`.".to_owned(),
+            ));
+        };
+        let (aspect, widest) = (w / h.max(1.0), 16.0 / 9.0);
+        let wanted = if aspect <= widest {
+            60.0
+        } else {
+            2.0 * (30f64.to_radians().tan() * widest / aspect)
+                .atan()
+                .to_degrees()
+        };
+        report.note(format!("walking {w}x{h}: fov-y {fov}, wanted {wanted:.3}"));
+        if (fov - wanted).abs() > 0.01 {
+            return Ok(Some(format!(
+                "walking in a {w}x{h} picture drew fov-y {fov}; it should be {wanted:.3}."
+            )));
+        }
+        let before = self.last("model-view-rendered", "perspective");
+        if !self.press(PERSPECTIVE)? {
+            return Ok(Some(format!("no `{PERSPECTIVE}` switch while walking.")));
+        }
+        let after = self.last("model-view-rendered", "perspective");
+        report.note(format!(
+            "Perspective while walking: {before:?} -> {after:?}"
+        ));
+        if after != before {
+            return Ok(Some(format!(
+                "a click on the greyed Perspective switch while walking changed the orbit's projection {before:?} -> {after:?}."
+            )));
         }
         Ok(None)
     }

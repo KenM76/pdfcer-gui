@@ -840,6 +840,8 @@ The request O280 is built on, answered and consumed.
 - **G245** — no 3D measuring: point-to-point distance, edge length, radius and angle on the model, as Acrobat's 3D Measurement Tool, and storing a measurement. The renderer returns no depth and nothing picks a surface point, so the viewer offers none. The page's 2D ce dimensions are unaffected.
 - **G246** — no list of a file's saved 3D views. Answered at v0.108.0 by `pdfcer_core::threed::view_list` (`saved_3d_views`) and consumed: the viewer's *Saved views* menu.
 - **G247** — the lit opening view written at insert. Answered at v0.112.0 by `EditSession::set_3d_opening_view` and consumed by `app::actions::model_insert`.
+- **G257** — no cast shadows: surfaces are shaded only by their angle to the lights, on both the GPU and CPU paths, so an interior reads flat beside other glTF viewers. Asked for a published shadow-map pass, the same on the CPU path, and a switch.
+- **G258** — no ambient occlusion: the ambient term is constant, and glTF `occlusionTexture` is not read. Asked for SSAO or baked per-vertex occlusion, and a switch beside G257's.
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 
