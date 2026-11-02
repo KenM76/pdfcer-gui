@@ -47,6 +47,8 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
+**`v0.5.0-dev.20261102.1`** is engine v0.116.0 (56f0a7fb), shell 1aa8c78d: walking keeps a 16:9 sideways field in a wider picture (O365) and the Perspective switch is greyed while walking (O364); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view` at 516x443, so the wide case rests on a unit test until he widens it. Zip `pdfcergui-20261102-1304-56f0a7f-1aa8c78d.zip`, 48,318,850 bytes, matches the asset; first published in OneDrive slot `pdfcer-gui2`. Shadows (O366) wait on G257 and G258.
+
 **Android (O337), stage A built and driven, not released:** the phone layout opens a PDF through SAF or *open with*, renders it, pans with one finger in Read, long-presses to the context menu, and draws the File overflow (Recent included) and the empty hint in phone form. `MOBILE_DESIGN.md` section 9, "Stage A status", lists what is left (chip strip, short overflow list, save-back, Android fonts) and the toolchain, AVD and diagnostics recipe. Build: `bash tools/android/build-apk.sh --emulator` for the emulator; without the flag the APK carries arm64 only. Not on GitHub yet. 3D models (O339) work on the emulator: the viewer has a phone layout and touch steering, and saves and file picks go through Android's pickers (`MOBILE_DESIGN.md` section 6).
 
 **O310 driven on SW41177, awaiting his verdict:** no blank, no squares; a size typed for a 425-run object click restyles as one engine call with one undo (`a_large_restyle_keeps_painting`, longest frame 219 ms, 238 operators in 131 ms); Properties follows the caret's word. The re-opened mixed-size line draws in its own font (G228, engine v0.98.0).
