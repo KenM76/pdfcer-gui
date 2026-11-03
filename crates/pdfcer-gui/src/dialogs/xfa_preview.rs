@@ -367,6 +367,25 @@ fn disclosures(ui: &mut egui::Ui, notes: &[String], warnings: &[String]) {
     }
 }
 
+/// Read the form, drop what its own views keep off the screen, and merge its
+/// data. The views must precede the merge so a dropped element binds nothing.
+fn merge(
+    view: &pdfcer_core::view::DocumentView<'_>,
+    choices: Choices,
+) -> Result<pdfcer_core::xfa::MergedForm, String> {
+    let xdp = pdfcer_core::xfa::read_xdp(view)
+        .map_err(|e| t::failed(&e.to_string()))?
+        .ok_or_else(|| t::no_template().to_owned())?;
+    let mut template = pdfcer_core::xfa::read_template(&xdp)
+        .map_err(|e| t::failed(&e.to_string()))?
+        .ok_or_else(|| t::no_template().to_owned())?;
+    let views =
+        pdfcer_core::xfa::Views::from_config(&xdp).map_err(|e| t::failed(&e.to_string()))?;
+    template.exclude_irrelevant(&views);
+    pdfcer_core::xfa::merge_data(&template, &xdp, &choices.merge())
+        .map_err(|e| t::failed(&e.to_string()))
+}
+
 /// Lay out and draw every computed page with the operator's render settings.
 /// Runs on the worker.
 fn draw(
@@ -375,19 +394,13 @@ fn draw(
     choices: Choices,
 ) -> Result<Drawn, String> {
     let view = session.view();
-    let xdp = pdfcer_core::xfa::read_xdp(&view)
-        .map_err(|e| t::failed(&e.to_string()))?
-        .ok_or_else(|| t::no_template().to_owned())?;
-    let template = pdfcer_core::xfa::read_template(&xdp)
-        .map_err(|e| t::failed(&e.to_string()))?
-        .ok_or_else(|| t::no_template().to_owned())?;
-    let merged = pdfcer_core::xfa::merge_data(&template, &xdp, &choices.merge())
-        .map_err(|e| t::failed(&e.to_string()))?;
+    let merged = merge(&view, choices)?;
     let template = &merged.template;
-    let layout = pdfcer_core::xfa::layout_template(template, &LayoutOptions::new())
-        .map_err(|e| t::failed(&e.to_string()))?;
-    let paint = choices.paint();
     let images = pdfcer_core::xfa::XfaImages::from_view(&view);
+    let layout =
+        pdfcer_core::xfa::layout_template_with_images(template, &LayoutOptions::new(), &images)
+            .map_err(|e| t::failed(&e.to_string()))?;
+    let paint = choices.paint();
     let mut pages = Vec::new();
     let mut counts: Vec<(PaintNoteKind, usize)> = Vec::new();
     for page in layout.pages.iter().take(MAX_PAGES) {

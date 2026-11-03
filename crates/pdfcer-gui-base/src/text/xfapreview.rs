@@ -68,8 +68,8 @@ pub fn notes_clean() -> &'static str {
 pub fn paint_note(kind: PaintNoteKind, count: usize) -> String {
     let what = match kind {
         PaintNoteKind::Content => "rich text, captions or non-text content not drawn",
-        PaintNoteKind::Stroke => "dashed or 3-D borders not drawn",
-        PaintNoteKind::FillType => "gradient or pattern fills not drawn",
+        PaintNoteKind::Stroke => "borders of an unknown style drawn solid",
+        PaintNoteKind::FillType => "fills not drawn",
         PaintNoteKind::Corner => "rounded corners drawn square",
         PaintNoteKind::OpenBreak => "borders split across pages drawn closed",
         PaintNoteKind::Color => "unreadable colours replaced by the default",
@@ -83,6 +83,10 @@ pub fn paint_note(kind: PaintNoteKind, count: usize) -> String {
         PaintNoteKind::StrokeApproximated => "3-D borders drawn as plain lines",
         PaintNoteKind::Shape => "line slopes, arc angles or line ends not understood, drawn plain",
         PaintNoteKind::Rotate => "turns other than quarter turns, or on sections, not applied",
+        PaintNoteKind::Script => "page numbers shown from a script that was not run",
+        PaintNoteKind::Choice => "list values shown as saved, or list items not filled in",
+        PaintNoteKind::Picture => "values shown partly unformatted, or with English names",
+        PaintNoteKind::Barcode => "barcodes shown as their text",
         _ => "drawn differently from the form",
     };
     format!("{count} × {what}")
@@ -92,8 +96,8 @@ pub fn paint_note(kind: PaintNoteKind, count: usize) -> String {
 #[must_use]
 pub fn layout_warning(warning: &LayoutWarning) -> &'static str {
     match warning {
-        LayoutWarning::FlowedLayoutPending { .. } => {
-            "A table or row is placed by position; table layout is not supported yet."
+        LayoutWarning::InappropriateLayout { .. } => {
+            "A table row outside a table is placed by position."
         }
         LayoutWarning::QualifiedPagination => {
             "Odd/even or first/last page rules are laid out in plain order."

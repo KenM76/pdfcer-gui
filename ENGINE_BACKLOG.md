@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **50 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `wanted` — a real gap — **53 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -122,6 +122,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Read a form field's free angle and opacity** — `forms::Widget::free_angle`, `forms::Widget::opacity` | **wanted, at the pin since v0.82.0; request G177.** `canvas::widgetturn` and Properties' Stand upright and Opacity rows read them instead of `pdfcer_gui_base::widgetread`, which parses the appearance `/Matrix` and `/CA`. The shell's `forms::Widget` literals already set both to `None`. |
 | **Dynamic XFA, form fill saved to the datasets packet** — `EditSession::fill_xfa_field`, the modules `pdfcer_core::edit::xfa_fill` and `pdfcer_core::xfa::merge::fill` (`XfaFillOutcome`, `XfaFillError`), `CommandKind::FillXfaField`, `EditError::XfaFill` | **wanted.** The surface is the Form preview made editable: a click on a drawn field opens its value, Enter calls `fill_xfa_field` with the field's data path, the preview redraws, and `XfaFillOutcome::shared_with` and `XfaFillOutcome::created` are disclosed off-canvas (a value shared by several copies, a data node created). One undo entry per fill. This is what makes O336's lease fillable. |
 | **Splitting a tiled XFA subform** — `pdfcer_core::xfa::layout::options::TiledSplit` (`TiledSplit::Split`, `TiledSplit::TbOnly`), `LayoutOptions::tiled_split`, `LayoutOptions::with_tiled_split` | **wanted, not built.** Form preview keeps the engine's default, `TiledSplit::Split`; offering it as a *Reading choice* belongs with `OddRotate` and the other layout settings above. |
+| **XFA reading choices for list items, choice sets and table cells** — the modules `pdfcer_core::xfa::merge::items` (`BindItemsMissing`, `BindItemsRepeat`, `BindItemsUnbound`) and `pdfcer_core::xfa::merge::set` (`ChoiceInstances`), `MergeOptions::bind_items_missing`, `MergeOptions::bind_items_repeat`, `MergeOptions::bind_items_search`, `MergeOptions::bind_items_unbound`, `MergeOptions::choice_instances`, `MergeOptions::with_bind_items_missing`, `MergeOptions::with_bind_items_repeat`, `MergeOptions::with_bind_items_search`, `MergeOptions::with_bind_items_unbound`, `MergeOptions::with_choice_instances`, `TableCellHeight` (`TableCellHeight::Content`, `TableCellHeight::Declared`), `LayoutOptions::table_cell_height`, `LayoutOptions::with_table_cell_height` | **wanted, not built.** Form preview uses the engine's defaults for each. Each is a place the XFA standard leaves the answer open, so each belongs in the *Reading choices* list beside `ThreeDStroke` and `CheckCaption`, with `TiledSplit` and `OddRotate` above. |
+| **XFA paint settings** — the module `pdfcer_core::xfa::paint::options` (`EdgePlacement`, `MissingFill`, `Stipple`, `FontWeight`, `CaptionFont`, `ImagePlacement`, `ImageOverflow`, `CheckEdge`, `Medium`, `PictureRounding`; the 3-D border and check-caption settings there are already offered) | **wanted, not built.** Form preview offers two of these as *Reading choices*; the rest draw at the engine's defaults. The ones the standard leaves open join that list; the rest stay at their defaults. |
+| **XFA print/screen views chosen by hand** — the module `pdfcer_core::xfa::relevant` (`ViewMatch`) | **wanted in part.** Form preview applies the form's own views before the merge (`dialogs::xfa_preview`), so an element the form keeps off the screen is not drawn. Not built: choosing another view (print) or `ViewMatch::Any` by hand, and listing the excluded paths beside the notes. |
 
 ### Redaction & security
 
@@ -165,7 +168,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `blocked` — waiting on something named — **2 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -183,7 +186,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -194,7 +197,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `declined` — deliberately no surface — **20 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -240,7 +243,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **409 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **418 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -497,6 +500,15 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Dynamic XFA, growable field/draw splits between text lines at a content-area break** — `LayoutItem::fragment`, the module `pdfcer_core::xfa::layout::lines` (`Fragment`) | **shipped — Form preview lays out and draws through the engine, so a long field splits across pages there.** The shell reads no fragment; the pieces arrive drawn. |
 | **Dynamic XFA, fields and draws sized from their text** | **shipped — Form preview, through the engine's layout; no setting.** |
 | **Dynamic XFA, geometric draws, dashed edges and rotate** — the modules `pdfcer_core::xfa::paint::dash` (`DashCaps`, `DashLengths`), `pdfcer_core::xfa::paint::shape` (`ArcCircle`, `ArcFill`) and `pdfcer_core::xfa::layout::options` (`OddRotate`, `NegativeCoordinates`, `NestedOverflow`), `PaintOptions::with_arc_circle`, `PaintOptions::with_arc_fill`, `PaintOptions::with_dash_caps`, `PaintOptions::with_dash_lengths`, `PaintOptions::arc_circle`, `PaintOptions::arc_fill`, `PaintOptions::dash_caps`, `PaintOptions::dash_lengths`, `LayoutItem::rotate`, `PaintNoteKind::Shape`, `PaintNoteKind::Rotate` | **shipped — Form preview draws lines, arcs, rectangles, dashed edges and quarter-turned items**; `Shape` and `Rotate` notes are worded. The settings keep the engine's defaults; offering `ArcCircle`, `ArcFill`, `DashLengths`, `DashCaps` and `OddRotate` as *Reading choices* is wanted, with the global settings above. |
+| **Dynamic XFA, display pictures and more widgets** | **shipped — Form preview, through the engine's paint; no setting.** A value drawn partly unformatted is the `PaintNoteKind::Picture` note, worded by `text::xfapreview::paint_note`. |
+| **Dynamic XFA, comb fields and inline captions** | **shipped — Form preview, through the engine's paint; no setting.** |
+| **Dynamic XFA, print/screen views (relevant)** | **shipped — Form preview applies the form's own views before the merge**; the hand-chosen views are the wanted row above. |
+| **Dynamic XFA, gradient, pattern and stipple fills** | **shipped — Form preview, through the engine's paint**; a fill it cannot draw is the `PaintNoteKind::FillType` note. |
+| **Dynamic XFA, bindItems choice lists** — `bindItems` on a `choiceList` or `checkButton` … | **shipped — Form preview merges through `merge_data`, so a bound list takes its items**; its settings are the wanted row above, and a list left unfilled is the `PaintNoteKind::Choice` note. |
+| **Dynamic XFA, tables and rows** — a `table` subform stacks its rows … | **shipped — Form preview, through the engine's layout**; a row outside a table is the `LayoutWarning::InappropriateLayout` warning. |
+| **Dynamic XFA, instances for dataRef-bound subforms and subform sets** | **shipped — Form preview merges through `merge_data`**; `ChoiceInstances` is the wanted row above. |
+| **Dynamic XFA, `render-page` draws the computed page** | **shipped — Form preview draws the computed pages itself**; the CLI line is the engine's own. `LayoutPage::count` and `LayoutPage::number` feed page-number scripts inside the engine; the preview's headings count its own pages. |
+| **Dynamic XFA, containers sized from an image** — a field or draw with no `w`/`h` … | **shipped — Form preview lays out through `layout_template_with_images` with the same `XfaImages` it paints with.** `LayoutOptions::image_dpi` and `LayoutOptions::with_image_dpi` stay at the engine's default. |
 | **Draw form widgets that carry no appearance** — `RenderOptions::with_widgets_without_ap`, `RenderOptions::widgets_without_ap`, `RenderPolicy::widgets_without_ap`, the modules `pdfcer_render::annot::widget` and `pdfcer_core::widget_draw`, `Diagnostics::annotations_widget_synthesized` (our `G230`) | **shipped — the canvas draws and clicks them; driven by `a_form_without_drawn_values_draws_and_clicks`.** The renderer draws such widgets by default and the shell keeps `WidgetsWithoutAp::Draw`. The canvas offers each one on a click by its `/Rect`, and the Forms panel says the file stores no drawing for those fields and that *Redraw values* writes one (O327). `widget_draw::WidgetAppearances` is not called: nothing here needs the picture without a render. |
 | State a new text or choice field's font, size and colour (`/DA`) at creation — `NewTextField::appearance`, `NewChoiceField::appearance`, `EditError::FieldAppearanceOnMerge` | **shipped — `app::actions::forms::author` states Forms ▸ Style's text look on the spec, one command and one undo entry;** a name joining an existing field is refused with a look, so the box is placed again without one and the status line says it takes that field's style. Driven by `forms_style_sets_the_next_field`. |
 | **What a redraw did to a field's text** — `LayoutDisclosure` (with `::applied_autosize`, `::applied_autosize_bound`, `::da_colour_unmodelled`, `::unencodable_chars`) carried on `FieldEditOutcome::layout`, `ResetOutcome::layout`, `WidgetEditOutcome::layout` and `WidgetRotation::layout` | **shipped.** One formatter, `text::forms::redraw_notes`, turns `LayoutDisclosure` into status-line sentences on `status-group:edit-disclosure`: the auto size and, where the bound is `Width` or `Floor`, what chose it; a `/DA` colour drawn black; characters drawn as `?`. Called by Properties (`app::actions::forms::edit_properties`), the box edit (`edit_widget`), Turn (`forms::widget::rotate`), and Reset and Redraw values in the Forms panel, which name no field because the engine reports the last auto-sized one. Regenerate reads `RegenOutcome`'s own four fields. Driven by `a_redraw_says_what_it_did_to_a_fields_text`. |
