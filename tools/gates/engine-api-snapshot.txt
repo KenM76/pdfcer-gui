@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: e12dd3b38e17ad79a5921b39f722cfcef5caf11f
+# baseline: c6baca001008799da639967f971e4cda0b996ebc
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11176
+# items: 11184
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
@@ -162,6 +162,7 @@ pdfcer-3d enum pdfcer_3d::container::SectionKind
 pdfcer-3d enum pdfcer_3d::error::PrcError
 pdfcer-3d enum pdfcer_3d::gltf::GltfColours
 pdfcer-3d enum pdfcer_3d::gltf::GltfError
+pdfcer-3d enum pdfcer_3d::gltf::GltfOcclusion
 pdfcer-3d enum pdfcer_3d::gltf::GltfUpAxis
 pdfcer-3d enum pdfcer_3d::model::AssembleError
 pdfcer-3d enum pdfcer_3d::model::MeshFit
@@ -171,6 +172,7 @@ pdfcer-3d enum pdfcer_3d::named_view::UpAxis
 pdfcer-3d enum pdfcer_3d::render::Projection
 pdfcer-3d enum pdfcer_3d::render::RenderError
 pdfcer-3d enum pdfcer_3d::shadow::LightSense
+pdfcer-3d enum pdfcer_3d::shadow::ShadowLight
 pdfcer-3d enum pdfcer_3d::tess::Tessellation
 pdfcer-3d enum pdfcer_3d::texture::TextureFunction
 pdfcer-3d enum pdfcer_3d::texture::TextureOrigin
@@ -203,6 +205,7 @@ pdfcer-3d field pdfcer_3d::gltf::GltfImport::inferred
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::notes
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::scene
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::colours
+pdfcer-3d field pdfcer_3d::gltf::GltfOptions::occlusion
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::up_axis
 pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::depth_range
 pdfcer-3d field pdfcer_3d::gpu_ao::FrameAmbientOcclusion::orthographic
@@ -273,6 +276,7 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::height
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_frame
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_sense
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lighting
+pdfcer-3d field pdfcer_3d::render::RenderOptions::shadow_light
 pdfcer-3d field pdfcer_3d::render::RenderOptions::shadow_map_size
 pdfcer-3d field pdfcer_3d::render::RenderOptions::shadows
 pdfcer-3d field pdfcer_3d::render::RenderOptions::threads
@@ -459,6 +463,8 @@ pdfcer-3d variant pdfcer_3d::gltf::GltfError::Buffer
 pdfcer-3d variant pdfcer_3d::gltf::GltfError::Json
 pdfcer-3d variant pdfcer_3d::gltf::GltfError::NotGltf
 pdfcer-3d variant pdfcer_3d::gltf::GltfError::RequiredExtension
+pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Bake
+pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Drop
 pdfcer-3d variant pdfcer_3d::gltf::GltfUpAxis::AsStored
 pdfcer-3d variant pdfcer_3d::gltf::GltfUpAxis::ZUp
 pdfcer-3d variant pdfcer_3d::model::AssembleError::CompressedOnly
@@ -487,6 +493,8 @@ pdfcer-3d variant pdfcer_3d::render::RenderError::Camera
 pdfcer-3d variant pdfcer_3d::render::RenderError::Size
 pdfcer-3d variant pdfcer_3d::shadow::LightSense::Emitted
 pdfcer-3d variant pdfcer_3d::shadow::LightSense::TowardsLight
+pdfcer-3d variant pdfcer_3d::shadow::ShadowLight::FollowsScheme
+pdfcer-3d variant pdfcer_3d::shadow::ShadowLight::Sun
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Compressed
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Markup
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Mesh

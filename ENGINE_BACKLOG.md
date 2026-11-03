@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **49 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `wanted` — a real gap — **51 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -160,11 +160,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
+| **A shadow light fixed in the model** — `pdfcer_3d::shadow::ShadowLight` (`ShadowLight::FollowsScheme`, `ShadowLight::Sun`), `RenderOptions::shadow_light` | **wanted; our request G259, at v0.118.0 (O368).** The viewer casts shadows from `ShadowLight::Sun` on its Up axis whenever *Shadows* is on, so a shadow keeps its place on the model as the eye moves, while *Lights turn with the view* still governs the shading. |
+| **A glTF occlusion map baked into the colour, or dropped** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `blocked` — waiting on something named — **2 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -182,7 +184,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -193,7 +195,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `declined` — deliberately no surface — **20 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -239,7 +241,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **408 of 479** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **408 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
