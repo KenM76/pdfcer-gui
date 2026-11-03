@@ -78,9 +78,8 @@ impl Effects {
     /// value at two eyes means the shadow lies in the same model place.
     pub(super) fn trace(&self, options: &ModelRenderOptions) -> String {
         let light = self.shadow.map_or_else(String::new, |s| {
-            // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                " shadow-light={} shadow-map={:016x}",
+                " shadow-light={} shadow-map={:016x}", // ui-text-exempt: diagnostic trace, never displayed
                 s.light,
                 fingerprint(&s.matrix)
             )
