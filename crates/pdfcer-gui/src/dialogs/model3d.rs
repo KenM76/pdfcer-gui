@@ -173,6 +173,9 @@ pub(crate) struct ModelView {
     occlusion: bool,
     /// Which way the scheme's light directions point, for shadows.
     light_sense: pdfcer_3d::LightSense,
+    /// Shadows are cast by a sun fixed above the model on the Up axis,
+    /// else by the lighting.
+    sun: bool,
     /// Orbiting or walking, the switches, and the fingers on the picture.
     nav: nav::Nav,
     /// The eye height was set or reset, for the preferences file.
@@ -256,6 +259,7 @@ impl ModelView {
             shadows: true,
             occlusion: true,
             light_sense: pdfcer_3d::LightSense::default(),
+            sun: true,
             nav: nav::Nav::with_eye(eye_mm, walk),
             eye_changed: false,
         }

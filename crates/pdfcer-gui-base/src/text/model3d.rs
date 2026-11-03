@@ -269,7 +269,29 @@ pub fn shadows() -> &'static str {
 /// Its tip.
 #[must_use]
 pub fn shadows_tooltip() -> &'static str {
-    "One light casts shadows: the lighting's brightest light on your side, or, where every light is at the camera, a light above and to the left of the view. The PDF standard defines no shadows, so another reader may draw this model without them."
+    "One light casts shadows. The PDF standard defines no shadows, so another reader may draw this model without them."
+}
+
+/// The label of the drop-down for which light casts shadows.
+#[must_use]
+pub fn shadow_light_label() -> &'static str {
+    "Shadows cast by"
+}
+
+/// One caster: `sun` a light fixed above the model, else the lighting's.
+#[must_use]
+pub fn shadow_light(sun: bool) -> &'static str {
+    if sun {
+        "A sun above the model"
+    } else {
+        "The lighting"
+    }
+}
+
+/// Its tip.
+#[must_use]
+pub fn shadow_light_tooltip() -> &'static str {
+    "A sun above the model stays where it is as you orbit and walk, so shadows keep their place on the model; above is the Up axis. The lighting casts from its brightest light on your side, or a light above and to the left of the view, so shadows turn as you move."
 }
 
 /// The ambient occlusion switch.
@@ -308,23 +330,36 @@ pub fn light_sense_tooltip() -> &'static str {
     "The PDF standard does not say which way a lighting scheme's directions point. It changes only the side shadows fall on; the shading is the same either way."
 }
 
+/// Which light casts the viewer's shadows, for [`effects_said`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShadowCast {
+    /// Shadows switched off, or nothing casts.
+    None,
+    /// The lighting's brightest light on the viewer's side.
+    SchemeLight,
+    /// A light above and to the left of the view.
+    ViewKey,
+    /// A sun fixed above the model.
+    Sun,
+}
+
 /// What the viewer's picture shows of shadows and ambient occlusion:
-/// `shadows` is `None` switched off, else `Some(None)` when nothing casts,
-/// `Some(Some(true))` when a light of the scheme casts and
-/// `Some(Some(false))` when the fixed light does; `drawn` when either
-/// effect is drawn.
+/// which light casts, and `drawn` when either effect is drawn.
 #[must_use]
-pub fn effects_said(shadows: Option<Option<bool>>, drawn: bool) -> String {
+pub fn effects_said(cast: ShadowCast, drawn: bool) -> String {
     if !drawn {
         return "This lighting is unlit, so neither shadows nor shaded corners are drawn."
             .to_owned();
     }
-    let cast = match shadows {
-        Some(Some(true)) => "Shadows fall from the lighting's brightest light on your side. ",
-        Some(Some(false)) => {
+    let cast = match cast {
+        ShadowCast::SchemeLight => {
+            "Shadows fall from the lighting's brightest light on your side. "
+        }
+        ShadowCast::ViewKey => {
             "This lighting is all at the camera, so shadows fall from a light above and to the left of the view. "
         }
-        _ => "",
+        ShadowCast::Sun => "Shadows fall from a sun fixed above the model. ",
+        ShadowCast::None => "",
     };
     format!("{cast}Other PDF readers may not draw shadows or shaded corners.")
 }

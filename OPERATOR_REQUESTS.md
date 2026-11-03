@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O368 — **WAITING ON ENGINE** — shadows move as I move
+## O368 — **BUILT** — shadows move as I move
 
 His words: *"The shadows on objects move and change directions as I move. I'd expect them to stay cast onto objects and stay positioned when I move."*
 
 **Scope, whole behaviour.** A shadow stays in one place on the model while orbiting, zooming and walking, as in other 3D viewers. The shading may still follow the view.
 
-**Status.** Measured with the engine's renderer on `fixtures/floor-box.prc` from four corners. With *Lights turn with the view* on (the default), the shadow keeps its place on the screen, so it swings round the model. With it off, a Z-up model casts no floor shadow, because the scheme's up is not the model's. No setting gives a still, visible shadow. Filed as G259. No GUI workaround.
+**Status.** Measured with the engine's renderer on `fixtures/floor-box.prc` from four corners. With *Lights turn with the view* on (the default), the shadow keeps its place on the screen, so it swings round the model. With it off, a Z-up model casts no floor shadow, because the scheme's up is not the model's. No setting gave a still, visible shadow; filed as G259, which the engine shipped in v0.118.0. Built: shadows are now cast by a sun fixed above the model on its Up axis, so they stay put while orbiting, zooming and walking; the options menu's *Shadows cast by* offers *The lighting* for the old behaviour. Driven: `shadows_stay_on_the_model_as_the_eye_moves` (the shadow map is unchanged by a turn and a zoom). Walking is covered by the engine's contract, not driven. A negative Up (−X, −Y, −Z) puts the sun beneath the model until G260. NOT VERIFIED by him.
 
 ## O367 — **BUILT** — a government dynamic form "doesn't open"
 

@@ -7,8 +7,8 @@
 //!
 //! Oracles, from the `model-view-rendered` line (the viewer is an immediate
 //! viewport no screenshot reaches): opened, `gpu=1 shadows=1
-//! shadow-light=-1 ao=1` (the default lighting is all at the camera, so the
-//! fixed key light casts), the shaders having linked; after the first
+//! shadow-light=-1 ao=1` (the default caster is the sun, a dim key, not one
+//! of the scheme's lights), the shaders having linked; after the first
 //! switch, `shadows=0 ao=1` with a different picture hash; after the second,
 //! `ao=0` with a hash different again. A GPU path that names the effects in
 //! the trace but never draws them keeps the hash, which neither later
@@ -99,7 +99,7 @@ fn drive(
     if first[..4] != ["1", "1", "-1", "1"] {
         return Ok(Some(format!(
             "the viewer opened with gpu={} shadows={} shadow-light={} ao={}; expected the \
-             graphics card drawing both, cast by the fixed key light (a refused shader drops \
+             graphics card drawing both, cast by the sun's dim key (a refused shader drops \
              to the CPU and loses `gpu=1`; look for `model-view-gpu failed`).",
             first[0], first[1], first[2], first[3]
         )));

@@ -109,7 +109,7 @@ impl ModelView {
         let effects = camera
             .ok()
             .and_then(|c| Effects::new(c, options, &self.bounds, wanted.size).ok())
-            .map_or_else(String::new, |e| e.trace(options.light_sense));
+            .map_or_else(String::new, |e| e.trace(options));
         let lit = self.lighting_trace(options.lighting) + &effects;
         let eye = camera_eye(wanted.walk.as_ref());
         format!(

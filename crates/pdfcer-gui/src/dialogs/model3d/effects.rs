@@ -7,7 +7,7 @@ use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
     Bounds, Camera, FrameAmbientOcclusion, FrameShadow, LightFrame, LightSense, LightingScheme,
-    RenderError,
+    RenderError, ShadowLight,
 };
 
 use super::ModelView;
@@ -19,6 +19,8 @@ pub const REGION_SHADOWS: &str = "model3d.shadows"; // ui-text-exempt: trace reg
 pub const REGION_OCCLUSION: &str = "model3d.occlusion"; // ui-text-exempt: trace region name, never displayed
 /// The drop-down for which way a scheme's light directions point.
 pub const REGION_LIGHT_SENSE: &str = "model3d.light_sense"; // ui-text-exempt: trace region name, never displayed
+/// The drop-down for which light casts shadows.
+pub const REGION_SHADOW_LIGHT: &str = "model3d.shadow_light"; // ui-text-exempt: trace region name, never displayed
 
 /// Everything the picture's look depends on besides the model and camera.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -28,6 +30,7 @@ pub(super) struct Look {
     pub(super) shadows: bool,
     pub(super) occlusion: bool,
     pub(super) light_sense: LightSense,
+    pub(super) shadow_light: ShadowLight,
 }
 
 impl Look {
@@ -40,6 +43,7 @@ impl Look {
             shadows: self.shadows,
             ambient_occlusion: self.occlusion,
             light_sense: self.light_sense,
+            shadow_light: self.shadow_light,
             ..ModelRenderOptions::default()
         }
     }
@@ -68,18 +72,26 @@ impl Effects {
         })
     }
 
-    /// The render trace's fields: whether each is drawn, and the casting
-    /// light, −1 for the fixed key light.
-    pub(super) fn trace(&self, sense: LightSense) -> String {
-        let light = self
-            .shadow
-            .map_or_else(String::new, |s| format!(" shadow-light={}", s.light)); // ui-text-exempt: diagnostic trace, never displayed
+    /// The render trace's fields: whether each is drawn, the casting
+    /// light (−1 for a dim key: the view's or the sun), the caster, and
+    /// `shadow-map`, a fingerprint of the model-to-map matrix: the same
+    /// value at two eyes means the shadow lies in the same model place.
+    pub(super) fn trace(&self, options: &ModelRenderOptions) -> String {
+        let light = self.shadow.map_or_else(String::new, |s| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!(
+                " shadow-light={} shadow-map={:016x}",
+                s.light,
+                fingerprint(&s.matrix)
+            )
+        });
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            " shadows={}{light} ao={} sense={}",
+            " shadows={}{light} ao={} sense={} caster={}",
             u8::from(self.shadow.is_some()),
             u8::from(self.occlusion.is_some()),
-            sense_word(sense)
+            sense_word(options.light_sense),
+            caster_word(options.shadow_light)
         )
     }
 }
@@ -94,6 +106,13 @@ impl ModelView {
             shadows: self.shadows,
             occlusion: self.occlusion,
             light_sense: self.light_sense,
+            shadow_light: if self.sun {
+                ShadowLight::Sun {
+                    up: self.upright.up.engine(),
+                }
+            } else {
+                ShadowLight::FollowsScheme
+            },
         }
     }
 
@@ -105,7 +124,10 @@ impl ModelView {
             .on_hover_text(m::shadows_tooltip());
         crate::diag::ui_rect_visible(REGION_SHADOWS, shadows.rect, ui.clip_rect());
         if self.shadows {
-            ui.horizontal_wrapped(|ui| self.light_sense_combo(ui));
+            ui.horizontal_wrapped(|ui| self.shadow_light_combo(ui));
+            if !self.sun {
+                ui.horizontal_wrapped(|ui| self.light_sense_combo(ui));
+            }
         }
         let occlusion = ui
             .checkbox(&mut self.occlusion, m::occlusion())
@@ -114,6 +136,25 @@ impl ModelView {
         if let Some(said) = self.effects_said() {
             ui.weak(said);
         }
+    }
+
+    fn shadow_light_combo(&mut self, ui: &mut Ui) {
+        ui.label(m::shadow_light_label());
+        let combo = egui::ComboBox::from_id_salt(REGION_SHADOW_LIGHT)
+            .selected_text(m::shadow_light(self.sun))
+            .show_ui(ui, |ui| {
+                for sun in [true, false] {
+                    let item = ui.selectable_value(&mut self.sun, sun, m::shadow_light(sun));
+                    // ui-text-exempt: trace region name, never displayed
+                    let region = format!(
+                        "{REGION_SHADOW_LIGHT}.{}",
+                        if sun { "sun" } else { "scheme" }
+                    );
+                    crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
+                }
+            });
+        crate::diag::ui_rect_visible(REGION_SHADOW_LIGHT, combo.response.rect, ui.clip_rect());
+        combo.response.on_hover_text(m::shadow_light_tooltip());
     }
 
     fn light_sense_combo(&mut self, ui: &mut Ui) {
@@ -147,9 +188,29 @@ impl ModelView {
         let camera = self.view_camera(aspect).ok()?;
         let options = self.look().options();
         let effects = Effects::new(&camera, &options, &self.bounds, [w.max(1), h.max(1)]).ok()?;
-        let cast = effects.shadow.map(|s| s.light >= 0);
+        let cast = match effects.shadow {
+            None => m::ShadowCast::None,
+            Some(_) if self.sun => m::ShadowCast::Sun,
+            Some(s) if s.light >= 0 => m::ShadowCast::SchemeLight,
+            Some(_) => m::ShadowCast::ViewKey,
+        };
         let drawn = effects.shadow.is_some() || effects.occlusion.is_some();
-        Some(m::effects_said(self.shadows.then_some(cast), drawn))
+        Some(m::effects_said(cast, drawn))
+    }
+}
+
+/// FNV-1a over `matrix`'s bits.
+fn fingerprint(matrix: &[f32; 16]) -> u64 {
+    matrix.iter().fold(0xcbf2_9ce4_8422_2325, |h, v| {
+        (h ^ u64::from(v.to_bits())).wrapping_mul(0x0100_0000_01b3)
+    })
+}
+
+/// The trace's word for the shadow caster.
+fn caster_word(light: ShadowLight) -> &'static str {
+    match light {
+        ShadowLight::Sun { .. } => "sun", // ui-text-exempt: trace value, never displayed
+        _ => "scheme",                    // ui-text-exempt: trace value, never displayed
     }
 }
 

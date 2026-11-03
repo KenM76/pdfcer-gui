@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **51 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `wanted` — a real gap — **50 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -160,7 +160,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
-| **A shadow light fixed in the model** — `pdfcer_3d::shadow::ShadowLight` (`ShadowLight::FollowsScheme`, `ShadowLight::Sun`), `RenderOptions::shadow_light` | **wanted; our request G259, at v0.118.0 (O368).** The viewer casts shadows from `ShadowLight::Sun` on its Up axis whenever *Shadows* is on, so a shadow keeps its place on the model as the eye moves, while *Lights turn with the view* still governs the shading. |
 | **A glTF occlusion map baked into the colour, or dropped** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
 
 ---
@@ -241,7 +240,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **408 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **409 of 481** <!-- counted by tools/walk-engine-backlog.py, 2026-11-02; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -709,6 +708,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Paragraph and cell-aware block recognition on spaced pages** — a blank-line gap ends a paragraph, a column of heading numbers is not a column, a drawing frame's cell splits into its notes (our `G205`, `G206`, Pass 611.0/612.0) | **shipped — engine v0.88.0.** Every block index the shell sends to a block verb comes from `canvas::textedit::engine_model::recognise`: cell-aware, `reflow_recognition_options`, the page's `LineMarks` attached, as `EditSession::block_at_point` builds it. The draft's paragraph, the Select tool's paragraph objects, Reflow and Align all read it. Driven by `a_written_blank_line_paragraph_is_numbered_as_the_engine_numbers_it` (a blank line written with `edit_block_text`, every block checked against `block_at_point`), falsified by dropping the marks. |
 | **Depth that holds coplanar 3D textures on the GPU** — logarithmic depth in `GLSL_ES_300_FRAGMENT`, `Camera::depth_range` … | **shipped; our request G256, at v0.116.0.** `dialogs::model3d::gpu::frame_uniforms` passes `depth_range` as `u_depth_range`, beside `u_orthographic`, into the 24-bit depth buffer `native-mesh` already allocates; a texture lying on a wall no longer fights it (O360). |
 | **Cast shadows and ambient occlusion in the 3D picture** — the modules `pdfcer_3d::shadow` (`LightSense`, `DEFAULT_SHADOW_MAP_SIZE`, `MAX_SHADOW_MAP_SIZE`), `pdfcer_3d::gpu_shadow` (`FrameShadow`, `GLSL_ES_300_SHADOW_VERTEX`, `GLSL_ES_300_SHADOW_FRAGMENT`) and `pdfcer_3d::gpu_ao` (`FrameAmbientOcclusion`, `GLSL_ES_300_SCREEN_VERTEX`, `GLSL_ES_300_AO_FRAGMENT`, `GLSL_ES_300_AO_COMPOSITE_FRAGMENT`), `RenderOptions::shadows`, `RenderOptions::light_sense`, `RenderOptions::shadow_map_size`, `RenderOptions::ambient_occlusion` | **shipped; our requests G257 and G258, at v0.117.0.** `dialogs::model3d::effects` puts *Shadows*, the light sense and *Shade corners and creases* in the viewer's options menu. The CPU path reads them through `RenderOptions`; the GPU path draws `FrameShadow`'s depth map and `FrameAmbientOcclusion`'s two screen passes through `native-mesh::Passes` (O366). |
+| **A shadow light fixed in the model** — `pdfcer_3d::shadow::ShadowLight` (`ShadowLight::FollowsScheme`, `ShadowLight::Sun`, `UpAxis`), `RenderOptions::shadow_light` | **shipped; our request G259, at v0.118.0.** `dialogs::model3d::effects` passes `ShadowLight::Sun` on the viewer's Up axis by default, so a shadow keeps its place on the model as the eye moves; *Shadows cast by* offers *The lighting* (`FollowsScheme`). *Lights turn with the view* still governs the shading (O368). |
 
 ## Filed requests for OCR — not verdict rows
 
@@ -846,7 +846,7 @@ The request O280 is built on, answered and consumed.
 - **G247** — the lit opening view written at insert. Answered at v0.112.0 by `EditSession::set_3d_opening_view` and consumed by `app::actions::model_insert`.
 - **G257** — no cast shadows: surfaces are shaded only by their angle to the lights, on both the GPU and CPU paths, so an interior reads flat beside other glTF viewers. Asked for a published shadow-map pass, the same on the CPU path, and a switch.
 - **G258** — no ambient occlusion: the ambient term is constant, and glTF `occlusionTexture` is not read. Asked for SSAO or baked per-vertex occlusion, and a switch beside G257's.
-- **G259** — shadows move as the eye moves (O368). In `LightFrame::Camera` the caster is a camera-frame light, so a shadow keeps its place on the screen and swings round the model. In `LightFrame::World` Table 310's directions are model axes, so a Z-up model casts no floor shadow, and `Caster::choose` still prefers the light on the viewer's side. Asked for a shadow light fixed in model space, chosen from the model's up axis, apart from `light_frame`.
+- **G259** — shadows move as the eye moves (O368). In `LightFrame::Camera` the caster is a camera-frame light, so a shadow keeps its place on the screen and swings round the model. In `LightFrame::World` Table 310's directions are model axes, so a Z-up model casts no floor shadow, and `Caster::choose` still prefers the light on the viewer's side. Asked for a shadow light fixed in model space, chosen from the model's up axis, apart from `light_frame`. Answered at v0.118.0 by `ShadowLight::Sun` and consumed by `dialogs::model3d::effects`. Its `UpAxis` is unsigned, so a negative Up puts the sun beneath the model: G260.
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 

@@ -42,6 +42,11 @@ impl Axis {
         ["+x", "+y", "+z", "-x", "-y", "-z"][self.index()]
     }
 
+    /// The engine's unsigned axis along this one.
+    pub(crate) fn engine(self) -> pdfcer_3d::UpAxis {
+        pdfcer_3d::UpAxis::ALL[self.index() % 3]
+    }
+
     /// Whether `other` is a different line through the origin.
     pub(crate) fn perpendicular(self, other: Self) -> bool {
         self.index() % 3 != other.index() % 3
