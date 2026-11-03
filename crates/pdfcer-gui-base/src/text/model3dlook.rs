@@ -181,16 +181,22 @@ pub fn model_lights(lamps: usize, directional: usize, ambient: usize, drawn: boo
     )
 }
 
-/// Lights past the 16 the picture draws.
+/// Lights past the `limit` the picture draws.
 #[must_use]
-pub fn lights_dropped(count: usize) -> String {
-    format!("{count} light(s) past the 16 drawn are left out.")
+pub fn lights_dropped(count: usize, limit: usize) -> String {
+    format!("{count} light(s) past the {limit} drawn are left out.")
 }
 
-/// Lights past the 16 that cast shadows, lit without one.
+/// Directional lights past the `limit` that cast shadows, lit without one.
 #[must_use]
-pub fn casters_dropped(count: usize) -> String {
-    format!("{count} light(s) past the 16 casting shadows light the model without one.")
+pub fn casters_dropped(count: usize, limit: usize) -> String {
+    format!("{count} light(s) past the {limit} casting shadows light the model without one.")
+}
+
+/// Point and spot lights past the `limit` that cast shadows, lit without one.
+#[must_use]
+pub fn lamp_casters_dropped(count: usize, limit: usize) -> String {
+    format!("{count} lamp(s) past the {limit} casting shadows light the model without one.")
 }
 
 /// The live picture is drawn by the processor, not the graphics card,
@@ -200,26 +206,17 @@ pub fn drawn_on_processor(what: &str) -> String {
     format!("Drawn without the graphics card while it shows {what}, so moving it is slower.")
 }
 
-/// What the graphics card does not draw yet, for [`drawn_on_processor`].
+/// What the graphics card does not draw, for [`drawn_on_processor`].
 #[must_use]
 pub fn processor_reason(reason: ProcessorReason) -> &'static str {
     match reason {
-        ProcessorReason::Lines => "edges, wires or vertices",
-        ProcessorReason::LampShadows => "lamp shadows",
-        ProcessorReason::ExtraCasters => "shadows from more than one light",
-        ProcessorReason::SeeThrough => "shadows of see-through parts",
+        ProcessorReason::WidePoints => "vertices larger than the card draws",
     }
 }
 
 /// Why the live picture is drawn by the processor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessorReason {
-    /// Lines, points or a second emissive pass.
-    Lines,
-    /// A lamp casts.
-    LampShadows,
-    /// More than one directional light casts.
-    ExtraCasters,
-    /// A see-through part casts.
-    SeeThrough,
+    /// Points wider than the card's widest.
+    WidePoints,
 }

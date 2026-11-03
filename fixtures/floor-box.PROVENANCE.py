@@ -9,7 +9,12 @@ flat normals inferred, +Y up turned to +Z up). Rendered with
 `pdfcer 3d-render`, the default picture and the `--no-shadows` one differ in
 about 23,000 pixels and the `--no-ambient-occlusion` one in about 3,300.
 
-Run: python fixtures/floor-box.PROVENANCE.py <path to pdfcer.exe>
+With `lamp` as a second argument it writes `fixtures/floor-lamp.prc`
+instead: the same scene with one white glTF point light
+(`KHR_lights_punctual`) above a corner of the floor, which the engine
+keeps as the model's own lamp.
+
+Run: python fixtures/floor-box.PROVENANCE.py <path to pdfcer.exe> [lamp]
 """
 import pathlib
 import subprocess
@@ -72,7 +77,16 @@ g = {
     "scene": 0,
 }
 
-out = pathlib.Path(__file__).with_name('floor-box.prc')
+lamp = sys.argv[2:3] == ['lamp']
+if lamp:
+    g["extensionsUsed"] = ["KHR_lights_punctual"]
+    g["extensions"] = {"KHR_lights_punctual": {"lights": [
+        {"type": "point", "color": [1, 1, 1], "intensity": 20}]}}
+    g["nodes"].append({"name": "lamp", "translation": [1.5, 2.5, 1.5],
+                       "extensions": {"KHR_lights_punctual": {"light": 0}}})
+    g["scenes"][0]["nodes"].append(2)
+
+out = pathlib.Path(__file__).with_name('floor-lamp.prc' if lamp else 'floor-box.prc')
 with tempfile.TemporaryDirectory() as tmp:
     src = pathlib.Path(tmp) / 'floor-box.gltf'
     src.write_text(json.dumps(g, separators=(',', ':')), encoding='utf-8')

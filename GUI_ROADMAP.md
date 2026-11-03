@@ -37,21 +37,15 @@ the pin has for them has a route and a driven check. A pasted link's
 
 ---
 
-## The 3D viewer on the graphics card: the passes still drawn in software
+## The 3D viewer on the graphics card: what is still drawn in software
 
-The card declines a frame (`dialogs::model3d::gpu::declined`) when it needs
-a pass the shell has not wired, and the processor draws it. Each pass below
-takes that case back to the card; the engine supplies every shader and
-per-frame helper, so the work is upload and binding.
-
-1. **Lines and points**: `pdfcer_3d::gpu_lines`, and the wide-line program
-   on the engine's main past v0.120.0 (`DrawData::line_width`), with the
-   next pin. Covers wireframe, edges, illustration and a model's wires.
-2. **The emissive pass**: `DrawData::emissive` under an unlit frame.
-3. **Lamp shadows**: `FrameLampShadows`' six-face cube maps per lamp.
-4. **Extra casters**: `FrameExtraShadows`' map array past the key light.
-5. **See-through casters**: the veil and transmit maps of
-   `pdfcer_3d::gpu_shadow_set`.
+The card draws every pass the engine publishes: faces, lines and points, the
+emissive repeat, the key light's map, lamp cube maps, extra directional
+casters, see-through casters and ambient occlusion. It declines a frame
+(`dialogs::model3d::gpu::declined`) only for points wider than the driver
+draws (`ProcessorReason::WidePoints`), which the processor draws and the
+line under the picture says. No fixture carries such points, so that path is
+not driven.
 
 ## How the order is chosen
 

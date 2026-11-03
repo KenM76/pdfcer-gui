@@ -8,145 +8,38 @@
 //! named, so this crate knows no shader. A [`Mesh`] owns GL objects and must
 //! be [`Mesh::destroy`]ed with the same context.
 //!
-//! Two optional passes surround the main one ([`Passes`]): a square depth
-//! map drawn first with its own program and bound to the main program as a
-//! sampler, and a two-pass effect over the finished frame's colour and depth.
+//! Optional passes surround the main one ([`Passes`]), in this order: float
+//! tables and layered textures filled from other viewpoints, bound to the
+//! main program as samplers; the main draws; a two-pass effect over the
+//! faces' colour and depth; the opaque draws repeated and added in; and
+//! overlays with their own vertices, depth-tested against the faces. The
+//! caller assigns every sampler its texture unit, picture on unit 0.
 //!
 //! State left behind: the destination framebuffer bound, no program, no
 //! vertex array, depth test, blending and culling off, scissor on with the
 //! clip box. `egui_glow` re-prepares its own state after a callback.
 
 mod buffers;
+mod layers;
+mod overlay;
 mod passes;
 mod program;
+mod spec;
 
 use glow::HasContext as _;
 
 use buffers::{Buffers, ScreenTextures};
-use passes::{DepthTarget, ScreenPrograms};
+use layers::{LayerTarget, TableTexture};
+use overlay::OverlayProgram;
+use passes::ScreenPrograms;
 use program::Program;
+pub use spec::{
+    Attribute, Draw, Fill, Format, Layers, Layout, Overlay, Passes, Picture, Primitive, Repeat,
+    ScreenEffect, Source, Table, Target, Value, Wrap,
+};
 
-/// How a picture's coordinates outside 0–1 are drawn.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Wrap {
-    /// The picture tiles.
-    Repeat,
-    /// Coordinates are held to the edge.
-    Clamp,
-    /// The picture tiles, every other copy mirrored.
-    Mirrored,
-}
-
-/// A picture to sample: straight RGBA, top row first, four bytes a pixel.
-#[derive(Debug, Clone, Copy)]
-pub struct Picture<'a> {
-    /// Pixels across.
-    pub width: u32,
-    /// Pixels down.
-    pub height: u32,
-    /// `width × height × 4` bytes.
-    pub rgba: &'a [u8],
-    /// Across, then down.
-    pub wrap: [Wrap; 2],
-}
-
-/// A uniform's value.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    /// `int`, `bool` or a sampler's texture unit.
-    Int(i32),
-    /// `float`.
-    Float(f32),
-    /// `ivec2`.
-    IVec2([i32; 2]),
-    /// `vec2`.
-    Vec2([f32; 2]),
-    /// `vec3`.
-    Vec3([f32; 3]),
-    /// `vec4`.
-    Vec4([f32; 4]),
-    /// `mat4`, column-major.
-    Mat4([f32; 16]),
-    /// `vec3[n]`, three floats an entry.
-    Vec3s(Vec<f32>),
-    /// `vec4[n]`, four floats an entry.
-    Vec4s(Vec<f32>),
-}
-
-/// One draw: a run of whole triangles with its own uniforms.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Draw {
-    /// The first vertex.
-    pub first: i32,
-    /// How many vertices, a multiple of three.
-    pub count: i32,
-    /// The picture bound to texture unit 0, an index into the last
-    /// [`Mesh::set_pictures`].
-    pub picture: Option<usize>,
-    /// Blended over what is drawn, without writing depth. Translucent draws
-    /// must come after every opaque one.
-    pub translucent: bool,
-    /// Set before this draw.
-    pub uniforms: Vec<(&'static str, Value)>,
-}
-
-/// Where a frame goes, in the destination's pixels from its bottom left.
-#[derive(Debug, Clone, Copy)]
-pub struct Target {
-    /// `[left, bottom, width, height]` of the picture.
-    pub viewport: [i32; 4],
-    /// `[left, bottom, width, height]` the copy may touch.
-    pub clip: [i32; 4],
-    /// The framebuffer the callback runs in; `None` is the window's.
-    pub destination: Option<glow::Framebuffer>,
-    /// The clear colour, straight RGBA 0–1.
-    pub background: [f32; 4],
-    /// Also return the picture's pixels.
-    pub read_back: bool,
-}
-
-/// A depth map drawn before the frame, from the viewpoint its uniforms set,
-/// with the program [`Mesh::set_depth_program`] linked.
-#[derive(Debug, Clone, Copy)]
-pub struct DepthMap<'a> {
-    /// Pixels a side.
-    pub size: i32,
-    /// Set on the depth map's program.
-    pub uniforms: &'a [(&'static str, Value)],
-    /// The main program's sampler the map is bound to.
-    pub sampler: &'static str,
-    /// Draw it this frame. A map is also drawn when it is new, resized, or
-    /// the vertices changed since it was last drawn; otherwise it is reused.
-    pub redraw: bool,
-}
-
-/// A two-pass effect over the finished frame, with the programs
-/// [`Mesh::set_screen_programs`] linked; each draws one triangle covering
-/// the viewport. The first reads the frame's depth and writes a texture the
-/// size of the viewport; the second reads the frame's colour and depth and
-/// that texture, and writes the picture.
-#[derive(Debug, Clone, Copy)]
-pub struct ScreenEffect<'a> {
-    /// Set on both programs.
-    pub uniforms: &'a [(&'static str, Value)],
-    /// Both programs' sampler for the frame's depth, 24 bits, read `NEAREST`.
-    pub depth: &'static str,
-    /// The second program's sampler for the frame's colour.
-    pub colour: &'static str,
-    /// The second program's sampler for the first's output.
-    pub first_output: &'static str,
-}
-
-/// The optional passes around the main one.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Passes<'a> {
-    /// Drawn before the main pass.
-    pub depth_map: Option<DepthMap<'a>>,
-    /// Drawn over the main pass.
-    pub screen: Option<ScreenEffect<'a>>,
-}
-
-/// A compiled program, its geometry and pictures, and its buffers.
+/// A compiled program, its geometry and pictures, the passes' programs and
+/// textures, and its buffers.
 pub struct Mesh {
     main: Program,
     vao: glow::VertexArray,
@@ -154,12 +47,18 @@ pub struct Mesh {
     pictures: Vec<glow::Texture>,
     buffers: Option<Buffers>,
     samples: i32,
-    depth_program: Option<Program>,
-    depth_target: Option<DepthTarget>,
-    /// The vertices changed since the depth map was drawn.
-    depth_stale: bool,
+    /// Programs a [`Fill`] names; they read the main attributes.
+    programs: Vec<Program>,
+    /// Parallel to the last [`Passes::layers`].
+    layer_targets: Vec<LayerTarget>,
+    /// Parallel to the last [`Passes::tables`].
+    tables: Vec<TableTexture>,
+    /// Bumped whenever the vertices or pictures change.
+    generation: u64,
     screen_programs: Option<ScreenPrograms>,
     screen_textures: Option<ScreenTextures>,
+    overlays: Vec<OverlayProgram>,
+    widest_point: f32,
 }
 
 /// The most samples a pixel takes; the driver's limit if lower.
@@ -203,32 +102,63 @@ impl Mesh {
                 pictures: Vec::new(),
                 buffers: None,
                 samples,
-                depth_program: None,
-                depth_target: None,
-                depth_stale: true,
+                programs: Vec::new(),
+                layer_targets: Vec::new(),
+                tables: Vec::new(),
+                generation: 0,
                 screen_programs: None,
                 screen_textures: None,
+                overlays: Vec::new(),
+                widest_point: overlay::widest_point(gl),
             })
         }
     }
 
-    /// Link the program a [`DepthMap`] is drawn with; it reads the same
-    /// vertex attributes as the main program.
+    /// Link a program a [`Fill`] draws with; it reads the same vertex
+    /// attributes as the main program. Returns its index.
     ///
     /// # Errors
     ///
     /// The driver's compile or link log.
-    pub fn set_depth_program(
+    pub fn add_program(
         &mut self,
         gl: &glow::Context,
         vertex: &str,
         fragment: &str,
-    ) -> Result<(), String> {
-        let program = Program::new(gl, vertex, fragment)?;
-        if let Some(old) = self.depth_program.replace(program) {
-            old.delete(gl);
+    ) -> Result<usize, String> {
+        self.programs.push(Program::new(gl, vertex, fragment)?);
+        Ok(self.programs.len() - 1)
+    }
+
+    /// Link an [`Overlay`]'s program over its own vertices, laid out as
+    /// `layout`. Returns its index.
+    ///
+    /// # Errors
+    ///
+    /// The driver's compile or link log, or the object it could not create.
+    pub fn add_overlay(
+        &mut self,
+        gl: &glow::Context,
+        vertex: &str,
+        fragment: &str,
+        layout: &Layout<'_>,
+    ) -> Result<usize, String> {
+        self.overlays
+            .push(OverlayProgram::new(gl, vertex, fragment, layout)?);
+        Ok(self.overlays.len() - 1)
+    }
+
+    /// Replace overlay `index`'s vertices; an unknown index is ignored.
+    pub fn set_overlay_vertices(&mut self, gl: &glow::Context, index: usize, vertices: &[f32]) {
+        if let Some(o) = self.overlays.get(index) {
+            o.set_vertices(gl, vertices);
         }
-        Ok(())
+    }
+
+    /// The widest point, in pixels, the context draws.
+    #[must_use]
+    pub fn widest_point(&self) -> f32 {
+        self.widest_point
     }
 
     /// Link a [`ScreenEffect`]'s two programs, both with `vertex`, which
@@ -259,7 +189,7 @@ impl Mesh {
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, &bytes, glow::STATIC_DRAW);
             gl.bind_buffer(glow::ARRAY_BUFFER, None);
         }
-        self.depth_stale = true;
+        self.generation += 1;
     }
 
     /// Replace the pictures [`Draw::picture`] indexes.
@@ -270,6 +200,7 @@ impl Mesh {
     /// not match its size.
     pub fn set_pictures(&mut self, gl: &glow::Context, pictures: &[Picture]) -> Result<(), String> {
         self.drop_pictures(gl);
+        self.generation += 1;
         for p in pictures {
             if p.rgba.len() != p.width as usize * p.height as usize * 4 {
                 return Err(format!(
@@ -279,39 +210,7 @@ impl Mesh {
                     p.rgba.len()
                 ));
             }
-            // SAFETY: the texture is created here and kept in `self.pictures`.
-            unsafe {
-                let texture = gl.create_texture()?;
-                gl.bind_texture(glow::TEXTURE_2D, Some(texture));
-                for (axis, wrap) in [glow::TEXTURE_WRAP_S, glow::TEXTURE_WRAP_T]
-                    .into_iter()
-                    .zip(p.wrap)
-                {
-                    let mode = match wrap {
-                        Wrap::Repeat => glow::REPEAT,
-                        Wrap::Clamp => glow::CLAMP_TO_EDGE,
-                        Wrap::Mirrored => glow::MIRRORED_REPEAT,
-                    };
-                    gl.tex_parameter_i32(glow::TEXTURE_2D, axis, mode as i32);
-                }
-                for filter in [glow::TEXTURE_MIN_FILTER, glow::TEXTURE_MAG_FILTER] {
-                    gl.tex_parameter_i32(glow::TEXTURE_2D, filter, glow::LINEAR as i32);
-                }
-                gl.pixel_store_i32(glow::UNPACK_ALIGNMENT, 4);
-                gl.tex_image_2d(
-                    glow::TEXTURE_2D,
-                    0,
-                    glow::RGBA8 as i32,
-                    p.width as i32,
-                    p.height as i32,
-                    0,
-                    glow::RGBA,
-                    glow::UNSIGNED_BYTE,
-                    glow::PixelUnpackData::Slice(Some(p.rgba)),
-                );
-                gl.bind_texture(glow::TEXTURE_2D, None);
-                self.pictures.push(texture);
-            }
+            self.pictures.push(upload_picture(gl, p)?);
         }
         Ok(())
     }
@@ -321,8 +220,9 @@ impl Mesh {
     ///
     /// # Errors
     ///
-    /// An offscreen buffer the driver could not create or complete, or a
-    /// pass asked for whose program is not linked.
+    /// An offscreen buffer the driver could not create or complete, a table
+    /// that is not a whole number of rows, or a screen effect asked for with
+    /// no screen programs.
     pub fn draw(
         &mut self,
         gl: &glow::Context,
@@ -336,79 +236,116 @@ impl Mesh {
             return Ok(None);
         }
         self.ensure_buffers(gl, [w, h])?;
-        if let Some(map) = &passes.depth_map {
-            self.depth_pass(gl, map, draws)?;
-        }
-        let Some(b) = &self.buffers else {
+        self.fit_inputs(gl, passes)?;
+        self.fill_layers(gl, passes.layers, draws)?;
+        let Some(multisampled) = self.buffers.as_ref().map(|b| b.multisampled) else {
             return Ok(None);
         };
-        self.begin(gl, b.multisampled, [w, h], target.background);
+        self.begin(gl, multisampled, [w, h], target.background);
         for (name, value) in uniforms {
             self.main.set(gl, name, value);
         }
-        if let (Some(map), Some(t)) = (&passes.depth_map, &self.depth_target) {
-            t.bind(gl, &mut self.main, map.sampler);
+        self.bind_inputs(gl, passes);
+        self.draw_runs(gl, draws, None);
+        if let Some(effect) = &passes.screen {
+            self.unbind_inputs(gl, passes);
+            self.screen(gl, effect, [w, h])?;
         }
-        self.draw_runs(gl, draws);
-        self.finish(gl, passes.screen.as_ref(), [w, h])?;
+        if let Some(repeat) = &passes.repeat {
+            self.repeat(gl, multisampled, [w, h], passes, repeat, draws);
+        }
+        overlay::draw_all(gl, &mut self.overlays, passes.overlays);
+        self.unbind_inputs(gl, passes);
         let Some(b) = &self.buffers else {
             return Ok(None);
         };
+        b.resolve(gl);
         Ok(buffers::present(gl, b, target))
     }
 
-    /// Draw the depth map when it is asked for or out of date.
-    fn depth_pass(
-        &mut self,
-        gl: &glow::Context,
-        map: &DepthMap<'_>,
-        draws: &[Draw],
-    ) -> Result<(), String> {
-        let Some(program) = self.depth_program.as_mut() else {
-            return Err("depth map asked for with no depth program".to_owned());
-        };
-        let size = map.size.max(1);
-        let fresh = self.depth_target.as_ref().is_none_or(|t| t.size != size);
-        if fresh {
-            if let Some(old) = self.depth_target.take() {
-                old.delete(gl);
-            }
-            self.depth_target = Some(DepthTarget::new(gl, size)?);
+    /// Make the tables and layered textures match `passes`, keeping what
+    /// still fits.
+    fn fit_inputs(&mut self, gl: &glow::Context, passes: &Passes<'_>) -> Result<(), String> {
+        let mut old = std::mem::take(&mut self.tables).into_iter();
+        for spec in passes.tables {
+            self.tables.push(TableTexture::fit(gl, old.next(), spec)?);
         }
-        if !(fresh || map.redraw || self.depth_stale) {
-            return Ok(());
+        old.for_each(|t| t.delete(gl));
+        let mut old = std::mem::take(&mut self.layer_targets).into_iter();
+        for spec in passes.layers {
+            self.layer_targets
+                .push(LayerTarget::fit(gl, old.next(), spec)?);
         }
-        let Some(target) = &self.depth_target else {
-            return Ok(());
-        };
-        // SAFETY: the vertex array is this mesh's own.
-        unsafe { gl.bind_vertex_array(Some(self.vao)) };
-        program.use_with(gl, map.uniforms);
-        target.draw(gl, draws);
-        self.depth_stale = false;
+        old.for_each(|t| t.delete(gl));
         Ok(())
     }
 
-    /// Resolve the frame into the plain buffer, through the screen effect
-    /// when one is asked for.
-    fn finish(
+    /// Fill each layered texture asked for or out of date.
+    fn fill_layers(
         &mut self,
         gl: &glow::Context,
-        screen: Option<&ScreenEffect<'_>>,
+        specs: &[Layers<'_>],
+        draws: &[Draw],
+    ) -> Result<(), String> {
+        let generation = self.generation;
+        let mut bound = false;
+        for (target, spec) in self.layer_targets.iter_mut().zip(specs) {
+            if !target.wants_fill(spec, generation) {
+                continue;
+            }
+            if !bound {
+                bound = true;
+                // SAFETY: the vertex array is this mesh's own.
+                unsafe { gl.bind_vertex_array(Some(self.vao)) };
+            }
+            target.fill(
+                gl,
+                spec,
+                &mut self.programs,
+                draws,
+                &self.pictures,
+                generation,
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Bind every table and layered texture to its unit and sampler on the
+    /// main program, which must be in use.
+    fn bind_inputs(&mut self, gl: &glow::Context, passes: &Passes<'_>) {
+        for (t, spec) in self.tables.iter().zip(passes.tables) {
+            t.bind(gl, &mut self.main, spec);
+        }
+        for (t, spec) in self.layer_targets.iter().zip(passes.layers) {
+            t.bind(gl, &mut self.main, spec);
+        }
+        // SAFETY: a binding change on the caller's current context.
+        unsafe { gl.active_texture(glow::TEXTURE0) };
+    }
+
+    /// Unbind what [`Mesh::bind_inputs`] bound.
+    fn unbind_inputs(&self, gl: &glow::Context, passes: &Passes<'_>) {
+        for spec in passes.tables {
+            // SAFETY: a binding change on the caller's current context.
+            unsafe {
+                gl.active_texture(glow::TEXTURE0 + spec.unit);
+                gl.bind_texture(glow::TEXTURE_2D, None);
+            }
+        }
+        for (t, spec) in self.layer_targets.iter().zip(passes.layers) {
+            t.unbind(gl, spec.unit);
+        }
+        // SAFETY: a binding change on the caller's current context.
+        unsafe { gl.active_texture(glow::TEXTURE0) };
+    }
+
+    /// Run the screen effect over the faces in the multisampled buffer.
+    fn screen(
+        &mut self,
+        gl: &glow::Context,
+        effect: &ScreenEffect<'_>,
         size: [i32; 2],
     ) -> Result<(), String> {
-        // SAFETY: unbinds the depth map's unit.
-        unsafe {
-            gl.active_texture(glow::TEXTURE1);
-            gl.bind_texture(glow::TEXTURE_2D, None);
-            gl.active_texture(glow::TEXTURE0);
-        }
-        let Some(effect) = screen else {
-            if let Some(b) = &self.buffers {
-                b.resolve(gl);
-            }
-            return Ok(());
-        };
         if self.screen_textures.as_ref().is_none_or(|t| t.size != size) {
             if let Some(old) = self.screen_textures.take() {
                 old.delete(gl);
@@ -424,6 +361,43 @@ impl Mesh {
         };
         programs.run(gl, effect, b, t);
         Ok(())
+    }
+
+    /// Draw the opaque draws again with `repeat`'s uniforms, added in where
+    /// they meet the faces' depth exactly.
+    fn repeat(
+        &mut self,
+        gl: &glow::Context,
+        multisampled: glow::Framebuffer,
+        [w, h]: [i32; 2],
+        passes: &Passes<'_>,
+        repeat: &Repeat<'_>,
+        draws: &[Draw],
+    ) {
+        let [r, g, b, a] = repeat.blend;
+        // SAFETY: the framebuffer, program and vertex array are this mesh's own.
+        unsafe {
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(multisampled));
+            gl.viewport(0, 0, w, h);
+            gl.disable(glow::SCISSOR_TEST);
+            gl.disable(glow::CULL_FACE);
+            gl.enable(glow::DEPTH_TEST);
+            gl.depth_func(glow::EQUAL);
+            gl.depth_mask(false);
+            gl.use_program(Some(self.main.id));
+            gl.bind_vertex_array(Some(self.vao));
+        }
+        self.bind_inputs(gl, passes);
+        // SAFETY: state changes on the caller's current context.
+        unsafe {
+            gl.enable(glow::BLEND);
+            gl.blend_equation(glow::FUNC_ADD);
+            gl.blend_color(r, g, b, a);
+            gl.blend_func(glow::CONSTANT_COLOR, glow::ONE);
+        }
+        self.draw_runs(gl, draws, Some(repeat.uniforms));
+        // SAFETY: state changes on the caller's current context.
+        unsafe { gl.depth_func(glow::LESS) };
     }
 
     /// Bind the multisampled buffer, clear it to `background`, and set the
@@ -457,9 +431,19 @@ impl Mesh {
     }
 
     /// The draws, opaque then blended, each with its uniforms and picture.
-    fn draw_runs(&mut self, gl: &glow::Context, draws: &[Draw]) {
+    /// With `repeat`, only the opaque ones, `repeat` set after each's own,
+    /// under the blending the caller set.
+    fn draw_runs(
+        &mut self,
+        gl: &glow::Context,
+        draws: &[Draw],
+        repeat: Option<&[(&'static str, Value)]>,
+    ) {
         let mut blending = false;
         for d in draws {
+            if d.translucent && repeat.is_some() {
+                break;
+            }
             if d.translucent && !blending {
                 blending = true;
                 // SAFETY: state changes on the caller's current context.
@@ -475,7 +459,7 @@ impl Mesh {
                     gl.depth_mask(false);
                 }
             }
-            for (name, value) in &d.uniforms {
+            for (name, value) in d.uniforms.iter().chain(repeat.unwrap_or_default()) {
                 self.main.set(gl, name, value);
             }
             let texture = d.picture.and_then(|i| self.pictures.get(i).copied());
@@ -488,8 +472,12 @@ impl Mesh {
                 gl.draw_arrays(glow::TRIANGLES, d.first, d.count);
             }
         }
-        // SAFETY: unbinds this mesh's texture.
-        unsafe { gl.bind_texture(glow::TEXTURE_2D, None) };
+        // SAFETY: restores the opaque state and unbinds this mesh's texture.
+        unsafe {
+            gl.disable(glow::BLEND);
+            gl.depth_mask(true);
+            gl.bind_texture(glow::TEXTURE_2D, None);
+        }
     }
 
     /// Make the offscreen buffers `size` pixels, keeping them when they are.
@@ -518,23 +506,58 @@ impl Mesh {
         if let Some(b) = self.buffers.take() {
             b.delete(gl);
         }
-        if let Some(t) = self.depth_target.take() {
-            t.delete(gl);
-        }
         if let Some(t) = self.screen_textures.take() {
             t.delete(gl);
-        }
-        if let Some(p) = self.depth_program.take() {
-            p.delete(gl);
         }
         if let Some(p) = self.screen_programs.take() {
             p.delete(gl);
         }
+        self.layer_targets.drain(..).for_each(|t| t.delete(gl));
+        self.tables.drain(..).for_each(|t| t.delete(gl));
+        self.programs.drain(..).for_each(|p| p.delete(gl));
+        self.overlays.drain(..).for_each(|o| o.delete(gl));
         // SAFETY: these objects are this mesh's own.
         unsafe {
             gl.delete_buffer(self.vbo);
             gl.delete_vertex_array(self.vao);
         }
         self.main.delete(gl);
+    }
+}
+
+/// Upload `p` as a linear-filtered `RGBA8` texture with its wrap modes.
+fn upload_picture(gl: &glow::Context, p: &Picture) -> Result<glow::Texture, String> {
+    // SAFETY: the texture is created here and returned to the caller.
+    unsafe {
+        let texture = gl.create_texture()?;
+        gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+        for (axis, wrap) in [glow::TEXTURE_WRAP_S, glow::TEXTURE_WRAP_T]
+            .into_iter()
+            .zip(p.wrap)
+        {
+            let mode = match wrap {
+                Wrap::Repeat => glow::REPEAT,
+                Wrap::Clamp => glow::CLAMP_TO_EDGE,
+                Wrap::Mirrored => glow::MIRRORED_REPEAT,
+            };
+            gl.tex_parameter_i32(glow::TEXTURE_2D, axis, mode as i32);
+        }
+        for filter in [glow::TEXTURE_MIN_FILTER, glow::TEXTURE_MAG_FILTER] {
+            gl.tex_parameter_i32(glow::TEXTURE_2D, filter, glow::LINEAR as i32);
+        }
+        gl.pixel_store_i32(glow::UNPACK_ALIGNMENT, 4);
+        gl.tex_image_2d(
+            glow::TEXTURE_2D,
+            0,
+            glow::RGBA8 as i32,
+            p.width as i32,
+            p.height as i32,
+            0,
+            glow::RGBA,
+            glow::UNSIGNED_BYTE,
+            glow::PixelUnpackData::Slice(Some(p.rgba)),
+        );
+        gl.bind_texture(glow::TEXTURE_2D, None);
+        Ok(texture)
     }
 }

@@ -1,100 +1,10 @@
-//! The passes around the main one: a depth map drawn first from another
-//! viewpoint, and a two-pass effect over the finished frame.
+//! The two-pass effect over the finished faces.
 
 use glow::HasContext as _;
 
-use crate::buffers::{Buffers, ScreenTextures, complete, texture};
+use crate::Value;
+use crate::buffers::{Buffers, ScreenTextures};
 use crate::program::Program;
-use crate::{Draw, Value};
-
-/// The texture unit a depth map is bound to in the main pass.
-const DEPTH_MAP_UNIT: u32 = 1;
-
-/// A square depth texture and the framebuffer that writes it.
-pub(crate) struct DepthTarget {
-    pub(crate) size: i32,
-    framebuffer: glow::Framebuffer,
-    pub(crate) texture: glow::Texture,
-}
-
-impl DepthTarget {
-    /// A `size`² 32-bit float depth texture.
-    pub(crate) fn new(gl: &glow::Context, size: i32) -> Result<Self, String> {
-        // SAFETY: objects created here are returned or deleted before an error.
-        unsafe {
-            let texture = texture(
-                gl,
-                glow::DEPTH_COMPONENT32F,
-                glow::DEPTH_COMPONENT,
-                glow::FLOAT,
-                [size, size],
-            )?;
-            let framebuffer = gl.create_framebuffer()?;
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer));
-            gl.framebuffer_texture_2d(
-                glow::FRAMEBUFFER,
-                glow::DEPTH_ATTACHMENT,
-                glow::TEXTURE_2D,
-                Some(texture),
-                0,
-            );
-            gl.draw_buffers(&[glow::NONE]);
-            gl.read_buffer(glow::NONE);
-            let target = Self {
-                size,
-                framebuffer,
-                texture,
-            };
-            if let Err(e) = complete(gl, framebuffer, [size, size]) {
-                target.delete(gl);
-                return Err(e);
-            }
-            Ok(target)
-        }
-    }
-
-    /// Clear to the far plane and draw the opaque `draws` with `program`,
-    /// which must be in use with its uniforms set; the mesh's vertex array
-    /// must be bound.
-    pub(crate) fn draw(&self, gl: &glow::Context, draws: &[Draw]) {
-        // SAFETY: the framebuffer is this target's own and complete.
-        unsafe {
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));
-            gl.viewport(0, 0, self.size, self.size);
-            gl.disable(glow::SCISSOR_TEST);
-            gl.disable(glow::BLEND);
-            gl.disable(glow::CULL_FACE);
-            gl.depth_mask(true);
-            gl.clear_depth_f32(1.0);
-            gl.clear(glow::DEPTH_BUFFER_BIT);
-            gl.enable(glow::DEPTH_TEST);
-            gl.depth_func(glow::LESS);
-            for d in draws.iter().filter(|d| !d.translucent) {
-                gl.draw_arrays(glow::TRIANGLES, d.first, d.count);
-            }
-        }
-    }
-
-    /// Bind the texture for the main pass and point `program`'s `sampler` at it.
-    pub(crate) fn bind(&self, gl: &glow::Context, program: &mut Program, sampler: &'static str) {
-        // SAFETY: the texture is this target's own.
-        unsafe {
-            gl.active_texture(glow::TEXTURE0 + DEPTH_MAP_UNIT);
-            gl.bind_texture(glow::TEXTURE_2D, Some(self.texture));
-            gl.active_texture(glow::TEXTURE0);
-        }
-        program.set(gl, sampler, &Value::Int(DEPTH_MAP_UNIT as i32));
-    }
-
-    /// Delete both objects.
-    pub(crate) fn delete(&self, gl: &glow::Context) {
-        // SAFETY: the objects are this value's own.
-        unsafe {
-            gl.delete_framebuffer(self.framebuffer);
-            gl.delete_texture(self.texture);
-        }
-    }
-}
 
 /// The two programs of a screen effect and the empty vertex array their
 /// one triangle is drawn with.
@@ -133,7 +43,7 @@ impl ScreenPrograms {
 
     /// Run the effect over the frame in `buffers`: copy its colour and depth
     /// into `textures`, draw the first pass into `textures.output`, and the
-    /// second into `buffers.resolved`.
+    /// second over `buffers.multisampled`'s colour, keeping its depth.
     pub(crate) fn run(
         &mut self,
         gl: &glow::Context,
@@ -163,7 +73,7 @@ impl ScreenPrograms {
             self.first.use_with(gl, effect.uniforms);
             self.first.set(gl, effect.depth, &Value::Int(0));
             gl.draw_arrays(glow::TRIANGLES, 0, 3);
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffers.resolved));
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffers.multisampled));
             self.second.use_with(gl, effect.uniforms);
             self.second.set(gl, effect.depth, &Value::Int(0));
             self.second.set(gl, effect.colour, &Value::Int(1));

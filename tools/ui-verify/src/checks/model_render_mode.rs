@@ -9,10 +9,10 @@
 //! viewport no screenshot reaches):
 //!
 //! - Opened: `render-mode=Solid gpu=1`, no `gpu-declined`.
-//! - Solid with edges: `render-mode=SolidWireframe`, `gpu-declined=lines`
-//!   (the card draws no lines yet, so the processor draws the frame and
-//!   the line has no `gpu`), and a hash differing from the opened one: a
-//!   mode named in the trace but not drawn keeps the solid picture.
+//! - Solid with edges: `render-mode=SolidWireframe gpu=1`, no
+//!   `gpu-declined` (the card draws the edges), and a hash differing from
+//!   the opened one: a mode named in the trace but whose edges are not
+//!   drawn keeps the solid picture.
 //! - Back to the view's: `render-mode=Solid gpu=1`, no `gpu-declined`.
 
 use crate::checks::driving::{declared_in, repo_fixture};
@@ -131,10 +131,10 @@ fn drive(
         ));
     };
     report.note(format!("solid with edges: {edges:?}"));
-    if edges[..3] != ["SolidWireframe", "-", "lines"] || edges[3] == first[3] {
+    if edges[..3] != ["SolidWireframe", "1", "-"] || edges[3] == first[3] {
         return Ok(Some(format!(
             "Solid with edges drew render-mode={} gpu={} gpu-declined={} with hash {} against \
-             {}; expected the processor drawing the edges into a new picture.",
+             {}; expected the graphics card drawing the edges into a new picture.",
             edges[0], edges[1], edges[2], edges[3], first[3]
         )));
     }

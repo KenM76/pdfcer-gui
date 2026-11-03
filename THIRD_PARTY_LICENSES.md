@@ -6888,9 +6888,9 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [pdfcer-color 0.120.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-model 0.120.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-pkix 0.120.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-color 0.121.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-model 0.121.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-pkix 0.121.0](https://github.com/KenM76/pdfcer)
 - [icccer-cmm 0.4.1](https://github.com/KenM76/icccer)
 - [icccer-color 0.4.1](https://github.com/KenM76/icccer)
 - [icccer-profile 0.4.1](https://github.com/KenM76/icccer)

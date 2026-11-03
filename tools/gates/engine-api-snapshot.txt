@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: a4d9b0cff6d982eeebd5fa05237c7700ea48392b
+# baseline: 3435f01af1188934976003d5bda13e6535533171
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11509
+# items: 11511
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
@@ -160,6 +160,7 @@ pdfcer-3d const pdfcer_3d::gpu_shadow_set::GLSL_ES_300_LAMP_SHADOW_ALPHA_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_shadow_set::GLSL_ES_300_SHADOW_ALPHA_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_shadow_set::GLSL_ES_300_SHADOW_ALPHA_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_shadow_set::MAX_EXTRA_SHADOWS
+pdfcer-3d const pdfcer_3d::gpu_wide_lines::GLSL_ES_300_WIDE_LINE_VERTEX
 pdfcer-3d const pdfcer_3d::lamp_shadow::DEFAULT_LAMP_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::lamp_shadow::MAX_LAMP_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_DIRECTION
@@ -245,6 +246,7 @@ pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::emissive
 pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::exponent
 pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::specular
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::count
+pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::dropped
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::far
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::size
 pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::bias

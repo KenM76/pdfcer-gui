@@ -886,6 +886,8 @@ pub mod model_fit;
 pub mod model_inferences;
 pub mod model_lighting;
 pub mod model_render_mode;
+pub mod model_shadow_extra;
+pub mod model_shadow_lamp;
 pub mod model_shadow_sun;
 pub mod model_shadows;
 pub mod model_tree;

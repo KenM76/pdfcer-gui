@@ -9,8 +9,9 @@
 use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
-    AssembledModel, DEFAULT_SHADOW_CUTOFF, FrameExtraShadows, FrameLights, LightingScheme,
-    ModelLightKind, RenderMode, RenderModeKind, ShadowAlpha, ShadowCasters, ShininessScale,
+    AssembledModel, DEFAULT_SHADOW_CUTOFF, FrameExtraShadows, FrameLampShadows, FrameLights,
+    LightingScheme, MAX_LIGHTS, MAX_SHADOW_CASTERS, ModelLightKind, RenderMode, RenderModeKind,
+    ShadowAlpha, ShadowCasters, ShininessScale,
 };
 
 use super::ModelView;
@@ -252,11 +253,15 @@ impl ModelView {
         if let Some(camera) = self.notes_camera() {
             let lights = FrameLights::for_model(&camera, &options, &d.lights);
             if let Some(n) = lights.ok().map(|l| l.dropped).filter(|&n| n > 0) {
-                ui.small(k::lights_dropped(n));
+                ui.small(k::lights_dropped(n, MAX_LIGHTS));
             }
             let extras = FrameExtraShadows::for_model(&camera, &options, &self.bounds, &d.lights);
             if let Some(n) = extras.ok().flatten().map(|e| e.dropped).filter(|&n| n > 0) {
-                ui.small(k::casters_dropped(n));
+                ui.small(k::casters_dropped(n, MAX_SHADOW_CASTERS));
+            }
+            let lamps = FrameLampShadows::for_model(&camera, &options, &self.bounds, &d.lights);
+            if let Some(n) = lamps.ok().flatten().map(|l| l.dropped).filter(|&n| n > 0) {
+                ui.small(k::lamp_casters_dropped(n, MAX_SHADOW_CASTERS));
             }
         }
         if let Some(reason) = self.gpu.declined() {
@@ -275,9 +280,6 @@ impl ModelView {
 /// The render trace's field for a frame the card declined.
 pub(super) fn declined_word(reason: k::ProcessorReason) -> &'static str {
     match reason {
-        k::ProcessorReason::Lines => " gpu-declined=lines", // ui-text-exempt: trace value, never displayed
-        k::ProcessorReason::LampShadows => " gpu-declined=lamp-shadows", // ui-text-exempt: trace value, never displayed
-        k::ProcessorReason::ExtraCasters => " gpu-declined=extra-casters", // ui-text-exempt: trace value, never displayed
-        k::ProcessorReason::SeeThrough => " gpu-declined=see-through", // ui-text-exempt: trace value, never displayed
+        k::ProcessorReason::WidePoints => " gpu-declined=wide-points", // ui-text-exempt: trace value, never displayed
     }
 }

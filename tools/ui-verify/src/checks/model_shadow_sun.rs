@@ -72,11 +72,19 @@ impl Check for ShadowsStayOnTheModel {
 /// The last `model-view-rendered` line's `shadows`, `caster`, `shadow-map`,
 /// `yaw` and `zoom`; an absent field reads as `-`.
 fn drawn(session: &Session) -> Result<Option<[String; 5]>> {
+    rendered(session, ["shadows", "caster", "shadow-map", "yaw", "zoom"])
+}
+
+/// The last `model-view-rendered` line's `fields`; an absent one reads `-`.
+pub(crate) fn rendered<const N: usize>(
+    session: &Session,
+    fields: [&str; N],
+) -> Result<Option<[String; N]>> {
     let trace = session.trace()?;
-    Ok(trace.events("model-view-rendered").last().map(|l| {
-        ["shadows", "caster", "shadow-map", "yaw", "zoom"]
-            .map(|k| l.get(k).unwrap_or("-").to_owned())
-    }))
+    Ok(trace
+        .events("model-view-rendered")
+        .last()
+        .map(|l| fields.map(|k| l.get(k).unwrap_or("-").to_owned())))
 }
 
 /// Drag across the picture to turn the model, and the picture line after.
@@ -103,7 +111,7 @@ fn turn(
 }
 
 /// Open the viewer on the placed model; a failure sentence when it cannot.
-fn open(
+pub(crate) fn open(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
@@ -126,7 +134,11 @@ fn open(
 
 /// Choose *The lighting* as the caster; `false` when either the drop-down
 /// or its item is drawn nowhere.
-fn choose_scheme(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<bool> {
+pub(crate) fn choose_scheme(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<bool> {
     let Some((combo, vp)) = viewer_options::reach(session, pointer, ui_rect, CASTER)? else {
         return Ok(false);
     };
