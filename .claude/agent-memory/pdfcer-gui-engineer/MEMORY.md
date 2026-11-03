@@ -9,7 +9,7 @@
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.
 - [Always publish the build to OneDrive](feedback_always_publish_latest.md) — finishing work is itself the trigger.
 - [Never mark a release --prerelease](feedback_never_mark_release.md) — hides it from `releases/latest`; a hand-off prompt did it 15 times.
-- [Publish the zip to GitHub every release](feedback_publish_portable_zip.md) — both places, every time, CLEAN tree.
+- [Publish zip AND APK to GitHub every release](feedback_publish_portable_zip.md) — both places, every time, CLEAN tree.
 - [Refresh FEATURES.md before every release](feedback_refresh_features_md.md) — re-measure, then package.
 - [Never defer on an external blocker](feedback_never_defer_external.md) — three "blockers" were never real.
 - [Use the conventional interaction](feedback_use_conventional.md) — the product class IS the spec.

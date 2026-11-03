@@ -38,6 +38,17 @@ updated, the work feels finished, and nothing red appears.
   [[refresh-features-md-before-every-release]] — and smoke-launch the exe
   off-screen first, see [[smoke-launch-before-every-release-it-is-ninety-seconds]].
 
+## The Android APK ships in EVERY release too — 2026-11-02
+
+Ken, after `.20261102.2` went out zip-only: *"I didn't see the android version
+on GitHub."* Two releases in a row (`.20261102.1` and `.2`) had skipped it
+because nothing phone-side had changed. He installs from the release page, so
+a release with no APK reads as "the phone build is stale". **How to apply:**
+`bash tools/android/build-apk.sh`, then attach
+`android/app/build/outputs/apk/release/app-release.apk` as
+`pdfcer-android-<tag>.apk` in the same `gh release create` (or `gh release
+upload` if it is already out). No "phone unchanged" exemption.
+
 ## ★ PUSH BEFORE `gh release create` — 2026-09-09
 
 `--target main` is resolved on the SERVER at creation time. With three
