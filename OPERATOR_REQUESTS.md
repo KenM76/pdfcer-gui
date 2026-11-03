@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O369 — **ENGINE** — a 3D model's own lamps
+
+His words: *"Can 3D pdfs have their own light sources (like lamps etc) or is that unsupported. Also please make a new release with the latest engine."*
+
+**Scope, whole behaviour.** A 3D model that carries its own lights draws lit by them, lamps lighting what is near them, and the viewer says which lights the model holds.
+
+**Status.** The formats carry lights (PDF's *Artwork* lighting scheme; U3D and PRC lights; glTF's `KHR_lights_punctual`). The engine does not read them and draws *Artwork* with a light at the eye. Filed G261. Nothing to build until it lands. The release he asked for in the same message carries the engine's main past v0.118.0.
+
 ## O368 — **BUILT** — shadows move as I move
 
 His words: *"The shadows on objects move and change directions as I move. I'd expect them to stay cast onto objects and stay positioned when I move."*
