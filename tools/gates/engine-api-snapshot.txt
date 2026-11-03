@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 3435f01af1188934976003d5bda13e6535533171
+# baseline: c7226cd8851710132a8b41c627e26826400d4bb4
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11511
+# items: 11512
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
@@ -586,6 +586,7 @@ pdfcer-3d variant pdfcer_3d::gltf::GltfError::Json
 pdfcer-3d variant pdfcer_3d::gltf::GltfError::NotGltf
 pdfcer-3d variant pdfcer_3d::gltf::GltfError::RequiredExtension
 pdfcer-3d variant pdfcer_3d::gltf::GltfLights::Drop
+pdfcer-3d variant pdfcer_3d::gltf::GltfLights::Exposure
 pdfcer-3d variant pdfcer_3d::gltf::GltfLights::Normalise
 pdfcer-3d variant pdfcer_3d::gltf::GltfLights::Stored
 pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Bake

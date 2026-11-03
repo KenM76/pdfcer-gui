@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O371 — **WAITING ON ENGINE** — a model's own lights leave the scene dark
+## O371 — **BUILT** — a model's own lights leave the scene dark
 
 His words: *"I'm trying C:\Users\Ken\OneDrive\pdfTests\Bancroft_3D_plan.pdf with the models lights enabled. the scene is very dark with this setting and the 64 lights in the model don't appear to be illuminated."*
 
 **Scope, whole behaviour.** An interior lit by its own lamps looks lit: rooms bright under their lamps, at a level that neither vanishes nor blows out.
 
-**Status.** Measured: the engine's own render (`3d-render --lighting artwork`) is just as dark, so the viewer draws what it is given. The file was made by pdfcer from a glb whose 64 lamps carry real candela values. The default glTF conversion scales all the lamps so that together they light the model's centre to 80%, which leaves each downlight at most a tenth of full strength. Filed as G262. The lamp lenses carry no glowing material in the glb, so they will not look lit whatever the lights do. NOT VERIFIED by him.
+**Status.** Measured: the engine's own render (`3d-render --lighting artwork`) is just as dark, so the viewer draws what it is given. The file was made by pdfcer from a glb whose 64 lamps carry real candela values. The default glTF conversion scales all the lamps so that together they light the model's centre to 80%, which leaves each downlight at most a tenth of full strength. Filed as G262; the engine shipped it in v0.122.0, metering one scale over the model's lit surfaces (about 8x brighter per lamp on this office), and this build carries it. A file converted before v0.122.0, Bancroft_3D_plan.pdf included, keeps its dim lamps until the glb is converted again. The lamp lenses carry no glowing material in the glb, so they will not look lit whatever the lights do. NOT VERIFIED by him.
 
 ## O370 — **BUILT** — hide the 3D navigation controls; a camera button while they are hidden
 
