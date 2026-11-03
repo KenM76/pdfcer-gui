@@ -23,6 +23,7 @@ use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
 mod axes;
+mod controls;
 mod drone;
 mod effects;
 mod eye;
@@ -488,6 +489,8 @@ impl ModelView {
         }
         self.paint_overlay(ui, rect);
         self.options_button(ui, rect);
+        self.shot_button(ui, rect);
+        self.settle_tap(ui.ctx());
     }
 
     /// What the picture leaves out or inferred, said under it.

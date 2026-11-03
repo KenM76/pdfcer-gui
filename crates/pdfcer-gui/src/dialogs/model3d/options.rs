@@ -116,6 +116,8 @@ impl ModelView {
         self.lighting_control(ui);
         self.effects_control(ui);
         self.looks_control(ui);
+        ui.separator();
+        self.controls_switch(ui);
         // Full screen has the navigation switches on its own row of glyphs.
         if !full {
             ui.separator();

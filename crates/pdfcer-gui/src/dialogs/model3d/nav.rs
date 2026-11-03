@@ -53,6 +53,8 @@ pub(super) struct Prefs {
     pub ghost: bool,
     pub level: bool,
     pub gimbal: bool,
+    /// The navigation controls are drawn over the picture.
+    pub controls: bool,
     pub speed: f64,
     /// Climb obstacles under a third of the eye height.
     pub stairs: bool,
@@ -67,6 +69,7 @@ impl Default for Prefs {
             ghost: false,
             level: true,
             gimbal: true,
+            controls: true,
             speed: 1.0,
             stairs: false,
             eye_mm: None,
@@ -123,8 +126,8 @@ pub(super) struct Nav {
     pub sticks: Sticks,
     /// Filling the screen where the viewer is drawn inside the application.
     pub immersive: bool,
-    /// The last tap on the picture, for a double tap: when and where.
-    pub last_tap: Option<(f64, Pos2)>,
+    /// A tap on the picture not yet known single or double: when and where.
+    pub pending_tap: Option<(f64, Pos2)>,
     /// The last tap on the gimbal's centre, for a double tap: when, and the
     /// view before it, which the double tap puts back to picture.
     centre_tap: Option<(std::time::Instant, super::orbit::Orbit, Option<Walk>)>,
@@ -326,10 +329,11 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-nav-prefs ghost={} level={} gimbal={} speed={:.2} stairs={} eye_mm={}",
+                "model-nav-prefs ghost={} level={} gimbal={} controls={} speed={:.2} stairs={} eye_mm={}",
                 p.ghost,
                 p.level,
                 p.gimbal,
+                p.controls,
                 p.speed,
                 p.stairs,
                 p.eye_mm
@@ -454,9 +458,10 @@ impl ModelView {
         crate::diag::trace(|| format!("model-gimbal zone={zone} walking={walking}"));
     }
 
-    /// The gimbal over `rect` for the current camera, when shown.
+    /// The gimbal over `rect` for the current camera, when it and the
+    /// controls are shown.
     pub(super) fn gimbal(&self, rect: Rect) -> Option<Gimbal> {
-        if !self.nav.prefs.gimbal {
+        if !(self.nav.prefs.gimbal && self.nav.prefs.controls) {
             return None;
         }
         let camera = self
@@ -487,8 +492,8 @@ impl ModelView {
                 // ui-text-exempt: trace region name, never displayed
                 crate::diag::ui_rect_visible(&format!("{REGION_DRONE_BUTTON}{i}"), button, rect);
             }
-            for (i, centre) in drone.centres.into_iter().enumerate() {
-                let base = Rect::from_center_size(centre, egui::Vec2::splat(drone.radius * 2.0));
+            for (i, (centre, r)) in drone.centres.into_iter().zip(drone.radii).enumerate() {
+                let base = Rect::from_center_size(centre, egui::Vec2::splat(r * 2.0));
                 // ui-text-exempt: trace region name, never displayed
                 crate::diag::ui_rect_visible(&format!("{REGION_DRONE_STICK}{i}"), base, rect);
             }

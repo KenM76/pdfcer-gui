@@ -49,11 +49,18 @@ pub(super) struct Sticks {
     touched: bool,
 }
 
-/// The sticks offered: their bases' centres and their common radius, points.
+/// The sticks offered: their bases' centres and radii, points, in order.
 #[derive(Debug, Clone, Copy, Default)]
 pub(super) struct Bases<'a> {
     pub centres: &'a [Pos2],
-    pub radius: f32,
+    pub radii: &'a [f32],
+}
+
+impl Bases<'_> {
+    /// Stick `s`'s radius, points; 0 past the list.
+    fn radius(&self, s: usize) -> f32 {
+        self.radii.get(s).copied().unwrap_or(0.0)
+    }
 }
 
 /// One frame's reading.
@@ -190,7 +197,7 @@ impl Sticks {
             .centres
             .iter()
             .enumerate()
-            .filter(|&(s, c)| !taken(s) && (pos - *c).length() <= bases.radius * GRAB)
+            .filter(|&(s, c)| !taken(s) && (pos - *c).length() <= bases.radius(s) * GRAB)
             .min_by(|a, b| (pos - *a.1).length().total_cmp(&(pos - *b.1).length()))
             .map(|(s, _)| s);
         let role = match (zones.iter().position(|z| z.contains(pos)), stick) {
@@ -229,7 +236,7 @@ impl Sticks {
             match c.role {
                 Role::Zone(z) => reading.held.push(z),
                 Role::Stick(s) => {
-                    let tilt = (c.pos - c.start) / bases.radius.max(1.0);
+                    let tilt = (c.pos - c.start) / bases.radius(s).max(1.0);
                     let tilt = if tilt.length() > 1.0 {
                         tilt.normalized()
                     } else {

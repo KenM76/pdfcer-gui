@@ -3,8 +3,8 @@
 //! drag to look, a pinch or Ctrl with the wheel to zoom, the wheel to step,
 //! the gimbal's taps, and a double tap that goes to the surface tapped.
 //!
-//! The drone sticks are offered on a touch screen and whenever the viewer
-//! fills the screen. With them, a drag turns the camera apart from the
+//! The drone sticks are offered, while the controls are shown, on a touch
+//! screen and whenever the viewer fills the screen. With them, a drag turns the camera apart from the
 //! heading, as the camera stick does; without them (a mouse in a window) a
 //! drag turns the body, as a desktop game's mouse-look does, so going
 //! forward goes where the view faces.
@@ -21,8 +21,6 @@ use super::walk::Intent;
 const LOOK_RATE: f64 = 0.005;
 /// Eye heights a wheel notch's 50 points steps.
 const WHEEL_STEP: f64 = 0.5;
-/// A double tap's most time between taps, seconds, and distance, points.
-const DOUBLE_TAP: (f64, f32) = (0.4, 32.0);
 /// Radians a fully tilted left stick turns the body per second.
 const STICK_TURN: f64 = 1.6;
 /// Radians a fully tilted camera stick turns the camera per second: left
@@ -34,7 +32,8 @@ impl ModelView {
     pub(super) fn walk_input(&mut self, ui: &Ui, response: &Response) {
         let rect = response.rect;
         let gimbal = self.gimbal(rect);
-        let offered = self.nav.sticks.touch() || self.filling_screen(ui.ctx());
+        let offered =
+            self.nav.prefs.controls && (self.nav.sticks.touch() || self.filling_screen(ui.ctx()));
         let drone = offered.then(|| Drone::layout(rect));
         // The gimbal's areas first, a fixed count of them, so an area's index
         // means the same thing when the finger lifts as when it landed: the
@@ -46,10 +45,10 @@ impl ModelView {
         if let Some(d) = &drone {
             zones.extend(d.buttons);
         }
-        let centres = drone.map(|d| d.centres);
+        let (centres, radii) = (drone.map(|d| d.centres), drone.map(|d| d.radii));
         let bases = Bases {
             centres: centres.as_ref().map_or(&[], |c| c.as_slice()),
-            radius: drone.map_or(0.0, |d| d.radius),
+            radii: radii.as_ref().map_or(&[], |r| r.as_slice()),
         };
         let hud = std::mem::take(&mut self.nav.hud);
         let reading = self.nav.sticks.read(ui, rect, bases, &zones, &hud);
@@ -196,18 +195,14 @@ impl ModelView {
         });
     }
 
-    /// A double tap on the picture goes to the surface under it.
+    /// A double tap on the picture goes to the surface under it; a single one
+    /// shows or hides the controls.
     fn walk_taps(&mut self, ui: &Ui, rect: Rect, taps: &[Pos2]) {
         let now = ui.input(|i| i.time);
         for &at in taps {
-            let double = self.nav.last_tap.is_some_and(|(then, was)| {
-                now - then <= DOUBLE_TAP.0 && (at - was).length() <= DOUBLE_TAP.1
-            });
-            if !double {
-                self.nav.last_tap = Some((now, at));
+            if !self.tap_picture(now, at) {
                 continue;
             }
-            self.nav.last_tap = None;
             let Some(hit) = self.hit_at(rect, at) else {
                 continue;
             };

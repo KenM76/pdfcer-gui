@@ -1,7 +1,7 @@
 //! The walking sticks, laid out and drawn as a drone's remote: a stick in
-//! each bottom corner in DJI's Mode 2, a camera stick at the bottom centre,
-//! and under it the buttons that centre the camera and switch stair
-//! climbing.
+//! each bottom corner in DJI's Mode 2, and at the bottom centre a camera
+//! stick two thirds their size between the buttons that centre the camera
+//! left and right and up and down, with stair climbing's button over it.
 //!
 //! Mode 2: the left stick's up and down rises and sinks and its left and
 //! right turns the body; the right stick's up and down flies forward and
@@ -30,8 +30,10 @@ const MARGIN: f32 = 16.0;
 const BUTTON: f32 = 44.0;
 /// The gap between buttons, points.
 const BUTTON_GAP: f32 = 6.0;
-/// A stick's radius bounds, points.
+/// A corner stick's radius bounds, points.
 const RADIUS: (f32, f32) = (30.0, 64.0);
+/// The camera stick's radius, as a share of a corner stick's.
+const CAMERA_SHARE: f32 = 2.0 / 3.0;
 /// The knob's radius, as a share of the stick's.
 const KNOB: f32 = 0.36;
 
@@ -40,35 +42,40 @@ const KNOB: f32 = 0.36;
 pub(super) struct Drone {
     /// The sticks' centres: [`LEFT`], [`RIGHT`], [`CAMERA`].
     pub centres: [Pos2; 3],
-    pub radius: f32,
-    /// The buttons, in [`BUTTONS`] order, in a row under the camera stick.
+    /// The sticks' radii, in [`Drone::centres`] order.
+    pub radii: [f32; 3],
+    /// The buttons, in [`BUTTONS`] order: the centring pair either side of
+    /// the camera stick, stair climbing over it.
     pub buttons: [Rect; 3],
 }
 
 impl Drone {
-    /// The sticks over the picture `rect`: the corners' low, the camera's
-    /// raised by the button row under it. Three sticks fit across a phone
+    /// The sticks over the picture `rect`, all on its bottom edge. The
+    /// corner sticks are as large as leaves room between them for the
+    /// camera stick and its two buttons, so the row fits across a phone
     /// held upright.
     pub fn layout(rect: Rect) -> Self {
-        let radius = ((rect.width() - 4.0 * MARGIN) / 6.0)
+        let middle = 2.0 * BUTTON + 4.0 * BUTTON_GAP;
+        let radius = ((rect.width() - 2.0 * MARGIN - middle) / (4.0 + 2.0 * CAMERA_SHARE))
             .min(rect.height() / 5.0)
             .clamp(RADIUS.0, RADIUS.1);
-        let low = rect.bottom() - MARGIN - radius;
-        let row = BUTTON * 3.0 + BUTTON_GAP * 2.0;
-        let first = Pos2::new(rect.center().x - row / 2.0, rect.bottom() - MARGIN - BUTTON);
-        let buttons = std::array::from_fn(|i| {
-            #[allow(clippy::cast_precision_loss)]
-            let x = (BUTTON + BUTTON_GAP) * i as f32;
-            Rect::from_min_size(first + Vec2::new(x, 0.0), Vec2::splat(BUTTON))
-        });
+        let camera = radius * CAMERA_SHARE;
+        let low = rect.bottom() - MARGIN;
+        let centre = Pos2::new(rect.center().x, low - camera);
+        let beside = camera + BUTTON_GAP + BUTTON / 2.0;
+        let button = |at: Pos2| Rect::from_center_size(at, Vec2::splat(BUTTON));
         Self {
             centres: [
-                Pos2::new(rect.left() + MARGIN + radius, low),
-                Pos2::new(rect.right() - MARGIN - radius, low),
-                Pos2::new(rect.center().x, first.y - MARGIN / 2.0 - radius),
+                Pos2::new(rect.left() + MARGIN + radius, low - radius),
+                Pos2::new(rect.right() - MARGIN - radius, low - radius),
+                centre,
             ],
-            radius,
-            buttons,
+            radii: [radius, radius, camera],
+            buttons: [
+                button(centre - Vec2::new(beside, 0.0)),
+                button(centre + Vec2::new(beside, 0.0)),
+                button(centre - Vec2::new(0.0, beside)),
+            ],
         }
     }
 
@@ -79,11 +86,11 @@ impl Drone {
         let (accent, _) = egui_shell::theme::Theme::accent_pair(ui.ctx());
         let base = visuals.window_fill.gamma_multiply(0.45);
         let ring = visuals.widgets.inactive.fg_stroke;
-        for (centre, tilt) in self.centres.into_iter().zip(tilts) {
-            painter.circle_filled(centre, self.radius, base);
-            painter.circle_stroke(centre, self.radius, ring);
-            let knob = centre + Vec2::new(tilt.x, -tilt.y) * self.radius;
-            painter.circle_filled(knob, self.radius * KNOB, accent.gamma_multiply(0.8));
+        for ((centre, radius), tilt) in self.centres.into_iter().zip(self.radii).zip(tilts) {
+            painter.circle_filled(centre, radius, base);
+            painter.circle_stroke(centre, radius, ring);
+            let knob = centre + Vec2::new(tilt.x, -tilt.y) * radius;
+            painter.circle_filled(knob, radius * KNOB, accent.gamma_multiply(0.8));
         }
         for (i, (rect, icon)) in self.buttons.into_iter().zip(BUTTONS).enumerate() {
             let on = i == STAIRS && stairs;
@@ -119,8 +126,12 @@ mod tests {
     fn three_sticks_and_the_buttons_fit_a_phone_without_overlapping() {
         let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(411.0, 800.0));
         let d = Drone::layout(rect);
-        let reach = |c: Pos2| Rect::from_center_size(c, Vec2::splat(d.radius * 2.0));
-        let sticks = d.centres.map(reach);
+        let sticks: Vec<Rect> = d
+            .centres
+            .iter()
+            .zip(d.radii)
+            .map(|(c, r)| Rect::from_center_size(*c, Vec2::splat(r * 2.0)))
+            .collect();
         for (i, a) in sticks.iter().enumerate() {
             assert!(rect.contains_rect(*a), "stick {i} {a:?}");
             for b in &sticks[i + 1..] {
@@ -130,7 +141,22 @@ mod tests {
                 assert!(!a.intersects(button), "{a:?} {button:?}");
             }
         }
-        assert!(d.radius >= 50.0, "{}", d.radius);
+        assert!(d.radii[LEFT] >= 50.0, "{:?}", d.radii);
+    }
+
+    #[test]
+    fn the_camera_stick_is_two_thirds_size_between_the_centring_buttons() {
+        let rect = Rect::from_min_size(Pos2::ZERO, Vec2::new(1200.0, 800.0));
+        let d = Drone::layout(rect);
+        assert!((d.radii[CAMERA] - d.radii[LEFT] * 2.0 / 3.0).abs() < 1e-3);
+        let camera = d.centres[CAMERA];
+        let [yaw, pitch, stairs] = d.buttons;
+        assert!(yaw.right() < camera.x - d.radii[CAMERA], "{yaw:?}");
+        assert!(pitch.left() > camera.x + d.radii[CAMERA], "{pitch:?}");
+        assert!((yaw.center().y - camera.y).abs() < 1e-3);
+        assert!((pitch.center().y - camera.y).abs() < 1e-3);
+        assert!(stairs.bottom() < camera.y - d.radii[CAMERA], "{stairs:?}");
+        assert!((camera.y + d.radii[CAMERA] - (rect.bottom() - MARGIN)).abs() < 1e-3);
     }
 
     #[test]

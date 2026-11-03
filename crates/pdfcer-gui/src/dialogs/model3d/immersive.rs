@@ -35,7 +35,8 @@ impl ModelView {
             });
     }
 
-    /// The picture filling `rect`, with the button row over it.
+    /// The picture filling `rect`, with the button row over it while the
+    /// controls are shown.
     pub(super) fn immersive_body(&mut self, ui: &mut Ui, rect: Rect) {
         let (escape, closing) = ui.input(|i| {
             (
@@ -53,6 +54,9 @@ impl ModelView {
             self.leave_immersive(ui.ctx());
         }
         self.picture(ui, rect.size());
+        if !self.nav.prefs.controls {
+            return;
+        }
         // The row starts right of the options glyph in the corner.
         let clear = super::options::THUMB_CLEAR;
         let bar = Rect::from_min_size(

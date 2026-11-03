@@ -81,6 +81,24 @@ pub fn gimbal_tooltip() -> &'static str {
     "Show the axes in the picture's corner. Tap an axis end to view from that side, or to face that way when walking; tap the centre to fit, or to level the view; tap it twice to save a picture of the scene."
 }
 
+/// The switch that shows or hides the navigation controls.
+#[must_use]
+pub fn controls() -> &'static str {
+    "Show navigation controls"
+}
+
+/// Its tip.
+#[must_use]
+pub fn controls_tooltip() -> &'static str {
+    "Draw the gimbal, the drone sticks and the full-screen buttons over the picture. A single tap on the picture also shows or hides them; while they are hidden, the camera button at the bottom saves a picture of the view."
+}
+
+/// The camera button's tip while the controls are hidden.
+#[must_use]
+pub fn shot_tooltip() -> &'static str {
+    "Save a picture of the view, without the buttons over it"
+}
+
 /// The walking speed.
 #[must_use]
 pub fn speed() -> &'static str {

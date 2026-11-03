@@ -659,7 +659,7 @@ His words: *"please make it an option to hide or show the on screen navigation c
 
 **Scope, whole behaviour.** (1) *Show navigation controls* in the 3D viewer's options menu, in a window and full screen, hiding the gimbal, the drone sticks and their buttons, and the full-screen row; the options glyph stays, so the switch can always be reached. (2) The camera stick two thirds the size of the others, at the bottom between the reset-horizontal and reset-vertical buttons. (3) A single tap on the picture shows or hides the controls; a double tap keeps its own job (centre on, or walk to, the surface) and leaves them as they were. (4) While hidden, a see-through camera button at the bottom centre saves a picture of the view, drawn by the engine without the button or the menu.
 
-**Status.** Built: all four. Driven: `the_3d_viewers_controls_hide_on_a_tap_and_a_camera_button_saves_the_view` (switch, camera button and saved file, single tap, double tap); the stick layout by unit tests. NOT VERIFIED by him.
+**Status.** Built: all four. Driven: `the_3d_viewers_controls_hide_on_a_tap_and_a_camera_button_saves_the_view` (switch, camera button and saved file, single tap, double tap); the stick layout by unit tests and by the drone check's regions (the camera stick 85 pt across, between the two reset buttons); the drone, walk, gimbal, double-tap and fill-screen checks still pass. NOT VERIFIED by him.
 
 ## O369 — **BUILT** — a 3D model's own lamps
 

@@ -1,7 +1,8 @@
 //! Orbiting: the pointer and fingers on the picture (one finger or the
 //! primary button turns, two fingers or the other buttons pan, a pinch or
 //! the wheel zooms at the pointer), the arrow and zoom keys, a double tap
-//! that centres on the surface tapped, and the gimbal's taps.
+//! that centres on the surface tapped, a single tap that shows or hides the
+//! controls, and the gimbal's taps.
 
 use egui::{Key, Response, Ui};
 
@@ -35,6 +36,13 @@ impl ModelView {
             self.gimbal_tap(g, zone);
         } else if !pressed_on_gimbal {
             self.steer(ui, response);
+        }
+        if response.clicked()
+            && let Some(at) = response.interact_pointer_pos()
+            && on_gimbal(at).is_none()
+            && !self.nav.hud.iter().any(|r| r.contains(at))
+        {
+            self.tap_picture(ui.input(|i| i.time), at);
         }
         if response.double_clicked()
             && let Some(at) = response.interact_pointer_pos()
