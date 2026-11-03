@@ -844,6 +844,7 @@ The request O280 is built on, answered and consumed.
 - **G247** — the lit opening view written at insert. Answered at v0.112.0 by `EditSession::set_3d_opening_view` and consumed by `app::actions::model_insert`.
 - **G257** — no cast shadows: surfaces are shaded only by their angle to the lights, on both the GPU and CPU paths, so an interior reads flat beside other glTF viewers. Asked for a published shadow-map pass, the same on the CPU path, and a switch.
 - **G258** — no ambient occlusion: the ambient term is constant, and glTF `occlusionTexture` is not read. Asked for SSAO or baked per-vertex occlusion, and a switch beside G257's.
+- **G259** — shadows move as the eye moves (O368). In `LightFrame::Camera` the caster is a camera-frame light, so a shadow keeps its place on the screen and swings round the model. In `LightFrame::World` Table 310's directions are model axes, so a Z-up model casts no floor shadow, and `Caster::choose` still prefers the light on the viewer's side. Asked for a shadow light fixed in model space, chosen from the model's up axis, apart from `light_frame`.
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 
