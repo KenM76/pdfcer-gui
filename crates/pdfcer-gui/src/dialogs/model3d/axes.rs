@@ -47,6 +47,11 @@ impl Axis {
         pdfcer_3d::UpAxis::ALL[self.index() % 3]
     }
 
+    /// Whether this axis points along the negative half of [`Self::engine`].
+    pub(crate) fn negative(self) -> bool {
+        self.index() >= 3
+    }
+
     /// Whether `other` is a different line through the origin.
     pub(crate) fn perpendicular(self, other: Self) -> bool {
         self.index() % 3 != other.index() % 3

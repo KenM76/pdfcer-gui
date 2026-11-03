@@ -885,6 +885,7 @@ pub mod model_fit;
 /// The 3D viewer says when an assembly coloured the model.
 pub mod model_inferences;
 pub mod model_lighting;
+pub mod model_render_mode;
 pub mod model_shadow_sun;
 pub mod model_shadows;
 pub mod model_tree;

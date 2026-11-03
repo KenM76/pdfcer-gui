@@ -158,8 +158,13 @@ fn steps(
              starting point is not the one this check assumes."
         )));
     }
-    let regions = [UP_REGION, UP_Y_REGION, TOP_REGION, SAVE_REGION];
+    let regions = [UP_REGION, UP_Y_REGION, TOP_REGION];
     if let Some(missing) = press_all(session, pointer, ui_rect, &regions)? {
+        return Ok(Some(missing));
+    }
+    // The open options menu lies over Save views; close it as a hand would.
+    crate::checks::viewer_options::close(session, pointer, ui_rect)?;
+    if let Some(missing) = press_all(session, pointer, ui_rect, &[SAVE_REGION])? {
         return Ok(Some(missing));
     }
     let trace = session.trace()?;

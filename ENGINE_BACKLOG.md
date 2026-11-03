@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **53 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `wanted` — a real gap — **55 of 501** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -124,6 +124,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Splitting a tiled XFA subform** — `pdfcer_core::xfa::layout::options::TiledSplit` (`TiledSplit::Split`, `TiledSplit::TbOnly`), `LayoutOptions::tiled_split`, `LayoutOptions::with_tiled_split` | **wanted, not built.** Form preview keeps the engine's default, `TiledSplit::Split`; offering it as a *Reading choice* belongs with `OddRotate` and the other layout settings above. |
 | **XFA reading choices for list items, choice sets and table cells** — the modules `pdfcer_core::xfa::merge::items` (`BindItemsMissing`, `BindItemsRepeat`, `BindItemsUnbound`) and `pdfcer_core::xfa::merge::set` (`ChoiceInstances`), `MergeOptions::bind_items_missing`, `MergeOptions::bind_items_repeat`, `MergeOptions::bind_items_search`, `MergeOptions::bind_items_unbound`, `MergeOptions::choice_instances`, `MergeOptions::with_bind_items_missing`, `MergeOptions::with_bind_items_repeat`, `MergeOptions::with_bind_items_search`, `MergeOptions::with_bind_items_unbound`, `MergeOptions::with_choice_instances`, `TableCellHeight` (`TableCellHeight::Content`, `TableCellHeight::Declared`), `LayoutOptions::table_cell_height`, `LayoutOptions::with_table_cell_height` | **wanted, not built.** Form preview uses the engine's defaults for each. Each is a place the XFA standard leaves the answer open, so each belongs in the *Reading choices* list beside `ThreeDStroke` and `CheckCaption`, with `TiledSplit` and `OddRotate` above. |
 | **XFA paint settings** — the module `pdfcer_core::xfa::paint::options` (`EdgePlacement`, `MissingFill`, `Stipple`, `FontWeight`, `CaptionFont`, `ImagePlacement`, `ImageOverflow`, `CheckEdge`, `Medium`, `PictureRounding`; the 3-D border and check-caption settings there are already offered) | **wanted, not built.** Form preview offers two of these as *Reading choices*; the rest draw at the engine's defaults. The ones the standard leaves open join that list; the rest stay at their defaults. |
+| **Dynamic XFA, materialize** — `xfa-materialize IN -o OUT` replaces a dynamic form's pages with the computed layout; the module `pdfcer_core::edit::xfa_materialize` (`XfaMaterializeOutcome`, `XfaSignatures`), `CommandKind::MaterializeXfa`, `EditError::XfaNotDynamic`, `EditError::XfaSigned`, the modules `pdfcer_core::xfa::paint::font_res` (`PaintedFont`) and `pdfcer_core::xfa::paint::image` (`PaintedImage`), `PaintOptions::font_embedding`, `PaintOptions::image_streams`, `PaintOptions::with_font_embedding`, `PaintOptions::with_image_streams`, `FontEmbedding` (`FontEmbedding::Embed`, `FontEmbedding::Reference`), `ImageStreams` (`ImageStreams::Inline`, `ImageStreams::XObject` <!--namesake:XObject--> (the shell's hits are its own `ImageSource::XObject` and `Action::XObject`, not this variant)), `PaintedPage::fonts`, `PaintedPage::images`, `paint_page_with` | **wanted, not built.** A Forms command writing Form preview's pages into the file as ordinary pages, one undo step, its outcome's notes as the disclosure. |
+| **Dynamic XFA, real fonts** — text is measured and drawn in fonts the shell supplies; the modules `pdfcer_core::xfa::fonts` and `pdfcer_render::font::xfa_faces` (`xfa_fonts`), `layout_template_with` | **wanted, not built.** Form preview lays out at the engine's default fonts; handing it the font folders the page renderer uses is wanted so its wrapping matches. |
 | **XFA print/screen views chosen by hand** — the module `pdfcer_core::xfa::relevant` (`ViewMatch`) | **wanted in part.** Form preview applies the form's own views before the merge (`dialogs::xfa_preview`), so an element the form keeps off the screen is not drawn. Not built: choosing another view (print) or `ViewMatch::Any` by hand, and listing the excluded paths beside the notes. |
 
 ### Redaction & security
@@ -168,7 +170,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `blocked` — waiting on something named — **2 of 501** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -186,7 +188,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 501** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -197,7 +199,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `declined` — deliberately no surface — **20 of 501** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -243,7 +245,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **418 of 493** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **424 of 501** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -721,6 +723,12 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Depth that holds coplanar 3D textures on the GPU** — logarithmic depth in `GLSL_ES_300_FRAGMENT`, `Camera::depth_range` … | **shipped; our request G256, at v0.116.0.** `dialogs::model3d::gpu::frame_uniforms` passes `depth_range` as `u_depth_range`, beside `u_orthographic`, into the 24-bit depth buffer `native-mesh` already allocates; a texture lying on a wall no longer fights it (O360). |
 | **Cast shadows and ambient occlusion in the 3D picture** — the modules `pdfcer_3d::shadow` (`LightSense`, `DEFAULT_SHADOW_MAP_SIZE`, `MAX_SHADOW_MAP_SIZE`), `pdfcer_3d::gpu_shadow` (`FrameShadow`, `GLSL_ES_300_SHADOW_VERTEX`, `GLSL_ES_300_SHADOW_FRAGMENT`) and `pdfcer_3d::gpu_ao` (`FrameAmbientOcclusion`, `GLSL_ES_300_SCREEN_VERTEX`, `GLSL_ES_300_AO_FRAGMENT`, `GLSL_ES_300_AO_COMPOSITE_FRAGMENT`), `RenderOptions::shadows`, `RenderOptions::light_sense`, `RenderOptions::shadow_map_size`, `RenderOptions::ambient_occlusion` | **shipped; our requests G257 and G258, at v0.117.0.** `dialogs::model3d::effects` puts *Shadows*, the light sense and *Shade corners and creases* in the viewer's options menu. The CPU path reads them through `RenderOptions`; the GPU path draws `FrameShadow`'s depth map and `FrameAmbientOcclusion`'s two screen passes through `native-mesh::Passes` (O366). |
 | **A shadow light fixed in the model** — `pdfcer_3d::shadow::ShadowLight` (`ShadowLight::FollowsScheme`, `ShadowLight::Sun`, `UpAxis`), `RenderOptions::shadow_light` | **shipped; our request G259, at v0.118.0.** `dialogs::model3d::effects` passes `ShadowLight::Sun` on the viewer's Up axis by default, so a shadow keeps its place on the model as the eye moves; *Shadows cast by* offers *The lighting* (`FollowsScheme`). *Lights turn with the view* still governs the shading (O368). |
+| **A 3D model's own lights, read from PRC and drawn** — the module `pdfcer_3d::model_light` (`ModelLight`, `ModelLightKind`, `ViewLights`), `PrcFile::lights`, `AssembledModel::lights`, `FrameLights::for_model`, `FrameShadow::for_model`, `RenderOptions::artwork_headlight` | **shipped; our requests G260 and G261, at v0.119.0.** The viewer draws a model under its own lights on the processor and the card (`dialogs::model3d::gpu::local_uniforms`), offers *Headlight with the model's lights*, and says under the picture how many lights it carries and how many were dropped (`dialogs::model3d::looks`). |
+| **Point and spot lamps of a 3D model cast shadows** — the modules `pdfcer_3d::lamp_shadow` and `pdfcer_3d::gpu_lamp_shadow` (`FrameLampShadows`), `RenderOptions::lamp_shadows` | **shipped, at v0.120.0.** *Lamps cast shadows* in the viewer's options menu (`dialogs::model3d::looks`), shown when the model has lamps. The card declines a frame with lamp shadows and the processor draws it, said under the picture; `RenderOptions::lamp_shadow_map_size` stays at its default. |
+| **Material specular, shininess, emissive and ambient in the 3D picture** — the modules `pdfcer_3d::finish` (`MaterialFinish`, `ShininessScale`) and `pdfcer_3d::gpu_finish` (`DrawFinish`), `AssembledModel::finishes`, `RenderOptions::shininess` | **shipped, at v0.120.0.** *Highlights* in the viewer's options menu when the model carries a finish; the card draws finishes per draw (`dialogs::model3d::gpu::finish_uniforms`); an emissive second pass sends the frame to the processor. |
+| **Every directional light casts; translucent casters cast partial shadows** — the modules `pdfcer_3d::shadow_cast` (`ShadowCasters`, `ShadowAlpha`, `DEFAULT_SHADOW_CUTOFF`) and `pdfcer_3d::gpu_shadow_set` (`FrameExtraShadows`, `MAX_EXTRA_SHADOWS`), `RenderOptions::shadow_casters`, `RenderOptions::shadow_alpha` | **shipped, at v0.120.0.** *Shadows from* (every light or the key light) and *See-through parts cast* (tinted, cut out, not at all) in the viewer's options menu (`dialogs::model3d::looks`); casters beyond the engine's limit are said under the picture. The card declines frames needing extra casters or see-through casters. |
+| **3D wire tessellations drawn, and all 15 render modes (`/RM`)** — the modules `pdfcer_3d::render_mode` (`RenderMode`, `RenderModeKind`, `EdgeSet`, `FaceColour`), `pdfcer_core::threed::render_mode` (`ThreeDRenderMode`, `ThreeDRenderModeKind`), `pdfcer_3d::wire` (`ModelLine`), `pdfcer_3d::node_box` (`NodeBox`) and `pdfcer_3d::gpu_lines`, `ThreeDSavedView::render_mode`, `RenderOptions::render_mode`, `RenderOptions::line_width`, `AssembledModel::lines`, `AssembledModel::boxes`, `RenderedPoster::wires`, `WireTessellation` (`WireTessellation::polylines`, `WireTessellation::colours`) | **shipped, at v0.120.0.** The viewer draws the view's own /RM and offers *Draw as* with all fifteen modes (`dialogs::model3d::looks`). Frames with lines go to the processor until the card's line program is wired (GUI_ROADMAP); `ThreeDSavedView::with_render_mode` is not called. |
+| **glTF/GLB lights (`KHR_lights_punctual`) imported and written into PRC** — `GltfLights` (`GltfLights::Normalise`, `GltfLights::Stored`, `GltfLights::Drop`), `MeshScene::lights`, `SceneMaterial::emissive`, `AssembleOptions::view_lights`, `AssembledModel::view_lights`, `AssembledModel::lights_view`, `PrcFile::view_lights`, `ViewLightUse` | **shipped at the default, at v0.120.0.** Insert 3D model passes `GltfOptions::default()`, so a glTF's lights arrive normalised and the viewer draws them. Not offered: a choice of `GltfLights`, or of a lit view's lights over the occurrences' (`ViewLightUse` stays at its default). |
 
 ## Filed requests for OCR — not verdict rows
 

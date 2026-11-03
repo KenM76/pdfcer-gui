@@ -269,7 +269,7 @@ pub fn shadows() -> &'static str {
 /// Its tip.
 #[must_use]
 pub fn shadows_tooltip() -> &'static str {
-    "One light casts shadows. The PDF standard defines no shadows, so another reader may draw this model without them."
+    "Lights cast shadows onto the model. The PDF standard defines no shadows, so another reader may draw this model without them."
 }
 
 /// The label of the drop-down for which light casts shadows.
@@ -353,7 +353,7 @@ pub fn effects_said(cast: ShadowCast, drawn: bool) -> String {
     }
     let cast = match cast {
         ShadowCast::SchemeLight => {
-            "Shadows fall from the lighting's brightest light on your side. "
+            "Shadows fall from the lighting's lights, the brightest on your side first. "
         }
         ShadowCast::ViewKey => {
             "This lighting is all at the camera, so shadows fall from a light above and to the left of the view. "

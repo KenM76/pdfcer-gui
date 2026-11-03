@@ -7,10 +7,11 @@ use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
     Bounds, Camera, FrameAmbientOcclusion, FrameShadow, LightFrame, LightSense, LightingScheme,
-    RenderError, ShadowLight,
+    ModelLight, RenderError, RenderMode, ShadowLight,
 };
 
 use super::ModelView;
+use super::looks::Extras;
 use crate::text::model3d as m;
 
 /// The shadows switch.
@@ -31,13 +32,17 @@ pub(super) struct Look {
     pub(super) occlusion: bool,
     pub(super) light_sense: LightSense,
     pub(super) shadow_light: ShadowLight,
+    /// The render mode, casters, lamp and highlight choices.
+    pub(super) extras: Extras,
+    /// The render mode the view on screen asks for.
+    pub(super) view_mode: Option<RenderMode>,
 }
 
 impl Look {
     /// The renderer's options for this look; size, background and threads
     /// are the caller's.
     pub(super) fn options(self) -> ModelRenderOptions {
-        ModelRenderOptions {
+        let mut options = ModelRenderOptions {
             lighting: self.lighting,
             light_frame: self.light_frame,
             shadows: self.shadows,
@@ -45,7 +50,9 @@ impl Look {
             light_sense: self.light_sense,
             shadow_light: self.shadow_light,
             ..ModelRenderOptions::default()
-        }
+        };
+        self.extras.apply(self.view_mode, &mut options);
+        options
     }
 }
 
@@ -58,16 +65,18 @@ pub(super) struct Effects {
 }
 
 impl Effects {
-    /// The effects `options` gives a model of `bounds` from `camera` in a
-    /// `size` picture: the same choice the CPU renderer makes inside.
+    /// The effects `options` gives a model of `bounds` lit by its own
+    /// `lights` from `camera` in a `size` picture: the same choice the CPU
+    /// renderer makes inside.
     pub(super) fn new(
         camera: &Camera,
         options: &ModelRenderOptions,
         bounds: &Bounds,
+        lights: &[ModelLight],
         size: [u32; 2],
     ) -> Result<Self, RenderError> {
         Ok(Self {
-            shadow: FrameShadow::new(camera, options, bounds)?,
+            shadow: FrameShadow::for_model(camera, options, bounds, lights)?,
             occlusion: FrameAmbientOcclusion::new(camera, options, bounds, size)?,
         })
     }
@@ -108,10 +117,13 @@ impl ModelView {
             shadow_light: if self.sun {
                 ShadowLight::Sun {
                     up: self.upright.up.engine(),
+                    negative: self.upright.up.negative(),
                 }
             } else {
                 ShadowLight::FollowsScheme
             },
+            extras: self.extras,
+            view_mode: self.view_mode(),
         }
     }
 
@@ -186,7 +198,9 @@ impl ModelView {
         let aspect = f64::from(w.max(1)) / f64::from(h.max(1));
         let camera = self.view_camera(aspect).ok()?;
         let options = self.look().options();
-        let effects = Effects::new(&camera, &options, &self.bounds, [w.max(1), h.max(1)]).ok()?;
+        let lights = &self.model.drawn.lights;
+        let size = [w.max(1), h.max(1)];
+        let effects = Effects::new(&camera, &options, &self.bounds, lights, size).ok()?;
         let cast = match effects.shadow {
             None => m::ShadowCast::None,
             Some(_) if self.sun => m::ShadowCast::Sun,

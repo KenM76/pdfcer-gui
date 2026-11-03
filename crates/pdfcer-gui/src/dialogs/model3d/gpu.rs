@@ -8,6 +8,12 @@
 //! shown or highlighted parts or the lighting change, and the pictures when
 //! the model does. The shadow map is redrawn when the engine's shadow for
 //! the frame changes or the vertices do; ambient occlusion runs every frame.
+//!
+//! The card draws the model's own lights, lamps included, and its material
+//! finishes. A frame showing what the engine's shaders need further passes
+//! for (lines and points, lamp shadows, more than one shadow-casting light,
+//! shadows of see-through parts) is declined, and the viewer draws it on the
+//! processor and says so under the picture.
 
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Instant;
@@ -16,14 +22,16 @@ use eframe::egui_glow;
 use native_mesh::{DepthMap, Draw, Mesh, Passes, Picture, ScreenEffect, Target, Value, Wrap};
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
-    AssembledModel, Bounds, Camera, FrameAmbientOcclusion, FrameLights, FrameShadow,
-    GLSL_ES_300_AO_COMPOSITE_FRAGMENT, GLSL_ES_300_AO_FRAGMENT, GLSL_ES_300_FRAGMENT,
-    GLSL_ES_300_SCREEN_VERTEX, GLSL_ES_300_SHADOW_FRAGMENT, GLSL_ES_300_SHADOW_VERTEX,
-    GLSL_ES_300_VERTEX, MAX_LIGHTS, PreparedModel, RenderError, TextureWrap,
+    AssembledModel, Bounds, Camera, FrameAmbientOcclusion, FrameExtraShadows, FrameLampShadows,
+    FrameLights, FrameShadow, GLSL_ES_300_AO_COMPOSITE_FRAGMENT, GLSL_ES_300_AO_FRAGMENT,
+    GLSL_ES_300_FRAGMENT, GLSL_ES_300_SCREEN_VERTEX, GLSL_ES_300_SHADOW_FRAGMENT,
+    GLSL_ES_300_SHADOW_VERTEX, GLSL_ES_300_VERTEX, MAX_LIGHTS, ModelLight, PreparedModel,
+    RenderError, RenderMode, ShininessScale, TextureWrap,
 };
 
 use super::effects::Effects;
 use super::{ModelView, Rendered};
+use crate::text::model3dlook::ProcessorReason;
 
 /// Vertex attribute widths, matching `pdfcer_3d::VERTEX_FLOATS`: position,
 /// normal, uv, flat.
@@ -45,6 +53,19 @@ pub(super) struct Gpu {
     forced_off: bool,
     /// The failure was traced.
     told: bool,
+    /// What the uploaded draws hold that bears on declining a frame.
+    facts: Facts,
+    /// Why the last frame was left to the processor.
+    declined: Option<ProcessorReason>,
+}
+
+/// What the uploaded draws hold that the card cannot draw yet.
+#[derive(Debug, Clone, Copy, Default)]
+struct Facts {
+    /// Lines, points or an emissive second pass.
+    lines: bool,
+    /// A translucent draw, which casts under see-through shadows.
+    translucent: bool,
 }
 
 /// What a set of draws depends on besides the model.
@@ -53,6 +74,8 @@ struct Built {
     parts: u32,
     accent: egui::Color32,
     lighting: pdfcer_3d::LightingScheme,
+    mode: RenderMode,
+    shininess: ShininessScale,
 }
 
 /// What the paint callback reads, written by the viewer each frame.
@@ -91,6 +114,8 @@ impl Default for Gpu {
             built: None,
             forced_off: std::env::var_os("PDFCER_3D_CPU").is_some_and(|v| v == "1"),
             told: false,
+            facts: Facts::default(),
+            declined: None,
         }
     }
 }
@@ -124,6 +149,11 @@ impl Gpu {
         true
     }
 
+    /// Why the last frame was left to the processor.
+    pub(super) fn declined(&self) -> Option<ProcessorReason> {
+        self.declined
+    }
+
     /// The model was replaced: rebuild everything from it.
     pub(super) fn forget_model(&mut self) {
         self.prepared = None;
@@ -144,14 +174,18 @@ impl Gpu {
 }
 
 impl ModelView {
-    /// Set the GPU picture up for `wanted`: new draws when the parts or
-    /// lighting changed, new uniforms always, and the trace line's head.
-    pub(super) fn gpu_frame(&mut self, wanted: Rendered) -> Result<(), RenderError> {
+    /// Set the GPU picture up for `wanted`: new draws when the parts,
+    /// lighting, render mode or highlights changed, new uniforms always,
+    /// and the trace line's head. `false` declines the frame: it shows
+    /// what the card does not draw yet, and the processor must draw it.
+    pub(super) fn gpu_frame(&mut self, wanted: Rendered) -> Result<bool, RenderError> {
         let options = wanted.look.options();
         let built = Built {
             parts: wanted.parts,
             accent: wanted.accent,
             lighting: wanted.look.lighting,
+            mode: options.render_mode,
+            shininess: options.shininess,
         };
         if self.gpu.built != Some(built) {
             self.gpu_scene(&options, wanted.accent);
@@ -160,8 +194,15 @@ impl ModelView {
         let [width, height] = wanted.size;
         let aspect = f64::from(width) / f64::from(height.max(1));
         let camera = self.view_camera(aspect)?;
-        let effects = Effects::new(&camera, &options, &self.bounds, wanted.size)?;
-        let mut uniforms = frame_uniforms(&camera, &options, aspect, &self.bounds)?;
+        let lights = &self.model.drawn.lights;
+        let effects = Effects::new(&camera, &options, &self.bounds, lights, wanted.size)?;
+        let facts = self.gpu.facts;
+        let cast = effects.shadow.is_some();
+        self.gpu.declined = declined(facts, cast, &camera, &options, &self.bounds, lights)?;
+        if self.gpu.declined.is_some() {
+            return Ok(false);
+        }
+        let mut uniforms = frame_uniforms(&camera, &options, aspect, &self.bounds, lights)?;
         uniforms.extend(shadow_uniforms(effects.shadow.as_ref()));
         let head = self.trace_head(&wanted, Ok(&camera), &options);
         let mut shared = lock(&self.gpu.shared);
@@ -171,7 +212,7 @@ impl ModelView {
         shared.occlusion = effects.occlusion;
         shared.background = wanted.background.to_normalized_gamma_f32();
         shared.trace = crate::diag::enabled().then_some(head);
-        Ok(())
+        Ok(true)
     }
 
     /// Rebuild the draws from the model painted for the parts' state.
@@ -190,6 +231,10 @@ impl ModelView {
             .painted(&mut self.model.drawn, Some(accent.to_array()), |model| {
                 prepared.draw_data(model, options)
             });
+        self.gpu.facts = Facts {
+            lines: !data.lines.is_empty() || !data.points.is_empty() || data.emissive > 0.0,
+            translucent: data.draws.iter().any(|d| d.translucent),
+        };
         let textures = &self.model.drawn.textures;
         let draws = data
             .draws
@@ -204,12 +249,15 @@ impl ModelView {
                     count: d.count as i32,
                     picture,
                     translucent: d.translucent,
-                    uniforms: vec![
+                    uniforms: [
                         ("u_colour", Value::Vec4(d.colour)),
                         ("u_textured", Value::Int(i32::from(picture.is_some()))),
                         ("u_function", Value::Int(function)),
                         ("u_blend_colour", Value::Vec4(blend)),
-                    ],
+                    ]
+                    .into_iter()
+                    .chain(finish_uniforms(d.finish.as_ref()))
+                    .collect(),
                 }
             })
             .collect();
@@ -219,16 +267,76 @@ impl ModelView {
     }
 }
 
-/// The per-frame uniforms: the camera's matrices and the lights it sees.
+/// Why the card cannot draw this frame, if it cannot: `facts` of the
+/// draws, and whether the key light `cast` a shadow.
+fn declined(
+    facts: Facts,
+    cast: bool,
+    camera: &Camera,
+    options: &ModelRenderOptions,
+    bounds: &Bounds,
+    lights: &[ModelLight],
+) -> Result<Option<ProcessorReason>, RenderError> {
+    if facts.lines {
+        return Ok(Some(ProcessorReason::Lines));
+    }
+    let lamps = FrameLampShadows::for_model(camera, options, bounds, lights)?;
+    if lamps.is_some_and(|l| l.far.iter().take(l.count).any(|&far| far > 0.0)) {
+        return Ok(Some(ProcessorReason::LampShadows));
+    }
+    let extra = FrameExtraShadows::for_model(camera, options, bounds, lights)?;
+    if extra.is_some_and(|e| e.count > 0) {
+        return Ok(Some(ProcessorReason::ExtraCasters));
+    }
+    let see_through = options.shadow_alpha.solid_range().is_some();
+    Ok((cast && facts.translucent && see_through).then_some(ProcessorReason::SeeThrough))
+}
+
+/// The samplers the card leaves unused, each on its own texture unit past
+/// the picture's (0) and the shadow map's (1): sampler types may not share
+/// a unit, so the default 0 fails every draw.
+const ARRAY_SAMPLERS: [&str; 6] = [
+    "u_lamp_shadow_map",
+    "u_shadow_extra_map",
+    "u_shadow_veil",
+    "u_shadow_transmit",
+    "u_lamp_veil",
+    "u_lamp_transmit",
+];
+
+/// One draw's material finish; `u_finished` false without one.
+fn finish_uniforms(finish: Option<&pdfcer_3d::DrawFinish>) -> Vec<(&'static str, Value)> {
+    let Some(f) = finish else {
+        return vec![("u_finished", Value::Int(0))];
+    };
+    vec![
+        ("u_finished", Value::Int(1)),
+        ("u_material_ambient", Value::Vec3(f.ambient)),
+        ("u_specular", Value::Vec3(f.specular)),
+        ("u_emissive", Value::Vec3(f.emissive)),
+        ("u_shininess", Value::Float(f.exponent)),
+    ]
+}
+
+/// The per-frame uniforms: the camera's matrices and the lights it sees,
+/// the model's own `lights` among them.
 fn frame_uniforms(
     camera: &Camera,
     options: &ModelRenderOptions,
     aspect: f64,
     bounds: &Bounds,
+    lights: &[ModelLight],
 ) -> Result<Vec<(&'static str, Value)>, RenderError> {
-    let lights = FrameLights::new(camera, options)?;
+    let lights = FrameLights::for_model(camera, options, lights)?;
     let count = lights.count.min(MAX_LIGHTS);
-    Ok(vec![
+    let mut uniforms = local_uniforms(&lights);
+    uniforms.extend(
+        ARRAY_SAMPLERS
+            .iter()
+            .zip(2..)
+            .map(|(&n, u)| (n, Value::Int(u))),
+    );
+    uniforms.extend([
         ("u_view", Value::Mat4(camera.view_matrix()?)),
         (
             "u_projection",
@@ -247,7 +355,38 @@ fn frame_uniforms(
         ("u_forward", Value::Vec3(lights.forward)),
         ("u_orthographic", Value::Int(i32::from(lights.orthographic))),
         ("u_texture", Value::Int(0)),
-    ])
+        ("u_lamp_shadows", Value::Int(0)),
+        ("u_shadow_extra", Value::Int(0)),
+        ("u_shadow_veiled", Value::Int(0)),
+        ("u_lamp_veiled", Value::Int(0)),
+    ]);
+    Ok(uniforms)
+}
+
+/// The point and spot lights, and every light's highlight colour.
+fn local_uniforms(lights: &FrameLights) -> Vec<(&'static str, Value)> {
+    let count = lights.local_count.min(MAX_LIGHTS) as i32;
+    vec![
+        ("u_local_count", Value::Int(count)),
+        (
+            "u_local_position",
+            Value::Vec4s(lights.local_positions.concat()),
+        ),
+        (
+            "u_local_colour",
+            Value::Vec3s(lights.local_colours.concat()),
+        ),
+        (
+            "u_local_attenuation",
+            Value::Vec3s(lights.local_attenuation.concat()),
+        ),
+        ("u_local_cone", Value::Vec4s(lights.local_cones.concat())),
+        ("u_light_specular", Value::Vec3s(lights.specular.concat())),
+        (
+            "u_local_specular",
+            Value::Vec3s(lights.local_specular.concat()),
+        ),
+    ]
 }
 
 /// The main pass's shadow uniforms; the map's sampler is the mesh's.

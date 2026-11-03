@@ -108,9 +108,16 @@ impl ModelView {
             .unwrap_or_default();
         let effects = camera
             .ok()
-            .and_then(|c| Effects::new(c, options, &self.bounds, wanted.size).ok())
+            .and_then(|c| {
+                let lights = &self.model.drawn.lights;
+                Effects::new(c, options, &self.bounds, lights, wanted.size).ok()
+            })
             .map_or_else(String::new, |e| e.trace(options));
-        let lit = self.lighting_trace(options.lighting) + &effects;
+        let declined = self.gpu.declined().map_or("", super::looks::declined_word);
+        let lit = self.lighting_trace(options.lighting)
+            + &effects
+            + &super::looks::trace(options)
+            + declined;
         let eye = camera_eye(wanted.walk.as_ref());
         format!(
             // ui-text-exempt: diagnostic trace, never displayed

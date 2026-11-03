@@ -94,7 +94,8 @@ pub(crate) struct Assembled {
     /// `pdfcer_3d::render_model`.
     pub drawn: pdfcer_3d::AssembledModel,
     pub triangles: usize,
-    /// Tessellations that are not triangles pdfcer can draw.
+    /// Tessellations pdfcer does not draw: markups and compressed meshes it
+    /// could not rebuild. Wires are drawn, as lines.
     pub skipped: usize,
     /// Compressed meshes only a best-fit search rebuilt: another shape could
     /// consume the same stored values.
@@ -182,7 +183,7 @@ fn assemble_as(
         other => Unassembled::Unreadable(other.to_string()),
     })?;
     Ok(Assembled {
-        skipped: model.wires + model.markups + model.compressed,
+        skipped: model.markups + model.compressed,
         best_fit: model.best_fit,
         overridden: model.overridden,
         placed: model.unplaced.is_none(),
@@ -230,7 +231,7 @@ fn mesh_bytes(data: &[u8], obj: bool) -> Result<Meshed, String> {
         bytes,
         meshes: model.drawn.meshes.len(),
         triangles: model.triangles,
-        skipped: model.skipped,
+        skipped: model.skipped + model.drawn.wires,
         best_fit: model.best_fit,
         placed: model.placed,
     })

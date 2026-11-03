@@ -31,6 +31,7 @@ mod gimbal;
 mod gpu;
 mod immersive;
 mod lights;
+mod looks;
 mod nav;
 mod navorbit;
 mod navwalk;
@@ -167,7 +168,7 @@ pub(crate) struct ModelView {
     view_lighting: Option<ThreeDLighting>,
     /// The lights turn with the view (`LightFrame::Camera`), else stay put.
     lights_turn: bool,
-    /// One light casts shadows.
+    /// Lights cast shadows.
     shadows: bool,
     /// Ambient occlusion darkens creases and corners.
     occlusion: bool,
@@ -176,6 +177,8 @@ pub(crate) struct ModelView {
     /// Shadows are cast by a sun fixed above the model on the Up axis,
     /// else by the lighting.
     sun: bool,
+    /// The render mode, casters, lamp and highlight choices.
+    extras: looks::Extras,
     /// Orbiting or walking, the switches, and the fingers on the picture.
     nav: nav::Nav,
     /// The eye height was set or reset, for the preferences file.
@@ -260,6 +263,7 @@ impl ModelView {
             occlusion: true,
             light_sense: pdfcer_3d::LightSense::default(),
             sun: true,
+            extras: looks::Extras::default(),
             nav: nav::Nav::with_eye(eye_mm, walk),
             eye_changed: false,
         }
@@ -448,7 +452,8 @@ impl ModelView {
         }
         // On the CPU, half the pixels while the camera moves, so it keeps
         // up; the full picture is drawn the frame it stops.
-        let halve = self.nav.moving && !gpu;
+        let card = gpu && self.gpu.declined().is_none();
+        let halve = self.nav.moving && !card;
         let scale = ui.ctx().pixels_per_point() * if halve { 0.5 } else { 1.0 };
         let side = |points: f32| (points * scale).clamp(1.0, MAX_SIDE).round() as u32;
         let size = [side(rect.width()), side(rect.height())];
@@ -462,21 +467,13 @@ impl ModelView {
             look: self.look(),
         };
         if self.rendered != Some(wanted) {
-            if gpu {
-                self.rendered = Some(wanted);
-                self.failed = self
-                    .gpu_frame(wanted)
-                    .err()
-                    .map(|e| t::view_render_failed(&e.to_string()));
-            } else {
-                self.render(ui.ctx(), wanted);
-            }
+            self.draw_picture(ui.ctx(), wanted, gpu);
         }
         match (&self.texture, &self.failed) {
             (_, Some(said)) => {
                 ui.put(rect, egui::Label::new(said.as_str()));
             }
-            _ if gpu => self.gpu.paint(ui.painter(), rect),
+            _ if gpu && self.gpu.declined().is_none() => self.gpu.paint(ui.painter(), rect),
             (Some(texture), None) => {
                 ui.painter().image(
                     texture.id(),
@@ -515,6 +512,27 @@ impl ModelView {
         for (reason, parts) in &self.model.drawn.texture_notes {
             ui.small(t::view_texture_note(reason, *parts));
         }
+        self.looks_notes(ui);
+    }
+
+    /// Draw `wanted` on the graphics card when `gpu` is live and it takes
+    /// the frame, else on the processor.
+    fn draw_picture(&mut self, ctx: &egui::Context, wanted: Rendered, gpu: bool) {
+        if gpu {
+            self.rendered = Some(wanted);
+            match self.gpu_frame(wanted) {
+                Ok(true) => {
+                    self.failed = None;
+                    return;
+                }
+                Ok(false) => self.failed = None,
+                Err(e) => {
+                    self.failed = Some(t::view_render_failed(&e.to_string()));
+                    return;
+                }
+            }
+        }
+        self.render(ctx, wanted);
     }
 
     /// *Close*, and what the view can be written to.

@@ -15,7 +15,7 @@ Steps and oracles, from the trace:
 1. The first `model-view-rendered` looks along `Corner`. This is the
    control: a viewer that opens there and later opens looking down `-y`
    has read something new from the file.
-2. *Up* ▸ `+Y`, *Top*, *Save views in the file*. `model-views-set` carries
+2. *Up* ▸ `+Y`, *Top*, then the options menu closed (open, it lies over the button), *Save views in the file*. `model-views-set` carries
    `after=5`: the five named views, and no sixth because Top is one of them.
 3. *Save views in the file* again from the same window: a second
    `model-views-set` with `before=5`. The window's listing row is the one it

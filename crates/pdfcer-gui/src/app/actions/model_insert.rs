@@ -171,7 +171,7 @@ fn poster_note(poster: &ThreeDPoster) -> Option<String> {
     });
     match poster {
         ThreeDPoster::Rendered(r) => Some(t::poster_rendered(
-            r.compressed_skipped > 0 || r.wires_skipped > 0 || r.unplaced.is_some(),
+            r.compressed_skipped > 0 || r.markups_skipped > 0 || r.unplaced.is_some(),
             r.uncoloured_meshes,
             r.meshes,
         )),

@@ -169,6 +169,8 @@ pub mod merge;
 pub mod metadata;
 /// Insert 3D model's options, a written view's lighting, part visibility.
 pub mod model3d;
+/// The 3D viewer's render mode, shadow and highlight choices.
+pub mod model3dlook;
 /// The sized-New dialog's copy — the size list, the orientation pair, the
 /// custom fields and the one refusal. Consumed by
 /// `pdfcer_gui::dialogs::new_document`.
