@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O371 — **WAITING ON ENGINE** — a model's own lights leave the scene dark
+
+His words: *"I'm trying C:\Users\Ken\OneDrive\pdfTests\Bancroft_3D_plan.pdf with the models lights enabled. the scene is very dark with this setting and the 64 lights in the model don't appear to be illuminated."*
+
+**Scope, whole behaviour.** An interior lit by its own lamps looks lit: rooms bright under their lamps, at a level that neither vanishes nor blows out.
+
+**Status.** Measured: the engine's own render (`3d-render --lighting artwork`) is just as dark, so the viewer draws what it is given. The file was made by pdfcer from a glb whose 64 lamps carry real candela values. The default glTF conversion scales all the lamps so that together they light the model's centre to 80%, which leaves each downlight at most a tenth of full strength. Filed as G262. The lamp lenses carry no glowing material in the glb, so they will not look lit whatever the lights do. NOT VERIFIED by him.
+
 ## O370 — **BUILT** — hide the 3D navigation controls; a camera button while they are hidden
 
 His words: *"please make it an option to hide or show the on screen navigation controls. also the camera one can be about 2/3 the size, then it should be able to fit at the bottom between the reset horizontal and vertical view controls. a single press on the screen should hide/show the controls. when the controls are hidden a semi-transparent screenshot camera button should show at the bottom center which will take a picture of the current view (the camera button and menu items don't show in the shot)"*
