@@ -7,7 +7,8 @@
 //! A camera move costs only new uniforms; the vertices are rebuilt when the
 //! shown or highlighted parts or the lighting change, and the pictures when
 //! the model does. The shadow maps are redrawn when the engine's shadows for
-//! the frame change or the vertices do; ambient occlusion runs every frame.
+//! the frame change or the vertices do; ambient occlusion runs every picture.
+//! A paint with nothing new copies the last picture again.
 //!
 //! The card draws everything the engine's shaders do: the model's own
 //! lights, lamp shadows, every directional caster, see-through shadows,
@@ -118,6 +119,11 @@ pub(super) struct Shared {
     pub(super) widest_point: f32,
     /// The trace line's head, when the picture is new.
     pub(super) trace: Option<String>,
+    /// The mesh holds the picture of everything above: set by a draw,
+    /// cleared by the viewer's every write. A paint while it is set copies
+    /// that picture again, so a repaint of the window around an unmoved
+    /// model costs a blit rather than every pass.
+    pub(super) drawn: bool,
 }
 
 /// A texture's pixels, held until the paint uploads them.
@@ -270,6 +276,7 @@ impl ModelView {
         shared.repeat = repeat;
         shared.background = wanted.background.to_normalized_gamma_f32();
         shared.trace = crate::diag::enabled().then_some(head);
+        shared.drawn = false;
         Ok(true)
     }
 

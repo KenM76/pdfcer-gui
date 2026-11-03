@@ -404,10 +404,12 @@ impl ModelView {
         }
         ui.small(self.nav_hint(ui.ctx(), t::view_hint()));
         self.file_view_note(ui);
+        let started = std::time::Instant::now();
         egui::Panel::left(egui::Id::new("model3d-parts")) // ui-text-exempt: an egui id, never displayed
             .resizable(true)
             .default_size(180.0)
             .show(ui, |ui| self.parts_list(ui));
+        let parts = started.elapsed();
 
         // The notes and buttons take their own height first and the picture
         // exactly what is left: a guessed footer the content overran made the
@@ -418,8 +420,20 @@ impl ModelView {
                 self.notes(ui);
                 ui.horizontal_wrapped(|ui| self.buttons(ui));
             });
+        let footer = started.elapsed() - parts;
         let area = ui.available_size().max(egui::vec2(64.0, 64.0));
         self.picture(ui, area);
+        let picture = started.elapsed() - parts - footer;
+        crate::diag::trace(|| {
+            let ms = |d: std::time::Duration| d.as_secs_f64() * 1000.0;
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed
+                "model-view-frame parts={:.1} footer={:.1} picture={:.1}",
+                ms(parts),
+                ms(footer),
+                ms(picture)
+            )
+        });
     }
 
     /// The parts list, with show and hide.

@@ -190,11 +190,16 @@ pub(super) fn show(
     if steerable && !nodes.is_empty() {
         ui.small(m::parts_note());
     }
+    // Only the rows in sight are laid out: a model of a thousand parts
+    // otherwise spends most of every frame on rows scrolled out of view.
+    let height = ui.spacing().interact_size.y;
     let scroll = egui::ScrollArea::both()
         .auto_shrink([false, false])
-        .show(ui, |ui| {
-            for (i, node) in nodes.iter().enumerate() {
-                row(ui, nodes, i, node, visibility, steerable);
+        .show_rows(ui, height, nodes.len(), |ui, range| {
+            for i in range {
+                if let Some(node) = nodes.get(i) {
+                    row(ui, nodes, i, node, visibility, steerable);
+                }
             }
         });
     crate::diag::ui_rect_visible(REGION_PARTS, scroll.inner_rect, ui.clip_rect());

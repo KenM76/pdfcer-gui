@@ -263,6 +263,18 @@ impl Mesh {
         Ok(buffers::present(gl, b, target))
     }
 
+    /// Copy the last picture [`Mesh::draw`] made onto `target` again, without
+    /// drawing; `false` when the mesh holds none at `target`'s size. Whether
+    /// that picture is still the one wanted is the caller's to know.
+    pub fn present_again(&self, gl: &glow::Context, target: &Target) -> bool {
+        let [_, _, w, h] = target.viewport;
+        let Some(b) = self.buffers.as_ref().filter(|b| b.size == [w, h]) else {
+            return false;
+        };
+        buffers::present(gl, b, target);
+        true
+    }
+
     /// Make the tables and layered textures match `passes`, keeping what
     /// still fits.
     fn fit_inputs(&mut self, gl: &glow::Context, passes: &Passes<'_>) -> Result<(), String> {

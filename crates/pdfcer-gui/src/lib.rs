@@ -158,8 +158,15 @@ pub fn run(initial: Option<PathBuf>, page: Option<usize>) -> eframe::Result {
 
     let native_options = eframe::NativeOptions {
         viewport,
+        // The swap's wait for the display is per window, so a frame with a
+        // dialog window open waited once for each; `app::pace` waits once.
+        glow_options: eframe::egui_glow::GlowConfiguration {
+            vsync: false,
+            ..Default::default()
+        },
         ..Default::default()
     };
+    app::pace::enable();
     launch(native_options, initial, page)
 }
 

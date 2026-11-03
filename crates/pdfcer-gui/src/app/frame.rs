@@ -82,6 +82,7 @@ impl eframe::App for PdfcerApp {
 
     /// eframe 0.35's entry point is `ui`, **not** `update`.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        crate::app::pace::frame();
         crate::diag::begin_ui_frame();
         let ctx = ui.ctx().clone();
         crate::insets::reserve(ui);
@@ -988,6 +989,7 @@ impl eframe::App for PdfcerApp {
             // One look for all four marking routes — see the field.
             redact_appearance,
         });
+        crate::diag::frame_phase("dialogs");
 
         // **Step 4a — the FLOATING PANELS' own windows.**
         //
@@ -1007,7 +1009,9 @@ impl eframe::App for PdfcerApp {
         // the window that raised it.
         //
         self.floating_panels(&ctx, &mut actions);
+        crate::diag::frame_phase("floating");
         self.drain_commands(&ctx, &mut actions);
+        crate::diag::frame_phase("commands");
         if let Status::Open(doc) = &self.status {
             crate::panels::align::show_handles(&ctx, doc, self.panels.align, &mut actions);
             crate::panels::properties::layer::window(&ctx, doc, &mut actions);
@@ -1169,7 +1173,7 @@ impl eframe::App for PdfcerApp {
             });
         }
 
-        crate::diag::frame_phase("dialogs");
+        crate::diag::frame_phase("placing");
         // Step 2b(ii) — the Settings window.
         //
         // Drawn beside the other dialogs but held separately, because its draft

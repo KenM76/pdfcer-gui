@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O372 — **BUILT** — the 3D viewer is slow with the model's lights on
+
+His words: *"There are slow performance issues with model lights enabled. Did you update the algorithms for this and render with the GPU like pdfcer likely mentioned you would have to do?"*
+
+**Scope, whole behaviour.** Orbiting, zooming and walking a large lit model such as Bancroft stays smooth, with the model's lamps, their shadows and occlusion on.
+
+**Status.** The graphics card already drew every pass and the lamp shadow maps were cached, so the engine was not the cost. Measured off-screen on Bancroft: the parts list laid out every one of its rows each frame (55 ms; now only the visible rows, under 1 ms), and every open dialog window waited for the display's refresh separately, which added about 40 ms to each frame while the viewer was open. The program now waits once per frame instead of once per window, and an unchanged picture is copied again rather than drawn again. An orbit drag of 40 steps went from 6.2 s to about 2 s; idle frames with the viewer open went from 57 in 100 over 50 ms to none. Lamp shadows, occlusion and sun shadows each cost under 0.5 s of that drag. NOT VERIFIED by him.
+
 ## O371 — **BUILT** — a model's own lights leave the scene dark
 
 His words: *"I'm trying C:\Users\Ken\OneDrive\pdfTests\Bancroft_3D_plan.pdf with the models lights enabled. the scene is very dark with this setting and the 64 lights in the model don't appear to be illuminated."*

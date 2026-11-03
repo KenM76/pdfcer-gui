@@ -166,8 +166,15 @@ pub(super) fn draw(
         s.failed = Some(error);
         return;
     }
-    let started = Instant::now();
     let target = target(s, info, painter);
+    if s.drawn
+        && s.mesh
+            .as_ref()
+            .is_some_and(|m| m.present_again(gl, &target))
+    {
+        return;
+    }
+    let started = Instant::now();
     let size = [target.viewport[2], target.viewport[3]];
     let plans = layer_plans(s);
     let fills: Vec<Vec<Fill>> = plans.iter().map(|p| borrow_fills(&p.fills)).collect();
@@ -242,6 +249,7 @@ fn layers<'a>(plans: &'a [LayerPlan], fills: &'a [Vec<Fill<'a>>]) -> Vec<Layers<
 fn finish(s: &mut Shared, result: Result<Option<Vec<u8>>, String>, started: Instant) {
     match result {
         Ok(rgba) => {
+            s.drawn = true;
             s.directional_redraw = false;
             s.lamp_redraw = false;
             let ms = started.elapsed().as_secs_f64() * 1000.0;
