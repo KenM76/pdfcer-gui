@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: b5cb78eb01e38b8a2375db5ff4b594aefa1719c6
+# baseline: 7d8aedb82cb26ce26a732a9d412caecb2f9fbd3e
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11517
+# items: 11518
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -521,6 +521,7 @@ pdfcer-3d method pdfcer_3d::pick_index::PickIndex::new
 pdfcer-3d method pdfcer_3d::pick_index::PickIndex::pick
 pdfcer-3d method pdfcer_3d::pick_index::PickIndex::pick_where
 pdfcer-3d method pdfcer_3d::render::Camera::fit
+pdfcer-3d method pdfcer_3d::render::Camera::fit_coloured
 pdfcer-3d method pdfcer_3d::render::Camera::fit_meshes
 pdfcer-3d method pdfcer_3d::render_mode::RenderMode::new
 pdfcer-3d method pdfcer_3d::render_mode::RenderModeKind::as_name

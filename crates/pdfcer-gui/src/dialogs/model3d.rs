@@ -208,10 +208,7 @@ impl ModelView {
         walk: bool,
     ) -> Self {
         let page_index = artwork.page_index;
-        let bounds = Bounds::of(&model.drawn.meshes).unwrap_or(Bounds {
-            min: [0.0; 3],
-            max: [0.0; 3],
-        });
+        let bounds = framed(&model.drawn);
         let reach = orbit::reach(&model.drawn.meshes, &bounds);
         let opening = model.opening.clone();
         let saved = opening.as_ref().and_then(Orbit::saved);
@@ -776,4 +773,13 @@ fn axis_choice(
     crate::diag::ui_rect_visible(region, combo.response.rect, ui.clip_rect());
     combo.response.on_hover_text(tip);
     picked
+}
+
+/// The box the viewer frames: the drawn meshes only, since a fully
+/// transparent mesh is not drawn; a model with none frames the origin.
+fn framed(model: &pdfcer_3d::AssembledModel) -> Bounds {
+    Bounds::of_coloured(&model.meshes, &model.colours).unwrap_or(Bounds {
+        min: [0.0; 3],
+        max: [0.0; 3],
+    })
 }

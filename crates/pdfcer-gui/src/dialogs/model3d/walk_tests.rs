@@ -236,8 +236,8 @@ fn a_solid_walker_never_climbs_onto_a_table_it_walks_under() {
     ] {
         let mut walk = walker([0.0, 0.0, 0.8]);
         ahead(3, &mut walk, rules, &table);
-        assert!((walk.eye[2] - 0.8).abs() < 1e-9, "{rules:?} {:?}", walk.eye);
-        assert!(walk.eye[0] < 2.0, "{rules:?} {:?}", walk.eye);
+        assert!((walk.eye[2] - 0.8).abs() < 1e-9, "{rules:?} {:?}", walk.eye); // ui-text-exempt: test failure message
+        assert!(walk.eye[0] < 2.0, "{rules:?} {:?}", walk.eye); // ui-text-exempt: test failure message
     }
 }
 
@@ -273,7 +273,7 @@ fn zoom_narrows_the_view_within_its_range() {
     let Projection::Perspective { fov_y } = walk.camera(1.0).projection else {
         unreachable!();
     };
-    assert!(fov_y <= 70.0 + 1e-9, "zoomed out to {fov_y} degrees");
+    assert!(fov_y <= 70.0 + 1e-9, "zoomed out to {fov_y} degrees"); // ui-text-exempt: test failure message
 }
 
 #[test]

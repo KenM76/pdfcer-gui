@@ -8,6 +8,7 @@
 //! speed still there.
 
 use crate::checks::model_axes::{launch, opened_from_page};
+use crate::checks::model_eye::value_of;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
@@ -109,14 +110,4 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     })();
     pointer.gone(&session)?;
     outcome
-}
-
-/// The value of `key = value` in a preferences file, ignoring comments.
-fn value_of(text: &str, key: &str) -> Option<String> {
-    text.lines()
-        .map(str::trim)
-        .filter(|l| !l.starts_with('#'))
-        .filter_map(|l| l.split_once('='))
-        .find(|(k, _)| k.trim() == key)
-        .map(|(_, v)| v.trim().to_owned())
 }

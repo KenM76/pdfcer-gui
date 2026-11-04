@@ -348,7 +348,7 @@ impl Stage<'_> {
 }
 
 /// The value of `key = value` in a preferences file, ignoring comments.
-fn value_of(text: &str, key: &str) -> Option<String> {
+pub(super) fn value_of(text: &str, key: &str) -> Option<String> {
     text.lines()
         .map(str::trim)
         .filter(|l| !l.starts_with('#'))

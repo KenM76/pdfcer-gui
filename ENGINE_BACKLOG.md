@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **55 of 505** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
+## `wanted` — a real gap — **55 of 506** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -170,7 +170,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 505** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
+## `blocked` — waiting on something named — **2 of 506** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -188,7 +188,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 505** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 506** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -199,7 +199,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 505** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
+## `declined` — deliberately no surface — **20 of 506** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -245,7 +245,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **428 of 505** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **429 of 506** <!-- counted by tools/walk-engine-backlog.py, 2026-11-04; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -256,6 +256,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **shipped — Pages ▸ Stamp ▸ Header & footer…; driven by `header_footer_and_printer_marks`.** `dialogs::running` collects the text and `app::actions::pagestamp` calls `stamp_running_text` through the edit funnel as one undo entry, with the `{page}` and `{pages}` tokens; text the font cannot print is refused before the engine is called. The print-time variant is its own row. |
 | **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **shipped — Edit ▸ Insert ▸ 3D model… takes `.gltf` and `.glb`; driven by `a_gltf_model_is_converted_and_placed`.** `app::actions::gltf::to_embed` converts through `pdfcer_3d::gltf` and `app::actions::models` places the PRC; the import's notes go to the status line (`model-insert-gltf triangles=`), and the placed model saves back out as PRC. |
 | **Render a 3D model under a lighting scheme** — `RenderOptions::lighting` and `light_frame` … | **shipped — the 3D viewer's Lighting list and *Lights turn with the view* light the live picture (G252, O347); driven by `the_3d_viewer_is_lit_as_chosen`.** |
+| **3D drawing and reading hold up against hostile models; framing skips invisible meshes** — `Camera::fit_coloured`, `Bounds::of_coloured` … | **shipped — the 3D viewer frames its opening view and every Mesh fit refit on `Bounds::of_coloured`, so a fully transparent part is not framed.** The hostile-model refusals arrive through the existing `Unassembled::Unreadable` and `view_render_failed` sentences. The viewer frames on bounds and its own orbit, never on `Camera::fit_meshes`, so `Camera::fit_coloured` itself has no caller here. Not driven on a model with an invisible part: no fixture carries one. |
 | **A host-supplied settings directory** — `pdfcer_core::settings::set_store_dir` and `StoreKind::HostSupplied` … | **shipped — `android_main` hands the engine the app's data folder through `reopen::store_in`, so settings, recents and the reopen list are kept (G254, O352, O353); the settings page says where.** |
 | **Write a PRC from a triangle-mesh scene** — `pdfcer_3d::write_prc` … | **shipped — reached through the glTF row above; driven by `a_gltf_model_is_converted_and_placed`**, whose saved-back model starts with the PRC signature. No surface of its own. |
 | **Compare the text of two documents** — `pdfcer compare OLD NEW`, the module `pdfcer_core::compare` | **shipped — Tools ▸ Compare ▸ Compare documents…; driven by `comparing_lists_every_change` and `a_compare_row_shows_its_change`.** `panels::compare::job` runs `compare_documents` off the UI thread on the open document (its path, or its incremental-save bytes when edited) against the picked older file; `panels::compare::rows` lists each change, a click turning to its page and revealing its rectangle. The engine's notes (`truncated` among them) list in the panel, off-canvas. |

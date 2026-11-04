@@ -86,7 +86,10 @@ impl ModelView {
             Ok(model) => {
                 self.model = model;
                 self.fit_refused = None;
-                if let Some(bounds) = pdfcer_3d::Bounds::of(&self.model.drawn.meshes) {
+                if let Some(bounds) = pdfcer_3d::Bounds::of_coloured(
+                    &self.model.drawn.meshes,
+                    &self.model.drawn.colours,
+                ) {
                     self.reach = super::orbit::reach(&self.model.drawn.meshes, &bounds);
                     self.bounds = bounds;
                 }
