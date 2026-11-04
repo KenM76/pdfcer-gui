@@ -206,6 +206,10 @@ pub fn drawn_on_processor(what: &str) -> String {
     format!("Drawn without the graphics card while it shows {what}, so moving it is slower.")
 }
 
+/// The graphics card failed to draw the model, so the processor draws
+/// every frame from then on.
+pub const CARD_FAILED: &str = "The graphics card could not draw this model, so it is drawn without it and moving it is slower.";
+
 /// What the graphics card does not draw, for [`drawn_on_processor`].
 #[must_use]
 pub fn processor_reason(reason: ProcessorReason) -> &'static str {

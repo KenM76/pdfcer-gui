@@ -186,6 +186,11 @@ impl Gpu {
         true
     }
 
+    /// Whether the card failed, so the processor draws every frame.
+    pub(super) fn failed(&self) -> bool {
+        !self.forced_off && lock(&self.shared).failed.is_some()
+    }
+
     /// Why the last frame was left to the processor.
     pub(super) fn declined(&self) -> Option<ProcessorReason> {
         self.declined

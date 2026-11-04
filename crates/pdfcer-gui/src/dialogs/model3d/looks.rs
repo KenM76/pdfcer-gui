@@ -264,7 +264,9 @@ impl ModelView {
                 ui.small(k::lamp_casters_dropped(n, MAX_SHADOW_CASTERS));
             }
         }
-        if let Some(reason) = self.gpu.declined() {
+        if self.gpu.failed() {
+            ui.small(k::CARD_FAILED);
+        } else if let Some(reason) = self.gpu.declined() {
             ui.small(k::drawn_on_processor(k::processor_reason(reason)));
         }
     }
