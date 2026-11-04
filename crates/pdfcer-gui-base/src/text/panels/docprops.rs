@@ -1,7 +1,7 @@
 //! # `text::panels::docprops` — the Document properties panel's copy
 //!
 //! Every string the **Document properties** panel says about the file itself:
-//! the four `/Info` fields' labels, the seven read-only facts, and the two
+//! the five `/Info` fields' labels, the seven read-only facts, and the two
 //! disclosures a document can owe an operator — a value pdfcer could not decode
 //! exactly, and an index pdfcer had to rebuild in order to open the file at all.
 //!
@@ -23,8 +23,7 @@ pub const fn note() -> &'static str {
 /// What the metadata rows cannot do yet, under them.
 #[must_use]
 pub const fn not_yet() -> &'static str {
-    "Entries of other names, the creating program and the dates cannot be added or \
-     changed here yet, and the file's XMP copy of these four is not updated with them."
+    "Entries of other names and the dates cannot be added or changed here yet."
 }
 
 /// The label on one document-information field.
@@ -35,6 +34,7 @@ pub fn info_label(field: pdfcer_core::edit::InfoField) -> &'static str {
         pdfcer_core::edit::InfoField::Author => "Author",
         pdfcer_core::edit::InfoField::Subject => "Subject",
         pdfcer_core::edit::InfoField::Keywords => "Keywords",
+        pdfcer_core::edit::InfoField::Creator => "Application",
         // A field this build does not know a word for. `key()` is
         // `&'static [u8]` of ASCII, so the decode cannot fail — and it is
         // spelled `unwrap_or` rather than `expect` because a panic in a label
@@ -42,6 +42,27 @@ pub fn info_label(field: pdfcer_core::edit::InfoField) -> &'static str {
         // no window. // ui-text-exempt: the fallback is the engine's own PDF key, not authored copy
         _ => core::str::from_utf8(field.key()).unwrap_or(""),
     }
+}
+
+/// **A field was changed but the file's XMP copy of it was not**, so the two
+/// now disagree; readers that prefer XMP keep showing the old value.
+#[must_use]
+pub fn xmp_skipped(field: &str, reason: pdfcer_core::edit::XmpSkip) -> String {
+    use pdfcer_core::edit::XmpSkip;
+    let why = match reason {
+        XmpSkip::Off => "keeping that copy in step is switched off",
+        XmpSkip::Signed => "the document is signed and rewriting it would break the signature",
+        XmpSkip::PdfaCustomKey { .. } => {
+            "the file claims PDF/A, which forbids an undeclared entry there"
+        }
+        XmpSkip::Unrepresentable => "the value holds a character that copy cannot store",
+        XmpSkip::Unreadable => "that copy could not be read",
+        _ => "pdfcer left it alone",
+    };
+    format!(
+        "{field} was changed, but the file's second (XMP) copy of it was not, because \
+         {why}. Some programs read that copy and will still show the old value."
+    )
 }
 
 /// **The value shown is pdfcer's reading of bytes it could not fully
@@ -325,50 +346,13 @@ mod tests {
         );
     }
 
-    /// ⚠ **The test this module's own doc claimed, written, run, and DELETED —
-    /// 2026-09-05.**
-    ///
-    /// [`info_label`]'s doc promised *"a test asserts none of the four known
-    /// fields reaches the fallback"*. It was written while this module was
-    /// being split out, in the form the promise implies:
-    ///
-    /// ```text
-    /// assert_ne!(info_label(field), from_utf8(field.key()));
-    /// ```
-    ///
-    /// It failed on the first field, and the message is the whole finding:
-    ///
-    /// ```text
-    /// Title fell through to the engine's own key `Title`
-    ///   left: "Title"   right: "Title"
-    /// ```
-    ///
-    /// **`InfoField::Title`'s PDF key is the word `Title`.** The mapping and
-    /// the fallback are byte-identical for all four known fields, so *"did this
-    /// field reach the fallback?"* has no observable answer and the promised
-    /// test cannot exist in any form. The doc is corrected in place rather than
-    /// quietly satisfied by a weaker assertion wearing the same name — which is
-    /// what a test asserting the four literals would have been.
-    ///
-    /// This stub is left as the record, because a deleted test leaves nothing
-    /// behind and the next reader of that doc comment would try the same thing.
-    ///
-    /// What replaces it is in `pdfcer_gui::panels::docprops`:
-    /// `every_info_field_is_labelled_and_no_label_repeats`, which asserts the
-    /// property that can actually reach the operator.
+    /// `Creator` is labelled as Acrobat labels it, not by its PDF key.
     #[test]
-    fn the_fallback_and_the_mapping_are_indistinguishable_for_every_known_field() {
-        for field in pdfcer_core::edit::InfoField::all().iter().copied() {
-            let key = core::str::from_utf8(field.key()).unwrap_or("");
-            assert_eq!(
-                info_label(field),
-                key,
-                "{field:?} now has a label that differs from its PDF key. That is \
-                 not a failure — it is the case the `match` arms exist FOR, and \
-                 it means a fallback test is finally possible for this field. \
-                 Read this test's doc comment before changing it."
-            );
-        }
+    fn the_creator_is_labelled_application() {
+        assert_eq!(
+            info_label(pdfcer_core::edit::InfoField::Creator),
+            "Application"
+        );
     }
 
     /// **The document heading does not repeat the tab's own label.**
@@ -380,6 +364,24 @@ mod tests {
             tab,
             "the heading repeats the tab's own label; see this function's doc"
         );
+    }
+
+    /// Each reason the XMP copy was left alone gets its own sentence, naming
+    /// the field that now disagrees.
+    #[test]
+    fn every_xmp_skip_reason_reads_differently() {
+        use pdfcer_core::edit::XmpSkip;
+        let reasons = [
+            XmpSkip::Off,
+            XmpSkip::Signed,
+            XmpSkip::PdfaCustomKey { part: 2 },
+            XmpSkip::Unrepresentable,
+            XmpSkip::Unreadable,
+        ];
+        let sentences: std::collections::BTreeSet<String> =
+            reasons.iter().map(|r| xmp_skipped("Title", *r)).collect();
+        assert_eq!(sentences.len(), reasons.len());
+        assert!(sentences.iter().all(|s| s.starts_with("Title ")));
     }
 
     /// The two disclosures are sentences about the **document**, not about

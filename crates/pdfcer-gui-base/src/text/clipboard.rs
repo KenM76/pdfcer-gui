@@ -453,9 +453,17 @@ pub fn rich_copied(
     families_missing: usize,
     colours_dropped: usize,
     decoration_forms_unread: usize,
+    truncated: bool,
 ) -> Option<String> {
     use super::plural;
     let mut parts = Vec::new();
+    if truncated {
+        parts.push(
+            "the copy reached the most one copy can hold and stops there, so the rest of the \
+             selection is not in it"
+                .to_owned(),
+        );
+    }
     if weights_derived > 0 {
         parts.push(format!(
             "bold or regular was judged from the font name for {}",

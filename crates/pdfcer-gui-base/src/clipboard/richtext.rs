@@ -58,6 +58,9 @@ pub fn document(doc: &OpenDoc) -> Result<RichText, String> {
         let text = pdfcer_core::text_extract::extract_page_view(&view, page_ref, index, &options)
             .map_err(|e| e.to_string())?;
         append(&mut all, build(&view, page_ref, &text, None));
+        if all.outcome.truncated {
+            break;
+        }
     }
     Ok(all)
 }
@@ -82,15 +85,36 @@ fn build(
     model.rich_text(range, &sources)
 }
 
-/// `more`'s paragraphs after `all`'s, with the outcome counts summed.
+/// `more`'s paragraphs after `all`'s, with the outcome counts summed. The
+/// engine caps each page's copy; the joined copy is marked truncated when it
+/// passes those caps too, since the writers drop what lies beyond them.
 fn append(all: &mut RichText, more: RichText) {
     all.paragraphs.extend(more.paragraphs);
+    let over = over_caps(all);
     let (a, b) = (&mut all.outcome, more.outcome);
+    a.truncated |= b.truncated || over;
     a.paragraphs += b.paragraphs;
     a.weights_derived += b.weights_derived;
     a.families_missing += b.families_missing;
     a.colours_dropped += b.colours_dropped;
     a.decoration_forms_unread += b.decoration_forms_unread;
+}
+
+/// Whether `rich` holds more than a writer serialises.
+fn over_caps(rich: &RichText) -> bool {
+    use pdfcer_core::text_edit::model::{
+        RICH_COPY_MAX_PARAGRAPHS, RICH_COPY_MAX_SPANS, RICH_COPY_MAX_TEXT_BYTES,
+    };
+    let spans = rich.paragraphs.iter().map(|p| p.spans.len()).sum::<usize>();
+    let bytes = rich
+        .paragraphs
+        .iter()
+        .flat_map(|p| &p.spans)
+        .map(|s| s.text.len())
+        .sum::<usize>();
+    rich.paragraphs.len() > RICH_COPY_MAX_PARAGRAPHS
+        || spans > RICH_COPY_MAX_SPANS
+        || bytes > RICH_COPY_MAX_TEXT_BYTES
 }
 
 /// Place `rich` as HTML, RTF and plain text in one transaction. Returns the

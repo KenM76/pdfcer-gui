@@ -642,7 +642,7 @@ mod tests {
         );
     }
 
-    /// The four fields this panel was written for are still in the engine's
+    /// The first four fields this panel was written for are still in the engine's
     /// list.
     #[test]
     fn the_draft_array_tracks_the_engines_field_list() {

@@ -490,7 +490,15 @@ impl PdfcerApp {
                 vector_edit(doc, "set-info-field", 0, 1, |session| {
                     session
                         .set_info_field(field, value.as_deref())
-                        .map(|()| Vec::new())
+                        .map(|outcome| match outcome.xmp {
+                            pdfcer_core::edit::XmpSync::Skipped { reason, .. } => {
+                                vec![crate::text::panels::docprops::xmp_skipped(
+                                    crate::text::panels::docprops::info_label(field),
+                                    reason,
+                                )]
+                            }
+                            _ => Vec::new(),
+                        })
                 });
             }
             // The `Option` is `markup::Refusal::Mismatched` arriving at the
