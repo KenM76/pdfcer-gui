@@ -653,6 +653,70 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O389 — **OPEN** — the picture at the edges is skewed again
+
+His words: *"Also things appear very skewed at the edges again."*
+
+**Scope, whole behaviour.** Near the edges of the 3D picture, shapes look as they do at its centre, in every navigation, at the default field of view and after a named view sets its own.
+
+**Status.** Not yet diagnosed.
+
+## O388 — **OPEN** — open a named view from inside the model
+
+His words: *"Also we should be able to start the view and be inside the model if that is a preset."*
+
+**Scope, whole behaviour.** A named view whose eye stands inside the model, the file's opening view included, opens with the eye there, not pulled back to frame the whole model, and the viewer starts in the navigation that suits it.
+
+**Status.** Not yet diagnosed.
+
+## O387 — **OPEN** — every 3D setting remembered
+
+His words: *"Also you need to remember my last settings for everything."*
+
+**Scope, whole behaviour.** Every choice in the 3D viewer's options menu and the picture's settings is as he left it when the viewer is next opened, on any model and after the program is restarted.
+
+**Status.** Not built.
+
+## O386 — **OPEN** — the picture's settings hold every render option
+
+His words: *"Also the image capture setting are supposed to have all the options we have for the view settings so shadows and lighting modes and everything else we have as render options can be chosen."*
+
+**Scope, whole behaviour.** The Picture tab, set to the picture's own look, offers every render option the screen has (lighting, shadows, occlusion, render mode, the model's lights, lamp reach and every other one), each starting at the screen's value, and the saved picture is drawn with them.
+
+**Status.** Not built.
+
+## O385 — **OPEN** — walking solid with stairs off still climbs some things
+
+His words: *"Also sometimes I was still able to climb items even with the steps turned off."*
+
+**Scope, whole behaviour.** With Ghost off and stair climbing off, the walker never rises onto or over anything, whatever it walks into, at any speed.
+
+**Status.** Not yet diagnosed.
+
+## O384 — **OPEN** — the full-screen buttons in the window too
+
+His words: *"Also I'd like the buttons we have on screen in full screen mode to show on the windowed version."*
+
+**Scope, whole behaviour.** The 3D viewer in its window shows the same on-screen buttons over the picture as full screen does, with the same behaviour, including hiding them with a tap.
+
+**Status.** Not built.
+
+## O383 — **OPEN** — the 3D viewer's window can be resized
+
+His words: *"also the window needs to be resizable - make everything look nice and also useable."*
+
+**Scope, whole behaviour.** The viewer's window resizes from its edges and corners, the picture filling it, the controls and the options menu laid out to fit at any size, and it opens at the size he left it.
+
+**Status.** Not built.
+
+## O382 — **OPEN** — glyphs on the 3D options menu's tabs
+
+His words: *"I checked out the new menu tabs for 3d options and it needs glyphs"*, and *"make everything look nice and also useable."*
+
+**Scope, whole behaviour.** Each tab of the options menu (View, Look, Moving, Picture) carries a glyph with its name, legible on a phone, in a window and full screen, and the menu looks tidy.
+
+**Status.** Not built.
+
 ## O381 — **OPEN** — add and edit the document's metadata
 
 His words: *"Also we need to have a way to add/edit metadata."*
