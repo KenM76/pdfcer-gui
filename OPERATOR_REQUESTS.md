@@ -653,6 +653,30 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O377 — **OPEN** — a picture's size, resolution and look set before saving
+
+His words: *"a tab needs to be added to set the render settings for screen shots. Also for screen shots it would be nice to be able to set the dpi, and resolution of the screenshot - a horizontal and vertical entry that when one is altered it alters the other to match the screen's ratio and also a slider to quickly change from current screen resolution size up to 8x."*
+
+**Scope, whole behaviour.** The options menu gets a picture tab, holding what *Save picture…* (and the full-screen save button) writes. That covers the size in pixels as a width and a height, linked to the picture's shape on screen, so changing one changes the other; a slider from the picture's size on screen to eight times it, moving both; the resolution in dots per inch, stored in the PNG; and the render settings the saved picture is drawn with. Those settings are the screen's by default, or the picture's own, so a picture can be drawn with more detail than the screen draws live. A size past the engine's work ceiling is refused with the engine's reason, never cut.
+
+**Status.** Not built.
+
+## O376 — **OPEN** — the 3D options menu in tabs
+
+His words: *"Also the menu might need to be tabbed for better organization"*
+
+**Scope, whole behaviour.** The options menu's groups go on tabs: the view (named views, perspective, axes, mesh fit), the look (lighting, effects, render mode), moving (navigation, controls, eye height, full screen), and the picture (O377). It is the same menu on a phone, in a window and full screen. The menu remembers the last tab.
+
+**Status.** Not built.
+
+## O375 — **OPEN** — walking cannot fly over things unless stairs are on
+
+His words: *"In walk through mode without ghost mode turned on the user shouldn't be able to walk over things unless they have turned on stair mode, and it should disable the height control on the left joystick without ghost mode turned on in walkthrough mode."*
+
+**Scope, whole behaviour.** Walking solid (ghost mode off), the left stick's up and down does nothing, and neither do the rise and sink keys: the walker stays on the floor and cannot lift itself over a wall or a box. Stair climbing is the only way up, and only over what it climbs. Ghosting, the left stick rises and sinks as before. The stick shows when its up and down is off.
+
+**Status.** Not built.
+
 ## O374 — **BUILT** — draw what survives of a damaged 3D model
 
 His words: *"We should still be able to draw damaged or broken 3D files for scenarios that this doesn't pose a security risk? If the engine has to guess at one small piece the user would still rather see what parts of the model did manage to render. No one cares if one triangle in an entire model is corrupt or one point is missing a co-ordinate or etc."*
