@@ -44,6 +44,7 @@ mod parts;
 mod phone;
 mod picture;
 mod saved;
+mod shot;
 mod stick;
 mod walk;
 mod window;
@@ -159,6 +160,8 @@ pub(crate) struct ModelView {
     native: bool,
     /// A picture of this view, waiting for the action queue.
     picture: Option<(PictureFor, Drawn)>,
+    /// The Picture tab's settings and the picture it is drawing.
+    shot: shot::Shot,
     /// Why the mesh fit last picked was not applied.
     fit_refused: Option<String>,
     /// Views to write into the file and the one to open on, waiting for
@@ -257,6 +260,7 @@ impl ModelView {
             escape_left_full_screen: false,
             native: false,
             picture: None,
+            shot: shot::Shot::default(),
             fit_refused: None,
             views: None,
             parts,
@@ -296,6 +300,11 @@ impl ModelView {
             self.native = frame.class == egui::ViewportClass::Immediate;
             frame.closed
         };
+        match self.finished_shot(ctx) {
+            Some(Ok(drawn)) => self.picture = Some((PictureFor::File, drawn)),
+            Some(Err(said)) => self.failed = Some(t::poster_not_drawn(&said)),
+            None => {}
+        }
         if let Some((purpose, drawn)) = self.picture.take() {
             self.queue(purpose, drawn, actions);
         }
@@ -474,6 +483,9 @@ impl ModelView {
         let scale = ui.ctx().pixels_per_point() * if halve { 0.5 } else { 1.0 };
         let side = |points: f32| (points * scale).clamp(1.0, MAX_SIDE).round() as u32;
         let size = [side(rect.width()), side(rect.height())];
+        let ppp = ui.ctx().pixels_per_point();
+        self.shot.base = [rect.width(), rect.height()].map(|p| (p * ppp).round().max(1.0) as u32);
+        self.shot.screen = background.to_array();
         let wanted = Rendered {
             orbit: self.orbit,
             walk: self.nav.walk,
@@ -585,6 +597,13 @@ impl ModelView {
                 REGION_SAVE_PICTURE,
             ),
         };
+        if matches!(purpose, PictureFor::File) && self.shot_drawing() {
+            ui.horizontal(|ui| {
+                ui.add(egui::Spinner::new().color(ui.visuals().text_color()));
+                ui.label(crate::text::model3dshot::drawing());
+            });
+            return;
+        }
         let button = phone::glyph_button(ui, icon, label, tip);
         crate::diag::ui_rect_visible(region, button.rect, ui.clip_rect());
         if button.clicked() {
@@ -594,9 +613,14 @@ impl ModelView {
 
     /// Draw this view, without the controls, and queue it for `purpose`.
     fn queue_picture(&mut self, purpose: PictureFor) {
-        match self.poster() {
-            Ok(drawn) => self.picture = Some((purpose, drawn)),
-            Err(said) => self.failed = Some(t::poster_not_drawn(&said)),
+        let drawn = match purpose {
+            PictureFor::Page => self
+                .poster()
+                .map(|drawn| self.picture = Some((purpose, drawn))),
+            PictureFor::File => self.start_shot(),
+        };
+        if let Err(said) = drawn {
+            self.failed = Some(t::poster_not_drawn(&said));
         }
     }
 
@@ -690,7 +714,7 @@ impl ModelView {
                 height: drawn.height,
                 rgba: drawn.rgba,
             },
-            PictureFor::File => match picture::png(&drawn) {
+            PictureFor::File => match picture::png(&drawn, self.shot.png_dpi()) {
                 Ok(png) => AttachmentAction::SaveModelPicture { artwork, png },
                 Err(said) => {
                     self.failed = Some(t::poster_not_drawn(&said));

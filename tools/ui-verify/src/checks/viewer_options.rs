@@ -1,11 +1,12 @@
 //! Reaching a 3D viewer control that lives in its options menu.
 //!
-//! The viewer keeps its views, projection, axes, mesh fit, navigation and
-//! window switches behind one glyph at the picture's top-left
-//! (`dialogs::model3d::options::REGION_OPTIONS`). A control in that menu is
-//! drawn only while the menu is open, so a check that wants one opens the
-//! menu first. The menu stays open while its switches are used, and covers
-//! part of the picture until it is closed.
+//! The viewer keeps its views, look, navigation, window and picture
+//! settings behind one glyph at the picture's top-left
+//! (`dialogs::model3d::options::REGION_OPTIONS`), on tabs. A control in that
+//! menu is drawn only while the menu is open on its tab, so a check that
+//! wants one opens the menu and walks the tabs to it. The menu stays open
+//! while its switches are used, and covers part of the picture until it is
+//! closed.
 
 use crate::checks::driving::declared_in;
 use crate::coords::WindowPoint;
@@ -31,11 +32,46 @@ pub fn reach(
     let Some((glyph, vp)) = declared_in(&session.trace()?, ui_rect, OPTIONS) else {
         return Ok(None);
     };
-    pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(glyph))?;
-    session.settle(20);
-    // The menu scrolls once it is taller than the room below the glyph,
-    // and an item scrolled out of it publishes no rect: wheel the menu
-    // down, as a person would, until the item shows or the menu ends.
+    if declared_in(&session.trace()?, ui_rect, MENU).is_none() {
+        pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(glyph))?;
+        session.settle(20);
+    }
+    // The menu shows one tab at a time and opens on the last one shown:
+    // look there first, then on each tab in turn.
+    if let Some(found) = scroll_to(session, pointer, ui_rect, name)? {
+        return Ok(Some(found));
+    }
+    for tab in TABS {
+        let Some((rect, tvp)) = declared_in(&session.trace()?, ui_rect, tab) else {
+            return Ok(None);
+        };
+        pointer.click_in(session, tvp.as_deref(), WindowPoint::centre_of(rect))?;
+        session.settle(12);
+        if let Some(found) = scroll_to(session, pointer, ui_rect, name)? {
+            return Ok(Some(found));
+        }
+    }
+    Ok(None)
+}
+
+/// The options menu's tabs: `dialogs::model3d::options::REGION_TAB` and
+/// each tab's word.
+const TABS: [&str; 4] = [
+    "model3d.options.tab.view",
+    "model3d.options.tab.look",
+    "model3d.options.tab.moving",
+    "model3d.options.tab.picture",
+];
+
+/// `name` on the open tab, wheeling its rows down until it shows or they
+/// end: a row scrolled out of the menu publishes no rect. A tab opens
+/// scrolled to the top.
+fn scroll_to(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    name: &str,
+) -> Result<Option<(LRect, Option<String>)>> {
     for _ in 0..SCROLLS {
         let trace = session.trace()?;
         if let Some(found) = declared_in(&trace, ui_rect, name) {
@@ -44,14 +80,15 @@ pub fn reach(
         let Some((menu, mvp)) = declared_in(&trace, ui_rect, MENU) else {
             return Ok(None);
         };
-        pointer.wheel_in(session, mvp.as_deref(), WindowPoint::centre_of(menu), -3.0)?;
+        pointer.wheel_in(session, mvp.as_deref(), WindowPoint::centre_of(menu), -1.0)?;
         session.settle(12);
     }
     Ok(declared_in(&session.trace()?, ui_rect, name))
 }
 
-/// Wheel notches [`reach`] spends looking down a scrolled menu.
-const SCROLLS: usize = 12;
+/// Wheel notches [`reach`] spends looking down a scrolled menu, one at a
+/// time: a short menu's rows show in a band narrower than three notches.
+const SCROLLS: usize = 18;
 
 /// Click `name`, opening the options menu first when it lives there;
 /// `false` when it is drawn nowhere.

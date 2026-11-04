@@ -10,6 +10,7 @@ use std::path::Path;
 
 use crate::checks::driving::declared_in;
 use crate::checks::model_axes::{launch_with, opened_from_page};
+use crate::checks::model_view_window::picture_saved;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
@@ -284,16 +285,17 @@ impl Stage<'_> {
             .drag_in(self.session, vp.as_deref(), from, to, 8, "l")?;
         self.session.settle(30);
         let before = self.last("model-view-rendered", "dir");
+        let mark = self.session.trace()?.mark();
         if !self.tap_centre_twice()? {
             return Ok(Err(format!(
                 "no `{CENTRE}` region: the gimbal is not drawn."
             )));
         }
+        picture_saved(self.session, mark)?;
         let trace = self.session.trace()?;
         let snapshot = trace.events("model-gimbal-snapshot").last().is_some();
         let saved = trace
-            .events("model-picture-saved")
-            .last()
+            .last_after("model-picture-saved", mark)
             .map(|l| l.raw.clone());
         let after = self.last("model-view-rendered", "dir");
         report.note(format!(

@@ -4,15 +4,18 @@
 //! Places the engine corpus's `assembly.prc` as `checks::model_view_window`
 //! does, with a path in this run's output folder as the picture picker's
 //! answer (`PDFCER_DIAG_PICTURE_SAVE_PATH`). Opens it with *View…*, turns to
-//! the Top view, presses *Save picture…* and closes the viewer.
+//! the Top view, presses *Save picture…*, waits for the picture drawn off
+//! the screen's thread, and closes the viewer.
 //!
-//! Oracles: a `model-picture-saved` line; the file decodes as PNG with its
-//! long side `LONG_SIDE` pixels; and at least `MIN_DRAWN` of its pixels are
-//! not the white background, so the model is in it.
+//! Oracles: a `model-picture-saved` line; the file decodes as PNG at the
+//! `w=` by `h=` its `model-view-poster` line names, and with the Picture
+//! tab untouched that is 1×, the picture on screen's `base=` size; and at
+//! least `MIN_DRAWN` of its pixels are not the white background, so the
+//! model is in it.
 
 use crate::checks::model_view_poster::click;
 use crate::checks::model_view_window::{
-    MODEL, VIEW_REGION, launch_with_model_env, press_insert, ui_rect,
+    MODEL, VIEW_REGION, launch_with_model_env, picture_saved, press_insert, ui_rect,
 };
 use crate::checks::{Check, CheckContext};
 use crate::error::Result;
@@ -29,8 +32,6 @@ const SAVE_REGION: &str = "model3d.save_picture";
 const CLOSE_REGION: &str = "model3d.close";
 /// The picture picker's diagnostic answer, read by `app::files::pick_picture_target`.
 const PICTURE_ENV: &str = "PDFCER_DIAG_PICTURE_SAVE_PATH";
-/// The saved picture's long side: `dialogs::model3d::POSTER_SIDE`.
-const LONG_SIDE: u32 = 1200;
 /// A channel this far below 255 is not the white background.
 const BELOW_WHITE: u8 = 40;
 /// Fewer drawn pixels than this is no model in the picture.
@@ -57,9 +58,9 @@ impl Check for TheViewerSavesItsViewAsAPicture {
         let extra = [(PICTURE_ENV, target.to_string_lossy().into_owned())];
         let driven = launch_with_model_env(ctx, &mut report, "model-view-picture", MODEL, &extra)
             .and_then(|(session, pointer)| drive(ctx, &session, &pointer))
-            .and_then(|failure| match failure {
-                Some(failure) => Ok(Some(failure)),
-                None => judge(&mut report, &target),
+            .and_then(|outcome| match outcome {
+                Err(failure) => Ok(Some(failure)),
+                Ok(sizes) => judge(&mut report, &target, sizes),
             });
         match driven {
             Ok(Some(failure)) => report.fail(failure),
@@ -69,13 +70,17 @@ impl Check for TheViewerSavesItsViewAsAPicture {
     }
 }
 
+/// The `w=`/`h=` and `base=` sides of the picture drawn.
+type Sizes = ([u32; 2], [u32; 2]);
+
+/// Save the Top view and close; the picture's sizes, or why not.
 fn drive(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
-) -> Result<Option<String>> {
+) -> Result<std::result::Result<Sizes, String>> {
     if !press_insert(ctx, session, pointer)? {
-        return Ok(Some("no 3D model button on the Edit tab.".to_owned()));
+        return Ok(Err("no 3D model button on the Edit tab.".to_owned()));
     }
     pointer.gone(session)?;
     session.settle(30);
@@ -84,28 +89,49 @@ fn drive(
         (VIEW_REGION, "View… beside the placed model"),
         (TOP_REGION, "the viewer's Top button"),
         (SAVE_REGION, "the viewer's Save picture… button"),
-        (CLOSE_REGION, "the viewer's Close button"),
     ] {
         if !click(session, pointer, ui_rect, region)? {
-            return Ok(Some(format!("no `{region}` region: {what} was not drawn.")));
+            return Ok(Err(format!("no `{region}` region: {what} was not drawn.")));
         }
     }
-    session.settle(30);
+    let saved = picture_saved(session, 0)?;
     let trace = session.trace()?;
-    if trace.events("model-picture-saved").count() == 0 {
+    if !saved {
         let failed = trace
             .events("model-picture-failed")
             .last()
             .map(|l| l.raw.clone());
-        return Ok(Some(format!(
+        return Ok(Err(format!(
             "the press saved no picture (`model-picture-saved` absent; failure line {failed:?})."
         )));
     }
-    Ok(None)
+    let line = trace.events("model-view-poster").last();
+    let side = |key: &str| line.and_then(|l| l.get(key)?.parse().ok());
+    let base = line.and_then(|l| {
+        let (w, h) = l.get("base")?.split_once('x')?;
+        Some([w.parse().ok()?, h.parse().ok()?])
+    });
+    let (Some(w), Some(h), Some(base)) = (side("w"), side("h"), base) else {
+        let raw = line.map(|l| l.raw.clone());
+        return Ok(Err(format!(
+            "no `w=`, `h=` and `base=` on the `model-view-poster` line: {raw:?}"
+        )));
+    };
+    if !click(session, pointer, ui_rect, CLOSE_REGION)? {
+        return Ok(Err(format!(
+            "no `{CLOSE_REGION}` region: the viewer's Close button was not drawn."
+        )));
+    }
+    Ok(Ok(([w, h], base)))
 }
 
 /// Read the saved file back and hold it to the oracles.
-fn judge(report: &mut CheckReport, target: &std::path::Path) -> Result<Option<String>> {
+fn judge(
+    report: &mut CheckReport,
+    target: &std::path::Path,
+    sizes: Sizes,
+) -> Result<Option<String>> {
+    let (traced, base) = sizes;
     if !target.is_file() {
         return Ok(Some(format!("no file at {}.", target.display())));
     }
@@ -123,10 +149,12 @@ fn judge(report: &mut CheckReport, target: &std::path::Path) -> Result<Option<St
             })
         })
         .count();
-    report.note(format!("saved picture {w} x {h}, {drawn} pixels drawn"));
-    if w.max(h) != LONG_SIDE {
+    report.note(format!(
+        "saved picture {w} x {h} (traced {traced:?}, screen {base:?}), {drawn} pixels drawn"
+    ));
+    if [w, h] != traced || traced != base {
         return Ok(Some(format!(
-            "the picture is {w} x {h}; its long side should be {LONG_SIDE}."
+            "the picture is {w} x {h}, traced {traced:?}; at 1× all three should be the picture on screen's {base:?}."
         )));
     }
     Ok((drawn < MIN_DRAWN).then(|| {

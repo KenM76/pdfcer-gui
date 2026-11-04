@@ -283,8 +283,8 @@ fn colourfulness(rgba: &[u8]) -> (usize, usize) {
     (chromatic, sectors.iter().filter(|n| **n >= floor).count())
 }
 
-/// `drawn` as PNG file bytes, for *Save picture…*.
-pub(super) fn png(drawn: &Drawn) -> Result<Vec<u8>, String> {
+/// `drawn` as PNG file bytes at `dpi` pixels per inch, for *Save picture…*.
+pub(super) fn png(drawn: &Drawn, dpi: f32) -> Result<Vec<u8>, String> {
     use pdfcer_render::tiny_skia::{ColorU8, IntSize, Pixmap};
     let premultiplied = drawn
         .rgba
@@ -296,7 +296,7 @@ pub(super) fn png(drawn: &Drawn) -> Result<Vec<u8>, String> {
         .collect();
     let size = IntSize::from_wh(drawn.width, drawn.height).ok_or_else(String::new)?;
     let pixmap = Pixmap::from_vec(premultiplied, size).ok_or_else(String::new)?;
-    pdfcer_render::export::encode_png(&pixmap, None).map_err(|e| e.to_string())
+    pdfcer_render::export::encode_png(&pixmap, Some(dpi)).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

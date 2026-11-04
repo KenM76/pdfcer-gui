@@ -19,7 +19,7 @@
 
 use crate::checks::driving::{declared_in, repo_fixture};
 use crate::checks::model_shadow_sun::open;
-use crate::checks::model_view_window::{launch_with_model_env, ui_rect};
+use crate::checks::model_view_window::{launch_with_model_env, picture_saved, ui_rect};
 use crate::checks::viewer_options;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
@@ -157,9 +157,12 @@ impl Driver<'_> {
                 "the `{SHOT}` button vanished before its press."
             )));
         }
-        let trace = self.session.trace()?;
-        let shot = trace.last_after("model-view-shot", mark).is_some();
-        let saved = trace.last_after("model-picture-saved", mark).is_some();
+        let saved = picture_saved(self.session, mark)?;
+        let shot = self
+            .session
+            .trace()?
+            .last_after("model-view-shot", mark)
+            .is_some();
         let kept = self.drawn()?;
         report.note(format!(
             "camera button: shot {shot}, saved {saved}, file {}, then {kept:?}",

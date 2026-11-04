@@ -171,6 +171,7 @@ pub mod metadata;
 pub mod model3d;
 /// The 3D viewer's render mode, shadow and highlight choices.
 pub mod model3dlook;
+pub mod model3dshot;
 /// The sized-New dialog's copy — the size list, the orientation pair, the
 /// custom fields and the one refusal. Consumed by
 /// `pdfcer_gui::dialogs::new_document`.

@@ -38,6 +38,10 @@ const FULL_SCREEN_REGION: &str = "model3d.full_screen";
 const FIT_REGION: &str = "model3d.fit";
 const CLOSE_REGION: &str = "model3d.close";
 const CLOSED: &str = "model-view-closed";
+/// A saved picture's trace line.
+const SAVED: &str = "model-picture-saved";
+/// Ten-frame waits for a picture being drawn.
+const PICTURE_WAITS: usize = 40;
 const MINIMIZE_REGION: &str = "model3d.minimize";
 const WINDOW: &str = "model-view-window";
 /// The camera's fields, as both the rendered and the window lines carry them.
@@ -227,6 +231,19 @@ fn press_ribbon(ctx: &CheckContext, session: &Session, pointer: &ScriptedPointer
     pointer.click(session, WindowPoint::centre_of(item))?;
     session.settle(30);
     Ok(true)
+}
+
+/// Wait for a `model-picture-saved` line after trace line `mark`:
+/// *Save picture…* draws off the screen's thread, so the line comes frames
+/// after the press.
+pub(crate) fn picture_saved(session: &Session, mark: usize) -> Result<bool> {
+    for _ in 0..PICTURE_WAITS {
+        if session.trace()?.last_after(SAVED, mark).is_some() {
+            return Ok(true);
+        }
+        session.settle(10);
+    }
+    Ok(false)
 }
 
 pub(crate) fn ui_rect(ctx: &CheckContext) -> Result<&'static str> {

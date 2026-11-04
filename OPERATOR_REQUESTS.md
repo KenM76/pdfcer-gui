@@ -667,21 +667,21 @@ His words: *"I assume the lighting stored in a 3D pdf can only be static? If so,
 
 **Status.** Not built. Frame cost not yet measured.
 
-## O377 — **OPEN** — a picture's size, resolution and look set before saving
+## O377 — **BUILT** — a picture's size, resolution and look set before saving
 
 His words: *"a tab needs to be added to set the render settings for screen shots. Also for screen shots it would be nice to be able to set the dpi, and resolution of the screenshot - a horizontal and vertical entry that when one is altered it alters the other to match the screen's ratio and also a slider to quickly change from current screen resolution size up to 8x."*
 
 **Scope, whole behaviour.** The options menu gets a picture tab, holding what *Save picture…* (and the full-screen save button) writes. That covers the size in pixels as a width and a height, linked to the picture's shape on screen, so changing one changes the other; a slider from the picture's size on screen to eight times it, moving both; the resolution in dots per inch, stored in the PNG; and the render settings the saved picture is drawn with. Those settings are the screen's by default, or the picture's own, so a picture can be drawn with more detail than the screen draws live. A size past the engine's work ceiling is refused with the engine's reason, never cut.
 
-**Status.** Not built.
+**Status.** Built. The Picture tab holds a width and a height in pixels, linked at the picture on screen's shape; a slider from 1× (the picture on screen, in device pixels) to 8×; the resolution in dpi, written into the PNG with the size it prints at beside it; the background (white, the screen's, or see-through); shadow detail (as on screen, fine, finest); and whether lines widen with the size. *Save picture…*, the camera button and the gimbal's double tap all draw at these settings, off the screen's thread, with *Drawing the picture…* shown meanwhile. Where the engine's pixel ceiling stops the size short of 8×, the slider and entries stop there and the tab says so, so no picture is refused or cut after the press. Driven by `the_3d_viewer_saves_a_picture_at_the_size_and_resolution_set` (slider to its end, width 1234, 300 dpi; the PNG read back at 1234 × 1059 with `pHYs` 11811 per metre), falsified by a PNG written without the resolution and a height that does not follow the width. *Use this view on the page* keeps its own 1200-pixel picture.
 
-## O376 — **OPEN** — the 3D options menu in tabs
+## O376 — **BUILT** — the 3D options menu in tabs
 
 His words: *"Also the menu might need to be tabbed for better organization"*
 
 **Scope, whole behaviour.** The options menu's groups go on tabs: the view (named views, perspective, axes, mesh fit), the look (lighting, effects, render mode), moving (navigation, controls, eye height, full screen), and the picture (O377). It is the same menu on a phone, in a window and full screen. The menu remembers the last tab.
 
-**Status.** Not built.
+**Status.** Built. The menu has four tabs: View (named views, perspective, axes, mesh fit, full screen), Look (lighting, effects, render mode), Moving (navigation, controls, eye height) and Picture (O377). Full screen sits on View, where the view is set. The same menu draws on a phone, in a window and full screen. It reopens on the last tab for the rest of the session; a tab opens scrolled to its top. Every check that reaches a menu row goes through its tab, so the seventeen 3D checks driven after the move cover it.
 
 ## O375 — **BUILT** — walking cannot fly over things unless stairs are on
 

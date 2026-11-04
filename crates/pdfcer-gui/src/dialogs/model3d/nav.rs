@@ -150,6 +150,8 @@ pub(super) struct Nav {
     loaded: bool,
     /// Start walking on the next frame: the viewer opens walking.
     pub start_walking: bool,
+    /// The options menu's tab, an index into `text::model3dshot::tabs`.
+    pub options_tab: usize,
 }
 
 impl Nav {

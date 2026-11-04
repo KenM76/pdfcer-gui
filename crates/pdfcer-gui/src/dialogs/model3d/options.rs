@@ -1,8 +1,11 @@
 //! The viewer's options behind one glyph at the picture's top-left corner,
-//! in a window, on a phone and full screen alike: the views, projection,
-//! axes, mesh fit, navigation and window switches, and, full screen where
-//! the footer is gone, the picture and save buttons. The menu stays open
-//! while its switches are used and closes on a click outside it or Escape.
+//! in a window, on a phone and full screen alike, on four tabs: View (the
+//! views, projection, axes, mesh fit and full screen), Look (lighting,
+//! effects, render mode), Moving (the controls, navigation and eye height)
+//! and Picture (what *Save picture…* draws at, and, full screen where the
+//! footer is gone, the picture and save buttons). The menu opens on the tab
+//! last shown, stays open while its switches are used and closes on a click
+//! outside it or Escape.
 
 use egui::{Rect, Ui, UiBuilder, Vec2};
 use pdfcer_gui_base::icons::{self, Icon};
@@ -11,6 +14,7 @@ use super::{ModelView, REGION_FIT, REGION_VIEW_PREFIX, phone};
 
 /// The Perspective switch, greyed while walking.
 pub const REGION_PERSPECTIVE: &str = "model3d.perspective"; // ui-text-exempt: trace region name, never displayed
+use crate::text::model3dshot as s;
 use crate::text::panels::modelnav as tn;
 use crate::text::panels::models as t;
 
@@ -29,6 +33,12 @@ pub(super) const THUMB_CLEAR: f32 = INSET + SIDE.1;
 const WIDTH: f32 = 300.0;
 /// Room kept below the menu, in points: its frame's margin and shadow.
 const BELOW: f32 = 24.0;
+/// Room the tab row and its rule take above the rows, in points.
+const TABS_HIGH: f32 = 40.0;
+/// Each tab's published region, after [`REGION_TAB`].
+const TAB_WORDS: [&str; 4] = ["view", "look", "moving", "picture"]; // ui-text-exempt: trace region names, never displayed
+/// The tabs' region prefix: `model3d.options.tab.view` and so on.
+pub const REGION_TAB: &str = "model3d.options.tab."; // ui-text-exempt: trace region name, never displayed
 
 impl ModelView {
     /// The options glyph over `rect`'s top-left corner and its menu.
@@ -69,8 +79,12 @@ impl ModelView {
             .close_behavior(egui::PopupCloseBehavior::IgnoreClicks)
             .width(WIDTH)
             .show(|ui| {
-                let mut scroll = egui::ScrollArea::vertical().max_height(room);
-                if opening {
+                let shown = self.nav.options_tab;
+                self.tab_row(ui);
+                ui.separator();
+                let fresh = opening || shown != self.nav.options_tab;
+                let mut scroll = egui::ScrollArea::vertical().max_height(room - TABS_HIGH);
+                if fresh {
                     scroll = scroll.vertical_scroll_offset(0.0);
                 }
                 scroll.show(ui, |ui| self.options(ui));
@@ -81,9 +95,41 @@ impl ModelView {
         self.nav.options_open = open;
     }
 
-    /// The menu's contents, in groups.
+    /// The tabs, the one shown marked.
+    fn tab_row(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            for (i, (name, word)) in s::tabs().into_iter().zip(TAB_WORDS).enumerate() {
+                let tab = ui.selectable_value(&mut self.nav.options_tab, i, name);
+                // ui-text-exempt: trace region name, never displayed
+                let region = format!("{REGION_TAB}{word}");
+                crate::diag::ui_rect_visible(&region, tab.rect, ui.clip_rect());
+            }
+        });
+    }
+
+    /// The tab shown's rows.
     fn options(&mut self, ui: &mut Ui) {
         let full = self.filling_screen(ui.ctx());
+        match self.nav.options_tab {
+            0 => self.view_tab(ui, full),
+            1 => {
+                self.lighting_control(ui);
+                self.effects_control(ui);
+                self.looks_control(ui);
+            }
+            2 => self.moving_tab(ui, full),
+            _ => {
+                self.shot_control(ui);
+                if full {
+                    ui.separator();
+                    ui.horizontal_wrapped(|ui| self.buttons(ui));
+                }
+            }
+        }
+    }
+
+    /// The View tab: the views, projection, axes, mesh fit and full screen.
+    fn view_tab(&mut self, ui: &mut Ui, full: bool) {
         ui.horizontal_wrapped(|ui| {
             self.file_view_control(ui);
             self.saved_views_control(ui);
@@ -127,11 +173,11 @@ impl ModelView {
         crate::diag::ui_rect_visible(REGION_PERSPECTIVE, switch.rect, ui.clip_rect());
         ui.horizontal_wrapped(|ui| self.axes_control(ui));
         ui.horizontal_wrapped(|ui| self.mesh_fit_control(ui));
-        ui.separator();
-        self.lighting_control(ui);
-        self.effects_control(ui);
-        self.looks_control(ui);
-        ui.separator();
+        ui.horizontal_wrapped(|ui| self.full_screen_control(ui));
+    }
+
+    /// The Moving tab: the controls, navigation and eye height.
+    fn moving_tab(&mut self, ui: &mut Ui, full: bool) {
         self.controls_switch(ui);
         // Full screen has the navigation switches on its own row of glyphs.
         if !full {
@@ -139,11 +185,6 @@ impl ModelView {
             ui.horizontal_wrapped(|ui| self.nav_controls(ui));
         }
         ui.horizontal_wrapped(|ui| self.eye_height_control(ui));
-        ui.horizontal_wrapped(|ui| self.full_screen_control(ui));
-        if full {
-            ui.separator();
-            ui.horizontal_wrapped(|ui| self.buttons(ui));
-        }
     }
 }
 
