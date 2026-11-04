@@ -54,10 +54,7 @@ impl ModelView {
         let reading = self.nav.sticks.read(ui, rect, bases, &zones, &hud);
         self.nav.hud = hud;
         let (keyed, keys, wheel) = self.walk_keys(ui, response);
-        let tilts: [Vec2; 3] = std::array::from_fn(|i| {
-            let held = reading.sticks.get(i).copied().unwrap_or_default();
-            (held + keys[i]).clamp(Vec2::splat(-1.0), Vec2::splat(1.0))
-        });
+        let tilts = self.tilts(&reading.sticks, keys);
         self.nav.drone = drone.map(|d| (d, tilts));
 
         // Mode 2: left is throttle and yaw, right is pitch and roll.
@@ -108,6 +105,22 @@ impl ModelView {
         if busy || self.nav.walk.is_some_and(|w| w.falling()) {
             ui.ctx().request_repaint();
         }
+    }
+
+    /// Each stick's tilt from its finger and its keys, clamped to the base.
+    /// Solid, the left stick only turns: its knob keeps to the level so the
+    /// stick shows that up and down is off.
+    fn tilts(&self, held: &[Vec2], keys: [Vec2; 3]) -> [Vec2; 3] {
+        let solid = self.nav.prefs.rules().solid;
+        std::array::from_fn(|i| {
+            let finger = held.get(i).copied().unwrap_or_default();
+            let tilt = (finger + keys[i]).clamp(Vec2::splat(-1.0), Vec2::splat(1.0));
+            if solid && i == LEFT {
+                Vec2::new(tilt.x, 0.0)
+            } else {
+                tilt
+            }
+        })
     }
 
     /// The walking keys as stick tilts, while the keyboard is the viewer's

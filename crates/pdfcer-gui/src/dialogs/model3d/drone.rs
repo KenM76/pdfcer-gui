@@ -80,15 +80,22 @@ impl Drone {
     }
 
     /// Draw the sticks at `tilts` (x right, y up) and the buttons, Stairs
-    /// lit when `stairs` is on.
-    pub fn paint(&self, ui: &Ui, painter: &Painter, tilts: [Vec2; 3], stairs: bool) {
+    /// lit when `stairs` is on. `level`, the left stick has no up and down
+    /// (walking solid), and its base carries a sideways track saying so.
+    pub fn paint(&self, ui: &Ui, painter: &Painter, tilts: [Vec2; 3], stairs: bool, level: bool) {
         let visuals = ui.visuals();
         let (accent, _) = egui_shell::theme::Theme::accent_pair(ui.ctx());
         let base = visuals.window_fill.gamma_multiply(0.45);
         let ring = visuals.widgets.inactive.fg_stroke;
-        for ((centre, radius), tilt) in self.centres.into_iter().zip(self.radii).zip(tilts) {
+        let sticks = self.centres.into_iter().zip(self.radii).zip(tilts);
+        for (i, ((centre, radius), tilt)) in sticks.enumerate() {
             painter.circle_filled(centre, radius, base);
             painter.circle_stroke(centre, radius, ring);
+            if level && i == LEFT {
+                let track =
+                    Rect::from_center_size(centre, Vec2::new(radius * 2.0, radius * KNOB * 2.0));
+                painter.rect_filled(track, radius * KNOB, accent.gamma_multiply(0.25));
+            }
             let knob = centre + Vec2::new(tilt.x, -tilt.y) * radius;
             painter.circle_filled(knob, radius * KNOB, accent.gamma_multiply(0.8));
         }

@@ -3,7 +3,9 @@
 //! right stick flies the body without turning it, the camera stick turns the
 //! camera without turning the body, the left stick turns the body, the
 //! centre-left/right button brings the camera back to the heading, and the
-//! Stairs button switches stair climbing.
+//! Stairs button switches stair climbing. Ghost turned off, the left stick pushed
+//! up leaves the eye where it was, and the sticks are photographed showing
+//! its sideways track.
 //!
 //! Each stick is dragged with the mouse, which the viewer takes as one more
 //! finger: the drag holds the stick for its frames, then lets it spring back.
@@ -21,6 +23,8 @@ const WALK: &str = "model3d.walk";
 const IMMERSIVE: &str = "model3d.immersive";
 const STICK: &str = "model3d.drone.stick.";
 const BUTTON: &str = "model3d.drone.button.";
+/// `dialogs::model3d::nav::REGION_GHOST`.
+const GHOST: &str = "model3d.ghost";
 /// The sticks and buttons, as `nav.rs` numbers them.
 const LEFT: u8 = 0;
 const RIGHT: u8 = 1;
@@ -68,6 +72,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session: &session,
         pointer: &pointer,
         ui_rect,
+        shot: Some(ctx.out("model-drone-solid.png")),
     };
     let outcome =
         opened_from_page(ctx, report, &session, &pointer, ui_rect).and_then(|f| match f {
@@ -82,6 +87,8 @@ struct Pilot<'a> {
     session: &'a Session,
     pointer: &'a ScriptedPointer,
     ui_rect: &'a str,
+    /// Where the solid-walking picture is written.
+    shot: Option<std::path::PathBuf>,
 }
 
 /// One `model-walk-moved` line's pose.
@@ -140,7 +147,43 @@ impl Pilot<'_> {
                 )));
             }
         }
+        if let Some(failure) = self.solid(report)? {
+            return Ok(Some(failure));
+        }
         self.buttons(report)
+    }
+
+    /// Ghost off, the left stick pushed up must not lift the eye.
+    fn solid(&self, report: &mut CheckReport) -> Result<Option<String>> {
+        // Walking entered from orbit starts with ghost off and traces no
+        // preference until one changes: on, then off again, proves the state.
+        if !self.press(GHOST)? || !self.press(GHOST)? {
+            return Ok(Some(format!(
+                "no `{GHOST}` switch in the full-screen walk."
+            )));
+        }
+        let ghost = self.last("model-nav-prefs", "ghost");
+        if ghost.as_deref() != Some("false") {
+            return Ok(Some(format!("Ghost did not turn off: ghost={ghost:?}.")));
+        }
+        let before = self.pose();
+        self.stick(LEFT, [0.0, -0.8])?;
+        let after = self.pose();
+        report.note(format!(
+            "left stick up, ghost off: eye {:?} -> {:?}",
+            before.as_ref().map(|p| &p.eye),
+            after.as_ref().map(|p| &p.eye)
+        ));
+        if let Some(png) = &self.shot {
+            self.pointer.screenshot(self.session, png)?;
+            report.artifact(png.clone());
+        }
+        let rose = matches!((&before, &after), (Some(b), Some(a)) if a.eye != b.eye);
+        Ok(rose.then(|| {
+            format!(
+                "with ghost off, the left stick pushed up moved the eye: {before:?} then {after:?}."
+            )
+        }))
     }
 
     /// Centre the camera; switch Stairs.

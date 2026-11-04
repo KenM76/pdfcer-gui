@@ -487,7 +487,8 @@ impl ModelView {
             }
         }
         if let Some((drone, tilts)) = &self.nav.drone {
-            drone.paint(ui, &painter, *tilts, self.nav.prefs.stairs);
+            let level = self.nav.prefs.rules().solid;
+            drone.paint(ui, &painter, *tilts, self.nav.prefs.stairs, level);
             for (i, button) in drone.buttons.into_iter().enumerate() {
                 // ui-text-exempt: trace region name, never displayed
                 crate::diag::ui_rect_visible(&format!("{REGION_DRONE_BUTTON}{i}"), button, rect);

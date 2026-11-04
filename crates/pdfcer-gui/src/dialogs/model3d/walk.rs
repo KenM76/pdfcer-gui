@@ -2,9 +2,10 @@
 //!
 //! Solid (ghost mode off), the walker stops at what it meets, slides along
 //! it, and falls onto the floor under it; with nothing under it, it keeps its
-//! height. With stair climbing on it climbs anything lower than [`CLIMB`] of
-//! its eye height; off, only a floor seam under [`BUMP`]. Ghosting, it flies
-//! through everything. Moving is horizontal when solid or level, so it
+//! height. It cannot rise or sink by itself: stair climbing, when on, is the
+//! only way up, over anything lower than [`CLIMB`] of its eye height; off,
+//! only a floor seam under [`BUMP`]. Ghosting, it flies through everything
+//! and rises and sinks as asked. Moving is horizontal when solid or level, so it
 //! never drifts up or down; a ghost that is not level flies where it looks.
 //!
 //! The body and the camera turn apart, as a drone and its gimbal do: `yaw`
@@ -193,7 +194,8 @@ impl Walk {
     }
 
     /// Move for `dt` seconds of `intent`. `world` is the model's nearest hit
-    /// along a ray; it is asked only when solid.
+    /// along a ray; it is asked only when solid. A solid walker ignores
+    /// `intent.rise`, so it can never lift itself over what it would meet.
     pub fn step(
         &mut self,
         intent: Intent,
@@ -207,11 +209,10 @@ impl Walk {
             rules,
             world,
         );
-        let rise = intent.rise * pace * dt;
         if rules.solid {
-            self.settle(rise, dt, world);
+            self.settle(dt, world);
         } else {
-            self.eye = along(self.eye, self.axes.up, rise);
+            self.eye = along(self.eye, self.axes.up, intent.rise * pace * dt);
         }
     }
 
@@ -297,30 +298,16 @@ impl Walk {
     }
 
     /// Stand on the floor under the eye, falling onto it from above it and
-    /// stepping up onto it from below; rise and sink by `rise`, a rise
-    /// stopping under a ceiling. With no floor under it the walker keeps its
-    /// height.
-    fn settle(&mut self, rise: f64, dt: f64, world: &mut impl FnMut(&Ray) -> Option<Hit>) {
+    /// stepping up onto it from below. With no floor under it the walker
+    /// keeps its height.
+    fn settle(&mut self, dt: f64, world: &mut impl FnMut(&Ray) -> Option<Hit>) {
         let up = self.axes.up;
-        let reach = self.body() * REACH;
-        if rise > 0.0 {
-            let ceiling = world(&Ray {
-                origin: self.eye,
-                direction: up,
-                min_distance: 0.0,
-            })
-            .map_or(f64::INFINITY, |h| (h.distance - reach).max(0.0));
-            self.eye = along(self.eye, up, rise.min(ceiling));
-            self.fall = 0.0;
-            return;
-        }
         let floor = world(&Ray {
             origin: self.eye,
             direction: up.map(|c| -c),
             min_distance: 0.0,
         });
         let Some(floor) = floor else {
-            self.eye = along(self.eye, up, rise);
             self.fall = 0.0;
             return;
         };
@@ -331,7 +318,7 @@ impl Walk {
             return;
         }
         self.fall += GRAVITY * self.body() * dt;
-        let drop = (self.fall * dt - rise).min(above);
+        let drop = (self.fall * dt).min(above);
         self.eye = along(self.eye, up, -drop);
         if drop >= above {
             self.fall = 0.0;

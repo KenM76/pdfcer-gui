@@ -172,6 +172,29 @@ fn stair_climbing_climbs_under_a_third_of_the_eye_height_and_off_it_bumps() {
 }
 
 #[test]
+fn a_solid_walker_cannot_rise_over_a_box_and_a_ghost_rises() {
+    let high = room_with_box(0.4);
+    let lifting = Intent {
+        forward: 1.0,
+        rise: 1.0,
+        ..Intent::default()
+    };
+    let mut solid = walker([0.0, 0.0, 0.8]);
+    for _ in 0..60 {
+        solid.step(lifting, 0.05, SOLID, &mut |ray| pick(&high, ray));
+    }
+    assert!(solid.eye[0] < 2.0, "{:?}", solid.eye);
+    assert!((solid.eye[2] - 0.8).abs() < 1e-9, "{:?}", solid.eye);
+    let ghost = Rules {
+        solid: false,
+        ..SOLID
+    };
+    let mut flying = walker([0.0, 0.0, 0.8]);
+    flying.step(lifting, 0.05, ghost, &mut |ray| pick(&high, ray));
+    assert!(flying.eye[2] > 0.8, "{:?}", flying.eye);
+}
+
+#[test]
 fn the_camera_turns_apart_from_the_heading_and_centres_back() {
     let meshes = room();
     let mut walk = walker([-5.0, 0.0, 0.8]);

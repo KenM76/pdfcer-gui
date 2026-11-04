@@ -683,13 +683,13 @@ His words: *"Also the menu might need to be tabbed for better organization"*
 
 **Status.** Not built.
 
-## O375 — **OPEN** — walking cannot fly over things unless stairs are on
+## O375 — **BUILT** — walking cannot fly over things unless stairs are on
 
 His words: *"In walk through mode without ghost mode turned on the user shouldn't be able to walk over things unless they have turned on stair mode, and it should disable the height control on the left joystick without ghost mode turned on in walkthrough mode."*
 
 **Scope, whole behaviour.** Walking solid (ghost mode off), the left stick's up and down does nothing, and neither do the rise and sink keys: the walker stays on the floor and cannot lift itself over a wall or a box. Stair climbing is the only way up, and only over what it climbs. Ghosting, the left stick rises and sinks as before. The stick shows when its up and down is off.
 
-**Status.** Not built.
+**Status.** Built. Solid, the walker ignores any rise or sink, whatever asks for it: the left stick, W/S, or a held key. Before, a rise lifted it up to the ceiling and over whatever was in the way. The left stick's knob keeps to its middle row, and the stick is drawn as a sideways track. Ghosting rises and sinks as before. Driven: `the_3d_viewer_opens_walking_with_ghost_on_and_walks_by_keys` turns Ghost off and presses W; the eye stays put, and on the old physics it rose 0.011. `the_3d_viewers_drone_sticks_fly_and_turn_the_camera` pushes the left stick up with Ghost off; the eye stays put (old: rose 0.081), and its picture shows the track. Unit test: `a_solid_walker_cannot_rise_over_a_box_and_a_ghost_rises`, red on the old physics.
 
 ## O374 — **BUILT** — draw what survives of a damaged 3D model
 

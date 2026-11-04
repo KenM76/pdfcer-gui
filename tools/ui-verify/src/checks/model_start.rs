@@ -3,7 +3,8 @@
 //! from its page is walking with ghost on before anything is pressed; and
 //! the keys stand in for the drone sticks: D turns the body, the up arrow
 //! flies forward, W rises, L turns the camera and U centres it, K tilts it
-//! and O levels it.
+//! and O levels it. With ghost then turned off, W no longer moves the eye:
+//! a solid walker cannot lift itself over what it meets.
 
 use crate::checks::driving::declared_in;
 use crate::checks::model_axes::{launch, opened_from_page};
@@ -14,6 +15,8 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 const IMAGE: &str = "model3d.image";
+/// `dialogs::model3d::nav::REGION_GHOST`.
+const GHOST: &str = "model3d.ghost";
 /// A traced angle or coordinate that moved: past its print precision.
 const MOVED: f64 = 0.002;
 
@@ -133,7 +136,40 @@ fn keys(
             )));
         }
     }
-    Ok(None)
+    solid(report, ui_rect, session, pointer, vp)
+}
+
+/// Turn ghost off, let the walker land, and require W to leave its eye where
+/// it stood.
+fn solid(
+    report: &mut CheckReport,
+    ui_rect: &str,
+    session: &Session,
+    pointer: &ScriptedPointer,
+    vp: Option<&str>,
+) -> Result<Option<String>> {
+    if !crate::checks::viewer_options::press(session, pointer, ui_rect, GHOST)? {
+        return Ok(Some(format!("no `{GHOST}` switch while walking.")));
+    }
+    let prefs = session
+        .trace()?
+        .events("model-nav-prefs")
+        .last()
+        .map(|l| l.raw.clone());
+    if !prefs.as_deref().is_some_and(|p| p.contains("ghost=false")) {
+        return Ok(Some(format!("Ghost did not turn off: {prefs:?}.")));
+    }
+    session.settle(45);
+    let before = walker(session)?.get("eye").cloned();
+    pointer.key(session, vp, "W", None)?;
+    session.settle(15);
+    let after = walker(session)?.get("eye").cloned();
+    report.note(format!("solid W: eye {before:?} -> {after:?}"));
+    let rose = match (&before, &after) {
+        (Some(a), Some(b)) => a.iter().zip(b).any(|(a, b)| (a - b).abs() > MOVED),
+        _ => false,
+    };
+    Ok(rose.then(|| format!("with ghost off, W moved the eye: {before:?} -> {after:?}.")))
 }
 
 /// The walker's last traced state, from whichever of the move and button
