@@ -419,3 +419,12 @@ no-op build. D: 44 → 137 GB free, C: 65 → 209 GB. ⚠ A path built with
 `os.path.join` on Windows carries a backslash, so a `startswith('target/release/deps/')`
 filter matched nothing and the first delete pass removed 0 files; compare
 `os.path.dirname(os.path.normpath(p))` instead.
+
+## Automated 2026-11-03, at Ken's request
+
+`tools/cache_prune.py` runs at the end of every `package-portable.py`: it drops
+engine pin trees the lock does not name, `release/deps` files outside the
+cargo-reported live set, all but the newest incremental dir per crate, and
+`target/debug` whole once it passes 20 GB. Manual cleanup should now be rare;
+if the disk fills anyway, check what it did NOT cover (the engine's own
+`target/`, other projects) before redoing it by hand.

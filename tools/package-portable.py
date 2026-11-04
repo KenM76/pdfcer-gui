@@ -396,6 +396,7 @@ def build_info_of(folder: Path) -> Path:
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
 import engine_path as _engine_path  # noqa: E402
+import cache_prune  # noqa: E402
 
 PAYLOAD_ASSET_DIRS: list[tuple[str, str]] = [
     # DERIVED, not written out. Under the temporary rename shim the engine's
@@ -2297,6 +2298,12 @@ are in the program itself: File > pdfcer > About pdfcer.
     archive_build(out)
 
     prune(out.parent, keep=KEEP_BUILDS)
+
+    # The release build just made every older cached artifact dead; reclaim
+    # them now so the cache cannot grow build over build. The environment must
+    # match the build's own, or cargo would rebuild instead of listing.
+    prune_env = build_env if not args.no_build else os.environ.copy()
+    cache_prune.run(prune_env)
 
     # The engine's WORKING TREE is not a warning — it cannot reach the
     # binary. What IS worth a console line is the engine being ahead of the
