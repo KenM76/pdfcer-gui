@@ -14,16 +14,13 @@ use crate::report::CheckReport;
 
 /// The mode this runs in.
 ///
-/// **Edit**, and not by preference: the shipped manifest shows the Edit tab in
-/// the Edit mode alone, so the control is *absent* in Read and Review rather
-/// than refusing. `app::modes::capability::offers_command` makes that a
-/// property of the tab rather than a list, so there is nothing to exempt and
-/// nothing that could drift.
+/// Edit: the Clipboard tab is in every mode, and Edit is the one whose
+/// snapshot box this check lays with the full tool set.
 const MODE: &str = "edit";
-/// The ribbon control — `shell::manifest::edit`'s Clipboard group.
+/// The ribbon control — the Clipboard tab's *Copy for other programs* group.
 const CONTROL: &str = "ribbon.item.edit.copy_as_vector";
-/// The Edit tab.
-const TAB: &str = "ribbon.tab.edit";
+/// The Clipboard tab.
+const TAB: &str = "ribbon.tab.clipboard";
 /// The trace the handler emits when the placement succeeded.
 const PLACED: &str = "clipboard-copy-out";
 /// The trace it emits when it refused.
@@ -154,7 +151,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, MODE)?;
 
-    // --- 1: the Edit tab ---------------------------------------------------
+    // --- 1: the Clipboard tab------------------------------------------------
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, TAB).ok_or_else(|| {
         Error::new(format!(
@@ -175,7 +172,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // honest bar: reachable, not necessarily on the band.
     let Some(item) = declared_or_in_overflow(&session, &driver, ui_rect, CONTROL)? else {
         return Ok(Some(format!(
-            "the Edit tab declares no `{CONTROL}`, on the band or in the overflow, so there \
+            "the Clipboard tab declares no `{CONTROL}`, on the band or in the overflow, so there \
              is no way to reach the copy-out at all. Items declared: {}.",
             list(&declared_names(
                 &session.trace()?,

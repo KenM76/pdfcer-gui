@@ -1,6 +1,6 @@
 # `ui-verify/checks/copy_as_vector_scripted`
 
-`copy_as_vector_without_the_mouse` — Edit ▸ Clipboard ▸ Copy as vector on a
+`copy_as_vector_without_the_mouse` — Clipboard ▸ Copy for other programs ▸ Copy as vector on a
 window off the desktop, driven only through `ScriptedPointer`, so it runs
 under `--no-input`. The payload goes to a folder through
 `PDFCER_DIAG_CLIPBOARD_DIR`, so the operator's clipboard is untouched.

@@ -18,7 +18,7 @@ clipboard is never touched.
    Require `move-annotation-applied`.
 3. Drag the top-right grip from (300, 140) to (340, 160). Require
    `resize-annotation-applied`.
-4. Press Edit ▸ Copy and require `clipboard-copy annots=1`. Press Edit ▸
+4. Press Clipboard ▸ Copy and require `clipboard-copy annots=1`. Press Clipboard ▸
    Paste and require `paste-objects-applied annots=1`.
 5. Press File ▸ Save a copy and require `save-copy`. Read the saved bytes.
    The links are those that the last definition of a page lists in

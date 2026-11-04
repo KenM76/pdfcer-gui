@@ -17,7 +17,7 @@ use crate::report::CheckReport;
 const FIXTURE: &str = "../../fixtures/form-parts.pdf";
 const COPIED: &str = "clipboard-copy"; // ui-text-exempt: a trace event name, never displayed
 const APPLIED: &str = "paste-objects-applied"; // ui-text-exempt: a trace event name, never displayed
-const EDIT_TAB: &str = "ribbon.tab.edit";
+const CLIPBOARD_TAB: &str = "ribbon.tab.clipboard";
 const PASTE: &str = "ribbon.item.edit.paste";
 /// Inside the polyline's first leg, leaf 1 of `form-parts.pdf`.
 const ON_THE_POLYLINE: (f64, f64) = (240.0, 120.0);
@@ -83,7 +83,7 @@ fn copy_and_paste(
     }
 
     let mark = session.trace()?.mark();
-    press_on_tab(ctx, session, pointer, PASTE, EDIT_TAB)?;
+    press_on_tab(ctx, session, pointer, PASTE, CLIPBOARD_TAB)?;
     session.settle(30);
     let trace = session.trace()?;
     let Some(applied) = trace.last_after(APPLIED, mark) else {

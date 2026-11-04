@@ -45,9 +45,5 @@ enable flag under any name would undo that.
 
 # What is absent
 
-The whole **Arrange** group (align, distribute, bring forward, send
-backward, group, ungroup, flip) is **N**, so it is not here. So is the
-object clipboard — cut, copy, paste, paste in place — and with the two
-text-copy commands gone to File ▸ Export there is nothing left for a
-Clipboard band to hold, so the band is absent rather than empty.
-`Shape ⌄` and `Sanitise…` are **N**.
+The clipboard verbs are on their own tab, in every mode (`clipboard.md`);
+text copy is on File ▸ Export. `Shape ⌄` and `Sanitise…` are **N**.

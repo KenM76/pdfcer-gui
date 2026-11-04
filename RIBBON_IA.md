@@ -15,7 +15,7 @@ the shell; it is not improvised around.
 
 ## 1. What this document is for
 
-Seven fixed tabs and one contextual tab. Each tab answers one stated question,
+Ten fixed tabs and one contextual tab. Each tab answers one stated question,
 each command has exactly one home, and each placement carries the reasoning that
 produced it. It is written so the ribbon could be rebuilt from this document
 alone.
@@ -30,7 +30,7 @@ authoritative for what is built; `GUI_ROADMAP.md` for when.
 **The layout below is Edit mode's.** Read and Review are *subsets* of it, not
 different layouts: the mode selector governs which tabs and panels are
 **present**, not where a command lives when it is. Read's tab list is
-`["file", "view"]` (`crates/pdfcer-gui/src/shell/ron/built_in.ron`).
+`["file", "clipboard", "view", "security"]` (`crates/pdfcer-gui/src/shell/ron/built_in.ron`).
 
 ---
 
@@ -169,20 +169,25 @@ read *Edit text* and *Add text*, with their icons kept.
 | # | Tab | The question it answers |
 |---|---|---|
 | 1 | **File** | What do I do with the file as a whole, or with pdfcer itself? |
-| 2 | **View** | What is on my screen, and how is the page laid out? |
-| 3 | **Pages** | What am I doing to the set of pages? |
-| 4 | **Edit** | What am I changing about content that is already there? |
-| 5 | **Markup** | What am I adding for someone else to read? |
-| 6 | **Forms** | What will someone filling this in be asked? |
-| 7 | **Measure** | What am I measuring, and in what units? |
-| 8 | **Security** | Who may open, change or trust this file, and what must never leave it? |
-| 9 | **Tools** | What do I run across files, or configure once? |
+| 2 | **Clipboard** | What am I taking out, or putting in? |
+| 3 | **View** | What is on my screen, and how is the page laid out? |
+| 4 | **Pages** | What am I doing to the set of pages? |
+| 5 | **Edit** | What am I changing about content that is already there? |
+| 6 | **Markup** | What am I adding for someone else to read? |
+| 7 | **Forms** | What will someone filling this in be asked? |
+| 8 | **Measure** | What am I measuring, and in what units? |
+| 9 | **Security** | Who may open, change or trust this file, and what must never leave it? |
+| 10 | **Tools** | What do I run across files, or configure once? |
 
 Plus one contextual tab:
 
 | Tab | Appears when |
 |---|---|
 | **Format** | A markup, ce dimension, image, vector object or text run is selected |
+
+**Why Clipboard is a tab.** The operator asked for one, with large labelled
+buttons (O380): the clipboard verbs are the most-used in every mode, and a
+group at the left of Edit was absent in Read and Review. §5.0 has its rule.
 
 **Why Forms is a tab.** The operator asked for one (O324): authoring a form
 is a job of its own, and it needs a Style group — how the next field looks —
@@ -217,6 +222,27 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 
 ---
 
+### 5.0 Clipboard — *what am I taking out, or putting in?*
+
+| Group | Commands |
+|---|---|
+| **Clipboard** | Cut · Copy · Paste · Paste as duplicate · Duplicate |
+| **Copy for other programs** | Copy as vector |
+
+**In every mode, second after File.** Copy is shown everywhere; Cut, the two
+pastes and Duplicate change the document and are absent in Read
+(`visible_when: mode.author_markup`) — Read cannot change the document, so they
+are not greyed there (R9). In Review they act on markup.
+
+**Every command is Large**, icon above its label: the tab holds few commands and
+the operator asked for them big.
+
+**The ids keep `edit.`**, as Forms' keep `edit.form_`: keymaps, saved layouts
+and the ui-verify checks name them by id.
+
+**Page cut, copy and paste stay on Pages ▸ Clipboard.** They move whole pages,
+which is organising the document (P1: one command, one tab).
+
 ### 5.1 File — *what do I do with the file as a whole, or with pdfcer itself?*
 
 | Group | Commands |
@@ -245,7 +271,7 @@ document; it may not modify this one* is load-bearing from the day in-place Save
 landed, and is enforced by the mode's capabilities rather than by the Save
 button.
 
-**Text copy is on Export, not on Edit ▸ Clipboard**, and OCR is in Recognise
+**Text copy is on Export, not on the Clipboard tab**, and OCR is in Recognise
 rather than on Tools. Both are §2's mode rule applied; §7 carries them.
 
 **Fonts is document-level inspection, not a view.** The Fonts panel answers
@@ -341,23 +367,19 @@ selection is correct.
 
 | Group | Commands |
 |---|---|
-| **Clipboard** | Cut · Copy · Paste · Paste in place · Copy as vector · Duplicate |
 | **Content** | Select all · Edit text · Add text · Reflow block · Paragraphs *(switch)* · Paragraphs on this page *(switch)* · This paragraph *(switch, for the paragraph the caret is in)* · Auto *(switch: each page measures its own gap width)* · Gap width *(slider: how wide a gap between glyphs reads as a space where a page is too sparse to measure, or with Auto off; commits on release)* |
 | **Insert** | Image… · Link… · Attachments · Shape ⌄ |
 | **Arrange** | Align and Distribute (one panel, as Inkscape's), with its seven one-click aligns beside it (left, right, top, bottom, centre on a vertical axis, centre on a horizontal axis, centre both — the Ctrl+Alt+keypad chords, against the panel's *Relative to*) · Bring to front · Bring forward · Send backward · Send to back · Group / Ungroup · Flip horizontal / vertical |
 
-**Clipboard leads the tab**, where a word processor puts it (`OPERATOR_REQUESTS.md` O313).
-
 **Reflow follows the tool that does the retyping**, not the tool that selects:
 an operator reflows a paragraph because they have just retyped a sentence in it.
 
-**The two pastes share one glyph deliberately.** A second paste picture would be
+**The two pastes share one glyph deliberately** (§5.0). A second paste picture would be
 a distinction the operator has to learn for no gain; the two are told apart by
 their labels and by the chord in the tooltip, which is how Word and Acrobat tell
 their paste variants apart too.
 
-**Copy as vector is icon-only.** A fifth long label widens the group past its
-neighbours.
+
 
 **Not here:** *Copy page text* / *Copy document text* are `file.copy_*` on File ▸
 Export, and *Fill form* is `view.panel_forms` on View ▸ Panels — both by §2's
@@ -867,7 +889,7 @@ decided and each decision holds.
 
 | Command | Lives on | Not on | Because |
 |---|---|---|---|
-| `file.copy_page_text`, `file.copy_document_text` | File ▸ Export | Edit ▸ Clipboard | copying is not authoring — it reads the page and writes the clipboard, and cannot change a byte. Read, whose standard is Acrobat Reader, copies text |
+| `file.copy_page_text`, `file.copy_document_text` | File ▸ Export | the Clipboard tab | copying is not authoring — it reads the page and writes the clipboard, and cannot change a byte. Read, whose standard is Acrobat Reader, copies text |
 | `view.panel_forms` | View ▸ Panels | Forms ▸ Manage | filling is not authoring, and it is a panel toggle rather than a verb, so it sits with the other panel toggles |
 | `file.ocr` | File ▸ Recognise | Tools ▸ Recognise | OCR must be reachable in Read and Tools is not in Read's tab list. File over View because OCR's product is a new file. Giving Read the whole Tools tab was the alternative and was refused: it would hand a reading stance batch merge, batch split and font embedding |
 | `view.reset_layout` | View ▸ Window | File | it resets panel geometry, which is a view concern (§3) |

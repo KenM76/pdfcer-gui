@@ -9,7 +9,7 @@ PASS needs, in order:
 
 1. A click and a double-click at (240, 120) select leaf 1, the polyline.
 2. Copy writes `clipboard-copy kind=form-leaves page=0 leaves=1 items=1`.
-3. Edit ▸ Paste writes `paste-objects-applied page=0 pasted=1`.
+3. Clipboard ▸ Paste writes `paste-objects-applied page=0 pasted=1`.
 
 ## Falsified
 

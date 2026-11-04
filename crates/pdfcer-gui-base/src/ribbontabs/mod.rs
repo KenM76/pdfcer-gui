@@ -9,6 +9,7 @@
 
 use egui_shell::manifest::{Group, Item, ItemSize};
 
+pub mod clipboard;
 pub mod edit;
 pub mod file;
 pub mod format;

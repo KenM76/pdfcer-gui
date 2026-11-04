@@ -14,7 +14,7 @@ use crate::launch::{LaunchSpec, Session};
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const CAPTURE_ENV: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an environment variable name
 const MODE: &str = "edit"; // ui-text-exempt: a ribbon mode id
-const TAB: &str = "edit"; // ui-text-exempt: a ribbon tab id
+const TAB: &str = "clipboard"; // ui-text-exempt: a ribbon tab id
 const COMMAND: &str = "ribbon.item.edit.copy_as_vector"; // ui-text-exempt: a trace region name
 const PLACED: &str = "clipboard-copy-out"; // ui-text-exempt: a trace event name
 const REFUSED: &str = "clipboard-copy-out-refused"; // ui-text-exempt: a trace event name

@@ -755,7 +755,7 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 // | glyph | command | where it is drawn |
 // |---|---|---|
 // | `export-image` | `file.export_image` | File ▸ Export |
-// | `copy-as-vector` | `edit.copy_as_vector` (token 408) | Edit ▸ Clipboard, icon-only |
+// | `copy-as-vector` | `edit.copy_as_vector` (token 408) | Clipboard ▸ Copy for other programs, large |
 // | `encrypt` | `file.encrypt` (126) | Security ▸ Security, large |
 // | `permissions` | `file.permissions` (127) | Security ▸ Security, large |
 // | `open-in-acrobat` | `file.open_in_acrobat` | the ribbon's trailing item |

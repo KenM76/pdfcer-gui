@@ -408,7 +408,7 @@ one cue that survives downscaling. The asset's own header carries the rest.
 
 Copy the selection to the clipboard as vector geometry rather than as a
 picture of it — `edit.copy_as_vector`, token 408, drawn icon-only beside
-Cut / Copy / Paste on Edit ▸ Clipboard. See the asset for which glyph it
+Cut / Copy / Paste on the Clipboard tab. See the asset for which glyph it
 must stay distinguishable from and by what cue.
 
 ### `const EXPORT_IMAGE`

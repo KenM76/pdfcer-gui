@@ -1,7 +1,7 @@
 //! # shell::manifest — pdfcer's ribbon, as an `egui_shell::Shell` value
 //!
-//! [`built_in`] returns the complete pdfcer shell: nine tabs (eight
-//! ordinary plus the contextual Format tab), thirty-seven groups, three
+//! [`built_in`] returns the complete pdfcer shell: eleven tabs (ten
+//! ordinary plus the contextual Format tab), forty-six groups, three
 //! modes, the quick-access toolbar and the keymap. It is the **built-in
 //! layer** of `SHELL_FRAMEWORK.md` §4's three-layer merge:
 //!
@@ -17,8 +17,8 @@ mod rail_tests;
 mod view;
 
 use pdfcer_gui_base::ribbontabs::{
-    command, edit, file, format, forms, group, group_two_rows, icon_only, markup, measure, pages,
-    security, tools,
+    clipboard, command, edit, file, format, forms, group, group_two_rows, icon_only, markup,
+    measure, pages, security, tools,
 };
 
 use crate::text::ribbon;
@@ -79,7 +79,12 @@ pub fn built_in() -> Shell {
         // in all three. See `format.rs`.
         // -------------------------------------------------------------------
         .with_mode(
-            Mode::new("read", ribbon::mode_read(), ["file", "view", "security"]).with_bottom_bar([
+            Mode::new(
+                "read",
+                ribbon::mode_read(),
+                ["file", "clipboard", "view", "security"],
+            )
+            .with_bottom_bar([
                 "view.panel_pages",
                 "edit.find",
                 "markup.comments",
@@ -89,19 +94,37 @@ pub fn built_in() -> Shell {
         .with_mode(Mode::new(
             "review",
             ribbon::mode_review(),
-            ["file", "view", "pages", "markup", "measure", "security"],
+            [
+                "file",
+                "clipboard",
+                "view",
+                "pages",
+                "markup",
+                "measure",
+                "security",
+            ],
         ))
         .with_mode(Mode::new(
             "edit",
             ribbon::mode_edit(),
             [
-                "file", "view", "pages", "edit", "markup", "forms", "measure", "security", "tools",
+                "file",
+                "clipboard",
+                "view",
+                "pages",
+                "edit",
+                "markup",
+                "forms",
+                "measure",
+                "security",
+                "tools",
             ],
         ))
         // -------------------------------------------------------------------
         // TABS
         // -------------------------------------------------------------------
         .with_tab(file::tab())
+        .with_tab(clipboard::tab())
         .with_tab(view::tab())
         .with_tab(pages::tab())
         .with_tab(edit::tab())
@@ -650,12 +673,12 @@ mod tests {
     #[test]
     fn the_ribbon_has_the_documented_shape() {
         let shell = built_in();
-        assert_eq!(shell.tabs().len(), 9, "nine ordinary tabs");
+        assert_eq!(shell.tabs().len(), 10, "ten ordinary tabs");
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
-            45,
-            "forty-five groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
+            46,
+            "forty-six groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
         );
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
@@ -693,15 +716,24 @@ mod tests {
         }
     }
 
-    /// The tabs are the nine of `RIBBON_IA.md` §4, in its order.
+    /// The tabs are the ten of `RIBBON_IA.md` §4, in its order.
     #[test]
-    fn the_tabs_are_the_nine_in_specification_order() {
+    fn the_tabs_are_the_ten_in_specification_order() {
         let shell = built_in();
         let ids: Vec<&str> = shell.tabs().iter().map(|t| t.id.as_str()).collect();
         assert_eq!(
             ids,
             [
-                "file", "view", "pages", "edit", "markup", "forms", "measure", "security", "tools"
+                "file",
+                "clipboard",
+                "view",
+                "pages",
+                "edit",
+                "markup",
+                "forms",
+                "measure",
+                "security",
+                "tools"
             ]
         );
         assert_eq!(shell.contextual_tabs()[0].id, "format");
@@ -709,12 +741,13 @@ mod tests {
 
     /// **Every command id is prefixed with the tab that owns it** — except
     /// Security's, which keep the `file.` and `edit.` prefixes that name their
-    /// handler-token blocks (`RIBBON_IA.md` §5.9), and Forms', which keep
-    /// `edit.form_` so keymaps and saved layouts survive the move (§5.5a).
+    /// handler-token blocks (`RIBBON_IA.md` §5.9), Forms', which keep
+    /// `edit.form_` so keymaps and saved layouts survive the move (§5.5a), and
+    /// Clipboard's, which keep `edit.` for the same reason (§5.0).
     #[test]
     fn every_command_id_names_its_owning_tab() {
         for tab in built_in().all_tabs() {
-            let prefixes: Vec<String> = if tab.id == "security" {
+            let prefixes: Vec<String> = if tab.id == "security" || tab.id == "clipboard" {
                 vec!["file.".into(), "edit.".into()]
             } else if tab.id == "forms" {
                 vec!["edit.form_".into()]

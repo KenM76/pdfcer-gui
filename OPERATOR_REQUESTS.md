@@ -673,6 +673,8 @@ His words: *"I think clipboard features should be put under a new tab, and be la
 
 **Status.** Not built.
 
+**Built, not yet released or driven.** The Clipboard tab is second after File in every mode, all Large: Clipboard (Cut, Copy, Paste, Paste duplicate, Duplicate) and Copy for other programs (Copy as vector). Read shows Copy alone. The two snapshot copies join the second group with O379. `RIBBON_IA.md` §5.0.
+
 ## O379 — **OPEN** — the snapshot copies text as drawing or as text, two buttons
 
 His words: *"Our marquee snapshot function for vector image pasting should still be able to copy text as vectors, and still have the option to paste text as text - these can be two separate icons."*

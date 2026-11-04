@@ -27,7 +27,6 @@ pub const LADDER: &[(&str, &str, u32)] = &[
     ("pages", "transform", 1),
     ("pages", "insert", 2),
     // EDIT — Content is the tab.
-    ("edit", "clipboard", 3),
     ("edit", "insert", 4),
     // MARKUP — Shapes is the pen. Style configures it, so it goes late.
     ("markup", "comments", 1),

@@ -774,6 +774,11 @@ impl PdfcerApp {
         if self.capabilities().edit_content {
             set.set("mode.edit_content");
         }
+        // **This mode may change the document at all** — Review and Edit. The
+        // Clipboard tab's Cut, pastes and Duplicate are absent in Read on it.
+        if self.capabilities().author_markup {
+            set.set("mode.author_markup");
+        }
         //
         // It answers a different question from everything above it: not *"may
         // this control be pressed?"* but *"is it already in the state it

@@ -25,7 +25,7 @@ const INVOKE: &str = "mode.edit";
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 const CLIPBOARD_ENV: &str = "PDFCER_DIAG_CLIPBOARD_DIR"; // ui-text-exempt: an environment variable name
 
-const EDIT_TAB: &str = "ribbon.tab.edit"; // ui-text-exempt: a trace region name
+const CLIPBOARD_TAB: &str = "ribbon.tab.clipboard"; // ui-text-exempt: a trace region name
 const COPY: &str = "ribbon.item.edit.copy"; // ui-text-exempt: a trace region name
 const PASTE: &str = "ribbon.item.edit.paste"; // ui-text-exempt: a trace region name
 const FILE_TAB: &str = "ribbon.tab.file"; // ui-text-exempt: a trace region name
@@ -201,7 +201,7 @@ fn drive(
 
     // --- copy and paste from the ribbon, the clipboard captured to a folder.
     let mark = session.trace()?.mark();
-    press_on_tab(ctx, session, pointer, COPY, EDIT_TAB)?;
+    press_on_tab(ctx, session, pointer, COPY, CLIPBOARD_TAB)?;
     let copied = match after(
         session,
         COPIED,
@@ -219,7 +219,7 @@ fn drive(
         )));
     }
     let mark = session.trace()?.mark();
-    press_on_tab(ctx, session, pointer, PASTE, EDIT_TAB)?;
+    press_on_tab(ctx, session, pointer, PASTE, CLIPBOARD_TAB)?;
     session.settle(30);
     let pasted = match after(
         session,

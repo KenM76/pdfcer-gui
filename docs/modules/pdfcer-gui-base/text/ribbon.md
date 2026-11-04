@@ -124,7 +124,7 @@ the strip gives up.
 
 ### `fn group_pages_clipboard`
 
-The same caption as Edit ▸ Clipboard, deliberately. Two bands on two tabs
+The same caption as Clipboard ▸ Clipboard, deliberately. Two bands on two tabs
 with one name is normally a smell; here it is the point — an operator
 looking for a clipboard finds a band called Clipboard on whichever tab they
 happen to be on, and the tab tells them what it acts on.

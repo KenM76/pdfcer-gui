@@ -41,6 +41,12 @@ pub fn tab_pages() -> &'static str {
     "Pages"
 }
 
+/// The Clipboard tab's label.
+#[must_use]
+pub fn tab_clipboard() -> &'static str {
+    "Clipboard"
+}
+
 /// The Edit tab's label.
 #[must_use]
 pub fn tab_edit() -> &'static str {
@@ -101,6 +107,12 @@ pub fn question_view() -> &'static str {
 #[must_use]
 pub fn question_pages() -> &'static str {
     "What am I doing to the set of pages?"
+}
+
+/// The Clipboard tab's question.
+#[must_use]
+pub fn question_clipboard() -> &'static str {
+    "What am I taking out, or putting in?"
 }
 
 /// The Edit tab's question.
@@ -309,10 +321,16 @@ pub fn group_edit_arrange() -> &'static str {
     "Arrange"
 }
 
-/// Edit ▸ Clipboard.
+/// Clipboard ▸ Clipboard.
 #[must_use]
-pub fn group_edit_clipboard() -> &'static str {
+pub fn group_clipboard_clipboard() -> &'static str {
     "Clipboard"
+}
+
+/// Clipboard ▸ Copy for other programs.
+#[must_use]
+pub fn group_clipboard_other_programs() -> &'static str {
+    "Copy for other programs"
 }
 
 //
