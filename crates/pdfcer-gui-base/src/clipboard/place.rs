@@ -43,6 +43,9 @@ pub enum Refusal {
     /// whose commonest member is *another process is holding the clipboard*,
     /// which is transient and worth retrying.
     Clipboard(native_clipboard::PlaceError),
+    /// The picture's sizes do not fit the clipboard bitmap's header, so
+    /// nothing was placed.
+    TooLarge(super::DibTooLarge),
 }
 
 /// **Copy the current page — or the selection on it — as vectors.**
@@ -261,11 +264,11 @@ fn staged(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
     if payload.is_empty() {
         return Err(Refusal::NoPage);
     }
-    Ok(frame(payload))
+    frame(payload)
 }
 
 /// Frame every format the payload has, in [`ORDER`].
-fn frame(payload: &CopyPayload) -> Vec<Staged> {
+fn frame(payload: &CopyPayload) -> Result<Vec<Staged>, Refusal> {
     // Driven by `ORDER`, never by the struct's field order. `CopyPayload`'s
     // own `formats()` makes the same choice and states the reason: a second
     // list is a second answer, and the one that goes stale is whichever is not
@@ -279,14 +282,16 @@ fn frame(payload: &CopyPayload) -> Vec<Staged> {
             ClipFormat::DibV5 => payload
                 .pixmap
                 .as_ref()
-                .map(|pixmap| dib_v5(pixmap, payload.pixels_per_metre)),
+                .map(|pixmap| dib_v5(pixmap, payload.pixels_per_metre))
+                .transpose()
+                .map_err(Refusal::TooLarge)?,
             ClipFormat::Pdf => payload.pdf.clone(),
         };
         if let Some(bytes) = bytes {
             out.push(Staged { format, bytes });
         }
     }
-    out
+    Ok(out)
 }
 
 /// Place a payload, returning the format names that landed.
@@ -301,7 +306,7 @@ pub(super) fn place_withheld(payload: &CopyPayload) -> Result<Vec<&'static str>,
     if payload.is_empty() {
         return Err(Refusal::NoPage);
     }
-    put(&frame(payload))
+    put(&frame(payload)?)
 }
 
 /// The environment variable that sends a copy-out to a folder instead of the
@@ -510,7 +515,7 @@ mod tests {
     fn a_capture_writes_each_entry_in_placement_order() {
         let dir = std::env::temp_dir().join(format!("pdfcer-capture-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        let framed = frame(&full());
+        let framed = frame(&full()).expect("a small picture fits");
         let names = capture(&dir, &entries(&framed)).expect("captured");
         assert_eq!(
             names,

@@ -151,53 +151,98 @@ pub fn svg_payload(svg: &str) -> Vec<u8> {
     out
 }
 
-/// `CF_DIBV5` bytes for a premultiplied RGBA pixmap.
-#[must_use]
-pub fn dib_v5(pixmap: &Pixmap, pixels_per_metre: u32) -> Vec<u8> {
-    let (width, height) = (pixmap.width(), pixmap.height());
-    let row_bytes = width as usize * 4;
-    let image_bytes = row_bytes * height as usize;
-    let mut out = Vec::with_capacity(DIB_V5_HEADER_LEN + image_bytes);
-    let u32le = |v: u32| v.to_le_bytes();
-    let i32le = |v: i32| v.to_le_bytes();
+/// A picture whose sizes do not fit `BITMAPV5HEADER`'s fields: a side past
+/// `i32::MAX`, more than `u32::MAX` bytes of pixels, or a resolution past
+/// `i32::MAX` pixels per metre. Refused, never truncated: a wrapped field is a
+/// header that tells the reader the wrong size and pastes noise.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DibTooLarge {
+    /// The picture's width, pixels.
+    pub width: u32,
+    /// The picture's height, pixels.
+    pub height: u32,
+}
 
-    out.extend_from_slice(&u32le(DIB_V5_HEADER_LEN as u32)); // bV5Size
-    out.extend_from_slice(&i32le(width as i32)); // bV5Width
-    out.extend_from_slice(&i32le(-(height as i32))); // bV5Height — negative: top-down
-    out.extend_from_slice(&1u16.to_le_bytes()); // bV5Planes
-    out.extend_from_slice(&32u16.to_le_bytes()); // bV5BitCount
-    out.extend_from_slice(&u32le(BI_BITFIELDS)); // bV5Compression
-    out.extend_from_slice(&u32le(image_bytes as u32)); // bV5SizeImage
-    out.extend_from_slice(&i32le(pixels_per_metre as i32)); // bV5XPelsPerMeter
-    out.extend_from_slice(&i32le(pixels_per_metre as i32)); // bV5YPelsPerMeter
-    out.extend_from_slice(&u32le(0)); // bV5ClrUsed
-    out.extend_from_slice(&u32le(0)); // bV5ClrImportant
-    out.extend_from_slice(&u32le(0x00FF_0000)); // bV5RedMask
-    out.extend_from_slice(&u32le(0x0000_FF00)); // bV5GreenMask
-    out.extend_from_slice(&u32le(0x0000_00FF)); // bV5BlueMask
-    out.extend_from_slice(&u32le(0xFF00_0000)); // bV5AlphaMask
-    out.extend_from_slice(&u32le(LCS_SRGB)); // bV5CSType
-    out.extend_from_slice(&[0u8; 36]); // bV5Endpoints — unused for sRGB
-    out.extend_from_slice(&u32le(0)); // bV5GammaRed
-    out.extend_from_slice(&u32le(0)); // bV5GammaGreen
-    out.extend_from_slice(&u32le(0)); // bV5GammaBlue
-    out.extend_from_slice(&u32le(LCS_GM_IMAGES)); // bV5Intent
-    out.extend_from_slice(&u32le(0)); // bV5ProfileData
-    out.extend_from_slice(&u32le(0)); // bV5ProfileSize
-    out.extend_from_slice(&u32le(0)); // bV5Reserved
-    debug_assert_eq!(out.len(), DIB_V5_HEADER_LEN);
-
-    for px in pixmap.pixels() {
+/// `CF_DIBV5` bytes for a premultiplied RGBA pixmap, or why its sizes do not
+/// fit the header.
+pub fn dib_v5(pixmap: &Pixmap, pixels_per_metre: u32) -> Result<Vec<u8>, DibTooLarge> {
+    let header = dib_v5_header(pixmap.width(), pixmap.height(), pixels_per_metre)?;
+    let refused = DibTooLarge {
+        width: pixmap.width(),
+        height: pixmap.height(),
+    };
+    let pixels = pixmap.pixels();
+    let len = pixels
+        .len()
+        .checked_mul(4)
+        .and_then(|bytes| bytes.checked_add(DIB_V5_HEADER_LEN))
+        .ok_or(refused)?;
+    let mut out = Vec::new();
+    // An allocation that cannot be had is the same refusal, not an abort.
+    out.try_reserve_exact(len).map_err(|_| refused)?;
+    out.extend_from_slice(&header);
+    for px in pixels {
         out.extend_from_slice(&[px.blue(), px.green(), px.red(), px.alpha()]);
     }
-    out
+    Ok(out)
+}
+
+/// The `BITMAPV5HEADER` for a top-down 32-bit BGRA picture of `width` by
+/// `height` pixels. An array, so its length is the structure's by type.
+pub fn dib_v5_header(
+    width: u32,
+    height: u32,
+    pixels_per_metre: u32,
+) -> Result<[u8; DIB_V5_HEADER_LEN], DibTooLarge> {
+    let refused = DibTooLarge { width, height };
+    let image_bytes = width
+        .checked_mul(4)
+        .and_then(|row| row.checked_mul(height))
+        .ok_or(refused)?;
+    let wide = i32::try_from(width).map_err(|_| refused)?;
+    // Negative: top-down. `i32::try_from` bounds it, so the negation cannot wrap.
+    let tall = -i32::try_from(height).map_err(|_| refused)?;
+    let ppm = i32::try_from(pixels_per_metre).map_err(|_| refused)?;
+
+    let mut out = [0u8; DIB_V5_HEADER_LEN];
+    let mut at = 0;
+    let mut put = |bytes: &[u8]| {
+        out[at..at + bytes.len()].copy_from_slice(bytes);
+        at += bytes.len();
+    };
+    put(&124u32.to_le_bytes()); // bV5Size
+    put(&wide.to_le_bytes()); // bV5Width
+    put(&tall.to_le_bytes()); // bV5Height
+    put(&1u16.to_le_bytes()); // bV5Planes
+    put(&32u16.to_le_bytes()); // bV5BitCount
+    put(&BI_BITFIELDS.to_le_bytes()); // bV5Compression
+    put(&image_bytes.to_le_bytes()); // bV5SizeImage
+    put(&ppm.to_le_bytes()); // bV5XPelsPerMeter
+    put(&ppm.to_le_bytes()); // bV5YPelsPerMeter
+    put(&0u32.to_le_bytes()); // bV5ClrUsed
+    put(&0u32.to_le_bytes()); // bV5ClrImportant
+    put(&0x00FF_0000u32.to_le_bytes()); // bV5RedMask
+    put(&0x0000_FF00u32.to_le_bytes()); // bV5GreenMask
+    put(&0x0000_00FFu32.to_le_bytes()); // bV5BlueMask
+    put(&0xFF00_0000u32.to_le_bytes()); // bV5AlphaMask
+    put(&LCS_SRGB.to_le_bytes()); // bV5CSType
+    put(&[0u8; 36]); // bV5Endpoints — unused for sRGB
+    put(&[0u8; 12]); // bV5GammaRed, Green, Blue
+    put(&LCS_GM_IMAGES.to_le_bytes()); // bV5Intent
+    put(&[0u8; 12]); // bV5ProfileData, ProfileSize, Reserved
+    // Every field is written: a short write would leave zeros where the
+    // reader expects a field, which the type alone cannot see.
+    if at != DIB_V5_HEADER_LEN {
+        return Err(refused);
+    }
+    Ok(out)
 }
 
 /// `sizeof(BITMAPV5HEADER)`. Fixed by the Win32 structure; a reader takes the
 /// first `u32` as the header length and skips exactly that far to the pixels,
 /// so a wrong value here does not fail — it reads pixels from the wrong offset
 /// and pastes noise.
-const DIB_V5_HEADER_LEN: usize = 124;
+pub const DIB_V5_HEADER_LEN: usize = 124;
 
 /// `BI_BITFIELDS` — channel masks are explicit rather than implied.
 const BI_BITFIELDS: u32 = 3;
@@ -376,7 +421,7 @@ mod tests {
         // Opaque red. Premultiplied and opaque are the same bytes, so this
         // isolates the CHANNEL ORDER from the premultiply question.
         pixmap.fill(pdfcer_render::tiny_skia::Color::from_rgba8(255, 0, 0, 255));
-        let dib = dib_v5(&pixmap, 11811);
+        let dib = dib_v5(&pixmap, 11811).expect("a 2x1 picture fits");
 
         assert_eq!(dib.len(), 124 + 2 * 4, "header plus two BGRA pixels");
         assert_eq!(u32::from_le_bytes([dib[0], dib[1], dib[2], dib[3]]), 124);
@@ -408,7 +453,7 @@ mod tests {
         let mut pixmap = Pixmap::new(1, 1).expect("1x1 is a valid pixmap");
         // Half-opaque red. Premultiplied: R = 255 * 128/255 = 128.
         pixmap.fill(pdfcer_render::tiny_skia::Color::from_rgba8(255, 0, 0, 128));
-        let dib = dib_v5(&pixmap, 0);
+        let dib = dib_v5(&pixmap, 0).expect("a 1x1 picture fits");
         let (blue, green, red, alpha) = (dib[124], dib[125], dib[126], dib[127]);
         assert_eq!((blue, green), (0, 0));
         assert_eq!(alpha, 128, "alpha travels unchanged");
@@ -443,11 +488,53 @@ mod tests {
     #[test]
     fn the_smallest_dib_is_a_header_and_one_pixel() {
         let pixmap = Pixmap::new(1, 1).expect("1x1 is a valid pixmap");
-        assert_eq!(dib_v5(&pixmap, 0).len(), 124 + 4);
+        assert_eq!(dib_v5(&pixmap, 0).map(|d| d.len()), Ok(124 + 4));
         assert!(
             Pixmap::new(0, 0).is_none(),
             "tiny_skia refuses a zero-area pixmap, so `dib_v5` can never be \
              handed one and needs no guard for it"
+        );
+    }
+
+    /// **Sizes past the header's fields are refused, never wrapped.** Built
+    /// from the header alone: no pixmap of these sizes can be allocated.
+    #[test]
+    fn a_picture_past_four_gibibytes_is_refused() {
+        // 32,768 x 32,768 x 4 = 2^32, one past `u32::MAX`; both sides fit `i32`.
+        assert_eq!(
+            dib_v5_header(32_768, 32_768, 0),
+            Err(DibTooLarge {
+                width: 32_768,
+                height: 32_768
+            })
+        );
+        // One row fewer fits, and says so in bV5SizeImage.
+        let header = dib_v5_header(32_768, 32_767, 0).expect("under 4 GiB fits");
+        assert_eq!(
+            u32::from_le_bytes([header[20], header[21], header[22], header[23]]),
+            32_768 * 4 * 32_767
+        );
+    }
+
+    #[test]
+    fn a_side_past_i32_max_is_refused() {
+        let past = i32::MAX as u32 + 1;
+        assert!(dib_v5_header(past, 0, 0).is_err(), "width");
+        assert!(dib_v5_header(0, past, 0).is_err(), "height");
+        let header = dib_v5_header(0, i32::MAX as u32, 0).expect("i32::MAX tall, no pixels, fits");
+        assert_eq!(
+            i32::from_le_bytes([header[8], header[9], header[10], header[11]]),
+            -i32::MAX
+        );
+    }
+
+    #[test]
+    fn a_resolution_past_i32_max_is_refused() {
+        assert!(dib_v5_header(1, 1, i32::MAX as u32 + 1).is_err());
+        let header = dib_v5_header(1, 1, i32::MAX as u32).expect("i32::MAX ppm fits");
+        assert_eq!(
+            i32::from_le_bytes([header[24], header[25], header[26], header[27]]),
+            i32::MAX
         );
     }
 }

@@ -70,5 +70,6 @@ fn reason(refusal: &crate::clipboard::place::Refusal) -> &'static str {
         Refusal::Render(_) => "render", // ui-text-exempt: a trace token, never displayed
         Refusal::WouldDegrade => "would-degrade", // ui-text-exempt: a trace token, never displayed
         Refusal::Clipboard(_) => "clipboard", // ui-text-exempt: a trace token, never displayed
+        Refusal::TooLarge(_) => "too-large", // ui-text-exempt: a trace token, never displayed
     }
 }

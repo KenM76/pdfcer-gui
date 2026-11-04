@@ -109,7 +109,11 @@ fn picture(clip: &ObjectClip) -> Option<Picture> {
         on_white(rendered.pixmap.data()),
         IntSize::from_wh(width, height)?,
     )?;
-    let dib = crate::clipboard::dib_v5(&flat, crate::clipboard::pixels_per_metre(72.0 * scale));
+    // `scale_for` holds both sides under the renderer's ceiling, far inside
+    // the header's fields; a refusal leaves the copy without its picture, as
+    // a render failure does.
+    let dib =
+        crate::clipboard::dib_v5(&flat, crate::clipboard::pixels_per_metre(72.0 * scale)).ok()?;
     Some(Picture {
         dib,
         width,

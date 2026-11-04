@@ -276,6 +276,11 @@ pub fn copy_out_refusal(reason: &CopyOut) -> String {
                 .to_owned()
         }
         CopyOut::Clipboard(err) => clipboard_refusal(err),
+        CopyOut::TooLarge(size) => format!(
+            "At {} \u{d7} {} pixels the picture is too large for the clipboard's bitmap. \
+             Nothing was put on the clipboard; a lower resolution makes it fit.",
+            size.width, size.height
+        ),
     }
 }
 
