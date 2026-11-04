@@ -41,16 +41,21 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: ebedefc14f603bd97dbadaec38876cab6dafd75a
+# baseline: 88cfe533d7844e139831c6d2a5b4f792a0a88d4e
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
 # items: 11520
 # ---------------------------------------------------------------------------
 
+exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
+exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_TRIANGLES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
+exempt pdfcer-3d module pdfcer_3d::elements -- holds only `MAX_DECODED_ELEMENTS`, the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::gpu_frame -- a private module whose `FrameLights`, `MAX_LIGHTS` and `ShadeMode` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::gpu_shader -- a private module whose `GLSL_ES_300_VERTEX` and `GLSL_ES_300_FRAGMENT` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::lighting -- a private module whose `LightingScheme` and `LightFrame` the engine re-exports from `pdfcer_3d`; `dialogs::model3d::lights` sets both on `RenderOptions` through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::prepared -- a private module whose `PreparedModel` the engine re-exports from `pdfcer_3d`; ENGINE_BACKLOG.md's 3D-speed row (G255) argues why the viewer cannot keep it yet, and the private path cannot be named from here.
+exempt pdfcer-3d variant pdfcer_3d::error::PrcError::TooManyElements -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
+exempt pdfcer-3d variant pdfcer_3d::model::AssembleError::PlacedTooLarge -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives as the engine's own warning, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_PERIODIC_SPAN -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.

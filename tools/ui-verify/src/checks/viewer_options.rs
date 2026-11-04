@@ -33,8 +33,25 @@ pub fn reach(
     };
     pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(glyph))?;
     session.settle(20);
+    // The menu scrolls once it is taller than the room below the glyph,
+    // and an item scrolled out of it publishes no rect: wheel the menu
+    // down, as a person would, until the item shows or the menu ends.
+    for _ in 0..SCROLLS {
+        let trace = session.trace()?;
+        if let Some(found) = declared_in(&trace, ui_rect, name) {
+            return Ok(Some(found));
+        }
+        let Some((menu, mvp)) = declared_in(&trace, ui_rect, MENU) else {
+            return Ok(None);
+        };
+        pointer.wheel_in(session, mvp.as_deref(), WindowPoint::centre_of(menu), -3.0)?;
+        session.settle(12);
+    }
     Ok(declared_in(&session.trace()?, ui_rect, name))
 }
+
+/// Wheel notches [`reach`] spends looking down a scrolled menu.
+const SCROLLS: usize = 12;
 
 /// Click `name`, opening the options menu first when it lives there;
 /// `false` when it is drawn nowhere.

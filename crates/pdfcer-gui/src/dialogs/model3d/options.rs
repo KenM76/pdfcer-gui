@@ -27,6 +27,8 @@ const SIDE: (f32, f32) = (28.0, 44.0);
 pub(super) const THUMB_CLEAR: f32 = INSET + SIDE.1;
 /// The menu's width, in points.
 const WIDTH: f32 = 300.0;
+/// Room kept below the menu, in points: its frame's margin and shadow.
+const BELOW: f32 = 24.0;
 
 impl ModelView {
     /// The options glyph over `rect`'s top-left corner and its menu.
@@ -35,6 +37,11 @@ impl ModelView {
     /// popup: egui remembers one popup per viewport, so a drop-down opened
     /// inside the menu would close it. For the same reason a click closes
     /// the menu only when it lands outside every popup layer.
+    ///
+    /// The menu scrolls once it is taller than the room below the glyph:
+    /// egui moves a popup that does not fit up the window, over the glyph,
+    /// and the click meant to close it then lands in the menu instead. It
+    /// opens scrolled to the top, as a menu does.
     pub(super) fn options_button(&mut self, ui: &mut Ui, rect: Rect) {
         let thumb = self.filling_screen(ui.ctx()) || egui_shell::ribbon::phone::is_phone(ui.ctx());
         let side = if thumb { SIDE.1 } else { SIDE.0 };
@@ -55,11 +62,19 @@ impl ModelView {
         } else if open && clicked_outside_popups(ui.ctx(), ui.layer_id()) {
             open = false;
         }
+        let opening = open && !self.nav.options_open;
+        let room = (ui.ctx().content_rect().bottom() - at.bottom() - BELOW).max(side * 4.0);
         let shown = egui::Popup::menu(&button)
             .open_bool(&mut open)
             .close_behavior(egui::PopupCloseBehavior::IgnoreClicks)
             .width(WIDTH)
-            .show(|ui| self.options(ui));
+            .show(|ui| {
+                let mut scroll = egui::ScrollArea::vertical().max_height(room);
+                if opening {
+                    scroll = scroll.vertical_scroll_offset(0.0);
+                }
+                scroll.show(ui, |ui| self.options(ui));
+            });
         if let Some(menu) = shown {
             crate::diag::ui_rect_visible(REGION_MENU, menu.response.rect, ui.clip_rect());
         }
