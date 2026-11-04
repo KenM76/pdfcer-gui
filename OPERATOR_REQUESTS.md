@@ -653,6 +653,36 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O381 — **OPEN** — add and edit the document's metadata
+
+His words: *"Also we need to have a way to add/edit metadata."*
+
+**What exists.** The Document properties panel edits the title, author, subject and keywords (`EditSession::set_info_field`), one undo step each; nothing on the ribbon says so. Security ▸ Protect ▸ *Remove metadata…* lists and removes every carrier. Nothing adds an entry of another name, edits the creating program, or edits the dates, and nothing keeps the file's XMP copy of the title, author, subject and keywords in step, so a reader that prefers XMP keeps showing the old values.
+
+**Scope, whole behaviour.** (1) A *Metadata…* command, on the ribbon and the right-click menu of a page with nothing selected, opening one window: the four standard fields, editable; every other entry the file's description holds, listed; *Add field* for an entry of the operator's own name, and edit and remove of one; the XMP copy kept in step when a field is saved, or the window saying it is not. (2) One undo step per change. (3) What the engine cannot write yet is shown as read-only with the reason, never offered.
+
+**Status.** Not built. Engine gap filed as G266 (custom entries, the creating program, XMP kept in step).
+
+## O380 — **OPEN** — a Clipboard tab, with large labelled buttons
+
+His words: *"I think clipboard features should be put under a new tab, and be larger icons with text."*
+
+**What exists.** Edit ▸ Clipboard holds Cut, Copy, Paste, Paste duplicate, Copy as vector and Duplicate as small icon-only buttons, and only in Edit mode.
+
+**Scope, whole behaviour.** (1) A **Clipboard** tab, holding every clipboard command as a large button with its name under the icon: Cut, Copy, Paste, Paste duplicate, Copy as vector, Duplicate, and the two snapshot copies (O379). (2) Edit ▸ Clipboard removed, an amendment to `RIBBON_IA.md` made on his word. (3) The tab in every mode, with only the commands that mode allows: copying in Read and Review, cutting and pasting where the mode allows changes. The shortcuts and right-click menus are unchanged.
+
+**Status.** Not built.
+
+## O379 — **OPEN** — the snapshot copies text as drawing or as text, two buttons
+
+His words: *"Our marquee snapshot function for vector image pasting should still be able to copy text as vectors, and still have the option to paste text as text - these can be two separate icons."*
+
+**What exists.** Copy with a snapshot box on the page puts the box on the clipboard as a picture and, cut to the box, as SVG, EMF and PDF. Whether the text in it goes as outlines or as text is one setting (Settings ▸ Snapshot ▸ *Copy as*), so changing between them means going to Settings.
+
+**Scope, whole behaviour.** Two commands, each its own icon: *Copy snapshot, text as drawing* (every character as its outline; looks the same everywhere, not editable) and *Copy snapshot, text as text* (each run that allows it kept as text the pasting program can edit, drawn in its installed font). Each copies the box whatever the setting says; Ctrl+C keeps following the setting. Both on the Clipboard tab (O380) and on the snapshot box's right-click menu; greyed with the reason when no box is laid. The status line says how many runs stayed text and how many went as outlines, as Copy does.
+
+**Status.** Not built.
+
 ## O378 — **OPEN** — light a static model once, then only move the eye
 
 His words: *"I assume the lighting stored in a 3D pdf can only be static? If so, could we have an option to render lights/shadows/everything once, then just navigate that model without having to calculate everything in real time? It should look the same in either case, or am I missing something, like if there are reflective materials things will change depending on perspective?"*

@@ -57,3 +57,5 @@ full SHA (which also fails if that SHA is unpushed). Afterwards, check
 `git rev-parse <tag>^{commit}` against the SHA in the zip name. To repair:
 `git push origin main`, then `git tag -f` and `git push -f` the tag. The release
 stays attached to the tag.
+
+**Also:** `--target` needs the FULL sha; a short one fails with "Release.target_commitish is invalid" (2026-11-04). Use `$(git rev-parse HEAD)`.

@@ -1272,7 +1272,7 @@ def _force_writable(func, path: str, _exc: object) -> None:
 
 
 def prune(dest: Path, keep: int) -> None:
-    """Delete superseded ``pdfcergui-*`` build folders, keeping the newest *keep*.
+    """Delete superseded ``pdfcergui-*`` build folders and their zips, keeping the newest *keep*.
 
     **Why this exists.** The operator: *"all this compiling has filled the
     drive with temporary files. you'll have to clean yours up."* A script that
@@ -1317,6 +1317,19 @@ def prune(dest: Path, keep: int) -> None:
             shutil.rmtree(folder, onerror=_force_writable)
         except OSError as error:
             print(f"package-portable: could not remove {folder.name}: {error}")
+            continue
+        removed += 1
+        freed += size
+    # Each build folder has a same-named zip beside it; a folder pruned
+    # without its zip leaves a 47 MB orphan per build.
+    for archive in dest.glob("pdfcergui-*.zip"):
+        if archive.with_suffix("").is_dir():
+            continue
+        try:
+            size = archive.stat().st_size
+            archive.unlink()
+        except OSError as error:
+            print(f"package-portable: could not remove {archive.name}: {error}")
             continue
         removed += 1
         freed += size

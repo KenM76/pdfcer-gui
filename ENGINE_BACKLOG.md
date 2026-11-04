@@ -863,6 +863,10 @@ The request O280 is built on, answered and consumed.
 
 - **G098** — a ce dimension cannot measure an area; `DimensionKind` has no area kind and `/A` in `build_measure_dict` is a placeholder. Also asks for a public `polygon_area`, the area twin of `polyline_length`, so the live readout during the pick and the committed label are one function. Answered (`DimensionKind::Perimeter { area: true }`, `vector::polygon_area`, `set_dimension_area`) and consumed by O280; the GUI computes no area of its own.
 
+## Filed requests for document metadata — not verdict rows
+
+- **G266** — the document information can be edited only through its four fields. `InfoField` is Title, Author, Subject and Keywords, so O381's *Metadata…* window cannot add, change or remove a custom entry or `/Creator`, and nothing says whether the XMP packet was kept in step with an edit. Asked for `set_info_entry` taking any key, `info_entries()` listing every entry in full, the XMP packet updated in the same undo step or an outcome saying it could not be, and named refusals for reserved keys. Until it lands the window shows the other entries read-only and says why.
+
 ## Filed requests for the 3D viewer — not verdict rows
 
 - **G245** — no 3D measuring: point-to-point distance, edge length, radius and angle on the model, as Acrobat's 3D Measurement Tool, and storing a measurement. The renderer returns no depth and nothing picks a surface point, so the viewer offers none. The page's 2D ce dimensions are unaffected.
