@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O373 — **WAITING ON ENGINE** — the model's lights crawl on the phone
+## O373 — **BUILT** — the model's lights crawl on the phone
 
 His words: *"Enabling the model lights on the latest Bancroft model slows rendering to a crawl. There are 64 of them. Doesn't matter if I turn off shadows or set it to only shadow with the brightest."* Then: *"I've only tried it on my fairphone 5"*.
 
 **Scope, whole behaviour.** On the phone, Bancroft under its own 64 lamps orbits and walks smoothly, with lamp shadows on or off.
 
-**Status.** The Android build draws on the graphics card (measured on the emulator: `gpu=1`, no failure). Lamp shadows and the CPU-side light preparation are cheap. What remains is the engine's fragment shader, which shades every one of the 64 lamps at every pixel twice, with no reach cut-off, and its depth write defeats early rejection of hidden pixels. A desktop or emulator GPU absorbs that; a phone's does not. Filed to the engine as G263. Also added: if the card ever fails, the viewer now says it is drawing without it, instead of going slow silently. NOT VERIFIED by him.
+**Status.** The Android build draws on the graphics card (measured on the emulator: `gpu=1`, no failure). Lamp shadows and the CPU-side light preparation are cheap. What remains is the engine's fragment shader, which shades every one of the 64 lamps at every pixel twice, with no reach cut-off, and its depth write defeats early rejection of hidden pixels. A desktop or emulator GPU absorbs that; a phone's does not. Filed to the engine as G263; engine v0.123.0 shades each lamp once per pixel and drops it after two reads when out of reach, and this build carries it. The options menu adds *Lamps reach* on a model with lamps: as far as their light shows (the default, no visible change), three shorter cuts that draw faster and leave up to 1, 4 or 16 of 255 brightness steps out far from the lamps (said under the picture while on), or everywhere. On Bancroft about half the lamps still reach any point at the default, so the shorter cuts are the real speed lever. Hidden pixels still pay for every lamp they would have shown; asked of the engine as G264. Also added: if the card ever fails, the viewer says it is drawing without it, instead of going slow silently. Not measured on an Adreno; NOT VERIFIED by him.
 
 ## O372 — **BUILT** — the 3D viewer is slow with the model's lights on
 

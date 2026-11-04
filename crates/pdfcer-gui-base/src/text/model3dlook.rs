@@ -110,6 +110,45 @@ pub fn lamp_shadows_tooltip() -> &'static str {
     "The model's own point and spot lights cast shadows in every direction around them. A lamp inside a closed part, such as a bulb in its shade, is shadowed by it."
 }
 
+/// The lamp reach drop-down's label.
+#[must_use]
+pub fn lamp_cut_label() -> &'static str {
+    "Lamps reach"
+}
+
+/// The lamp reach choice that changes no pixel.
+#[must_use]
+pub fn lamp_cut_auto() -> &'static str {
+    "As far as their light shows"
+}
+
+/// The lamp reach choice that stops no lamp.
+#[must_use]
+pub fn lamp_cut_off() -> &'static str {
+    "Everywhere"
+}
+
+/// A lamp reach choice that leaves out up to `steps` of 255 brightness steps.
+#[must_use]
+pub fn lamp_cut_steps(steps: u16) -> String {
+    format!("Shorter, faster: up to {steps} of 255 brightness steps left out")
+}
+
+/// Its tip.
+#[must_use]
+pub fn lamp_cut_tooltip() -> &'static str {
+    "Each lamp is drawn only as far as its light makes a difference. A model with many lamps draws much faster when they stop sooner, at the cost of being slightly darker far from them."
+}
+
+/// Under the picture while lamps stop short: up to `steps` of 255
+/// brightness steps of lamp light are left out of any point.
+#[must_use]
+pub fn lamp_cut_note(steps: u16) -> String {
+    format!(
+        "Lamps stop short to draw faster: up to {steps} of 255 brightness steps of their light are left out far from them."
+    )
+}
+
 /// The camera light switch beside a model's own lights.
 #[must_use]
 pub fn headlight() -> &'static str {

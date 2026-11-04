@@ -1,6 +1,7 @@
 //! The engine's drawing choices beyond the lighting scheme and the shadow
 //! switch: the render mode (the view's own, or one picked), which lights
-//! cast, how see-through parts cast, whether the model's lamps cast, a
+//! cast, how see-through parts cast, whether the model's lamps cast and how
+//! far they reach, a
 //! camera light beside the model's own lights, and how stored shininess is
 //! read. Each sits in the options menu; the model's own lights, the lights
 //! and casters past the engine's limits, and why the picture is drawn
@@ -10,8 +11,8 @@ use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
     AssembledModel, DEFAULT_SHADOW_CUTOFF, FrameExtraShadows, FrameLampShadows, FrameLights,
-    LightingScheme, MAX_LIGHTS, MAX_SHADOW_CASTERS, ModelLightKind, RenderMode, RenderModeKind,
-    ShadowAlpha, ShadowCasters, ShininessScale,
+    LampCut, LightingScheme, MAX_LIGHTS, MAX_SHADOW_CASTERS, ModelLightKind, RenderMode,
+    RenderModeKind, ShadowAlpha, ShadowCasters, ShininessScale,
 };
 
 use super::ModelView;
@@ -27,6 +28,10 @@ pub const REGION_CASTERS: &str = "model3d.casters"; // ui-text-exempt: trace reg
 pub const REGION_SEE_THROUGH: &str = "model3d.see_through"; // ui-text-exempt: trace region name, never displayed
 /// The lamp shadow switch.
 pub const REGION_LAMP_SHADOWS: &str = "model3d.lamp_shadows"; // ui-text-exempt: trace region name, never displayed
+/// The lamp reach drop-down; items add `.auto`, `.off` or `.<hundredths>`.
+pub const REGION_LAMP_CUT: &str = "model3d.lamp_cut"; // ui-text-exempt: trace region name, never displayed
+/// The lamp reach drop-down's shorter choices, in hundredths of an 8-bit level.
+const LAMP_CUT_STEPS: [u16; 3] = [100, 400, 1600];
 /// The camera light switch.
 pub const REGION_HEADLIGHT: &str = "model3d.headlight"; // ui-text-exempt: trace region name, never displayed
 /// The highlight reading drop-down.
@@ -40,6 +45,7 @@ pub(super) struct Extras {
     pub(super) every_light: bool,
     pub(super) see_through: SeeThrough,
     pub(super) lamp_shadows: bool,
+    pub(super) lamp_cut: LampCut,
     pub(super) headlight: bool,
     pub(super) highlights: Highlights,
 }
@@ -52,6 +58,7 @@ impl Default for Extras {
             every_light: d.shadow_casters == ShadowCasters::EveryLight,
             see_through: SeeThrough::Tinted,
             lamp_shadows: d.lamp_shadows,
+            lamp_cut: d.lamp_cut,
             headlight: d.artwork_headlight,
             highlights: Highlights::Auto,
         }
@@ -80,6 +87,7 @@ impl Extras {
             SeeThrough::None => ShadowAlpha::OpaqueOnly,
         };
         options.lamp_shadows = self.lamp_shadows;
+        options.lamp_cut = self.lamp_cut;
         options.artwork_headlight = self.headlight;
         options.shininess = match self.highlights {
             Highlights::Auto => ShininessScale::Auto,
@@ -102,11 +110,36 @@ pub(super) fn trace(options: &ModelRenderOptions) -> String {
     };
     format!(
         // ui-text-exempt: diagnostic trace, never displayed
-        " render-mode={} casters={casters} see-through={see_through} lamp-shadows={} headlight={}",
+        " render-mode={} casters={casters} see-through={see_through} lamp-shadows={} lamp-cut={} headlight={}",
         options.render_mode.kind.as_name(),
         u8::from(options.lamp_shadows),
+        lamp_cut_word(options.lamp_cut),
         u8::from(options.artwork_headlight)
     )
+}
+
+/// A lamp cut's trace and region word: `auto`, `off` or the hundredths.
+fn lamp_cut_word(cut: LampCut) -> String {
+    match cut {
+        LampCut::Auto => "auto".to_owned(), // ui-text-exempt: trace value, never displayed
+        LampCut::Off => "off".to_owned(),   // ui-text-exempt: trace value, never displayed
+        LampCut::Threshold(h) => h.to_string(),
+    }
+}
+
+/// A lamp cut's drop-down wording.
+fn lamp_cut_text(cut: LampCut) -> String {
+    match cut {
+        LampCut::Auto => k::lamp_cut_auto().to_owned(),
+        LampCut::Off => k::lamp_cut_off().to_owned(),
+        LampCut::Threshold(h) => k::lamp_cut_steps(steps(h)),
+    }
+}
+
+/// Hundredths of an 8-bit level as whole steps, rounded up so a nonzero cut
+/// never reads as none.
+fn steps(hundredths: u16) -> u16 {
+    hundredths.div_ceil(100)
 }
 
 /// How many of `model`'s lights are lamps (point or spot), directional and
@@ -151,6 +184,9 @@ impl ModelView {
                     .on_hover_text(k::lamp_shadows_tooltip());
                 crate::diag::ui_rect_visible(REGION_LAMP_SHADOWS, r.rect, ui.clip_rect());
             }
+        }
+        if lamps > 0 {
+            ui.horizontal_wrapped(|ui| self.lamp_cut_combo(ui));
         }
         if !self.model.drawn.lights.is_empty() {
             let r = ui
@@ -227,6 +263,26 @@ impl ModelView {
         combo.response.on_hover_text(k::alpha_tooltip());
     }
 
+    fn lamp_cut_combo(&mut self, ui: &mut Ui) {
+        ui.label(k::lamp_cut_label());
+        let choices = std::iter::once(LampCut::Auto)
+            .chain(LAMP_CUT_STEPS.map(LampCut::Threshold))
+            .chain(std::iter::once(LampCut::Off));
+        let combo = egui::ComboBox::from_id_salt(REGION_LAMP_CUT)
+            .selected_text(lamp_cut_text(self.extras.lamp_cut))
+            .show_ui(ui, |ui| {
+                for cut in choices {
+                    let item =
+                        ui.selectable_value(&mut self.extras.lamp_cut, cut, lamp_cut_text(cut));
+                    // ui-text-exempt: trace region name, never displayed
+                    let region = format!("{REGION_LAMP_CUT}.{}", lamp_cut_word(cut));
+                    crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
+                }
+            });
+        crate::diag::ui_rect_visible(REGION_LAMP_CUT, combo.response.rect, ui.clip_rect());
+        combo.response.on_hover_text(k::lamp_cut_tooltip());
+    }
+
     fn highlights_combo(&mut self, ui: &mut Ui) {
         ui.label(k::shininess_label());
         let combo = egui::ComboBox::from_id_salt(REGION_SHININESS)
@@ -249,6 +305,9 @@ impl ModelView {
             let [lamps, directional, ambient] = light_kinds(d);
             let drawn = options.lighting == LightingScheme::Artwork;
             ui.small(k::model_lights(lamps, directional, ambient, drawn));
+            if let (true, LampCut::Threshold(h @ 1..)) = (drawn && lamps > 0, options.lamp_cut) {
+                ui.small(k::lamp_cut_note(steps(h)));
+            }
         }
         if let Some(camera) = self.notes_camera() {
             let lights = FrameLights::for_model(&camera, &options, &d.lights);

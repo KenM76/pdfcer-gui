@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **55 of 502** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `wanted` — a real gap — **55 of 503** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -170,7 +170,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 502** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `blocked` — waiting on something named — **2 of 503** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -188,7 +188,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 502** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 503** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -199,7 +199,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 502** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `declined` — deliberately no surface — **20 of 503** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -245,7 +245,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **425 of 502** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **426 of 503** <!-- counted by tools/walk-engine-backlog.py, 2026-11-03; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -725,6 +725,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A shadow light fixed in the model** — `pdfcer_3d::shadow::ShadowLight` (`ShadowLight::FollowsScheme`, `ShadowLight::Sun`, `UpAxis`), `RenderOptions::shadow_light` | **shipped; our request G259, at v0.118.0.** `dialogs::model3d::effects` passes `ShadowLight::Sun` on the viewer's Up axis by default, so a shadow keeps its place on the model as the eye moves; *Shadows cast by* offers *The lighting* (`FollowsScheme`). *Lights turn with the view* still governs the shading (O368). |
 | **A 3D model's own lights, read from PRC and drawn** — the module `pdfcer_3d::model_light` (`ModelLight`, `ModelLightKind`, `ViewLights`), `PrcFile::lights`, `AssembledModel::lights`, `FrameLights::for_model`, `FrameShadow::for_model`, `RenderOptions::artwork_headlight` | **shipped; our requests G260 and G261, at v0.119.0.** The viewer draws a model under its own lights on the processor and the card (the `u_lights` table, `dialogs::model3d::gpu_uniforms::light_uniforms`), offers *Headlight with the model's lights*, and says under the picture how many lights it carries and how many were dropped (`dialogs::model3d::looks`). |
 | **A converted glTF's lamps metered over the model** — `pdfcer_3d::gltf::GltfLights::Exposure`, the default of `GltfOptions::default()` | **shipped; our request G262, at v0.122.0.** Both glTF routes, *Insert 3D model* (`app::actions::model_insert`) and the glTF conversion (`app::actions::gltf`), take `GltfOptions::default()`, so a model whose lamps are spread room by room lights its rooms. A file converted before v0.122.0 keeps its dim lights until it is converted again. |
+| **Bounded per-fragment lamp work, with a lamp-cut setting** — the module `pdfcer_3d::model_shade` (`LampCut`: `Auto`, `Threshold`, `Off`), `RenderOptions::lamp_cut`, `FrameLights::local_reach` | **shipped; our request G263, at v0.123.0.** `dialogs::model3d::looks` offers *Lamps reach* whenever the model carries a lamp: the default `Auto` (no pixel changes), three `Threshold` steps (1, 4 and 16 of 255 levels), or `Off`. Under `Threshold` a note under the picture states the bound. |
 | **Point and spot lamps of a 3D model cast shadows** — the modules `pdfcer_3d::lamp_shadow` and `pdfcer_3d::gpu_lamp_shadow` (`FrameLampShadows`), `RenderOptions::lamp_shadows` | **shipped, at v0.120.0.** *Lamps cast shadows* in the viewer's options menu (`dialogs::model3d::looks`), shown when the model has lamps. The card draws each lamp's cube map (`dialogs::model3d::gpu_uniforms::lamp_uniforms`); `RenderOptions::lamp_shadow_map_size` stays at its default. |
 | **Material specular, shininess, emissive and ambient in the 3D picture** — the modules `pdfcer_3d::finish` (`MaterialFinish`, `ShininessScale`) and `pdfcer_3d::gpu_finish` (`DrawFinish`), `AssembledModel::finishes`, `RenderOptions::shininess` | **shipped, at v0.120.0.** *Highlights* in the viewer's options menu when the model carries a finish; the card draws finishes per draw (`dialogs::model3d::gpu_uniforms::finish_uniforms`) and the emissive repeat unlit (`repeat_uniforms`). |
 | **Every directional light casts; translucent casters cast partial shadows** — the modules `pdfcer_3d::shadow_cast` (`ShadowCasters`, `ShadowAlpha`, `DEFAULT_SHADOW_CUTOFF`) and `pdfcer_3d::gpu_shadow_set` (`FrameExtraShadows`, `MAX_EXTRA_SHADOWS`), `RenderOptions::shadow_casters`, `RenderOptions::shadow_alpha` | **shipped, at v0.120.0.** *Shadows from* (every light or the key light) and *See-through parts cast* (tinted, cut out, not at all) in the viewer's options menu (`dialogs::model3d::looks`); casters beyond the engine's limit are said under the picture. The card draws the extra casters' maps and the see-through veil and transmit maps (`dialogs::model3d::gpu_uniforms::extra_uniforms`, `veil_uniforms`). |

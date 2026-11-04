@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: c7226cd8851710132a8b41c627e26826400d4bb4
+# baseline: 912437c38ca90bf2e7891f0356a7857e1a7e102e
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11512
+# items: 11518
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
@@ -185,6 +185,7 @@ pdfcer-3d enum pdfcer_3d::model::MeshFit
 pdfcer-3d enum pdfcer_3d::model::StoredVisibility
 pdfcer-3d enum pdfcer_3d::model_light::ModelLightKind
 pdfcer-3d enum pdfcer_3d::model_light::ViewLightUse
+pdfcer-3d enum pdfcer_3d::model_shade::LampCut
 pdfcer-3d enum pdfcer_3d::named_view::NamedView
 pdfcer-3d enum pdfcer_3d::named_view::UpAxis
 pdfcer-3d enum pdfcer_3d::render::Projection
@@ -337,6 +338,7 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::artwork_headlight
 pdfcer-3d field pdfcer_3d::render::RenderOptions::background
 pdfcer-3d field pdfcer_3d::render::RenderOptions::colour
 pdfcer-3d field pdfcer_3d::render::RenderOptions::height
+pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_cut
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_shadow_map_size
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_shadows
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_frame
@@ -489,6 +491,7 @@ pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::layers
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::matrix
 pdfcer-3d method pdfcer_3d::model_light::ModelLight::new
 pdfcer-3d method pdfcer_3d::model_light::ModelLightKind::name
+pdfcer-3d method pdfcer_3d::model_shade::LampCut::hundredths
 pdfcer-3d method pdfcer_3d::named_view::NamedView::as_str
 pdfcer-3d method pdfcer_3d::named_view::NamedView::direction
 pdfcer-3d method pdfcer_3d::named_view::NamedView::label
@@ -609,6 +612,9 @@ pdfcer-3d variant pdfcer_3d::model_light::ModelLightKind::Point
 pdfcer-3d variant pdfcer_3d::model_light::ModelLightKind::Spot
 pdfcer-3d variant pdfcer_3d::model_light::ViewLightUse::DefaultView
 pdfcer-3d variant pdfcer_3d::model_light::ViewLightUse::Ignore
+pdfcer-3d variant pdfcer_3d::model_shade::LampCut::Auto
+pdfcer-3d variant pdfcer_3d::model_shade::LampCut::Off
+pdfcer-3d variant pdfcer_3d::model_shade::LampCut::Threshold
 pdfcer-3d variant pdfcer_3d::named_view::NamedView::Back
 pdfcer-3d variant pdfcer_3d::named_view::NamedView::Bottom
 pdfcer-3d variant pdfcer_3d::named_view::NamedView::Front
