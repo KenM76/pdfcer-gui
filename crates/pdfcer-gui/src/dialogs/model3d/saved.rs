@@ -73,16 +73,19 @@ impl ModelView {
         let view = view.clone();
         self.orbiting();
         self.orbit = orbit;
+        // A camera inside the model is stood at, walking.
+        let inside = self.walk_from_view(&view);
         self.aimed = Some(view);
         self.saved_chosen = Some(i);
         let (perspective, framed) = (orbit.perspective, orbit.framed);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-view-saved-view index={i} default={} perspective={} framed={}",
+                "model-view-saved-view index={i} default={} perspective={} framed={} inside={}",
                 u8::from(default),
                 u8::from(perspective),
-                u8::from(framed)
+                u8::from(framed),
+                u8::from(inside)
             )
         });
         ui.close();

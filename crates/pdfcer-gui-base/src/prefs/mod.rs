@@ -37,6 +37,7 @@ pub mod exporting;
 mod families;
 pub mod formstyle;
 pub mod modelstart;
+pub mod modelview;
 pub mod ocrmodels;
 /// **Whether the canvas grows to show what sits off the sheet — one answer
 /// per ribbon mode.** Its own file because *why the answer is per mode at all*
@@ -402,6 +403,8 @@ pub struct Prefs {
     /// The 3D viewer opens walking with ghost on; `false` orbiting. See
     /// [`modelstart`].
     pub model_start_walk: bool,
+    /// The 3D viewer's last settings, as it wrote them. See [`modelview`].
+    pub model_view: std::collections::BTreeMap<String, String>,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -861,6 +864,7 @@ impl Default for Prefs {
             overprint_default: OverprintDefault::default(),
             walk_eye_mm: None,
             model_start_walk: true,
+            model_view: std::collections::BTreeMap::new(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

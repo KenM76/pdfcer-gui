@@ -468,6 +468,7 @@ pub mod media_clip;
 pub mod model_axes;
 pub mod model_drone;
 pub mod model_eye;
+pub mod model_memory;
 pub mod model_page_still;
 pub mod model_pivot;
 pub mod model_start;
@@ -958,6 +959,7 @@ pub mod snapshot_grips;
 /// A snapshot copy pastes back into pdfcer as a drawing, not a picture.
 pub mod snapshot_paste;
 pub mod snapshot_save;
+pub mod snapshot_two_copies;
 
 pub mod bookmark_move;
 

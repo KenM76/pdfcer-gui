@@ -527,10 +527,12 @@ impl DialogsState {
         model: crate::app::actions::models::Assembled,
         eye_mm: Option<u32>,
         walk: bool,
+        settings: &std::collections::BTreeMap<String, String>,
     ) {
-        self.model3d = Some(super::model3d::ModelView::open(
-            artwork, model, eye_mm, walk,
-        ));
+        let mut view = super::model3d::ModelView::open(artwork, model, eye_mm, walk);
+        view.recall(settings);
+        view.start_inside();
+        self.model3d = Some(view);
     }
 
     /// Raise the 3D prompt for `artwork`, unless one is already up.

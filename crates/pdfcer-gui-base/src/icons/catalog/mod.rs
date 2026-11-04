@@ -1297,6 +1297,8 @@ pub enum Icon {
     CentreYaw,
     /// Tilt the walking camera back to level.
     CentrePitch,
+    /// The 3D picture's look: lighting, shadows and render mode. A sun.
+    Lighting,
 }
 
 // The mapping lives next door. `Icon::ALL`, `Icon::source` and `Icon::name`

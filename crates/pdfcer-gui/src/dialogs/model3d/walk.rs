@@ -20,9 +20,9 @@ use pdfcer_3d::{Camera, Hit, Projection, Ray};
 
 use super::orbit::{Axes, PITCH_LIMIT, cross, dot, unit};
 
-/// The walking field of view, degrees, vertically: a game's, wider than the
-/// orbit's.
-const FOV: f64 = 60.0;
+/// The walking field of view, degrees, vertically: wider than the orbit's,
+/// narrower than a game's so a wide window's edges stay unstretched.
+const FOV: f64 = 50.0;
 /// The widest aspect the vertical field holds for. A wider window keeps a
 /// 16:9 window's sideways field and narrows the vertical one instead, so
 /// stretching the window never stretches the picture's edges.
@@ -39,8 +39,9 @@ pub(super) const CLIMB: f64 = 1.0 / 3.0;
 /// The highest step climbed with it off: a seam or a threshold, never an
 /// object.
 const BUMP: f64 = 0.05;
-/// The camera's zoom range, as a multiple of [`FOV`]'s view.
-const ZOOM: (f64, f64) = (0.5, 6.0);
+/// The camera's zoom range, as a multiple of [`FOV`]'s view. Zooming out
+/// stops at a 70 degree vertical field, past which the edges stretch.
+const ZOOM: (f64, f64) = (FOV / 70.0, 6.0);
 /// A hit whose normal is this close to the up axis is a floor or a ramp,
 /// stood on rather than walked into.
 const WALKABLE: f64 = 0.7;
@@ -114,9 +115,15 @@ impl Walk {
     /// about `axes.up`.
     pub fn from_camera(camera: &Camera, axes: Axes, radius: f64) -> Self {
         let look: [f64; 3] = std::array::from_fn(|i| camera.target[i] - camera.eye[i]);
+        Self::standing(camera.eye, look, axes, radius)
+    }
+
+    /// A walker standing at `eye`, looking along `look`, turning about
+    /// `axes.up`; `radius` is the model's.
+    pub fn standing(eye: [f64; 3], look: [f64; 3], axes: Axes, radius: f64) -> Self {
         let (yaw, pitch) = axes.angles(look).unwrap_or((0.0, 0.0));
         Self {
-            eye: camera.eye,
+            eye,
             yaw,
             look_yaw: 0.0,
             pitch,
@@ -234,8 +241,34 @@ impl Walk {
         let mut motion: [f64; 3] = std::array::from_fn(|i| ahead[i] * forward + side[i] * right);
         if rules.solid {
             motion = self.slide(motion, rules.step(), world);
+            let to = std::array::from_fn(|i| self.eye[i] + motion[i]);
+            if self.lifts(to, rules.step(), world) {
+                motion = [0.0; 3];
+            }
         }
         self.eye = std::array::from_fn(|i| self.eye[i] + motion[i]);
+    }
+
+    /// Whether standing at `to` would raise the eye by more than `step` of
+    /// its height, and above where standing here puts it. The wall rays see
+    /// only two heights from the eye's line, so a slab between them, a
+    /// rounded front or a wall behind a ramp's lip passes them; the floor
+    /// under the destination does not.
+    fn lifts(&self, to: [f64; 3], step: f64, world: &mut impl FnMut(&Ray) -> Option<Hit>) -> bool {
+        let mut down = |origin: [f64; 3]| {
+            world(&Ray {
+                origin,
+                direction: self.axes.up.map(|c| -c),
+                min_distance: 0.0,
+            })
+            .map(|hit| hit.distance)
+        };
+        let here = down(self.eye);
+        let Some(there) = down(to) else {
+            return false;
+        };
+        let rise = self.body() - there;
+        rise > step * self.body() + 1e-9 && here.is_none_or(|h| there < h - 1e-9)
     }
 
     /// `motion` cut where it would bring the eye or the top of a step within

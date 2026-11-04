@@ -164,3 +164,17 @@ pub fn drawing() -> &'static str {
 pub fn lost() -> &'static str {
     "the drawing stopped before it finished"
 }
+
+/// The Picture tab's switch giving the picture its own lighting, shadows and
+/// render mode.
+#[must_use]
+pub fn own_look() -> &'static str {
+    "Its own look"
+}
+
+/// Its tip.
+#[must_use]
+pub fn own_look_tooltip() -> &'static str {
+    "Light, shade and render the saved picture with its own choices, set below; they start at \
+     the screen's. Off, it looks as the screen does."
+}

@@ -865,6 +865,9 @@ pub enum PrefAction {
     /// **Persist the 3D walker's eye height** (O356), whole millimetres;
     /// `None` for *Auto*.
     WalkEyeHeight(Option<u32>),
+    /// **Persist the 3D viewer's settings**: every `model3d_` key, as the
+    /// viewer encodes them. See `prefs::modelview`.
+    ModelView(std::collections::BTreeMap<String, String>),
 }
 /// **Where an Arrange command puts the selected mark.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

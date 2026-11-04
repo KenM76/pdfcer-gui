@@ -653,69 +653,69 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O389 — **OPEN** — the picture at the edges is skewed again
+## O389 — **BUILT, PART DRIVEN** — the picture at the edges is skewed again
 
 His words: *"Also things appear very skewed at the edges again."*
 
 **Scope, whole behaviour.** Near the edges of the 3D picture, shapes look as they do at its centre, in every navigation, at the default field of view and after a named view sets its own.
 
-**Status.** Not yet diagnosed.
+**Status.** Built. Cause: the picture was capped at its largest side one side at a time, so a wide window drew a picture of another shape, which was then stretched over the whole area; both sides now shrink by one factor (`picture::render_size`, tested over four window shapes). Walking draws at 50 degrees vertically, not 60, and zooming out stops at 70 degrees, past which the edges stretch. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view` asserts the walking field. NOT VERIFIED by him.
 
-## O388 — **OPEN** — open a named view from inside the model
+## O388 — **BUILT, NOT DRIVEN** — open a named view from inside the model
 
 His words: *"Also we should be able to start the view and be inside the model if that is a preset."*
 
 **Scope, whole behaviour.** A named view whose eye stands inside the model, the file's opening view included, opens with the eye there, not pulled back to frame the whole model, and the viewer starts in the navigation that suits it.
 
-**Status.** Not yet diagnosed.
+**Status.** Built. A perspective named view whose camera (`/C2W`'s position) lies in the model's box opens walking from that camera, looking where it looks, at the eye height set; the file's opening view the same, when the viewer opens (`model3d::inside`, `file-view-eye=inside|outside|none` traced, unit-tested). An orthographic view keeps its framing. Assumes the view's camera and the mesh share one coordinate space. Not driven: no fixture yet has a view inside its model. NOT VERIFIED by him.
 
-## O387 — **OPEN** — every 3D setting remembered
+## O387 — **BUILT, DRIVEN** — every 3D setting remembered
 
 His words: *"Also you need to remember my last settings for everything."*
 
 **Scope, whole behaviour.** Every choice in the 3D viewer's options menu and the picture's settings is as he left it when the viewer is next opened, on any model and after the program is restarted.
 
-**Status.** Not built.
+**Status.** Built. Every switch, the speed, the options menu's tab, the screen's whole look, the picture's size, resolution, backdrop, detail, line width and own look, and the window's size are written as `model3d_*` preference keys whenever they change (once a drag is let go) and when the viewer closes, and read back when it opens on any model (`model3d::memory`, `prefs::modelview`; round trip unit-tested; `model-view-settings-recalled` / `-persisted` traced). The projection and the camera are the view's and are not kept. Driven: `the_3d_viewer_remembers_its_settings` plants stairs, speed and tab, sees them recalled, chooses another tab and finds it written with the others kept (falsified with recall switched off). NOT VERIFIED by him.
 
-## O386 — **OPEN** — the picture's settings hold every render option
+## O386 — **BUILT, NOT DRIVEN** — the picture's settings hold every render option
 
 His words: *"Also the image capture setting are supposed to have all the options we have for the view settings so shadows and lighting modes and everything else we have as render options can be chosen."*
 
 **Scope, whole behaviour.** The Picture tab, set to the picture's own look, offers every render option the screen has (lighting, shadows, occlusion, render mode, the model's lights, lamp reach and every other one), each starting at the screen's value, and the saved picture is drawn with them.
 
-**Status.** Not built.
+**Status.** Built. The Picture tab, set to its own look, offers every option the Look tab has (lighting, the model's lights turning, shadows, occlusion, light sense, sun, render mode, every light, see-through, lamp shadows, lamp reach, skip hidden, headlight, highlights), each starting at the screen's value, and the saved picture is drawn with them (`model3d::shotlook`). Not driven. NOT VERIFIED by him.
 
-## O385 — **OPEN** — walking solid with stairs off still climbs some things
+## O385 — **BUILT, NOT DRIVEN** — walking solid with stairs off still climbs some things
 
 His words: *"Also sometimes I was still able to climb items even with the steps turned off."*
 
 **Scope, whole behaviour.** With Ghost off and stair climbing off, the walker never rises onto or over anything, whatever it walks into, at any speed.
 
-**Status.** Not yet diagnosed.
+**Status.** Built for walking. Cause: the walls are felt by rays at two heights from the eye, so a slab between them, a rounded front or a wall behind a ramp's lip passed; each step now also reads the floor under where it would land, and refuses a step that would lift the eye more than the step allowed (`Walk::lifts`, unit-tested). Still open: turning Ghost off while inside something settles onto it, and a double-click to go somewhere does not ask about stairs. Not driven. NOT VERIFIED by him.
 
-## O384 — **OPEN** — the full-screen buttons in the window too
+## O384 — **BUILT, NOT DRIVEN** — the full-screen buttons in the window too
 
 His words: *"Also I'd like the buttons we have on screen in full screen mode to show on the windowed version."*
 
 **Scope, whole behaviour.** The 3D viewer in its window shows the same on-screen buttons over the picture as full screen does, with the same behaviour, including hiding them with a tap.
 
-**Status.** Not built.
+**Status.** Built. The window shows the full-screen button row over the picture, sized for a desk (30 px) or a thumb (44 px), with the walking switches and speed beside it; a tap hides them as in full screen (`model3d::immersive::hud_row`). Not driven. NOT VERIFIED by him.
 
-## O383 — **OPEN** — the 3D viewer's window can be resized
+## O383 — **BUILT, NOT DRIVEN** — the 3D viewer's window can be resized
 
 His words: *"also the window needs to be resizable - make everything look nice and also useable."*
 
 **Scope, whole behaviour.** The viewer's window resizes from its edges and corners, the picture filling it, the controls and the options menu laid out to fit at any size, and it opens at the size he left it.
 
-**Status.** Not built.
+**Status.** Built. The window resizes from its edges and corners, the picture filling it, and opens at the size left (kept with O387). The options menu resizes too and its tabs are laid out to fit. Not driven. NOT VERIFIED by him.
 
-## O382 — **OPEN** — glyphs on the 3D options menu's tabs
+## O382 — **BUILT, NOT DRIVEN** — glyphs on the 3D options menu's tabs
 
 His words: *"I checked out the new menu tabs for 3d options and it needs glyphs"*, and *"make everything look nice and also useable."*
 
 **Scope, whole behaviour.** Each tab of the options menu (View, Look, Moving, Picture) carries a glyph with its name, legible on a phone, in a window and full screen, and the menu looks tidy.
 
-**Status.** Not built.
+**Status.** Built. View, Look, Moving and Picture each carry a glyph with the name (a new Lighting glyph for Look), as larger buttons that fit a thumb. Not driven. NOT VERIFIED by him.
 
 ## O381 — **OPEN** — add and edit the document's metadata
 

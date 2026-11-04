@@ -156,7 +156,7 @@ impl Walker<'_> {
         Ok(None)
     }
 
-    /// Walking, the vertical field is 60 degrees up to a 16:9 picture and
+    /// Walking, the vertical field is 50 degrees up to a 16:9 picture and
     /// narrows past it so the sideways field stops growing; and the greyed
     /// Perspective switch ignores a click.
     fn field_of_view(&self, report: &mut CheckReport) -> Result<Option<String>> {
@@ -171,9 +171,9 @@ impl Walker<'_> {
         };
         let (aspect, widest) = (w / h.max(1.0), 16.0 / 9.0);
         let wanted = if aspect <= widest {
-            60.0
+            50.0
         } else {
-            2.0 * (30f64.to_radians().tan() * widest / aspect)
+            2.0 * (25f64.to_radians().tan() * widest / aspect)
                 .atan()
                 .to_degrees()
         };

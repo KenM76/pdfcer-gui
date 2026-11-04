@@ -1159,6 +1159,7 @@ impl PdfcerApp {
                             model,
                             self.prefs.walk_eye_mm,
                             self.prefs.model_start_walk,
+                            &self.prefs.model_view,
                         );
                     }
                     Err(said) => {

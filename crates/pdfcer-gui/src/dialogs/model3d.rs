@@ -33,8 +33,10 @@ mod gpu;
 mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;
+mod inside;
 mod lights;
 mod looks;
+mod memory;
 mod nav;
 mod navorbit;
 mod navwalk;
@@ -45,6 +47,7 @@ mod phone;
 mod picture;
 mod saved;
 mod shot;
+mod shotlook;
 mod stick;
 mod walk;
 mod window;
@@ -189,6 +192,8 @@ pub(crate) struct ModelView {
     nav: nav::Nav,
     /// The eye height was set or reset, for the preferences file.
     eye_changed: bool,
+    /// The kept settings as last written.
+    remembered: memory::Settings,
 }
 
 impl ModelView {
@@ -273,6 +278,7 @@ impl ModelView {
             extras: looks::Extras::default(),
             nav: nav::Nav::with_eye(eye_mm, walk),
             eye_changed: false,
+            remembered: memory::Settings::new(),
         }
     }
 
@@ -291,7 +297,9 @@ impl ModelView {
             let (frame, ()) = crate::dialogs::host::Host::new(
                 VIEWPORT_KEY,
                 &self.title,
-                egui::vec2(720.0, 600.0),
+                self.nav
+                    .window_open
+                    .map_or(egui::vec2(720.0, 600.0), egui::Vec2::from),
                 egui::vec2(360.0, 320.0),
             )
             .maximizable()
@@ -321,6 +329,7 @@ impl ModelView {
         }
         let closed = closed && !std::mem::take(&mut self.escape_left_full_screen);
         let button = std::mem::take(&mut self.close_requested);
+        self.keep_settings(ctx, closed || button, actions);
         if closed || button {
             let how = if button { "button" } else { "window" };
             // ui-text-exempt: diagnostic trace, never displayed
@@ -481,8 +490,7 @@ impl ModelView {
         let card = gpu && self.gpu.declined().is_none();
         let halve = self.nav.moving && !card;
         let scale = ui.ctx().pixels_per_point() * if halve { 0.5 } else { 1.0 };
-        let side = |points: f32| (points * scale).clamp(1.0, MAX_SIDE).round() as u32;
-        let size = [side(rect.width()), side(rect.height())];
+        let size = picture::render_size([rect.width(), rect.height()], scale, MAX_SIDE);
         let ppp = ui.ctx().pixels_per_point();
         self.shot.base = [rect.width(), rect.height()].map(|p| (p * ppp).round().max(1.0) as u32);
         self.shot.screen = background.to_array();
@@ -514,6 +522,7 @@ impl ModelView {
             (None, None) => {}
         }
         self.paint_overlay(ui, rect);
+        self.hud_row(ui, rect);
         self.options_button(ui, rect);
         self.shot_button(ui, rect);
         self.settle_tap(ui.ctx());

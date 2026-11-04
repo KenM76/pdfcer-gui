@@ -38,5 +38,11 @@ pub fn apply(action: PrefAction, prefs: &mut Prefs) {
             let mm = mm.map_or_else(|| "auto".to_owned(), |mm| mm.to_string()); // ui-text-exempt: diagnostic trace, never displayed
             crate::diag::trace(|| format!("walk-eye-persisted mm={mm}")); // ui-text-exempt: diagnostic trace, never displayed
         }
+        PrefAction::ModelView(settings) => {
+            let keys = settings.len();
+            prefs.model_view = settings;
+            let _ = prefs.save();
+            crate::diag::trace(|| format!("model-view-settings-persisted keys={keys}")); // ui-text-exempt: diagnostic trace, never displayed
+        }
     }
 }

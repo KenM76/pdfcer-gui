@@ -749,6 +749,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(snapshot_box::ASnapshotBoxStaysOnThePageThroughAZoom),
         Box::new(snapshot_grips::ASnapshotBoxMovesResizesAndClears),
         Box::new(snapshot_copy::ASnapshotCopyIsCroppedAtTheSetDpi),
+        Box::new(snapshot_two_copies::TheSnapshotBoxsTwoCopiesChooseItsText),
         Box::new(snapshot_picture::ASnapshotSetToPictureCopiesNoVectors),
         Box::new(snapshot_save::ASnapshotSavesAsAOnePagePdf),
         Box::new(snapshot_paste::ASnapshotPastesBackAsADrawing),

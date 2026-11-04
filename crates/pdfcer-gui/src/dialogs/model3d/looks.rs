@@ -31,7 +31,7 @@ pub const REGION_LAMP_SHADOWS: &str = "model3d.lamp_shadows"; // ui-text-exempt:
 /// The lamp reach drop-down; items add `.auto`, `.off` or `.<hundredths>`.
 pub const REGION_LAMP_CUT: &str = "model3d.lamp_cut"; // ui-text-exempt: trace region name, never displayed
 /// The lamp reach drop-down's shorter choices, in hundredths of an 8-bit level.
-const LAMP_CUT_STEPS: [u16; 3] = [100, 400, 1600];
+pub(super) const LAMP_CUT_STEPS: [u16; 3] = [100, 400, 1600];
 /// The depth prepass switch.
 pub const REGION_SKIP_HIDDEN: &str = "model3d.skip_hidden"; // ui-text-exempt: trace region name, never displayed
 /// The camera light switch.

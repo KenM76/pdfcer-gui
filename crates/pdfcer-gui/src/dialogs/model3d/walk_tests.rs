@@ -194,6 +194,53 @@ fn a_solid_walker_cannot_rise_over_a_box_and_a_ghost_rises() {
     assert!(flying.eye[2] > 0.8, "{:?}", flying.eye);
 }
 
+/// [`room`] with a slab across x = 2..3 from `z0` up to `z1`, standing on
+/// nothing: a table top, passing between the wall rays.
+fn room_with_slab(z0: f64, z1: f64) -> Vec<TriangleMesh> {
+    let mut meshes = room();
+    let mut slab = TriangleMesh::default();
+    slab.positions = vec![
+        [2.0, -10.0, z0],
+        [2.0, 10.0, z0],
+        [2.0, 10.0, z1],
+        [2.0, -10.0, z1],
+        [3.0, -10.0, z1],
+        [3.0, 10.0, z1],
+        [3.0, 10.0, z0],
+        [3.0, -10.0, z0],
+    ];
+    slab.triangles = vec![
+        [0, 1, 2],
+        [0, 2, 3],
+        [3, 2, 5],
+        [3, 5, 4],
+        [4, 5, 6],
+        [4, 6, 7],
+        [7, 6, 1],
+        [7, 1, 0],
+    ];
+    meshes.push(slab);
+    meshes
+}
+
+#[test]
+fn a_solid_walker_never_climbs_onto_a_table_it_walks_under() {
+    // Eye height 0.8: both wall rays miss a slab from 0.3 to 0.4.
+    let table = room_with_slab(0.3, 0.4);
+    for rules in [
+        SOLID,
+        Rules {
+            stairs: true,
+            ..SOLID
+        },
+    ] {
+        let mut walk = walker([0.0, 0.0, 0.8]);
+        ahead(3, &mut walk, rules, &table);
+        assert!((walk.eye[2] - 0.8).abs() < 1e-9, "{rules:?} {:?}", walk.eye);
+        assert!(walk.eye[0] < 2.0, "{rules:?} {:?}", walk.eye);
+    }
+}
+
 #[test]
 fn the_camera_turns_apart_from_the_heading_and_centres_back() {
     let meshes = room();
@@ -222,6 +269,11 @@ fn zoom_narrows_the_view_within_its_range() {
     assert!((fov_y - FOV / 2.0).abs() < 1e-9, "{fov_y}");
     walk.zoom_by(1000.0);
     assert!((walk.zoom - ZOOM.1).abs() < 1e-9);
+    walk.zoom_by(1e-6);
+    let Projection::Perspective { fov_y } = walk.camera(1.0).projection else {
+        unreachable!();
+    };
+    assert!(fov_y <= 70.0 + 1e-9, "zoomed out to {fov_y} degrees");
 }
 
 #[test]

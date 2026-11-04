@@ -67,9 +67,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 204 → 205: `exit-fullscreen`, the full-screen 3D viewer's way back.
     // 205 → 208: `stairs`, `centre-yaw`, `centre-pitch`, the walking sticks' buttons.
     // 208 → 210: `copy-snapshot-outlines`, `copy-snapshot-text`, the snapshot box's two copies.
+    // 210 → 211: `lighting`, the 3D options menu's Look tab.
     assert_eq!(
         Icon::ALL.len(),
-        210,
+        211,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

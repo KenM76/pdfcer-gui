@@ -152,6 +152,12 @@ pub(super) struct Nav {
     pub start_walking: bool,
     /// The options menu's tab, an index into `text::model3dshot::tabs`.
     pub options_tab: usize,
+    /// The OS window's inner size as last seen in a window, points.
+    pub window: Option<[f32; 2]>,
+    /// The size the OS window opens at, points; `None` for the default.
+    pub window_open: Option<[f32; 2]>,
+    /// When the settings were last written, egui seconds.
+    pub kept_at: f64,
 }
 
 impl Nav {
@@ -163,6 +169,18 @@ impl Nav {
         nav.prefs.ghost = walk;
         nav.start_walking = walk;
         nav
+    }
+
+    /// Take up `prefs`, the last session's, in place of the session's
+    /// switches; opening walking keeps ghost on and the eye height given.
+    pub fn recalled(&mut self, prefs: Prefs) {
+        let ghost = self.start_walking || prefs.ghost;
+        self.prefs = Prefs {
+            ghost,
+            eye_mm: self.prefs.eye_mm,
+            ..prefs
+        };
+        self.loaded = true;
     }
 
     /// Take up the session's switches, once.
@@ -229,7 +247,8 @@ impl ModelView {
             self.set_walking(!walking);
         }
         if walking {
-            self.walk_switches(ui, false);
+            self.walk_switches(ui, None);
+            self.speed_slider(ui);
         }
         let gimbal = toggle(
             ui,
@@ -260,14 +279,11 @@ impl ModelView {
 
     /// Ghost, Level and (in a window) the speed; `hud` draws them as the
     /// full-screen row's thumb-sized glyphs.
-    pub(super) fn walk_switches(&mut self, ui: &mut Ui, hud: bool) {
+    pub(super) fn walk_switches(&mut self, ui: &mut Ui, hud: Option<f32>) {
         let prefs = self.nav.prefs;
-        let switch = |ui: &mut Ui, icon, label, tip, on| {
-            if hud {
-                super::immersive::glyph(ui, icon, label, on).on_hover_text(tip)
-            } else {
-                toggle(ui, icon, label, tip, on)
-            }
+        let switch = |ui: &mut Ui, icon, label, tip, on| match hud {
+            Some(side) => super::immersive::glyph(ui, icon, label, on, side).on_hover_text(tip),
+            None => toggle(ui, icon, label, tip, on),
         };
         let ghost = switch(ui, Icon::Ghost, t::ghost(), t::ghost_tooltip(), prefs.ghost);
         crate::diag::ui_rect_visible(REGION_GHOST, ghost.rect, ui.clip_rect());
@@ -303,18 +319,20 @@ impl ModelView {
                 self.toggle_stairs(ui.ctx());
             }
         }
-        if !hud {
-            let speed = ui
-                .add(
-                    egui::Slider::new(&mut self.nav.prefs.speed, 0.25..=4.0)
-                        .logarithmic(true)
-                        .custom_formatter(|v, _| t::speed_value(v))
-                        .text(t::speed()),
-                )
-                .on_hover_text(t::speed_tooltip());
-            if speed.drag_stopped() || speed.lost_focus() {
-                self.switched(ui.ctx());
-            }
+    }
+
+    /// The walking speed.
+    pub(super) fn speed_slider(&mut self, ui: &mut Ui) {
+        let speed = ui
+            .add(
+                egui::Slider::new(&mut self.nav.prefs.speed, 0.25..=4.0)
+                    .logarithmic(true)
+                    .custom_formatter(|v, _| t::speed_value(v))
+                    .text(t::speed()),
+            )
+            .on_hover_text(t::speed_tooltip());
+        if speed.drag_stopped() || speed.lost_focus() {
+            self.switched(ui.ctx());
         }
     }
 

@@ -15,6 +15,15 @@ A check is selected when any of these holds:
    change can reach this check" means here;
 3. it is in SMOKE, which is always driven.
 
+An engine pin moved since REF counts as change too: every engine crate with a
+source file changed between the two pins (`pdfcer-3d/src/raster.rs` is
+`pdfcer_3d`) makes every program file naming that crate changed, so rule 2
+reaches the checks of whatever calls it. The crate, not the module, because
+engine crates re-export their modules' types at the root (`pdfcer_3d::Bounds`
+is `bounds::Bounds`), so a caller need not name the module it reaches. A crate
+the program never names (`pdfcer_cli`) reaches nothing. A pin this cannot read
+selects every check, as `--all` does.
+
 Usage:
     python tools/ui-verify/affected-checks.py [--since REF] [--why]
 
@@ -52,6 +61,54 @@ def git(*args):
     return out.stdout
 
 
+# `source = "git+file:///D:/Dev/pdfcer?branch=main#<commit>"` in Cargo.lock.
+PIN = re.compile(r'source = "git\+file:///([^?"]+)\?[^#"]*#([0-9a-f]{40})"')
+ENGINE_SRC = re.compile(r"^crates/([a-z0-9\-]+)/src/(.+)\.rs$")
+
+
+def engine_pin(lock_text):
+    pins = set(PIN.findall(lock_text))
+    return pins.pop() if len(pins) == 1 else None
+
+
+def engine_touched(since):
+    """Engine crates changed between the pins, `None` when every check must
+    run, `[]` when the pin did not move."""
+    old = subprocess.run(["git", "show", f"{since}:Cargo.lock"], cwd=ROOT,
+                         capture_output=True, text=True)
+    new = engine_pin((ROOT / "Cargo.lock").read_text(encoding="utf-8"))
+    if old.returncode != 0 or new is None:
+        return None
+    old = engine_pin(old.stdout)
+    if old is None:
+        return None
+    if old == new:
+        return []
+    repo = new[0] if new[0][1:2] == ":" else new[0].lstrip("/")
+    diff = subprocess.run(["git", "-C", repo, "diff", "--name-only", f"{old[1]}..{new[1]}"],
+                          capture_output=True, text=True)
+    if diff.returncode != 0:
+        return None
+    crates = set()
+    for name in diff.stdout.split():
+        m = ENGINE_SRC.match(name)
+        if m and "/tests" not in name and not name.endswith("tests.rs"):
+            crates.add(m.group(1).replace("-", "_"))
+    return sorted(crates)
+
+
+def engine_callers(crates):
+    """Program files (not the harness) naming a changed engine crate."""
+    hits = {}
+    for path in (ROOT / "crates").rglob("*.rs"):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for crate in crates:
+            if re.search(rf"\b{crate}\b", text):
+                hits[path.relative_to(ROOT).as_posix()] = crate
+                break
+    return hits
+
+
 def changed_files(since):
     names = set(git("diff", "--name-only", f"{since}..HEAD").split())
     names |= set(git("diff", "--name-only", "HEAD").split())
@@ -72,6 +129,16 @@ def main():
     since = argv[argv.index("--since") + 1] if "--since" in argv else \
         git("describe", "--tags", "--abbrev=0").strip()
     changed = changed_files(since)
+    touched = engine_touched(since)
+    if touched is None or "--all" in argv:
+        for path in sorted(CHECKS.rglob("*.rs")):
+            for name in NAME.findall(path.read_text(encoding="utf-8", errors="replace")):
+                print(name)
+        print("affected-checks: every check (the engine's reach cannot be bounded)",
+              file=sys.stderr)
+        return
+    via_engine = engine_callers(touched)
+    changed = sorted(set(changed) | via_engine.keys())
 
     checks = {}  # path -> (names, idents)
     for path in CHECKS.rglob("*.rs"):
@@ -115,7 +182,9 @@ def main():
         if why:
             print(f"{name}: {picked[name]}", file=sys.stderr)
     print(f"affected-checks: {len(picked)} of {sum(len(n) for n, _ in checks.values())} "
-          f"checks, {len(changed)} changed .rs files since {since}", file=sys.stderr)
+          f"checks, {len(changed)} changed .rs files since {since} "
+          f"({len(via_engine)} calling the changed engine crates {', '.join(touched) or 'none'})",
+          file=sys.stderr)
 
 
 if __name__ == "__main__":

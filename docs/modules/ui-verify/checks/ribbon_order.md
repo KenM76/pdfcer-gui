@@ -3,12 +3,12 @@
 `ribbon_puts_clipboard_first_and_save_beside_file` — O313, driven off the
 desktop through the scripted pointer.
 
-The operator asked for the ribbon in a word processor's order: Clipboard at
-the very left of Edit, Save next to File, and the highlighter's band filled
-yellow. The check clicks each tab and requires:
+The operator asked for the ribbon in a word processor's order: Clipboard
+first after File (its own tab, O380, `RIBBON_IA.md` section 5.0), Save next to
+File, and the highlighter's band filled yellow. The check requires:
 
-1. Edit's groups, read left to right from their declared rects, start with
-   `clipboard`;
+1. the tabs, read left to right from their declared `ribbon.tab.*` rects,
+   start with `file`, then `clipboard`;
 2. File's start with `file`, then `save`;
 3. the Markup tab's highlight button, in the window's own screenshot, holds
    at least `MIN_YELLOW` pixels of the wash yellow.
@@ -26,4 +26,4 @@ defect.
 | control | expected verdict |
 |---|---|
 | `HIGHLIGHT` pointed at `ribbon.item.markup.underline` | FAIL at step 3, 0 yellow pixels (the highlight button reads 16) |
-| the expected first Edit group renamed | FAIL at step 1 |
+| the expected second tab renamed | FAIL at step 1 |

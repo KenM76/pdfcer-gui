@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- The 3D picture's look: a sun, a disc and eight rays, for lighting, shadows and render mode. -->
+  <circle cx="24" cy="24" r="8" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M24 4v6M24 38v6M4 24h6M38 24h6M9.9 9.9l4.2 4.2M33.9 33.9l4.2 4.2M9.9 38.1l4.2-4.2M33.9 14.1l4.2-4.2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

@@ -16,9 +16,20 @@ impl ModelView {
             return;
         }
         self.trace_minimized(ui);
+        self.note_window_size(ui);
         if ui.input(|i| i.key_pressed(egui::Key::F11)) {
             let full = pdfcer_gui_base::windowshape::fullscreen_believed(ui.ctx());
             Self::ask_full_screen(ui.ctx(), !full);
+        }
+    }
+
+    /// Keep the OS window's size while it is a window, neither full screen
+    /// nor maximized, in whole points.
+    fn note_window_size(&mut self, ui: &Ui) {
+        let (rect, maximized) = ui.input(|i| (i.viewport().inner_rect, i.viewport().maximized));
+        let full = pdfcer_gui_base::windowshape::fullscreen_believed(ui.ctx());
+        if let Some(rect) = rect.filter(|_| !full && maximized != Some(true)) {
+            self.nav.window = Some([rect.width().round(), rect.height().round()]);
         }
     }
 
@@ -52,7 +63,7 @@ impl ModelView {
         }
     }
 
-    fn ask_full_screen(ctx: &egui::Context, on: bool) {
+    pub(super) fn ask_full_screen(ctx: &egui::Context, on: bool) {
         // ui-text-exempt: diagnostic trace, never displayed
         crate::diag::trace(|| format!("model-view-full-screen asked={on} escape=false"));
         pdfcer_gui_base::windowshape::set_fullscreen(ctx, on);

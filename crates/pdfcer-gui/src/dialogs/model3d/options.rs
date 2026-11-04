@@ -3,9 +3,11 @@
 //! views, projection, axes, mesh fit and full screen), Look (lighting,
 //! effects, render mode), Moving (the controls, navigation and eye height)
 //! and Picture (what *Save picture…* draws at, and, full screen where the
-//! footer is gone, the picture and save buttons). The menu opens on the tab
-//! last shown, stays open while its switches are used and closes on a click
-//! outside it or Escape.
+//! footer is gone, the picture and save buttons). Each tab shows a glyph
+//! with its name. Controls the glyph row over the picture already shows are
+//! left out while it is shown. The menu resizes from its corner, keeps its
+//! size, opens on the tab last shown, stays open while its switches are used
+//! and closes on a click outside it or Escape.
 
 use egui::{Rect, Ui, UiBuilder, Vec2};
 use pdfcer_gui_base::icons::{self, Icon};
@@ -24,13 +26,14 @@ pub const REGION_MENU: &str = "model3d.options.menu"; // ui-text-exempt: trace r
 pub const REGION_OPTIONS: &str = "model3d.options"; // ui-text-exempt: trace region name, never displayed
 /// The glyph's gap from the picture's corner, in points.
 const INSET: f32 = 8.0;
-/// The glyph's side in a desktop window, and where a thumb uses it.
-const SIDE: (f32, f32) = (28.0, 44.0);
-/// The width the glyph takes from the picture's left edge where a thumb
-/// uses it, so a row beside it starts clear of it.
-pub(super) const THUMB_CLEAR: f32 = INSET + SIDE.1;
-/// The menu's width, in points.
-const WIDTH: f32 = 300.0;
+/// The menu's width when first opened, in points.
+const WIDTH: f32 = 330.0;
+/// The smallest the menu is resized to, in points.
+const SMALLEST: [f32; 2] = [240.0, 160.0];
+/// The egui id the menu's size is kept under.
+const SIZE_ID: &str = "model3d-options-size"; // ui-text-exempt: an egui id, never displayed
+/// Each tab's glyph, in [`TAB_WORDS`]' order.
+const TAB_ICONS: [Icon; 4] = [Icon::Model3d, Icon::Lighting, Icon::Walk, Icon::Snapshot];
 /// Room kept below the menu, in points: its frame's margin and shadow.
 const BELOW: f32 = 24.0;
 /// Room the tab row and its rule take above the rows, in points.
@@ -52,9 +55,12 @@ impl ModelView {
     /// egui moves a popup that does not fit up the window, over the glyph,
     /// and the click meant to close it then lands in the menu instead. It
     /// opens scrolled to the top, as a menu does.
+    ///
+    /// It opens no lower than the picture's bottom, so the footer's buttons
+    /// below the picture stay in reach while it is open; dragged from its
+    /// corner it grows to the window's bottom.
     pub(super) fn options_button(&mut self, ui: &mut Ui, rect: Rect) {
-        let thumb = self.filling_screen(ui.ctx()) || egui_shell::ribbon::phone::is_phone(ui.ctx());
-        let side = if thumb { SIDE.1 } else { SIDE.0 };
+        let side = self.glyph_side(ui.ctx());
         let at = Rect::from_min_size(
             egui::pos2(rect.left() + INSET, rect.top() + INSET),
             Vec2::splat(side),
@@ -74,20 +80,29 @@ impl ModelView {
         }
         let opening = open && !self.nav.options_open;
         let room = (ui.ctx().content_rect().bottom() - at.bottom() - BELOW).max(side * 4.0);
+        let opens_at = (rect.bottom() - at.bottom() - BELOW).clamp(SMALLEST[1], room);
         let shown = egui::Popup::menu(&button)
             .open_bool(&mut open)
             .close_behavior(egui::PopupCloseBehavior::IgnoreClicks)
-            .width(WIDTH)
             .show(|ui| {
-                let shown = self.nav.options_tab;
-                self.tab_row(ui);
-                ui.separator();
-                let fresh = opening || shown != self.nav.options_tab;
-                let mut scroll = egui::ScrollArea::vertical().max_height(room - TABS_HIGH);
-                if fresh {
-                    scroll = scroll.vertical_scroll_offset(0.0);
-                }
-                scroll.show(ui, |ui| self.options(ui));
+                egui::Resize::default()
+                    .id_salt(SIZE_ID)
+                    .default_size([WIDTH, opens_at])
+                    .min_size(SMALLEST)
+                    .max_height(room)
+                    .show(ui, |ui| {
+                        let shown = self.nav.options_tab;
+                        self.tab_row(ui);
+                        ui.separator();
+                        let fresh = opening || shown != self.nav.options_tab;
+                        let mut scroll = egui::ScrollArea::vertical()
+                            .auto_shrink(false)
+                            .max_height(ui.available_height().max(TABS_HIGH));
+                        if fresh {
+                            scroll = scroll.vertical_scroll_offset(0.0);
+                        }
+                        scroll.show(ui, |ui| self.options(ui));
+                    });
             });
         if let Some(menu) = shown {
             crate::diag::ui_rect_visible(REGION_MENU, menu.response.rect, ui.clip_rect());
@@ -95,11 +110,26 @@ impl ModelView {
         self.nav.options_open = open;
     }
 
-    /// The tabs, the one shown marked.
+    /// The tabs, each a glyph and its name, the one shown marked; they wrap
+    /// in a narrow menu.
     fn tab_row(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            for (i, (name, word)) in s::tabs().into_iter().zip(TAB_WORDS).enumerate() {
-                let tab = ui.selectable_value(&mut self.nav.options_tab, i, name);
+        ui.horizontal_wrapped(|ui| {
+            let names = s::tabs().into_iter().zip(TAB_WORDS).zip(TAB_ICONS);
+            for (i, ((name, word), icon)) in names.enumerate() {
+                let on = self.nav.options_tab == i;
+                let image = if on {
+                    icons::selected_image(ui, icon)
+                } else {
+                    icons::image(ui, icon)
+                };
+                let tab = ui.add(
+                    egui::Button::image_and_text(image.fit_to_exact_size(Vec2::splat(20.0)), name)
+                        .selected(on)
+                        .min_size(Vec2::new(0.0, 30.0)),
+                );
+                if tab.clicked() {
+                    self.nav.options_tab = i;
+                }
                 // ui-text-exempt: trace region name, never displayed
                 let region = format!("{REGION_TAB}{word}");
                 crate::diag::ui_rect_visible(&region, tab.rect, ui.clip_rect());
@@ -110,14 +140,15 @@ impl ModelView {
     /// The tab shown's rows.
     fn options(&mut self, ui: &mut Ui) {
         let full = self.filling_screen(ui.ctx());
+        let row = self.nav.prefs.controls;
         match self.nav.options_tab {
-            0 => self.view_tab(ui, full),
+            0 => self.view_tab(ui, row),
             1 => {
                 self.lighting_control(ui);
                 self.effects_control(ui);
                 self.looks_control(ui);
             }
-            2 => self.moving_tab(ui, full),
+            2 => self.moving_tab(ui, row),
             _ => {
                 self.shot_control(ui);
                 if full {
@@ -128,8 +159,9 @@ impl ModelView {
         }
     }
 
-    /// The View tab: the views, projection, axes, mesh fit and full screen.
-    fn view_tab(&mut self, ui: &mut Ui, full: bool) {
+    /// The View tab: the views, projection, axes, mesh fit and full screen;
+    /// Fit only where the glyph `row` is not shown.
+    fn view_tab(&mut self, ui: &mut Ui, row: bool) {
         ui.horizontal_wrapped(|ui| {
             self.file_view_control(ui);
             self.saved_views_control(ui);
@@ -147,8 +179,7 @@ impl ModelView {
                     self.orbit = super::Orbit::named(i, self.orbit.perspective, self.upright);
                 }
             }
-            // Full screen has Fit on its own row of glyphs.
-            if !full {
+            if !row {
                 let fit = phone::glyph_button(
                     ui,
                     Icon::FitPage,
@@ -176,13 +207,15 @@ impl ModelView {
         ui.horizontal_wrapped(|ui| self.full_screen_control(ui));
     }
 
-    /// The Moving tab: the controls, navigation and eye height.
-    fn moving_tab(&mut self, ui: &mut Ui, full: bool) {
+    /// The Moving tab: the controls, navigation and eye height; the
+    /// navigation switches only where the glyph `row` is not shown.
+    fn moving_tab(&mut self, ui: &mut Ui, row: bool) {
         self.controls_switch(ui);
-        // Full screen has the navigation switches on its own row of glyphs.
-        if !full {
-            ui.separator();
+        ui.separator();
+        if !row {
             ui.horizontal_wrapped(|ui| self.nav_controls(ui));
+        } else if self.nav.walk.is_some() {
+            self.speed_slider(ui);
         }
         ui.horizontal_wrapped(|ui| self.eye_height_control(ui));
     }

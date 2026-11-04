@@ -1038,6 +1038,9 @@ pub(super) const EXIT_FULLSCREEN: &str = include_str!("assets/exit-fullscreen.sv
 /// Walking climbs obstacles under a third of the eye height.
 pub(super) const STAIRS: &str = include_str!("assets/stairs.svg");
 
+/// `lighting.svg` — the art for [`super::Icon::Lighting`].
+pub(super) const LIGHTING: &str = include_str!("assets/lighting.svg");
+
 /// `centre-yaw.svg` — the art for [`super::Icon::CentreYaw`].
 ///
 /// Turn the walking camera back to straight ahead.

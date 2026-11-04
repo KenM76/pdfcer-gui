@@ -51,21 +51,23 @@ const DETAILS: [(&str, u32); 3] = [("screen", 1), ("fine", 2), ("finest", 4)]; /
 /// measured from, and the picture being drawn.
 pub(super) struct Shot {
     /// Times the picture on screen.
-    scale: f64,
+    pub(super) scale: f64,
     /// Pixels per inch, written into the PNG.
-    dpi: u32,
+    pub(super) dpi: u32,
     /// An index into [`BACKDROPS`].
-    backdrop: usize,
+    pub(super) backdrop: usize,
     /// An index into [`DETAILS`].
-    detail: usize,
+    pub(super) detail: usize,
     /// Lines widen with the scale.
-    wide_lines: bool,
+    pub(super) wide_lines: bool,
     /// The picture on screen, device pixels: 1×.
     pub(super) base: [u32; 2],
     /// The screen's background, straight RGBA.
     pub(super) screen: [u8; 4],
     /// The picture being drawn and its trace line's head.
     drawing: Option<(Receiver<Result<Drawn, String>>, String)>,
+    /// The picture's own look, else the screen's.
+    pub(super) own: Option<super::shotlook::LookSet>,
 }
 
 impl Default for Shot {
@@ -79,6 +81,7 @@ impl Default for Shot {
             base: [4, 3],
             screen: [255; 4],
             drawing: None,
+            own: None,
         }
     }
 }
@@ -163,6 +166,8 @@ impl ModelView {
         self.shot_size(ui);
         self.shot_dpi(ui);
         self.shot_finish(ui);
+        ui.separator();
+        self.shot_look_control(ui);
         let after = self.shot.trace();
         if after != before {
             crate::diag::trace(|| format!("model-view-picture-size{after}")); // ui-text-exempt: diagnostic trace, never displayed
@@ -277,7 +282,7 @@ impl ModelView {
         let aspect = f64::from(w) / f64::from(h);
         let mut options = ModelRenderOptions {
             threads: 0,
-            ..self.look().options()
+            ..self.in_shot_look(|view| view.look()).options()
         };
         self.shot.apply(&mut options);
         let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
@@ -286,10 +291,17 @@ impl ModelView {
             .painted(&mut self.model.drawn, None, Clone::clone);
         let head = format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            "model-view-poster yaw={:.3} pitch={:.3}{}",
+            "model-view-poster yaw={:.3} pitch={:.3}{} look={} shadows={} occlusion={}",
             self.orbit.yaw,
             self.orbit.pitch,
-            self.shot.trace()
+            self.shot.trace(),
+            if self.shot.own.is_some() {
+                "own"
+            } else {
+                "screen"
+            }, // ui-text-exempt: trace value, never displayed
+            u8::from(options.shadows),
+            u8::from(options.ambient_occlusion)
         );
         let (send, receive) = std::sync::mpsc::channel();
         std::thread::Builder::new()

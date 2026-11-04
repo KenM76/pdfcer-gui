@@ -188,7 +188,14 @@ both before its verdict is believed.
 release tag: a check whose own file changed, a check quoting a trace event,
 region, command id or `PDFCER_*` variable that a changed source file also
 quotes, and a three-check smoke set. `--why` on the selector prints each
-reason. The full sweep is for framework-wide changes or on request.
+reason. An engine pin moved since the tag counts as change: every engine
+crate with a source file changed between the two pins marks each program file
+naming it as changed, so the checks of whatever calls it are driven; a pin the
+selector cannot read selects every check. This is the standing rule for every
+release, engine bumps included: skip what the change cannot reach, never what
+it can. The full sweep is for framework-wide changes (the harness, the shell
+framework, the theme) or on request. `cargo test --workspace` and the gates
+always run whole.
 
 The full sweep takes about ninety-five minutes and aborts if any `.rs` or
 `.toml` in the tree is edited while it runs. **Two independent guards fire, and

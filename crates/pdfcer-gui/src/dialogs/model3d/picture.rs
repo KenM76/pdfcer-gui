@@ -299,9 +299,39 @@ pub(super) fn png(drawn: &Drawn, dpi: f32) -> Result<Vec<u8>, String> {
     pdfcer_render::export::encode_png(&pixmap, Some(dpi)).map_err(|e| e.to_string())
 }
 
+/// The picture's pixel size for an area of `points` at `scale` pixels a
+/// point: both sides shrunk by one factor so the longer fits `max_side`,
+/// keeping the area's shape, since the camera's aspect comes from this size
+/// and the picture is shown stretched over the whole area.
+pub(super) fn render_size(points: [f32; 2], scale: f32, max_side: f32) -> [u32; 2] {
+    let px = points.map(|p| (p * scale).max(1.0));
+    let k = (max_side / px[0].max(px[1])).min(1.0);
+    px.map(|p| (p * k).round().max(1.0) as u32)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_capped_picture_keeps_the_areas_shape() {
+        for (w, h) in [
+            (1920.0, 1000.0),
+            (2560.0, 1300.0),
+            (3840.0, 2100.0),
+            (500.0, 400.0),
+        ] {
+            let [pw, ph] = render_size([w, h], 1.0, 1600.0);
+            assert!(pw.max(ph) <= 1600, "{w}x{h} -> {pw}x{ph}");
+            let want = f64::from(w / h);
+            let got = f64::from(pw) / f64::from(ph);
+            assert!(
+                (want - got).abs() < 2.0 / f64::from(ph),
+                "{w}x{h} -> {pw}x{ph}"
+            );
+        }
+        assert_eq!(render_size([500.0, 400.0], 2.0, 1600.0), [1000, 800]);
+    }
 
     #[test]
     fn grey_is_not_colour_and_two_hues_count_twice() {

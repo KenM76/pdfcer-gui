@@ -253,6 +253,7 @@ impl Icon {
         Icon::Stairs,
         Icon::CentreYaw,
         Icon::CentrePitch,
+        Icon::Lighting,
     ];
 
     /// The asset's SVG source.
@@ -468,6 +469,7 @@ impl Icon {
             Icon::Stairs => assets::STAIRS,
             Icon::CentreYaw => assets::CENTRE_YAW,
             Icon::CentrePitch => assets::CENTRE_PITCH,
+            Icon::Lighting => assets::LIGHTING,
         }
     }
 
@@ -702,6 +704,7 @@ impl Icon {
             Icon::Stairs => "stairs",
             Icon::CentreYaw => "centre-yaw",
             Icon::CentrePitch => "centre-pitch",
+            Icon::Lighting => "lighting",
         }
     }
 

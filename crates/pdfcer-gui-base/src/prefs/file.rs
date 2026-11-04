@@ -990,6 +990,7 @@ impl Prefs {
         overprint::write_block(self.overprint_default, &mut out);
         walkeye::write_block(self.walk_eye_mm, &mut out);
         modelstart::write_block(self.model_start_walk, &mut out);
+        modelview::write_block(&self.model_view, &mut out);
 
         out
     }

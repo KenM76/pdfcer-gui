@@ -386,10 +386,21 @@ fn camera(session: &Session, event: &str, state: Option<&str>) -> Result<Option<
         }))
 }
 
-/// Wait up to five seconds for a window line with `minimized=state`.
-fn await_window(session: &Session, state: &str) -> Result<bool> {
+/// How many window lines carry `minimized=state`.
+fn window_lines(session: &Session, state: &str) -> Result<usize> {
+    Ok(session
+        .trace()?
+        .events(WINDOW)
+        .filter(|l| l.get("minimized") == Some(state))
+        .count())
+}
+
+/// Wait up to five seconds for a window line with `minimized=state` beyond
+/// the `seen` already traced: the viewer traces its state as it opens, so a
+/// line that was there before the press says nothing about the press.
+fn await_window(session: &Session, state: &str, seen: usize) -> Result<bool> {
     for _ in 0..25 {
-        if camera(session, WINDOW, Some(state))?.is_some() {
+        if window_lines(session, state)? > seen {
             return Ok(true);
         }
         std::thread::sleep(std::time::Duration::from_millis(200));
@@ -413,8 +424,12 @@ fn minimize_and_back(
         )));
     };
     let before = camera(session, RENDERED, None)?;
+    let (shown, hidden) = (
+        window_lines(session, "false")?,
+        window_lines(session, "true")?,
+    );
     pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(button))?;
-    if !await_window(session, "true")? {
+    if !await_window(session, "true", hidden)? {
         return Ok(Some("★★★ Minimize did not minimise the viewer.".to_owned()));
     }
     let iconic: Vec<_> = crate::sys::windows_for_pid(session.pid())
@@ -431,7 +446,7 @@ fn minimize_and_back(
         ));
     }
     iconic.into_iter().for_each(crate::sys::restore_quietly);
-    if !await_window(session, "false")? {
+    if !await_window(session, "false", shown)? {
         return Ok(Some(
             "★★★ the viewer did not come back from the taskbar.".to_owned(),
         ));

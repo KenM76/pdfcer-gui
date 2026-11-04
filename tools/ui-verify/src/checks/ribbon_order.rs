@@ -1,6 +1,7 @@
-//! `ribbon_puts_clipboard_first_and_save_beside_file` — Clipboard is the
-//! Edit tab's first group, Save is the File tab's second, after File, and the
-//! highlight glyph's band is drawn filled yellow.
+//! `ribbon_puts_clipboard_first_and_save_beside_file` — the Clipboard tab is
+//! second, after File (`RIBBON_IA.md` section 5.0), Save is the File tab's
+//! second group, after File, and the highlight glyph's band is drawn filled
+//! yellow.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/ribbon_order.md`.
 
@@ -38,8 +39,8 @@ impl Check for RibbonPutsClipboardFirstAndSaveBesideFile {
     }
 
     fn defect(&self) -> &'static str {
-        "Clipboard is not the first group on Edit, Save is not beside File, or the highlight \
-         icon's band is hollow, so the ribbon does not read in a word processor's order"
+        "The Clipboard tab is not second after File, Save is not beside File, or the \
+         highlight icon's band is hollow, so the ribbon does not read in a word processor's order"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -72,6 +73,24 @@ fn groups_in_order(ctx: &CheckContext, session: &Session, tab: &str) -> Result<V
     Ok(drawn.into_iter().map(|(_, id)| id).collect())
 }
 
+/// The tab ids drawn now, left to right.
+fn tabs_in_order(ctx: &CheckContext, session: &Session) -> Result<Vec<String>> {
+    let trace = session.trace()?;
+    let ui_rect = ui_rect_event(ctx)?;
+    let prefix = "ribbon.tab.";
+    let mut drawn: Vec<(f32, String)> = declared_names(&trace, ui_rect, prefix)
+        .into_iter()
+        .filter(|name| !name[prefix.len()..].contains('.'))
+        .filter_map(|name| {
+            let rect = declared(&trace, ui_rect, &name)?;
+            Some((rect.min.x, name[prefix.len()..].to_owned()))
+        })
+        .collect();
+    drawn.sort_by(|a, b| a.0.total_cmp(&b.0));
+    drawn.dedup_by(|a, b| a.1 == b.1);
+    Ok(drawn.into_iter().map(|(_, id)| id).collect())
+}
+
 /// Click `tab` and answer its groups left to right.
 fn open_tab(
     ctx: &CheckContext,
@@ -100,12 +119,12 @@ fn drive(
 ) -> Result<Option<String>> {
     session.settle(30);
     let path = session.trace_path().display().to_string();
-    let edit = open_tab(ctx, session, pointer, "edit")?;
-    report.note(format!("Edit groups: {}", list(&edit)));
-    if edit.first().map(String::as_str) != Some("clipboard") {
+    let tabs = tabs_in_order(ctx, session)?;
+    report.note(format!("tabs: {}", list(&tabs)));
+    if tabs.get(..2) != Some(&["file".to_owned(), "clipboard".to_owned()][..]) {
         return Ok(Some(format!(
-            "★ Edit's groups read left to right as {}; Clipboard must lead. Trace: {path}.",
-            list(&edit)
+            "★ the tabs read left to right as {}; File then Clipboard must lead. Trace: {path}.",
+            list(&tabs)
         )));
     }
     let file = open_tab(ctx, session, pointer, "file")?;
