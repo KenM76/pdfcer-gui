@@ -213,17 +213,12 @@ pub enum Clipped {
     ///
     /// `Clipped::Content` and `Clipped::Pages` carry serialised clips because
     /// the engine gives them one — `ObjectClip::to_bytes` and a `PageClip` that
-    /// **is** a PDF. `OutlineClip` has no serialisation at all, so there are no
-    /// bytes to carry and the live structure is the only representation there
-    /// is.
-    ///
-    /// That is a real difference in what the two can do, and it is worth
-    /// knowing rather than discovering: the day this shell registers a private
-    /// OS clipboard format, pages and page content will cross a process
-    /// boundary and **bookmarks will not**, until the engine gives this type a
-    /// codec. Not filed as a request, because nothing has asked for it — a
-    /// bookmark subtree pasted into another program has no meaning, and the
-    /// pdfcer-to-pdfcer case this variant serves works entirely in memory.
+    /// **is** a PDF. The pdfcer-to-pdfcer paste this variant serves works
+    /// entirely in memory, so the clip is carried live and its byte codec
+    /// (`OutlineClip::to_bytes_with_loss`) is unused: a live clip cannot cut a
+    /// subtree at the depth cap or skip a malformed entry. The day this shell
+    /// registers a private OS clipboard format, bookmarks cross it through
+    /// that codec, and its loss report then owes the operator a sentence.
     ///
     /// `Box`ed for `FormField`'s reason: this enum is cloned on every read
     /// and an `OutlineClip` carries a whole subtree of titles, destinations and

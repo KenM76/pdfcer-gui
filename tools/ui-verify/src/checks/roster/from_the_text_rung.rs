@@ -774,6 +774,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_render_mode::TheModelViewerDrawsAPickedMode),
         Box::new(model_inferences::TheViewerSaysTheAssemblyColouredIt),
         Box::new(model_inferences::TheViewerSaysAMeshWasBestFit),
+        Box::new(model_inferences::TheViewerDrawsADamagedModel),
         Box::new(model_inferences::TheViewerDrawsATexture),
         Box::new(model_fit::TheViewerDrawsAMeshInPart),
         Box::new(model_tree::TheViewerListsTheModelTree),

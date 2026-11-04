@@ -41,21 +41,25 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 88cfe533d7844e139831c6d2a5b4f792a0a88d4e
+# baseline: b5cb78eb01e38b8a2375db5ff4b594aefa1719c6
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11520
+# items: 11517
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_TRIANGLES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
+exempt pdfcer-3d module pdfcer_3d::bounds -- `Bounds` relocated from the render module; the engine re-exports it unchanged as `pdfcer_3d::render::Bounds`, and this shell holds no bounds of its own.
 exempt pdfcer-3d module pdfcer_3d::elements -- holds only `MAX_DECODED_ELEMENTS`, the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::gpu_frame -- a private module whose `FrameLights`, `MAX_LIGHTS` and `ShadeMode` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::gpu_shader -- a private module whose `GLSL_ES_300_VERTEX` and `GLSL_ES_300_FRAGMENT` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::lighting -- a private module whose `LightingScheme` and `LightFrame` the engine re-exports from `pdfcer_3d`; `dialogs::model3d::lights` sets both on `RenderOptions` through that path, and the private path cannot be named from here.
 exempt pdfcer-3d module pdfcer_3d::prepared -- a private module whose `PreparedModel` the engine re-exports from `pdfcer_3d`; ENGINE_BACKLOG.md's 3D-speed row (G255) argues why the viewer cannot keep it yet, and the private path cannot be named from here.
+exempt pdfcer-3d module pdfcer_3d::work -- holds only `MAX_RENDER_PIXEL_TESTS`, the engine's per-frame work ceiling; a frame past it arrives as `RenderError::TooMuchWork`, shown verbatim through `view_render_failed`.
 exempt pdfcer-3d variant pdfcer_3d::error::PrcError::TooManyElements -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
+exempt pdfcer-3d variant pdfcer_3d::model::AssembleError::Damaged -- the refusal of a model with nothing drawable left once its damaged data is dropped; `app::actions::models::assemble_as` passes it, as every AssembleError it does not map, to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence with its reasons.
 exempt pdfcer-3d variant pdfcer_3d::model::AssembleError::PlacedTooLarge -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
+exempt pdfcer-3d variant pdfcer_3d::render::RenderError::TooMuchWork -- the raster work ceiling; `dialogs::model3d::picture` shows every RenderError through `view_render_failed(&error.to_string())`, so the operator reads the engine's own sentence naming the limit, and there is nothing to choose.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_PERIOD -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MAX_VARYING_PREFIX -- the engine's loop-stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives as the engine's own warning, shown verbatim.
 exempt pdfcer-core const pdfcer_core::ocr::vl_decode::MIN_PERIODIC_SPAN -- the engine's periodic-loop stop tuning inside PaddleOCR-VL decoding; nothing here chooses it, and a stopped decode arrives in `OcrRunner::disclosure`, shown verbatim.
@@ -71,6 +75,8 @@ exempt pdfcer-core field pdfcer_core::ocr::vl_page::RegionRead::column_edges -- 
 exempt pdfcer-core field pdfcer_core::ocr::vl_page::RegionRead::row_edges -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
 exempt pdfcer-core field pdfcer_core::ocr::vl_page::TableEdges::edges -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
 exempt pdfcer-core field pdfcer_core::ocr::vl_page::TableEdges::source -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
+exempt pdfcer-core field pdfcer_core::outline::OutlineClipLoss::cut_at_depth -- part of the byte codec's loss report; this shell never serialises an `OutlineClip`, so the count is always zero for it.
+exempt pdfcer-core field pdfcer_core::outline::OutlineClipLoss::skipped_malformed -- part of the byte codec's loss report; this shell never serialises an `OutlineClip`, so the count is always zero for it.
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::discarded -- the value pdfcer threw away, which is the fact that makes the operator's choice offerable rather than theoretical -- the engine's own argument for carrying both. Reached here as `LoadAnomaly::DuplicateDictKey::discarded` and printed beside the kept value today; the override that would ACT on it is filed `wanted` in ENGINE_BACKLOG.md against `LoadOptions::with_duplicate_keys`, not against this field.
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::kept -- the value pdfcer kept under the policy in force. Reached here as `LoadAnomaly::DuplicateDictKey::kept`; see the two lines above. It is the half the operator sees in the disclosure sentence -- `pdfcer kept /UseOutlines` -- and the shell renders it from the tagged anomaly, never from the parser.
 exempt pdfcer-core field pdfcer_core::parser::DuplicateKeyRecord::key -- the repeated key without its solidus. Reached here as `LoadAnomaly::DuplicateDictKey::key` and printed in Document properties today; see the struct's exemption above for why the parser-level copy is the wrong one to hold. Exempted per field rather than wildcarded on the struct, deliberately: if the engine ever adds a fourth fact to the record that `LoadAnomaly` does NOT mirror, that is exactly the divergence this project wants to cost one line and one look.
@@ -103,6 +109,9 @@ exempt pdfcer-core method pdfcer_core::edit::Visibility::apply_to -- the bit ari
 exempt pdfcer-core method pdfcer_core::font_embed::FontEmbedPlan::to_unicode_cmap -- the CMap text an embed plan writes into the file. The shell never builds or inspects an embed plan's streams; it hands the plan's owner a font and reads the report.
 exempt pdfcer-core method pdfcer_core::ocr::vl_page::RegionRead::edges_from_gutters -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
 exempt pdfcer-core method pdfcer_core::ocr::vl_page::TableEdges::new -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
+exempt pdfcer-core method pdfcer_core::outline::OutlineClip::from_bytes_with_loss -- the bookmark clip's byte codec with a loss report; this shell carries the clip live in memory and never parses one.
+exempt pdfcer-core method pdfcer_core::outline::OutlineClip::to_bytes_with_loss -- the bookmark clip's byte codec with a loss report; this shell carries the clip live in memory and never serialises it.
+exempt pdfcer-core method pdfcer_core::outline::OutlineClipLoss::is_empty -- part of the byte codec's loss report; this shell never serialises an `OutlineClip`.
 exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys -- every duplicate key one `Parser` resolved. This shell never constructs a `Parser` and never will: it opens documents through `Document::load`, which drives the parser internally, tags each record with its object and hands the result out as `Document::load_anomalies()` -- the call `app::status::anomalies` actually makes. Reading the parser's own list would require standing up a second parse of the same bytes, and would produce a report that disagreed with the one on screen the moment the two parses were given different `LoadOptions`.
 exempt pdfcer-core method pdfcer_core::parser::Parser::duplicate_keys_resolved -- the count of the list above. The shell's census clause in the status bar counts the same thing, derived from `load_anomalies()` by matching on the variant, so the number an operator reads is a count of the anomalies actually being itemised in Document properties -- which is the property that matters and the one a separate counter would eventually break. Same `Parser`-receiver argument as the line above.
 exempt pdfcer-core method pdfcer_core::parser::Parser::with_duplicate_key_policy -- the parser-level opt-in to `DuplicateKeyPolicy`. The capability behind it IS wanted here and is filed as such: ENGINE_BACKLOG.md carries `Offer the operator the value pdfcer discarded` under `wanted`, naming `LoadOptions::with_duplicate_keys(policy)` -- the DOCUMENT-level builder, which is the one a re-load of the same bytes goes through. This parser-level twin is the same switch one layer down, on a type this shell never holds, and wiring it would mean re-implementing `Document::load` to reach a policy the loader already forwards. NOTE the trap the backlog row also records: `DuplicateKeyPolicy`'s own `Default` is `Refuse`, which is the behaviour that cost the operator his 46 KB drawing -- so neither builder may ever be called with `DuplicateKeyPolicy::default()`.
@@ -122,6 +131,7 @@ exempt pdfcer-core module pdfcer_core::editable::fingerprint -- a private module
 exempt pdfcer-core module pdfcer_core::editable::source -- a private module whose `EditableSource` the engine re-exports from `pdfcer_core::editable`; `app::actions::structure` reads `editable::EditableSource::object_ids` through that path for the export receipt, and the private path cannot be named from here.
 exempt pdfcer-core module pdfcer_core::settings::host_dir -- a private module whose `set_store_dir` and `StoreDirError` the engine re-exports from `pdfcer_core::settings`; `reopen::store_in` calls it through that path for Android, and the private path cannot be named from here.
 exempt pdfcer-core struct pdfcer_core::ocr::vl_page::TableEdges -- how the engine placed an OCR table's cell boxes; the engine words it itself in `paddle_vl_layout_disclosure`, which reaches the operator verbatim through `OcrRunner::disclosure`, and this shell never holds a `LayoutReading`.
+exempt pdfcer-core struct pdfcer_core::outline::OutlineClipLoss -- the loss report of the bookmark clip's byte codec; this shell carries an `OutlineClip` live in `canvas::clipboard::Clipped::Outline` and never serialises one, so nothing it does can cut or skip a bookmark.
 exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
 exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
 exempt pdfcer-core variant pdfcer_core::edit::CommandKind::ImportEditable -- the undo entry a compile records. `app::actions::history` traces every undo kind by its Debug name and words no kind, so no table here needs a row for it.
@@ -286,6 +296,9 @@ pdfcer-3d field pdfcer_3d::model::AssembledModel::best_fit_parts
 pdfcer-3d field pdfcer_3d::model::AssembledModel::boxes
 pdfcer-3d field pdfcer_3d::model::AssembledModel::colours
 pdfcer-3d field pdfcer_3d::model::AssembledModel::compressed
+pdfcer-3d field pdfcer_3d::model::AssembledModel::damaged
+pdfcer-3d field pdfcer_3d::model::AssembledModel::damaged_parts
+pdfcer-3d field pdfcer_3d::model::AssembledModel::damaged_why
 pdfcer-3d field pdfcer_3d::model::AssembledModel::finishes
 pdfcer-3d field pdfcer_3d::model::AssembledModel::left_out_parts
 pdfcer-3d field pdfcer_3d::model::AssembledModel::lights
@@ -331,8 +344,6 @@ pdfcer-3d field pdfcer_3d::pick::Hit::triangle
 pdfcer-3d field pdfcer_3d::pick::Ray::direction
 pdfcer-3d field pdfcer_3d::pick::Ray::min_distance
 pdfcer-3d field pdfcer_3d::pick::Ray::origin
-pdfcer-3d field pdfcer_3d::render::Bounds::max
-pdfcer-3d field pdfcer_3d::render::Bounds::min
 pdfcer-3d field pdfcer_3d::render::Camera::eye
 pdfcer-3d field pdfcer_3d::render::Camera::projection
 pdfcer-3d field pdfcer_3d::render::Camera::target
@@ -509,9 +520,6 @@ pdfcer-3d method pdfcer_3d::pick::Camera::ray_through
 pdfcer-3d method pdfcer_3d::pick_index::PickIndex::new
 pdfcer-3d method pdfcer_3d::pick_index::PickIndex::pick
 pdfcer-3d method pdfcer_3d::pick_index::PickIndex::pick_where
-pdfcer-3d method pdfcer_3d::render::Bounds::centre
-pdfcer-3d method pdfcer_3d::render::Bounds::of
-pdfcer-3d method pdfcer_3d::render::Bounds::radius
 pdfcer-3d method pdfcer_3d::render::Camera::fit
 pdfcer-3d method pdfcer_3d::render::Camera::fit_meshes
 pdfcer-3d method pdfcer_3d::render_mode::RenderMode::new
@@ -554,7 +562,6 @@ pdfcer-3d struct pdfcer_3d::node_box::NodeBox
 pdfcer-3d struct pdfcer_3d::pick::Hit
 pdfcer-3d struct pdfcer_3d::pick::Ray
 pdfcer-3d struct pdfcer_3d::pick_index::PickIndex
-pdfcer-3d struct pdfcer_3d::render::Bounds
 pdfcer-3d struct pdfcer_3d::render::Camera
 pdfcer-3d struct pdfcer_3d::render::Image
 pdfcer-3d struct pdfcer_3d::render::RenderOptions

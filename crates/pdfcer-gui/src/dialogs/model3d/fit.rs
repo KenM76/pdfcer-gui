@@ -39,11 +39,12 @@ pub(super) fn trace_fields(model: &Assembled) -> String {
     let d = &model.drawn;
     let (got, of) = d.partial_triangles;
     format!(
-        "fit={} opened-in-part={} partial={} partial-triangles={got}/{of} left-out={}", // ui-text-exempt: trace fields, never displayed
+        "fit={} opened-in-part={} partial={} partial-triangles={got}/{of} left-out={} damaged={}", // ui-text-exempt: trace fields, never displayed
         TOKENS[index_of(model.fit)],
         u8::from(model.opened_in_part),
         d.partial,
-        d.compressed
+        d.compressed,
+        d.damaged
     )
 }
 
@@ -120,7 +121,7 @@ impl ModelView {
 type PartsLine = fn(&[String]) -> String;
 
 /// The lines below the picture saying what the model drawn inferred about
-/// its compressed meshes.
+/// its compressed meshes and what damaged data it left out.
 pub(super) fn disclose(ui: &mut Ui, model: &Assembled, refused: Option<&str>) {
     let d = &model.drawn;
     if let Some(refused) = refused {
@@ -145,10 +146,17 @@ pub(super) fn disclose(ui: &mut Ui, model: &Assembled, refused: Option<&str>) {
             ui.small(tf::mesh_partial_why(why, *n));
         }
     }
-    let lists: [(&[String], PartsLine); 3] = [
+    if d.damaged > 0 {
+        ui.small(tf::mesh_damaged(d.damaged));
+        for (why, n) in &d.damaged_why {
+            ui.small(tf::mesh_damaged_why(why, *n));
+        }
+    }
+    let lists: [(&[String], PartsLine); 4] = [
         (&d.left_out_parts, tf::mesh_left_out_parts),
         (&d.best_fit_parts, tf::mesh_best_fit_parts),
         (&d.partial_parts, tf::mesh_partial_parts),
+        (&d.damaged_parts, tf::mesh_damaged_parts),
     ];
     for (parts, line) in lists {
         if !parts.is_empty() {

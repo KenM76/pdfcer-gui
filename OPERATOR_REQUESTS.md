@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O374 — **OPEN (engine)** — draw what survives of a damaged 3D model
+## O374 — **BUILT** — draw what survives of a damaged 3D model
 
 His words: *"We should still be able to draw damaged or broken 3D files for scenarios that this doesn't pose a security risk? If the engine has to guess at one small piece the user would still rather see what parts of the model did manage to render. No one cares if one triangle in an entire model is corrupt or one point is missing a co-ordinate or etc."*
 
 **Scope, whole behaviour.** A model with local damage (a point missing a coordinate, a corrupt triangle, a part naming a mesh the file lacks, a short file, a bad compression table) draws everything that decodes, and the line under the picture says what was left out and why. A model is refused only when nothing survives, or when it would exceed a memory ceiling (that guard stays).
 
-**Status.** Since engine v0.125.0 any one of those defects refuses the whole model. The viewer shows the engine's reason and no picture. The fix belongs in the engine, which already draws partial compressed meshes this way. Filed as G265. GUI side once it lands: show the new left-out reasons through the existing line under the picture, and drive one damaged fixture. Nothing built yet.
+**Status.** Built on engine v0.126.0 (G265). A damaged model draws what survives under every mesh fit but *Exact only*; below the picture the viewer says how many pieces were left out, each reason with its count, and which parts lost one. A model with nothing left to draw, or past a memory or work ceiling, is still refused with the engine's reason. Driven by `the_3d_viewer_draws_a_damaged_model_and_says_so`, red on v0.125.0 (the model refused as undecodable), green on v0.126.0.
 
 ## O373 — **BUILT** — the model's lights crawl on the phone
 

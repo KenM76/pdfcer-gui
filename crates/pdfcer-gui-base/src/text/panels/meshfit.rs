@@ -85,3 +85,32 @@ pub fn mesh_partial_parts(parts: &[String]) -> String {
         parts.join(", ")
     )
 }
+
+/// Damaged data left out of the drawn model, as the engine counts it.
+#[must_use]
+pub fn mesh_damaged(n: usize) -> String {
+    match n {
+        1 => "The file is damaged in one place; that piece is left out and the rest is drawn."
+            .to_owned(),
+        n => format!(
+            "The file is damaged in {n} places; those pieces are left out and the rest is drawn."
+        ),
+    }
+}
+
+/// One kind of damage, in the engine's words (`defect: what is left out`),
+/// with how many.
+#[must_use]
+pub fn mesh_damaged_why(why: &str, n: usize) -> String {
+    format!("Left out ({n}): {why}.")
+}
+
+/// Parts that lost a piece to damaged data.
+#[must_use]
+pub fn mesh_damaged_parts(parts: &[String]) -> String {
+    format!(
+        "Parts missing a damaged piece ({}): {}",
+        parts.len(),
+        parts.join(", ")
+    )
+}

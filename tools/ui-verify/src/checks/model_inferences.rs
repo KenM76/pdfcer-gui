@@ -15,8 +15,13 @@
 //! texture picture is red, green, blue and white: `textured=` must be at least
 //! 1, and the last `model-view-rendered` line must count at least three hues,
 //! which a square drawn in one base colour cannot produce.
+//!
+//! `TheViewerDrawsADamagedModel` does the same with `fixtures/floor-box-short.prc`,
+//! whose header states an end past its data: the viewer must open it, not
+//! refuse it, and `damaged=` must be at least 1, the count the viewer states
+//! through `tf::mesh_damaged`.
 
-use crate::checks::driving::declared_in;
+use crate::checks::driving::{declared_in, repo_fixture};
 use crate::checks::model_view_window::{
     VIEW_REGION, launch_with_model_file, press_insert, ui_rect,
 };
@@ -101,6 +106,47 @@ impl Check for TheViewerSaysAMeshWasBestFit {
                 )
             },
         );
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// A floor and cube whose header states an end one byte past the data.
+const DAMAGED_MODEL: &str = "floor-box-short.prc";
+const DAMAGED_METHOD: &str = "Rebuild it with `python fixtures/floor-box-short.PROVENANCE.py`.";
+
+/// See the module documentation.
+pub struct TheViewerDrawsADamagedModel;
+
+impl Check for TheViewerDrawsADamagedModel {
+    fn name(&self) -> &'static str {
+        "the_3d_viewer_draws_a_damaged_model_and_says_so"
+    }
+
+    fn defect(&self) -> &'static str {
+        "a 3D model damaged in one place is refused outright instead of drawn without that \
+         piece, or is drawn with no word that a piece was left out"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven = repo_fixture(DAMAGED_MODEL, DAMAGED_METHOD)
+            .and_then(|model| {
+                launch_with_model_file(ctx, &mut report, "damaged", &model.to_string_lossy())
+            })
+            .and_then(|(session, pointer)| {
+                drive(
+                    ctx,
+                    &mut report,
+                    &session,
+                    &pointer,
+                    "damaged",
+                    "its header states an end past its data",
+                )
+            });
         match driven {
             Ok(Some(failure)) => report.fail(failure),
             Ok(None) => report.pass(),
