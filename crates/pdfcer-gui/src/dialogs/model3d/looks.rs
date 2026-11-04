@@ -1,8 +1,8 @@
 //! The engine's drawing choices beyond the lighting scheme and the shadow
 //! switch: the render mode (the view's own, or one picked), which lights
 //! cast, how see-through parts cast, whether the model's lamps cast and how
-//! far they reach, a
-//! camera light beside the model's own lights, and how stored shininess is
+//! far they reach, whether the graphics card skips lighting hidden
+//! surfaces, a camera light beside the model's own lights, and how stored shininess is
 //! read. Each sits in the options menu; the model's own lights, the lights
 //! and casters past the engine's limits, and why the picture is drawn
 //! without the graphics card are said under the picture.
@@ -32,6 +32,8 @@ pub const REGION_LAMP_SHADOWS: &str = "model3d.lamp_shadows"; // ui-text-exempt:
 pub const REGION_LAMP_CUT: &str = "model3d.lamp_cut"; // ui-text-exempt: trace region name, never displayed
 /// The lamp reach drop-down's shorter choices, in hundredths of an 8-bit level.
 const LAMP_CUT_STEPS: [u16; 3] = [100, 400, 1600];
+/// The depth prepass switch.
+pub const REGION_SKIP_HIDDEN: &str = "model3d.skip_hidden"; // ui-text-exempt: trace region name, never displayed
 /// The camera light switch.
 pub const REGION_HEADLIGHT: &str = "model3d.headlight"; // ui-text-exempt: trace region name, never displayed
 /// The highlight reading drop-down.
@@ -46,6 +48,8 @@ pub(super) struct Extras {
     pub(super) see_through: SeeThrough,
     pub(super) lamp_shadows: bool,
     pub(super) lamp_cut: LampCut,
+    /// The graphics card draws a depth prepass; the processor ignores it.
+    pub(super) skip_hidden: bool,
     pub(super) headlight: bool,
     pub(super) highlights: Highlights,
 }
@@ -59,6 +63,7 @@ impl Default for Extras {
             see_through: SeeThrough::Tinted,
             lamp_shadows: d.lamp_shadows,
             lamp_cut: d.lamp_cut,
+            skip_hidden: true,
             headlight: d.artwork_headlight,
             highlights: Highlights::Auto,
         }
@@ -187,6 +192,12 @@ impl ModelView {
         }
         if lamps > 0 {
             ui.horizontal_wrapped(|ui| self.lamp_cut_combo(ui));
+        }
+        if self.gpu.drawing() {
+            let r = ui
+                .checkbox(&mut self.extras.skip_hidden, k::skip_hidden())
+                .on_hover_text(k::skip_hidden_tooltip());
+            crate::diag::ui_rect_visible(REGION_SKIP_HIDDEN, r.rect, ui.clip_rect());
         }
         if !self.model.drawn.lights.is_empty() {
             let r = ui

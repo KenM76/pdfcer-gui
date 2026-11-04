@@ -4,6 +4,11 @@
 //! before the faces, ambient occlusion, the emissive repeat, then the lines
 //! and points.
 //!
+//! The depth prepass, when the look asks for it, draws the opaque faces'
+//! depth first so the faces' shader skips lighting what ends up hidden; the
+//! picture is the same on a single-sample target and can differ by part of
+//! a sample at silhouettes on a multisampled one (`pdfcer_3d::gpu_prepass`).
+//!
 //! The seven layered inputs are always handed over in the same order, one
 //! placeholder texel standing in for a feature that is off, because the
 //! mesh reuses a layered texture by position and its shaders declare every
@@ -14,16 +19,17 @@ use std::time::Instant;
 
 use eframe::egui_glow;
 use native_mesh::{
-    Attribute, Fill, Format, Layers, Layout, Mesh, Overlay, Passes, Picture, Primitive, Repeat,
-    ScreenEffect, Source, Table, Target, Value,
+    Attribute, Fill, Format, Layers, Layout, Mesh, Overlay, Passes, Picture, Prepass, Primitive,
+    Repeat, ScreenEffect, Source, Table, Target, Value,
 };
 use pdfcer_3d::{
     GLSL_ES_300_AO_COMPOSITE_FRAGMENT, GLSL_ES_300_AO_FRAGMENT, GLSL_ES_300_FRAGMENT,
     GLSL_ES_300_LAMP_SHADOW_ALPHA_FRAGMENT, GLSL_ES_300_LAMP_SHADOW_ALPHA_VERTEX,
     GLSL_ES_300_LAMP_SHADOW_FRAGMENT, GLSL_ES_300_LAMP_SHADOW_VERTEX, GLSL_ES_300_LINE_FRAGMENT,
-    GLSL_ES_300_LINE_VERTEX, GLSL_ES_300_SCREEN_VERTEX, GLSL_ES_300_SHADOW_ALPHA_FRAGMENT,
-    GLSL_ES_300_SHADOW_ALPHA_VERTEX, GLSL_ES_300_SHADOW_FRAGMENT, GLSL_ES_300_SHADOW_VERTEX,
-    GLSL_ES_300_VERTEX, GLSL_ES_300_WIDE_LINE_VERTEX, LIGHT_TABLE_WIDTH,
+    GLSL_ES_300_LINE_VERTEX, GLSL_ES_300_PREPASS_FRAGMENT, GLSL_ES_300_PREPASS_VERTEX,
+    GLSL_ES_300_SCREEN_VERTEX, GLSL_ES_300_SHADOW_ALPHA_FRAGMENT, GLSL_ES_300_SHADOW_ALPHA_VERTEX,
+    GLSL_ES_300_SHADOW_FRAGMENT, GLSL_ES_300_SHADOW_VERTEX, GLSL_ES_300_VERTEX,
+    GLSL_ES_300_WIDE_LINE_VERTEX, LIGHT_TABLE_WIDTH,
 };
 
 use super::gpu::{RETIRED, Shared, lock};
@@ -40,6 +46,7 @@ const SHADOW: usize = 0;
 const LAMP: usize = 1;
 const SHADOW_ALPHA: usize = 2;
 const LAMP_ALPHA: usize = 3;
+const PREPASS: usize = 4;
 /// The overlays, in the order `prepare` adds them.
 const WIDE_LINES: usize = 0;
 const POINTS: usize = 1;
@@ -189,6 +196,9 @@ pub(super) fn draw(
     let mut line_uniforms = s.line_uniforms.clone();
     line_uniforms.push(("u_viewport", Value::Vec2(size.map(|v| v as f32))));
     let overlays = overlays(s, &line_uniforms);
+    let samples = s.mesh.as_ref().map_or(0, Mesh::samples);
+    let mut uniforms = s.uniforms.clone();
+    uniforms.extend(super::gpu_uniforms::prepass_uniforms(s.prepass, samples));
     let passes = Passes {
         tables: &tables,
         layers: &layers,
@@ -203,9 +213,15 @@ pub(super) fn draw(
             blend: [*e; 4],
         }),
         overlays: &overlays,
+        prepass: s.prepass.then(|| Prepass {
+            program: PREPASS,
+            uniforms: &s.uniforms,
+            sampler: "u_prepass_depth",
+            unit: unit("u_prepass_depth"),
+        }),
     };
     let Some(mesh) = s.mesh.as_mut() else { return };
-    let result = mesh.draw(gl, &s.uniforms, &s.draws, &passes, &target);
+    let result = mesh.draw(gl, &uniforms, &s.draws, &passes, &target);
     finish(s, result, started);
 }
 
@@ -255,7 +271,10 @@ fn finish(s: &mut Shared, result: Result<Option<Vec<u8>>, String>, started: Inst
             let ms = started.elapsed().as_secs_f64() * 1000.0;
             if let (Some(rgba), Some(head)) = (rgba, s.trace.take()) {
                 let fields = super::picture::pixel_fields(&rgba, to_bytes(s.background));
-                crate::diag::trace(|| format!("{head} gpu=1 ms={ms:.1}{fields}")); // ui-text-exempt: diagnostic trace, never displayed
+                let prepass = u8::from(s.prepass);
+                crate::diag::trace(|| {
+                    format!("{head} gpu=1 gpu-prepass={prepass} ms={ms:.1}{fields}")
+                }); // ui-text-exempt: diagnostic trace, never displayed
             }
         }
         Err(error) => s.failed = Some(error),
@@ -487,6 +506,11 @@ fn link(gl: &egui_glow::glow::Context, mesh: &mut Mesh) -> Result<(), String> {
             GLSL_ES_300_LAMP_SHADOW_ALPHA_VERTEX,
             GLSL_ES_300_LAMP_SHADOW_ALPHA_FRAGMENT,
             LAMP_ALPHA,
+        ),
+        (
+            GLSL_ES_300_PREPASS_VERTEX,
+            GLSL_ES_300_PREPASS_FRAGMENT,
+            PREPASS,
         ),
     ];
     for (vertex, fragment, index) in fills {

@@ -149,6 +149,18 @@ pub fn lamp_cut_note(steps: u16) -> String {
     )
 }
 
+/// The depth prepass switch.
+#[must_use]
+pub fn skip_hidden() -> &'static str {
+    "Skip lighting hidden surfaces"
+}
+
+/// Its tip.
+#[must_use]
+pub fn skip_hidden_tooltip() -> &'static str {
+    "The graphics card first finds the nearest surface at each pixel, then lights only that one. A model with many lamps or many overlapping parts moves much faster. Smoothed edges can differ slightly from the picture drawn without it; a saved or copied picture never uses it."
+}
+
 /// The camera light switch beside a model's own lights.
 #[must_use]
 pub fn headlight() -> &'static str {

@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 912437c38ca90bf2e7891f0356a7857e1a7e102e
+# baseline: ebedefc14f603bd97dbadaec38876cab6dafd75a
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11518
+# items: 11520
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d module pdfcer_3d::gpu -- a private module whose `Draw`, `DrawData` and `VERTEX_FLOATS` the engine re-exports from `pdfcer_3d`; the GPU drawing path of the 3D viewer (O348, O355) consumes them through that path, and the private path cannot be named from here.
@@ -153,6 +153,8 @@ pdfcer-3d const pdfcer_3d::gpu_lamp_shadow::GLSL_ES_300_LAMP_SHADOW_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_lines::GLSL_ES_300_LINE_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_lines::GLSL_ES_300_LINE_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_lines::LINE_VERTEX_FLOATS
+pdfcer-3d const pdfcer_3d::gpu_prepass::GLSL_ES_300_PREPASS_FRAGMENT
+pdfcer-3d const pdfcer_3d::gpu_prepass::GLSL_ES_300_PREPASS_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_shadow::GLSL_ES_300_SHADOW_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_shadow::GLSL_ES_300_SHADOW_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_shadow_set::GLSL_ES_300_LAMP_SHADOW_ALPHA_FRAGMENT

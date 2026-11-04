@@ -10,7 +10,8 @@
 //!
 //! Optional passes surround the main one ([`Passes`]), in this order: float
 //! tables and layered textures filled from other viewpoints, bound to the
-//! main program as samplers; the main draws; a two-pass effect over the
+//! main program as samplers; a depth prepass over the opaque draws, bound
+//! the same way; the main draws; a two-pass effect over the
 //! faces' colour and depth; the opaque draws repeated and added in; and
 //! overlays with their own vertices, depth-tested against the faces. The
 //! caller assigns every sampler its texture unit, picture on unit 0.
@@ -23,6 +24,7 @@ mod buffers;
 mod layers;
 mod overlay;
 mod passes;
+mod prepass;
 mod program;
 mod spec;
 
@@ -32,10 +34,11 @@ use buffers::{Buffers, ScreenTextures};
 use layers::{LayerTarget, TableTexture};
 use overlay::OverlayProgram;
 use passes::ScreenPrograms;
+use prepass::PrepassTarget;
 use program::Program;
 pub use spec::{
-    Attribute, Draw, Fill, Format, Layers, Layout, Overlay, Passes, Picture, Primitive, Repeat,
-    ScreenEffect, Source, Table, Target, Value, Wrap,
+    Attribute, Draw, Fill, Format, Layers, Layout, Overlay, Passes, Picture, Prepass, Primitive,
+    Repeat, ScreenEffect, Source, Table, Target, Value, Wrap,
 };
 
 /// A compiled program, its geometry and pictures, the passes' programs and
@@ -59,6 +62,7 @@ pub struct Mesh {
     screen_textures: Option<ScreenTextures>,
     overlays: Vec<OverlayProgram>,
     widest_point: f32,
+    prepass: Option<PrepassTarget>,
 }
 
 /// The most samples a pixel takes; the driver's limit if lower.
@@ -110,6 +114,7 @@ impl Mesh {
                 screen_textures: None,
                 overlays: Vec::new(),
                 widest_point: overlay::widest_point(gl),
+                prepass: None,
             })
         }
     }
@@ -153,6 +158,12 @@ impl Mesh {
         if let Some(o) = self.overlays.get(index) {
             o.set_vertices(gl, vertices);
         }
+    }
+
+    /// The samples a pixel of the main buffer takes; 0 single-sample.
+    #[must_use]
+    pub fn samples(&self) -> i32 {
+        self.samples
     }
 
     /// The widest point, in pixels, the context draws.
@@ -222,7 +233,7 @@ impl Mesh {
     ///
     /// An offscreen buffer the driver could not create or complete, a table
     /// that is not a whole number of rows, or a screen effect asked for with
-    /// no screen programs.
+    /// no screen programs, or a prepass naming no program.
     pub fn draw(
         &mut self,
         gl: &glow::Context,
@@ -238,6 +249,9 @@ impl Mesh {
         self.ensure_buffers(gl, [w, h])?;
         self.fit_inputs(gl, passes)?;
         self.fill_layers(gl, passes.layers, draws)?;
+        if let Some(prepass) = &passes.prepass {
+            self.draw_prepass(gl, prepass, draws, [w, h])?;
+        }
         let Some(multisampled) = self.buffers.as_ref().map(|b| b.multisampled) else {
             return Ok(None);
         };
@@ -292,6 +306,30 @@ impl Mesh {
         Ok(())
     }
 
+    /// Draw the opaque draws' depth into the prepass texture, `size` pixels.
+    fn draw_prepass(
+        &mut self,
+        gl: &glow::Context,
+        prepass: &Prepass<'_>,
+        draws: &[Draw],
+        size: [i32; 2],
+    ) -> Result<(), String> {
+        if self.prepass.as_ref().is_none_or(|t| t.size != size) {
+            if let Some(old) = self.prepass.take() {
+                old.delete(gl);
+            }
+            self.prepass = Some(PrepassTarget::new(gl, size)?);
+        }
+        let (Some(target), Some(program)) = (&self.prepass, self.programs.get_mut(prepass.program))
+        else {
+            return Err(format!("prepass program {} not linked", prepass.program));
+        };
+        // SAFETY: the vertex array is this mesh's own.
+        unsafe { gl.bind_vertex_array(Some(self.vao)) };
+        target.draw(gl, program, prepass, draws);
+        Ok(())
+    }
+
     /// Fill each layered texture asked for or out of date.
     fn fill_layers(
         &mut self,
@@ -331,6 +369,14 @@ impl Mesh {
         for (t, spec) in self.layer_targets.iter().zip(passes.layers) {
             t.bind(gl, &mut self.main, spec);
         }
+        if let (Some(p), Some(t)) = (&passes.prepass, &self.prepass) {
+            // SAFETY: the texture is this mesh's own.
+            unsafe {
+                gl.active_texture(glow::TEXTURE0 + p.unit);
+                gl.bind_texture(glow::TEXTURE_2D, Some(t.depth));
+            }
+            self.main.set(gl, p.sampler, &Value::Int(p.unit as i32));
+        }
         // SAFETY: a binding change on the caller's current context.
         unsafe { gl.active_texture(glow::TEXTURE0) };
     }
@@ -346,6 +392,13 @@ impl Mesh {
         }
         for (t, spec) in self.layer_targets.iter().zip(passes.layers) {
             t.unbind(gl, spec.unit);
+        }
+        if let Some(p) = &passes.prepass {
+            // SAFETY: a binding change on the caller's current context.
+            unsafe {
+                gl.active_texture(glow::TEXTURE0 + p.unit);
+                gl.bind_texture(glow::TEXTURE_2D, None);
+            }
         }
         // SAFETY: a binding change on the caller's current context.
         unsafe { gl.active_texture(glow::TEXTURE0) };
@@ -519,6 +572,9 @@ impl Mesh {
             b.delete(gl);
         }
         if let Some(t) = self.screen_textures.take() {
+            t.delete(gl);
+        }
+        if let Some(t) = self.prepass.take() {
             t.delete(gl);
         }
         if let Some(p) = self.screen_programs.take() {

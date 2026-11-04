@@ -769,6 +769,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_shadow_extra::EveryLightCastsOnTheCard),
         Box::new(model_shadow_lamp::ALampCastsOnTheCard),
         Box::new(model_lamp_cut::TheLampReachChoiceReachesThePicture),
+        Box::new(model_skip_hidden::TheDepthPrepassHidesNothingVisible),
         Box::new(model_controls::TheViewerControlsHide),
         Box::new(model_render_mode::TheModelViewerDrawsAPickedMode),
         Box::new(model_inferences::TheViewerSaysTheAssemblyColouredIt),

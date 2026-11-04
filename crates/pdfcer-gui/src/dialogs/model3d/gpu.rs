@@ -111,6 +111,8 @@ pub(super) struct Shared {
     pub(super) directional_redraw: bool,
     /// The lamp cubes changed since last drawn.
     pub(super) lamp_redraw: bool,
+    /// The faces are drawn after a depth prepass.
+    pub(super) prepass: bool,
     /// The frame's ambient occlusion, when drawn.
     pub(super) occlusion: Option<FrameAmbientOcclusion>,
     /// The emissive repeat's uniforms and share.
@@ -184,6 +186,11 @@ impl Gpu {
             return false;
         }
         true
+    }
+
+    /// Whether the card draws, or will try to: not forced off, not failed.
+    pub(super) fn drawing(&self) -> bool {
+        !self.forced_off && lock(&self.shared).failed.is_none()
     }
 
     /// Whether the card failed, so the processor draws every frame.
@@ -279,6 +286,7 @@ impl ModelView {
         shared.set_casters(casters);
         shared.occlusion = effects.occlusion;
         shared.repeat = repeat;
+        shared.prepass = wanted.look.extras.skip_hidden;
         shared.background = wanted.background.to_normalized_gamma_f32();
         shared.trace = crate::diag::enabled().then_some(head);
         shared.drawn = false;

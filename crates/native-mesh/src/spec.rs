@@ -251,4 +251,20 @@ pub struct Passes<'a> {
     pub repeat: Option<Repeat<'a>>,
     /// Drawn last.
     pub overlays: &'a [Overlay<'a>],
+    /// Drawn before the main pass and bound for it and the repeat.
+    pub prepass: Option<Prepass<'a>>,
+}
+
+/// A depth-only pass over the opaque draws before the main one, into a
+/// single-sample depth texture the main program samples by window pixel.
+#[derive(Debug, Clone, Copy)]
+pub struct Prepass<'a> {
+    /// The [`crate::Mesh::add_program`] program drawn with.
+    pub program: usize,
+    /// Set on that program.
+    pub uniforms: &'a [(&'static str, Value)],
+    /// The main program's sampler the depth texture is bound to.
+    pub sampler: &'static str,
+    /// Its texture unit.
+    pub unit: u32,
 }

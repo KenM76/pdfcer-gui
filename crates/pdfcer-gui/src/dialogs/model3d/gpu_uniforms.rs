@@ -14,7 +14,7 @@ pub(super) type Uniforms = Vec<(&'static str, Value)>;
 
 /// The main program's samplers and their texture units. Sampler types may
 /// not share a unit, so each takes its own even when its feature is off.
-pub(super) const SAMPLERS: [(&str, i32); 9] = [
+pub(super) const SAMPLERS: [(&str, i32); 10] = [
     ("u_texture", 0),
     ("u_shadow_map", 1),
     ("u_lamp_shadow_map", 2),
@@ -24,6 +24,7 @@ pub(super) const SAMPLERS: [(&str, i32); 9] = [
     ("u_lamp_veil", 6),
     ("u_lamp_transmit", 7),
     ("u_lights", 8),
+    ("u_prepass_depth", 9),
 ];
 
 /// The texture unit of `sampler` in [`SAMPLERS`].
@@ -138,6 +139,16 @@ pub(super) fn veil_uniforms(directional: bool, lamps: bool) -> Uniforms {
     vec![
         ("u_shadow_veiled", Value::Int(i32::from(directional))),
         ("u_lamp_veiled", Value::Int(i32::from(lamps))),
+    ]
+}
+
+/// Whether the main pass skips fragments the depth prepass shows hidden,
+/// and how far round each pixel it looks: one pixel on a multisampled
+/// target, whose edge samples the single-sample prepass cannot see.
+pub(super) fn prepass_uniforms(on: bool, samples: i32) -> Uniforms {
+    vec![
+        ("u_prepass", Value::Int(i32::from(on))),
+        ("u_prepass_spread", Value::Int(i32::from(samples > 0))),
     ]
 }
 
