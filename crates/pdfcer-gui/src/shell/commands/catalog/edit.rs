@@ -120,6 +120,18 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.copy_as_vector", t::edit_copy_as_vector(), 408)
             .with_icon("copy-as-vector")
             .enabled_when("doc.pages"),
+        // The snapshot box's two copies, each forcing its text form whatever
+        // the Snapshot setting says. O379.
+        command(
+            "edit.copy_snapshot_outlines",
+            t::edit_copy_snapshot_outlines(),
+            493,
+        )
+        .with_icon("copy-snapshot-outlines")
+        .enabled_when("doc.snapshot"),
+        command("edit.copy_snapshot_text", t::edit_copy_snapshot_text(), 494)
+            .with_icon("copy-snapshot-text")
+            .enabled_when("doc.snapshot"),
         // ═══════════════════════════════════════════════════════════════════
         // `edit.duplicate` — Ctrl+D over what is selected: page objects, parts
         // of a placed drawing, comments, form fields.

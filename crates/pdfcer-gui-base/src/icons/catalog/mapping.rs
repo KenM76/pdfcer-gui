@@ -185,6 +185,8 @@ impl Icon {
         // `every_icon_rasterizes_to_visible_pixels` and the rest. That reason
         // is unaffected by whether a button exists.
         Icon::CopyAsVector,
+        Icon::CopySnapshotOutlines,
+        Icon::CopySnapshotText,
         Icon::Encrypt,
         Icon::ExportImage,
         Icon::ReplaceImage,
@@ -298,6 +300,8 @@ impl Icon {
             Icon::UnembedFonts => assets::UNEMBED_FONTS,
             Icon::WheelFlip => assets::WHEEL_FLIP,
             Icon::CopyAsVector => assets::COPY_AS_VECTOR,
+            Icon::CopySnapshotOutlines => assets::COPY_SNAPSHOT_OUTLINES,
+            Icon::CopySnapshotText => assets::COPY_SNAPSHOT_TEXT,
             Icon::Encrypt => assets::ENCRYPT,
             Icon::ExportImage => assets::EXPORT_IMAGE,
             Icon::ReplaceImage => assets::REPLACE_IMAGE,
@@ -513,6 +517,8 @@ impl Icon {
             Icon::UnembedFonts => "unembed-fonts",
             Icon::WheelFlip => "wheel-flip",
             Icon::CopyAsVector => "copy-as-vector",
+            Icon::CopySnapshotOutlines => "copy-snapshot-outlines",
+            Icon::CopySnapshotText => "copy-snapshot-text",
             Icon::Encrypt => "encrypt",
             Icon::ExportImage => "export-image",
             Icon::ReplaceImage => "replace-image",

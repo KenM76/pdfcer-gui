@@ -1107,6 +1107,14 @@ pub enum Icon {
     /// [`Icon::EditObjects`] by having sheets, [`Icon::ShowPoints`] by curving.
     CopyAsVector,
 
+    /// Copy the snapshot with its text as drawing: [`Icon::CopyAsVector`]'s
+    /// sheets, the front one carrying a letter A with a node handle at its apex.
+    CopySnapshotOutlines,
+
+    /// Copy the snapshot with its text kept as text: the same sheets, the
+    /// front one carrying a letter T and a text caret.
+    CopySnapshotText,
+
     /// Put a password on this document — the engine's `set_encryption`, **awaiting
     /// the operator's ruling** as O119. A folded page, padlock over its lower half.
     /// The page is the entire point. [`Icon::Locked`] is a BARE padlock marking

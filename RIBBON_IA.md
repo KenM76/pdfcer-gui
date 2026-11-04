@@ -227,7 +227,7 @@ Groups are `**Group**`. `⌄` means the control is a split button or dropdown.
 | Group | Commands |
 |---|---|
 | **Clipboard** | Cut · Copy · Paste · Paste as duplicate · Duplicate |
-| **Copy for other programs** | Copy as vector |
+| **Copy for other programs** | Copy as vector · Copy snapshot, text as drawing · Copy snapshot, text as text |
 
 **In every mode, second after File.** Copy is shown everywhere; Cut, the two
 pastes and Duplicate change the document and are absent in Read
@@ -239,6 +239,11 @@ the operator asked for them big.
 
 **The ids keep `edit.`**, as Forms' keep `edit.form_`: keymaps, saved layouts
 and the ui-verify checks name them by id.
+
+**The two snapshot copies force their text form** — outlines, or text another
+program can edit — over Settings ▸ Snapshot ▸ *Copy as*, which Copy follows.
+They are greyed until a snapshot box is laid, and are also on the box's
+right-click menu.
 
 **Page cut, copy and paste stay on Pages ▸ Clipboard.** They move whole pages,
 which is organising the document (P1: one command, one tab).

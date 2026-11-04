@@ -21,6 +21,8 @@ pub fn handles(id: &str) -> bool {
         "edit.cut"
             | "edit.copy"
             | "edit.copy_as_vector"
+            | "edit.copy_snapshot_outlines"
+            | "edit.copy_snapshot_text"
             | "edit.paste"
             | "edit.paste_duplicate"
             // `edit.duplicate`, 2026-09-06 — and it is the one id here that
@@ -43,6 +45,18 @@ pub fn dispatch(app: &mut PdfcerApp, ctx: &egui::Context, id: &str, actions: &mu
         // absences are the point: it neither reads the internal clipboard nor
         // changes the document. It renders and it places. See `copy_as_vector`.
         "edit.copy_as_vector" => copy_as_vector(app),
+        "edit.copy_snapshot_outlines" => {
+            super::snapshotclip::copy_as(
+                app,
+                pdfcer_gui_base::prefs::snapshot::SnapshotForm::Outlines,
+            );
+        }
+        "edit.copy_snapshot_text" => {
+            super::snapshotclip::copy_as(
+                app,
+                pdfcer_gui_base::prefs::snapshot::SnapshotForm::KeepText,
+            );
+        }
         "edit.paste" => {
             let at = ctx.pointer_latest_pos();
             paste(app, ctx, id, PasteAs::NewField, at, actions);

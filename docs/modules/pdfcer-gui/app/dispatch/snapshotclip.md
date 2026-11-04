@@ -12,7 +12,10 @@ nothing when the tool is down.
   `dispatch::clipboard::copy_or_cut` asks it before every other rung, for
   `edit.copy` only. Cut has no meaning for a box and falls through to the
   ordinary rungs.
-- `copy(app)` calls `clipboard::snapshot::copy_snapshot` and reports:
+- `copy(app)` copies in the Snapshot setting's form; `copy_as(app, form)` in
+  the form given, for `edit.copy_snapshot_outlines` (`Outlines`) and
+  `edit.copy_snapshot_text` (`KeepText`), routed by `dispatch::clipboard`.
+  Both call `clipboard::snapshot::copy_snapshot_as` and report:
   - on success, trace `clipboard-snapshot-copy dpi= asked= w= h= vectors=
     formats=`, where `vectors=` is `cut`, `withheld` or `refused` and the
     formats are comma-joined in placement order, and the status sentence
@@ -23,6 +26,7 @@ nothing when the tool is down.
     `no-box`, `render`, `would-degrade`, `clipboard`, and the page copy's
     refusal sentence.
 - Reached from the Copy chord and from the box's right-click menu,
-  `canvas.snapshot`, whose rows are `edit.copy` and `view.snapshot_save_pdf`
+  `canvas.snapshot`, whose rows are `edit.copy`, the two snapshot copies and
+  `view.snapshot_save_pdf`
   (`dispatch::snapshotsave`). Copy is allowed in every
   mode, so the box copies in Read.

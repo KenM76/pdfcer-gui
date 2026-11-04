@@ -179,6 +179,8 @@
                     caption: "Copy for other programs",
                     items: [
                         Command(id: "edit.copy_as_vector", size: Large),
+                        Command(id: "edit.copy_snapshot_outlines", size: Large),
+                        Command(id: "edit.copy_snapshot_text", size: Large),
                     ],
                 ),
             ],
@@ -905,6 +907,8 @@
             context: "canvas.snapshot",
             items: [
                 Command(id: "edit.copy"),
+                Command(id: "edit.copy_snapshot_outlines"),
+                Command(id: "edit.copy_snapshot_text"),
                 Command(id: "view.snapshot_save_pdf"),
             ],
         ),

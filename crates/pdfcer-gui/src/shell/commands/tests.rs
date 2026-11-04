@@ -77,6 +77,8 @@ fn every_predicate_names_a_documented_condition() {
         "panels.floating",
         "doc.open",
         "doc.pages",
+        // A snapshot box is laid on a page.
+        "doc.snapshot",
         "undo.available",
         "redo.available",
         "selection.any",

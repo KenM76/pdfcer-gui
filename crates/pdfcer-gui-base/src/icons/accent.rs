@@ -162,7 +162,10 @@ pub const fn accent(icon: Icon) -> Option<(Hue, &'static [usize])> {
         | Icon::ExportImage
         | Icon::ReplaceImage
         | Icon::ResetLayout => (Hue::Primary, &[2, 3]),
-        Icon::CopyPageText | Icon::CopyAsVector => (Hue::Primary, &[2, 3, 4]),
+        Icon::CopyPageText
+        | Icon::CopyAsVector
+        | Icon::CopySnapshotOutlines
+        | Icon::CopySnapshotText => (Hue::Primary, &[2, 3, 4]),
         Icon::Sign | Icon::PickFormXObject => (Hue::Primary, &[3]),
         Icon::CopyDocumentText | Icon::Reflow => (Hue::Primary, &[3, 4]),
         Icon::Paragraphs => (Hue::Primary, &[0]),

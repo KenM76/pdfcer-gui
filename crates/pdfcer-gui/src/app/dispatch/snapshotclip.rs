@@ -15,13 +15,20 @@ pub fn owns_copy(app: &PdfcerApp) -> bool {
     matches!(&app.status, Status::Open(doc) if doc.snapshot.is_some())
 }
 
-/// Copy the box, then say what landed or why nothing did.
+/// Copy the box in the Snapshot setting's form.
 pub fn copy(app: &PdfcerApp) {
+    if let Status::Open(doc) = &app.status {
+        copy_as(app, doc.prefs.snapshot.form());
+    }
+}
+
+/// Copy the box in `form`, then say what landed or why nothing did.
+pub fn copy_as(app: &PdfcerApp, form: pdfcer_gui_base::prefs::snapshot::SnapshotForm) {
     let Status::Open(doc) = &app.status else {
         return;
     };
     let epoch = doc.edit_epoch;
-    match crate::clipboard::snapshot::copy_snapshot(doc) {
+    match crate::clipboard::snapshot::copy_snapshot_as(doc, form) {
         Ok(copied) => {
             let (blends, kept) = match &copied.vectors {
                 crate::clipboard::snapshot::Vectors::Cut {

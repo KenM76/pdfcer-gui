@@ -820,6 +820,12 @@ pub(super) const SET_SCALE: &str = include_str!("assets/set-scale.svg");
 /// `copy-as-vector.svg` — the art for [`super::Icon::CopyAsVector`].
 pub(super) const COPY_AS_VECTOR: &str = include_str!("assets/copy-as-vector.svg");
 
+/// `copy-snapshot-outlines.svg` — the art for [`super::Icon::CopySnapshotOutlines`].
+pub(super) const COPY_SNAPSHOT_OUTLINES: &str = include_str!("assets/copy-snapshot-outlines.svg");
+
+/// `copy-snapshot-text.svg` — the art for [`super::Icon::CopySnapshotText`].
+pub(super) const COPY_SNAPSHOT_TEXT: &str = include_str!("assets/copy-snapshot-text.svg");
+
 /// `encrypt.svg` — the art for [`super::Icon::Encrypt`].
 ///
 /// Put a password on this document — the engine's `set_encryption`. Worn by

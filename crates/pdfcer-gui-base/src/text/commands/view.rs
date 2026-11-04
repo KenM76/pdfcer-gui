@@ -140,6 +140,27 @@ pub const fn view_snapshot_save_pdf() -> CommandText {
     )
 }
 
+/// `edit.copy_snapshot_outlines` — the snapshot box, its text drawn as shapes.
+pub const fn edit_copy_snapshot_outlines() -> CommandText {
+    CommandText::new(
+        "Copy snapshot, text as drawing",
+        "Copy what is inside the snapshot box as a drawing, with its words drawn as \
+         shapes, so they look the same in any program and cannot be edited there. \
+         Greyed until a snapshot box is drawn.",
+    )
+}
+
+/// `edit.copy_snapshot_text` — the snapshot box, its text kept as text.
+pub const fn edit_copy_snapshot_text() -> CommandText {
+    CommandText::new(
+        "Copy snapshot, text as text",
+        "Copy what is inside the snapshot box as a drawing, with its words kept as \
+         text, so they can be edited or searched in the program it is pasted into. \
+         A font that program lacks changes how they look. Greyed until a snapshot \
+         box is drawn.",
+    )
+}
+
 /// `edit.paste` — the object clipboard's paste.
 #[must_use]
 pub const fn edit_paste() -> CommandText {

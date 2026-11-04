@@ -673,7 +673,7 @@ His words: *"I think clipboard features should be put under a new tab, and be la
 
 **Status.** Not built.
 
-**Built, not yet released or driven.** The Clipboard tab is second after File in every mode, all Large: Clipboard (Cut, Copy, Paste, Paste duplicate, Duplicate) and Copy for other programs (Copy as vector). Read shows Copy alone. The two snapshot copies join the second group with O379. `RIBBON_IA.md` §5.0.
+**Built, not yet released or driven.** The Clipboard tab is second after File in every mode, all Large: Clipboard (Cut, Copy, Paste, Paste duplicate, Duplicate) and Copy for other programs (Copy as vector and O379's two snapshot copies). Read shows Copy alone. `RIBBON_IA.md` §5.0.
 
 ## O379 — **OPEN** — the snapshot copies text as drawing or as text, two buttons
 
@@ -683,7 +683,7 @@ His words: *"Our marquee snapshot function for vector image pasting should still
 
 **Scope, whole behaviour.** Two commands, each its own icon: *Copy snapshot, text as drawing* (every character as its outline; looks the same everywhere, not editable) and *Copy snapshot, text as text* (each run that allows it kept as text the pasting program can edit, drawn in its installed font). Each copies the box whatever the setting says; Ctrl+C keeps following the setting. Both on the Clipboard tab (O380) and on the snapshot box's right-click menu; greyed with the reason when no box is laid. The status line says how many runs stayed text and how many went as outlines, as Copy does.
 
-**Status.** Not built.
+**Built, not yet released or driven.** `edit.copy_snapshot_outlines` and `edit.copy_snapshot_text`, each with its own icon, Large on Clipboard ▸ Copy for other programs and on the snapshot box's right-click menu. Each forces its form over the setting; Ctrl+C still follows it. Greyed until a box is laid (`doc.snapshot`), the tooltip saying so. The status line is Copy's, with the kept and outlined run counts. `RIBBON_IA.md` §5.0.
 
 ## O378 — **OPEN** — light a static model once, then only move the eye
 

@@ -97,9 +97,17 @@ pub struct KeptText {
     pub emf_outlines: usize,
 }
 
-/// **Copy the document's snapshot box to the clipboard.** `NoPage` when there
-/// is no box, or it lies off its page.
+/// **Copy the document's snapshot box to the clipboard** in the Snapshot
+/// setting's form. `NoPage` when there is no box, or it lies off its page.
 pub fn copy_snapshot(doc: &crate::opendoc::OpenDoc) -> Result<SnapshotCopy, Refusal> {
+    copy_snapshot_as(doc, doc.prefs.snapshot.form())
+}
+
+/// [`copy_snapshot`] in `form`, whatever the setting says.
+pub fn copy_snapshot_as(
+    doc: &crate::opendoc::OpenDoc,
+    form: SnapshotForm,
+) -> Result<SnapshotCopy, Refusal> {
     let laid = doc.snapshot.ok_or(Refusal::NoPage)?;
     let page = doc.pages.get(laid.page).ok_or(Refusal::NoPage)?;
     let region = cropped(page, laid.rect).ok_or(Refusal::NoPage)?;
@@ -112,7 +120,6 @@ pub fn copy_snapshot(doc: &crate::opendoc::OpenDoc) -> Result<SnapshotCopy, Refu
     let state = region_state(doc, &options);
     // The view, so unsaved edits are what is copied — as `place::page_payload`.
     let view = doc.session.view();
-    let form = doc.prefs.snapshot.form();
     let (payload, vectors) = if form == SnapshotForm::Picture {
         let rendered = render_region(&view, &region, &options, dpi_f)?;
         (picture(rendered, dpi_f)?, Vectors::PictureOnly)

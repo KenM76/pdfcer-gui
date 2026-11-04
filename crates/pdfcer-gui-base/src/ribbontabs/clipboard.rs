@@ -35,7 +35,11 @@ pub fn tab() -> Tab {
             super::group(
                 "other_programs",
                 ribbon::group_clipboard_other_programs(),
-                [large("edit.copy_as_vector")],
+                [
+                    large("edit.copy_as_vector"),
+                    large("edit.copy_snapshot_outlines"),
+                    large("edit.copy_snapshot_text"),
+                ],
             ),
         ])
 }

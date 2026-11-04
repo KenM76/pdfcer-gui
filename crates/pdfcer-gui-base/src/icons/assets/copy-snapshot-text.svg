@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Copy the snapshot with its text kept as text: `copy-as-vector.svg`'s
+       sheets, the front one carrying a letter T and a text caret — type the
+       pasting program can still edit. Distinct from `copy-snapshot-outlines.svg`
+       by the caret where that one has a node handle. -->
+  <path d="M18 14H10a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="16" y="6" width="26" height="32" rx="2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M21 13H33" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M27 13V32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M35 19H39M37 19V32M35 32H39" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

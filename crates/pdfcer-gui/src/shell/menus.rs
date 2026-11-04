@@ -472,6 +472,8 @@ pub fn built_in() -> Menus {
         // canvas.snapshot — inside the snapshot box: copy it, or save it as a PDF.
         .with(Menu::new(CANVAS_SNAPSHOT).with_items([
             Item::command("edit.copy"),
+            Item::command("edit.copy_snapshot_outlines"),
+            Item::command("edit.copy_snapshot_text"),
             Item::command("view.snapshot_save_pdf"),
         ]))
         // -------------------------------------------------------------------

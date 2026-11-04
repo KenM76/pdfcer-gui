@@ -436,9 +436,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 250 → 251: `file.network_print`, File ▸ Print.
     // 251 → 252: `tools.batch_print`, Tools ▸ Batch.
     // 252 → 253: `markup.remove_stroke`, canvas markup menu.
+    // 253 → 255: `edit.copy_snapshot_outlines` and `edit.copy_snapshot_text`, Clipboard tab.
     assert_eq!(
         registry().len(),
-        253 + 2 * usize::from(cfg!(feature = "signing"))
+        255 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -884,9 +885,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 219 → 220: `file.network_print` shares `print`.
     // 220 → 221: `tools.batch_print` shares `print`.
     // 221 → 222: `markup.remove_stroke` shares `show-points`.
+    // 222 → 224: the two snapshot copies, each with its own icon.
     assert_eq!(
         named,
-        222 + 2 * usize::from(cfg!(feature = "signing"))
+        224 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"
