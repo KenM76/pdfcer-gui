@@ -653,6 +653,20 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O378 — **OPEN** — light a static model once, then only move the eye
+
+His words: *"I assume the lighting stored in a 3D pdf can only be static? If so, could we have an option to render lights/shadows/everything once, then just navigate that model without having to calculate everything in real time? It should look the same in either case, or am I missing something, like if there are reflective materials things will change depending on perspective?"*
+
+**What is already reused.** On the graphics card a camera move sends only new matrices: the vertices, textures and lighting are rebuilt only when the shown parts, the highlight or the lighting change, and the shadow maps only when the engine's shadows for the frame change. With the fixed sun casting, the shadow map stays in one model place and is not redrawn as the eye moves.
+
+**What a move genuinely changes, so cannot be baked without changing the picture.** A lighting scheme whose lights sit in the camera's frame turns with the view, and so do its shadows; highlights on a shiny finish depend on the angle to the eye; anything nearer or farther draws over a different part of the screen.
+
+**What could be baked and is not.** Ambient occlusion is computed from the screen every picture, so it is the one effect redone on every move although a model-fixed version would look the same from any eye. Baking it into the model is engine work (`pdfcer-3d`), to be requested only once a frame measurement on a heavy model shows occlusion is what costs.
+
+**Scope, whole behaviour.** Measure a heavy model's frame cost with each effect on and off. If a per-move cost exists that a model-fixed version would remove, request the baked form from the engine and offer it as an option, the picture the same either way.
+
+**Status.** Not built. Frame cost not yet measured.
+
 ## O377 — **OPEN** — a picture's size, resolution and look set before saving
 
 His words: *"a tab needs to be added to set the render settings for screen shots. Also for screen shots it would be nice to be able to set the dpi, and resolution of the screenshot - a horizontal and vertical entry that when one is altered it alters the other to match the screen's ratio and also a slider to quickly change from current screen resolution size up to 8x."*
