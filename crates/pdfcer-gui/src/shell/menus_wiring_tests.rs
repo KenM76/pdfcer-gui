@@ -89,11 +89,12 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 69 → 68: Word gap… off the canvas text menu; the Content band sets the gap.
     // 68 → 69: Delete this stroke on the canvas markup menu.
     // 69 → 71: the two snapshot copies on the snapshot box's menu.
+    // 71 → 72: Document properties on the paper's menu.
     // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
     // no stacking glyph exists (see `ledger`'s refused count).
     assert_eq!(
         (glyph, blank, absent),
-        (71, 5, 0),
+        (72, 5, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

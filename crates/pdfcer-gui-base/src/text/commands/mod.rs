@@ -310,8 +310,8 @@ pub const fn file_properties() -> CommandText {
 pub const fn file_document_properties() -> CommandText {
     CommandText::new(
         "Document properties",
-        "This document's own title, author, subject and keywords — stored in the file and \
-         travelling with it — and the facts pdfcer read about it.",
+        "This document's metadata — its title, author, subject and keywords, stored in the \
+         file and travelling with it, to read and change — and the facts pdfcer read about it.",
     )
 }
 

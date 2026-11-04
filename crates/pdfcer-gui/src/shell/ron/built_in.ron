@@ -919,6 +919,8 @@
                 Command(id: "view.zoom_fit_width"),
                 Command(id: "view.zoom_fit_height"),
                 Command(id: "view.zoom_actual"),
+                Separator,
+                Command(id: "file.document_properties"),
             ],
         ),
         (

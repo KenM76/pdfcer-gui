@@ -477,7 +477,7 @@ pub fn built_in() -> Menus {
             Item::command("view.snapshot_save_pdf"),
         ]))
         // -------------------------------------------------------------------
-        // canvas.empty — the view menu.
+        // canvas.empty — the view menu, then the document's properties.
         //
         // Right-clicking paper is not a question about an object, because
         // there is not one; it is a question about the view. The three named
@@ -512,6 +512,10 @@ pub fn built_in() -> Menus {
             Item::command("view.zoom_fit_width"),
             Item::command("view.zoom_fit_height"),
             Item::command("view.zoom_actual"),
+            // The document's own metadata: paper with nothing on it is the
+            // document itself (O381).
+            Item::Separator,
+            Item::command("file.document_properties"),
         ]))
         // -------------------------------------------------------------------
         // canvas.field — the form field's menu.

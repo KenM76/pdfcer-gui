@@ -175,6 +175,8 @@ fn info_body(ui: &mut Ui, doc: &OpenDoc, drafts: &mut InfoDrafts, actions: &mut 
         };
         row(ui, index, field, draft, current.as_ref(), actions);
     }
+    // Until G266: what the engine cannot yet write.
+    ui.weak(t::not_yet());
 
     // `ui_rect_visible` rather than `ui_rect`, and published LAST — the
     // reason survives the move even though the collapse that prompted it did

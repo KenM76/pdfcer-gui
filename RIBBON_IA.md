@@ -848,7 +848,7 @@ block:
 |---|---|
 | `canvas.object` | Zoom to selection · Properties · Select this line of text *(when a run pick is offered)* · Select the form · Give this page its own copy · Mark this for redaction · Delete *(when deletion is permitted)* |
 | `canvas.read-object` | Copy · Zoom to selection |
-| `canvas.empty` | Fit page · Fit width · Fit height · Actual size |
+| `canvas.empty` | Fit page · Fit width · Fit height · Actual size · Document properties |
 | `canvas.field` | Properties · Delete *(when permitted)* |
 | `canvas.markup` | Properties · Add a point here · Remove this point *(each when the mark offers it)* · Make part of the page *(when the engine would accept it)* · Cut · Copy · Paste · Delete *(when permitted)* |
 | `canvas.text` | Reflow paragraph · Paragraphs · Paragraphs on this page · This paragraph *(pressed while it is open whole)* |

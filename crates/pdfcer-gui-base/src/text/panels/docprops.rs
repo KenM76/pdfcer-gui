@@ -20,6 +20,13 @@ pub const fn note() -> &'static str {
      empty a box to remove it from the document altogether."
 }
 
+/// What the metadata rows cannot do yet, under them.
+#[must_use]
+pub const fn not_yet() -> &'static str {
+    "Entries of other names, the creating program and the dates cannot be added or \
+     changed here yet, and the file's XMP copy of these four is not updated with them."
+}
+
 /// The label on one document-information field.
 #[must_use]
 pub fn info_label(field: pdfcer_core::edit::InfoField) -> &'static str {

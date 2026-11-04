@@ -377,6 +377,7 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "view.zoom_fit_width",
                 "view.zoom_fit_height",
                 "view.zoom_actual",
+                "file.document_properties",
             ][..],
         ),
         (
