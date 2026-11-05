@@ -201,7 +201,7 @@ impl Walker<'_> {
         ));
         if (fov - wanted).abs() > 0.01 {
             return Ok(Some(format!(
-                "Ctrl+wheel out while walking in a {w}x{h} picture reached fov-y {fov}; the                  widest should be {wanted:.3}."
+                "Ctrl+wheel out while walking in a {w}x{h} picture reached fov-y {fov}; the widest should be {wanted:.3}."
             )));
         }
         Ok(None)

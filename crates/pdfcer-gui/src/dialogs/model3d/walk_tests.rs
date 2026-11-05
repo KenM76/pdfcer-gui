@@ -275,8 +275,8 @@ fn zoom_narrows_the_view_within_its_range() {
     };
     assert!(
         (fov_y - WIDEST_FOV).abs() < 1e-9,
-        "zoomed out to {fov_y} degrees"
-    ); // ui-text-exempt: test failure message
+        "zoomed out to {fov_y} degrees" // ui-text-exempt: test failure message
+    );
 }
 
 #[test]

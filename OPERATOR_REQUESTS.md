@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O391 — **WAITING ON THE ENGINE (G268)** — a fisheye lens in the 3D viewer
+
+His words, on being told a flat picture past about 100 degrees stretches and only a curved lens goes wider: *"yes. Let's get a fisheye lens option offering too!"*
+
+**Scope, whole behaviour.** The 3D viewer's options offer a fisheye lens beside the flat one, in orbit and walking, remembered across sessions; the picture, a saved or copied picture, clicking, double-click go-to and walking collision all follow the lens; zooming out reaches the lens's widest, 180 degrees or more.
+
+**Status.** Not built: pdfcer-3d draws only flat (perspective) and orthographic pictures. Asked as G268 (a fisheye projection, equidistant and/or stereographic, the same on the CPU and GPU paths and in picking). No GUI-side warp in the meantime.
+
 ## O390 — **BUILT AND DRIVEN** — a wider widest view in the 3D viewer, at least Acrobat's
 
 His words: *"the 3D viewer's distortion is fixed. What is the widest viewing angle we can offer and not distort? Currently the widest is narrower than what acrobat has."*
