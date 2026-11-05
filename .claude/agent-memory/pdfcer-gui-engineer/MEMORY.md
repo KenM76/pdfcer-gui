@@ -195,3 +195,4 @@
 - [Moving a command's tab breaks checks](feedback_moving_command_tab.md) — grep checks for the old `ribbon.tab.`; the chain stays green.
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
+- [An early tag empties `--affected`](feedback_early_tag_empties_affected.md) — APK-first moved the tag; 3 of 639 swept. Pass `--affected=<prev tag>`.

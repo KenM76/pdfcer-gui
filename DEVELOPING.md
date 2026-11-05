@@ -188,7 +188,9 @@ both before its verdict is believed.
 release tag: a check whose own file changed, a check quoting a trace event,
 region, command id or `PDFCER_*` variable that a changed source file also
 quotes, and a three-check smoke set. `--why` on the selector prints each
-reason. An engine pin moved since the tag counts as change: every engine
+reason. A release tagged before its drive (the APK shipped first) is
+itself the newest tag, so drive with `--affected=<previous tag>`; read the
+selector's count line before trusting the tally. An engine pin moved since the tag counts as change: every engine
 crate with a source file changed between the two pins marks each program file
 naming it as changed, so the checks of whatever calls it are driven; a pin the
 selector cannot read selects every check. This is the standing rule for every
