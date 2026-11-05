@@ -12,10 +12,11 @@
 //!
 //! The card draws everything the engine's shaders do: the model's own
 //! lights, lamp shadows, every directional caster, see-through shadows,
-//! material finishes, the emissive repeat, and lines and points of any
-//! width. A frame whose points are wider than the card's widest is
-//! declined, and the viewer draws it on the processor and says so under the
-//! picture. The passes themselves are `gpu_paint`'s.
+//! material finishes, the emissive repeat, lines and points of any width,
+//! and a fisheye lens, its faces drawn as `gpu_lens` sets out. A frame whose
+//! points are wider than the card's widest is declined, and the viewer
+//! draws it on the processor and says so under the picture. The passes
+//! themselves are `gpu_paint`'s.
 
 use std::sync::{Arc, Mutex, PoisonError};
 
@@ -28,6 +29,7 @@ use pdfcer_3d::{
 };
 
 use super::effects::Effects;
+use super::gpu_lens::LensPlan;
 use super::gpu_uniforms as u;
 use super::{ModelView, Rendered};
 use crate::text::model3dlook::ProcessorReason;
@@ -91,8 +93,11 @@ pub(super) struct Shared {
     pub(super) points: i32,
     pub(super) draws: Vec<Draw>,
     pub(super) uniforms: u::Uniforms,
-    /// The line and point programs' uniforms but `u_viewport`.
+    /// The line and point programs' uniforms but `u_viewport`: the lens
+    /// programs' when [`Shared::lens`] is set.
     pub(super) line_uniforms: u::Uniforms,
+    /// The fisheye's faces, when the frame is drawn through one.
+    pub(super) lens: Option<LensPlan>,
     pub(super) background: [f32; 4],
     /// `u_lights`, `pdfcer_3d::LIGHT_TABLE_WIDTH` texels a row.
     pub(super) light_table: Vec<f32>,
@@ -253,24 +258,30 @@ impl ModelView {
         let [width, height] = wanted.size;
         let aspect = f64::from(width) / f64::from(height.max(1));
         let camera = self.view_camera(aspect)?;
-        // The card's picture is one perspective frame; a fisheye is the
-        // processor's until the lens faces are drawn here.
-        self.gpu.declined = self
-            .gpu
-            .decline()
-            .or_else(|| super::lens::is_fisheye(&camera).then_some(ProcessorReason::Lens));
+        self.gpu.declined = self.gpu.decline();
         if self.gpu.declined.is_some() {
             return Ok(false);
         }
+        let fisheye = super::lens::is_fisheye(&camera);
         let lights = &self.model.drawn.lights;
-        let effects = Effects::new(&camera, &options, &self.bounds, lights, wanted.size)?;
+        // A fisheye's occlusion is each face's own (`gpu_lens`).
+        let effects = if fisheye {
+            Effects {
+                shadow: FrameShadow::for_model(&camera, &options, &self.bounds, lights)?,
+                occlusion: None,
+            }
+        } else {
+            Effects::new(&camera, &options, &self.bounds, lights, wanted.size)?
+        };
         let mut frame_lights = FrameLights::for_model(&camera, &options, lights)?;
         let casters = self.casters(&camera, &options, effects.shadow)?;
         if let Some(lamps) = &casters.lamps {
             frame_lights.use_lamp_shadows(lamps);
         }
-        let view = u::camera_uniforms(&camera, &frame_lights, aspect, &self.bounds)?;
-        let mut uniforms = view.clone();
+        let background = wanted.background.to_normalized_gamma_f32();
+        let (view, lens, line_uniforms) =
+            self.frame_view(&camera, &frame_lights, &options, (wanted.size, background))?;
+        let mut uniforms = view;
         uniforms.extend(u::light_uniforms(&frame_lights));
         uniforms.extend(u::shadow_uniforms(casters.shadow.as_ref()));
         uniforms.extend(u::extra_uniforms(casters.extra.as_ref()));
@@ -286,21 +297,44 @@ impl ModelView {
         } else {
             None
         };
-        let mut line_uniforms = view;
-        line_uniforms.extend(self.gpu.facts.lines.iter().cloned());
         let head = self.trace_head(&wanted, Ok(&camera), &options) + &casters.trace();
         let mut shared = lock(&self.gpu.shared);
         shared.uniforms = uniforms;
         shared.line_uniforms = line_uniforms;
+        shared.lens = lens;
         shared.light_table = frame_lights.light_table();
         shared.set_casters(casters);
         shared.occlusion = effects.occlusion;
         shared.repeat = repeat;
         shared.prepass = wanted.look.extras.skip_hidden;
-        shared.background = wanted.background.to_normalized_gamma_f32();
+        shared.background = background;
         shared.trace = crate::diag::enabled().then_some(head);
         shared.drawn = false;
         Ok(true)
+    }
+
+    /// The camera's uniforms for the faces, the fisheye's faces when it is
+    /// one (the faces' cameras then carry the view), and the line and point
+    /// programs' uniforms, for a `size` picture over `background`.
+    fn frame_view(
+        &self,
+        camera: &Camera,
+        lights: &FrameLights,
+        options: &ModelRenderOptions,
+        (size, background): ([u32; 2], [f32; 4]),
+    ) -> Result<(u::Uniforms, Option<LensPlan>, u::Uniforms), RenderError> {
+        let lines = &self.gpu.facts.lines;
+        if super::lens::is_fisheye(camera) {
+            let (plan, lens) =
+                super::gpu_lens::plan(camera, lights, options, &self.bounds, (size, background))?;
+            let lines = super::gpu_lens::line_uniforms(camera, &lens, &self.bounds, lines)?;
+            return Ok((Vec::new(), Some(plan), lines));
+        }
+        let aspect = f64::from(size[0]) / f64::from(size[1].max(1));
+        let view = u::camera_uniforms(camera, lights, aspect, &self.bounds)?;
+        let mut all = view.clone();
+        all.extend(lines.iter().cloned());
+        Ok((view, None, all))
     }
 
     /// The frame's shadow casters past the key light's `shadow`: further

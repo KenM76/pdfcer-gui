@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **57 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `wanted` — a real gap — **55 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -68,8 +68,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
-| **Fisheye lens for the 3D camera** — `Projection::Fisheye`, `FrameLens` | **wanted, being built under O391.** The viewer offers Flat / Fisheye / Auto with the curve, Auto switching to fisheye past a chosen angle; the CPU picture draws it directly and the GPU picture through `FrameLens` faces and the lens shaders. |
-| **Fisheye lens on the GPU draws correctly** — hosts' recipe: `FrameLens::eye`, `FrameLens::basis`, depth test `ALWAYS` for the resample | **wanted, being built under O391.** The shell still hands a fisheye frame to the processor (`ProcessorReason::Lens`); drawing `FrameLens` faces on the card with this recipe is the shell's own work, not an engine gap. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
 
 ### Text
@@ -247,7 +245,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **434 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **436 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -255,6 +253,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Fisheye lens for the 3D camera** — `Projection::Fisheye`, `FrameLens` | **shipped — the 3D viewer's Lens choice (O391); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`.** The viewer offers Flat / Fisheye / Auto with the curve, Auto switching to fisheye past a chosen angle; the CPU picture draws it directly and the GPU picture through `FrameLens` faces and the lens shaders. |
+| **Fisheye lens on the GPU draws correctly** — hosts' recipe: `FrameLens::eye`, `FrameLens::basis`, depth test `ALWAYS` for the resample | **shipped — the 3D viewer's Lens choice (O391); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`.** `gpu_lens::plan` draws each `FrameLens` face from its camera, lit and shadowed from the fisheye camera, resamples it with depth `ALWAYS`, and bends the lines and points through the lens programs with `FrameLens::eye` and `::basis`. |
 | **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **shipped — Pages ▸ Stamp ▸ Header & footer…; driven by `header_footer_and_printer_marks`.** `dialogs::running` collects the text and `app::actions::pagestamp` calls `stamp_running_text` through the edit funnel as one undo entry, with the `{page}` and `{pages}` tokens; text the font cannot print is refused before the engine is called. The print-time variant is its own row. |
 | **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **shipped — Edit ▸ Insert ▸ 3D model… takes `.gltf` and `.glb`; driven by `a_gltf_model_is_converted_and_placed`.** `app::actions::gltf::to_embed` converts through `pdfcer_3d::gltf` and `app::actions::models` places the PRC; the import's notes go to the status line (`model-insert-gltf triangles=`), and the placed model saves back out as PRC. |
 | **Render a 3D model under a lighting scheme** — `RenderOptions::lighting` and `light_frame` … | **shipped — the 3D viewer's Lighting list and *Lights turn with the view* light the live picture (G252, O347); driven by `the_3d_viewer_is_lit_as_chosen`.** |
@@ -883,7 +883,7 @@ The request O280 is built on, answered and consumed.
 - **G257** — no cast shadows: surfaces are shaded only by their angle to the lights, on both the GPU and CPU paths, so an interior reads flat beside other glTF viewers. Asked for a published shadow-map pass, the same on the CPU path, and a switch.
 - **G258** — no ambient occlusion: the ambient term is constant, and glTF `occlusionTexture` is not read. Asked for SSAO or baked per-vertex occlusion, and a switch beside G257's.
 - **G259** — shadows move as the eye moves (O368). In `LightFrame::Camera` the caster is a camera-frame light, so a shadow keeps its place on the screen and swings round the model. In `LightFrame::World` Table 310's directions are model axes, so a Z-up model casts no floor shadow, and `Caster::choose` still prefers the light on the viewer's side. Asked for a shadow light fixed in model space, chosen from the model's up axis, apart from `light_frame`. Answered at v0.118.0 by `ShadowLight::Sun` and consumed by `dialogs::model3d::effects`. Its `UpAxis` is unsigned, so a negative Up puts the sun beneath the model: G260.
-- **G268** — SHIPPED in v0.129.0: `Projection::Fisheye { fov, mapping }` with `FisheyeMapping::Equidistant` and `::Stereographic`, drawn on the CPU and through `FrameLens` on the GPU (O391). The blend asked for Auto (item 6) did not come: Auto switches at an angle. Verdict on its modules: `pdfcer_3d::lens` and `pdfcer_3d::gpu_lens` are **wanted** — the GPU picture draws a fisheye as `FrameLens` faces resampled through the lens shaders, not yet wired (the shell's fisheye frames go to the processor, `ProcessorReason::Lens`); `pdfcer_3d::projection` and `pdfcer_3d::render_error` are where `Projection` and `RenderError` now live, re-exported at the crate root the shell already names, so nothing new to wire.
+- **G268** — SHIPPED in v0.129.0: `Projection::Fisheye { fov, mapping }` with `FisheyeMapping::Equidistant` and `::Stereographic`, drawn on the CPU and through `FrameLens` on the GPU (O391). The blend asked for Auto (item 6) did not come: Auto switches at an angle. Verdict on its modules: `pdfcer_3d::lens` and `pdfcer_3d::gpu_lens` are **consumed** — the GPU picture draws a fisheye as `FrameLens` faces resampled through the lens shaders (`gpu_lens`); `pdfcer_3d::projection` and `pdfcer_3d::render_error` are where `Projection` and `RenderError` now live, re-exported at the crate root the shell already names, so nothing new to wire.
 - **G269** — CONSUMED at v0.130.0: `RenderOptions::light_gain`, the options menu's *Brightness* per lighting choice (O392).
 - **G270** — CONSUMED at v0.130.0: `ShadowLight::AimedSun(SunLight)`, *A sun you aim* under *Shadows cast by* (O392).
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).

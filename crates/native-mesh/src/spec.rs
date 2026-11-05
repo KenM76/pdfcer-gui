@@ -253,6 +253,42 @@ pub struct Passes<'a> {
     pub overlays: &'a [Overlay<'a>],
     /// Drawn before the main pass and bound for it and the repeat.
     pub prepass: Option<Prepass<'a>>,
+    /// Draws the frame as a fisheye instead of one perspective frame.
+    pub lens: Option<Lens<'a>>,
+}
+
+/// A fisheye frame: each face drawn as an ordinary frame at its own size,
+/// single-sample, then resampled into the picture by the lens program
+/// ([`crate::Mesh::set_lens_program`]) with the depth test on, `ALWAYS`,
+/// and depth writes on; the overlays follow, into the picture. With one,
+/// [`Passes::screen`], [`Passes::repeat`] and [`Passes::prepass`] are not
+/// drawn: each face carries its own screen effect and repeat.
+#[derive(Debug, Clone, Copy)]
+pub struct Lens<'a> {
+    /// Drawn in order; each resample writes only the pixels its face owns.
+    pub faces: &'a [LensFace<'a>],
+    /// Set on the lens program for every face.
+    pub uniforms: &'a [(&'static str, Value)],
+    /// The lens program's sampler for a face's colour, on unit 0.
+    pub colour: &'static str,
+    /// Its sampler for a face's 24-bit depth, on unit 1.
+    pub depth: &'static str,
+}
+
+/// One face of a [`Lens`].
+#[derive(Debug, Clone, Copy)]
+pub struct LensFace<'a> {
+    /// Its width and height, pixels.
+    pub size: [i32; 2],
+    /// Set on the main program before the face's draws; every key the
+    /// repeat overrides must be among them.
+    pub uniforms: &'a [(&'static str, Value)],
+    /// Drawn over the face's draws.
+    pub screen: Option<ScreenEffect<'a>>,
+    /// Drawn after its screen effect.
+    pub repeat: Option<Repeat<'a>>,
+    /// Set on the lens program after [`Lens::uniforms`] for this face.
+    pub resample: &'a [(&'static str, Value)],
 }
 
 /// A depth-only pass over the opaque draws before the main one, into a

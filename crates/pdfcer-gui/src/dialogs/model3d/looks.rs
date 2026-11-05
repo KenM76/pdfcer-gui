@@ -434,6 +434,5 @@ fn lamp_notes(ui: &mut Ui, s: LampStats) {
 pub(super) fn declined_word(reason: k::ProcessorReason) -> &'static str {
     match reason {
         k::ProcessorReason::WidePoints => " gpu-declined=wide-points", // ui-text-exempt: trace value, never displayed
-        k::ProcessorReason::Lens => " gpu-declined=lens", // ui-text-exempt: trace value, never displayed
     }
 }

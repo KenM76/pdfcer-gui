@@ -2,7 +2,9 @@
 //! upload what the viewer left, and draw the frame with every pass the
 //! engine's shaders ask for — the shadow, lamp, extra and see-through maps
 //! before the faces, ambient occlusion, the emissive repeat, then the lines
-//! and points.
+//! and points. A fisheye frame draws the same passes once per lens face and
+//! resamples each into the picture (`gpu_lens`), its lines and points then
+//! bent through the lens by their own programs.
 //!
 //! The depth prepass, when the look asks for it, draws the opaque faces'
 //! depth first so the faces' shader skips lighting what ends up hidden; the
@@ -19,20 +21,22 @@ use std::time::Instant;
 
 use eframe::egui_glow;
 use native_mesh::{
-    Attribute, Fill, Format, Layers, Layout, Mesh, Overlay, Passes, Picture, Prepass, Primitive,
-    Repeat, ScreenEffect, Source, Table, Target, Value,
+    Attribute, Fill, Format, Layers, Layout, Lens, LensFace, Mesh, Overlay, Passes, Picture,
+    Prepass, Primitive, Repeat, ScreenEffect, Source, Table, Target, Value,
 };
 use pdfcer_3d::{
     GLSL_ES_300_AO_COMPOSITE_FRAGMENT, GLSL_ES_300_AO_FRAGMENT, GLSL_ES_300_FRAGMENT,
     GLSL_ES_300_LAMP_SHADOW_ALPHA_FRAGMENT, GLSL_ES_300_LAMP_SHADOW_ALPHA_VERTEX,
-    GLSL_ES_300_LAMP_SHADOW_FRAGMENT, GLSL_ES_300_LAMP_SHADOW_VERTEX, GLSL_ES_300_LINE_FRAGMENT,
+    GLSL_ES_300_LAMP_SHADOW_FRAGMENT, GLSL_ES_300_LAMP_SHADOW_VERTEX, GLSL_ES_300_LENS_LINE_VERTEX,
+    GLSL_ES_300_LENS_POINT_VERTEX, GLSL_ES_300_LENS_RESAMPLE_FRAGMENT, GLSL_ES_300_LINE_FRAGMENT,
     GLSL_ES_300_LINE_VERTEX, GLSL_ES_300_PREPASS_FRAGMENT, GLSL_ES_300_PREPASS_VERTEX,
     GLSL_ES_300_SCREEN_VERTEX, GLSL_ES_300_SHADOW_ALPHA_FRAGMENT, GLSL_ES_300_SHADOW_ALPHA_VERTEX,
     GLSL_ES_300_SHADOW_FRAGMENT, GLSL_ES_300_SHADOW_VERTEX, GLSL_ES_300_VERTEX,
-    GLSL_ES_300_WIDE_LINE_VERTEX, LIGHT_TABLE_WIDTH,
+    GLSL_ES_300_WIDE_LINE_VERTEX, LENS_LINE_PIECES, LIGHT_TABLE_WIDTH,
 };
 
 use super::gpu::{RETIRED, Shared, lock};
+use super::gpu_lens::LensPlan;
 use super::gpu_uniforms::{Uniforms, occlusion_uniforms, unit};
 
 /// Vertex attribute widths, matching `pdfcer_3d::VERTEX_FLOATS`: position,
@@ -50,6 +54,9 @@ const PREPASS: usize = 4;
 /// The overlays, in the order `prepare` adds them.
 const WIDE_LINES: usize = 0;
 const POINTS: usize = 1;
+/// The same through a fisheye.
+const LENS_LINES: usize = 2;
+const LENS_POINTS: usize = 3;
 
 /// One line vertex's attributes (`pdfcer_3d::LINE_VERTEX_FLOATS`): position,
 /// colour, midpoint, two normals, kind, shaded.
@@ -157,30 +164,11 @@ pub(super) fn draw(
     painter: &egui_glow::Painter,
 ) {
     let gl = painter.gl();
-    for mesh in RETIRED
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .drain(..)
-    {
-        mesh.destroy(gl);
-    }
     let mut guard = lock(shared);
     let s = &mut *guard;
-    if s.failed.is_some() {
+    let Some(target) = ready(gl, s, info, painter) else {
         return;
-    }
-    if let Err(error) = prepare(gl, s) {
-        s.failed = Some(error);
-        return;
-    }
-    let target = target(s, info, painter);
-    if s.drawn
-        && s.mesh
-            .as_ref()
-            .is_some_and(|m| m.present_again(gl, &target))
-    {
-        return;
-    }
+    };
     let started = Instant::now();
     let size = [target.viewport[2], target.viewport[3]];
     let plans = layer_plans(s);
@@ -193,27 +181,35 @@ pub(super) fn draw(
         data: &s.light_table,
     }];
     let ao_uniforms = s.occlusion.map(|ao| occlusion_uniforms(&ao, size));
+    let (lens_ao, lens_uniforms) = lens_owned(s, size);
     let mut line_uniforms = s.line_uniforms.clone();
     line_uniforms.push(("u_viewport", Value::Vec2(size.map(|v| v as f32))));
     let overlays = overlays(s, &line_uniforms);
     let samples = s.mesh.as_ref().map_or(0, Mesh::samples);
     let mut uniforms = s.uniforms.clone();
     uniforms.extend(super::gpu_uniforms::prepass_uniforms(s.prepass, samples));
+    let repeat = s.repeat.as_ref().map(|(uniforms, e)| Repeat {
+        uniforms,
+        blend: [*e; 4],
+    });
+    let faces = s
+        .lens
+        .as_ref()
+        .map(|l| lens_faces(l, &lens_ao, repeat))
+        .unwrap_or_default();
     let passes = Passes {
         tables: &tables,
         layers: &layers,
-        screen: ao_uniforms.as_deref().map(|uniforms| ScreenEffect {
-            uniforms,
-            depth: "u_depth",
-            colour: "u_colour",
-            first_output: "u_ao",
-        }),
-        repeat: s.repeat.as_ref().map(|(uniforms, e)| Repeat {
-            uniforms,
-            blend: [*e; 4],
-        }),
+        screen: ao_uniforms.as_deref().map(screen_effect),
+        repeat,
         overlays: &overlays,
-        prepass: s.prepass.then(|| Prepass {
+        lens: lens_uniforms.as_deref().map(|uniforms| Lens {
+            faces: &faces,
+            uniforms,
+            colour: "u_face_colour",
+            depth: "u_face_depth",
+        }),
+        prepass: (s.prepass && s.lens.is_none()).then(|| Prepass {
             program: PREPASS,
             uniforms: &s.uniforms,
             sampler: "u_prepass_depth",
@@ -223,6 +219,36 @@ pub(super) fn draw(
     let Some(mesh) = s.mesh.as_mut() else { return };
     let result = mesh.draw(gl, &uniforms, &s.draws, &passes, &target);
     finish(s, result, started);
+}
+
+/// Retire old meshes and prepare `s`; the target to draw into, or `None`
+/// when the frame has failed or the last picture was presented again.
+fn ready(
+    gl: &egui_glow::glow::Context,
+    s: &mut Shared,
+    info: &egui::PaintCallbackInfo,
+    painter: &egui_glow::Painter,
+) -> Option<Target> {
+    for mesh in RETIRED
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .drain(..)
+    {
+        mesh.destroy(gl);
+    }
+    if s.failed.is_some() {
+        return None;
+    }
+    if let Err(error) = prepare(gl, s) {
+        s.failed = Some(error);
+        return None;
+    }
+    let target = target(s, info, painter);
+    let again = s.drawn
+        && s.mesh
+            .as_ref()
+            .is_some_and(|m| m.present_again(gl, &target));
+    (!again).then_some(target)
 }
 
 /// Where the picture is drawn: the callback's viewport and clip, in pixels.
@@ -281,22 +307,74 @@ fn finish(s: &mut Shared, result: Result<Option<Vec<u8>>, String>, started: Inst
     }
 }
 
-/// The lines as wide instanced quads, then the points.
+/// Ambient occlusion's two passes with `uniforms`.
+fn screen_effect<'a>(uniforms: &'a [(&'static str, Value)]) -> ScreenEffect<'a> {
+    ScreenEffect {
+        uniforms,
+        depth: "u_depth",
+        colour: "u_colour",
+        first_output: "u_ao",
+    }
+}
+
+/// A fisheye frame's per-face occlusion uniforms, and its resample
+/// uniforms with the paint's `size` as `u_viewport`; empty and `None` for a
+/// planar frame.
+fn lens_owned(s: &Shared, size: [i32; 2]) -> (Vec<Option<Uniforms>>, Option<Uniforms>) {
+    let Some(lens) = &s.lens else {
+        return (Vec::new(), None);
+    };
+    let ao = lens
+        .faces
+        .iter()
+        .map(|f| f.occlusion.map(|ao| occlusion_uniforms(&ao, f.size)))
+        .collect();
+    let mut uniforms = lens.uniforms.clone();
+    uniforms.push(("u_viewport", Value::Vec2(size.map(|v| v as f32))));
+    (ao, Some(uniforms))
+}
+
+/// The mesh's faces of `plan`, `ao` each face's occlusion uniforms, each
+/// repeating the emissive pass `repeat`.
+fn lens_faces<'a>(
+    plan: &'a LensPlan,
+    ao: &'a [Option<Uniforms>],
+    repeat: Option<Repeat<'a>>,
+) -> Vec<LensFace<'a>> {
+    plan.faces
+        .iter()
+        .zip(ao)
+        .map(|(f, ao)| LensFace {
+            size: f.size,
+            uniforms: &f.uniforms,
+            screen: ao.as_deref().map(screen_effect),
+            repeat,
+            resample: &f.resample,
+        })
+        .collect()
+}
+
+/// The lines as wide instanced quads, then the points; through a fisheye,
+/// each segment cut into `LENS_LINE_PIECES` bent pieces.
 fn overlays<'a>(s: &Shared, uniforms: &'a [(&'static str, Value)]) -> Vec<Overlay<'a>> {
+    let (lines, points, pieces) = match s.lens {
+        Some(_) => (LENS_LINES, LENS_POINTS, LENS_LINE_PIECES as i32),
+        None => (WIDE_LINES, POINTS, 1),
+    };
     let mut out = Vec::new();
     if s.segments > 0 {
         out.push(Overlay {
-            overlay: WIDE_LINES,
+            overlay: lines,
             uniforms,
             primitive: Primitive::InstancedStrip {
                 vertices: 4,
-                instances: s.segments,
+                instances: s.segments * pieces,
             },
         });
     }
     if s.points > 0 {
         out.push(Overlay {
-            overlay: POINTS,
+            overlay: points,
             uniforms,
             primitive: Primitive::Points { count: s.points },
         });
@@ -462,8 +540,14 @@ fn prepare(gl: &egui_glow::glow::Context, s: &mut Shared) -> Result<(), String> 
         return Ok(());
     };
     if let Some([lines, points]) = s.overlay_upload.take() {
-        mesh.set_overlay_vertices(gl, WIDE_LINES, &lines);
-        mesh.set_overlay_vertices(gl, POINTS, &points);
+        for (overlay, vertices) in [
+            (WIDE_LINES, &lines),
+            (POINTS, &points),
+            (LENS_LINES, &lines),
+            (LENS_POINTS, &points),
+        ] {
+            mesh.set_overlay_vertices(gl, overlay, vertices);
+        }
     }
     let Some((vertices, pictures)) = s.upload.take() else {
         return Ok(());
@@ -529,9 +613,15 @@ fn link(gl: &egui_glow::glow::Context, mesh: &mut Mesh) -> Result<(), String> {
         divisor: 0,
         attributes: &LINE_VERTEX,
     };
+    let pieces = Layout {
+        divisor: LENS_LINE_PIECES,
+        ..segment
+    };
     let lines = [
         (GLSL_ES_300_WIDE_LINE_VERTEX, segment, WIDE_LINES),
         (GLSL_ES_300_LINE_VERTEX, point, POINTS),
+        (GLSL_ES_300_LENS_LINE_VERTEX, pieces, LENS_LINES),
+        (GLSL_ES_300_LENS_POINT_VERTEX, point, LENS_POINTS),
     ];
     for (vertex, layout, index) in lines {
         let added = mesh.add_overlay(gl, vertex, GLSL_ES_300_LINE_FRAGMENT, &layout)?;
@@ -543,6 +633,11 @@ fn link(gl: &egui_glow::glow::Context, mesh: &mut Mesh) -> Result<(), String> {
         gl,
         GLSL_ES_300_SCREEN_VERTEX,
         [GLSL_ES_300_AO_FRAGMENT, GLSL_ES_300_AO_COMPOSITE_FRAGMENT],
+    )?;
+    mesh.set_lens_program(
+        gl,
+        GLSL_ES_300_SCREEN_VERTEX,
+        GLSL_ES_300_LENS_RESAMPLE_FRAGMENT,
     )
 }
 

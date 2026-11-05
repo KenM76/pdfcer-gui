@@ -79,6 +79,10 @@ struct Walker<'a> {
 
 impl Walker<'_> {
     fn run(&self, report: &mut CheckReport) -> Result<Option<String>> {
+        let lens = crate::checks::model_walk_lens::orbit;
+        if let Some(failure) = lens(self.session, self.pointer, self.ui_rect, report)? {
+            return Ok(Some(failure));
+        }
         if let Some(failure) = self.gimbal(report)? {
             return Ok(Some(failure));
         }

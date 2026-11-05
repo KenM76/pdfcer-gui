@@ -30,6 +30,7 @@ mod eye;
 mod fit;
 mod gimbal;
 mod gpu;
+mod gpu_lens;
 mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;

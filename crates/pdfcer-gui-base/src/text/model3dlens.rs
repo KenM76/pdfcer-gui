@@ -75,10 +75,3 @@ pub fn drawn_fisheye(curve: &str, fov: f64) -> String {
 pub fn auto_flat(at: f64) -> String {
     format!("Drawn through a flat lens; Auto turns fisheye past {at:.0}° tall.")
 }
-
-/// What the graphics card does not yet draw, for
-/// [`super::model3dlook::drawn_on_processor`].
-#[must_use]
-pub fn processor_lens() -> &'static str {
-    "a fisheye view"
-}

@@ -22,6 +22,7 @@
 
 mod buffers;
 mod layers;
+mod lens;
 mod overlay;
 mod passes;
 mod prepass;
@@ -37,8 +38,8 @@ use passes::ScreenPrograms;
 use prepass::PrepassTarget;
 use program::Program;
 pub use spec::{
-    Attribute, Draw, Fill, Format, Layers, Layout, Overlay, Passes, Picture, Prepass, Primitive,
-    Repeat, ScreenEffect, Source, Table, Target, Value, Wrap,
+    Attribute, Draw, Fill, Format, Layers, Layout, Lens, LensFace, Overlay, Passes, Picture,
+    Prepass, Primitive, Repeat, ScreenEffect, Source, Table, Target, Value, Wrap,
 };
 
 /// A compiled program, its geometry and pictures, the passes' programs and
@@ -63,6 +64,8 @@ pub struct Mesh {
     overlays: Vec<OverlayProgram>,
     widest_point: f32,
     prepass: Option<PrepassTarget>,
+    /// The lens program and the face buffers a [`Lens`] frame draws into.
+    lens: lens::LensTargets,
 }
 
 /// The most samples a pixel takes; the driver's limit if lower.
@@ -115,6 +118,7 @@ impl Mesh {
                 overlays: Vec::new(),
                 widest_point: overlay::widest_point(gl),
                 prepass: None,
+                lens: lens::LensTargets::default(),
             })
         }
     }
@@ -249,6 +253,9 @@ impl Mesh {
         self.ensure_buffers(gl, [w, h])?;
         self.fit_inputs(gl, passes)?;
         self.fill_layers(gl, passes.layers, draws)?;
+        if let Some(lens) = &passes.lens {
+            return self.draw_lens(gl, uniforms, draws, passes, lens, target);
+        }
         if let Some(prepass) = &passes.prepass {
             self.draw_prepass(gl, prepass, draws, [w, h])?;
         }
@@ -263,7 +270,10 @@ impl Mesh {
         self.draw_runs(gl, draws, None);
         if let Some(effect) = &passes.screen {
             self.unbind_inputs(gl, passes);
-            self.screen(gl, effect, [w, h])?;
+            let buffers = self.buffers.take();
+            let ran = buffers.as_ref().map(|b| self.screen(gl, effect, b));
+            self.buffers = buffers;
+            ran.transpose()?;
         }
         if let Some(repeat) = &passes.repeat {
             self.repeat(gl, multisampled, [w, h], passes, repeat, draws);
@@ -404,24 +414,22 @@ impl Mesh {
         unsafe { gl.active_texture(glow::TEXTURE0) };
     }
 
-    /// Run the screen effect over the faces in the multisampled buffer.
+    /// Run the screen effect over the faces in `b`'s multisampled buffer.
     fn screen(
         &mut self,
         gl: &glow::Context,
         effect: &ScreenEffect<'_>,
-        size: [i32; 2],
+        b: &Buffers,
     ) -> Result<(), String> {
+        let size = b.size;
         if self.screen_textures.as_ref().is_none_or(|t| t.size != size) {
             if let Some(old) = self.screen_textures.take() {
                 old.delete(gl);
             }
             self.screen_textures = Some(ScreenTextures::new(gl, size)?);
         }
-        let (Some(programs), Some(b), Some(t)) = (
-            self.screen_programs.as_mut(),
-            &self.buffers,
-            &self.screen_textures,
-        ) else {
+        let (Some(programs), Some(t)) = (self.screen_programs.as_mut(), &self.screen_textures)
+        else {
             return Err("screen effect asked for with no screen programs".to_owned());
         };
         programs.run(gl, effect, b, t);
@@ -584,6 +592,7 @@ impl Mesh {
         self.tables.drain(..).for_each(|t| t.delete(gl));
         self.programs.drain(..).for_each(|p| p.delete(gl));
         self.overlays.drain(..).for_each(|o| o.delete(gl));
+        std::mem::take(&mut self.lens).delete(gl);
         // SAFETY: these objects are this mesh's own.
         unsafe {
             gl.delete_buffer(self.vbo);
