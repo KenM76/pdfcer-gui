@@ -369,7 +369,7 @@ mod tests {
     /// Each reason the XMP copy was left alone gets its own sentence, naming
     /// the field that now disagrees.
     #[test]
-    fn every_xmp_skip_reason_reads_differently() {
+    fn the_five_known_xmp_skip_reasons_read_differently() {
         use pdfcer_core::edit::XmpSkip;
         let reasons = [
             XmpSkip::Off,

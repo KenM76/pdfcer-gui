@@ -105,6 +105,9 @@ pub mod structure_round_trip;
 
 pub mod driving;
 
+/// Press a region, opening a collapsed ribbon group that holds it.
+pub mod ribbonpress;
+
 /// Helpers shared by checks that press through the scripted pointer.
 pub mod scripteddrive;
 

@@ -22,7 +22,7 @@
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
 - [A SKIP is not red](feedback_skip_red_check_stop.md) — a check stops unnoticed; a SKIP can be a misfiled FAIL.
-- [A check that cannot fail is not evidence](feedback_check_cannot_fail.md) — falsify before quoting green.
+- [A check that cannot fail is not evidence](feedback_check_cannot_fail.md) — falsify it, [on real files](feedback_falsify_on_real_files.md): a self-test alone says nothing.
 - [A check's failure messages never run](feedback_failure_messages_unrun.md) — a plant fires one arm; the rest say anything.
 - [His sentences are reports, not measurements](feedback_kens_sentences.md) — "800%" named a setting.
 - [Read a better instrument](feedback_measurement_runs_out.md) — extreme-end failure is usually resolution.
@@ -117,7 +117,6 @@
 - [You never ship the thing you measured](feedback_thing_measured_never.md) — the release relinks; 8M bytes differ, none real.
 - [One property differs; absence needs a witness](feedback_control_differs_one.md) — a healthy file satisfies it three ways.
 - [Field access is invisible to the drift gate](feedback_type_reached_field.md) — bind it, don't mention it.
-- [Falsify the gate on real files](feedback_falsify_on_real_files.md) — the fix on a control binary; a self-test alone says nothing.
 - [A census of what the program emits can't be completed](feedback_census_cannot_complete.md) — an incomplete one accuses live code.
 - [A pattern claims a document's notation](feedback_pattern_over_human.md) — measure the widening's yield.
 - [A classification invites the next exception](feedback_rule_classification.md) — one token plus a written exemption.
@@ -184,7 +183,7 @@
 - [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.
 - [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.
 - [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.
-- [Drive only what changed between releases](feedback_drive_only_affected.md) — O305: select checks from the diff since the last tag; full sweep only if framework-wide.
+- [Drive only what changed](feedback_drive_only_affected.md) — select checks from the diff since the last tag; [an early tag empties it](feedback_early_tag_empties_affected.md): pass `--affected=<prev tag>`.
 - [One gate run at a time](feedback_one_gate_run_at_a_time.md) — two runs on one log: no verdict; a failed first step is not a finished chain.
 - [An inactive window starves focus gates](feedback_inactive_window_starves_gate.md) — no-steal scripted dialogs never typed; route gates via window_takes_keys.
 - [A wrapper drops a trait's default methods](feedback_wrapper_drops_default_method.md) — installedfaces lost `candidates`; every composite font fell to Helvetica.
@@ -195,4 +194,3 @@
 - [Moving a command's tab breaks checks](feedback_moving_command_tab.md) — grep checks for the old `ribbon.tab.`; the chain stays green.
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
-- [An early tag empties `--affected`](feedback_early_tag_empties_affected.md) — APK-first moved the tag; 3 of 639 swept. Pass `--affected=<prev tag>`.

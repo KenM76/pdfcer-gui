@@ -143,6 +143,14 @@ fn measure(ctx: &CheckContext, report: &mut CheckReport, on: bool) -> Result<Hue
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+    // The capture raises the window and reads the composited desktop, which
+    // off-screen is someone else's screen.
+    if !ctx.allow_input {
+        return Err(Error::new(
+            "input is disabled (--no-input). This check photographs the window on the screen. \
+             Reported as SKIPPED rather than passed.",
+        ));
+    }
     // Leave the profile as a first run left it, on every path out.
     struct Restore<'a>(Option<&'a Path>);
     impl Drop for Restore<'_> {

@@ -353,6 +353,9 @@ struct Drive<'a> {
 impl Drive<'_> {
     /// Click a declared region, or the failure naming the regions under `family`.
     fn press(&self, region: &str, family: &str) -> Result<std::result::Result<(), String>> {
+        if region.starts_with("ribbon.item.") {
+            declared_or_in_overflow(self.session, self.pointer, self.ui_rect, region)?;
+        }
         let trace = self.session.trace()?;
         let Some(r) = declared(&trace, self.ui_rect, region) else {
             return Ok(Err(format!(

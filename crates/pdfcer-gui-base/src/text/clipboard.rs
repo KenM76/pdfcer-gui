@@ -502,6 +502,13 @@ pub fn rich_copied(
 mod tests {
     use super::*;
 
+    #[test]
+    fn a_cut_copy_says_so_even_with_nothing_else_to_report() {
+        assert_eq!(rich_copied(3, 0, 0, 0, 0, false), None);
+        let said = rich_copied(3, 0, 0, 0, 0, true).expect("a cut copy is told");
+        assert!(said.contains("not in it"), "{said}");
+    }
+
     /// **Every refusal says what to do next, or why there is nothing to do.**
     #[test]
     fn every_refusal_is_a_sentence() {

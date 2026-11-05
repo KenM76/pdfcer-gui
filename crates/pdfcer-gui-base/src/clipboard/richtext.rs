@@ -189,4 +189,21 @@ mod tests {
         assert!(all.outcome.paragraphs > first.outcome.paragraphs);
         assert!(all.plain_text().starts_with(&first.plain_text()));
     }
+
+    #[test]
+    fn a_joined_copy_past_the_paragraph_cap_is_marked_cut() {
+        use pdfcer_core::text_edit::model::RICH_COPY_MAX_PARAGRAPHS;
+        let doc = open_fixture(FOUR_PAGES);
+        let one = page(&doc, 0, None).expect("page 0 extracts");
+        let mut small = one.clone();
+        append(&mut small, one.clone());
+        assert!(!small.outcome.truncated, "two pages are well inside the caps");
+
+        let mut big = one.clone();
+        let filler = one.paragraphs[0].clone();
+        big.paragraphs = vec![filler; RICH_COPY_MAX_PARAGRAPHS];
+        let mut all = one.clone();
+        append(&mut all, big);
+        assert!(all.outcome.truncated, "a join past the cap is not marked cut");
+    }
 }

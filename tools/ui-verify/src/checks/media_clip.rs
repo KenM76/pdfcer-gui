@@ -5,11 +5,10 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/media_clip.md`.
 
-use crate::checks::driving::{
-    SHELL_DIAG_ENV, click_mode_segment, declared_in, declared_names, list, repo_fixture,
-};
+use crate::checks::driving::{SHELL_DIAG_ENV, click_mode_segment, repo_fixture};
+use crate::checks::ribbonpress::press;
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
+use crate::coords::{CanvasMapping, DocPoint};
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -106,27 +105,6 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     report.note(format!("launched as pid {}", session.pid()));
     session.settle(40);
     Ok((session, pointer))
-}
-
-/// Click a declared region, or the failure naming the regions under `family`.
-fn press(
-    session: &Session,
-    pointer: &ScriptedPointer,
-    ui_rect: &str,
-    region: &str,
-    family: &str,
-) -> Result<std::result::Result<(), String>> {
-    let trace = session.trace()?;
-    let Some((r, viewport)) = declared_in(&trace, ui_rect, region) else {
-        return Ok(Err(format!(
-            "no `{region}` region. Regions beginning `{family}`: {}. Trace: {}.",
-            list(&declared_names(&trace, ui_rect, family)),
-            session.trace_path().display()
-        )));
-    };
-    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(r))?;
-    session.settle(20);
-    Ok(Ok(()))
 }
 
 fn drive(
