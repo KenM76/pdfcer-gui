@@ -669,13 +669,13 @@ His words: *"oh and can we add an adjuster for the brightness for each of the li
 
 **Status.** Not built. pdfcer-3d has no light brightness setting, and its sun (`ShadowLight::Sun`) only places the shadow at a fixed iso direction: no angles, no colour, no light of its own. Asked as G269 (a brightness gain for every lighting scheme) and G270 (a sun with azimuth, elevation and colour). No GUI-side brightening in the meantime.
 
-## O391 — **WAITING ON THE ENGINE (G268)** — a fisheye lens in the 3D viewer
+## O391 — **BUILT AND DRIVEN** — a fisheye lens in the 3D viewer
 
 His words, on being told a flat picture past about 100 degrees stretches and only a curved lens goes wider: *"yes. Let's get a fisheye lens option offering too!"* Then: *"When the fisheye lens lands we should add it as an option to select which lense to use, or an auto setting where it switches past a certain degree like a cell phone camera does."*
 
 **Scope, whole behaviour.** The 3D viewer's options offer a lens choice, *Flat*, *Fisheye* or *Auto*, in orbit and walking; *Auto* draws flat up to a set angle and fisheye past it as the view zooms out, as a phone camera changes lens, the change point adjustable and the lens in use said off the picture, remembered across sessions; the picture, a saved or copied picture, clicking, double-click go-to and walking collision all follow the lens; zooming out reaches the lens's widest, 180 degrees or more.
 
-**Status.** Not built: pdfcer-3d draws only flat (perspective) and orthographic pictures. Asked as G268 (a fisheye projection, equidistant and/or stereographic, the same on the CPU and GPU paths and in picking). No GUI-side warp in the meantime.
+**Status.** Built on G268 (engine v0.129.0). The options menu's View tab has *Lens* (Flat, Fisheye, Auto), *Curve* (Natural, Classic) and Auto's *Fisheye past* angle (40–100 degrees, default 90); the line under the picture names the lens drawn; all three are kept between sessions; walking zooms out to 180 degrees through a fisheye. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view` picks Fisheye, zooms out to 180, changes the curve and returns to Flat at 100; it fails on a build whose fisheye stops at 100 and on one whose lens change never reaches the picture. Not yet: the fisheye is drawn by the processor, 100–230 ms a frame in the driven window against about 4 ms on the card, so walking through it is jerky until the card's lens route is wired; a saved or copied picture is drawn flat, since a PDF view cannot hold a fisheye; clicking and go-to under a fisheye are not driven. NOT VERIFIED by him.
 
 ## O390 — **BUILT AND DRIVEN** — a wider widest view in the 3D viewer, at least Acrobat's
 

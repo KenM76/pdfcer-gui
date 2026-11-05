@@ -308,7 +308,8 @@ impl ModelView {
     }
 
     /// Under the picture: the model's own lights, the lights and casters
-    /// past the engine's limits, and why the graphics card is not drawing.
+    /// past the engine's limits, the lens, and why the graphics card is not
+    /// drawing.
     pub(super) fn looks_notes(&self, ui: &mut Ui) {
         let d = &self.model.drawn;
         let options = self.look().options();
@@ -334,6 +335,9 @@ impl ModelView {
                 ui.small(k::lamp_casters_dropped(n, MAX_SHADOW_CASTERS));
             }
         }
+        if let Some(line) = self.lens_said() {
+            ui.small(line);
+        }
         if self.gpu.failed() {
             ui.small(k::CARD_FAILED);
         } else if let Some(reason) = self.gpu.declined() {
@@ -353,5 +357,6 @@ impl ModelView {
 pub(super) fn declined_word(reason: k::ProcessorReason) -> &'static str {
     match reason {
         k::ProcessorReason::WidePoints => " gpu-declined=wide-points", // ui-text-exempt: trace value, never displayed
+        k::ProcessorReason::Lens => " gpu-declined=lens", // ui-text-exempt: trace value, never displayed
     }
 }

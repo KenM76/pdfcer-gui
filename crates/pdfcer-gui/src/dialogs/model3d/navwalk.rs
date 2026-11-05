@@ -71,6 +71,7 @@ impl ModelView {
             ui.input(egui::InputState::zoom_delta)
         };
         let before = self.nav.walk;
+        let lens = self.lens;
         if let Some(walk) = &mut self.nav.walk {
             let (drag_yaw, drag_pitch) = (
                 -f64::from(reading.look.x) * LOOK_RATE,
@@ -87,7 +88,7 @@ impl ModelView {
                 -shaped(tilts[CAMERA].y) * CAMERA_TURN.1 * dt,
             );
             if pinch != 1.0 {
-                walk.zoom_by(f64::from(pinch));
+                walk.zoom_by(f64::from(pinch), &lens);
             }
         }
         for &z in &reading.tapped_zones {

@@ -266,6 +266,7 @@ pub const CARD_FAILED: &str = "The graphics card could not draw this model, so i
 pub fn processor_reason(reason: ProcessorReason) -> &'static str {
     match reason {
         ProcessorReason::WidePoints => "vertices larger than the card draws",
+        ProcessorReason::Lens => super::model3dlens::processor_lens(),
     }
 }
 
@@ -274,4 +275,6 @@ pub fn processor_reason(reason: ProcessorReason) -> &'static str {
 pub enum ProcessorReason {
     /// Points wider than the card's widest.
     WidePoints,
+    /// A fisheye lens, which the card's picture does not draw yet.
+    Lens,
 }

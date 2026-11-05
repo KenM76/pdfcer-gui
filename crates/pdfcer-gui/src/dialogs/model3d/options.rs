@@ -1,6 +1,6 @@
 //! The viewer's options behind one glyph at the picture's top-left corner,
 //! in a window, on a phone and full screen alike, on four tabs: View (the
-//! views, projection, axes, mesh fit and full screen), Look (lighting,
+//! views, projection, lens, axes, mesh fit and full screen), Look (lighting,
 //! effects, render mode), Moving (the controls, navigation and eye height)
 //! and Picture (what *Save picture…* draws at, and, full screen where the
 //! footer is gone, the picture and save buttons). Each tab shows a glyph
@@ -202,6 +202,7 @@ impl ModelView {
             .on_hover_text(t::view_perspective_tooltip())
             .on_disabled_hover_text(t::view_perspective_walking_tooltip());
         crate::diag::ui_rect_visible(REGION_PERSPECTIVE, switch.rect, ui.clip_rect());
+        self.lens_control(ui);
         ui.horizontal_wrapped(|ui| self.axes_control(ui));
         ui.horizontal_wrapped(|ui| self.mesh_fit_control(ui));
         ui.horizontal_wrapped(|ui| self.full_screen_control(ui));

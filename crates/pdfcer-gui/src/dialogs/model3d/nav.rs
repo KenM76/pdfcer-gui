@@ -216,13 +216,25 @@ pub(super) fn toggle(ui: &mut Ui, icon: Icon, label: &str, tip: &str, on: bool) 
 }
 
 impl ModelView {
-    /// The camera the picture is drawn from, in an image of `aspect`.
+    /// The camera the picture is drawn from, in an image of `aspect`,
+    /// through the chosen lens.
     pub(super) fn view_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
+        self.camera_through(aspect, &self.lens)
+    }
+
+    /// The view's camera through a flat lens: what a view written to the
+    /// file holds, since a PDF view has no fisheye.
+    pub(super) fn flat_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
+        self.camera_through(aspect, &super::lens::Lens::default())
+    }
+
+    fn camera_through(&self, aspect: f64, lens: &super::lens::Lens) -> Result<Camera, RenderError> {
         match &self.nav.walk {
-            Some(walk) => Ok(walk.camera(aspect)),
+            Some(walk) => Ok(walk.camera(aspect, lens)),
             None => self
                 .orbit
-                .camera(&self.bounds, self.reach, aspect, self.aimed.as_ref()),
+                .camera(&self.bounds, self.reach, aspect, self.aimed.as_ref())
+                .map(|c| lens.applied(c)),
         }
     }
 

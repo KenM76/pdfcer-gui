@@ -1,5 +1,5 @@
 //! The viewer's settings kept between sessions: the navigation switches and
-//! speed, the options menu's tab, the screen's look, and the saved picture's
+//! speed, the options menu's tab, the lens, the screen's look, and the saved picture's
 //! size, resolution, backdrop, detail and own look, and the OS window's
 //! size. Each is one `model3d_`
 //! preferences key, written as a number or a 0/1 flag; a choice from a list
@@ -18,6 +18,7 @@ use pdfcer_3d::{LampCut, LightSense, RenderModeKind};
 use pdfcer_core::threed::ThreeDLighting;
 
 use super::ModelView;
+use super::lens::{AUTO_RANGE, CURVES, KINDS};
 use super::shotlook::LookSet;
 use crate::app::actions::Action;
 use crate::app::actions::prefs::PrefAction;
@@ -161,6 +162,10 @@ impl ModelView {
         put.value("speed", format!("{:.3}", p.speed));
         put.flag("stairs", p.stairs);
         put.value("tab", self.nav.options_tab);
+        let lens = &self.lens;
+        put.pick("lens", &KINDS, &lens.kind);
+        put.pick("lens_curve", &CURVES, &lens.curve);
+        put.value("lens_auto_at", format!("{:.0}", lens.auto_at));
         if let Some([w, h]) = self.nav.window.or(self.nav.window_open) {
             put.value("window_w", w);
             put.value("window_h", h);
@@ -195,6 +200,9 @@ impl ModelView {
         get.flag("stairs", &mut p.stairs);
         self.nav.recalled(p);
         get.number("tab", 0..=3, &mut self.nav.options_tab);
+        get.pick("lens", &KINDS, &mut self.lens.kind);
+        get.pick("lens_curve", &CURVES, &mut self.lens.curve);
+        get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);
         let mut size = [0.0_f32; 2];
         get.number("window_w", 200.0..=20_000.0, &mut size[0]);
         get.number("window_h", 200.0..=20_000.0, &mut size[1]);

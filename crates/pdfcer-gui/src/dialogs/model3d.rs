@@ -34,6 +34,8 @@ mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;
 mod inside;
+mod lens;
+mod lensmenu;
 mod lights;
 mod looks;
 mod memory;
@@ -122,6 +124,7 @@ struct Rendered {
     /// [`parts::Visibility::version`].
     parts: u32,
     look: effects::Look,
+    lens: lens::Lens,
 }
 
 /// The 3D viewer's state.
@@ -136,6 +139,8 @@ pub(crate) struct ModelView {
     orbit: Orbit,
     /// The axes the named views are measured in.
     upright: Upright,
+    /// The lens every picture is drawn through.
+    lens: lens::Lens,
     /// The named view last chosen, re-applied when the axes change.
     named: usize,
     /// The file's opening view (`default_3d_view`), the camera it opens on
@@ -248,6 +253,7 @@ impl ModelView {
             reach,
             orbit: saved.unwrap_or_else(|| Orbit::named(0, true, Upright::default())),
             upright: Upright::default(),
+            lens: lens::Lens::default(),
             named: 0,
             aimed: opening.clone(),
             saved: saved_list,
@@ -499,6 +505,7 @@ impl ModelView {
             accent: egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),
             parts: self.parts.version,
             look: self.look(),
+            lens: self.lens,
         };
         if self.rendered != Some(wanted) {
             self.draw_picture(ui.ctx(), wanted, gpu);
@@ -691,7 +698,7 @@ impl ModelView {
         {
             return Some((views, self.named));
         }
-        let camera = self.view_camera(aspect).ok()?;
+        let camera = self.flat_camera(aspect).ok()?;
         views.push(self.lit(ThreeDSavedView::from_camera(
             t::view_custom(),
             &camera,

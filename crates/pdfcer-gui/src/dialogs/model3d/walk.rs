@@ -16,8 +16,9 @@
 //! and a bracket walk alike, except the eye height where the operator set
 //! one ([`Walk::height`]). Model units throughout.
 
-use pdfcer_3d::{Camera, Hit, Projection, Ray};
+use pdfcer_3d::{Camera, Hit, Ray};
 
+use super::lens::Lens;
 use super::orbit::{Axes, PITCH_LIMIT, cross, dot, unit};
 
 /// The walking field of view, degrees, vertically: wider than the orbit's,
@@ -39,12 +40,15 @@ pub(super) const CLIMB: f64 = 1.0 / 3.0;
 /// The highest step climbed with it off: a seam or a threshold, never an
 /// object.
 const BUMP: f64 = 0.05;
-/// The widest vertical field zooming out reaches, degrees: about 130 degrees
-/// sideways at 16:9. A flat (rectilinear) picture this wide stretches its
-/// edges by design; the operator chooses it, the default stays at [`FOV`].
-const WIDEST_FOV: f64 = 100.0;
-/// The camera's zoom range, as a multiple of [`FOV`]'s view.
-const ZOOM: (f64, f64) = (FOV / WIDEST_FOV, 6.0);
+/// The widest vertical field zooming out reaches through a flat lens,
+/// degrees: about 130 degrees sideways at 16:9. A flat (rectilinear)
+/// picture this wide stretches its edges by design; the operator chooses
+/// it, the default stays at [`FOV`]. A fisheye reaches [`Lens::widest`].
+#[cfg(test)]
+const WIDEST_FOV: f64 = super::lens::FLAT_WIDEST;
+/// The camera's narrowest zoom-in, as a multiple of [`FOV`]'s view; the
+/// widest zoom-out is the lens's.
+const ZOOM_IN: f64 = 6.0;
 /// A hit whose normal is this close to the up axis is a floor or a ramp,
 /// stood on rather than walked into.
 const WALKABLE: f64 = 0.7;
@@ -155,17 +159,18 @@ impl Walk {
         self.axes.look(self.yaw + self.look_yaw, self.pitch)
     }
 
-    /// The camera for a picture of `aspect`, width / height.
-    pub fn camera(&self, aspect: f64) -> Camera {
+    /// The camera for a picture of `aspect`, width / height, through `lens`.
+    /// The field is the zoom's, no wider than the lens reaches.
+    pub fn camera(&self, aspect: f64, lens: &Lens) -> Camera {
         let d = self.direction();
         let ahead = self.body() * 4.0;
+        let natural = (FOV / self.zoom).min(lens.widest());
+        let fisheye = lens.fisheye_at(natural);
         Camera {
             eye: self.eye,
             target: std::array::from_fn(|i| self.eye[i] + d[i] * ahead),
             up: self.axes.up,
-            projection: Projection::Perspective {
-                fov_y: fov_y(FOV / self.zoom, aspect),
-            },
+            projection: lens.projection(fov_y(natural, aspect, fisheye)),
         }
     }
 
@@ -191,9 +196,10 @@ impl Walk {
         self.look_yaw = 0.0;
     }
 
-    /// Multiply the camera's zoom by `factor`, within [`ZOOM`].
-    pub fn zoom_by(&mut self, factor: f64) {
-        self.zoom = (self.zoom * factor).clamp(ZOOM.0, ZOOM.1);
+    /// Multiply the camera's zoom by `factor`, out no wider than `lens`
+    /// reaches and in no further than [`ZOOM_IN`].
+    pub fn zoom_by(&mut self, factor: f64, lens: &Lens) {
+        self.zoom = (self.zoom * factor).clamp(FOV / lens.widest(), ZOOM_IN);
     }
 
     /// Look and head along `direction`.
@@ -400,10 +406,15 @@ fn along(point: [f64; 3], direction: [f64; 3], distance: f64) -> [f64; 3] {
 mod tests;
 
 /// `natural`'s vertical field, narrowed past [`WIDEST`] so the sideways
-/// field stops growing with the window's width.
-fn fov_y(natural: f64, aspect: f64) -> f64 {
+/// field stops growing with the window's width. A fisheye's sideways field
+/// is its vertical one times the aspect, so it narrows in proportion; a
+/// flat one's tangent does.
+fn fov_y(natural: f64, aspect: f64, fisheye: bool) -> f64 {
     if aspect <= WIDEST {
         return natural;
+    }
+    if fisheye {
+        return natural * WIDEST / aspect;
     }
     let half = (natural.to_radians() / 2.0).tan() * WIDEST / aspect;
     2.0 * half.atan().to_degrees()

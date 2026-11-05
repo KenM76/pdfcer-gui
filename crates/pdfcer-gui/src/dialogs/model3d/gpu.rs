@@ -248,13 +248,18 @@ impl ModelView {
             self.gpu_scene(&options, wanted.accent);
             self.gpu.built = Some(built);
         }
-        self.gpu.declined = self.gpu.decline();
-        if self.gpu.declined.is_some() {
-            return Ok(false);
-        }
         let [width, height] = wanted.size;
         let aspect = f64::from(width) / f64::from(height.max(1));
         let camera = self.view_camera(aspect)?;
+        // The card's picture is one perspective frame; a fisheye is the
+        // processor's until the lens faces are drawn here.
+        self.gpu.declined = self
+            .gpu
+            .decline()
+            .or_else(|| super::lens::is_fisheye(&camera).then_some(ProcessorReason::Lens));
+        if self.gpu.declined.is_some() {
+            return Ok(false);
+        }
         let lights = &self.model.drawn.lights;
         let effects = Effects::new(&camera, &options, &self.bounds, lights, wanted.size)?;
         let frame_lights = FrameLights::for_model(&camera, &options, lights)?;

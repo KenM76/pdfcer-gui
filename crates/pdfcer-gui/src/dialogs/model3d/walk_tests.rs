@@ -1,4 +1,6 @@
-use pdfcer_3d::{TriangleMesh, pick};
+use pdfcer_3d::{FisheyeMapping, Projection, TriangleMesh, pick};
+
+use super::super::lens::{FISHEYE_WIDEST, LensKind};
 
 use super::*;
 
@@ -262,15 +264,15 @@ fn the_camera_turns_apart_from_the_heading_and_centres_back() {
 #[test]
 fn zoom_narrows_the_view_within_its_range() {
     let mut walk = walker([0.0; 3]);
-    walk.zoom_by(2.0);
-    let Projection::Perspective { fov_y } = walk.camera(1.0).projection else {
+    walk.zoom_by(2.0, &Lens::default());
+    let Projection::Perspective { fov_y } = walk.camera(1.0, &Lens::default()).projection else {
         unreachable!();
     };
     assert!((fov_y - FOV / 2.0).abs() < 1e-9, "{fov_y}");
-    walk.zoom_by(1000.0);
-    assert!((walk.zoom - ZOOM.1).abs() < 1e-9);
-    walk.zoom_by(1e-6);
-    let Projection::Perspective { fov_y } = walk.camera(1.0).projection else {
+    walk.zoom_by(1000.0, &Lens::default());
+    assert!((walk.zoom - ZOOM_IN).abs() < 1e-9);
+    walk.zoom_by(1e-6, &Lens::default());
+    let Projection::Perspective { fov_y } = walk.camera(1.0, &Lens::default()).projection else {
         unreachable!();
     };
     assert!(
@@ -283,7 +285,8 @@ fn zoom_narrows_the_view_within_its_range() {
 fn a_wide_window_keeps_a_16_9_sideways_field() {
     let walk = walker([0.0; 3]);
     let across = |aspect: f64| {
-        let Projection::Perspective { fov_y } = walk.camera(aspect).projection else {
+        let Projection::Perspective { fov_y } = walk.camera(aspect, &Lens::default()).projection
+        else {
             unreachable!();
         };
         2.0 * ((fov_y.to_radians() / 2.0).tan() * aspect)
@@ -293,11 +296,51 @@ fn a_wide_window_keeps_a_16_9_sideways_field() {
     let screen = across(WIDEST);
     assert!((across(3.0) - screen).abs() < 1e-9, "{}", across(3.0));
     assert!((across(5.0) - screen).abs() < 1e-9, "{}", across(5.0));
-    let Projection::Perspective { fov_y } = walk.camera(4.0 / 3.0).projection else {
+    let Projection::Perspective { fov_y } = walk.camera(4.0 / 3.0, &Lens::default()).projection
+    else {
         unreachable!();
     };
     assert!(
         (fov_y - FOV).abs() < 1e-9,
         "a narrower window keeps the vertical field" // ui-text-exempt: test assertion message
+    );
+}
+
+#[test]
+fn a_fisheye_zooms_out_to_a_half_sphere_and_flat_stops_short() {
+    let fisheye = Lens {
+        kind: LensKind::Fisheye,
+        ..Lens::default()
+    };
+    let mut walk = walker([0.0; 3]);
+    walk.zoom_by(1e-6, &fisheye);
+    let Projection::Fisheye { fov, mapping } = walk.camera(1.0, &fisheye).projection else {
+        unreachable!();
+    };
+    assert!((fov - FISHEYE_WIDEST).abs() < 1e-9, "{fov}");
+    assert_eq!(mapping, FisheyeMapping::Stereographic);
+    let Projection::Perspective { fov_y } = walk.camera(1.0, &Lens::default()).projection else {
+        unreachable!();
+    };
+    assert!((fov_y - WIDEST_FOV).abs() < 1e-9, "{fov_y}");
+}
+
+#[test]
+fn a_wide_window_narrows_a_fisheye_in_proportion() {
+    let fisheye = Lens {
+        kind: LensKind::Fisheye,
+        ..Lens::default()
+    };
+    let walk = walker([0.0; 3]);
+    let across = |aspect: f64| {
+        let Projection::Fisheye { fov, .. } = walk.camera(aspect, &fisheye).projection else {
+            unreachable!();
+        };
+        fov * aspect
+    };
+    assert!(
+        (across(3.0) - across(WIDEST)).abs() < 1e-9,
+        "{}",
+        across(3.0)
     );
 }

@@ -1,7 +1,8 @@
 //! `the_3d_viewer_walks_and_its_gimbal_turns_the_view` — in the 3D viewer, a
 //! tap on the gimbal's +X end views the model from +X, Walk starts a walk
 //! from the orbit's eye, the wheel walks it forward, a drag turns its look,
-//! and Ghost and Orbit switch as they say.
+//! Ghost and Orbit switch as they say, and the lens choice reaches the walk's
+//! field and picture (`model_walk_lens`).
 
 use crate::checks::driving::declared_in;
 use crate::checks::model_axes::{launch, opened_from_page};
@@ -90,7 +91,17 @@ impl Walker<'_> {
         if let Some(failure) = self.field_of_view(report)? {
             return Ok(Some(failure));
         }
-        if let Some(failure) = self.zoomed_out(report)? {
+        let flat_widest = match self.zoomed_out(report)? {
+            Ok(widest) => widest,
+            Err(failure) => return Ok(Some(failure)),
+        };
+        if let Some(failure) = crate::checks::model_walk_lens::lens(
+            self.session,
+            self.pointer,
+            self.ui_rect,
+            report,
+            flat_widest,
+        )? {
             return Ok(Some(failure));
         }
         let start = self.last("model-view-rendered", "eye");
@@ -161,10 +172,10 @@ impl Walker<'_> {
 
     /// Ctrl+wheel out while walking widens the field to its 100 degree
     /// vertical limit (narrowed past a 16:9 picture as the default is), and
-    /// no further.
-    fn zoomed_out(&self, report: &mut CheckReport) -> Result<Option<String>> {
+    /// no further; that field, or the failure.
+    fn zoomed_out(&self, report: &mut CheckReport) -> Result<std::result::Result<f64, String>> {
         let Some((image, vp)) = self.region(IMAGE)? else {
-            return Ok(Some(format!("no `{IMAGE}` region.")));
+            return Ok(Err(format!("no `{IMAGE}` region.")));
         };
         let centre = WindowPoint::centre_of(image);
         let vp = vp.map_or(String::new(), |v| format!(" vp={v}"));
@@ -184,7 +195,7 @@ impl Walker<'_> {
                 .and_then(|v| v.parse::<f64>().ok())
         };
         let (Some(w), Some(h), Some(fov)) = (num("w"), num("h"), num("fov-y")) else {
-            return Ok(Some(
+            return Ok(Err(
                 "the picture drawn after zooming out traced no `w`, `h` or `fov-y`.".to_owned(),
             ));
         };
@@ -200,11 +211,11 @@ impl Walker<'_> {
             "zoomed out {w}x{h}: fov-y {fov}, wanted {wanted:.3}"
         ));
         if (fov - wanted).abs() > 0.01 {
-            return Ok(Some(format!(
+            return Ok(Err(format!(
                 "Ctrl+wheel out while walking in a {w}x{h} picture reached fov-y {fov}; the widest should be {wanted:.3}."
             )));
         }
-        Ok(None)
+        Ok(Ok(fov))
     }
 
     /// Walking, the vertical field is 50 degrees up to a 16:9 picture and

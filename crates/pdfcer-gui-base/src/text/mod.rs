@@ -169,6 +169,8 @@ pub mod merge;
 pub mod metadata;
 /// Insert 3D model's options, a written view's lighting, part visibility.
 pub mod model3d;
+/// The 3D viewer's lens choice.
+pub mod model3dlens;
 /// The 3D viewer's render mode, shadow and highlight choices.
 pub mod model3dlook;
 pub mod model3dshot;
