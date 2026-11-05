@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O392 — **WAITING ON THE ENGINE (G269, G270)** — light brightness, and a sun he can aim and colour
+
+His words: *"oh and can we add an adjuster for the brightness for each of the light settings? It would be nice to sometimes be able to just use the model's lights, but bump the brightness up. Also the sun's horizontal and vertical angle and color temperature (from what it is at sun rise vs midday vs sunset)."*
+
+**Scope, whole behaviour.** In the 3D viewer's lighting options and the picture's settings: a brightness adjuster under every lighting choice, the model's own lights included, remembered per lighting choice; a sun with a compass direction (horizontal angle) and a height above the horizon (vertical angle), and a colour temperature running from sunrise through midday to sunset, which lights the model and casts its shadow; all of it the same in the live picture, a saved or copied picture, and remembered across sessions.
+
+**Status.** Not built. pdfcer-3d has no light brightness setting, and its sun (`ShadowLight::Sun`) only places the shadow at a fixed iso direction: no angles, no colour, no light of its own. Asked as G269 (a brightness gain for every lighting scheme) and G270 (a sun with azimuth, elevation and colour). No GUI-side brightening in the meantime.
+
 ## O391 — **WAITING ON THE ENGINE (G268)** — a fisheye lens in the 3D viewer
 
 His words, on being told a flat picture past about 100 degrees stretches and only a curved lens goes wider: *"yes. Let's get a fisheye lens option offering too!"* Then: *"When the fisheye lens lands we should add it as an option to select which lense to use, or an auto setting where it switches past a certain degree like a cell phone camera does."*
