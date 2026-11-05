@@ -653,13 +653,23 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O390 — **BUILT AND DRIVEN** — a wider widest view in the 3D viewer, at least Acrobat's
+
+His words: *"the 3D viewer's distortion is fixed. What is the widest viewing angle we can offer and not distort? Currently the widest is narrower than what acrobat has."*
+
+**Scope, whole behaviour.** Zooming out while walking reaches a field of view at least as wide as Acrobat's widest, the default staying where O389 put it; and the answer to his question in words.
+
+**The answer.** A flat (rectilinear) picture is undistorted only at the angle the screen fills at the eye, about 50–60 degrees across a desktop monitor; any wider stretches the edges, mildly to about 100 degrees across and strongly past about 120. Wider without stretch needs a curved projection, which bends straight lines; pdfcer-3d has only perspective and orthographic.
+
+**Status.** Built. Ctrl+wheel (or a pinch) out while walking now stops at 100 degrees vertical, about 130 across at 16:9, narrowed on a wider window as the default is; the default is still 50. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view` zooms out and asserts the widest field (fails on the previous build at 70). Acrobat's own widest is not measured here; his report that it was wider than 70 is the evidence. The orbit view's fixed 30 degree field is unchanged. NOT VERIFIED by him.
+
 ## O389 — **BUILT, PART DRIVEN** — the picture at the edges is skewed again
 
 His words: *"Also things appear very skewed at the edges again."*
 
 **Scope, whole behaviour.** Near the edges of the 3D picture, shapes look as they do at its centre, in every navigation, at the default field of view and after a named view sets its own.
 
-**Status.** Built. Cause: the picture was capped at its largest side one side at a time, so a wide window drew a picture of another shape, which was then stretched over the whole area; both sides now shrink by one factor (`picture::render_size`, tested over four window shapes). Walking draws at 50 degrees vertically, not 60, and zooming out stops at 70 degrees, past which the edges stretch. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view` asserts the walking field. NOT VERIFIED by him.
+**Status.** Built. Cause: the picture was capped at its largest side one side at a time, so a wide window drew a picture of another shape, which was then stretched over the whole area; both sides now shrink by one factor (`picture::render_size`, tested over four window shapes). Walking draws at 50 degrees vertically, not 60; how far zooming out goes is O390. Driven: `the_3d_viewer_walks_and_its_gimbal_turns_the_view` asserts the walking field. NOT VERIFIED by him.
 
 ## O388 — **BUILT, NOT DRIVEN** — open a named view from inside the model
 

@@ -39,9 +39,12 @@ pub(super) const CLIMB: f64 = 1.0 / 3.0;
 /// The highest step climbed with it off: a seam or a threshold, never an
 /// object.
 const BUMP: f64 = 0.05;
-/// The camera's zoom range, as a multiple of [`FOV`]'s view. Zooming out
-/// stops at a 70 degree vertical field, past which the edges stretch.
-const ZOOM: (f64, f64) = (FOV / 70.0, 6.0);
+/// The widest vertical field zooming out reaches, degrees: about 130 degrees
+/// sideways at 16:9. A flat (rectilinear) picture this wide stretches its
+/// edges by design; the operator chooses it, the default stays at [`FOV`].
+const WIDEST_FOV: f64 = 100.0;
+/// The camera's zoom range, as a multiple of [`FOV`]'s view.
+const ZOOM: (f64, f64) = (FOV / WIDEST_FOV, 6.0);
 /// A hit whose normal is this close to the up axis is a floor or a ramp,
 /// stood on rather than walked into.
 const WALKABLE: f64 = 0.7;

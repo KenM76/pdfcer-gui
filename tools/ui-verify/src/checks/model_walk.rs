@@ -90,6 +90,9 @@ impl Walker<'_> {
         if let Some(failure) = self.field_of_view(report)? {
             return Ok(Some(failure));
         }
+        if let Some(failure) = self.zoomed_out(report)? {
+            return Ok(Some(failure));
+        }
         let start = self.last("model-view-rendered", "eye");
         report.note(format!("walk starts at eye {start:?}"));
         if start.is_none() {
@@ -152,6 +155,54 @@ impl Walker<'_> {
             return Ok(Some(
                 "Orbit did not end the walk (`model-walk on=false`).".to_owned(),
             ));
+        }
+        Ok(None)
+    }
+
+    /// Ctrl+wheel out while walking widens the field to its 100 degree
+    /// vertical limit (narrowed past a 16:9 picture as the default is), and
+    /// no further.
+    fn zoomed_out(&self, report: &mut CheckReport) -> Result<Option<String>> {
+        let Some((image, vp)) = self.region(IMAGE)? else {
+            return Ok(Some(format!("no `{IMAGE}` region.")));
+        };
+        let centre = WindowPoint::centre_of(image);
+        let vp = vp.map_or(String::new(), |v| format!(" vp={v}"));
+        for _ in 0..12 {
+            self.pointer.send(
+                self.session,
+                &format!(
+                    "wheel {} -20 mods=ctrl{vp}",
+                    crate::input::scripted::xy(centre)
+                ),
+            )?;
+            self.session.settle(4);
+        }
+        self.session.settle(20);
+        let num = |key: &str| {
+            self.last("model-view-rendered", key)
+                .and_then(|v| v.parse::<f64>().ok())
+        };
+        let (Some(w), Some(h), Some(fov)) = (num("w"), num("h"), num("fov-y")) else {
+            return Ok(Some(
+                "the picture drawn after zooming out traced no `w`, `h` or `fov-y`.".to_owned(),
+            ));
+        };
+        let (aspect, widest) = (w / h.max(1.0), 16.0 / 9.0);
+        let wanted = if aspect <= widest {
+            100.0
+        } else {
+            2.0 * (50f64.to_radians().tan() * widest / aspect)
+                .atan()
+                .to_degrees()
+        };
+        report.note(format!(
+            "zoomed out {w}x{h}: fov-y {fov}, wanted {wanted:.3}"
+        ));
+        if (fov - wanted).abs() > 0.01 {
+            return Ok(Some(format!(
+                "Ctrl+wheel out while walking in a {w}x{h} picture reached fov-y {fov}; the                  widest should be {wanted:.3}."
+            )));
         }
         Ok(None)
     }

@@ -273,7 +273,10 @@ fn zoom_narrows_the_view_within_its_range() {
     let Projection::Perspective { fov_y } = walk.camera(1.0).projection else {
         unreachable!();
     };
-    assert!(fov_y <= 70.0 + 1e-9, "zoomed out to {fov_y} degrees"); // ui-text-exempt: test failure message
+    assert!(
+        (fov_y - WIDEST_FOV).abs() < 1e-9,
+        "zoomed out to {fov_y} degrees"
+    ); // ui-text-exempt: test failure message
 }
 
 #[test]
