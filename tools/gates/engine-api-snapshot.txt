@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: eba71f2f5405e2b01713ee3dddfbb574a2804783
+# baseline: 56ee4f8528065133de07821590edb2153a045fb4
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11581
+# items: 11605
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -93,6 +93,8 @@ exempt pdfcer-core field pdfcer_core::text_edit::block_text::BlockEditReport::in
 exempt pdfcer-core field pdfcer_core::text_edit::edit::TextEditPreview::cid_to_gid -- the glyph map for drawing an augmented composite font from `font_program`. This shell's text preview places the typed text at the engine's glyph positions and reads neither `font_program` nor this map, so there is nothing here for it to feed.
 exempt pdfcer-core field pdfcer_core::text_edit::format::FormatRequest::set_drawn_size -- the field under `FormatRequest::drawn_size`, which `StyleChange::stamp` calls for every size the operator types; the shell sets it through the builder and never reads it back.
 exempt pdfcer-core field pdfcer_core::text_edit::model::BlockDiagnostics::paragraph_breaks_by_blank_line -- one of paragraph recognition's internal counts; this shell reads no `BlockDiagnostics` field, and a recognised paragraph reaches the operator as the paragraph itself.
+exempt pdfcer-core field pdfcer_core::text_edit::model::rich_copy::SpanStyle::family_as_named -- the rich-copy writers read it themselves; the shell hands `RichText` to `to_cf_html` and `to_rtf` and never builds a `SpanStyle`.
+exempt pdfcer-core field pdfcer_core::text_edit::model::rich_copy::fonts::FontFace::family_as_named -- the rich-copy writers read it themselves; the shell hands `RichText` to `to_cf_html` and `to_rtf` and never builds a `FontFace`.
 exempt pdfcer-core field pdfcer_core::text_edit::reflow::ReflowDiagnostics::derived_word_breaks -- the count behind the engine's own disclosure sentence ("reflow: N word break(s) inferred from glyph spacing ..."), which reaches the operator through the diagnostics' `disclosures`.
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::hidden -- the object numbers whose winning xref entry came from the /XRefStm stream. This is the ONE fact in the hybrid cluster that `WriteError::HybridFullRewrite` does not already carry, and it is still not actionable: an operator cannot do anything with a set of object numbers, and the surface that would need them -- a structure report saying WHICH parts of a hybrid file a full rewrite would drop -- does not exist and is not planned. See the struct's exemption above, which names the condition for deleting both.
 exempt pdfcer-core field pdfcer_core::xref::HybridPartition::stream_unreadable -- a did-the-XRefStm-parse flag. Its ONLY consumer is `is_reproducible()`, which is the gate on `writer::save`'s full rewrite, and this shell already renders the outcome of that gate as `WriteError::HybridFullRewrite` (O157). Reading the flag would let the shell predict the refusal one step earlier; it would not let it say anything new, and a prediction that disagreed with the writer's own check would be a second description of the rule.
@@ -169,6 +171,9 @@ pdfcer-3d const pdfcer_3d::gpu_ao::GLSL_ES_300_AO_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_ao::GLSL_ES_300_SCREEN_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_lamp_shadow::GLSL_ES_300_LAMP_SHADOW_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_lamp_shadow::GLSL_ES_300_LAMP_SHADOW_VERTEX
+pdfcer-3d const pdfcer_3d::gpu_lens::GLSL_ES_300_LENS_LINE_VERTEX
+pdfcer-3d const pdfcer_3d::gpu_lens::GLSL_ES_300_LENS_POINT_VERTEX
+pdfcer-3d const pdfcer_3d::gpu_lens::GLSL_ES_300_LENS_RESAMPLE_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_lines::GLSL_ES_300_LINE_FRAGMENT
 pdfcer-3d const pdfcer_3d::gpu_lines::GLSL_ES_300_LINE_VERTEX
 pdfcer-3d const pdfcer_3d::gpu_lines::LINE_VERTEX_FLOATS
@@ -184,6 +189,7 @@ pdfcer-3d const pdfcer_3d::gpu_shadow_set::MAX_EXTRA_SHADOWS
 pdfcer-3d const pdfcer_3d::gpu_wide_lines::GLSL_ES_300_WIDE_LINE_VERTEX
 pdfcer-3d const pdfcer_3d::lamp_shadow::DEFAULT_LAMP_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::lamp_shadow::MAX_LAMP_SHADOW_MAP_SIZE
+pdfcer-3d const pdfcer_3d::lens::LENS_LINE_PIECES
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_DIRECTION
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_UP
 pdfcer-3d const pdfcer_3d::render::MAX_RENDER_PIXELS
@@ -209,8 +215,9 @@ pdfcer-3d enum pdfcer_3d::model_light::ViewLightUse
 pdfcer-3d enum pdfcer_3d::model_shade::LampCut
 pdfcer-3d enum pdfcer_3d::named_view::NamedView
 pdfcer-3d enum pdfcer_3d::named_view::UpAxis
-pdfcer-3d enum pdfcer_3d::render::Projection
-pdfcer-3d enum pdfcer_3d::render::RenderError
+pdfcer-3d enum pdfcer_3d::projection::FisheyeMapping
+pdfcer-3d enum pdfcer_3d::projection::Projection
+pdfcer-3d enum pdfcer_3d::render_error::RenderError
 pdfcer-3d enum pdfcer_3d::render_mode::EdgeSet
 pdfcer-3d enum pdfcer_3d::render_mode::FaceColour
 pdfcer-3d enum pdfcer_3d::render_mode::RenderModeKind
@@ -286,6 +293,16 @@ pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::lights
 pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::reach
 pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::size
 pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::to_light
+pdfcer-3d field pdfcer_3d::lens::FrameLens::faces
+pdfcer-3d field pdfcer_3d::lens::FrameLens::focal
+pdfcer-3d field pdfcer_3d::lens::FrameLens::mapping
+pdfcer-3d field pdfcer_3d::lens::FrameLens::near
+pdfcer-3d field pdfcer_3d::lens::LensFace::axes
+pdfcer-3d field pdfcer_3d::lens::LensFace::camera
+pdfcer-3d field pdfcer_3d::lens::LensFace::face
+pdfcer-3d field pdfcer_3d::lens::LensFace::height
+pdfcer-3d field pdfcer_3d::lens::LensFace::scale
+pdfcer-3d field pdfcer_3d::lens::LensFace::width
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::entity_overrides
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::mesh_fit
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::picture_files
@@ -511,6 +528,7 @@ pdfcer-3d method pdfcer_3d::gpu_shadow::FrameShadow::new
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::for_model
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::layers
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::matrix
+pdfcer-3d method pdfcer_3d::lens::FrameLens::new
 pdfcer-3d method pdfcer_3d::model_light::ModelLight::new
 pdfcer-3d method pdfcer_3d::model_light::ModelLightKind::name
 pdfcer-3d method pdfcer_3d::model_shade::LampCut::hundredths
@@ -558,6 +576,8 @@ pdfcer-3d struct pdfcer_3d::gpu_finish::DrawFinish
 pdfcer-3d struct pdfcer_3d::gpu_lamp_shadow::FrameLampShadows
 pdfcer-3d struct pdfcer_3d::gpu_shadow::FrameShadow
 pdfcer-3d struct pdfcer_3d::gpu_shadow_set::FrameExtraShadows
+pdfcer-3d struct pdfcer_3d::lens::FrameLens
+pdfcer-3d struct pdfcer_3d::lens::LensFace
 pdfcer-3d struct pdfcer_3d::model::AssembleOptions
 pdfcer-3d struct pdfcer_3d::model::AssembledModel
 pdfcer-3d struct pdfcer_3d::model_light::ModelLight
@@ -644,10 +664,16 @@ pdfcer-3d variant pdfcer_3d::named_view::NamedView::Top
 pdfcer-3d variant pdfcer_3d::named_view::UpAxis::X
 pdfcer-3d variant pdfcer_3d::named_view::UpAxis::Y
 pdfcer-3d variant pdfcer_3d::named_view::UpAxis::Z
-pdfcer-3d variant pdfcer_3d::render::Projection::Orthographic
-pdfcer-3d variant pdfcer_3d::render::Projection::Perspective
-pdfcer-3d variant pdfcer_3d::render::RenderError::Camera
-pdfcer-3d variant pdfcer_3d::render::RenderError::Size
+pdfcer-3d variant pdfcer_3d::projection::FisheyeMapping::Equidistant
+pdfcer-3d variant pdfcer_3d::projection::FisheyeMapping::Stereographic
+pdfcer-3d variant pdfcer_3d::projection::Projection::Fisheye
+pdfcer-3d variant pdfcer_3d::projection::Projection::Orthographic
+pdfcer-3d variant pdfcer_3d::projection::Projection::Perspective
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::Camera
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::FisheyeField
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::OutsideLens
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::Size
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::TooMuchWork
 pdfcer-3d variant pdfcer_3d::render_mode::EdgeSet::Creases
 pdfcer-3d variant pdfcer_3d::render_mode::EdgeSet::Triangles
 pdfcer-3d variant pdfcer_3d::render_mode::FaceColour::Background

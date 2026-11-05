@@ -191,7 +191,7 @@ impl Orbit {
         let offset = [dot(v, right), dot(v, image_up)];
         let distance = match camera.projection {
             Projection::Orthographic { height } => height / 2.0 / half_fov().tan(),
-            Projection::Perspective { .. } => depth,
+            Projection::Perspective { .. } | Projection::Fisheye { .. } => depth,
         };
         if distance.is_finite() && distance > 0.0 {
             self.anchor = Some(Anchor {
@@ -385,7 +385,10 @@ pub(super) fn radius(bounds: &Bounds) -> f64 {
 fn visible_height(camera: &Camera) -> f64 {
     match camera.projection {
         Projection::Orthographic { height } => height,
-        Projection::Perspective { fov_y } => {
+        // A fisheye's field spans its height as a perspective's does; past
+        // 180° the plane is unbounded, so the span is taken just short of it.
+        Projection::Perspective { fov_y } | Projection::Fisheye { fov: fov_y, .. } => {
+            let fov_y = fov_y.min(179.0);
             let distance = (0..3)
                 .map(|i| (camera.eye[i] - camera.target[i]).powi(2))
                 .sum::<f64>()
@@ -682,6 +685,7 @@ mod tests {
         let v: [f64; 3] = std::array::from_fn(|i| p[i] - c.eye[i]);
         let h = match c.projection {
             Projection::Perspective { fov_y } => 2.0 * dot(v, f) * (fov_y / 2.0).to_radians().tan(),
+            Projection::Fisheye { .. } => unreachable!("orbit tests use flat lenses"),
             Projection::Orthographic { height } => height,
         };
         [dot(v, r) / h, dot(v, u) / h]

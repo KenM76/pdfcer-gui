@@ -175,6 +175,9 @@ fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let t = camera.target;
     let fov = match camera.projection {
         pdfcer_3d::Projection::Perspective { fov_y } => format!(" fov-y={fov_y:.3}"), // ui-text-exempt: diagnostic trace
+        pdfcer_3d::Projection::Fisheye { fov, mapping } => {
+            format!(" lens=fisheye-{mapping:?} fov={fov:.3}").to_lowercase() // ui-text-exempt: diagnostic trace
+        }
         pdfcer_3d::Projection::Orthographic { .. } => String::new(),
     };
     format!(
@@ -211,6 +214,9 @@ fn pivot_shown(camera: &pdfcer_3d::Camera, p: [f64; 3]) -> String {
     let h = match camera.projection {
         pdfcer_3d::Projection::Perspective { fov_y } => {
             2.0 * dot(v, f) * (fov_y / 2.0).to_radians().tan()
+        }
+        pdfcer_3d::Projection::Fisheye { fov, .. } => {
+            2.0 * dot(v, f) * (fov.min(179.0) / 2.0).to_radians().tan()
         }
         pdfcer_3d::Projection::Orthographic { height } => height,
     }
