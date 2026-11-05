@@ -655,9 +655,9 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 ## O391 — **WAITING ON THE ENGINE (G268)** — a fisheye lens in the 3D viewer
 
-His words, on being told a flat picture past about 100 degrees stretches and only a curved lens goes wider: *"yes. Let's get a fisheye lens option offering too!"*
+His words, on being told a flat picture past about 100 degrees stretches and only a curved lens goes wider: *"yes. Let's get a fisheye lens option offering too!"* Then: *"When the fisheye lens lands we should add it as an option to select which lense to use, or an auto setting where it switches past a certain degree like a cell phone camera does."*
 
-**Scope, whole behaviour.** The 3D viewer's options offer a fisheye lens beside the flat one, in orbit and walking, remembered across sessions; the picture, a saved or copied picture, clicking, double-click go-to and walking collision all follow the lens; zooming out reaches the lens's widest, 180 degrees or more.
+**Scope, whole behaviour.** The 3D viewer's options offer a lens choice, *Flat*, *Fisheye* or *Auto*, in orbit and walking; *Auto* draws flat up to a set angle and fisheye past it as the view zooms out, as a phone camera changes lens, the change point adjustable and the lens in use said off the picture, remembered across sessions; the picture, a saved or copied picture, clicking, double-click go-to and walking collision all follow the lens; zooming out reaches the lens's widest, 180 degrees or more.
 
 **Status.** Not built: pdfcer-3d draws only flat (perspective) and orthographic pictures. Asked as G268 (a fisheye projection, equidistant and/or stereographic, the same on the CPU and GPU paths and in picking). No GUI-side warp in the meantime.
 
