@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O393 — **INVESTIGATING** — the 3D viewer crawls on his Fairphone 5 with the model's lights on
+
+His words: *"Is this why my fairphone 5 slows to a crawl when I enable the model's lights?"*
+
+**Scope, whole behaviour.** On the phone, choosing the model's own lights keeps moving the model as smooth as the other lighting choices, or the viewer says what costs the speed and offers the cheaper setting.
+
+**Status.** Not the processor fallback: a single frame is handed to the processor only for points wider than the card draws, and a card that cannot draw the model at all says so under the picture. The model's lamps are fixed in the model, so their shadow maps (six faces per lamp, up to 16 lamps) are drawn once, not per move; what runs every frame is each pixel lit by every lamp and tested against every lamp's shadow, which a phone's graphics chip pays for at its full screen resolution. Not measured on the phone (no device attached here). Next: his reading of whether the note under the picture appears and whether *Lamp shadows* off restores the speed; then a per-frame cost trace on Android.
+
 ## O392 — **WAITING ON THE ENGINE (G269, G270)** — light brightness, and a sun he can aim and colour
 
 His words: *"oh and can we add an adjuster for the brightness for each of the light settings? It would be nice to sometimes be able to just use the model's lights, but bump the brightness up. Also the sun's horizontal and vertical angle and color temperature (from what it is at sun rise vs midday vs sunset)."*
