@@ -114,7 +114,8 @@ pub(super) fn lens(
     report.note(format!("curve Classic {w2}x{h2}: lens={lens} fov={fov2}"));
     if lens != "fisheye-equidistant" || [&w2, &h2, &fov2] != [&w, &h, &fov] {
         return Ok(Some(format!(
-            "Curve: Classic drew lens={lens} at {w2}x{h2} fov={fov2}; expected              lens=fisheye-equidistant at the same {w}x{h} fov={fov}."
+            "Curve: Classic drew lens={lens} at {w2}x{h2} fov={fov2}; expected \
+             lens=fisheye-equidistant at the same {w}x{h} fov={fov}."
         )));
     }
     if !choose(session, pointer, ui_rect, LENS, "flat")? {
