@@ -244,12 +244,6 @@ pub fn casters_dropped(count: usize, limit: usize) -> String {
     format!("{count} light(s) past the {limit} casting shadows light the model without one.")
 }
 
-/// Point and spot lights past the `limit` that cast shadows, lit without one.
-#[must_use]
-pub fn lamp_casters_dropped(count: usize, limit: usize) -> String {
-    format!("{count} lamp(s) past the {limit} casting shadows light the model without one.")
-}
-
 /// The live picture is drawn by the processor, not the graphics card,
 /// because it shows `what`.
 #[must_use]

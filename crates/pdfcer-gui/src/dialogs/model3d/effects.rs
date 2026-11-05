@@ -32,6 +32,8 @@ pub(super) struct Look {
     pub(super) occlusion: bool,
     pub(super) light_sense: LightSense,
     pub(super) shadow_light: ShadowLight,
+    /// The scheme's brightness, a multiple of full.
+    pub(super) light_gain: f64,
     /// The render mode, casters, lamp and highlight choices.
     pub(super) extras: Extras,
     /// The render mode the view on screen asks for.
@@ -49,6 +51,7 @@ impl Look {
             ambient_occlusion: self.occlusion,
             light_sense: self.light_sense,
             shadow_light: self.shadow_light,
+            light_gain: self.light_gain,
             ..ModelRenderOptions::default()
         };
         self.extras.apply(self.view_mode, &mut options);
@@ -114,14 +117,8 @@ impl ModelView {
             shadows: self.shadows,
             occlusion: self.occlusion,
             light_sense: self.light_sense,
-            shadow_light: if self.sun {
-                ShadowLight::Sun {
-                    up: self.upright.up.engine(),
-                    negative: self.upright.up.negative(),
-                }
-            } else {
-                ShadowLight::FollowsScheme
-            },
+            shadow_light: self.shadow_light(),
+            light_gain: self.light_gain(),
             extras: self.extras,
             view_mode: self.view_mode(),
         }
@@ -136,6 +133,7 @@ impl ModelView {
         crate::diag::ui_rect_visible(REGION_SHADOWS, shadows.rect, ui.clip_rect());
         if self.shadows {
             ui.horizontal_wrapped(|ui| self.shadow_light_combo(ui));
+            self.sun_control(ui);
             if !self.sun {
                 ui.horizontal_wrapped(|ui| self.light_sense_combo(ui));
             }
@@ -151,19 +149,26 @@ impl ModelView {
 
     fn shadow_light_combo(&mut self, ui: &mut Ui) {
         ui.label(m::shadow_light_label());
+        // (sun, aimed) for the fixed sun, the aimed sun and the scheme.
+        let mut chosen = (self.sun, self.sun && self.light.sun.on);
         let combo = egui::ComboBox::from_id_salt(REGION_SHADOW_LIGHT)
-            .selected_text(m::shadow_light(self.sun))
+            .selected_text(caster_text(chosen))
             .show_ui(ui, |ui| {
-                for sun in [true, false] {
-                    let item = ui.selectable_value(&mut self.sun, sun, m::shadow_light(sun));
+                for (way, word) in [
+                    ((true, false), "sun"),
+                    ((true, true), "aimed"),
+                    ((false, false), "scheme"),
+                ] {
+                    let item = ui.selectable_value(&mut chosen, way, caster_text(way));
                     // ui-text-exempt: trace region name, never displayed
-                    let region = format!(
-                        "{REGION_SHADOW_LIGHT}.{}",
-                        if sun { "sun" } else { "scheme" }
-                    );
+                    let region = format!("{REGION_SHADOW_LIGHT}.{word}");
                     crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
                 }
             });
+        self.sun = chosen.0;
+        if chosen.0 {
+            self.light.sun.on = chosen.1;
+        }
         crate::diag::ui_rect_visible(REGION_SHADOW_LIGHT, combo.response.rect, ui.clip_rect());
         combo.response.on_hover_text(m::shadow_light_tooltip());
     }
@@ -219,10 +224,20 @@ fn fingerprint(matrix: &[f32; 16]) -> u64 {
     })
 }
 
+/// The shadow caster drop-down's wording for `(sun, aimed)`.
+fn caster_text((sun, aimed): (bool, bool)) -> &'static str {
+    if aimed {
+        crate::text::model3dlight::aimed_sun()
+    } else {
+        m::shadow_light(sun)
+    }
+}
+
 /// The trace's word for the shadow caster.
 fn caster_word(light: ShadowLight) -> &'static str {
     match light {
         ShadowLight::Sun { .. } => "sun", // ui-text-exempt: trace value, never displayed
+        ShadowLight::AimedSun(_) => "aimed", // ui-text-exempt: trace value, never displayed
         _ => "scheme",                    // ui-text-exempt: trace value, never displayed
     }
 }

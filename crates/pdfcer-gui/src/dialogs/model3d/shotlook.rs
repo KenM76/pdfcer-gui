@@ -25,6 +25,7 @@ pub(super) struct LookSet {
     pub(super) occlusion: bool,
     pub(super) light_sense: pdfcer_3d::LightSense,
     pub(super) sun: bool,
+    pub(super) light: super::sunlight::Light,
     pub(super) extras: super::looks::Extras,
 }
 
@@ -39,6 +40,7 @@ impl LookSet {
             occlusion: false,
             light_sense: pdfcer_3d::LightSense::default(),
             sun: false,
+            light: super::sunlight::Light::default(),
             extras: super::looks::Extras::default(),
         }
     }
@@ -54,6 +56,7 @@ impl ModelView {
             occlusion: self.occlusion,
             light_sense: self.light_sense,
             sun: self.sun,
+            light: self.light,
             extras: self.extras,
         }
     }
@@ -66,6 +69,7 @@ impl ModelView {
         std::mem::swap(&mut self.occlusion, &mut set.occlusion);
         std::mem::swap(&mut self.light_sense, &mut set.light_sense);
         std::mem::swap(&mut self.sun, &mut set.sun);
+        std::mem::swap(&mut self.light, &mut set.light);
         std::mem::swap(&mut self.extras, &mut set.extras);
     }
 

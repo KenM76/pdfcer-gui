@@ -51,6 +51,7 @@ mod saved;
 mod shot;
 mod shotlook;
 mod stick;
+mod sunlight;
 mod walk;
 mod window;
 
@@ -191,6 +192,8 @@ pub(crate) struct ModelView {
     /// Shadows are cast by a sun fixed above the model on the Up axis,
     /// else by the lighting.
     sun: bool,
+    /// A brightness per lighting choice, and the aimed sun.
+    light: sunlight::Light,
     /// The render mode, casters, lamp and highlight choices.
     extras: looks::Extras,
     /// Orbiting or walking, the switches, and the fingers on the picture.
@@ -278,6 +281,7 @@ impl ModelView {
             occlusion: true,
             light_sense: pdfcer_3d::LightSense::default(),
             sun: true,
+            light: sunlight::Light::default(),
             extras: looks::Extras::default(),
             nav: nav::Nav::with_eye(eye_mm, walk),
             eye_changed: false,

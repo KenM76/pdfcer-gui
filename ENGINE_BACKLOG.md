@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **56 of 508** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `wanted` — a real gap — **57 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -69,6 +69,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
 | **Fisheye lens for the 3D camera** — `Projection::Fisheye`, `FrameLens` | **wanted, being built under O391.** The viewer offers Flat / Fisheye / Auto with the curve, Auto switching to fisheye past a chosen angle; the CPU picture draws it directly and the GPU picture through `FrameLens` faces and the lens shaders. |
+| **Fisheye lens on the GPU draws correctly** — hosts' recipe: `FrameLens::eye`, `FrameLens::basis`, depth test `ALWAYS` for the resample | **wanted, being built under O391.** The shell still hands a fisheye frame to the processor (`ProcessorReason::Lens`); drawing `FrameLens` faces on the card with this recipe is the shell's own work, not an engine gap. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
 
 ### Text
@@ -171,7 +172,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 508** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `blocked` — waiting on something named — **2 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -189,7 +190,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 508** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -200,7 +201,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 508** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `declined` — deliberately no surface — **20 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -246,7 +247,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **430 of 508** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **434 of 513** <!-- counted by tools/walk-engine-backlog.py, 2026-11-05; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -731,6 +732,10 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Bounded per-fragment lamp work, with a lamp-cut setting** — the module `pdfcer_3d::model_shade` (`LampCut`: `Auto`, `Threshold`, `Off`), `RenderOptions::lamp_cut`, `FrameLights::local_reach` | **shipped; our request G263, at v0.123.0.** `dialogs::model3d::looks` offers *Lamps reach* whenever the model carries a lamp: the default `Auto` (no pixel changes), three `Threshold` steps (1, 4 and 16 of 255 levels), or `Off`. Under `Threshold` a note under the picture states the bound. |
 | **GPU depth prepass: skip shading hidden fragments** — the module `pdfcer_3d::gpu_prepass` (`GLSL_ES_300_PREPASS_VERTEX`, `GLSL_ES_300_PREPASS_FRAGMENT`; the main shader's `u_prepass`, `u_prepass_depth`, `u_prepass_spread`) | **shipped; our request G264, at v0.124.0.** `native-mesh` draws the opaque draws depth-only into a single-sample texture before the main pass; `dialogs::model3d::looks` offers *Skip lighting hidden surfaces* (on by default) whenever the card draws the model. Single-sample is pixel-exact; under MSAA silhouette edges may differ, disclosed on the box's tooltip. A saved or copied picture is drawn by the CPU and never uses it. |
 | **Point and spot lamps of a 3D model cast shadows** — the modules `pdfcer_3d::lamp_shadow` and `pdfcer_3d::gpu_lamp_shadow` (`FrameLampShadows`), `RenderOptions::lamp_shadows` | **shipped, at v0.120.0.** *Lamps cast shadows* in the viewer's options menu (`dialogs::model3d::looks`), shown when the model has lamps. The card draws each lamp's cube map (`dialogs::model3d::gpu_uniforms::lamp_uniforms`); `RenderOptions::lamp_shadow_map_size` stays at its default. |
+| **3D light gain** — `RenderOptions::light_gain`, `MIN_LIGHT_GAIN`, `MAX_LIGHT_GAIN` | **shipped; our request G269, at v0.130.0.** `dialogs::model3d::sunlight` keeps a gain per lighting choice and offers it as *Brightness* (25% to 400%) under the Lighting list; `effects::Look::options` carries it into the live, poster and saved pictures. The module `pdfcer_3d::light_gain` holds the range. `RenderError::LightGain` cannot reach the operator, since the slider stays inside it; if it did, it reads as every other render refusal, the engine's own sentence. Driven by `the_3d_brightness_is_kept_for_each_lighting`. |
+| **3D sun** — aimed, coloured (kelvin) directional light; `ShadowLight::AimedSun`, `SunLight`, `SunColour`, `MIN_SUN_KELVIN`, `MAX_SUN_KELVIN` | **shipped; our request G270, at v0.130.0.** *Shadows cast by* ▸ *A sun you aim* in `dialogs::model3d::effects`, its bearing, height, colour and strength in `sunlight::ModelView::sun_control`; sent only while Shadows is on, since the engine adds the sun as a light with shadows off too. The module `pdfcer_3d::sun` is wholly consumed through its re-exports. `RenderError::Sun` is kept out of reach by the sliders' ranges, and would read as the engine's own sentence. Driven by `an_aimed_sun_lights_the_3d_model_where_it_is_aimed`. |
+| **3D lamp culling and cost mode** — lamps outside the view skipped; `LampCost`, `RenderOptions::lamp_cost`, `LampStats` | **shipped; our request G271, at v0.130.0.** Culling needs the host's viewport size in `RenderOptions`, which `gpu.rs` and the lamp notes set; *Lamps drawn* in `dialogs::model3d::looks` picks `LampCost::NearestPerFrame` 4, 8 or 16, and `looks::lamp_notes` says `LampStats`. The module `pdfcer_3d::lamp_view` is consumed through its re-exports. Driven by `the_3d_viewer_draws_fewer_lamps_when_asked`. |
+| **3D shadow-caster choice** — up to 16 lamps cast, chosen at the view; `FrameLampShadows::for_model_after`, `FrameLights::use_lamp_shadows`, `MAX_LAMP_SHADOWS` | **shipped; our request G272, at v0.130.0.** `dialogs::model3d::gpu` passes the previous frame's choice and maps slots to lamps; `looks::lamp_notes` says when more lamps would cast than `MAX_LAMP_SHADOWS`. Covered by `a_models_lamp_casts_on_the_card`. |
 | **Material specular, shininess, emissive and ambient in the 3D picture** — the modules `pdfcer_3d::finish` (`MaterialFinish`, `ShininessScale`) and `pdfcer_3d::gpu_finish` (`DrawFinish`), `AssembledModel::finishes`, `RenderOptions::shininess` | **shipped, at v0.120.0.** *Highlights* in the viewer's options menu when the model carries a finish; the card draws finishes per draw (`dialogs::model3d::gpu_uniforms::finish_uniforms`) and the emissive repeat unlit (`repeat_uniforms`). |
 | **Every directional light casts; translucent casters cast partial shadows** — the modules `pdfcer_3d::shadow_cast` (`ShadowCasters`, `ShadowAlpha`, `DEFAULT_SHADOW_CUTOFF`) and `pdfcer_3d::gpu_shadow_set` (`FrameExtraShadows`, `MAX_EXTRA_SHADOWS`), `RenderOptions::shadow_casters`, `RenderOptions::shadow_alpha` | **shipped, at v0.120.0.** *Shadows from* (every light or the key light) and *See-through parts cast* (tinted, cut out, not at all) in the viewer's options menu (`dialogs::model3d::looks`); casters beyond the engine's limit are said under the picture. The card draws the extra casters' maps and the see-through veil and transmit maps (`dialogs::model3d::gpu_uniforms::extra_uniforms`, `veil_uniforms`). |
 | **3D wire tessellations drawn, and all 15 render modes (`/RM`)** — the modules `pdfcer_3d::render_mode` (`RenderMode`, `RenderModeKind`, `EdgeSet`, `FaceColour`), `pdfcer_core::threed::render_mode` (`ThreeDRenderMode`, `ThreeDRenderModeKind`), `pdfcer_3d::wire` (`ModelLine`), `pdfcer_3d::node_box` (`NodeBox`), `pdfcer_3d::gpu_lines` and `pdfcer_3d::gpu_wide_lines` (`GLSL_ES_300_WIDE_LINE_VERTEX`, `DrawData::line_width`), `ThreeDSavedView::render_mode`, `RenderOptions::render_mode`, `RenderOptions::line_width`, `AssembledModel::lines`, `AssembledModel::boxes`, `RenderedPoster::wires`, `WireTessellation` (`WireTessellation::polylines`, `WireTessellation::colours`) | **shipped, at v0.120.0.** The viewer draws the view's own /RM and offers *Draw as* with all fifteen modes (`dialogs::model3d::looks`). The card draws lines of every width as instanced quads and points with the line program (`dialogs::model3d::gpu_uniforms::line_uniforms`); `ThreeDSavedView::with_render_mode` is not called. |
@@ -879,10 +884,10 @@ The request O280 is built on, answered and consumed.
 - **G258** — no ambient occlusion: the ambient term is constant, and glTF `occlusionTexture` is not read. Asked for SSAO or baked per-vertex occlusion, and a switch beside G257's.
 - **G259** — shadows move as the eye moves (O368). In `LightFrame::Camera` the caster is a camera-frame light, so a shadow keeps its place on the screen and swings round the model. In `LightFrame::World` Table 310's directions are model axes, so a Z-up model casts no floor shadow, and `Caster::choose` still prefers the light on the viewer's side. Asked for a shadow light fixed in model space, chosen from the model's up axis, apart from `light_frame`. Answered at v0.118.0 by `ShadowLight::Sun` and consumed by `dialogs::model3d::effects`. Its `UpAxis` is unsigned, so a negative Up puts the sun beneath the model: G260.
 - **G268** — SHIPPED in v0.129.0: `Projection::Fisheye { fov, mapping }` with `FisheyeMapping::Equidistant` and `::Stereographic`, drawn on the CPU and through `FrameLens` on the GPU (O391). The blend asked for Auto (item 6) did not come: Auto switches at an angle. Verdict on its modules: `pdfcer_3d::lens` and `pdfcer_3d::gpu_lens` are **wanted** — the GPU picture draws a fisheye as `FrameLens` faces resampled through the lens shaders, not yet wired (the shell's fisheye frames go to the processor, `ProcessorReason::Lens`); `pdfcer_3d::projection` and `pdfcer_3d::render_error` are where `Projection` and `RenderError` now live, re-exported at the crate root the shell already names, so nothing new to wire.
-- **G269** — no brightness setting for any lighting scheme, the model's own lights included (O392). Asked for a gain on `RenderOptions`, carried into `FrameLights`.
-- **G270** — `ShadowLight::Sun` places a shadow only, at a fixed iso direction, with no colour and no light of its own (O392). Asked for a sun with azimuth, elevation and a colour temperature that lights and casts.
-- **G271** — the fragment program visits every model lamp (up to `MAX_LIGHTS`) for every pixel before its reach rejects it, which a phone's graphics chip cannot pay (O393). Asked for culling by reach, tiled or clustered, with lamp counts to disclose.
-- **G272** — the 16 lamps that cast shadows are the first 16 in the model's order, never re-chosen as the view moves (O393). Asked for a choice by contribution to the current view, the cap a stated constant.
+- **G269** — CONSUMED at v0.130.0: `RenderOptions::light_gain`, the options menu's *Brightness* per lighting choice (O392).
+- **G270** — CONSUMED at v0.130.0: `ShadowLight::AimedSun(SunLight)`, *A sun you aim* under *Shadows cast by* (O392).
+- **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
+- **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 

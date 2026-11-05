@@ -10,12 +10,13 @@
 use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
-    AssembledModel, DEFAULT_SHADOW_CUTOFF, FrameExtraShadows, FrameLampShadows, FrameLights,
-    LampCut, LightingScheme, MAX_LIGHTS, MAX_SHADOW_CASTERS, ModelLightKind, RenderMode,
-    RenderModeKind, ShadowAlpha, ShadowCasters, ShininessScale,
+    AssembledModel, DEFAULT_SHADOW_CUTOFF, FrameExtraShadows, FrameLights, LampCost, LampCut,
+    LampStats, LightingScheme, MAX_LAMP_SHADOWS, MAX_LIGHTS, MAX_SHADOW_CASTERS, ModelLightKind,
+    RenderMode, RenderModeKind, ShadowAlpha, ShadowCasters, ShininessScale,
 };
 
 use super::ModelView;
+use crate::text::model3dlight as k_light;
 use crate::text::model3dlook as k;
 use k::{Highlights, SeeThrough};
 
@@ -32,6 +33,11 @@ pub const REGION_LAMP_SHADOWS: &str = "model3d.lamp_shadows"; // ui-text-exempt:
 pub const REGION_LAMP_CUT: &str = "model3d.lamp_cut"; // ui-text-exempt: trace region name, never displayed
 /// The lamp reach drop-down's shorter choices, in hundredths of an 8-bit level.
 pub(super) const LAMP_CUT_STEPS: [u16; 3] = [100, 400, 1600];
+/// The lamps drawn drop-down; items add `.all` or `.<count>`.
+pub const REGION_LAMPS_DRAWN: &str = "model3d.lamps_drawn"; // ui-text-exempt: trace region name, never displayed
+/// The lamps drawn choices: all in view, else the brightest so many. The
+/// preferences file keeps an index into this list.
+pub(super) const LAMP_NEAREST: [Option<u16>; 4] = [None, Some(4), Some(8), Some(16)];
 /// The depth prepass switch.
 pub const REGION_SKIP_HIDDEN: &str = "model3d.skip_hidden"; // ui-text-exempt: trace region name, never displayed
 /// The camera light switch.
@@ -48,6 +54,9 @@ pub(super) struct Extras {
     pub(super) see_through: SeeThrough,
     pub(super) lamp_shadows: bool,
     pub(super) lamp_cut: LampCut,
+    /// Only this many lamps are drawn, the brightest at the view's centre;
+    /// `None` draws every lamp in view.
+    pub(super) nearest: Option<u16>,
     /// The graphics card draws a depth prepass; the processor ignores it.
     pub(super) skip_hidden: bool,
     pub(super) headlight: bool,
@@ -63,6 +72,7 @@ impl Default for Extras {
             see_through: SeeThrough::Tinted,
             lamp_shadows: d.lamp_shadows,
             lamp_cut: d.lamp_cut,
+            nearest: None,
             skip_hidden: true,
             headlight: d.artwork_headlight,
             highlights: Highlights::Auto,
@@ -93,6 +103,9 @@ impl Extras {
         };
         options.lamp_shadows = self.lamp_shadows;
         options.lamp_cut = self.lamp_cut;
+        options.lamp_cost = self
+            .nearest
+            .map_or(LampCost::Full, LampCost::NearestPerFrame);
         options.artwork_headlight = self.headlight;
         options.shininess = match self.highlights {
             Highlights::Auto => ShininessScale::Auto,
@@ -115,11 +128,28 @@ pub(super) fn trace(options: &ModelRenderOptions) -> String {
     };
     format!(
         // ui-text-exempt: diagnostic trace, never displayed
-        " render-mode={} casters={casters} see-through={see_through} lamp-shadows={} lamp-cut={} headlight={}",
+        " render-mode={} casters={casters} see-through={see_through} lamp-shadows={} lamp-cut={} lamp-cost={} headlight={}",
         options.render_mode.kind.as_name(),
         u8::from(options.lamp_shadows),
         lamp_cut_word(options.lamp_cut),
+        lamp_cost_word(options.lamp_cost),
         u8::from(options.artwork_headlight)
+    )
+}
+
+/// A lamp cost's trace and region word: `all` or the count drawn.
+fn lamp_cost_word(cost: LampCost) -> String {
+    match cost {
+        LampCost::NearestPerFrame(n) => n.to_string(),
+        _ => "all".to_owned(), // ui-text-exempt: trace value, never displayed
+    }
+}
+
+/// A lamps drawn choice's drop-down wording.
+fn nearest_text(nearest: Option<u16>) -> String {
+    nearest.map_or_else(
+        || k_light::lamps_drawn_all().to_owned(),
+        k_light::lamps_drawn_nearest,
     )
 }
 
@@ -192,6 +222,7 @@ impl ModelView {
         }
         if lamps > 0 {
             ui.horizontal_wrapped(|ui| self.lamp_cut_combo(ui));
+            ui.horizontal_wrapped(|ui| self.lamps_drawn_combo(ui));
         }
         if self.gpu.drawing() {
             let r = ui
@@ -294,6 +325,25 @@ impl ModelView {
         combo.response.on_hover_text(k::lamp_cut_tooltip());
     }
 
+    fn lamps_drawn_combo(&mut self, ui: &mut Ui) {
+        ui.label(k_light::lamps_drawn_label())
+            .on_hover_text(k_light::lamps_drawn_tooltip());
+        let combo = egui::ComboBox::from_id_salt(REGION_LAMPS_DRAWN)
+            .selected_text(nearest_text(self.extras.nearest))
+            .show_ui(ui, |ui| {
+                for nearest in LAMP_NEAREST {
+                    let text = nearest_text(nearest);
+                    let item = ui.selectable_value(&mut self.extras.nearest, nearest, text);
+                    let cost = nearest.map_or(LampCost::Full, LampCost::NearestPerFrame);
+                    // ui-text-exempt: trace region name, never displayed
+                    let region = format!("{REGION_LAMPS_DRAWN}.{}", lamp_cost_word(cost));
+                    crate::diag::ui_rect_visible(&region, item.rect, ui.clip_rect());
+                }
+            });
+        crate::diag::ui_rect_visible(REGION_LAMPS_DRAWN, combo.response.rect, ui.clip_rect());
+        combo.response.on_hover_text(k_light::lamps_drawn_tooltip());
+    }
+
     fn highlights_combo(&mut self, ui: &mut Ui) {
         ui.label(k::shininess_label());
         let combo = egui::ComboBox::from_id_salt(REGION_SHININESS)
@@ -312,7 +362,11 @@ impl ModelView {
     /// drawing.
     pub(super) fn looks_notes(&self, ui: &mut Ui) {
         let d = &self.model.drawn;
-        let options = self.look().options();
+        let mut options = self.look().options();
+        // The engine culls lamps out of view at the picture's own size.
+        if let Some(r) = self.rendered {
+            [options.width, options.height] = r.size.map(|n| n.max(1));
+        }
         if !d.lights.is_empty() {
             let [lamps, directional, ambient] = light_kinds(d);
             let drawn = options.lighting == LightingScheme::Artwork;
@@ -330,9 +384,8 @@ impl ModelView {
             if let Some(n) = extras.ok().flatten().map(|e| e.dropped).filter(|&n| n > 0) {
                 ui.small(k::casters_dropped(n, MAX_SHADOW_CASTERS));
             }
-            let lamps = FrameLampShadows::for_model(&camera, &options, &self.bounds, &d.lights);
-            if let Some(n) = lamps.ok().flatten().map(|l| l.dropped).filter(|&n| n > 0) {
-                ui.small(k::lamp_casters_dropped(n, MAX_SHADOW_CASTERS));
+            if let Ok(s) = LampStats::for_model(&camera, &options, &d.lights) {
+                lamp_notes(ui, s);
             }
         }
         if let Some(line) = self.lens_said() {
@@ -350,6 +403,30 @@ impl ModelView {
         let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
         self.view_camera(f64::from(w.max(1)) / f64::from(h.max(1)))
             .ok()
+    }
+}
+
+/// The model's lamps: how many reach the view and are lit, those the lamps
+/// drawn choice leaves out, and those lit without a shadow.
+fn lamp_notes(ui: &mut Ui, s: LampStats) {
+    if s.in_model == 0 {
+        return;
+    }
+    ui.small(k_light::lamp_counts(
+        s.in_model,
+        s.in_view,
+        s.lit_this_frame,
+    ));
+    if s.lit_this_frame < s.in_view {
+        ui.small(k_light::lamps_left_out(s.in_view - s.lit_this_frame));
+    }
+    if s.would_cast > s.casting {
+        let dropped = s.would_cast - s.casting;
+        ui.small(k_light::lamp_shadows_capped(
+            s.casting,
+            dropped,
+            MAX_LAMP_SHADOWS,
+        ));
     }
 }
 

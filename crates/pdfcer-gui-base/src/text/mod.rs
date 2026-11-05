@@ -171,6 +171,8 @@ pub mod metadata;
 pub mod model3d;
 /// The 3D viewer's lens choice.
 pub mod model3dlens;
+/// The 3D viewer's light strength, aimed sun and lamp cost.
+pub mod model3dlight;
 /// The 3D viewer's render mode, shadow and highlight choices.
 pub mod model3dlook;
 pub mod model3dshot;

@@ -19,7 +19,9 @@ use pdfcer_core::threed::ThreeDLighting;
 
 use super::ModelView;
 use super::lens::{AUTO_RANGE, CURVES, KINDS};
+use super::looks::LAMP_NEAREST;
 use super::shotlook::LookSet;
+use super::sunlight::{BEARING_RANGE, GAIN_RANGE, HEIGHT_RANGE, KELVIN_RANGE, Light};
 use crate::app::actions::Action;
 use crate::app::actions::prefs::PrefAction;
 use crate::text::model3dlook::{Highlights, SeeThrough};
@@ -120,15 +122,43 @@ fn put_look(put: &mut Put<'_>, look: &LookSet) {
     put.flag("occlusion", look.occlusion);
     put.pick("light_sense", &SENSES, &look.light_sense);
     put.flag("sun", look.sun);
+    put_light(put, &look.light);
     let x = &look.extras;
     put.pick("mode", &modes(), &x.mode);
     put.flag("every_light", x.every_light);
     put.pick("see_through", &SEE_THROUGH, &x.see_through);
     put.flag("lamp_shadows", x.lamp_shadows);
     put.pick("lamp_cut", &lamp_cuts(), &x.lamp_cut);
+    put.pick("lamp_nearest", &LAMP_NEAREST, &x.nearest);
     put.flag("skip_hidden", x.skip_hidden);
     put.flag("headlight", x.headlight);
     put.pick("highlights", &HIGHLIGHTS, &x.highlights);
+}
+
+fn put_light(put: &mut Put<'_>, light: &Light) {
+    for (i, gain) in light.gains.iter().enumerate() {
+        put.value(&format!("gain_{i}"), format!("{gain:.3}"));
+    }
+    let a = &light.sun;
+    put.flag("sun_aimed", a.on);
+    put.value("sun_bearing", format!("{:.0}", a.bearing));
+    put.value("sun_height", format!("{:.0}", a.height));
+    put.flag("sun_by_height", a.by_height);
+    put.value("sun_kelvin", format!("{:.0}", a.kelvin));
+    put.value("sun_strength", format!("{:.3}", a.strength));
+}
+
+fn get_light(get: &Get<'_>, light: &mut Light) {
+    for (i, gain) in light.gains.iter_mut().enumerate() {
+        get.number(&format!("gain_{i}"), GAIN_RANGE, gain);
+    }
+    let a = &mut light.sun;
+    get.flag("sun_aimed", &mut a.on);
+    get.number("sun_bearing", BEARING_RANGE, &mut a.bearing);
+    get.number("sun_height", HEIGHT_RANGE, &mut a.height);
+    get.flag("sun_by_height", &mut a.by_height);
+    get.number("sun_kelvin", KELVIN_RANGE, &mut a.kelvin);
+    get.number("sun_strength", GAIN_RANGE, &mut a.strength);
 }
 
 fn get_look(get: &Get<'_>, look: &mut LookSet) {
@@ -138,12 +168,14 @@ fn get_look(get: &Get<'_>, look: &mut LookSet) {
     get.flag("occlusion", &mut look.occlusion);
     get.pick("light_sense", &SENSES, &mut look.light_sense);
     get.flag("sun", &mut look.sun);
+    get_light(get, &mut look.light);
     let x = &mut look.extras;
     get.pick("mode", &modes(), &mut x.mode);
     get.flag("every_light", &mut x.every_light);
     get.pick("see_through", &SEE_THROUGH, &mut x.see_through);
     get.flag("lamp_shadows", &mut x.lamp_shadows);
     get.pick("lamp_cut", &lamp_cuts(), &mut x.lamp_cut);
+    get.pick("lamp_nearest", &LAMP_NEAREST, &mut x.nearest);
     get.flag("skip_hidden", &mut x.skip_hidden);
     get.flag("headlight", &mut x.headlight);
     get.pick("highlights", &HIGHLIGHTS, &mut x.highlights);
@@ -278,7 +310,14 @@ mod tests {
         look.extras.mode = RenderModeKind::ALL.last().copied();
         look.extras.see_through = SeeThrough::Cutout;
         look.extras.lamp_cut = LampCut::Off;
+        look.extras.nearest = Some(8);
         look.extras.highlights = Highlights::Fraction;
+        look.light.gains[3] = 2.5;
+        look.light.sun.on = true;
+        look.light.sun.bearing = 200.0;
+        look.light.sun.by_height = false;
+        look.light.sun.kelvin = 3200.0;
+        look.light.sun.strength = 0.5;
         let mut map = Settings::new();
         put_look(&mut Put(&mut map, "look_"), &look);
         assert!(map.keys().all(|k| k.starts_with("model3d_look_")));

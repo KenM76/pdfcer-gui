@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 56ee4f8528065133de07821590edb2153a045fb4
+# baseline: 5f9657e7f4922e9a8fdfb9beaf6b68a5f03d90cf
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-fetch pdfcer-ocr-host
-# items: 11605
+# items: 11644
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -190,12 +190,16 @@ pdfcer-3d const pdfcer_3d::gpu_wide_lines::GLSL_ES_300_WIDE_LINE_VERTEX
 pdfcer-3d const pdfcer_3d::lamp_shadow::DEFAULT_LAMP_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::lamp_shadow::MAX_LAMP_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::lens::LENS_LINE_PIECES
+pdfcer-3d const pdfcer_3d::light_gain::MAX_LIGHT_GAIN
+pdfcer-3d const pdfcer_3d::light_gain::MIN_LIGHT_GAIN
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_DIRECTION
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_UP
 pdfcer-3d const pdfcer_3d::render::MAX_RENDER_PIXELS
 pdfcer-3d const pdfcer_3d::shadow::DEFAULT_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::shadow::MAX_SHADOW_MAP_SIZE
 pdfcer-3d const pdfcer_3d::shadow_cast::DEFAULT_SHADOW_CUTOFF
+pdfcer-3d const pdfcer_3d::sun::MAX_SUN_KELVIN
+pdfcer-3d const pdfcer_3d::sun::MIN_SUN_KELVIN
 pdfcer-3d const pdfcer_3d::texture::MAX_TEXTURE_PIXELS
 pdfcer-3d const pdfcer_3d::tree::geometry::IDENTITY
 pdfcer-3d const pdfcer_3d::write::MAX_DEPTH
@@ -207,6 +211,7 @@ pdfcer-3d enum pdfcer_3d::gltf::GltfError
 pdfcer-3d enum pdfcer_3d::gltf::GltfLights
 pdfcer-3d enum pdfcer_3d::gltf::GltfOcclusion
 pdfcer-3d enum pdfcer_3d::gltf::GltfUpAxis
+pdfcer-3d enum pdfcer_3d::lamp_view::LampCost
 pdfcer-3d enum pdfcer_3d::model::AssembleError
 pdfcer-3d enum pdfcer_3d::model::MeshFit
 pdfcer-3d enum pdfcer_3d::model::StoredVisibility
@@ -225,6 +230,7 @@ pdfcer-3d enum pdfcer_3d::shadow::LightSense
 pdfcer-3d enum pdfcer_3d::shadow::ShadowLight
 pdfcer-3d enum pdfcer_3d::shadow_cast::ShadowAlpha
 pdfcer-3d enum pdfcer_3d::shadow_cast::ShadowCasters
+pdfcer-3d enum pdfcer_3d::sun::SunColour
 pdfcer-3d enum pdfcer_3d::tess::Tessellation
 pdfcer-3d enum pdfcer_3d::texture::TextureFunction
 pdfcer-3d enum pdfcer_3d::texture::TextureOrigin
@@ -274,10 +280,13 @@ pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::ambient
 pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::emissive
 pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::exponent
 pdfcer-3d field pdfcer_3d::gpu_finish::DrawFinish::specular
+pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::casting
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::count
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::dropped
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::far
+pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::lamps
 pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::size
+pdfcer-3d field pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::would_cast
 pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::bias
 pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::dim
 pdfcer-3d field pdfcer_3d::gpu_shadow::FrameShadow::light
@@ -293,6 +302,13 @@ pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::lights
 pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::reach
 pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::size
 pdfcer-3d field pdfcer_3d::gpu_shadow_set::FrameExtraShadows::to_light
+pdfcer-3d field pdfcer_3d::lamp_view::LampStats::casting
+pdfcer-3d field pdfcer_3d::lamp_view::LampStats::in_model
+pdfcer-3d field pdfcer_3d::lamp_view::LampStats::in_view
+pdfcer-3d field pdfcer_3d::lamp_view::LampStats::lit_this_frame
+pdfcer-3d field pdfcer_3d::lamp_view::LampStats::would_cast
+pdfcer-3d field pdfcer_3d::lens::FrameLens::basis
+pdfcer-3d field pdfcer_3d::lens::FrameLens::eye
 pdfcer-3d field pdfcer_3d::lens::FrameLens::faces
 pdfcer-3d field pdfcer_3d::lens::FrameLens::focal
 pdfcer-3d field pdfcer_3d::lens::FrameLens::mapping
@@ -377,10 +393,12 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::artwork_headlight
 pdfcer-3d field pdfcer_3d::render::RenderOptions::background
 pdfcer-3d field pdfcer_3d::render::RenderOptions::colour
 pdfcer-3d field pdfcer_3d::render::RenderOptions::height
+pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_cost
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_cut
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_shadow_map_size
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_shadows
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_frame
+pdfcer-3d field pdfcer_3d::render::RenderOptions::light_gain
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_sense
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lighting
 pdfcer-3d field pdfcer_3d::render::RenderOptions::line_width
@@ -401,6 +419,12 @@ pdfcer-3d field pdfcer_3d::render_mode::RenderMode::face_colour
 pdfcer-3d field pdfcer_3d::render_mode::RenderMode::kind
 pdfcer-3d field pdfcer_3d::render_mode::RenderMode::opacity
 pdfcer-3d field pdfcer_3d::render_mode::RenderMode::point_size
+pdfcer-3d field pdfcer_3d::sun::SunLight::azimuth_deg
+pdfcer-3d field pdfcer_3d::sun::SunLight::colour
+pdfcer-3d field pdfcer_3d::sun::SunLight::elevation_deg
+pdfcer-3d field pdfcer_3d::sun::SunLight::gain
+pdfcer-3d field pdfcer_3d::sun::SunLight::negative
+pdfcer-3d field pdfcer_3d::sun::SunLight::up
 pdfcer-3d field pdfcer_3d::tess::TriangleMesh::faces
 pdfcer-3d field pdfcer_3d::tess::TriangleMesh::normals
 pdfcer-3d field pdfcer_3d::tess::TriangleMesh::normals_recalculated
@@ -482,6 +506,7 @@ pdfcer-3d fn pdfcer_3d::model::render_model
 pdfcer-3d fn pdfcer_3d::pick::pick
 pdfcer-3d fn pdfcer_3d::render::render
 pdfcer-3d fn pdfcer_3d::render::render_coloured
+pdfcer-3d fn pdfcer_3d::sun::kelvin_rgb
 pdfcer-3d fn pdfcer_3d::tree::geometry::multiply
 pdfcer-3d fn pdfcer_3d::tree::geometry::transform_point
 pdfcer-3d fn pdfcer_3d::write::write_prc
@@ -522,12 +547,14 @@ pdfcer-3d method pdfcer_3d::finish::ShininessScale::name
 pdfcer-3d method pdfcer_3d::gpu_ao::FrameAmbientOcclusion::new
 pdfcer-3d method pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::face_matrix
 pdfcer-3d method pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::for_model
+pdfcer-3d method pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::for_model_after
 pdfcer-3d method pdfcer_3d::gpu_lamp_shadow::FrameLampShadows::layers
 pdfcer-3d method pdfcer_3d::gpu_shadow::FrameShadow::for_model
 pdfcer-3d method pdfcer_3d::gpu_shadow::FrameShadow::new
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::for_model
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::layers
 pdfcer-3d method pdfcer_3d::gpu_shadow_set::FrameExtraShadows::matrix
+pdfcer-3d method pdfcer_3d::lamp_view::LampStats::for_model
 pdfcer-3d method pdfcer_3d::lens::FrameLens::new
 pdfcer-3d method pdfcer_3d::model_light::ModelLight::new
 pdfcer-3d method pdfcer_3d::model_light::ModelLightKind::name
@@ -554,6 +581,9 @@ pdfcer-3d method pdfcer_3d::schema::Schema::read
 pdfcer-3d method pdfcer_3d::schema::Schema::skip_added_fields
 pdfcer-3d method pdfcer_3d::shadow_cast::ShadowAlpha::solid_range
 pdfcer-3d method pdfcer_3d::shadow_cast::ShadowAlpha::veil_range
+pdfcer-3d method pdfcer_3d::sun::SunLight::direction
+pdfcer-3d method pdfcer_3d::sun::SunLight::kelvin
+pdfcer-3d method pdfcer_3d::sun::SunLight::rgb
 pdfcer-3d method pdfcer_3d::texture::Texture::apply
 pdfcer-3d method pdfcer_3d::texture::Texture::is_opaque
 pdfcer-3d method pdfcer_3d::texture::Texture::sample
@@ -576,6 +606,7 @@ pdfcer-3d struct pdfcer_3d::gpu_finish::DrawFinish
 pdfcer-3d struct pdfcer_3d::gpu_lamp_shadow::FrameLampShadows
 pdfcer-3d struct pdfcer_3d::gpu_shadow::FrameShadow
 pdfcer-3d struct pdfcer_3d::gpu_shadow_set::FrameExtraShadows
+pdfcer-3d struct pdfcer_3d::lamp_view::LampStats
 pdfcer-3d struct pdfcer_3d::lens::FrameLens
 pdfcer-3d struct pdfcer_3d::lens::LensFace
 pdfcer-3d struct pdfcer_3d::model::AssembleOptions
@@ -592,6 +623,7 @@ pdfcer-3d struct pdfcer_3d::render::Image
 pdfcer-3d struct pdfcer_3d::render::RenderOptions
 pdfcer-3d struct pdfcer_3d::render_mode::RenderMode
 pdfcer-3d struct pdfcer_3d::schema::Schema
+pdfcer-3d struct pdfcer_3d::sun::SunLight
 pdfcer-3d struct pdfcer_3d::tess::TriangleMesh
 pdfcer-3d struct pdfcer_3d::tess::WireTessellation
 pdfcer-3d struct pdfcer_3d::texture::Texture
@@ -635,6 +667,8 @@ pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Bake
 pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Drop
 pdfcer-3d variant pdfcer_3d::gltf::GltfUpAxis::AsStored
 pdfcer-3d variant pdfcer_3d::gltf::GltfUpAxis::ZUp
+pdfcer-3d variant pdfcer_3d::lamp_view::LampCost::Full
+pdfcer-3d variant pdfcer_3d::lamp_view::LampCost::NearestPerFrame
 pdfcer-3d variant pdfcer_3d::model::AssembleError::CompressedOnly
 pdfcer-3d variant pdfcer_3d::model::AssembleError::NoTriangles
 pdfcer-3d variant pdfcer_3d::model::AssembleError::NotPrc
@@ -671,8 +705,10 @@ pdfcer-3d variant pdfcer_3d::projection::Projection::Orthographic
 pdfcer-3d variant pdfcer_3d::projection::Projection::Perspective
 pdfcer-3d variant pdfcer_3d::render_error::RenderError::Camera
 pdfcer-3d variant pdfcer_3d::render_error::RenderError::FisheyeField
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::LightGain
 pdfcer-3d variant pdfcer_3d::render_error::RenderError::OutsideLens
 pdfcer-3d variant pdfcer_3d::render_error::RenderError::Size
+pdfcer-3d variant pdfcer_3d::render_error::RenderError::Sun
 pdfcer-3d variant pdfcer_3d::render_error::RenderError::TooMuchWork
 pdfcer-3d variant pdfcer_3d::render_mode::EdgeSet::Creases
 pdfcer-3d variant pdfcer_3d::render_mode::EdgeSet::Triangles
@@ -695,6 +731,7 @@ pdfcer-3d variant pdfcer_3d::render_mode::RenderModeKind::Vertices
 pdfcer-3d variant pdfcer_3d::render_mode::RenderModeKind::Wireframe
 pdfcer-3d variant pdfcer_3d::shadow::LightSense::Emitted
 pdfcer-3d variant pdfcer_3d::shadow::LightSense::TowardsLight
+pdfcer-3d variant pdfcer_3d::shadow::ShadowLight::AimedSun
 pdfcer-3d variant pdfcer_3d::shadow::ShadowLight::FollowsScheme
 pdfcer-3d variant pdfcer_3d::shadow::ShadowLight::Sun
 pdfcer-3d variant pdfcer_3d::shadow_cast::ShadowAlpha::Cutout
@@ -702,6 +739,8 @@ pdfcer-3d variant pdfcer_3d::shadow_cast::ShadowAlpha::OpaqueOnly
 pdfcer-3d variant pdfcer_3d::shadow_cast::ShadowAlpha::Transmit
 pdfcer-3d variant pdfcer_3d::shadow_cast::ShadowCasters::EveryLight
 pdfcer-3d variant pdfcer_3d::shadow_cast::ShadowCasters::KeyLight
+pdfcer-3d variant pdfcer_3d::sun::SunColour::FromElevation
+pdfcer-3d variant pdfcer_3d::sun::SunColour::Kelvin
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Compressed
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Markup
 pdfcer-3d variant pdfcer_3d::tess::Tessellation::Mesh

@@ -103,6 +103,7 @@ impl ModelView {
             ui.label(m::lighting_label());
             self.lighting_combo(ui, REGION_LIGHTING);
         });
+        self.brightness_control(ui);
         let turn = ui
             .checkbox(&mut self.lights_turn, m::lights_turn())
             .on_hover_text(m::lights_turn_tooltip());

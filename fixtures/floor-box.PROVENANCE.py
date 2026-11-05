@@ -12,9 +12,12 @@ about 23,000 pixels and the `--no-ambient-occlusion` one in about 3,300.
 With `lamp` as a second argument it writes `fixtures/floor-lamp.prc`
 instead: the same scene with one white glTF point light
 (`KHR_lights_punctual`) above a corner of the floor, which the engine
-keeps as the model's own lamp.
+keeps as the model's own lamp. With `lamps` it writes
+`fixtures/floor-lamps.prc`: six such lamps in a ring above the floor, all
+in view of the opening camera, so drawing only the brightest four leaves
+two out.
 
-Run: python fixtures/floor-box.PROVENANCE.py <path to pdfcer.exe> [lamp]
+Run: python fixtures/floor-box.PROVENANCE.py <path to pdfcer.exe> [lamp|lamps]
 """
 import pathlib
 import subprocess
@@ -77,16 +80,21 @@ g = {
     "scene": 0,
 }
 
-lamp = sys.argv[2:3] == ['lamp']
-if lamp:
+mode = sys.argv[2] if len(sys.argv) > 2 else ''
+spots = {'lamp': [(1.5, 2.5, 1.5)],
+         'lamps': [(1.5, 2.5, 0), (0.75, 2.5, 1.3), (-0.75, 2.5, 1.3),
+                   (-1.5, 2.5, 0), (-0.75, 2.5, -1.3), (0.75, 2.5, -1.3)]}.get(mode, [])
+if spots:
     g["extensionsUsed"] = ["KHR_lights_punctual"]
     g["extensions"] = {"KHR_lights_punctual": {"lights": [
         {"type": "point", "color": [1, 1, 1], "intensity": 20}]}}
-    g["nodes"].append({"name": "lamp", "translation": [1.5, 2.5, 1.5],
-                       "extensions": {"KHR_lights_punctual": {"light": 0}}})
-    g["scenes"][0]["nodes"].append(2)
+    for i, at in enumerate(spots):
+        g["nodes"].append({"name": f"lamp{i}", "translation": list(at),
+                           "extensions": {"KHR_lights_punctual": {"light": 0}}})
+        g["scenes"][0]["nodes"].append(len(g["nodes"]) - 1)
 
-out = pathlib.Path(__file__).with_name('floor-lamp.prc' if lamp else 'floor-box.prc')
+name = {'lamp': 'floor-lamp.prc', 'lamps': 'floor-lamps.prc'}.get(mode, 'floor-box.prc')
+out = pathlib.Path(__file__).with_name(name)
 with tempfile.TemporaryDirectory() as tmp:
     src = pathlib.Path(tmp) / 'floor-box.gltf'
     src.write_text(json.dumps(g, separators=(',', ':')), encoding='utf-8')

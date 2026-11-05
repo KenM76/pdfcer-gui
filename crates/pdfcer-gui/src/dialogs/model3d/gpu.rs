@@ -236,7 +236,9 @@ impl ModelView {
     /// and the trace line's head. `false` declines the frame: it shows
     /// what the card does not draw, and the processor must draw it.
     pub(super) fn gpu_frame(&mut self, wanted: Rendered) -> Result<bool, RenderError> {
-        let options = wanted.look.options();
+        let mut options = wanted.look.options();
+        // The engine culls lamps out of view at the frame's own size.
+        [options.width, options.height] = wanted.size;
         let built = Built {
             parts: wanted.parts,
             accent: wanted.accent,
@@ -262,8 +264,11 @@ impl ModelView {
         }
         let lights = &self.model.drawn.lights;
         let effects = Effects::new(&camera, &options, &self.bounds, lights, wanted.size)?;
-        let frame_lights = FrameLights::for_model(&camera, &options, lights)?;
+        let mut frame_lights = FrameLights::for_model(&camera, &options, lights)?;
         let casters = self.casters(&camera, &options, effects.shadow)?;
+        if let Some(lamps) = &casters.lamps {
+            frame_lights.use_lamp_shadows(lamps);
+        }
         let view = u::camera_uniforms(&camera, &frame_lights, aspect, &self.bounds)?;
         let mut uniforms = view.clone();
         uniforms.extend(u::light_uniforms(&frame_lights));
@@ -312,7 +317,16 @@ impl ModelView {
             Some(_) => FrameExtraShadows::for_model(camera, options, &self.bounds, lights)?,
             None => None,
         };
-        let lamps = FrameLampShadows::for_model(camera, options, &self.bounds, lights)?;
+        // Last frame's casters keep their slots while they rank near the
+        // top, so walking past a crowd of lamps does not flicker shadows.
+        let previous = lock(&self.gpu.shared).lamps;
+        let lamps = FrameLampShadows::for_model_after(
+            camera,
+            options,
+            &self.bounds,
+            lights,
+            previous.as_ref(),
+        )?;
         let casting = (shadow.is_some() || lamps.is_some()) && self.gpu.facts.translucent;
         Ok(Casters {
             shadow,

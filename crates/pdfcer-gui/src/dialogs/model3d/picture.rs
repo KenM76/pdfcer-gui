@@ -116,6 +116,8 @@ impl ModelView {
         let declined = self.gpu.declined().map_or("", super::looks::declined_word);
         let lit = self.lighting_trace(options.lighting)
             + &effects
+            + &super::sunlight::trace(options)
+            + &lamp_counts(camera.ok(), options, &self.model.drawn.lights)
             + &super::looks::trace(options)
             + declined;
         let eye = camera_eye(wanted.walk.as_ref());
@@ -150,6 +152,25 @@ impl ModelView {
         }
         self.failed = None;
     }
+}
+
+/// The render trace's lamp counts, `lamps=<in model>/<in view>/<lit>`,
+/// and how many cast a shadow; empty for a model without lamps.
+fn lamp_counts(
+    camera: Option<&pdfcer_3d::Camera>,
+    options: &ModelRenderOptions,
+    lights: &[pdfcer_3d::ModelLight],
+) -> String {
+    camera
+        .and_then(|c| pdfcer_3d::LampStats::for_model(c, options, lights).ok())
+        .filter(|s| s.in_model > 0)
+        .map_or_else(String::new, |s| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed
+                " lamps={}/{}/{} lamp-casting={}",
+                s.in_model, s.in_view, s.lit_this_frame, s.casting
+            )
+        })
 }
 
 /// A camera's unit look direction and up, the point it looks at and its
