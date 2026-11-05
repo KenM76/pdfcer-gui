@@ -881,6 +881,8 @@ The request O280 is built on, answered and consumed.
 - **G268** — SHIPPED in v0.129.0: `Projection::Fisheye { fov, mapping }` with `FisheyeMapping::Equidistant` and `::Stereographic`, drawn on the CPU and through `FrameLens` on the GPU (O391). The blend asked for Auto (item 6) did not come: Auto switches at an angle. Verdict on its modules: `pdfcer_3d::lens` and `pdfcer_3d::gpu_lens` are **wanted** — the GPU picture draws a fisheye as `FrameLens` faces resampled through the lens shaders, being wired under O391; `pdfcer_3d::projection` and `pdfcer_3d::render_error` are where `Projection` and `RenderError` now live, re-exported at the crate root the shell already names, so nothing new to wire.
 - **G269** — no brightness setting for any lighting scheme, the model's own lights included (O392). Asked for a gain on `RenderOptions`, carried into `FrameLights`.
 - **G270** — `ShadowLight::Sun` places a shadow only, at a fixed iso direction, with no colour and no light of its own (O392). Asked for a sun with azimuth, elevation and a colour temperature that lights and casts.
+- **G271** — the fragment program visits every model lamp (up to `MAX_LIGHTS`) for every pixel before its reach rejects it, which a phone's graphics chip cannot pay (O393). Asked for culling by reach, tiled or clustered, with lamp counts to disclose.
+- **G272** — the 16 lamps that cast shadows are the first 16 in the model's order, never re-chosen as the view moves (O393). Asked for a choice by contribution to the current view, the cap a stated constant.
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 

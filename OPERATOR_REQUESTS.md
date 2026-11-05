@@ -653,13 +653,13 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O393 — **INVESTIGATING** — the 3D viewer crawls on his Fairphone 5 with the model's lights on
+## O393 — **WAITING ON THE ENGINE (G271, G272)** — the 3D viewer crawls on his Fairphone 5 with the model's lights on
 
 His words: *"Is this why my fairphone 5 slows to a crawl when I enable the model's lights?"*
 
 **Scope, whole behaviour.** On the phone, choosing the model's own lights keeps moving the model as smooth as the other lighting choices, or the viewer says what costs the speed and offers the cheaper setting.
 
-**Status.** Not the processor fallback: a single frame is handed to the processor only for points wider than the card draws, and a card that cannot draw the model at all says so under the picture. The model's lamps are fixed in the model, so their shadow maps (six faces per lamp, up to 16 lamps) are drawn once, not per move; what runs every frame is each pixel lit by every lamp and tested against every lamp's shadow, which a phone's graphics chip pays for at its full screen resolution. He confirms it is the phone only: desktop and laptop are smooth with the same lights, which fits a per-pixel cost a phone chip pays and a desktop card does not. Not measured on the phone (no device attached here). Next: his reading of whether the note under the picture appears and whether *Lamp shadows* off restores the speed; then a per-frame cost trace on Android.
+**Status.** Waiting on the engine (G271, G272). His readings: no note under the picture, the card draws everything else, and with *Lamp shadows* off it is still slow, so the cost is not the shadow maps. The engine's fragment program visits every one of the model's lamps (up to 1,024) for every pixel, each with several texture reads, before discarding those out of reach; a phone pays that at full resolution and a desktop card does not. Asked as G271 (visit only the lamps that can light a pixel). His second question answered: the 16-lamp limit is on lamps that cast shadows, not on lamps that light; the 16 are the first 16 in the model's file, not the brightest, and they are not re-chosen as the view moves. Asked as G272 (choose them by what they add to the current view). Not measured on the device. No GUI-side culling in the meantime.
 
 ## O392 — **WAITING ON THE ENGINE (G269, G270)** — light brightness, and a sun he can aim and colour
 
