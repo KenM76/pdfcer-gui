@@ -197,13 +197,19 @@ mod tests {
         let one = page(&doc, 0, None).expect("page 0 extracts");
         let mut small = one.clone();
         append(&mut small, one.clone());
-        assert!(!small.outcome.truncated, "two pages are well inside the caps");
+        assert!(
+            !small.outcome.truncated,
+            "two pages are well inside the caps"
+        );
 
         let mut big = one.clone();
         let filler = one.paragraphs[0].clone();
         big.paragraphs = vec![filler; RICH_COPY_MAX_PARAGRAPHS];
         let mut all = one.clone();
         append(&mut all, big);
-        assert!(all.outcome.truncated, "a join past the cap is not marked cut");
+        assert!(
+            all.outcome.truncated,
+            "a join past the cap is not marked cut"
+        );
     }
 }
