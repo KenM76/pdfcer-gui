@@ -653,19 +653,19 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O396 — **IN PROGRESS** — X048: the 3D viewer's file split, two panic paths, lookups by enum
+## O396 — **PART BUILT** — X048: the 3D viewer's file split, two panic paths, lookups by enum
 
 From the crates consumer (request X048 in the channel). **Scope.** (1) Navigation onto the engine's headless navigation crate once X047 ships it: waits on the engine, no GUI copy meanwhile. (2) `dialogs/model3d.rs` split by responsibility to under 700 lines. (3) The options menu's height can no longer panic in a 1x1 or zero-size window or on a size not yet known. (4) Named views and axis names looked up by `get` or by the enum, never by a bare index. (5) Nothing the viewer does changes.
 
-**Status.** Items 2–4 being built; item 1 waits on X047.
+**Status.** Items 2–5 built (`e7df858b`): `model3d.rs` 797 to 619 lines, the view rows in `model3d/rows.rs`; `options::heights` orders the bounds (test `a_window_too_small_for_the_menu_lays_it_out`, fails on the old clamp); lookups by enum or `get`. The 38 3D checks pass driven, none skipped. Item 1 waits on X047.
 
-## O395 — **IN PROGRESS** — X045: the 3D viewer fits a model of any size, with a finite eye, and reads a model's files only from its folder
+## O395 — **BUILT AND DRIVEN** — X045: the 3D viewer fits a model of any size, with a finite eye, and reads a model's files only from its folder
 
 From the crates consumer (request X045 in the channel). **Scope.** The orbit's lengths taken scaled so a box of ±1e200 or ±1e-200 fits at a finite, positive distance; an eye that would land past the largest float pulled in towards its target, as the engine's `eye_at` does; a glTF's external files read only when their real path, links resolved, is inside the model's real folder; no panic on any of it.
 
-**Status.** Being built.
+**Status.** Built (`e7df858b`), five tests, each failing with its fix reverted; the 38 3D checks pass driven, none skipped. The scaled vector helpers are a local copy until X046.
 
-## O394 — **IN PROGRESS** — a finger dragged on the 3D view turns the view; only the keys and sticks move the camera
+## O394 — **BUILT AND DRIVEN** — a finger dragged on the 3D view turns the view; only the keys and sticks move the camera
 
 His words: *"can you check if putting a finger on the screen and moving the view around rotates the camera? It should rotate the view. Only the camera keyboard keys or joystick should move the camera."*
 
