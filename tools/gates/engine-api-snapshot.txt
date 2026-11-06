@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 02c338265a34e6a4b16316a71d32f14cd6120cc8
+# baseline: 50d0135ff8ee404d6dfcf3280b5ae81b0e0607de
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11385
+# items: 11395
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -408,6 +408,8 @@ pdfcer-3d-nav const pdfcer_3d_nav::lens::CURVES
 pdfcer-3d-nav const pdfcer_3d_nav::lens::FISHEYE_WIDEST
 pdfcer-3d-nav const pdfcer_3d_nav::lens::FLAT_WIDEST
 pdfcer-3d-nav const pdfcer_3d_nav::orbit::FIT_MARGIN
+pdfcer-3d-nav const pdfcer_3d_nav::orbit::NAMED_PITCH
+pdfcer-3d-nav const pdfcer_3d_nav::orbit::PAN_LIMIT
 pdfcer-3d-nav const pdfcer_3d_nav::orbit::PITCH_LIMIT
 pdfcer-3d-nav const pdfcer_3d_nav::orbit::ZOOM_RANGE
 pdfcer-3d-nav const pdfcer_3d_nav::walk::CLIMB
@@ -481,8 +483,10 @@ pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::centre_on
 pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::direction
 pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::look_along
 pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::named
+pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::pan_by
 pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::refit
 pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::saved
+pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::set_pan
 pdfcer-3d-nav method pdfcer_3d_nav::orbit::Orbit::zoom_at
 pdfcer-3d-nav method pdfcer_3d_nav::saved::NotInside::as_str
 pdfcer-3d-nav method pdfcer_3d_nav::saved::SavedAim::eye_inside
@@ -6473,6 +6477,8 @@ pdfcer-core method pdfcer_core::threed::view_aim::SavedViewAim::camera
 pdfcer-core method pdfcer_core::threed::view_aim::SavedViewAim::frame
 pdfcer-core method pdfcer_core::threed::view_aim::SavedViewAim::source
 pdfcer-core method pdfcer_core::threed::view_aim::ThreeDSavedView::aim
+pdfcer-core method pdfcer_core::threed::view_aim::ThreeDSavedView::saved_aim
+pdfcer-core method pdfcer_core::threed::view_aim::ThreeDSavedView::view_frame
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::from_camera
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::new
 pdfcer-core method pdfcer_core::threed::view_write::ThreeDSavedView::with_lighting
@@ -10376,6 +10382,7 @@ pdfcer-render const pdfcer_render::MAX_PIXMAP_EDGE
 pdfcer-render const pdfcer_render::color::MAX_COLOR_SPACE_DEPTH
 pdfcer-render const pdfcer_render::compositor::MAX_SPOTS
 pdfcer-render const pdfcer_render::display_list::MAX_DISPLAY_LIST_BYTES
+pdfcer-render const pdfcer_render::export::xmp::MAX_JPEG_XMP_PACKET
 pdfcer-render const pdfcer_render::font::subset::MAX_DONOR_BYTES
 pdfcer-render const pdfcer_render::gstate::MAX_Q_DEPTH
 pdfcer-render const pdfcer_render::interpret::MAX_XOBJECT_DEPTH
@@ -10937,6 +10944,8 @@ pdfcer-render fn pdfcer_render::emf::walk_records
 pdfcer-render fn pdfcer_render::export::encode_jpeg
 pdfcer-render fn pdfcer_render::export::encode_png
 pdfcer-render fn pdfcer_render::export::flatten_over
+pdfcer-render fn pdfcer_render::export::xmp::insert_jpeg_xmp
+pdfcer-render fn pdfcer_render::export::xmp::photo_sphere_xmp
 pdfcer-render fn pdfcer_render::font::bundled::face_name
 pdfcer-render fn pdfcer_render::font::bundled::faces
 pdfcer-render fn pdfcer_render::font::select::by_descriptor
@@ -11396,6 +11405,7 @@ pdfcer-render variant pdfcer_render::emf::print::RasterReason::TilingPattern
 pdfcer-render variant pdfcer_render::emf::print::RasterReason::TransparencyGroup
 pdfcer-render variant pdfcer_render::export::ExportError::EmptyRaster
 pdfcer-render variant pdfcer_render::export::ExportError::Encoder
+pdfcer-render variant pdfcer_render::export::ExportError::Metadata
 pdfcer-render variant pdfcer_render::export::ExportError::TooLargeForJpeg
 pdfcer-render variant pdfcer_render::font::EmbedMatch::Alias
 pdfcer-render variant pdfcer_render::font::EmbedMatch::Bundled

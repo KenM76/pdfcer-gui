@@ -653,6 +653,24 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O400 — **BUILT AND DRIVEN** by `the_3d_viewer_saves_a_360_picture_for_photo_viewers` — X054: a 360° picture from the 3D viewer
+
+His words, relayed by the engine: *"Can we add 360 degree capability to our screen capture? The kind that opens in photo viewers as a picture you can look around in?"* and *"inform pdfcer-gui of this new feature to add to the screenshot render options."*
+
+**Scope, whole behaviour.** A switch on the viewer's Picture tab; a choice of three 2:1 sizes; the file a JPEG with the photo sphere tag; the save dialog offering JPEG for it; the camera levelled onto the model's up so the horizon stays flat as he looks round; the choice kept by *Save as default* and on the Settings page; Clear refused while it is on, with the reason on hover, because a JPEG has no see-through backdrop.
+
+**Status.** Built on engine v0.133.0. Driven and falsified twice on real builds: without the levelling the check reads a tilted camera, and without the tag it reads a file lacking it. The picture is taken from the view's eye, so from an orbit outside the model it shows the model small on the backdrop; the switch's hover text says to walk inside for a view from within. The engine's own `3d-render --360` does not level a pitched view: reported as X055.
+
+## O399 — **FILED, NOT BUILT** — the engine's 3D measuring tools, reachable in the 3D viewer
+
+His words: *"If there are 3D measuring tools in pdfcer we need to add support for them in pdfcer-gui as well."*
+
+**What exists.** The engine reads and writes measurements on a saved 3D view: `pdfcer_core::threed::measure`, kinds linear, perpendicular, angular, radial and comment, read through `ThreeDSavedView.measurements` and written with `ThreeDSavedView::with_measurement` and `EditSession::set_3d_views`. Its `pdfcer_3d::pick` gives the picked points. The viewer calls none of the measuring half: a measurement in a file is not shown and none can be made.
+
+**Scope, whole behaviour.** A measure tool in the viewer: every kind the engine writes, from points picked on the model, with the value shown as it is measured; a saved view's measurements listed and shown; a new one kept on a saved view; the PDF 2.0 disclosure off the canvas. Anything the engine lacks goes to it as a request.
+
+**Status.** Filed. To be built straight after the v0.133.0 release.
+
 ## O398 — **BUILT**, driven by `the_3d_viewers_settings_are_saved_only_as_defaults`, `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`, `settings_navigate_by_page` — the 3D viewer's settings: graphics-card switches per part, *Save as default* instead of saving on every change, and all of them on a Settings page
 
 His words: *"We also need in our settings while in the 3D menu a way to turn on and off GPU support for different parts, and instead of automatically saving the last set of rendering preferences for all these, include a save as default button that will save them as user preferences (not over the reset to default default). Also we need this to be included in our settings for the main program settings window, and a way in there to change all the lense and other settings that we have to control 3D actions and rendering and save them like we do for the other settings."*
