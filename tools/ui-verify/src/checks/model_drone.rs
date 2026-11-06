@@ -186,7 +186,7 @@ impl Pilot<'_> {
                 Ok(None)
             }
             other => Ok(Some(format!(
-                "a finger dragged across the picture should turn the camera and leave the eye:                  {before:?} then {other:?}."
+                "a finger dragged across the picture should turn the camera and leave the eye: {before:?} then {other:?}."
             ))),
         }
     }
