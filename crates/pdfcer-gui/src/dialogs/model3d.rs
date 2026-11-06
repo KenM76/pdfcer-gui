@@ -37,6 +37,9 @@ mod immersive;
 mod lensmenu;
 mod lights;
 mod looks;
+mod measure;
+mod measure_paint;
+mod measure_tab;
 mod memory;
 mod nav;
 mod navorbit;
@@ -177,7 +180,9 @@ pub(crate) struct ModelView {
     fit_refused: Option<String>,
     /// Views to write into the file and the one to open on, waiting for
     /// the action queue.
-    views: Option<(Vec<ThreeDSavedView>, usize)>,
+    views: Option<(Vec<ThreeDSavedView>, usize, Vec<String>)>,
+    /// The measure tool.
+    measure: measure::Measure,
     /// Which parts are shown and which is highlighted.
     parts: parts::Visibility,
     /// The lighting every saved view asks for and the live picture is lit
@@ -207,6 +212,35 @@ pub(crate) struct ModelView {
     remembered: memory::Settings,
 }
 
+/// The opening's two trace lines: what was drawn and what its parts are.
+fn trace_opened(page_index: usize, model: &Assembled, saved_orbit: bool) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} textured={} texture-notes={} placed={} file-view={} {}",
+            model.drawn.meshes.len(),
+            model.uncoloured(),
+            model.triangles,
+            model.skipped,
+            model.best_fit,
+            model.overridden,
+            model.drawn.textured,
+            model.drawn.texture_notes.len(),
+            model.placed,
+            u8::from(saved_orbit),
+            fit::trace_fields(model)
+        )
+    });
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed
+        format!(
+            "model-view-parts {} error={}",
+            parts::trace_fields(&model.tree),
+            u8::from(model.tree_error.is_some())
+        )
+    });
+}
+
 impl ModelView {
     /// Open on `model`, decoded from `artwork`, at the file's opening view
     /// when it carries a camera, else at the isometric view; `walk` opens it
@@ -225,31 +259,7 @@ impl ModelView {
         let saved = opening.as_ref().and_then(fileview::saved_orbit);
         saved::trace_listed(&model.saved);
         let saved_list = model.saved.clone();
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            format!(
-                "model-view-opened page={page_index} parts={} uncoloured={} triangles={} skipped={} best-fit={} overridden={} textured={} texture-notes={} placed={} file-view={} {}",
-                model.drawn.meshes.len(),
-                model.uncoloured(),
-                model.triangles,
-                model.skipped,
-                model.best_fit,
-                model.overridden,
-                model.drawn.textured,
-                model.drawn.texture_notes.len(),
-                model.placed,
-                u8::from(saved.is_some()),
-                fit::trace_fields(&model)
-            )
-        });
-        crate::diag::trace(|| {
-            // ui-text-exempt: diagnostic trace, never displayed
-            format!(
-                "model-view-parts {} error={}",
-                parts::trace_fields(&model.tree),
-                u8::from(model.tree_error.is_some())
-            )
-        });
+        trace_opened(page_index, &model, saved.is_some());
         let parts = parts::Visibility::stored(shown_tree(&model));
         let look = shotlook::LookSet::factory();
         Self {
@@ -278,6 +288,7 @@ impl ModelView {
             shot: shot::Shot::default(),
             fit_refused: None,
             views: None,
+            measure: measure::Measure::default(),
             parts,
             view_lighting: look.view_lighting,
             lights_turn: look.lights_turn,
@@ -330,11 +341,12 @@ impl ModelView {
         if std::mem::take(&mut self.save_defaults) {
             self.save_defaults(actions);
         }
-        if let Some((views, default)) = self.views.take() {
+        if let Some((views, default, notes)) = self.views.take() {
             actions.push(Action::Attachment(AttachmentAction::SetModelViews {
                 artwork: self.artwork.clone(),
                 views,
                 default,
+                notes,
             }));
         }
         let closed = closed && !std::mem::take(&mut self.escape_left_full_screen);
@@ -413,6 +425,7 @@ impl ModelView {
         } else {
             self.orbit_input(ui, &response);
         }
+        self.measure_input(ui.ctx(), &response, rect);
         // Rebuilt below and by the full-screen row, for the next frame's
         // fingers.
         self.nav.hud.clear();
@@ -461,8 +474,10 @@ impl ModelView {
             }
             (None, None) => {}
         }
+        self.paint_measures(ui, rect);
         self.paint_overlay(ui, rect);
         self.hud_row(ui, rect);
+        self.measure_card(ui.ctx(), rect);
         self.options_button(ui, rect);
         self.shot_button(ui, rect);
         self.settle_tap(ui.ctx());
@@ -470,6 +485,7 @@ impl ModelView {
 
     /// What the picture leaves out or inferred, said under it.
     fn notes(&mut self, ui: &mut Ui) {
+        self.measure_readout(ui);
         self.nav_note(ui);
         ui.small(t::view_census(
             self.model.drawn.meshes.len(),

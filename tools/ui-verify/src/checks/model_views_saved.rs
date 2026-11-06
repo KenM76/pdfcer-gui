@@ -81,19 +81,24 @@ fn pdf_bytes(prc: &[u8]) -> Vec<u8> {
     ])
 }
 
-fn fixture(ctx: &CheckContext) -> Result<PathBuf> {
+pub(super) fn fixture(ctx: &CheckContext, stem: &str) -> Result<PathBuf> {
     let prc = std::fs::read(MODEL).map_err(|e| {
         Error::new(format!(
             "the engine corpus's fixture is unreadable at {MODEL}: {e}"
         ))
     })?;
-    let path = ctx.out("model-views-saved.pdf");
+    let path = ctx.out(&format!("{stem}.pdf"));
     std::fs::write(&path, pdf_bytes(&prc))
         .map_err(|e| Error::new(format!("cannot write {}: {e}", path.display())))?;
     Ok(path)
 }
 
-fn launch(ctx: &CheckContext, pdf: PathBuf) -> Result<(Session, ScriptedPointer)> {
+pub(super) fn launch(
+    ctx: &CheckContext,
+    stem: &str,
+    pdf: PathBuf,
+    extra: &[(&str, &str)],
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -103,7 +108,7 @@ fn launch(ctx: &CheckContext, pdf: PathBuf) -> Result<(Session, ScriptedPointer)
     let viewport_env = ctx.profile.viewport_env.ok_or_else(|| {
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("model-views-saved.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(pdf);
     for (key, value) in [
         ctx.profile.diag_env,
@@ -113,10 +118,13 @@ fn launch(ctx: &CheckContext, pdf: PathBuf) -> Result<(Session, ScriptedPointer)
     ] {
         spec.env.push((key.to_owned(), value.to_owned()));
     }
+    for (key, value) in extra {
+        spec.env.push(((*key).to_owned(), (*value).to_owned()));
+    }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("model-views-saved.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     Ok((session, pointer))
 }
@@ -127,7 +135,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let (session, pointer) = launch(ctx, fixture(ctx)?)?;
+    let (session, pointer) = launch(
+        ctx,
+        "model-views-saved",
+        fixture(ctx, "model-views-saved")?,
+        &[],
+    )?;
     report.artifact(session.trace_path().to_path_buf());
     report.artifact(pointer.path().to_path_buf());
     session.settle(45);
@@ -237,7 +250,7 @@ fn steps(
 
 /// Click each region in turn, letting the window redraw; the sentence for
 /// the first one not declared.
-fn press_all(
+pub(super) fn press_all(
     session: &Session,
     pointer: &ScriptedPointer,
     ui_rect: &str,

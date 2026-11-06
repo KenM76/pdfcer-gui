@@ -117,7 +117,7 @@ impl ModelView {
             }
         });
         match views {
-            Some(views) => self.views = Some(views),
+            Some((views, default)) => self.views = Some((views, default, Vec::new())),
             None => self.failed = Some(t::views_not_built().to_owned()),
         }
     }
@@ -126,11 +126,7 @@ impl ModelView {
     /// view when it is not the named one last chosen; with the index of
     /// this view. `None` when a view cannot be formed.
     fn file_views(&self) -> Option<(Vec<ThreeDSavedView>, usize)> {
-        let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
-        let aspect = self
-            .model
-            .aspect
-            .unwrap_or_else(|| f64::from(w.max(1)) / f64::from(h.max(1)));
+        let aspect = self.file_aspect();
         let perspective = self.orbit.perspective;
         let mut views = Vec::new();
         for (i, name) in t::view_names().into_iter().enumerate() {
@@ -139,6 +135,7 @@ impl ModelView {
             views.push(self.lit(ThreeDSavedView::from_camera(name, &camera, aspect)?));
         }
         if self.nav.walk.is_none() && self.orbit == named(self.named, perspective, self.upright) {
+            super::measure_tab::carry_measurements(&mut views, &self.saved.views);
             return Some((views, self.named));
         }
         let camera = self.flat_camera(aspect).ok()?;
@@ -148,11 +145,21 @@ impl ModelView {
             aspect,
         )?));
         let custom = views.len() - 1;
+        super::measure_tab::carry_measurements(&mut views, &self.saved.views);
         Some((views, custom))
     }
 
+    /// The aspect a view written to the file is framed for: the annotation's,
+    /// else the picture's.
+    pub(super) fn file_aspect(&self) -> f64 {
+        let [w, h] = self.rendered.map_or([4, 3], |r| r.size);
+        self.model
+            .aspect
+            .unwrap_or_else(|| f64::from(w.max(1)) / f64::from(h.max(1)))
+    }
+
     /// `view` with the chosen lighting.
-    fn lit(&self, view: ThreeDSavedView) -> ThreeDSavedView {
+    pub(super) fn lit(&self, view: ThreeDSavedView) -> ThreeDSavedView {
         match self.view_lighting {
             Some(scheme) => view.with_lighting(scheme),
             None => view,

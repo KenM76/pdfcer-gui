@@ -1,9 +1,10 @@
 //! The viewer's options behind one glyph at the picture's top-left corner,
-//! in a window, on a phone and full screen alike, on four tabs: View (the
+//! in a window, on a phone and full screen alike, on five tabs: View (the
 //! views, projection, lens, axes, mesh fit and full screen), Look (lighting,
 //! effects, render mode), Moving (the controls, navigation and eye height)
 //! and Picture (what *Save picture…* draws at, and, full screen where the
-//! footer is gone, the picture and save buttons). Each tab shows a glyph
+//! footer is gone, the picture and save buttons) and Measure (see
+//! [`super::measure_tab`]). Each tab shows a glyph
 //! with its name. Controls the glyph row over the picture already shows are
 //! left out while it is shown. The menu resizes from its corner, keeps its
 //! size, opens on the tab last shown, stays open while its switches are used
@@ -39,13 +40,19 @@ const SMALLEST: [f32; 2] = [240.0, 160.0];
 /// The egui id the menu's size is kept under.
 const SIZE_ID: &str = "model3d-options-size"; // ui-text-exempt: an egui id, never displayed
 /// Each tab's glyph, in [`TAB_WORDS`]' order.
-const TAB_ICONS: [Icon; 4] = [Icon::Model3d, Icon::Lighting, Icon::Walk, Icon::Snapshot];
+const TAB_ICONS: [Icon; 5] = [
+    Icon::Model3d,
+    Icon::Lighting,
+    Icon::Walk,
+    Icon::Snapshot,
+    Icon::Measure,
+];
 /// Room kept below the menu, in points: its frame's margin and shadow.
 const BELOW: f32 = 24.0;
 /// Room the tab row and its rule take above the rows, in points.
 const TABS_HIGH: f32 = 40.0;
 /// Each tab's published region, after [`REGION_TAB`].
-const TAB_WORDS: [&str; 4] = ["view", "look", "moving", "picture"]; // ui-text-exempt: trace region names, never displayed
+const TAB_WORDS: [&str; 5] = ["view", "look", "moving", "picture", "measure"]; // ui-text-exempt: trace region names, never displayed
 /// The tabs' region prefix: `model3d.options.tab.view` and so on.
 pub const REGION_TAB: &str = "model3d.options.tab."; // ui-text-exempt: trace region name, never displayed
 
@@ -187,13 +194,14 @@ impl ModelView {
                 self.card_control(ui);
             }
             2 => self.moving_tab(ui, row),
-            _ => {
+            3 => {
                 self.shot_control(ui);
                 if full {
                     ui.separator();
                     ui.horizontal_wrapped(|ui| self.buttons(ui));
                 }
             }
+            _ => self.measure_tab(ui),
         }
     }
 

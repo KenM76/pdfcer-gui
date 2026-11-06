@@ -175,6 +175,8 @@ pub mod model3dlens;
 pub mod model3dlight;
 /// The 3D viewer's render mode, shadow and highlight choices.
 pub mod model3dlook;
+/// The 3D viewer's measure tool.
+pub mod model3dmeasure;
 pub mod model3dshot;
 /// The sized-New dialog's copy — the size list, the orientation pair, the
 /// custom fields and the one refusal. Consumed by

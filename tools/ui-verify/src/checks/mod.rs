@@ -913,6 +913,8 @@ pub mod model_view_poster;
 pub mod button_icon;
 /// A picture pasted while a push button is selected becomes its picture.
 pub mod button_icon_paste;
+/// The 3D viewer saves its named views into the file.
+pub mod model_measure;
 pub mod model_options;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
@@ -926,7 +928,6 @@ pub mod model_trust;
 pub mod model_view;
 /// The 3D viewer zooms about the pointer, fills the screen and comes back.
 pub mod model_view_window;
-/// The 3D viewer saves its named views into the file.
 pub mod model_views_saved;
 /// A picture another program copied pastes at the pointer; the newer copy wins.
 pub mod os_image_paste;

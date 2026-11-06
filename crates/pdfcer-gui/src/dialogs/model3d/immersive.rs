@@ -13,6 +13,7 @@ use pdfcer_gui_base::windowshape;
 
 use super::ModelView;
 use super::nav::{REGION_GIMBAL, REGION_IMMERSIVE, REGION_WALK};
+use crate::text::model3dmeasure as tm;
 use crate::text::panels::modelnav as t;
 
 /// The egui id of the area the viewer fills the screen with.
@@ -116,6 +117,16 @@ impl ModelView {
         if gimbal.clicked() {
             self.nav.prefs.gimbal = !self.nav.prefs.gimbal;
             self.switched(ui.ctx());
+        }
+        let on = self.measure.on;
+        let measure = glyph(ui, Icon::Measure, tm::MEASURE, on, side);
+        crate::diag::ui_rect_visible(
+            super::measure_tab::REGION_GLYPH,
+            measure.rect,
+            ui.clip_rect(),
+        );
+        if measure.clicked() {
+            self.measure.switch(!on);
         }
         let home = glyph(ui, Icon::FitPage, t::home(), false, side);
         crate::diag::ui_rect_visible(super::REGION_FIT, home.rect, ui.clip_rect());

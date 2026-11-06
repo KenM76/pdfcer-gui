@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O402 — **FILED, WAITING ON THE ENGINE (G275)** — a sun the operator aims lights the whole ceiling instead of coming in the windows
+
+His words: *"I notice the sun lights the entire ceiling in the model I am moving in. I don't know if it is the way the model was made or if it shouldn't do that."* And: *"This is when I am in the settings where I can adjust the angle of the sun. I'd expect it in this custom mode to be outside of the model and only shine in the windows."*
+
+**Scope, whole behaviour.** With an aimed sun, a room lights only where the sun reaches through an opening; a ceiling or wall between the sun and the room stays as it is without the sun, on any device and any model size.
+
+**Status.** Measured with the operator's model: the model is sound, a closed ceiling 12.7 mm thick, and the shadow lookup's offsets at the default map size are larger than that. The same view is right at the largest map size, wrong at the default. Asked of the engine as G275, with no workaround here. Then: drive it on `Bancroft_3D_plan.pdf` from this view and compare a picture with the sun and one without.
+
 ## O401 — **BUILT AND DRIVEN ON THE EMULATOR, not on a real printer** — the Android app may use the network, for printing
 
 His words: *"I think we need to be able to request network access when installing on android in order for printing."*
@@ -677,7 +685,7 @@ His words, relayed by the engine: *"Can we add 360 degree capability to our scre
 
 **Status.** Built on engine v0.133.0. Driven and falsified twice on real builds: without the levelling the check reads a tilted camera, and without the tag it reads a file lacking it. The picture is taken from the view's eye, so from an orbit outside the model it shows the model small on the backdrop; the switch's hover text says to walk inside for a view from within. The engine's own `3d-render --360` does not level a pitched view: reported as X055.
 
-## O399 — **FILED, NOT BUILT** — the engine's 3D measuring tools, reachable in the 3D viewer
+## O399 — **BUILT**, driven by `the_3d_viewer_measures_from_points_on_the_model` — the engine's 3D measuring tools, reachable in the 3D viewer
 
 His words: *"If there are 3D measuring tools in pdfcer we need to add support for them in pdfcer-gui as well."*
 
@@ -685,7 +693,9 @@ His words: *"If there are 3D measuring tools in pdfcer we need to add support fo
 
 **Scope, whole behaviour.** A measure tool in the viewer: every kind the engine writes, from points picked on the model, with the value shown as it is measured; a saved view's measurements listed and shown; a new one kept on a saved view; the PDF 2.0 disclosure off the canvas. Anything the engine lacks goes to it as a request.
 
-**Status.** Filed. The engine's v0.134.0 has what it needs (X056, X057). To be built straight after that release.
+**Status.** Built on the engine's v0.134.1. A ruler glyph on the picture turns it on, with the kind chosen on the options menu's Measure tab: length, perpendicular, angle, radius, comment. The value shows under the pointer before the last pick and below the picture after it; a pick snaps to a corner it lands near. *Keep on this view* writes it to the saved view on show, the first saved view when none is, and those are listed with *Delete* on the tab and drawn in the picture.
+
+Limits, stated so they are not mistaken for done: keeping or deleting rewrites the file's saved views through `EditSession::set_3d_views`, which drops what a `ThreeDSavedView` does not carry, each view's background, section, node states and named 3D path among them. The status line says so, and the verb that would avoid it is asked of the engine as G274. A measurement's own `node1`/`node2` hiding is not applied. The marks are drawn over the picture, so a saved picture does not carry them.
 
 ## O398 — **BUILT**, driven by `the_3d_viewers_settings_are_saved_only_as_defaults`, `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`, `settings_navigate_by_page` — the 3D viewer's settings: graphics-card switches per part, *Save as default* instead of saving on every change, and all of them on a Settings page
 

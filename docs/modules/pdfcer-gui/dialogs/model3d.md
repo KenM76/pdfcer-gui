@@ -184,8 +184,51 @@ part by part. A part turned off declines the card for the picture
 `DialogsState::model3d`, one at a time; opening another model replaces it,
 and changing documents closes it.
 
+## Measure
+
+The ruler glyph on the picture (`measure_tab.rs`) turns the tool on; while on, a
+tap picks and a double-click no longer centres. The kind is on the options
+menu's fifth tab. Picks needed: linear and perpendicular two, angular and radial
+three, comment one (`measure.rs`).
+
+- **A pick** is the ray hit under the pointer, moved to the hit triangle's nearest
+  corner when that corner is within a snap reach in points, larger on a phone.
+  A miss changes nothing but says so off the canvas.
+- **The value** is always `ThreeDMeasurement::value_text` of the engine's builder,
+  so the shell computes no number of its own. With one pick left, hovering builds
+  a measurement from the hover and shows its value under the pointer. A builder's
+  `None` is reported off the canvas as a refusal: a perpendicular between two
+  points of one plane has no length, so a flat model refuses every one.
+- **The unit** is named only when `ModelUnits::from_cad_file` holds and the unit
+  has a word; otherwise the units are empty and a sentence says the value is in
+  the model's own units.
+- **Keeping** appends to the saved view on show, or the first saved view, through
+  `SetModelViews`, an ordinary undoable edit. With no saved view one is made from
+  the camera. `EditSession::set_3d_views` replaces all views, so every view's
+  measurements are carried across (`carry_measurements`) and the status line carries
+  `REWRITES_VIEWS`: what `ThreeDSavedView` does not hold is lost from the file, and
+  G274 asks the engine for the narrower verb.
+- **Reading back.** `sync_saved` re-reads the views each time `OpenDoc::edit_epoch`
+  moves, which also covers undo and redo. Without it the viewer's own write looks
+  like the file having changed, and the next keep is refused.
+- **Drawing** (`measure_paint.rs`) is egui over the picture, in screen space through
+  `Camera::pixel_of`, and so is in no saved picture. It is a viewer overlay on the
+  saved view's content, in the measurement's own colour where it has one. The live
+  viewer never draws the 360 panorama, so no seam logic exists. A measurement's
+  `node1`/`node2` hiding is not applied.
+- **The readout** is in the viewer's notes; at full screen, which has no footer,
+  `measure_card` shows the same at the bottom left.
+
+Regions: `model3d.measure.on`, `model3d.measure`, `model3d.measure.kind.N`,
+`model3d.measure.keep`, `model3d.measure.again`, `model3d.measure.delete.N`.
+
 ## Trace
 
+- `model-measure-on on=`; `model-measure-pick n= at=x,y,z snapped=`;
+  `model-measure-missed`; `model-measure-refused`;
+  `model-measure-result kind= value= text=`; `model-measure-preview value=`;
+  `model-measure-keep view= count=`; `model-measure-delete index=`;
+  `model-measure-saved count=`; `model-measure-drawn count= saved=a|b`.
 - `model-view-opened page= parts= uncoloured= triangles= skipped= best-fit= overridden= textured= texture-notes= placed= file-view=`
   — `file-view=1` when it opened on the file's view; `uncoloured` counts
   meshes with neither a colour nor a texture.

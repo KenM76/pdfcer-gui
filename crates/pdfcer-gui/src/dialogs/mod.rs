@@ -1102,6 +1102,10 @@ impl DialogsState {
             self.labels = None;
         }
         #[cfg(feature = "3d")]
+        if let (Some(view), Status::Open(doc)) = (self.model3d.as_mut(), status) {
+            view.sync_saved(doc);
+        }
+        #[cfg(feature = "3d")]
         if self.model3d.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
             self.model3d = None;
         }

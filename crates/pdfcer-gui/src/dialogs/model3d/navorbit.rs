@@ -56,6 +56,7 @@ impl ModelView {
             self.tap_picture(ui.input(|i| i.time), at);
         }
         if response.double_clicked()
+            && !self.measure.on
             && let Some(at) = response.interact_pointer_pos()
             && on_gimbal(at).is_none()
             && let Some(hit) = self.hit_at(rect, at)

@@ -6,7 +6,7 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/selection_gestures.md`.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, repo_fixture};
+use crate::checks::driving::{SHELL_DIAG_ENV, count, repo_fixture};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
 use crate::error::{Error, Result};
@@ -105,10 +105,6 @@ fn last_select(session: &Session) -> Result<String> {
         .last()
         .map(|l| l.raw.clone())
         .unwrap_or_default())
-}
-
-fn count(session: &Session, event: &str) -> Result<usize> {
-    Ok(session.trace()?.events(event).count())
 }
 
 /// Double click, triple click, Shift+Down and a drag, on the Word-style lines.

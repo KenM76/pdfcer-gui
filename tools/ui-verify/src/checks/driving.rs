@@ -126,6 +126,11 @@ pub fn frame_for(session: &Session, trace: &Trace, viewport: Option<&str>) -> Re
     })
 }
 
+/// How many lines of `event` the trace holds so far.
+pub fn count(session: &Session, event: &str) -> Result<usize> {
+    Ok(session.trace()?.events(event).count())
+}
+
 /// **A region's rectangle and the viewport it was drawn in.**
 #[must_use]
 pub fn declared_in(trace: &Trace, ui_rect: &str, name: &str) -> Option<(LRect, Option<String>)> {

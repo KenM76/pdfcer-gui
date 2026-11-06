@@ -3,10 +3,10 @@
 //! `pdfcer_gui::dialogs::model3d`.
 
 /// The options menu's tabs, in order: the view, its look, moving about,
-/// and the saved picture.
+/// the saved picture, and measuring.
 #[must_use]
-pub fn tabs() -> [&'static str; 4] {
-    ["View", "Look", "Moving", "Picture"]
+pub fn tabs() -> [&'static str; 5] {
+    ["View", "Look", "Moving", "Picture", "Measure"]
 }
 
 /// The 360° picture switch.

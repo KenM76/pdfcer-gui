@@ -1288,6 +1288,9 @@ pub enum AttachmentAction {
         views: Vec<pdfcer_core::threed::ThreeDSavedView>,
         /// The index in `views` a reader opens on.
         default: usize,
+        /// What the status line says in place of the views being replaced,
+        /// when this edit only changed their measurements.
+        notes: Vec<String>,
     },
     /// **Pick a picture file and make it the page picture of a 3D model**,
     /// one undo entry. The picker runs in the apply arm, as it does for

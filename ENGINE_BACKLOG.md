@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **57 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `wanted` — a real gap — **54 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -164,9 +164,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **wanted.** The engine half of *Vector printing* above; that row says what the Print dialog does with it. |
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
-| **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
-| **Model point to image position** — `Camera::pixel_of` | **wanted; X056, shipped at v0.134.0.** O399's measure tool draws a measurement over the picture and snaps a pick to a triangle's corner with it. |
-| **Builders for the other 3D measurements** — the module `pdfcer_core::threed::measure::build` (`ThreeDMeasurement::perpendicular`, `angular`, `radial`, `comment`) | **wanted; X057, shipped at v0.134.0.** O399's measure tool offers every kind through them, and its value comes from `ThreeDMeasurement::value_text`. |
 | **glTF occlusion maps and textured alpha cut-outs** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
 
 ---
@@ -247,7 +244,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **442 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **445 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -256,6 +253,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
 | **Fisheye lens for the 3D camera** — `Projection::Fisheye`, `FrameLens` | **shipped — the 3D viewer's Lens choice (O391); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`.** The viewer offers Flat / Fisheye / Auto with the curve, Auto switching to fisheye past a chosen angle; the CPU picture draws it directly and the GPU picture through `FrameLens` faces and the lens shaders. |
+| **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **shipped; our request G245, complete at v0.113.0.** The 3D viewer's measure tool (O399): read, drawn and listed from a saved view, and a new one kept on it, with the PDF 2.0 disclosure off the canvas. Driven by `the_3d_viewer_measures_from_points_on_the_model`. |
+| **Model point to image position** — `Camera::pixel_of` | **shipped; X056, shipped at v0.134.0.** O399's measure tool draws a measurement over the picture and snaps a pick to a triangle's corner with it. |
+| **Builders for the other 3D measurements** — the module `pdfcer_core::threed::measure::build` (`ThreeDMeasurement::perpendicular`, `angular`, `radial`, `comment`) | **shipped; X057, shipped at v0.134.0.** O399's measure tool offers every kind through them, and its value comes from `ThreeDMeasurement::value_text`. |
 | **Fisheye lens on the GPU draws correctly** — hosts' recipe: `FrameLens::eye`, `FrameLens::basis`, depth test `ALWAYS` for the resample | **shipped — the 3D viewer's Lens choice (O391); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`.** `gpu_lens::plan` draws each `FrameLens` face from its camera, lit and shadowed from the fisheye camera, resamples it with depth `ALWAYS`, and bends the lines and points through the lens programs with `FrameLens::eye` and `::basis`. |
 | **Header & footer as a document edit** (Acrobat "Add Header & Footer") — `EditSession::stamp_running_text` … | **shipped — Pages ▸ Stamp ▸ Header & footer…; driven by `header_footer_and_printer_marks`.** `dialogs::running` collects the text and `app::actions::pagestamp` calls `stamp_running_text` through the edit funnel as one undo entry, with the `{page}` and `{pages}` tokens; text the font cannot print is refused before the engine is called. The print-time variant is its own row. |
 | **Make a 3D PDF from a glTF/GLB mesh (colours, transparency, part names)** … | **shipped — Edit ▸ Insert ▸ 3D model… takes `.gltf` and `.glb`; driven by `a_gltf_model_is_converted_and_placed`.** `app::actions::gltf::to_embed` converts through `pdfcer_3d::gltf` and `app::actions::models` places the PRC; the import's notes go to the status line (`model-insert-gltf triangles=`), and the placed model saves back out as PRC. |
@@ -906,7 +906,7 @@ The answers to G243, G244, G245 part 2 and G249–G251.
 - **Model units** — `pdfcer_3d::container::ModelUnits` (`ModelUnits::mm_per_unit`, `ModelUnits::from_cad_file`), `AssembledModel::units`. **Wired**: the walking eye height in feet and inches (G250, O356).
 - **Print fork** — `pdfcer_core::edit::print_decoration::EditSession::fork_for_print`, `pdfcer_core::edit::print_decoration::EditSession::decorated_for_print`. **wanted**: replaces the serialise-and-reopen copy `dialogs::print::running` stamps (G243).
 - **Font resubsetting** — `pdfcer_core::optimize::OptimizeSettings::install_resubsetter`, `pdfcer_core::optimize::resubset::ResubsetFonts::with_source`, `pdfcer_core::optimize::resubset::ResubsetFonts::is_bound`, `pdfcer_core::optimize::resubset::NO_RESUBSETTER`, `pdfcer_core::optimize::resubset::NoResubsetter`. **wanted**: Compact installs the renderer's glyph resubsetter so subset fonts shrink (G244).
-- **3D measurements** — `pdfcer_core::threed::measure` (`ThreeDMeasurement`, `ThreeDMeasureKind`, `MAX_3D_MEASUREMENTS`) and `pdfcer_core::threed::view_write::ThreeDSavedView::with_measurement`. **wanted**: the viewer's measure tool — two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure `ThreeDViewsOutcome::disclosures` carries (G245).
+- **3D measurements** — `pdfcer_core::threed::measure` (`ThreeDMeasurement`, `ThreeDMeasureKind`, `MAX_3D_MEASUREMENTS`) and `pdfcer_core::threed::view_write::ThreeDSavedView::with_measurement`. **Wired**: the viewer's measure tool, every kind, kept on a saved view, with the PDF 2.0 disclosure `ThreeDViewsOutcome::disclosures` carries (G245, O399).
 - **3D activation** — `pdfcer_core::threed::activation` is where `ThreeDActivation` now lives; the type is consumed by Insert 3D model through its `pdfcer_core::threed` re-export. Reading it to show the poster until a click is the Click-to-activate row.
 
 ## Engine arrivals at v0.108.0 — not verdict rows
@@ -917,6 +917,14 @@ The answers to G243, G244, G245 part 2 and G249–G251.
 ## Open: a print-ready copy
 
 - **G273** — no call gives a copy of a document with everything that prints burned into page content. Android's print preview draws no annotation, and what its printer service draws is outside this shell, so a 3D picture may not come out. `EditSession::flatten_annotations` refuses Media and encrypted documents and burns annotations set not to print, so it cannot compose one. The Android print command discloses the limit meanwhile.
+
+## Open: a sun through a thin ceiling
+
+- **G275** — at the default shadow map size, `LightView::normal_offset` and `LightView::bias` are larger than a 12.7 mm ceiling in a 25 m model, so its room side is unblocked, and `abs(dot(n, l))` then gives it the sun at full strength (O402). No workaround here.
+
+## Open: one saved view's measurements
+
+- **G274** — no verb writes one saved view's `/MA` and leaves the rest of the dictionary alone. `EditSession::set_3d_views` replaces every view, and its `view_dict` writes only what `ThreeDSavedView` carries, so keeping or deleting a measurement drops each view's `/BG`, `/SA`, `/NA`, `/U3DPath` and `/IN`. The shell uses it as it stands and says so off the canvas (`REWRITES_VIEWS`): a boundary finding, no workaround.
 
 ## Engine arrivals at v0.107.0 — not verdict rows
 

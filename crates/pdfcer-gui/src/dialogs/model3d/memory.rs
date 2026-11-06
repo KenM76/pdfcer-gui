@@ -287,7 +287,7 @@ impl ModelView {
         get.number("speed", 0.25..=4.0, &mut p.speed);
         get.flag("stairs", &mut p.stairs);
         self.nav.recalled(p);
-        get.number("tab", 0..=3, &mut self.nav.options_tab);
+        get.number("tab", 0..=4, &mut self.nav.options_tab);
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);
         get.pick("lens_curve", &CURVES, &mut self.lens.curve);
         get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);

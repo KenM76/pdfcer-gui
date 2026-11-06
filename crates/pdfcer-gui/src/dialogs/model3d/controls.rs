@@ -36,6 +36,11 @@ impl ModelView {
             self.nav.pending_tap = None;
             return false;
         }
+        if self.measure.on {
+            self.nav.pending_tap = None;
+            self.measure.take_tap(now, at);
+            return false;
+        }
         let double = self.nav.pending_tap.take().is_some_and(|(then, was)| {
             now - then <= DOUBLE_TAP.0 && (at - was).length() <= DOUBLE_TAP.1
         });

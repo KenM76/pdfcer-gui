@@ -525,6 +525,7 @@ pub(super) fn set_views(
     artwork: &ThreeDArtwork,
     views: &[ThreeDSavedView],
     default: usize,
+    said: Vec<String>,
 ) {
     let page = artwork.page_index;
     let Some(annot) = artwork.annot_id.filter(|_| still_listed(doc, artwork)) else {
@@ -560,11 +561,14 @@ pub(super) fn set_views(
                         u8::from(outcome.shared_stream)
                     )
                 });
-                let mut notes = vec![t::views_set(
-                    page,
-                    outcome.views_after,
-                    outcome.views_before,
-                )];
+                let mut notes = said;
+                if notes.is_empty() {
+                    notes.push(t::views_set(
+                        page,
+                        outcome.views_after,
+                        outcome.views_before,
+                    ));
+                }
                 notes.extend(outcome.disclosures);
                 notes
             })
