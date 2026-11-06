@@ -653,11 +653,17 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O396 — **PART BUILT** — X048: the 3D viewer's file split, two panic paths, lookups by enum
+## O397 — **BUILT AND DRIVEN** — X049: a vertex too far to measure no longer shrinks the 3D fit, and the pan is bounded
+
+From the crates consumer (request X049 in the channel). **Scope.** A model whose farthest vertex is past the float range is fitted whole, not to its nearer part. Both drag pans (two-finger, and secondary or middle button) go through one setter, which ignores input that is not finite and holds each component within ±1000 model radii. Nothing changes for an ordinary model.
+
+**Status.** Built on `pdfcer-3d-nav` (engine v0.131.0): the reach and the fit are the crate's, and its clamped distance frames X049's repro triangle whole (test `fit::tests::a_model_wider_than_the_float_range_is_fitted_whole`). The pan goes through `navorbit::drag_pan` (test `navorbit::tests::a_pan_that_is_not_finite_is_ignored_and_a_huge_one_is_held`). Both tests fail with their fix reverted. The bound sits GUI-side until the crate owns it (X051). The 38 3D checks pass driven on engine v0.132.0, none skipped.
+
+## O396 — **BUILT AND DRIVEN** — X048: the 3D viewer on the engine's navigation crate, its file split, two panic paths, lookups by enum
 
 From the crates consumer (request X048 in the channel). **Scope.** (1) Navigation onto the engine's headless navigation crate once X047 ships it: waits on the engine, no GUI copy meanwhile. (2) `dialogs/model3d.rs` split by responsibility to under 700 lines. (3) The options menu's height can no longer panic in a 1x1 or zero-size window or on a size not yet known. (4) Named views and axis names looked up by `get` or by the enum, never by a bare index. (5) Nothing the viewer does changes.
 
-**Status.** Items 2–5 built (`e7df858b`): `model3d.rs` 797 to 619 lines, the view rows in `model3d/rows.rs`; `options::heights` orders the bounds (test `a_window_too_small_for_the_menu_lays_it_out`, fails on the old clamp); lookups by enum or `get`. The 38 3D checks pass driven, none skipped. Item 1 waits on X047.
+**Status.** Items 2–5 built (`e7df858b`): `model3d.rs` 797 to 619 lines, the view rows in `model3d/rows.rs`; `options::heights` orders the bounds (test `a_window_too_small_for_the_menu_lays_it_out`, fails on the old clamp); lookups by enum or `get`. The 38 3D checks pass driven, none skipped. Item 1 built on engine v0.131.0: the viewer navigates on `pdfcer-3d-nav` and `pdfcer_3d::vec3`, and the local orbit, walk, axes, lens, inside, stick-curve and vector copies are deleted (about 2,000 lines); 36 GUI tests moved with them to the crate. Visible differences: Top view pitches to the crate's `PITCH_LIMIT`, 89.43 degrees where it was 89 (X052 asks the engine to confirm this), and a saved view with a tilted up direction keeps the tilt. Saved preferences load unchanged. Still GUI-side, with a request filed for each: the pan bound (X051) and the conversion from a saved view to `SavedAim` (X053). The 38 3D checks pass driven on engine v0.132.0, none skipped.
 
 ## O395 — **BUILT AND DRIVEN** — X045: the 3D viewer fits a model of any size, with a finite eye, and reads a model's files only from its folder
 
