@@ -21,6 +21,9 @@ pub const SPHERE_SIZE_TOOLTIP: &str = "The picture's pixels. Its width is always
 pub const SPHERE_NOT_CLEAR: &str =
     "A 360° picture is a JPEG, which has no clear background: it is drawn on white.";
 
+/// Why a 360° picture could not be drawn: the view gives it no heading.
+pub const SPHERE_NO_HEADING: &str = "This view has no direction to draw a 360° picture from. Choose a named view and try again.";
+
 /// The 360° sizes, smallest first, as `dialogs::model3d::sphere` holds them.
 #[must_use]
 pub fn sphere_size(which: usize) -> &'static str {

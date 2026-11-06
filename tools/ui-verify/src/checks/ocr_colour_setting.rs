@@ -23,7 +23,7 @@ const RESET: &str = "settings.display.ocr_colour.reset";
 /// The page body the Display controls scroll in.
 const PAGE_BODY: &str = "settings.page"; // ui-text-exempt: a trace region name
 /// Wheel rolls allowed to bring Reset into view.
-const MAX_SCROLLS: usize = 8;
+const MAX_SCROLLS: usize = 40;
 const SAVE: &str = "dialog:settings.save";
 /// The dialog host's line when fitting the window to its content never settles.
 const RUNAWAY: &str = "dialog-fit-runaway"; // ui-text-exempt: a trace event name

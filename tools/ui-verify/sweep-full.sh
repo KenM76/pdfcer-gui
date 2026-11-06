@@ -347,6 +347,11 @@ pages_are_drawn_before_he_scrolls_to_them|--pdf fixtures/synthetic-image-only-8p
 # tell a step from a wrap. No aim point; it clicks the field the census names.
 tab_moves_between_form_fields|--pdf fixtures/three-text-fields.pdf
 
+# Each reads `--pdf` as its subject, and the shared sheet has neither fields
+# without drawn values nor a font subset short of a key.
+a_form_without_drawn_values_draws_and_clicks|--pdf fixtures/need-appearances-fields.pdf
+a_key_the_subset_lacks_comes_from_its_installed_face|--pdf fixtures/augment-subset.pdf
+
 # The shared aim is bare paper. These five need a click that lands on a
 # run of text in a document with real text objects in it; the a1 sheet is
 # CAD line-work with a title block, and per-glyph runs at that.

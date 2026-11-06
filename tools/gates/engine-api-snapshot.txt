@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 50d0135ff8ee404d6dfcf3280b5ae81b0e0607de
+# baseline: fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11395
+# items: 11399
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -6469,6 +6469,10 @@ pdfcer-core method pdfcer_core::threed::lighting::ThreeDLighting::from_name
 pdfcer-core method pdfcer_core::threed::measure::ThreeDMeasurement::linear
 pdfcer-core method pdfcer_core::threed::measure::ThreeDMeasurement::new
 pdfcer-core method pdfcer_core::threed::measure::ThreeDMeasurement::value_text
+pdfcer-core method pdfcer_core::threed::measure::build::ThreeDMeasurement::angular
+pdfcer-core method pdfcer_core::threed::measure::build::ThreeDMeasurement::comment
+pdfcer-core method pdfcer_core::threed::measure::build::ThreeDMeasurement::perpendicular
+pdfcer-core method pdfcer_core::threed::measure::build::ThreeDMeasurement::radial
 pdfcer-core method pdfcer_core::threed::opening::ThreeDOpeningView::disclosure
 pdfcer-core method pdfcer_core::threed::render_mode::ThreeDRenderMode::new
 pdfcer-core method pdfcer_core::threed::render_mode::ThreeDRenderModeKind::as_name

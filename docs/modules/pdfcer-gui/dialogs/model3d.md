@@ -124,7 +124,7 @@ where it goes, and *Save picture…* alone encodes it (`Shot::encoded`).
 
 *360° picture* on the Picture tab draws the whole sphere round the view's eye
 at one of `sphere::SIZES`, 2:1, for a photo viewer to look around in.
-`sphere::levelled` turns the camera onto the model's up first, keeping its eye
+`Camera::levelled_panorama` turns the camera onto the model's up first, keeping its eye
 and its heading, because a photo viewer takes the picture's top edge as
 straight up. `picture::sphere_jpeg` encodes it with the engine's photo sphere
 tag: a PNG cannot carry the tag, and a JPEG has no see-through backdrop, so

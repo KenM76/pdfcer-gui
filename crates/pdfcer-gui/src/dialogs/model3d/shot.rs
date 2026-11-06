@@ -368,7 +368,9 @@ impl ModelView {
         let mut camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
         self.shot.drawn_sphere = self.shot.sphere;
         if self.shot.sphere {
-            camera = sphere::levelled(camera, self.upright);
+            camera = camera
+                .levelled_panorama(self.upright.up.vector(), self.upright.front.vector())
+                .ok_or_else(|| s::SPHERE_NO_HEADING.to_owned())?;
         }
         let model = self
             .parts
