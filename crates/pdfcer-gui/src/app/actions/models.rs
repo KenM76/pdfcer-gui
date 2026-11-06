@@ -409,13 +409,14 @@ fn suggested(doc: &OpenDoc, artwork: &ThreeDArtwork, extension: &str) -> std::pa
     suggested
 }
 
-/// Write `png`, a picture the 3D viewer drew of `artwork`, to a file the
-/// operator picks. The document is not changed.
-pub(super) fn save_picture(doc: &mut OpenDoc, artwork: &ThreeDArtwork, png: &[u8]) {
+/// Write `bytes`, a picture the 3D viewer drew of `artwork`, to a file the
+/// operator picks: a JPEG when it is a 360° picture, else a PNG. The document
+/// is not changed.
+pub(super) fn save_picture(doc: &mut OpenDoc, artwork: &ThreeDArtwork, bytes: &[u8], sphere: bool) {
     let epoch = doc.edit_epoch;
-    let suggested = suggested(doc, artwork, "png");
+    let suggested = suggested(doc, artwork, if sphere { "jpg" } else { "png" });
     let crate::app::files::Picked::Path(target) =
-        crate::app::files::pick_picture_target(&suggested)
+        crate::app::files::pick_picture_target(&suggested, sphere)
     else {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -423,11 +424,15 @@ pub(super) fn save_picture(doc: &mut OpenDoc, artwork: &ThreeDArtwork, png: &[u8
         });
         return;
     };
-    match std::fs::write(&target, png) {
+    match std::fs::write(&target, bytes) {
         Ok(()) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
-                format!("model-picture-saved bytes={}", png.len())
+                format!(
+                    "model-picture-saved bytes={} sphere={}",
+                    bytes.len(),
+                    u8::from(sphere)
+                )
             });
             super::record_note(epoch, t::picture_saved(&target.display().to_string()));
         }

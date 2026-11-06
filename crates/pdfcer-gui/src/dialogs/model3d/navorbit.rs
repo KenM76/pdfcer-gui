@@ -13,24 +13,15 @@ use super::{ModelView, ORBIT_RATE, PITCH_LIMIT};
 const KEY_TURN: f64 = 1.5;
 /// The zoom factor per second a held + or - applies.
 const KEY_ZOOM: f64 = 2.5;
-/// The farthest a drag pans the target from the fitted view's, in model
-/// radii along the picture's right and up: past it the model is a speck,
-/// and the pan stays well inside the float range at any zoom.
-const PAN_LIMIT: f64 = 1e3;
-
 /// Pan `orbit` by a drag of `delta` points over a picture `height` points
 /// high, so the content follows the pointer at the target's depth. Every
-/// drag pans here: each part of the pan is held within [`PAN_LIMIT`], and a
-/// pan that is not finite is ignored.
+/// drag pans here, and [`Orbit::pan_by`] holds the pan in range.
 fn drag_pan(orbit: &mut Orbit, delta: Vec2, height: f32) {
     let per_point = 2.0 / f64::from(height.max(1.0)) / orbit.zoom;
-    let pan = [
-        orbit.pan[0] - f64::from(delta.x) * per_point,
-        orbit.pan[1] + f64::from(delta.y) * per_point,
-    ];
-    if pan.iter().all(|c| c.is_finite()) {
-        orbit.pan = pan.map(|c| c.clamp(-PAN_LIMIT, PAN_LIMIT));
-    }
+    orbit.pan_by([
+        -f64::from(delta.x) * per_point,
+        f64::from(delta.y) * per_point,
+    ]);
 }
 
 impl ModelView {
@@ -237,7 +228,7 @@ mod tests {
         assert_eq!(orbit.pan, [0.25, -0.5]);
         // A drag that would pan a billion radii.
         drag_pan(&mut orbit, Vec2::new(-1e11, 1e11), 200.0);
-        assert_eq!(orbit.pan, [PAN_LIMIT, PAN_LIMIT]);
+        assert_eq!(orbit.pan, [pdfcer_3d_nav::PAN_LIMIT; 2]);
         let bounds = Bounds {
             min: [-1.0; 3],
             max: [1.0; 3],

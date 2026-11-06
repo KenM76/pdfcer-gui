@@ -1,7 +1,5 @@
-//! A file's saved view, read into the navigation crate's terms: its aim
-//! (`pdfcer_3d_nav::SavedAim`), its framing at a picture aspect
-//! (`pdfcer_3d_nav::ViewFrame`), the orbit it opens on, and the walk a
-//! camera standing inside the model starts.
+//! A file's saved view in the viewer: the orbit it opens on, its framing, and
+//! the walk a camera standing inside the model starts.
 //!
 //! Inside means the camera's position (`/C2W`'s translation, in the model's
 //! own units) lies in the model's bounding box and the view is perspective;
@@ -10,8 +8,8 @@
 //! view made from inside a room would otherwise show the room's outside.
 
 use pdfcer_3d::NamedView;
-use pdfcer_3d_nav::{Axes, Orbit, SavedAim, Upright, ViewFrame, Walk, radius};
-use pdfcer_core::threed::{ThreeDSavedView, ViewFit};
+use pdfcer_3d_nav::{Axes, Orbit, Upright, ViewFrame, Walk, radius};
+use pdfcer_core::threed::ThreeDSavedView;
 
 use super::ModelView;
 
@@ -31,44 +29,23 @@ pub(super) fn named(index: usize, perspective: bool, upright: Upright) -> Orbit 
     Orbit::named(view, perspective, upright)
 }
 
-/// `view`'s aim, or `None` when it carries no camera of its own.
-pub(super) fn saved_aim(view: &ThreeDSavedView) -> Option<SavedAim> {
-    let aim = view.aim(1.0)?;
-    let [.., tx, ty, tz] = view.camera_to_world?;
-    Some(SavedAim {
-        direction: aim.direction,
-        up: aim.up,
-        position: [tx, ty, tz],
-        orthographic: aim.orthographic,
-        framed: matches!(aim.fit, ViewFit::Framed { .. }),
-    })
-}
-
 /// The orbit `view` opens on, or `None` when it carries no camera or one
 /// whose direction and up coincide.
 pub(super) fn saved_orbit(view: &ThreeDSavedView) -> Option<Orbit> {
-    Orbit::saved(&saved_aim(view)?)
-}
-
-/// What `view` fixes of the framing in a picture of `aspect`, when it is an
-/// orthographic view that fixes its own centre and scale.
-pub(super) fn frame(view: Option<&ThreeDSavedView>, aspect: f64) -> Option<ViewFrame> {
-    match view?.aim(aspect)?.fit {
-        ViewFit::Framed { position, height } => Some(ViewFrame { position, height }),
-        _ => None,
-    }
+    Orbit::saved(&view.saved_aim()?)
 }
 
 impl ModelView {
     /// The framing the view being followed fixes at `aspect`.
     pub(super) fn frame(&self, aspect: f64) -> Option<ViewFrame> {
-        frame(self.aimed.as_ref(), aspect)
+        self.aimed.as_ref()?.view_frame(aspect)
     }
 
     /// Walk from `view`'s camera when it stands inside the model; whether it
     /// did.
     pub(super) fn walk_from_view(&mut self, view: &ThreeDSavedView) -> bool {
-        let eye = saved_aim(view)
+        let eye = view
+            .saved_aim()
             .ok_or(pdfcer_3d_nav::NotInside::NoStandingPoint)
             .and_then(|aim| Ok((aim.eye_inside(&self.bounds)?, aim.direction)));
         let word = eye.as_ref().map_or_else(|why| why.as_str(), |_| "inside"); // ui-text-exempt: trace value

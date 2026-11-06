@@ -182,6 +182,8 @@ fn shot_rows() -> Vec<Row> {
         pick("backdrop", s::background_label(), (0..3).map(s::background)),
         pick("detail", s::detail_label(), (0..3).map(s::detail)),
         flag("wide_lines", s::wide_lines()),
+        flag("sphere", s::SPHERE),
+        pick("sphere_size", s::SPHERE_SIZE, (0..3).map(s::sphere_size)),
         flag("own_look", s::own_look()),
     ];
     for row in &mut rows {

@@ -902,6 +902,7 @@ pub mod model_shadow_sun;
 pub mod model_shadows;
 /// Skipping hidden surfaces on the card hides nothing visible.
 pub mod model_skip_hidden;
+pub mod model_sphere;
 pub mod model_tree;
 /// The 3D viewer saves the view on screen as a PNG picture.
 pub mod model_view_picture;

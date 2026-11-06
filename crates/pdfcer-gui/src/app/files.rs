@@ -515,9 +515,10 @@ pub fn pick_mesh_target(suggested: &std::path::Path) -> Picked {
     answer
 }
 
-/// **Ask where to write a picture of a 3D model**, as PNG.
+/// **Ask where to write a picture of a 3D model**: a PNG, or with `sphere` a
+/// JPEG.
 #[must_use]
-pub fn pick_picture_target(suggested: &std::path::Path) -> Picked {
+pub fn pick_picture_target(suggested: &std::path::Path, sphere: bool) -> Picked {
     if let Some(answer) = from_env(std::env::var_os(DIAG_PICTURE_SAVE_PATH)) {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed.
@@ -525,9 +526,17 @@ pub fn pick_picture_target(suggested: &std::path::Path) -> Picked {
         });
         return answer;
     }
+    let (filter, extensions): (_, &[&str]) = if sphere {
+        (
+            crate::text::panels::models::picture_filter_jpeg(),
+            &["jpg", "jpeg"],
+        )
+    } else {
+        (crate::text::panels::models::picture_filter_png(), &["png"])
+    };
     let mut dialog = crate::filedialog::FileDialog::new()
         .set_title(crate::text::panels::models::picture_dialog_title())
-        .add_filter(crate::text::panels::models::picture_filter_png(), &["png"]);
+        .add_filter(filter, extensions);
     if let Some(dir) = suggested.parent().filter(|d| !d.as_os_str().is_empty()) {
         dialog = dialog.set_directory(dir);
     }

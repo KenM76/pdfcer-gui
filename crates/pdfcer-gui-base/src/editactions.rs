@@ -1301,7 +1301,9 @@ pub enum AttachmentAction {
     SaveModelPicture {
         /// The row the viewer was opened on, which names the suggested file.
         artwork: pdfcer_core::threed::ThreeDArtwork,
-        /// The picture, as PNG file bytes.
-        png: Vec<u8>,
+        /// The picture's file bytes: a JPEG with `sphere`, else a PNG.
+        bytes: Vec<u8>,
+        /// A 360° picture, tagged for photo viewers.
+        sphere: bool,
     },
 }

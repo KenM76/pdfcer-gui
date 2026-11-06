@@ -109,8 +109,8 @@ set, every view written carries it (`ThreeDSavedView::with_lighting`).
 
 Below the picture, beside *Close*. *Save picture…* is on every model and
 queues `AttachmentAction::SaveModelPicture`, which
-`app::actions::models::save_picture` writes to a PNG file the operator picks;
-the document is not changed. *Use this view on the page* is on a model that
+`app::actions::models::save_picture` writes to a file the operator picks, PNG
+or, for a 360° picture, JPEG; the document is not changed. *Use this view on the page* is on a model that
 is a `/3D` annotation of its own (`panels::attachments::models::has_own_poster`; a RichMedia asset has
 no page picture to replace). The press renders the current orbit through
 `render_model` at the last rendered picture's shape, 1200 pixels on the
@@ -120,7 +120,16 @@ poster uses, not the theme's) and queues its RGBA samples as
 builds the image with `ImportedImage::from_rgba8` and applies it as one undo
 entry. A render failure replaces the picture with its sentence and queues
 nothing. Both buttons draw the same picture (`poster`); `PictureFor` says
-where it goes, and *Save picture…* alone encodes it as PNG (`png`).
+where it goes, and *Save picture…* alone encodes it (`Shot::encoded`).
+
+*360° picture* on the Picture tab draws the whole sphere round the view's eye
+at one of `sphere::SIZES`, 2:1, for a photo viewer to look around in.
+`sphere::levelled` turns the camera onto the model's up first, keeping its eye
+and its heading, because a photo viewer takes the picture's top edge as
+straight up. `picture::sphere_jpeg` encodes it with the engine's photo sphere
+tag: a PNG cannot carry the tag, and a JPEG has no see-through backdrop, so
+*Clear* is greyed while the switch is on. The switch and its size are settings
+like the others (`memory`, `settingspage`).
 
 ## Save views in the file
 

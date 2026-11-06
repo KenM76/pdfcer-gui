@@ -176,7 +176,7 @@ fn lamp_counts(
 /// A camera's unit look direction and up, the point it looks at and its
 /// distance from it, as `dir=x,y,z up=x,y,z target=x,y,z gap=d`, for the
 /// trace a driven check reads.
-fn aim_of(camera: &pdfcer_3d::Camera) -> String {
+pub(super) fn aim_of(camera: &pdfcer_3d::Camera) -> String {
     let unit = |v: [f64; 3]| {
         let length = v
             .iter()
@@ -301,6 +301,17 @@ fn colourfulness(rgba: &[u8]) -> (usize, usize) {
 
 /// `drawn` as PNG file bytes at `dpi` pixels per inch, for *Save picture…*.
 pub(super) fn png(drawn: &Drawn, dpi: f32) -> Result<Vec<u8>, String> {
+    pdfcer_render::export::encode_png(&pixmap(drawn)?, Some(dpi)).map_err(|e| e.to_string())
+}
+
+/// `drawn` as the file bytes of a 360° picture: a JPEG tagged for photo viewers.
+pub(super) fn sphere_jpeg(drawn: &Drawn) -> Result<Vec<u8>, String> {
+    use pdfcer_render::export::{JpegOptions, encode_jpeg, insert_jpeg_xmp, photo_sphere_xmp};
+    let jpeg = encode_jpeg(&pixmap(drawn)?, &JpegOptions::default()).map_err(|e| e.to_string())?;
+    insert_jpeg_xmp(&jpeg, &photo_sphere_xmp(drawn.width, drawn.height)).map_err(|e| e.to_string())
+}
+
+fn pixmap(drawn: &Drawn) -> Result<pdfcer_render::tiny_skia::Pixmap, String> {
     use pdfcer_render::tiny_skia::{ColorU8, IntSize, Pixmap};
     let premultiplied = drawn
         .rgba
@@ -311,8 +322,7 @@ pub(super) fn png(drawn: &Drawn, dpi: f32) -> Result<Vec<u8>, String> {
         })
         .collect();
     let size = IntSize::from_wh(drawn.width, drawn.height).ok_or_else(String::new)?;
-    let pixmap = Pixmap::from_vec(premultiplied, size).ok_or_else(String::new)?;
-    pdfcer_render::export::encode_png(&pixmap, Some(dpi)).map_err(|e| e.to_string())
+    Pixmap::from_vec(premultiplied, size).ok_or_else(String::new)
 }
 
 /// The picture's pixel size for an area of `points` at `scale` pixels a

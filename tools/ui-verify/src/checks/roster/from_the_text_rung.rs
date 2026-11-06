@@ -788,6 +788,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_view_poster::APictureFileBecomesTheModelsPagePicture),
         Box::new(model_view_picture::TheViewerSavesItsViewAsAPicture),
         Box::new(model_picture_size::TheViewerSavesAPictureAtTheSizeSet),
+        Box::new(model_sphere::TheViewerSavesA360Picture),
         Box::new(os_image_paste::AnOsPicturePastesAtThePointer),
         Box::new(paste_chord::CtrlVPastesAPicture),
         Box::new(paste_text::OsTextPastesAsATextBox),

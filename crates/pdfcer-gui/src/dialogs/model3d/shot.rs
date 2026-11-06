@@ -7,7 +7,9 @@
 //! sides follow it. The scale stops at 8× or at the renderer's pixel
 //! ceiling (`pdfcer_3d::MAX_RENDER_PIXELS`), whichever comes first, and the
 //! ceiling is said when it is the one that stops it. The resolution is only
-//! the PNG's `pHYs` record; it changes no pixel.
+//! the PNG's `pHYs` record; it changes no pixel. A 360° picture replaces the
+//! size and resolution with a choice of 2:1 sizes, and is a JPEG on an opaque
+//! background (see `sphere`).
 
 use std::sync::mpsc::{Receiver, TryRecvError};
 
@@ -15,7 +17,7 @@ use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{MAX_LAMP_SHADOW_MAP_SIZE, MAX_RENDER_PIXELS, MAX_SHADOW_MAP_SIZE, render_model};
 
-use super::{Drawn, ModelView};
+use super::{Drawn, ModelView, sphere};
 use crate::text::model3dshot as s;
 
 /// The width entry.
@@ -30,6 +32,10 @@ pub const REGION_SHOT_DPI: &str = "model3d.shot.dpi"; // ui-text-exempt: trace r
 pub const REGION_SHOT_BACKGROUND: &str = "model3d.shot.background"; // ui-text-exempt: trace region name, never displayed
 /// The shadow detail drop-down; its items add `.screen`, `.fine`, `.finest`.
 pub const REGION_SHOT_DETAIL: &str = "model3d.shot.detail"; // ui-text-exempt: trace region name, never displayed
+/// The 360° picture switch.
+pub const REGION_SHOT_SPHERE: &str = "model3d.shot.sphere"; // ui-text-exempt: trace region name, never displayed
+/// The 360° size drop-down; its items add `.small`, `.medium`, `.large`.
+pub const REGION_SHOT_SPHERE_SIZE: &str = "model3d.shot.sphere_size"; // ui-text-exempt: trace region name, never displayed
 /// The switch that widens lines with the picture.
 pub const REGION_SHOT_LINES: &str = "model3d.shot.lines"; // ui-text-exempt: trace region name, never displayed
 
@@ -41,6 +47,11 @@ const MOST: f64 = 8.0;
 const SMALLEST: f64 = 16.0;
 /// The resolutions an entry may ask for, pixels per inch.
 const DPI: std::ops::RangeInclusive<u32> = 72..=2400;
+
+/// The [`BACKDROPS`] entry a JPEG cannot hold.
+const CLEAR: usize = 2;
+/// The 360° sizes' region words, smallest first.
+const SPHERE_WORDS: [&str; 3] = ["small", "medium", "large"]; // ui-text-exempt: trace region names, never displayed
 
 /// What is behind the model: the trace words are `white`, `screen`, `clear`.
 const BACKDROPS: [&str; 3] = ["white", "screen", "clear"]; // ui-text-exempt: trace values, never displayed
@@ -68,6 +79,12 @@ pub(super) struct Shot {
     drawing: Option<(Receiver<Result<Drawn, String>>, String)>,
     /// The picture's own look, else the screen's.
     pub(super) own: Option<super::shotlook::LookSet>,
+    /// *Save picture…* draws the whole sphere round the eye.
+    pub(super) sphere: bool,
+    /// An index into [`sphere::SIZES`].
+    pub(super) sphere_size: usize,
+    /// The picture being drawn, or the last, is a 360° one.
+    drawn_sphere: bool,
 }
 
 impl Default for Shot {
@@ -82,6 +99,9 @@ impl Default for Shot {
             screen: [255; 4],
             drawing: None,
             own: None,
+            sphere: false,
+            sphere_size: 1,
+            drawn_sphere: false,
         }
     }
 }
@@ -106,7 +126,29 @@ impl Shot {
 
     /// The picture's size, pixels.
     pub(super) fn size(&self) -> [u32; 2] {
+        if self.sphere {
+            return sphere::SIZES[self.sphere_size.min(sphere::SIZES.len() - 1)];
+        }
         self.size_at(self.scale.clamp(self.least(), self.most()))
+    }
+
+    /// The background the picture is drawn on: a 360° picture has no clear
+    /// one, and draws on white while the setting stays as chosen.
+    fn backdrop_drawn(&self) -> usize {
+        if self.sphere && self.backdrop == CLEAR {
+            0
+        } else {
+            self.backdrop
+        }
+    }
+
+    /// `drawn`'s file bytes, and whether they are a 360° picture's.
+    pub(super) fn encoded(&self, drawn: &Drawn) -> Result<(Vec<u8>, bool), String> {
+        if self.drawn_sphere {
+            Ok((super::picture::sphere_jpeg(drawn)?, true))
+        } else {
+            Ok((super::picture::png(drawn, self.png_dpi())?, false))
+        }
     }
 
     /// Set the scale so side `axis` is `pixels` long.
@@ -121,7 +163,7 @@ impl Shot {
         let [width, height] = self.size();
         options.width = width;
         options.height = height;
-        match BACKDROPS[self.backdrop] {
+        match BACKDROPS[self.backdrop_drawn()] {
             "screen" => options.background = self.screen,
             "clear" => options.background[3] = 0,
             _ => {}
@@ -131,7 +173,12 @@ impl Shot {
         options.lamp_shadow_map_size =
             (options.lamp_shadow_map_size * k).min(MAX_LAMP_SHADOW_MAP_SIZE);
         if self.wide_lines {
-            let wide = f64::from(options.line_width.max(1)) * self.scale.max(1.0);
+            let scale = if self.sphere {
+                f64::from(width) / f64::from(self.base[0].max(1))
+            } else {
+                self.scale
+            };
+            let wide = f64::from(options.line_width.max(1)) * scale.max(1.0);
             options.line_width = wide.round() as u32;
         }
     }
@@ -141,19 +188,20 @@ impl Shot {
         self.dpi as f32
     }
 
-    /// ` base=WxH scale=s w= h= dpi= background= detail= lines=`, for the
+    /// ` base=WxH scale=s w= h= dpi= background= detail= lines= sphere=`, for the
     /// trace a driven check reads.
     fn trace(&self) -> String {
         let [bw, bh] = self.base;
         let [w, h] = self.size();
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            " base={bw}x{bh} scale={:.3} w={w} h={h} dpi={} background={} detail={} lines={}",
+            " base={bw}x{bh} scale={:.3} w={w} h={h} dpi={} background={} detail={} lines={} sphere={}",
             self.scale.clamp(self.least(), self.most()),
             self.dpi,
-            BACKDROPS[self.backdrop],
+            BACKDROPS[self.backdrop_drawn()],
             DETAILS[self.detail].0,
-            u8::from(self.wide_lines)
+            u8::from(self.wide_lines),
+            u8::from(self.sphere)
         )
     }
 }
@@ -163,14 +211,40 @@ impl ModelView {
     pub(super) fn shot_control(&mut self, ui: &mut Ui) {
         let before = self.shot.trace();
         ui.weak(s::note());
-        self.shot_size(ui);
-        self.shot_dpi(ui);
+        self.shot_sphere(ui);
+        if !self.shot.sphere {
+            self.shot_size(ui);
+            self.shot_dpi(ui);
+        }
         self.shot_finish(ui);
         ui.separator();
         self.shot_look_control(ui);
         let after = self.shot.trace();
         if after != before {
             crate::diag::trace(|| format!("model-view-picture-size{after}")); // ui-text-exempt: diagnostic trace, never displayed
+        }
+    }
+
+    /// The 360° switch, and the sizes when it is on.
+    fn shot_sphere(&mut self, ui: &mut Ui) {
+        let shot = &mut self.shot;
+        let switch = ui
+            .checkbox(&mut shot.sphere, s::SPHERE)
+            .on_hover_text(s::SPHERE_TOOLTIP);
+        crate::diag::ui_rect_visible(REGION_SHOT_SPHERE, switch.rect, ui.clip_rect());
+        if shot.sphere {
+            let words = SPHERE_WORDS.map(str::to_owned);
+            ui.horizontal_wrapped(|ui| {
+                choice(
+                    ui,
+                    (s::SPHERE_SIZE, s::SPHERE_SIZE_TOOLTIP),
+                    REGION_SHOT_SPHERE_SIZE,
+                    &words,
+                    s::sphere_size,
+                    &mut shot.sphere_size,
+                    None,
+                );
+            });
         }
     }
 
@@ -248,6 +322,7 @@ impl ModelView {
     fn shot_finish(&mut self, ui: &mut Ui) {
         let shot = &mut self.shot;
         let words = BACKDROPS.map(|w| w.to_owned());
+        let mut backdrop = shot.backdrop_drawn();
         ui.horizontal_wrapped(|ui| {
             choice(
                 ui,
@@ -255,9 +330,13 @@ impl ModelView {
                 REGION_SHOT_BACKGROUND,
                 &words,
                 s::background,
-                &mut shot.backdrop,
+                &mut backdrop,
+                shot.sphere.then_some((CLEAR, s::SPHERE_NOT_CLEAR)),
             );
         });
+        if backdrop != shot.backdrop_drawn() {
+            shot.backdrop = backdrop;
+        }
         let words = DETAILS.map(|(w, _)| w.to_owned());
         ui.horizontal_wrapped(|ui| {
             choice(
@@ -267,6 +346,7 @@ impl ModelView {
                 &words,
                 s::detail,
                 &mut shot.detail,
+                None,
             );
         });
         let lines = ui
@@ -285,13 +365,17 @@ impl ModelView {
             ..self.in_shot_look(|view| view.look()).options()
         };
         self.shot.apply(&mut options);
-        let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
+        let mut camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
+        self.shot.drawn_sphere = self.shot.sphere;
+        if self.shot.sphere {
+            camera = sphere::levelled(camera, self.upright);
+        }
         let model = self
             .parts
             .painted(&mut self.model.drawn, None, Clone::clone);
         let head = format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            "model-view-poster yaw={:.3} pitch={:.3}{} look={} shadows={} occlusion={}",
+            "model-view-poster yaw={:.3} pitch={:.3}{} look={} shadows={} occlusion={} {}",
             self.orbit.yaw,
             self.orbit.pitch,
             self.shot.trace(),
@@ -301,7 +385,8 @@ impl ModelView {
                 "screen"
             }, // ui-text-exempt: trace value, never displayed
             u8::from(options.shadows),
-            u8::from(options.ambient_occlusion)
+            u8::from(options.ambient_occlusion),
+            super::picture::aim_of(&camera)
         );
         let (send, receive) = std::sync::mpsc::channel();
         std::thread::Builder::new()
@@ -346,7 +431,8 @@ impl ModelView {
 }
 
 /// A label and a drop-down of `words.len()` items named by `name`, the
-/// button published as `region` and each item as `region.<word>`.
+/// button published as `region` and each item as `region.<word>`; `barred`
+/// greys one item and says why.
 fn choice(
     ui: &mut Ui,
     (label, tip): (&str, &str),
@@ -354,13 +440,20 @@ fn choice(
     words: &[String],
     name: fn(usize) -> &'static str,
     chosen: &mut usize,
+    barred: Option<(usize, &str)>,
 ) {
     ui.label(label);
     let combo = egui::ComboBox::from_id_salt(region)
         .selected_text(name(*chosen))
         .show_ui(ui, |ui| {
             for (i, word) in words.iter().enumerate() {
-                let item = ui.selectable_value(chosen, i, name(i));
+                let why = barred.filter(|(at, _)| *at == i).map(|(_, why)| why);
+                let item = ui
+                    .add_enabled_ui(why.is_none(), |ui| {
+                        ui.selectable_value(chosen, i, name(i))
+                            .on_disabled_hover_text(why.unwrap_or_default())
+                    })
+                    .inner;
                 crate::diag::ui_rect_visible(
                     &format!("{region}.{word}"),
                     item.rect,

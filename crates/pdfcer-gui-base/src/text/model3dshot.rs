@@ -9,6 +9,28 @@ pub fn tabs() -> [&'static str; 4] {
     ["View", "Look", "Moving", "Picture"]
 }
 
+/// The 360° picture switch.
+pub const SPHERE: &str = "360° picture (photo sphere)";
+/// Its hover.
+pub const SPHERE_TOOLTIP: &str = "Save the whole view round the eye as a JPEG that photo viewers open as a picture to look around in. It is drawn level, from where this view stands: walk into the model for a view from inside.";
+/// The 360° size drop-down's label.
+pub const SPHERE_SIZE: &str = "360° size";
+/// The 360° size drop-down's hover.
+pub const SPHERE_SIZE_TOOLTIP: &str = "The picture's pixels. Its width is always twice its height, the whole way round the eye by half way over.";
+/// Why a 360° picture cannot have a clear background.
+pub const SPHERE_NOT_CLEAR: &str =
+    "A 360° picture is a JPEG, which has no clear background: it is drawn on white.";
+
+/// The 360° sizes, smallest first, as `dialogs::model3d::sphere` holds them.
+#[must_use]
+pub fn sphere_size(which: usize) -> &'static str {
+    match which {
+        0 => "2048 × 1024 pixels",
+        1 => "4096 × 2048 pixels",
+        _ => "8192 × 4096 pixels",
+    }
+}
+
 /// The options menu's button writing every setting as the operator's own.
 pub const SAVE_DEFAULTS: &str = "Save as default";
 /// Its hover.

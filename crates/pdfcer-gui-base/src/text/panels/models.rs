@@ -651,6 +651,12 @@ pub fn picture_filter_png() -> &'static str {
     "PNG picture"
 }
 
+/// The JPEG filter name, for a 360° picture.
+#[must_use]
+pub fn picture_filter_jpeg() -> &'static str {
+    "JPEG photo sphere"
+}
+
 /// Where the picture went.
 #[must_use]
 pub fn picture_saved(path: &str) -> String {

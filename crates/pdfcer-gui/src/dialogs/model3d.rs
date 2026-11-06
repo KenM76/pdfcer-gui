@@ -50,6 +50,7 @@ mod saved;
 pub(crate) mod settingspage;
 mod shot;
 mod shotlook;
+mod sphere;
 mod stick;
 mod sunlight;
 mod window;
@@ -578,7 +579,7 @@ impl ModelView {
     }
 
     /// Queue `drawn` for `purpose`: the page's picture takes the samples as
-    /// they are, a file takes them encoded as PNG.
+    /// they are, a file takes them encoded.
     fn queue(&mut self, purpose: PictureFor, drawn: Drawn, actions: &mut Vec<Action>) {
         let artwork = self.artwork.clone();
         let action = match purpose {
@@ -588,8 +589,12 @@ impl ModelView {
                 height: drawn.height,
                 rgba: drawn.rgba,
             },
-            PictureFor::File => match picture::png(&drawn, self.shot.png_dpi()) {
-                Ok(png) => AttachmentAction::SaveModelPicture { artwork, png },
+            PictureFor::File => match self.shot.encoded(&drawn) {
+                Ok((bytes, sphere)) => AttachmentAction::SaveModelPicture {
+                    artwork,
+                    bytes,
+                    sphere,
+                },
                 Err(said) => {
                     self.failed = Some(t::poster_not_drawn(&said));
                     return;

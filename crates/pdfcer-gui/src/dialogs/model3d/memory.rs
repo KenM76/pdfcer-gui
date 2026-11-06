@@ -228,6 +228,8 @@ impl Kept<'_> {
         put.value("backdrop", s.backdrop);
         put.value("detail", s.detail);
         put.flag("wide_lines", s.wide_lines);
+        put.flag("sphere", s.sphere);
+        put.value("sphere_size", s.sphere_size);
         put.value("base_w", s.base[0]);
         put.value("base_h", s.base[1]);
         put.flag("own_look", s.own.is_some());
@@ -309,6 +311,8 @@ impl ModelView {
         get.number("backdrop", 0..=2, &mut s.backdrop);
         get.number("detail", 0..=2, &mut s.detail);
         get.flag("wide_lines", &mut s.wide_lines);
+        get.flag("sphere", &mut s.sphere);
+        get.number("sphere_size", 0..=2, &mut s.sphere_size);
         get.number("base_w", 1..=10_000, &mut s.base[0]);
         get.number("base_h", 1..=10_000, &mut s.base[1]);
         let mut own = self.shot.own.is_some();

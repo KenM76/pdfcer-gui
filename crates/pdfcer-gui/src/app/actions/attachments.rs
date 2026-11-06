@@ -45,8 +45,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
             default,
         } => super::models::set_views(doc, &artwork, &views, default),
         AttachmentAction::PickModelPoster { artwork } => super::models::pick_poster(doc, &artwork),
-        AttachmentAction::SaveModelPicture { artwork, png } => {
-            super::models::save_picture(doc, &artwork, &png);
+        AttachmentAction::SaveModelPicture {
+            artwork,
+            bytes,
+            sphere,
+        } => {
+            super::models::save_picture(doc, &artwork, &bytes, sphere);
         }
     }
 }
