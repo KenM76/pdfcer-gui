@@ -6,9 +6,13 @@
 //! is its index in the list here, so the lists' order is part of the file's
 //! format and new choices go on their ends.
 //!
-//! The settings are written whenever they change and no pointer is held, so
-//! a slider dragged writes once, when let go. A key missing or unreadable
-//! leaves that setting at its default. The projection and the camera are the
+//! The settings are the operator's defaults: written only by *Save as
+//! default* (or the Settings window), and read as each viewer opens. *Reset
+//! to defaults* takes up [`factory`]'s, the built-in ones, without writing.
+//! The OS window's size and the menu's tab alone are written as they change
+//! and no pointer is held, merged into the file's keys so a viewer never
+//! overwrites another's saved defaults. A key missing or unreadable leaves
+//! that setting at its default. The projection and the camera are the
 //! view's and are not kept; the eye height is kept by its own key.
 
 use std::collections::BTreeMap;
@@ -19,7 +23,10 @@ use pdfcer_3d_nav::{AUTO_RANGE, CURVES, LensKind};
 use pdfcer_core::threed::ThreeDLighting;
 
 use super::ModelView;
+use super::card::CardParts;
 use super::looks::LAMP_NEAREST;
+use super::nav;
+use super::shot::Shot;
 use super::shotlook::LookSet;
 use super::sunlight::{BEARING_RANGE, GAIN_RANGE, HEIGHT_RANGE, KELVIN_RANGE, Light};
 use crate::app::actions::Action;
@@ -29,12 +36,17 @@ use crate::text::model3dlook::{Highlights, SeeThrough};
 /// The settings, keyed as in the preferences file.
 pub(super) type Settings = BTreeMap<String, String>;
 
-const SENSES: [LightSense; 2] = [LightSense::TowardsLight, LightSense::Emitted];
-const SEE_THROUGH: [SeeThrough; 3] = [SeeThrough::Tinted, SeeThrough::Cutout, SeeThrough::None];
-const HIGHLIGHTS: [Highlights; 3] = [Highlights::Auto, Highlights::Exponent, Highlights::Fraction];
+/// The keys written as they change rather than by *Save as default*.
+pub(super) const KEPT_AS_THEY_CHANGE: [&str; 3] = ["tab", "window_w", "window_h"];
+
+pub(super) const SENSES: [LightSense; 2] = [LightSense::TowardsLight, LightSense::Emitted];
+pub(super) const SEE_THROUGH: [SeeThrough; 3] =
+    [SeeThrough::Tinted, SeeThrough::Cutout, SeeThrough::None];
+pub(super) const HIGHLIGHTS: [Highlights; 3] =
+    [Highlights::Auto, Highlights::Exponent, Highlights::Fraction];
 
 /// The lamp reach choices, in the drop-down's order.
-fn lamp_cuts() -> Vec<LampCut> {
+pub(super) fn lamp_cuts() -> Vec<LampCut> {
     std::iter::once(LampCut::Auto)
         .chain(super::looks::LAMP_CUT_STEPS.map(LampCut::Threshold))
         .chain(std::iter::once(LampCut::Off))
@@ -42,14 +54,14 @@ fn lamp_cuts() -> Vec<LampCut> {
 }
 
 /// The lighting choices: the view's own, then each scheme.
-fn lightings() -> Vec<Option<ThreeDLighting>> {
+pub(super) fn lightings() -> Vec<Option<ThreeDLighting>> {
     std::iter::once(None)
         .chain(crate::text::model3d::lighting_schemes().map(Some))
         .collect()
 }
 
 /// The render mode choices: the view's own, then each mode.
-fn modes() -> Vec<Option<RenderModeKind>> {
+pub(super) fn modes() -> Vec<Option<RenderModeKind>> {
     std::iter::once(None)
         .chain(RenderModeKind::ALL.map(Some))
         .collect()
@@ -181,30 +193,36 @@ fn get_look(get: &Get<'_>, look: &mut LookSet) {
     get.pick("highlights", &HIGHLIGHTS, &mut x.highlights);
 }
 
-impl ModelView {
-    /// Every kept setting, as it now stands.
-    pub(super) fn remember(&self) -> Settings {
-        let mut map = Settings::new();
-        let mut put = Put(&mut map, "");
-        let p = self.nav.prefs;
+/// What one viewer keeps, apart from its tab and OS window.
+struct Kept<'a> {
+    prefs: &'a nav::Prefs,
+    lens: &'a pdfcer_3d_nav::Lens,
+    look: &'a LookSet,
+    shot: &'a Shot,
+    card: &'a CardParts,
+}
+
+impl Kept<'_> {
+    fn put(&self, map: &mut Settings) {
+        let mut put = Put(map, "");
+        let p = self.prefs;
         put.flag("ghost", p.ghost);
         put.flag("level", p.level);
         put.flag("gimbal", p.gimbal);
         put.flag("controls", p.controls);
         put.value("speed", format!("{:.3}", p.speed));
         put.flag("stairs", p.stairs);
-        put.value("tab", self.nav.options_tab);
-        let lens = &self.lens;
+        let lens = self.lens;
         put.pick("lens", &LensKind::ALL, &lens.kind);
         put.pick("lens_curve", &CURVES, &lens.curve);
         put.value("lens_auto_at", format!("{:.0}", lens.auto_at));
-        if let Some([w, h]) = self.nav.window.or(self.nav.window_open) {
-            put.value("window_w", w);
-            put.value("window_h", h);
+        put.flag("card_picture", self.card.picture);
+        for (i, on) in self.card.parts.iter().enumerate() {
+            put.flag(&format!("card_part_{i}"), *on);
         }
-        put_look(&mut Put(&mut map, "look_"), &self.look_set());
-        let s = &self.shot;
-        let mut put = Put(&mut map, "shot_");
+        put_look(&mut Put(map, "look_"), self.look);
+        let s = self.shot;
+        let mut put = Put(map, "shot_");
         put.value("scale", format!("{:.3}", s.scale));
         put.value("dpi", s.dpi);
         put.value("backdrop", s.backdrop);
@@ -214,7 +232,43 @@ impl ModelView {
         put.value("base_h", s.base[1]);
         put.flag("own_look", s.own.is_some());
         if let Some(own) = &s.own {
-            put_look(&mut Put(&mut map, "shot_look_"), own);
+            put_look(&mut Put(map, "shot_look_"), own);
+        }
+    }
+}
+
+/// The built-in defaults: every key a viewer keeps but its tab and window.
+pub(crate) fn factory() -> Settings {
+    let mut map = Settings::new();
+    Kept {
+        prefs: &nav::Prefs::default(),
+        lens: &pdfcer_3d_nav::Lens::default(),
+        look: &LookSet::factory(),
+        shot: &Shot::default(),
+        card: &CardParts::default(),
+    }
+    .put(&mut map);
+    map
+}
+
+impl ModelView {
+    /// Every kept setting, as it now stands.
+    pub(super) fn remember(&self) -> Settings {
+        let mut map = Settings::new();
+        let look = self.look_set();
+        Kept {
+            prefs: &self.nav.prefs,
+            lens: &self.lens,
+            look: &look,
+            shot: &self.shot,
+            card: &self.gpu.card,
+        }
+        .put(&mut map);
+        let mut put = Put(&mut map, "");
+        put.value("tab", self.nav.options_tab);
+        if let Some([w, h]) = self.nav.window.or(self.nav.window_open) {
+            put.value("window_w", w);
+            put.value("window_h", h);
         }
         map
     }
@@ -235,6 +289,10 @@ impl ModelView {
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);
         get.pick("lens_curve", &CURVES, &mut self.lens.curve);
         get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);
+        get.flag("card_picture", &mut self.gpu.card.picture);
+        for (i, on) in self.gpu.card.parts.iter_mut().enumerate() {
+            get.flag(&format!("card_part_{i}"), on);
+        }
         let mut size = [0.0_f32; 2];
         get.number("window_w", 200.0..=20_000.0, &mut size[0]);
         get.number("window_h", 200.0..=20_000.0, &mut size[1]);
@@ -253,14 +311,14 @@ impl ModelView {
         get.flag("wide_lines", &mut s.wide_lines);
         get.number("base_w", 1..=10_000, &mut s.base[0]);
         get.number("base_h", 1..=10_000, &mut s.base[1]);
-        let mut own = false;
+        let mut own = self.shot.own.is_some();
         get.flag("own_look", &mut own);
-        if own {
-            let mut set = self.look_set();
+        self.shot.own = own.then(|| {
+            let mut set = self.shot.own.unwrap_or_else(|| self.look_set());
             get_look(&Get(settings, "shot_look_"), &mut set);
-            self.shot.own = Some(set);
-        }
-        self.remembered = self.remember();
+            set
+        });
+        self.remembered = self.kept_as_they_change();
         let (keys, p, tab) = (settings.len(), self.nav.prefs, self.nav.options_tab);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -271,17 +329,29 @@ impl ModelView {
         });
     }
 
-    /// Ask for the settings to be written when they differ from those last
-    /// written, no pointer is held and a second has passed since the last
-    /// write (an OS window resized by its edge changes size every frame
-    /// with no pointer down here), or `now`, as the viewer closes.
+    /// The settings written as they change: [`KEPT_AS_THEY_CHANGE`]'s.
+    fn kept_as_they_change(&self) -> Settings {
+        let prefix = pdfcer_gui_base::prefs::modelview::PREFIX;
+        let mut map = self.remember();
+        map.retain(|key, _| {
+            key.strip_prefix(prefix)
+                .is_some_and(|k| KEPT_AS_THEY_CHANGE.contains(&k))
+        });
+        map
+    }
+
+    /// Ask for the tab and the OS window's size to be written when they
+    /// differ from those last written, no pointer is held and a second has
+    /// passed since the last write (an OS window resized by its edge changes
+    /// size every frame with no pointer down here), or `now`, as the viewer
+    /// closes.
     pub(super) fn keep_settings(
         &mut self,
         ctx: &egui::Context,
         now: bool,
         actions: &mut Vec<Action>,
     ) {
-        let settings = self.remember();
+        let settings = self.kept_as_they_change();
         if settings == self.remembered {
             return;
         }
@@ -293,7 +363,28 @@ impl ModelView {
         }
         self.remembered = settings.clone();
         self.nav.kept_at = time;
+        actions.push(Action::Pref(PrefAction::ModelViewMerge(settings)));
+    }
+
+    /// Write every setting and the eye height as the operator's defaults.
+    pub(super) fn save_defaults(&mut self, actions: &mut Vec<Action>) {
+        let settings = self.remember();
+        let keys = settings.len();
+        self.remembered = self.kept_as_they_change();
+        let mm = self.nav.prefs.eye_mm.map(|mm| mm.round().max(1.0) as u32);
         actions.push(Action::Pref(PrefAction::ModelView(settings)));
+        actions.push(Action::Pref(PrefAction::WalkEyeHeight(mm)));
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| format!("model-view-defaults-saved keys={keys}"));
+    }
+
+    /// Take up the built-in defaults, the eye height's share of the model
+    /// included, without writing them.
+    pub(super) fn reset_defaults(&mut self) {
+        self.recall(&factory());
+        self.nav.prefs.eye_mm = None;
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| "model-view-defaults-reset".to_owned());
     }
 }
 
@@ -324,6 +415,17 @@ mod tests {
         let mut back = LookSet::default_for_tests();
         get_look(&Get(&map, "look_"), &mut back);
         assert_eq!(back, look);
+    }
+
+    #[test]
+    fn the_built_in_defaults_hold_every_saved_key_but_tab_and_window() {
+        let keys = factory();
+        assert!(keys.contains_key("model3d_card_part_6"));
+        assert!(keys.contains_key("model3d_look_shadows"));
+        assert!(!keys.contains_key("model3d_shot_look_shadows"));
+        for kept in KEPT_AS_THEY_CHANGE {
+            assert!(!keys.contains_key(&format!("model3d_{kept}")));
+        }
     }
 
     #[test]

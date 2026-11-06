@@ -403,7 +403,7 @@ pub struct Prefs {
     /// The 3D viewer opens walking with ghost on; `false` orbiting. See
     /// [`modelstart`].
     pub model_start_walk: bool,
-    /// The 3D viewer's last settings, as it wrote them. See [`modelview`].
+    /// The 3D viewer's defaults. See [`modelview`].
     pub model_view: std::collections::BTreeMap<String, String>,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.

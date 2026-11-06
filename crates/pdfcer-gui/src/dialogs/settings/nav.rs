@@ -45,6 +45,8 @@ const PAGES: &[(Section, &str)] = &[
     (Section::Program, "shortcuts"),
     (Section::Program, "acrobat"),
     (Section::Program, "remote"),
+    #[cfg(feature = "3d")]
+    (Section::Program, "model3d"),
     (Section::Document, "colour"),
     (Section::Document, "fonts"),
     (Section::Document, "images"),
@@ -87,6 +89,7 @@ fn heading(key: &str) -> String {
         "shortcuts" => t::keys::title().to_owned(),
         "acrobat" => crate::text::acrobat::group_acrobat(),
         "remote" => t::group_remote().to_owned(),
+        "model3d" => crate::text::model3dshot::PAGE_TITLE.to_owned(),
         "colour" => t::group_colour().to_owned(),
         "fonts" => t::group_fonts().to_owned(),
         "images" => t::group_images().to_owned(),

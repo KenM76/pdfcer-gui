@@ -1,6 +1,7 @@
 //! `settings_navigate_by_page` — the Settings window shows one page at a time
 //! from a grouped page list, its search keeps only the pages holding a match,
-//! and Tools ▸ Font folders opens it on the Fonts page.
+//! Tools ▸ Font folders opens it on the Fonts page, and the 3D viewer's
+//! page is listed and reached.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/settings_nav.md`.
 
@@ -25,7 +26,7 @@ const HEADING: &str = "settings.heading.";
 /// The trace event naming the page on show.
 const PAGE_EVENT: &str = "settings-page"; // ui-text-exempt: a trace event name, never displayed
 /// Every page, in the order the list must show them.
-const PAGES: [&str; 19] = [
+const PAGES: [&str; 20] = [
     "general",
     "presets",
     "appearance",
@@ -33,6 +34,7 @@ const PAGES: [&str; 19] = [
     "shortcuts",
     "acrobat",
     "remote",
+    "model3d",
     "colour",
     "fonts",
     "images",
@@ -96,6 +98,16 @@ fn launch(
     invoke: &str,
     stem: &str,
 ) -> Result<(Session, ScriptedPointer)> {
+    launch_with(ctx, report, invoke, stem, &[])
+}
+
+fn launch_with(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    invoke: &str,
+    stem: &str,
+    extra: &[(&str, &str)],
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -116,6 +128,9 @@ fn launch(
         .push(("PDFCER_DIAG_INVOKE".to_owned(), invoke.to_owned()));
     spec.env
         .push((viewport_env.to_owned(), OFFSCREEN.to_owned()));
+    for (k, v) in extra {
+        spec.env.push(((*k).to_owned(), (*v).to_owned()));
+    }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
@@ -199,6 +214,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("clicking Signatures in the list showed the Signatures page");
+    click(&session, &pointer, ui_rect, &format!("{HEADING}model3d"))?;
+    if page_on_show(&session.trace()?).as_deref() != Some("model3d") {
+        return Ok(Some(format!(
+            "3D viewer was clicked in the page list and the window shows {:?}.",
+            page_on_show(&session.trace()?)
+        )));
+    }
+    report.note("clicking 3D viewer in the list showed its page");
 
     // --- The search narrows the list -----------------------------------------
     // The window is its own viewport; keys go to the one holding the box.
@@ -255,5 +278,36 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     report.note("Tools ▸ Font folders opened on the Fonts page");
+    drop(session);
+    photograph_the_3d_page(ctx, report, ui_rect)?;
     Ok(None)
+}
+
+/// Pictures of the 3D viewer's page, top and scrolled, drawn inside the main
+/// window: eframe never photographs a dialog's own window.
+fn photograph_the_3d_page(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    ui_rect: &str,
+) -> Result<()> {
+    let embed = [("PDFCER_DIAG_EMBED", "1")];
+    let (session, pointer) = launch_with(ctx, report, OPEN_SETTINGS, "settings-nav-3d", &embed)?;
+    let heading = format!("{HEADING}model3d");
+    click(&session, &pointer, ui_rect, &heading)?;
+    for (stem, notches) in [("top", 0.0), ("lower", -12.0)] {
+        if notches != 0.0 {
+            // Right of the page list, over the page.
+            let Some(mut over) = declared(&session.trace()?, ui_rect, &heading) else {
+                return Ok(());
+            };
+            over.min.x += 400.0;
+            over.max.x += 400.0;
+            pointer.wheel_in(&session, None, WindowPoint::centre_of(over), notches)?;
+            session.settle(20);
+        }
+        let picture = ctx.out(&format!("settings-model3d-{stem}.png"));
+        pointer.screenshot(&session, &picture)?;
+        report.artifact(picture);
+    }
+    Ok(())
 }

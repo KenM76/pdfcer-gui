@@ -868,6 +868,9 @@ pub enum PrefAction {
     /// **Persist the 3D viewer's settings**: every `model3d_` key, as the
     /// viewer encodes them. See `prefs::modelview`.
     ModelView(std::collections::BTreeMap<String, String>),
+    /// **Persist some of the 3D viewer's settings**, each key replacing the
+    /// file's and every other key kept: what a viewer writes as it changes.
+    ModelViewMerge(std::collections::BTreeMap<String, String>),
 }
 /// **Where an Arrange command puts the selected mark.**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

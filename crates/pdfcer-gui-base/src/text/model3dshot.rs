@@ -9,6 +9,46 @@ pub fn tabs() -> [&'static str; 4] {
     ["View", "Look", "Moving", "Picture"]
 }
 
+/// The options menu's button writing every setting as the operator's own.
+pub const SAVE_DEFAULTS: &str = "Save as default";
+/// Its hover.
+pub const SAVE_DEFAULTS_TOOLTIP: &str = "Open every 3D viewer with these settings, the eye height included. The Settings window's 3D viewer page changes them too.";
+/// The options menu's button taking up the built-in settings.
+pub const RESET_DEFAULTS: &str = "Reset to defaults";
+/// Its hover.
+pub const RESET_DEFAULTS_TOOLTIP: &str =
+    "Use the built-in settings in this viewer. Your saved defaults are kept until you save again.";
+/// Said after *Save as default*.
+pub const DEFAULTS_SAVED: &str = "Saved as your defaults.";
+
+/// The Settings window's 3D viewer page, in its list and over it.
+pub const PAGE_TITLE: &str = "3D viewer";
+/// What the page sets.
+pub const PAGE_SILENCE: &str = "How every 3D viewer opens: the same settings its options menu has, saved there by Save as default.";
+/// What it reaches.
+pub const PAGE_RADIUS: &str =
+    "A viewer already open keeps its own until it is opened again or reset.";
+/// How a viewer starts: walking.
+pub const START_WALKING: &str = "Open walking";
+/// How a viewer starts: orbiting.
+pub const START_ORBITING: &str = "Open orbiting";
+/// The eye height left to the model's size.
+pub const EYE_AUTO: &str = "Eye height from the model's size";
+/// The eye height's unit.
+pub const MM: &str = " mm";
+/// A brightness's unit.
+pub const PERCENT: &str = "%";
+/// The render mode that follows each view.
+pub const MODE_FROM_VIEW: &str = "As the view says";
+/// The saved picture's scale on the page.
+pub const PICTURE_SCALE: &str = "Picture size, times the screen";
+
+/// One lighting scheme's brightness.
+#[must_use]
+pub fn brightness_of(scheme: &str) -> String {
+    format!("Brightness: {scheme}")
+}
+
 /// What the Picture tab sets, above its rows.
 #[must_use]
 pub fn note() -> &'static str {

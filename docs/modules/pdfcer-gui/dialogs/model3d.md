@@ -151,6 +151,25 @@ wording (`text::panels::meshfit`): best-fit and partial counts, each reason a
 mesh stopped fitting or was left out, and the parts each list names. Nothing is
 marked on the picture: a partial mesh renders as a whole one would.
 
+## Settings and defaults
+
+A viewer starts from the `model3d_*` keys in the preferences file, or the
+built-in value for a key that is absent. A change stays in that viewer. *Save as
+default* writes every setting, replacing the keys (`PrefAction::ModelView`), and
+the eye height (`PrefAction::WalkEyeHeight`). *Reset to defaults* takes up the
+built-in settings in that viewer and writes nothing. Only the options menu's
+tab and the window's size are kept as they change
+(`PrefAction::ModelViewMerge`).
+
+The Settings window's 3D viewer page (`settingspage`) edits the same keys from a
+table of rows, because the settings live in a viewer that has no model to open
+there. Its values are read by the next viewer opened; one already open keeps
+its own.
+
+The graphics card's switches (`card`) turn the card off for the whole picture or
+part by part. A part turned off declines the card for the picture
+(`gpu-declined=turned-off` on `model-view-rendered`) and the processor draws it.
+
 ## Lifetime
 
 `DialogsState::model3d`, one at a time; opening another model replaces it,

@@ -7,7 +7,9 @@
 //! with its name. Controls the glyph row over the picture already shows are
 //! left out while it is shown. The menu resizes from its corner, keeps its
 //! size, opens on the tab last shown, stays open while its switches are used
-//! and closes on a click outside it or Escape.
+//! and closes on a click outside it or Escape. Above every tab, *Save as
+//! default* and *Reset to defaults* (see [`super::memory`]); the Look tab ends
+//! with the graphics card's switches (see [`super::card`]).
 
 use egui::{Rect, Ui, UiBuilder, Vec2};
 use pdfcer_gui_base::icons::{self, Icon};
@@ -20,6 +22,10 @@ use crate::text::model3dshot as s;
 use crate::text::panels::modelnav as tn;
 use crate::text::panels::models as t;
 
+/// *Save as default*.
+pub const REGION_SAVE_DEFAULTS: &str = "model3d.options.save_default"; // ui-text-exempt: trace region name, never displayed
+/// *Reset to defaults*.
+pub const REGION_RESET_DEFAULTS: &str = "model3d.options.reset_default"; // ui-text-exempt: trace region name, never displayed
 /// The open menu's frame.
 pub const REGION_MENU: &str = "model3d.options.menu"; // ui-text-exempt: trace region name, never displayed
 /// The options glyph's published region.
@@ -95,6 +101,7 @@ impl ModelView {
                     .show(ui, |ui| {
                         let shown = self.nav.options_tab;
                         self.tab_row(ui);
+                        self.defaults_row(ui);
                         ui.separator();
                         let fresh = opening || shown != self.nav.options_tab;
                         let mut scroll = egui::ScrollArea::vertical()
@@ -139,6 +146,33 @@ impl ModelView {
         });
     }
 
+    /// *Save as default* and *Reset to defaults*, and that the defaults
+    /// were saved.
+    fn defaults_row(&mut self, ui: &mut Ui) {
+        ui.horizontal_wrapped(|ui| {
+            let save = ui
+                .button(s::SAVE_DEFAULTS)
+                .on_hover_text(s::SAVE_DEFAULTS_TOOLTIP);
+            crate::diag::ui_rect_visible(REGION_SAVE_DEFAULTS, save.rect, ui.clip_rect());
+            if save.clicked() {
+                self.save_defaults = true;
+                self.nav.defaults_saved = true;
+            }
+            let reset = ui
+                .button(s::RESET_DEFAULTS)
+                .on_hover_text(s::RESET_DEFAULTS_TOOLTIP);
+            crate::diag::ui_rect_visible(REGION_RESET_DEFAULTS, reset.rect, ui.clip_rect());
+            if reset.clicked() {
+                self.reset_defaults();
+                self.nav.defaults_saved = false;
+                self.switched(ui.ctx());
+            }
+            if self.nav.defaults_saved {
+                ui.weak(s::DEFAULTS_SAVED);
+            }
+        });
+    }
+
     /// The tab shown's rows.
     fn options(&mut self, ui: &mut Ui) {
         let full = self.filling_screen(ui.ctx());
@@ -149,6 +183,8 @@ impl ModelView {
                 self.lighting_control(ui);
                 self.effects_control(ui);
                 self.looks_control(ui);
+                ui.separator();
+                self.card_control(ui);
             }
             2 => self.moving_tab(ui, row),
             _ => {

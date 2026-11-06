@@ -260,6 +260,7 @@ pub const CARD_FAILED: &str = "The graphics card could not draw this model, so i
 pub fn processor_reason(reason: ProcessorReason) -> &'static str {
     match reason {
         ProcessorReason::WidePoints => "vertices larger than the card draws",
+        ProcessorReason::TurnedOff(part) => card_part(part),
     }
 }
 
@@ -268,4 +269,74 @@ pub fn processor_reason(reason: ProcessorReason) -> &'static str {
 pub enum ProcessorReason {
     /// Points wider than the card's widest.
     WidePoints,
+    /// The frame shows a part the operator turned the card off for.
+    TurnedOff(CardPart),
 }
+
+/// A part of the live picture the graphics card can be turned off for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CardPart {
+    Shadows,
+    LampShadows,
+    SeeThrough,
+    Occlusion,
+    Fisheye,
+    Glow,
+    Lines,
+}
+
+impl CardPart {
+    /// Every part, in the menu's order.
+    pub const ALL: [Self; 7] = [
+        Self::Shadows,
+        Self::LampShadows,
+        Self::SeeThrough,
+        Self::Occlusion,
+        Self::Fisheye,
+        Self::Glow,
+        Self::Lines,
+    ];
+}
+
+/// The part's switch, and the words a frame showing it is said in.
+#[must_use]
+pub fn card_part(part: CardPart) -> &'static str {
+    match part {
+        CardPart::Shadows => "shadows",
+        CardPart::LampShadows => "lamp shadows",
+        CardPart::SeeThrough => "see-through shadows",
+        CardPart::Occlusion => "ambient occlusion",
+        CardPart::Fisheye => "the fisheye lens",
+        CardPart::Glow => "glowing surfaces",
+        CardPart::Lines => "lines and points",
+    }
+}
+
+/// The live picture is drawn by the processor because it shows `part`,
+/// which the operator turned the card off for.
+#[must_use]
+pub fn drawn_on_processor_by_choice(part: CardPart) -> String {
+    format!(
+        "Drawn without the graphics card while it shows {}, which it is set not to draw, so moving it is slower.",
+        card_part(part)
+    )
+}
+
+/// The heading of the graphics card's switches.
+pub const CARD_HEADING: &str = "Graphics card";
+/// The switch for the whole live picture.
+pub const CARD_PICTURE: &str = "Draw the live picture on the graphics card";
+/// Its tooltip.
+pub const CARD_PICTURE_TOOLTIP: &str = "Off, the processor draws every frame: slower to move, the same picture. Saved pictures are always drawn by the processor.";
+/// The switch, greyed because `PDFCER_3D_CPU=1` is set.
+pub const CARD_FORCED_OFF_TOOLTIP: &str =
+    "PDFCER_3D_CPU=1 is set for this session, so the processor draws every frame.";
+/// The parts' switches, under the picture's.
+pub const CARD_PARTS: &str = "Use the graphics card for:";
+/// A part's switch tooltip.
+pub const CARD_PART_TOOLTIP: &str = "Off, a frame showing this is drawn by the processor instead: slower to move, the same picture.";
+/// The parts' switches, greyed while the whole picture is off.
+pub const CARD_PARTS_OFF_TOOLTIP: &str = "The graphics card is off for the whole picture.";
+/// The whole picture is drawn by the processor by the operator's choice.
+pub const CARD_TURNED_OFF: &str =
+    "Drawn without the graphics card, as set under Graphics card, so moving it is slower.";

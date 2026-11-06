@@ -77,7 +77,6 @@ impl ModelView {
             .iter()
             .any(|r| r.drag_stopped() || r.lost_focus());
         if settled {
-            self.eye_changed = true;
             self.switched(ui.ctx());
         }
         if !units.from_cad_file {
@@ -91,7 +90,6 @@ impl ModelView {
                 .clicked()
         {
             self.nav.prefs.eye_mm = None;
-            self.eye_changed = true;
             self.switched(ui.ctx());
         }
     }

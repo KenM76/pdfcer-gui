@@ -1,7 +1,7 @@
-//! # `prefs::modelview` — the 3D viewer's last settings
+//! # `prefs::modelview` — the 3D viewer's defaults
 //!
-//! Keys: every key beginning `model3d_`, each a word or number the 3D viewer
-//! wrote and alone reads back (see `pdfcer_gui::dialogs::model3d::memory`).
+//! Keys: every key beginning `model3d_`, each a word or number written by
+//! *Save as default* or the Settings window and read back by the 3D viewer (see `pdfcer_gui::dialogs::model3d::memory`).
 //! This module keeps them as text: what each means belongs to the viewer, so
 //! a setting the viewer adds needs no change here. A value the viewer cannot
 //! read falls back to that setting's default there.
@@ -34,8 +34,8 @@ pub(super) fn write_block(pref: &BTreeMap<String, String>, out: &mut String) {
     }
     out.push_str(
         "\n\
-         # model3d_*: the 3D viewer's last settings, written by the viewer as\n\
-         # it closes or changes them. Delete a line to restore its default.\n",
+         # model3d_*: the 3D viewer's defaults, written by Save as default and\n\
+         # the Settings window. Delete a line to restore the built-in value.\n",
     );
     for (key, value) in pref {
         let _ = writeln!(out, "{key} = {value}"); // ui-text-exempt: a preferences-file line, never displayed

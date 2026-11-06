@@ -1,7 +1,7 @@
 //! `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap` —
 //! walking with ghost mode off, a drag on the feet field sets the walker's
-//! eye height (O356), which is written to the preferences file and comes
-//! back in a second launch; and two quick taps on the gimbal's centre save
+//! eye height (O356) in that viewer only, written to the preferences file
+//! by *Save as default* (O398) and back in a second launch; and two quick taps on the gimbal's centre save
 //! a picture of the view as it was before the taps (O357), both facing
 //! along X, whose tip is then drawn over the centre (O358), and from a
 //! tilted view.
@@ -29,6 +29,8 @@ const EYE: &str = "model3d.eye-height";
 const CENTRE: &str = "model3d.gimbal.tip.6";
 /// The gimbal's +X tip.
 const TIP_X: &str = "model3d.gimbal.tip.0";
+/// `dialogs::model3d::options::REGION_SAVE_DEFAULTS`.
+const SAVE_DEFAULTS: &str = "model3d.options.save_default";
 /// `prefs::walkeye`'s file key.
 const KEY: &str = "walk_eye_height_mm";
 /// The picture picker's diagnostic answer, read by `app::files::pick_picture_target`.
@@ -44,7 +46,8 @@ impl Check for TheViewerKeepsItsEyeHeight {
 
     fn defect(&self) -> &'static str {
         "The 3D walker's feet-and-inches eye height is missing, does not change the height, is \
-         not written to the preferences file or is forgotten on the next launch; or two taps \
+         written to the preferences file before Save as default or not by it, or is \
+         forgotten on the next launch; or two taps \
          on the gimbal's centre save no picture, or change the view"
     }
 
@@ -138,8 +141,9 @@ impl Stage<'_> {
         Ok(None)
     }
 
-    /// Set the height by dragging the feet field; it must be traced,
-    /// persisted and on disk. Then the double tap. `Ok` carries the
+    /// Set the height by dragging the feet field and typing inches; the
+    /// viewer must trace it and write nothing until *Save as default*,
+    /// which must put it on disk. Then the double tap. `Ok` carries the
     /// millimetres written.
     fn first(
         &self,
@@ -164,22 +168,40 @@ impl Stage<'_> {
         self.pointer
             .drag_in(self.session, vp.as_deref(), from, to, 10, "l")?;
         self.session.settle(30);
-        let dragged = self.last("walk-eye-persisted", "mm");
+        let dragged = self.last("model-nav-prefs", "eye_mm");
         if let Some(failure) = self.typed(report, vp.as_deref(), dragged.as_deref())? {
             return Ok(Err(failure));
         }
-        crate::checks::viewer_options::close(self.session, self.pointer, self.ui_rect)?;
+        let early = self.last("walk-eye-persisted", "mm");
+        if early.is_some() {
+            return Ok(Err(format!(
+                "editing the height wrote it before Save as default: `walk-eye-persisted mm` \
+                 {early:?}."
+            )));
+        }
+        if !self.press(SAVE_DEFAULTS)? {
+            return Ok(Err(format!(
+                "no `{SAVE_DEFAULTS}` region in the options menu."
+            )));
+        }
+        self.session.settle(20);
         let traced = self.last("model-nav-prefs", "eye_mm");
         let persisted = self.last("walk-eye-persisted", "mm");
         report.note(format!(
-            "after the drag: nav eye_mm {traced:?}, persisted {persisted:?}"
+            "after Save as default: nav eye_mm {traced:?}, persisted {persisted:?}"
         ));
         let Some(mm) = persisted.as_deref().and_then(|m| m.parse::<u32>().ok()) else {
             return Ok(Err(format!(
-                "a drag on the feet field persisted no height: `walk-eye-persisted mm` \
+                "Save as default persisted no height: `walk-eye-persisted mm` \
                  {persisted:?}, nav eye_mm {traced:?}."
             )));
         };
+        let held = traced.as_deref().and_then(|t| t.parse::<f64>().ok());
+        if held.is_none_or(|h| (h - f64::from(mm)).abs() > 0.5) {
+            return Ok(Err(format!(
+                "Save as default wrote {mm} mm while the viewer walks with eye_mm {traced:?}."
+            )));
+        }
         let on_disk = std::fs::read_to_string(userdata.join("preferences.txt"))
             .ok()
             .and_then(|t| value_of(&t, KEY));
@@ -193,7 +215,7 @@ impl Stage<'_> {
     }
 
     /// Click the inches field, type 7 over what it holds and press Enter:
-    /// the persisted height must change from `before` and end on 7 inches.
+    /// the viewer's height must change from `before` and end on 7 inches.
     /// `Some` names the failure.
     fn typed(
         &self,
@@ -213,15 +235,15 @@ impl Stage<'_> {
         self.pointer.type_text(self.session, vp, "7")?;
         self.pointer.key(self.session, vp, "Enter", None)?;
         self.session.settle(30);
-        let after = self.last("walk-eye-persisted", "mm");
-        report.note(format!("typed 7 in: persisted {before:?} -> {after:?}"));
+        let after = self.last("model-nav-prefs", "eye_mm");
+        report.note(format!("typed 7 in: eye_mm {before:?} -> {after:?}"));
         let inches = after
             .as_deref()
             .and_then(|m| m.parse::<f64>().ok())
             .map(|mm| (mm / 25.4) % 12.0);
         if after.as_deref() == before || inches.is_none_or(|i| (i - 7.0).abs() > 0.06) {
             return Ok(Some(format!(
-                "typing 7 into the inches field did not set the height: persisted \
+                "typing 7 into the inches field did not set the height: eye_mm \
                  {before:?} -> {after:?}."
             )));
         }

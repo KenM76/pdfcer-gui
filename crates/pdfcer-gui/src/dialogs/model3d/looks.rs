@@ -146,7 +146,7 @@ fn lamp_cost_word(cost: LampCost) -> String {
 }
 
 /// A lamps drawn choice's drop-down wording.
-fn nearest_text(nearest: Option<u16>) -> String {
+pub(super) fn nearest_text(nearest: Option<u16>) -> String {
     nearest.map_or_else(
         || k_light::lamps_drawn_all().to_owned(),
         k_light::lamps_drawn_nearest,
@@ -163,7 +163,7 @@ fn lamp_cut_word(cut: LampCut) -> String {
 }
 
 /// A lamp cut's drop-down wording.
-fn lamp_cut_text(cut: LampCut) -> String {
+pub(super) fn lamp_cut_text(cut: LampCut) -> String {
     match cut {
         LampCut::Auto => k::lamp_cut_auto().to_owned(),
         LampCut::Off => k::lamp_cut_off().to_owned(),
@@ -393,8 +393,15 @@ impl ModelView {
         }
         if self.gpu.failed() {
             ui.small(k::CARD_FAILED);
+        } else if self.gpu.turned_off() {
+            ui.small(k::CARD_TURNED_OFF);
         } else if let Some(reason) = self.gpu.declined() {
-            ui.small(k::drawn_on_processor(k::processor_reason(reason)));
+            ui.small(match reason {
+                k::ProcessorReason::TurnedOff(part) => k::drawn_on_processor_by_choice(part),
+                k::ProcessorReason::WidePoints => {
+                    k::drawn_on_processor(k::processor_reason(reason))
+                }
+            });
         }
     }
 
@@ -434,5 +441,6 @@ fn lamp_notes(ui: &mut Ui, s: LampStats) {
 pub(super) fn declined_word(reason: k::ProcessorReason) -> &'static str {
     match reason {
         k::ProcessorReason::WidePoints => " gpu-declined=wide-points", // ui-text-exempt: trace value, never displayed
+        k::ProcessorReason::TurnedOff(_) => " gpu-declined=turned-off", // ui-text-exempt: trace value, never displayed
     }
 }

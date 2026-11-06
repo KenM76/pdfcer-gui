@@ -44,5 +44,11 @@ pub fn apply(action: PrefAction, prefs: &mut Prefs) {
             let _ = prefs.save();
             crate::diag::trace(|| format!("model-view-settings-persisted keys={keys}")); // ui-text-exempt: diagnostic trace, never displayed
         }
+        PrefAction::ModelViewMerge(settings) => {
+            let keys = settings.len();
+            prefs.model_view.extend(settings);
+            let _ = prefs.save();
+            crate::diag::trace(|| format!("model-view-settings-merged keys={keys}")); // ui-text-exempt: diagnostic trace, never displayed
+        }
     }
 }

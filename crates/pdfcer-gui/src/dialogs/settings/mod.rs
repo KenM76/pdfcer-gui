@@ -300,6 +300,8 @@ fn page_body(
             text::open_paragraphs(ui, &mut draft.working_prefs);
         }
         "ocr" => ocr::folders(ui, &mut draft.working_prefs),
+        #[cfg(feature = "3d")]
+        "model3d" => super::model3d::settingspage::page(ui, &mut draft.working_prefs),
         "measuring" => measuring::parallel(ui, draft),
         "comments" => {
             comments::author_name(ui, &mut draft.working_prefs);

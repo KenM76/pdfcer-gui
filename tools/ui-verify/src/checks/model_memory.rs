@@ -91,7 +91,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         session.settle(90);
         let persisted = session
             .trace()?
-            .events("model-view-settings-persisted")
+            .events("model-view-settings-merged")
             .last()
             .and_then(|l| l.get("keys").map(str::to_owned));
         let text = std::fs::read_to_string(userdata.join("preferences.txt")).unwrap_or_default();

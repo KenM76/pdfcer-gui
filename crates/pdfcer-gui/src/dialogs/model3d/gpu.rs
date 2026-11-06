@@ -32,7 +32,7 @@ use super::effects::Effects;
 use super::gpu_lens::LensPlan;
 use super::gpu_uniforms as u;
 use super::{ModelView, Rendered};
-use crate::text::model3dlook::ProcessorReason;
+use crate::text::model3dlook::{CardPart, ProcessorReason};
 
 /// GL objects of viewers closed since the last paint; the next paint of any
 /// viewer deletes them, since only a paint holds the context.
@@ -53,6 +53,8 @@ pub(super) struct Gpu {
     facts: Facts,
     /// Why the last frame was left to the processor.
     declined: Option<ProcessorReason>,
+    /// What the operator lets the card draw.
+    pub(super) card: super::card::CardParts,
 }
 
 /// What the uploaded draws hold that the frame's passes depend on.
@@ -158,6 +160,7 @@ impl Default for Gpu {
             built: None,
             forced_off: std::env::var_os("PDFCER_3D_CPU").is_some_and(|v| v == "1"),
             told: false,
+            card: super::card::CardParts::default(),
             facts: Facts::default(),
             declined: None,
         }
@@ -179,7 +182,7 @@ impl Drop for Gpu {
 impl Gpu {
     /// Whether the GPU draws the live picture.
     pub(super) fn live(&mut self) -> bool {
-        if self.forced_off {
+        if self.forced_off || !self.card.picture {
             return false;
         }
         let failed = lock(&self.shared).failed.clone();
@@ -195,7 +198,17 @@ impl Gpu {
 
     /// Whether the card draws, or will try to: not forced off, not failed.
     pub(super) fn drawing(&self) -> bool {
-        !self.forced_off && lock(&self.shared).failed.is_none()
+        !self.forced_off && self.card.picture && lock(&self.shared).failed.is_none()
+    }
+
+    /// `PDFCER_3D_CPU=1` keeps the card off for the session.
+    pub(super) fn forced_off(&self) -> bool {
+        self.forced_off
+    }
+
+    /// The operator switched the card off for the whole picture.
+    pub(super) fn turned_off(&self) -> bool {
+        !self.forced_off && !self.card.picture
     }
 
     /// Whether the card failed, so the processor draws every frame.
@@ -275,6 +288,23 @@ impl ModelView {
         };
         let mut frame_lights = FrameLights::for_model(&camera, &options, lights)?;
         let casters = self.casters(&camera, &options, effects.shadow)?;
+        let refused = self.gpu.card.refused(|part| match part {
+            CardPart::Shadows => casters.shadow.is_some() || casters.extra.is_some(),
+            CardPart::LampShadows => casters.lamps.is_some(),
+            CardPart::SeeThrough => casters.veil.is_some(),
+            CardPart::Occlusion => {
+                effects.occlusion.is_some() || (fisheye && options.ambient_occlusion)
+            }
+            CardPart::Fisheye => fisheye,
+            CardPart::Glow => self.gpu.facts.emissive > 0.0,
+            CardPart::Lines => {
+                self.gpu.facts.point_size.is_some() || lock(&self.gpu.shared).segments > 0
+            }
+        });
+        if let Some(part) = refused {
+            self.gpu.declined = Some(ProcessorReason::TurnedOff(part));
+            return Ok(false);
+        }
         if let Some(lamps) = &casters.lamps {
             frame_lights.use_lamp_shadows(lamps);
         }

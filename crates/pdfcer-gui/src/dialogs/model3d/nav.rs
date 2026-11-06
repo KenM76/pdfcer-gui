@@ -127,6 +127,8 @@ pub(super) struct Nav {
     pub window_open: Option<[f32; 2]>,
     /// When the settings were last written, egui seconds.
     pub kept_at: f64,
+    /// *Save as default* was pressed and nothing reset since.
+    pub defaults_saved: bool,
 }
 
 impl Nav {

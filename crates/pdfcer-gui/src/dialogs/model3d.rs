@@ -18,10 +18,10 @@ use pdfcer_gui_base::icons::Icon;
 use crate::app::actions::Action;
 use crate::app::actions::attachments::AttachmentAction;
 use crate::app::actions::models::Assembled;
-use crate::app::actions::prefs::PrefAction;
 use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
+mod card;
 mod controls;
 mod drone;
 mod effects;
@@ -47,6 +47,7 @@ mod phone;
 mod picture;
 mod rows;
 mod saved;
+pub(crate) mod settingspage;
 mod shot;
 mod shotlook;
 mod stick;
@@ -124,6 +125,8 @@ struct Rendered {
     parts: u32,
     look: effects::Look,
     lens: Lens,
+    /// What the card may draw.
+    card: card::CardParts,
 }
 
 /// The 3D viewer's state.
@@ -197,7 +200,8 @@ pub(crate) struct ModelView {
     /// Orbiting or walking, the switches, and the fingers on the picture.
     nav: nav::Nav,
     /// The eye height was set or reset, for the preferences file.
-    eye_changed: bool,
+    /// *Save as default* was pressed this frame.
+    save_defaults: bool,
     /// The kept settings as last written.
     remembered: memory::Settings,
 }
@@ -246,6 +250,7 @@ impl ModelView {
             )
         });
         let parts = parts::Visibility::stored(shown_tree(&model));
+        let look = shotlook::LookSet::factory();
         Self {
             title: t::view_title(page_index),
             artwork,
@@ -273,16 +278,16 @@ impl ModelView {
             fit_refused: None,
             views: None,
             parts,
-            view_lighting: None,
-            lights_turn: true,
-            shadows: true,
-            occlusion: true,
-            light_sense: pdfcer_3d::LightSense::default(),
-            sun: true,
-            light: sunlight::Light::default(),
-            extras: looks::Extras::default(),
+            view_lighting: look.view_lighting,
+            lights_turn: look.lights_turn,
+            shadows: look.shadows,
+            occlusion: look.occlusion,
+            light_sense: look.light_sense,
+            sun: look.sun,
+            light: look.light,
+            extras: look.extras,
             nav: nav::Nav::with_eye(eye_mm, walk),
-            eye_changed: false,
+            save_defaults: false,
             remembered: memory::Settings::new(),
         }
     }
@@ -321,9 +326,8 @@ impl ModelView {
         if let Some((purpose, drawn)) = self.picture.take() {
             self.queue(purpose, drawn, actions);
         }
-        if std::mem::take(&mut self.eye_changed) {
-            let mm = self.nav.prefs.eye_mm.map(|mm| mm.round().max(1.0) as u32);
-            actions.push(Action::Pref(PrefAction::WalkEyeHeight(mm)));
+        if std::mem::take(&mut self.save_defaults) {
+            self.save_defaults(actions);
         }
         if let Some((views, default)) = self.views.take() {
             actions.push(Action::Attachment(AttachmentAction::SetModelViews {
@@ -436,6 +440,7 @@ impl ModelView {
             parts: self.parts.version,
             look: self.look(),
             lens: self.lens,
+            card: self.gpu.card,
         };
         if self.rendered != Some(wanted) {
             self.draw_picture(ui.ctx(), wanted, gpu);

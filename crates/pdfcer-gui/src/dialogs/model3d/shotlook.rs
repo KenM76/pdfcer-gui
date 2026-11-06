@@ -29,6 +29,22 @@ pub(super) struct LookSet {
     pub(super) extras: super::looks::Extras,
 }
 
+impl LookSet {
+    /// The look a viewer opens with before any saved default.
+    pub(super) fn factory() -> Self {
+        Self {
+            view_lighting: None,
+            lights_turn: true,
+            shadows: true,
+            occlusion: true,
+            light_sense: pdfcer_3d::LightSense::default(),
+            sun: true,
+            light: super::sunlight::Light::default(),
+            extras: super::looks::Extras::default(),
+        }
+    }
+}
+
 #[cfg(test)]
 impl LookSet {
     /// A set with each field at a fixed value, for tests.
