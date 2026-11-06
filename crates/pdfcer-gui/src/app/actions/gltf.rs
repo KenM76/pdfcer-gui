@@ -9,7 +9,9 @@
 //! External buffers are read only from beside the model file: a URI that is
 //! absolute, names a drive or scheme, or climbs out with `..` resolves to
 //! nothing, so a model cannot make the program read an arbitrary file. The
-//! rule is the CLI's (`threed_cmd::gltf::beside` in `pdfcer-cli`).
+//! rule is the CLI's (`threed_cmd::gltf::beside` in `pdfcer-cli`); a path it
+//! allows is then read only when its real path, links resolved, is still
+//! inside the model's real folder ([`read_inside`]).
 
 use std::path::{Component, Path, PathBuf};
 
@@ -38,6 +40,18 @@ fn beside(dir: &Path, uri: &str) -> Option<PathBuf> {
     plain.then(|| dir.join(rel))
 }
 
+/// The bytes of `uri` beside `dir`, read only when the file's real path,
+/// every link resolved, lies inside `dir`'s real path; `None` otherwise.
+fn read_inside(dir: &Path, uri: &str) -> Option<Vec<u8>> {
+    let path = beside(dir, uri)?;
+    let folder = std::fs::canonicalize(dir).ok()?;
+    let real = std::fs::canonicalize(path).ok()?;
+    if !real.starts_with(&folder) {
+        return None;
+    }
+    std::fs::read(real).ok()
+}
+
 /// The bytes to embed for the model at `path`, the notes its conversion
 /// owes the status line, and whether it was converted. Anything not glTF
 /// passes through unchanged with no notes; a glTF the engine cannot read or
@@ -55,7 +69,7 @@ pub(super) fn to_embed(
         return Ok((data, Vec::new(), false));
     }
     let dir = path.parent().unwrap_or(Path::new("."));
-    let mut resolve = |uri: &str| beside(dir, uri).and_then(|p| std::fs::read(p).ok());
+    let mut resolve = |uri: &str| read_inside(dir, uri);
     let import =
         read_gltf(&data, &mut resolve, options).map_err(|e| t::gltf_refused(&e.to_string()))?;
     let report = write_prc(&import.scene).map_err(|e| t::gltf_refused(&e.to_string()))?;
@@ -104,6 +118,31 @@ mod tests {
         assert_eq!(beside(dir, "../secret.bin"), None);
         assert_eq!(beside(dir, "C:/x.bin"), None);
         assert_eq!(beside(dir, "/etc/passwd"), None);
+    }
+
+    /// A link beside the model that leads out of its folder is not followed;
+    /// a plain file beside it is read. Skipped where links cannot be made.
+    #[test]
+    fn a_link_out_of_the_models_folder_is_refused() {
+        let base = std::env::temp_dir().join(format!("pdfcer-gltf-link-{}", std::process::id()));
+        let (models, outside) = (base.join("models"), base.join("outside"));
+        std::fs::create_dir_all(&models).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(outside.join("secret.bin"), b"secret").unwrap();
+        std::fs::write(models.join("mesh.bin"), b"mesh").unwrap();
+        #[cfg(windows)]
+        let linked =
+            std::os::windows::fs::symlink_file(outside.join("secret.bin"), models.join("link.bin"));
+        #[cfg(unix)]
+        let linked =
+            std::os::unix::fs::symlink(outside.join("secret.bin"), models.join("link.bin"));
+        assert_eq!(read_inside(&models, "mesh.bin"), Some(b"mesh".to_vec()));
+        if linked.is_ok() {
+            assert_eq!(read_inside(&models, "link.bin"), None);
+        } else {
+            eprintln!("skipped: no symbolic link can be made here");
+        }
+        let _ = std::fs::remove_dir_all(&base);
     }
 
     /// A PRC file passes through unchanged and adds no notes.

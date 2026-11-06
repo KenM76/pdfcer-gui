@@ -9,6 +9,10 @@
 //! the file's own opening view (`ThreeDSavedView::aim`) turns about its own
 //! up from its own direction, and an orthographic view that fixes its framing
 //! keeps it (`SavedViewAim::frame`) until Fit or a named view drops it.
+//!
+//! Lengths are taken scaled by the largest component ([`length`], [`unit`]),
+//! so a model of any finite size fits, and an eye that would land beyond the
+//! largest float is pulled in towards its target ([`eye_at`]).
 
 use std::f64::consts::FRAC_PI_2;
 
@@ -78,9 +82,17 @@ impl Axes {
     /// independent directions.
     fn of(direction: [f64; 3], up: [f64; 3]) -> Option<Self> {
         let up = unit(up)?;
+        let direction = unit(direction)?;
         let along = dot(direction, up);
-        let front = unit(std::array::from_fn(|i| direction[i] - up[i] * along))?;
-        Some(Self { front, up })
+        let front: [f64; 3] = std::array::from_fn(|i| direction[i] - up[i] * along);
+        // Rounding leaves a residue of a direction along `up`, not a front.
+        if length(front) < 1e-12 {
+            return None;
+        }
+        Some(Self {
+            front: unit(front)?,
+            up,
+        })
     }
 
     /// Image right at yaw 0, pitch 0.
@@ -130,7 +142,7 @@ pub(super) struct Orbit {
 impl Orbit {
     /// Named view `index`, turned about `upright`.
     pub fn named(index: usize, perspective: bool, upright: Upright) -> Self {
-        let (yaw, pitch) = VIEWS[index];
+        let (yaw, pitch) = VIEWS.get(index).copied().unwrap_or(VIEWS[0]);
         Self {
             yaw: yaw.to_radians(),
             pitch: pitch.to_radians(),
@@ -282,8 +294,11 @@ impl Orbit {
         let shift: [f64; 3] =
             std::array::from_fn(|i| (right[i] * self.pan[0] + image_up[i] * self.pan[1]) * radius);
         let target: [f64; 3] = std::array::from_fn(|i| camera.target[i] + shift[i]);
-        camera.eye =
-            std::array::from_fn(|i| target[i] + (camera.eye[i] - camera.target[i]) / self.zoom);
+        let offset: [f64; 3] = std::array::from_fn(|i| camera.eye[i] - camera.target[i]);
+        camera.eye = match unit(offset) {
+            Some(back) => eye_at(target, back.map(|c| -c), length(offset) / self.zoom),
+            None => target,
+        };
         camera.target = target;
         if let Projection::Orthographic { height } = camera.projection {
             camera.projection = Projection::Orthographic {
@@ -320,11 +335,11 @@ fn fitted(
     let (distance, projection) = if perspective {
         (r / half.sin(), Projection::Perspective { fov_y: FOV_Y })
     } else {
-        let height = 2.0 * r / aspect.min(1.0);
+        let height = (2.0 * r / aspect.min(1.0)).min(f64::MAX);
         (2.0 * r, Projection::Orthographic { height })
     };
     Camera {
-        eye: std::array::from_fn(|i| centre[i] - dir[i] * distance),
+        eye: eye_at(centre, dir, distance),
         target: centre,
         up,
         projection,
@@ -340,11 +355,11 @@ fn about(anchor: Anchor, dir: [f64; 3], up: [f64; 3], perspective: bool) -> Came
         Projection::Perspective { fov_y: FOV_Y }
     } else {
         Projection::Orthographic {
-            height: 2.0 * anchor.distance * half_fov().tan(),
+            height: (2.0 * anchor.distance * half_fov().tan()).min(f64::MAX),
         }
     };
     Camera {
-        eye: std::array::from_fn(|i| base[i] - dir[i] * anchor.distance),
+        eye: eye_at(base, dir, anchor.distance),
         target: base,
         up,
         projection,
@@ -363,13 +378,9 @@ pub(super) fn reach(meshes: &[pdfcer_3d::TriangleMesh], bounds: &Bounds) -> f64 
                 .flatten()
                 .filter_map(|&i| m.positions.get(i as usize))
         })
-        .map(|p| {
-            let d: [f64; 3] = std::array::from_fn(|i| p[i] - c[i]);
-            dot(d, d)
-        })
+        .map(|p| length(std::array::from_fn(|i| p[i] - c[i])))
         .filter(|d| d.is_finite())
-        .fold(0.0_f64, f64::max)
-        .sqrt();
+        .fold(0.0_f64, f64::max);
     if far > 0.0 { far } else { radius(bounds) }
 }
 
@@ -389,10 +400,7 @@ fn visible_height(camera: &Camera) -> f64 {
         // 180° the plane is unbounded, so the span is taken just short of it.
         Projection::Perspective { fov_y } | Projection::Fisheye { fov: fov_y, .. } => {
             let fov_y = fov_y.min(179.0);
-            let distance = (0..3)
-                .map(|i| (camera.eye[i] - camera.target[i]).powi(2))
-                .sum::<f64>()
-                .sqrt();
+            let distance = length(std::array::from_fn(|i| camera.eye[i] - camera.target[i]));
             2.0 * distance * (fov_y.to_radians() / 2.0).tan()
         }
     }
@@ -410,10 +418,50 @@ pub(super) fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     ]
 }
 
-/// `v` at unit length, or `None` for a zero or non-finite vector.
+/// `v`'s length, scaled by its largest component before squaring so it
+/// neither overflows nor underflows; NaN when any component is.
+pub(super) fn length(v: [f64; 3]) -> f64 {
+    if v.iter().any(|c| c.is_nan()) {
+        return f64::NAN;
+    }
+    let m = v.iter().fold(0.0_f64, |m, c| m.max(c.abs()));
+    if m == 0.0 || m.is_infinite() {
+        return m;
+    }
+    let s = v.map(|c| c / m);
+    m * dot(s, s).sqrt()
+}
+
+/// `v` at unit length, or `None` for a zero or non-finite vector; any other
+/// `v` has one, however large or small.
 pub(super) fn unit(v: [f64; 3]) -> Option<[f64; 3]> {
-    let length = dot(v, v).sqrt();
-    (length.is_finite() && length > 1e-12).then(|| v.map(|c| c / length))
+    let m = v.iter().fold(0.0_f64, |m, c| m.max(c.abs()));
+    if !(m > 0.0 && v.iter().all(|c| c.is_finite())) {
+        return None;
+    }
+    let s = v.map(|c| c / m);
+    let l = dot(s, s).sqrt();
+    Some(s.map(|c| c / l))
+}
+
+/// The eye `distance` back from `target` along unit `dir`, halved towards
+/// the target until it is finite: the engine's `eye_at` rule.
+fn eye_at(target: [f64; 3], dir: [f64; 3], distance: f64) -> [f64; 3] {
+    let at = |d: f64| -> [f64; 3] { std::array::from_fn(|i| target[i] - dir[i] * d) };
+    let mut d = if distance.is_nan() {
+        0.0
+    } else {
+        distance.min(f64::MAX)
+    };
+    let mut eye = at(d);
+    for _ in 0..64 {
+        if eye.iter().all(|c| c.is_finite()) {
+            break;
+        }
+        d /= 2.0;
+        eye = at(d);
+    }
+    eye
 }
 
 fn normalise(v: [f64; 3]) -> [f64; 3] {
@@ -444,6 +492,81 @@ mod tests {
     fn parallel(a: [f64; 3], b: [f64; 3]) -> bool {
         let (a, b) = (normalise(a), normalise(b));
         (dot(a, b) - 1.0).abs() < 1e-9
+    }
+
+    fn mesh(corner: f64) -> pdfcer_3d::TriangleMesh {
+        let mut m = pdfcer_3d::TriangleMesh::default();
+        m.positions = vec![[-corner; 3], [corner; 3], [corner, -corner, corner]];
+        m.triangles = vec![[0, 1, 2]];
+        m
+    }
+
+    #[test]
+    fn the_reach_of_a_huge_or_tiny_model_is_its_own() {
+        for corner in [1e200, 1e-200] {
+            // The box is twice the mesh, so the fallback is told apart.
+            let bounds = Bounds {
+                min: [-2.0 * corner; 3],
+                max: [2.0 * corner; 3],
+            };
+            let reach = reach(&[mesh(corner)], &bounds);
+            let wanted = corner * 3f64.sqrt();
+            assert!(
+                (reach / wanted - 1.0).abs() < 1e-12,
+                "{corner:e}: reach {reach:e}, wanted {wanted:e}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_huge_or_tiny_vector_has_a_direction_and_a_length() {
+        assert_eq!(unit([0.0, 1e-200, 0.0]), Some([0.0, 1.0, 0.0]));
+        assert_eq!(unit([0.0, 0.0, -1e200]), Some([0.0, 0.0, -1.0]));
+        assert_eq!(length([0.0, -3e-200, 0.0]), 3e-200);
+        assert_eq!(length([1e200, 0.0, 0.0]), 1e200);
+        assert_eq!(unit([0.0; 3]), None);
+        assert_eq!(unit([f64::INFINITY, 0.0, 0.0]), None);
+    }
+
+    #[test]
+    fn a_huge_or_tiny_box_fits_at_a_finite_positive_distance() {
+        for corner in [1e200, 1e-200] {
+            let bounds = Bounds {
+                min: [-corner; 3],
+                max: [corner; 3],
+            };
+            for perspective in [true, false] {
+                let orbit = Orbit::named(0, perspective, Upright::default());
+                let c = orbit
+                    .camera(&bounds, reach(&[], &bounds), 1.5, None)
+                    .unwrap();
+                let d = length(std::array::from_fn(|i| c.eye[i] - c.target[i]));
+                let h = visible_height(&c);
+                assert!(c.eye.iter().all(|e| e.is_finite()), "{corner:e}: {c:?}");
+                assert!(d.is_finite() && d > 0.0, "{corner:e}: distance {d:e}");
+                assert!(h.is_finite() && h > 0.0, "{corner:e}: height {h:e}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_box_out_at_the_largest_float_gives_a_finite_eye() {
+        let bounds = Bounds {
+            min: [0.0, -1.0, -1.0],
+            max: [f64::MAX, 1.0, 1.0],
+        };
+        for aspect in [1e9, 1e-9] {
+            for perspective in [true, false] {
+                let mut orbit = Orbit::named(0, perspective, Upright::default());
+                for zoom in [1.0, ZOOM_RANGE.0] {
+                    orbit.zoom = zoom;
+                    let c = orbit
+                        .camera(&bounds, reach(&[], &bounds), aspect, None)
+                        .unwrap();
+                    assert!(c.eye.iter().all(|e| e.is_finite()), "{aspect:e}: {c:?}");
+                }
+            }
+        }
     }
 
     #[test]

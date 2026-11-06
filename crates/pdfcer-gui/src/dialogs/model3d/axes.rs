@@ -27,7 +27,14 @@ pub(crate) const ALL: [Axis; 6] = [
 impl Axis {
     /// Its place in [`ALL`].
     pub(crate) fn index(self) -> usize {
-        ALL.iter().position(|a| *a == self).unwrap_or(0)
+        match self {
+            Axis::PosX => 0,
+            Axis::PosY => 1,
+            Axis::PosZ => 2,
+            Axis::NegX => 3,
+            Axis::NegY => 4,
+            Axis::NegZ => 5,
+        }
     }
 
     /// The unit vector it names.
@@ -39,12 +46,20 @@ impl Axis {
 
     /// Its trace token: `+x` … `-z`.
     pub(crate) fn token(self) -> &'static str {
-        ["+x", "+y", "+z", "-x", "-y", "-z"][self.index()]
+        match self {
+            Axis::PosX => "+x",
+            Axis::PosY => "+y",
+            Axis::PosZ => "+z",
+            Axis::NegX => "-x",
+            Axis::NegY => "-y",
+            Axis::NegZ => "-z",
+        }
     }
 
     /// The engine's unsigned axis along this one.
     pub(crate) fn engine(self) -> pdfcer_3d::UpAxis {
-        pdfcer_3d::UpAxis::ALL[self.index() % 3]
+        let all = pdfcer_3d::UpAxis::ALL;
+        all.get(self.index() % 3).copied().unwrap_or(all[0])
     }
 
     /// Whether this axis points along the negative half of [`Self::engine`].

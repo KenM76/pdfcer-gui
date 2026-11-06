@@ -79,8 +79,10 @@ impl ModelView {
             open = false;
         }
         let opening = open && !self.nav.options_open;
-        let room = (ui.ctx().content_rect().bottom() - at.bottom() - BELOW).max(side * 4.0);
-        let opens_at = (rect.bottom() - at.bottom() - BELOW).clamp(SMALLEST[1], room);
+        let (opens_at, room) = heights(
+            rect.bottom() - at.bottom() - BELOW,
+            (ui.ctx().content_rect().bottom() - at.bottom() - BELOW).max(side * 4.0),
+        );
         let shown = egui::Popup::menu(&button)
             .open_bool(&mut open)
             .close_behavior(egui::PopupCloseBehavior::IgnoreClicks)
@@ -222,6 +224,22 @@ impl ModelView {
     }
 }
 
+/// The menu's opening height and the most it may grow to: `wanted` and
+/// `room`, each at least the smallest the menu is, the opening height at most
+/// the room; a value not finite counts as the smallest. A window too small
+/// for the menu gets the smallest menu, cut by its edge.
+fn heights(wanted: f32, room: f32) -> (f32, f32) {
+    let least = |v: f32| {
+        if v.is_finite() {
+            v.max(SMALLEST[1])
+        } else {
+            SMALLEST[1]
+        }
+    };
+    let room = least(room);
+    (least(wanted).min(room), room)
+}
+
 /// A click this frame on `home`, the viewer's own layer, or on any layer
 /// below the popups: one that is neither the menu nor a drop-down in it.
 fn clicked_outside_popups(ctx: &egui::Context, home: egui::LayerId) -> bool {
@@ -235,4 +253,27 @@ fn clicked_outside_popups(ctx: &egui::Context, home: egui::LayerId) -> bool {
         ctx.layer_id_at(pos)
             .is_none_or(|l| l == home || l.order < egui::Order::Foreground)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The heights a 1x1 and a zero-size window give, and a size not yet
+    /// known, lay the menu out without a panic.
+    #[test]
+    fn a_window_too_small_for_the_menu_lays_it_out() {
+        for (wanted, room) in [
+            (1.0 - BELOW, 4.0),
+            (-BELOW, 0.0),
+            (f32::NAN, f32::NAN),
+            (f32::INFINITY, f32::NEG_INFINITY),
+        ] {
+            let (opens, most) = heights(wanted, room);
+            assert!(opens.is_finite() && opens >= SMALLEST[1] && opens <= most);
+            let _ = opens.clamp(SMALLEST[1], most);
+        }
+        assert_eq!(heights(300.0, 500.0), (300.0, 500.0));
+        assert_eq!(heights(900.0, 500.0), (500.0, 500.0));
+    }
 }

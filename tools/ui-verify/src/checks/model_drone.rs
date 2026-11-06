@@ -2,8 +2,9 @@
 //! full-screen 3D viewer, drawn inside the application as on a phone: the
 //! right stick flies the body without turning it, the camera stick turns the
 //! camera without turning the body, the left stick turns the body, the
-//! centre-left/right button brings the camera back to the heading, and the
-//! Stairs button switches stair climbing. Ghost turned off, the left stick pushed
+//! centre-left/right button brings the camera back to the heading, a finger
+//! dragged across the open picture turns the camera and never moves the eye,
+//! and the Stairs button switches stair climbing. Ghost turned off, the left stick pushed
 //! up leaves the eye where it was, and the sticks are photographed showing
 //! its sideways track.
 //!
@@ -20,6 +21,7 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 const WALK: &str = "model3d.walk";
+const IMAGE: &str = "model3d.image";
 const IMMERSIVE: &str = "model3d.immersive";
 const STICK: &str = "model3d.drone.stick.";
 const BUTTON: &str = "model3d.drone.button.";
@@ -137,6 +139,9 @@ impl Pilot<'_> {
                 )));
             }
         }
+        if let Some(failure) = self.finger(report)? {
+            return Ok(Some(failure));
+        }
         let turned = self.stick(LEFT, [0.8, 0.0])?;
         report.note(format!("left stick right: {turned:?}"));
         match turned {
@@ -151,6 +156,39 @@ impl Pilot<'_> {
             return Ok(Some(failure));
         }
         self.buttons(report)
+    }
+
+    /// A finger dragged across the middle of the picture, clear of the
+    /// sticks, turns the camera and leaves the eye where it was.
+    fn finger(&self, report: &mut CheckReport) -> Result<Option<String>> {
+        let (Some((image, vp)), Some(before)) = (self.region(IMAGE)?, self.pose()) else {
+            return Ok(Some(format!(
+                "no `{IMAGE}` region or no pose before the finger drag."
+            )));
+        };
+        let mid = WindowPoint::centre_of(image);
+        let mut aim = image;
+        let (dx, dy) = (image.width() * 0.2, image.height() * 0.1);
+        (aim.min.x, aim.max.x, aim.min.y, aim.max.y) = (
+            aim.min.x + dx,
+            aim.max.x + dx,
+            aim.min.y + dy,
+            aim.max.y + dy,
+        );
+        let to = WindowPoint::centre_of(aim);
+        self.pointer
+            .drag_in(self.session, vp.as_deref(), mid, to, 40, "l")?;
+        self.session.settle(30);
+        let after = self.pose();
+        report.note(format!("finger drag: {before:?} -> {after:?}"));
+        match after {
+            Some(a) if a.eye == before.eye && (a.look_yaw - before.look_yaw).abs() > TURNED => {
+                Ok(None)
+            }
+            other => Ok(Some(format!(
+                "a finger dragged across the picture should turn the camera and leave the eye:                  {before:?} then {other:?}."
+            ))),
+        }
     }
 
     /// Ghost off, the left stick pushed up must not lift the eye.
