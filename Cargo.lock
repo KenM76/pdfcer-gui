@@ -2604,7 +2604,7 @@ dependencies = [
 [[package]]
 name = "ocrcer-core"
 version = "0.1.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 
 [[package]]
 name = "ocrs"
@@ -2715,8 +2715,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-3d"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "flate2",
  "pdfcer-json",
@@ -2728,8 +2728,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-3d-nav"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "pdfcer-3d",
 ]
@@ -2746,13 +2746,13 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-color"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 
 [[package]]
 name = "pdfcer-core"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "aes",
  "cbc",
@@ -2792,8 +2792,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-fetch"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "sha2",
  "thiserror 2.0.21",
@@ -2802,8 +2802,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-fonts"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2811,8 +2811,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-function"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2864,8 +2864,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-image-codec"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "hayro-ccitt",
  "hayro-jbig2",
@@ -2877,16 +2877,16 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-json"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "pdfcer-model"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "aes",
  "brotli",
@@ -2900,8 +2900,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-ocr-host"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "pdfcer-core",
  "thiserror 2.0.21",
@@ -2909,8 +2909,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-pkix"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2918,8 +2918,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-print"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "roxmltree",
  "thiserror 2.0.21",
@@ -2935,8 +2935,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "icccer-cmm",
  "icccer-color",
@@ -2952,8 +2952,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-text"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 dependencies = [
  "pdfcer-fonts",
  "pdfcer-model",
@@ -2962,8 +2962,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-vec3"
-version = "0.134.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#fc3f7e1daa6dcb35c70e6a24aa0c6f016a6b1bc1"
+version = "0.134.1"
+source = "git+file:///D:/Dev/pdfcer?branch=main#c2dca228d3a667a344e0132a16fdaa3d23f987b0"
 
 [[package]]
 name = "pem-rfc7468"
