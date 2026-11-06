@@ -6888,13 +6888,13 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [pdfcer-3d-nav 0.131.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-3d 0.131.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-color 0.131.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-json 0.131.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-model 0.131.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-pkix 0.131.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-vec3 0.131.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d-nav 0.132.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d 0.132.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-color 0.132.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-json 0.132.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-model 0.132.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-pkix 0.132.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-vec3 0.132.0](https://github.com/KenM76/pdfcer)
 - [icccer-cmm 0.4.1](https://github.com/KenM76/icccer)
 - [icccer-color 0.4.1](https://github.com/KenM76/icccer)
 - [icccer-profile 0.4.1](https://github.com/KenM76/icccer)
