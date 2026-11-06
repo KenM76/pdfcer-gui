@@ -15,6 +15,7 @@ use crate::app::state::Status;
 
 impl DialogsState {
     /// Open the print dialog for the document in `status`.
+    #[cfg(not(target_os = "android"))]
     pub(crate) fn open_print(
         &mut self,
         status: &Status,

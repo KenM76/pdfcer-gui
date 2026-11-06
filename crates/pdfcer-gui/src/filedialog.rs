@@ -27,14 +27,18 @@
 pub use rfd::FileDialog;
 
 #[cfg(target_os = "android")]
-pub use android::{FileDialog, Picker, Purpose, deliver, install, take_answered, take_picked};
+pub use android::{
+    FileDialog, Picker, Purpose, deliver, install, print_later, take_answered, take_picked,
+    take_print_failure,
+};
 
 #[cfg(target_os = "android")]
 mod android {
     use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::sync::{Mutex, OnceLock};
 
-    /// What the platform supplies: the document picker.
+    /// What the platform supplies: the document picker and the print service.
     pub trait Picker: Send + Sync {
         /// Shows the picker for one or several documents of the given MIME
         /// types and returns readable local paths, empty when cancelled.
@@ -44,11 +48,17 @@ mod android {
         /// Shows the create-document picker suggesting `name` and copies
         /// `path` there; false when cancelled or the copy failed.
         fn place(&self, path: &Path, name: &str) -> bool;
+        /// Shows the system print dialog for the PDF at `path`, titled `name`,
+        /// and returns once it is up. True hands the file to the dialog, which
+        /// deletes it when it closes. A non-empty `note` is shown over the dialog.
+        fn print(&self, path: &Path, name: &str, note: &str) -> bool;
     }
 
     static PICKER: OnceLock<Box<dyn Picker>> = OnceLock::new();
     /// Documents the picker returned that the frame has not opened yet.
     static PICKED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
+    /// Why a print showed no dialog, not yet reported.
+    static PRINT_FAILURE: Mutex<Option<String>> = Mutex::new(None);
     /// The context to wake when they arrive; recorded by [`take_picked`].
     static CONTEXT: OnceLock<egui::Context> = OnceLock::new();
     /// Single files picked for a [`Purpose`], not yet acted on.
@@ -89,6 +99,43 @@ mod android {
     /// A second call is ignored.
     pub fn install(picker: Box<dyn Picker>) {
         let _ = PICKER.set(picker);
+    }
+
+    /// Writes `pdf` to a private file and shows the system print dialog on a
+    /// thread of its own, so the frame never waits. When the dialog cannot be
+    /// shown, the reason arrives through [`take_print_failure`].
+    pub fn print_later(pdf: Vec<u8>, name: String, note: &'static str) {
+        static JOBS: AtomicU64 = AtomicU64::new(0);
+        std::thread::spawn(move || {
+            let Some(picker) = PICKER.get() else { return };
+            let Some(dir) = picker.save_dir() else { return };
+            let job = JOBS.fetch_add(1, Ordering::Relaxed);
+            let path = dir.join(format!("print-{job}.pdf"));
+            if let Err(e) = std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&path, pdf))
+            {
+                print_failed(e.to_string());
+                return;
+            }
+            if !picker.print(&path, &name, note) {
+                let _ = std::fs::remove_file(&path);
+                print_failed(crate::text::print::phone_print_refused().to_owned());
+            }
+        });
+    }
+
+    /// Why the last print showed no dialog, once. Called once per frame.
+    pub fn take_print_failure() -> Option<String> {
+        PRINT_FAILURE
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take()
+    }
+
+    fn print_failed(reason: String) {
+        *PRINT_FAILURE.lock().unwrap_or_else(|e| e.into_inner()) = Some(reason);
+        if let Some(ctx) = CONTEXT.get() {
+            ctx.request_repaint();
+        }
     }
 
     /// The rfd-shaped builder. Titles, folders and file names are ignored:

@@ -81,6 +81,8 @@ pub(crate) mod nodeshape;
 /// operand problem (a command id is a verb with no noun) and the
 /// park-and-drain shape that answers it.
 pub(crate) mod panels;
+#[cfg(target_os = "android")]
+pub(crate) mod phoneprint;
 /// Format ▸ Replace image.
 pub(crate) mod replaceimage;
 mod replacetext;
@@ -418,7 +420,10 @@ impl PdfcerApp {
             // the commit button sets a flag, and the spool runs after the
             // window's closure has returned. Paper is as irreversible as it
             // gets; it is the rule being kept, not the mechanism.
+            #[cfg(not(target_os = "android"))]
             "file.print" => self.dialogs.open_print(&self.status, &self.prefs.print),
+            #[cfg(target_os = "android")]
+            "file.print" => phoneprint::print(&self.status),
             "file.network_print" => self.dialogs.open_netprint(&self.status),
             // Printer's marks: the Bates scope rule; the page-information
             // label starts as the file's name.

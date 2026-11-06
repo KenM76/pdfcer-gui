@@ -78,4 +78,31 @@ impl pdfcer_gui::filedialog::Picker for ActivityPicker {
             false
         })
     }
+
+    /// `MainActivity.printDocument`, which returns once the dialog is up.
+    fn print(&self, path: &Path, name: &str, note: &str) -> bool {
+        let answer = self
+            .activity
+            .vm
+            .attach_current_thread(|env| -> jni::errors::Result<bool> {
+                let path = env.new_string(path.to_string_lossy())?;
+                let name = env.new_string(name)?;
+                let note = env.new_string(note)?;
+                env.call_method(
+                    &*self.activity.object,
+                    jni_str!("printDocument"),
+                    jni_sig!((path: JString, name: JString, note: JString) -> jboolean),
+                    &[
+                        JValue::Object(&path),
+                        JValue::Object(&name),
+                        JValue::Object(&note),
+                    ],
+                )?
+                .z()
+            });
+        answer.unwrap_or_else(|e| {
+            eprintln!("pdfcer: opening the print dialog failed: {e}");
+            false
+        })
+    }
 }

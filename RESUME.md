@@ -138,7 +138,7 @@ Measured:
 
 **Trap: rustc crashes under full parallelism on this machine.** It crashed four times today, with STATUS_HEAP_CORRUPTION and ACCESS_VIOLATION. Build, package and sweep with `CARGO_BUILD_JOBS=6`. After a crash, delete `target/release/incremental`; see `D:/dev/rag/rust/` for the heap-corruption entry.
 
-Open to the engine: nothing. Owed here: O399's measure tool on X056 and X057, then their `done_*_CONSUMED` files.
+Open to the engine: G273, a print-ready copy for Android's print service. Owed here: O399's measure tool on X056 and X057, then their `done_*_CONSUMED` files.
 
 **The release before.** `v0.5.0-dev.20261106.1` (tag on `9f42ac09`, engine v0.130.0 `5f9657e7`; zip `pdfcergui-20261106-0343-5f9657e-9f42ac09.zip` 48,805,005 bytes; APK `pdfcer-android-v0.5.0-dev.20261106.1.apk` 41,613,376 bytes, also in `pdfTests`; OneDrive slot `pdfcer-gui1`, `pdfcer-gui2` holds `.20261105.2`). It carries O394 (walking, a finger drag turns the view and never moves the eye, asserted in `the_3d_viewers_drone_sticks_fly_and_turn_the_camera`), O395 (X045: any finite model size fits, a finite eye, glTF files read only inside the model's real folder) and O396 (X048 items 2-5: `model3d.rs` split to 619 lines, the menu-height clamp ordered, lookups by enum or `get`; item 1 waits on X047). Before release: 5562 tests pass, none failing; gates 86/87, the FAIL (a string gap in the new check's message) fixed in `ace8f314` and re-run alone green; the 38 3D checks driven off-screen, 38 pass, 0 skip (a scratch copy of `sweep-full.sh` fed the list, since `affected-checks.py` selects 518 for any GUI-crate change). Smoke 90 s off-screen, rendered, no panic. Not run on the phone. Replies X045 (BUILT) and X048 (PARTIAL) are in the channel.
 

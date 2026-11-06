@@ -165,7 +165,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **wanted; our request G245, complete at v0.113.0.** The 3D viewer's measure tool: two picked points give a linear measurement, kept on a saved view, with the PDF 2.0 disclosure. |
-| **A model point's position in the picture** — `Camera::pixel_of` | **wanted; X056, shipped at v0.134.0.** O399's measure tool draws a measurement over the picture and snaps a pick to a triangle's corner with it. |
+| **Model point to image position** — `Camera::pixel_of` | **wanted; X056, shipped at v0.134.0.** O399's measure tool draws a measurement over the picture and snaps a pick to a triangle's corner with it. |
 | **Builders for the other 3D measurements** — the module `pdfcer_core::threed::measure::build` (`ThreeDMeasurement::perpendicular`, `angular`, `radial`, `comment`) | **wanted; X057, shipped at v0.134.0.** O399's measure tool offers every kind through them, and its value comes from `ThreeDMeasurement::value_text`. |
 | **glTF occlusion maps and textured alpha cut-outs** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
 
@@ -747,8 +747,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A damaged PRC model still draws, with the loss disclosed** — `AssembledModel::damaged`, `damaged_why`, `damaged_parts`, `AssembleError::Damaged` | **shipped, at v0.126.0.** The viewer draws what survives and says below the picture how many pieces were left out, each reason with its count, and which parts lost one (`dialogs::model3d::fit`); `AssembleError::Damaged` reaches the operator through the unreadable-model line. Driven by `the_3d_viewer_draws_a_damaged_model_and_says_so`. |
 | **3D navigation: bounded pan, 89-degree Top/Bottom, saved view to aim** — `Orbit::pan_by`, `Orbit::set_pan`, `PAN_LIMIT`, `NAMED_PITCH`, `ThreeDSavedView::saved_aim`, `ThreeDSavedView::view_frame` | **shipped, at v0.133.0; our requests X051, X052, X053.** Dragging to pan goes through `Orbit::pan_by` in `dialogs::model3d::navorbit`, and a saved view's aim and frame come from the engine in `dialogs::model3d::fileview`; the shell's own copies of each are deleted. `Orbit::set_pan` is not called, because every pan here is a drag and `pan_by` is the verb for that. The Top and Bottom buttons take `NAMED_PITCH` inside the engine's named views, so nothing here names it. |
 | **360-degree photo-sphere 3D render** — `FisheyeMapping::Equirectangular`, the module `pdfcer_render::export::xmp` (`photo_sphere_xmp`, `insert_jpeg_xmp`, `MAX_JPEG_XMP_PACKET`), `ExportError::Metadata` | **shipped, at v0.133.0; X054.** The Picture tab's *360° picture* switch and its three sizes (`dialogs::model3d::shot`, `dialogs::model3d::sphere`), saved as a tagged JPEG by `dialogs::model3d::picture::sphere_jpeg`. `ExportError::Metadata` reaches the operator as the picture's failure sentence, with every other encoding error. The shell levels the camera onto the model's up first, which the engine's `3d-render --360` does not do: X055. |
-| **A levelled 360-degree camera** — `Camera::levelled_panorama` | **shipped, at v0.134.0; X055.** The Picture tab's *360° picture* levels through it, so a photo viewer's horizon is flat from any saved view. |
-| **Walking on ramps, under low ceilings, on long steps and down slopes** — `pdfcer_3d_nav::Walk` | **shipped, at v0.134.0; X058, X059.** Nothing to call: the viewer's Walk mode takes them through the pin. |
+| **Levelled 360 camera** — `Camera::levelled_panorama` | **shipped, at v0.134.0; X055.** The Picture tab's *360° picture* levels through it, so a photo viewer's horizon is flat from any saved view. |
+| **3D walker: ceilings, long steps, descents, ramps** — `pdfcer_3d_nav::Walk` | **shipped, at v0.134.0; X058, X059.** Nothing to call: the viewer's Walk mode takes them through the pin. |
 
 ## Filed requests for OCR — not verdict rows
 
@@ -913,6 +913,10 @@ The answers to G243, G244, G245 part 2 and G249–G251.
 
 - **XFA data merge** — `pdfcer_core::xfa::merge` (`merge_data`, `MergeOptions`, `MergedForm`, `MergeWarningKind`) and the paint choices `ThreeDStroke`, `CheckCaption`, `PaintNoteKind::StrokeApproximated`. **Wired**: Form preview (its row under shipped). Normal binding by name and repeated instances from data are not in the engine; filed as **G248**, which is why a LiveCycle form that binds by name still shows no values.
 - **A file's saved 3D views** — `pdfcer_core::threed::view_list` (`saved_3d_views`, `SavedViews`). **Wired**: the 3D viewer's *Saved views* menu, every `/VA` view with the default marked; choosing one looks from it. Driven by `the_3d_viewer_opens_on_the_files_view`.
+
+## Open: a print-ready copy
+
+- **G273** — no call gives a copy of a document with everything that prints burned into page content. Android's print preview draws no annotation, and what its printer service draws is outside this shell, so a 3D picture may not come out. `EditSession::flatten_annotations` refuses Media and encrypted documents and burns annotations set not to print, so it cannot compose one. The Android print command discloses the limit meanwhile.
 
 ## Engine arrivals at v0.107.0 — not verdict rows
 

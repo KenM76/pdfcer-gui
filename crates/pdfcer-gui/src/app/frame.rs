@@ -557,6 +557,8 @@ impl eframe::App for PdfcerApp {
         );
         #[cfg(target_os = "android")]
         crate::app::dispatch::models::answered(&mut self.dialogs, &self.status);
+        #[cfg(target_os = "android")]
+        crate::app::dispatch::phoneprint::report_failure(&self.status);
 
         // Step 1 — **files dragged onto the window**, read before anything
         // is drawn.

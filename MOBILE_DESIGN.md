@@ -121,7 +121,13 @@ Handles are drawn at their desktop size, but each one responds to a touch
   thread of its own and the command continues when it does; the frame never
   waits on it.
 - **Share:** a `SEND` intent.
-- **Print:** Android's print service, in place of the Windows print crates.
+- **Print:** Android's print service, in place of the Windows print crates. The
+  document goes to it as it stands, edits included; its dialog chooses the printer,
+  paper and pages. Android's preview draws page content only, so a 3D picture is
+  blank there although the file it prints keeps it; a toast over the dialog and
+  the status line say so when a page has annotations. *Send to network printer* works as on the desktop, by typed
+  `ipp://` address; `ipps://` is refused by name because the phone build leaves TLS
+  out.
 
 ## 7. What a phone build leaves out at first
 

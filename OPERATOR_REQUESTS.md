@@ -653,17 +653,21 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O401 — **BUILT, NOT DRIVEN ON A DEVICE** — the Android app may use the network, for printing
+## O401 — **BUILT AND DRIVEN ON THE EMULATOR, not on a real printer** — the Android app may use the network, for printing
 
 His words: *"I think we need to be able to request network access when installing on android in order for printing."*
 
-**Built.** The Android manifest declares `android.permission.INTERNET`, which direct printing to a network printer over IPP (`pdfcer_print::ipp`) needs.
+**Built.** The Android manifest declares `android.permission.INTERNET`, which direct printing to a network printer over IPP (`pdfcer_print::ipp`) needs. File ▸ Print opens Android's own print dialog with the document as it stands; *Send to network printer* takes a typed `ipp://` address.
 
 **What he will see.** No prompt. Android grants this permission at install without asking and has no install-time permission screen; only a store listing shows it. The app uses the network only when he asks it to.
 
-**Not built.** Android's own print service (`PrintManager`) needs no permission and reaches any printer the phone already knows; finding printers on the network by mDNS needs `CHANGE_WIFI_MULTICAST_STATE` as well. Printing from the Android app is the follow-up. Before `targetSdk` goes past 34, check Android's documentation for a local-network prompt.
+**Not built.** Finding printers on the network from *Send to network printer* (the address is typed; it would need `CHANGE_WIFI_MULTICAST_STATE`), and `ipps://` on the phone, whose build leaves TLS out. Before `targetSdk` goes past 34, check Android's documentation for a local-network prompt.
 
-**Status.** The permission ships in the next release.
+**Driven on the Android 14 emulator.** Print: the system dialog listed the network's printers, and its *Save as PDF* wrote a file holding the document's 3D annotation, 487 bytes smaller than the original. Send: against a stand-in printer the phone connected, then sent the whole PDF and showed the job number. No sheet has come out of a real printer.
+
+**Known limit.** Android's preview leaves out the 3D picture. A toast over the dialog says so; the status line adds that the printer's service decides what comes out; G273 asks the engine for a copy with everything that prints burned in.
+
+**Status.** Ships in the next release.
 
 ## O400 — **BUILT AND DRIVEN** by `the_3d_viewer_saves_a_360_picture_for_photo_viewers` — X054: a 360° picture from the 3D viewer
 

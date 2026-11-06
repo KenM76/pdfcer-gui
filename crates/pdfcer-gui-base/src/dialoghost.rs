@@ -678,8 +678,12 @@ impl Host {
             // `D:/dev/rag/egui/`'s standing rule arriving again: **a layout or
             // rendering defect has exactly one oracle, and it is a rendered
             // screenshot.**
-            ui.painter()
-                .rect_filled(ui.max_rect(), 0.0, ui.visuals().panel_fill);
+            // An embedded dialog has its window's own fill, and its `max_rect` runs
+            // past that window, so painting it would cover the page behind.
+            if class != ViewportClass::EmbeddedWindow {
+                ui.painter()
+                    .rect_filled(ui.max_rect(), 0.0, ui.visuals().panel_fill);
+            }
             //
             // His words, about Print: *"the print button that is so far off in
             // the corner it is touching the edge the window."* It was, and so
