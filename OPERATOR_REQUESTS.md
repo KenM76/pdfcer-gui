@@ -721,7 +721,7 @@ His words: *"Also we should be able to start the view and be inside the model if
 
 **Scope, whole behaviour.** A named view whose eye stands inside the model, the file's opening view included, opens with the eye there, not pulled back to frame the whole model, and the viewer starts in the navigation that suits it.
 
-**Status.** Built. A perspective named view whose camera (`/C2W`'s position) lies in the model's box opens walking from that camera, looking where it looks, at the eye height set; the file's opening view the same, when the viewer opens (`model3d::inside`, `file-view-eye=inside|outside|none` traced, unit-tested). An orthographic view keeps its framing. Assumes the view's camera and the mesh share one coordinate space. Not driven: no fixture yet has a view inside its model. NOT VERIFIED by him.
+**Status.** Built. A perspective named view whose camera (`/C2W`'s position) lies in the model's box opens walking from that camera, looking where it looks, at the eye height set; the file's opening view the same, when the viewer opens (`model3d::fileview`, `file-view-eye=inside|outside|none` traced, unit-tested). An orthographic view keeps its framing. Assumes the view's camera and the mesh share one coordinate space. Not driven: no fixture yet has a view inside its model. NOT VERIFIED by him.
 
 ## O387 — **BUILT, DRIVEN** — every 3D setting remembered
 

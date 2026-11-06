@@ -19,7 +19,7 @@ const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const INVOKE: &str = "mode.edit,edit.attachments";
 const VIEW_REGION: &str = "models.view";
 const UP_REGION: &str = "model3d.up";
-/// +Y in the up choice: its index in `dialogs::model3d::axes::ALL`.
+/// +Y in the up choice: its index in `pdfcer_3d_nav::Axis::ALL`.
 const UP_Y_REGION: &str = "model3d.up.1";
 const TOP_REGION: &str = "model3d.view.3";
 const SAVE_REGION: &str = "model3d.save_views";

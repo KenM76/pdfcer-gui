@@ -5,8 +5,9 @@ use egui::Ui;
 use pdfcer_core::threed::ThreeDSavedView;
 use pdfcer_gui_base::icons::Icon;
 
-use super::axes::{self, Axis};
-use super::orbit::Orbit;
+use pdfcer_3d_nav::Axis;
+
+use super::fileview::{named, saved_orbit};
 use super::{
     ModelView, REGION_FILE_VIEW, REGION_FRONT, REGION_SAVE_VIEWS, REGION_UP, REGION_VIEWS_LIGHTING,
     phone,
@@ -17,7 +18,7 @@ impl ModelView {
     /// *File's view*: back to the camera the file opens on, offered only
     /// when its opening view carries one.
     pub(super) fn file_view_control(&mut self, ui: &mut Ui) {
-        let Some(saved) = self.opening.as_ref().and_then(Orbit::saved) else {
+        let Some(saved) = self.opening.as_ref().and_then(saved_orbit) else {
             return;
         };
         let button = ui
@@ -55,7 +56,7 @@ impl ModelView {
             (t::view_up(), t::view_up_tooltip()),
             REGION_UP,
             was.up,
-            axes::ALL.into_iter(),
+            Axis::ALL.into_iter(),
         );
         let front = axis_choice(
             ui,
@@ -74,7 +75,7 @@ impl ModelView {
         }
         self.upright = chosen;
         self.orbiting();
-        self.orbit = Orbit::named(self.named, self.orbit.perspective, chosen);
+        self.orbit = named(self.named, self.orbit.perspective, chosen);
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
@@ -133,13 +134,11 @@ impl ModelView {
         let perspective = self.orbit.perspective;
         let mut views = Vec::new();
         for (i, name) in t::view_names().into_iter().enumerate() {
-            let orbit = Orbit::named(i, perspective, self.upright);
+            let orbit = named(i, perspective, self.upright);
             let camera = orbit.camera(&self.bounds, self.reach, aspect, None).ok()?;
             views.push(self.lit(ThreeDSavedView::from_camera(name, &camera, aspect)?));
         }
-        if self.nav.walk.is_none()
-            && self.orbit == Orbit::named(self.named, perspective, self.upright)
-        {
+        if self.nav.walk.is_none() && self.orbit == named(self.named, perspective, self.upright) {
             return Some((views, self.named));
         }
         let camera = self.flat_camera(aspect).ok()?;

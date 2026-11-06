@@ -10,12 +10,12 @@
 //! forward goes where the view faces.
 
 use egui::{Key, Pos2, Rect, Response, Ui, Vec2};
+use pdfcer_3d_nav::{Intent, shaped};
 
 use super::ModelView;
-use super::drone::{self, CAMERA, Drone, LEFT, RIGHT, shaped};
+use super::drone::{self, CAMERA, Drone, LEFT, RIGHT};
 use super::gimbal::{Gimbal, ZONES as GIMBAL_ZONES};
 use super::stick::Bases;
-use super::walk::Intent;
 
 /// Radians the look turns per point dragged.
 const LOOK_RATE: f64 = 0.005;

@@ -20,7 +20,7 @@ const RIBBON_ITEM: &str = "ribbon.item.edit.insert_3d";
 const FRONT: &str = "model3d.view.1";
 const TOP: &str = "model3d.view.3";
 const UP: &str = "model3d.up";
-/// +Y in the up choice: its index in `dialogs::model3d::axes::ALL`.
+/// +Y in the up choice: its index in `pdfcer_3d_nav::Axis::ALL`.
 const UP_Y: &str = "model3d.up.1";
 const MODEL_ENV: &str = "PDFCER_DIAG_MODEL_PATH";
 const DOC: &str = "D:/Dev/pdfcer/fixtures/synthetic/pageops/four-pages.pdf";

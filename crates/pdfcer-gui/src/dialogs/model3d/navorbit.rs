@@ -4,7 +4,8 @@
 //! that centres on the surface tapped, a single tap that shows or hides the
 //! controls, and the gimbal's taps.
 
-use egui::{Key, Response, Ui};
+use egui::{Key, Response, Ui, Vec2};
+use pdfcer_3d_nav::Orbit;
 
 use super::{ModelView, ORBIT_RATE, PITCH_LIMIT};
 
@@ -12,6 +13,25 @@ use super::{ModelView, ORBIT_RATE, PITCH_LIMIT};
 const KEY_TURN: f64 = 1.5;
 /// The zoom factor per second a held + or - applies.
 const KEY_ZOOM: f64 = 2.5;
+/// The farthest a drag pans the target from the fitted view's, in model
+/// radii along the picture's right and up: past it the model is a speck,
+/// and the pan stays well inside the float range at any zoom.
+const PAN_LIMIT: f64 = 1e3;
+
+/// Pan `orbit` by a drag of `delta` points over a picture `height` points
+/// high, so the content follows the pointer at the target's depth. Every
+/// drag pans here: each part of the pan is held within [`PAN_LIMIT`], and a
+/// pan that is not finite is ignored.
+fn drag_pan(orbit: &mut Orbit, delta: Vec2, height: f32) {
+    let per_point = 2.0 / f64::from(height.max(1.0)) / orbit.zoom;
+    let pan = [
+        orbit.pan[0] - f64::from(delta.x) * per_point,
+        orbit.pan[1] + f64::from(delta.y) * per_point,
+    ];
+    if pan.iter().all(|c| c.is_finite()) {
+        orbit.pan = pan.map(|c| c.clamp(-PAN_LIMIT, PAN_LIMIT));
+    }
+}
 
 impl ModelView {
     /// Steer the orbit from this frame's input on the picture.
@@ -99,7 +119,7 @@ impl ModelView {
                 aspect,
                 factor,
                 [0.0, 0.0],
-                self.aimed.as_ref(),
+                self.frame(aspect),
             );
         }
         ui.ctx().request_repaint();
@@ -151,10 +171,11 @@ impl ModelView {
             .hover_pos()
             .and_then(|_| ui.input(egui::InputState::multi_touch));
         if let Some(touch) = touch {
-            let rect = response.rect;
-            let per_point = 2.0 / f64::from(rect.height().max(1.0)) / self.orbit.zoom;
-            self.orbit.pan[0] -= f64::from(touch.translation_delta.x) * per_point;
-            self.orbit.pan[1] += f64::from(touch.translation_delta.y) * per_point;
+            drag_pan(
+                &mut self.orbit,
+                touch.translation_delta,
+                response.rect.height(),
+            );
         }
         if touch.is_none() && response.drag_started_by(egui::PointerButton::Primary) {
             self.pivot(ui, response.rect);
@@ -171,9 +192,7 @@ impl ModelView {
             || response.dragged_by(egui::PointerButton::Middle))
             && delta != egui::Vec2::ZERO
         {
-            let per_point = 2.0 / f64::from(response.rect.height().max(1.0)) / self.orbit.zoom;
-            self.orbit.pan[0] -= f64::from(delta.x) * per_point;
-            self.orbit.pan[1] += f64::from(delta.y) * per_point;
+            drag_pan(&mut self.orbit, delta, response.rect.height());
         }
         if let Some(at) = response.hover_pos() {
             let scroll = ui.input(|i| i.smooth_scroll_delta.y);
@@ -194,9 +213,41 @@ impl ModelView {
                     aspect,
                     factor,
                     offset,
-                    self.aimed.as_ref(),
+                    self.frame(aspect),
                 );
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pdfcer_3d::Bounds;
+    use pdfcer_3d_nav::Upright;
+
+    #[test]
+    fn a_pan_that_is_not_finite_is_ignored_and_a_huge_one_is_held() {
+        let mut orbit = super::super::fileview::named(0, true, Upright::default());
+        // 100 points over a 200-point picture at zoom 1 pans one radius.
+        drag_pan(&mut orbit, Vec2::new(-25.0, -50.0), 200.0);
+        assert_eq!(orbit.pan, [0.25, -0.5]);
+        drag_pan(&mut orbit, Vec2::new(f32::NAN, 0.0), 200.0);
+        drag_pan(&mut orbit, Vec2::new(0.0, f32::INFINITY), 200.0);
+        assert_eq!(orbit.pan, [0.25, -0.5]);
+        // A drag that would pan a billion radii.
+        drag_pan(&mut orbit, Vec2::new(-1e11, 1e11), 200.0);
+        assert_eq!(orbit.pan, [PAN_LIMIT, PAN_LIMIT]);
+        let bounds = Bounds {
+            min: [-1.0; 3],
+            max: [1.0; 3],
+        };
+        for zoom in [0.05, 1.0, 50.0] {
+            orbit.zoom = zoom;
+            let camera = orbit.camera(&bounds, 2.0, 1.0, None).unwrap();
+            let shift = (0..3).map(|i| camera.target[i].abs()).fold(0.0, f64::max);
+            assert!(shift > 100.0 && shift.is_finite(), "{shift}");
+            assert!(camera.eye.iter().all(|c| c.is_finite()));
         }
     }
 }

@@ -117,14 +117,6 @@ impl Drone {
     }
 }
 
-/// A stick's tilt shaped for fine control: a small dead zone, then the
-/// square of the rest, so half a tilt is a quarter speed.
-pub(super) fn shaped(tilt: f32) -> f64 {
-    const DEAD: f32 = 0.08;
-    let rest = ((tilt.abs() - DEAD) / (1.0 - DEAD)).max(0.0);
-    f64::from(tilt.signum() * rest * rest)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -164,13 +156,5 @@ mod tests {
         assert!((pitch.center().y - camera.y).abs() < 1e-3);
         assert!(stairs.bottom() < camera.y - d.radii[CAMERA], "{stairs:?}");
         assert!((camera.y + d.radii[CAMERA] - (rect.bottom() - MARGIN)).abs() < 1e-3);
-    }
-
-    #[test]
-    fn a_stick_ignores_a_resting_thumb_and_eases_in() {
-        assert!(shaped(0.05).abs() < f64::EPSILON);
-        assert!((shaped(1.0) - 1.0).abs() < 1e-6);
-        assert!((shaped(-1.0) + 1.0).abs() < 1e-6);
-        assert!(shaped(0.5) < 0.3);
     }
 }

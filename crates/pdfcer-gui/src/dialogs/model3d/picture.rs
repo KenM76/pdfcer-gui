@@ -215,19 +215,8 @@ fn aim_of(camera: &pdfcer_3d::Camera) -> String {
 /// it shows, right and up of the picture's centre as a share of the visible
 /// height at its depth, for the trace a driven check reads.
 fn pivot_shown(camera: &pdfcer_3d::Camera, p: [f64; 3]) -> String {
-    let sub = |a: [f64; 3], b: [f64; 3]| -> [f64; 3] { std::array::from_fn(|i| a[i] - b[i]) };
-    let dot = |a: [f64; 3], b: [f64; 3]| a.iter().zip(b).map(|(x, y)| x * y).sum::<f64>();
-    let unit = |v: [f64; 3]| {
-        let l = dot(v, v).sqrt().max(f64::MIN_POSITIVE);
-        v.map(|c| c / l)
-    };
-    let cross = |a: [f64; 3], b: [f64; 3]| {
-        [
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0],
-        ]
-    };
+    use pdfcer_3d::vec3::{cross, dot, normalize, sub};
+    let unit = |v: [f64; 3]| normalize(v).unwrap_or([0.0; 3]);
     let f = unit(sub(camera.target, camera.eye));
     let r = unit(cross(f, camera.up));
     let u = cross(r, f);
@@ -254,7 +243,7 @@ fn pivot_shown(camera: &pdfcer_3d::Camera, p: [f64; 3]) -> String {
 }
 
 /// ` walk=1 eye=x,y,z` while walking, empty while orbiting, for the trace.
-fn camera_eye(walk: Option<&super::walk::Walk>) -> String {
+fn camera_eye(walk: Option<&pdfcer_3d_nav::Walk>) -> String {
     walk.map_or_else(String::new, |w| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed

@@ -106,7 +106,7 @@ impl ModelView {
     /// scheme. The engine adds an aimed sun as a light even with shadows
     /// off, so it is drawn only while they are on.
     pub(super) fn shadow_light(&self) -> ShadowLight {
-        let (up, negative) = (self.upright.up.engine(), self.upright.up.negative());
+        let (up, negative) = (self.upright.up.up_axis(), self.upright.up.negative());
         let a = self.light.sun;
         match (self.sun, a.on && self.shadows) {
             (true, true) => ShadowLight::AimedSun(SunLight {

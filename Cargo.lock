@@ -2727,6 +2727,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pdfcer-3d-nav"
+version = "0.131.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#ec81929c1358ecb56e84ae4d948cdc934f900f59"
+dependencies = [
+ "pdfcer-3d",
+]
+
+[[package]]
 name = "pdfcer-android"
 version = "0.1.0"
 dependencies = [
@@ -2825,6 +2833,7 @@ dependencies = [
  "native-pipe",
  "native-window",
  "pdfcer-3d",
+ "pdfcer-3d-nav",
  "pdfcer-core",
  "pdfcer-gui-base",
  "pdfcer-print",

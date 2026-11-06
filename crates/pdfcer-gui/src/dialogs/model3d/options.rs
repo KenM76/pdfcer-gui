@@ -178,7 +178,7 @@ impl ModelView {
                 if button.clicked() {
                     self.named = i;
                     self.orbiting();
-                    self.orbit = super::Orbit::named(i, self.orbit.perspective, self.upright);
+                    self.orbit = super::fileview::named(i, self.orbit.perspective, self.upright);
                 }
             }
             if !row {

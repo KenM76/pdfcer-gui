@@ -22,11 +22,11 @@ use crate::app::actions::prefs::PrefAction;
 use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
-mod axes;
 mod controls;
 mod drone;
 mod effects;
 mod eye;
+mod fileview;
 mod fit;
 mod gimbal;
 mod gpu;
@@ -34,8 +34,6 @@ mod gpu_lens;
 mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;
-mod inside;
-mod lens;
 mod lensmenu;
 mod lights;
 mod looks;
@@ -44,7 +42,6 @@ mod nav;
 mod navorbit;
 mod navwalk;
 mod options;
-mod orbit;
 mod parts;
 mod phone;
 mod picture;
@@ -54,11 +51,9 @@ mod shot;
 mod shotlook;
 mod stick;
 mod sunlight;
-mod walk;
 mod window;
 
-use axes::Upright;
-use orbit::{Orbit, PITCH_LIMIT};
+use pdfcer_3d_nav::{Lens, Orbit, PITCH_LIMIT, Upright, Walk};
 
 /// The picture's published region, for `ui-verify`.
 pub const REGION_IMAGE: &str = "model3d.image"; // ui-text-exempt: trace region name, never displayed
@@ -66,9 +61,10 @@ pub const REGION_IMAGE: &str = "model3d.image"; // ui-text-exempt: trace region 
 pub const REGION_VIEW_PREFIX: &str = "model3d.view."; // ui-text-exempt: trace region name, never displayed
 /// The *File's view* button.
 pub const REGION_FILE_VIEW: &str = "model3d.view.file"; // ui-text-exempt: trace region name, never displayed
-/// The up-axis drop-down; its items add `.<index in axes::ALL>`.
+/// The up-axis drop-down; its items add `.<index in Axis::ALL>`
+/// (`pdfcer_3d_nav::Axis`).
 pub const REGION_UP: &str = "model3d.up"; // ui-text-exempt: trace region name, never displayed
-/// The Front-look drop-down; its items add `.<index in axes::ALL>`.
+/// The Front-look drop-down; its items add `.<index in Axis::ALL>`.
 pub const REGION_FRONT: &str = "model3d.front"; // ui-text-exempt: trace region name, never displayed
 /// The Fit button.
 pub const REGION_FIT: &str = "model3d.fit"; // ui-text-exempt: trace region name, never displayed
@@ -119,7 +115,7 @@ const POSTER_SIDE: f64 = 1200.0;
 struct Rendered {
     orbit: Orbit,
     /// The walker's camera, when walking.
-    walk: Option<walk::Walk>,
+    walk: Option<Walk>,
     size: [u32; 2],
     background: egui::Color32,
     /// The highlighted part's colour, the theme's selection fill.
@@ -127,7 +123,7 @@ struct Rendered {
     /// [`parts::Visibility::version`].
     parts: u32,
     look: effects::Look,
-    lens: lens::Lens,
+    lens: Lens,
 }
 
 /// The 3D viewer's state.
@@ -137,13 +133,13 @@ pub(crate) struct ModelView {
     artwork: ThreeDArtwork,
     model: Assembled,
     bounds: Bounds,
-    /// [`orbit::reach`] of the model: the fitted sphere's radius.
+    /// `pdfcer_3d_nav::reach` of the model: the fitted sphere's radius.
     reach: f64,
     orbit: Orbit,
     /// The axes the named views are measured in.
     upright: Upright,
     /// The lens every picture is drawn through.
-    lens: lens::Lens,
+    lens: Lens,
     /// The named view last chosen, re-applied when the axes change.
     named: usize,
     /// The file's opening view (`default_3d_view`), the camera it opens on
@@ -219,9 +215,9 @@ impl ModelView {
     ) -> Self {
         let page_index = artwork.page_index;
         let bounds = framed(&model.drawn);
-        let reach = orbit::reach(&model.drawn.meshes, &bounds);
+        let reach = pdfcer_3d_nav::reach(&model.drawn.meshes, &bounds);
         let opening = model.opening.clone();
-        let saved = opening.as_ref().and_then(Orbit::saved);
+        let saved = opening.as_ref().and_then(fileview::saved_orbit);
         saved::trace_listed(&model.saved);
         let saved_list = model.saved.clone();
         crate::diag::trace(|| {
@@ -256,9 +252,9 @@ impl ModelView {
             model,
             bounds,
             reach,
-            orbit: saved.unwrap_or_else(|| Orbit::named(0, true, Upright::default())),
+            orbit: saved.unwrap_or_else(|| fileview::named(0, true, Upright::default())),
             upright: Upright::default(),
-            lens: lens::Lens::default(),
+            lens: Lens::default(),
             named: 0,
             aimed: opening.clone(),
             saved: saved_list,

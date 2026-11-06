@@ -7,15 +7,13 @@
 //! opened walks the same way.
 
 use egui::{Pos2, Rect, Response, Ui};
-use pdfcer_3d::{AssembledModel, Camera, Hit, PickIndex, Ray, RenderError};
+use pdfcer_3d::{Camera, Hit, Ray, RenderError};
+use pdfcer_3d_nav::{Axes, Lens, Orbit, Rules, Solids, Walk, radius};
 use pdfcer_gui_base::icons::{self, Icon};
 
 use super::drone::Drone;
 use super::gimbal::Gimbal;
-use super::orbit::radius;
-use super::parts::Visibility;
 use super::stick::Sticks;
-use super::walk::{Rules, Walk};
 use super::{ModelView, PITCH_LIMIT};
 use crate::text::panels::modelnav as t;
 
@@ -88,35 +86,6 @@ impl Prefs {
     }
 }
 
-/// The model's surface a walker meets: the engine's pick index, built once
-/// per model, and the shown-mesh mask, read again when visibility changes.
-#[derive(Default)]
-struct Solids {
-    /// The model the index was built from: its mesh list's address and length.
-    model: Option<(usize, usize)>,
-    index: Option<PickIndex>,
-    version: Option<u32>,
-    shown: Option<Vec<bool>>,
-}
-
-impl Solids {
-    fn hit(&mut self, model: &AssembledModel, parts: &Visibility, ray: &Ray) -> Option<Hit> {
-        let key = (model.meshes.as_ptr() as usize, model.meshes.len());
-        if self.model != Some(key) {
-            self.index = Some(PickIndex::new(&model.meshes));
-            (self.model, self.version) = (Some(key), None);
-        }
-        if self.version != Some(parts.version) {
-            self.shown = parts.shown_meshes(model);
-            self.version = Some(parts.version);
-        }
-        let shown = self.shown.as_deref();
-        self.index.as_ref()?.pick_where(ray, f64::INFINITY, |mesh| {
-            shown.is_none_or(|mask| mask.get(mesh).copied().unwrap_or(true))
-        })
-    }
-}
-
 /// Navigation state kept between frames.
 #[derive(Default)]
 pub(super) struct Nav {
@@ -130,7 +99,7 @@ pub(super) struct Nav {
     pub pending_tap: Option<(f64, Pos2)>,
     /// The last tap on the gimbal's centre, for a double tap: when, and the
     /// view before it, which the double tap puts back to picture.
-    centre_tap: Option<(std::time::Instant, super::orbit::Orbit, Option<Walk>)>,
+    centre_tap: Option<(std::time::Instant, Orbit, Option<Walk>)>,
     solids: Solids,
     /// The camera moved this frame, so the picture renders at the moving
     /// size.
@@ -225,15 +194,15 @@ impl ModelView {
     /// The view's camera through a flat lens: what a view written to the
     /// file holds, since a PDF view has no fisheye.
     pub(super) fn flat_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
-        self.camera_through(aspect, &super::lens::Lens::default())
+        self.camera_through(aspect, &Lens::default())
     }
 
-    fn camera_through(&self, aspect: f64, lens: &super::lens::Lens) -> Result<Camera, RenderError> {
+    fn camera_through(&self, aspect: f64, lens: &Lens) -> Result<Camera, RenderError> {
         match &self.nav.walk {
             Some(walk) => Ok(walk.camera(aspect, lens)),
             None => self
                 .orbit
-                .camera(&self.bounds, self.reach, aspect, self.aimed.as_ref())
+                .camera(&self.bounds, self.reach, aspect, self.frame(aspect))
                 .map(|c| lens.applied(c)),
         }
     }
@@ -380,15 +349,17 @@ impl ModelView {
     /// would climb or sink while level.
     pub(super) fn set_walking(&mut self, on: bool) {
         if on {
-            let Ok(camera) =
-                self.orbit
-                    .camera(&self.bounds, self.reach, self.aspect(), self.aimed.as_ref())
-            else {
+            let Ok(camera) = self.orbit.camera(
+                &self.bounds,
+                self.reach,
+                self.aspect(),
+                self.frame(self.aspect()),
+            ) else {
                 return;
             };
             self.nav.walk = Some(Walk::from_camera(
                 &camera,
-                super::orbit::Axes::upright(self.upright),
+                Axes::upright(self.upright),
                 radius(&self.bounds),
             ));
             let height = self.eye_height();
@@ -439,7 +410,13 @@ impl ModelView {
 
     /// The model's shown surface along `ray`, nearest first.
     pub(super) fn hit(&mut self, ray: &Ray) -> Option<Hit> {
-        self.nav.solids.hit(&self.model.drawn, &self.parts, ray)
+        let (drawn, parts) = (&self.model.drawn, &self.parts);
+        self.nav.solids.hit(
+            &drawn.meshes,
+            parts.version,
+            || parts.shown_meshes(drawn),
+            ray,
+        )
     }
 
     /// The model's shown surface under `at` on the picture `rect`.

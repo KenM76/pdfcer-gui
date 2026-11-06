@@ -15,10 +15,10 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use pdfcer_3d::{LampCut, LightSense, RenderModeKind};
+use pdfcer_3d_nav::{AUTO_RANGE, CURVES, LensKind};
 use pdfcer_core::threed::ThreeDLighting;
 
 use super::ModelView;
-use super::lens::{AUTO_RANGE, CURVES, KINDS};
 use super::looks::LAMP_NEAREST;
 use super::shotlook::LookSet;
 use super::sunlight::{BEARING_RANGE, GAIN_RANGE, HEIGHT_RANGE, KELVIN_RANGE, Light};
@@ -195,7 +195,7 @@ impl ModelView {
         put.flag("stairs", p.stairs);
         put.value("tab", self.nav.options_tab);
         let lens = &self.lens;
-        put.pick("lens", &KINDS, &lens.kind);
+        put.pick("lens", &LensKind::ALL, &lens.kind);
         put.pick("lens_curve", &CURVES, &lens.curve);
         put.value("lens_auto_at", format!("{:.0}", lens.auto_at));
         if let Some([w, h]) = self.nav.window.or(self.nav.window_open) {
@@ -232,7 +232,7 @@ impl ModelView {
         get.flag("stairs", &mut p.stairs);
         self.nav.recalled(p);
         get.number("tab", 0..=3, &mut self.nav.options_tab);
-        get.pick("lens", &KINDS, &mut self.lens.kind);
+        get.pick("lens", &LensKind::ALL, &mut self.lens.kind);
         get.pick("lens_curve", &CURVES, &mut self.lens.curve);
         get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);
         let mut size = [0.0_f32; 2];

@@ -10,38 +10,49 @@ texture picture, grey where the file gives neither) as a texture.
 
 ## Camera
 
-`dialogs::model3d::orbit`. `Orbit { yaw, pitch, zoom, pan, perspective,
-axes, framed }`, relative to a fitted view. `axes` is a front and an up: yaw
-0, pitch 0 looks along front, yaw turns about up, pitch looks down from it,
-clamped short of ±90° so up never lines up with the view.
+Navigation is the engine's GUI-free crate `pdfcer_3d_nav`; the viewer keeps
+only the egui side and the glue to `pdfcer-core`'s saved views
+(`dialogs::model3d::fileview`). `Orbit { yaw, pitch, zoom, pan, perspective,
+framed, anchor }` is relative to a fitted view, measured in `Orbit::axes`, a
+front and an up: yaw 0, pitch 0 looks along front, yaw turns about up, pitch
+looks down from it, clamped to `PITCH_LIMIT` so up never lines up with the
+view.
 
-- Direction `-sin yaw · cos pitch · right + cos yaw · cos pitch · front -
-  sin pitch · up`, with `right = front × up`.
-- Named views use the operator's `axes::Upright`: *Up* (`model3d.up`) picks
-  any signed axis, *Front looks along* (`model3d.front`) one of the four
-  perpendicular to it; items are `<region>.<index in axes::ALL>`. The default
+- Named views use the operator's `Upright`: *Up* (`model3d.up`) picks any
+  signed axis, *Front looks along* (`model3d.front`) one of the four
+  perpendicular to it; items are `<region>.<index in Axis::ALL>`. The default
   is z up, Front along +y, as the engine's `3d-render` treats a model with no
   view of its own. A new up keeps a Front that is still perpendicular, else
   takes the convention for that up (along -z for y up, along +y otherwise).
   A change re-applies the named view last chosen and traces
   `model-view-axes up= front= view=`. Per window; the file's own view keeps
   its own axes.
+- Named views, in button order (`fileview::NAMED`, matching `t::view_names`):
+  Isometric, Front, Right, Top, Back, as `pdfcer_3d::NamedView` gives them
+  to `Orbit::named`. Top looks down at `PITCH_LIMIT`. *Fit* resets zoom and
+  pan, drops the file's framing and keeps the side.
 - The file's opening view (`pdfcer_core::threed::default_3d_view`: the
-  annotation's `/3DV`, else the stream's `/DV`, else its first `/VA`) gives
-  `Orbit::saved` when it carries a `/C2W` camera: axes are its
-  `SavedViewAim::direction` and `up` (up orthonormalised against the
-  direction; a view whose two coincide is not offered), yaw and pitch 0,
-  perspective unless it asks for orthographic, and `framed` when its aim is
-  `ViewFit::Framed`.
-- `Camera::fit(bounds, direction, up, perspective, aspect)` frames the model;
-  while `framed` and orthographic, `SavedViewAim::frame` then moves it onto
-  the view's own centre and height;
-  zoom then divides the eye's distance (perspective) or the view height
-  (orthographic); pan shifts eye and target along the image's right and up
-  by `pan × radius`.
-- Named views, in button order: Isometric (45°, 35.26°), Front (0, 0),
-  Right (90°, 0), Top (0, 89°), Back (180°, 0). *Fit* resets zoom and pan,
-  drops the file's framing and keeps the side.
+  annotation's `/3DV`, else the stream's `/DV`, else its first `/VA`) opens
+  as `Orbit::saved` when it carries a `/C2W` camera. `fileview::saved_aim`
+  reads it into a `SavedAim`: direction and up from
+  `ThreeDSavedView::aim`, position from the matrix's translation, `framed`
+  when the aim is `ViewFit::Framed`. Its up is the turning axis, kept even
+  when not square to the direction; a view whose two coincide is not
+  offered. `framed` holds only for an orthographic view.
+- `Orbit::camera(bounds, reach, aspect, frame)` frames the sphere of
+  `pdfcer_3d_nav::reach` (the farthest drawn vertex from the box centre; a
+  distance past the float range counts as the largest float). While
+  `framed` and orthographic, the `ViewFrame` that `fileview::frame` reads from
+  the followed view at the picture's aspect moves the camera onto the view's
+  own centre and height. Zoom divides the eye's distance (perspective) or
+  the view height (orthographic); pan shifts eye and target along the
+  image's right and up by `pan × radius`.
+- Every drag's pan goes through `navorbit::drag_pan`, which ignores a pan
+  that is not finite and holds each part within ±1000 model radii
+  (`PAN_LIMIT`); `Orbit::pan` itself has no bound.
+- A perspective view whose camera stands inside the model's box opens
+  walking from there (`SavedAim::eye_inside`, traced
+  `file-view-eye=inside|outside|none`).
 - *File's view* (`model3d.view.file`), first in the row and drawn only when
   the file's view carries a camera, returns to `Orbit::saved`. The viewer
   opens there; without one, at Isometric.

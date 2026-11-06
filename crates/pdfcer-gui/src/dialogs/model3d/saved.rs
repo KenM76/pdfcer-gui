@@ -10,7 +10,7 @@ use egui::Ui;
 use pdfcer_core::threed::SavedViews;
 
 use super::ModelView;
-use super::orbit::Orbit;
+use super::fileview::saved_orbit;
 use crate::text::panels::savedviews as t;
 
 /// The menu's published region.
@@ -24,7 +24,7 @@ pub(super) fn trace_listed(saved: &SavedViews) {
     let cameras = saved
         .views
         .iter()
-        .filter(|v| Orbit::saved(v).is_some())
+        .filter(|v| saved_orbit(v).is_some())
         .count();
     let default = saved.default;
     crate::diag::trace(|| {
@@ -52,7 +52,7 @@ impl ModelView {
 
     fn saved_item(&mut self, ui: &mut Ui, i: usize) {
         let view = &self.saved.views[i];
-        let orbit = Orbit::saved(view);
+        let orbit = saved_orbit(view);
         let default = self.saved.default == Some(i);
         let label = t::view_saved_item(&view.name, i, default);
         let item = ui

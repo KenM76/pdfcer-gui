@@ -5,8 +5,9 @@
 use egui::Ui;
 use pdfcer_3d::Projection;
 
+use pdfcer_3d_nav::{AUTO_RANGE, CURVES, LensKind};
+
 use super::ModelView;
-use super::lens::{AUTO_RANGE, CURVES, KINDS, LensKind};
 use crate::text::model3dlens as l;
 
 /// The lens drop-down's published region; each item adds `.flat`,
@@ -16,7 +17,7 @@ pub const REGION_LENS: &str = "model3d.lens"; // ui-text-exempt: trace region na
 pub const REGION_CURVE: &str = "model3d.lens.curve"; // ui-text-exempt: trace region name, never displayed
 /// Auto's change-point slider's published region.
 pub const REGION_AUTO_AT: &str = "model3d.lens.auto-at"; // ui-text-exempt: trace region name, never displayed
-/// Each lens item's region word, in [`KINDS`]' order.
+/// Each lens item's region word, in [`LensKind::ALL`]'s order.
 const KIND_WORDS: [&str; 3] = ["flat", "fisheye", "auto"]; // ui-text-exempt: trace region names, never displayed
 
 impl ModelView {
@@ -29,11 +30,16 @@ impl ModelView {
             ui.horizontal_wrapped(|ui| {
                 ui.label(l::lens_label()).on_hover_text(l::lens_tooltip());
                 let names = l::lens_names();
-                let at = KINDS.iter().position(|k| *k == self.lens.kind).unwrap_or(0);
+                let at = LensKind::ALL
+                    .iter()
+                    .position(|k| *k == self.lens.kind)
+                    .unwrap_or(0);
                 let combo = egui::ComboBox::from_id_salt(REGION_LENS)
                     .selected_text(names[at])
                     .show_ui(ui, |ui| {
-                        for ((kind, name), word) in KINDS.into_iter().zip(names).zip(KIND_WORDS) {
+                        for ((kind, name), word) in
+                            LensKind::ALL.into_iter().zip(names).zip(KIND_WORDS)
+                        {
                             let item = ui.selectable_value(&mut self.lens.kind, kind, name);
                             // ui-text-exempt: trace region name, never displayed
                             let region = format!("{REGION_LENS}.{word}");

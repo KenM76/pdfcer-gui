@@ -6,8 +6,8 @@
 
 use egui::{Color32, Pos2, Rect, Stroke, Vec2};
 use pdfcer_3d::Camera;
+use pdfcer_3d::vec3::{cross, dot, normalize, span};
 
-use super::orbit::{cross, dot, unit};
 use crate::text::panels::modelnav as t;
 
 /// The gimbal's side, in points, on a picture wide enough for it.
@@ -53,8 +53,8 @@ impl Gimbal {
         if side < 64.0 {
             return None;
         }
-        let forward = unit(std::array::from_fn(|i| camera.target[i] - camera.eye[i]))?;
-        let right = unit(cross(forward, camera.up))?;
+        let forward = normalize(span(camera.eye, camera.target))?;
+        let right = normalize(cross(forward, camera.up))?;
         let image_up = cross(right, forward);
         let centre = Pos2::new(
             picture.right() - INSET - side / 2.0,

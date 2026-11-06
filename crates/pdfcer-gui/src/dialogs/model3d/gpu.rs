@@ -262,7 +262,7 @@ impl ModelView {
         if self.gpu.declined.is_some() {
             return Ok(false);
         }
-        let fisheye = super::lens::is_fisheye(&camera);
+        let fisheye = pdfcer_3d_nav::is_fisheye(&camera);
         let lights = &self.model.drawn.lights;
         // A fisheye's occlusion is each face's own (`gpu_lens`).
         let effects = if fisheye {
@@ -324,7 +324,7 @@ impl ModelView {
         (size, background): ([u32; 2], [f32; 4]),
     ) -> Result<(u::Uniforms, Option<LensPlan>, u::Uniforms), RenderError> {
         let lines = &self.gpu.facts.lines;
-        if super::lens::is_fisheye(camera) {
+        if pdfcer_3d_nav::is_fisheye(camera) {
             let (plan, lens) =
                 super::gpu_lens::plan(camera, lights, options, &self.bounds, (size, background))?;
             let lines = super::gpu_lens::line_uniforms(camera, &lens, &self.bounds, lines)?;

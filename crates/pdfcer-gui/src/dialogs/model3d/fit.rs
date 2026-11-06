@@ -90,7 +90,7 @@ impl ModelView {
                     &self.model.drawn.meshes,
                     &self.model.drawn.colours,
                 ) {
-                    self.reach = super::orbit::reach(&self.model.drawn.meshes, &bounds);
+                    self.reach = pdfcer_3d_nav::reach(&self.model.drawn.meshes, &bounds);
                     self.bounds = bounds;
                 }
                 self.rendered = None;
@@ -179,5 +179,22 @@ mod tests {
         }
         assert_eq!(FITS[0], MeshFit::default());
         assert_eq!(tf::mesh_fit_names().len(), FITS.len());
+    }
+
+    #[test]
+    fn a_model_wider_than_the_float_range_is_fitted_whole() {
+        // Its farthest vertices are f64::MAX from the box's centre, a
+        // distance whose square overflows; the vertex at 1 must not set the fit.
+        let mut mesh = pdfcer_3d::TriangleMesh::default();
+        mesh.positions = vec![[-f64::MAX, 0.0, 0.0], [f64::MAX, 0.0, 0.0], [0.0, 1.0, 0.0]];
+        mesh.triangles = vec![[0, 1, 2]];
+        let mut model = pdfcer_3d::AssembledModel::default();
+        model.meshes = vec![mesh];
+        let bounds = super::super::framed(&model);
+        let reach = pdfcer_3d_nav::reach(&model.meshes, &bounds);
+        assert!(reach > 1e300, "{reach}");
+        let orbit = super::super::fileview::named(1, false, pdfcer_3d_nav::Upright::default());
+        let camera = orbit.camera(&bounds, reach, 1.0, None).unwrap();
+        assert!(camera.visible_height() > 1e300, "{camera:?}");
     }
 }
