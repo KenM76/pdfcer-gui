@@ -44,7 +44,7 @@ impl CardParts {
 
     /// The switches; `forced` greys the whole picture's with its reason.
     pub(crate) fn controls(&mut self, ui: &mut Ui, forced: bool) {
-        ui.label(egui::RichText::new(k::CARD_HEADING).strong());
+        ui.label(k::CARD_HEADING);
         let whole = ui
             .add_enabled(
                 !forced,

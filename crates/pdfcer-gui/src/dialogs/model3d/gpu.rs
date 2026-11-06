@@ -288,20 +288,8 @@ impl ModelView {
         };
         let mut frame_lights = FrameLights::for_model(&camera, &options, lights)?;
         let casters = self.casters(&camera, &options, effects.shadow)?;
-        let refused = self.gpu.card.refused(|part| match part {
-            CardPart::Shadows => casters.shadow.is_some() || casters.extra.is_some(),
-            CardPart::LampShadows => casters.lamps.is_some(),
-            CardPart::SeeThrough => casters.veil.is_some(),
-            CardPart::Occlusion => {
-                effects.occlusion.is_some() || (fisheye && options.ambient_occlusion)
-            }
-            CardPart::Fisheye => fisheye,
-            CardPart::Glow => self.gpu.facts.emissive > 0.0,
-            CardPart::Lines => {
-                self.gpu.facts.point_size.is_some() || lock(&self.gpu.shared).segments > 0
-            }
-        });
-        if let Some(part) = refused {
+        let occlusion = effects.occlusion.is_some() || (fisheye && options.ambient_occlusion);
+        if let Some(part) = self.refused_part(&casters, occlusion, fisheye) {
             self.gpu.declined = Some(ProcessorReason::TurnedOff(part));
             return Ok(false);
         }
@@ -311,16 +299,7 @@ impl ModelView {
         let background = wanted.background.to_normalized_gamma_f32();
         let (view, lens, line_uniforms) =
             self.frame_view(&camera, &frame_lights, &options, (wanted.size, background))?;
-        let mut uniforms = view;
-        uniforms.extend(u::light_uniforms(&frame_lights));
-        uniforms.extend(u::shadow_uniforms(casters.shadow.as_ref()));
-        uniforms.extend(u::extra_uniforms(casters.extra.as_ref()));
-        uniforms.extend(u::lamp_uniforms(casters.lamps.as_ref()));
-        let veiled = casters.veil.is_some();
-        uniforms.extend(u::veil_uniforms(
-            veiled && casters.shadow.is_some(),
-            veiled && casters.lamps.is_some(),
-        ));
+        let uniforms = frame_uniforms(view, &frame_lights, &casters);
         let emissive = self.gpu.facts.emissive;
         let repeat = if emissive > 0.0 {
             Some((u::repeat_uniforms(&camera, &options)?, emissive))
@@ -341,6 +320,21 @@ impl ModelView {
         shared.trace = crate::diag::enabled().then_some(head);
         shared.drawn = false;
         Ok(true)
+    }
+
+    /// The first part this frame draws that the card is switched off for.
+    fn refused_part(&self, casters: &Casters, occlusion: bool, fisheye: bool) -> Option<CardPart> {
+        self.gpu.card.refused(|part| match part {
+            CardPart::Shadows => casters.shadow.is_some() || casters.extra.is_some(),
+            CardPart::LampShadows => casters.lamps.is_some(),
+            CardPart::SeeThrough => casters.veil.is_some(),
+            CardPart::Occlusion => occlusion,
+            CardPart::Fisheye => fisheye,
+            CardPart::Glow => self.gpu.facts.emissive > 0.0,
+            CardPart::Lines => {
+                self.gpu.facts.point_size.is_some() || lock(&self.gpu.shared).segments > 0
+            }
+        })
     }
 
     /// The camera's uniforms for the faces, the fisheye's faces when it is
@@ -490,6 +484,22 @@ impl Shared {
         self.keep = c.keep;
         self.veil = c.veil;
     }
+}
+
+/// The frame's uniforms: `view`, then the lights, the shadow casters and the
+/// see-through ranges.
+fn frame_uniforms(view: u::Uniforms, lights: &FrameLights, casters: &Casters) -> u::Uniforms {
+    let mut uniforms = view;
+    uniforms.extend(u::light_uniforms(lights));
+    uniforms.extend(u::shadow_uniforms(casters.shadow.as_ref()));
+    uniforms.extend(u::extra_uniforms(casters.extra.as_ref()));
+    uniforms.extend(u::lamp_uniforms(casters.lamps.as_ref()));
+    let veiled = casters.veil.is_some();
+    uniforms.extend(u::veil_uniforms(
+        veiled && casters.shadow.is_some(),
+        veiled && casters.lamps.is_some(),
+    ));
+    uniforms
 }
 
 /// Every texture of `model`, copied for the upload.

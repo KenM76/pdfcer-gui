@@ -94,7 +94,7 @@ struct Drawn {
 enum PictureFor {
     /// The model's picture on the page.
     Page,
-    /// A PNG file the operator picks.
+    /// A file the operator picks: PNG, or JPEG for a 360° picture.
     File,
 }
 /// The Minimize button.
