@@ -110,31 +110,7 @@ pub(crate) fn render(
     });
 
     if ui.is_rect_visible(rect) {
-        let visuals = ui.style().interact(&response);
-        ui.painter()
-            .rect_filled(rect, visuals.corner_radius, visuals.weak_bg_fill);
-
-        let line = ui.text_style_height(&TextStyle::Button);
-        let stack = line * 2.0;
-        let top = rect.center().y - stack / 2.0;
-        let (head, second, second_style) = match group.summary.as_deref() {
-            Some(summary) => (headed(caption), summary, TextStyle::Small),
-            None => (caption.to_owned(), CHEVRON, TextStyle::Button),
-        };
-        ui.painter().text(
-            egui::pos2(rect.center().x, top),
-            egui::Align2::CENTER_TOP,
-            head,
-            TextStyle::Button.resolve(ui.style()),
-            visuals.text_color(),
-        );
-        ui.painter().text(
-            egui::pos2(rect.center().x, top + line),
-            egui::Align2::CENTER_TOP,
-            second,
-            second_style.resolve(ui.style()),
-            visuals.text_color(),
-        );
+        paint_face(ui, rect, &response, caption, group.summary.as_deref());
     }
 
     // Published for `ui-verify` under the group's own region name plus a
@@ -156,6 +132,41 @@ pub(crate) fn render(
             outcome,
         );
     });
+}
+
+/// The button's face: two stacked lines, the caption over the summary, or over
+/// the chevron alone when the group has no summary.
+fn paint_face(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    response: &egui::Response,
+    caption: &str,
+    summary: Option<&str>,
+) {
+    let visuals = ui.style().interact(response);
+    ui.painter()
+        .rect_filled(rect, visuals.corner_radius, visuals.weak_bg_fill);
+
+    let line = ui.text_style_height(&TextStyle::Button);
+    let top = rect.center().y - line;
+    let (head, second, second_style) = match summary {
+        Some(summary) => (headed(caption), summary, TextStyle::Small),
+        None => (caption.to_owned(), CHEVRON, TextStyle::Button),
+    };
+    ui.painter().text(
+        egui::pos2(rect.center().x, top),
+        egui::Align2::CENTER_TOP,
+        head,
+        TextStyle::Button.resolve(ui.style()),
+        visuals.text_color(),
+    );
+    ui.painter().text(
+        egui::pos2(rect.center().x, top + line),
+        egui::Align2::CENTER_TOP,
+        second,
+        second_style.resolve(ui.style()),
+        visuals.text_color(),
+    );
 }
 
 // There is deliberately no `count` helper here, and the absence is worth a

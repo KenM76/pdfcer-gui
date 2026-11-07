@@ -29,3 +29,13 @@ CRLF, promote.rs and extract.rs LF), so an anchor containing a newline matches i
 one file and not its neighbour. Detect per file (`'\r\n' in s`), normalise to `\n`,
 edit, write back in the file's own ending. A multi-line `\`-continued string
 literal is easiest with the Edit tool; a `sed` on a CRLF file needs `\r$`.
+
+**Same shape:** A script did `open(target,'w').write(head + tail)` where building `tail` raised
+(a cp1252 encode of '★'). `open` had already truncated the file: a 233-line
+check became 0 bytes, recoverable only because a draft sat in D:\scratch.
+
+**Why:** `open(...,'w')` truncates the file the moment it opens; the encode happens later, inside `write`. The default Windows encoding is cp1252, which cannot encode most symbols this repo uses in failure messages.
+
+**How to apply:** always pass `encoding='utf-8', newline=''`; compute the full
+text into a variable BEFORE opening the target; keep a copy of any file a
+script rewrites in D:\scratch first. See [[python-write-crlf]], [[feedback_write_python_file]].

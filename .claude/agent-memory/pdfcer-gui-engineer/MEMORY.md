@@ -47,7 +47,7 @@
 - [pdfcer-gui since 2026-09-03](project_project_pdfcer_gui.md) — two references deliberately did NOT move.
 - [OCRcer is a second OCR engine](project_ocrcer_second_engine.md) — integrated via the engine; LOCAL newest only, never GitHub; LLM add-in is O240.
 - [A rename can blind an instrument](feedback_rename_blind.md) — a hard-coded path makes green over nothing.
-- [A proxy condition survives one fix](feedback_proxy_condition.md) — ask what it READS, not what it means.
+- [A proxy condition survives one fix](feedback_proxy_condition.md) — ask what it READS; a substring outlives a narrowing.
 - [A right value in the wrong role](feedback_correctly_sourced.md) — gates forbid invented, not misused.
 - [A trace grep passes on a crash](feedback_trace_grepping_check.md) — the oracle line precedes the panic.
 - [Parallelism needs an ownership map](feedback_parallelism_default.md) — nine tracks in one repo.
@@ -91,12 +91,11 @@
 - [`gh release create` tags remotely](feedback_gh_release_create.md) — fetch tags; push main FIRST or the tag lands on old remote main.
 - [Meaning can change under a signature](feedback_capability_change.md) — `is_editable` went false → *is a path*.
 - [A refusal filtered on the opposite test](feedback_refusal_filtered.md) — the symptom is SILENCE, which nobody reports.
-- [A substring survives a narrowing](feedback_substring_match.md) — words stayed, the condition shrank.
 - [The count command can be wrong](feedback_count_command_wrong.md) — `xargs` batches, so `tail -1` reads one.
 - [Named everywhere, registered nowhere](feedback_checker_named_every.md) — grep the runner, not the prose.
 - [A gate crashing after its headline](feedback_gate_crashes_after.md) — the named row sat unfixed.
 - [One remedy banner on any failure](feedback_one_remedy_banner_any.md) — it told him to rewrite right figures.
-- [An assertion both outcomes satisfy](feedback_assertion_both.md) — name what the WRONG one can't produce; drag diagonally.
+- [An assertion both outcomes satisfy](feedback_assertion_both.md) — name what the WRONG one can't produce; `Ok(None)` read as success.
 - [A hit inside the repo is no outside mandate](feedback_gate_hit_inside_repo.md) — a half-renamed archive is worse.
 - [A branch pin moves on its own](feedback_branch_pinned.md) — it changed mid-session with no command.
 - [Python-to-a-file does not protect an escape](feedback_write_python_file.md) — build `\` with chr(92); an LF anchor misses CRLF.
@@ -113,7 +112,6 @@
 - [A value can't name its producer](feedback_value_cannot_identify.md) — three arms emit `(0,0)`; trace the DECIDER.
 - [The wrong binary shows as an ABSENT line](feedback_tell_running_wrong.md) — a stale exe emits the OLD trace.
 - [The wrong axis is wrong by the ratio](feedback_measured_note_names.md) — 1683.8 is A1's SHORT side.
-- [My own quotation carried a line number](feedback_quotation_wrote.md) — right claim, manufactured evidence.
 - [You never ship the thing you measured](feedback_thing_measured_never.md) — the release relinks; 8M bytes differ, none real.
 - [One property differs; absence needs a witness](feedback_control_differs_one.md) — a healthy file satisfies it three ways.
 - [Field access is invisible to the drift gate](feedback_type_reached_field.md) — bind it, don't mention it.
@@ -139,9 +137,8 @@
 - [A blocker inherited from an unlinked dep](feedback_blocker_inherited.md) — four docs, a crate not in the lock.
 - [A preview must be replayed](feedback_preview_replayed_read.md) — calibration is blind to a shared error.
 - [Before-and-after is blind to the gesture](feedback_before_after_checks.md) — the roster passed while the drag showed nothing.
-- [An archived tree's citations froze wrong](feedback_archived_trees.md) — 7 of 11 off by +2 to +29; the freeze preserved the error.
-- [Anchoring without opening freezes the error](feedback_anchoring_citation.md) — 4 of 31 were wrong; the pass IS the audit.
-- [A drifted citation lands on a real symbol](feedback_drifted_citation.md) — 66 of 92 drifted; none dangled.
+- [Anchoring without opening freezes the error](feedback_anchoring_citation.md) — 4 of 31 wrong; my own quote carried a line number.
+- [A drifted citation lands on a real symbol](feedback_drifted_citation.md) — 66 of 92 drifted, none dangled; freezing a tree keeps the error.
 - [A shell gate costs spawns, not work](feedback_shell_gates_cost.md) — 4,100 spawns = 5 min; three greps = 3 s.
 - [A teaching example IS the violation](feedback_document_teaches_rule.md) — break the shape, keep the meaning.
 - [A full-form sweep misses the shorthand](feedback_sweep_keyed_full_form.md) — the abbreviation accumulates fastest.
@@ -174,10 +171,9 @@
 - [Park drafts in D:\scratch](feedback_park_drafts_scratch.md) — never D:/temp; apply scripts and control exes live there too.
 - [Overshooting a band passes on the defect](feedback_overshoot_window.md) — picture at the first wall; SKIP if the trace shows the far tier.
 - [Neighbour checks can encode the defect](feedback_neighbour_checks_encode_defect.md) — a funnel fix reddened 2 green checks; re-drive all readers of its trace line.
-- [Python 'w' writes CRLF on Windows](feedback_python_write_crlf.md) — pass newline=''; git diff --stat hides the conversion.
+- [Python 'w' writes CRLF, truncates first](feedback_python_write_crlf.md) — pass newline=''; build the text before open().
 - [Defined is not on the page](feedback_defined_not_on_page.md) — an appended save keeps a deleted body; scan the page's /Annots.
 - [No `timeout` around run-all](feedback_gate_run_no_timeout.md) — rc=124 at 58 min threw away 48 green gates; background, no wrapper.
-- [`open('w')` truncates before a crash](feedback_open_truncates_before_crash.md) — a failed encode left a check at 0 bytes; build text first, utf-8.
 - [A backlog row's key is the engine's words](feedback_backlog_key_matches_engine.md) — a full path where the engine wrote `ocr::upscale` is unaccounted.
 - [A sed-redirected dry run was not dry](feedback_dry_run_redirect.md) — no-match sed; script hit the real tree mid-gates. Take the root as an argument.
 - [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.

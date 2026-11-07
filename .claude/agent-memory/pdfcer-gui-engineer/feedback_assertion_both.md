@@ -144,3 +144,9 @@ the plant, because reading the test could not tell.
 ## The variant where a modifier is already taken: assert both axes
 
 The whole-stroke ink move was first put on Shift+drag. A (40,20) drag moved the stroke dx=40 dy=0, because `vertexroute` runs `constrain::reposition(ctx, shift, …)`, which makes Shift the axis lock on every point drag. A check asserting only "a stroke moved" passes on that defect. **How to apply:** before giving a gesture a modifier, map what Shift, Ctrl and Alt already do on that route (`constrain`, `dimdrag::intent`, `alt_held`, `cycle_depth`). Then drive the gesture diagonally and assert both components.
+
+**Same shape:** In a check, never let `Ok(None)` mean both "no failure" and "never reached the state". The collapsed-group arm of `the_ribbon_says_what_its_controls_do` passed with nothing collapsed, because a walk of window widths that ended without a collapse returned `Ok(None)`.
+
+**Why:** drive functions in `tools/ui-verify` use `Ok(None)` for pass, so any early return through that type is silently green. Falsifying the arm with a build missing the feature is what would have shown it; the SKIP before it had looked like the problem.
+
+**How to apply:** give a reach step its own layer, `Option<Option<String>>` or a dedicated enum, and fail or skip on "not reached". See [[feedback_check_cannot_fail]].
