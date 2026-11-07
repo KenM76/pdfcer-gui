@@ -41,6 +41,8 @@ pub struct PreviewKey {
     lines: Option<(f64, f64)>,
     /// Which print-only header and footer copy renders; 0 for the document.
     stamp: u64,
+    /// `OpenDoc`'s layer generation: a layer shown or hidden re-renders.
+    layers: u64,
 }
 
 impl PreviewKey {
@@ -57,6 +59,7 @@ impl PreviewKey {
             settings: settings.clone(),
             lines,
             stamp: 0,
+            layers: 0,
         }
     }
 
@@ -64,6 +67,12 @@ impl PreviewKey {
     #[must_use]
     pub fn with_stamp(self, stamp: u64) -> Self {
         Self { stamp, ..self }
+    }
+
+    /// The same key for a render with layer generation `layers`.
+    #[must_use]
+    pub fn with_layers(self, layers: u64) -> Self {
+        Self { layers, ..self }
     }
 
     /// Set the fixed line width, if any, on a render at `scale` pixels per

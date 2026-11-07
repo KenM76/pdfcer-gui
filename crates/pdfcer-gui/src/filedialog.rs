@@ -50,8 +50,8 @@ mod android {
         fn place(&self, path: &Path, name: &str) -> bool;
         /// Shows the system print dialog for the PDF at `path`, titled `name`,
         /// and returns once it is up. True hands the file to the dialog, which
-        /// deletes it when it closes. A non-empty `note` is shown over the dialog.
-        fn print(&self, path: &Path, name: &str, note: &str) -> bool;
+        /// deletes it when it closes.
+        fn print(&self, path: &Path, name: &str) -> bool;
     }
 
     static PICKER: OnceLock<Box<dyn Picker>> = OnceLock::new();
@@ -104,7 +104,7 @@ mod android {
     /// Writes `pdf` to a private file and shows the system print dialog on a
     /// thread of its own, so the frame never waits. When the dialog cannot be
     /// shown, the reason arrives through [`take_print_failure`].
-    pub fn print_later(pdf: Vec<u8>, name: String, note: &'static str) {
+    pub fn print_later(pdf: Vec<u8>, name: String) {
         static JOBS: AtomicU64 = AtomicU64::new(0);
         std::thread::spawn(move || {
             let Some(picker) = PICKER.get() else { return };
@@ -116,7 +116,7 @@ mod android {
                 print_failed(e.to_string());
                 return;
             }
-            if !picker.print(&path, &name, note) {
+            if !picker.print(&path, &name) {
                 let _ = std::fs::remove_file(&path);
                 print_failed(crate::text::print::phone_print_refused().to_owned());
             }

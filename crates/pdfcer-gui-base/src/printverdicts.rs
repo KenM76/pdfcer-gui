@@ -29,6 +29,8 @@ pub struct Context {
     lines_pt: Option<f64>,
     /// The print-only header and footer copy the preview renders; 0: none.
     stamp: u64,
+    /// The document's layer generation.
+    layers: u64,
 }
 
 impl Context {
@@ -45,6 +47,7 @@ impl Context {
             printable_pt,
             lines_pt,
             stamp: 0,
+            layers: 0,
         }
     }
 
@@ -52,6 +55,12 @@ impl Context {
     #[must_use]
     pub fn with_stamp(self, stamp: u64) -> Self {
         Self { stamp, ..self }
+    }
+
+    /// The same context, with the document's layer generation.
+    #[must_use]
+    pub fn with_layers(self, layers: u64) -> Self {
+        Self { layers, ..self }
     }
 
     /// The preview texture's cache key for `page`.
@@ -63,6 +72,7 @@ impl Context {
             self.lines_pt.map(|pt| (pt, placement)),
         )
         .with_stamp(self.stamp)
+        .with_layers(self.layers)
     }
 }
 

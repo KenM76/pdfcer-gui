@@ -536,6 +536,9 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
                 .small(),
         );
     }
+    if let Some(said) = dialog.permission.sentence() {
+        ui.label(egui::RichText::new(said).small());
+    }
 }
 
 /// The Size mode's four scale choices.

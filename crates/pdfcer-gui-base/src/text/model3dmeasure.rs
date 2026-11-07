@@ -40,10 +40,6 @@ pub const NOT_KEPT: &str = "This view cannot be saved, so the measurement was no
 /// The value carries no unit.
 pub const NO_UNIT: &str = "No unit is shown because the model's file does not name one pdfcer can label: this value is \
      in the model's own units.";
-/// Rewriting the list loses what the engine does not read.
-pub const REWRITES_VIEWS: &str = "Keeping or deleting a measurement rewrites the file's saved views from what pdfcer reads of \
-     them. A background, cross-section or part visibility a view held is not carried over; Undo \
-     puts them back.";
 /// Above the list of a view's measurements.
 pub const NONE_KEPT: &str = "No measurements are saved on this view.";
 /// A measurement's delete button.

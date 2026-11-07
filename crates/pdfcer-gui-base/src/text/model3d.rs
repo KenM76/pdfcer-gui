@@ -269,7 +269,7 @@ pub fn shadows() -> &'static str {
 /// Its tip.
 #[must_use]
 pub fn shadows_tooltip() -> &'static str {
-    "Lights cast shadows onto the model. The PDF standard defines no shadows, so another reader may draw this model without them."
+    "Lights cast shadows onto the model, so a surface facing away from a light gets none of it. Off, a surface is lit from both sides. The PDF standard defines no shadows, so another reader may draw this model without them."
 }
 
 /// The label of the drop-down for which light casts shadows.

@@ -349,6 +349,14 @@ impl ModelView {
                 notes,
             }));
         }
+        if let Some((view_index, measurements, notes)) = self.measure.writing.take() {
+            actions.push(Action::Attachment(AttachmentAction::SetViewMeasurements {
+                artwork: self.artwork.clone(),
+                view_index,
+                measurements,
+                notes,
+            }));
+        }
         let closed = closed && !std::mem::take(&mut self.escape_left_full_screen);
         let button = std::mem::take(&mut self.close_requested);
         self.keep_settings(ctx, closed || button, actions);

@@ -1,8 +1,7 @@
 //! The options menu's Measure tab, the readout it shares with the footer, and
-//! keeping and deleting a saved view's measurements. `set_3d_views` replaces the
-//! whole list, so both rewrite every view from what the engine reads of it, and
-//! say so. The viewer re-reads the list when the document's edit epoch moves, so
-//! a refusal, an undo or a redo shows here as in the file.
+//! keeping and deleting a saved view's measurements. Both write that view's list
+//! alone. The viewer re-reads the list when the document's edit epoch moves, so a
+//! refusal, an undo or a redo shows here as in the file.
 
 use egui::{Rect, RichText, Ui, Vec2};
 use pdfcer_core::threed::{ThreeDMeasureKind, ThreeDMeasurement, ThreeDSavedView};
@@ -276,38 +275,33 @@ impl ModelView {
             return;
         };
         m.color.get_or_insert(KEPT_COLOUR);
-        let mut views = writable_views(&self.saved.views);
-        let mut notes = Vec::new();
-        let target = match self.active_view() {
-            Some(i) => {
-                notes.push(t::kept_on(&views[i].name));
-                notes.push(t::REWRITES_VIEWS.to_owned());
-                i
-            }
-            None => {
-                let Some(view) = self.camera_view() else {
-                    self.measure.said = Some(Said::NotKept);
-                    return;
-                };
-                views.push(view);
-                notes.push(t::NEW_VIEW.to_owned());
-                0
-            }
-        };
-        let Some(view) = views.get_mut(target) else {
+        let Some(index) = self.active_view() else {
+            self.keep_on_a_new_view(m);
             return;
         };
-        m.name = Some(t::saved_name(
-            self.measure.kind,
-            view.measurements.len() + 1,
-        ));
+        let names = writable_views(&self.saved.views);
+        let (Some(view), Some(named)) = (self.saved.views.get(index), names.get(index)) else {
+            return;
+        };
+        let mut measurements = view.measurements.clone();
+        m.name = Some(t::saved_name(self.measure.kind, measurements.len() + 1));
+        measurements.push(m);
+        trace_kept(&named.name, measurements.len());
+        let notes = vec![t::kept_on(&named.name)];
+        self.measure.writing = Some((index, measurements, notes));
+        self.measure.keeping = true;
+    }
+
+    /// The file has no saved view: write one of this camera, holding `m`.
+    fn keep_on_a_new_view(&mut self, mut m: ThreeDMeasurement) {
+        let Some(mut view) = self.camera_view() else {
+            self.measure.said = Some(Said::NotKept);
+            return;
+        };
+        m.name = Some(t::saved_name(self.measure.kind, 1));
         view.measurements.push(m);
-        let total = view.measurements.len();
-        let name = view.name.clone();
-        // ui-text-exempt: diagnostic trace, never displayed
-        crate::diag::trace(|| format!("model-measure-keep view={name} count={total}"));
-        let default = self.saved.default.unwrap_or(0).min(views.len() - 1);
-        self.views = Some((views, default, notes));
+        trace_kept(&view.name, view.measurements.len());
+        self.views = Some((vec![view], 0, vec![t::NEW_VIEW.to_owned()]));
         self.measure.keeping = true;
     }
 
@@ -319,20 +313,25 @@ impl ModelView {
     }
 
     fn delete_measurement(&mut self, view: usize, measurement: usize) {
-        let mut views = writable_views(&self.saved.views);
-        let Some(target) = views.get_mut(view) else {
+        let names = writable_views(&self.saved.views);
+        let (Some(target), Some(named)) = (self.saved.views.get(view), names.get(view)) else {
             return;
         };
         if measurement >= target.measurements.len() {
             return;
         }
-        target.measurements.remove(measurement);
-        let notes = vec![t::deleted_from(&target.name), t::REWRITES_VIEWS.to_owned()];
+        let mut measurements = target.measurements.clone();
+        measurements.remove(measurement);
+        let notes = vec![t::deleted_from(&named.name)];
         // ui-text-exempt: diagnostic trace, never displayed
         crate::diag::trace(|| format!("model-measure-delete index={measurement}"));
-        let default = self.saved.default.unwrap_or(0).min(views.len() - 1);
-        self.views = Some((views, default, notes));
+        self.measure.writing = Some((view, measurements, notes));
     }
+}
+
+fn trace_kept(view: &str, count: usize) {
+    // ui-text-exempt: diagnostic trace, never displayed
+    crate::diag::trace(|| format!("model-measure-keep view={view} count={count}"));
 }
 
 /// A saved measurement's line in the list: its name and its value.

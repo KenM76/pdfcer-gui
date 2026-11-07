@@ -1292,6 +1292,18 @@ pub enum AttachmentAction {
         /// when this edit only changed their measurements.
         notes: Vec<String>,
     },
+    /// **Set the measurements of one saved view of a 3D model**, leaving every
+    /// other key of it and every other view as they are; one undo entry.
+    SetViewMeasurements {
+        /// The row the viewer was opened on.
+        artwork: pdfcer_core::threed::ThreeDArtwork,
+        /// Which of `saved_3d_views`' views.
+        view_index: usize,
+        /// The view's whole list of measurements.
+        measurements: Vec<pdfcer_core::threed::ThreeDMeasurement>,
+        /// What the status line says.
+        notes: Vec<String>,
+    },
     /// **Pick a picture file and make it the page picture of a 3D model**,
     /// one undo entry. The picker runs in the apply arm, as it does for
     /// [`Self::Attach`].

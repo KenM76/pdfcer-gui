@@ -65,6 +65,15 @@ fn page_sizes(pages: usize) -> Vec<(f64, f64)> {
     vec![(612.0, 792.0); pages]
 }
 
+/// A layer shown or hidden is a new picture: the preview's key changes with it.
+#[test]
+fn the_preview_key_changes_with_the_layers() {
+    assert_ne!(
+        context().with_layers(0).preview_key(0, 0.0),
+        context().with_layers(1).preview_key(0, 0.0)
+    );
+}
+
 /// The context a plain frame would build.
 fn context() -> Context {
     Context::new(

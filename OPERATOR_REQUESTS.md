@@ -673,7 +673,7 @@ His words: *"I think we need to be able to request network access when installin
 
 **Driven on the Android 14 emulator.** Print: the system dialog listed the network's printers, and its *Save as PDF* wrote a file holding the document's 3D annotation, 487 bytes smaller than the original. Send: against a stand-in printer the phone connected, then sent the whole PDF and showed the job number. No sheet has come out of a real printer.
 
-**Known limit.** Android's preview leaves out the 3D picture. A toast over the dialog says so; the status line adds that the printer's service decides what comes out; G273 asks the engine for a copy with everything that prints burned in.
+**Answered by engine v0.135.0.** The phone and the network printer now send a print-ready copy with everything that prints burned into the page, so the preview shows it and the printer's service has no say; the toast went with its cause. Encrypted documents are refused when their password does not allow printing. Desktop Print got the same rule: annotations flagged for paper, the layers hidden on screen left out, the file's Print usage applied, and the permission honoured.
 
 **Status.** Ships in the next release.
 
@@ -695,7 +695,7 @@ His words: *"If there are 3D measuring tools in pdfcer we need to add support fo
 
 **Status.** Built on the engine's v0.134.1. A ruler glyph on the picture turns it on, with the kind chosen on the options menu's Measure tab: length, perpendicular, angle, radius, comment. The value shows under the pointer before the last pick and below the picture after it; a pick snaps to a corner it lands near. *Keep on this view* writes it to the saved view on show, the first saved view when none is, and those are listed with *Delete* on the tab and drawn in the picture.
 
-Limits, stated so they are not mistaken for done: keeping or deleting rewrites the file's saved views through `EditSession::set_3d_views`, which drops what a `ThreeDSavedView` does not carry, each view's background, section, node states and named 3D path among them. The status line says so, and the verb that would avoid it is asked of the engine as G274. A measurement's own `node1`/`node2` hiding is not applied. The marks are drawn over the picture, so a saved picture does not carry them.
+Limits, stated so they are not mistaken for done: a measurement's own `node1`/`node2` hiding is not applied. The marks are drawn over the picture, so a saved picture does not carry them.
 
 ## O398 — **RELEASED in `v0.5.0-dev.20261106.3`**, driven by `the_3d_viewers_settings_are_saved_only_as_defaults`, `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`, `settings_navigate_by_page` — the 3D viewer's settings: graphics-card switches per part, *Save as default* instead of saving on every change, and all of them on a Settings page
 

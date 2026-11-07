@@ -22,7 +22,9 @@ impl PrintDialog {
     pub(super) fn plan(&mut self, doc: &OpenDoc) -> Planned {
         let page_sizes = page_sizes(doc);
 
-        let spec = self.job_spec(&page_sizes, doc.view.page_index);
+        self.permission = super::permission::Permission::of(doc.session.document());
+        let mut spec = self.job_spec(&page_sizes, doc.view.page_index);
+        spec.max_dpi = self.permission.ceiling(spec.max_dpi);
         self.impose.first_landscape = spec
             .pages
             .first()

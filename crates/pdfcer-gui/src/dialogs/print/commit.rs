@@ -23,7 +23,7 @@ use crate::app::state::OpenDoc;
 use crate::dialogs::print::spooler::{self, Job, PageBitmap, SettingsSource, SpoolReport};
 use crate::text::print as t;
 
-use super::{PrintDialog, US_LETTER_PORTRAIT_PT, autopaper, verdicts};
+use super::{PrintDialog, US_LETTER_PORTRAIT_PT, autopaper, permission, verdicts};
 
 impl PrintDialog {
     /// **What a finished commit owes the operator, and whether the window is
@@ -52,6 +52,9 @@ impl PrintDialog {
         job: &Job,
         page_sizes: &[(f64, f64)],
     ) -> Result<SpoolReport, String> {
+        if let permission::Permission::Forbidden = self.permission {
+            return Err(t::printing_forbidden().to_owned());
+        }
         let mut bitmaps = self.render_sheets(doc, job, page_sizes)?;
         // The orientation page is the FIRST PLANNED page — the one `plan`
         // resolved orientation from. Not `pages[0]`: the sequence may be
@@ -91,7 +94,7 @@ impl PrintDialog {
         // The SAME builder the preview calls. See `render_options` for the
         // choices it encodes and why a second copy of them here would defeat
         // the preview's purpose.
-        let options = render_options(self.scope, &doc.settings);
+        let options = render_options(self.scope, doc);
         let lines_pt = super::lines::paper_pt(self.lines, job.resolution.dpi);
         // The stamped copy when a print-only header or footer is set.
         let copy = self.running.copy();
@@ -280,17 +283,49 @@ fn render_tile(
     })
 }
 
+/// The options of every print render, preview and spool alike: `scope`, paper's
+/// annotation rule (`Print` set, `Hidden` clear, `NoView` ignored), and the layers
+/// hidden on screen with the file's `Print` usage applied over them. The usage
+/// lasts for the print, so it goes on a copy of the hidden set.
 pub(super) fn render_options(
     scope: pdfcer_render::AnnotationScope,
-    settings: &pdfcer_core::settings::Settings,
+    doc: &OpenDoc,
 ) -> pdfcer_render::RenderOptions {
     use crate::app::settings::SettingsExt;
-    settings.render_options().with_annotation_scope(scope)
+    let mut off = doc.hidden_layers();
+    let _usage = pdfcer_core::annot::apply_print_usage(&doc.session.view(), &mut off);
+    let mut options = doc
+        .settings
+        .render_options()
+        .with_annotation_scope(scope)
+        .with_print_intent(true);
+    options.layers = Some(pdfcer_render::LayerVisibility::hiding(off));
+    options
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A layer hidden on screen stays off paper; the file's own usage adds to it
+    /// without changing what the screen hides.
+    #[test]
+    fn a_print_leaves_out_the_layers_hidden_on_screen() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/print-impose.pdf");
+        let document = pdfcer_core::document::Document::load(&path).expect("the fixture loads");
+        let pages = pdfcer_core::page_tree::pages(&document).expect("a page tree");
+        let session = pdfcer_core::edit::EditSession::new(document);
+        let mut doc = OpenDoc::new(path, session, pages);
+        let hidden = pdfcer_core::object::ObjId::new(77, 0);
+        doc.set_hidden_layers(std::iter::once(hidden).collect());
+
+        let options = render_options(pdfcer_render::AnnotationScope::Document, &doc);
+
+        let layers = options.layers.expect("a print always states its layers");
+        assert!(layers.is_hidden(hidden));
+        assert_eq!(doc.hidden_layers().len(), 1);
+    }
 
     /// A spool report with the given page count and settings source.
     fn report(pages: usize, source: SettingsSource) -> SpoolReport {

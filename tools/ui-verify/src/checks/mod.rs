@@ -494,6 +494,8 @@ pub mod print_colour;
 /// Several pages per sheet, and booklets.
 pub mod print_impose;
 pub mod print_presets;
+/// Print obeys paper's annotation flags and the file's Print layer usage.
+pub mod print_preview_rule;
 /// A print-only header or footer reaches the printed copy.
 pub mod print_running;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.

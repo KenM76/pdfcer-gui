@@ -112,6 +112,18 @@ pub fn failed(detail: &str) -> String {
     format!("Nothing was sent to the printer. {detail}")
 }
 
+/// The password that opened the document does not allow printing.
+#[must_use]
+pub const fn printing_forbidden() -> &'static str {
+    "The password that opened this document does not allow printing."
+}
+
+/// The password allows printing at low quality only.
+#[must_use]
+pub fn low_quality_only(dpi: u32) -> String {
+    format!("The password that opened this document allows low-quality printing only, so this prints at {dpi} DPI or less.")
+}
+
 /// **The driver would not report its settings, so the job carried only what
 /// pdfcer sets itself.**
 #[must_use]

@@ -7,8 +7,8 @@
 //! printer, which lays it out. Both exchanges run on a worker, so a slow or
 //! absent printer never stalls the window.
 //!
-//! The document's bytes are taken when the window opens: the saved file, or
-//! the current edits as an incremental save when there are any.
+//! The document's bytes are taken when the window opens: a print-ready copy, so
+//! what comes out does not depend on how the printer treats annotations or layers.
 
 use std::sync::mpsc::{Receiver, channel};
 

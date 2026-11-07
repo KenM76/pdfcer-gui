@@ -19,6 +19,19 @@ impl OpenDoc {
         })
     }
 
+    /// The copy a print service or network printer is handed: everything that
+    /// prints burned into the page, the layers hidden here left out.
+    ///
+    /// # Errors
+    ///
+    /// As [`pdfcer_core::edit::EditSession::to_print_ready_bytes_with_layers`].
+    pub fn print_ready_copy(
+        &self,
+    ) -> Result<pdfcer_core::edit::PrintReadyCopy, pdfcer_core::edit::PrintReadyError> {
+        self.session
+            .to_print_ready_bytes_with_layers(self.settings.free_text_c, &self.hidden_layers())
+    }
+
     /// Replace the operator's optional-content override with `hidden`.
     pub fn set_hidden_layers(&mut self, hidden: BTreeSet<ObjId>) {
         self.layers.hidden = Some(hidden);

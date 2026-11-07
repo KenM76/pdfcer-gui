@@ -45,6 +45,12 @@ pub(super) fn apply(doc: &mut OpenDoc, action: AttachmentAction) {
             default,
             notes,
         } => super::models::set_views(doc, &artwork, &views, default, notes),
+        AttachmentAction::SetViewMeasurements {
+            artwork,
+            view_index,
+            measurements,
+            notes,
+        } => super::models::set_view_measurements(doc, &artwork, view_index, &measurements, notes),
         AttachmentAction::PickModelPoster { artwork } => super::models::pick_poster(doc, &artwork),
         AttachmentAction::SaveModelPicture {
             artwork,

@@ -13,20 +13,6 @@ pub const fn phone_print_refused() -> &'static str {
     "Android did not open its print dialog. Bring pdfcer to the front and print again."
 }
 
-/// The same fact in the two lines Android allows a toast, shown over its dialog.
-#[must_use]
-pub const fn phone_print_preview_brief() -> &'static str {
-    "Preview may omit comments and 3D pictures. The file still holds them."
-}
-
-/// Android's preview draws page content only; the file it prints keeps the rest.
-#[must_use]
-pub const fn phone_print_preview_note() -> &'static str {
-    "Android's print preview can leave out comments and 3D pictures. The file it \
-     prints still holds them; whether they come out is up to the printer's service. \
-     Send to network printer sends the file to a printer that draws it itself."
-}
-
 /// The document could not be prepared for the phone's print service.
 #[must_use]
 pub fn phone_print_failed(reason: &str) -> String {

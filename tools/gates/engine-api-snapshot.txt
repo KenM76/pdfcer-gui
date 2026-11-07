@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: c2dca228d3a667a344e0132a16fdaa3d23f987b0
+# baseline: 2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11399
+# items: 11445
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -863,6 +863,7 @@ pdfcer-core enum pdfcer_core::edit::info_entries::XmpMirror
 pdfcer-core enum pdfcer_core::edit::info_entries::XmpSkip
 pdfcer-core enum pdfcer_core::edit::info_entries::XmpSync
 pdfcer-core enum pdfcer_core::edit::link::LinkTarget
+pdfcer-core enum pdfcer_core::edit::print_ready::PrintReadyError
 pdfcer-core enum pdfcer_core::edit::xfa_materialize::XfaSignatures
 pdfcer-core enum pdfcer_core::editable::EditableError
 pdfcer-core enum pdfcer_core::editable::ExportBase
@@ -2310,6 +2311,24 @@ pdfcer-core field pdfcer_core::edit::print_decoration::PrintDecoration::marks
 pdfcer-core field pdfcer_core::edit::print_decoration::PrintDecoration::running_text
 pdfcer-core field pdfcer_core::edit::print_decoration::PrintDecorationReport::marks
 pdfcer-core field pdfcer_core::edit::print_decoration::PrintDecorationReport::running_text
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyCopy::bytes
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyCopy::report
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyLoss::page_index
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyLoss::reason
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyLoss::subtype
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::appearances_drawn
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::burned
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::decrypted
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::disclosures
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::dynamic_xfa
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::fields_generated
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::layers_changed_for_print
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::layers_with_print_setting
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::lost
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::not_printing
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::printed_not_on_screen
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::redaction_marks
+pdfcer-core field pdfcer_core::edit::print_ready::PrintReadyReport::signatures_dropped
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::action_targets_orphaned
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::disclosures
 pdfcer-core field pdfcer_core::edit::regroup::WidgetRegroup::on_state
@@ -4280,6 +4299,15 @@ pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::fit
 pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::name
 pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::orthographic
 pdfcer-core field pdfcer_core::threed::view_aim::SavedViewAim::up
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::annot_id
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::disclosures
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::measurements_after
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::measurements_before
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::shared_stream
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::stream_id
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::unread_entries_kept
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::view_index
+pdfcer-core field pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome::written
 pdfcer-core field pdfcer_core::threed::view_list::SavedViews::default
 pdfcer-core field pdfcer_core::threed::view_list::SavedViews::views
 pdfcer-core field pdfcer_core::threed::view_write::ThreeDViewsOutcome::annot_id
@@ -4594,6 +4622,7 @@ pdfcer-core field pdfcer_core::xfa::template::XfaNode::attributes
 pdfcer-core field pdfcer_core::xfa::template::XfaNode::children
 pdfcer-core field pdfcer_core::xfa::template::XfaNode::tag
 pdfcer-core field pdfcer_core::xfa::template::XfaNode::text
+pdfcer-core fn pdfcer_core::annot::apply_print_usage
 pdfcer-core fn pdfcer_core::annot::apply_view_usage
 pdfcer-core fn pdfcer_core::annot::need_appearances
 pdfcer-core fn pdfcer_core::annot::oc_is_hidden
@@ -4665,6 +4694,7 @@ pdfcer-core fn pdfcer_core::edit::deskew::detect_image_skew
 pdfcer-core fn pdfcer_core::edit::deskew::page_scan_image
 pdfcer-core fn pdfcer_core::edit::duplicate_choice_export
 pdfcer-core fn pdfcer_core::edit::encode_text_string
+pdfcer-core fn pdfcer_core::edit::print_ready::check_print_permission
 pdfcer-core fn pdfcer_core::edit::sort_choice_options
 pdfcer-core fn pdfcer_core::editable::export
 pdfcer-core fn pdfcer_core::editable::import
@@ -4986,6 +5016,7 @@ pdfcer-core method pdfcer_core::annot::Annotation::effective_reply_type
 pdfcer-core method pdfcer_core::annot::Annotation::is_group_subordinate
 pdfcer-core method pdfcer_core::annot::Annotation::is_widget
 pdfcer-core method pdfcer_core::annot::Annotation::subtype_label
+pdfcer-core method pdfcer_core::annot::prints::Annotation::prints
 pdfcer-core method pdfcer_core::annot_author::AttachmentIcon::from_name
 pdfcer-core method pdfcer_core::annot_author::AttachmentIcon::from_name_lossless
 pdfcer-core method pdfcer_core::annot_author::AttachmentIcon::name
@@ -5672,6 +5703,8 @@ pdfcer-core method pdfcer_core::edit::print_decoration::EditSession::decorate_fo
 pdfcer-core method pdfcer_core::edit::print_decoration::EditSession::decorated_for_print
 pdfcer-core method pdfcer_core::edit::print_decoration::EditSession::fork_for_print
 pdfcer-core method pdfcer_core::edit::print_decoration::PrintDecoration::is_empty
+pdfcer-core method pdfcer_core::edit::print_ready::EditSession::to_print_ready_bytes
+pdfcer-core method pdfcer_core::edit::print_ready::EditSession::to_print_ready_bytes_with_layers
 pdfcer-core method pdfcer_core::edit::printer_marks::EditSession::add_printer_marks
 pdfcer-core method pdfcer_core::edit::rc4_append::EditSession::encryption_refusal
 pdfcer-core method pdfcer_core::edit::rc4_append::EditSession::encryption_refusal_cause
@@ -5694,6 +5727,7 @@ pdfcer-core method pdfcer_core::edit::text_form_reshape::EditSession::text_objec
 pdfcer-core method pdfcer_core::edit::threed_opening::EditSession::set_3d_opening_view
 pdfcer-core method pdfcer_core::edit::threed_poster::EditSession::add_3d_annotation
 pdfcer-core method pdfcer_core::edit::threed_poster::EditSession::set_3d_poster
+pdfcer-core method pdfcer_core::edit::threed_view_measures::EditSession::set_3d_view_measurements
 pdfcer-core method pdfcer_core::edit::threed_views::EditSession::set_3d_views
 pdfcer-core method pdfcer_core::edit::undo_fold::EditSession::coalesce_last_same
 pdfcer-core method pdfcer_core::edit::upscale_image::EditSession::upscale_image
@@ -6893,6 +6927,9 @@ pdfcer-core struct pdfcer_core::edit::link::LinkTargetChange
 pdfcer-core struct pdfcer_core::edit::markup_respan::TextMarkupRespan
 pdfcer-core struct pdfcer_core::edit::print_decoration::PrintDecoration
 pdfcer-core struct pdfcer_core::edit::print_decoration::PrintDecorationReport
+pdfcer-core struct pdfcer_core::edit::print_ready::PrintReadyCopy
+pdfcer-core struct pdfcer_core::edit::print_ready::PrintReadyLoss
+pdfcer-core struct pdfcer_core::edit::print_ready::PrintReadyReport
 pdfcer-core struct pdfcer_core::edit::regroup::WidgetRegroup
 pdfcer-core struct pdfcer_core::edit::svg::PlacedSvg
 pdfcer-core struct pdfcer_core::edit::text_form_reshape::FormTextOutcome
@@ -7256,6 +7293,7 @@ pdfcer-core struct pdfcer_core::threed::poster::ThreeDPosterOutcome
 pdfcer-core struct pdfcer_core::threed::render_mode::ThreeDRenderMode
 pdfcer-core struct pdfcer_core::threed::view::ThreeDSavedView
 pdfcer-core struct pdfcer_core::threed::view_aim::SavedViewAim
+pdfcer-core struct pdfcer_core::threed::view_carry::ThreeDViewMeasuresOutcome
 pdfcer-core struct pdfcer_core::threed::view_list::SavedViews
 pdfcer-core struct pdfcer_core::threed::view_write::ThreeDViewsOutcome
 pdfcer-core struct pdfcer_core::vector::centerline::CenterlineCandidate
@@ -8144,6 +8182,10 @@ pdfcer-core variant pdfcer_core::edit::info_entries::XmpSync::Updated
 pdfcer-core variant pdfcer_core::edit::link::LinkTarget::Named
 pdfcer-core variant pdfcer_core::edit::link::LinkTarget::Page
 pdfcer-core variant pdfcer_core::edit::link::LinkTarget::Uri
+pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::Edit
+pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::LowQualityPrintingOnly
+pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::PrintingForbidden
+pdfcer-core variant pdfcer_core::edit::print_ready::PrintReadyError::Write
 pdfcer-core variant pdfcer_core::edit::xfa_materialize::XfaSignatures::Refuse
 pdfcer-core variant pdfcer_core::edit::xfa_materialize::XfaSignatures::Remove
 pdfcer-core variant pdfcer_core::editable::EditableError::Encrypted
@@ -9400,6 +9442,7 @@ pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::NotA3dAnnotation
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::NotEmbeddable
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::TooManyViews
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::Unrecognised
+pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::ViewIndexOutOfRange
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::ViewInvalid
 pdfcer-core variant pdfcer_core::threed::ThreeDEmbedError::ViewNameEmpty
 pdfcer-core variant pdfcer_core::threed::ThreeDError::Decode
@@ -10563,6 +10606,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::omit_annotations
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderOptions::page_blend_space_source
+pdfcer-render field pdfcer_render::font::RenderOptions::print_intent
 pdfcer-render field pdfcer_render::font::RenderOptions::separation_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::spot_colorant_device_model
 pdfcer-render field pdfcer_render::font::RenderOptions::stroke_display
@@ -10585,6 +10629,7 @@ pdfcer-render field pdfcer_render::font::RenderPolicy::missing_as
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderPolicy::page_blend_space_source
+pdfcer-render field pdfcer_render::font::RenderPolicy::print_intent
 pdfcer-render field pdfcer_render::font::RenderPolicy::spot_colorant_device_model
 pdfcer-render field pdfcer_render::font::RenderPolicy::subpixel_culling
 pdfcer-render field pdfcer_render::font::RenderPolicy::view_magnification
@@ -11104,6 +11149,7 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_omit_annotations
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_zero_tint_scope
 pdfcer-render method pdfcer_render::font::RenderOptions::with_page_blend_space_source
+pdfcer-render method pdfcer_render::font::RenderOptions::with_print_intent
 pdfcer-render method pdfcer_render::font::RenderOptions::with_separation_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_spot_colorant_device_model
 pdfcer-render method pdfcer_render::font::RenderOptions::with_view_magnification

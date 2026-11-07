@@ -203,11 +203,11 @@ three, comment one (`measure.rs`).
   has a word; otherwise the units are empty and a sentence says the value is in
   the model's own units.
 - **Keeping** appends to the saved view on show, or the first saved view, through
-  `SetModelViews`, an ordinary undoable edit. With no saved view one is made from
-  the camera. `EditSession::set_3d_views` replaces all views, so every view's
-  measurements are carried across (`carry_measurements`) and the status line carries
-  `REWRITES_VIEWS`: what `ThreeDSavedView` does not hold is lost from the file, and
-  G274 asks the engine for the narrower verb.
+  `SetViewMeasurements`, one undo entry from `EditSession::set_3d_view_measurements`:
+  that view's list changes and nothing else in the file does, so a background,
+  section or part visibility survives. Deleting takes the same route. With no saved
+  view one is made from the camera through `SetModelViews`; *Save views* still
+  replaces every view and carries their measurements across (`carry_measurements`).
 - **Reading back.** `sync_saved` re-reads the views each time `OpenDoc::edit_epoch`
   moves, which also covers undo and redo. Without it the viewer's own write looks
   like the file having changed, and the next keep is refused.

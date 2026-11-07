@@ -30,10 +30,9 @@ impl DialogsState {
         self.print = Some(print::PrintDialog::open(doc, remembered));
     }
 
-    /// **Open Send to network printer** on the document in `status`: its
-    /// current edits as an incremental save, or the reason there are none.
+    /// **Open Send to network printer** on the document in `status`: a print-ready
+    /// copy of it, or the reason there is none.
     pub(crate) fn open_netprint(&mut self, status: &Status) {
-        use crate::app::settings::SettingsExt;
         let Status::Open(doc) = status else {
             return;
         };
@@ -41,9 +40,13 @@ impl DialogsState {
             return;
         }
         let bytes = doc
-            .session
-            .to_incremental_bytes(&doc.settings.save_options())
-            .map(|(bytes, _report)| bytes)
+            .print_ready_copy()
+            .map(|copy| {
+                if !copy.report.disclosures.is_empty() {
+                    crate::app::actions::record_notes(doc.edit_epoch, copy.report.disclosures);
+                }
+                copy.bytes
+            })
             .map_err(|e| e.to_string());
         let name = doc
             .path

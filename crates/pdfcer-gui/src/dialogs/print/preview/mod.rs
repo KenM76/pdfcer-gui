@@ -887,7 +887,7 @@ fn texture_for(
     // The SAME builder the spooler calls. See `super::render_options` for the
     // choices it encodes and why a second copy of them here would defeat the
     // preview's entire purpose.
-    let mut options = super::commit::render_options(dialog.scope, &inputs.doc.settings);
+    let mut options = super::commit::render_options(dialog.scope, inputs.doc);
     key.apply_lines(&mut options, f64::from(raster_scale(size)));
     // `session.view()`, NOT `session.document()` — the view composes the
     // overlay and the staging buffer, so unsaved edits are what the operator
@@ -900,8 +900,20 @@ fn texture_for(
         return None;
     };
     // `stamp=` is what rendered, not what the key asked for; 0 is the document.
-    // ui-text-exempt: diagnostic trace
-    crate::diag::trace(|| format!("print-preview-render page={page} stamp={}", source.stamp));
+    // `ink=` and `of=` are the raster's non-white pixels and its pixel count.
+    crate::diag::trace(|| {
+        let data = rendered.pixmap.data();
+        let ink = data
+            .chunks_exact(4)
+            .filter(|p| p[..3].iter().any(|c| *c < 250))
+            .count();
+        // ui-text-exempt: diagnostic trace
+        format!(
+            "print-preview-render page={page} stamp={} ink={ink} of={}",
+            source.stamp,
+            data.len() / 4
+        )
+    });
     super::colour::recolour(rendered.pixmap.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
     // The ink mask is built HERE, from the same pixmap, on the same miss —
     // operator request O113. Once per raster and never per frame: it is a pure

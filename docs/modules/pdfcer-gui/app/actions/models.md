@@ -109,6 +109,15 @@ annotation.
 
 Driven by `ui-verify` check `the_3d_viewer_saves_its_views_into_the_file`.
 
+## `set_view_measurements(doc, artwork, view_index, measurements, notes)` — one view's list
+
+The viewer's keep and delete. Refused as `set_views` is when the row moved. The vector
+funnel, label `set-3d-view-measures`, calls `EditSession::set_3d_view_measurements`:
+one undo entry, or none when nothing changed. Trace `model-view-measures-set page=
+view= before= after= unread= written=`, and the engine's disclosures join the notes.
+
+Driven by `ui-verify` check `the_3d_viewer_measures_from_points_on_the_model`.
+
 ## `save_picture(doc, artwork, png)` — the viewer's Save picture…
 
 Asks `files::pick_picture_target` (PNG filter; `PDFCER_DIAG_PICTURE_SAVE_PATH`

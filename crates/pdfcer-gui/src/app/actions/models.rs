@@ -2,7 +2,8 @@
 
 use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::threed::{
-    ThreeDArtwork, ThreeDFormat, ThreeDSavedView, extract_3d, list_3d_with_notes,
+    ThreeDArtwork, ThreeDFormat, ThreeDMeasurement, ThreeDSavedView, extract_3d,
+    list_3d_with_notes,
 };
 
 use crate::app::state::OpenDoc;
@@ -514,6 +515,46 @@ pub(super) fn set_poster(
         session
             .set_3d_poster(page, annot, &image)
             .map(|_| vec![t::poster_set(page)])
+    });
+}
+
+/// Give saved view `view_index` of `artwork` these measurements: one undo entry
+/// that touches nothing else. Refused, with a sentence, when the model moved
+/// since the viewer opened.
+pub(super) fn set_view_measurements(
+    doc: &mut OpenDoc,
+    artwork: &ThreeDArtwork,
+    view_index: usize,
+    measurements: &[ThreeDMeasurement],
+    said: Vec<String>,
+) {
+    let page = artwork.page_index;
+    let Some(annot) = artwork.annot_id.filter(|_| still_listed(doc, artwork)) else {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("model-views-declined page={page} reason=moved")
+        });
+        super::record_note(doc.edit_epoch, t::views_not_set().to_owned());
+        return;
+    };
+    super::apply::vector_edit(doc, "set-3d-view-measures", page, 1, |session| {
+        session
+            .set_3d_view_measurements(page, annot, view_index, measurements)
+            .map(|outcome| {
+                crate::diag::trace(|| {
+                    // ui-text-exempt: diagnostic trace, never displayed
+                    format!(
+                        "model-view-measures-set page={page} view={view_index} before={} after={} unread={} written={}",
+                        outcome.measurements_before,
+                        outcome.measurements_after,
+                        outcome.unread_entries_kept,
+                        u8::from(outcome.written.is_some())
+                    )
+                });
+                let mut notes = said;
+                notes.extend(outcome.disclosures);
+                notes
+            })
     });
 }
 

@@ -914,17 +914,13 @@ The answers to G243, G244, G245 part 2 and G249–G251.
 - **XFA data merge** — `pdfcer_core::xfa::merge` (`merge_data`, `MergeOptions`, `MergedForm`, `MergeWarningKind`) and the paint choices `ThreeDStroke`, `CheckCaption`, `PaintNoteKind::StrokeApproximated`. **Wired**: Form preview (its row under shipped). Normal binding by name and repeated instances from data are not in the engine; filed as **G248**, which is why a LiveCycle form that binds by name still shows no values.
 - **A file's saved 3D views** — `pdfcer_core::threed::view_list` (`saved_3d_views`, `SavedViews`). **Wired**: the 3D viewer's *Saved views* menu, every `/VA` view with the default marked; choosing one looks from it. Driven by `the_3d_viewer_opens_on_the_files_view`.
 
-## Open: a print-ready copy
+## Engine arrivals at v0.135.0 — not verdict rows
 
-- **G273** — no call gives a copy of a document with everything that prints burned into page content. Android's print preview draws no annotation, and what its printer service draws is outside this shell, so a 3D picture may not come out. `EditSession::flatten_annotations` refuses Media and encrypted documents and burns annotations set not to print, so it cannot compose one. The Android print command discloses the limit meanwhile.
-
-## Open: a sun through a thin ceiling
-
-- **G275** — at the default shadow map size, `LightView::normal_offset` and `LightView::bias` are larger than a 12.7 mm ceiling in a 25 m model, so its room side is unblocked, and `abs(dot(n, l))` then gives it the sun at full strength (O402). No workaround here.
-
-## Open: one saved view's measurements
-
-- **G274** — no verb writes one saved view's `/MA` and leaves the rest of the dictionary alone. `EditSession::set_3d_views` replaces every view, and its `view_dict` writes only what `ThreeDSavedView` carries, so keeping or deleting a measurement drops each view's `/BG`, `/SA`, `/NA`, `/U3DPath` and `/IN`. The shell uses it as it stands and says so off the canvas (`REWRITES_VIEWS`): a boundary finding, no workaround.
+- **A print-ready copy (G273)** — `pdfcer_core::edit::print_ready` (`to_print_ready_bytes_with_layers`, `PrintReadyCopy`, `PrintReadyError`, `check_print_permission`). **Wired**: File ▸ Print on Android and Send to network printer send this copy; the toast that said Android's preview may omit comments went with its cause. Desktop Print renders the pages itself, so it takes the permission answer and not the copy.
+- **Paper's rule for a render** — `RenderOptions::print_intent`, `RenderPolicy::print_intent`, `with_print_intent`, and `pdfcer_core::annot::prints`. **Wired**: every desktop print render, preview and spool alike, with `pdfcer_core::annot::apply_print_usage` on a copy of the hidden layers.
+- **One view's measurements (G274)** — `pdfcer_core::edit::threed_view_measures` (`set_3d_view_measurements`, `ThreeDViewMeasuresOutcome`). **Wired**: the 3D viewer's keep and delete. A view index the file no longer holds is refused as `pdfcer_core::threed::ThreeDEmbedError::ViewIndexOutOfRange`, which reaches the status line through the edit funnel's error sentence; nothing here matches on it.
+- **A sun through a thin ceiling (G275)** — the renderers' lighting, no new call. O402 owns the drive.
+- **A saved view carried by the print-ready copy** — `pdfcer_core::threed::view_carry`. Inside the engine's verbs; no GUI surface.
 
 ## Engine arrivals at v0.107.0 — not verdict rows
 

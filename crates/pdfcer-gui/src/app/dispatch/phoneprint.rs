@@ -1,12 +1,11 @@
-//! File ▸ Print on a phone: the document as it stands, edits included, handed
-//! to Android's print service, whose dialog chooses the printer, paper and
+//! File ▸ Print on a phone: a print-ready copy of the document as it stands,
+//! handed to Android's print service, whose dialog chooses the printer, paper and
 //! pages. No network is touched until the operator picks a printer there.
 
 use pdfcer_gui_base::text::print as s;
 
-use crate::app::actions::record_note;
-use crate::app::settings::SettingsExt;
-use crate::app::state::{OpenDoc, Status};
+use crate::app::actions::{record_note, record_notes};
+use crate::app::state::Status;
 
 /// The whole of `file.print` on Android.
 pub(super) fn print(status: &Status) {
@@ -17,39 +16,19 @@ pub(super) fn print(status: &Status) {
         || "document.pdf".to_owned(),
         |n| n.to_string_lossy().into_owned(),
     );
-    match doc
-        .session
-        .to_incremental_bytes(&doc.settings.save_options())
-    {
-        Ok((bytes, _report)) => {
+    match doc.print_ready_copy() {
+        Ok(copy) => {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed.
-                format!("phone-print bytes={}", bytes.len())
+                format!("phone-print bytes={}", copy.bytes.len())
             });
-            let omits = preview_may_omit(doc);
-            let brief = if omits {
-                s::phone_print_preview_brief()
-            } else {
-                ""
-            };
-            crate::filedialog::print_later(bytes, name, brief);
-            if omits {
-                record_note(doc.edit_epoch, s::phone_print_preview_note().to_owned());
+            crate::filedialog::print_later(copy.bytes, name);
+            if !copy.report.disclosures.is_empty() {
+                record_notes(doc.edit_epoch, copy.report.disclosures);
             }
         }
         Err(e) => record_note(doc.edit_epoch, s::phone_print_failed(&e.to_string())),
     }
-}
-
-/// Whether a page carries an annotation Android's preview may leave out. A link
-/// draws nothing, so it does not count.
-fn preview_may_omit(doc: &OpenDoc) -> bool {
-    let graph = doc.session.graph();
-    doc.pages.iter().any(|page| {
-        pdfcer_core::annot::page_annotations(&graph, page.id)
-            .iter()
-            .any(|a| a.subtype.as_slice() != b"Link")
-    })
 }
 
 /// Puts a print that showed no dialog on the status line. Called once per frame.

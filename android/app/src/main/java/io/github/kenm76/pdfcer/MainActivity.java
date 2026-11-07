@@ -69,13 +69,11 @@ public class MainActivity extends GameActivity {
      * Shows the system print dialog for the local PDF {@code path}, titled
      * {@code name}, and returns once it is up. The dialog owns the file from
      * then on and deletes it when it closes; on false the caller still owns it.
-     * A non-empty {@code note} shows as a toast, because the dialog covers the
-     * app's own status line.
      *
      * @return true when the dialog opened; false when Android refused it, as it
      *     does while this activity is not in front
      */
-    public boolean printDocument(String path, String name, String note) {
+    public boolean printDocument(String path, String name) {
         SynchronousQueue<Boolean> shown = new SynchronousQueue<>();
         runOnUiThread(() -> {
             boolean ok = false;
@@ -83,9 +81,6 @@ public class MainActivity extends GameActivity {
                 PrintManager printing = getSystemService(PrintManager.class);
                 printing.print(name, new FilePrintAdapter(this, new File(path), name), null);
                 ok = true;
-                if (!note.isEmpty()) {
-                    android.widget.Toast.makeText(this, note, android.widget.Toast.LENGTH_LONG).show();
-                }
             } catch (RuntimeException e) {
                 android.util.Log.w("pdfcer", "the print service refused", e);
             }

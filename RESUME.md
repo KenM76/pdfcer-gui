@@ -142,7 +142,7 @@ Measured:
 
 **Trap: rustc crashes under full parallelism on this machine.** It crashed four times today, with STATUS_HEAP_CORRUPTION and ACCESS_VIOLATION. Build, package and sweep with `CARGO_BUILD_JOBS=6`. After a crash, delete `target/release/incremental`; see `D:/dev/rag/rust/` for the heap-corruption entry.
 
-Open to the engine: G273, a print-ready copy for Android's print service; G274, a write of one saved view's measurements that leaves the rest of its dictionary alone; G275, an aimed sun lighting through a thin ceiling (O402).
+Open to the engine: nothing from this shell's own asks at v0.135.0.
 
 **Trap: a phone's status notes sit in a sideways scroller,** so most of a note is out of sight. The 3D measure tool's value is not affected: it shows in the viewer's own notes and in a card at full screen. Owed: a status line a phone can read.
 

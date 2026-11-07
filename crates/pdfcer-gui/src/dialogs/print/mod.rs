@@ -103,6 +103,8 @@ mod colour;
 mod lines;
 /// One document's job, planned from the window's settings.
 mod plan;
+/// What the document's password allows a print.
+mod permission;
 /// The document's own `/ViewerPreferences` print settings.
 mod presets;
 /// A header or footer on the printed copy only.
@@ -250,6 +252,8 @@ pub struct PrintDialog {
     /// Rendering resolution ceiling, in DPI. A memory bound, editable because
     /// the disclosure is worth more as a control than as a warning.
     max_dpi: u32,
+    /// What the password that opened the document allows; set by each plan.
+    permission: permission::Permission,
     /// Driver-level settings: orientation, duplex, tray choice, paper.
     ///
     /// ⚠ [`DeviceSettings::paper`] here is the operator's **choice**, which
@@ -535,6 +539,7 @@ impl PrintDialog {
             custom_percent: remembered.custom_percent,
             scope: remembered.scope,
             max_dpi: remembered.max_dpi,
+            permission: permission::Permission::default(),
             device: DeviceSettings {
                 orientation: remembered.orientation,
                 // Restored even onto a device that cannot duplex. The control
@@ -783,6 +788,7 @@ impl PrintDialog {
                 lines::paper_pt(self.lines, job.resolution.dpi),
             )
             .with_stamp(stamp)
+            .with_layers(doc.layers.generation)
         });
 
         //

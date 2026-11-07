@@ -72,6 +72,9 @@ pub(super) struct Measure {
     pub said: Option<Said>,
     /// A keep was queued this frame.
     pub keeping: bool,
+    /// One saved view's new list, waiting for the frame's actions: its index,
+    /// the list, and what the status line says.
+    pub writing: Option<(usize, Vec<ThreeDMeasurement>, Vec<String>)>,
     /// The document's edit epoch the saved views were last read at.
     pub epoch: Option<u64>,
     /// The number of measurements painted, as last traced.
