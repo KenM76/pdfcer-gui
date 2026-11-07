@@ -19,6 +19,8 @@ use crate::trace::Trace;
 pub(super) const MODE: &str = "edit";
 /// The contextual Format tab's strip region.
 pub(super) const FORMAT_TAB: &str = "ribbon.tab.format";
+/// A window wide enough for every tab in Edit mode.
+const ROOMY_WINDOW: &str = "-4200,-4200,1500,900";
 /// The Font group's captioned band.
 pub(super) const FONT_GROUP: &str = "ribbon.group.format.font";
 /// The Bold control, which is the one this check presses.
@@ -232,6 +234,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("font-group.trace.txt"));
     spec.pdf = Some(pdf.clone());
+    // A contextual tab arriving into a full strip goes into its menu, by design,
+    // and this check asks about the tab, so the strip is given room for all of them.
+    if let Some(viewport) = ctx.profile.viewport_env {
+        spec.env.push((viewport.to_owned(), ROOMY_WINDOW.to_owned()));
+    }
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),
         ctx.profile.diag_env.1.to_owned(),

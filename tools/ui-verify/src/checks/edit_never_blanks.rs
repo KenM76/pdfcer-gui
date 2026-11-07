@@ -35,6 +35,9 @@ const THUMB: &str = "pages-thumbnail";
 const TILES: &str = "pages-tiles";
 const BLANK: &str = "canvas-pages-blank";
 const SPAWN: &str = "render-spawn";
+const DONE: &str = "render-async-done";
+/// How long an edit waited for the engine to notice a render's cancel.
+const CANCEL_WAIT: &str = "edit-cancel-wait";
 const LONG: &str = "frame-long";
 const HIT: &str = "hit-test";
 const BUILT: &str = "page-objects-built";
@@ -178,6 +181,10 @@ fn edit_and_judge(
         filled.as_millis(),
         thumbnail_costs(&session.trace()?, 0)
     ));
+    // Render-ahead may still be filling pages: an edit cancels that render, so
+    // its page is ordered again afterwards, which is not a redraw of a finished
+    // picture and would read as one.
+    wait_until(session, FILL_TIMEOUT, renders_idle)?;
     let pdf = repo_fixture(FIXTURE, METHOD)?;
     let page = crate::fixture::page_geometry(&pdf)
         .ok_or_else(|| Error::new("could not read a page size from the fixture."))?;
@@ -331,7 +338,17 @@ fn gui_held(trace: &Trace, mark: usize) -> Option<(&crate::trace::TraceLine, u64
 
 /// Whether `line` reports time spent inside the engine.
 fn is_engine(line: &crate::trace::TraceLine) -> bool {
-    [HIT, BUILT, "move-objects", "add-markup"].contains(&line.event.as_str())
+    [HIT, BUILT, CANCEL_WAIT, "move-objects", "add-markup"].contains(&line.event.as_str())
+}
+
+/// Whether the newest render ordered has finished.
+fn renders_idle(trace: &Trace) -> bool {
+    let Some(ordered) = trace.last(SPAWN).and_then(|l| l.get_usize("gen")) else {
+        return false;
+    };
+    trace
+        .events(DONE)
+        .any(|l| l.get_usize("gen") == Some(ordered))
 }
 
 /// The edit's own engine time: its verb, and the page model rebuilt after it.

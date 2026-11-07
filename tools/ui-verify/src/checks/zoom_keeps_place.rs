@@ -139,6 +139,10 @@ pub(crate) fn held(session: &Session, canvas: crate::geom::LRect) -> Result<Opti
 /// How many frames to wait between two settling reads. See [`settled`].
 const SETTLE_STEP: u32 = 3;
 
+/// How far to knock the view off centre. Small enough that the centre stays on the
+/// page however narrow the docks leave the fitted page.
+const PAN_NOTCHES: i32 = -2;
+
 /// How many settling reads before giving up. See [`settled`].
 const SETTLE_ROUNDS: usize = 24;
 
@@ -242,8 +246,23 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // middle drag, and a primary drag pans only under the hand tool. The wheel
     // is unconditional and moves the view off the centred position, which is
     // all this check needs in order to be capable of failing.
-    driver.scroll_at(frame.declared_at(canvas, PAN_AT.0, PAN_AT.1), -4)?;
+    driver.scroll_at(frame.declared_at(canvas, PAN_AT.0, PAN_AT.1), PAN_NOTCHES)?;
     session.settle(20);
+    let knocked = session.trace()?;
+    let page_on_screen = knocked.events(CANVAS_EVENT).last().and_then(|l| l.get_rect("rect"));
+    let middle = (
+        (canvas.min.x + canvas.max.x) / 2.0,
+        (canvas.min.y + canvas.max.y) / 2.0,
+    );
+    if !page_on_screen.is_some_and(|r| {
+        (r.min.x..r.max.x).contains(&middle.0) && (r.min.y..r.max.y).contains(&middle.1)
+    }) {
+        return Err(Error::new(format!(
+            "the knock left the canvas centre off the page ({page_on_screen:?}, centre \
+             {middle:?}), where the page-in-view limit rightly moves the view at high \
+             magnification, so this check would measure that limit and not the zoom."
+        )));
+    }
 
     let Some(mut prev) = settled(&session, canvas)? else {
         return Err(Error::new(

@@ -413,12 +413,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 5. picking a colour and closing reaches the document ---------------
     //
-    // Aimed at the LOWER part of the picker, which is where
-    // `color_picker_hsva_2d` puts its saturation/value square — the largest
-    // target in the popup and the one whose whole area changes the colour. The
-    // upper part carries the preview button and the hue strip; a click on the
-    // preview would open a nested popup and change nothing.
-    let picker_click = session.frame()?.declared_at(picker, 0.35, 0.80);
+    // The fixture's text is black in grey, so the picker opens on its grey tab:
+    // the space tabs, then the slider, then an inert chip. Aimed at the slider.
+    let picker_click = session.frame()?.declared_at(picker, 0.35, 0.45);
     driver.click_at(picker_click)?;
     session.settle(16);
     // CLOSE the picker, because THE CLOSE IS THE COMMIT. The widget

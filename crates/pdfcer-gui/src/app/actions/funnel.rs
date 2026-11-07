@@ -103,7 +103,14 @@ fn vector_edit_scoped<E: std::fmt::Display + crate::app::unlock::Refusal>(
     scope: EditScope,
     edit: impl FnOnce(&mut EditSession) -> Result<Vec<String>, E>,
 ) {
+    // An edit needs the session to itself, so a render in flight holds this frame
+    // until the engine notices the cancel.
+    let waiting = std::time::Instant::now();
     doc.render_worker.cancel_and_wait();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("edit-cancel-wait ms={}", waiting.elapsed().as_millis())
+    });
     wait_for_sole_owner(&doc.session);
     let Some(session) = Arc::get_mut(&mut doc.session) else {
         crate::diag::trace(|| {

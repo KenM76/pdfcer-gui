@@ -193,3 +193,6 @@
 - [A leftover loop ran the harness live](feedback_loop_tail_ran_harness.md) — --no-input AND --check.
 - [A sweep failure that passes alone](feedback_passes_alone_trace.md) — A sweep-only failure that passes alone still needs its trace read: name the mechanism before calling
 - [A replace-all verb drops keys](feedback_replace_all_verb.md) — A write verb that replaces a list drops every key its Rust type doesn't carry; disclose and file.
+- [A control past the window's edge](feedback_read_layout_before_bug.md) — may just be below a scrolling fold; read the layout before saying bug.
+- [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice on 2026-11-06, mixed RAM kits; flaky compiles may be hardware.
+- [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it, drive what slid ahead.
