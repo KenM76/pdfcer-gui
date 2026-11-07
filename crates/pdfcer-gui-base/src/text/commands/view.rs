@@ -37,7 +37,7 @@ use super::CommandText;
 #[must_use]
 pub const fn view_page_single() -> CommandText {
     CommandText::new(
-        "Single page",
+        "Single",
         "Show one page at a time. This is pdfcer's default, because paging one drawing sheet at \
          a time is the right model for reading a sheet set.",
     )
@@ -47,7 +47,7 @@ pub const fn view_page_single() -> CommandText {
 #[must_use]
 pub const fn view_page_continuous() -> CommandText {
     CommandText::new(
-        "Continuous",
+        "Scroll",
         "Scroll through every page in one run, for a document you read rather than a sheet set \
          you page through. pdfcer remembers this choice for this document, so another file keeps \
          its own.",
@@ -68,7 +68,7 @@ pub const fn view_page_facing() -> CommandText {
 #[must_use]
 pub const fn view_page_facing_continuous() -> CommandText {
     CommandText::new(
-        "Facing continuous",
+        "Facing scroll",
         "Scroll through every spread in one run — facing pages, without stopping at each one.",
     )
 }
@@ -555,7 +555,10 @@ pub const fn view_read_mode() -> CommandText {
 /// `view.fullscreen`
 #[must_use]
 pub const fn view_fullscreen() -> CommandText {
-    CommandText::new("Full screen", "Fill the whole display with pdfcer (F11).")
+    CommandText::new(
+        "Full screen",
+        "Show only the page, on the whole display. Press F11 or Esc to leave.",
+    )
 }
 
 /// `view.next_document`

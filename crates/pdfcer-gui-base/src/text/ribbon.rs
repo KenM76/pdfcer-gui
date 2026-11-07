@@ -83,6 +83,13 @@ pub fn tab_format() -> &'static str {
     "Format"
 }
 
+/// The same tab while it offers no formatting: what the selection can do is copy,
+/// show its properties or delete.
+#[must_use]
+pub fn tab_selection() -> &'static str {
+    "Selection"
+}
+
 // ---------------------------------------------------------------------------
 // TAB QUESTIONS
 //
@@ -192,6 +199,12 @@ pub fn group_file_document() -> &'static str {
     "Document"
 }
 
+/// What the Document group holds, said on its button when it collapses.
+#[must_use]
+pub fn group_file_document_summary() -> &'static str {
+    "Properties, Fonts"
+}
+
 /// File ▸ Recognise — reading words out of a page image.
 #[must_use]
 pub fn group_file_recognise() -> &'static str {
@@ -202,6 +215,18 @@ pub fn group_file_recognise() -> &'static str {
 #[must_use]
 pub fn group_file_pdfcer() -> &'static str {
     "pdfcer"
+}
+
+/// What the Window group is reached for, said on its button when it collapses.
+#[must_use]
+pub fn group_view_window_summary() -> &'static str {
+    "Read mode, Full screen"
+}
+
+/// What the pdfcer group holds, said on its button when it collapses.
+#[must_use]
+pub fn group_file_pdfcer_summary() -> &'static str {
+    "Settings, Shortcuts, About"
 }
 
 // ---------------------------------------------------------------------------
@@ -597,6 +622,7 @@ mod tests {
             tab_measure(),
             tab_tools(),
             tab_format(),
+            tab_selection(),
         ];
         let mut sorted = labels;
         sorted.sort_unstable();

@@ -4,10 +4,15 @@ One compact box **floating over the top-right of the page**, which is
 where Acrobat Reader, Chrome's PDF viewer and Edge's all put theirs:
 
 ```text
-                         ┌────────────────────────────────────────────┐
-                         │ Find [ total       ] ⏴ ⏵ 3 of 47  Options ⏷  × │
-                         └────────────────────────────────────────────┘
+                  ┌───────────────────────────────────────────────────┐
+                  │ Find [ total       ] [Find] ⏴ ⏵ 3 of 47  Options ⏷  × │
+                  └───────────────────────────────────────────────────┘
 ```
+
+The **Find** button does what Enter does in the field: a new query searches,
+an unchanged one steps to the next match. Focus returns to the field so Enter
+walks on. It exists because a search with only a keyboard route reads as a box
+that does nothing to anyone reaching for the mouse.
 
 [`super`]'s header carries the placement note. The short version is that an
 overlay consumes **no layout space**, so opening Find does not resize the

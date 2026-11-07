@@ -426,6 +426,12 @@ fn merge_tab(
     if overlay.label.is_some() {
         base.label.clone_from(&overlay.label);
     }
+    if overlay.label_alt.is_some() {
+        base.label_alt.clone_from(&overlay.label_alt);
+    }
+    if overlay.label_alt_when.is_some() {
+        base.label_alt_when.clone_from(&overlay.label_alt_when);
+    }
     if overlay.icon.is_some() {
         base.icon.clone_from(&overlay.icon);
     }
@@ -462,6 +468,9 @@ fn merge_groups(
                 let mut group = remaining.remove(pos);
                 if ogroup.caption.is_some() {
                     group.caption.clone_from(&ogroup.caption);
+                }
+                if ogroup.summary.is_some() {
+                    group.summary.clone_from(&ogroup.summary);
                 }
                 if ogroup.items.is_some() {
                     // Items are replaced, not merged element-wise: an item

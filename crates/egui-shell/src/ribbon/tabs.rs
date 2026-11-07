@@ -238,7 +238,12 @@ pub(crate) fn resolve_active<'a>(visible: &[&'a Tab], requested: Option<&str>) -
 /// The label one tab draws. Never empty in a well-formed manifest, and
 /// diagnostic when it is not — the same fallback rule as
 /// [`super::band::caption_text`] and [`super::mode_selector::mode_label`].
-pub(crate) fn tab_label(tab: &Tab) -> &str {
+pub(crate) fn tab_label<'t>(tab: &'t Tab, conditions: &ConditionSet) -> &'t str {
+    if let (Some(alt), Some(when)) = (tab.label_alt.as_deref(), tab.label_alt_when.as_deref())
+        && condition_holds(when, conditions)
+    {
+        return alt;
+    }
     match tab.label.as_deref() {
         Some(l) if !l.trim().is_empty() => l,
         _ => &tab.id,
@@ -256,7 +261,7 @@ pub(crate) fn measure_tab(ui: &egui::Ui, ctx: &Ctx<'_>, tab: &Tab) -> f32 {
             0.0
         },
         text: if has_text {
-            measure::text_width(ui, tab_label(tab), &TextStyle::Button)
+            measure::text_width(ui, tab_label(tab, ctx.conditions), &TextStyle::Button)
         } else {
             0.0
         },
@@ -357,7 +362,7 @@ fn draw_tab(
 ) -> bool {
     let palette = ctx.theme.palette;
     let cues = tab_cues(is_active);
-    let label = tab_label(tab);
+    let label = tab_label(tab, ctx.conditions);
 
     let text = if cues.emphasised_text {
         RichText::new(label).strong().color(palette.text)

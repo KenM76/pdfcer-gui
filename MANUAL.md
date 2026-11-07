@@ -82,8 +82,10 @@ While it is on, the title bar says how to get out — `Read mode — Ctrl+H to
 exit` — and so does the bar along the bottom. That is deliberate: the control
 that turns it off lives on the ribbon, and the ribbon is the thing it just hid.
 
-**F11** is full screen and is separate; its button stays on screen, so it needs
-no such note.
+**F11** is full screen, and it shows **only the page**: no ribbon, panels or bar
+along the bottom. Press **F11** or **Esc** to leave; a line at the top says so for
+a few seconds as it starts. If something on the page is selected, the first Esc
+clears that, and the next one leaves.
 
 ### Making the chrome get out of the way on its own
 
@@ -918,7 +920,7 @@ overrules the DXF units you set, always in that direction.
 | **Ctrl+=** *or* **Ctrl++** | Zoom in one rung |
 | **Ctrl+-** | Zoom out one rung |
 | **Ctrl+H** | Read view |
-| **F11** | Full screen |
+| **F11** | Full screen: only the page (F11 or Esc to leave) |
 | **Ctrl+Tab** / **Ctrl+Shift+Tab** | Next / previous document |
 | **Ctrl+1 / 2 / 3** | Read / Review / Edit |
 

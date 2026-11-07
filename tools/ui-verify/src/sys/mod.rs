@@ -37,6 +37,8 @@ pub mod vk {
     pub const BACKSPACE: u16 = 0x08;
     /// `Enter` — steps to the next Find hit, commits the page box.
     pub const ENTER: u16 = 0x0D;
+    /// `F11` — `view.fullscreen`'s chord, the way back from a page-only window.
+    pub const F11: u16 = 0x7A;
     /// `Tab` — O204's key: the one that walked into the ribbon.
     ///
     /// Pressed with [`LSHIFT`] for the backward direction, never with

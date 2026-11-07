@@ -31,9 +31,13 @@ const IMAGE_VISIBLE_WHEN: &str = "selection.image_replaceable"; // ui-text-exemp
 /// Pictures are selected that Make pictures smaller can rewrite.
 const SHRINK_VISIBLE_WHEN: &str = "selection.images_shrinkable"; // ui-text-exempt: a condition name, never displayed
 
+/// The selection can be looked at, not formatted, so the tab is named for it.
+const NO_FORMATTING: &str = "selection.no_formatting"; // ui-text-exempt: a condition name, never displayed
+
 /// The Format tab.
 pub fn tab() -> Tab {
     Tab::new("format", ribbon::tab_format())
+        .with_label_when(NO_FORMATTING, ribbon::tab_selection())
         .with_icon("properties")
         .with_question(ribbon::question_format())
         .with_visible_when(VISIBLE_WHEN)

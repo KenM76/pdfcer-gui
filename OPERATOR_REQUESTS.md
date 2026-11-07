@@ -653,13 +653,43 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O402 — **FILED, WAITING ON THE ENGINE (G275)** — a sun the operator aims lights the whole ceiling instead of coming in the windows
+## O403 — **BUILT AND DRIVEN** — the outside review's five open ribbon questions, ruled
+
+His words: *"Do all the things you recommend except the find can stay the same, but should have a find button added to also execute the search."* The review's questions (`D:\Dev\FeatureRequests\pdfcer-gui\REVIEW.md`, O114) and what he ruled:
+
+1. **Page display (A10):** a word on each button: Single, Scroll, Facing, Facing scroll.
+2. **Find (A13):** the bar stays floating, and gains a **Find** button that runs the search as Enter does.
+3. **Document and pdfcer groups (A17):** the collapsed button says what it opens: *Document ⏷ / Properties, Fonts*. Settings was already large.
+4. **Format tab in Read (A18):** *"If it only offers Copy, rename it Selection; if it offers formatting, hide it in Read."* Audited: on page content in Read or Review every formatting group is gated out and Properties and Delete remain, so it is named Selection in exactly that state. It keeps its one id and region.
+5. **F11 (A19):** shows only the page. Beyond the ruling, because the control went with the ribbon: Esc also leaves, as the ladder's last rung, and a line says so for three seconds. With no document the ribbon stays, and a phone is unchanged.
+
+**Scope, whole behaviour.** `RIBBON_IA.md` P5 names the Find bar and the full-screen line as its two exceptions; the manual says what F11 now does.
+
+Beyond the ruling, by the same rule: View's Window group gets words too, *Window ⏷ / Read mode, Full screen*, and now collapses first at 1,400 px.
+
+**Status.** Driven by `the_ribbon_says_what_its_controls_do`, `read_mode_hides_the_chrome` and `read_mode_says_how_to_get_back_out`, all passing, photographs read. The Find button reached match 1 then 2, Enter 3; the tab measures 81.4 points as Selection in Read and 70.1 as Format in Edit; the collapsed Document button measures 103.8 points; F11 grew the page's panel from 2560x1000 to 3440x1440 and both F11 and Esc restored it. Falsified twice: the previous build fails on a 22-point page button, and a build with Document's words removed fails on an 80.9-point collapsed button. At a 1,100 px window in Read all of View fits, with Window collapsed; in Edit, with an object selected, the Format tab folds into the tab strip's *2 more* (see `FEATURES.md`).
+
+## O402 — **BUILT BY THE ENGINE (G275), DRIVEN ON HIS MODEL** — a sun the operator aims lights the whole ceiling instead of coming in the windows
 
 His words: *"I notice the sun lights the entire ceiling in the model I am moving in. I don't know if it is the way the model was made or if it shouldn't do that."* And: *"This is when I am in the settings where I can adjust the angle of the sun. I'd expect it in this custom mode to be outside of the model and only shine in the windows."*
 
 **Scope, whole behaviour.** With an aimed sun, a room lights only where the sun reaches through an opening; a ceiling or wall between the sun and the room stays as it is without the sun, on any device and any model size.
 
-**Status.** Measured with the operator's model: the model is sound, a closed ceiling 12.7 mm thick, and the shadow lookup's offsets at the default map size are larger than that. The same view is right at the largest map size, wrong at the default. Asked of the engine as G275, with no workaround here. Then: drive it on `Bancroft_3D_plan.pdf` from this view and compare a picture with the sun and one without.
+**Status.** Measured with the operator's model: the model is sound, a closed ceiling 12.7 mm thick, and the shadow lookup's offsets at the default map size are larger than that. The same view is right at the largest map size, wrong at the default. Asked of the engine as G275, with no workaround here. 
+
+**Driven on `Bancroft_3D_plan.pdf`, engine v0.135.0.** In the viewer on the graphics card, walking in and looking up at the skylight, eye `3.42,-15.79,1.00`, the sun at bearing 45 and height 45, against the engine's CPU render of the same camera. Mean of each ceiling patch, 0 to 255:
+
+| Patch | Card, no aimed sun | Card, aimed sun | CPU, no sun | CPU, sun |
+|---|---:|---:|---:|---:|
+| Left | 17.4 | 20.2 | 16.6 | 19.2 |
+| Middle | 17.4 | 26.0 | 16.6 | 24.9 |
+| Right | 20.9 | 29.2 | 21.4 | 31.1 |
+
+The card and the CPU agree to within two levels, which is what the engine asked to have confirmed; the shader compiled and the picture stayed on the card. The ceiling no longer floods: it is lit a little, not whole.
+
+**What he will see that is not the bug.** A room reads a little brighter with an aimed sun on, as the row above measures: an aimed sun replaces the fixed lighting's shadow key, so that key's dimming goes. One view at one sun angle was driven; the engine measured the CPU route at three map sizes.
+
+**Not a standing check.** The viewer's picture reaches no scripted screenshot, so this was a real-desktop one-off; `an_aimed_sun_lights_the_3d_model_where_it_is_aimed` keeps the sun on the card with no decline.
 
 ## O401 — **RELEASED in `v0.5.0-dev.20261106.3`, DRIVEN ON THE EMULATOR, not on a real printer** — the Android app may use the network, for printing
 

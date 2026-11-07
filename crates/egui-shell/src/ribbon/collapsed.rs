@@ -54,9 +54,21 @@ const SIDE_PADDING: f32 = 10.0;
 /// **What a collapsed group costs the band.**
 pub(crate) fn width(ui: &egui::Ui, group: &Group) -> f32 {
     let caption = super::band::caption_text(group);
-    let text = super::measure::text_width(ui, caption, &TextStyle::Button);
     let chevron = super::measure::text_width(ui, CHEVRON, &TextStyle::Button);
-    text.max(chevron) + SIDE_PADDING * 2.0
+    let content = match group.summary.as_deref() {
+        Some(summary) => {
+            let head = super::measure::text_width(ui, &headed(caption), &TextStyle::Button);
+            head.max(super::measure::text_width(ui, summary, &TextStyle::Small))
+        }
+        None => super::measure::text_width(ui, caption, &TextStyle::Button).max(chevron),
+    };
+    content + SIDE_PADDING * 2.0
+}
+
+/// A caption with the chevron on its own line's end, for a group whose second
+/// line says what is inside.
+fn headed(caption: &str) -> String {
+    format!("{caption} {CHEVRON}")
 }
 
 /// **Draw one collapsed group**: the button, and the popup behind it.
@@ -90,7 +102,10 @@ pub(crate) fn render(
         egui::WidgetInfo::labeled(
             egui::WidgetType::Button,
             ui.is_enabled(),
-            caption.to_owned(),
+            group
+                .summary
+                .as_deref()
+                .map_or_else(|| caption.to_owned(), |s| format!("{caption}: {s}")),
         )
     });
 
@@ -102,18 +117,22 @@ pub(crate) fn render(
         let line = ui.text_style_height(&TextStyle::Button);
         let stack = line * 2.0;
         let top = rect.center().y - stack / 2.0;
+        let (head, second, second_style) = match group.summary.as_deref() {
+            Some(summary) => (headed(caption), summary, TextStyle::Small),
+            None => (caption.to_owned(), CHEVRON, TextStyle::Button),
+        };
         ui.painter().text(
             egui::pos2(rect.center().x, top),
             egui::Align2::CENTER_TOP,
-            caption,
+            head,
             TextStyle::Button.resolve(ui.style()),
             visuals.text_color(),
         );
         ui.painter().text(
             egui::pos2(rect.center().x, top + line),
             egui::Align2::CENTER_TOP,
-            CHEVRON,
-            TextStyle::Button.resolve(ui.style()),
+            second,
+            second_style.resolve(ui.style()),
             visuals.text_color(),
         );
     }
@@ -168,6 +187,24 @@ mod tests {
             measured >= SIDE_PADDING * 2.0,
             "a collapsed group must cost at least its own padding (got {measured})"
         );
+    }
+
+    /// A summary widens the button to fit its words, and a group without one is
+    /// measured exactly as before.
+    #[test]
+    fn a_summary_widens_the_collapsed_button() {
+        let ctx = egui::Context::default();
+        super::super::testfont::install(&ctx);
+        let (mut plain, mut summed) = (0.0, 0.0);
+        let _ = ctx.run_ui(egui::RawInput::default(), |ui| {
+            let group = Group::new("document", "Document");
+            plain = width(ui, &group);
+            summed = width(
+                ui,
+                &group.with_summary("Properties, Fonts, and a good deal more"),
+            );
+        });
+        assert!(summed > plain, "{summed} vs {plain}");
     }
 
     /// **A longer caption costs more**, which is what makes the ladder's

@@ -948,6 +948,7 @@ mod tests {
             caption: Some("   ".to_owned()),
             items: None,
             collapse: None,
+            summary: None,
             prefer_rows: None,
         };
         assert_eq!(
@@ -960,6 +961,7 @@ mod tests {
             caption: None,
             items: None,
             collapse: None,
+            summary: None,
             prefer_rows: None,
         };
         assert_eq!(caption_text(&nameless), "(unnamed group)");
@@ -975,6 +977,7 @@ mod tests {
                 caption: Some(String::new()),
                 items: None,
                 collapse: None,
+                summary: None,
                 prefer_rows: None,
             },
         ] {

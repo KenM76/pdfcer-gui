@@ -220,8 +220,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         CHORDS.len()
     ));
     report.note(
-        "NOT covered here: `F11`. It resizes the window mid-run and would invalidate every rect \
-         already measured; its dispatch is covered by the unit gate. Nor is this list swept from \
+        "NOT covered here: `F11`, which resizes the window mid-run and would invalidate every \
+         rect already measured; `read_mode_hides_the_chrome` presses it. Nor is this list swept from \
          the manifest — a chord added tomorrow is not pressed here until it is added above, which \
          is what `every_chord_the_manifest_binds_actually_fires` is for",
     );

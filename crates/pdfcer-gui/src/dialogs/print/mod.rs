@@ -101,10 +101,10 @@ pub(crate) mod batch;
 mod colour;
 /// **Fixed line width** — O233: every line printed at one width.
 mod lines;
-/// One document's job, planned from the window's settings.
-mod plan;
 /// What the document's password allows a print.
 mod permission;
+/// One document's job, planned from the window's settings.
+mod plan;
 /// The document's own `/ViewerPreferences` print settings.
 mod presets;
 /// A header or footer on the printed copy only.

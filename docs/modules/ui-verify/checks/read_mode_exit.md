@@ -79,18 +79,6 @@ be the first thing the ellipsis eats, on the window of the one operator who
 most needs it. It is also what keeps
 [`super::title_build_stamp`]'s right-hand parse aimed at the build stamp.
 
-# Full screen is checked by its absence
-
-`fullscreen=` must be **empty** here. Full screen hides no chrome of pdfcer's
-own — the ribbon stays, its control stays, `app::conditions` renders it
-pressed — so naming `F11` when the window is not full screen would be the
-furniture this feature is written not to add. The one state where it *is* a
-trap is read mode **and** full screen together, where the ribbon is gone and
-the control with it; that combined state is covered by
-`app::status::readmode`'s unit tests and is deliberately not driven here,
-because filling the operator's display is a cost `read_mode_chrome` already
-pays once and should not pay twice.
-
 # It needs no input at all
 
 No pointer, no keyboard. `PDFCER_DIAG_VIEWPORT` lays out a real window

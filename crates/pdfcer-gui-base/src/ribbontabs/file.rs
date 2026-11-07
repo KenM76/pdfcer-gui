@@ -281,7 +281,8 @@ pub fn tab() -> Tab {
                     command("file.properties"),
                     command("file.fonts"),
                 ],
-            ),
+            )
+            .with_summary(ribbon::group_file_document_summary()),
             // ---------------------------------------------------------------
             // pdfcer — the application's own settings, help and identity.
             //
@@ -306,6 +307,7 @@ pub fn tab() -> Tab {
                     command("file.shortcuts"),
                     command("file.about"),
                 ],
-            ),
+            )
+            .with_summary(ribbon::group_file_pdfcer_summary()),
         ])
 }

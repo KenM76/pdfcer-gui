@@ -56,10 +56,10 @@ pub(super) fn tab() -> Tab {
                 "page_display",
                 ribbon::group_view_page_display(),
                 [
-                    icon_only("view.page_single"),
-                    icon_only("view.page_continuous"),
-                    icon_only("view.page_facing"),
-                    icon_only("view.page_facing_continuous"),
+                    command("view.page_single"),
+                    command("view.page_continuous"),
+                    command("view.page_facing"),
+                    command("view.page_facing_continuous"),
                 ],
             ),
             //
@@ -459,6 +459,7 @@ pub(super) fn tab() -> Tab {
                     command("view.rail_auto_hide"),
                     command("view.reset_layout"),
                 ],
-            ),
+            )
+            .with_summary(ribbon::group_view_window_summary()),
         ])
 }

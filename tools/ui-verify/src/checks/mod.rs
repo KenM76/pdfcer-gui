@@ -512,6 +512,8 @@ pub mod remove_metadata;
 pub mod remove_ocr_pages;
 /// Propose replacement words for selected text from Markup.
 pub mod replace_text;
+/// The ribbon's words: page display, Find, Selection and the collapsed groups.
+pub mod ribbon_rulings;
 /// Document properties ▸ Security notes and the open-time wrapper warning.
 pub mod security_notes;
 /// A password typed into an earlier saved version is said, field and version.

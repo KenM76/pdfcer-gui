@@ -2,8 +2,7 @@
 
 use pdfcer_core::image_import::ImportedImage;
 use pdfcer_core::threed::{
-    ThreeDArtwork, ThreeDFormat, ThreeDMeasurement, ThreeDSavedView, extract_3d,
-    list_3d_with_notes,
+    ThreeDArtwork, ThreeDFormat, ThreeDMeasurement, ThreeDSavedView, extract_3d, list_3d_with_notes,
 };
 
 use crate::app::state::OpenDoc;

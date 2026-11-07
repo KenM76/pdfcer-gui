@@ -16,6 +16,25 @@
 
 use super::*;
 
+/// The tab's second name is exactly the state with nothing to format.
+#[test]
+fn the_format_tab_is_called_selection_only_with_nothing_to_format() {
+    let with = |names: &[&str]| {
+        let mut set = egui_shell::commands::ConditionSet::new();
+        for name in names {
+            set.set(*name);
+        }
+        no_formatting_offered(&set)
+    };
+    assert!(with(&["selection.formattable"]));
+    assert!(!with(&[]));
+    assert!(!with(&["selection.formattable", "mode.edit_content"]));
+    assert!(!with(&[
+        "selection.formattable",
+        "selection.markup_restylable"
+    ]));
+}
+
 /// **`undo.available` and `redo.available` follow the session, in both
 /// directions, through the real verbs.**
 #[test]

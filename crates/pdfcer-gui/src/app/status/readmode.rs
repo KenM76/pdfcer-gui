@@ -27,18 +27,12 @@ pub(super) fn show(ui: &mut egui::Ui) {
         return;
     }
 
-    // Both chords come from `app::window`'s published values, resolved once
+    // The chord comes from `app::window`'s published value, resolved once
     // per frame from the keymap that dispatches. Nothing in this file spells a
     // key, and `crate::text::window`'s own test forbids the catalog spelling one
     // either — so there is no place left for the sentence and the binding to
     // disagree.
     let exit = crate::app::window::exit_chord(&ctx);
-    // Named only in the combined state. Full screen alone keeps the ribbon and
-    // therefore keeps its own control; it is read mode that took the control
-    // away, so it is read mode that owes the sentence.
-    let full = crate::app::window::fullscreen(&ctx)
-        .then(|| crate::app::window::fullscreen_chord(&ctx))
-        .flatten();
 
     let width = (ui.available_width() * EXIT_WIDTH_FRACTION).max(0.0);
     let mut line = String::new();
@@ -46,19 +40,15 @@ pub(super) fn show(ui: &mut egui::Ui) {
         .allocate_ui_with_layout(
             Vec2::new(width, ROW_HEIGHT_PTS),
             Layout::left_to_right(Align::Center),
-            |ui| match (&exit, &full) {
-                (Some(exit), Some(full)) => {
-                    line = t::status_read_mode_and_fullscreen(exit, full);
-                    statement(ui, &line);
-                }
-                (Some(exit), None) => {
+            |ui| match &exit {
+                Some(exit) => {
                     line = t::status_read_mode(exit);
                     statement(ui, &line);
                 }
                 // No chord is bound to `view.read_mode` in this build, so there
                 // is nothing true to say about a key and the only honest surface
                 // is the route itself. See the module header.
-                (None, _) => {
+                None => {
                     line = t::status_read_mode_unbound().to_owned();
                     statement(ui, &line);
                     if ui.button(t::leave_read_mode_button()).clicked() {
@@ -80,7 +70,6 @@ pub(super) fn show(ui: &mut egui::Ui) {
     // is expressed as the empty string. A trace shape a check has to
     // special-case is a trace shape a check gets wrong.
     let chord_field = exit.clone().unwrap_or_default();
-    let full_field = full.clone().unwrap_or_default();
     crate::diag::trace_changed(EXIT_SLOT, || {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         //
@@ -91,7 +80,7 @@ pub(super) fn show(ui: &mut egui::Ui) {
         // answered, `line=` is what the OPERATOR is shown, and asserting the
         // second quotes the first is the only external statement that a
         // re-introduced hard-coded chord would fail.
-        format!("{EXIT_SLOT} chord={chord_field:?} fullscreen={full_field:?} line={line:?}")
+        format!("{EXIT_SLOT} chord={chord_field:?} line={line:?}")
     });
 }
 

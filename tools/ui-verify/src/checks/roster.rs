@@ -417,6 +417,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_impose::PrintSeveralPagesPerSheetAndBooklets),
         Box::new(print_running::PrintHeaderFooterReachesThePrintedCopy),
         Box::new(print_preview_rule::PrintPreviewFollowsThePaperRule),
+        Box::new(ribbon_rulings::TheRibbonSaysWhatItsControlsDo),
         Box::new(print_batch::BatchPrintPrintsEachFile),
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(print_shop::InkPickerReadsOverprint),

@@ -347,6 +347,11 @@ impl FindState {
         self.open
     }
 
+    /// Ask for the caret to return to the search field on the next frame.
+    pub fn request_focus(&mut self) {
+        self.focus_wanted = true;
+    }
+
     /// Take the pending focus request, if there is one.
     pub fn take_focus_request(&mut self) -> bool {
         std::mem::take(&mut self.focus_wanted)

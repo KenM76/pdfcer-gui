@@ -38,7 +38,7 @@ and the button never lit up.
 
 | Phase | Move | Evidence | If it does not hold |
 |---|---|---|---|
-| 0 | click `view.fullscreen`, twice | the **client area** grows to the display and comes back | FAIL — see the phase-0 section below |
+| 0 | click `view.fullscreen`, then F11; F11, then Esc | the **client area** grows to the display and comes back by each key; while filled `central-panel` fills it and `fullscreen-hint` was drawn | FAIL — see the phase-0 section below |
 | A | click View, read `central-panel` | the canvas's rect **before** | SKIP — nothing was measured to compare against |
 | B | click `view.read_mode` | `ribbon-command-invoked id=view.read_mode`, then `read-mode on=true` | SKIP if no invoke (no click landed); **FAIL** if invoked and no `read-mode` line — the arm is missing |
 | C | read `central-panel` again, and capture | the rect's **top moved up**, and the pixels where the ribbon was **changed** | FAIL — the command ran and the frame did not change |
@@ -80,11 +80,10 @@ ribbon group, and they share the one expensive precondition this check has
 second check module would have to restate that placement argument, which is
 the "two hand-written tables" smell one level up.
 
-It runs **before** read mode because it is the only half that can be
-reversed: full screen keeps the ribbon, so the same control is still on
-screen and a second click restores the window. Read mode removes the ribbon
-and is therefore terminal. Doing them the other way round would leave the
-display filled with a window that has no visible way back.
+It runs **before** read mode because read mode removes the ribbon and is terminal,
+and this phase starts from the ribbon's control. Full screen removes the ribbon too,
+so the way back is the keys: F11 first, then a second round for Esc, each judged by
+the client area.
 
 Its oracle is the **client area**, read from the window manager rather than
 from the application: `WindowFrame::client_size` before and after. That is

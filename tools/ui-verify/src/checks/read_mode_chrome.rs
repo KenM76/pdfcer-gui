@@ -13,6 +13,7 @@ use crate::error::{Error, Result};
 use crate::geom::LRect;
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
+use crate::sys::vk;
 
 /// The command this check is about.
 const SUBJECT_ID: &str = "view.read_mode";
@@ -49,6 +50,13 @@ const READ_MODE_EVENT: &str = "read-mode";
 
 /// The region the canvas declares for itself, every frame.
 const CANVAS: &str = "central-panel";
+
+/// The central panel's own inset from the window's edge, in points; a ribbon or a
+/// tab strip above the page is several times this.
+const PANEL_MARGIN_PTS: f32 = 9.0;
+
+/// The line that says how to leave a page-only window.
+const HINT: &str = "fullscreen-hint";
 
 /// How far the canvas's top edge must rise, in logical points, for the ribbon
 /// to be counted as gone.
@@ -448,10 +456,13 @@ fn fullscreen_round_trip(
     }
 
     let filled = session.frame()?.client_pixels();
+    // Read now and judged below: the ribbon's control is gone, so the way back is
+    // the chord.
+    let page = declared(&session.trace()?, ui_rect, CANVAS);
+    let hint = declared(&session.trace()?, ui_rect, HINT);
     // Put it back FIRST, so that every return below leaves the operator's
     // display as it found it.
-    //
-    let restored_press = press_until_invoked(session, driver, ui_rect, control)?;
+    let restored_press = key_until_left(session, driver, vk::F11)?;
     // **Three seconds, and the asymmetry with the 1 s above is measured
     // rather than cautious.** Entering full screen was complete inside 1 s on
     // this machine; *leaving* it was not, and the first run of this phase failed
@@ -508,6 +519,9 @@ fn fullscreen_round_trip(
         "full screen grew the client area from {} x {} px to {} x {} px",
         before.w, before.h, filled.w, filled.h
     ));
+    if let Some(failure) = only_the_page(page, hint, filled.w, filled.h) {
+        return Ok(Some(failure));
+    }
 
     // THE PRESS BEFORE THE VERDICT. Nothing below may be read as a
     // statement about the application until the application has been shown to
@@ -517,15 +531,13 @@ fn fullscreen_round_trip(
     //
     if !restored_press {
         return Err(Error::new(format!(
-            "the window is full screen and {PRESS_TRIES} clicks on `{FULLSCREEN}` produced no \
-             new `{INVOKE_EVENT} id={FULLSCREEN_ID}` line, so the restoring press never reached \
-             the ribbon and NOTHING was learned about whether full screen toggles back.\n  \
-             ⚠ **THE DISPLAY HAS BEEN LEFT FILLED.** The operator's routes back are `F11` — \
-             `view.fullscreen`'s chord, which is bound and unaffected by this — and the same \
-             ribbon control, which full screen keeps on screen. Closing the window also works.\n  \
+            "the window is full screen and {PRESS_TRIES} presses of F11 produced no new \
+             `{FULLSCREEN_EVENT} asked=false` line, so the restoring press never reached the \
+             application and NOTHING was learned about whether full screen toggles back.\n  \
+             ⚠ **THE DISPLAY HAS BEEN LEFT FILLED.** The operator's routes back are `F11` and \
+             Esc; closing the window also works.\n  \
              This is reported as SKIPPED rather than failed because a press that was not \
-             delivered says nothing about `app::window::next_fullscreen`: on 2026-08-29 this \
-             exact state was reported as a defect in that function, which was correct. See \
+             delivered says nothing about `app::window::next_fullscreen`. See \
              `{SHELL_TRACE_PREFIX}` in {}.",
             session.trace_path().display()
         )));
@@ -549,7 +561,7 @@ fn fullscreen_round_trip(
             .map(|l| l.raw.clone())
             .collect::<Vec<_>>();
         return Ok(Some(format!(
-            "the second press of `{FULLSCREEN_ID}` reached the ribbon and did not restore the \
+            "F11, pressed in full screen, reached the application and did not restore the \
              window: it is still {} x {} px. Full screen is a toggle — \
              `app::window::next_fullscreen` reads the viewport's own state, and remembers its \
              own outstanding request for a few frames so that a second press cannot read a \
@@ -562,10 +574,95 @@ fn fullscreen_round_trip(
         )));
     }
     report.note(format!(
-        "a second press restored it to {} x {} px",
+        "F11 restored it to {} x {} px",
         restored.w, restored.h
     ));
+    esc_leaves(session, driver, report)
+}
+
+/// The page alone fills the client area, and the line saying how to leave was drawn.
+/// `page` is in points and the client area in pixels, so they compare by proportion,
+/// which does not depend on the display's scale.
+fn only_the_page(page: Option<LRect>, hint: Option<LRect>, w: u32, h: u32) -> Option<String> {
+    let Some(page) = page else {
+        return Some(format!("full screen declared no `{CANVAS}` region."));
+    };
+    #[allow(clippy::cast_precision_loss)]
+    let client = w as f32 / h.max(1) as f32;
+    let shape = page.width() / page.height().max(1.0);
+    if page.min.y > PANEL_MARGIN_PTS
+        || page.min.x > PANEL_MARGIN_PTS
+        || (shape - client).abs() > client * 0.02
+    {
+        return Some(format!(
+            "★★★ F11 is to show only the page, and `{CANVAS}` is {page:?} in a client area of \
+             {w} x {h} px: something still takes room beside the page (the ribbon, a dock or \
+             the status bar)."
+        ));
+    }
+    if hint.is_none() {
+        return Some(format!(
+            "★★★ the page filled the window and no `{HINT}` region was declared: nothing on \
+             screen says how to get the controls back."
+        ));
+    }
+    None
+}
+
+/// Esc takes a page-only window back as F11 does, once nothing on the page wants it.
+fn esc_leaves(
+    session: &Session,
+    driver: &Driver,
+    report: &mut CheckReport,
+) -> Result<Option<String>> {
+    let windowed = session.frame()?.client_pixels();
+    driver.press(vk::F11)?;
+    session.settle(60);
+    let filled = session.frame()?.client_pixels();
+    let heard = key_until_left(session, driver, vk::ESCAPE)?;
+    session.settle(120);
+    let back = session.frame()?.client_pixels();
+    if !heard {
+        driver.press(vk::F11)?;
+        session.settle(120);
+        return Ok(Some(format!(
+            "★★★ Esc in a page-only window with nothing selected traced no \
+             `{FULLSCREEN_EVENT} asked=false`: the window was {} x {} and F11 has been pressed \
+             to recover it. The way out the line names does not work.",
+            filled.w, filled.h
+        )));
+    }
+    if u64::from(back.w) * u64::from(back.h) >= u64::from(filled.w) * u64::from(filled.h) {
+        return Ok(Some(format!(
+            "★★★ Esc asked to leave full screen and the window is still {} x {} px; it was {} \
+             x {} px windowed. **The display has been left filled**; press F11 to recover it.",
+            back.w, back.h, windowed.w, windowed.h
+        )));
+    }
+    report.note(format!("Esc restored it to {} x {} px", back.w, back.h));
     Ok(None)
+}
+
+/// Press `key` until the application traces a new request to leave full screen,
+/// and answer whether it ever did. Pressed again only while unheard, so a toggle
+/// cannot be flipped back.
+fn key_until_left(session: &Session, driver: &Driver, key: u16) -> Result<bool> {
+    let count = |session: &Session| -> Result<usize> {
+        Ok(session
+            .trace()?
+            .events(FULLSCREEN_EVENT)
+            .filter(|l| l.get("asked") == Some("false"))
+            .count())
+    };
+    let before = count(session)?;
+    for _ in 0..PRESS_TRIES {
+        driver.press(key)?;
+        session.settle(40);
+        if count(session)? > before {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 /// **Press the Full screen control until the application says it heard**, and

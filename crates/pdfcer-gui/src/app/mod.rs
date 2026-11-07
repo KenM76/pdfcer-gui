@@ -162,6 +162,8 @@ pub mod surfaces;
 pub mod floats;
 /// Which signature boxes the document records as hand-signed.
 pub mod handsigned;
+/// The sentence that says how to leave a page-only window.
+pub(crate) mod pageonly;
 /// The signing strip: *Signed N of M* and Next, over the page (O269).
 pub mod signstrip;
 /// **Which runs a Format command acts on** - one answer, two gestures.

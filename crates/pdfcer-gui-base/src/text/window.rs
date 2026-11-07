@@ -27,13 +27,14 @@ pub fn status_read_mode(chord: &str) -> String {
     format!("Read mode — press {chord} to bring the ribbon and the panels back.")
 }
 
-/// The status bar's line when read mode and **full screen** are both on.
+/// The line over a page-only window. Escape is the canvas ladder's own last rung,
+/// not a binding, so it is named here and the chord comes from the keymap.
 #[must_use]
-pub fn status_read_mode_and_fullscreen(read_chord: &str, fullscreen_chord: &str) -> String {
-    format!(
-        "Read mode and full screen — press {read_chord} to bring the ribbon and the panels \
-         back, {fullscreen_chord} to leave full screen."
-    )
+pub fn fullscreen_hint(chord: Option<&str>) -> String {
+    match chord {
+        Some(chord) => format!("Press {chord} or Esc to leave full screen"),
+        None => "Press Esc to leave full screen".to_owned(),
+    }
 }
 
 /// The status bar's line when read mode is on and **nothing is bound to it**.
@@ -63,7 +64,6 @@ mod tests {
             // so what is tested is the FIXED part of each format string.
             title_read_mode("<k>"),
             status_read_mode("<k>"),
-            status_read_mode_and_fullscreen("<k>", "<j>"),
         ];
         for text in strings {
             for probe in ["Ctrl", "Alt", "Shift", "F11", "F1", "Esc", "view.", "edit."] {
@@ -81,14 +81,8 @@ mod tests {
     fn every_chord_handed_in_reaches_the_sentence() {
         assert_eq!(title_read_mode("Ctrl+H").matches("Ctrl+H").count(), 1);
         assert_eq!(status_read_mode("Ctrl+H").matches("Ctrl+H").count(), 1);
-        let both = status_read_mode_and_fullscreen("Ctrl+H", "F11");
-        assert_eq!(both.matches("Ctrl+H").count(), 1);
-        assert_eq!(both.matches("F11").count(), 1);
-        assert!(
-            both.find("Ctrl+H") < both.find("F11"),
-            "read mode leads: it is the mode that took the ribbon away, and the \
-             full-screen control went with it"
-        );
+        assert_eq!(fullscreen_hint(Some("F11")).matches("F11").count(), 1);
+        assert!(fullscreen_hint(None).contains("Esc"));
     }
 
     /// **The status line names what comes back**, in the command's own words.
@@ -96,7 +90,6 @@ mod tests {
     fn the_status_line_names_the_ribbon_and_the_panels() {
         for text in [
             status_read_mode("Ctrl+H"),
-            status_read_mode_and_fullscreen("Ctrl+H", "F11"),
             leave_read_mode_button().to_owned(),
         ] {
             assert!(text.contains("ribbon"), "{text}");

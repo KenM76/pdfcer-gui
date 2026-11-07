@@ -598,13 +598,25 @@ pub(super) fn canvas_keys(
             // out into the drawing. That is one rung per press — decision 025's
             // L1 — with the scope as the outermost rung of the same ladder,
             // rather than a sixth thing competing for the key.
-            if matches!(outcome, crate::canvas::selection::EscapeOutcome::Nothing)
-                && crate::canvas::smart::leave(ctx)
-            {
-                crate::diag::trace(|| {
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "canvas-escape outcome=LeftContainer".to_owned()
-                });
+            if matches!(outcome, crate::canvas::selection::EscapeOutcome::Nothing) {
+                if crate::canvas::smart::leave(ctx) {
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        "canvas-escape outcome=LeftContainer".to_owned()
+                    });
+                // **Claimant 7 — LEAVE THE PAGE-ONLY WINDOW.** Last, so a press
+                // retires everything transient on the page before it takes the
+                // window back.
+                } else if crate::app::window::leave_page_only(ctx) {
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        "canvas-escape outcome=LeftFullScreen".to_owned()
+                    });
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        "fullscreen asked=false by=escape".to_owned()
+                    });
+                }
             }
         }
     }

@@ -323,7 +323,7 @@ fn tool_sheet(ui: &mut egui::Ui, ctx: &mut Ctx<'_>, visible: &[&Tab], phone: &mu
                         for candidate in visible {
                             let on = candidate.id == tab.id;
                             if ui
-                                .selectable_label(on, tabs::tab_label(candidate))
+                                .selectable_label(on, tabs::tab_label(candidate, ctx.conditions))
                                 .clicked()
                             {
                                 phone.sheet_tab = Some(candidate.id.clone());

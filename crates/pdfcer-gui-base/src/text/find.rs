@@ -16,6 +16,18 @@ pub fn field_label() -> &'static str {
     "Find"
 }
 
+/// The button beside the field that runs the search.
+#[must_use]
+pub fn find_button() -> &'static str {
+    "Find"
+}
+
+/// Hover text for the Find button.
+#[must_use]
+pub fn find_button_tooltip() -> &'static str {
+    "Search for what is typed, then go to the next match (the same as Enter)."
+}
+
 /// Hover text for the search field.
 #[must_use]
 pub fn field_tooltip() -> &'static str {

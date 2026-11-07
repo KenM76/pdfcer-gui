@@ -13,9 +13,6 @@ const READ_MODE_ID: &str = "pdfcer-read-mode"; // ui-text-exempt: widget id, nev
 pub const READ_MODE_COMMAND: &str = "view.read_mode"; // ui-text-exempt: command id, never displayed
 
 /// The full-screen command id, named here for the same reason as its sibling.
-///
-/// Used only for the combined state — see the module header's *Full screen is
-/// NOT the same trap* section.
 #[doc(hidden)]
 pub const FULLSCREEN_COMMAND: &str = "view.fullscreen"; // ui-text-exempt: command id, never displayed
 
@@ -153,6 +150,22 @@ pub fn fullscreen_believed(ctx: &egui::Context) -> bool {
     let pending: Option<(u64, bool)> = ctx.data(|d| d.get_temp(id));
     let reported = ctx.input(|i| i.viewport().fullscreen);
     !next_fullscreen(reported, pending, ctx.cumulative_pass_nr())
+}
+
+/// Whether the frame draws the page alone: full screen on a desktop. A phone's
+/// window is always full and keeps its controls.
+#[must_use]
+pub fn page_only(ctx: &egui::Context) -> bool {
+    fullscreen_believed(ctx) && !egui_shell::ribbon::phone::is_phone(ctx)
+}
+
+/// Leave [`page_only`] if the window is in it, and say whether it was.
+pub fn leave_page_only(ctx: &egui::Context) -> bool {
+    let on = page_only(ctx);
+    if on {
+        set_fullscreen(ctx, false);
+    }
+    on
 }
 
 /// Ask the current viewport for full screen `on`, and remember the request.

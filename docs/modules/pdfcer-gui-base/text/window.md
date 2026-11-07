@@ -127,21 +127,11 @@ Named in the same two words the command's own promise uses
 …"*), so the sentence that turns it off is the sentence that turned it on,
 read backwards.
 
-### `fn status_read_mode_and_fullscreen`
+### `fn fullscreen_hint`
 
-This is the one state in which `view.fullscreen` is also a trap, and the
-reason is compositional rather than intrinsic: full screen hides no chrome
-of pdfcer's own, so its ribbon control is normally right there — but read
-mode has taken the ribbon away, and with it that control. Two hidden
-controls, two chords, one line.
-
-It is deliberately **not** shown for full screen alone. See
-`crate::app::window`'s header: an always-on `F11` hint would be furniture,
-and it would be wrong the moment the mode is off.
-
-Read mode leads because it is the mode that removed the chrome; full screen
-merely removed the title bar, which is why this sentence cannot live in the
-title.
+The line over a page-only window, for three seconds. Escape is spelled because it is
+the canvas ladder's own last rung and no keymap entry; the chord arrives as a
+parameter like every other here.
 
 ### `fn status_read_mode_unbound`
 

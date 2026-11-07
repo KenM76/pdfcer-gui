@@ -554,6 +554,13 @@ pub struct Tab {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 
+    /// The label drawn instead of `label` while `label_alt_when` holds.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label_alt: Option<String>,
+    /// The condition that selects `label_alt`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label_alt_when: Option<String>,
+
     /// The icon key drawn before the label, resolved by the application's
     /// icon painter. Absent, or with no painter installed, the tab is text.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -633,6 +640,19 @@ impl Tab {
     #[must_use]
     pub fn with_visible_when(mut self, condition: impl Into<String>) -> Self {
         self.visible_when = Some(condition.into());
+        self
+    }
+
+    /// Draw `label` in place of [`Tab::label`] while `condition` holds. One tab
+    /// with one id and one region; only the words change.
+    #[must_use]
+    pub fn with_label_when(
+        mut self,
+        condition: impl Into<String>,
+        label: impl Into<String>,
+    ) -> Self {
+        self.label_alt_when = Some(condition.into());
+        self.label_alt = Some(label.into());
         self
     }
 
@@ -735,6 +755,10 @@ pub struct Group {
     /// says everything else about its ribbon.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefer_rows: Option<u32>,
+    /// Words naming what is inside, drawn under the caption while the group is
+    /// collapsed to one button. Absent, the button carries the caption alone.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
 }
 
 impl Group {
@@ -747,6 +771,7 @@ impl Group {
             items: Some(Vec::new()),
             collapse: None,
             prefer_rows: None,
+            summary: None,
         }
     }
 
@@ -780,6 +805,13 @@ impl Group {
     #[must_use]
     pub fn items(&self) -> &[Item] {
         self.items.as_deref().unwrap_or(&[])
+    }
+
+    /// Say what is inside when the group is collapsed to one button.
+    #[must_use]
+    pub fn with_summary(mut self, summary: impl Into<String>) -> Self {
+        self.summary = Some(summary.into());
+        self
     }
 
     /// **Ask for this group to be laid out on `rows` rows even when one fits.**

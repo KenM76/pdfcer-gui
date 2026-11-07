@@ -16,6 +16,15 @@ mod armed;
 mod offered;
 mod textformat;
 
+/// The Format tab is up and nothing on it restyles the selection: every formatting
+/// group asks for `mode.edit_content` or a restylable markup, so Read and Review on
+/// plain page content leave Properties and Delete, and the tab says Selection.
+fn no_formatting_offered(set: &egui_shell::commands::ConditionSet) -> bool {
+    set.is_set("selection.formattable")
+        && !set.is_set("mode.edit_content")
+        && !set.is_set("selection.markup_restylable")
+}
+
 impl PdfcerApp {
     /// The conditions the ribbon evaluates its predicates against.
     pub(super) fn conditions(&self, ctx: &egui::Context) -> egui_shell::commands::ConditionSet {
@@ -751,6 +760,9 @@ impl PdfcerApp {
         // changes and the fifth has no unit test to remind you.
         self.armed_conditions(ctx, &mut set);
         self.text_format_conditions(ctx, &mut set);
+        if no_formatting_offered(&set) {
+            set.set("selection.no_formatting");
+        }
 
         set
     }

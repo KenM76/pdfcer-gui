@@ -78,7 +78,9 @@ each group remembering to.
 
 **P5 — Nothing floats over the canvas.** Tool options live in the dock, not in
 canvas-anchored overlays: accept/reject boxes that moved on every zoom were a
-reported defect.
+reported defect. Two exceptions, both ruled by the operator and neither anchored to
+the document: the Find bar, top-right of the window as every viewer has it, and the
+few-second line saying how to leave full screen.
 
 ### A refusal in a mode means the tab is wrong
 
@@ -183,7 +185,7 @@ Plus one contextual tab:
 
 | Tab | Appears when |
 |---|---|
-| **Format** | A markup, ce dimension, image, vector object or text run is selected |
+| **Format** | A markup, ce dimension, image, vector object or text run is selected. Named **Selection** while it offers no formatting: Read and Review on page content, where only Copy, Properties and Delete apply |
 
 **Why Clipboard is a tab.** The operator asked for one, with large labelled
 buttons (O380): the clipboard verbs are the most-used in every mode, and a
@@ -289,7 +291,7 @@ Panels, where nobody will find it.
 
 | Group | Commands |
 |---|---|
-| **Page display** | Single page · Continuous · Facing · Facing continuous |
+| **Page display** | Single · Scroll · Facing · Facing scroll, each with its word beside its picture |
 | **Navigate** | Select · Points · Text · Hand · Smart select |
 | **Render** | Strategy: Whole page · Tiled progressive · Raster scale ⌄ (quality) · Settle delay · Antialias ⌄ (text / vector) |
 | **Rotate view** | Rotate view left / right |

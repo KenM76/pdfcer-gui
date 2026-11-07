@@ -130,30 +130,21 @@ read from the keymap that dispatches, so neither can disagree with the key.
 
 ### Full screen is NOT the same trap
 
-`view.fullscreen` hides no chrome of ours: the ribbon stays drawn, its
-control stays on View ▸ Window, and `app::conditions` renders it *pressed*.
-A second click is right there. So no permanent `F11` hint is added — it
-would be the noise this file's own §2 argues against, and it would be wrong
-the moment the mode is off.
+On a desktop with a document open, `view.fullscreen` draws **the page and
+nothing else** ([`page_only`]): no ribbon, docks, tab strip or status bar. The
+remote-control banner and the signing strip stay, as they do in read mode, since a
+question or a signing task is not chrome. With no document the ribbon stays, or the
+window would be a blank rectangle. A phone's window is always full and keeps its
+controls. Read mode's flag is untouched, so leaving full screen returns the window
+to whichever it was.
 
-**The one state where it IS a trap is the combination**, and it is handled:
-with read mode on as well, the ribbon is gone, so `view.fullscreen`'s
-control is gone with it and `F11` has become undiscoverable too. The status
-line names *both* chords in that state and only in that state. It cannot be
-the title's job, because full screen is precisely when the title is not
-drawn — which is the same argument for the status bar, arriving from the
-other end.
+Three routes back, because the control went with the ribbon: the chord, Escape, and
+`app::pageonly`'s three-second line naming both.
 
-**Escape was considered and declined.** `canvas::keys` already ranks four
-claimants for Escape (a focused form field, the selection ladder's rungs, an
-in-flight gesture, the page box's draft), and `SelectionLevel::ascend`
-returning `EscapeOutcome::Nothing` is a documented fall-through seam that
-this could have used. It is declined because the fall-through is *quiet*: an
-operator who presses Escape to abandon a half-made marquee and instead finds
-the whole application's chrome coming back has been surprised by a key that
-means "no" everywhere else in this shell. If that changes it should change
-as a ruling about Escape's ladder, in `canvas::keys`, and not as a fifth
-claimant added here.
+**Escape is the last rung of `canvas::keys`' ladder**, below leaving a smart-select
+container. Every transient thing is retired first, one press per rung, so a press
+meant to abandon a half-made marquee cannot take the window back instead. A focused
+text field, an open popup and a dialog own the key before the ladder is reached.
 
 # 3. Where each state lives, and why they are stored differently
 

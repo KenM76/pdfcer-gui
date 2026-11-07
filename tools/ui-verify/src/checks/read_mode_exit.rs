@@ -152,7 +152,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     };
     let chord = exit.get("chord").unwrap_or_default().to_owned();
     let line = exit.get("line").unwrap_or_default().to_owned();
-    let fullscreen = exit.get("fullscreen").unwrap_or_default().to_owned();
     report.note(format!("status line: {line:?}"));
 
     if chord.is_empty() {
@@ -218,16 +217,6 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(format!(
             "the ordinary title already names {chord:?}: {first:?}. It must appear only while \
              the mode it explains is on."
-        )));
-    }
-
-    // --- full screen is named only in the combined state -----------------
-    if !fullscreen.is_empty() {
-        return Ok(Some(format!(
-            "the status line names a full-screen chord ({fullscreen:?}) on a window that is not \
-             full screen: {line:?}. Full screen hides no chrome of pdfcer's own — the ribbon \
-             stays and its control stays — so an always-on `F11` hint is the furniture this \
-             feature was written not to add. It belongs in the combined state and nowhere else."
         )));
     }
 

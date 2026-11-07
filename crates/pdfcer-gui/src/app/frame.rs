@@ -702,8 +702,12 @@ impl eframe::App for PdfcerApp {
         // added to the frame. Why it is not `mode.read`, why the status bar
         // below stays and how the operator gets back out are all in [`window`];
         // a composition step deciding any of that would be a second rule.
-        let chrome = window::draws_chrome(&ctx);
+        // Full screen on an open document is the page alone; with nothing open
+        // the ribbon stays, or the window would be a blank rectangle.
+        let page_only = window::page_only(&ctx) && matches!(self.status, Status::Open(_));
+        let chrome = window::draws_chrome(&ctx) && !page_only;
         let phone = egui_shell::ribbon::phone::is_phone(&ctx);
+        crate::app::pageonly::hint(&ctx, page_only);
         if chrome {
             self.ribbon_band(ui, &mut actions);
         }
@@ -759,111 +763,113 @@ impl eframe::App for PdfcerApp {
         // height and a per-frame fit-to-viewport zoom form a measured
         // feedback loop — 230 % → 224 % → 215 % drift from a status line
         // that grew (R128, `D:\dev\rag\egui\bottom_panel_height_...md`).
-        egui::Panel::bottom("status")
-            .exact_size(crate::app::status::height_for(&theme))
-            .show(ui, |ui| {
-                // Three disjoint field borrows through `self`, as at the
-                // canvas call site below: the bar reads the status and
-                // writes the Find toggle's and the selection filter's own
-                // state.
-                //
-                // The filter is compared before and after rather than
-                // reporting its own change. `PickFilter` is `Copy` and
-                // eleven bytes wide, so a snapshot costs less than the
-                // dirty flag it replaces — and, more to the point, it
-                // cannot be forgotten by a future row added to the popup.
-                // A control that mutated the filter without setting a flag
-                // would persist nothing and look completely correct.
-                let filter_before = self.pick_filter;
-                // Same comparison seam as the filter, for the same reason:
-                // a snapshot of a `Copy` value cannot be forgotten by a future
-                // control added to the popup, where a dirty flag can.
-                let max_zoom_before = self.prefs.max_zoom_percent;
-                // And the wheel-paging choice, snapshotted for the same
-                // reason and saved by the same branch — O30. Two preferences
-                // reachable from one bar, and the file is written whole, so
-                // one comparison and one save covers both. Adding a second
-                // save call here would write the file twice on the frame a
-                // future control changed both.
-                let wheel_before = self.prefs.wheel_paging;
-                crate::app::status::show(
-                    ui,
-                    &self.status,
-                    &self.commands,
-                    &mut self.find,
-                    &mut self.pick_filter,
-                    &mut self.prefs.max_zoom_percent,
-                    &mut self.prefs.wheel_paging,
-                    &mut self.remote,
-                    &mut actions,
-                );
-                let wheel_now = self.prefs.wheel_paging;
-                // THE WHEEL CHOICE REACHES THE OPEN DOCUMENTS AT ONCE —
-                // O30, and it is the one preference that must not wait for a
-                // Settings apply.
-                //
-                // `OpenDoc::prefs` is a SNAPSHOT, adopted when the Settings
-                // window is applied, and its contract is about values baked
-                // into cached rasters — `render_quality` is the reason it
-                // exists. `wheel_paging` bakes into nothing; it is a live
-                // preference about an input gesture, and the operator who
-                // just pressed the toggle expects the very NEXT notch to obey.
-                // Left to the snapshot, the control would look correct, write
-                // the file correctly, and change nothing on screen until the
-                // Settings window was opened and applied — which is exactly
-                // the shape of a silently-inert control this project has
-                // shipped before.
-                if self.prefs.wheel_paging != wheel_before {
-                    let adopt = |status: &mut crate::app::state::Status| {
-                        if let crate::app::state::Status::Open(doc) = status {
-                            doc.prefs.wheel_paging = wheel_now;
-                        }
-                    };
-                    adopt(&mut self.status);
-                    for parked in &mut self.parked {
-                        adopt(parked);
-                    }
-                }
-                if (self.prefs.max_zoom_percent - max_zoom_before).abs() > f32::EPSILON
-                    || self.prefs.wheel_paging != wheel_before
-                {
-                    // The preferences file is written whole, and the error is
-                    // traced rather than shown: losing a maximum-zoom choice
-                    // across a restart is an inconvenience, where a modal about
-                    // a preferences file raised at the moment he picked from a
-                    // menu would be worse than what it reports.
-                    if let Err(err) = self.prefs.save() {
-                        crate::diag::trace(|| {
-                            format!(
-                                // ui-text-exempt: diagnostic trace, never displayed.
-                                "prefs-save-failed after=max-zoom err={err}"
-                            )
-                        });
-                    }
-                }
-                if self.pick_filter != filter_before {
-                    // Immediately, not debounced: a filter can only change
-                    // on a discrete click, so one change is already one
-                    // operator decision. `pickstore`'s header carries the
-                    // contrast with the dock layout, which needs a delay
-                    // because a splitter drag reports one per frame.
+        if !page_only {
+            egui::Panel::bottom("status")
+                .exact_size(crate::app::status::height_for(&theme))
+                .show(ui, |ui| {
+                    // Three disjoint field borrows through `self`, as at the
+                    // canvas call site below: the bar reads the status and
+                    // writes the Find toggle's and the selection filter's own
+                    // state.
                     //
-                    // The error is traced and not shown. Losing a filter
-                    // across a restart is an inconvenience; a modal about a
-                    // preferences file, raised at the moment the operator
-                    // ticked a checkbox, would be worse than what it
-                    // reports.
-                    if let Err(err) = crate::app::pickstore::save(self.pick_filter) {
-                        crate::diag::trace(|| {
-                            format!(
-                                // ui-text-exempt: diagnostic trace, never displayed.
-                                "pick-filter-save-failed kind={}",
-                                err.kind()
-                            )
-                        });
+                    // The filter is compared before and after rather than
+                    // reporting its own change. `PickFilter` is `Copy` and
+                    // eleven bytes wide, so a snapshot costs less than the
+                    // dirty flag it replaces — and, more to the point, it
+                    // cannot be forgotten by a future row added to the popup.
+                    // A control that mutated the filter without setting a flag
+                    // would persist nothing and look completely correct.
+                    let filter_before = self.pick_filter;
+                    // Same comparison seam as the filter, for the same reason:
+                    // a snapshot of a `Copy` value cannot be forgotten by a future
+                    // control added to the popup, where a dirty flag can.
+                    let max_zoom_before = self.prefs.max_zoom_percent;
+                    // And the wheel-paging choice, snapshotted for the same
+                    // reason and saved by the same branch — O30. Two preferences
+                    // reachable from one bar, and the file is written whole, so
+                    // one comparison and one save covers both. Adding a second
+                    // save call here would write the file twice on the frame a
+                    // future control changed both.
+                    let wheel_before = self.prefs.wheel_paging;
+                    crate::app::status::show(
+                        ui,
+                        &self.status,
+                        &self.commands,
+                        &mut self.find,
+                        &mut self.pick_filter,
+                        &mut self.prefs.max_zoom_percent,
+                        &mut self.prefs.wheel_paging,
+                        &mut self.remote,
+                        &mut actions,
+                    );
+                    let wheel_now = self.prefs.wheel_paging;
+                    // THE WHEEL CHOICE REACHES THE OPEN DOCUMENTS AT ONCE —
+                    // O30, and it is the one preference that must not wait for a
+                    // Settings apply.
+                    //
+                    // `OpenDoc::prefs` is a SNAPSHOT, adopted when the Settings
+                    // window is applied, and its contract is about values baked
+                    // into cached rasters — `render_quality` is the reason it
+                    // exists. `wheel_paging` bakes into nothing; it is a live
+                    // preference about an input gesture, and the operator who
+                    // just pressed the toggle expects the very NEXT notch to obey.
+                    // Left to the snapshot, the control would look correct, write
+                    // the file correctly, and change nothing on screen until the
+                    // Settings window was opened and applied — which is exactly
+                    // the shape of a silently-inert control this project has
+                    // shipped before.
+                    if self.prefs.wheel_paging != wheel_before {
+                        let adopt = |status: &mut crate::app::state::Status| {
+                            if let crate::app::state::Status::Open(doc) = status {
+                                doc.prefs.wheel_paging = wheel_now;
+                            }
+                        };
+                        adopt(&mut self.status);
+                        for parked in &mut self.parked {
+                            adopt(parked);
+                        }
                     }
-                }
-            });
+                    if (self.prefs.max_zoom_percent - max_zoom_before).abs() > f32::EPSILON
+                        || self.prefs.wheel_paging != wheel_before
+                    {
+                        // The preferences file is written whole, and the error is
+                        // traced rather than shown: losing a maximum-zoom choice
+                        // across a restart is an inconvenience, where a modal about
+                        // a preferences file raised at the moment he picked from a
+                        // menu would be worse than what it reports.
+                        if let Err(err) = self.prefs.save() {
+                            crate::diag::trace(|| {
+                                format!(
+                                    // ui-text-exempt: diagnostic trace, never displayed.
+                                    "prefs-save-failed after=max-zoom err={err}"
+                                )
+                            });
+                        }
+                    }
+                    if self.pick_filter != filter_before {
+                        // Immediately, not debounced: a filter can only change
+                        // on a discrete click, so one change is already one
+                        // operator decision. `pickstore`'s header carries the
+                        // contrast with the dock layout, which needs a delay
+                        // because a splitter drag reports one per frame.
+                        //
+                        // The error is traced and not shown. Losing a filter
+                        // across a restart is an inconvenience; a modal about a
+                        // preferences file, raised at the moment the operator
+                        // ticked a checkbox, would be worse than what it
+                        // reports.
+                        if let Err(err) = crate::app::pickstore::save(self.pick_filter) {
+                            crate::diag::trace(|| {
+                                format!(
+                                    // ui-text-exempt: diagnostic trace, never displayed.
+                                    "pick-filter-save-failed kind={}",
+                                    err.kind()
+                                )
+                            });
+                        }
+                    }
+                });
+        }
 
         crate::diag::frame_phase("status");
         // Step 1c — the docks, between the ribbon and the canvas.

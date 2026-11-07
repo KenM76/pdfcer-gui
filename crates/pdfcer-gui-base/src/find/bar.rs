@@ -18,7 +18,7 @@ use pdfcer_core::edit::WordBoundary;
 // ---------------------------------------------------------------------------
 
 /// How wide the overlay's content row is, in egui points.
-pub const BAR_WIDTH_PTS: f32 = 460.0;
+pub const BAR_WIDTH_PTS: f32 = 505.0;
 
 /// The height of the single row every control is laid out inside.
 pub const ROW_HEIGHT_PTS: f32 = 24.0;
@@ -43,6 +43,9 @@ const REGION_BAR: &str = "find-bar"; // ui-text-exempt: trace region name, never
 
 /// The search field itself.
 const REGION_FIELD: &str = "find-field"; // ui-text-exempt: trace region name, never displayed
+
+/// The button that runs the search, as Enter does.
+const REGION_FIND_BUTTON: &str = "find-button"; // ui-text-exempt: trace region name, never displayed
 
 /// The step buttons and the position readout.
 const REGION_POSITION: &str = "find-position"; // ui-text-exempt: trace region name, never displayed
@@ -221,6 +224,21 @@ fn anchor_right_top(host: Rect) -> Pos2 {
 
 /// Everything on the row.
 ///
+/// The Find button: exactly what Enter does in the field, and the caret goes back
+/// there so that Enter walks on from the result.
+fn find_button(ui: &mut egui::Ui, state: &mut FindState, epoch: u64, actions: &mut Vec<Action>) {
+    let button = ui
+        .button(t::find_button())
+        .on_hover_text(t::find_button_tooltip());
+    crate::diag::ui_rect(REGION_FIND_BUTTON, button.rect);
+    if button.clicked() {
+        let request = enter_intent(state.readout(epoch), false).unwrap_or(FindRequest::Search);
+        actions.push(Action::Find(request));
+        state.request_focus();
+        ui.ctx().request_repaint();
+    }
+}
+
 fn body(
     ui: &mut egui::Ui,
     state: &mut FindState,
@@ -238,6 +256,7 @@ fn body(
         ui.set_max_size(row);
 
         field(ui, state, epoch, actions);
+        find_button(ui, state, epoch, actions);
         position(ui, state, epoch, actions);
 
         // The options menu and the close button, hard right, in that order
