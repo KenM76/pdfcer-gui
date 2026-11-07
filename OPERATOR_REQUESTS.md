@@ -661,7 +661,7 @@ His words: *"I notice the sun lights the entire ceiling in the model I am moving
 
 **Status.** Measured with the operator's model: the model is sound, a closed ceiling 12.7 mm thick, and the shadow lookup's offsets at the default map size are larger than that. The same view is right at the largest map size, wrong at the default. Asked of the engine as G275, with no workaround here. Then: drive it on `Bancroft_3D_plan.pdf` from this view and compare a picture with the sun and one without.
 
-## O401 — **BUILT AND DRIVEN ON THE EMULATOR, not on a real printer** — the Android app may use the network, for printing
+## O401 — **RELEASED in `v0.5.0-dev.20261106.3`, DRIVEN ON THE EMULATOR, not on a real printer** — the Android app may use the network, for printing
 
 His words: *"I think we need to be able to request network access when installing on android in order for printing."*
 
@@ -685,7 +685,7 @@ His words, relayed by the engine: *"Can we add 360 degree capability to our scre
 
 **Status.** Built on engine v0.133.0. Driven and falsified twice on real builds: without the levelling the check reads a tilted camera, and without the tag it reads a file lacking it. The picture is taken from the view's eye, so from an orbit outside the model it shows the model small on the backdrop; the switch's hover text says to walk inside for a view from within. The engine's own `3d-render --360` does not level a pitched view: reported as X055.
 
-## O399 — **BUILT**, driven by `the_3d_viewer_measures_from_points_on_the_model` — the engine's 3D measuring tools, reachable in the 3D viewer
+## O399 — **RELEASED in `v0.5.0-dev.20261106.3`**, driven by `the_3d_viewer_measures_from_points_on_the_model` — the engine's 3D measuring tools, reachable in the 3D viewer
 
 His words: *"If there are 3D measuring tools in pdfcer we need to add support for them in pdfcer-gui as well."*
 
@@ -697,7 +697,7 @@ His words: *"If there are 3D measuring tools in pdfcer we need to add support fo
 
 Limits, stated so they are not mistaken for done: keeping or deleting rewrites the file's saved views through `EditSession::set_3d_views`, which drops what a `ThreeDSavedView` does not carry, each view's background, section, node states and named 3D path among them. The status line says so, and the verb that would avoid it is asked of the engine as G274. A measurement's own `node1`/`node2` hiding is not applied. The marks are drawn over the picture, so a saved picture does not carry them.
 
-## O398 — **BUILT**, driven by `the_3d_viewers_settings_are_saved_only_as_defaults`, `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`, `settings_navigate_by_page` — the 3D viewer's settings: graphics-card switches per part, *Save as default* instead of saving on every change, and all of them on a Settings page
+## O398 — **RELEASED in `v0.5.0-dev.20261106.3`**, driven by `the_3d_viewers_settings_are_saved_only_as_defaults`, `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`, `settings_navigate_by_page` — the 3D viewer's settings: graphics-card switches per part, *Save as default* instead of saving on every change, and all of them on a Settings page
 
 His words: *"We also need in our settings while in the 3D menu a way to turn on and off GPU support for different parts, and instead of automatically saving the last set of rendering preferences for all these, include a save as default button that will save them as user preferences (not over the reset to default default). Also we need this to be included in our settings for the main program settings window, and a way in there to change all the lense and other settings that we have to control 3D actions and rendering and save them like we do for the other settings."*
 

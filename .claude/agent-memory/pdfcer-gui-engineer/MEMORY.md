@@ -195,3 +195,5 @@
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
 - [A leftover loop ran the harness live](feedback_loop_tail_ran_harness.md) — --no-input AND --check.
+- [A sweep failure that passes alone](feedback_passes_alone_trace.md) — A sweep-only failure that passes alone still needs its trace read: name the mechanism before calling
+- [A replace-all verb drops keys](feedback_replace_all_verb.md) — A write verb that replaces a list drops every key its Rust type doesn't carry; disclose and file.
