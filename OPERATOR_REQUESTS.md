@@ -707,6 +707,8 @@ His words: *"I think we need to be able to request network access when installin
 
 **Status.** Ships in the next release.
 
+**Print rule driven on engine v0.135.0, on the emulator, Save as PDF only.** A one-page test file with one square of each case: page content 900 units, a paper-only annotation 900, a screen-only annotation 3,600, a layer off for paper 6,400, of a 40,000-unit page. The app shows the screen's three squares; Android's print preview showed the two that print; the saved file, rasterised by Ghostscript rather than by the engine, holds 1,800 of 40,000 pixels, 4.5%, the right share with the right two left. On a 200-point page and Letter paper the preview draws the page fitted to the width and at the top of the sheet: that placement is Android's. No real printer was used.
+
 ## O400 — **BUILT AND DRIVEN** by `the_3d_viewer_saves_a_360_picture_for_photo_viewers` — X054: a 360° picture from the 3D viewer
 
 His words, relayed by the engine: *"Can we add 360 degree capability to our screen capture? The kind that opens in photo viewers as a picture you can look around in?"* and *"inform pdfcer-gui of this new feature to add to the screenshot render options."*
