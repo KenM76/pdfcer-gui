@@ -196,3 +196,4 @@
 - [A control past the window's edge](feedback_read_layout_before_bug.md) — may just be below a scrolling fold; read the layout before saying bug.
 - [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice on 2026-11-06, mixed RAM kits; flaky compiles may be hardware.
 - [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it, drive what slid ahead.
+- [A Git Bash winpid may be a stub](feedback_msys_winpid_is_stub.md) — killing it left the app running and hung `wait`; find the PID by exe path.
