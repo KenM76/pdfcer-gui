@@ -17,6 +17,8 @@ const MODE: &str = "read";
 /// Four pages whose text is set in embedded TrueType, which SVG can keep.
 const FIXTURE: &str = "four-pages.pdf";
 const WINDOW: &str = "dialog:export-image";
+/// How many wheel notches to spend reaching a control below the body's fold.
+const SCROLLS: usize = 30;
 const SVG_RADIO: &str = "export-image.format.svg";
 const KEEP_TEXT: &str = "export-image.keep-text";
 const EXPORT: &str = "export-image.export";
@@ -227,13 +229,17 @@ fn export_once(
                 "export {round}: `file.export_image` was clicked and no `{WINDOW}` appeared."
             )));
         }
-        let Some(rect) = declared(&trace, ui_rect, name) else {
+        let Some(rect) = crate::checks::reaching::scroll_to(
+            session, driver, ui_rect, WINDOW, name, SCROLLS, report,
+        )?
+        else {
             return Ok(Some(format!(
                 "export {round}: the window declares no `{name}` region, so {what} is not on \
                  offer. Regions declared: {}.",
                 list(&declared_names(&trace, ui_rect, "export-image."))
             )));
         };
+        let trace = session.trace()?;
         driver.click_at(frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
         session.settle(14);
     }

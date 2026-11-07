@@ -7,7 +7,7 @@ use crate::geom::LRect;
 use crate::input::Click;
 use crate::launch::Session;
 
-use super::driving::declared;
+use super::driving::{declared, frame_of};
 /// **Bring a docked panel to the front of its tab stack.**
 pub fn raise_dock_tab(
     session: &Session,
@@ -183,7 +183,7 @@ pub fn scroll_to(
                 session.trace_path().display()
             )));
         };
-        let point = session.frame()?.declared_center(at);
+        let point = frame_of(session, &trace, ui_rect, anchor)?.declared_center(at);
         driver.scroll_at(point, -1)?;
         session.settle(12);
         // Instrumentation, kept rather than removed. When this loop fails the

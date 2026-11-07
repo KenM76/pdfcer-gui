@@ -25,6 +25,9 @@ const FOLD: &str = "compact.pictures";
 const SWITCH: &str = "compact.pictures.on";
 const LOSSY: &str = "compact.pictures.lossy";
 const BUTTON: &str = "compact.commit";
+/// The window's scrolling body, and how far to roll it looking for a region.
+const BODY: &str = "compact.body";
+const SCROLLS: usize = 36;
 /// One line per finished recompression of the copy.
 const RECOMPRESSED: &str = "compact-recompressed";
 const WRITTEN: &str = "compact-written";
@@ -70,7 +73,14 @@ fn recompressed_after(session: &Session, mark: usize) -> Result<Option<TraceLine
 }
 
 /// Clicks the centre of `region` once it has stopped moving.
-fn click(session: &Session, driver: &Driver, ui_rect: &str, region: &str) -> Result<bool> {
+fn click(
+    session: &Session,
+    driver: &Driver,
+    ui_rect: &str,
+    region: &str,
+    report: &mut CheckReport,
+) -> Result<bool> {
+    crate::checks::reaching::scroll_to(session, driver, ui_rect, BODY, region, SCROLLS, report)?;
     let Some(rect) = stable_rect(session, ui_rect, region, 8)? else {
         return Ok(false);
     };
@@ -180,7 +190,7 @@ fn pictures_on(
         )));
     }
 
-    if !click(session, driver, ui_rect, FOLD)? {
+    if !click(session, driver, ui_rect, FOLD, report)? {
         return Ok(Err(format!(
             "★ THE PICTURES FOLD IS NOT IN THE WINDOW: no visible `{FOLD}` region. Regions \
              beginning `compact`: {}. Trace: {path}.",
@@ -188,7 +198,7 @@ fn pictures_on(
         )));
     }
     let mark = session.trace()?.mark();
-    if !click(session, driver, ui_rect, SWITCH)? {
+    if !click(session, driver, ui_rect, SWITCH, report)? {
         return Ok(Err(format!(
             "the Pictures fold was clicked and its switch never drew: no visible `{SWITCH}` \
              region. The fold did not open, or the switch is clipped below the window's \
@@ -260,7 +270,7 @@ fn save(
     before: usize,
 ) -> Result<Option<String>> {
     let path = session.trace_path().display().to_string();
-    if !click(session, driver, ui_rect, BUTTON)? {
+    if !click(session, driver, ui_rect, BUTTON, report)? {
         return Ok(Some(format!(
             "the window declared no visible `{BUTTON}` region. Trace: {path}."
         )));

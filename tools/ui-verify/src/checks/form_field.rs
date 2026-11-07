@@ -78,6 +78,11 @@ const WIDGET_APPLY_REGION: &str = "properties.widget_edit.apply";
 /// engine.
 const WIDGET_APPLIED: &str = "edit-widget";
 
+/// How many times the trace says the field selection was cleared.
+fn cleared_lines(trace: &crate::trace::Trace) -> usize {
+    trace.events(SELECTED).filter(|l| l.get("field").is_none()).count()
+}
+
 /// Placing a form field, and selecting one that already exists.
 pub struct FormFieldPlaceAndSelect;
 
@@ -415,6 +420,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             session.trace_path().display()
         )));
     };
+    let cleared_before = cleared_lines(&trace);
+    driver.press(crate::sys::vk::ESCAPE)?;
+    session.settle(20);
+    if cleared_lines(&session.trace()?) <= cleared_before {
+        return Ok(Some(format!(
+            "★ ESCAPE DID NOT LET GO OF THE SELECTED FORM FIELD: no new `{SELECTED} none` line \
+             after the press. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    driver.click_at(frame.to_screen(point))?;
+    session.settle(25);
     report.note(format!(
         "selected {:?} on page {:?}",
         selected.get("field"),

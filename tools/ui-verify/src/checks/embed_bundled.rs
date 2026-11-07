@@ -14,6 +14,9 @@ use crate::report::CheckReport;
 
 /// The command, invoked through the harness seam.
 const INVOKE: &str = "mode.edit,tools.embed_fonts";
+/// A profile defaults to the computer's font folders, where a real Arial answers
+/// `Helvetica` and the own-fonts offer rightly never appears.
+const NO_OS_FONTS: &str = "use_os_fonts = false\n";
 /// The variable this check deliberately does **not** set.
 #[allow(dead_code)]
 const DELIBERATELY_UNSET: &str = "PDFCER_DIAG_FONT_DIR";
@@ -84,6 +87,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
+
+    let userdata = exe
+        .parent()
+        .ok_or_else(|| Error::new("the binary has no parent directory"))?
+        .join("userdata");
+    std::fs::create_dir_all(&userdata)
+        .map_err(|e| Error::new(format!("could not create {}: {e}", userdata.display())))?;
+    crate::sandbox::write_prefs(&userdata, NO_OS_FONTS)
+        .map_err(|e| Error::new(format!("could not write preferences: {e}")))?;
 
     let mut spec = LaunchSpec::new(&exe, ctx.out("embed-bundled.trace.txt"));
     spec.pdf = Some(pdf.clone());

@@ -59,7 +59,7 @@
 #
 # ## Usage
 #
-#   bash tools/ui-verify/sweep-full.sh [--no-input] [--affected[=REF]]
+#   bash tools/ui-verify/sweep-full.sh [--no-input] [--affected[=REF]] [--start=N]
 #
 # `--affected` drives only the checks `affected-checks.py` selects from the
 # change since REF (default: the newest release tag). This is the default
@@ -152,11 +152,14 @@ NOINPUT=
 RUN=full
 VOIDED=$OUT/sweep-skips-foreground-voided.txt
 AFFECTED=
+# The list position to begin at, for a run a machine failure cut short.
+START=1
 for arg in "$@"; do
     case "$arg" in
         --no-input) NOINPUT=--no-input ;;
         --affected) AFFECTED=latest-tag ;;
         --affected=*) AFFECTED=${arg#--affected=} ;;
+        --start=*) START=${arg#--start=} ;;
         *) echo "sweep-full: unknown argument '$arg'" >&2; exit 2 ;;
     esac
 done
@@ -422,7 +425,7 @@ echo "=== sweeping $N checks in chunks, plus the ALONE table" | tee -a "$LOG"
 # statement about the whole run rather than about its last chunk.
 worst=0
 
-for start in $(seq 1 20 "$N"); do
+for start in $(seq "$START" 20 "$N"); do
     ARGS=$(sed -n "${start},$((start + 19))p" "$LIST" | sed 's/^/--check /' | tr '\n' ' ')
     echo "=== chunk $start" >> "$LOG"
     # shellcheck disable=SC2086

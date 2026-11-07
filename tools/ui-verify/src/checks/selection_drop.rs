@@ -15,7 +15,7 @@ use crate::coords::{CanvasMapping, DocPoint, WindowPoint};
 use crate::error::{Error, Result};
 use crate::trace::TraceLine;
 
-const SELECT_ALL: &str = "ribbon.item.edit.select_all"; // ui-text-exempt: a trace region name
+const SELECT_ALL: &str = "rail.select.edit.select_all"; // ui-text-exempt: a trace region name
 const MODE: &str = "edit"; // ui-text-exempt: a ribbon mode id
 const DROPPED: &str = "window-selection-dropped"; // ui-text-exempt: a trace event name
 const COPIED: &str = "clipboard-copy"; // ui-text-exempt: a trace event name

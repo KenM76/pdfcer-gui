@@ -37,6 +37,9 @@ const PREVIEW_EVENT: &str = "dim-preview";
 const RELEASE_EVENT: &str = "dimension-extension-gap";
 /// The funnel's success line for the engine verb.
 const APPLIED_EVENT: &str = "set-dimension-extension-gap";
+/// What Escape did, and the outcome that drops a selected ce dimension.
+const ESCAPE_EVENT: &str = "canvas-escape";
+const LET_GO: &str = "ClearedAnnotation";
 /// The three clicks that place the dimension, as fractions of the page box
 /// (y up): A, B, and where the dimension line sits. Blank paper on
 /// `blank-overhang.pdf`, below its frame.
@@ -390,6 +393,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // Deselected first, so no handle or outline is read as the line.
     driver.press(vk::ESCAPE)?;
     session.settle(18);
+    let let_go = session.trace()?;
+    if let_go.last(ESCAPE_EVENT).and_then(|l| l.get("outcome")) != Some(LET_GO) {
+        return Ok(Some(format!(
+            "★ ESCAPE DID NOT LET GO OF THE SELECTED CE DIMENSION: the last `{ESCAPE_EVENT}` line \
+             is {:?}, not `outcome={LET_GO}`.",
+            let_go.last(ESCAPE_EVENT).map(|l| l.raw.clone())
+        )));
+    }
     let after_shot = ctx.out("dimension_extension_grip_after.png");
     let after = crate::capture::window_to_png(&session, &after_shot)?;
     report.artifact(after_shot);

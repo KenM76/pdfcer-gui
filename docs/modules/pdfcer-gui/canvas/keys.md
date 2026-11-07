@@ -34,6 +34,7 @@ first"*, and rung 3 has two occupants that cannot both be present:
 | — | the **armed text tool** is deliberately **not** a claimant — see below | — | — |
 | 4 | an **armed region zoom** | [`crate::canvas::zoom::disarm_region_zoom`] | its return value: `true` when there was something to retire |
 | 5 | the **selection ladder**, or the **text selection** | [`crate::canvas::selection::SelectionState::escape`] / clearing [`crate::canvas::textsel::TextSelection`] | it is last, so it acts only when none above did |
+| 5b | a selected **markup, link or ce dimension**, or a selected **form field**: selections the ladder does not hold | `canvas::keys::escape_selection`, through `SelectionState::clear_annot` and `FieldAction::Select(None)` | acts only when the ladder reported `Nothing`, and traces `canvas-escape outcome=ClearedAnnotation` or `ClearedField` |
 
 ### Why the text selection shares rung 5 rather than taking a sixth
 

@@ -646,7 +646,7 @@ impl ExportImageDialog {
             &mut self.keep_text,
             crate::text::export_keeptext::checkbox(),
         );
-        crate::diag::ui_rect(REGION_KEEP_TEXT, response.rect);
+        crate::diag::ui_rect_visible(REGION_KEEP_TEXT, response.rect, ui.clip_rect());
         ui.weak(crate::text::export_keeptext::hint(
             self.format,
             self.keep_text,

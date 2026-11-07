@@ -209,6 +209,56 @@ pub(super) struct Keys<'a> {
     pub field_page: Option<&'a pdfcer_core::page_tree::Page>,
 }
 
+/// **Claimants 5 to 7**: the press no transient gesture took.
+///
+/// The text selection is tested first because it can be non-empty in Read,
+/// where the ladder has nothing to ascend. Then the ladder, then whatever is
+/// selected outside it (a markup, link or ce dimension, or a form field), and
+/// only with nothing selected does the press leave the container and, last, the
+/// page-only window: the most transient thing is retired first, one per press.
+fn escape_selection(
+    ctx: &egui::Context,
+    page_index: usize,
+    selected_field: Option<&crate::app::state::SelectedField>,
+    selection: &mut SelectionState,
+    text_selection: &mut Option<crate::canvas::textsel::TextSelection>,
+    actions: &mut Vec<Action>,
+) {
+    if text_selection.take().is_some() {
+        crate::canvas::trace::text_selection(page_index, None, "escape");
+        return;
+    }
+    let outcome = selection.escape();
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("canvas-escape outcome={outcome:?} sel={}", selection.len())
+    });
+    use crate::canvas::selection::EscapeOutcome;
+    if !matches!(outcome, EscapeOutcome::Nothing | EscapeOutcome::ClearedSelection) {
+        return;
+    }
+    // Clicking a form field selects it in both places, so the press that empties
+    // the ladder lets go of the rest too, or the field would outlive it.
+    // ui-text-exempt: diagnostic traces, never displayed in the UI
+    let said = if selection.clear_annot() {
+        "ClearedAnnotation"
+    } else if selected_field.is_some() {
+        actions.push(crate::app::actions::forms::FieldAction::Select(None).into());
+        crate::diag::trace(|| "form-field-selected none".to_owned());
+        "ClearedField"
+    } else if matches!(outcome, EscapeOutcome::ClearedSelection) {
+        return;
+    } else if crate::canvas::smart::leave(ctx) {
+        "LeftContainer"
+    } else if crate::app::window::leave_page_only(ctx) {
+        crate::diag::trace(|| "fullscreen asked=false by=escape".to_owned());
+        "LeftFullScreen"
+    } else {
+        return;
+    };
+    crate::diag::trace(|| format!("canvas-escape outcome={said}"));
+}
+
 pub(super) fn canvas_keys(
     keys: Keys<'_>,
     selection: &mut SelectionState,
@@ -568,57 +618,7 @@ pub(super) fn canvas_keys(
         && !tool_disarmed
         && !disarmed
     {
-        // Rung 5's two occupants, and they cannot both be here — see the
-        // header. The text branch is tested first because it is the one that
-        // can be non-empty in a mode where the other is *structurally* empty:
-        // in Read the ladder has nothing to ascend, so calling `escape()` first
-        // would consume the press on a no-op and leave the wash on the page.
-        if text_selection.take().is_some() {
-            crate::canvas::trace::text_selection(page_index, None, "escape");
-        } else {
-            let outcome = selection.escape();
-            crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "canvas-escape outcome={outcome:?} sel={}",
-                    selection.len()
-                )
-            });
-            // **Claimant 6 — LEAVE THE CONTAINER**, and only when the rung
-            // above found nothing left to do. `OPERATOR_REQUESTS.md` O70.
-            //
-            // Below the selection rather than above it, which is the opposite
-            // of a first guess and follows this table's own rule: **retire the
-            // most transient thing first**. A selection inside a title block is
-            // made and remade by every click; the fact that the operator is
-            // WORKING inside that title block survives all of them, and is what
-            // they would be most annoyed to lose to a stray press.
-            //
-            // ⇒ So one Escape clears what is selected, and a second steps back
-            // out into the drawing. That is one rung per press — decision 025's
-            // L1 — with the scope as the outermost rung of the same ladder,
-            // rather than a sixth thing competing for the key.
-            if matches!(outcome, crate::canvas::selection::EscapeOutcome::Nothing) {
-                if crate::canvas::smart::leave(ctx) {
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed in the UI
-                        "canvas-escape outcome=LeftContainer".to_owned()
-                    });
-                // **Claimant 7 — LEAVE THE PAGE-ONLY WINDOW.** Last, so a press
-                // retires everything transient on the page before it takes the
-                // window back.
-                } else if crate::app::window::leave_page_only(ctx) {
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed in the UI
-                        "canvas-escape outcome=LeftFullScreen".to_owned()
-                    });
-                    crate::diag::trace(|| {
-                        // ui-text-exempt: diagnostic trace, never displayed in the UI
-                        "fullscreen asked=false by=escape".to_owned()
-                    });
-                }
-            }
-        }
+        escape_selection(ctx, page_index, selected_field, selection, text_selection, actions);
     }
 
     if !delete {
