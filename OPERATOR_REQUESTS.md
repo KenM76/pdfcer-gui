@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O403 — **BUILT AND DRIVEN** — the outside review's five open ribbon questions, ruled
+## O403 — **RELEASED in `v0.5.0-dev.20261107.1`** — the outside review's five open ribbon questions, ruled
 
 His words: *"Do all the things you recommend except the find can stay the same, but should have a find button added to also execute the search."* The review's questions (`D:\Dev\FeatureRequests\pdfcer-gui\REVIEW.md`, O114) and what he ruled:
 
@@ -669,7 +669,7 @@ Beyond the ruling, by the same rule: View's Window group gets words too, *Window
 
 **Status.** Driven by `the_ribbon_says_what_its_controls_do`, `read_mode_hides_the_chrome` and `read_mode_says_how_to_get_back_out`, all passing, photographs read. The Find button reached match 1 then 2, Enter 3; the tab measures 81.4 points as Selection in Read and 70.1 as Format in Edit; the collapsed Document button measures 103.8 points; F11 grew the page's panel from 2560x1000 to 3440x1440 and both F11 and Esc restored it. Falsified twice: the previous build fails on a 22-point page button, and a build with Document's words removed fails on an 80.9-point collapsed button. At a 1,100 px window in Read all of View fits, with Window collapsed; in Edit, with an object selected, the Format tab folds into the tab strip's *2 more* (see `FEATURES.md`).
 
-## O402 — **BUILT BY THE ENGINE (G275), DRIVEN ON HIS MODEL** — a sun the operator aims lights the whole ceiling instead of coming in the windows
+## O402 — **RELEASED in `v0.5.0-dev.20261107.1`, BUILT BY THE ENGINE (G275), DRIVEN ON HIS MODEL** — a sun the operator aims lights the whole ceiling instead of coming in the windows
 
 His words: *"I notice the sun lights the entire ceiling in the model I am moving in. I don't know if it is the way the model was made or if it shouldn't do that."* And: *"This is when I am in the settings where I can adjust the angle of the sun. I'd expect it in this custom mode to be outside of the model and only shine in the windows."*
 
@@ -709,7 +709,7 @@ His words: *"I think we need to be able to request network access when installin
 
 **Print rule driven on engine v0.135.0, on the emulator, Save as PDF only.** A one-page test file with one square of each case: page content 900 units, a paper-only annotation 900, a screen-only annotation 3,600, a layer off for paper 6,400, of a 40,000-unit page. The app shows the screen's three squares; Android's print preview showed the two that print; the saved file, rasterised by Ghostscript rather than by the engine, holds 1,800 of 40,000 pixels, 4.5%, the right share with the right two left. On a 200-point page and Letter paper the preview draws the page fitted to the width and at the top of the sheet: that placement is Android's. No real printer was used.
 
-## O400 — **BUILT AND DRIVEN** by `the_3d_viewer_saves_a_360_picture_for_photo_viewers` — X054: a 360° picture from the 3D viewer
+## O400 — **RELEASED in `v0.5.0-dev.20261106.3`**, driven by `the_3d_viewer_saves_a_360_picture_for_photo_viewers` — X054: a 360° picture from the 3D viewer
 
 His words, relayed by the engine: *"Can we add 360 degree capability to our screen capture? The kind that opens in photo viewers as a picture you can look around in?"* and *"inform pdfcer-gui of this new feature to add to the screenshot render options."*
 
