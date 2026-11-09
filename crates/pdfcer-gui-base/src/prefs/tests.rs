@@ -216,6 +216,7 @@ fn every_preference_round_trips_through_the_file() {
                         custom_percent: 250,
                         scope: pdfcer_render::AnnotationScope::DocumentAndMarkups,
                         max_dpi: 600,
+                        print_as_image: false,
                         copies: 3,
                         // Non-default, and it is the field that proves the
                         // INVERSION: the file says `print_collate` and the struct
@@ -777,6 +778,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             // exactly where a writer that formatted through an `f32` would
             // start emitting something its own parser could not read.
             max_dpi: 2_400,
+            print_as_image: true,
             copies: 999,
             uncollated: true,
             subset: PageSubset::Odd,

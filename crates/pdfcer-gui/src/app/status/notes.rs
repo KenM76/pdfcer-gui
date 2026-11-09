@@ -138,7 +138,7 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
         out.push(t::diagnostics_resources_defaulted().to_owned());
     }
 
-    let entries: [NoteEntry; 11] = [
+    let entries: [NoteEntry; 12] = [
         (
             d.contents_streams_unresolved,
             t::diagnostics_contents_missing,
@@ -155,6 +155,7 @@ pub(crate) fn findings(d: &pdfcer_render::Diagnostics) -> Vec<String> {
         // Drawn, so below the invisible ones; still above the font lines,
         // because it is the one finding about what ANOTHER viewer will show.
         (geometry_drawn(d), t::diagnostics_annots_drawn_from_shape),
+        (d.jxl_nonstandard_images, t::diagnostics_images_jxl),
         (d.fonts_unsupported, t::diagnostics_fonts_skipped),
         (d.images_unsupported, t::diagnostics_images_skipped),
         (d.glyphs_notdef, t::diagnostics_glyphs_notdef),
@@ -182,6 +183,17 @@ pub(crate) fn ink_trace(d: &pdfcer_render::Diagnostics) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A JPEG XL image is drawn and named, because another reader may not
+    /// show it.
+    #[test]
+    fn a_jpeg_xl_image_is_named() {
+        let d = pdfcer_render::Diagnostics {
+            jxl_nonstandard_images: 2,
+            ..Default::default()
+        };
+        assert!(notes_line(&d).contains(&t::diagnostics_images_jxl(2)));
+    }
 
     /// A clean render still says something.
     #[test]

@@ -87,6 +87,17 @@ pub fn diagnostics_images_skipped(n: usize) -> String {
     }
 }
 
+/// JPEG XL images, drawn here; the format is outside the PDF standard, so
+/// another reader may leave them blank.
+#[must_use]
+pub fn diagnostics_images_jxl(n: usize) -> String {
+    if n == 1 {
+        "1 JPEG XL image, which other PDF readers may not show".to_owned()
+    } else {
+        format!("{n} JPEG XL images, which other PDF readers may not show")
+    }
+}
+
 /// Annotations the file carries that pdfcer drew **nothing** for.
 #[must_use]
 pub fn diagnostics_annots_no_appearance(n: usize) -> String {

@@ -8,9 +8,9 @@
 //! raster's pixels changed. Red is never white and never already grey, so
 //! both modes must change every red pixel.
 
-use crate::checks::driving::{SHELL_DIAG_ENV, declared_in, declared_names, list, repo_fixture};
+use crate::checks::driving::{SHELL_DIAG_ENV, repo_fixture};
+use crate::checks::region_press::press_region;
 use crate::checks::{Check, CheckContext};
-use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::input::scripted::ScriptedPointer;
 use crate::launch::{LaunchSpec, Session};
@@ -19,7 +19,6 @@ use crate::report::CheckReport;
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const FIXTURE: &str = "print-colour.pdf";
 const METHOD: &str = "Rebuild it with `python fixtures/print-colour.PROVENANCE.py`.";
-const UI_RECT: &str = "ui-rect";
 const OPEN: &str = "print-open";
 const COLOUR: &str = "print-colour";
 const TAB: &str = "print.tab.copies";
@@ -79,24 +78,10 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     Ok((session, pointer))
 }
 
-/// Click the region `name`, in whichever window declared it.
-fn press(session: &Session, pointer: &ScriptedPointer, name: &str, family: &str) -> Result<()> {
-    let trace = session.trace()?;
-    let (rect, viewport) = declared_in(&trace, UI_RECT, name).ok_or_else(|| {
-        Error::new(format!(
-            "no `{name}` region. Declared under `{family}`: {}.",
-            list(&declared_names(&trace, UI_RECT, family))
-        ))
-    })?;
-    pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;
-    session.settle(30);
-    Ok(())
-}
-
 /// Choose `mode` and read the preview's recolour line it caused.
 fn choose(session: &Session, pointer: &ScriptedPointer, mode: &str) -> Result<Option<String>> {
     let before = session.trace()?.events(COLOUR).count();
-    press(session, pointer, &format!("{PREFIX}{mode}"), PREFIX)?;
+    press_region(session, pointer, &format!("{PREFIX}{mode}"), PREFIX)?;
     let trace = session.trace()?;
     let Some(line) = trace
         .events(COLOUR)
@@ -131,7 +116,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              `print_dialog_reaches_the_spooler`'s subject."
         )));
     }
-    press(&session, &pointer, TAB, "print.tab.")?;
+    press_region(&session, &pointer, TAB, "print.tab.")?;
     for mode in ["grey", "black"] {
         if let Some(failure) = choose(&session, &pointer, mode)? {
             return Ok(Some(failure));

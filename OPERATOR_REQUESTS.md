@@ -653,6 +653,14 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O404 — **BUILT, DRIVEN** — a setting for whether a print goes as vector graphics or as an image
+
+His words: *"I don't see a way to set how printing is handled - sending as bitmap or vector or etc. Shouldn't there be a setting for this now that our print engine has been updated?"*
+
+**Scope, whole behaviour.** A plain page prints as vector graphics by default; the Print window's Pages tab has *Print as image*, remembered, which sends every page as pixels at the job's resolution. A page the engine cannot send as vectors (transparency, for one) goes as an image anyway, and the note after the job says how many pages did and why. Sheets pdfcer itself recolours or composes (grey and black-only colour, n-up and booklet sheets, poster tiles) stay images, and the window says so under the switch.
+
+**Status.** Driven by `print_sends_vector_unless_as_image` in dry run, no press reaching a device: ticked, four plain pages sent `vector=0`; relaunched, the remembered switch clicked off, `vector=4`; a transparent page, switch untouched, `vector=0 fell_back=1 why=blend mode`. Not printed on a real printer.
+
 ## O403 — **RELEASED in `v0.5.0-dev.20261107.1`** — the outside review's five open ribbon questions, ruled
 
 His words: *"Do all the things you recommend except the find can stay the same, but should have a find button added to also execute the search."* The review's questions (`D:\Dev\FeatureRequests\pdfcer-gui\REVIEW.md`, O114) and what he ruled:

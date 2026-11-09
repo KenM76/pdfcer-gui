@@ -14,9 +14,10 @@ mod diagnostics;
 pub use diagnostics::{
     diagnostics_annots_drawn_from_shape, diagnostics_annots_no_appearance, diagnostics_clean,
     diagnostics_contents_missing, diagnostics_fonts_skipped, diagnostics_glyphs_notdef,
-    diagnostics_glyphs_substituted, diagnostics_glyphs_supplied, diagnostics_images_skipped,
-    diagnostics_join, diagnostics_layers_hidden, diagnostics_ops_deferred, diagnostics_ops_unknown,
-    diagnostics_resources_defaulted, diagnostics_toggle, diagnostics_tooltip,
+    diagnostics_glyphs_substituted, diagnostics_glyphs_supplied, diagnostics_images_jxl,
+    diagnostics_images_skipped, diagnostics_join, diagnostics_layers_hidden,
+    diagnostics_ops_deferred, diagnostics_ops_unknown, diagnostics_resources_defaulted,
+    diagnostics_toggle, diagnostics_tooltip,
 };
 
 mod formdelete;
@@ -655,10 +656,11 @@ mod tests {
 
     /// Every counted note in this module, so a new one cannot be added
     /// without inheriting the checks below.
-    const COUNTERS: [fn(usize) -> String; 9] = [
+    const COUNTERS: [fn(usize) -> String; 10] = [
         diagnostics_contents_missing,
         diagnostics_fonts_skipped,
         diagnostics_images_skipped,
+        diagnostics_images_jxl,
         diagnostics_glyphs_notdef,
         diagnostics_glyphs_substituted,
         diagnostics_glyphs_supplied,

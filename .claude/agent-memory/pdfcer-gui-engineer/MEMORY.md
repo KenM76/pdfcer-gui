@@ -3,12 +3,12 @@
 - [Not at the keyboard unless he says so](user_keyboard_unless_says.md) — assume the PC is free; he texts and will TELL you.
 - [ui-verify competes for the machine](feedback_ui_verify_competes.md) — ask in one line with the cost.
 - [A driven check reached the real printer](feedback_driven_check_reached_printer.md) — 42 sheets; pause the queue around print-dialog drives.
-- [Update the engine before every build](feedback_update_engine_before.md) — SUPERSEDED while tag-only: package with `--no-update`.
+- [Update the engine before every build](feedback_update_engine_before.md) — superseded: package with `--no-update`.
 - [No pdfcer specialist agents on this roster](project_pdfcer_agent_roster.md) — dispatching them fails; go general-purpose.
 - [Scope a request to the whole behaviour](feedback_scope_request_whole.md) — he expects what surrounds it too.
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.
 - [Always publish the build to OneDrive](feedback_always_publish_latest.md) — finishing work is itself the trigger.
-- [Never mark a release --prerelease](feedback_never_mark_release.md) — hides it from `releases/latest`; a hand-off prompt did it 15 times.
+- [Never --prerelease](feedback_never_mark_release.md) — [`gh release create` tags remotely](feedback_gh_release_create.md); push main first, fetch tags.
 - [Publish zip AND APK to GitHub every release](feedback_publish_portable_zip.md) — both places, every time, CLEAN tree.
 - [Refresh FEATURES.md before every release](feedback_refresh_features_md.md) — re-measure, then package.
 - [Never defer on an external blocker](feedback_never_defer_external.md) — three "blockers" were never real.
@@ -49,7 +49,7 @@
 - [A rename can blind an instrument](feedback_rename_blind.md) — a hard-coded path makes green over nothing.
 - [A proxy condition survives one fix](feedback_proxy_condition.md) — ask what it READS; a substring outlives a narrowing.
 - [A right value in the wrong role](feedback_correctly_sourced.md) — gates forbid invented, not misused.
-- [A trace grep passes on a crash](feedback_trace_grepping_check.md) — the oracle line precedes the panic.
+- [A trace grep passes on a crash](feedback_trace_grepping_check.md) — [read a passing check's trace](feedback_read_passing_trace.md); the oracle line can lie.
 - [Parallelism needs an ownership map](feedback_parallelism_default.md) — nine tracks in one repo.
 - [Never ask — just add the feature](feedback_never_ask_add_feature.md) — placement, wording and scope are yours.
 - [A commit can describe work that never landed](feedback_commit_message.md) — a `;` chain hid a failed edit.
@@ -62,7 +62,6 @@
 - [A gate keyed on a name eats prose](feedback_gate_keyed_name.md) — 25 verbs scored "consumed" on doc comments.
 - [Never Debug-format a machine-read field](feedback_never_debug_format.md) — a `{:?}` inverted what it quoted.
 - [A supporting citation may be another doc](feedback_citation_supports.md) — two wrong diagnoses in a day.
-- [Shared state measures the run order](feedback_suite_shares_state.md) — isolation turns long-green checks red.
 - [A stage's trace is the stage's decision](feedback_stages_trace_records.md) — not what the frame settled on.
 - [A compile error invites reading the reply](feedback_compile_error.md) — a defaulted new arg declines the feature.
 - ["Cheap to read" isn't "no need to re-read"](feedback_cheap_read_no_need.md) — a cost comment answered a staleness question.
@@ -72,7 +71,7 @@
 - [Triage the reply channel](feedback_triage_reply_channel.md) — one triage found 8 closed-absence claims.
 - [Channel state is measured in the channel](feedback_claim_channels_state.md) — we had closed E001 ourselves.
 - [An omission may be an argued decision](feedback_apparent_omission.md) — open the module that owns it.
-- [Never kill pdfcer-gui by name](feedback_never_kill_pdfcer_gui.md) — his daily reader; by PID, never `/IM`.
+- [Never kill pdfcer-gui by name](feedback_never_kill_pdfcer_gui.md) — [a Git Bash winpid may be a stub](feedback_msys_winpid_is_stub.md); by exe-path PID only.
 - [Count one condition, reason about the other](feedback_count_condition.md) — two wrong diagnoses from half an AND.
 - [An `||` between required conditions](feedback_between_two_required.md) — asserts neither; looks like tolerance.
 - [A convenient input tests the assertion](feedback_check_input_chosen.md) — "what is typed doesn't matter" is a finding.
@@ -82,13 +81,12 @@
 - [A wobble inside the framework](feedback_wobble_inside.md) — list the leaves by id; five probes stalled.
 - ["Still broken" asks which build and pin](feedback_still_broken_report.md) — check the pin first.
 - [A gate reading evidence you write](feedback_gate_evidence_write.md) — no CONSUMED note, no guard.
-- [An API-drift hit can be a feature](feedback_api_drift_hit.md) — the counter was a disclosure's missing half.
+- [An API-drift hit can be a feature](feedback_api_drift_hit.md) — [an engine feature ships unconsumed](feedback_engine_feature_unconsumed.md); list new pub API per pin move.
 - [A quoted count goes stale invisibly](feedback_verbatim_quotation.md) — a figure beside its remedy self-invalidates.
 - [An oracle from the system under test](feedback_oracle_needs.md) — calibrate it: build the fixture from the spec first.
 - [Slack in screen units shrinks in his](feedback_slack_screen_units.md) — viewport-sized areas die at high zoom.
 - [A runner's sentinel indicts the runner](feedback_runners_sentinel.md) — 210 checks "swept", every chunk rc=2.
 - [Mutate before stamping, report your dirt](feedback_tool_mutates_tree.md) — `cargo update` earned the `-dirty`.
-- [`gh release create` tags remotely](feedback_gh_release_create.md) — fetch tags; push main FIRST or the tag lands on old remote main.
 - [Meaning can change under a signature](feedback_capability_change.md) — `is_editable` went false → *is a path*.
 - [A refusal filtered on the opposite test](feedback_refusal_filtered.md) — the symptom is SILENCE, which nobody reports.
 - [The count command can be wrong](feedback_count_command_wrong.md) — `xargs` batches, so `tail -1` reads one.
@@ -158,13 +156,12 @@
 - [An engine count is not the operator's](feedback_engine_count_not_operators.md) — purge verb said 0 while the rewrite removed the password.
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
 - [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.
-- [Read a passing check's trace](feedback_read_passing_trace.md) — the receipt said page 2 while the index oracle passed.
 - [Push only with a release](feedback_push_only_with_release.md) — commit locally; main goes to origin only inside an engine-triggered release.
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
 - [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — window_to_png raises + screen-grabs; photographed SolidWorks off-screen.
 - [A release build skips the tests](feedback_release_build_skips_tests.md) — clippy --all-targets before gates; a test literal cost a run.
 - [A missing-asset SKIP is the scratch folder](feedback_skip_on_missing_asset.md) — paddle "unrunnable" was 3 unlinked files.
-- [Git Bash ps cannot see a sibling call](feedback_ps_blind_sibling.md) — "no process" lied; check via Win32_Process before re-running gates.
+- [One gate run at a time](feedback_one_gate_run_at_a_time.md) — [Git Bash ps can't see a sibling](feedback_ps_blind_sibling.md); check Win32_Process first.
 - [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
 - [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — widening ate the OCR word preview; drive its neighbours first.
 - [A missing feature surface SKIPs, not FAILs](feedback_harness_skip_masks_feature.md) — `press` on an absent region is a harness error; assert the surface drew first.
@@ -180,7 +177,6 @@
 - [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.
 - [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.
 - [Drive only what changed](feedback_drive_only_affected.md) — checks from the diff; [an early tag empties it](feedback_early_tag_empties_affected.md): pass `--affected=<prev tag>`.
-- [One gate run at a time](feedback_one_gate_run_at_a_time.md) — two runs on one log: no verdict; a failed first step is not a finished chain.
 - [An inactive window starves focus gates](feedback_inactive_window_starves_gate.md) — no-steal scripted dialogs never typed; route gates via window_takes_keys.
 - [A wrapper drops a trait's default methods](feedback_wrapper_drops_default_method.md) — installedfaces lost `candidates`; every composite font fell to Helvetica.
 - [A seam's unit can widen under it](feedback_seam_unit_widens.md) — whole-draft seed wiped a paragraph; reach the old unit by his switch.
@@ -191,9 +187,8 @@
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
 - [A leftover loop ran the harness live](feedback_loop_tail_ran_harness.md) — --no-input AND --check.
-- [A sweep failure that passes alone](feedback_passes_alone_trace.md) — A sweep-only failure that passes alone still needs its trace read: name the mechanism before calling
+- [Shared state measures run order](feedback_suite_shares_state.md) — [a sweep-only failure](feedback_passes_alone_trace.md); read its trace, name the mechanism.
 - [A replace-all verb drops keys](feedback_replace_all_verb.md) — A write verb that replaces a list drops every key its Rust type doesn't carry; disclose and file.
 - [A control past the window's edge](feedback_read_layout_before_bug.md) — may just be below a scrolling fold; read the layout before saying bug.
 - [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice on 2026-11-06, mixed RAM kits; flaky compiles may be hardware.
 - [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it, drive what slid ahead.
-- [A Git Bash winpid may be a stub](feedback_msys_winpid_is_stub.md) — killing it left the app running and hung `wait`; find the PID by exe path.

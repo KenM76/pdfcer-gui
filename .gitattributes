@@ -91,6 +91,7 @@
 *.bin binary
 *.ico binary
 *.emf binary
+*.jxl binary
 # ★ `.rgba` — a RAW pixel buffer, and the reason it is listed rather than left
 # to `text=auto` is this file's own opening argument.
 #

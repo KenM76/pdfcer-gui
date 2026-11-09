@@ -49,5 +49,8 @@ pub const REGION_TAB_PREFIX: &str = "print.tab.";
 /// or not.
 pub const REGION_RESOLUTION: &str = "print.resolution";
 
+/// The Print as image switch on the Pages tab.
+pub const REGION_PRINT_AS_IMAGE: &str = "print.as-image";
+
 /// One region per colour choice, suffixed with the choice's trace word.
 pub const REGION_COLOUR_PREFIX: &str = "print.colour.";

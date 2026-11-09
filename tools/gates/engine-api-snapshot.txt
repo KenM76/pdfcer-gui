@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0
+# baseline: d5061ffffbf97ab485b81ffe577d8102c897619a
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11445
+# items: 11450
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -4745,6 +4745,7 @@ pdfcer-core fn pdfcer_core::image_import::gif::import
 pdfcer-core fn pdfcer_core::image_import::import
 pdfcer-core fn pdfcer_core::image_import::import_with
 pdfcer-core fn pdfcer_core::image_import::jpeg::import
+pdfcer-core fn pdfcer_core::image_import::jxl::import
 pdfcer-core fn pdfcer_core::image_import::png::import
 pdfcer-core fn pdfcer_core::image_import::sniff
 pdfcer-core fn pdfcer_core::image_import::tiff::import
@@ -8386,6 +8387,7 @@ pdfcer-core variant pdfcer_core::image_import::ImageCompression::Passthrough
 pdfcer-core variant pdfcer_core::image_import::ImageFormat::Bmp
 pdfcer-core variant pdfcer_core::image_import::ImageFormat::Gif
 pdfcer-core variant pdfcer_core::image_import::ImageFormat::Jpeg
+pdfcer-core variant pdfcer_core::image_import::ImageFormat::Jxl
 pdfcer-core variant pdfcer_core::image_import::ImageFormat::Pixels
 pdfcer-core variant pdfcer_core::image_import::ImageFormat::Png
 pdfcer-core variant pdfcer_core::image_import::ImageFormat::Tiff
@@ -10683,6 +10685,7 @@ pdfcer-render field pdfcer_render::image::ImageNotes::dct_cmyk_image
 pdfcer-render field pdfcer_render::image::ImageNotes::dct_cmyk_polarity_unverifiable
 pdfcer-render field pdfcer_render::image::ImageNotes::decode_array_ignored
 pdfcer-render field pdfcer_render::image::ImageNotes::jpx_smask_in_data_preblended
+pdfcer-render field pdfcer_render::image::ImageNotes::jxl_nonstandard
 pdfcer-render field pdfcer_render::image::ImageNotes::lzw_framing_anomalies
 pdfcer-render field pdfcer_render::image::ImageNotes::mask_applied
 pdfcer-render field pdfcer_render::image::ImageNotes::mask_refused
@@ -10754,6 +10757,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::inks_forced_subtracti
 pdfcer-render field pdfcer_render::interpret::Diagnostics::inks_hidden
 pdfcer-render field pdfcer_render::interpret::Diagnostics::inks_unmatched
 pdfcer-render field pdfcer_render::interpret::Diagnostics::jpx_smask_in_data_preblended
+pdfcer-render field pdfcer_render::interpret::Diagnostics::jxl_nonstandard_images
 pdfcer-render field pdfcer_render::interpret::Diagnostics::lzw_framing_anomalies
 pdfcer-render field pdfcer_render::interpret::Diagnostics::mask_applied
 pdfcer-render field pdfcer_render::interpret::Diagnostics::mask_refused
@@ -10986,6 +10990,7 @@ pdfcer-render fn pdfcer_render::compositor::union_
 pdfcer-render fn pdfcer_render::display_list::record_page
 pdfcer-render fn pdfcer_render::edit_preview::paint_dimension_preview
 pdfcer-render fn pdfcer_render::edit_preview::preview_outlines
+pdfcer-render fn pdfcer_render::effective_scale
 pdfcer-render fn pdfcer_render::emf::export_emf
 pdfcer-render fn pdfcer_render::emf::export_emf_view
 pdfcer-render fn pdfcer_render::emf::print::print_metafile

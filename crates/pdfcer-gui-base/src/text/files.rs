@@ -24,10 +24,11 @@ pub fn filter_pdf() -> &'static str {
 /// The picker filter for a picture or drawing; it names `picture::EXTENSIONS`.
 #[must_use]
 pub fn filter_image() -> &'static str {
-    if cfg!(feature = "svg-import") {
-        "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, SVG, EMF)"
-    } else {
-        "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, EMF)"
+    match (cfg!(feature = "jxl"), cfg!(feature = "svg-import")) {
+        (true, true) => "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, JPEG XL, SVG, EMF)",
+        (true, false) => "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, JPEG XL, EMF)",
+        (false, true) => "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, SVG, EMF)",
+        (false, false) => "Pictures and drawings (PNG, JPEG, BMP, GIF, TIFF, EMF)",
     }
 }
 

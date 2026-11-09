@@ -291,6 +291,8 @@ pub(super) fn render_sheet(
             clipped: false,
         },
         page_pt: printable,
+        metafile: None,
+        image_reason: None,
     })
 }
 

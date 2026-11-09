@@ -67,8 +67,8 @@ alongside the other licences harvested from `Cargo.lock`.
 
 ## Licence overview
 
-- **Apache License 2.0** — used by 208 crate(s)
-- **MIT License** — used by 31 crate(s)
+- **Apache License 2.0** — used by 221 crate(s)
+- **MIT License** — used by 38 crate(s)
 - **Unicode License v3** — used by 19 crate(s)
 - **BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License** — used by 7 crate(s)
 - **ISC License** — used by 4 crate(s)
@@ -1823,6 +1823,8 @@ Used by:
 - [crypto-primes 0.7.2](https://github.com/entropyxyz/crypto-primes)
 - [self_cell 1.3.0](https://github.com/Voultapher/self_cell)
 - [ureq 3.4.2](https://github.com/algesten/ureq)
+- [zune-core 0.5.3](https://github.com/etemesi254/zune-image)
+- [zune-jpeg 0.5.15](https://github.com/etemesi254/zune-image/tree/dev/crates/zune-jpeg)
 
 ```
                                  Apache License
@@ -6017,8 +6019,6 @@ limitations under the License.
 ### Apache License 2.0
 
 Used by:
-- [zune-core 0.5.3](https://github.com/etemesi254/zune-image)
-- [zune-jpeg 0.5.16-rc3](https://github.com/etemesi254/zune-image/tree/dev/crates/zune-jpeg)
 - [accesskit 0.24.1](https://github.com/AccessKit/accesskit)
 - [accesskit_consumer 0.35.0](https://github.com/AccessKit/accesskit)
 - [accesskit_windows 0.32.1](https://github.com/AccessKit/accesskit)
@@ -6044,6 +6044,19 @@ Used by:
 - [hayro-jpeg2000 0.4.0](https://github.com/LaurenzV/hayro)
 - [image 0.25.10](https://github.com/image-rs/image)
 - [itoa 1.0.18](https://github.com/dtolnay/itoa)
+- [jxl-bitstream 1.1.0](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-coding 1.0.1](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-color 0.11.0](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-frame 0.13.3](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-grid 0.6.2](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-image 0.13.0](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-jbr 0.2.1](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-modular 0.11.3](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-oxide-common 1.0.0](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-oxide 0.12.6](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-render 0.12.4](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-threadpool 1.0.0](https://github.com/tirr-c/jxl-oxide.git)
+- [jxl-vardct 0.11.1](https://github.com/tirr-c/jxl-oxide.git)
 - [linebender_resource_handle 0.1.1](https://github.com/linebender/raw_resource_handle)
 - [litrs 1.0.0](https://github.com/LukasKalbertodt/litrs)
 - [miniz_oxide 0.8.9](https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide)
@@ -6857,7 +6870,39 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [ocrcer-core 0.1.0](https://crates.io/crates/ocrcer-core)
+- [icccer-cmm 0.4.2](https://github.com/KenM76/icccer)
+- [icccer-color 0.4.2](https://github.com/KenM76/icccer)
+- [icccer-profile 0.4.2](https://github.com/KenM76/icccer)
+
+```
+MIT License
+
+Copyright (c) 2026 Ken Mantle
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+### MIT License
+
+Used by:
+- [ocrcer-core 0.2.0](https://github.com/KenM76/ocrcer)
 
 ```
 MIT License
@@ -6888,16 +6933,20 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [pdfcer-3d-nav 0.135.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-3d 0.135.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-color 0.135.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-json 0.135.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-model 0.135.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-pkix 0.135.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-vec3 0.135.0](https://github.com/KenM76/pdfcer)
-- [icccer-cmm 0.4.1](https://github.com/KenM76/icccer)
-- [icccer-color 0.4.1](https://github.com/KenM76/icccer)
-- [icccer-profile 0.4.1](https://github.com/KenM76/icccer)
+- [pdfcer-3d-nav 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-color 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-core 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-fonts 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-function 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-image-codec 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-jpeg-remux 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-json 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-model 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-pkix 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-render 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-text 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-vec3 0.138.0](https://github.com/KenM76/pdfcer)
 - [egui-shell 0.1.0](https://crates.io/crates/egui-shell)
 - [pdfcer-gui 0.1.0](https://crates.io/crates/pdfcer-gui)
 - [pdfcer-gui-base 0.1.0](https://crates.io/crates/pdfcer-gui-base)

@@ -508,6 +508,8 @@ pub(super) fn comments(ui: &mut Ui, dialog: &mut PrintDialog) {
 /// The resolution each page is rendered at, on the Pages tab.
 fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResolution>) {
     ui.add_space(8.0);
+    // Above the field it qualifies: the resolution applies to image pages.
+    super::route::controls(ui, dialog);
     ui.horizontal_wrapped(|ui| {
         ui.label(t::dpi_limit_label());
         let (widget, refusal) =

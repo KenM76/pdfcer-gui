@@ -38,6 +38,13 @@ impl PrintDialog {
         if report.settings_source == SettingsSource::Synthesised {
             notes.push(t::settings_synthesised().to_owned());
         }
+        if report.fell_back > 0 {
+            notes.push(t::route::fell_back(
+                report.fell_back,
+                report.pages,
+                &report.image_reasons,
+            ));
+        }
         // Both sentences in ONE call. `record_notes`' own doc comment records
         // why: the slot holds a single disclosure, so a second `record_note`
         // REPLACES the first rather than joining it, and which one survived
@@ -101,6 +108,7 @@ impl PrintDialog {
         let source = super::running::Source::of(doc, copy.as_deref());
         let view = source.session.view();
         let name = super::poster::document_name(doc);
+        let vector = self.vector_offered();
 
         let mut bitmaps = Vec::with_capacity(job.plans.len());
         for (i, plan) in job.plans.iter().enumerate() {
@@ -131,23 +139,9 @@ impl PrintDialog {
                 bitmaps.push(render_tile(&view, page, plan, &tile, &options, &name)?);
                 continue;
             }
-            let rendered = pdfcer_render::render_page_with_view(
-                &view,
-                page,
-                plan.render_scale as f32,
-                &options,
-            )
-            .map_err(|e| e.to_string())?;
-            bitmaps.push(PageBitmap {
-                width: rendered.pixmap.width(),
-                height: rendered.pixmap.height(),
-                // Premultiplied RGBA8, handed over unchanged — the engine's
-                // stated contract. Any conversion here would be a second
-                // colour convention.
-                rgba: rendered.pixmap.data().to_vec(),
-                placement: plan.placement,
-                page_pt: size,
-            });
+            bitmaps.push(super::route::plain_sheet(
+                &view, page, plan, size, &options, vector,
+            )?);
         }
         Ok(bitmaps)
     }
@@ -259,6 +253,8 @@ fn render_tile(
                 clipped: false,
             },
             page_pt: (s.width, s.height),
+            metafile: None,
+            image_reason: None,
         });
     }
     let label = tile.labels.then(|| tile.label(name));
@@ -280,6 +276,8 @@ fn render_tile(
             clipped: false,
         },
         page_pt: tile.extent_pt(),
+        metafile: None,
+        image_reason: None,
     })
 }
 
@@ -336,6 +334,9 @@ mod tests {
             clipped_pages: 0,
             job_id: Some(1),
             settings_source: source,
+            vector_sheets: 0,
+            fell_back: 0,
+            image_reasons: Vec::new(),
         }
     }
 
@@ -348,6 +349,27 @@ mod tests {
             PrintDialog::commit_notes(Ok(&ok)).is_some(),
             "a job that reached the spooler must produce a receipt, which is what closes the \
              window. Leaving it open is how one press became a dozen queued jobs."
+        );
+    }
+
+    /// Pages the engine would not send as vector graphics are disclosed in
+    /// the receipt, with the reason.
+    #[test]
+    fn pages_sent_as_images_are_disclosed() {
+        let mut ok = report(4, SettingsSource::DriverSupplied);
+        ok.fell_back = 1;
+        ok.image_reasons = vec!["shading".to_owned()];
+        let notes = PrintDialog::commit_notes(Ok(&ok)).expect("a receipt");
+        assert!(
+            notes
+                .iter()
+                .any(|n| n.contains("1 of 4 pages") && n.contains("shading")),
+            "{notes:?}"
+        );
+        let clean = report(4, SettingsSource::DriverSupplied);
+        assert_eq!(
+            PrintDialog::commit_notes(Ok(&clean)).map(|n| n.len()),
+            Some(1)
         );
     }
 

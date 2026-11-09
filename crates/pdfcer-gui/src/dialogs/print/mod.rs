@@ -108,6 +108,7 @@ mod plan;
 /// The document's own `/ViewerPreferences` print settings.
 mod presets;
 /// A header or footer on the printed copy only.
+mod route;
 mod running;
 
 // The names this dialog publishes for `tools/ui-verify`. A private glob keeps
@@ -252,6 +253,8 @@ pub struct PrintDialog {
     /// Rendering resolution ceiling, in DPI. A memory bound, editable because
     /// the disclosure is worth more as a control than as a warning.
     max_dpi: u32,
+    /// Send every page as an image; see [`route`].
+    print_as_image: bool,
     /// What the password that opened the document allows; set by each plan.
     permission: permission::Permission,
     /// Driver-level settings: orientation, duplex, tray choice, paper.
@@ -539,6 +542,7 @@ impl PrintDialog {
             custom_percent: remembered.custom_percent,
             scope: remembered.scope,
             max_dpi: remembered.max_dpi,
+            print_as_image: remembered.print_as_image,
             permission: permission::Permission::default(),
             device: DeviceSettings {
                 orientation: remembered.orientation,

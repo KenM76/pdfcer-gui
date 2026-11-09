@@ -513,11 +513,12 @@ pub const fn scope_fields_only() -> &'static str {
     "Form fields only"
 }
 
-/// The standing note that pdfcer prints rasters, not vectors.
+/// Hover on the resolution field: which pages it applies to.
 #[must_use]
 pub const fn raster_note() -> &'static str {
-    "pdfcer renders each page to an image at the resolution below and sends \
-     that image. Text and lines are not sent as vectors."
+    "The resolution of every page pdfcer sends as an image: all of them when \
+     Print as image is ticked, otherwise only the pages that need it, such as \
+     those with transparency."
 }
 
 /// pdfcer chose a resolution the operator did not.
@@ -722,6 +723,8 @@ mod lines;
 /// Send to network printer.
 pub mod network;
 pub mod presets;
+/// Vector graphics or images.
+pub mod route;
 /// A header or footer on the printed copy only.
 pub mod running;
 

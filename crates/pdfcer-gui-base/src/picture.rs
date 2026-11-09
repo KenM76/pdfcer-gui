@@ -12,14 +12,18 @@ use pdfcer_core::svg_import::ImportedSvg;
 
 /// Every extension the picker offers and a drop accepts as a picture; `svg`
 /// and `emf` are read as vector drawings. A build without `svg-import` does
-/// not offer `svg`.
-#[cfg(feature = "svg-import")]
-pub const EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff", "svg", "emf",
-];
-/// See the `svg-import` twin.
-#[cfg(not(feature = "svg-import"))]
-pub const EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff", "emf"];
+/// not offer `svg`, and one without `jxl` does not offer `jxl`.
+pub static EXTENSIONS: std::sync::LazyLock<Vec<&'static str>> = std::sync::LazyLock::new(|| {
+    let mut all = vec!["png", "jpg", "jpeg", "bmp", "gif", "tif", "tiff"];
+    if cfg!(feature = "jxl") {
+        all.push("jxl");
+    }
+    if cfg!(feature = "svg-import") {
+        all.push("svg");
+    }
+    all.push("emf");
+    all
+});
 
 /// How a picture's samples reached the engine, as a trace value: `pixels`
 /// when handed over in memory (`ImportedImage::from_rgba8`), `file` when
@@ -35,7 +39,7 @@ pub fn samples_route(image: &ImportedImage) -> &'static str {
 /// One imported picture, ready for the engine's placement verb.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Picture {
-    /// PNG, JPEG, BMP, GIF or TIFF, placed by `EditSession::add_image`.
+    /// PNG, JPEG, BMP, GIF, TIFF or JPEG XL, placed by `EditSession::add_image`.
     Raster(ImportedImage),
     /// An SVG drawing, placed by `EditSession::add_svg_on_layer`.
     #[cfg(feature = "svg-import")]

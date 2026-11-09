@@ -1,15 +1,20 @@
 //! # `text::images` — the words the Insert-image window shows
 //!
-//! ## What this surface is
-//!
-//! `edit.insert_image` was registered, drawn on Edit ▸ Insert, listed in
-//! `reach`'s `SCAFFOLDED` set with **no recorded reason at all**, and inert.
-//! `EditSession::add_image` has shipped the whole time.
-//!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/images.md`.
 
 use pdfcer_core::edit::ImageFit;
 use pdfcer_core::image_import::{ImageFormat, RecompressReason};
+
+/// The raster formats this build reads, as a sentence's list: JPEG XL only
+/// when the `jxl` feature brought the engine's decoder in.
+#[must_use]
+pub const fn raster_formats() -> &'static str {
+    if cfg!(feature = "jxl") {
+        "PNG, JPEG, BMP, GIF, TIFF or JPEG XL"
+    } else {
+        "PNG, JPEG, BMP, GIF or TIFF"
+    }
+}
 
 /// The window's title.
 #[must_use]
@@ -413,8 +418,9 @@ pub fn drawing_disclosures(distorted: bool, notes: Option<&str>) -> Vec<String> 
 #[must_use]
 pub fn replace_needs_raster(kind: &str) -> String {
     format!(
-        "A {} drawing cannot replace an image. Choose a PNG, JPEG, BMP, GIF or TIFF file.",
-        kind.to_uppercase()
+        "A {} drawing cannot replace an image. Choose a {} file.",
+        kind.to_uppercase(),
+        raster_formats()
     )
 }
 

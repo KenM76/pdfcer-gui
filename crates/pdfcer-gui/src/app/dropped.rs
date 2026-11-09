@@ -30,9 +30,6 @@ pub enum Dropped {
     Unknown(String),
 }
 
-/// The extensions the image picker offers, read from the one list.
-const IMAGE_EXTENSIONS: &[&str] = pdfcer_gui_base::picture::EXTENSIONS;
-
 /// How far each further dropped picture sits from the one before, in points,
 /// down and to the right.
 pub const CASCADE_PT: f64 = 18.0;
@@ -46,7 +43,7 @@ pub fn classify(path: &Path) -> Dropped {
         .unwrap_or_default();
     if ext == "pdf" {
         Dropped::Document(path.to_path_buf())
-    } else if IMAGE_EXTENSIONS.contains(&ext.as_str()) {
+    } else if pdfcer_gui_base::picture::EXTENSIONS.contains(&ext.as_str()) {
         Dropped::Image(path.to_path_buf())
     } else if ext == "txt" {
         Dropped::Text(path.to_path_buf())

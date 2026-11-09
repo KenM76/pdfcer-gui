@@ -39,9 +39,11 @@ pub const fn text_needs_a_document() -> &'static str {
 #[must_use]
 pub fn not_accepted(ext: &str) -> String {
     if ext.is_empty() {
-        "pdfcer takes a PDF to open, a PNG, JPEG, BMP, GIF or TIFF to place on the page, or a .txt \
-         file to add as pages. That file has no extension, so pdfcer could not tell what it was."
-            .to_owned()
+        format!(
+            "pdfcer takes a PDF to open, a {} to place on the page, or a .txt file to add as \
+             pages. That file has no extension, so pdfcer could not tell what it was.",
+            crate::text::images::raster_formats()
+        )
     } else if CONVERTIBLE.contains(&ext) {
         format!(
             "pdfcer cannot read .{ext} pictures yet. Save the picture as PNG or JPEG in another \
@@ -49,8 +51,9 @@ pub fn not_accepted(ext: &str) -> String {
         )
     } else {
         format!(
-            "pdfcer takes a PDF to open, a PNG, JPEG, BMP, GIF or TIFF to place on the page, or a \
-             .txt file to add as pages. It does not read .{ext} files."
+            "pdfcer takes a PDF to open, a {} to place on the page, or a .txt file to add as \
+             pages. It does not read .{ext} files.",
+            crate::text::images::raster_formats()
         )
     }
 }

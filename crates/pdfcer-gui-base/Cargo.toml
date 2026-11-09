@@ -92,10 +92,12 @@ syn = { version = "2.0.119", features = ["full", "visit"] }
 # `default-features = false` and forwards its own `ocrs`, which documents what
 # the flag gates; it is a default here only so this crate builds and tests
 # alone as the program ships.
-default = ["ocrs", "ocrcer", "paddle", "ocr-vl", "svg-import"]
+default = ["ocrs", "ocrcer", "paddle", "ocr-vl", "svg-import", "jxl"]
 ocrs = ["pdfcer-core/ocrs", "pdfcer-ocr-host/ocrs"]
 # `svg-import` — reading an SVG as a vector drawing (`picture::Picture::Svg`).
 svg-import = ["pdfcer-core/svg-import"]
+# `jxl` — reading a JPEG XL picture, so Insert image offers `.jxl`.
+jxl = ["pdfcer-core/jxl"]
 # `ocrcer` — the second recogniser, `pdfcer_core::ocr::engine_ocrcer`, whose
 # `ocrcer-core` the engine vendors from OCRcer's newest local commit. Offered
 # beside `ocrs`, never instead of it.

@@ -81,8 +81,9 @@ pub const fn touched_caption_position() -> &'static str {
 #[must_use]
 pub fn icon_not_a_drawing(kind: &str) -> String {
     format!(
-        "A button's picture is made of pixels, and that file is an {} drawing. Nothing was changed — choose a PNG, JPEG, BMP, GIF or TIFF.",
-        kind.to_ascii_uppercase()
+        "A button's picture is made of pixels, and that file is an {} drawing. Nothing was changed — choose a {}.",
+        kind.to_ascii_uppercase(),
+        crate::text::images::raster_formats()
     )
 }
 

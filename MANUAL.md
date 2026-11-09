@@ -789,7 +789,7 @@ Three ways to leave, and they mean different things:
 
 | | |
 |---|---|
-| **Print** | spools the job, and keeps the settings that describe you rather than this document — printer, orientation, duplex, tray, paper, scale, copies, collation, page subset and order, and the resolution ceiling |
+| **Print** | spools the job, and keeps the settings that describe you rather than this document — printer, orientation, duplex, tray, paper, scale, copies, collation, page subset and order, the resolution ceiling and Print as image |
 | **Keep and close** | keeps those same settings and prints nothing |
 | **Cancel**, Escape, or the window's close button | puts the settings back to what they were when the window opened |
 
@@ -802,7 +802,14 @@ the preview redraws against it. Choosing paper automatically picks the form the
 pages themselves ask for, and says when the pages are of mixed sizes or larger
 than anything the device offers.
 
-N-up, booklet and poster layouts are not in the GUI.
+**Pages go to the printer as vector graphics**, so lines and text are as sharp
+as the printer can make them. Tick **Print as image** on the Pages tab to send
+every page as pixels at the job's resolution instead, for a driver that draws
+vector jobs wrongly; the choice is remembered. A page with something vector
+printing cannot carry, such as transparency, goes as an image anyway, and the
+note after the job says how many pages did and why. Grey and black-only
+printing, n-up and booklet sheets and poster tiles are always sent as images,
+and the window says so under the switch.
 
 ---
 

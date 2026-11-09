@@ -16,6 +16,7 @@ mod device;
 pub mod finishing;
 pub mod network;
 pub mod probe;
+mod send;
 
 // Re-exported rather than left as `spooler::device::…`.
 //
@@ -29,6 +30,7 @@ pub use device::{
     DeviceFeatures, DriverConfig, FormSourceSupport, PaperForm, Printer, device_features,
     edit_printer_configuration, list_printers, printer_forms,
 };
+pub use send::{DIAG_DRY_RUN, spool};
 
 // ---------------------------------------------------------------------------
 // Failure
@@ -320,6 +322,12 @@ pub struct PageBitmap {
     pub placement: Placement,
     /// The page's own size in PDF points — what the driver picks paper from.
     pub page_pt: (f64, f64),
+    /// The page as an Enhanced Metafile, sent as vector graphics in place of
+    /// `rgba`, which is then empty and not read.
+    pub metafile: Option<Vec<u8>>,
+    /// Why a page that was offered the vector route prints as an image;
+    /// `None` when it went as vector or was never offered it.
+    pub image_reason: Option<String>,
 }
 
 /// What a spool attempt did. Maps to `pdfcer_print::SpoolReport`.
@@ -344,6 +352,12 @@ pub struct SpoolReport {
     /// One of its four values is a disclosure the operator would otherwise
     /// never learn — see [`SettingsSource`].
     pub settings_source: SettingsSource,
+    /// Sheets sent as vector graphics.
+    pub vector_sheets: usize,
+    /// Sheets that were offered the vector route and printed as images.
+    pub fell_back: usize,
+    /// Why those sheets printed as images, each reason once.
+    pub image_reasons: Vec<String>,
 }
 
 /// Where the `DEVMODE` a job was sent with came from. Maps to
@@ -674,117 +688,6 @@ pub fn plan_from_caps(
                 tile: None,
             })
             .collect(),
-    }
-}
-
-/// Hand the rendered sheets to the spooler.
-pub fn spool(
-    printer: &str,
-    bitmaps: &[PageBitmap],
-    settings: DeviceSettings,
-    config: Option<&DriverConfig>,
-    first_page_pt: (f64, f64),
-) -> Result<SpoolReport, Unavailable> {
-    // Traced BEFORE the call, not after, and that ordering is the point: this
-    // is the one call in the application that consumes paper, and if it hangs
-    // or takes the process down, the trace line describing what was sent is
-    // the only record that survives. Reading every operand here is also what
-    // keeps the shape of `PageBitmap` honest — a field nothing ever reads is
-    // a field that can quietly acquire the wrong units.
-    crate::diag::trace(|| {
-        let bytes: usize = bitmaps.iter().map(|b| b.rgba.len()).sum();
-        let first = bitmaps.first();
-        format!(
-            // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "print-spool printer={printer} sheets={} px={:?} bytes={bytes} \
-             first_page_pt={first_page_pt:?} placement={:?} page_pt={:?} \
-             orientation={:?} duplex={:?} tray={}",
-            bitmaps.len(),
-            first.map(|b| (b.width, b.height)),
-            first.map(|b| b.placement),
-            first.map(|b| b.page_pt),
-            settings.orientation,
-            settings.duplex,
-            settings.pick_tray_by_page_size,
-        )
-    });
-
-    let pages: Vec<pdfcer_print::PageBitmap> = bitmaps.iter().map(to_engine_bitmap).collect();
-
-    // `DryRun::No` (unless the diagnostic switch below is set) and
-    // `output: None`, both deliberate.
-    //
-    // The CLI defaults to a dry run and requires `--send`, and that is right
-    // *there*: a command line has no confirmation step of its own, so the
-    // flag is the confirmation. Here the DIALOG is the confirmation — the
-    // operator chose a printer, read a clip count in the button's own label,
-    // and pressed it. A dry-run toggle on this surface would be a second gate
-    // whose only effect is to make the first one mean less.
-    // `spool_with_config` rather than `spool`, always — including when
-    // there is no configuration, where `None` makes it the same call.
-    //
-    // One call site rather than two branches: a shell that chose between two
-    // spool functions would have two paths to the one irreversible operation
-    // in the application, and the rarer one would be the one nobody drove.
-    let outcome = pdfcer_print::spool_with_config(
-        printer,
-        &pages,
-        dry_run(),
-        None,
-        to_engine_settings(settings),
-        first_page_pt,
-        config.map(DriverConfig::engine),
-    );
-
-    match outcome {
-        Ok(report) => {
-            crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "print-spool-done printer={printer} pages={} printed={} dpi={:?} \
-                     clipped={} job_id={:?}",
-                    report.pages, report.printed, report.dpi, report.clipped_pages, report.job_id,
-                )
-            });
-            Ok(SpoolReport {
-                pages: report.pages,
-                printed: report.printed,
-                dpi: report.dpi,
-                clipped_pages: report.clipped_pages,
-                job_id: report.job_id,
-                settings_source: match report.settings_source {
-                    pdfcer_print::SettingsSource::DeviceDefault => SettingsSource::DeviceDefault,
-                    pdfcer_print::SettingsSource::DriverSupplied => SettingsSource::DriverSupplied,
-                    pdfcer_print::SettingsSource::CallerSupplied => SettingsSource::CallerSupplied,
-                    pdfcer_print::SettingsSource::Synthesised => SettingsSource::Synthesised,
-                },
-            })
-        }
-        Err(error) => {
-            let detail = error.to_string();
-            crate::diag::trace(|| {
-                format!(
-                    // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "print-spool-failed printer={printer} reason={detail}"
-                )
-            });
-            Err(Unavailable::Spooler(detail))
-        }
-    }
-}
-
-/// The diagnostic switch that makes every spool a dry run: the engine does
-/// everything but start the job, so a driven check can press Print without
-/// paper. Never set in normal use.
-pub const DIAG_DRY_RUN: &str = "PDFCER_DIAG_PRINT_DRY_RUN"; // ui-text-exempt: an environment variable name, never displayed
-
-/// `DryRun::Yes` when [`DIAG_DRY_RUN`] is set to `1`, else `DryRun::No`.
-fn dry_run() -> pdfcer_print::DryRun {
-    if std::env::var(DIAG_DRY_RUN).is_ok_and(|v| v == "1") {
-        crate::diag::trace(|| "print-dry-run".to_owned()); // ui-text-exempt: diagnostic trace
-        pdfcer_print::DryRun::Yes
-    } else {
-        pdfcer_print::DryRun::No
     }
 }
 

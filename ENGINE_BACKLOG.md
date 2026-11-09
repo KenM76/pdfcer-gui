@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **54 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `wanted` — a real gap — **53 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -158,10 +158,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Page `/UserUnit` honoured** in rendering (page, region, display-list replay) and print sizing … | **wanted.** The engine renders a `/UserUnit` page at its physical size, but this shell sizes pages from the box in points (`Page::user_unit` is read nowhere here), so the canvas slot, the print placement and every measurement would disagree with the picture on such a page. Not yet driven: no fixture carries `/UserUnit`. |
 | **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **wanted — unblocked at v0.107.0: `pdfcer_render::plates::render_plates` is public (G242).** Restating it here would be a second definition of plate grey and of where the label sits beside a marks band. Once public, it becomes a choice in the Print dialog using the ink list Output Preview already reads, repeating the engine's caution that plate greys approximate ink density. |
-| **Vector printing** — pages the EMF writer carries whole print as vector … | **wanted — unblocked at v0.107.0: `pdfcer_render::emf::print_metafile` returns the EMF or a `RasterReason` (G241).** A copy of its eleven counters here would drift from the CLI's the first time `EmfOutcome` grows one. Once public, the Print dialog sends safe pages as EMF and the receipt names each image page's reason. |
 | **Separation plates as engine API** — `pdfcer_render::plates::render_plates` … | **wanted.** The engine half of *Print separations* above; that row says what the Print dialog does with it. |
-| **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **wanted.** The engine half of *Vector printing* above; that row says what the Print dialog does with it. |
 | **A print-only copy of an open session** — `EditSession::fork_for_print` / `decorated_for_print` … | **wanted; our request G243, shipped at v0.113.0.** Replaces the serialise-and-reopen copy `dialogs::print::running` stamps marks and running text into. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **glTF occlusion maps and textured alpha cut-outs** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
@@ -169,7 +168,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `blocked` — waiting on something named — **2 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -187,7 +186,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -198,7 +197,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `declined` — deliberately no surface — **20 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -244,7 +243,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **445 of 521** <!-- counted by tools/walk-engine-backlog.py, 2026-11-06; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **453 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -596,6 +595,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Import JPEG XL image files** — `.jxl` decoded and written as a Flate image … | **shipped — every picture picker and a drop take `.jxl` (`picture::EXTENSIONS`), and `image_import::import` routes it to `pdfcer_core::image_import::jxl` (`jxl::import`); driven by `insert_image_places_a_drawing`, which asserts `format=Jxl` (`ImageFormat::Jxl`, named by the engine's own `ImageFormat::name`).** The re-encoding is disclosed in the window before Insert. |
+| **Read JPEG XL images in PDFs (non-standard `/JXLDecode`)** … | **shipped — the `jxl` feature is forwarded, so such images draw; the status line counts them through `Diagnostics::jxl_nonstandard_images` (`app::status::notes`).** `ImageNotes::jxl_nonstandard` is the per-image half of the same fact; the shell reports the page total. Not driven: no fixture carries `/JXLDecode`. |
 | **Overprint preview switch** — render with overprint simulated … | **Reachable — View ▸ Display ▸ *Overprint preview* (`view.overprint_preview`, O323 part 1)**, on by default, canvas only; print, export and thumbnails keep `OverprintPreview::Simulate`. Off sets `RenderOptions::overprint_preview` to `OverprintPreview::Off` and is part of the render key; the status bar says how many marks asked for overprint while it is off (`Diagnostics::overprint_requested`). Driven and falsified: `overprint_preview` reads requested=1 effective=1 on, effective=0 off. |
 | **Separation preview (hide inks)** — render with chosen … | **Reachable — View ▸ Panels ▸ *Output Preview* (`view.output_preview`, O323 part 2)**: *Preview separations* sets `RenderOptions::separation_preview`, canvas only and part of the render key; the panel lists `Diagnostics::inks` with a show box each (`SeparationPreview::with_hidden`), says `inks_forced_subtractive` and `inks_unmatched`, and the status bar says how many inks are hidden. Driven and falsified: `output_preview` lists Cyan, Magenta, Yellow, Black and hides Magenta. |
 | An RGB-to-CMYK that keeps the colour — the inverse of `pdfcer_color::color::cmyk_to_srgb` (our `G224`) (the shell calls `cmyk_to_srgb` itself; the row wants its inverse) | **Shipped** — `colourpick::Ink::convert` seeds the CMYK tab with `pdfcer_core::color::srgb_to_cmyk`, and the CMYK the picker shows draws as the colour it replaced. When `CmykFit::in_gamut` is false the picker reads "That colour is outside CMYK; the nearest CMYK colour is used." under the numbers. Driven by `a_part_of_a_placed_drawing_can_be_recoloured`: the switch traces `colour-switched … in_gamut=`, an in-gamut fill re-reads within one count and an out-of-gamut one draws the disclosure. |
@@ -634,6 +635,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **shipped — called by `dialogs::print::route::plain_sheet`.** The engine half of *Vector printing*, filed beside it. |
+| **Vector printing** — pages the EMF writer carries whole print as vector … | **shipped — File ▸ Print sends each plain page as the metafile `pdfcer_render::emf::print_metafile` makes, unless *Print as image* is ticked; driven by `print_sends_vector_unless_as_image` (O404).** A page the engine declines goes as pixels and `dialogs::print::route::plain_sheet` carries its `RasterReason` into the receipt; grey, black-only, n-up, booklet and poster sheets stay images, and the dialog says so under the switch. |
 | **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **shipped.** Our request G250. Walking stands at a real eye height, set in feet and inches in the options menu with ghost off, and the model's unit (or the disclosed assumption of millimetres) converts it (O356). |
 | **Interactive 3D frame rate (CPU)** — `pdfcer_3d::PreparedModel`, and a GPU path (draw buffers for eframe's glow context) and a prepared model the viewer can keep … | **shipped.** Our requests G253 and G255. `RenderOptions::threads` draws every written picture on every core; the viewer keeps a `PreparedModel` for the model's life and draws the live picture on the GPU from it (O348, O355). <!--namesake:PreparedModel--> |
 | **GPU-ready 3D draw data, matrices and shader** — `PreparedModel::draw_data`, `Camera::view_matrix`, `FrameLights`, `GLSL_ES_300_*` … | **shipped.** Our request G253. `dialogs::model3d::gpu` draws the live picture through eframe's glow context with these (O348, O355); the CPU renderer stays for every picture written out and where the driver refuses the shader. |
@@ -933,7 +936,7 @@ The answers to G238–G242 and X018. Each replaces a copy this shell keeps or un
 - **Print decoration** — `pdfcer_core::edit::print_decoration` (`EditSession::decorate_for_print`). **wanted**: it composes marks and running text in one call; `dialogs::print::running` still reopens a copy to stamp, which G243 asks the engine to spare.
 - **Print preset merge** — `pdfcer_core::print_presets::merge` (`merge_print_presets`, `EffectivePrint`). **wanted**: replaces `dialogs::print::presets::apply`, the shell's copy of the merge (G238).
 - **IPP offer check and send** — `pdfcer_print::ipp::offer`, `pdfcer_print::ipp::send`, `TransportError::NeedsTls`, `TransportError::Other`. **wanted**: replaces `printspooler::network`'s query and send (G240).
-- **Vector-or-image print route** — `pdfcer_render::emf::print` (`print_metafile`, `RasterReason`, `EmfOutcome::print_fallback`). **wanted**: unblocks the Vector printing row (G241).
+- **Vector-or-image print route** — `pdfcer_render::emf::print` (`print_metafile`, `RasterReason`, `EmfOutcome::print_fallback`). **shipped**: `dialogs::print::route::plain_sheet` calls it (G241, O404).
 - **Separation plates** — `pdfcer_render::plates` (`render_plates`, `to_plate_grey`). **wanted**: unblocks the Print separations row (G242).
 - **Visual-compare marks and notes** — `pdfcer_render::visual_compare::notes` (`region_marks`, `summary_note`, `settings_text`, `match_text`). **wanted**: replaces `panels::compare::rows::region_marks` and the shell's summary sentence (G239).
 - **Textures in a written PRC** — `SceneTexture` (its `SceneTexture::alpha` and `SceneTexture::wrap` are filled by `read_gltf`, never by this shell), `MeshScene::textures`, `SceneMaterial::texture`, `ScenePrimitive::uvs`, `PrcWriteReport::textured`, `PrcWriteError::BadTexture`. **wanted**: glTF insert reports `PrcWriteReport::textured` in place of saying textures are not carried.

@@ -68,6 +68,8 @@ pub struct PrintPrefs {
     pub scope: AnnotationScope,
     /// Rendering resolution ceiling, in DPI.
     pub max_dpi: u32,
+    /// Send every page as an image, never as vector graphics.
+    pub print_as_image: bool,
     /// How many copies.
     pub copies: u16,
     /// `true` when copies come out uncollated.
@@ -171,6 +173,7 @@ impl Default for PrintPrefs {
             // costlier mistake. Argued in full on `PrintDialog::scope`.
             scope: AnnotationScope::Document,
             max_dpi: 300,
+            print_as_image: false,
             copies: 1,
             uncollated: false,
             subset: PageSubset::All,
@@ -461,6 +464,8 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
                 .map(|n| n.clamp(MIN_PRINT_DPI, MAX_PRINT_DPI)),
             prefs.max_dpi
         ),
+        // ui-text-exempt: file KEYS, as above.
+        "print_as_image" => store!(super::opening::bool_from_key(value), prefs.print_as_image),
         // The dialog's own `DragValue` range, so a hand-edited file cannot put
         // a number in the box that the box could not have produced.
         // ui-text-exempt: file KEYS, as above.
@@ -643,6 +648,14 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
     // ui-text-exempt: a file KEY, as above.
     out.push_str("print_max_dpi = ");
     out.push_str(&prefs.max_dpi.to_string());
+    out.push('\n');
+    out.push_str(
+        "# print_as_image: true | false. Send every page as a picture instead\n\
+         # of as lines and text. Slower and bigger; for a printer that draws\n\
+         # a page wrongly.\n",
+    );
+    out.push_str("print_as_image = "); // ui-text-exempt: a file KEY, as above.
+    out.push_str(super::opening::bool_key(prefs.print_as_image));
     out.push('\n');
 
     out.push_str(
@@ -919,6 +932,7 @@ mod tests {
         assert_eq!(prefs.custom_percent, 100);
         assert_eq!(prefs.scope, AnnotationScope::Document);
         assert_eq!(prefs.max_dpi, 300);
+        assert!(!prefs.print_as_image);
         assert_eq!(prefs.copies, 1);
         assert!(!prefs.uncollated);
         assert_eq!(prefs.subset, PageSubset::All);

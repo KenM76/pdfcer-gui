@@ -1,6 +1,7 @@
 //! `insert_image_places_a_drawing` — an SVG and an EMF chosen through Edit ▸
 //! Insert image reach the page as vector artwork, and what the import could
-//! not carry is said before Insert and after it. Driven through the scripted
+//! not carry is said before Insert and after it; a PNG and a JPEG XL picture
+//! reach it as pictures. Driven through the scripted
 //! pointer on a window off the desktop.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/insert_drawing.md`.
@@ -34,7 +35,7 @@ struct Case {
     says: &'static str,
 }
 
-const CASES: [Case; 3] = [
+const CASES: [Case; 4] = [
     Case {
         fixture: Some("vector-art.svg"),
         kind: "svg",
@@ -51,6 +52,13 @@ const CASES: [Case; 3] = [
     // reshaped: the fit choice and the resolution preview are raster-only.
     Case {
         fixture: None,
+        kind: "image",
+        note: None,
+        says: " dpi", // ui-text-exempt: matched against a disclosure
+    },
+    // A JPEG XL picture, which a build without the engine's `jxl` refuses.
+    Case {
+        fixture: Some("raster-art.jxl"),
         kind: "image",
         note: None,
         says: " dpi", // ui-text-exempt: matched against a disclosure
@@ -114,7 +122,7 @@ fn launch(
         "A one-page vector fixture every writer accepts, so --pdf is ignored.",
     )?;
     let drawing = picked(ctx, case)?;
-    let stem = format!("insert_drawing.{}", case.kind);
+    let stem = format!("insert_drawing.{}", case.fixture.unwrap_or("raster.png"));
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(pdf);
     spec.env.push((
@@ -191,6 +199,12 @@ fn assess(ctx: &CheckContext, report: &mut CheckReport, case: &Case) -> Result<O
         return Ok(Some(format!(
             "★ `{}` imported as `{}`; it should be `kind={kind}`.",
             case.kind, imported.raw
+        )));
+    }
+    if case.fixture.is_some_and(|f| f.ends_with(".jxl")) && imported.get("format") != Some("Jxl") {
+        return Ok(Some(format!(
+            "★ the JPEG XL fixture imported as `{}`; it should be `format=Jxl`.",
+            imported.raw
         )));
     }
     let notes = imported.get("notes").unwrap_or("none");

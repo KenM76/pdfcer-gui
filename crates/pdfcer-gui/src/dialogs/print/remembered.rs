@@ -23,6 +23,7 @@ impl PrintDialog {
             custom_percent: self.custom_percent,
             scope: self.scope,
             max_dpi: self.max_dpi,
+            print_as_image: self.print_as_image,
             copies: self.copies,
             uncollated: self.uncollated,
             subset: self.subset,
