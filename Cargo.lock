@@ -1764,8 +1764,9 @@ dependencies = [
 
 [[package]]
 name = "icccer-cmm"
-version = "0.4.1"
-source = "git+https://github.com/KenM76/icccer.git?rev=7002353e557d5a2af0815098c2a6de436e3648c5#7002353e557d5a2af0815098c2a6de436e3648c5"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b1aa1aa1785d102028c93145d80628a738a73ae40d12aa69f174736320f8e06"
 dependencies = [
  "icccer-color",
  "icccer-profile",
@@ -1773,13 +1774,15 @@ dependencies = [
 
 [[package]]
 name = "icccer-color"
-version = "0.4.1"
-source = "git+https://github.com/KenM76/icccer.git?rev=7002353e557d5a2af0815098c2a6de436e3648c5#7002353e557d5a2af0815098c2a6de436e3648c5"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b784a4cf599abbc6b03605a4709dbd4015480da8d619079ac7d8e9fc9b32eec"
 
 [[package]]
 name = "icccer-profile"
-version = "0.4.1"
-source = "git+https://github.com/KenM76/icccer.git?rev=7002353e557d5a2af0815098c2a6de436e3648c5#7002353e557d5a2af0815098c2a6de436e3648c5"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13e234c33d93ec4509e2219e25b6c36b11ec63bf2f638ab4fd764acec554c1a8"
 
 [[package]]
 name = "icu_collections"
@@ -2603,8 +2606,8 @@ dependencies = [
 
 [[package]]
 name = "ocrcer-core"
-version = "0.1.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.2.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 
 [[package]]
 name = "ocrs"
@@ -2715,21 +2718,22 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-3d"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "flate2",
+ "pdfcer-jpeg-remux",
  "pdfcer-json",
  "pdfcer-vec3",
  "png 0.17.16",
  "thiserror 2.0.21",
- "zune-jpeg 0.5.16-rc3",
+ "zune-jpeg",
 ]
 
 [[package]]
 name = "pdfcer-3d-nav"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "pdfcer-3d",
 ]
@@ -2746,13 +2750,13 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-color"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 
 [[package]]
 name = "pdfcer-core"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "aes",
  "cbc",
@@ -2792,8 +2796,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-fetch"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "sha2",
  "thiserror 2.0.21",
@@ -2802,8 +2806,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-fonts"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2811,8 +2815,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-function"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2864,29 +2868,38 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-image-codec"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "hayro-ccitt",
  "hayro-jbig2",
  "hayro-jpeg2000",
+ "pdfcer-jpeg-remux",
  "pdfcer-model",
  "thiserror 2.0.21",
- "zune-jpeg 0.5.16-rc3",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "pdfcer-jpeg-remux"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
+dependencies = [
+ "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "pdfcer-json"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "thiserror 2.0.21",
 ]
 
 [[package]]
 name = "pdfcer-model"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "aes",
  "brotli",
@@ -2900,8 +2913,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-ocr-host"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "pdfcer-core",
  "thiserror 2.0.21",
@@ -2909,8 +2922,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-pkix"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "pdfcer-model",
  "thiserror 2.0.21",
@@ -2918,8 +2931,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-print"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "roxmltree",
  "thiserror 2.0.21",
@@ -2935,8 +2948,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-render"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "icccer-cmm",
  "icccer-color",
@@ -2952,8 +2965,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-text"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 dependencies = [
  "pdfcer-fonts",
  "pdfcer-model",
@@ -2962,8 +2975,8 @@ dependencies = [
 
 [[package]]
 name = "pdfcer-vec3"
-version = "0.135.0"
-source = "git+file:///D:/Dev/pdfcer?branch=main#2ee0a6bd6b45d01c435d51b3ec296fa7a5eb8bd0"
+version = "0.138.0"
+source = "git+file:///D:/Dev/pdfcer?branch=main#d5061ffffbf97ab485b81ffe577d8102c897619a"
 
 [[package]]
 name = "pem-rfc7468"
@@ -4096,7 +4109,7 @@ dependencies = [
  "half",
  "quick-error",
  "weezl 0.1.12",
- "zune-jpeg 0.5.15",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -5492,25 +5505,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b"
 
 [[package]]
-name = "zune-core"
-version = "0.5.3"
-source = "git+https://github.com/etemesi254/zune-image?rev=c1c7f49776ee32928ed329f4436ae63a595b6283#c1c7f49776ee32928ed329f4436ae63a595b6283"
-
-[[package]]
 name = "zune-jpeg"
 version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
 dependencies = [
- "zune-core 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "zune-jpeg"
-version = "0.5.16-rc3"
-source = "git+https://github.com/etemesi254/zune-image?rev=c1c7f49776ee32928ed329f4436ae63a595b6283#c1c7f49776ee32928ed329f4436ae63a595b6283"
-dependencies = [
- "zune-core 0.5.3 (git+https://github.com/etemesi254/zune-image?rev=c1c7f49776ee32928ed329f4436ae63a595b6283)",
+ "zune-core",
 ]
 
 [[package]]
