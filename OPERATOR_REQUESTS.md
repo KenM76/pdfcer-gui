@@ -653,6 +653,18 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O405 — **OPEN, IN PROGRESS** — the marquee as a region every command acts on; redact outside it; highlight modes and shapes; a crop tool
+
+His words, relayed by the engine in `request_2026-11-09_marquee_region_highlight_modes_crop.md`: *"instead of the Marquee tool just being for snapshots, it needs to be available and work with any other operations like delete, redact, etc - and redact should be able to inverse the area redacted to be everything outside the marquess on the page. A crop tool would be nice too. Also add different shapes for the highlight tool, and modes too as it's hard to use the highlight tool to just draw a box sometimes as sometime when I go over text it starts selecting text all over the page."*
+
+**Scope, whole behaviour.**
+1. **Region.** A marquee is one rectangle on one page that Redact, Crop, Copy, OCR region and Extract act on; Delete with a region deletes the objects inside it (a setting: inside only, touching, or by drag direction, Alt flipping it for one drag), and the status line says how many crossing objects it kept. Esc clears the region. Commands that need a region are greyed without one, saying *Draw a marquee first*.
+2. **Redact outside.** Redact offers *Inside region* or *Outside region*, with no shortcut for Outside, and the save confirmation counts the pages it wipes. Engine verb `EditSession::mark_redaction_outside`.
+3. **Highlight.** A mode row (Text, Area, Shapes: ellipse, freehand, polygon), remembered; Alt forces Area; a text drag highlights only the runs under the drag, never a reading-order range across columns. Shapes write highlighter marks (`MarkupOptions::highlighter`).
+4. **Crop.** Drag a box with handles and margin fields; This page, All, Range, Odd or Even; Reset; *Crop to region*; says that cropping hides and does not remove. Engine verb `EditSession::set_page_boxes`.
+
+**Status.** Filed. Engine side shipped in v0.139.0; nothing built here yet.
+
 ## O404 — **RELEASED in `v0.5.0-dev.20261109.1`, DRIVEN** — a setting for whether a print goes as vector graphics or as an image
 
 His words: *"I don't see a way to set how printing is handled - sending as bitmap or vector or etc. Shouldn't there be a setting for this now that our print engine has been updated?"*
