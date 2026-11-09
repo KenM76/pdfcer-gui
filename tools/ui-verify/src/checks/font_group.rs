@@ -237,7 +237,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // A contextual tab arriving into a full strip goes into its menu, by design,
     // and this check asks about the tab, so the strip is given room for all of them.
     if let Some(viewport) = ctx.profile.viewport_env {
-        spec.env.push((viewport.to_owned(), ROOMY_WINDOW.to_owned()));
+        spec.env
+            .push((viewport.to_owned(), ROOMY_WINDOW.to_owned()));
     }
     spec.env.push((
         ctx.profile.diag_env.0.to_owned(),

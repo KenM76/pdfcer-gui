@@ -234,7 +234,10 @@ fn escape_selection(
         format!("canvas-escape outcome={outcome:?} sel={}", selection.len())
     });
     use crate::canvas::selection::EscapeOutcome;
-    if !matches!(outcome, EscapeOutcome::Nothing | EscapeOutcome::ClearedSelection) {
+    if !matches!(
+        outcome,
+        EscapeOutcome::Nothing | EscapeOutcome::ClearedSelection
+    ) {
         return;
     }
     // Clicking a form field selects it in both places, so the press that empties
@@ -618,7 +621,14 @@ pub(super) fn canvas_keys(
         && !tool_disarmed
         && !disarmed
     {
-        escape_selection(ctx, page_index, selected_field, selection, text_selection, actions);
+        escape_selection(
+            ctx,
+            page_index,
+            selected_field,
+            selection,
+            text_selection,
+            actions,
+        );
     }
 
     if !delete {

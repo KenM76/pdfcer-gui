@@ -249,7 +249,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.scroll_at(frame.declared_at(canvas, PAN_AT.0, PAN_AT.1), PAN_NOTCHES)?;
     session.settle(20);
     let knocked = session.trace()?;
-    let page_on_screen = knocked.events(CANVAS_EVENT).last().and_then(|l| l.get_rect("rect"));
+    let page_on_screen = knocked
+        .events(CANVAS_EVENT)
+        .last()
+        .and_then(|l| l.get_rect("rect"));
     let middle = (
         (canvas.min.x + canvas.max.x) / 2.0,
         (canvas.min.y + canvas.max.y) / 2.0,

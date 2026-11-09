@@ -80,7 +80,10 @@ const WIDGET_APPLIED: &str = "edit-widget";
 
 /// How many times the trace says the field selection was cleared.
 fn cleared_lines(trace: &crate::trace::Trace) -> usize {
-    trace.events(SELECTED).filter(|l| l.get("field").is_none()).count()
+    trace
+        .events(SELECTED)
+        .filter(|l| l.get("field").is_none())
+        .count()
 }
 
 /// Placing a form field, and selecting one that already exists.
