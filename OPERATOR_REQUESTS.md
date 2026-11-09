@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O404 — **BUILT, DRIVEN** — a setting for whether a print goes as vector graphics or as an image
+## O404 — **RELEASED in `v0.5.0-dev.20261109.1`, DRIVEN** — a setting for whether a print goes as vector graphics or as an image
 
 His words: *"I don't see a way to set how printing is handled - sending as bitmap or vector or etc. Shouldn't there be a setting for this now that our print engine has been updated?"*
 
