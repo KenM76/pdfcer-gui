@@ -36,6 +36,7 @@ pub mod exporting;
 
 mod families;
 pub mod formstyle;
+pub mod markuptools;
 pub mod modelstart;
 pub mod modelview;
 pub mod ocrmodels;
@@ -88,6 +89,7 @@ pub use exporting::{
     MAX_EXPORT_DPI, MAX_JPEG_QUALITY, MIN_EXPORT_DPI, MIN_JPEG_QUALITY,
 };
 pub use formstyle::FormStylePrefs;
+pub use markuptools::MarkupToolPrefs;
 pub use ocrmodels::OcrModelPrefs;
 pub use offpage::OffPagePrefs;
 pub use opening::{OpeningFit, PageChrome};
@@ -395,6 +397,8 @@ pub struct Prefs {
     pub pictures: PicturePrefs,
     /// Forms ▸ Style's look for the next placed field. See [`formstyle`].
     pub form_style: FormStylePrefs,
+    /// The highlighter's shape and Delete in region's reach. See [`markuptools`].
+    pub markup_tools: MarkupToolPrefs,
     /// Whether a document opens with overprint preview on. See [`overprint`].
     pub overprint_default: OverprintDefault,
     /// The 3D walker's eye height, whole millimetres; `None` follows the
@@ -861,6 +865,7 @@ impl Default for Prefs {
             trust: TrustPrefs::default(),
             pictures: PicturePrefs::default(),
             form_style: FormStylePrefs::default(),
+            markup_tools: MarkupToolPrefs::default(),
             overprint_default: OverprintDefault::default(),
             walk_eye_mm: None,
             model_start_walk: true,

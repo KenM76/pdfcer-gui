@@ -1,7 +1,8 @@
 //! `highlight_shapes_draw_as_chosen` — **the highlighter draws the shape Tool
 //! Options names**: an Alt-drag over text is a box where a plain drag follows
 //! the text, Ellipse authors a washed ellipse, and Polygon takes its corners
-//! by click, Backspace and Enter and authors a washed polygon.
+//! by click, Backspace and Enter and authors a washed polygon. The chosen
+//! shape is saved for the next launch.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/highlight_shapes.md`.
 
@@ -21,6 +22,7 @@ const BAND_COMMIT: &str = "markup-commit"; // ui-text-exempt: a trace event name
 const TEXT_COMMIT: &str = "text-markup-commit"; // ui-text-exempt: a trace event name, never displayed
 const AUTHOR: &str = "markup-author"; // ui-text-exempt: a trace event name, never displayed
 const VERTEX_KEY: &str = "markup-vertex-key"; // ui-text-exempt: a trace event name, never displayed
+const SAVED: &str = "markup-tools-saved"; // ui-text-exempt: a trace event name, never displayed
 /// `Shape::ALL` indices.
 const ELLIPSE: usize = 2;
 const POLYGON: usize = 4;
@@ -174,6 +176,16 @@ fn ellipse_step(
         return Ok(Some(format!(
             "★★★ with Ellipse chosen a drag authored {ellipse:?}; a washed, multiplied ellipse \
              was expected."
+        )));
+    }
+    let saved = last_raw(rig, SAVED)?;
+    report.note(format!("remembered: {saved:?}"));
+    if !saved
+        .as_deref()
+        .is_some_and(|l| l.contains("ok=true shape=ellipse"))
+    {
+        return Ok(Some(format!(
+            "★★ choosing Ellipse traced {saved:?}; the choice was not saved for the next launch."
         )));
     }
     Ok(None)

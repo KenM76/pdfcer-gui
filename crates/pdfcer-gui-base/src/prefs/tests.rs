@@ -53,6 +53,10 @@ fn every_preference_round_trips_through_the_file() {
                         smooth_enlarged: false,
                     },
                     form_style: odd_form_style(),
+                    markup_tools: crate::prefs::MarkupToolPrefs {
+                        highlight_shape: crate::prefs::markuptools::HighlightShape::Polygon,
+                        region_touching: true,
+                    },
                     overprint_default: crate::prefs::OverprintDefault::Automatic,
                     walk_eye_mm: Some(1676),
                     model_start_walk: false,
@@ -645,6 +649,10 @@ fn the_writer_emits_no_key_the_parser_rejects() {
             smooth_enlarged: false,
         },
         form_style: odd_form_style(),
+        markup_tools: crate::prefs::MarkupToolPrefs {
+            highlight_shape: crate::prefs::markuptools::HighlightShape::Polygon,
+            region_touching: true,
+        },
         overprint_default: crate::prefs::OverprintDefault::PdfxOnly,
         walk_eye_mm: Some(1520),
         model_start_walk: false,

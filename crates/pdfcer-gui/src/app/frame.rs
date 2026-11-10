@@ -111,6 +111,7 @@ impl eframe::App for PdfcerApp {
         crate::canvas::clipseq::settle(&ctx);
         crate::canvas::keys::note_popup_at_frame_start(&ctx);
         crate::app::prefs::formstyle::keep(&ctx, &mut self.prefs, &self.form_defaults);
+        crate::app::prefs::markuptools::keep(&ctx, &mut self.prefs);
         self.note_open_documents();
         if std::mem::take(&mut self.form_preview_due) {
             self.dialogs.open_xfa_preview(&ctx, &self.status);

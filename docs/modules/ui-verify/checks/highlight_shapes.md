@@ -20,5 +20,8 @@
    `markup-vertex-key key=backspace vertices=3`. Press Enter: exactly one more
    `markup-author`, reading `kind=Polygon wash=Shape highlighter=true`.
 
+After the Ellipse step the last `markup-tools-saved` must read
+`ok=true shape=ellipse`: the choice is saved for the next launch.
+
 Rows measured with `pdfcer.exe find-text`. The rig is
 [`snapshot_box`](snapshot_box.md)'s, which always opens this fixture.

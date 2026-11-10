@@ -21,43 +21,7 @@ use crate::canvas::tool::CanvasTool;
 
 const SHAPE_MEMORY_KEY: &str = "pdfcer-highlight-shape"; // ui-text-exempt: internal memory id, never displayed
 
-/// What one highlighter drag draws.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Shape {
-    /// Follow the text under the drag; a box where there is none.
-    #[default]
-    Text,
-    /// A box, whatever is under it.
-    Area,
-    /// A washed ellipse.
-    Ellipse,
-    /// A washed freehand stroke.
-    Freehand,
-    /// A washed polygon, a click per vertex.
-    Polygon,
-}
-
-impl Shape {
-    /// Every shape, in the order Tool Options offers them.
-    pub const ALL: [Self; 5] = [
-        Self::Text,
-        Self::Area,
-        Self::Ellipse,
-        Self::Freehand,
-        Self::Polygon,
-    ];
-
-    /// The markup kind whose gesture draws this shape.
-    #[must_use]
-    pub fn kind(self) -> MarkupKind {
-        match self {
-            Self::Text | Self::Area => MarkupKind::Highlight,
-            Self::Ellipse => MarkupKind::Ellipse,
-            Self::Freehand => MarkupKind::Ink,
-            Self::Polygon => MarkupKind::Polygon,
-        }
-    }
-}
+pub use pdfcer_gui_base::prefs::markuptools::HighlightShape as Shape;
 
 /// The chosen shape.
 #[must_use]
@@ -75,6 +39,12 @@ pub fn set_shape(ctx: &egui::Context, shape: Shape) {
     super::vertex::abandon(ctx);
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(SHAPE_MEMORY_KEY), shape));
     crate::diag::trace(|| format!("highlight-shape shape={shape:?}"));
+}
+
+/// Set the shape remembered from the preferences file, at launch. Unlike
+/// [`set_shape`] it abandons nothing and traces nothing: no tool is drawing.
+pub fn seed(ctx: &egui::Context, shape: Shape) {
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new(SHAPE_MEMORY_KEY), shape));
 }
 
 /// The tool the canvas behaves as when `tool` is armed: the highlighter's

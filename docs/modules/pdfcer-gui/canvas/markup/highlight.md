@@ -46,4 +46,6 @@ Enter finishes it and Backspace removes its last vertex. Each key is consumed
 only when it acted, so Backspace still deletes the selection otherwise.
 Escape abandons the run, as for every vertex tool.
 
-Choosing another shape abandons a run in progress.
+Choosing another shape abandons a run in progress. The shape is remembered
+across launches ([`app::prefs::markuptools`](../../app/prefs/markuptools.md));
+`seed` restores it without abandoning or tracing anything.
