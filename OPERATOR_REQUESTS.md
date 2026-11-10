@@ -663,7 +663,7 @@ His words, relayed by the engine in `request_2026-11-09_marquee_region_highlight
 3. **Highlight.** A mode row (Text, Area, Shapes: ellipse, freehand, polygon), remembered; Alt forces Area; a text drag highlights only the runs under the drag, never a reading-order range across columns. Shapes write highlighter marks (`MarkupOptions::highlighter`).
 4. **Crop.** Drag a box with handles and margin fields; This page, All, Range, Odd or Even; Reset; *Crop to region*; says that cropping hides and does not remove. Engine verb `EditSession::set_page_boxes`.
 
-**Status.** Filed. Engine side shipped in v0.139.0; nothing built here yet.
+**Status.** §1 built: Tool Options › Region offers Delete in region (Inside only / Touching), Redact region and Crop to region…, driven by `delete_in_region_removes_what_the_box_holds` and `crop_to_region_crops_to_the_box`. §2 built: Redact outside… hatches everything outside the box and marks it through `mark_redaction_outside`, driven by `redact_outside_hatches_then_marks`. §4 built: the crop window takes odd, even, range or all pages, driven by `crop_even_pages_crops_only_even_pages`. §3 (highlight modes and shapes) not yet built.
 
 ## O404 — **RELEASED in `v0.5.0-dev.20261109.1`, DRIVEN** — a setting for whether a print goes as vector graphics or as an image
 
