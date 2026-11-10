@@ -247,6 +247,8 @@ pub mod printmarks;
 pub mod purge_passwords;
 /// The left rail's own words — O123 part 7.
 pub mod rail;
+/// Words of the snapshot region and its commands.
+pub mod region;
 /// Every word the **review-status** control says — `/State` and
 /// `/StateModel` (§12.5.6.3, Table 171), consumed by
 /// `crate::commentreviewstate` and by

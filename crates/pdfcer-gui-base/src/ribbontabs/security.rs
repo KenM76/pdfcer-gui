@@ -54,6 +54,8 @@ pub fn tab() -> Tab {
                     // cannot, then apply once. Putting it after Apply would put
                     // a marking verb on the far side of the destructive one.
                     command("edit.redact_selection").shown_when(EDIT_CONTENT),
+                    command("edit.redact_region").shown_when(EDIT_CONTENT),
+                    command("edit.redact_outside_region").shown_when(EDIT_CONTENT),
                     // The census, BETWEEN the marking verbs and Apply, and
                     // the position is the same argument as its neighbour's
                     // taken one step further. The operator's sequence is: find

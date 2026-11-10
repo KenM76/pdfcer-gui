@@ -299,6 +299,7 @@ pub(super) fn draw(
     if let Some(rect) = marquee {
         overlay::draw_marquee(&painter, map, rect);
     }
+    crate::canvas::region::paint_outside(&painter, doc, page_index, map);
     crate::canvas::snapshot::paint(&painter, doc, page_index, map);
     // The ghost sits ON TOP of the real outline, and both stay visible: the
     // pair is what states the displacement. `ghost` is `Some` only when

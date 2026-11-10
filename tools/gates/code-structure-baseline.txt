@@ -337,7 +337,6 @@ fn crates/pdfcer-gui/src/dialogs/mod.rs::show
 fn crates/pdfcer-gui/src/dialogs/new_document.rs::body
 fn crates/pdfcer-gui/src/dialogs/ocr.rs::body
 fn crates/pdfcer-gui/src/dialogs/ocr.rs::poll_worker
-fn crates/pdfcer-gui/src/dialogs/page_crop.rs::body
 fn crates/pdfcer-gui/src/dialogs/page_size.rs::diagram
 fn crates/pdfcer-gui/src/dialogs/page_size.rs::open
 fn crates/pdfcer-gui/src/dialogs/print/layout.rs::body

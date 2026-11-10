@@ -340,6 +340,7 @@
                         Command(id: "pages.rotate_left", size: Small),
                         Command(id: "pages.rotate_right", size: Small),
                         Command(id: "pages.crop"),
+                        Command(id: "pages.crop_to_region"),
                         Command(id: "pages.resize"),
                     ],
                     collapse: 1,
@@ -367,6 +368,7 @@
                     caption: "Content",
                     items: [
                         Command(id: "edit.select_all"),
+                        Command(id: "edit.delete_in_region"),
                         Command(id: "edit.text"),
                         Command(id: "edit.add_text"),
                         Command(id: "edit.reflow_block"),
@@ -604,6 +606,11 @@
                         ),
                         Command(id: "file.remove_metadata", size: Large),
                         Command(id: "edit.redact_selection", visible_when: "mode.edit_content"),
+                        Command(id: "edit.redact_region", visible_when: "mode.edit_content"),
+                        Command(
+                            id: "edit.redact_outside_region",
+                            visible_when: "mode.edit_content",
+                        ),
                         Command(id: "edit.offpage", visible_when: "mode.edit_content"),
                         Command(id: "edit.redact_apply", visible_when: "mode.edit_content"),
                     ],

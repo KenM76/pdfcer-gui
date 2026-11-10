@@ -131,6 +131,9 @@ pub(super) fn band() -> Vec<Command> {
         command("pages.crop", t::pages_crop(), 326)
             .with_icon("page-single")
             .enabled_when("doc.pages"),
+        command("pages.crop_to_region", t::pages_crop_to_region(), 327)
+            .with_icon("page-single")
+            .enabled_when("doc.snapshot"),
         command("pages.resize", t::pages_resize(), 325)
             .with_icon("page-single")
             .enabled_when("doc.pages"),

@@ -132,6 +132,21 @@ pub(super) fn band() -> Vec<Command> {
         command("edit.copy_snapshot_text", t::edit_copy_snapshot_text(), 494)
             .with_icon("copy-snapshot-text")
             .enabled_when("doc.snapshot"),
+        // The snapshot region's commands: they act on the box, not the
+        // selection. O405.
+        command("edit.delete_in_region", t::edit_delete_in_region(), 495)
+            .with_icon("delete")
+            .enabled_when("doc.snapshot"),
+        command("edit.redact_region", t::edit_redact_region(), 496)
+            .with_icon("redact")
+            .enabled_when("doc.snapshot"),
+        command(
+            "edit.redact_outside_region",
+            t::edit_redact_outside_region(),
+            497,
+        )
+        .with_icon("redact-selection")
+        .enabled_when("doc.snapshot"),
         // ═══════════════════════════════════════════════════════════════════
         // `edit.duplicate` — Ctrl+D over what is selected: page objects, parts
         // of a placed drawing, comments, form fields.

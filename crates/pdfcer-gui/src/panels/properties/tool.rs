@@ -45,6 +45,8 @@ pub enum Block {
     /// The group the next ce dimension joins and, for the linear tool, its
     /// direction.
     DimensionTool,
+    /// The snapshot region: its chip and the commands that act on it.
+    Region,
 }
 
 /// The controls `tool` brings, if any.
@@ -76,6 +78,7 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
             | MeasureKind::PathLength
             | MeasureKind::Area,
         ) => Some(Block::DimensionTool),
+        CanvasTool::Snapshot => Some(Block::Region),
         CanvasTool::TextEdit(_)
         | CanvasTool::Measure(MeasureKind::Scale)
         | CanvasTool::Node
@@ -85,7 +88,6 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
         | CanvasTool::TextAnnot(_)
         | CanvasTool::Form(_)
         | CanvasTool::Place(_)
-        | CanvasTool::Snapshot
         | CanvasTool::InkPicker => None,
     }
 }
@@ -115,7 +117,9 @@ pub enum Slot {
 #[must_use]
 pub fn slot_of(block: Block) -> Slot {
     match block {
-        Block::TextPen | Block::MeasurePoints | Block::DimensionTool => Slot::AboveTheSelection,
+        Block::TextPen | Block::MeasurePoints | Block::DimensionTool | Block::Region => {
+            Slot::AboveTheSelection
+        }
         Block::ScaleSwitches => Slot::BelowTheSelection,
     }
 }
@@ -153,6 +157,7 @@ fn section_in(ui: &mut Ui, slot: Slot, doc: &OpenDoc, actions: &mut Vec<Action>)
             super::tooldim::section(ui, doc, kind, actions);
         }
         (Block::DimensionTool, _) => {}
+        (Block::Region, _) => super::toolregion::section(ui, doc, actions),
     }
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     ui.separator();
@@ -405,6 +410,7 @@ mod tests {
         assert_eq!(slot_of(Block::TextPen), Slot::AboveTheSelection);
         assert_eq!(slot_of(Block::MeasurePoints), Slot::AboveTheSelection);
         assert_eq!(slot_of(Block::DimensionTool), Slot::AboveTheSelection);
+        assert_eq!(slot_of(Block::Region), Slot::AboveTheSelection);
     }
 
     /// **Exactly one block occupies the foot of the panel.**

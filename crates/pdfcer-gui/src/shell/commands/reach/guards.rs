@@ -185,6 +185,9 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::text::handles(id) {
         return Some("handles");
     }
+    if crate::app::dispatch::region::handles(id) {
+        return Some("handles");
+    }
     //
     // Both resolve to the string `"handles"` because that is the **guard's own
     // spelling** in `dispatch.rs`, which is what

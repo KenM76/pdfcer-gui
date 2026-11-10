@@ -28,6 +28,9 @@ pub fn tab() -> Tab {
                     // knowing `Ctrl+A` is not findable. It sits where the eye
                     // lands first on the tab they are already working in.
                     command("edit.select_all"),
+                    // The marquee region's own Delete, beside Select all: both act
+                    // on what the operator has gathered rather than on one object.
+                    command("edit.delete_in_region"),
                     command("edit.text"),
                     command("edit.add_text"),
                     // Beside the text verbs it belongs with, and after them:

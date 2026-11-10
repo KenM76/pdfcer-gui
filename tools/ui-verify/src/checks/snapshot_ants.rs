@@ -81,7 +81,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 }
 
 /// Shoot the window to `name` and read it back.
-fn shot(ctx: &CheckContext, rig: &Rig, report: &mut CheckReport, name: &str) -> Result<Image> {
+pub(super) fn shot(
+    ctx: &CheckContext,
+    rig: &Rig,
+    report: &mut CheckReport,
+    name: &str,
+) -> Result<Image> {
     let png = ctx.out(name);
     rig.pointer.screenshot(&rig.session, &png)?;
     let image = Image::load_png(&png)?;

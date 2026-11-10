@@ -22,6 +22,8 @@ pub mod inkpick;
 /// O66. A shared arm, not a feature of one dialog: his sentence was about
 /// *"anything we are inserting"*.
 pub mod placing;
+/// What the snapshot region takes from the page, and the Inside / Touching choice.
+pub mod region;
 pub mod snapshot;
 // pdfcer's OWN crosshair bitmap, supplied to the OS as a real cursor. The
 // platform's stock crosshair is monochrome and its colour belongs to the

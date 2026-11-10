@@ -116,6 +116,7 @@ pub fn tab() -> Tab {
                     icon_only("pages.rotate_left"),
                     icon_only("pages.rotate_right"),
                     command("pages.crop"),
+                    command("pages.crop_to_region"),
                     command("pages.resize"),
                 ],
             ),

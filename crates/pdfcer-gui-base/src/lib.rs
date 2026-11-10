@@ -442,6 +442,9 @@ pub mod snapmark;
 /// The box View ▸ Snapshot leaves on a page, in PDF user space.
 pub mod snapshotbox;
 
+/// What the snapshot region's commands raise for the action layer.
+pub mod regionaction;
+
 /// The overlay colour roles the canvas registers with the theme.
 pub mod overlayroles;
 

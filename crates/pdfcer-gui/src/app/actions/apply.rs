@@ -1017,6 +1017,7 @@ impl PdfcerApp {
             Action::Page(action) => {
                 super::pages::apply(doc, &mut self.panels, action, self.settings.separations);
             }
+            Action::Region(action) => super::region::apply(doc, action),
             // One line, like its neighbours: the whole of this verb — its two
             // correctable refusals, its three unreachable ones and the three
             // conditional clauses of its disclosure — is `super::forms`, whose

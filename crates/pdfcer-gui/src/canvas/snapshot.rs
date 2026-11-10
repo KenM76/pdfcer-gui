@@ -106,6 +106,7 @@ pub fn dragged(
     let Some(grip) = grab.grip else {
         if phase == Phase::Complete {
             lay(doc, from, to, "new");
+            filled(ctx, doc);
         }
         return;
     };
@@ -113,8 +114,17 @@ pub fn dragged(
     let part = if grip == Grip::Move { "move" } else { "resize" };
     if phase == Phase::Complete {
         lay(doc, r.min, r.max, part);
+        filled(ctx, doc);
     } else {
         set(doc, r.min, r.max);
+    }
+}
+
+/// A settled box fills the selection with what it takes, where the mode
+/// edits content; Shift or Ctrl clicks then adjust that selection only.
+fn filled(ctx: &egui::Context, doc: &mut OpenDoc) {
+    if crate::canvas::tool::capabilities(ctx).edit_content {
+        crate::canvas::region::fill_selection(ctx, doc);
     }
 }
 

@@ -127,6 +127,7 @@ mod ocr_upscale;
 /// and *how their answers reach the app*. Two different callers, two different
 /// sets of invariants, one receiver.
 pub mod open;
+mod open_region;
 /// The "which pages" group Recognise text and Remove OCR text share.
 mod page_scope;
 /// Security ▸ Remove metadata: the description entries, ticked to remove.
@@ -186,6 +187,8 @@ pub mod protect;
 /// removal runs on open, why confirmation is three gates rather than one click,
 /// and why the destination is asked for every time.
 pub mod redact;
+/// Redact outside the region: which pages, and the outside hatched meanwhile.
+pub mod redact_outside;
 /// The window that puts the operator's own digital signature on a document.
 #[cfg(feature = "signing")]
 pub mod sign;
@@ -297,6 +300,8 @@ pub struct DialogsState {
     /// The open crop window, if any; it holds the operand sheets' size, so it
     /// closes with their document.
     page_crop: Option<page_crop::PageCropDialog>,
+    /// The open Redact outside the region window; it holds a page index.
+    redact_outside: Option<redact_outside::RedactOutsideDialog>,
     /// The open Bates window; it holds the operand pages, so it closes with
     /// their document.
     bates: Option<bates::BatesDialog>,
@@ -1049,6 +1054,7 @@ impl DialogsState {
         {
             self.offpage = None;
         }
+        self.show_region(ctx, doc, actions, &redact_appearance);
         // Managing dimension groups is a DOCK PANEL and not a window
         // (`crate::panels::Panel::DimensionGroups`), because a window taller
         // than the screen can push its own title bar off the desktop, leaving
@@ -1413,6 +1419,7 @@ impl DialogsState {
         // see the field. A part-finished scan of a closed document is not a
         // window that merely goes stale — it is one that keeps working.
         self.offpage = None;
+        self.redact_outside = None;
         self.compact = None;
         self.remove_ocr = None;
         self.shrink_images = None;

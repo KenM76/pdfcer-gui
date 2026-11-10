@@ -651,24 +651,14 @@ pub enum Action {
     /// it in eight arms, and the day one of them got it wrong the symptom
     /// would be a stale number on a page the operator was not looking at.
     Dimension(crate::editactions::DimensionAction),
-    /// **Everything the operator asks of the SET OF PAGES**, as one variant
-    /// carrying which.
-    ///
-    /// Five verbs — insert another document's pages, rotate, delete, reorder,
-    /// extract. They live in [`pages::PageAction`] rather than as five variants
-    /// here, and that type's own documentation gives the reasons.
-    ///
-    /// The short version is the one that matters at this level: **every one of
-    /// them can renumber the document**, and what each of them does to the
-    /// shell's *derived* state afterwards is different — a rotation preserves
-    /// both selections, a reorder remaps the panel's picks and clears the
-    /// canvas's, a delete clears both, an insert navigates. That rule is a
-    /// property of the family rather than of any one verb, and expressing it in
-    /// one place is what stops a sixth page verb being added with the wrong
-    /// invalidation and nothing noticing — because nothing would: every
-    /// individual edit would still be correct in the document and wrong only
-    /// on screen.
+    /// Everything asked of the set of pages, as one variant carrying which.
+    /// Every one of these verbs can renumber the document, and each leaves the
+    /// shell's derived state differently (a rotation keeps both selections, a
+    /// reorder remaps the panel's picks, a delete clears both, an insert
+    /// navigates); [`crate::subactions::PageAction`] states that rule once.
     Page(crate::subactions::PageAction),
+    /// A command on the snapshot region; see [`crate::regionaction::RegionAction`].
+    Region(crate::regionaction::RegionAction),
     /// **Everything whose subject is one entry in the document's outline**
     /// — add, rename, and delete-with-its-subtree.
     ///

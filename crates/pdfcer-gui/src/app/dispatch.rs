@@ -32,6 +32,7 @@ pub(crate) mod ospaste;
 /// it would take the clipboard from the canvas for ever.
 pub(crate) mod pageclip;
 pub(crate) mod pages;
+pub(crate) mod region;
 /// Copy while a snapshot box is laid: the box.
 pub(crate) mod snapshotclip;
 /// The snapshot box, saved as a one-page PDF.
@@ -471,6 +472,7 @@ impl PdfcerApp {
             "file.about" => self.dialogs.open_about(),
             id if text::handles(id) => text::dispatch(self, ctx, id, actions),
             id if settings::handles(id) => settings::dispatch(self, id),
+            id if region::handles(id) => region::dispatch(self, ctx, id, actions),
             // Recognise text. A dialog rather than an immediate action, and
             // rather than the `file.copy_document_text` shape one arm below.
             //
