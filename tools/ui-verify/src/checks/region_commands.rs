@@ -265,7 +265,8 @@ impl Check for CropToRegion {
     }
 
     fn defect(&self) -> &'static str {
-        "Crop to region opens no crop window, or commits a crop box somewhere other than the          marquee box"
+        "Crop to region opens no crop window, or commits a crop box somewhere other than the \
+             marquee box"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -301,7 +302,8 @@ fn drive_crop(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<Str
     let trace = rig.session.trace()?;
     let Some(commit) = trace.last(CROP_COMMIT) else {
         return Ok(Some(format!(
-            "★★ Crop was pressed in the window Crop to region opened and no `{CROP_COMMIT}`              line followed."
+            "★★ Crop was pressed in the window Crop to region opened and no `{CROP_COMMIT}` \
+             line followed."
         )));
     };
     report.note(commit.raw.clone());

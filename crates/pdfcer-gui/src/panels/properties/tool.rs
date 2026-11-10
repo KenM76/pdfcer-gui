@@ -47,6 +47,8 @@ pub enum Block {
     DimensionTool,
     /// The snapshot region: its chip and the commands that act on it.
     Region,
+    /// What one highlighter drag draws.
+    Highlight,
 }
 
 /// The controls `tool` brings, if any.
@@ -79,6 +81,7 @@ pub fn block_for(tool: CanvasTool) -> Option<Block> {
             | MeasureKind::Area,
         ) => Some(Block::DimensionTool),
         CanvasTool::Snapshot => Some(Block::Region),
+        CanvasTool::Markup(crate::canvas::markup::MarkupKind::Highlight) => Some(Block::Highlight),
         CanvasTool::TextEdit(_)
         | CanvasTool::Measure(MeasureKind::Scale)
         | CanvasTool::Node
@@ -117,9 +120,11 @@ pub enum Slot {
 #[must_use]
 pub fn slot_of(block: Block) -> Slot {
     match block {
-        Block::TextPen | Block::MeasurePoints | Block::DimensionTool | Block::Region => {
-            Slot::AboveTheSelection
-        }
+        Block::TextPen
+        | Block::MeasurePoints
+        | Block::DimensionTool
+        | Block::Region
+        | Block::Highlight => Slot::AboveTheSelection,
         Block::ScaleSwitches => Slot::BelowTheSelection,
     }
 }
@@ -158,6 +163,7 @@ fn section_in(ui: &mut Ui, slot: Slot, doc: &OpenDoc, actions: &mut Vec<Action>)
         }
         (Block::DimensionTool, _) => {}
         (Block::Region, _) => super::toolregion::section(ui, doc, actions),
+        (Block::Highlight, _) => super::toolhighlight::section(ui),
     }
     crate::diag::ui_rect_visible(REGION, ui.min_rect(), ui.clip_rect());
     ui.separator();

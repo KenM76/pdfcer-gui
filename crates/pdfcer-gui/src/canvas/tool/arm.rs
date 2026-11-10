@@ -559,7 +559,7 @@ pub fn space_held(ctx: &egui::Context) -> bool {
 /// result and nothing downstream reads the space bar for itself.
 #[must_use]
 pub fn active(ctx: &egui::Context) -> CanvasTool {
-    let selected = selected(ctx);
+    let selected = crate::canvas::markup::highlight::drawn_as(ctx, selected(ctx));
     resolve(
         selected,
         space_held(ctx) || touch_borrows_the_hand(ctx, selected),

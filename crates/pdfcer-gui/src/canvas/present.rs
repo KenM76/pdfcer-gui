@@ -96,6 +96,7 @@ fn show_in(
         max_zoom_percent,
         pen,
     } = sampled;
+    let pen = crate::canvas::markup::highlight::pen_for(ui.ctx(), pen);
     if doc.pages.is_empty() {
         let placeholder = ui.centered_and_justified(|ui| ui.label(crate::text::canvas_no_pages()));
         // Say so on the trace rather than staying silent. A consumer that

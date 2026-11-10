@@ -93,18 +93,25 @@ pub fn drag(frame: Drag<'_>, actions: &mut Vec<Action>) -> Previews {
             },
             actions,
         );
-    } else if let Some(marks) = markup::text::swept(
-        markup::text::Swept {
-            kind,
-            pen,
-            doc,
-            page_index,
-            from,
-            to,
-            phase,
-        },
-        actions,
-    ) {
+    } else if let Some(marks) = (pen.wash != markup::pen::Wash::Area)
+        .then(|| {
+            markup::text::swept(
+                markup::text::Swept {
+                    kind,
+                    pen,
+                    doc,
+                    page_index,
+                    from,
+                    to,
+                    phase,
+                },
+                actions,
+            )
+        })
+        .flatten()
+    {
+        // An area box (Area mode, or Alt held) never follows text.
+        //
         // THE HIGHLIGHT FOLLOWED TEXT. `OPERATOR_REQUESTS.md` O54.
         //
         // *"we should be able to drag it along to just highlight text

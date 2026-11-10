@@ -18,6 +18,7 @@ use crate::canvas::mapping::PageMapping;
 
 /// The two-point rubber band: Rectangle, Ellipse, Arrow, Highlight.
 pub mod band;
+pub mod highlight;
 /// Freehand: press, follow the pointer, release. `/Ink`.
 pub mod ink;
 
@@ -111,6 +112,14 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
     // module changes."* Nothing else in this module did.
     let color = pen.colour_for(kind);
     let width = pen.width_pts;
+    // A highlighter shape is a wash: its area takes the colour and it has no
+    // outline, so the ellipse or polygon reads as a highlight, not a comment.
+    let washed = pen.wash == pen::Wash::Shape;
+    let (border, interior) = if washed {
+        (None, Some(color))
+    } else {
+        (Some(color), None)
+    };
     match (kind, geometry) {
         (
             MarkupKind::Rectangle | MarkupKind::Ellipse | MarkupKind::Arrow | MarkupKind::Highlight,
@@ -147,8 +156,8 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
                 },
                 MarkupKind::Ellipse => MarkupSpec::Circle {
                     rect,
-                    border: Some(color),
-                    interior: None,
+                    border,
+                    interior,
                     border_width: width,
                 },
                 // RAW `start` and `end` — see this function's docs.
@@ -183,8 +192,8 @@ pub fn spec(kind: MarkupKind, geometry: &Geometry, pen: pen::Pen) -> Option<Mark
         }),
         (MarkupKind::Polygon, Geometry::Vertices(vertices)) => Some(MarkupSpec::Polygon {
             vertices: vertices.clone(),
-            border: Some(color),
-            interior: None,
+            border,
+            interior,
             width,
         }),
         // **The revision cloud**, and the ONLY line in this module that
@@ -259,6 +268,15 @@ pub fn action(
             // it began, which would author a 1-point mark nobody can see. See
             // the module docs.
             if start == end {
+                return Err(Refusal::NoExtent);
+            }
+            // A filled band with no outline — Highlight, or a washed shape —
+            // is invisible when flat in either axis.
+            let filled_only = k == MarkupKind::Highlight || pen.wash == pen::Wash::Shape;
+            if filled_only
+                && ((start.0 - end.0).abs() < f64::EPSILON
+                    || (start.1 - end.1).abs() < f64::EPSILON)
+            {
                 return Err(Refusal::NoExtent);
             }
         }

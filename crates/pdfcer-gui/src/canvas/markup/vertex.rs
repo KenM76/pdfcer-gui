@@ -188,7 +188,7 @@ pub fn finishable(ctx: &egui::Context) -> bool {
 /// One derivation behind [`finishable`] and [`finish`], for the reason
 /// `measure::circular::pending` gives.
 fn pending(ctx: &egui::Context) -> Option<VertexRun> {
-    let armed = tool::selected(ctx)
+    let armed = super::highlight::drawn_as(ctx, tool::selected(ctx))
         .markup_kind()
         .filter(|k| k.is_vertex())?;
     let run = read(ctx)?;
@@ -232,6 +232,29 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>, pen: super::pen::P
         format!("markup-finish via=command kind={kind:?} page={page_index}")
     });
     true
+}
+
+/// **The keys of a vertex run in progress**: Enter finishes it, as Finish and
+/// a double-click do, and Backspace takes back its last vertex. Each key is
+/// consumed only when it acted, so with no run in progress Backspace still
+/// reaches the canvas's Delete. Nothing happens while a text field has focus.
+pub fn keys(ctx: &egui::Context, actions: &mut Vec<Action>, pen: super::pen::Pen) {
+    if crate::canvas::textedit::composing(ctx) || !pending(ctx).is_some_and(|r| r.in_progress()) {
+        return;
+    }
+    let consume = |key| ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, key));
+    if consume(egui::Key::Enter) {
+        let finished = finish(ctx, actions, pen);
+        crate::diag::trace(|| format!("markup-vertex-key key=enter finished={finished}"));
+    } else if consume(egui::Key::Backspace) {
+        let Some(mut run) = read(ctx) else {
+            return;
+        };
+        run.vertices.pop();
+        let left = run.vertices.len();
+        store(ctx, run);
+        crate::diag::trace(|| format!("markup-vertex-key key=backspace vertices={left}"));
+    }
 }
 
 /// **Abandon a vertex run in progress**, reporting whether there was one.

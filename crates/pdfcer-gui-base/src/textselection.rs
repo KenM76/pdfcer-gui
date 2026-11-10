@@ -134,6 +134,23 @@ impl TextSelection {
     }
 
     /// How many characters are selected. For the trace line and for tests.
+    /// Keep only the lines whose canvas box satisfies `keep`, dropping the
+    /// matching page-space quad with each. Answers how many were dropped, or
+    /// `None` when the two lists are not parallel and nothing was touched.
+    /// `text` is left whole: it is what a copy of the sweep would carry.
+    pub fn retain_lines(&mut self, keep: impl Fn(&Rect) -> bool) -> Option<usize> {
+        if self.quads.len() != self.page_quads.len() {
+            return None;
+        }
+        let before = self.quads.len();
+        let kept: Vec<bool> = self.quads.iter().map(&keep).collect();
+        let mut flags = kept.iter();
+        self.quads.retain(|_| *flags.next().unwrap_or(&false));
+        let mut flags = kept.iter();
+        self.page_quads.retain(|_| *flags.next().unwrap_or(&false));
+        Some(before - self.quads.len())
+    }
+
     #[must_use]
     pub fn len(&self) -> usize {
         self.text.len()

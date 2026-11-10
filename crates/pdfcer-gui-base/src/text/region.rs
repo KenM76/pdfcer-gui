@@ -17,10 +17,11 @@ pub const fn heading() -> &'static str {
 /// screen, whose objects are not loaded.
 #[must_use]
 pub fn chip(page_index: usize, w_pt: f64, h_pt: f64, objects: Option<usize>) -> String {
-    let (w_in, h_in) = (w_pt / 72.0, h_pt / 72.0);
-    let (w_mm, h_mm) = (w_pt * 25.4 / 72.0, h_pt * 25.4 / 72.0);
+    use crate::units::{inches_from_points, whole_mm_from_points};
+    let (w_in, h_in) = (inches_from_points(w_pt), inches_from_points(h_pt));
+    let (w_mm, h_mm) = (whole_mm_from_points(w_pt), whole_mm_from_points(h_pt));
     let page = page_index + 1;
-    let size = format!("{w_in:.1} \u{d7} {h_in:.1} in ({w_mm:.0} \u{d7} {h_mm:.0} mm)");
+    let size = format!("{w_in:.1} \u{d7} {h_in:.1} in ({w_mm} \u{d7} {h_mm} mm)");
     match objects {
         Some(1) => format!("Region: page {page}, {size}, 1 object"),
         Some(n) => format!("Region: page {page}, {size}, {n} objects"),

@@ -555,8 +555,17 @@ impl PdfcerApp {
                     let options = pdfcer_core::edit::MarkupOptions {
                         opacity: pen.opacity_option(),
                         dash: pen.dash_option(),
+                        // A highlighter shape multiplies into the page rather
+                        // than covering it, as a text highlight does.
+                        highlighter: pen.wash == crate::canvas::markup::pen::Wash::Shape,
                         ..Default::default()
                     };
+                    crate::diag::trace(|| {
+                        format!(
+                            "markup-author kind={kind:?} wash={:?} highlighter={}",
+                            pen.wash, options.highlighter
+                        )
+                    });
                     super::markupdest::author(
                         doc,
                         "add-markup",

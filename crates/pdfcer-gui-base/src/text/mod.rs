@@ -131,6 +131,8 @@ pub mod formfonts;
 pub mod forms;
 /// The *Sign here* window.
 pub mod handsign;
+/// Words of the highlighter's Tool Options block.
+pub mod highlight;
 pub mod images;
 /// **The words of the Import-text window** — the return journey's chooser.
 /// Its header carries the one way it departs from `export_text`'s shape:

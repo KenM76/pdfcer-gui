@@ -103,6 +103,25 @@ impl PenSlot {
     }
 }
 
+/// How the Highlight tool's chosen shape reaches the mark it authors.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Wash {
+    /// Not a highlighter shape: an ordinary markup, or a highlight that
+    /// follows the text under the drag.
+    #[default]
+    Off,
+    /// A highlight drawn as the dragged rectangle, never following text.
+    Area,
+    /// An ellipse, freehand stroke or polygon filled or stroked in the
+    /// highlighter's colour and painted Multiply
+    /// (`MarkupOptions::highlighter`).
+    Shape,
+}
+
+/// The stroke width, in PDF points, of a freehand highlighter stroke: a
+/// highlighter is a broad nib whatever the shape pen's width.
+pub const HIGHLIGHTER_STROKE_PTS: f64 = MAX_WIDTH_PTS;
+
 /// The colour and width the next markup gesture will be authored with.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pen {
@@ -219,6 +238,10 @@ pub struct Pen {
     /// simplified points, because `/Ink` carries no `/LE` (ISO 32000-1
     /// Table 182); with none it stays `/Ink`.
     pub ends: (LineEnding, LineEnding),
+    /// Whether the next mark is a highlighter shape; see [`Wash`]. Set only
+    /// by the Highlight tool's shape choice, through [`Self::washed`] or
+    /// [`Self::area`].
+    pub wash: Wash,
 }
 
 /// The smoothest freehand stroke offered: tolerance of half the width.
@@ -275,6 +298,7 @@ impl Default for Pen {
             on_page: false,
             detail: DEFAULT_DETAIL,
             ends: (LineEnding::None, LineEnding::None),
+            wash: Wash::Off,
         }
     }
 }
@@ -371,6 +395,30 @@ impl Pen {
     #[must_use]
     pub fn dash_option(&self) -> Option<pdfcer_core::annot_author::BorderDash> {
         self.dash.dash()
+    }
+
+    /// This pen drawing a highlighter shape: the shape slot takes the
+    /// highlighter's colour, a freehand stroke the broad nib, solid with no
+    /// arrowheads.
+    #[must_use]
+    pub fn washed(self) -> Self {
+        Self {
+            ink: self.highlighter,
+            width_pts: HIGHLIGHTER_STROKE_PTS,
+            dash: crate::linestyle::LineStyle::Solid,
+            ends: (LineEnding::None, LineEnding::None),
+            wash: Wash::Shape,
+            ..self
+        }
+    }
+
+    /// This pen drawing a highlight as the dragged rectangle only.
+    #[must_use]
+    pub fn area(self) -> Self {
+        Self {
+            wash: Wash::Area,
+            ..self
+        }
     }
 
     /// Set the highlighter colour from a screen colour. As [`Self::set_ink`].

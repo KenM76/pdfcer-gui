@@ -138,7 +138,8 @@ pub fn swept(frame: Swept<'_>, actions: &mut Vec<Action>) -> Option<Vec<egui::Re
         index: page_index,
         epoch: doc.edit_epoch,
     };
-    let selection = crate::canvas::textsel::drag(&ctx, from, to)?;
+    let mut selection = crate::canvas::textsel::drag(&ctx, from, to)?;
+    let dropped = clamp(&mut selection, from, to);
     let marks = selection.highlights(page_index, doc.edit_epoch);
     if marks.is_empty() {
         // No quads is NOT the same as no text: a drag that began and ended
@@ -158,16 +159,43 @@ pub fn swept(frame: Swept<'_>, actions: &mut Vec<Action>) -> Option<Vec<egui::Re
         ) {
             Ok(raised) => {
                 trace_commit(TextMarkKind::Highlight, page_index, marks.len());
+                if dropped > 0 {
+                    crate::diag::trace(|| format!("highlight-clamped dropped={dropped}"));
+                    crate::app::actions::record_note(
+                        doc.edit_epoch,
+                        crate::text::highlight::clamped(dropped),
+                    );
+                }
                 actions.push(raised);
             }
             Err(reason) => decline(TextMarkKind::Highlight, reason),
         }
         // Nothing is previewed on the frame that commits: the annotation is
         // about to be drawn for real, and a wash left over it would be a second
-        // copy of the same colour, one frame stale.
-        return None;
+        // copy of the same colour, one frame stale. `Some` and not `None`: the
+        // router falls through to the band on `None`, which would author a
+        // second, box-shaped highlight from the same release.
+        return Some(Vec::new());
     }
     Some(marks)
+}
+
+/// How far past the drag's box, as a fraction of its size on each side, a
+/// swept line may lie and still be highlighted.
+pub const CLAMP_MARGIN: f32 = 0.25;
+
+/// Drop the swept lines that lie wholly outside the drag's box grown by
+/// [`CLAMP_MARGIN`] — the lines a reading-order sweep reaches in another
+/// column or across the page — answering how many it dropped. A sweep that
+/// would drop every line is left whole, so the band fallback stays the
+/// answer only for a drag that found no text at all.
+fn clamp(selection: &mut TextSelection, from: egui::Pos2, to: egui::Pos2) -> usize {
+    let drag = egui::Rect::from_two_pos(from, to);
+    let reach = drag.expand2(drag.size() * CLAMP_MARGIN);
+    if !selection.quads.iter().any(|q| q.intersects(reach)) {
+        return 0;
+    }
+    selection.retain_lines(|q| q.intersects(reach)).unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -399,5 +427,27 @@ mod tests {
                 "{kind:?}"
             );
         }
+    }
+
+    #[test]
+    fn a_sweep_keeps_only_the_lines_near_the_drag() {
+        let mut swept = selection(0, 1, 5);
+        let dropped = clamp(
+            &mut swept,
+            egui::pos2(100.0, 705.0),
+            egui::pos2(200.0, 693.0),
+        );
+        assert_eq!(dropped, 3);
+        assert_eq!(swept.quads.len(), 2);
+        assert_eq!(swept.page_quads.len(), 2);
+        assert_eq!(swept.page_quads[0], quad(700.0));
+    }
+
+    #[test]
+    fn a_sweep_with_no_line_under_the_drag_is_left_whole() {
+        let mut swept = selection(0, 1, 3);
+        let dropped = clamp(&mut swept, egui::pos2(0.0, 0.0), egui::pos2(10.0, 10.0));
+        assert_eq!(dropped, 0);
+        assert_eq!(swept.quads.len(), 3);
     }
 }

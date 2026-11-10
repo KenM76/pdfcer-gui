@@ -101,6 +101,7 @@ pub mod textspacing;
 pub mod tool;
 /// **The dimension tools' group and direction**, drawn inside [`tool`]'s block.
 pub mod tooldim;
+mod toolhighlight;
 mod toolregion;
 /// The **box** a form field is drawn in — `EditSession::edit_widget`. Its own
 /// file rather than four more rows in [`fieldedit`],

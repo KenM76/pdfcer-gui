@@ -334,6 +334,7 @@ impl PageCropDialog {
             crate::diag::ui_rect(&format!("{REGION_SCOPE_PREFIX}{}", scope.key()), radio.rect);
         }
         if self.scope == Scope::Range {
+            // escape-disposition: dialog-cancels
             let field =
                 ui.add(egui::TextEdit::singleline(&mut self.range).hint_text(t::range_hint()));
             crate::diag::ui_rect(REGION_RANGE, field.rect);

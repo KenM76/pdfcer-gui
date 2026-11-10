@@ -317,6 +317,27 @@ fn the_smallest_real_extent_on_either_axis_still_commits() {
     }
 }
 
+/// A filled band with no outline — Highlight, or a washed shape — is refused
+/// when flat in either axis; an outlined one still draws as a line.
+#[test]
+fn a_flat_filled_band_commits_nothing() {
+    let flat = band((100.0, 200.0), (300.0, 200.0));
+    assert_eq!(
+        action(MarkupKind::Highlight, 0, flat.clone(), pen::Pen::default()),
+        Err(Refusal::NoExtent)
+    );
+    assert_eq!(
+        action(
+            MarkupKind::Ellipse,
+            0,
+            flat.clone(),
+            pen::Pen::default().washed()
+        ),
+        Err(Refusal::NoExtent)
+    );
+    assert!(action(MarkupKind::Rectangle, 0, flat, pen::Pen::default()).is_ok());
+}
+
 /// **A polygon needs three vertices and a polyline needs two** — the one
 /// place this shell is deliberately stricter than `pdfcer-core`.
 #[test]

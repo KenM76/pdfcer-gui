@@ -57,7 +57,11 @@ pub(super) fn dispatch(app: &mut PdfcerApp, ctx: &Context, id: &str, actions: &m
         // second derivation here is exactly how the two endings would come to
         // author different annotations.
         "markup.finish" => {
-            if !crate::canvas::markup::vertex::finish(ctx, actions, app.pen) {
+            if !crate::canvas::markup::vertex::finish(
+                ctx,
+                actions,
+                crate::canvas::markup::highlight::pen_for(ctx, app.pen),
+            ) {
                 crate::diag::trace(|| {
                     // ui-text-exempt: diagnostic trace, never displayed.
                     //

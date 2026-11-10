@@ -1006,6 +1006,8 @@ pub(super) fn interact(
         &mut text_selection,
     );
 
+    // Before the canvas keys, so a run's Backspace is not also a Delete.
+    crate::canvas::markup::vertex::keys(&ctx, actions, pen);
     keys::canvas_keys(
         keys::Keys {
             ctx: &ctx,

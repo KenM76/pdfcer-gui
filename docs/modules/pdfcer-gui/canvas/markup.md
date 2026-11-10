@@ -460,7 +460,7 @@ the gesture alone and can be tested as one.
 | rule | refused as | what it prevents |
 |---|---|---|
 | any coordinate non-finite | [`Refusal::NotFinite`] | a NaN in an annotation's `/Rect` |
-| a band with identical endpoints, or a vertex/ink run with no extent at all | [`Refusal::NoExtent`] | a 1-point mark nobody can see, holding a slot on the undo stack |
+| a band with identical endpoints; a Highlight or washed band flat in either axis (it has no outline to draw); a vertex/ink run with no extent at all | [`Refusal::NoExtent`] | a 1-point mark nobody can see, holding a slot on the undo stack |
 | a run too short for its kind | [`Refusal::TooFewVertices`] | a two-vertex "polygon" that renders as a line |
 
 The engine refuses the *empty* cases and only those. Everything above is

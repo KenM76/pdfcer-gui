@@ -164,6 +164,7 @@ pub mod insert_drawing;
 pub mod export_image_emf;
 /// File ▸ Export image writes JPEG XL.
 pub mod export_image_jxl;
+pub mod highlight_shapes;
 pub mod page_crop_even;
 pub mod region_commands;
 
