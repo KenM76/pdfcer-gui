@@ -32,6 +32,10 @@ const REGION_APPLY: &str = "page-crop.apply";
 const REGION_SCOPE_PREFIX: &str = "page-crop.scope.";
 /// The range field.
 const REGION_RANGE: &str = "page-crop.range";
+/// The margin kept by Remove white margins.
+const REGION_WHITE_KEEP: &str = "page-crop.white.keep";
+/// The Remove white margins button.
+const REGION_WHITE: &str = "page-crop.white";
 
 /// The on-screen edges, in the order the window lists them.
 const EDGES: [Edge; 4] = [Edge::Left, Edge::Right, Edge::Top, Edge::Bottom];
@@ -135,6 +139,10 @@ pub struct PageCropDialog {
     range: String,
     /// Margins in whole millimetres, by on-screen edge, in [`EDGES`] order.
     margins_mm: [i64; 4],
+    /// Paper Remove white margins keeps around the ink, whole millimetres.
+    white_mm: i64,
+    /// Set by the Remove white margins button.
+    white_requested: bool,
     /// Set by the commit button or Enter, consumed after the window closure
     /// returns.
     apply_requested: bool,
@@ -192,6 +200,8 @@ impl PageCropDialog {
             scope: Scope::Operands,
             range: String::new(),
             margins_mm,
+            white_mm: 0,
+            white_requested: false,
             apply_requested: false,
             close_requested: false,
         })
@@ -224,7 +234,7 @@ impl PageCropDialog {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "page-crop", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
-            egui::vec2(420.0, 460.0),
+            egui::vec2(420.0, 540.0),
             egui::vec2(340.0, 320.0),
         )
         .show(ctx, |ui| {
@@ -235,6 +245,17 @@ impl PageCropDialog {
             }
         });
         let open = !frame.closed;
+
+        if std::mem::take(&mut self.white_requested) {
+            let pages = self.pages();
+            if !pages.is_empty() {
+                actions.push(Action::Page(PageAction::RemoveWhiteMargins {
+                    pages,
+                    margin_mm: self.white_mm,
+                }));
+                return false;
+            }
+        }
 
         if std::mem::take(&mut self.apply_requested)
             && let Some(edits) = self.edits()
@@ -376,6 +397,32 @@ impl PageCropDialog {
         }
     }
 
+    /// Remove white margins: the paper kept around the ink, and the button,
+    /// present while the scope names a page.
+    fn white_group(&mut self, ui: &mut Ui) {
+        if self.pages().is_empty() {
+            return;
+        }
+        ui.label(t::white_heading());
+        ui.horizontal(|ui| {
+            ui.label(t::white_keep());
+            let (widget, refusal) = entry::drag_value(
+                ui,
+                &mut self.white_mm,
+                entry::Kind::Length(entry::LengthUnit::Of(
+                    pdfcer_core::dimension::Unit::Millimeter,
+                )),
+            );
+            let keep = refusal.show(ui.add(widget.range(0..=500)));
+            crate::diag::ui_rect(REGION_WHITE_KEEP, keep.rect);
+            let button = ui.button(t::white_button());
+            crate::diag::ui_rect(REGION_WHITE, button.rect);
+            if button.on_hover_text(t::white_tooltip()).clicked() {
+                self.white_requested = true;
+            }
+        });
+    }
+
     /// The visible-area line for the first page in scope, or the refusal.
     fn summary(&self, ui: &mut Ui, valid: bool) {
         let pages = self.pages();
@@ -417,6 +464,8 @@ impl PageCropDialog {
         ui.add_space(6.0);
         let valid = self.edits().is_some();
         self.summary(ui, valid);
+        ui.add_space(6.0);
+        self.white_group(ui);
 
         ui.separator();
         ui.horizontal(|ui| {
@@ -451,6 +500,8 @@ mod tests {
             scope: Scope::Operands,
             range: String::new(),
             margins_mm,
+            white_mm: 0,
+            white_requested: false,
             apply_requested: false,
             close_requested: false,
         }

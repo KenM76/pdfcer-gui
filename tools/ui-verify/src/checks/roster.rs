@@ -417,6 +417,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_route::PrintSendsVectorUnlessAsImage),
         Box::new(export_image_jxl::ExportImageWritesJpegXl),
         Box::new(page_crop_even::CropEvenPages),
+        Box::new(page_crop_white::CropWhiteMargins),
         Box::new(region_commands::DeleteInRegion),
         Box::new(region_commands::RedactOutsideRegion),
         Box::new(region_commands::CropToRegion),

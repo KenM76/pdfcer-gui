@@ -609,6 +609,9 @@ pub(super) fn apply(
                 })
             });
         }
+        PageAction::RemoveWhiteMargins { pages, margin_mm } => {
+            super::whitemargins::apply(doc, &pages, margin_mm);
+        }
         PageAction::SetPageBoxes { edits } => {
             if let Some(first) = edits.first().map(|e| e.page_index) {
                 super::apply::vector_edit(

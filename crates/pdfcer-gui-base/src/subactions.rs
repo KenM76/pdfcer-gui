@@ -518,6 +518,14 @@ pub enum PageAction {
         /// One edit per page, in page order, no page twice.
         edits: Vec<pdfcer_core::edit::PageBoxEdit>,
     },
+    /// Crop each page to what it paints, plus `margin_mm` on every side, as
+    /// one undo step. A page that paints nothing is left alone and counted.
+    RemoveWhiteMargins {
+        /// 0-based, ascending, no page twice.
+        pages: Vec<usize>,
+        /// Paper kept around the ink, whole millimetres.
+        margin_mm: i64,
+    },
     /// **Remove the operand pages from the document**, as one undoable
     /// command.
     ///

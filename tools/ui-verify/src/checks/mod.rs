@@ -166,6 +166,7 @@ pub mod export_image_emf;
 pub mod export_image_jxl;
 pub mod highlight_shapes;
 pub mod page_crop_even;
+pub mod page_crop_white;
 pub mod region_commands;
 
 pub mod export_remembered;

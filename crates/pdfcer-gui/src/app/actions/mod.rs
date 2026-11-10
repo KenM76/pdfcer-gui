@@ -138,6 +138,7 @@ pub mod pagesize;
 /// Header & footer and printer's marks.
 pub mod pagestamp;
 mod region;
+mod whitemargins;
 
 pub use disclosure::{EditDisclosure, last_edit_disclosure};
 // Crate-visible rather than `pub`, and re-exported here rather than reached

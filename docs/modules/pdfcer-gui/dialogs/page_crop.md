@@ -25,6 +25,15 @@ page coordinates would ask him for the origin and the `/Rotate` convention.
 Margins seen on screen are the Acrobat Crop Pages shape, and they carry across
 sheets of other sizes where one rectangle would not.
 
+## Remove white margins
+
+Below the summary: **Keep around the ink** (whole mm, 0–500, default 0) and
+the **Remove white margins** button. Pressing it closes the window and raises
+`PageAction::RemoveWhiteMargins` on the same page scope as Crop; the margin
+boxes above play no part. The measuring is
+[`app::actions::whitemargins`](../app/actions/whitemargins.md). The group is
+absent while the scope names no page.
+
 ## Trace and regions
 
 `page-crop-opened sheets rotate margins_mm`, `page-crop-commit n scope set
@@ -32,4 +41,4 @@ reset margins_mm llx lly urx ury` (the rect is the first page's), and from the
 action `page-crop-applied n overhang explicit inherited_removed base_kept
 absent`. Regions: `page-crop.body`, `page-crop.margin.{left,right,top,bottom}`,
 `page-crop.scope.{operands,all,odd,even,range}`, `page-crop.range`,
-`page-crop.whole`, `page-crop.apply`.
+`page-crop.whole`, `page-crop.apply`, `page-crop.white.keep`, `page-crop.white`.

@@ -172,6 +172,74 @@ pub fn disclosure_inherited(n: usize) -> String {
     )
 }
 
+/// The white-margin group's heading.
+#[must_use]
+pub const fn white_heading() -> &'static str {
+    "Remove white margins"
+}
+
+/// Label before the margin kept around the ink.
+#[must_use]
+pub const fn white_keep() -> &'static str {
+    "Keep around the ink"
+}
+
+/// The button that measures and crops.
+#[must_use]
+pub const fn white_button() -> &'static str {
+    "Remove white margins"
+}
+
+/// The button's hover text: what it does and its three limits.
+#[must_use]
+pub const fn white_tooltip() -> &'static str {
+    "Crops each page in scope to what it draws, plus the margin above, in one step. The \
+     edge is found by drawing the page, to within half a point; a grey or tinted \
+     background counts as drawing, so such a page may not shrink; and a page is never \
+     cropped larger than it already shows."
+}
+
+/// The status sentence after Remove white margins.
+#[must_use]
+pub fn white_cropped(cropped: usize, blank: usize, failed: usize) -> String {
+    let pages = |n: usize| {
+        if n == 1 {
+            "1 page".to_owned()
+        } else {
+            format!("{n} pages")
+        }
+    };
+    let mut s = format!(
+        "Cropped {} to what {} draw, found by drawing each page: the edge is within \
+         half a point, and a tinted background counts as drawing.",
+        pages(cropped),
+        if cropped == 1 { "it" } else { "they" },
+    );
+    if blank > 0 {
+        s.push_str(&format!(
+            " {} drew nothing and were left alone.",
+            pages(blank)
+        ));
+    }
+    if failed > 0 {
+        s.push_str(&format!(
+            " {} could not be drawn and were left alone.",
+            pages(failed)
+        ));
+    }
+    s
+}
+
+/// Remove white margins found nothing to crop.
+#[must_use]
+pub fn white_nothing(blank: usize, failed: usize) -> String {
+    match (blank, failed) {
+        (_, 0) => "No page in scope draws anything, so nothing was cropped.".to_owned(),
+        (0, n) => format!("No page in scope could be drawn ({n}), so nothing was cropped."),
+        (b, n) => format!("Nothing was cropped: {b} drew nothing and {n} could not be drawn."),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -193,5 +261,8 @@ mod tests {
         assert_eq!(scope_operands(1), "This page");
         assert!(disclosure_overhang(1).contains("sheet was"));
         assert!(disclosure_inherited(2).contains("sheets"));
+        assert!(white_cropped(3, 1, 0).contains("1 page drew nothing"));
+        assert!(!white_cropped(1, 0, 0).contains("left alone"));
+        assert!(white_nothing(2, 0).contains("draws anything"));
     }
 }
