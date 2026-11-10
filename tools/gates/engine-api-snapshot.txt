@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 0c0ed7b26c82de2c4cf4306231b58e120463783b
+# baseline: 6903d6e172dbe6b506fb7f439b4d55f6ccff60e3
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11495
+# items: 11504
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -10473,6 +10473,8 @@ pdfcer-render const pdfcer_render::profile::CLIP_TOP_N
 pdfcer-render const pdfcer_render::separation_preview::PROCESS_INKS
 pdfcer-render const pdfcer_render::shading::RAMP_SAMPLES
 pdfcer-render const pdfcer_render::visual_compare::notes::INSERTED_PAGE_NOTE
+pdfcer-render const pdfcer_render::white_margins::WHITE_MARGIN_SCALE
+pdfcer-render const pdfcer_render::white_margins::WHITE_MARGIN_THRESHOLD
 pdfcer-render enum pdfcer_render::RenderError
 pdfcer-render enum pdfcer_render::annot::AnnotationClass
 pdfcer-render enum pdfcer_render::annot::AnnotationScope
@@ -10530,6 +10532,7 @@ pdfcer-render enum pdfcer_render::type3::GlyphColorSource
 pdfcer-render enum pdfcer_render::visual_compare::PageMatch
 pdfcer-render enum pdfcer_render::visual_compare::VisualCompareError
 pdfcer-render enum pdfcer_render::visual_diff::VisualDiffError
+pdfcer-render enum pdfcer_render::white_margins::WhiteMarginError
 pdfcer-render field pdfcer_render::PageInk::composites_in_ink
 pdfcer-render field pdfcer_render::PageInk::source
 pdfcer-render field pdfcer_render::RegionGeometry::ctm
@@ -11014,6 +11017,8 @@ pdfcer-render field pdfcer_render::visual_diff::PageDiff::ssim
 pdfcer-render field pdfcer_render::visual_diff::VisualDiffOptions::render
 pdfcer-render field pdfcer_render::visual_diff::VisualDiffOptions::scale
 pdfcer-render field pdfcer_render::visual_diff::VisualDiffOptions::threshold
+pdfcer-render field pdfcer_render::white_margins::WhiteMarginCrop::content
+pdfcer-render field pdfcer_render::white_margins::WhiteMarginCrop::crop
 pdfcer-render field pdfcer_render::xfa::RenderedXfaPage::notes
 pdfcer-render field pdfcer_render::xfa::RenderedXfaPage::page
 pdfcer-render fn pdfcer_render::annot::appearance_placement
@@ -11098,6 +11103,7 @@ pdfcer-render fn pdfcer_render::visual_compare::visual_compare
 pdfcer-render fn pdfcer_render::visual_diff::diff_heatmap
 pdfcer-render fn pdfcer_render::visual_diff::diff_rendered
 pdfcer-render fn pdfcer_render::visual_diff::visual_diff
+pdfcer-render fn pdfcer_render::white_margins::white_margin_crop
 pdfcer-render fn pdfcer_render::will_composite_in_cmyk
 pdfcer-render fn pdfcer_render::xfa::render_xfa_page
 pdfcer-render fn pdfcer_render::xfa::render_xfa_page_with_images
@@ -11423,6 +11429,7 @@ pdfcer-render struct pdfcer_render::visual_compare::VisualRegion
 pdfcer-render struct pdfcer_render::visual_diff::ChangedRegion
 pdfcer-render struct pdfcer_render::visual_diff::PageDiff
 pdfcer-render struct pdfcer_render::visual_diff::VisualDiffOptions
+pdfcer-render struct pdfcer_render::white_margins::WhiteMarginCrop
 pdfcer-render struct pdfcer_render::xfa::RenderedXfaPage
 pdfcer-render variant pdfcer_render::RenderError::BadRasterSize
 pdfcer-render variant pdfcer_render::RenderError::Cancelled
@@ -11671,3 +11678,5 @@ pdfcer-render variant pdfcer_render::visual_compare::VisualCompareError::Signatu
 pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::MissingPage
 pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::Render
 pdfcer-render variant pdfcer_render::visual_diff::VisualDiffError::SizeChanged
+pdfcer-render variant pdfcer_render::white_margins::WhiteMarginError::BadMargin
+pdfcer-render variant pdfcer_render::white_margins::WhiteMarginError::Render
