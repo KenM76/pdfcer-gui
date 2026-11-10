@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O405 — **BUILT, DRIVEN, awaiting release** — the marquee as a region every command acts on; redact outside it; highlight modes and shapes; a crop tool
+## O405 — **RELEASED in `v0.5.0-dev.20261110.1`** — the marquee as a region every command acts on; redact outside it; highlight modes and shapes; a crop tool
 
 His words, relayed by the engine in `request_2026-11-09_marquee_region_highlight_modes_crop.md`: *"instead of the Marquee tool just being for snapshots, it needs to be available and work with any other operations like delete, redact, etc - and redact should be able to inverse the area redacted to be everything outside the marquess on the page. A crop tool would be nice too. Also add different shapes for the highlight tool, and modes too as it's hard to use the highlight tool to just draw a box sometimes as sometime when I go over text it starts selecting text all over the page."*
 
