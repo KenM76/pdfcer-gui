@@ -766,6 +766,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Print-ready copy** — `EditSession::to_print_ready_bytes` | **shipped, at v0.135.0; G273.** File ▸ Print on Android and Send to network printer; see *A print-ready copy* below. |
 | **Write one saved 3D view's measurements** — `EditSession::set_3d_view_measurements` | **shipped, at v0.135.0; G274.** The 3D viewer's keep and delete; see *One view's measurements* below. |
 | **3D walker: ceilings, long steps, descents, ramps** — `pdfcer_3d_nav::Walk` | **shipped, at v0.134.0; X058, X059.** Nothing to call: the viewer's Walk mode takes them through the pin. |
+| **Banded CMYK render** — a subtractive-group page past the ink buffer ceiling (`Diagnostics::cmyk_bands`) | **shipped, at v0.142.0.** Nothing to call: a printed sheet past the ink buffer ceiling bands through the pin; Print traces each sheet as `print-ink`, and `print_composites_an_oversized_sheet_in_ink` drives it. |
+| **Print with hard (non-antialiased) edges** — `pdfcer print --edge-antialiasing`, in the shell `pdfcer_render::EdgeAntialiasing` | **shipped, at v0.142.0.** Print ▸ Pages ▸ Edge smoothing, Automatic by default (hard at 300 DPI and finer); `prefs::print_edges`. |
 
 ## Filed requests for OCR — not verdict rows
 
