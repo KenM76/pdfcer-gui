@@ -378,6 +378,10 @@ his_typo_can_be_corrected_on_his_own_file|--pdf fixtures/per-glyph-twice.pdf --d
 # regions the dialog declares.
 print_clip_claim_follows_the_preview|--pdf fixtures/blank-overhang.pdf
 
+# The Layers panel draws rows only for a document with optional content, and
+# the shared title-block sheet has none.
+layers_search_narrows_the_list|--pdf fixtures/layered-drawing.pdf
+
 # The exception described above: same document, different point, and the
 # point cannot be pinned. See `fixture::a1_text_target`, which carries the
 # two requirements any replacement must satisfy.
