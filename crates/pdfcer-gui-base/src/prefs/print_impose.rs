@@ -100,7 +100,7 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
         "print_nup_border" => bool_from(value).map(|v| p.border = v),
         "print_nup_rotate" => bool_from(value).map(|v| p.rotate = v),
         "print_booklet_binding" => from_token(&BINDINGS, value).map(|v| p.binding = v),
-        _ => return KeyOutcome::NotMine,
+        _ => return super::print_colour::parse_key(prefs, key, value),
     };
     if stored.is_some() {
         KeyOutcome::Accepted

@@ -99,6 +99,8 @@ mod poster;
 pub(crate) mod batch;
 /// Colour, grey or black-only output.
 mod colour;
+/// ICC printer profile and press simulation.
+mod icc;
 /// **Fixed line width** — O233: every line printed at one width.
 mod lines;
 /// What the document's password allows a print.
@@ -478,6 +480,8 @@ pub struct PrintDialog {
     presets: presets::Applied,
     /// Colour, grey or black only, applied to every rendered sheet.
     output_color: pdfcer_print::output_color::OutputColor,
+    /// The printer profile and simulated press every sheet is converted through.
+    icc: icc::Icc,
 }
 
 impl PrintDialog {
@@ -609,6 +613,7 @@ impl PrintDialog {
             opened_with: remembered.clone(),
             presets: presets::Applied::default(),
             output_color: pdfcer_print::output_color::OutputColor::Color,
+            icc: icc::Icc::new(remembered.colour.clone()),
         };
         presets::apply(
             &mut dialog,

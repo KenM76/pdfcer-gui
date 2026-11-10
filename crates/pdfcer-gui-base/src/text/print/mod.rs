@@ -716,6 +716,7 @@ pub mod batch;
 pub mod colour;
 /// Staple, punch and output tray.
 pub mod finishing;
+pub mod icc;
 /// Several pages per sheet, and booklets.
 pub mod impose;
 /// **Fixed line width** — operator request O233.

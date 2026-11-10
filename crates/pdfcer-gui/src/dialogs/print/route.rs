@@ -17,13 +17,15 @@ use crate::text::print::route as t;
 impl PrintDialog {
     /// Whether a plain page of this job is offered the vector route.
     pub(super) fn vector_offered(&self) -> bool {
-        !self.print_as_image && self.output_color == OutputColor::Color
+        !self.print_as_image && self.output_color == OutputColor::Color && !self.icc.managed()
     }
 
     /// The sentence saying which sheets of this job are images whatever the
     /// switch says, or `None` when the switch governs them all.
     fn forced_images(&self) -> Option<&'static str> {
-        if self.output_color != OutputColor::Color {
+        if self.icc.managed() {
+            Some(crate::text::print::icc::forced_images())
+        } else if self.output_color != OutputColor::Color {
             Some(t::forced_colour())
         } else if self.impose.prefs.mode != ImposeMode::Off {
             Some(t::forced_impose())

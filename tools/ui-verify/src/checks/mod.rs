@@ -496,8 +496,10 @@ pub mod password_fill;
 pub mod pdfx_claim;
 /// Batch print sends each picked file as its own job.
 pub mod print_batch;
-/// A slow default printer does not hold the Print window shut.
+/// Print in grey or black only.
 pub mod print_colour;
+/// Print through an ICC printer profile, or proof a press.
+pub mod print_icc;
 /// Several pages per sheet, and booklets.
 pub mod print_impose;
 pub mod print_presets;

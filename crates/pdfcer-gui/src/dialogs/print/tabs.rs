@@ -408,6 +408,11 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.add_space(8.0);
     super::colour::radios(ui, dialog);
     ui.add_space(8.0);
+    if super::icc::controls(ui, &mut dialog.icc) {
+        dialog.preview_texture = None;
+        dialog.impose.preview = None;
+    }
+    ui.add_space(8.0);
     let printer = dialog.printers.get(dialog.selected).map(|p| p.name.clone());
     dialog.finishing.controls(ui, printer.as_deref());
 

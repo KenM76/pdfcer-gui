@@ -914,6 +914,7 @@ fn texture_for(
             data.len() / 4
         )
     });
+    dialog.icc.preview(rendered.pixmap.data_mut());
     super::colour::recolour(rendered.pixmap.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
     // The ink mask is built HERE, from the same pixmap, on the same miss —
     // operator request O113. Once per raster and never per frame: it is a pure

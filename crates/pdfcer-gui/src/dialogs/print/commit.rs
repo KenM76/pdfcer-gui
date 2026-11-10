@@ -62,6 +62,9 @@ impl PrintDialog {
         if let permission::Permission::Forbidden = self.permission {
             return Err(t::printing_forbidden().to_owned());
         }
+        if let Some(why) = self.icc.refusal() {
+            return Err(why);
+        }
         let mut bitmaps = self.render_sheets(doc, job, page_sizes)?;
         // The orientation page is the FIRST PLANNED page — the one `plan`
         // resolved orientation from. Not `pages[0]`: the sequence may be
@@ -73,6 +76,7 @@ impl PrintDialog {
             .and_then(|plan| page_sizes.get(plan.index).copied())
             .unwrap_or(US_LETTER_PORTRAIT_PT);
         for sheet in &mut bitmaps {
+            self.icc.sheet(&mut sheet.rgba);
             super::colour::recolour(&mut sheet.rgba, self.output_color, "sheet"); // ui-text-exempt: trace token
         }
         let config = self.finishing.config(printer, self.config.as_ref())?;

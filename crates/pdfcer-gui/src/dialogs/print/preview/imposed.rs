@@ -86,6 +86,7 @@ fn compose(
     }
     let borrowed: Vec<(&Pixmap, Cell)> = pages.iter().map(|(p, c)| (p, *c)).collect();
     let mut composed = base::compose(printable_pt, px_per_pt, &borrowed)?;
+    dialog.icc.preview(composed.data_mut());
     super::super::colour::recolour(composed.data_mut(), dialog.output_color, "preview"); // ui-text-exempt: trace token
     Some(composed)
 }

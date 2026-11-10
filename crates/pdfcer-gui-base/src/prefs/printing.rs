@@ -89,6 +89,8 @@ pub struct PrintPrefs {
     pub lines: LineWidthPrefs,
     /// N-up and booklet.
     pub impose: super::print_impose::ImposePrefs,
+    /// ICC printer profile and press simulation.
+    pub colour: super::print_colour::PrintColourPrefs,
 }
 
 /// Print every line at one width.
@@ -181,6 +183,7 @@ impl Default for PrintPrefs {
             poster: PosterPrefs::default(),
             lines: LineWidthPrefs::default(),
             impose: super::print_impose::ImposePrefs::default(),
+            colour: super::print_colour::PrintColourPrefs::default(),
         }
     }
 }
@@ -724,6 +727,7 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
         out.push('\n');
     }
     super::print_impose::write_block(prefs, out);
+    super::print_colour::write_block(prefs, out);
 }
 
 #[cfg(test)]

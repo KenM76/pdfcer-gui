@@ -252,6 +252,13 @@ fn every_preference_round_trips_through_the_file() {
                             rotate: false,
                             binding: pdfcer_print::imposition::Binding::Right,
                         },
+                        colour: crate::prefs::print_colour::PrintColourPrefs {
+                            printer_profile: Some(r"C:\profiles\desk printer.icm".into()),
+                            proof_profile: Some(r"C:\profiles\CoatedFOGRA39.icc".into()),
+                            intent: pdfcer_print::icc_output::RenderingIntent::Saturation,
+                            black_point_compensation: false,
+                            simulate_paper: true,
+                        },
                     },
                     // Off-page display, and every one of these three is
                     // the OPPOSITE of what that mode ships — Read ships off,
@@ -812,6 +819,13 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 border: false,
                 rotate: true,
                 binding: pdfcer_print::imposition::Binding::LeftTall,
+            },
+            colour: crate::prefs::print_colour::PrintColourPrefs {
+                printer_profile: None,
+                proof_profile: Some(r"D:\a b=c\GRACoL.icc".into()),
+                intent: pdfcer_print::icc_output::RenderingIntent::Perceptual,
+                black_point_compensation: true,
+                simulate_paper: false,
             },
         },
         // Off-page display. A DIFFERENT set from the round-trip test
