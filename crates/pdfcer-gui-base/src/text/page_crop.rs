@@ -12,8 +12,70 @@ pub const fn window_title() -> &'static str {
 /// The standing rule, first line of the window.
 #[must_use]
 pub const fn intro() -> &'static str {
-    "This changes what is shown and printed, not the paper. Nothing is deleted: \
-     the part outside the crop is hidden, and Show whole sheet brings it back."
+    "This changes what is shown and printed, not the paper. Crop hides content \
+     outside the box; it does not remove it, and Show whole sheet brings it back. \
+     To remove it, use Redact outside the region."
+}
+
+/// Heading above the page choice.
+#[must_use]
+pub const fn scope_heading() -> &'static str {
+    "Pages"
+}
+
+/// The pages the command was raised on.
+#[must_use]
+pub fn scope_operands(n: usize) -> String {
+    if n == 1 {
+        "This page".to_owned()
+    } else {
+        format!("The {n} picked pages")
+    }
+}
+
+/// Every page.
+#[must_use]
+pub const fn scope_all() -> &'static str {
+    "All pages"
+}
+
+/// Page numbers 1, 3, 5….
+#[must_use]
+pub const fn scope_odd() -> &'static str {
+    "Odd pages"
+}
+
+/// Page numbers 2, 4, 6….
+#[must_use]
+pub const fn scope_even() -> &'static str {
+    "Even pages"
+}
+
+/// A typed range.
+#[must_use]
+pub const fn scope_range() -> &'static str {
+    "Pages:"
+}
+
+/// Placeholder in the range field.
+#[must_use]
+pub const fn range_hint() -> &'static str {
+    "e.g. 1-3, 7"
+}
+
+/// How many pages the crop will change.
+#[must_use]
+pub fn scope_count(n: usize) -> String {
+    match n {
+        1 => "1 page will be cropped.".to_owned(),
+        n => format!("{n} pages will be cropped."),
+    }
+}
+
+/// The range names no page of this document.
+#[must_use]
+pub const fn no_pages() -> &'static str {
+    "No page of this document is named. Type page numbers such as 1-3, 7."
 }
 
 /// Heading above the four margin boxes.
@@ -71,15 +133,6 @@ pub const fn nothing_left() -> &'static str {
     "These margins leave nothing visible. Make them smaller."
 }
 
-/// The picked sheets are different sizes, so only the whole sheet is offered.
-#[must_use]
-pub fn mixed_sizes(count: usize) -> String {
-    format!(
-        "These {count} sheets are different sizes, so one set of margins would crop \
-         them differently. Pick sheets of one size to crop them, or show every sheet whole."
-    )
-}
-
 /// The commit button.
 #[must_use]
 pub const fn apply() -> &'static str {
@@ -89,7 +142,8 @@ pub const fn apply() -> &'static str {
 /// Tooltip of [`apply`].
 #[must_use]
 pub const fn apply_tooltip() -> &'static str {
-    "Crop the picked sheets as one step; Undo reverses it."
+    "Crop the pages counted above as one step, each from its own edges; Undo \
+     reverses it."
 }
 
 /// The cancel button.
@@ -135,7 +189,8 @@ mod tests {
         ] {
             assert!(!s.trim().is_empty());
         }
-        assert!(mixed_sizes(3).contains('3'));
+        assert!(scope_count(3).contains('3'));
+        assert_eq!(scope_operands(1), "This page");
         assert!(disclosure_overhang(1).contains("sheet was"));
         assert!(disclosure_inherited(2).contains("sheets"));
     }

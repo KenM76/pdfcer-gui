@@ -7,8 +7,8 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/actions/pagesize.md`.
 
 use pdfcer_core::edit::{
-    CropBoxChange, CropBoxEdit, CropBoxEntry, CropFollow, EditError, EditSession, MediaBoxChange,
-    MediaBoxEntry, PageResize,
+    CropBoxEntry, CropFollow, EditError, EditSession, MediaBoxChange, MediaBoxEntry, PageBoxChange,
+    PageBoxEdit, PageResize,
 };
 use pdfcer_core::page_tree::Rect;
 use pdfcer_core::pageops::{OrientationPolicy, ScaleMode, ScaleReport, ScaleRequest};
@@ -335,35 +335,19 @@ pub(super) fn set(
     Ok(notes)
 }
 
-/// The body of `PageAction::SetCropBox`: set or remove the visible area of
-/// `pages` as one `CommandKind::SetCropBoxes` undo step, returning the
+/// The body of `PageAction::SetPageBoxes`: set or remove each page's visible
+/// area as one `CommandKind::SetPageBoxes` undo step, returning the
 /// off-canvas sentences its outcome owes (R8b).
 ///
 /// # Errors
 ///
-/// `EditError::CropBoxEmpty` for a rectangle that leaves a sheet nothing, raised
-/// before any sheet is touched.
-pub fn crop(
-    session: &mut EditSession,
-    pages: &[usize],
-    edit: CropBoxEdit,
-) -> Result<Vec<String>, EditError> {
-    let changes = session.set_crop_boxes(pages, edit)?;
-    let overhang = changes
-        .iter()
-        .filter(
-            |CropBoxChange {
-                 overhangs_media_box,
-                 ..
-             }| *overhangs_media_box,
-        )
-        .count();
-    let entries = |want: CropBoxEntry| {
-        changes
-            .iter()
-            .filter(|CropBoxChange { entry, .. }| *entry == want)
-            .count()
-    };
+/// `EditError::PageBoxEmpty` for a rectangle that leaves a sheet nothing and
+/// `EditError::PageBoxRepeated` for a page named twice, both raised before any
+/// sheet is touched.
+pub fn crop(session: &mut EditSession, edits: &[PageBoxEdit]) -> Result<Vec<String>, EditError> {
+    let changes: Vec<PageBoxChange> = session.set_page_boxes(edits)?;
+    let overhang = changes.iter().filter(|c| c.overhangs_media_box).count();
+    let entries = |want: CropBoxEntry| changes.iter().filter(|c| c.entry == want).count();
     let inherited = entries(CropBoxEntry::InheritedSoOwnEntryRemoved);
     crate::diag::trace(|| {
         format!(

@@ -416,6 +416,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_colour::PrintInGreyOrBlackOnly),
         Box::new(print_route::PrintSendsVectorUnlessAsImage),
         Box::new(export_image_jxl::ExportImageWritesJpegXl),
+        Box::new(page_crop_even::CropEvenPages),
         Box::new(print_impose::PrintSeveralPagesPerSheetAndBooklets),
         Box::new(print_running::PrintHeaderFooterReachesThePrintedCopy),
         Box::new(print_preview_rule::PrintPreviewFollowsThePaperRule),

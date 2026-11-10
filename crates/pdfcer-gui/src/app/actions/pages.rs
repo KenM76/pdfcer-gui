@@ -609,15 +609,14 @@ pub(super) fn apply(
                 })
             });
         }
-        PageAction::SetCropBox { pages, edit } => {
-            if !pages.is_empty() {
-                let first = pages.first().copied().unwrap_or(0);
+        PageAction::SetPageBoxes { edits } => {
+            if let Some(first) = edits.first().map(|e| e.page_index) {
                 super::apply::vector_edit(
                     doc,
                     "page-crop-changed",
                     first,
-                    pages.len(),
-                    |session| super::pagesize::crop(session, &pages, edit),
+                    edits.len(),
+                    |session| super::pagesize::crop(session, &edits),
                 );
             }
         }

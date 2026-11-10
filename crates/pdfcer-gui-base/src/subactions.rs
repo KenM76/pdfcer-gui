@@ -512,12 +512,11 @@ pub enum PageAction {
     },
     /// Remove every page label, as one undo step.
     ClearLabels,
-    /// Set or remove the picked sheets' visible area, as one undo step.
-    SetCropBox {
-        /// 0-based page indices, ascending and unique.
-        pages: Vec<usize>,
-        /// The rectangle in page space, or the whole sheet.
-        edit: pdfcer_core::edit::CropBoxEdit,
+    /// Set or remove pages' visible area, each page its own rectangle, as one
+    /// undo step.
+    SetPageBoxes {
+        /// One edit per page, in page order, no page twice.
+        edits: Vec<pdfcer_core::edit::PageBoxEdit>,
     },
     /// **Remove the operand pages from the document**, as one undoable
     /// command.
