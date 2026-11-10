@@ -523,6 +523,7 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
             .show(ui.add(widget.range(36..=2400).suffix(t::dpi_suffix())))
             .on_hover_text(t::raster_note());
         crate::diag::ui_rect_visible(super::REGION_RESOLUTION, field.rect, ui.clip_rect());
+        edge_combo(ui, dialog);
         if let Some(res) = resolution
             && !res.capped
         {
@@ -547,6 +548,36 @@ fn resolution(ui: &mut Ui, dialog: &mut PrintDialog, resolution: Option<JobResol
         ui.label(egui::RichText::new(said).small());
     }
 }
+
+/// Smoothed or hard edges on the printed sheets, on the resolution row it
+/// depends on.
+fn edge_combo(ui: &mut Ui, dialog: &mut PrintDialog) {
+    use pdfcer_gui_base::prefs::print_edges::{EDGE_CHOICES, EdgeChoice};
+    let name = |c: EdgeChoice| match c {
+        EdgeChoice::Auto => t::edges_auto(),
+        EdgeChoice::On => t::edges_on(),
+        EdgeChoice::Off => t::edges_off(),
+    };
+    ui.add_space(12.0);
+    ui.label(t::edges_label());
+    let combo = egui::ComboBox::from_id_salt(REGION_EDGES)
+        .selected_text(name(dialog.edges))
+        .show_ui(ui, |ui| {
+            for (i, (choice, _)) in EDGE_CHOICES.into_iter().enumerate() {
+                let item = ui.selectable_value(&mut dialog.edges, choice, name(choice));
+                crate::diag::ui_rect_visible(
+                    &format!("{REGION_EDGES}.item.{i}"),
+                    item.rect,
+                    ui.clip_rect(),
+                );
+            }
+        });
+    let combo = combo.response.on_hover_text(t::edges_hover());
+    crate::diag::ui_rect_visible(REGION_EDGES, combo.rect, ui.clip_rect());
+}
+
+/// Region of the edge smoothing list; its entries add `.item.<i>`.
+const REGION_EDGES: &str = "print.edges";
 
 /// The Size mode's four scale choices.
 /// The scale choices; greyed, with the reason on hover, while the document

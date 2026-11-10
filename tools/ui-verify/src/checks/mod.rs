@@ -498,10 +498,14 @@ pub mod pdfx_claim;
 pub mod print_batch;
 /// Print in grey or black only.
 pub mod print_colour;
+/// Hard edges on printed sheets at print resolution, and Edge smoothing.
+pub mod print_edges;
 /// Print through an ICC printer profile, or proof a press.
 pub mod print_icc;
 /// Several pages per sheet, and booklets.
 pub mod print_impose;
+/// An oversized printed sheet composites in ink, in row bands.
+pub mod print_ink;
 pub mod print_presets;
 /// Print obeys paper's annotation flags and the file's Print layer usage.
 pub mod print_preview_rule;

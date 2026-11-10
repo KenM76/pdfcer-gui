@@ -58,6 +58,7 @@ pub mod walkeye;
 pub use crate::pastechords;
 /// The Print window's N-up and booklet answers.
 pub mod print_colour;
+pub mod print_edges;
 pub mod print_impose;
 /// **What the Print window opens with** — `OPERATOR_REQUESTS.md` **O166**.
 /// Its own file because deciding *which* of that window's controls may be

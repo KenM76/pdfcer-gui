@@ -93,6 +93,7 @@ pub(super) fn plain_sheet(
     let rendered =
         pdfcer_render::render_page_with_view(view, page, plan.render_scale as f32, options)
             .map_err(|e| e.to_string())?;
+    super::commit::trace_ink(&rendered.diagnostics);
     Ok(PageBitmap {
         width: rendered.pixmap.width(),
         height: rendered.pixmap.height(),

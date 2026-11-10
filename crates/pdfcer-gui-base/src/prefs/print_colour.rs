@@ -90,7 +90,7 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
             .map(|(i, _)| p.intent = *i),
         "print_colour_bpc" => bool_from(value).map(|v| p.black_point_compensation = v),
         "print_simulate_paper" => bool_from(value).map(|v| p.simulate_paper = v),
-        _ => return KeyOutcome::NotMine,
+        _ => return super::print_edges::parse_key(prefs, key, value),
     };
     if stored.is_some() {
         KeyOutcome::Accepted

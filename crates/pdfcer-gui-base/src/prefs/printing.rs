@@ -91,6 +91,8 @@ pub struct PrintPrefs {
     pub impose: super::print_impose::ImposePrefs,
     /// ICC printer profile and press simulation.
     pub colour: super::print_colour::PrintColourPrefs,
+    /// Smoothed or hard edges on printed sheets.
+    pub edges: super::print_edges::EdgeChoice,
 }
 
 /// Print every line at one width.
@@ -184,6 +186,7 @@ impl Default for PrintPrefs {
             lines: LineWidthPrefs::default(),
             impose: super::print_impose::ImposePrefs::default(),
             colour: super::print_colour::PrintColourPrefs::default(),
+            edges: super::print_edges::EdgeChoice::Auto,
         }
     }
 }
@@ -728,6 +731,7 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
     }
     super::print_impose::write_block(prefs, out);
     super::print_colour::write_block(prefs, out);
+    super::print_edges::write_block(prefs, out);
 }
 
 #[cfg(test)]

@@ -32,6 +32,7 @@ impl PrintDialog {
             impose: self.impose.prefs,
             lines: self.lines,
             colour: self.icc.prefs.clone(),
+            edges: self.edges,
         };
         super::presets::keep_own_habits(&self.presets, &mut habits, &self.opened_with);
         habits

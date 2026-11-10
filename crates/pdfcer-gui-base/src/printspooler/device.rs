@@ -123,6 +123,22 @@ pub struct PaperForm {
     pub size_pt: (f64, f64),
 }
 
+impl PaperForm {
+    /// The 1-based paper list item of the largest sheet in `forms`, 0 when
+    /// there is none. Item 0 is "from the printer's own settings", so form `i`
+    /// is item `i + 1`.
+    #[must_use]
+    pub fn largest_item(forms: &[Self]) -> usize {
+        forms
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| {
+                (a.size_pt.0 * a.size_pt.1).total_cmp(&(b.size_pt.0 * b.size_pt.1))
+            })
+            .map_or(0, |(i, _)| i + 1)
+    }
+}
+
 /// Whether the driver advertises "choose the tray from the sheet size".
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum FormSourceSupport {

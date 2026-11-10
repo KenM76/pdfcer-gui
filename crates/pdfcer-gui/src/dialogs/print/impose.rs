@@ -273,6 +273,7 @@ pub(super) fn render_sheet(
         super::lines::apply(&mut options, lines_pt, scale, cell.fit.scale);
         let rendered = pdfcer_render::render_page_with_view(&view, page, scale as f32, &options)
             .map_err(|e| e.to_string())?;
+        super::commit::trace_ink(&rendered.diagnostics);
         pages.push((rendered.pixmap, *cell));
     }
     let printable = job.device.printable_pt;

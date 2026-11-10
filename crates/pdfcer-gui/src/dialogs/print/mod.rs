@@ -255,6 +255,8 @@ pub struct PrintDialog {
     /// Rendering resolution ceiling, in DPI. A memory bound, editable because
     /// the disclosure is worth more as a control than as a warning.
     max_dpi: u32,
+    /// Smoothed or hard edges on the printed sheets.
+    edges: pdfcer_gui_base::prefs::print_edges::EdgeChoice,
     /// Send every page as an image; see [`route`].
     print_as_image: bool,
     /// What the password that opened the document allows; set by each plan.
@@ -546,6 +548,7 @@ impl PrintDialog {
             custom_percent: remembered.custom_percent,
             scope: remembered.scope,
             max_dpi: remembered.max_dpi,
+            edges: remembered.edges,
             print_as_image: remembered.print_as_image,
             permission: permission::Permission::default(),
             device: DeviceSettings {
@@ -1024,12 +1027,13 @@ impl PrintDialog {
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "print-features selected={} duplex={} max_copies={} form_source={:?} forms={}",
+                "print-features selected={} duplex={} max_copies={} form_source={:?} forms={} largest_form={}",
                 self.selected,
                 features.supports_duplex,
                 features.max_copies,
                 features.form_source,
                 forms.len(),
+                pdfcer_gui_base::printspooler::PaperForm::largest_item(&forms),
             )
         });
 

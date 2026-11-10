@@ -105,7 +105,16 @@ impl PrintDialog {
         // The SAME builder the preview calls. See `render_options` for the
         // choices it encodes and why a second copy of them here would defeat
         // the preview's purpose.
-        let options = render_options(self.scope, doc);
+        let options = render_options(self.scope, doc)
+            .with_edge_antialiasing(self.edges.at_dpi(job.resolution.dpi));
+        crate::diag::trace(|| {
+            format!(
+                "print-edges choice={} dpi={} smoothed={}", // ui-text-exempt: diagnostic trace
+                self.edges.key(),
+                job.resolution.dpi,
+                options.edge_antialiasing.is_on()
+            )
+        });
         let lines_pt = super::lines::paper_pt(self.lines, job.resolution.dpi);
         // The stamped copy when a print-only header or footer is set.
         let copy = self.running.copy();
@@ -245,6 +254,7 @@ fn render_tile(
     let rendered =
         pdfcer_render::render_page_region(view, page, plan.render_scale as f32, region, options)
             .map_err(|e| e.to_string())?;
+    trace_ink(&rendered.diagnostics);
     if !tile.has_band() {
         return Ok(PageBitmap {
             width: rendered.pixmap.width(),
@@ -283,6 +293,19 @@ fn render_tile(
         metafile: None,
         image_reason: None,
     })
+}
+
+/// The `print-ink` line for one rendered sheet: whether its page composited in
+/// ink, and in how many row bands (`Diagnostics::cmyk_bands`, 0 = one pass).
+/// A page over the ink buffer ceiling bands rather than falling back to sRGB;
+/// only `refused` is the fallback.
+pub(super) fn trace_ink(d: &pdfcer_render::Diagnostics) {
+    crate::diag::trace(|| {
+        format!(
+            "print-ink engaged={} bands={} refused={}", // ui-text-exempt: diagnostic trace
+            d.cmyk_buffer_engaged, d.cmyk_bands, d.cmyk_buffer_refused
+        )
+    });
 }
 
 /// The options of every print render, preview and spool alike: `scope`, paper's

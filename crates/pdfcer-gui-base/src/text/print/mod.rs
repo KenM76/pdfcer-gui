@@ -531,6 +531,39 @@ pub fn dpi_capped(dpi: u32, device_dpi: u32, uncapped_page_mb: u64) -> String {
     )
 }
 
+/// Label before the edge smoothing list.
+#[must_use]
+pub const fn edges_label() -> &'static str {
+    "Edge smoothing"
+}
+
+/// Edge smoothing chosen by the print resolution.
+#[must_use]
+pub const fn edges_auto() -> &'static str {
+    "Automatic"
+}
+
+/// Edge smoothing always on.
+#[must_use]
+pub const fn edges_on() -> &'static str {
+    "Smooth"
+}
+
+/// Edge smoothing always off.
+#[must_use]
+pub const fn edges_off() -> &'static str {
+    "Sharp"
+}
+
+/// Hover on the edge smoothing list.
+#[must_use]
+pub const fn edges_hover() -> &'static str {
+    "Automatic prints sharp edges at 300 DPI and finer, and smooth ones below it. \
+     Smoothing softens the edges of shapes, but where two shapes touch it can leave a faint \
+     line between them. Sharp edges leave no line; at printer resolutions their steps are too \
+     small to see. The preview is always smoothed."
+}
+
 /// Label before the resolution limit field.
 #[must_use]
 pub const fn dpi_limit_label() -> &'static str {
