@@ -40,7 +40,7 @@ pub const fn hint(format: ImageFormat, keep: bool) -> &'static str {
             "Text is written as outlines. It looks the same in every program, \
              and cannot be selected or searched there."
         }
-        (ImageFormat::Png | ImageFormat::Jpeg, _) => {
+        (ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::Jxl, _) => {
             "Pictures made of pixels have no text to keep."
         }
     }

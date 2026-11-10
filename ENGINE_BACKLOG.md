@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **53 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `wanted` — a real gap — **59 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -66,6 +66,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Set Crop, Bleed, Trim or Art box, each with its own rect, in one undo step** … | **wanted — O405 §4.** The crop window moves to `EditSession::set_page_boxes` (module `pdfcer_core::edit::page_boxes`, `PageBoxEdit`, `CommandKind::SetPageBoxes`) so each page in scope gets its own rect, one undo step; the refusals `EditError::PageBoxEmpty` and `EditError::PageBoxRepeated` reach the status line verbatim. Bleed, Trim and Art have no operator ask and stay off the surface until one arrives. |
+| **Crop odd or even pages only** — `set-crop-box --odd` / `--even` … | **wanted — O405 §4: the crop window's page choice gains Odd and Even beside This page, All and a range, with the page count shown.** |
+| **Remove white margins** — `set-crop-box --remove-white-margins` … | **wanted — no operator ask yet; it is the natural third button beside Crop to region in the crop window, and its inferred rects need the off-canvas list the engine prints.** |
 | **Name a destination while inserting pages** — `add_named_destination` (`pdfcer-core`'s `edit` module) … | **wanted, and nothing is owed yet.** *Reading, navigation & printing* carries `add_named_destination` as blocked on the argument that governs both rows: a destination resolved and baked at author time is indistinguishable from a correct one until a reorder moves the page it points at, and this shell has drag-to-reorder. The verb has no call site in `crates/` and should keep none until the `insert_pages` bookmark-carry surface named in this row exists. Both rows close together then. |
 | **Insert a page named twice as separate copies** — `insert_pages` <!--namesake:insert_pages--> (the shell calls the pinned version; the row is the engine's fix to it) | **wanted, at the pin since v0.82.0; request G185.** `app::actions::insertruns` may call `insert_pages` once with the repeats in place, instead of once per repeat-free run folded into one undo step. |
 | **Move a session's unsaved edits and undo/redo history to another process** — `export_history`, `import_history`, `HistoryImport` | **wanted, at the pin since v0.82.0; request G184.** Moving a document to another window carries its undo: the sender calls `export_history` and the receiver, on a pristine session opened from the same base bytes, calls `import_history` (`pdfcer_core::edit::history_transfer`); the move command's hover text saying the history stays behind is deleted. Refusals to word: `HistoryError::BaseMismatch`, `HistoryError::SessionNotPristine`, `HistoryError::UnsupportedVersion`, `HistoryError::UnknownCommand`, `HistoryError::NotAHistory`, `HistoryError::Malformed`. |
@@ -90,6 +93,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Delete everything inside (or touched by) a rectangle** — `object-delete IN --rect` … | **wanted — O405 §1: Delete with a marquee region, Inside only / Touching (drag direction stays the Select marquee's); composed from `vector::hit_test_rect` and `delete_objects` as the engine's CLI does, with the crossing-kept count on the status line.** |
 | **Stop decomposing the same page twice per edit** — `EditSession::page_objects(page_index)`, memoised and consulted by the editing verbs … | **wanted.** <!--namesake:page_objects--> Every hit in `crates/pdfcer-gui/src/` is this shell's own `OpenDoc::page_objects(&self)`, never the engine's `EditSession::page_objects(&mut self, page_index)`, so a bare-identifier grep reads as *thoroughly consumed* and means the opposite — an absence claim here has to name the receiver. The engine's is called only from `tests/engine_overlay_skew.rs` and `tests/page_generation_covers.rs`. Production still runs the shell's own parse in `panels::objects::provider`, cached separately on `OpenDoc` by `app::cache`, so every edit pays the session's decomposition **and** ours. Wiring it needs a decided answer on cache invalidation: the engine memoises against the session revision and we key on our own. |
 | **Re-read a page's objects quickly after an edit** — `EditSession::page_objects` <!--namesake:page_objects--> (the shell calls the pinned version; the row is its faster re-read) | **wanted, at the pin since v0.81.0; request G140.** It shortens what holds the next input after an edit on a dense page (O288 item 1); nothing in the shell changes. |
 | **A click on a transparent or rotated-away part of an image does not pick the image** — `hit_test_point_deep_with`, `DocumentImageAlpha`, `ImageAlpha` | **wanted, at the pin since v0.81.0; request G138.** Every point query tests an image's placed parallelogram, and the `_with` siblings skip fully clear mask samples given a `DocumentImageAlpha` built from the view. The canvas still box-tests an image. Owed: call `hit_test_point_deep_with` with a `DocumentImageAlpha` from one `vector::ImageAlphaCache` kept per edit epoch (`ImageAlphaCache::with_view`, cleared on an edit; request G181, at the pin since v0.82.0), and a driven click through a clear pixel onto ink beneath. Its module is `pdfcer_core::vector::image_hit`; the canvas's point queries move to `hit_test_point_with` and `hit_test_point_all_with`. |
@@ -105,6 +109,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Highlighter shapes: rectangle, ellipse, polygon, cloud, freehand painted Multiply** … | **wanted — O405 §3: the Highlight tool's Shapes mode sets `MarkupOptions::highlighter`; the properties panel reads `annot_author::is_highlighter` back and the mode row is offered only for kinds `annot_author::takes_highlighter` accepts.** |
 | **Change a placed sticky note's icon and colour, and read `/C` / `/Name` on any subtype** — `Annotation::icon` / `Annotation::color` … | **Reached both ways; what stays wanted is narrower than the clause — the READ.** `dialogs::textannot` offers the seven icons of §12.5.6.4 Table 172 as radios at placement (region `text-annot.icon`), and authors `DEFAULT_STICKY_ICON = Comment` — Acrobat's, per `ACROBAT_DEFAULTS.md` — rather than `StickyIcon::default()`'s `Note`. A **placed** note restyles in `panels::properties::markup::textannot`: a swatch for `/C`, a combo for `/Name`, raised as `AnnotAction::SetTextAnnotStyle` and applied by `app::actions::annots::textannotstyle` through `set_text_annot_style` as one undo entry, every untouched field spelt `None` so a colour change cannot rewrite the icon. An unmodelled `/Name` survives as `StickyIcon::Other` verbatim, driven by `a_foreign_icon_name_reaches_the_panel`. **Owed:** *any subtype* is not true — the read goes through `text_spec_from_dict` and the markup family's `spec_from_dict`, never `Annotation::icon` / `Annotation::color`, so `/FreeText` is declined by name and `/C` elsewhere is unread. Neither write is driven. |
 | **Move or delete several annotations in one command** — `move_annotations_each`, `delete_annotations`, `dimension_for_annotation` | **wanted, at the pin since v0.82.0; requests G190 and G191.** `app::actions::movemixed` calls `move_annotations_each` once instead of `move_annotation` and `place_dimension` per mark with a `coalesce_last`, and `app::actions::annots::deletemany` calls `delete_annotations` instead of `cut_selection`'s recipe; `dimension_for_annotation` finds a ce dimension from its annotation. Both live in `pdfcer_core::edit::batch`. Reports: `AnnotationBatchMove`, `AnnotationDeletion`. Refusal to word: `EditError::AnnotationLocked`, which replaces the shell's own locked check. |
 | **Read a marker's colour** — `EditSession::marker_color`, `MarkerColor`, `ColorEntry` | **wanted, at the pin since v0.82.0; request G176.** A marker's Icon colour row reads it instead of `panels::properties::markup::read_colour`; `ColorEntry::Absent`, `ColorEntry::Empty` and `ColorEntry::Malformed` separate no colour from a bad one, and `ColorEntry::Device` carries the colour; the free function `color_entry` reads the same from a dictionary. |
@@ -132,6 +137,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Inverse redaction: redact everything OUTSIDE a rectangle** … | **wanted — O405 §2: "Redact: Outside region" in the region block calls `EditSession::mark_redaction_outside` (module `pdfcer_core::edit::redact_outside`) per page in scope, never reusing one page's rect silently; `EditError::RedactOutsideNothing` is worded on the status line, and the apply confirmation names the page count.** |
 | Embed a supplied U3D/PRC model as a `/3D` annotation, with a poster … | **wired — Edit ▸ Insert ▸ 3D model…, driven (`a_3d_model_is_placed_listed_and_saved_back`); no poster yet, the engine's placeholder shows.** `EditSession::add_3d_annotation` takes the model bytes and a poster; the shell owes a file picker and a placement rectangle, reached from Insert. The engine renders no 3D scene (refused on scope), so the canvas shows the poster, which is what saved content shows too. Its refusals arrive as `EditError::ThreeD`, and the annotation it writes lists as `AnnotKind::ThreeD`. |
 | Page labels — read and set (Acrobat's Number Pages) … | **wanted — the label-keeping page verbs only.** Reading labels and the Number pages window shipped (the page-labels row under `shipped`). `pdfcer_core::page_labels` (`page_labels`, `label_ranges`, `LabelFormat`, `LabelStyle`) reads what each page shows; `EditSession::set_page_labels` / `clear_page_labels` write it as one undo entry, refusing with `EditError::InvertedPageRange`. `pageops::extract_with_labels` is offered by Pages ▸ Extract…'s *Keep the page labels*. Still wanted: the label-keeping page verbs (`reorder_pages_with_labels`, `delete_pages_with_labels`, `insert_pages_with`) matter only where Acrobat offers the choice: extract, split and page paste already keep labels by default. |
 | **A pasted markup carries what was copied — dash, opacity, note, author and blend mode travel** | **wanted no longer — this is the same capability as the shipped row of the same opening words**, which carries the argument and the evidence. Kept as its own entry because the register deletes no row; read the sibling under `shipped` → *Annotations & markup*, and do not repeat the gap sentence from here. |
@@ -168,7 +174,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `blocked` — waiting on something named — **2 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -186,7 +192,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -197,7 +203,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `declined` — deliberately no surface — **20 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -243,7 +249,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **453 of 528** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **454 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -670,7 +676,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
-| **Blend flattening for EMF and Word-bound SVG** — `SvgOptions::with_flatten_blends`, `SvgOptions::flatten_blends`, `SvgOutcome::blends_flattened`, `EmfOutcome::blends_flattened` | **shipped — the Snapshot tool's clipboard SVG passes the flag, because its paste target is Word; the EMF flattens on its own.** The snapshot status line counts what both flattened (O329). Not driven. |
+| **Export page(s) to JPEG XL (`.jxl`)** … | **shipped — File ▸ Export image offers JPEG XL when the `jxl-write` feature is built (`ImageFormat::offered`); `app::actions::export::jxl_bytes` calls `pdfcer_render::export::encode_jxl` (module `pdfcer_render::export::jxl`) with `JxlOptions::distance` from the quality slider (100 is lossless) and `JxlOptions::background` from the transparency choice. Driven by `export_image_writes_jpeg_xl`, which reads the codestream signature back.** `JxlEncoded::max_error` is not shown: a lossy file says so in the quality hint before export. |
+| **Blend flattening for EMF and Word-bound SVG** — `SvgOptions::with_flatten_blends`, `SvgOptions::flatten_blends`, `SvgOutcome::blends_flattened`, `EmfOutcome::blends_flattened` | **shipped — the Snapshot tool's clipboard SVG passes the flag, because its paste target is Word; the EMF flattens on its own.** The snapshot status line counts what both flattened (O329). A blend over plain ink is drawn beneath the drawing instead (`SvgOptions::underlay_blends`, `SvgOptions::with_underlay_blends`, `EmfOptions::underlay_blends`, `EmfOptions::with_underlay_blends`, on by default and kept), and `SvgOutcome::blends_underlaid` / `EmfOutcome::blends_underlaid` are subtracted from the picture count and worded as their own sentence. Not driven. |
 | List and extract embedded 3D model streams … | **shipped.** The Attachments panel's *3D models* section lists every U3D, PRC and STEP stream `pdfcer_core::threed::list_3d_with_notes` finds, with one *Save model…* per row through `extract_3d`. Driven: `a_3d_model_is_placed_listed_and_saved_back`. |
 | Export an embedded PRC 3D model's tessellation as a mesh (STL/OBJ) … | **shipped.** *Save as mesh…* on a PRC row of the Attachments panel's 3D models section (feature `3d`, default on) writes STL or OBJ through `pdfcer_3d::to_stl` / `to_obj`. Compressed tessellation the engine rebuilt is saved with the rest; a part with no mesh is counted and named, and the receipt names parts placed where the file stores them rather than by `PrcFile::placements`. Driven: `a_3d_model_is_placed_listed_and_saved_back`, which reads the STL back. |
 | **Export detected tables to Excel (XLSX)** — `pdfcer_core::export::xlsx`, `write_xlsx` with `XlsxOptions` and `XlsxReport` | **shipped — File ▸ Export ▸ Tables… ▸ *Save as: Excel workbook*.** `app::actions::export_tables` detects on the chosen pages and calls `write_xlsx` with `XlsxOptions::default()` (its error, `pdfcer_core::export::PackageError`, re-exported from the private `pdfcer_core::export::ooxml_zip`, is shown by its own wording in the failure line); the receipt carries the report's numbers written, locale-ambiguous cells kept as text, dropped characters and cells cut or left out at Excel's limits, off-canvas (R8b). Driven by `export_tables_without_the_mouse`, which reads `format=xlsx numbers=4` and the package on disk. |

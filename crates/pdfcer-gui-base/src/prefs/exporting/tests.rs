@@ -33,9 +33,10 @@ use super::*;
 // ---------------------------------------------------------------------------
 
 /// Every [`ImageFormat`], written out here rather than taken from the type.
-const IMAGE_FORMATS: [ImageFormat; 4] = [
+const IMAGE_FORMATS: [ImageFormat; 5] = [
     ImageFormat::Png,
     ImageFormat::Jpeg,
+    ImageFormat::Jxl,
     ImageFormat::Svg,
     ImageFormat::Emf,
 ];

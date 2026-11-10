@@ -440,9 +440,9 @@ pub(super) fn image(doc: &mut OpenDoc, plan: &crate::app::actions::imageexport::
         let produced = match plan.format {
             imageexport::ImageFormat::Svg => svg_bytes(&view, page, &options, plan),
             imageexport::ImageFormat::Emf => emf_bytes(&view, page, &options, plan),
-            imageexport::ImageFormat::Png | imageexport::ImageFormat::Jpeg => {
-                raster_bytes(&view, page, scale, &options, plan)
-            }
+            imageexport::ImageFormat::Png
+            | imageexport::ImageFormat::Jpeg
+            | imageexport::ImageFormat::Jxl => raster_bytes(&view, page, scale, &options, plan),
         };
         let produced = match produced {
             Ok(produced) => produced,
@@ -647,6 +647,30 @@ enum Produced {
 
 /// One page, encoded as PNG or JPEG.
 ///
+/// A JPEG XL file. `background: None` keeps the alpha channel, which is what
+/// a transparent plan asks for.
+#[cfg(feature = "jxl-write")]
+fn jxl_bytes(
+    pixmap: &pdfcer_render::tiny_skia::Pixmap,
+    plan: &crate::app::actions::imageexport::ImagePlan,
+) -> Result<Vec<u8>, pdfcer_render::export::ExportError> {
+    let mut jxl = pdfcer_render::export::JxlOptions::default();
+    jxl.distance = crate::app::actions::imageexport::jxl_distance(plan.quality);
+    jxl.background = plan.flatten_colour();
+    pdfcer_render::export::encode_jxl(pixmap, &jxl).map(|e| e.bytes)
+}
+
+/// A build without the encoder never offers the format
+/// (`ImageFormat::is_offered`); a plan naming it anyway writes the lossless
+/// PNG rather than nothing.
+#[cfg(not(feature = "jxl-write"))]
+fn jxl_bytes(
+    pixmap: &pdfcer_render::tiny_skia::Pixmap,
+    plan: &crate::app::actions::imageexport::ImagePlan,
+) -> Result<Vec<u8>, pdfcer_render::export::ExportError> {
+    pdfcer_render::export::encode_png(pixmap, Some(plan.dpi))
+}
+
 fn raster_bytes(
     view: &pdfcer_render::DocumentView<'_>,
     page: &pdfcer_core::page_tree::Page,
@@ -659,7 +683,8 @@ fn raster_bytes(
     let rendered = pdfcer_render::render_page_with_view(view, page, scale, options)
         .map_err(|error| Failed::Render(error.to_string()))?;
     // A PNG asked for a colour other than white was rendered clear and is
-    // composited here; a JPEG composites through `JpegOptions::background`.
+    // composited here; a JPEG and a JPEG XL composite through their encoder's
+    // `background`.
     let pixmap = match (plan.format, plan.flatten_colour()) {
         (ImageFormat::Png, Some(colour)) => {
             pdfcer_render::export::flatten_over(&rendered.pixmap, colour)
@@ -693,6 +718,7 @@ fn raster_bytes(
                 .unwrap_or(pdfcer_render::export::Rgb::WHITE);
             pdfcer_render::export::encode_jpeg(pixmap, &jpeg)
         }
+        ImageFormat::Jxl => jxl_bytes(pixmap, plan),
         // Unreachable — the caller matches on the format and sends these two
         // to `svg_bytes` and `emf_bytes`. Written as arms returning the
         // lossless format rather than as `unreachable!`, because a panic

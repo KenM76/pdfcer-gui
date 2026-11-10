@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use pdfcer_core::settings::presets::RenderStandard;
 use pdfcer_render::export::Rgb;
 
-/// Which of the four writers an export goes through.
+/// Which writer an export goes through.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
     /// Every pixel as rendered, with an alpha channel and a `pHYs` resolution.
@@ -48,11 +48,37 @@ pub enum ImageFormat {
     /// and half pictures looks identical to one that is all geometry until
     /// somebody scales it up.
     Emf,
+    /// Every pixel as rendered, as JPEG XL (ISO/IEC 18181) through
+    /// `pdfcer_render::export::encode_jxl`: lossless at quality 100, lossy
+    /// below it, and decoded back by the engine before it is returned.
+    /// Offered only in a build with the `jxl-write` feature.
+    Jxl,
 }
 
 impl ImageFormat {
-    /// Every format, in the order the window offers them.
-    pub const ALL: [Self; 4] = [Self::Png, Self::Jpeg, Self::Svg, Self::Emf];
+    /// Every format, offered or not.
+    pub const ALL: [Self; 5] = [Self::Png, Self::Jpeg, Self::Jxl, Self::Svg, Self::Emf];
+
+    /// The formats this build can write, in the order the window offers them.
+    #[must_use]
+    pub fn offered() -> Vec<Self> {
+        Self::ALL.into_iter().filter(|f| f.is_offered()).collect()
+    }
+
+    /// Whether this build can write the format.
+    #[must_use]
+    pub const fn is_offered(self) -> bool {
+        match self {
+            Self::Jxl => cfg!(feature = "jxl-write"),
+            Self::Png | Self::Jpeg | Self::Svg | Self::Emf => true,
+        }
+    }
+
+    /// Whether the quality setting governs this format.
+    #[must_use]
+    pub const fn takes_quality(self) -> bool {
+        matches!(self, Self::Jpeg | Self::Jxl)
+    }
 
     /// The file extension, lower case, without a dot.
     #[must_use]
@@ -71,6 +97,7 @@ impl ImageFormat {
             // ui-text-exempt: file extension. [MS-EMF] names no other one, and
             // Windows associates `.emf` with the metafile picture handler.
             Self::Emf => "emf",
+            Self::Jxl => "jxl",
         }
     }
 
@@ -78,7 +105,7 @@ impl ImageFormat {
     #[must_use]
     pub const fn can_be_transparent(self) -> bool {
         match self {
-            Self::Png | Self::Svg | Self::Emf => true,
+            Self::Png | Self::Jxl | Self::Svg | Self::Emf => true,
             Self::Jpeg => false,
         }
     }
@@ -137,7 +164,8 @@ pub struct ImagePlan {
     /// export nobody requested, and [`Self::impossible`] would have nothing
     /// left to refuse.
     pub transparent: bool,
-    /// JPEG encoder quality, `1..=100`. Meaningless for the other two and
+    /// JPEG and JPEG XL encoder quality, `1..=100` (100 is lossless for JPEG
+    /// XL; see [`jxl_distance`]). Meaningless for the other formats and
     /// carried anyway, so that switching format and switching back does not
     /// lose the number the operator chose.
     pub quality: u8,
@@ -183,6 +211,21 @@ impl ImagePlan {
     #[must_use]
     pub fn renders_transparent(&self) -> bool {
         self.transparent || self.background != Rgb::WHITE
+    }
+}
+
+/// The Butteraugli distance for a JPEG XL `quality`, or `None` for
+/// lossless at 100. The mapping is `cjxl -q`'s, so a number means what it
+/// means in the reference encoder.
+#[must_use]
+pub fn jxl_distance(quality: u8) -> Option<f32> {
+    let q = f32::from(quality.clamp(1, 100));
+    if quality >= 100 {
+        None
+    } else if q >= 30.0 {
+        Some(0.1 + (100.0 - q) * 0.09)
+    } else {
+        Some((6.4 + 2.5f32.powf((30.0 - q) / 5.0) / 6.25).min(25.0))
     }
 }
 
@@ -452,6 +495,18 @@ mod tests {
         assert!(ImageFormat::Emf.is_vector());
         assert!(!ImageFormat::Png.is_vector());
         assert!(!ImageFormat::Jpeg.is_vector());
+        assert!(!ImageFormat::Jxl.is_vector());
+    }
+
+    /// Quality 100 is lossless and the scale is `cjxl`'s: 90 is distance 1.0,
+    /// visually lossless.
+    #[test]
+    fn jxl_quality_maps_as_cjxl_does() {
+        assert_eq!(jxl_distance(100), None);
+        assert!((jxl_distance(90).unwrap() - 1.0).abs() < 1e-5);
+        assert!((jxl_distance(30).unwrap() - 6.4).abs() < 1e-4);
+        assert!(jxl_distance(1).unwrap() <= 25.0);
+        assert!(jxl_distance(50).unwrap() > jxl_distance(80).unwrap());
     }
 
     /// **Every format has its own extension**, which is what keeps a

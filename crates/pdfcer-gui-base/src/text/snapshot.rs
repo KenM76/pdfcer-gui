@@ -82,7 +82,8 @@ pub fn copied(copy: &SnapshotCopy) -> String {
         Vectors::Cut {
             glyphs_removed,
             notes,
-            blends_flattened,
+            blends_as_pixels,
+            blends_underlaid,
             text,
         } => {
             let edge = match glyphs_removed {
@@ -90,7 +91,17 @@ pub fn copied(copy: &SnapshotCopy) -> String {
                 1 => " One character crossing its edge was left out.".to_owned(),
                 n => format!(" {n} characters crossing its edge were left out."),
             };
-            let blends = match blends_flattened {
+            let underlaid = match blends_underlaid {
+                0 => String::new(),
+                1 => " One see-through area, such as a highlight, was moved beneath the \
+                      drawing so it stays a vector shape and looks the same."
+                    .to_owned(),
+                n => format!(
+                    " {n} see-through areas, such as highlights, were moved beneath the \
+                     drawing so they stay vector shapes and look the same."
+                ),
+            };
+            let blends = match blends_as_pixels {
                 0 => String::new(),
                 1 => " One see-through area, such as a highlight, was copied as its \
                       blended pixels so it stays see-through when pasted."
@@ -103,7 +114,7 @@ pub fn copied(copy: &SnapshotCopy) -> String {
             let kept = text.map(kept_text).unwrap_or_default();
             let said = format!(
                 "Copied the snapshot box as vectors and as {picture}. Everything outside the \
-                 box was cut away.{edge}{blends}{kept}"
+                 box was cut away.{edge}{underlaid}{blends}{kept}"
             );
             (said, notes.as_slice())
         }
@@ -175,7 +186,8 @@ mod tests {
         Vectors::Cut {
             glyphs_removed,
             notes: Vec::new(),
-            blends_flattened: 0,
+            blends_as_pixels: 0,
+            blends_underlaid: 0,
             text: None,
         }
     }
@@ -206,7 +218,8 @@ mod tests {
         let vectors = Vectors::Cut {
             glyphs_removed: 0,
             notes: Vec::new(),
-            blends_flattened: 2,
+            blends_as_pixels: 2,
+            blends_underlaid: 1,
             text: Some(KeptText {
                 svg_text: 3,
                 svg_outlines: 1,
@@ -216,6 +229,10 @@ mod tests {
         };
         let said = copied(&copy(300, 300, vectors));
         assert!(said.contains("2 see-through areas"), "{said}");
+        assert!(
+            said.contains("One see-through area") && said.contains("beneath"),
+            "{said}"
+        );
         assert!(said.contains("1 run of 4 in the SVG"), "{said}");
     }
 }

@@ -162,6 +162,8 @@ pub mod insert_drawing;
 // programs open as an empty frame. ⬜ NOT RUN — see the module header, which
 // says so in its own words rather than leaving an absent result to imply it.
 pub mod export_image_emf;
+/// File ▸ Export image writes JPEG XL.
+pub mod export_image_jxl;
 
 pub mod export_remembered;
 

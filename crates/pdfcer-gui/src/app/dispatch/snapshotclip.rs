@@ -30,19 +30,24 @@ pub fn copy_as(app: &PdfcerApp, form: pdfcer_gui_base::prefs::snapshot::Snapshot
     let epoch = doc.edit_epoch;
     match crate::clipboard::snapshot::copy_snapshot_as(doc, form) {
         Ok(copied) => {
-            let (blends, kept) = match &copied.vectors {
+            let (blends, underlaid, kept) = match &copied.vectors {
                 crate::clipboard::snapshot::Vectors::Cut {
-                    blends_flattened,
+                    blends_as_pixels,
+                    blends_underlaid,
                     text,
                     ..
-                } => (*blends_flattened, text.map_or(0, |t| t.svg_text)),
-                _ => (0, 0),
+                } => (
+                    *blends_as_pixels,
+                    *blends_underlaid,
+                    text.map_or(0, |t| t.svg_text),
+                ),
+                _ => (0, 0, 0),
             };
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed.
                     "clipboard-snapshot-copy dpi={} asked={} w={} h={} vectors={} formats={} \
-                     blends={blends} text_runs={kept}",
+                     blends={blends} underlaid={underlaid} text_runs={kept}",
                     copied.dpi,
                     copied.asked_dpi,
                     copied.width_px,

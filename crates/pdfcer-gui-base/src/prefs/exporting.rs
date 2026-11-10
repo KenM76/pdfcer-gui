@@ -206,6 +206,7 @@ pub const fn image_format_key(value: ImageFormat) -> &'static str {
         ImageFormat::Jpeg => "jpeg",
         ImageFormat::Svg => "svg",
         ImageFormat::Emf => "emf",
+        ImageFormat::Jxl => "jxl",
     }
 }
 
@@ -218,6 +219,7 @@ pub fn image_format_from_key(token: &str) -> Option<ImageFormat> {
         "jpeg" => Some(ImageFormat::Jpeg),
         "svg" => Some(ImageFormat::Svg),
         "emf" => Some(ImageFormat::Emf),
+        "jxl" if ImageFormat::Jxl.is_offered() => Some(ImageFormat::Jxl),
         _ => None,
     }
 }

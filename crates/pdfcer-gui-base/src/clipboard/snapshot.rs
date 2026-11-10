@@ -54,7 +54,10 @@ pub enum Vectors {
         /// Blended areas (a highlight) written as their composited pixels so
         /// they stay see-through where blend modes are ignored; the larger of
         /// the SVG's and the EMF's counts.
-        blends_flattened: usize,
+        blends_as_pixels: usize,
+        /// Blended areas moved beneath the drawing as a plain vector shape
+        /// that looks the same; the larger of the two formats' counts.
+        blends_underlaid: usize,
         /// What became of the text when the operator asked to keep it as
         /// text; `None` when it was drawn as outlines.
         text: Option<KeptText>,
@@ -221,13 +224,21 @@ fn cut_payload(
         emf_text: emf.outcome.text.runs_as_text,
         emf_outlines: emf.outcome.text.runs_as_outlines(),
     });
+    // The engine counts an underlaid blend inside `blends_flattened` too.
+    let svg_blends: &pdfcer_render::svg::SvgOutcome = &svg.outcome;
+    let emf_blends: &pdfcer_render::emf::EmfOutcome = &emf.outcome;
     let vectors = Vectors::Cut {
         glyphs_removed: report.glyphs_removed,
         notes: report.notes.clone(),
-        blends_flattened: svg
-            .outcome
+        blends_as_pixels: (svg_blends
             .blends_flattened
-            .max(emf.outcome.blends_flattened),
+            .saturating_sub(svg_blends.blends_underlaid))
+        .max(
+            emf_blends
+                .blends_flattened
+                .saturating_sub(emf_blends.blends_underlaid),
+        ),
+        blends_underlaid: svg_blends.blends_underlaid.max(emf_blends.blends_underlaid),
         text,
     };
     let mut payload = raster_at(svg.svg, emf.emf, rendered.pixmap, dpi)?;

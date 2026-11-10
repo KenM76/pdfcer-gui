@@ -79,6 +79,7 @@ pub const fn region_for_format(format: ImageFormat) -> &'static str {
         ImageFormat::Png => "export-image.format.png",
         ImageFormat::Jpeg => "export-image.format.jpeg",
         ImageFormat::Svg => "export-image.format.svg",
+        ImageFormat::Jxl => "export-image.format.jxl",
         ImageFormat::Emf => "export-image.format.emf",
     }
 }
@@ -421,7 +422,7 @@ impl ExportImageDialog {
         // No `.strong()` — R84 / DEFECTS.md D11.
         ui.label(t::format_heading());
         let start = ui.cursor();
-        for format in ImageFormat::ALL {
+        for format in ImageFormat::offered() {
             let response = ui.radio_value(&mut self.format, format, t::format_name(format));
             // Each radio's OWN rectangle, so `tools/ui-verify` can press a
             // named format instead of dividing the group's height by four. See
@@ -655,15 +656,14 @@ impl ExportImageDialog {
 
     /// How hard the JPEG encoder is allowed to squeeze.
     fn quality_group(&mut self, ui: &mut Ui) {
-        // Drawn only for JPEG — see [`Self::body`]. PNG is lossless and SVG is
-        // not pixels at all, so the control would be inert for two of three and
-        // an inert control is a promise the format does not keep.
-        if self.format != ImageFormat::Jpeg {
+        // Drawn only for the formats that take it: an inert control is a
+        // promise the format does not keep.
+        if !self.format.takes_quality() {
             return;
         }
         ui.label(t::quality_heading());
         ui.horizontal(|ui| {
-            ui.label(t::quality_label());
+            ui.label(t::quality_label(self.format));
             // The engine clamps rather than refusing, and says why; the control
             // holds the same range so the clamp is never reached from here.
             // The range is the preferences file's own, for the reason
@@ -672,7 +672,7 @@ impl ExportImageDialog {
             let response = refusal.show(ui.add(widget.range(MIN_JPEG_QUALITY..=MAX_JPEG_QUALITY)));
             crate::diag::ui_rect(REGION_QUALITY, response.rect);
         });
-        ui.weak(t::quality_hint());
+        ui.weak(t::quality_hint(self.format));
     }
 }
 

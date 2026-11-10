@@ -57,10 +57,12 @@ path = "src/main.rs"
 # `Cargo.lock` pins and fails the
 # build when a name in it is neither forwarded from here nor named in that
 # gate's DELIBERATELY-NOT-FORWARDED list with a reason.
-default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "model-download", "ipps", "3d", "svg-import", "jxl"]
+default = ["jpx", "ocrs", "ocrcer", "paddle", "ocr-vl", "signing", "timestamp", "model-download", "ipps", "3d", "svg-import", "jxl", "jxl-write"]
 jpx = ["pdfcer-core/jpx", "pdfcer-render/jpx"]
 # `jxl` — JPEG XL pictures drawn on the page and placed by Insert image.
 jxl = ["pdfcer-core/jxl", "pdfcer-render/jxl", "pdfcer-gui-base/jxl"]
+# `jxl-write` — Export as image writes JPEG XL. Without it the format is not offered.
+jxl-write = ["jxl", "pdfcer-render/jxl-write", "pdfcer-gui-base/jxl-write"]
 
 # `3d` — the PRC reader in `pdfcer-3d`, for the Attachments panel's
 # *Save as mesh…* (STL/OBJ), and the engine's poster drawn from the model when

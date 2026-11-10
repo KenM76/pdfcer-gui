@@ -67,7 +67,7 @@ alongside the other licences harvested from `Cargo.lock`.
 
 ## Licence overview
 
-- **Apache License 2.0** — used by 221 crate(s)
+- **Apache License 2.0** — used by 222 crate(s)
 - **MIT License** — used by 38 crate(s)
 - **Unicode License v3** — used by 19 crate(s)
 - **BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License** — used by 7 crate(s)
@@ -1609,6 +1609,7 @@ Used by:
 ### Apache License 2.0
 
 Used by:
+- [jixel 0.5.7](https://github.com/awxkee/jixel)
 - [moxcms 0.8.1](https://github.com/awxkee/moxcms.git)
 - [pxfm 0.1.30](https://github.com/awxkee/pxfm)
 
@@ -6933,20 +6934,20 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [pdfcer-3d-nav 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-3d 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-color 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-core 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-fonts 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-function 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-image-codec 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-jpeg-remux 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-json 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-model 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-pkix 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-render 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-text 0.138.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-vec3 0.138.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d-nav 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-color 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-core 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-fonts 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-function 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-image-codec 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-jpeg-remux 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-json 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-model 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-pkix 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-render 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-text 0.139.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-vec3 0.139.0](https://github.com/KenM76/pdfcer)
 - [egui-shell 0.1.0](https://crates.io/crates/egui-shell)
 - [pdfcer-gui 0.1.0](https://crates.io/crates/pdfcer-gui)
 - [pdfcer-gui-base 0.1.0](https://crates.io/crates/pdfcer-gui-base)

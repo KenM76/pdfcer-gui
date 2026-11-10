@@ -37,6 +37,7 @@ pub const fn format_name(format: ImageFormat) -> &'static str {
         ImageFormat::Png => "PNG",
         ImageFormat::Jpeg => "JPEG",
         ImageFormat::Svg => "SVG",
+        ImageFormat::Jxl => "JPEG XL",
         // The acronym AND what it stands for, unlike the other three, and
         // that asymmetry is deliberate. PNG, JPEG and SVG are names an
         // operator has met; "EMF" is one almost nobody has, and a radio
@@ -60,6 +61,11 @@ pub const fn format_hint(format: ImageFormat) -> &'static str {
              pick up smudges around the edges, and it cannot hold a clear \
              background at all."
         }
+        ImageFormat::Jxl => {
+            "Smaller than PNG with every pixel kept at quality 100, and it can \
+             keep a clear background. Newer programs open it; Word, older \
+             Windows viewers and many web services do not yet."
+        }
         // Both vector hints name PROGRAMS rather than properties, because
         // the choice between these two is not a choice about fidelity — it is
         // a choice about which program is going to open the file, and an
@@ -73,7 +79,8 @@ pub const fn format_hint(format: ImageFormat) -> &'static str {
         ImageFormat::Emf => {
             "Also lines rather than pixels, for the programs that will not \
              open an SVG — LibreOffice 24, Visio, CorelDRAW, and Word's Paste \
-             Special. Anything see-through in the page becomes a picture."
+             Special. Most see-through things in the page become a picture; a \
+             highlight over plain ink stays lines."
         }
     }
 }
@@ -136,7 +143,7 @@ pub const fn dpi_label() -> &'static str {
 #[must_use]
 pub const fn dpi_hint(format: ImageFormat) -> &'static str {
     match format {
-        ImageFormat::Png | ImageFormat::Jpeg => {
+        ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::Jxl => {
             "How large the picture is, and it is written into the file so Word \
              and its like place it at the page's real size. 300 is print \
              grade; 96 is screen grade."
@@ -217,15 +224,26 @@ pub const fn quality_heading() -> &'static str {
 
 /// The label beside the quality field.
 #[must_use]
-pub const fn quality_label() -> &'static str {
-    "JPEG quality"
+pub const fn quality_label(format: ImageFormat) -> &'static str {
+    match format {
+        ImageFormat::Jxl => "JPEG XL quality",
+        _ => "JPEG quality",
+    }
 }
 
 /// What quality costs, in the terms this operator's files are in.
 #[must_use]
-pub const fn quality_hint() -> &'static str {
-    "Lower makes a smaller file and smudges the edges of lines and letters. \
-     Drawings need it high; 90 is a good place to stay."
+pub const fn quality_hint(format: ImageFormat) -> &'static str {
+    match format {
+        ImageFormat::Jxl => {
+            "100 keeps every pixel exactly. Lower makes a smaller file that is \
+             no longer exact; 90 still looks the same to the eye."
+        }
+        _ => {
+            "Lower makes a smaller file and smudges the edges of lines and letters. \
+             Drawings need it high; 90 is a good place to stay."
+        }
+    }
 }
 
 /// The Export button.
@@ -792,7 +810,7 @@ mod tests {
             "two formats share a display name; the radio group would show the \
              same label twice"
         );
-        assert_eq!(count, 4, "PNG, JPEG, SVG, EMF");
+        assert_eq!(count, 5, "PNG, JPEG, JPEG XL, SVG, EMF");
     }
 
     /// **The EMF radio spells out what the acronym means.**
