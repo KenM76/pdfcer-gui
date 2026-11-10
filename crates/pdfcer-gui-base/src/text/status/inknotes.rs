@@ -144,6 +144,18 @@ pub fn ink_shadings_refused(n: usize) -> String {
     )
 }
 
+/// Drawings or content streams skipped because the page passed the engine's
+/// page-wide work limits (`pdfcer_render::page_budget`), so part of the page is
+/// missing.
+#[must_use]
+pub fn ink_content_truncated(n: usize) -> String {
+    counted(
+        n,
+        "part of the page was skipped because it was too heavy to draw",
+        "parts of the page were skipped because they were too heavy to draw",
+    )
+}
+
 /// A divergence counter this build has no sentence for, named by its engine
 /// key so a counter added upstream is still disclosed.
 #[must_use]

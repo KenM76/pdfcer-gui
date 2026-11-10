@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: f6c8b27cd2343d9f2ca8df99dffffd83c17956cb
+# baseline: ba022dcff59850e805adb2cf42b8cd2cecf975c9
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11571
+# items: 11574
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -10526,6 +10526,8 @@ pdfcer-render const pdfcer_render::font::subset::MAX_DONOR_BYTES
 pdfcer-render const pdfcer_render::gstate::MAX_Q_DEPTH
 pdfcer-render const pdfcer_render::interpret::MAX_XOBJECT_DEPTH
 pdfcer-render const pdfcer_render::interpret::SUBPIXEL_CULL_PX
+pdfcer-render const pdfcer_render::page_budget::MAX_NESTED_PAINTS
+pdfcer-render const pdfcer_render::page_budget::MAX_PAGE_CONTENT
 pdfcer-render const pdfcer_render::profile::CLIP_BUCKETS
 pdfcer-render const pdfcer_render::profile::CLIP_BUCKET_EDGES_US
 pdfcer-render const pdfcer_render::profile::CLIP_REUSE_BUCKETS
@@ -10832,6 +10834,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::codec_feature_unsuppo
 pdfcer-render field pdfcer_render::interpret::Diagnostics::codec_geometry_mismatch
 pdfcer-render field pdfcer_render::interpret::Diagnostics::color
 pdfcer-render field pdfcer_render::interpret::Diagnostics::compat_skipped
+pdfcer-render field pdfcer_render::interpret::Diagnostics::content_truncated
 pdfcer-render field pdfcer_render::interpret::Diagnostics::contents_streams_unresolved
 pdfcer-render field pdfcer_render::interpret::Diagnostics::dct_cmyk_images
 pdfcer-render field pdfcer_render::interpret::Diagnostics::dct_cmyk_polarity_unverifiable

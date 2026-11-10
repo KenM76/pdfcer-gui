@@ -25,6 +25,7 @@ fn phrase(key: &str) -> Option<fn(usize) -> String> {
         "color.tint_transform_not_applied" => t::ink_tint_not_applied,
         "color.patterns_unpainted" => t::ink_patterns_unpainted,
         "shading.refused" => t::ink_shadings_refused,
+        "content_truncated" => t::ink_content_truncated,
         _ => return None,
     };
     Some(say)
