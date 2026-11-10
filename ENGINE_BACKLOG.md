@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **57 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `wanted` — a real gap — **57 of 538** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -172,7 +172,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `blocked` — waiting on something named — **2 of 538** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -190,7 +190,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 538** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -201,7 +201,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `declined` — deliberately no surface — **20 of 538** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -247,7 +247,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **456 of 535** <!-- counted by tools/walk-engine-backlog.py, 2026-11-09; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **459 of 538** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -652,7 +652,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Background printer probe** — `pdfcer_print::PrinterProbe` … | **shipped — started at launch (`printspooler::probe::start`), so the Print dialog finds each printer's features and forms already read (X013b). Driven by `print_dialog_never_waits_on_a_printer` with `PDFCER_DIAG_SLOW_PRINTER`.** |
 | **Print honours the document's presets** — `pdfcer print` fills unset options from the viewer preferences … | **shipped — File ▸ Print; driven by `print_opens_on_the_documents_own_settings`.** `dialogs::print::presets::apply` reads `pdfcer_core::print_presets::print_presets` when the dialog opens and puts actual size, the page range, copies, duplex and tray-by-size in place of the remembered settings; each is listed under the scale choices as the document's. `/Enforce [/PrintScaling]` greys the scale choices with the reason on hover. `/PrintArea` and `/PrintClip` naming another box are disclosed, not honoured. A preset left unchanged is not saved as a habit (`keep_own_habits`). The merge policy is the CLI's, duplicated here: reported as G238. |
 | **Grayscale and black-only printing** — `pdfcer print --color` … | **shipped — File ▸ Print ▸ Copies tab, *In colour / In grey / Black only*; driven by `print_in_grey_or_black_only`.** `dialogs::print::colour::recolour` runs `pdfcer_print::output_color::apply_output_color` on the preview raster and on every sheet before it is spooled, so the two cannot disagree. Per dialog, not remembered. |
-| **Printing into a printer's ICC profile, installed-profile listing, and CMYK proof printing** — `pdfcer_print::icc_output` (`PrinterProfile`, `PrinterColour`, `PrinterTransform`, `RenderingIntent`), `pdfcer_print::icc_profiles` (`installed_profiles`, `InstalledProfile::is_print_destination`, `is_proof_source`), `pdfcer_print::icc_proof` (`ProofProfile`, `ProofColour`) | **shipped — File ▸ Print ▸ Copies tab, *Printer profile* and *Simulate press*; driven by `print_simulates_a_press`.** `dialogs::print::icc::Icc` compiles one transform for the sheets (`PrinterColour`, or `ProofColour` landing in the printer profile) and one for the preview (`ProofColour` with no printer profile, so it lands in sRGB), and applies them before `colour::recolour`. A managed job is never offered the vector route. |
+| **Print into a printer's ICC profile** — `pdfcer_print::icc_output` (`PrinterProfile`, `PrinterColour`, `PrinterTransform`, `RenderingIntent`) | **shipped — File ▸ Print ▸ Copies tab, *Printer profile*, with *Intent* and *Black point compensation*; driven by `print_simulates_a_press`.** `dialogs::print::icc::Icc` compiles one `PrinterColour` per change of choice and applies it to every sheet before `colour::recolour`. A managed job is never offered the vector route; a refused profile stops the job with its reason. The preview is not converted by a printer profile alone, and says so. |
+| **CMYK proof printing on the desk printer** — `pdfcer_print::icc_proof` (`ProofProfile`, `ProofColour`) | **shipped — File ▸ Print ▸ Copies tab, *Simulate press* and *Simulate paper colour*; driven by `print_simulates_a_press`.** The sheets use `ProofColour` landing in the chosen printer profile, or sRGB without one; the preview uses `ProofColour` with `printer: None`, a screen proof. |
+| **List installed ICC profiles** — `pdfcer list-icc-profiles`; `pdfcer_print::icc_profiles` (`installed_profiles`, `InstalledProfile::is_print_destination`, `is_proof_source`) | **shipped — the *Printer profile* and *Simulate press* lists in File ▸ Print ▸ Copies tab, each ending with a file picker; driven by `print_simulates_a_press`.** Read once, on the first draw of the controls; a profile is remembered by its path. |
 | **Fixed stroke width** — `RenderOptions::stroke_display: StrokeDisplay::Fixed { device_px }` … | **shipped — Print › Pages › *Fixed line width*, with *Auto* (0.1 mm, or one printer dot where that is wider) or a typed width in millimetres.** Our G039, the engine half of O233. `dialogs::print::lines` resolves the width on paper and converts it per render, so the preview, the zoomed detail and the spool draw the same width whatever the scale or poster tiling. Off by default: a print keeps the document's weights. **Not driven.** |
 | **Poster cut marks and labels — engine-owned band and geometry** … | **Consumed — O238.** `pdfcer_gui_base::poster::impose` tiles through `plan_poster` on the whole sheet and copies the engine's rectangles unmoved; the band is `PosterLayout::mark_band_pt`, the marks `cut_mark_segments`, the label box `label_rect`, the wording `poster_tile_label`. The shell only rasterises the glyphs and strokes (`poster::compose`), which the engine leaves to its caller. `the_tiles_are_the_engines_unmoved` compares every tile with the engine's for three flag combinations. |
 | Rename a bookmark, or delete one and its subtree — `set_outline_title(item_id, title)` … | **Reachable — `app::actions::bookmarks` calls `set_outline_title` and `delete_outline_item`** (`EDITABLE_SURFACES.md`: *Bookmarks rename and remove*). The subtree goes with the parent, as Acrobat does. |

@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 6903d6e172dbe6b506fb7f439b4d55f6ccff60e3
+# baseline: 1747a9c1cd5250673cf2895a14b795941f730e49
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11504
+# items: 11564
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -9939,6 +9939,8 @@ pdfcer-print const pdfcer_print::US_LETTER_PORTRAIT_PT
 pdfcer-print const pdfcer_print::devmode::MAX_CUSTOM_SHEET_TENTHS_MM
 pdfcer-print const pdfcer_print::finishing::print_schema::PSF
 pdfcer-print const pdfcer_print::finishing::print_schema::PSK
+pdfcer-print const pdfcer_print::icc_output::MAX_PROFILE_BYTES
+pdfcer-print const pdfcer_print::icc_profiles::MAX_FILES
 pdfcer-print const pdfcer_print::imposition::DEFAULT_MAX_TILES
 pdfcer-print const pdfcer_print::imposition::MAX_BOOKLET_SHEETS
 pdfcer-print const pdfcer_print::imposition::MAX_CELLS_PER_SHEET
@@ -9963,6 +9965,9 @@ pdfcer-print enum pdfcer_print::devmode::PaperSelection
 pdfcer-print enum pdfcer_print::finishing::Edge
 pdfcer-print enum pdfcer_print::finishing::Fold
 pdfcer-print enum pdfcer_print::finishing::Staple
+pdfcer-print enum pdfcer_print::icc_output::ProfileError
+pdfcer-print enum pdfcer_print::icc_output::ProfileSpace
+pdfcer-print enum pdfcer_print::icc_output::RenderingIntent
 pdfcer-print enum pdfcer_print::imposition::Binding
 pdfcer-print enum pdfcer_print::imposition::BookletSide
 pdfcer-print enum pdfcer_print::imposition::BookletSubset
@@ -10053,6 +10058,18 @@ pdfcer-print field pdfcer_print::finishing::print_schema::Bin::namespace
 pdfcer-print field pdfcer_print::finishing::print_schema::Capabilities::bins
 pdfcer-print field pdfcer_print::finishing::print_schema::Capabilities::punch
 pdfcer-print field pdfcer_print::finishing::print_schema::Capabilities::staples
+pdfcer-print field pdfcer_print::icc_output::PrinterColour::black_point_compensation
+pdfcer-print field pdfcer_print::icc_output::PrinterColour::intent
+pdfcer-print field pdfcer_print::icc_output::PrinterColour::profile
+pdfcer-print field pdfcer_print::icc_profiles::InstalledProfile::class
+pdfcer-print field pdfcer_print::icc_profiles::InstalledProfile::color_space
+pdfcer-print field pdfcer_print::icc_profiles::InstalledProfile::name
+pdfcer-print field pdfcer_print::icc_profiles::InstalledProfile::path
+pdfcer-print field pdfcer_print::icc_proof::ProofColour::black_point_compensation
+pdfcer-print field pdfcer_print::icc_proof::ProofColour::intent
+pdfcer-print field pdfcer_print::icc_proof::ProofColour::printer
+pdfcer-print field pdfcer_print::icc_proof::ProofColour::proof
+pdfcer-print field pdfcer_print::icc_proof::ProofColour::simulate_paper
 pdfcer-print field pdfcer_print::imposition::BookletLayout::blank_positions
 pdfcer-print field pdfcer_print::imposition::BookletLayout::padded_pages
 pdfcer-print field pdfcer_print::imposition::BookletLayout::slots
@@ -10172,6 +10189,12 @@ pdfcer-print fn pdfcer_print::finishing::finishing_name
 pdfcer-print fn pdfcer_print::finishing::ipp_finishings
 pdfcer-print fn pdfcer_print::finishing::print_schema::delta_ticket
 pdfcer-print fn pdfcer_print::finishing::print_schema::parse_capabilities
+pdfcer-print fn pdfcer_print::icc_output::apply_printer_colour
+pdfcer-print fn pdfcer_print::icc_profiles::find_installed
+pdfcer-print fn pdfcer_print::icc_profiles::installed_profiles
+pdfcer-print fn pdfcer_print::icc_profiles::installed_profiles_in
+pdfcer-print fn pdfcer_print::icc_profiles::print_destinations
+pdfcer-print fn pdfcer_print::icc_profiles::profile_folders
 pdfcer-print fn pdfcer_print::imposition::booklet_pairing
 pdfcer-print fn pdfcer_print::imposition::fit_into_cell
 pdfcer-print fn pdfcer_print::imposition::plan_booklet
@@ -10226,6 +10249,22 @@ pdfcer-print method pdfcer_print::finishing::Fold::ipp
 pdfcer-print method pdfcer_print::finishing::Staple::ipp
 pdfcer-print method pdfcer_print::finishing::print_schema::Edge::print_schema
 pdfcer-print method pdfcer_print::finishing::print_schema::Staple::print_schema
+pdfcer-print method pdfcer_print::icc_output::PrinterColour::compile
+pdfcer-print method pdfcer_print::icc_output::PrinterColour::new
+pdfcer-print method pdfcer_print::icc_output::PrinterProfile::from_bytes
+pdfcer-print method pdfcer_print::icc_output::PrinterProfile::name
+pdfcer-print method pdfcer_print::icc_output::PrinterProfile::read
+pdfcer-print method pdfcer_print::icc_output::PrinterProfile::space
+pdfcer-print method pdfcer_print::icc_output::PrinterTransform::apply
+pdfcer-print method pdfcer_print::icc_output::PrinterTransform::black_point_compensation_refused
+pdfcer-print method pdfcer_print::icc_profiles::InstalledProfile::is_print_destination
+pdfcer-print method pdfcer_print::icc_profiles::InstalledProfile::is_proof_source
+pdfcer-print method pdfcer_print::icc_proof::ProofColour::compile
+pdfcer-print method pdfcer_print::icc_proof::ProofColour::new
+pdfcer-print method pdfcer_print::icc_proof::ProofProfile::from_bytes
+pdfcer-print method pdfcer_print::icc_proof::ProofProfile::name
+pdfcer-print method pdfcer_print::icc_proof::ProofProfile::read
+pdfcer-print method pdfcer_print::icc_proof::ProofProfile::space
 pdfcer-print method pdfcer_print::imposition::Binding::is_mirrored
 pdfcer-print method pdfcer_print::imposition::Binding::is_stacked
 pdfcer-print method pdfcer_print::imposition::Binding::split
@@ -10288,6 +10327,12 @@ pdfcer-print struct pdfcer_print::devmode::PrinterConfiguration
 pdfcer-print struct pdfcer_print::finishing::Finishing
 pdfcer-print struct pdfcer_print::finishing::print_schema::Bin
 pdfcer-print struct pdfcer_print::finishing::print_schema::Capabilities
+pdfcer-print struct pdfcer_print::icc_output::PrinterColour
+pdfcer-print struct pdfcer_print::icc_output::PrinterProfile
+pdfcer-print struct pdfcer_print::icc_output::PrinterTransform
+pdfcer-print struct pdfcer_print::icc_profiles::InstalledProfile
+pdfcer-print struct pdfcer_print::icc_proof::ProofColour
+pdfcer-print struct pdfcer_print::icc_proof::ProofProfile
 pdfcer-print struct pdfcer_print::imposition::BookletLayout
 pdfcer-print struct pdfcer_print::imposition::BookletSheet
 pdfcer-print struct pdfcer_print::imposition::BookletSlot
@@ -10391,6 +10436,21 @@ pdfcer-print variant pdfcer_print::finishing::Staple::DualTop
 pdfcer-print variant pdfcer_print::finishing::Staple::Saddle
 pdfcer-print variant pdfcer_print::finishing::Staple::TopLeft
 pdfcer-print variant pdfcer_print::finishing::Staple::TopRight
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::Cmyk
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::Io
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::NotAProfile
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::TooLarge
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::Transform
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::UnsupportedClass
+pdfcer-print variant pdfcer_print::icc_output::ProfileError::UnsupportedSpace
+pdfcer-print variant pdfcer_print::icc_output::ProfileSpace::Cmyk
+pdfcer-print variant pdfcer_print::icc_output::ProfileSpace::Gray
+pdfcer-print variant pdfcer_print::icc_output::ProfileSpace::Other
+pdfcer-print variant pdfcer_print::icc_output::ProfileSpace::Rgb
+pdfcer-print variant pdfcer_print::icc_output::RenderingIntent::AbsoluteColorimetric
+pdfcer-print variant pdfcer_print::icc_output::RenderingIntent::Perceptual
+pdfcer-print variant pdfcer_print::icc_output::RenderingIntent::RelativeColorimetric
+pdfcer-print variant pdfcer_print::icc_output::RenderingIntent::Saturation
 pdfcer-print variant pdfcer_print::imposition::Binding::Left
 pdfcer-print variant pdfcer_print::imposition::Binding::LeftTall
 pdfcer-print variant pdfcer_print::imposition::Binding::Right
