@@ -32,6 +32,7 @@ pub mod display;
 mod fonts;
 /// The extra OCR model folders.
 mod ocr;
+mod textsize;
 /// The order Tab visits a page in. Its header carries the filing rule:
 /// both settings answer *"I pressed Tab and it went to the wrong field"*,
 /// and neither is discoverable from anywhere else in the program.
@@ -115,6 +116,17 @@ pub fn show(
     )
     .show(ctx, |ui| {
         crate::diag::ui_rect(REGION_BODY, ui.max_rect());
+        let scale = &mut draft.working_prefs.settings_text_scale;
+        textsize::wheel(ui, scale);
+        let scale = *scale;
+        textsize::apply(ui, scale);
+        let small = egui::TextStyle::Small.resolve(ui.style()).size;
+        crate::diag::trace_changed("settings-small-text", || {
+            format!("settings-small-text pts={small:.2}") // ui-text-exempt: diagnostic trace
+        });
+        crate::diag::trace_changed("settings-text-scale", || {
+            format!("settings-text-scale scale={scale:.2}") // ui-text-exempt: diagnostic trace
+        });
         // Always shown, never a control. An operator who does not know
         // which of the two homes is live cannot follow the update
         // instructions, and those instructions are the one place a wrong
@@ -425,6 +437,7 @@ mod tests {
         ),
         ("nav", include_str!("nav.rs")),
         ("ocr", include_str!("ocr.rs")),
+        ("textsize", include_str!("textsize.rs")),
         (
             "pages",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/pages.rs"),

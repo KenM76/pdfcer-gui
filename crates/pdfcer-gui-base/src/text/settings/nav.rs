@@ -41,6 +41,18 @@ pub fn search_hint() -> &'static str {
     "Search options"
 }
 
+/// The label beside the Settings window's text-size slider.
+#[must_use]
+pub fn text_size_label() -> &'static str {
+    "Text size"
+}
+
+/// Hover text on the text-size slider.
+#[must_use]
+pub fn text_size_tooltip() -> &'static str {
+    "How large this window draws its text, apart from the rest of pdfcer. Ctrl+wheel over the window does the same. Kept as soon as it changes, so Cancel leaves it."
+}
+
 /// Hover text on the search box.
 #[must_use]
 pub fn search_hover() -> &'static str {

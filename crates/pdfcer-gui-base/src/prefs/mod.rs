@@ -48,6 +48,7 @@ pub mod ocrmodels;
 pub mod offpage;
 pub mod overprint;
 pub mod pictures;
+pub mod settingstext;
 pub mod shortcuts;
 pub mod snapshot;
 pub mod trust;
@@ -411,6 +412,9 @@ pub struct Prefs {
     pub model_start_walk: bool,
     /// The 3D viewer's defaults. See [`modelview`].
     pub model_view: std::collections::BTreeMap<String, String>,
+    /// How large the Settings window draws its text, on top of `ui_scale`.
+    /// See [`settingstext`].
+    pub settings_text_scale: f32,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -872,6 +876,7 @@ impl Default for Prefs {
             walk_eye_mm: None,
             model_start_walk: true,
             model_view: std::collections::BTreeMap::new(),
+            settings_text_scale: settingstext::DEFAULT,
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

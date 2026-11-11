@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O408 — **BUILDING** — the Settings window's text larger by default, with its own size: Ctrl+wheel or a slider beside the search box
+## O408 — **BUILT, DRIVEN, ships in the next release** — the Settings window's text larger by default, with its own size: Ctrl+wheel or a slider beside the search box
 
 His words: *"also the font size in our settings is really small. it should be at larger size as default, and we should be able to adjust it separately from the program by using ctrl-scrollwheel or a slider on the far right side next to the command search bar."*
 
@@ -663,7 +663,7 @@ His words: *"also the font size in our settings is really small. it should be at
 3. **Kept.** The size is remembered between sessions as soon as it is changed, like the window's size — it is not a draft setting that Cancel throws away, because it is how the window is read, not something it configures. *Restore defaults* resets it.
 4. **Reading taken.** "Next to the command search bar" is read as the Settings window's own search box, since the size is the Settings window's. Say if you meant the main window's command search.
 
-**Status.** NOT VERIFIED — building.
+**Status.** Built and driven by `settings_text_size`. It opens at 1.25 times the program's text. One Ctrl+wheel notch over the window gives 1.30, written to the preferences file with no Save. Pressing the slider's right end gives 2.50, with the small text 2 times its opening size. The slider sits right of its *Text size* label, which sits right of the search box, at the window's right edge. The main window's 38 ribbon regions are unmoved, and after Cancel the file still says 2.50. Falsified three ways, each red at its own arm: the wheel hook removed, the slider fed a copy, and the spacing leaked into every window. *Restore defaults* resetting it is read from the code, not driven.
 
 ## O407 — **BUILT, DRIVEN, ships in the next release** — the sun aimed on a disc: a ball you drag round a circle, turned with the model
 

@@ -106,6 +106,24 @@ fn heading(key: &str) -> String {
     }
 }
 
+/// The search box filling the row, and the text-size slider at its far
+/// right.
+fn search_row(ui: &mut Ui, query: &mut String, scale: &mut f32) -> egui::Response {
+    let size = egui::vec2(ui.available_width(), ui.spacing().interact_size.y);
+    let layout = egui::Layout::right_to_left(egui::Align::Center);
+    ui.allocate_ui_with_layout(size, layout, |ui| {
+        super::textsize::slider(ui, scale);
+        // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
+        // every field in this window.
+        ui.add(
+            egui::TextEdit::singleline(query)
+                .hint_text(t::search_hint())
+                .desired_width(f32::INFINITY),
+        )
+    })
+    .inner
+}
+
 /// The names each page's options carry, lower-cased, for the search.
 type Index = Arc<Vec<(&'static str, Vec<String>)>>;
 
@@ -128,13 +146,7 @@ pub fn show(
         .unwrap_or(FIRST);
 
     let top = ui.cursor().top();
-    // escape-disposition: dialog-cancels — `dialogs::host` owns the key for
-    // every field in this window.
-    let search = ui.add(
-        egui::TextEdit::singleline(&mut query)
-            .hint_text(t::search_hint())
-            .desired_width(f32::INFINITY),
-    );
+    let search = search_row(ui, &mut query, &mut draft.working_prefs.settings_text_scale);
     crate::diag::ui_rect(REGION_SEARCH, search.rect);
     let search = search.on_hover_text(t::search_hover());
     ui.data_mut(|d| d.insert_temp(query_id, query.clone()));

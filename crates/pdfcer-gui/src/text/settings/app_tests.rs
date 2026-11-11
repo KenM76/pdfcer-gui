@@ -455,8 +455,17 @@ mod tests {
         // listing it in `GROUP_SOURCES` would make the sibling check
         // `the_window_draws_exactly_the_settings_this_catalog_describes` look
         // for catalog entries that must not exist.
-        // `nav` draws the page list and search, and no setting.
-        const NOT_A_GROUP: &[&str] = &["widgets", "preset", "defaultapp", "nav", "keyscatalog"];
+        // `nav` draws the page list and search, and no setting. `textsize` is
+        // the window's own text size, drawn in that search row: how the window
+        // is read, on no page and in no catalog.
+        const NOT_A_GROUP: &[&str] = &[
+            "widgets",
+            "preset",
+            "defaultapp",
+            "nav",
+            "keyscatalog",
+            "textsize",
+        ];
         // The pages without document state are declared in base's `settingspages`.
         let sources = [
             include_str!("../../dialogs/settings/mod.rs"),

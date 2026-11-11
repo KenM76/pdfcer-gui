@@ -61,6 +61,7 @@ fn every_preference_round_trips_through_the_file() {
                     walk_eye_mm: Some(1676),
                     model_start_walk: false,
                     model_view: [("model3d_stairs".to_owned(), "0".to_owned())].into(),
+                    settings_text_scale: 1.75,
                     trust: {
                         let mut t = crate::prefs::TrustPrefs::default();
                         t.remember_site("example.com", false);
@@ -664,6 +665,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
         overprint_default: crate::prefs::OverprintDefault::PdfxOnly,
         walk_eye_mm: Some(1520),
         model_start_walk: false,
+        settings_text_scale: 1.6,
         model_view: [("model3d_speed".to_owned(), "2.000".to_owned())].into(),
         trust: {
             let mut t = crate::prefs::TrustPrefs::default();

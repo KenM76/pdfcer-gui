@@ -12,7 +12,7 @@ use super::printing::KeyOutcome;
 type Parse = fn(&mut Prefs, &str, &str) -> KeyOutcome;
 
 /// Every group, in the order a line is offered to them.
-const FAMILIES: [Parse; 14] = [
+const FAMILIES: [Parse; 15] = [
     |p, k, v| super::offpage::parse_key(&mut p.off_page, k, v),
     |p, k, v| super::printing::parse_key(&mut p.print, k, v),
     |p, k, v| super::exporting::parse_key(&mut p.export, k, v),
@@ -27,6 +27,7 @@ const FAMILIES: [Parse; 14] = [
     |p, k, v| super::walkeye::parse_key(&mut p.walk_eye_mm, k, v),
     |p, k, v| super::modelstart::parse_key(&mut p.model_start_walk, k, v),
     |p, k, v| super::modelview::parse_key(&mut p.model_view, k, v),
+    |p, k, v| super::settingstext::parse_key(&mut p.settings_text_scale, k, v),
 ];
 
 /// Offer `key = value` to every group; `NotMine` when none claims it.

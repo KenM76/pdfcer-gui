@@ -38,6 +38,18 @@ impl PdfcerApp {
             &mut open,
             acrobat_viewer.as_ref(),
         );
+        // The text size is how the window is read, not something it
+        // configures: kept the moment it changes, and never left for Cancel.
+        let scale = draft.working_prefs.settings_text_scale;
+        if scale != draft.original_prefs.settings_text_scale {
+            draft.original_prefs.settings_text_scale = scale;
+            self.prefs.settings_text_scale = scale;
+            if let Err(error) = self.prefs.save() {
+                crate::diag::trace(|| {
+                    format!("prefs-save-failed reason={error}") // ui-text-exempt: diagnostic trace
+                });
+            }
+        }
 
         match outcome {
             Outcome::Save => self.save_settings(),

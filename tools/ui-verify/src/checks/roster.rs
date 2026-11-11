@@ -194,6 +194,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(overprint_default::OverprintDefaultDecidesTheOpen),
         Box::new(calibrated_cmyk_setting::CalibratedCmykIsSaved),
         Box::new(settings_sun_disc::SettingsSunDisc),
+        Box::new(settings_text_size::SettingsTextSize),
         Box::new(smooth_pictures::SmoothPicturesSetting),
         Box::new(off_page_blank_overhang::BlankOverhangIsCountedNotListed),
         Box::new(off_page_wall::AnObjectOffThePageIsDrawnPastItsHaloWall),
