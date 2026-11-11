@@ -32,7 +32,7 @@ pub fn collect(draw: impl FnOnce()) -> Vec<String> {
 /// Record `name` for [`collect`] and return it styled: underlined in the
 /// `notice` colour when it contains the search. Not `.strong()`, which no
 /// theme here renders legibly on a panel (`DEFECTS.md` D11).
-fn name(ui: &Ui, name: &str) -> RichText {
+pub fn name(ui: &Ui, name: &str) -> RichText {
     let lower = name.to_lowercase();
     let hit = QUERY.with(|q| {
         let q = q.borrow();

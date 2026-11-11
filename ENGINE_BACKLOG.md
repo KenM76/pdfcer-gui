@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **58 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
+## `wanted` — a real gap — **61 of 546** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -120,6 +120,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 |---|---|
 | **Paste a radio button as another member of its group** — `FieldPasteOutcome::radio_on_state` | **wanted, at the pin since v0.82.0; request G187.** `paste_field` with `AdditionalWidget` gives a pasted radio member a free on-state and reports it; `app::actions::forms::radiogroup::add_member` goes back to `paste_field` and its `add_radio_button` workaround is deleted. |
 | **Copy and paste several form fields as one** — `copy_fields`, `paste_fields`, `FieldSetPastePolicy`, `FieldClipSet` | **wanted, at the pin since v0.82.0; request G193.** `app::actions::forms::paste::many` (`FieldAction::PasteMany`) calls `copy_fields` and `paste_fields` (`pdfcer_core::edit::field_set`, over the clip format in `pdfcer_core::formclip::set`) once instead of one `paste_field` per field; the layout, batch-unique names and radio export values become the engine's, reported in `FieldSetPasteOutcome`. Policies: `FieldSetPastePolicy::NewFields`, `FieldSetPastePolicy::AdditionalWidgets`; a set holds at most `MAX_CLIP_SET_FIELDS`. |
+| **Honour `/NeedAppearances true` when rendering, and tint form fields** — `NeedAppearances::Honour`, `NeedAppearances::AsStored`, `RenderOptions::with_need_appearances`, `RenderPolicy::need_appearances`, `Diagnostics::widgets_redrawn_for_need_appearances`, `FieldHighlight`, `FieldHighlight::new`, `FieldHighlight::fill`, `FieldHighlight::required_border`, `RenderOptions::with_field_highlight`, `RenderOptions::field_highlight`, `RenderPolicy::field_highlight` <!--namesake:AsStored--> (the shell's hits are `GltfColours::AsStored` and `GltfUpAxis::AsStored`) <!--namesake:need_appearances--> (the shell's hit is the AcroForm flag `form.need_appearances`, read for the Forms panel's disclosure) | **wanted, at the pin since v0.145.0; X070.** Honouring needs no wiring (`Honour` is the default the funnel leaves). Owed: the redraw count on the status line, since those fields draw from an appearance the file lacks (R8b). `FieldHighlight` could replace the shell's overlay wash, which skips undrawn fields (`FEATURES.md` *Highlight an undrawn field*); it is never printed, and must stay off in export. |
+| **Field text geometry** — for a form field's value, `WidgetAppearances::text_geometry`, `WidgetAppearances::field`, module `pdfcer_core::widget_draw::geometry` (`FieldTextGeometry`, `FieldCaret`, `FieldTextChar`) | **wanted, at the pin since v0.145.0; X070.** The in-place field editor places its caret and selection with egui's own text layout, which is not the layout the field is drawn with: `/Q` quadding, comb cells and wrapping put the caret off the glyphs it names. The engine's carets are in page space, so the editor can draw them through the page transform; offsets are UTF-8 byte offsets, and a soft wrap lists one offset twice. |
+| **Formatted field values and list-box rows** — module `pdfcer_core::field_display`, `SynthesizedAppearance::notes`, `DisplayNotes`, `DisplayCounts` | **wanted, at the pin since v0.145.0; X069.** Display needs no wiring: a field with no stored appearance is drawn through the engine's builder, which now applies the document's AF formatting and list-box rows. What is owed is `SynthesizedAppearance::notes`: a format the engine could not apply, or a list-box top index it ignored, changes what the field shows, and belongs off-canvas in the Forms panel beside the field. |
 | **Move a radio button into another radio group** — `move_widget_to_field`, `WidgetRegroup` | **wanted, at the pin since v0.82.0; request G188.** `app::actions::forms::radiogroup::move_to` calls it (`pdfcer_core::edit::regroup`) instead of add, `delete_widget` and `coalesce_last`; one `CommandKind::MoveWidgetToField`. `WidgetRegroup::action_targets_orphaned` and its disclosures reach the status line. Refusals to word: `EditError::NotARadioGroup`, `EditError::WidgetAlreadyInField`. |
 | **Move or delete several form-field boxes in one command** — `move_widgets_each`, `delete_widgets` | **wanted, at the pin since v0.82.0; requests G189 and G192.** `app::actions::movemixed` calls `move_widgets_each` instead of `move_widget` per widget, and `app::actions::forms::delete::widgets` calls `delete_widgets` instead of its highest-index-first loop folded with `coalesce_last`. Both live in `pdfcer_core::edit::batch`. Reports: `WidgetMove`, `FieldDeletion`. |
 | **Read a form field's free angle and opacity** — `forms::Widget::free_angle`, `forms::Widget::opacity` | **wanted, at the pin since v0.82.0; request G177.** `canvas::widgetturn` and Properties' Stand upright and Opacity rows read them instead of `pdfcer_gui_base::widgetread`, which parses the appearance `/Matrix` and `/CA`. The shell's `forms::Widget` literals already set both to `None`. |
@@ -173,7 +176,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **3 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
+## `blocked` — waiting on something named — **2 of 546** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -187,12 +190,11 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
-| **Preserve calibrated CMYK numbers** — `--preserve-calibrated-cmyk` on `render-page`, `export-image`; in the shell `RenderOptions::with_preserve_calibrated_cmyk` | **blocked on the engine: our request for a `Settings::preserve_calibrated_cmyk` field.** Every render option the shell passes comes verbatim from `pdfcer_core::settings::Settings` through `SettingsExt::render_options`; a shell-side store for an engine colour policy would be a second home for the setting. |
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 546** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -203,7 +205,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
+## `declined` — deliberately no surface — **20 of 546** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -249,7 +251,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **462 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **463 of 546** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -643,6 +645,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Preserve calibrated CMYK numbers** — `--preserve-calibrated-cmyk` on `render-page`, `export-image`; in the shell `RenderOptions::with_preserve_calibrated_cmyk` | **shipped, at v0.145.0.** `Settings::preserve_calibrated_cmyk` reaches the renderer through `SettingsExt::render_options`; offered as Settings ▸ Colour ▸ *Keep the CMYK numbers as written*, saved in `settings.txt`. Driven by `calibrated_cmyk_setting`. |
 | **Vector-or-raster print decision as engine API** — `pdfcer_render::emf::print_metafile`, `RasterReason` … | **shipped — called by `dialogs::print::route::plain_sheet`.** The engine half of *Vector printing*, filed beside it. |
 | **Vector printing** — pages the EMF writer carries whole print as vector … | **shipped — File ▸ Print sends each plain page as the metafile `pdfcer_render::emf::print_metafile` makes, unless *Print as image* is ticked; driven by `print_sends_vector_unless_as_image` (O404).** A page the engine declines goes as pixels and `dialogs::print::route::plain_sheet` carries its `RasterReason` into the receipt; grey, black-only, n-up, booklet and poster sheets stay images, and the dialog says so under the switch. |
 | **A placed PRC model's unit** — `PrcFile::units()` and `AssembledModel::units` … | **shipped.** Our request G250. Walking stands at a real eye height, set in feet and inches in the options menu with ghost off, and the model's unit (or the disclosed assumption of millimetres) converts it (O356). |
@@ -769,7 +772,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Write one saved 3D view's measurements** — `EditSession::set_3d_view_measurements` | **shipped, at v0.135.0; G274.** The 3D viewer's keep and delete; see *One view's measurements* below. |
 | **3D walker: ceilings, long steps, descents, ramps** — `pdfcer_3d_nav::Walk` | **shipped, at v0.134.0; X058, X059.** Nothing to call: the viewer's Walk mode takes them through the pin. |
 | **Banded CMYK render** — a subtractive-group page past the ink buffer ceiling (`Diagnostics::cmyk_bands`) | **shipped, at v0.142.0.** Nothing to call: a printed sheet past the ink buffer ceiling bands through the pin; Print traces each sheet as `print-ink`, and `print_composites_an_oversized_sheet_in_ink` drives it. |
-| **Seamless edges (no conflation seam between abutting shapes)** — `pdfcer print --edge-antialiasing`, in the shell `pdfcer_render::EdgeAntialiasing` | **shipped, at v0.144.0.** `SUPERSAMPLE_FACTOR`, `EdgeAntialiasing::pixel_factor`: a seamless sheet past 4,096 output pixels on an edge is refused by the engine (our request on supersampled large sheets), and the hover says a large sheet may be refused. Print ▸ Pages ▸ Edge smoothing offers Automatic (hard at 300 DPI and finer, smoothed below), Smooth, Sharp and Smooth, no seams (`EdgeAntialiasing::Supersampled`); `prefs::print_edges`. Automatic smooths below 300 DPI where the CLI goes seamless, because seamless costs sixteen times the sheet's memory. |
+| **Seamless edges (no conflation seam between abutting shapes)** — `pdfcer print --edge-antialiasing`, in the shell `pdfcer_render::EdgeAntialiasing` | **shipped, at v0.144.0.** `SUPERSAMPLE_FACTOR`, `EdgeAntialiasing::pixel_factor`: from v0.145.0 a seamless sheet past 4,096 output pixels on an edge is drawn in tiles rather than refused (`Diagnostics::supersample_tiles`), and the hover says a large sheet is slow, not refused. Print ▸ Pages ▸ Edge smoothing offers Automatic (hard at 300 DPI and finer, smoothed below), Smooth, Sharp and Smooth, no seams (`EdgeAntialiasing::Supersampled`); `prefs::print_edges`. Automatic smooths below 300 DPI where the CLI goes seamless, because seamless costs sixteen times the sheet's memory. |
 | **3D light bounces off walls and things (bounced light and colour bleed)** — `PreparedModel::frame_bounce`, `FrameBounce` | **shipped, at v0.144.0.** The CPU picture takes it through the pin; the GPU card builds the probe volume on a worker thread per model, painted parts and options, and samples its atlas in the face shader (`dialogs::model3d::gpu_bounce`). Camera-following lights are not bounced, as in the engine default. |
 
 ## Filed requests for OCR — not verdict rows

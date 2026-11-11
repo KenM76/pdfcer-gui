@@ -80,7 +80,7 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 52;
+    const SETTINGS_COUNT: usize = 53;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -153,6 +153,11 @@ mod tests {
                 mesh_padding_radius(),
             ),
             (bpc_title(), bpc_silence(), bpc_radius()),
+            (
+                calibrated_cmyk_title(),
+                calibrated_cmyk_silence(),
+                calibrated_cmyk_radius(),
+            ),
             (mask_title(), mask_silence(), mask_radius()),
             (minify_title(), minify_silence(), minify_radius()),
             (word_gap_title(), word_gap_silence(), word_gap_radius()),

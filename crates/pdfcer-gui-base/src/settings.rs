@@ -67,6 +67,7 @@ impl SettingsExt for Settings {
             .with_spot_colorant_device_model(self.spot_colorant_device_model)
             .with_mesh_patch_padding(self.mesh_patch_padding)
             .with_black_point_compensation(self.black_point_compensation)
+            .with_preserve_calibrated_cmyk(self.preserve_calibrated_cmyk)
             //
             // `Option<usize>` passed VERBATIM: `None` means the engine's own
             // default and every one of its four public helpers takes the same

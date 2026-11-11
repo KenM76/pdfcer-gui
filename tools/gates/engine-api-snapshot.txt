@@ -41,16 +41,11 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 5eb04866a21821dc8bccded19c30033c26529acf
+# baseline: 9077e43aafd40cd07effef67dd0031f9bd36ab52
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11581
+# items: 11644
 # ---------------------------------------------------------------------------
 
-exempt pdfcer-render const pdfcer_render::page_budget::BLENDED_PAINT_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
-exempt pdfcer-render const pdfcer_render::page_budget::COVERAGE_PER_CANVAS -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
-exempt pdfcer-render const pdfcer_render::page_budget::MESH_PIXEL_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
-exempt pdfcer-render const pdfcer_render::page_budget::MESH_TRIANGLE_COST -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
-exempt pdfcer-render const pdfcer_render::page_budget::MIN_COVERAGE -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_TRIANGLES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d module pdfcer_3d::bounds -- `Bounds` relocated from the render module; the engine re-exports it unchanged as `pdfcer_3d::render::Bounds`, and this shell holds no bounds of its own.
@@ -173,6 +168,11 @@ exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::Duplicate
 exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::EmptyTextRunMove -- `move_text_runs` handed no runs. Unreachable from here by construction: `canvas::moving::run_move` returns before building the move when no line is selected, so there is no sentence for the operator to read.
 exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::TransformInsideTextObject -- a transform asked to act inside a text object. The shell transforms whole objects only; this reaches the operator through `EditRefusal`'s generic arm if the engine ever answers it, and it names no act the operator can take differently.
 exempt pdfcer-print const pdfcer_print::imposition::POSTER_MARK_GAP_PT -- the gap the engine leaves between a poster tile's image and its cut marks. The shell draws the marks from the tile's own `marks` and `label_rect`, which already include it; restating the gap here would be a second copy of the geometry.
+exempt pdfcer-render const pdfcer_render::page_budget::BLENDED_PAINT_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::COVERAGE_PER_CANVAS -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::MESH_PIXEL_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::MESH_TRIANGLE_COST -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::MIN_COVERAGE -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::edge_antialiasing -- the policy half of `RenderOptions::edge_antialiasing`; this shell builds `RenderOptions` and never holds a `RenderPolicy`, and print sets edges through `RenderOptions::with_edge_antialiasing`.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::omit_annotations -- the interpreter's derived mirror of RenderOptions::omit_annotations, which this shell sets through `with_omit_annotations` in `canvas::dimpreview::underlay`; it constructs no RenderPolicy. Per field, as for stroke_display.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
@@ -1898,6 +1898,7 @@ pdfcer-core field pdfcer_core::edit::LayerOrderOutcome::path
 pdfcer-core field pdfcer_core::edit::LayoutDisclosure::applied_autosize
 pdfcer-core field pdfcer_core::edit::LayoutDisclosure::applied_autosize_bound
 pdfcer-core field pdfcer_core::edit::LayoutDisclosure::da_colour_unmodelled
+pdfcer-core field pdfcer_core::edit::LayoutDisclosure::display
 pdfcer-core field pdfcer_core::edit::LayoutDisclosure::unencodable_chars
 pdfcer-core field pdfcer_core::edit::MarkupContentOutcome::objects
 pdfcer-core field pdfcer_core::edit::MarkupContentOutcome::paste
@@ -2078,6 +2079,7 @@ pdfcer-core field pdfcer_core::edit::RedactionMarking::diagnostics
 pdfcer-core field pdfcer_core::edit::RegenOutcome::applied_autosize
 pdfcer-core field pdfcer_core::edit::RegenOutcome::applied_autosize_bound
 pdfcer-core field pdfcer_core::edit::RegenOutcome::da_colour_unmodelled
+pdfcer-core field pdfcer_core::edit::RegenOutcome::display
 pdfcer-core field pdfcer_core::edit::RegenOutcome::need_appearances_cleared
 pdfcer-core field pdfcer_core::edit::RegenOutcome::regenerated
 pdfcer-core field pdfcer_core::edit::RegenOutcome::unencodable_chars
@@ -2477,6 +2479,13 @@ pdfcer-core field pdfcer_core::fdf::XmlElement::children
 pdfcer-core field pdfcer_core::fdf::XmlElement::name
 pdfcer-core field pdfcer_core::fdf::XmlElement::nodes
 pdfcer-core field pdfcer_core::fdf::XmlElement::text
+pdfcer-core field pdfcer_core::field_display::DisplayCounts::formatted
+pdfcer-core field pdfcer_core::field_display::DisplayCounts::list_indices_ignored
+pdfcer-core field pdfcer_core::field_display::DisplayCounts::unformatted
+pdfcer-core field pdfcer_core::field_display::DisplayNotes::formatted
+pdfcer-core field pdfcer_core::field_display::DisplayNotes::ignored_selected
+pdfcer-core field pdfcer_core::field_display::DisplayNotes::ignored_top_index
+pdfcer-core field pdfcer_core::field_display::DisplayNotes::unformatted
 pdfcer-core field pdfcer_core::font_embed_missing::EmbedBlocked::base_font
 pdfcer-core field pdfcer_core::font_embed_missing::EmbedBlocked::blocker
 pdfcer-core field pdfcer_core::font_embed_missing::EmbedBlocked::id
@@ -3423,6 +3432,7 @@ pdfcer-core field pdfcer_core::settings::Settings::missing_as
 pdfcer-core field pdfcer_core::settings::Settings::overprint_zero_tint_scope
 pdfcer-core field pdfcer_core::settings::Settings::page_blend_space_source
 pdfcer-core field pdfcer_core::settings::Settings::parallel_epsilon_degrees
+pdfcer-core field pdfcer_core::settings::Settings::preserve_calibrated_cmyk
 pdfcer-core field pdfcer_core::settings::Settings::quad_point_order
 pdfcer-core field pdfcer_core::settings::Settings::separations
 pdfcer-core field pdfcer_core::settings::Settings::spot_colorant_device_model
@@ -4519,6 +4529,22 @@ pdfcer-core field pdfcer_core::vector::stroke_style::StrokeStyle::width
 pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::ap_dict
 pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::content
 pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::kind
+pdfcer-core field pdfcer_core::widget_draw::SynthesizedAppearance::notes
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldCaret::bottom
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldCaret::line
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldCaret::offset
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldCaret::top
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextChar::end
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextChar::line
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextChar::offset
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextChar::start
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextChar::stop
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextGeometry::chars
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextGeometry::font_size
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextGeometry::lines
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextLine::corners
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextLine::end
+pdfcer-core field pdfcer_core::widget_draw::geometry::FieldTextLine::start
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::is_wrapper
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::payload_count
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::payload_name
@@ -5784,6 +5810,8 @@ pdfcer-core method pdfcer_core::fdf::FormData::parse_xfdf
 pdfcer-core method pdfcer_core::fdf::FormData::to_fdf
 pdfcer-core method pdfcer_core::fdf::FormData::to_xfdf
 pdfcer-core method pdfcer_core::fdf::XmlElement::attr
+pdfcer-core method pdfcer_core::field_display::DisplayNotes::ignored_list_indices
+pdfcer-core method pdfcer_core::field_display::DisplayNotes::is_empty
 pdfcer-core method pdfcer_core::font_embed_missing::EmbedBlocker::reason
 pdfcer-core method pdfcer_core::font_embed_missing::EmbedBlocker::token
 pdfcer-core method pdfcer_core::font_embed_missing::EmbedPlan::blocker_counts
@@ -6657,6 +6685,11 @@ pdfcer-core method pdfcer_core::vector::stroke_style::StrokeStyle::sets_alpha
 pdfcer-core method pdfcer_core::vector::stroke_style::StrokeStyle::validate
 pdfcer-core method pdfcer_core::widget_draw::WidgetAppearances::appearance
 pdfcer-core method pdfcer_core::widget_draw::WidgetAppearances::read
+pdfcer-core method pdfcer_core::widget_draw::geometry::FieldTextGeometry::caret_at_point
+pdfcer-core method pdfcer_core::widget_draw::geometry::FieldTextGeometry::caret_segment
+pdfcer-core method pdfcer_core::widget_draw::geometry::FieldTextGeometry::carets
+pdfcer-core method pdfcer_core::widget_draw::geometry::WidgetAppearances::field
+pdfcer-core method pdfcer_core::widget_draw::geometry::WidgetAppearances::text_geometry
 pdfcer-core method pdfcer_core::wrapper::WrapperInfo::message
 pdfcer-core method pdfcer_core::xfa::XfaFormKind::is_dynamic
 pdfcer-core method pdfcer_core::xfa::fonts::XfaFace::new
@@ -6983,6 +7016,8 @@ pdfcer-core struct pdfcer_core::export::xlsx::XlsxReport
 pdfcer-core struct pdfcer_core::fdf::FieldData
 pdfcer-core struct pdfcer_core::fdf::FormData
 pdfcer-core struct pdfcer_core::fdf::XmlElement
+pdfcer-core struct pdfcer_core::field_display::DisplayCounts
+pdfcer-core struct pdfcer_core::field_display::DisplayNotes
 pdfcer-core struct pdfcer_core::font_embed_missing::EmbedBlocked
 pdfcer-core struct pdfcer_core::font_embed_missing::EmbedPlan
 pdfcer-core struct pdfcer_core::font_embed_missing::EmbedRequest
@@ -7369,6 +7404,10 @@ pdfcer-core struct pdfcer_core::vector::stroke_style::Dash
 pdfcer-core struct pdfcer_core::vector::stroke_style::StrokeStyle
 pdfcer-core struct pdfcer_core::widget_draw::SynthesizedAppearance
 pdfcer-core struct pdfcer_core::widget_draw::WidgetAppearances
+pdfcer-core struct pdfcer_core::widget_draw::geometry::FieldCaret
+pdfcer-core struct pdfcer_core::widget_draw::geometry::FieldTextChar
+pdfcer-core struct pdfcer_core::widget_draw::geometry::FieldTextGeometry
+pdfcer-core struct pdfcer_core::widget_draw::geometry::FieldTextLine
 pdfcer-core struct pdfcer_core::wrapper::WrapperInfo
 pdfcer-core struct pdfcer_core::xfa::fonts::XfaFace
 pdfcer-core struct pdfcer_core::xfa::fonts::XfaFontProgram
@@ -7412,6 +7451,7 @@ pdfcer-core type pdfcer_core::ocr::models::EngineDirName
 pdfcer-core type pdfcer_core::ocr::vl_pre::PixelBox
 pdfcer-core type pdfcer_core::offpage::UnreadablePage
 pdfcer-core type pdfcer_core::pageops::assemble::PageRef
+pdfcer-core type pdfcer_core::widget_draw::geometry::PagePoint
 pdfcer-core variant pdfcer_core::annot::Appearance::None
 pdfcer-core variant pdfcer_core::annot::Appearance::Normal
 pdfcer-core variant pdfcer_core::annot::Appearance::StateUnresolved
@@ -10526,8 +10566,10 @@ pdfcer-render const pdfcer_render::MAX_GUARANTEED_REGION_SCALE
 pdfcer-render const pdfcer_render::MAX_PIXMAP_EDGE
 pdfcer-render const pdfcer_render::color::MAX_COLOR_SPACE_DEPTH
 pdfcer-render const pdfcer_render::compositor::MAX_SPOTS
+pdfcer-render const pdfcer_render::display_list::BAND_ROW_LATTICE
 pdfcer-render const pdfcer_render::display_list::MAX_DISPLAY_LIST_BYTES
 pdfcer-render const pdfcer_render::export::xmp::MAX_JPEG_XMP_PACKET
+pdfcer-render const pdfcer_render::font::SUPERSAMPLE_FACTOR
 pdfcer-render const pdfcer_render::font::subset::MAX_DONOR_BYTES
 pdfcer-render const pdfcer_render::gstate::MAX_Q_DEPTH
 pdfcer-render const pdfcer_render::interpret::MAX_XOBJECT_DEPTH
@@ -10548,6 +10590,7 @@ pdfcer-render enum pdfcer_render::RenderError
 pdfcer-render enum pdfcer_render::annot::AnnotationClass
 pdfcer-render enum pdfcer_render::annot::AnnotationScope
 pdfcer-render enum pdfcer_render::annot::markup::MarkupWithoutAp
+pdfcer-render enum pdfcer_render::annot::widget::NeedAppearances
 pdfcer-render enum pdfcer_render::annot::widget::WidgetsWithoutAp
 pdfcer-render enum pdfcer_render::blend_nonsep::NonSeparableBlend
 pdfcer-render enum pdfcer_render::color::ColorSpace
@@ -10555,6 +10598,7 @@ pdfcer-render enum pdfcer_render::color::Colorant
 pdfcer-render enum pdfcer_render::color::DeviceSpace
 pdfcer-render enum pdfcer_render::compositor::Blend
 pdfcer-render enum pdfcer_render::compositor::BlendSpace
+pdfcer-render enum pdfcer_render::display_list::BandBlocker
 pdfcer-render enum pdfcer_render::display_list::PoisonReason
 pdfcer-render enum pdfcer_render::edit_preview::OutlineSkip
 pdfcer-render enum pdfcer_render::emf::EmfText
@@ -10613,6 +10657,8 @@ pdfcer-render field pdfcer_render::RegionGeometry::x0
 pdfcer-render field pdfcer_render::RegionGeometry::y0
 pdfcer-render field pdfcer_render::RenderedPage::diagnostics
 pdfcer-render field pdfcer_render::RenderedPage::pixmap
+pdfcer-render field pdfcer_render::annot::widget::FieldHighlight::fill
+pdfcer-render field pdfcer_render::annot::widget::FieldHighlight::required_border
 pdfcer-render field pdfcer_render::color::ColorDiagnostics::colors_not_set
 pdfcer-render field pdfcer_render::color::ColorDiagnostics::icc_alternate_used
 pdfcer-render field pdfcer_render::color::ColorDiagnostics::icc_device_fallback_used
@@ -10702,6 +10748,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::cancel
 pdfcer-render field pdfcer_render::font::RenderOptions::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderOptions::cmyk_jpeg_polarity
 pdfcer-render field pdfcer_render::font::RenderOptions::edge_antialiasing
+pdfcer-render field pdfcer_render::font::RenderOptions::field_highlight
 pdfcer-render field pdfcer_render::font::RenderOptions::fonts
 pdfcer-render field pdfcer_render::font::RenderOptions::free_text_c
 pdfcer-render field pdfcer_render::font::RenderOptions::image_magnify
@@ -10714,6 +10761,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::mask_resample
 pdfcer-render field pdfcer_render::font::RenderOptions::max_cmyk_buffer_bytes
 pdfcer-render field pdfcer_render::font::RenderOptions::mesh_patch_padding
 pdfcer-render field pdfcer_render::font::RenderOptions::missing_as
+pdfcer-render field pdfcer_render::font::RenderOptions::need_appearances
 pdfcer-render field pdfcer_render::font::RenderOptions::omit_annotations
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_zero_tint_scope
@@ -10729,6 +10777,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::widgets_without_ap
 pdfcer-render field pdfcer_render::font::RenderPolicy::black_point_compensation
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_intent
 pdfcer-render field pdfcer_render::font::RenderPolicy::cmyk_jpeg_polarity
+pdfcer-render field pdfcer_render::font::RenderPolicy::field_highlight
 pdfcer-render field pdfcer_render::font::RenderPolicy::free_text_c
 pdfcer-render field pdfcer_render::font::RenderPolicy::image_magnify
 pdfcer-render field pdfcer_render::font::RenderPolicy::image_minify
@@ -10739,6 +10788,7 @@ pdfcer-render field pdfcer_render::font::RenderPolicy::mask_resample
 pdfcer-render field pdfcer_render::font::RenderPolicy::max_cmyk_buffer_bytes
 pdfcer-render field pdfcer_render::font::RenderPolicy::mesh_patch_padding
 pdfcer-render field pdfcer_render::font::RenderPolicy::missing_as
+pdfcer-render field pdfcer_render::font::RenderPolicy::need_appearances
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderPolicy::page_blend_space_source
@@ -10904,6 +10954,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::soft_masks_reset_stal
 pdfcer-render field pdfcer_render::interpret::Diagnostics::strokes_hairlined
 pdfcer-render field pdfcer_render::interpret::Diagnostics::subpixel_culled
 pdfcer-render field pdfcer_render::interpret::Diagnostics::substituted_fonts
+pdfcer-render field pdfcer_render::interpret::Diagnostics::supersample_tiles
 pdfcer-render field pdfcer_render::interpret::Diagnostics::supplied_fonts
 pdfcer-render field pdfcer_render::interpret::Diagnostics::tolerated
 pdfcer-render field pdfcer_render::interpret::Diagnostics::transparency_groups_backdrop_reruns
@@ -10915,6 +10966,7 @@ pdfcer-render field pdfcer_render::interpret::Diagnostics::type3_colors_ignored
 pdfcer-render field pdfcer_render::interpret::Diagnostics::type3_glyph_procs_run
 pdfcer-render field pdfcer_render::interpret::Diagnostics::type3_glyphs_missing
 pdfcer-render field pdfcer_render::interpret::Diagnostics::unknown_ops
+pdfcer-render field pdfcer_render::interpret::Diagnostics::widgets_redrawn_for_need_appearances
 pdfcer-render field pdfcer_render::interpret::Diagnostics::xobject_depth_overflows
 pdfcer-render field pdfcer_render::interpret::TracedPath::ctm
 pdfcer-render field pdfcer_render::interpret::TracedPath::fill
@@ -11185,6 +11237,7 @@ pdfcer-render fn pdfcer_render::xfa::render_xfa_page_with_images
 pdfcer-render method pdfcer_render::annot::AnnotationClass::of_subtype
 pdfcer-render method pdfcer_render::annot::AnnotationScope::paints_class
 pdfcer-render method pdfcer_render::annot::AnnotationScope::paints_page_content
+pdfcer-render method pdfcer_render::annot::widget::FieldHighlight::new
 pdfcer-render method pdfcer_render::blend_nonsep::NonSeparableBlend::from_name
 pdfcer-render method pdfcer_render::blend_nonsep::NonSeparableBlend::name
 pdfcer-render method pdfcer_render::cancel::RenderCancel::cancel
@@ -11242,6 +11295,7 @@ pdfcer-render method pdfcer_render::export::Rgb::to_hex
 pdfcer-render method pdfcer_render::export::jxl::JxlOptions::with_background
 pdfcer-render method pdfcer_render::export::jxl::JxlOptions::with_distance
 pdfcer-render method pdfcer_render::font::EdgeAntialiasing::is_on
+pdfcer-render method pdfcer_render::font::EdgeAntialiasing::pixel_factor
 pdfcer-render method pdfcer_render::font::FontData::bytes
 pdfcer-render method pdfcer_render::font::FontData::from_static
 pdfcer-render method pdfcer_render::font::FontData::new
@@ -11266,6 +11320,7 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_cancel
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cmyk_intent
 pdfcer-render method pdfcer_render::font::RenderOptions::with_cmyk_jpeg_polarity
 pdfcer-render method pdfcer_render::font::RenderOptions::with_edge_antialiasing
+pdfcer-render method pdfcer_render::font::RenderOptions::with_field_highlight
 pdfcer-render method pdfcer_render::font::RenderOptions::with_free_text_c
 pdfcer-render method pdfcer_render::font::RenderOptions::with_image_magnify
 pdfcer-render method pdfcer_render::font::RenderOptions::with_image_minify
@@ -11277,6 +11332,7 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_mask_resample
 pdfcer-render method pdfcer_render::font::RenderOptions::with_max_cmyk_buffer_bytes
 pdfcer-render method pdfcer_render::font::RenderOptions::with_mesh_patch_padding
 pdfcer-render method pdfcer_render::font::RenderOptions::with_missing_as
+pdfcer-render method pdfcer_render::font::RenderOptions::with_need_appearances
 pdfcer-render method pdfcer_render::font::RenderOptions::with_omit_annotations
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_zero_tint_scope
@@ -11432,6 +11488,7 @@ pdfcer-render static pdfcer_render::font::resubset::GLYPH_ZERO_RESUBSETTER
 pdfcer-render struct pdfcer_render::PageInk
 pdfcer-render struct pdfcer_render::RegionGeometry
 pdfcer-render struct pdfcer_render::RenderedPage
+pdfcer-render struct pdfcer_render::annot::widget::FieldHighlight
 pdfcer-render struct pdfcer_render::cancel::RenderCancel
 pdfcer-render struct pdfcer_render::color::ColorDiagnostics
 pdfcer-render struct pdfcer_render::color::ColorState
@@ -11512,6 +11569,7 @@ pdfcer-render struct pdfcer_render::visual_diff::VisualDiffOptions
 pdfcer-render struct pdfcer_render::white_margins::WhiteMarginCrop
 pdfcer-render struct pdfcer_render::xfa::RenderedXfaPage
 pdfcer-render variant pdfcer_render::RenderError::BadRasterSize
+pdfcer-render variant pdfcer_render::RenderError::BandNotAligned
 pdfcer-render variant pdfcer_render::RenderError::Cancelled
 pdfcer-render variant pdfcer_render::RenderError::Content
 pdfcer-render variant pdfcer_render::RenderError::DisplayListStale
@@ -11528,6 +11586,8 @@ pdfcer-render variant pdfcer_render::annot::AnnotationScope::DocumentAndStamps
 pdfcer-render variant pdfcer_render::annot::AnnotationScope::FormFieldsOnly
 pdfcer-render variant pdfcer_render::annot::markup::MarkupWithoutAp::Blank
 pdfcer-render variant pdfcer_render::annot::markup::MarkupWithoutAp::FromGeometry
+pdfcer-render variant pdfcer_render::annot::widget::NeedAppearances::AsStored
+pdfcer-render variant pdfcer_render::annot::widget::NeedAppearances::Honour
 pdfcer-render variant pdfcer_render::annot::widget::WidgetsWithoutAp::Blank
 pdfcer-render variant pdfcer_render::annot::widget::WidgetsWithoutAp::Draw
 pdfcer-render variant pdfcer_render::blend_nonsep::NonSeparableBlend::Color
@@ -11566,6 +11626,9 @@ pdfcer-render variant pdfcer_render::compositor::Blend::Screen
 pdfcer-render variant pdfcer_render::compositor::Blend::SoftLight
 pdfcer-render variant pdfcer_render::compositor::BlendSpace::Additive
 pdfcer-render variant pdfcer_render::compositor::BlendSpace::Subtractive
+pdfcer-render variant pdfcer_render::display_list::BandBlocker::Gradient
+pdfcer-render variant pdfcer_render::display_list::BandBlocker::Image
+pdfcer-render variant pdfcer_render::display_list::BandBlocker::LayerMask
 pdfcer-render variant pdfcer_render::display_list::PoisonReason::ColorantBuffer
 pdfcer-render variant pdfcer_render::display_list::PoisonReason::NonIsolatedGroup
 pdfcer-render variant pdfcer_render::display_list::PoisonReason::NonSeparableBlend

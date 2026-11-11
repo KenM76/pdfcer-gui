@@ -215,6 +215,30 @@ pub fn black_point(ui: &mut Ui, draft: &mut Draft) {
     );
 }
 
+/// The calibrated-CMYK switch's region.
+pub const CALIBRATED_CMYK_REGION: &str = "settings.colour.calibrated_cmyk"; // ui-text-exempt: trace region name, never displayed
+
+/// Whether an `ICCBased` CMYK colour keeps its numbers as the ink on a page
+/// composited in ink.
+pub fn calibrated_cmyk(ui: &mut Ui, draft: &mut Draft) {
+    widgets::header(
+        ui,
+        t::calibrated_cmyk_title(),
+        t::calibrated_cmyk_silence(),
+        t::calibrated_cmyk_radius(),
+    );
+    let switch = ui.checkbox(
+        &mut draft.working.preserve_calibrated_cmyk,
+        widgets::name(ui, t::calibrated_cmyk_label()),
+    );
+    crate::diag::ui_rect_visible(CALIBRATED_CMYK_REGION, switch.rect, ui.clip_rect());
+    ui.label(
+        egui::RichText::new(t::calibrated_cmyk_note())
+            .small()
+            .weak(),
+    );
+}
+
 /// How a mesh-shading patch record is byte-padded (spec ambiguity `MSH-A1`).
 pub fn mesh_patch_padding(ui: &mut Ui, draft: &mut Draft) {
     widgets::header(

@@ -270,6 +270,8 @@ fn page_body(
             colour::mesh_patch_padding(ui, draft);
             ui.add_space(10.0);
             colour::black_point(ui, draft);
+            ui.add_space(10.0);
+            colour::calibrated_cmyk(ui, draft);
         }
         "fonts" => {
             // Where pdfcer looks for a face, then what it does when looking

@@ -561,8 +561,8 @@ pub const fn edges_hover() -> &'static str {
     "Automatic prints sharp edges at 300 DPI and finer, and smooth ones below it. \
      Smoothing softens the edges of shapes, but where two shapes touch it can leave a faint \
      line between them. Sharp edges leave no line; at printer resolutions their steps are too \
-     small to see. Smooth, no seams has both, but takes sixteen times the memory and time, so a large \
-     sheet at a fine resolution may be refused. \
+     small to see. Smooth, no seams has both, but takes sixteen times the time, so a large \
+     sheet at a fine resolution is slow to print. \
      The preview is always smoothed."
 }
 

@@ -126,6 +126,20 @@ mod tests {
         }
     }
 
+    /// Settings ▸ Colour's calibrated-CMYK switch reaches the renderer, and
+    /// off is the engine's default.
+    #[test]
+    fn the_calibrated_cmyk_switch_reaches_the_renderer() {
+        assert!(
+            !Settings::default()
+                .render_options()
+                .preserve_calibrated_cmyk
+        );
+        let mut s = Settings::default();
+        s.preserve_calibrated_cmyk = true;
+        assert!(s.render_options().preserve_calibrated_cmyk);
+    }
+
     /// The default settings produce the engine's own defaults, unchanged.
     #[test]
     fn default_settings_change_nothing_about_the_engines_own_defaults() {
