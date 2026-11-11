@@ -1,7 +1,7 @@
 //! `the_security_tab_holds_security_and_protect` — the Security tab carries
 //! the file's security tools and, in Edit alone, the redaction tools; File no
 //! longer carries them. And `the_snapshot_tool_is_on_the_left_rail` — the rail's
-//! Navigate group arms the snapshot tool. Both driven off the desktop through
+//! Select group arms the Region tool. Both driven off the desktop through
 //! the scripted pointer.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/security_tab.md`.
@@ -25,7 +25,7 @@ const SECURITY: [&str; 2] = ["ribbon.item.file.encrypt", "ribbon.group.security.
 /// The same for the Protect group.
 /// The redaction items; Protect's Remove metadata is drawn in every mode.
 const PROTECT: [&str; 2] = ["ribbon.item.edit.redact", "ribbon.item.edit.offpage"];
-const RAIL_SNAPSHOT: &str = "rail.navigate.view.tool_snapshot"; // ui-text-exempt: a trace region name, never displayed
+const RAIL_SNAPSHOT: &str = "rail.select.view.tool_snapshot"; // ui-text-exempt: a trace region name, never displayed
 const ARMED: &str = "snapshot-tool";
 
 /// See the module documentation.
@@ -60,8 +60,8 @@ impl Check for TheSnapshotToolIsOnTheLeftRail {
     }
 
     fn defect(&self) -> &'static str {
-        "the snapshot tool is reachable only from View ▸ Navigate: the left tool strip has no \
-         row for it, or its row does not arm the tool"
+        "the Region tool is not in the left rail's Select group, or its row there does not arm \
+         the tool"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -144,12 +144,8 @@ fn rail(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> 
     let (session, pointer) = launch(ctx, report, "mode.read", "rail_snapshot")?;
     if declared_in(&session.trace()?, UI_RECT, RAIL_SNAPSHOT).is_none() {
         return Ok(Some(format!(
-            "the left rail draws no `{RAIL_SNAPSHOT}`. Navigate rows: {}.",
-            list(&declared_names(
-                &session.trace()?,
-                UI_RECT,
-                "rail.navigate."
-            ))
+            "the left rail draws no `{RAIL_SNAPSHOT}`. Select rows: {}.",
+            list(&declared_names(&session.trace()?, UI_RECT, "rail.select."))
         )));
     }
     press(&session, &pointer, RAIL_SNAPSHOT)?;

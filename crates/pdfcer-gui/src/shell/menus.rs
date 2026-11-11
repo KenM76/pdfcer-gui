@@ -469,12 +469,19 @@ pub fn built_in() -> Menus {
             Item::command("view.zoom_selection"),
         ]))
         // -------------------------------------------------------------------
-        // canvas.snapshot — inside the snapshot box: copy it, or save it as a PDF.
+        // canvas.snapshot — inside the region: copy it or save it, then the
+        // verbs that change the page, least destructive first (O406). Those
+        // are withheld outside Edit, as Tool Options › Region withholds them.
         .with(Menu::new(CANVAS_SNAPSHOT).with_items([
             Item::command("edit.copy"),
             Item::command("edit.copy_snapshot_outlines"),
             Item::command("edit.copy_snapshot_text"),
             Item::command("view.snapshot_save_pdf"),
+            Item::Separator,
+            Item::command("pages.crop_to_region").shown_when("mode.edit_content"),
+            Item::command("edit.redact_region").shown_when("mode.edit_content"),
+            Item::command("edit.redact_outside_region").shown_when("mode.edit_content"),
+            Item::command("edit.delete_in_region").shown_when("mode.edit_content"),
         ]))
         // -------------------------------------------------------------------
         // canvas.empty — the view menu, then the document's properties.

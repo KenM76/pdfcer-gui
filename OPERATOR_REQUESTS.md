@@ -653,6 +653,41 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O408 — **BUILDING** — the Settings window's text larger by default, with its own size: Ctrl+wheel or a slider beside the search box
+
+His words: *"also the font size in our settings is really small. it should be at larger size as default, and we should be able to adjust it separately from the program by using ctrl-scrollwheel or a slider on the far right side next to the command search bar."*
+
+**Scope, whole behaviour.**
+1. **Larger by default.** Every text in the Settings window — headings, labels, descriptions, buttons, the search box — is drawn larger than the rest of the program by default.
+2. **Its own size.** A text-size slider sits at the far right of the Settings window's search row. Ctrl+mouse wheel anywhere in the Settings window moves the same size. It changes only the Settings window: the ribbon, panels and the page are untouched, and the program's own *Interface size* still scales everything, Settings included, on top of it.
+3. **Kept.** The size is remembered between sessions as soon as it is changed, like the window's size — it is not a draft setting that Cancel throws away, because it is how the window is read, not something it configures. *Restore defaults* resets it.
+4. **Reading taken.** "Next to the command search bar" is read as the Settings window's own search box, since the size is the Settings window's. Say if you meant the main window's command search.
+
+**Status.** NOT VERIFIED — building.
+
+## O407 — **BUILDING** — the sun aimed on a disc: a ball you drag round a circle, turned with the model
+
+His words: *"for the 3D settings instead of horizontal sliders I want the sun bearing and sun height to be a circle with a ball that you move around to adjust the sun position - and the ball shows the current position of the sun based on which way the model is facing. The ball's circular placement position determines the sun bearing setting and its distance from the center determines its angle setting (near the edge it is near 0 degrees, and at center it is 90 degrees). note that the controls to enter the numbers should update as the ball is moved and should still be able to be entered by hand."*
+
+**Scope, whole behaviour.**
+1. **The disc.** The sky seen from straight above: a circle with a ball on it. The ball's direction round the centre is the sun's bearing; its distance from the centre is its height, linear in degrees — the rim is 0°, the centre 90°. A faint ring marks 45° and a tick on the rim marks the model's front. Press anywhere on the disc or drag the ball to move it; the ball is clamped to the rim when dragged past it.
+2. **Turned with the model.** In the 3D viewer, the disc's bottom edge is the side the camera is looking from. As the model is orbited the ball moves round the disc, so it always shows where the sun is relative to the picture. The sun itself stays fixed in the model; only the disc turns.
+3. **The numbers.** Bearing and height fields sit beside the disc. They follow the ball while it is dragged, and typing or dragging a number moves the ball. They replace the two sliders.
+4. **Both places.** The viewer's sun controls, and Settings ▸ 3D's default sun. There is no camera in Settings, so that disc is drawn with the model's front at the bottom.
+
+**Status.** NOT VERIFIED — building.
+
+## O406 — **BUILT, DRIVEN, ships in the next release** — the Snapshot tool renamed Region, moved to the Select area, and its right-click menu carries every region verb
+
+His words: *"for the next release the Snapshot marquee selector should be put under the Selection area and renamed appropriately since it now has multiple functions. Also its right click needs to have the other things it can do added to it."*
+
+**Scope, whole behaviour.**
+1. **Placement.** The tool leaves the left rail's Navigate band for its **Select** band, beside Select all. The ribbon keeps it in View ▸ Navigate: the ribbon has no Selection group outside the contextual Format ▸ Selection, which exists only once something is selected, and a tool that has to be reached before anything is selected cannot live there.
+2. **Name.** *Region*, the word every command it feeds already uses (Delete in region, Redact region, Crop to region). Its tooltip, its two copy commands (*Copy region, text as drawing / as text*), the Save as PDF window, Settings ▸ Images (*Region copy resolution*, *Region copies as*) and every status line now say region.
+3. **Right-click.** Inside the region the menu keeps Copy, the two copies and Save as PDF…, then, in Edit, Crop to region…, Redact region, Redact outside… and Delete in region, least destructive first. Outside Edit those four are hidden, not greyed, as Tool Options › Region hides them.
+
+**Status.** All three built. Driven: `the_region_menu_offers_every_region_verb` (rail Select row arms the tool; the Edit menu draws all four verbs and its Delete in region deletes exactly what the region selected; the Read menu draws the copies and none of the four — falsified by ungating Crop, which fails naming the leak) and `the_snapshot_tool_is_on_the_left_rail` (now keyed on the Select band). `a_snapshot_saves_as_a_one_page_pdf` and `delete_in_region_removes_what_the_box_holds` re-driven green.
+
 ## O405 — **RELEASED in `v0.5.0-dev.20261110.1`** — the marquee as a region every command acts on; redact outside it; highlight modes and shapes; a crop tool
 
 His words, relayed by the engine in `request_2026-11-09_marquee_region_highlight_modes_crop.md`: *"instead of the Marquee tool just being for snapshots, it needs to be available and work with any other operations like delete, redact, etc - and redact should be able to inverse the area redacted to be everything outside the marquess on the page. A crop tool would be nice too. Also add different shapes for the highlight tool, and modes too as it's hard to use the highlight tool to just draw a box sometimes as sometime when I go over text it starts selecting text all over the page."*

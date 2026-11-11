@@ -24,7 +24,7 @@ use crate::report::CheckReport;
 /// Edit mode, then the snapshot tool: the region's content commands are Edit's.
 const INVOKE: &str = "mode.edit,view.tool_snapshot"; // ui-text-exempt: command ids, never displayed
 const SELECTION: &str = "region-selection"; // ui-text-exempt: a trace event name, never displayed
-const DELETE_REQUESTED: &str = "region-delete-requested"; // ui-text-exempt: a trace event name, never displayed
+pub(super) const DELETE_REQUESTED: &str = "region-delete-requested"; // ui-text-exempt: a trace event name, never displayed
 const OUTSIDE_OPENED: &str = "redact-outside-opened"; // ui-text-exempt: a trace event name, never displayed
 const OUTSIDE_MARKED: &str = "redact-mark-outside-marked"; // ui-text-exempt: a trace event name, never displayed
 const DELETE_BUTTON: &str = "properties.tool.region.button.edit.delete_in_region"; // ui-text-exempt: a trace region name, never displayed
@@ -40,7 +40,7 @@ const CROP_TOLERANCE_PT: f64 = 1.5;
 const MARK: &str = "redact_outside.mark"; // ui-text-exempt: a trace region name, never displayed
 
 /// Over the fixture's drawing, which lies inside x 6–50 %, y 50–92.5 %.
-const OVER_DRAWING: ((f64, f64), (f64, f64)) = ((0.04, 0.48), (0.52, 0.94));
+pub(super) const OVER_DRAWING: ((f64, f64), (f64, f64)) = ((0.04, 0.48), (0.52, 0.94));
 /// The drawing again, from a corner outside the first box, so the drag draws a
 /// new box rather than moving or resizing the one already laid.
 const OVER_DRAWING_AGAIN: ((f64, f64), (f64, f64)) = ((0.02, 0.46), (0.54, 0.96));
@@ -52,7 +52,7 @@ const INSET_PX: u32 = 16;
 const HATCHED_SHARE: f64 = 0.02;
 
 /// Arm the snapshot tool and drag a box at `fractions` of page 0.
-fn lay(
+pub(super) fn lay(
     ctx: &CheckContext,
     rig: &Rig,
     page: crate::coords::PageGeometry,
@@ -72,7 +72,7 @@ fn lay(
 }
 
 /// The `objects=` of the `nth` (1-based) `region-selection` line.
-fn selected(rig: &Rig, nth: usize) -> Result<Option<usize>> {
+pub(super) fn selected(rig: &Rig, nth: usize) -> Result<Option<usize>> {
     let trace = rig.session.trace()?;
     Ok(trace
         .events(SELECTION)

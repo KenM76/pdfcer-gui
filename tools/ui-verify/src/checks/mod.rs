@@ -169,6 +169,8 @@ pub mod highlight_shapes;
 pub mod page_crop_even;
 pub mod page_crop_white;
 pub mod region_commands;
+/// The Region tool's right-click menu offers every region verb.
+pub mod region_menu;
 
 pub mod export_remembered;
 

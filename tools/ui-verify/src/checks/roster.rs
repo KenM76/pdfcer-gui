@@ -425,6 +425,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(region_commands::DeleteInRegion),
         Box::new(region_commands::RedactOutsideRegion),
         Box::new(region_commands::CropToRegion),
+        Box::new(region_menu::TheRegionMenuOffersEveryRegionVerb),
         Box::new(highlight_shapes::HighlightShapes),
         Box::new(print_impose::PrintSeveralPagesPerSheetAndBooklets),
         Box::new(print_running::PrintHeaderFooterReachesThePrintedCopy),

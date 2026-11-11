@@ -108,11 +108,10 @@ fn the_two_selection_toggles_are_the_last_rows_of_navigate() {
             "view.tool_node",
             "view.tool_text",
             "view.tool_hand",
-            "view.tool_snapshot",
             "view.smart_select",
             "view.text_chunks",
         ],
-        "the rail's Navigate group mirrors View ▸ Navigate row for row"
+        "the rail's Navigate group is View ▸ Navigate row for row, less the Region tool, which is in the rail's Select group (O406)"
     );
     let smart = group
         .items
@@ -207,4 +206,22 @@ fn the_lasso_is_absent_until_the_command_exists() {
         registry.get("edit.lasso").is_some(),
         "the rail draws the lasso exactly when the lasso exists"
     );
+}
+
+/// The Region tool is in the rail's Select group, after Select all (O406).
+#[test]
+fn the_region_tool_is_in_the_select_group() {
+    let group = groups()
+        .into_iter()
+        .find(|g| g.id == "select")
+        .expect("the select group");
+    let ids: Vec<&str> = group
+        .items
+        .iter()
+        .filter_map(|i| match i {
+            Item::Command { id, .. } => Some(id.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(ids, ["edit.select_all", "view.tool_snapshot"]);
 }

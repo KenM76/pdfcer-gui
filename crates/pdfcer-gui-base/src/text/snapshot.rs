@@ -1,4 +1,4 @@
-//! # `text::snapshot` — what the snapshot box says on the status row
+//! # `text::snapshot` — what the region says on the status row
 
 use crate::clipboard::snapshot::{KeptText, SnapshotCopy, Vectors};
 use pdfcer_core::pageops::RegionReport;
@@ -6,36 +6,36 @@ use pdfcer_core::pageops::RegionReport;
 /// The save dialog's title.
 #[must_use]
 pub const fn save_title() -> &'static str {
-    "Save the snapshot box as a PDF"
+    "Save the region as a PDF"
 }
 
 /// Why nothing was saved: there is no box, or it lies off its page.
 #[must_use]
 pub const fn save_no_box() -> &'static str {
-    "There is no snapshot box to save. Draw one with the Snapshot tool on the View tab \
+    "There is no region to save. Draw one with the Region tool \
      first."
 }
 
 /// Why nothing was saved: the file picked is the document on screen.
 #[must_use]
 pub const fn save_over_document() -> &'static str {
-    "The snapshot box was not saved: that file is the document on screen. Pick another \
+    "The region was not saved: that file is the document on screen. Pick another \
      name."
 }
 
 /// Why nothing was saved: the engine refused the region, in its own words.
 #[must_use]
 pub fn save_refused(why: &str) -> String {
-    format!("The snapshot box could not be cut out of its page: {why}. Nothing was saved.")
+    format!("The region could not be cut out of its page: {why}. Nothing was saved.")
 }
 
 /// Why nothing was saved: the file could not be written.
 #[must_use]
 pub fn save_failed(path: &str, why: &str) -> String {
-    format!("The snapshot box could not be written to {path}: {why}.")
+    format!("The region could not be written to {path}: {why}.")
 }
 
-/// **What saving the snapshot box wrote**: the file, its page size, and
+/// **What saving the region wrote**: the file, its page size, and
 /// anything the engine left out or could not cut away.
 #[must_use]
 pub fn saved_pdf(path: &str, report: &RegionReport) -> String {
@@ -54,9 +54,8 @@ pub fn saved_pdf(path: &str, report: &RegionReport) -> String {
     } else {
         " Everything outside the box was cut away."
     };
-    let said = format!(
-        "Saved the snapshot box as a one-page PDF, {w:.0} \u{d7} {h:.0} pt: {path}.{cut}{edge}"
-    );
+    let said =
+        format!("Saved the region as a one-page PDF, {w:.0} \u{d7} {h:.0} pt: {path}.{cut}{edge}");
     report
         .notes
         .iter()
@@ -113,28 +112,28 @@ pub fn copied(copy: &SnapshotCopy) -> String {
             };
             let kept = text.map(kept_text).unwrap_or_default();
             let said = format!(
-                "Copied the snapshot box as vectors and as {picture}. Everything outside the \
+                "Copied the region as vectors and as {picture}. Everything outside the \
                  box was cut away.{edge}{underlaid}{blends}{kept}"
             );
             (said, notes.as_slice())
         }
         Vectors::PictureOnly => {
             let said = format!(
-                "Copied the snapshot box as {picture} only, as the Snapshot copies as \
+                "Copied the region as {picture} only, as the Region copies as \
                  setting asks."
             );
             (said, &[][..])
         }
         Vectors::Withheld { notes } => {
             let said = format!(
-                "Copied the snapshot box as {picture} only: some drawing outside the box could \
+                "Copied the region as {picture} only: some drawing outside the box could \
                  not be cut away, so it was not copied as vectors."
             );
             (said, notes.as_slice())
         }
         Vectors::Refused(why) => {
             let said = format!(
-                "Copied the snapshot box as {picture} only: it could not be copied as vectors \
+                "Copied the region as {picture} only: it could not be copied as vectors \
                  ({why})."
             );
             (said, &[][..])

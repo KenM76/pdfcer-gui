@@ -121,7 +121,7 @@ pub(super) fn parse_key(prefs: &mut SnapshotPrefs, key: &str, value: &str) -> Ke
 pub(super) fn write_block(prefs: &SnapshotPrefs, out: &mut String) {
     out.push_str(
         "\n\
-         # How View > Snapshot copies its box:\n\
+         # How the Region tool copies its box:\n\
          #   snapshot_dpi: the picture's resolution, 36 to 2400 (default 300)\n\
          #   snapshot_copy: outlines (default), text (keep text as text) or\n\
          #                  picture (the picture alone)\n\

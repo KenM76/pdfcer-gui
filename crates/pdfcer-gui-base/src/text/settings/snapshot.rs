@@ -7,20 +7,20 @@ use crate::prefs::snapshot::SnapshotForm;
 /// The setting's name.
 #[must_use]
 pub const fn title() -> &'static str {
-    "Snapshot resolution"
+    "Region copy resolution"
 }
 
 /// What the setting changes.
 #[must_use]
 pub const fn silence() -> &'static str {
-    "How sharp the picture is when the Snapshot tool copies its box. Higher is \
+    "How sharp the picture is when the Region tool copies its box. Higher is \
      sharper and larger."
 }
 
 /// Where the change applies.
 #[must_use]
 pub const fn radius() -> &'static str {
-    "Applies to every snapshot copied after Save, and is kept in your \
+    "Applies to every region copied after Save, and is kept in your \
      preferences file."
 }
 
@@ -39,13 +39,13 @@ pub fn range_note(min: u32, max: u32, default: u32) -> String {
 /// The copy-form setting's name.
 #[must_use]
 pub const fn form_title() -> &'static str {
-    "Snapshot copies as"
+    "Region copies as"
 }
 
 /// What the copy-form setting changes.
 #[must_use]
 pub const fn form_silence() -> &'static str {
-    "What the Snapshot tool puts on the clipboard when it copies its box."
+    "What the Region tool puts on the clipboard when it copies its box."
 }
 
 /// One choice's label.

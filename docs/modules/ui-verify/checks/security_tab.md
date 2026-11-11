@@ -25,14 +25,14 @@ redaction — which edits page content — appears in Read.
 
 ## `the_snapshot_tool_is_on_the_left_rail`
 
-**Defect it guards.** O289 item 11: the snapshot tool reachable from the left
-tool strip, not only from View ▸ Navigate.
+**Defect it guards.** O289 item 11 and O406: the Region tool reachable from the
+left tool strip, in its Select group, not only from View ▸ Navigate.
 
-**Steps.** Read mode. `rail.navigate.view.tool_snapshot` must be declared;
+**Steps.** Read mode. `rail.select.view.tool_snapshot` must be declared;
 pressing it must trace `snapshot-tool armed=true`.
 
-**Falsified** by removing `view.tool_snapshot` from the rail's Navigate group in
-`railmanifest`: the check fails naming the Navigate rows the rail drew.
+**Falsified** by moving `view.tool_snapshot` out of the rail's Select group in
+`railmanifest`: the check fails naming the Select rows the rail drew.
 
 **What neither proves.** Placement within the band or the rail beyond
 presence; the ribbon's own order is pinned by the manifest tests.

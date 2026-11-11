@@ -153,7 +153,6 @@ pub fn groups() -> Vec<RailGroup> {
                 Item::command("view.tool_node").shown_when("mode.edit_content"),
                 Item::command("view.tool_text"),
                 Item::command("view.tool_hand"),
-                Item::command("view.tool_snapshot"),
                 Item::command("view.smart_select").shown_when("mode.edit_content"),
                 Item::command("view.text_chunks").shown_when("mode.edit_content"),
             ],
@@ -184,9 +183,17 @@ pub fn groups() -> Vec<RailGroup> {
         // nothing in it is reached by habit or by chord in the way Hand and
         // Select are.
         // -------------------------------------------------------------------
-        RailGroup::new("select", [Item::command("edit.select_all")])
-            .with_caption(t::group_rail_select())
-            .with_fold(RailFold::Whole),
+        RailGroup::new(
+            "select",
+            [
+                Item::command("edit.select_all"),
+                // The region tool selects an area that copy, save, crop,
+                // redact and delete then act on (O406).
+                Item::command("view.tool_snapshot"),
+            ],
+        )
+        .with_caption(t::group_rail_select())
+        .with_fold(RailFold::Whole),
         // -------------------------------------------------------------------
         // GROUP 4 — ROTATE. O126, and read the module header's ⚠ before
         // touching it: this is what puts a real document edit in Read mode.

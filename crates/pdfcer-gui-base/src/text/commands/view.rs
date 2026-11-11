@@ -130,34 +130,34 @@ pub const fn edit_copy() -> CommandText {
     )
 }
 
-/// `view.snapshot_save_pdf` — the snapshot box's menu.
+/// `view.snapshot_save_pdf` — the region's menu.
 #[must_use]
 pub const fn view_snapshot_save_pdf() -> CommandText {
     CommandText::new(
         "Save as PDF\u{2026}",
-        "Save what is inside the snapshot box as a one-page PDF, cut to the box, with \
+        "Save what is inside the region as a one-page PDF, cut to the box, with \
          comments and layers as the page shows them. The document is not changed.",
     )
 }
 
-/// `edit.copy_snapshot_outlines` — the snapshot box, its text drawn as shapes.
+/// `edit.copy_snapshot_outlines` — the region, its text drawn as shapes.
 pub const fn edit_copy_snapshot_outlines() -> CommandText {
     CommandText::new(
-        "Copy snapshot, text as drawing",
-        "Copy what is inside the snapshot box as a drawing, with its words drawn as \
+        "Copy region, text as drawing",
+        "Copy what is inside the region as a drawing, with its words drawn as \
          shapes, so they look the same in any program and cannot be edited there. \
-         Greyed until a snapshot box is drawn.",
+         Greyed until a region is drawn.",
     )
 }
 
-/// `edit.copy_snapshot_text` — the snapshot box, its text kept as text.
+/// `edit.copy_snapshot_text` — the region, its text kept as text.
 pub const fn edit_copy_snapshot_text() -> CommandText {
     CommandText::new(
-        "Copy snapshot, text as text",
-        "Copy what is inside the snapshot box as a drawing, with its words kept as \
+        "Copy region, text as text",
+        "Copy what is inside the region as a drawing, with its words kept as \
          text, so they can be edited or searched in the program it is pasted into. \
-         A font that program lacks changes how they look. Greyed until a snapshot \
-         box is drawn.",
+         A font that program lacks changes how they look. Greyed until a region \
+         is drawn.",
     )
 }
 
@@ -295,9 +295,10 @@ pub const fn view_tool_hand() -> CommandText {
 #[must_use]
 pub const fn view_tool_snapshot() -> CommandText {
     CommandText::new(
-        "Snapshot",
-        "Drag a box on the page. The box stays on the page while you zoom and scroll. Press \
-         again to return to the select tool.",
+        "Region",
+        "Drag a box on the page. Right-click inside it to copy what it holds, save it as a \
+         PDF, crop to it, redact it or delete what is in it. The box stays on the page \
+         while you zoom and scroll. Press again to return to the select tool.",
     )
 }
 

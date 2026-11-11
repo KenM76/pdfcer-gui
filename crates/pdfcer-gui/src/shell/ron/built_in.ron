@@ -807,7 +807,6 @@
                 Command(id: "view.tool_node", visible_when: "mode.edit_content"),
                 Command(id: "view.tool_text"),
                 Command(id: "view.tool_hand"),
-                Command(id: "view.tool_snapshot"),
                 Command(id: "view.smart_select", visible_when: "mode.edit_content"),
                 Command(id: "view.text_chunks", visible_when: "mode.edit_content"),
             ],
@@ -818,6 +817,7 @@
             fold: whole,
             items: [
                 Command(id: "edit.select_all"),
+                Command(id: "view.tool_snapshot"),
             ],
         ),
         (
@@ -922,6 +922,11 @@
                 Command(id: "edit.copy_snapshot_outlines"),
                 Command(id: "edit.copy_snapshot_text"),
                 Command(id: "view.snapshot_save_pdf"),
+                Separator,
+                Command(id: "pages.crop_to_region", visible_when: "mode.edit_content"),
+                Command(id: "edit.redact_region", visible_when: "mode.edit_content"),
+                Command(id: "edit.redact_outside_region", visible_when: "mode.edit_content"),
+                Command(id: "edit.delete_in_region", visible_when: "mode.edit_content"),
             ],
         ),
         (
