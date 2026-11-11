@@ -1022,6 +1022,7 @@ pub mod ocr_word_lists;
 
 pub mod save_after_edit;
 
+pub mod settings_sun_disc;
 pub mod settings_theme;
 
 /// The keyboard reference lists every chord, and every chord names a command.

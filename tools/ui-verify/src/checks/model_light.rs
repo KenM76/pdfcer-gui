@@ -15,15 +15,18 @@
 //!   kept fails the last.
 //! - [`AnAimedSunCastsWhereItIsAimed`]: *A sun you aim* draws `caster=aimed`
 //!   at bearing 45 and height 45, coloured by its height (4943 K), on the
-//!   card; the height slider pressed near its foot lowers the sun under 10°,
-//!   warms it under 3500 K and changes the picture.
+//!   card; the sun disc pressed at its left rim lowers the sun under 10°,
+//!   warms it under 3500 K and changes the picture. With the model turned,
+//!   the disc pressed at its right rim aims the sun 90° round from the
+//!   side the camera looks from (`sun-disc facing=`), that facing has
+//!   turned at least 20° with the model, and the picture draws that sun.
 //! - [`FewerLampsAreDrawnWhenAsked`]: `floor-lamps.prc`'s six lamps all
 //!   reach the opening view and are lit (`lamps=6/6/6 lamp-cost=all`);
 //!   *Brightest 4 at the view* draws `lamps=6/6/4 lamp-cost=4` on the card,
 //!   and a different picture.
 
 use crate::checks::driving::{declared_in, repo_fixture};
-use crate::checks::model_shadow_sun::{open, rendered};
+use crate::checks::model_shadow_sun::{open, rendered, turn};
 use crate::checks::model_view_window::{launch_with_model_file, ui_rect};
 use crate::checks::viewer_options;
 use crate::checks::{Check, CheckContext};
@@ -45,8 +48,8 @@ const ARTWORK: &str = "model3d.lighting.artwork";
 /// `dialogs::model3d::effects::REGION_SHADOW_LIGHT` and its aimed item.
 const CASTER: &str = "model3d.shadow_light";
 const AIMED: &str = "model3d.shadow_light.aimed";
-/// `dialogs::model3d::sunlight::REGION_SUN_HEIGHT`.
-const SUN_HEIGHT: &str = "model3d.sun.height";
+/// `dialogs::model3d::sunlight::REGION_SUN_DISC`.
+const SUN_DISC: &str = "model3d.sun.disc";
 /// `dialogs::model3d::looks::REGION_LAMPS_DRAWN` and its four item.
 const LAMPS_DRAWN: &str = "model3d.lamps_drawn";
 const FOUR: &str = "model3d.lamps_drawn.4";
@@ -72,6 +75,30 @@ fn choose(
         return Ok(false);
     };
     pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
+    session.settle(30);
+    viewer_options::close(session, pointer, ui_rect)?;
+    Ok(true)
+}
+
+/// Press the sun disc at `(fx, fy)`, shares of its rect from the top left.
+/// Press at mid-height: the menu scrolls only until most of the disc shows,
+/// so its foot can sit under the scroll edge where a press reaches nothing;
+/// `false` when it is drawn nowhere.
+fn press_disc(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    (fx, fy): (f32, f32),
+) -> Result<bool> {
+    let Some((rect, vp)) = viewer_options::reach(session, pointer, ui_rect, SUN_DISC)? else {
+        return Ok(false);
+    };
+    let at = Pt {
+        x: rect.min.x + (rect.max.x - rect.min.x) * fx,
+        y: rect.min.y + (rect.max.y - rect.min.y) * fy,
+    };
+    let point = WindowPoint::centre_of(LRect { min: at, max: at });
+    pointer.click_in(session, vp.as_deref(), point)?;
     session.settle(30);
     viewer_options::close(session, pointer, ui_rect)?;
     Ok(true)
@@ -297,21 +324,88 @@ fn aimed_sun(
             aimed[0], aimed[1], aimed[2], aimed[3], aimed[4], aimed[5], aimed[6], first[6]
         )));
     }
-    if !press_slider(session, pointer, ui_rect, SUN_HEIGHT, 0.04)? {
-        return Ok(Some(format!(
-            "no `{SUN_HEIGHT}` slider under the aimed sun."
-        )));
+    let mark = session.trace()?.mark();
+    if !press_disc(session, pointer, ui_rect, (0.04, 0.5))? {
+        return Ok(Some(format!("no `{SUN_DISC}` under the aimed sun.")));
     }
+    let Some(before) = disc_line(session, mark)? else {
+        return Ok(Some(
+            "pressing the disc's left rim moved no sun.".to_owned(),
+        ));
+    };
     let Some(low) = rendered(session, SUN)? else {
         return Ok(Some("no picture line after lowering the sun.".to_owned()));
     };
     report.note(format!("lowered: {low:?}"));
     if !below(&low[2], 10.0) || !below(&low[3], 3500.0) || low[6] == aimed[6] {
         return Ok(Some(format!(
-            "pressing the sun height slider near its foot drew height={} kelvin={} with hash \
+            "pressing the sun disc at its left rim drew height={} kelvin={} with hash \
              {} against {}; expected a sun under 10°, warmer than 3500 K, and a different \
              picture.",
             low[2], low[3], low[6], aimed[6]
+        )));
+    }
+    turned_disc(report, session, (pointer, ui_rect), before[0])
+}
+
+/// The `facing`, `bearing` and `height` of the last `sun-disc` line after
+/// `mark`; `None` when there is none or it does not read as numbers.
+fn disc_line(session: &Session, mark: usize) -> Result<Option<[f64; 3]>> {
+    let trace = session.trace()?;
+    let Some(disc) = trace.last_after("sun-disc", mark) else {
+        return Ok(None);
+    };
+    let field = |k: &str| disc.get(k).and_then(|v| v.parse::<f64>().ok());
+    Ok(match (field("facing"), field("bearing"), field("height")) {
+        (Some(f), Some(b), Some(h)) => Some([f, b, h]),
+        _ => None,
+    })
+}
+
+/// The signed difference `a - b` in degrees, in -180..180.
+fn off(a: f64, b: f64) -> f64 {
+    ((a - b).rem_euclid(360.0) + 180.0).rem_euclid(360.0) - 180.0
+}
+
+/// Turn the model, press the disc's right rim, and require the sun aimed
+/// 90° round from a facing that turned with the model away from `before`.
+fn turned_disc(
+    report: &mut CheckReport,
+    session: &Session,
+    (pointer, ui_rect): (&ScriptedPointer, &str),
+    before: f64,
+) -> Result<Option<String>> {
+    if turn(session, pointer, ui_rect)?.is_none() {
+        return Ok(Some(
+            "the picture could not be dragged to turn the model.".to_owned(),
+        ));
+    }
+    let mark = session.trace()?.mark();
+    if !press_disc(session, pointer, ui_rect, (0.98, 0.5))? {
+        return Ok(Some(format!("no `{SUN_DISC}` after turning the model.")));
+    }
+    let Some([facing, bearing, height]) = disc_line(session, mark)? else {
+        return Ok(Some(
+            "pressing the disc's right rim moved no sun.".to_owned(),
+        ));
+    };
+    let drawn = rendered(session, SUN)?.unwrap_or_else(|| SUN.map(|_| "-".to_owned()));
+    report.note(format!(
+        "turned: facing={facing} (was {before}) bearing={bearing} height={height}; \
+         drawn {drawn:?}"
+    ));
+    let drawn_at = drawn[1].parse::<f64>().ok();
+    if off(bearing, facing + 90.0).abs() > 1.5
+        || off(facing, before).abs() < 20.0
+        || height > 1.0
+        || drawn_at.is_none_or(|b| off(b, bearing).abs() > 0.5)
+    {
+        return Ok(Some(format!(
+            "after turning the model, the disc's right rim aimed bearing={bearing} \
+             height={height} at facing={facing} (was {before}), drawn at bearing {}; \
+             expected the facing turned at least 20° with the model, the sun 90° round \
+             from it on the horizon, and that sun drawn.",
+            drawn[1]
         )));
     }
     Ok(None)

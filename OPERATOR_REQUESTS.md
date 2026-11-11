@@ -665,7 +665,7 @@ His words: *"also the font size in our settings is really small. it should be at
 
 **Status.** NOT VERIFIED — building.
 
-## O407 — **BUILDING** — the sun aimed on a disc: a ball you drag round a circle, turned with the model
+## O407 — **BUILT, DRIVEN, ships in the next release** — the sun aimed on a disc: a ball you drag round a circle, turned with the model
 
 His words: *"for the 3D settings instead of horizontal sliders I want the sun bearing and sun height to be a circle with a ball that you move around to adjust the sun position - and the ball shows the current position of the sun based on which way the model is facing. The ball's circular placement position determines the sun bearing setting and its distance from the center determines its angle setting (near the edge it is near 0 degrees, and at center it is 90 degrees). note that the controls to enter the numbers should update as the ball is moved and should still be able to be entered by hand."*
 
@@ -675,7 +675,7 @@ His words: *"for the 3D settings instead of horizontal sliders I want the sun be
 3. **The numbers.** Bearing and height fields sit beside the disc. They follow the ball while it is dragged, and typing or dragging a number moves the ball. They replace the two sliders.
 4. **Both places.** The viewer's sun controls, and Settings ▸ 3D's default sun. There is no camera in Settings, so that disc is drawn with the model's front at the bottom.
 
-**Status.** NOT VERIFIED — building.
+**Status.** All four built. Driven: `an_aimed_sun_lights_the_3d_model_where_it_is_aimed` presses the viewer's disc at its left rim (the sun drops to the horizon and warms), turns the model, presses the right rim, and requires the sun 90° round from a facing that turned with the model — falsified by pinning the facing to the front, which fails naming facing 0 before and after; `settings_sun_disc` presses Settings ▸ 3D's disc and requires Save to write bearing 270 on the horizon. Typing into the fields is the stock number field and is not driven.
 
 ## O406 — **BUILT, DRIVEN, ships in the next release** — the Snapshot tool renamed Region, moved to the Select area, and its right-click menu carries every region verb
 

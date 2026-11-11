@@ -26,7 +26,7 @@ pub fn aimed_sun() -> &'static str {
     "A sun you aim"
 }
 
-/// The sun's bearing slider's label.
+/// The sun's bearing field's label.
 #[must_use]
 pub fn sun_bearing_label() -> &'static str {
     "Sun bearing"
@@ -38,7 +38,7 @@ pub fn sun_bearing_tooltip() -> &'static str {
     "Which side the sun shines from, measured round the Up axis: 0° is the model's front, 90° its right, 180° its back, 270° its left."
 }
 
-/// The sun's height slider's label.
+/// The sun's height field's label.
 #[must_use]
 pub fn sun_height_label() -> &'static str {
     "Sun height"
@@ -50,7 +50,13 @@ pub fn sun_height_tooltip() -> &'static str {
     "How high the sun stands: 0° on the horizon, 90° straight overhead. A lower sun casts longer shadows."
 }
 
-/// A slider's degrees suffix.
+/// The sun disc's tip.
+#[must_use]
+pub fn sun_disc_tooltip() -> &'static str {
+    "The sky seen from above. Drag the sun round the circle to set its bearing, and in or out to set its height: the rim is the horizon, the centre straight overhead. The disc turns with the view, so the side nearest you is the side you are looking from; the mark on the rim is the model's front."
+}
+
+/// A degrees field's suffix.
 #[must_use]
 pub fn degrees_suffix() -> &'static str {
     "°"

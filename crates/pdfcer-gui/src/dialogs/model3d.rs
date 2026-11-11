@@ -56,6 +56,7 @@ mod shot;
 mod shotlook;
 mod sphere;
 mod stick;
+mod sundisc;
 mod sunlight;
 mod window;
 

@@ -3,21 +3,24 @@
 //! carries no mark of either, and the sun drawn is said under its controls.
 
 use egui::Ui;
+use pdfcer_3d::vec3::{dot, length, scale, sub};
 use pdfcer_3d::{
     MAX_LIGHT_GAIN, MAX_SUN_KELVIN, MIN_LIGHT_GAIN, MIN_SUN_KELVIN, ShadowLight, SunColour,
     SunLight,
 };
 use pdfcer_core::threed::ThreeDLighting;
 
-use super::ModelView;
+use super::{ModelView, sundisc};
 use crate::text::model3d as m;
 use crate::text::model3dlight as g;
 
 /// The brightness slider.
 pub const REGION_BRIGHTNESS: &str = "model3d.brightness"; // ui-text-exempt: trace region name, never displayed
-/// The sun's bearing slider.
+/// The sun disc.
+pub const REGION_SUN_DISC: &str = "model3d.sun.disc"; // ui-text-exempt: trace region name, never displayed
+/// The sun's bearing field.
 pub const REGION_SUN_BEARING: &str = "model3d.sun.bearing"; // ui-text-exempt: trace region name, never displayed
-/// The sun's height slider.
+/// The sun's height field.
 pub const REGION_SUN_HEIGHT: &str = "model3d.sun.height"; // ui-text-exempt: trace region name, never displayed
 /// The colour-by-height switch.
 pub const REGION_SUN_BY_HEIGHT: &str = "model3d.sun.by_height"; // ui-text-exempt: trace region name, never displayed
@@ -126,6 +129,29 @@ impl ModelView {
         }
     }
 
+    /// The sun bearing the camera looks from, degrees: the bearing at the
+    /// sun disc's bottom, so the ball stands where the sun is relative to
+    /// the picture. 0 when there is no camera to ask.
+    pub(super) fn sun_facing(&self) -> f64 {
+        let Ok(camera) = self.view_camera(1.0) else {
+            return 0.0;
+        };
+        let (up, negative) = (self.upright.up.up_axis(), self.upright.up.negative());
+        let towards = |azimuth_deg, elevation_deg| {
+            SunLight {
+                up,
+                negative,
+                azimuth_deg,
+                elevation_deg,
+                colour: SunColour::FromElevation,
+                gain: 1.0,
+            }
+            .direction()
+        };
+        let ground = (towards(0.0, 0.0), towards(90.0, 0.0), towards(0.0, 90.0));
+        facing_from(sub(camera.eye, camera.target), camera.up, ground)
+    }
+
     /// The brightness slider for the scheme lighting the picture.
     pub(super) fn brightness_control(&mut self, ui: &mut Ui) {
         let Some(i) = slot(self.lit_by().0) else {
@@ -149,23 +175,15 @@ impl ModelView {
         if !(self.sun && self.light.sun.on) {
             return;
         }
+        let facing = self.sun_facing();
         let a = &mut self.light.sun;
-        degrees_row(
-            ui,
-            REGION_SUN_BEARING,
-            g::sun_bearing_label(),
-            g::sun_bearing_tooltip(),
-            &mut a.bearing,
-            BEARING_RANGE,
-        );
-        degrees_row(
-            ui,
-            REGION_SUN_HEIGHT,
-            g::sun_height_label(),
-            g::sun_height_tooltip(),
-            &mut a.height,
-            HEIGHT_RANGE,
-        );
+        if aim_row(ui, (&mut a.bearing, &mut a.height), facing) {
+            let (bearing, height) = (a.bearing, a.height);
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!("sun-disc facing={facing:.0} bearing={bearing:.0} height={height:.0}")
+            });
+        }
         let by = ui
             .checkbox(&mut a.by_height, g::sun_colour_by_height())
             .on_hover_text(g::sun_colour_by_height_tooltip());
@@ -208,8 +226,44 @@ fn percent_slider(gain: &mut f64) -> egui::Slider<'_> {
         })
 }
 
-/// A labelled whole-degree slider under `region`.
-fn degrees_row(
+/// The sun disc, `facing` at its bottom, beside the bearing and height
+/// fields that follow it and can be typed into. True when the disc moved
+/// the sun; a typed number moves the ball on the next frame.
+pub(super) fn aim_row(ui: &mut Ui, (bearing, height): (&mut f64, &mut f64), facing: f64) -> bool {
+    ui.horizontal(|ui| {
+        let moved = sundisc::sun_disc(
+            ui,
+            REGION_SUN_DISC,
+            g::sun_disc_tooltip(),
+            (&mut *bearing, &mut *height),
+            facing,
+        );
+        ui.vertical(|ui| {
+            let (b, h) = (g::sun_bearing_tooltip(), g::sun_height_tooltip());
+            degrees_field(
+                ui,
+                REGION_SUN_BEARING,
+                g::sun_bearing_label(),
+                b,
+                bearing,
+                BEARING_RANGE,
+            );
+            degrees_field(
+                ui,
+                REGION_SUN_HEIGHT,
+                g::sun_height_label(),
+                h,
+                height,
+                HEIGHT_RANGE,
+            );
+        });
+        moved
+    })
+    .inner
+}
+
+/// A labelled whole-degree number field under `region`.
+fn degrees_field(
     ui: &mut Ui,
     region: &str,
     label: &str,
@@ -217,16 +271,40 @@ fn degrees_row(
     value: &mut f64,
     range: std::ops::RangeInclusive<f64>,
 ) {
-    ui.horizontal_wrapped(|ui| {
-        ui.label(label).on_hover_text(tip);
-        let slider = ui.add(
-            egui::Slider::new(value, range)
-                .step_by(1.0)
-                .suffix(g::degrees_suffix()),
-        );
-        crate::diag::ui_rect_visible(region, slider.rect, ui.clip_rect());
-        slider.on_hover_text(tip);
-    });
+    ui.label(label).on_hover_text(tip);
+    let field = ui.add(
+        egui::DragValue::new(value)
+            .range(range)
+            .speed(1.0)
+            .max_decimals(0)
+            .suffix(g::degrees_suffix()),
+    );
+    crate::diag::ui_rect_visible(region, field.rect, ui.clip_rect());
+    field.on_hover_text(tip);
+}
+
+/// The bearing of `back` (target towards eye) on the ground spanned by
+/// `front` and `right`, degrees in 0..360. Looking straight down
+/// `overhead`, the screen's bottom — opposite the camera's `up` — stands in.
+fn facing_from(
+    back: [f64; 3],
+    up: [f64; 3],
+    (front, right, overhead): ([f64; 3], [f64; 3], [f64; 3]),
+) -> f64 {
+    let ground = |v: [f64; 3]| sub(v, scale(overhead, dot(v, overhead)));
+    let flat = ground(back);
+    let flat = if length(flat) > 1e-9 * length(back).max(1.0) {
+        flat
+    } else {
+        scale(ground(up), -1.0)
+    };
+    if length(flat) <= 1e-12 {
+        return 0.0;
+    }
+    dot(flat, right)
+        .atan2(dot(flat, front))
+        .to_degrees()
+        .rem_euclid(360.0)
 }
 
 /// The render trace's light strength and sun fields for `options`.
@@ -248,6 +326,22 @@ pub(super) fn trace(options: &pdfcer_3d::RenderOptions) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_disc_faces_the_side_the_camera_looks_from() {
+        // Z up: front -Y, right +X, overhead +Z.
+        let ground = ([0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]);
+        let up = [0.0, 0.0, 1.0];
+        let near = |a: f64, b: f64| (a - b).abs() < 1e-9;
+        assert!(near(facing_from([0.0, -5.0, 2.0], up, ground), 0.0));
+        assert!(near(facing_from([3.0, 0.0, 1.0], up, ground), 90.0));
+        assert!(near(facing_from([0.0, 4.0, 0.0], up, ground), 180.0));
+        // Straight down, screen top towards +Y: the bottom is the front.
+        assert!(near(
+            facing_from([0.0, 0.0, 9.0], [0.0, 1.0, 0.0], ground),
+            0.0
+        ));
+    }
 
     #[test]
     fn each_scheme_keeps_its_own_brightness() {

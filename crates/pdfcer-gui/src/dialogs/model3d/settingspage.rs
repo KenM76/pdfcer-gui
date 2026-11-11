@@ -16,7 +16,7 @@ use pdfcer_gui_base::settingspages::widgets;
 
 use super::looks::{LAMP_NEAREST, lamp_cut_text, nearest_text};
 use super::memory::{self, HIGHLIGHTS, SEE_THROUGH, SENSES, Settings};
-use super::sunlight::{BEARING_RANGE, GAIN_RANGE, HEIGHT_RANGE, KELVIN_RANGE};
+use super::sunlight::{GAIN_RANGE, KELVIN_RANGE, aim_row};
 use crate::app::prefs::Prefs;
 use crate::text::model3d as m;
 use crate::text::model3dlens as l;
@@ -37,6 +37,12 @@ enum Kind {
         decimals: usize,
         percent: bool,
     },
+    /// The sun disc, holding this key's bearing and `height`'s height.
+    SunDisc {
+        height: &'static str,
+    },
+    /// Drawn by the row before it.
+    Within,
 }
 
 /// One key, without the `model3d_` prefix, and its name on the page.
@@ -124,8 +130,16 @@ fn look_rows(prefix: &str) -> Vec<Row> {
         flag("shadows", m::shadows()),
         flag("sun", m::shadow_light(true)),
         flag("sun_aimed", g::aimed_sun()),
-        number("sun_bearing", g::sun_bearing_label(), BEARING_RANGE, 0),
-        number("sun_height", g::sun_height_label(), HEIGHT_RANGE, 0),
+        Row {
+            kind: Kind::SunDisc {
+                height: "sun_height", // ui-text-exempt: a preferences key, never displayed
+            },
+            ..flag("sun_bearing", g::sun_bearing_label())
+        },
+        Row {
+            kind: Kind::Within,
+            ..flag("sun_height", g::sun_height_label())
+        },
         flag("sun_by_height", g::sun_colour_by_height()),
         number("sun_kelvin", g::sun_kelvin_label(), KELVIN_RANGE, 0),
         percent("sun_strength", g::sun_strength_label()),
@@ -246,6 +260,31 @@ fn row_ui(ui: &mut Ui, row: &Row, value: Option<&str>) -> Option<String> {
                 .inner;
             changed.then(|| format!("{:.*}", *decimals, shown / scale))
         }
+        Kind::SunDisc { .. } | Kind::Within => None,
+    }
+}
+
+/// The sun disc over the bearing at `key` and the height at `height_key`,
+/// the model's front at its bottom: Settings has no camera to turn it by.
+fn sun_disc_row(
+    ui: &mut Ui,
+    (key, height_key): (&str, &str),
+    map: &mut Settings,
+    factory: &Settings,
+) {
+    let read = |k: &str, map: &Settings| {
+        stored(map, factory, k)
+            .and_then(|v| v.parse::<f64>().ok())
+            .unwrap_or(0.0)
+    };
+    let (mut bearing, mut height) = (read(key, map), read(height_key, map));
+    let before = (bearing, height);
+    aim_row(ui, (&mut bearing, &mut height), 0.0);
+    if bearing != before.0 {
+        map.insert(key.to_owned(), format!("{bearing:.0}"));
+    }
+    if height != before.1 {
+        map.insert(height_key.to_owned(), format!("{height:.0}"));
     }
 }
 
@@ -254,6 +293,11 @@ fn rows_ui(ui: &mut Ui, rows: &[Row], map: &mut Settings, factory: &Settings) {
     let prefix = pdfcer_gui_base::prefs::modelview::PREFIX;
     for row in rows {
         let key = format!("{prefix}{}", row.key);
+        if let Kind::SunDisc { height } = row.kind {
+            let height = format!("{prefix}{}", row.key.replace("sun_bearing", height));
+            sun_disc_row(ui, (&key, &height), map, factory);
+            continue;
+        }
         if let Some(new) = row_ui(ui, row, stored(map, factory, &key).as_deref()) {
             map.insert(key, new);
         }

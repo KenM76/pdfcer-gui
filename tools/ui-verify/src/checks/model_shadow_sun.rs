@@ -88,7 +88,7 @@ pub(crate) fn rendered<const N: usize>(
 }
 
 /// Drag across the picture to turn the model, and the picture line after.
-fn turn(
+pub(crate) fn turn(
     session: &Session,
     pointer: &ScriptedPointer,
     ui_rect: &str,
