@@ -7,7 +7,11 @@ use pdfcer_render::EdgeAntialiasing;
 use super::printing::{KeyOutcome, PrintPrefs};
 
 /// The print resolution at and above which [`EdgeChoice::Auto`] draws hard
-/// edges: the threshold `pdfcer print --edge-antialiasing auto` uses.
+/// edges: the threshold `pdfcer print --edge-antialiasing auto` uses. Below
+/// it that command draws seamless edges; [`EdgeChoice::Auto`] smooths them
+/// instead, because seamless costs sixteen times the memory of the sheet and
+/// a low print resolution is often the operator's answer to a sheet too large
+/// for memory.
 pub const HARD_EDGE_DPI: u32 = 300;
 
 /// How the edges of shapes are drawn on a printed sheet.
@@ -20,14 +24,18 @@ pub enum EdgeChoice {
     On,
     /// Always hard, so shapes that touch leave no seam.
     Off,
+    /// Smooth and seamless: drawn hard at four times the resolution and
+    /// averaged down.
+    Seamless,
 }
 
 /// Every choice, in the order offered, with its file token.
 // ui-text-exempt: file tokens, never displayed.
-pub const EDGE_CHOICES: [(EdgeChoice, &str); 3] = [
+pub const EDGE_CHOICES: [(EdgeChoice, &str); 4] = [
     (EdgeChoice::Auto, "auto"),
     (EdgeChoice::On, "on"),
     (EdgeChoice::Off, "off"),
+    (EdgeChoice::Seamless, "seamless"),
 ];
 
 impl EdgeChoice {
@@ -37,6 +45,7 @@ impl EdgeChoice {
         match self {
             Self::On => EdgeAntialiasing::On,
             Self::Off => EdgeAntialiasing::Off,
+            Self::Seamless => EdgeAntialiasing::Supersampled,
             Self::Auto if dpi >= HARD_EDGE_DPI => EdgeAntialiasing::Off,
             Self::Auto => EdgeAntialiasing::On,
         }
@@ -70,8 +79,8 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
 /// Append this group's line.
 pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
     out.push_str(
-        "# print_edge_smoothing: auto | on | off. Smoothed edges on printed\n\
-         # sheets; auto draws them hard at 300 dpi and finer.\n",
+        "# print_edge_smoothing: auto | on | off | seamless. Smoothed edges\n\
+         # on printed sheets; auto draws them hard at 300 dpi and finer.\n",
     );
     out.push_str("print_edge_smoothing = "); // ui-text-exempt: file key
     out.push_str(prefs.edges.key());
@@ -88,6 +97,10 @@ mod tests {
         assert!(!EdgeChoice::Auto.at_dpi(300).is_on());
         assert!(EdgeChoice::On.at_dpi(1200).is_on());
         assert!(!EdgeChoice::Off.at_dpi(72).is_on());
+        assert_eq!(
+            EdgeChoice::Seamless.at_dpi(600),
+            EdgeAntialiasing::Supersampled
+        );
     }
 
     #[test]

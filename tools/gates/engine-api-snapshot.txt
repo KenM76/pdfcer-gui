@@ -41,11 +41,16 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: ba022dcff59850e805adb2cf42b8cd2cecf975c9
+# baseline: 5eb04866a21821dc8bccded19c30033c26529acf
 # crates: pdfcer-core pdfcer-render pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11574
+# items: 11581
 # ---------------------------------------------------------------------------
 
+exempt pdfcer-render const pdfcer_render::page_budget::BLENDED_PAINT_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::COVERAGE_PER_CANVAS -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::MESH_PIXEL_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::MESH_TRIANGLE_COST -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::page_budget::MIN_COVERAGE -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_TRIANGLES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
 exempt pdfcer-3d module pdfcer_3d::bounds -- `Bounds` relocated from the render module; the engine re-exports it unchanged as `pdfcer_3d::render::Bounds`, and this shell holds no bounds of its own.
@@ -261,6 +266,7 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::artwork_headlight
 pdfcer-3d field pdfcer_3d::render::RenderOptions::background
 pdfcer-3d field pdfcer_3d::render::RenderOptions::colour
 pdfcer-3d field pdfcer_3d::render::RenderOptions::height
+pdfcer-3d field pdfcer_3d::render::RenderOptions::indirect
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_cost
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_cut
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lamp_shadow_map_size
@@ -10712,6 +10718,7 @@ pdfcer-render field pdfcer_render::font::RenderOptions::omit_annotations
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderOptions::page_blend_space_source
+pdfcer-render field pdfcer_render::font::RenderOptions::preserve_calibrated_cmyk
 pdfcer-render field pdfcer_render::font::RenderOptions::print_intent
 pdfcer-render field pdfcer_render::font::RenderOptions::separation_preview
 pdfcer-render field pdfcer_render::font::RenderOptions::spot_colorant_device_model
@@ -10735,6 +10742,7 @@ pdfcer-render field pdfcer_render::font::RenderPolicy::missing_as
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_preview
 pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderPolicy::page_blend_space_source
+pdfcer-render field pdfcer_render::font::RenderPolicy::preserve_calibrated_cmyk
 pdfcer-render field pdfcer_render::font::RenderPolicy::print_intent
 pdfcer-render field pdfcer_render::font::RenderPolicy::spot_colorant_device_model
 pdfcer-render field pdfcer_render::font::RenderPolicy::subpixel_culling
@@ -11210,6 +11218,7 @@ pdfcer-render method pdfcer_render::compositor::BlendSpace::is_subtractive
 pdfcer-render method pdfcer_render::compositor::BlendSpace::of
 pdfcer-render method pdfcer_render::compositor::Pixel::from_premultiplied
 pdfcer-render method pdfcer_render::compositor::Pixel::to_premultiplied
+pdfcer-render method pdfcer_render::display_list::DisplayList::band_exact
 pdfcer-render method pdfcer_render::display_list::DisplayList::clip_count
 pdfcer-render method pdfcer_render::display_list::DisplayList::diagnostics
 pdfcer-render method pdfcer_render::display_list::DisplayList::key
@@ -11217,6 +11226,7 @@ pdfcer-render method pdfcer_render::display_list::DisplayList::memory_bytes
 pdfcer-render method pdfcer_render::display_list::DisplayList::op_count
 pdfcer-render method pdfcer_render::display_list::DisplayList::page_device_size
 pdfcer-render method pdfcer_render::display_list::DisplayList::replay_region
+pdfcer-render method pdfcer_render::display_list::DisplayList::replay_rows
 pdfcer-render method pdfcer_render::display_list::ExportTally::is_exact
 pdfcer-render method pdfcer_render::display_list::PoisonReason::as_str
 pdfcer-render method pdfcer_render::divergence::Diagnostics::divergences
@@ -11271,6 +11281,7 @@ pdfcer-render method pdfcer_render::font::RenderOptions::with_omit_annotations
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_overprint_zero_tint_scope
 pdfcer-render method pdfcer_render::font::RenderOptions::with_page_blend_space_source
+pdfcer-render method pdfcer_render::font::RenderOptions::with_preserve_calibrated_cmyk
 pdfcer-render method pdfcer_render::font::RenderOptions::with_print_intent
 pdfcer-render method pdfcer_render::font::RenderOptions::with_separation_preview
 pdfcer-render method pdfcer_render::font::RenderOptions::with_spot_colorant_device_model
@@ -11585,6 +11596,7 @@ pdfcer-render variant pdfcer_render::export::ExportError::Metadata
 pdfcer-render variant pdfcer_render::export::ExportError::TooLargeForJpeg
 pdfcer-render variant pdfcer_render::font::EdgeAntialiasing::Off
 pdfcer-render variant pdfcer_render::font::EdgeAntialiasing::On
+pdfcer-render variant pdfcer_render::font::EdgeAntialiasing::Supersampled
 pdfcer-render variant pdfcer_render::font::EmbedMatch::Alias
 pdfcer-render variant pdfcer_render::font::EmbedMatch::Bundled
 pdfcer-render variant pdfcer_render::font::EmbedMatch::Exact

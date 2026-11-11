@@ -30,6 +30,7 @@ mod fileview;
 mod fit;
 mod gimbal;
 mod gpu;
+mod gpu_bounce;
 mod gpu_lens;
 mod gpu_paint;
 mod gpu_uniforms;
@@ -464,6 +465,9 @@ impl ModelView {
             lens: self.lens,
             card: self.gpu.card,
         };
+        if self.gpu.bounce_arrived(ui.ctx()) {
+            self.rendered = None;
+        }
         if self.rendered != Some(wanted) {
             self.draw_picture(ui.ctx(), wanted, gpu);
         }

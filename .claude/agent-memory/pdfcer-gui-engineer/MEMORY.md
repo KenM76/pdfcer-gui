@@ -21,7 +21,7 @@
 - [A delete that frees nothing](project_drive_holds_deleted_target.md) — a sync client's hard links hold the data; check `fsutil hardlink list`.
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
-- [A SKIP is not red](feedback_skip_red_check_stop.md) — a check stops unnoticed; a SKIP can be a misfiled FAIL.
+- [A SKIP is not red](feedback_skip_red_check_stop.md) — can be a misfiled FAIL; [or the scratch folder](feedback_skip_on_missing_asset.md).
 - [A check that cannot fail is not evidence](feedback_check_cannot_fail.md) — falsify it, [on real files](feedback_falsify_on_real_files.md); self-tests aren't enough.
 - [A check's failure messages never run](feedback_failure_messages_unrun.md) — a plant fires one arm; the rest say anything.
 - [His sentences are reports, not measurements](feedback_kens_sentences.md) — "800%" named a setting.
@@ -49,7 +49,7 @@
 - [A rename can blind an instrument](feedback_rename_blind.md) — a hard-coded path makes green over nothing.
 - [A proxy condition survives one fix](feedback_proxy_condition.md) — ask what it READS; a substring outlives a narrowing.
 - [A right value in the wrong role](feedback_correctly_sourced.md) — gates forbid invented, not misused.
-- [A trace grep passes on a crash](feedback_trace_grepping_check.md) — [read a passing check's trace](feedback_read_passing_trace.md); the oracle line can lie.
+- [A trace grep passes on a crash](feedback_trace_grepping_check.md) — [read a passing trace](feedback_read_passing_trace.md); [a runner's sentinel](feedback_runners_sentinel.md) too.
 - [Parallelism needs an ownership map](feedback_parallelism_default.md) — nine tracks in one repo.
 - [Never ask — just add the feature](feedback_never_ask_add_feature.md) — placement, wording and scope are yours.
 - [A commit can describe work that never landed](feedback_commit_message.md) — a `;` chain hid a failed edit.
@@ -83,9 +83,8 @@
 - [A gate reading evidence you write](feedback_gate_evidence_write.md) — no CONSUMED note, no guard.
 - [An API-drift hit can be a feature](feedback_api_drift_hit.md) — [an engine feature ships unconsumed](feedback_engine_feature_unconsumed.md); list new pub API per pin move.
 - [A quoted count goes stale invisibly](feedback_verbatim_quotation.md) — a figure beside its remedy self-invalidates.
-- [An oracle from the system under test](feedback_oracle_needs.md) — calibrate it: build the fixture from the spec first.
+- [An oracle from the system under test](feedback_oracle_needs.md) — calibrate from the spec; [a flat fixture cannot bounce](feedback_flat_fixture_no_bounce.md).
 - [Slack in screen units shrinks in his](feedback_slack_screen_units.md) — viewport-sized areas die at high zoom.
-- [A runner's sentinel indicts the runner](feedback_runners_sentinel.md) — 210 checks "swept", every chunk rc=2.
 - [Mutate before stamping, report your dirt](feedback_tool_mutates_tree.md) — `cargo update` earned the `-dirty`.
 - [Meaning can change under a signature](feedback_capability_change.md) — `is_editable` went false → *is a path*.
 - [A refusal filtered on the opposite test](feedback_refusal_filtered.md) — the symptom is SILENCE, which nobody reports.
@@ -160,7 +159,6 @@
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
 - [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — window_to_png raises + screen-grabs; photographed SolidWorks off-screen.
 - [A release build skips the tests](feedback_release_build_skips_tests.md) — clippy --all-targets before gates; a test literal cost a run.
-- [A missing-asset SKIP is the scratch folder](feedback_skip_on_missing_asset.md) — paddle "unrunnable" was 3 unlinked files.
 - [One gate run at a time](feedback_one_gate_run_at_a_time.md) — [Git Bash ps can't see a sibling](feedback_ps_blind_sibling.md); check Win32_Process first.
 - [A gate reading upstream must read the pin](feedback_gate_reads_moving_upstream.md) — engine landed a row per hour; three verified runs failed.
 - [A later feature can capture an earlier gesture](feedback_later_feature_captures_gesture.md) — widening ate the OCR word preview; drive its neighbours first.

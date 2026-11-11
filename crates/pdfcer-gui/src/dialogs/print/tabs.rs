@@ -557,6 +557,7 @@ fn edge_combo(ui: &mut Ui, dialog: &mut PrintDialog) {
         EdgeChoice::Auto => t::edges_auto(),
         EdgeChoice::On => t::edges_on(),
         EdgeChoice::Off => t::edges_off(),
+        EdgeChoice::Seamless => t::edges_seamless(),
     };
     ui.add_space(12.0);
     ui.label(t::edges_label());

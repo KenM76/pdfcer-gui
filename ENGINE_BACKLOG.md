@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **57 of 540** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
+## `wanted` — a real gap — **58 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -162,6 +162,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
+| **Banded page replay** — `DisplayList::replay_rows`, `DisplayList::band_exact`, `BAND_ROW_LATTICE`, `BandBlocker` (`BandBlocker::Image`, `BandBlocker::Gradient`, `BandBlocker::LayerMask`), `RenderError::BandNotAligned` | **wanted.** The page renderer replays each page on one thread; banding a dense CAD sheet across worker threads is the engine's measured 2.6x to 3.0x. Needs a measurement here first (the canvas renders tiles off the frame loop already), per `BENCHMARK.md`. |
 | **Page `/UserUnit` honoured** in rendering (page, region, display-list replay) and print sizing … | **wanted.** The engine renders a `/UserUnit` page at its physical size, but this shell sizes pages from the box in points (`Page::user_unit` is read nowhere here), so the canvas slot, the print placement and every measurement would disagree with the picture on such a page. Not yet driven: no fixture carries `/UserUnit`. |
 | **Print separations** — `pdfcer print --separations` prints one grey plate per ink … | **wanted — unblocked at v0.107.0: `pdfcer_render::plates::render_plates` is public (G242).** Restating it here would be a second definition of plate grey and of where the label sits beside a marks band. Once public, it becomes a choice in the Print dialog using the ink list Output Preview already reads, repeating the engine's caution that plate greys approximate ink density. |
 | **Separation plates as engine API** — `pdfcer_render::plates::render_plates` … | **wanted.** The engine half of *Print separations* above; that row says what the Print dialog does with it. |
@@ -172,7 +173,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 540** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
+## `blocked` — waiting on something named — **3 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -186,11 +187,12 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 | Row (`FEATURES.md`, blocked) | Why |
 |---|---|
+| **Preserve calibrated CMYK numbers** — `--preserve-calibrated-cmyk` on `render-page`, `export-image`; in the shell `RenderOptions::with_preserve_calibrated_cmyk` | **blocked on the engine: our request for a `Settings::preserve_calibrated_cmyk` field.** Every render option the shell passes comes verbatim from `pdfcer_core::settings::Settings` through `SettingsExt::render_options`; a shell-side store for an engine colour policy would be a second home for the setting. |
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 540** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -201,7 +203,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 540** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
+## `declined` — deliberately no surface — **20 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -247,7 +249,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **461 of 540** <!-- counted by tools/walk-engine-backlog.py, 2026-11-10; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **462 of 543** <!-- counted by tools/walk-engine-backlog.py, 2026-11-11; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -767,7 +769,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Write one saved 3D view's measurements** — `EditSession::set_3d_view_measurements` | **shipped, at v0.135.0; G274.** The 3D viewer's keep and delete; see *One view's measurements* below. |
 | **3D walker: ceilings, long steps, descents, ramps** — `pdfcer_3d_nav::Walk` | **shipped, at v0.134.0; X058, X059.** Nothing to call: the viewer's Walk mode takes them through the pin. |
 | **Banded CMYK render** — a subtractive-group page past the ink buffer ceiling (`Diagnostics::cmyk_bands`) | **shipped, at v0.142.0.** Nothing to call: a printed sheet past the ink buffer ceiling bands through the pin; Print traces each sheet as `print-ink`, and `print_composites_an_oversized_sheet_in_ink` drives it. |
-| **Print with hard (non-antialiased) edges** — `pdfcer print --edge-antialiasing`, in the shell `pdfcer_render::EdgeAntialiasing` | **shipped, at v0.142.0.** Print ▸ Pages ▸ Edge smoothing, Automatic by default (hard at 300 DPI and finer); `prefs::print_edges`. |
+| **Seamless edges (no conflation seam between abutting shapes)** — `pdfcer print --edge-antialiasing`, in the shell `pdfcer_render::EdgeAntialiasing` | **shipped, at v0.144.0.** `SUPERSAMPLE_FACTOR`, `EdgeAntialiasing::pixel_factor`: a seamless sheet past 4,096 output pixels on an edge is refused by the engine (our request on supersampled large sheets), and the hover says a large sheet may be refused. Print ▸ Pages ▸ Edge smoothing offers Automatic (hard at 300 DPI and finer, smoothed below), Smooth, Sharp and Smooth, no seams (`EdgeAntialiasing::Supersampled`); `prefs::print_edges`. Automatic smooths below 300 DPI where the CLI goes seamless, because seamless costs sixteen times the sheet's memory. |
+| **3D light bounces off walls and things (bounced light and colour bleed)** — `PreparedModel::frame_bounce`, `FrameBounce` | **shipped, at v0.144.0.** The CPU picture takes it through the pin; the GPU card builds the probe volume on a worker thread per model, painted parts and options, and samples its atlas in the face shader (`dialogs::model3d::gpu_bounce`). Camera-following lights are not bounced, as in the engine default. |
 
 ## Filed requests for OCR — not verdict rows
 

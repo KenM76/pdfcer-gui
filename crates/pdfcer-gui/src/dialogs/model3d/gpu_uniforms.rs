@@ -14,7 +14,7 @@ pub(super) type Uniforms = Vec<(&'static str, Value)>;
 
 /// The main program's samplers and their texture units. Sampler types may
 /// not share a unit, so each takes its own even when its feature is off.
-pub(super) const SAMPLERS: [(&str, i32); 10] = [
+pub(super) const SAMPLERS: [(&str, i32); 11] = [
     ("u_texture", 0),
     ("u_shadow_map", 1),
     ("u_lamp_shadow_map", 2),
@@ -25,6 +25,7 @@ pub(super) const SAMPLERS: [(&str, i32); 10] = [
     ("u_lamp_transmit", 7),
     ("u_lights", 8),
     ("u_prepass_depth", 9),
+    ("u_bounce_atlas", 10),
 ];
 
 /// The texture unit of `sampler` in [`SAMPLERS`].
@@ -170,6 +171,7 @@ pub(super) fn repeat_uniforms(
         ("u_ambient", Value::Vec3(unlit.ambient)),
         ("u_count", Value::Int(0)),
         ("u_local_count", Value::Int(0)),
+        ("u_bounce", Value::Int(0)),
         ("u_shadows", Value::Int(0)),
         ("u_lamp_shadows", Value::Int(0)),
         ("u_shadow_extra", Value::Int(0)),

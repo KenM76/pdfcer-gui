@@ -109,10 +109,11 @@ impl PrintDialog {
             .with_edge_antialiasing(self.edges.at_dpi(job.resolution.dpi));
         crate::diag::trace(|| {
             format!(
-                "print-edges choice={} dpi={} smoothed={}", // ui-text-exempt: diagnostic trace
+                "print-edges choice={} dpi={} smoothed={} seamless={}", // ui-text-exempt: diagnostic trace
                 self.edges.key(),
                 job.resolution.dpi,
-                options.edge_antialiasing.is_on()
+                options.edge_antialiasing != pdfcer_render::EdgeAntialiasing::Off,
+                options.edge_antialiasing == pdfcer_render::EdgeAntialiasing::Supersampled
             )
         });
         let lines_pt = super::lines::paper_pt(self.lines, job.resolution.dpi);

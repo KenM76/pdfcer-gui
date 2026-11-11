@@ -41,6 +41,7 @@ impl Program {
                 Value::Int(v) => gl.uniform_1_i32(location, *v),
                 Value::Float(v) => gl.uniform_1_f32(location, *v),
                 Value::IVec2(v) => gl.uniform_2_i32_slice(location, v),
+                Value::IVec3(v) => gl.uniform_3_i32_slice(location, v),
                 Value::Vec2(v) => gl.uniform_2_f32_slice(location, v),
                 Value::Vec3(v) => gl.uniform_3_f32_slice(location, v),
                 Value::Vec4(v) => gl.uniform_4_f32_slice(location, v),

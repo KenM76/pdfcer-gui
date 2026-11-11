@@ -561,7 +561,15 @@ pub const fn edges_hover() -> &'static str {
     "Automatic prints sharp edges at 300 DPI and finer, and smooth ones below it. \
      Smoothing softens the edges of shapes, but where two shapes touch it can leave a faint \
      line between them. Sharp edges leave no line; at printer resolutions their steps are too \
-     small to see. The preview is always smoothed."
+     small to see. Smooth, no seams has both, but takes sixteen times the memory and time, so a large \
+     sheet at a fine resolution may be refused. \
+     The preview is always smoothed."
+}
+
+/// Edge smoothing without seams, at sixteen times the work.
+#[must_use]
+pub const fn edges_seamless() -> &'static str {
+    "Smooth, no seams"
 }
 
 /// Label before the resolution limit field.

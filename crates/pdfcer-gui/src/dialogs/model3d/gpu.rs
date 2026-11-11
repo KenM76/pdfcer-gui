@@ -24,8 +24,9 @@ use eframe::egui_glow;
 use native_mesh::{Draw, Mesh, Value, Wrap};
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
-    AssembledModel, Camera, DrawData, FrameAmbientOcclusion, FrameExtraShadows, FrameLampShadows,
-    FrameLights, FrameShadow, PreparedModel, RenderError, RenderMode, ShininessScale, TextureWrap,
+    AssembledModel, Camera, DrawData, FrameAmbientOcclusion, FrameBounce, FrameExtraShadows,
+    FrameLampShadows, FrameLights, FrameShadow, PreparedModel, RenderError, RenderMode,
+    ShininessScale, TextureWrap,
 };
 
 use super::effects::Effects;
@@ -42,7 +43,9 @@ pub(super) static RETIRED: Mutex<Vec<Mesh>> = Mutex::new(Vec::new());
 pub(super) struct Gpu {
     shared: Arc<Mutex<Shared>>,
     /// Kept for the model's life; dropped when a mesh fit replaces it.
-    prepared: Option<PreparedModel>,
+    prepared: Option<Arc<PreparedModel>>,
+    /// The bounce light's builds.
+    bounce: super::gpu_bounce::Bounces,
     /// What the uploaded draws were built for.
     built: Option<Built>,
     /// `PDFCER_3D_CPU` asked for the CPU renderer.
@@ -103,6 +106,8 @@ pub(super) struct Shared {
     pub(super) background: [f32; 4],
     /// `u_lights`, `pdfcer_3d::LIGHT_TABLE_WIDTH` texels a row.
     pub(super) light_table: Vec<f32>,
+    /// `u_bounce_atlas`, when the frame has bounce light.
+    pub(super) bounce: Option<Arc<FrameBounce>>,
     /// The key light's shadow, when one is cast.
     pub(super) shadow: Option<FrameShadow>,
     /// The further directional casters.
@@ -157,6 +162,7 @@ impl Default for Gpu {
         Self {
             shared: Arc::default(),
             prepared: None,
+            bounce: super::gpu_bounce::Bounces::default(),
             built: None,
             forced_off: std::env::var_os("PDFCER_3D_CPU").is_some_and(|v| v == "1"),
             told: false,
@@ -225,6 +231,17 @@ impl Gpu {
     pub(super) fn forget_model(&mut self) {
         self.prepared = None;
         self.built = None;
+        self.bounce.forget();
+    }
+
+    /// Take a finished bounce build, `true` when the frame must be drawn
+    /// again for it; while one is in flight, look again shortly.
+    pub(super) fn bounce_arrived(&mut self, ctx: &egui::Context) -> bool {
+        let arrived = self.bounce.poll();
+        if self.bounce.waiting() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(50));
+        }
+        arrived
     }
 
     /// Queue the picture for `rect`, drawn when egui paints.
@@ -299,19 +316,24 @@ impl ModelView {
         let background = wanted.background.to_normalized_gamma_f32();
         let (view, lens, line_uniforms) =
             self.frame_view(&camera, &frame_lights, &options, (wanted.size, background))?;
-        let uniforms = frame_uniforms(view, &frame_lights, &casters);
+        let bounce = self.frame_bounce(&options, &wanted, camera);
+        let mut uniforms = frame_uniforms(view, &frame_lights, &casters);
+        uniforms.extend(super::gpu_bounce::uniforms(bounce.as_deref()));
         let emissive = self.gpu.facts.emissive;
         let repeat = if emissive > 0.0 {
             Some((u::repeat_uniforms(&camera, &options)?, emissive))
         } else {
             None
         };
-        let head = self.trace_head(&wanted, Ok(&camera), &options) + &casters.trace();
+        let head = self.trace_head(&wanted, Ok(&camera), &options)
+            + &casters.trace()
+            + &super::gpu_bounce::trace(bounce.as_deref(), self.gpu.bounce.waiting());
         let mut shared = lock(&self.gpu.shared);
         shared.uniforms = uniforms;
         shared.line_uniforms = line_uniforms;
         shared.lens = lens;
         shared.light_table = frame_lights.light_table();
+        shared.bounce = bounce;
         shared.set_casters(casters);
         shared.occlusion = effects.occlusion;
         shared.repeat = repeat;
@@ -395,6 +417,29 @@ impl ModelView {
         })
     }
 
+    /// The frame's bounce light, building it off the frame loop when what
+    /// it depends on changed.
+    fn frame_bounce(
+        &mut self,
+        options: &ModelRenderOptions,
+        wanted: &Rendered,
+        camera: Camera,
+    ) -> Option<Arc<FrameBounce>> {
+        let key = super::gpu_bounce::key(options, wanted.parts, wanted.accent);
+        let Self {
+            gpu, parts, model, ..
+        } = self;
+        let accent = wanted.accent.to_array();
+        gpu.bounce.for_frame(key, camera, || {
+            let prepared = gpu
+                .prepared
+                .get_or_insert_with(|| Arc::new(PreparedModel::new(&model.drawn)))
+                .clone();
+            let painted = parts.painted(&mut model.drawn, Some(accent), |m| m.clone());
+            (painted, prepared)
+        })
+    }
+
     /// Rebuild the draws from the model painted for the parts' state.
     fn gpu_scene(&mut self, options: &ModelRenderOptions, accent: egui::Color32) {
         let pictures = self
@@ -405,7 +450,7 @@ impl ModelView {
         let prepared = self
             .gpu
             .prepared
-            .get_or_insert_with(|| PreparedModel::new(&self.model.drawn));
+            .get_or_insert_with(|| Arc::new(PreparedModel::new(&self.model.drawn)));
         let data = self
             .parts
             .painted(&mut self.model.drawn, Some(accent.to_array()), |model| {

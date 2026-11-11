@@ -34,6 +34,8 @@ pub enum Value {
     Float(f32),
     /// `ivec2`.
     IVec2([i32; 2]),
+    /// `ivec3`.
+    IVec3([i32; 3]),
     /// `vec2`.
     Vec2([f32; 2]),
     /// `vec3`.

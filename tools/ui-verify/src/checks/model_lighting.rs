@@ -1,8 +1,8 @@
 //! `checks::model_lighting` — **the 3D viewer's Lighting list lights the
 //! live picture, and its switch turns the lights with the view or not**
 //!
-//! Places the engine corpus's `coloured.prc` from the ribbon, as
-//! `checks::model_colours` does, opens it with *View…*, then in the options
+//! Places `fixtures/floor-box.prc`, a cube standing on a floor, from the
+//! ribbon as `checks::model_colours` does, opens it with *View…*, then in the options
 //! menu picks *Night lights* and clears *Lights turn with the view*.
 //!
 //! Oracles, from the `model-view-rendered` line (the viewer is an immediate
@@ -11,8 +11,15 @@
 //! hash; after the switch, `lights-turn=0` with a hash different again. A
 //! viewer that lists schemes but draws with one light keeps the first hash,
 //! which neither later assertion accepts.
+//!
+//! Lights fixed to the model bounce off its surfaces, and the card builds that
+//! bounce on a worker: the check then waits for a `gpu-bounce=<probes>` line,
+//! drawn to a hash other than the fixed-light frames drawn while it was
+//! `waiting`. Camera lights do not bounce, so the default and Night frames
+//! before the switch carry none. The model must have faces that see each
+//! other: coplanar faces exchange no light, so their bounce is black.
 
-use crate::checks::driving::declared_in;
+use crate::checks::driving::{declared_in, repo_fixture};
 use crate::checks::model_view_window::{
     VIEW_REGION, launch_with_model_file, press_insert, ui_rect,
 };
@@ -24,8 +31,9 @@ use crate::input::scripted::ScriptedPointer;
 use crate::launch::Session;
 use crate::report::CheckReport;
 
-/// A part-coloured PRC model from the engine corpus.
-const MODEL: &str = "D:/Dev/pdfcer/fixtures/synthetic/prc/coloured.prc";
+/// A cube on a floor: the lit floor lights the cube's sides.
+const MODEL: &str = "floor-box.prc";
+const METHOD: &str = "Rebuild it with `python fixtures/floor-box.PROVENANCE.py <pdfcer.exe>`.";
 /// `dialogs::model3d::lights::REGION_LIGHTING`.
 const LIGHTING: &str = "model3d.lighting";
 /// Its Night item: the region plus the scheme's PDF name in lower case.
@@ -48,7 +56,10 @@ impl Check for TheModelViewerIsLitAsChosen {
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
         let mut report = CheckReport::new(self.name(), self.defect());
-        let driven = launch_with_model_file(ctx, &mut report, "model-lighting", MODEL)
+        let driven = repo_fixture(MODEL, METHOD)
+            .and_then(|model| {
+                launch_with_model_file(ctx, &mut report, "model-lighting", &model.to_string_lossy())
+            })
             .and_then(|(session, pointer)| drive(ctx, &mut report, &session, &pointer));
         match driven {
             Ok(Some(failure)) => report.fail(failure),
@@ -154,5 +165,44 @@ fn drive(
             fixed[2], fixed[3], night[3]
         )));
     }
-    Ok(None)
+    bounced(session, report)
+}
+
+/// Wait for the bounce of the model-fixed lights to reach the card.
+fn bounced(session: &Session, report: &mut CheckReport) -> Result<Option<String>> {
+    let mut last = String::new();
+    for _ in 0..40 {
+        let trace = session.trace()?;
+        let fixed: Vec<_> = trace
+            .events("model-view-rendered")
+            .filter(|l| l.get("lights-turn") == Some("0"))
+            .collect();
+        if let Some(line) = fixed.last() {
+            last = line.raw.clone();
+            let probes = line.get("gpu-bounce").and_then(|b| b.parse::<u64>().ok());
+            if probes.is_some_and(|p| p > 0) {
+                report.note(format!("bounced: {last}"));
+                let unbounced = fixed
+                    .iter()
+                    .rev()
+                    .filter(|l| l.get("gpu-bounce") == Some("waiting"))
+                    .find_map(|l| l.get("hash"));
+                return Ok(match unbounced {
+                    None => Some(format!(
+                        "no fixed-light frame was drawn while the bounce was `waiting`, so \
+                         nothing shows what it added: `{last}`."
+                    )),
+                    Some(h) if Some(h) == line.get("hash") => Some(format!(
+                        "the bounce arrived and the picture did not change: `{last}`."
+                    )),
+                    Some(_) => None,
+                });
+            }
+        }
+        session.settle(20);
+    }
+    Ok(Some(format!(
+        "the lights were fixed to the model and no bounce reached the card (look for \
+         `model-view-bounce failed`); the last such picture line: `{last}`."
+    )))
 }

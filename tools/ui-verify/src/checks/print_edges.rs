@@ -6,7 +6,7 @@
 //! Driven off the desktop with the scripted pointer, `file.print` rung on
 //! `transparency-cmyk.pdf` (a page the vector route declines, so its sheet is
 //! a picture) and `PDFCER_DIAG_PRINT_DRY_RUN=1` so no press reaches a device.
-//! Four launches on one preferences file, each pressing Print and reading the
+//! Five launches on one preferences file, each pressing Print and reading the
 //! `print-edges` line the sheet render traces:
 //!
 //! 1. untouched: `choice=auto`, and `smoothed` is true exactly when `dpi` is
@@ -14,7 +14,8 @@
 //! 2. Smooth picked from the list: `choice=on smoothed=true`. Smooth rather
 //!    than Sharp, because at 300 DPI Sharp and Automatic trace alike.
 //! 3. relaunched, untouched: `choice=on smoothed=true`, so it was remembered.
-//! 4. Automatic picked back: `choice=auto`, leaving the preference at its
+//! 4. Smooth, no seams picked: `choice=seamless smoothed=true seamless=true`.
+//! 5. Automatic picked back: `choice=auto`, leaving the preference at its
 //!    default for the checks that follow.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, repo_fixture};
@@ -32,9 +33,10 @@ const OPEN: &str = "print-open";
 const EDGES: &str = "print-edges";
 const LIST: &str = "print.edges";
 const PRINT: &str = "dialog.buttons.accept";
-/// `EDGE_CHOICES` order: Automatic, Smooth, Sharp.
+/// `EDGE_CHOICES` order: Automatic, Smooth, Sharp, Smooth no seams.
 const AUTO_ITEM: usize = 0;
 const SMOOTH_ITEM: usize = 1;
+const SEAMLESS_ITEM: usize = 3;
 
 /// See the module documentation.
 pub struct PrintDrawsSharpEdgesAtPrintResolution;
@@ -103,6 +105,7 @@ struct Edges {
     choice: String,
     dpi: u32,
     smoothed: bool,
+    seamless: bool,
     raw: String,
 }
 
@@ -140,6 +143,7 @@ fn round(
             .and_then(|d| u32::try_from(d).ok())
             .unwrap_or(0),
         smoothed: line.get("smoothed") == Some("true"),
+        seamless: line.get("seamless") == Some("true"),
         raw: line.raw.clone(),
     };
     report.note(edges.raw.clone());
@@ -170,8 +174,15 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             relaunched.raw
         )));
     }
-    let restored = round(ctx, report, 4, Some(AUTO_ITEM))?;
-    if restored.choice != "auto" || restored.smoothed != (restored.dpi < 300) {
+    let seamless = round(ctx, report, 4, Some(SEAMLESS_ITEM))?;
+    if seamless.choice != "seamless" || !seamless.smoothed || !seamless.seamless {
+        return Ok(Some(format!(
+            "★★★ Smooth, no seams was picked and the sheets were not drawn seamless: `{}`.",
+            seamless.raw
+        )));
+    }
+    let restored = round(ctx, report, 5, Some(AUTO_ITEM))?;
+    if restored.choice != "auto" || restored.smoothed != (restored.dpi < 300) || restored.seamless {
         return Ok(Some(format!(
             "★★★ Automatic was picked back and the sheets did not use it: `{}`.",
             restored.raw

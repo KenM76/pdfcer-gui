@@ -174,12 +174,20 @@ pub(super) fn draw(
     let plans = layer_plans(s);
     let fills: Vec<Vec<Fill>> = plans.iter().map(|p| borrow_fills(&p.fills)).collect();
     let layers = layers(&plans, &fills);
-    let tables = [Table {
+    let mut tables = vec![Table {
         sampler: "u_lights",
         unit: unit("u_lights"),
         width: LIGHT_TABLE_WIDTH as i32,
         data: &s.light_table,
     }];
+    if let Some(b) = &s.bounce {
+        tables.push(Table {
+            sampler: "u_bounce_atlas",
+            unit: unit("u_bounce_atlas"),
+            width: b.atlas_width as i32,
+            data: &b.atlas,
+        });
+    }
     let ao_uniforms = s.occlusion.map(|ao| occlusion_uniforms(&ao, size));
     let (lens_ao, lens_uniforms) = lens_owned(s, size);
     let mut line_uniforms = s.line_uniforms.clone();
