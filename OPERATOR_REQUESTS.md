@@ -653,7 +653,7 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
-## O411 — **BUILT, DRIVEN, ships in the next release** — 3D walk: swap the turn and sidestep controls to opposite sides, on the keyboard and on mobile
+## O411 — **RELEASED in `v0.5.0-dev.20261112.1`** — 3D walk: swap the turn and sidestep controls to opposite sides, on the keyboard and on mobile
 
 His words: *"For the next release I'd like the option of the 3D walk through modes having the rotate and strife controls switched to their opposite sides on the keyboard and mobile."*
 
@@ -661,7 +661,7 @@ His words: *"For the next release I'd like the option of the 3D walk through mod
 
 **Built.** *Swap the turning and strafing sides* on the 3D options menu's Controls tab and on Settings ▸ 3D; it moves turning to the right stick and the keys that strafed. Driven by `the_3d_viewers_controls_tab_sets_layouts_swaps_sides_and_takes_a_key`.
 
-## O412 — **BUILT, DRIVEN, ships in the next release** — 3D gaming navigation: a Counter-Strike preset for first person and a World of Warcraft preset for Behind, all controls available, and a window for presets and customisation
+## O412 — **RELEASED in `v0.5.0-dev.20261112.1`** — 3D gaming navigation: a Counter-Strike preset for first person and a World of Warcraft preset for Behind, all controls available, and a window for presets and customisation
 
 His words: *"Also a gaming mode where controls for the mouse and other navigation are set up like Counterstrike for first person or WOW for the avatar style mode, but have all available. Make a nice interface for the presets and customization of navigation."*
 
@@ -672,31 +672,31 @@ His words: *"Also a gaming mode where controls for the mouse and other navigatio
 
 **Built.** The Controls tab of the 3D options menu: three cards (Default, Shooter, Avatar) with the one in use outlined and named, a chip per key slot (two per action, fourteen actions) that takes the next key pressed, and the mouse's choices: each button's drag, both buttons walk, free look (the picture holds the mouse after a click; Escape gives it back), invert, sensitivity and the run modifier. Avatar also turns on the view from behind. Settings ▸ 3D carries the same rows. Picking a card is the reset. Driven by the same check.
 
-## O413 — **BUILT, DRIVEN, ships in the next release** — 3D toolbar: a show/hide arrow left of the menu, the row wraps to a second line, a camera button and a show/hide-controls button in the row; auto-hide and the bottom camera button removed
+## O413 — **RELEASED in `v0.5.0-dev.20261112.1`** — 3D toolbar: a show/hide arrow left of the menu, the row wraps to a second line, a camera button and a show/hide-controls button in the row; auto-hide and the bottom camera button removed
 
 His words: *"Also in 3D to the left of the menu icon we should have an arrow one that when clicked slides out the menu and other icons from hiding, and clicking again hides them - no auto-hide and default is for them to show, and if they are too many to show on the screen they should try and spill into a second row. Also add a camera and show hide controls icon to the row, and get rid of the auto-hide controls feature and the camera button at the bottom that used to show in auto-hide."*
 
 **Built.** An arrow left of the options glyph slides the row away and back, shown by default and never on its own; the row wraps onto a second line when the window is narrow. The row gains a camera glyph (save a picture) and a sticks glyph (show or hide the navigation controls). Auto-hide and the bottom camera button are gone. Driven by `the_3d_viewers_tool_row_slides_away_on_its_arrow_and_its_camera_and_sticks_work`.
 
-## O414 — **BUILT, DRIVEN, ships in the next release** — one dedicated place for the current tool's (or selected object's) properties, in the left panel rail, opened automatically
+## O414 — **RELEASED in `v0.5.0-dev.20261112.1`** — one dedicated place for the current tool's (or selected object's) properties, in the left panel rail, opened automatically
 
 His words: *"when options are available for a tool such as selecting linear and measure, I have to search for where it's properties panel shows up. We need to make it so properties when a tool is selected comes up in a space dedicated for all the tools no matter which one is selected to show up in. I find I am always having to fish around to find the properties of the currently selected tool or object. Maybe they have a left side icon in the pages, bookmarks, etc area and use the same space as those do, and when a tool is selected and I use it shows up there automatically. If the user gets out of the tool and there is nothing to show the display in that area goes back to what it was previously set to display by the user."*
 
 **Built, modified.** Properties is the one place, and it now comes to the front by itself: arming a tool with options (the linear measure, the text pen, a ce dimension, Region, Highlight) brings it forward wherever its tab is docked, and an object picked on the page does the same. Putting the tool down with nothing picked gives the front back to the tab it covered, and hides the side again if it was hidden. Properties also has its own icon in the left rail, beside Pages and Bookmarks, in Review and Edit. **The modification:** the panel is not moved into the left stack, so a layout he arranged is left as it is; and a pick made while the Objects tree is in front leaves the tree there, because the tree shows the pick (O416). Driven by `properties_comes_forward_for_an_armed_tool_and_gives_the_front_back`.
 
-## O415 — **BUILT, DRIVEN, ships in the next release** — 3D model tree: + and − boxes on the nesting lines to expand and collapse
+## O415 — **RELEASED in `v0.5.0-dev.20261112.1`** — 3D model tree: + and − boxes on the nesting lines to expand and collapse
 
 His words: *"Also can we add a + and - expand contract option to the nesting lines of the 3D model tree?"* He means the classic tree view: a small boxed + or − where a node's guide line meets its children's line.
 
 **Built.** A boxed + or − where a branch's guide line meets its children's; a press folds or unfolds that branch only, alongside *Fold every part* and *Unfold every part*. Driven by `the_3d_viewers_part_tree_folds_on_its_boxes`.
 
-## O416 — **BUILT, DRIVEN, ships in the next release** — selecting an object on the page reveals and highlights it in the Objects panel tree
+## O416 — **RELEASED in `v0.5.0-dev.20261112.1`** — selecting an object on the page reveals and highlights it in the Objects panel tree
 
 His words: *"Also when I select an object on a page, can the objects tab jump to the object in the tree and have it highlighted?"*
 
 **Built.** A pick on the page unfolds the layer headings over the picked object in the Objects tree and scrolls its row to the middle when it is out of sight; the row is highlighted as a selected row always is. A click in the tree itself is not followed, so the list does not jump under the pointer. Driven by `objects_tree_follows_an_object_picked_on_the_page`.
 
-## O410 — **BUILT, DRIVEN, ships in the next release** — a Tags panel that outlines the selected structure element on the page (X077)
+## O410 — **RELEASED in `v0.5.0-dev.20261112.1`** — a Tags panel that outlines the selected structure element on the page (X077)
 
 Relayed in `pdfcer-gui/request_X077_tags_panel_with_on_page_highlight.md`, from an accessibility specialist's report: *"An accessibility reviewer checks a tagged PDF by selecting a structure element and looking at the content it owns. pdfcer-gui has no structure-tree view."*
 
@@ -709,7 +709,7 @@ Relayed in `pdfcer-gui/request_X077_tags_panel_with_on_page_highlight.md`, from 
 
 **Status.** Parts 1, 2 and 4 built, and part 3 on the pinned engine's `element_bbox`. View ▸ Panels ▸ *Tags* opens the panel, which is mounted in Edit. The panel shows the tree with each element's facts. Picking an element outlines its boxes on every page and scrolls to the first. An element without a box gets a stated reason: no content, page not found, MCID not declared, or nothing textual. An untagged file says it is untagged, and reached-twice elements are counted, not looped. Driven by `the_tags_panel_outlines_the_picked_element`, on a 2×2 table split over two pages with a cycle: the cell gets A1 alone, the row both columns, and the table pages 1 and 2. `the_tags_panel_says_a_file_is_untagged` covers the untagged file. Falsified: with the outline's drawing removed, the first check fails naming no `canvas.tag-outline.1`. **Not built:** part 3's switch to painted bounds, which waits for an engine tag carrying X076 and happens at that pin move; and part 5, clicking the page to select, which is optional in the request.
 
-## O409 — **BUILT, DRIVEN, ships in the next release** — walking the 3D model seen from behind a figure, as in a game
+## O409 — **RELEASED in `v0.5.0-dev.20261112.1`** — walking the 3D model seen from behind a figure, as in a game
 
 His words: *"Can we add an avatar view to the 3D viewer and walk through? The kind of view you get in games viewing the person from  the back?"*
 
@@ -721,7 +721,7 @@ His words: *"Can we add an avatar view to the 3D viewer and walk through? The ki
 
 **Status.** All three built. Driven by `the_3d_viewer_walks_seen_from_behind`. Walking with Behind off draws from the eye. With Behind on it draws from 3.14 eye heights behind and 1.98 above, with an arm of 3.00, while looking 35° down. A 180-triangle figure is drawn 70 × 116 pt, centred low in the picture. Off again, the camera is back at the eye and no further figure is drawn. Falsified twice. The first drive failed because the picture was not redrawn on the switch, a real defect now fixed. With the figure's drawing disabled, it fails naming no `model3d.figure`. The viewer is an immediate viewport, which the harness cannot photograph, so the figure's presence is read from its declared region, not from its pixels. A wall pulling the camera in is unit-tested, not driven.
 
-## O408 — **BUILT, DRIVEN, ships in the next release** — the Settings window's text larger by default, with its own size: Ctrl+wheel or a slider beside the search box
+## O408 — **RELEASED in `v0.5.0-dev.20261112.1`** — the Settings window's text larger by default, with its own size: Ctrl+wheel or a slider beside the search box
 
 His words: *"also the font size in our settings is really small. it should be at larger size as default, and we should be able to adjust it separately from the program by using ctrl-scrollwheel or a slider on the far right side next to the command search bar."*
 
@@ -733,7 +733,7 @@ His words: *"also the font size in our settings is really small. it should be at
 
 **Status.** Built and driven by `settings_text_size`. It opens at 1.25 times the program's text. One Ctrl+wheel notch over the window gives 1.30, written to the preferences file with no Save. Pressing the slider's right end gives 2.50, with the small text 2 times its opening size. The slider sits right of its *Text size* label, which sits right of the search box, at the window's right edge. The main window's 38 ribbon regions are unmoved, and after Cancel the file still says 2.50. Falsified three ways, each red at its own arm: the wheel hook removed, the slider fed a copy, and the spacing leaked into every window. *Restore defaults* resetting it is read from the code, not driven. At the default 1.25 the release sweep found three layout defects it caused, now fixed: Save drew 4 pt past the window's bottom edge (the footer's reserve now grows with the scale), the last four pages of the list fell below a 1080-line display (the list widens with the scale so no entry wraps, and its rows take their text's height), and the Images page's resolution box went below the fold (it scrolls; `the_snapshot_resolution_persists` now scrolls to it). `settings_navigate_by_page`, `ocr_colour_setting` and `small_text_is_the_caption_size` pass again; the last now expects the caption size times the window's scale.
 
-## O407 — **BUILT, DRIVEN, ships in the next release** — the sun aimed on a disc: a ball you drag round a circle, turned with the model
+## O407 — **RELEASED in `v0.5.0-dev.20261112.1`** — the sun aimed on a disc: a ball you drag round a circle, turned with the model
 
 His words: *"for the 3D settings instead of horizontal sliders I want the sun bearing and sun height to be a circle with a ball that you move around to adjust the sun position - and the ball shows the current position of the sun based on which way the model is facing. The ball's circular placement position determines the sun bearing setting and its distance from the center determines its angle setting (near the edge it is near 0 degrees, and at center it is 90 degrees). note that the controls to enter the numbers should update as the ball is moved and should still be able to be entered by hand."*
 
@@ -745,7 +745,7 @@ His words: *"for the 3D settings instead of horizontal sliders I want the sun be
 
 **Status.** All four built. Driven: `an_aimed_sun_lights_the_3d_model_where_it_is_aimed` presses the viewer's disc at its left rim (the sun drops to the horizon and warms), turns the model, presses the right rim, and requires the sun 90° round from a facing that turned with the model — falsified by pinning the facing to the front, which fails naming facing 0 before and after; `settings_sun_disc` presses Settings ▸ 3D's disc and requires Save to write bearing 270 on the horizon. Typing into the fields is the stock number field and is not driven.
 
-## O406 — **BUILT, DRIVEN, ships in the next release** — the Snapshot tool renamed Region, moved to the Select area, and its right-click menu carries every region verb
+## O406 — **RELEASED in `v0.5.0-dev.20261112.1`** — the Snapshot tool renamed Region, moved to the Select area, and its right-click menu carries every region verb
 
 His words: *"for the next release the Snapshot marquee selector should be put under the Selection area and renamed appropriately since it now has multiple functions. Also its right click needs to have the other things it can do added to it."*
 
