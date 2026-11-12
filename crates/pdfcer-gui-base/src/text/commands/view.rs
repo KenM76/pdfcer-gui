@@ -506,6 +506,16 @@ pub const fn view_panel_signatures() -> CommandText {
     )
 }
 
+/// `view.panel_tags`
+#[must_use]
+pub const fn view_panel_tags() -> CommandText {
+    CommandText::new(
+        "Tags",
+        "Show the document's tags, the structure a screen reader follows. Click one to \
+         outline its content on the page.",
+    )
+}
+
 /// `view.output_preview`
 #[must_use]
 pub const fn view_output_preview() -> CommandText {

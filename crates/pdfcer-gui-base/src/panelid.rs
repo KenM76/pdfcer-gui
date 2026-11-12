@@ -86,11 +86,14 @@ pub enum Panel {
     /// What changed from an older version of the open document — Acrobat's
     /// Compare Files, listed with a jump per change.
     Compare,
+    /// The structure tree a screen reader follows, read-only, with the
+    /// picked element outlined on the page.
+    Tags,
 }
 
 impl Panel {
     /// Every panel.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 17] = [
         Self::Attachments,
         Self::Bookmarks,
         Self::Layers,
@@ -107,6 +110,7 @@ impl Panel {
         Self::AlignDistribute,
         Self::OutputPreview,
         Self::Compare,
+        Self::Tags,
     ];
 
     /// The ribbon command that shows this panel.
@@ -140,6 +144,7 @@ impl Panel {
             Self::OutputPreview => "view.output_preview",
             // Tools, beside Batch: the other command that reads files from disk.
             Self::Compare => "tools.compare",
+            Self::Tags => "view.panel_tags",
         }
     }
 
@@ -191,6 +196,7 @@ mod tests {
                 Panel::AlignDistribute => 13,
                 Panel::OutputPreview => 14,
                 Panel::Compare => 15,
+                Panel::Tags => 16,
             }
         }
         let mut ordinals: Vec<usize> = Panel::ALL.iter().copied().map(ordinal).collect();

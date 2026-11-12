@@ -505,6 +505,9 @@ pub enum Action {
     /// [`crate::canvas::minreveal::MinReveal`], which carries why fractions
     /// and why they span frames. `why` reaches the operator through nothing
     /// but a `PDFCER_DIAG` line.
+    /// The element picked in the Tags panel, or none; the canvas outlines
+    /// its boxes.
+    PickTag(Option<crate::tagtree::TagPick>),
     RevealRect {
         /// 0-based page index.
         page: usize,

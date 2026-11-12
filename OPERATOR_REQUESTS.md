@@ -653,6 +653,19 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O410 — **BUILT, DRIVEN, ships in the next release** — a Tags panel that outlines the selected structure element on the page (X077)
+
+Relayed in `pdfcer-gui/request_X077_tags_panel_with_on_page_highlight.md`, from an accessibility specialist's report: *"An accessibility reviewer checks a tagged PDF by selecting a structure element and looking at the content it owns. pdfcer-gui has no structure-tree view."*
+
+**Scope, whole behaviour.**
+1. **The panel.** *Tags*: the structure tree, expandable, read-only. Each row shows the element's type (the role-mapped type, with the written one when they differ), its `/T`, `/Alt`, `/ActualText` and `/Lang`; a table cell also shows `Scope`, `Headers`, `RowSpan` and `ColSpan`.
+2. **On-page outline.** Selecting an element outlines what it owns on every page it spans, one box per page, and scrolls to the first. A container outlines the union of its descendants. The outline is a selection affordance, like a hover highlight, not a mark on the content.
+3. **Bounds.** On the pinned engine (v0.145.0), the boxes come from `StructureTree::element_bbox`, which covers text and `/OBJR` rectangles only, and the panel says so when an element has none. Once the engine's painted bounds (X076, `structure_bounds::read_painted_bounds`, on engine `main`, untagged) are released, the outline switches to them, and the panel shows the engine's reason for every element without bounds.
+4. **Untagged and hostile files.** An untagged file shows an empty panel saying it is untagged. A cyclic or very deep tree opens without hanging, because the engine's reader bounds both.
+5. **Click to select (second step).** Clicking page content selects the deepest element that owns it.
+
+**Status.** Parts 1, 2 and 4 built, and part 3 on the pinned engine's `element_bbox`. View ▸ Panels ▸ *Tags* opens the panel, which is mounted in Edit. The panel shows the tree with each element's facts. Picking an element outlines its boxes on every page and scrolls to the first. An element without a box gets a stated reason: no content, page not found, MCID not declared, or nothing textual. An untagged file says it is untagged, and reached-twice elements are counted, not looped. Driven by `the_tags_panel_outlines_the_picked_element`, on a 2×2 table split over two pages with a cycle: the cell gets A1 alone, the row both columns, and the table pages 1 and 2. `the_tags_panel_says_a_file_is_untagged` covers the untagged file. Falsified: with the outline's drawing removed, the first check fails naming no `canvas.tag-outline.1`. **Not built:** part 3's switch to painted bounds, which waits for an engine tag carrying X076 and happens at that pin move; and part 5, clicking the page to select, which is optional in the request.
+
 ## O409 — **BUILT, DRIVEN, ships in the next release** — walking the 3D model seen from behind a figure, as in a game
 
 His words: *"Can we add an avatar view to the 3D viewer and walk through? The kind of view you get in games viewing the person from  the back?"*

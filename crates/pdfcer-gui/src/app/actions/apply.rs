@@ -372,6 +372,7 @@ impl PdfcerApp {
             | Action::PrevPage
             | Action::GoToPage(_)
             | Action::GoToDestination(_)
+            | Action::PickTag(_)
             | Action::RevealRect { .. } => {
                 super::view::apply(doc, action, page_count, max_zoom);
             }

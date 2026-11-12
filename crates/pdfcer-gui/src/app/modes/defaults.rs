@@ -356,6 +356,8 @@ fn spec(mode_id: &str) -> ModeSpec {
                     Panel::OutputPreview.command_id(),
                     // Compare, after it: another check that is asked for.
                     Panel::Compare.command_id(),
+                    // Tags, last: an accessibility check, asked for.
+                    Panel::Tags.command_id(),
                 ],
             ],
             left_width: NAVIGATOR_WIDTH,

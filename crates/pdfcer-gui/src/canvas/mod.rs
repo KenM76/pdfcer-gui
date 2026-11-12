@@ -260,6 +260,7 @@ mod pagefocus;
 /// [`interact`] when that file crossed R2's ceiling. Its header carries the
 /// layer order and the argument for each position in it.
 mod painting;
+mod tagoutline;
 /// **What a click is ALLOWED to land on** — the operator's selection
 /// filter, and the eleven classes it switches.
 pub use pdfcer_gui_base::pick;

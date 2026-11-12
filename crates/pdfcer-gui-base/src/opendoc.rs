@@ -525,6 +525,10 @@ pub struct OpenDoc {
     /// carries: a destination the operator clicked outranks a focus move they
     /// tabbed to.
     pub min_reveal: Option<crate::scrolltarget::MinReveal>,
+    /// The structure tree, read once per edit epoch: `tagtree`.
+    pub tags: crate::tagtree::TagCache,
+    /// The element picked in the Tags panel, outlined on the canvas.
+    pub tag_pick: Option<crate::tagtree::TagPick>,
     /// **The horizontal scroll offset the view had when a destination was
     /// raised**, before anything navigated.
     ///
@@ -1126,6 +1130,8 @@ impl OpenDoc {
             pending_destination: None,
             dest_scroll: None,
             min_reveal: None,
+            tags: crate::tagtree::TagCache::default(),
+            tag_pick: None,
             dest_origin_x: None,
             view_viewport: None,
             // Nothing to reveal on a document nobody has searched yet — and,

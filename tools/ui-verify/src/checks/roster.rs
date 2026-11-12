@@ -383,6 +383,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(model_walk::TheViewerWalksAndItsGimbalTurnsTheView),
         Box::new(model_eye::TheViewerKeepsItsEyeHeight),
         Box::new(model_behind::TheViewerWalksSeenFromBehind),
+        Box::new(tags_pick::TheTagsPanelOutlinesThePickedElement),
+        Box::new(tags_pick::TheTagsPanelSaysAFileIsUntagged),
         Box::new(model_memory::TheViewerRemembersItsSettings),
         Box::new(model_defaults::TheViewersSettingsAreSavedOnlyAsDefaults),
         Box::new(model_start::TheViewerOpensWalking),

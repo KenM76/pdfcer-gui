@@ -244,6 +244,9 @@ pub(super) fn draw(
             find.page_highlights(view.page, doc.edit_epoch),
         );
     }
+    // The Tags panel's pick, in the find wash's layer: both say where
+    // content is, not what a verb acts on.
+    super::tagoutline::draw(&painter, doc, pages);
     // The text selection's wash, in the same layer as the find wash and for
     // the same reason: both are statements about *characters on the page*
     // rather than about a control, so they belong under anything that describes

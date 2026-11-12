@@ -1295,6 +1295,8 @@ pub enum Icon {
     Stairs,
     /// Walk seen from behind: the camera follows a figure standing where the walker is.
     Behind,
+    /// The Tags panel: the structure tree a screen reader follows.
+    Tags,
     /// Turn the walking camera back to straight ahead.
     CentreYaw,
     /// Tilt the walking camera back to level.

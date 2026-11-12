@@ -69,9 +69,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 208 → 210: `copy-snapshot-outlines`, `copy-snapshot-text`, the snapshot box's two copies.
     // 210 → 211: `lighting`, the 3D options menu's Look tab.
     // 211 → 212: `behind`, walking seen from behind a figure.
+    // 212 → 213: `tags`, the Tags panel.
     assert_eq!(
         Icon::ALL.len(),
-        212,
+        213,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

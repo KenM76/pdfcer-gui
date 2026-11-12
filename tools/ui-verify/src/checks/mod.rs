@@ -544,6 +544,8 @@ pub mod security_tab;
 pub mod straighten_confidence;
 pub mod straighten_scans;
 pub mod tab_tips;
+/// The Tags panel: the tree, picking, the outline.
+pub mod tags_pick;
 /// The page thumbnails zoom without a blank tile.
 pub mod thumbnail_zoom;
 pub mod viewer_options;

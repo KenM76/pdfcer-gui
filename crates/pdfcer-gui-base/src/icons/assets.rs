@@ -1043,6 +1043,9 @@ pub(super) const STAIRS: &str = include_str!("assets/stairs.svg");
 /// The walking camera follows a figure from behind.
 pub(super) const BEHIND: &str = include_str!("assets/behind.svg");
 
+/// `tags.svg` — the art for [`super::Icon::Tags`].
+pub(super) const TAGS: &str = include_str!("assets/tags.svg");
+
 /// `lighting.svg` — the art for [`super::Icon::Lighting`].
 pub(super) const LIGHTING: &str = include_str!("assets/lighting.svg");
 

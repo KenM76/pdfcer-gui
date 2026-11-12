@@ -438,9 +438,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 252 → 253: `markup.remove_stroke`, canvas markup menu.
     // 253 → 255: `edit.copy_snapshot_outlines` and `edit.copy_snapshot_text`, Clipboard tab.
     // 255 → 259: the snapshot region's delete, redact, redact outside and crop.
+    // 259 → 260: `view.panel_tags`, View ▸ Panels.
     assert_eq!(
         registry().len(),
-        259 + 2 * usize::from(cfg!(feature = "signing"))
+        260 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -889,9 +890,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // 222 → 224: the two snapshot copies, each with its own icon.
     // 224 → 228: the region's delete, redact, redact outside and crop share
     // `delete`, `redact`, `redact-selection` and `page-single`.
+    // 228 → 229: `view.panel_tags`, with its own icon.
     assert_eq!(
         named,
-        228 + 2 * usize::from(cfg!(feature = "signing"))
+        229 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

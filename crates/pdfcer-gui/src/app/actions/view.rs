@@ -48,6 +48,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zo
         Action::NextPage => doc.view.next_page(page_count),
         Action::PrevPage => doc.view.prev_page(page_count),
         Action::GoToPage(index) => doc.view.go_to_page(index, page_count),
+        Action::PickTag(pick) => doc.tag_pick = pick,
         // Parked, not performed: the least-movement solve needs the page's
         // drawn size and the viewport, neither of which this phase has.
         // `canvas::offset`'s ranked chain spends it. When a `GoToPage` was

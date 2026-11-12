@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A small tree of tags: a parent box with three children hanging from it, the structure a screen reader follows. -->
+  <rect x="4" y="4" width="16" height="10" rx="2" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M10 14v26M10 22h10M10 31h10M10 40h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="22" y="18" width="22" height="8" rx="2" stroke="currentColor" stroke-width="2.5"/>
+  <rect x="22" y="27" width="22" height="8" rx="2" stroke="currentColor" stroke-width="2.5"/>
+  <rect x="22" y="36" width="22" height="8" rx="2" stroke="currentColor" stroke-width="2.5"/>
+</svg>

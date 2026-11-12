@@ -89,6 +89,7 @@ pub mod modelphone;
 pub mod properties;
 /// The 3D viewer's *Saved views* menu.
 pub mod savedviews;
+pub mod tags;
 /// The Properties panel's **text-annotation style** section — a sticky
 /// note's icon and colour and a stamp's colour, which reach
 /// `EditSession::set_text_annot_style` rather than `set_markup_style`.

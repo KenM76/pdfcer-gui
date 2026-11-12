@@ -31,6 +31,7 @@ pub mod pages;
 pub mod properties;
 pub mod redact;
 pub mod signatures;
+pub mod tags;
 
 pub use pdfcer_gui_base::panelid::Panel;
 
@@ -75,6 +76,7 @@ pub fn show(
         Panel::AlignDistribute => align::body(ui, doc, &mut state.align, actions),
         Panel::OutputPreview => output_preview::body(ui, doc, state, actions),
         Panel::Compare => compare::body(ui, doc, state, actions),
+        Panel::Tags => tags::body(ui, doc, state, actions),
     }
     Vec::new()
 }
@@ -345,6 +347,8 @@ pub struct PanelsState {
     /// The Compare panel: the older version, the options and the last
     /// result. Reset with the document: a result describes one document.
     compare: compare::CompareUi,
+    /// The Tags panel's open rows, keyed on the document serial.
+    tags: tags::TagsUi,
 }
 
 /// What the operator has opened and picked in the Objects tree.
@@ -605,6 +609,11 @@ impl PanelsState {
     /// The Compare panel's state.
     pub fn compare_mut(&mut self) -> &mut compare::CompareUi {
         &mut self.compare
+    }
+
+    /// The Tags panel's state.
+    pub fn tags_mut(&mut self) -> &mut tags::TagsUi {
+        &mut self.tags
     }
 
     /// The Attachments panel's authoring state — the optional description.

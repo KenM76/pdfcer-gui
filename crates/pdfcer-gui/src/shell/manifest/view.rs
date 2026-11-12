@@ -364,6 +364,7 @@ pub(super) fn tab() -> Tab {
                     //
                     command("view.panel_objects"),
                     command("view.panel_signatures"),
+                    command("view.panel_tags"),
                     command("view.output_preview"),
                     command("view.form_preview").shown_when("doc.xfa_dynamic"),
                     //

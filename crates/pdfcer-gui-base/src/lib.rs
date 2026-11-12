@@ -508,6 +508,7 @@ pub mod testsupport;
 
 /// The form tab-order working list and its reorder arithmetic.
 pub mod tabordermodel;
+pub mod tagtree;
 
 /// A form field's appearance colours, as a picker.
 pub mod mkcolour;
