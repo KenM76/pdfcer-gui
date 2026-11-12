@@ -47,6 +47,7 @@ impl SettingsExt for Settings {
         session.set_quad_point_order(self.quad_point_order);
         session.set_widget_tab_tail(self.widget_tab_tail);
         session.set_tab_row_tolerance(self.tab_row_tolerance);
+        session.set_rich_style_precedence(self.rich_style_precedence);
         session
     }
 

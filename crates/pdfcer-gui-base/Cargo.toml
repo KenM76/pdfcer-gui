@@ -73,6 +73,10 @@ pdfcer-fetch = { git = "file:///D:/Dev/pdfcer", branch = "main", default-feature
 # `pdfcer-gui`'s, for the unification reason given above.
 pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
+# pdfcer-emf — the Enhanced Metafile writer (print, clipboard, export),
+# released in lockstep with pdfcer-render at one version.
+pdfcer-emf = { git = "file:///D:/Dev/pdfcer", branch = "main" }
+
 # pdfcer-ocr-host — runs a discovered OCR model of any kind, including a
 # program add-on (Tesseract) run as a separate process, which pdfcer-core
 # never does. Same spec as the engine crates above, for unification; its

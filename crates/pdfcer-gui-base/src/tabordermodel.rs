@@ -749,6 +749,8 @@ mod tests {
                 // THE POINT OF THIS FIXTURE.
                 page: None,
                 caption: None,
+                alternate_caption: None,
+                rollover_caption: None,
                 // The appearance fields below are all `None`, and `None` is the
                 // honest value for a synthetic widget: it means "this file states
                 // nothing here", which is exactly true of one built in a test.

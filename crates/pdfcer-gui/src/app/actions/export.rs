@@ -799,15 +799,15 @@ fn emf_bytes(
     options: &pdfcer_render::RenderOptions,
     plan: &crate::app::actions::imageexport::ImagePlan,
 ) -> Result<Output, Failed> {
-    let emf_options = pdfcer_render::emf::EmfOptions::default()
+    let emf_options = pdfcer_emf::EmfOptions::default()
         .with_raster_dpi(plan.dpi)
         .with_background(plan.flatten_colour())
         .with_text(if plan.keep_text {
-            pdfcer_render::emf::EmfText::KeepText
+            pdfcer_emf::EmfText::KeepText
         } else {
-            pdfcer_render::emf::EmfText::Outlines
+            pdfcer_emf::EmfText::Outlines
         });
-    let export = pdfcer_render::emf::export_emf_view(view, page, options, &emf_options)
+    let export = pdfcer_emf::export_emf_view(view, page, options, &emf_options)
         .map_err(|error| Failed::Render(error.to_string()))?;
 
     let mut notes = vec![background_note(plan)];
@@ -857,7 +857,7 @@ fn trace_svg_text(o: &pdfcer_render::svg::SvgTextOutcome) {
 }
 
 /// Trace an EMF keep-text outcome, in the engine CLI's `emf-text:` vocabulary.
-fn trace_emf_text(o: &pdfcer_render::emf::EmfTextOutcome) {
+fn trace_emf_text(o: &pdfcer_emf::EmfTextOutcome) {
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(

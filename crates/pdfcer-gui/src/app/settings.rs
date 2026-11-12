@@ -70,6 +70,27 @@ mod tests {
         }
     }
 
+    /// **The session funnel applies the operator's rich-text style precedence.**
+    #[test]
+    fn the_session_funnel_applies_the_operators_rich_style_precedence() {
+        use pdfcer_core::richtext::RichStylePrecedence;
+
+        for precedence in [
+            RichStylePrecedence::RichStyleFirst,
+            RichStylePrecedence::DefaultAppearanceFirst,
+        ] {
+            let mut settings = Settings::default();
+            settings.rich_style_precedence = precedence;
+            let (doc, _pages) = crate::app::blank::document().expect("the template parses");
+            let session = settings.open_session(doc);
+            assert_eq!(
+                session.rich_style_precedence(),
+                precedence,
+                "the session took the engine's default instead of the operator's choice"
+            );
+        }
+    }
+
     /// **The regression test for the defect this module exists to prevent.**
     #[test]
     fn every_setting_reaches_the_options_it_configures() {

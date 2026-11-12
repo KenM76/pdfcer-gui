@@ -67,8 +67,8 @@ alongside the other licences harvested from `Cargo.lock`.
 
 ## Licence overview
 
-- **Apache License 2.0** — used by 222 crate(s)
-- **MIT License** — used by 38 crate(s)
+- **Apache License 2.0** — used by 223 crate(s)
+- **MIT License** — used by 45 crate(s)
 - **Unicode License v3** — used by 19 crate(s)
 - **BSD 3-Clause &quot;New&quot; or &quot;Revised&quot; License** — used by 7 crate(s)
 - **ISC License** — used by 4 crate(s)
@@ -6043,6 +6043,7 @@ Used by:
 - [hayro-ccitt 0.3.0](https://github.com/LaurenzV/hayro)
 - [hayro-jbig2 0.3.0](https://github.com/LaurenzV/hayro)
 - [hayro-jpeg2000 0.4.0](https://github.com/LaurenzV/hayro)
+- [i_overlay 9.1.0](https://github.com/iShape-Rust/iOverlay)
 - [image 0.25.10](https://github.com/image-rs/image)
 - [itoa 1.0.18](https://github.com/dtolnay/itoa)
 - [jxl-bitstream 1.1.0](https://github.com/tirr-c/jxl-oxide.git)
@@ -6871,6 +6872,67 @@ SOFTWARE.
 ### MIT License
 
 Used by:
+- [i_float 5.0.0](https://github.com/iShape-Rust/iFloat)
+- [i_shape 5.0.0](https://github.com/iShape-Rust/i_shape)
+
+```
+MIT License
+
+Copyright (c) 2023 iShape-Rust
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+### MIT License
+
+Used by:
+- [i_tree 0.20.0](https://github.com/iShape-Rust/iTree)
+
+```
+MIT License
+
+Copyright (c) 2024 iShape-Rust
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+```
+
+### MIT License
+
+Used by:
 - [icccer-cmm 0.4.2](https://github.com/KenM76/icccer)
 - [icccer-color 0.4.2](https://github.com/KenM76/icccer)
 - [icccer-profile 0.4.2](https://github.com/KenM76/icccer)
@@ -6934,25 +6996,29 @@ SOFTWARE.
 ### MIT License
 
 Used by:
-- [pdfcer-3d-nav 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-3d 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-color 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-core 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-fonts 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-function 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-image-codec 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-jpeg-remux 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-json 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-model 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-pkix 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-render 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-text 0.145.0](https://github.com/KenM76/pdfcer)
-- [pdfcer-vec3 0.145.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d-nav 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-3d 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-color 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-core 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-emf 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-flatten 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-fonts 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-function 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-image-codec 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-jpeg-remux 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-json 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-model 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-pkix 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-render 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-text 0.146.0](https://github.com/KenM76/pdfcer)
+- [pdfcer-vec3 0.146.0](https://github.com/KenM76/pdfcer)
 - [egui-shell 0.1.0](https://crates.io/crates/egui-shell)
 - [pdfcer-gui 0.1.0](https://crates.io/crates/pdfcer-gui)
 - [pdfcer-gui-base 0.1.0](https://crates.io/crates/pdfcer-gui-base)
 - [dpi 0.1.2](https://github.com/rust-windowing/winit)
 - [harfrust 0.7.0](https://github.com/harfbuzz/harfrust)
+- [i_key_sort 0.12.0](https://github.com/iShape-Rust/iKeySort)
+- [libm 0.2.16](https://github.com/rust-lang/compiler-builtins)
 
 ```
 MIT License

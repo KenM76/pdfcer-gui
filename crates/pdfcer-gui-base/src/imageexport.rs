@@ -19,7 +19,7 @@ pub enum ImageFormat {
     /// The renderer's own recording, replayed as vector geometry.
     Svg,
     /// **The same recording, written as a Windows Enhanced Metafile**
-    /// ([MS-EMF]) — `pdfcer_render::emf::export_emf`.
+    /// ([MS-EMF]) — `pdfcer_emf::export_emf`.
     ///
     /// # Why a fourth format, when SVG already carries vectors
     ///
@@ -265,8 +265,8 @@ pub struct EmfCounts {
     pub tally: pdfcer_render::display_list::ExportTally,
 }
 
-impl From<&pdfcer_render::emf::EmfOutcome> for EmfCounts {
-    fn from(outcome: &pdfcer_render::emf::EmfOutcome) -> Self {
+impl From<&pdfcer_emf::EmfOutcome> for EmfCounts {
+    fn from(outcome: &pdfcer_emf::EmfOutcome) -> Self {
         Self {
             ops: outcome.ops,
             rasters_embedded: outcome.rasters_embedded,

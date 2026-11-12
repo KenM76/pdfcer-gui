@@ -100,9 +100,9 @@ pub(super) fn svg_options(dpi: f32, keep_text: bool) -> pdfcer_render::svg::SvgO
 
 /// The EMF writer's clipboard options at `dpi`: no background, and text as
 /// outlines unless `keep_text`, because an EMF cannot carry the font.
-pub(super) fn emf_options(dpi: f32, keep_text: bool) -> pdfcer_render::emf::EmfOptions {
-    use pdfcer_render::emf::EmfText;
-    pdfcer_render::emf::EmfOptions::default()
+pub(super) fn emf_options(dpi: f32, keep_text: bool) -> pdfcer_emf::EmfOptions {
+    use pdfcer_emf::EmfText;
+    pdfcer_emf::EmfOptions::default()
         .with_raster_dpi(dpi)
         .with_background(None)
         .with_text(if keep_text {
@@ -130,9 +130,8 @@ fn page_payload(
     let svg =
         pdfcer_render::svg::export_svg_view(&view, page, options, &svg_options(COPY_DPI, false))
             .map_err(|error| Refusal::Render(error.to_string()))?;
-    let emf =
-        pdfcer_render::emf::export_emf_view(&view, page, options, &emf_options(COPY_DPI, false))
-            .map_err(|error| Refusal::Render(error.to_string()))?;
+    let emf = pdfcer_emf::export_emf_view(&view, page, options, &emf_options(COPY_DPI, false))
+        .map_err(|error| Refusal::Render(error.to_string()))?;
     let rendered = pdfcer_render::render_page_with_view(
         &view,
         page,
@@ -193,9 +192,8 @@ fn selection_bytes(
     let svg =
         pdfcer_render::svg::export_svg(&clipped, page, options, &svg_options(COPY_DPI, false))
             .map_err(|error| Refusal::Render(error.to_string()))?;
-    let emf =
-        pdfcer_render::emf::export_emf(&clipped, page, options, &emf_options(COPY_DPI, false))
-            .map_err(|error| Refusal::Render(error.to_string()))?;
+    let emf = pdfcer_emf::export_emf(&clipped, page, options, &emf_options(COPY_DPI, false))
+        .map_err(|error| Refusal::Render(error.to_string()))?;
     // `render_page_with`, the four-argument form, NOT the three-argument
     // `render_page` that `canvas::clipimage` uses on the same clip. That one
     // makes a thumbnail for an internal paste, where the operator's colour

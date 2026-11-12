@@ -4,7 +4,7 @@
 //! SVG or EMF export owes when it kept text: how many runs stayed text, how
 //! many fell back to outlines, and why, per reason, only where nonzero.
 
-use pdfcer_render::emf::EmfTextOutcome;
+use pdfcer_emf::EmfTextOutcome;
 use pdfcer_render::svg::SvgTextOutcome;
 
 use crate::imageexport::ImageFormat;

@@ -102,6 +102,8 @@ fn drawn_widget() -> Widget {
         has_off_appearance: false,
         page: None,
         caption: None,
+        alternate_caption: None,
+        rollover_caption: None,
         // The appearance group — `/MK /BG`, `/MK /BC`, `/MK /BW` and the
         // annotation flags. `None` is the honest value for a synthetic
         // widget: it means "this file states nothing", which is exactly true

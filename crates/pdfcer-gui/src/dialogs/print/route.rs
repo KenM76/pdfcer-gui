@@ -1,6 +1,6 @@
 //! **How each sheet travels to the printer: vector graphics or an image.**
 //!
-//! A plain page goes as the Enhanced Metafile `pdfcer_render::emf::print_metafile`
+//! A plain page goes as the Enhanced Metafile `pdfcer_emf::print_metafile`
 //! makes of it, unless the operator ticked Print as image or the engine
 //! declined the page; a declined page goes as pixels and its reason is
 //! reported after the job. Sheets whose pixels pdfcer itself changes or
@@ -70,7 +70,7 @@ pub(super) fn plain_sheet(
     // width set in pixels by `lines::apply` means the same on both routes.
     let raster_dpi = plan.render_scale as f32 * 72.0;
     let image_reason = if vector {
-        match pdfcer_render::emf::print_metafile(view, page, options, raster_dpi) {
+        match pdfcer_emf::print_metafile(view, page, options, raster_dpi) {
             Ok(emf) => {
                 return Ok(PageBitmap {
                     width: 0,
@@ -82,9 +82,7 @@ pub(super) fn plain_sheet(
                     image_reason: None,
                 });
             }
-            Err(pdfcer_render::emf::PrintMetafileError::Raster(why)) => {
-                Some(why.as_str().to_owned())
-            }
+            Err(pdfcer_emf::PrintMetafileError::Raster(why)) => Some(why.as_str().to_owned()),
             Err(error) => Some(error.to_string()),
         }
     } else {

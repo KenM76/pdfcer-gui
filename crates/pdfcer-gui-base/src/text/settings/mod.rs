@@ -30,6 +30,7 @@ pub mod print_colour;
 pub mod redaction;
 /// Whether another program may drive the window.
 pub mod remote;
+pub mod richstyle;
 /// The settings that change pdfcer's own window.
 pub mod shell;
 pub mod snapshot;
@@ -47,6 +48,7 @@ pub use pictures::*;
 pub use print_colour::*;
 pub use redaction::*;
 pub use remote::*;
+pub use richstyle::*;
 pub use shell::*;
 pub use tabface::*;
 

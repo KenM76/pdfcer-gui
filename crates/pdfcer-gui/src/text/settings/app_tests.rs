@@ -80,7 +80,7 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 53;
+    const SETTINGS_COUNT: usize = 54;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -249,7 +249,7 @@ mod tests {
                 paste_chords_radius(),
             ),
             (chrome_title(), chrome_silence(), chrome_radius()),
-            // The two Forms settings. Both are engine settings whose radius
+            // The two Tab-order Forms settings. Both are engine settings whose radius
             // stops at a keystroke, which is why their strings sit in
             // `look` beside the shell's own preferences rather than in
             // `bytes`.
@@ -258,6 +258,12 @@ mod tests {
                 tab_tolerance_title(),
                 tab_tolerance_silence(),
                 tab_tolerance_radius(),
+            ),
+            // Forms: which of /DS and /DA styles a filled rich-text run.
+            (
+                rich_style_title(),
+                rich_style_silence(),
+                rich_style_radius(),
             ),
             (auto_hide_title(), auto_hide_silence(), auto_hide_radius()),
             (tab_face_title(), tab_face_silence(), tab_face_radius()),

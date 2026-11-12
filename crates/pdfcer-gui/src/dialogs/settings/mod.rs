@@ -326,6 +326,8 @@ fn page_body(
             forms::tab_tail(ui, draft);
             ui.add_space(10.0);
             forms::row_tolerance(ui, draft);
+            ui.add_space(10.0);
+            forms::rich_style(ui, draft);
         }
         "pages" => {
             pages::separations(ui, draft);

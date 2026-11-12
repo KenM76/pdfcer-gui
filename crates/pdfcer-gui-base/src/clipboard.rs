@@ -91,7 +91,7 @@ pub struct CopyPayload {
     /// The trailing NUL is **not** in here — it is added by [`svg_payload`] at
     /// placement, so that the same string can also be written to a file.
     pub svg: Option<String>,
-    /// [MS-EMF] bytes from `pdfcer_render::emf::export_emf_view`.
+    /// [MS-EMF] bytes from `pdfcer_emf::export_emf_view`.
     pub emf: Option<Vec<u8>>,
     /// PNG file bytes from `pdfcer_render::export::encode_png`, straight
     /// alpha, with the resolution in `pHYs`.

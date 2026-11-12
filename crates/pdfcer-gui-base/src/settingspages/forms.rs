@@ -1,6 +1,6 @@
-//! # `dialogs::settings::forms` — the order Tab visits a form in
+//! # `dialogs::settings::forms` — form fields: Tab order and filled-in styling
 //!
-//! Two settings, both about one question: *"I pressed Tab and it went to the
+//! The two Tab settings answer one question: *"I pressed Tab and it went to the
 //! wrong field."* That sentence is the filing rule for this group — an
 //! operator who comes here has come from a keyboard, not from a menu, and
 //! neither setting is discoverable from anywhere else in the window.
@@ -26,9 +26,13 @@
 //! Changing it therefore cannot make pdfcer quieter about the ambiguity — it
 //! only chooses which side of it this machine takes.
 //!
+//! The third, [`rich_style`], answers *"the field I filled in came out in the
+//! wrong font"* — a form question, so it is filed with the form settings.
+//!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/settingspages/forms.md`.
 
 use egui::Ui;
+use pdfcer_core::richtext::RichStylePrecedence;
 use pdfcer_core::settings::{MAX_TAB_ROW_TOLERANCE, MIN_TAB_ROW_TOLERANCE, WidgetTabTail};
 
 use super::{Draft, widgets};
@@ -75,6 +79,30 @@ pub fn row_tolerance(ui: &mut Ui, draft: &mut Draft) {
         .text(t::tab_tolerance_slider_label()),
     );
     ui.label(egui::RichText::new(t::tab_tolerance_note()).small().weak());
+}
+
+/// Which of `/DS` and `/DA` styles a rich-text run that sets neither itself.
+pub fn rich_style(ui: &mut Ui, draft: &mut Draft) {
+    widgets::header(
+        ui,
+        t::rich_style_title(),
+        t::rich_style_silence(),
+        t::rich_style_radius(),
+    );
+    widgets::option(
+        ui,
+        &mut draft.working.rich_style_precedence,
+        RichStylePrecedence::RichStyleFirst,
+        t::rich_style_ds_label(),
+        Some(t::rich_style_ds_note()),
+    );
+    widgets::option(
+        ui,
+        &mut draft.working.rich_style_precedence,
+        RichStylePrecedence::DefaultAppearanceFirst,
+        t::rich_style_da_label(),
+        Some(t::rich_style_da_note()),
+    );
 }
 
 #[cfg(test)]

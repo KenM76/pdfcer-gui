@@ -394,6 +394,10 @@ egui-shell.workspace = true
 pdfcer-core = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 pdfcer-render = { git = "file:///D:/Dev/pdfcer", branch = "main", default-features = false }
 
+# pdfcer-emf — the Enhanced Metafile writer (print, clipboard, export),
+# released in lockstep with pdfcer-render at one version.
+pdfcer-emf = { git = "file:///D:/Dev/pdfcer", branch = "main" }
+
 # pdfcer-print — printer enumeration, device capabilities and spooling.
 #
 # No `default-features = false`, unlike its two siblings above, and the

@@ -216,7 +216,7 @@ fn cut_payload(
     }
     let svg = pdfcer_render::svg::export_svg(&cut, page, &options, &svg_options(dpi, keep_text))
         .map_err(|e| render(&e))?;
-    let emf = pdfcer_render::emf::export_emf(&cut, page, &options, &emf_options(dpi, keep_text))
+    let emf = pdfcer_emf::export_emf(&cut, page, &options, &emf_options(dpi, keep_text))
         .map_err(|e| render(&e))?;
     let text = keep_text.then(|| KeptText {
         svg_text: svg.outcome.text.runs_as_text,
@@ -226,7 +226,7 @@ fn cut_payload(
     });
     // The engine counts an underlaid blend inside `blends_flattened` too.
     let svg_blends: &pdfcer_render::svg::SvgOutcome = &svg.outcome;
-    let emf_blends: &pdfcer_render::emf::EmfOutcome = &emf.outcome;
+    let emf_blends: &pdfcer_emf::EmfOutcome = &emf.outcome;
     let vectors = Vectors::Cut {
         glyphs_removed: report.glyphs_removed,
         notes: report.notes.clone(),
