@@ -1,6 +1,7 @@
 //! `small_text_is_the_caption_size` (O303): a Settings description, drawn in
 //! `TextStyle::Small` like every other small text, is the theme's ribbon
-//! caption size rather than egui's stock 9 pt.
+//! caption size rather than egui's stock 9 pt, times the Settings window's
+//! own text scale (O408), which scales that window alone.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/small_text.md`.
 
@@ -16,6 +17,8 @@ const OPEN_SETTINGS: &str = "file.settings";
 const SMALL_EVENT: &str = "settings-small-text"; // ui-text-exempt: a trace event name
 /// The active theme's `ribbon_caption_pts`.
 const CAPTION_EVENT: &str = "theme-caption"; // ui-text-exempt: a trace event name
+/// The Settings window's own text scale.
+const SCALE_EVENT: &str = "settings-text-scale"; // ui-text-exempt: a trace event name
 /// egui's stock `Small` size, which O303 replaced.
 const STOCK_SMALL: f32 = 9.0;
 
@@ -73,13 +76,17 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<Session> {
     Ok(session)
 }
 
-/// The `pts` field of the last `event` line, if one has been written.
-fn pts(session: &Session, event: &str) -> Result<Option<f32>> {
+/// The `field` of the last `event` line, if one has been written.
+fn read(session: &Session, event: &str, field: &str) -> Result<Option<f32>> {
     Ok(session
         .trace()?
         .last(event)
-        .and_then(|l| l.get("pts"))
+        .and_then(|l| l.get(field))
         .and_then(|v| v.parse().ok()))
+}
+
+fn pts(session: &Session, event: &str) -> Result<Option<f32>> {
+    read(session, event, "pts")
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
@@ -93,6 +100,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         small = pts(&session, SMALL_EVENT)?;
     }
     let caption = pts(&session, CAPTION_EVENT)?;
+    let scale = read(&session, SCALE_EVENT, "scale")?;
     drop(session);
 
     let small = small.ok_or_else(|| {
@@ -106,13 +114,19 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
             "no `{CAPTION_EVENT}` line: the frame never reported its theme's caption size."
         ))
     })?;
+    let scale = scale.ok_or_else(|| {
+        Error::new(format!(
+            "no `{SCALE_EVENT}` line: the Settings window never reported its own text scale."
+        ))
+    })?;
+    let want = caption * scale;
     report.note(format!(
-        "Settings description drawn at {small} pt; the theme's caption size is {caption} pt"
+        "Settings description drawn at {small} pt; the theme's caption size is {caption} pt, the window's text scale {scale}"
     ));
-    if (small - caption).abs() > 0.01 {
+    if (small - want).abs() > 0.02 {
         return Ok(Some(format!(
-            "the Settings description is drawn at {small} pt, not the caption size {caption} pt{}.",
-            if (small - STOCK_SMALL).abs() < 0.01 {
+            "the Settings description is drawn at {small} pt, not the caption size {caption} pt times the window's scale {scale} ({want} pt){}.",
+            if (small - STOCK_SMALL * scale).abs() < 0.02 {
                 " (egui's stock small size)"
             } else {
                 ""

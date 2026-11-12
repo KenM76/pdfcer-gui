@@ -20,7 +20,8 @@ pub const REGION_SEARCH: &str = "settings.search"; // ui-text-exempt: trace regi
 /// The pane showing the selected page.
 pub const REGION_PAGE: &str = "settings.page"; // ui-text-exempt: trace region name, never displayed
 
-/// Width of the page list, in points.
+/// Width of the page list at text scale 1, in points; it grows with the
+/// window's text so no entry wraps.
 const NAV_WIDTH: f32 = 170.0;
 
 /// The label a run of pages sits under in the list.
@@ -187,7 +188,7 @@ pub fn show(
         // after it until its budget runs out with Save off-screen.
         ui.set_max_height(rest);
         ui.allocate_ui_with_layout(
-            egui::vec2(NAV_WIDTH, rest),
+            egui::vec2(NAV_WIDTH * draft.working_prefs.settings_text_scale, rest),
             egui::Layout::top_down_justified(egui::Align::LEFT),
             |ui| {
                 egui::ScrollArea::vertical()
@@ -226,7 +227,14 @@ pub fn show(
 }
 
 /// The page list. A click selects the page; it never toggles it.
+/// Entries sit close, so every page fits a 1080-line display at the
+/// default text scale.
 fn list(ui: &mut Ui, shown: &[(Section, &'static str)], selected: &mut &'static str) {
+    let spacing = ui.spacing_mut();
+    spacing.item_spacing.y = 1.0;
+    spacing.button_padding.y = 2.0;
+    // The entry's height is its text's, not the scaled minimum control height.
+    spacing.interact_size.y = 0.0;
     let mut last = None;
     for &(section, key) in shown {
         if last != Some(section) {

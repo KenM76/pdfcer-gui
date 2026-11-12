@@ -108,6 +108,8 @@ pub fn show(
     // Its own OS window. `open` is the caller's flag; `frame.closed` is
     // written into it.
     let mut outcome = Outcome::Idle;
+    /// The footer's height at text scale 1, points.
+    const FOOTER: f32 = 40.0;
     let (frame, ()) = crate::dialogs::host::Host::new(
         "settings", // ui-text-exempt: a viewport key, never displayed.
         t::window_title(),
@@ -152,8 +154,9 @@ pub fn show(
         ui.label(store_line);
         ui.separator();
 
-        // The bottom bar is a separator and one row of buttons.
-        let height = (ui.available_height() - 40.0).max(180.0);
+        // The bottom bar is a separator and one row of buttons, both grown
+        // by the window's text scale.
+        let height = (ui.available_height() - FOOTER * scale).max(180.0);
         nav::show(ui, height, draft, focus, acrobat_viewer);
 
         ui.separator();

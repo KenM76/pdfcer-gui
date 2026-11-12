@@ -18,6 +18,8 @@ use crate::report::CheckReport;
 /// Off the desktop, so the check runs while the operator uses the machine.
 const OFFSCREEN: &str = "-4200,-4200,1400,900";
 const OPEN_SETTINGS: &str = "file.settings";
+/// The pane showing the selected page, which the wheel scrolls.
+const PAGE: &str = "settings.page";
 const HEADING: &str = "settings.heading.images";
 const FIELD: &str = "settings.snapshot.dpi";
 const SAVE: &str = "dialog:settings.save";
@@ -113,7 +115,7 @@ fn open_page(
     pointer: &ScriptedPointer,
     ui_rect: &str,
 ) -> Result<Option<String>> {
-    if click(session, pointer, ui_rect, HEADING)?.is_none() {
+    let Some(vp) = click(session, pointer, ui_rect, HEADING)? else {
         return Ok(Some(format!(
             "the Settings window lists no Images page: no `{HEADING}`. Pages: {}.",
             list(&declared_names(
@@ -122,8 +124,31 @@ fn open_page(
                 "settings.heading."
             ))
         )));
-    }
+    };
+    reveal(session, pointer, ui_rect, vp.as_deref())?;
     Ok(None)
+}
+
+/// Wheel the page down until the dpi box is in view, as the operator scrolls
+/// to it when the window's text scale pushes it below the fold.
+fn reveal(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    vp: Option<&str>,
+) -> Result<()> {
+    for _ in 0..8 {
+        let trace = session.trace()?;
+        if declared_in(&trace, ui_rect, FIELD).is_some() {
+            return Ok(());
+        }
+        let Some((page, _)) = declared_in(&trace, ui_rect, PAGE) else {
+            return Ok(());
+        };
+        pointer.wheel_in(session, vp, WindowPoint::centre_of(page), -3.0)?;
+        session.settle(10);
+    }
+    Ok(())
 }
 
 /// Run the sequence. `Err` is SKIP, `Ok(Some(_))` is FAIL, `Ok(None)` is a pass.
