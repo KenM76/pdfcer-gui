@@ -1,6 +1,7 @@
 //! The viewer's part list and which parts it draws: the engine's model tree,
-//! one row per product occurrence indented by depth, each with a box that
-//! shows or hides its part and a name that highlights it.
+//! one row per product occurrence under guide lines that fold by branch (see
+//! [`super::partstree`]), each with a box that shows or hides its part and a
+//! name that highlights it.
 //!
 //! The viewer assembles every part, the stored-hidden ones too
 //! (`StoredVisibility::DrawAll`), so it opens on the file's stored state and
@@ -17,6 +18,7 @@ use std::collections::BTreeSet;
 use egui::Ui;
 use pdfcer_3d::{AssembledModel, ModelNode, NameSource};
 
+use super::partstree::{self, Shape};
 use crate::text::model3d as m;
 use crate::text::panels::models as t;
 
@@ -27,15 +29,14 @@ pub const REGION_SHOW_PREFIX: &str = "model3d.part.show."; // ui-text-exempt: tr
 /// One row's name, which highlights the part; the suffix is the node's index.
 pub const REGION_NAME_PREFIX: &str = "model3d.part.name."; // ui-text-exempt: trace region name, never displayed
 
-/// Points each tree level is indented.
-const INDENT: f32 = 12.0;
-
-/// Which nodes are hidden and which one is highlighted, by index in the
-/// list. `version` changes with either, so the picture is redrawn.
+/// Which nodes are hidden, which one is highlighted and which are folded,
+/// by index in the list. `version` changes with the first two, so the
+/// picture is redrawn; folding only changes the list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Visibility {
     hidden: BTreeSet<usize>,
     highlight: Option<usize>,
+    folded: BTreeSet<usize>,
     pub version: u32,
 }
 
@@ -50,8 +51,26 @@ impl Visibility {
                 .map(|(i, _)| i)
                 .collect(),
             highlight: None,
+            folded: BTreeSet::new(),
             version: 0,
         }
+    }
+
+    /// Fold these nodes and unfold the rest.
+    fn fold(&mut self, folded: BTreeSet<usize>, why: &str) {
+        self.folded = folded;
+        let shown: Vec<String> = self.folded.iter().map(ToString::to_string).collect();
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| {
+            format!(
+                "model-view-parts-fold why={why} folded={}",
+                if shown.is_empty() {
+                    "-".to_owned()
+                } else {
+                    shown.join("|")
+                }
+            )
+        });
     }
 
     fn set(&mut self, hidden: BTreeSet<usize>, highlight: Option<usize>, why: &str) {
@@ -193,12 +212,14 @@ pub(super) fn show(
     // Only the rows in sight are laid out: a model of a thousand parts
     // otherwise spends most of every frame on rows scrolled out of view.
     let height = ui.spacing().interact_size.y;
+    let shape = Shape::of(nodes.iter().map(|n| n.parent).collect());
+    let rows = shape.visible(&visibility.folded);
     let scroll = egui::ScrollArea::both()
         .auto_shrink([false, false])
-        .show_rows(ui, height, nodes.len(), |ui, range| {
-            for i in range {
+        .show_rows(ui, height, rows.len(), |ui, range| {
+            for &i in rows.get(range).unwrap_or_default() {
                 if let Some(node) = nodes.get(i) {
-                    row(ui, nodes, i, node, visibility, steerable);
+                    row(ui, (nodes, &shape), i, node, visibility, steerable);
                 }
             }
         });
@@ -210,14 +231,20 @@ pub(super) fn show(
 /// borrowed name came from.
 fn row(
     ui: &mut Ui,
-    nodes: &[ModelNode],
+    (nodes, shape): (&[ModelNode], &Shape),
     i: usize,
     node: &ModelNode,
     visibility: &mut Visibility,
     steerable: bool,
 ) {
     ui.horizontal(|ui| {
-        ui.add_space(INDENT * node.depth as f32);
+        if partstree::guides(ui, shape, i, visibility.folded.contains(&i)) {
+            let mut folded = visibility.folded.clone();
+            if !folded.remove(&i) {
+                folded.insert(i);
+            }
+            visibility.fold(folded, "box"); // ui-text-exempt: trace token
+        }
         if steerable {
             show_box(ui, i, visibility);
         }
@@ -249,7 +276,7 @@ fn row(
                 let to = if lit { None } else { Some(i) };
                 visibility.set(visibility.hidden.clone(), to, "highlight"); // ui-text-exempt: trace token
             }
-            r.context_menu(|ui| menu(ui, nodes, i, visibility));
+            r.context_menu(|ui| menu(ui, (nodes, shape), i, visibility));
             r
         };
         match node.name_from {
@@ -296,8 +323,13 @@ fn show_box(ui: &mut Ui, i: usize, visibility: &mut Visibility) {
 }
 
 /// A row's menu: show only this part, show every part, or back to the file's
-/// stored state.
-fn menu(ui: &mut Ui, nodes: &[ModelNode], i: usize, visibility: &mut Visibility) {
+/// stored state; fold or unfold every branch.
+fn menu(
+    ui: &mut Ui,
+    (nodes, shape): (&[ModelNode], &Shape),
+    i: usize,
+    visibility: &mut Visibility,
+) {
     if ui.button(m::part_isolate()).clicked() {
         let keep = |j: usize| {
             j == i || ancestors(nodes, i).any(|a| a == j) || ancestors(nodes, j).any(|a| a == i)
@@ -313,6 +345,15 @@ fn menu(ui: &mut Ui, nodes: &[ModelNode], i: usize, visibility: &mut Visibility)
     if ui.button(m::parts_as_stored()).clicked() {
         let stored = Visibility::stored(nodes).hidden;
         visibility.set(stored, visibility.highlight, "stored"); // ui-text-exempt: trace token
+        ui.close();
+    }
+    ui.separator();
+    if ui.button(m::parts_fold_all()).clicked() {
+        visibility.fold(shape.branches(), "all"); // ui-text-exempt: trace token
+        ui.close();
+    }
+    if ui.button(m::parts_unfold_all()).clicked() {
+        visibility.fold(BTreeSet::new(), "none"); // ui-text-exempt: trace token
         ui.close();
     }
 }

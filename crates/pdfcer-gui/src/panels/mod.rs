@@ -394,6 +394,8 @@ pub struct ObjectTreeUi {
     /// Shift. Not a selection — it names where a range starts, and resets with
     /// the rest of this state on a page or revision change.
     pub(crate) range_anchor: Option<usize>,
+    /// What the tree last followed of the selection.
+    pub(crate) followed: objects::follow::Followed,
 }
 
 impl ObjectTreeUi {

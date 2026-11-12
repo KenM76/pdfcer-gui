@@ -653,6 +653,49 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O411 — **BUILT, DRIVEN, ships in the next release** — 3D walk: swap the turn and sidestep controls to opposite sides, on the keyboard and on mobile
+
+His words: *"For the next release I'd like the option of the 3D walk through modes having the rotate and strife controls switched to their opposite sides on the keyboard and mobile."*
+
+**Scope, whole behaviour.** A swap option: on the keyboard it exchanges the turn keys and the sidestep keys. On mobile it exchanges the two on-screen sticks. It applies to every walking mode, including Behind. The option lives in the navigation presets window (O412) and Settings ▸ 3D, and it is remembered.
+
+**Built.** *Swap the turning and strafing sides* on the 3D options menu's Controls tab and on Settings ▸ 3D; it moves turning to the right stick and the keys that strafed. Driven by `the_3d_viewers_controls_tab_sets_layouts_swaps_sides_and_takes_a_key`.
+
+## O412 — **BUILT, DRIVEN, ships in the next release** — 3D gaming navigation: a Counter-Strike preset for first person and a World of Warcraft preset for Behind, all controls available, and a window for presets and customisation
+
+His words: *"Also a gaming mode where controls for the mouse and other navigation are set up like Counterstrike for first person or WOW for the avatar style mode, but have all available. Make a nice interface for the presets and customization of navigation."*
+
+**Scope, whole behaviour.**
+1. **Presets.** The current default, a Counter-Strike-style preset (WASD, mouse-look, Space and Ctrl) for first person, and a World of Warcraft-style preset for Behind (right-drag steers, left-drag orbits the camera, both buttons walk forward, the wheel zooms the camera).
+2. **Everything stays available.** A preset only changes what each key and button does; no navigation action is lost.
+3. **The window.** Pick a preset, see every action with its key or mouse binding, rebind any of them, apply the O411 swap, and reset to the preset.
+
+**Built.** The Controls tab of the 3D options menu: three cards (Default, Shooter, Avatar) with the one in use outlined and named, a chip per key slot (two per action, fourteen actions) that takes the next key pressed, and the mouse's choices: each button's drag, both buttons walk, free look (the picture holds the mouse after a click; Escape gives it back), invert, sensitivity and the run modifier. Avatar also turns on the view from behind. Settings ▸ 3D carries the same rows. Picking a card is the reset. Driven by the same check.
+
+## O413 — **BUILT, DRIVEN, ships in the next release** — 3D toolbar: a show/hide arrow left of the menu, the row wraps to a second line, a camera button and a show/hide-controls button in the row; auto-hide and the bottom camera button removed
+
+His words: *"Also in 3D to the left of the menu icon we should have an arrow one that when clicked slides out the menu and other icons from hiding, and clicking again hides them - no auto-hide and default is for them to show, and if they are too many to show on the screen they should try and spill into a second row. Also add a camera and show hide controls icon to the row, and get rid of the auto-hide controls feature and the camera button at the bottom that used to show in auto-hide."*
+
+**Built.** An arrow left of the options glyph slides the row away and back, shown by default and never on its own; the row wraps onto a second line when the window is narrow. The row gains a camera glyph (save a picture) and a sticks glyph (show or hide the navigation controls). Auto-hide and the bottom camera button are gone. Driven by `the_3d_viewers_tool_row_slides_away_on_its_arrow_and_its_camera_and_sticks_work`.
+
+## O414 — **BUILT, DRIVEN, ships in the next release** — one dedicated place for the current tool's (or selected object's) properties, in the left panel rail, opened automatically
+
+His words: *"when options are available for a tool such as selecting linear and measure, I have to search for where it's properties panel shows up. We need to make it so properties when a tool is selected comes up in a space dedicated for all the tools no matter which one is selected to show up in. I find I am always having to fish around to find the properties of the currently selected tool or object. Maybe they have a left side icon in the pages, bookmarks, etc area and use the same space as those do, and when a tool is selected and I use it shows up there automatically. If the user gets out of the tool and there is nothing to show the display in that area goes back to what it was previously set to display by the user."*
+
+**Built, modified.** Properties is the one place, and it now comes to the front by itself: arming a tool with options (the linear measure, the text pen, a ce dimension, Region, Highlight) brings it forward wherever its tab is docked, and an object picked on the page does the same. Putting the tool down with nothing picked gives the front back to the tab it covered, and hides the side again if it was hidden. Properties also has its own icon in the left rail, beside Pages and Bookmarks, in Review and Edit. **The modification:** the panel is not moved into the left stack, so a layout he arranged is left as it is; and a pick made while the Objects tree is in front leaves the tree there, because the tree shows the pick (O416). Driven by `properties_comes_forward_for_an_armed_tool_and_gives_the_front_back`.
+
+## O415 — **BUILT, DRIVEN, ships in the next release** — 3D model tree: + and − boxes on the nesting lines to expand and collapse
+
+His words: *"Also can we add a + and - expand contract option to the nesting lines of the 3D model tree?"* He means the classic tree view: a small boxed + or − where a node's guide line meets its children's line.
+
+**Built.** A boxed + or − where a branch's guide line meets its children's; a press folds or unfolds that branch only, alongside *Fold every part* and *Unfold every part*. Driven by `the_3d_viewers_part_tree_folds_on_its_boxes`.
+
+## O416 — **BUILT, DRIVEN, ships in the next release** — selecting an object on the page reveals and highlights it in the Objects panel tree
+
+His words: *"Also when I select an object on a page, can the objects tab jump to the object in the tree and have it highlighted?"*
+
+**Built.** A pick on the page unfolds the layer headings over the picked object in the Objects tree and scrolls its row to the middle when it is out of sight; the row is highlighted as a selected row always is. A click in the tree itself is not followed, so the list does not jump under the pointer. Driven by `objects_tree_follows_an_object_picked_on_the_page`.
+
 ## O410 — **BUILT, DRIVEN, ships in the next release** — a Tags panel that outlines the selected structure element on the page (X077)
 
 Relayed in `pdfcer-gui/request_X077_tags_panel_with_on_page_highlight.md`, from an accessibility specialist's report: *"An accessibility reviewer checks a tagged PDF by selecting a structure element and looking at the content it owns. pdfcer-gui has no structure-tree view."*

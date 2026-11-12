@@ -483,6 +483,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(bilevel_pictures::SmallestExactPictureTriesEveryStorage),
         Box::new(bilevel_pictures::Jbig2RaisesAnOldDocumentsVersion),
         Box::new(objects_multiselect::ObjectsTreeGathersRowsForOneMenu),
+        Box::new(panels_follow::PropertiesComesForwardForAnArmedTool),
+        Box::new(panels_follow::ObjectsTreeFollowsAPagePick),
         Box::new(weblink_prompt::AWebLinkAsksBeforeItOpens),
         Box::new(filelink_prompt::AFileLinkAsksOrOpensHere),
         Box::new(model_trust::ThreeDContentAsksWhileItIsOff),

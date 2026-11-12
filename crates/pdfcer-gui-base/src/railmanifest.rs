@@ -83,6 +83,10 @@ pub fn groups() -> Vec<RailGroup> {
                 // truth, and inventing a symmetric-looking id here would give
                 // the rail a tab that opens nothing.
                 Item::command("file.fonts"),
+                // Properties, so the tool and object in hand are one click
+                // from this strip wherever the panel's tab is (O414). Read
+                // mounts no Properties, so the row is absent there.
+                Item::command("file.properties").shown_when("mode.author_markup"),
             ],
         ),
         // -------------------------------------------------------------------

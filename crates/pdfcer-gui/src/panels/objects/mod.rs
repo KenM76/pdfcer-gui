@@ -6,6 +6,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/objects/mod.md`.
 
 mod disagree;
+pub(crate) mod follow;
 mod layered;
 mod rowclick;
 pub use pdfcer_gui_base::objectprovider as provider;
@@ -119,6 +120,9 @@ pub fn body(
     disagree::lines(ui, page_index, diagnostics);
     ui.separator();
 
+    let frame = ui.ctx().cumulative_frame_nr();
+    let picked = doc.selection.object_indices_on(page_index);
+    let follow = follow::unfold(tree, provider, (page_index, frame), &picked);
     let rows = build_tree(
         provider,
         &tree.objects_expanded,
@@ -172,7 +176,7 @@ pub fn body(
     // CONTENT, which is what this tree lists. An annotation or a ce dimension
     // selected on the canvas leaves every row here unhighlighted, correctly —
     // none of these rows is that thing.
-    let selected = doc.selection.object_indices_on(page_index);
+    let selected = picked;
     let expanded_objects = &tree.objects_expanded;
     let expanded_parts = &tree.parts_expanded;
 
@@ -193,9 +197,15 @@ pub fn body(
     // scroll sideways to, and a horizontal bar with nothing beyond its viewport
     // is a control that cannot do anything. R9. So the axis goes with the
     // mechanism it would exist for.
-    egui::ScrollArea::vertical()
-        .id_salt("objects-tree-rows")
-        .show_rows(ui, row_height, total_rows, |ui, range| {
+    let step = row_height + ui.spacing().item_spacing.y;
+    let scroll_to = follow
+        .then(|| follow::offset(&tree.followed, &rows, &selected, step))
+        .flatten();
+    let mut area = egui::ScrollArea::vertical().id_salt("objects-tree-rows");
+    if let Some(y) = scroll_to {
+        area = area.vertical_scroll_offset(y);
+    }
+    let shown = area.show_rows(ui, row_height, total_rows, |ui, range| {
             // The pane's width is taken from the **inner** `Ui`, not from
             // the panel's, and the difference is the vertical scrollbar.
             //
@@ -436,6 +446,8 @@ pub fn body(
             }
         });
 
+    tree.followed
+        .drawn(shown.state.offset.y, shown.inner_rect.height());
     if let Some(index) = toggle_object {
         tree.toggle_object(index);
     }
@@ -448,6 +460,7 @@ pub fn body(
     // A row click SELECTS, through `doc.selection` — the one notion of what
     // is being worked on, which the canvas reads too. See `rowclick`.
     if let Some(click) = row_click {
+        tree.followed.row_clicked(frame);
         rowclick::apply(
             click,
             page_index,

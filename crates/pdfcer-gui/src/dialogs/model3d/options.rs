@@ -1,10 +1,12 @@
 //! The viewer's options behind one glyph at the picture's top-left corner,
-//! in a window, on a phone and full screen alike, on five tabs: View (the
+//! right of the arrow that hides it (see [`super::controls`]), in a window,
+//! on a phone and full screen alike, on six tabs: View (the
 //! views, projection, lens, axes, mesh fit and full screen), Look (lighting,
 //! effects, render mode), Moving (the controls, navigation and eye height)
 //! and Picture (what *Save picture…* draws at, and, full screen where the
-//! footer is gone, the picture and save buttons) and Measure (see
-//! [`super::measure_tab`]). Each tab shows a glyph
+//! footer is gone, the picture and save buttons), Measure (see
+//! [`super::measure_tab`]) and Controls (the walking keys and mouse, see
+//! [`super::navkeys`]). Each tab shows a glyph
 //! with its name. Controls the glyph row over the picture already shows are
 //! left out while it is shown. The menu resizes from its corner, keeps its
 //! size, opens on the tab last shown, stays open while its switches are used
@@ -15,6 +17,7 @@
 use egui::{Rect, Ui, UiBuilder, Vec2};
 use pdfcer_gui_base::icons::{self, Icon};
 
+use super::controls::INSET;
 use super::{ModelView, REGION_FIT, REGION_VIEW_PREFIX, phone};
 
 /// The Perspective switch, greyed while walking.
@@ -31,8 +34,6 @@ pub const REGION_RESET_DEFAULTS: &str = "model3d.options.reset_default"; // ui-t
 pub const REGION_MENU: &str = "model3d.options.menu"; // ui-text-exempt: trace region name, never displayed
 /// The options glyph's published region.
 pub const REGION_OPTIONS: &str = "model3d.options"; // ui-text-exempt: trace region name, never displayed
-/// The glyph's gap from the picture's corner, in points.
-const INSET: f32 = 8.0;
 /// The menu's width when first opened, in points.
 const WIDTH: f32 = 330.0;
 /// The smallest the menu is resized to, in points.
@@ -40,19 +41,20 @@ const SMALLEST: [f32; 2] = [240.0, 160.0];
 /// The egui id the menu's size is kept under.
 const SIZE_ID: &str = "model3d-options-size"; // ui-text-exempt: an egui id, never displayed
 /// Each tab's glyph, in [`TAB_WORDS`]' order.
-const TAB_ICONS: [Icon; 5] = [
+const TAB_ICONS: [Icon; 6] = [
     Icon::Model3d,
     Icon::Lighting,
     Icon::Walk,
     Icon::Snapshot,
     Icon::Measure,
+    Icon::Sticks,
 ];
 /// Room kept below the menu, in points: its frame's margin and shadow.
 const BELOW: f32 = 24.0;
 /// Room the tab row and its rule take above the rows, in points.
 const TABS_HIGH: f32 = 40.0;
 /// Each tab's published region, after [`REGION_TAB`].
-const TAB_WORDS: [&str; 5] = ["view", "look", "moving", "picture", "measure"]; // ui-text-exempt: trace region names, never displayed
+const TAB_WORDS: [&str; 6] = ["view", "look", "moving", "picture", "measure", "controls"]; // ui-text-exempt: trace region names, never displayed
 /// The tabs' region prefix: `model3d.options.tab.view` and so on.
 pub const REGION_TAB: &str = "model3d.options.tab."; // ui-text-exempt: trace region name, never displayed
 
@@ -73,9 +75,12 @@ impl ModelView {
     /// below the picture stay in reach while it is open; dragged from its
     /// corner it grows to the window's bottom.
     pub(super) fn options_button(&mut self, ui: &mut Ui, rect: Rect) {
+        if !self.nav.prefs.bar {
+            return;
+        }
         let side = self.glyph_side(ui.ctx());
         let at = Rect::from_min_size(
-            egui::pos2(rect.left() + INSET, rect.top() + INSET),
+            egui::pos2(rect.left() + INSET * 2.0 + side, rect.top() + INSET),
             Vec2::splat(side),
         );
         let mut child = ui.new_child(UiBuilder::new().max_rect(at));
@@ -124,6 +129,9 @@ impl ModelView {
             crate::diag::ui_rect_visible(REGION_MENU, menu.response.rect, ui.clip_rect());
         }
         self.nav.options_open = open;
+        if !open {
+            self.nav.capturing = None;
+        }
     }
 
     /// The tabs, each a glyph and its name, the one shown marked; they wrap
@@ -183,7 +191,7 @@ impl ModelView {
     /// The tab shown's rows.
     fn options(&mut self, ui: &mut Ui) {
         let full = self.filling_screen(ui.ctx());
-        let row = self.nav.prefs.controls;
+        let row = self.nav.prefs.bar;
         match self.nav.options_tab {
             0 => self.view_tab(ui, row),
             1 => {
@@ -201,7 +209,8 @@ impl ModelView {
                     ui.horizontal_wrapped(|ui| self.buttons(ui));
                 }
             }
-            _ => self.measure_tab(ui),
+            4 => self.measure_tab(ui),
+            _ => self.controls_tab(ui),
         }
     }
 

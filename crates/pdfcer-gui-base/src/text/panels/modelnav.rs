@@ -102,10 +102,34 @@ pub fn controls() -> &'static str {
 /// Its tip.
 #[must_use]
 pub fn controls_tooltip() -> &'static str {
-    "Draw the gimbal, the drone sticks and the full-screen buttons over the picture. A single tap on the picture also shows or hides them; while they are hidden, the camera button at the bottom saves a picture of the view."
+    "Draw the gimbal and the drone sticks over the picture. The sticks button in the row over the picture shows or hides them too."
 }
 
-/// The camera button's tip while the controls are hidden.
+/// The sticks glyph's tip, in the row over the picture.
+#[must_use]
+pub fn controls_glyph() -> &'static str {
+    "Show or hide the gimbal and the drone sticks"
+}
+
+/// The settings page's row for the button row over the picture.
+#[must_use]
+pub fn bar() -> &'static str {
+    "Show the button row over the picture"
+}
+
+/// The arrow's tip while the options and the button row are shown.
+#[must_use]
+pub fn bar_hide() -> &'static str {
+    "Hide the options and the button row"
+}
+
+/// The arrow's tip while they are hidden.
+#[must_use]
+pub fn bar_show() -> &'static str {
+    "Show the options and the button row"
+}
+
+/// The camera glyph's tip, in the row over the picture.
 #[must_use]
 pub fn shot_tooltip() -> &'static str {
     "Save a picture of the view, without the buttons over it"

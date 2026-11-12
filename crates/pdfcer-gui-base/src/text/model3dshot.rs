@@ -5,8 +5,8 @@
 /// The options menu's tabs, in order: the view, its look, moving about,
 /// the saved picture, and measuring.
 #[must_use]
-pub fn tabs() -> [&'static str; 5] {
-    ["View", "Look", "Moving", "Picture", "Measure"]
+pub fn tabs() -> [&'static str; 6] {
+    ["View", "Look", "Moving", "Picture", "Measure", "Controls"]
 }
 
 /// The 360° picture switch.

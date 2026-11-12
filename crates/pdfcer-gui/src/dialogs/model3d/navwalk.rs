@@ -1,24 +1,21 @@
 //! Walking's input: the drone sticks and their buttons, the keys that stand
-//! in for them (W A S D, the arrows or keypad, I J K L, U and O, Shift), a
-//! drag to look, a pinch or Ctrl with the wheel to zoom, the wheel to step,
-//! the gimbal's taps, and a double tap that goes to the surface tapped.
+//! in for them (bound in [`super::bindings`]), the mouse
+//! ([`super::navmouse`]), a pinch or Ctrl with the wheel to zoom, the wheel
+//! to step, the gimbal's taps, and a double tap that goes to the surface
+//! tapped.
 //!
 //! The drone sticks are offered, while the controls are shown, on a touch
-//! screen and whenever the viewer fills the screen. With them, a drag turns the camera apart from the
-//! heading, as the camera stick does; without them (a mouse in a window) a
-//! drag turns the body, as a desktop game's mouse-look does, so going
-//! forward goes where the view faces.
+//! screen and whenever the viewer fills the screen.
 
-use egui::{Key, Pos2, Rect, Response, Ui, Vec2};
+use egui::{Pos2, Rect, Response, Ui, Vec2};
 use pdfcer_3d_nav::{Intent, shaped};
 
 use super::ModelView;
+use super::bindings::Act;
 use super::drone::{self, CAMERA, Drone, LEFT, RIGHT};
 use super::gimbal::{Gimbal, ZONES as GIMBAL_ZONES};
 use super::stick::Bases;
 
-/// Radians the look turns per point dragged.
-const LOOK_RATE: f64 = 0.005;
 /// Eye heights a wheel notch's 50 points steps.
 const WHEEL_STEP: f64 = 0.5;
 /// Radians a fully tilted left stick turns the body per second.
@@ -57,12 +54,17 @@ impl ModelView {
         let tilts = self.tilts(&reading.sticks, keys);
         self.nav.drone = drone.map(|d| (d, tilts));
 
-        // Mode 2: left is throttle and yaw, right is pitch and roll.
+        let before = self.nav.walk;
+        let bind = self.nav.prefs.bind;
+        let (both, turned) = self.walk_mouse(ui, response, reading.look, drone.is_some());
+        // Mode 2: left is throttle and yaw, right is pitch and roll, unless
+        // the sides are swapped.
+        let (turn, strafe) = bind.turn_strafe(tilts[LEFT].x, tilts[RIGHT].x);
         let intent = Intent {
-            forward: shaped(tilts[RIGHT].y),
-            right: shaped(tilts[RIGHT].x),
+            forward: if both { 1.0 } else { shaped(tilts[RIGHT].y) },
+            right: shaped(strafe),
             rise: shaped(tilts[LEFT].y),
-            run: ui.input(|i| i.modifiers.shift),
+            run: ui.input(|i| bind.run.held(i.modifiers)),
         };
         let dt = f64::from(ui.input(|i| i.stable_dt.min(0.1)));
         let pinch = if self.nav.sticks.touch() {
@@ -70,19 +72,9 @@ impl ModelView {
         } else {
             ui.input(egui::InputState::zoom_delta)
         };
-        let before = self.nav.walk;
         let lens = self.lens;
         if let Some(walk) = &mut self.nav.walk {
-            let (drag_yaw, drag_pitch) = (
-                -f64::from(reading.look.x) * LOOK_RATE,
-                f64::from(reading.look.y) * LOOK_RATE,
-            );
-            if drone.is_some() {
-                walk.look(drag_yaw, drag_pitch);
-            } else {
-                walk.turn(drag_yaw, drag_pitch);
-            }
-            walk.turn(-shaped(tilts[LEFT].x) * STICK_TURN * dt, 0.0);
+            walk.turn(-shaped(turn) * STICK_TURN * dt, 0.0);
             walk.look(
                 -shaped(tilts[CAMERA].x) * CAMERA_TURN.0 * dt,
                 -shaped(tilts[CAMERA].y) * CAMERA_TURN.1 * dt,
@@ -101,7 +93,8 @@ impl ModelView {
         self.walk_taps(ui, rect, &reading.taps);
         self.walk_step(intent, dt, wheel);
         self.update_arm();
-        let busy = self.nav.sticks.active() || keyed || wheel != 0.0 || pinch != 1.0;
+        let busy =
+            self.nav.sticks.active() || keyed || both || turned || wheel != 0.0 || pinch != 1.0;
         self.nav.moving = self.nav.walk != before && busy;
         self.walk_trace(busy);
         if busy || self.nav.walk.is_some_and(|w| w.falling()) {
@@ -128,9 +121,7 @@ impl ModelView {
     /// The walking keys as stick tilts, while the keyboard is the viewer's
     /// (its own window, full screen, or the pointer over the picture) and no
     /// text box has it: whether any was held, the three tilts, and the wheel.
-    /// W A S D are the left stick, the arrows or the keypad's 8 4 2 6 the
-    /// right, I J K L the camera's; U and O tap the two centring buttons.
-    /// Shift runs.
+    /// The centring actions tap the drone's two centring buttons.
     fn walk_keys(&mut self, ui: &Ui, response: &Response) -> (bool, [Vec2; 3], f64) {
         let wheel = if response.hovered() {
             f64::from(ui.input(|i| i.smooth_scroll_delta.y))
@@ -138,26 +129,16 @@ impl ModelView {
             0.0
         };
         let ours = response.hovered() || self.nav.immersive || self.native;
-        if !ours || crate::canvas::textedit::composing(ui.ctx()) {
+        let waiting = self.nav.capturing.is_some();
+        if !ours || waiting || crate::canvas::textedit::composing(ui.ctx()) {
             return (false, [Vec2::ZERO; 3], wheel);
         }
+        let bind = &self.nav.prefs.bind;
         let (tilts, centre) = ui.input(|i| {
-            let down = |ks: &[Key]| f32::from(u8::from(ks.iter().any(|k| i.key_down(*k))));
-            let stick = |up: &[Key], left: &[Key], down_: &[Key], right: &[Key]| {
-                Vec2::new(down(right) - down(left), down(up) - down(down_))
-            };
+            let pressed = |act: Act| bind.fired(act, |k| i.key_pressed(k));
             (
-                [
-                    stick(&[Key::W], &[Key::A], &[Key::S], &[Key::D]),
-                    stick(
-                        &[Key::ArrowUp, Key::Num8],
-                        &[Key::ArrowLeft, Key::Num4],
-                        &[Key::ArrowDown, Key::Num2],
-                        &[Key::ArrowRight, Key::Num6],
-                    ),
-                    stick(&[Key::I], &[Key::J], &[Key::K], &[Key::L]),
-                ],
-                [i.key_pressed(Key::U), i.key_pressed(Key::O)],
+                bind.tilts(|k| i.key_down(k)),
+                [pressed(Act::CentreYaw), pressed(Act::CentrePitch)],
             )
         });
         if centre[0] {

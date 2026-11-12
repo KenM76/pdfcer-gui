@@ -2667,3 +2667,90 @@ document always* (kept in `Prefs`, by path). The one choke point is the
 remembered list, each row Allow or Block, removable), *Ask before opening
 other files* and *Play 3D content*, drawn pressed from their live value like
 `view.smart_select`. The Settings window carries the same under a Trust page.
+
+## O411 / O412 — navigation bindings, presets and the Controls tab
+
+Walking reads its keys and drags through one table, `model3d::bindings`,
+instead of fixed keys in `navwalk`.
+
+- **Actions.** Forward, back, strafe left and right, turn left and right,
+  rise, sink, look up, down, left and right, centre the look's yaw, level
+  the pitch. Each action holds up to two keys.
+- **Mouse.** Left drag and right drag each do one of turn the body, turn
+  the camera, or nothing. Both buttons held can walk forward. Free look
+  turns the body from raw mouse motion with the cursor confined and
+  hidden; Esc, leaving the walk, or opening the options releases it.
+  Invert-Y and a sensitivity apply to every mouse look.
+- **Run.** A modifier (Shift, Ctrl or Alt) rather than a key, because egui
+  reports modifiers apart from keys.
+- **Swap sides.** Exchanges the turn axis and the strafe axis — for the keys
+  and the on-screen sticks alike. A finger's tilt is never moved: the left
+  stick's x simply strafes and the right stick's turns. The turn and strafe
+  keys feed the stick that now does their job, so the knob a key moves is
+  the one doing that work.
+- **Presets.** *Default* is the layout before this table existed. *Shooter*
+  (Counter-Strike): W/S move, A/D strafe, free mouse look, Space rises, C
+  sinks. *Avatar* (World of Warcraft): A/D turn, Q/E strafe, right drag
+  turns the body, left drag turns the camera, both buttons walk, the
+  behind-view on. Editing any binding names the set *Custom*; a preset can
+  be reapplied at any time.
+- **Persistence.** One saved key per action slot (`bind_<action>_<n>`, the
+  key's index in `bindings::KEYS` plus one, 0 for none; that list only grows
+  at its end) and one per mouse option, under the viewer's prefix, so the
+  settings page reaches every one. Escape is never bindable: it always gives
+  the mouse back and leaves full screen.
+- **The Controls tab.** A sixth tab of the viewer's options, not a separate
+  window, so it opens where the other walking options are and closes with
+  them: preset cards (clicking one reapplies it), the swap switch, the
+  action table with key chips (click a chip, press a key to capture it, Esc
+  cancels, Delete clears; while a chip waits the walking keys do nothing),
+  and the mouse options. Closing the options ends a wait.
+
+## O413 — the viewer's tool row slides in and out
+
+- An arrow glyph holds the corner. Pressed, it hides the options glyph and
+  the whole tool row; pressed again, it brings them back. It never hides by
+  itself, and the row starts shown (`bar`, saved).
+- The row wraps to further rows when the window is too narrow.
+- The row gains a camera glyph (save the view as a picture) and a controls
+  glyph (show or hide the drone sticks). The single tap on the picture no
+  longer toggles the controls and the separate camera button is gone; the
+  double tap still goes to the surface.
+
+## O415 — folding the 3D model tree
+
+Each node with children draws a boxed +/− at the end of its guide line;
+clicking it folds or unfolds that branch. Guide lines run down from each
+parent to its last child with an elbow into every child. Folded nodes are
+held by index in the panel and survive a reload of the same model only by
+chance — a new model starts unfolded. The row menu offers fold-all and
+unfold-all.
+
+## O414 — Properties comes forward for the tool or object in hand
+
+- The left rail gains a Properties row, so the panel is one click from the
+  same strip as Pages and Bookmarks in Review and Edit, wherever its tab is.
+- Properties comes to the front of its own stack, and its side shows, when
+  a tool with options is armed (the text pen, the measuring and dimension
+  tools, the region, the highlighter) or when the selection changes to a new
+  non-empty one. The Select tool's scale switches do not count: Select is the
+  resting tool.
+- A pick does not displace the Objects tree when that tree is the tab in
+  front of Properties' stack — the tree follows the pick itself (O416).
+- When neither a tool with options nor a selection is left, the tab
+  Properties covered comes back to the front, and a side that was hidden is
+  hidden again. If the operator changed tab in the meantime, nothing moves.
+- It never mounts the panel. A Properties the operator closed stays closed,
+  and Read, which has none, gains none.
+- `app::forward`; traced as `properties-forward` and `properties-back`.
+
+## O416 — the Objects tree follows a pick on the page
+
+- When the selection on the page changes and the change did not come from
+  a click in the tree, the layer headings over the picked objects unfold and
+  the list scrolls the front-most picked row to its middle — unless that row
+  is already in view, so a pick never jolts a list that already shows it.
+- Rows already highlight the selection; this adds only the reach.
+- A row click marks the next three frames as the tree's own, since its
+  action lands a frame or two later.
+- `panels::objects::follow`; traced as `objects-follow`.

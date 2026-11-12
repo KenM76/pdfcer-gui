@@ -1,5 +1,5 @@
 //! The viewer's settings kept between sessions: the navigation switches and
-//! speed, the options menu's tab, the lens, the screen's look, and the saved picture's
+//! speed, the walking keys and mouse, the options menu's tab, the lens, the screen's look, and the saved picture's
 //! size, resolution, backdrop, detail and own look, and the OS window's
 //! size. Each is one `model3d_`
 //! preferences key, written as a number or a 0/1 flag; a choice from a list
@@ -23,6 +23,7 @@ use pdfcer_3d_nav::{AUTO_RANGE, CURVES, LensKind};
 use pdfcer_core::threed::ThreeDLighting;
 
 use super::ModelView;
+use super::bindings::{self, Act, Bindings, Drag, Run};
 use super::card::CardParts;
 use super::looks::LAMP_NEAREST;
 use super::nav;
@@ -127,6 +128,46 @@ impl Get<'_> {
     }
 }
 
+/// The walking bindings under `bind_`: each key slot an index into
+/// [`bindings::KEYS`] plus one, 0 for none; each choice its index in its
+/// list.
+fn put_bind(put: &mut Put<'_>, b: &Bindings) {
+    for (act, slots) in Act::ALL.iter().zip(&b.keys) {
+        for (n, key) in slots.iter().enumerate() {
+            let at = key.and_then(|k| bindings::KEYS.iter().position(|x| *x == k));
+            put.value(&format!("{}_{n}", act.word()), at.map_or(0, |i| i + 1));
+        }
+    }
+    put.pick("left_drag", &Drag::ALL, &b.left_drag);
+    put.pick("right_drag", &Drag::ALL, &b.right_drag);
+    put.flag("both_forward", b.both_forward);
+    put.flag("free_look", b.free_look);
+    put.flag("invert_y", b.invert_y);
+    put.value("sensitivity", format!("{:.3}", b.sensitivity));
+    put.pick("run", &Run::ALL, &b.run);
+    put.flag("swap_sides", b.swap_sides);
+}
+
+fn get_bind(get: &Get<'_>, b: &mut Bindings) {
+    for (act, slots) in Act::ALL.iter().zip(&mut b.keys) {
+        for (n, key) in slots.iter_mut().enumerate() {
+            match get.value::<usize>(&format!("{}_{n}", act.word())) {
+                Some(0) => *key = None,
+                Some(i) => *key = bindings::KEYS.get(i - 1).copied().or(*key),
+                None => {}
+            }
+        }
+    }
+    get.pick("left_drag", &Drag::ALL, &mut b.left_drag);
+    get.pick("right_drag", &Drag::ALL, &mut b.right_drag);
+    get.flag("both_forward", &mut b.both_forward);
+    get.flag("free_look", &mut b.free_look);
+    get.flag("invert_y", &mut b.invert_y);
+    get.number("sensitivity", bindings::SENSITIVITY, &mut b.sensitivity);
+    get.pick("run", &Run::ALL, &mut b.run);
+    get.flag("swap_sides", &mut b.swap_sides);
+}
+
 fn put_look(put: &mut Put<'_>, look: &LookSet) {
     put.pick("lighting", &lightings(), &look.view_lighting);
     put.flag("lights_turn", look.lights_turn);
@@ -210,9 +251,12 @@ impl Kept<'_> {
         put.flag("level", p.level);
         put.flag("gimbal", p.gimbal);
         put.flag("controls", p.controls);
+        put.flag("bar", p.bar);
         put.value("speed", format!("{:.3}", p.speed));
         put.flag("stairs", p.stairs);
         put.flag("behind", p.behind);
+        put_bind(&mut Put(map, "bind_"), &p.bind);
+        let mut put = Put(map, "");
         let lens = self.lens;
         put.pick("lens", &LensKind::ALL, &lens.kind);
         put.pick("lens_curve", &CURVES, &lens.curve);
@@ -285,11 +329,13 @@ impl ModelView {
         get.flag("level", &mut p.level);
         get.flag("gimbal", &mut p.gimbal);
         get.flag("controls", &mut p.controls);
+        get.flag("bar", &mut p.bar);
         get.number("speed", 0.25..=4.0, &mut p.speed);
         get.flag("stairs", &mut p.stairs);
         get.flag("behind", &mut p.behind);
+        get_bind(&Get(settings, "bind_"), &mut p.bind);
         self.nav.recalled(p);
-        get.number("tab", 0..=4, &mut self.nav.options_tab);
+        get.number("tab", 0..=5, &mut self.nav.options_tab);
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);
         get.pick("lens_curve", &CURVES, &mut self.lens.curve);
         get.number("lens_auto_at", AUTO_RANGE, &mut self.lens.auto_at);

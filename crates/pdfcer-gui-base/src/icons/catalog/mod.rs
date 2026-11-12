@@ -1297,6 +1297,8 @@ pub enum Icon {
     Behind,
     /// The Tags panel: the structure tree a screen reader follows.
     Tags,
+    /// The 3D viewer's drone sticks: show or hide the navigation controls.
+    Sticks,
     /// Turn the walking camera back to straight ahead.
     CentreYaw,
     /// Tilt the walking camera back to level.

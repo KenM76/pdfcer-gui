@@ -70,9 +70,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 210 → 211: `lighting`, the 3D options menu's Look tab.
     // 211 → 212: `behind`, walking seen from behind a figure.
     // 212 → 213: `tags`, the Tags panel.
+    // 213 → 214: `sticks`, the 3D viewer's controls glyph.
     assert_eq!(
         Icon::ALL.len(),
-        213,
+        214,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

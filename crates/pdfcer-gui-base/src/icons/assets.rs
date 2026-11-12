@@ -1045,6 +1045,7 @@ pub(super) const BEHIND: &str = include_str!("assets/behind.svg");
 
 /// `tags.svg` — the art for [`super::Icon::Tags`].
 pub(super) const TAGS: &str = include_str!("assets/tags.svg");
+pub(super) const STICKS: &str = include_str!("assets/sticks.svg");
 
 /// `lighting.svg` — the art for [`super::Icon::Lighting`].
 pub(super) const LIGHTING: &str = include_str!("assets/lighting.svg");

@@ -160,6 +160,8 @@ pub mod surfaces;
 /// floating panel, and the coordinate questions being in another window
 /// forces.
 pub mod floats;
+/// Properties comes forward for the tool or object in hand.
+pub mod forward;
 /// Which signature boxes the document records as hand-signed.
 pub mod handsigned;
 /// The sentence that says how to leave a page-only window.
@@ -503,6 +505,8 @@ pub struct PdfcerApp {
     /// state: scroll positions, expansion, focus. `open_path` forgets it,
     /// which is why it needs no key of any kind.
     pub panels: crate::panels::PanelsState,
+    /// What Properties last had to show and the tab it covers.
+    pub forward: forward::Forward,
 
     /// **The Find bar's state** — the query, the search options, whether the
     /// bar is on screen, and the last search's hits.
@@ -1036,6 +1040,7 @@ impl PdfcerApp {
             // `ThumbnailCache::on` could go back to a plain `bool`: there is
             // still exactly one party deciding.
             //
+            forward: forward::Forward::default(),
             panels: {
                 let mut panels = crate::panels::PanelsState::default();
                 let pages = panels.pages_mut();

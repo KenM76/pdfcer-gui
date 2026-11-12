@@ -22,6 +22,7 @@ use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
 mod behind;
+mod bindings;
 mod card;
 mod controls;
 mod drone;
@@ -44,10 +45,13 @@ mod measure_paint;
 mod measure_tab;
 mod memory;
 mod nav;
+mod navkeys;
+mod navmouse;
 mod navorbit;
 mod navwalk;
 mod options;
 mod parts;
+mod partstree;
 mod phone;
 mod picture;
 mod rows;
@@ -173,7 +177,8 @@ pub(crate) struct ModelView {
     close_requested: bool,
     /// The minimised state last traced.
     minimized: Option<bool>,
-    /// This frame's Escape left full screen, so it must not close the window.
+    /// This frame's Escape was used up — it left full screen or gave back
+    /// the mouse — so it must not close the window.
     escape_left_full_screen: bool,
     /// The host drew a real OS window, the only kind that can fill the screen.
     native: bool,
@@ -374,6 +379,7 @@ impl ModelView {
     }
 
     fn body(&mut self, ui: &mut Ui) {
+        self.mouse_escape(ui);
         self.window_keys(ui);
         if self.filling_screen(ui.ctx()) {
             self.immersive_body(ui, ui.max_rect());
@@ -499,9 +505,8 @@ impl ModelView {
         self.paint_overlay(ui, rect);
         self.hud_row(ui, rect);
         self.measure_card(ui.ctx(), rect);
+        self.bar_button(ui, rect);
         self.options_button(ui, rect);
-        self.shot_button(ui, rect);
-        self.settle_tap(ui.ctx());
     }
 
     /// What the picture leaves out or inferred, said under it.

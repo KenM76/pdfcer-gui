@@ -1273,6 +1273,7 @@ impl eframe::App for PdfcerApp {
         // Step 3 — apply, after the frame is drawn.
         let pixels_per_point = ctx.pixels_per_point();
         self.apply_actions(actions, pixels_per_point);
+        self.properties_forward(&ctx);
         self.remote_settle(&ctx);
         self.siblings_picker(&ctx);
         // After the actions, so the in-font draft is laid out for the text

@@ -82,6 +82,7 @@ pub mod fonts;
 /// alignment.
 pub mod formfield;
 /// The 3D viewer's walking, gimbal and full screen.
+pub mod modelkeys;
 pub mod modelnav;
 /// The 3D viewer's phone layout.
 pub mod modelphone;

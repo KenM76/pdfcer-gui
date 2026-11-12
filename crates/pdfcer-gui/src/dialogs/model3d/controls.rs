@@ -1,35 +1,37 @@
-//! Showing and hiding the navigation controls over the picture — the
-//! gimbal, the drone sticks and their buttons, and the full-screen row —
-//! by a switch in the options menu or a single tap on the picture. While
-//! they are hidden a see-through camera button at the picture's bottom
-//! centre saves the view, drawn by the engine without it or the menu.
+//! What is drawn over the picture, and the switches for it: the arrow in
+//! the top-left corner that slides the options glyph and the button row out
+//! of sight and back (never by itself; shown by default), and the
+//! navigation controls — the gimbal and the drone sticks with their buttons
+//! — switched from the row's sticks glyph or the options menu. Design:
+//! `DESIGNS.md` § O413.
 //!
-//! A tap toggles only once the double-tap window has passed without a
-//! second tap, so a double tap does its own job (centre on, or go to, the
-//! surface tapped) and leaves the controls as they were.
+//! A tap on the picture is held for the double-tap window, so a double tap
+//! does its own job: centre on, or go to, the surface tapped.
 
-use egui::{Pos2, Rect, Ui, Vec2};
-use pdfcer_gui_base::icons::{self, Icon};
+use egui::{Pos2, Rect, Ui, UiBuilder, Vec2};
+use pdfcer_gui_base::icons::Icon;
 
 use super::ModelView;
 use crate::text::panels::modelnav as t;
 
 /// The options menu's *Show navigation controls* switch.
 pub const REGION_CONTROLS: &str = "model3d.controls"; // ui-text-exempt: trace region name, never displayed
-/// The camera button drawn while the controls are hidden.
+/// The row's camera glyph.
 pub const REGION_SHOT: &str = "model3d.shot"; // ui-text-exempt: trace region name, never displayed
+/// The row's sticks glyph.
+pub const REGION_STICKS: &str = "model3d.sticks"; // ui-text-exempt: trace region name, never displayed
+/// The corner arrow that hides and shows the options glyph and the row.
+pub const REGION_BAR: &str = "model3d.bar"; // ui-text-exempt: trace region name, never displayed
 
 /// A double tap's most time between taps, seconds, and distance, points.
 pub(super) const DOUBLE_TAP: (f64, f32) = (0.4, 32.0);
-/// The camera button's side and its gap from the picture's bottom, points.
-const SHOT: (f32, f32) = (56.0, 16.0);
-/// How much of the camera button's fill and glyph shows through.
-const SHOT_ALPHA: (f32, f32) = (0.35, 0.75);
+/// The glyphs' gap from the picture's corner and from each other, points.
+pub(super) const INSET: f32 = 8.0;
 
 impl ModelView {
     /// A tap on the picture away from every control, at `now` and `at`.
     /// Whether it is the second of a double tap; a first one is held for
-    /// [`ModelView::settle_tap`].
+    /// the next.
     /// A tap that closes the options menu is the menu's, not the picture's.
     pub(super) fn tap_picture(&mut self, now: f64, at: Pos2) -> bool {
         if self.nav.options_open {
@@ -48,20 +50,6 @@ impl ModelView {
             self.nav.pending_tap = Some((now, at));
         }
         double
-    }
-
-    /// Toggle the controls once a held tap's window has passed alone.
-    pub(super) fn settle_tap(&mut self, ctx: &egui::Context) {
-        let Some((then, _)) = self.nav.pending_tap else {
-            return;
-        };
-        let left = DOUBLE_TAP.0 - (ctx.input(|i| i.time) - then);
-        if left > 0.0 {
-            ctx.request_repaint_after(std::time::Duration::from_secs_f64(left));
-            return;
-        }
-        self.nav.pending_tap = None;
-        self.set_controls(ctx, !self.nav.prefs.controls);
     }
 
     /// Show or hide the controls, for the session.
@@ -87,31 +75,46 @@ impl ModelView {
         }
     }
 
-    /// The camera button over the picture `rect`'s bottom centre while the
-    /// controls are hidden; a press saves a picture of the view.
-    pub(super) fn shot_button(&mut self, ui: &mut Ui, rect: Rect) {
-        if self.nav.prefs.controls {
-            return;
-        }
-        let at = Rect::from_center_size(
-            Pos2::new(rect.center().x, rect.bottom() - SHOT.1 - SHOT.0 / 2.0),
-            Vec2::splat(SHOT.0),
-        );
-        let response = ui
-            .interact(at, ui.id().with(REGION_SHOT), egui::Sense::click())
-            .on_hover_text(t::shot_tooltip());
-        crate::diag::ui_rect_visible(REGION_SHOT, at, ui.clip_rect());
+    /// The arrow in `rect`'s top-left corner: it hides the options glyph
+    /// and the button row, or brings them back.
+    pub(super) fn bar_button(&mut self, ui: &mut Ui, rect: Rect) {
+        let side = self.glyph_side(ui.ctx());
+        let at = Rect::from_min_size(rect.min + Vec2::splat(INSET), Vec2::splat(side));
+        let shown = self.nav.prefs.bar;
+        let (icon, tip) = if shown {
+            (Icon::ChevronLeft, t::bar_hide())
+        } else {
+            (Icon::ChevronRight, t::bar_show())
+        };
+        let mut child = ui.new_child(UiBuilder::new().max_rect(at));
+        let arrow = super::immersive::glyph(&mut child, icon, tip, false, side);
+        crate::diag::ui_rect_visible(REGION_BAR, arrow.rect, ui.clip_rect());
         self.nav.hud.push(at.expand(4.0));
-        let painter = ui.painter().with_clip_rect(rect);
-        let fill = ui.visuals().window_fill.gamma_multiply(SHOT_ALPHA.0);
-        painter.circle_filled(at.center(), SHOT.0 / 2.0, fill);
-        icons::image(ui, Icon::Snapshot)
-            .tint(egui::Color32::WHITE.gamma_multiply(SHOT_ALPHA.1)) // NOT A THEME COLOUR: pass-through tint, only its alpha applies
-            .paint_at(ui, at.shrink(SHOT.0 * 0.22));
-        if response.clicked() {
+        if arrow.clicked() {
+            self.nav.prefs.bar = !shown;
+            if shown {
+                self.nav.options_open = false;
+            }
+            // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| format!("model-nav-bar shown={}", !shown));
+            self.switched(ui.ctx());
+        }
+    }
+
+    /// The row's camera and sticks glyphs, `side` points square.
+    pub(super) fn bar_extras(&mut self, ui: &mut Ui, side: f32) {
+        let shot = super::immersive::glyph(ui, Icon::Snapshot, t::shot_tooltip(), false, side);
+        crate::diag::ui_rect_visible(REGION_SHOT, shot.rect, ui.clip_rect());
+        if shot.clicked() {
             // ui-text-exempt: diagnostic trace, never displayed
             crate::diag::trace(|| "model-view-shot".to_owned());
             self.save_scene();
+        }
+        let shown = self.nav.prefs.controls;
+        let sticks = super::immersive::glyph(ui, Icon::Sticks, t::controls_glyph(), shown, side);
+        crate::diag::ui_rect_visible(REGION_STICKS, sticks.rect, ui.clip_rect());
+        if sticks.clicked() {
+            self.set_controls(ui.ctx(), !shown);
         }
     }
 }

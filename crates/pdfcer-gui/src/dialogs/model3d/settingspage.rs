@@ -14,6 +14,7 @@ use egui::Ui;
 use pdfcer_3d_nav::AUTO_RANGE;
 use pdfcer_gui_base::settingspages::widgets;
 
+use super::bindings::{Act, KEYS, SENSITIVITY, SLOTS};
 use super::looks::{LAMP_NEAREST, lamp_cut_text, nearest_text};
 use super::memory::{self, HIGHLIGHTS, SEE_THROUGH, SENSES, Settings};
 use super::sunlight::{GAIN_RANGE, KELVIN_RANGE, aim_row};
@@ -23,6 +24,7 @@ use crate::text::model3dlens as l;
 use crate::text::model3dlight as g;
 use crate::text::model3dlook::{self as k, CardPart};
 use crate::text::model3dshot as s;
+use crate::text::panels::modelkeys as n;
 use crate::text::panels::modelnav as t;
 
 /// What one key holds.
@@ -103,8 +105,33 @@ fn view_rows() -> Vec<Row> {
         flag("stairs", t::stairs()),
         flag("behind", t::behind()),
         flag("controls", t::controls()),
+        flag("bar", t::bar()),
         number("speed", t::speed(), 0.25..=4.0, 3),
     ]
+}
+
+/// The walking keys and mouse, as the navigation-controls window sets them.
+fn bind_rows() -> Vec<Row> {
+    let keys = std::iter::once(n::no_key()).chain(KEYS.iter().map(|k| n::key(*k)));
+    let keys: Vec<&str> = keys.collect();
+    let mut rows = Vec::new();
+    for (act, name) in Act::ALL.iter().zip(n::acts()) {
+        for slot in 0..SLOTS {
+            let key = format!("bind_{}_{slot}", act.word());
+            rows.push(pick(&key, &n::slot_label(name, slot), keys.iter().copied()));
+        }
+    }
+    rows.extend([
+        pick("bind_left_drag", n::left_drag(), n::drags()),
+        pick("bind_right_drag", n::right_drag(), n::drags()),
+        flag("bind_both_forward", n::both_forward()),
+        flag("bind_free_look", n::free_look()),
+        flag("bind_invert_y", n::invert_y()),
+        number("bind_sensitivity", n::sensitivity(), SENSITIVITY, 3),
+        pick("bind_run", n::run(), n::runs()),
+        flag("bind_swap_sides", n::swap()),
+    ]);
+    rows
 }
 
 /// The graphics card's switches.
@@ -334,6 +361,8 @@ pub(crate) fn page(ui: &mut Ui, prefs: &mut Prefs) {
     let tabs = s::tabs();
     section(ui, tabs[0]);
     rows_ui(ui, &view_rows(), map, &factory);
+    section(ui, n::title());
+    rows_ui(ui, &bind_rows(), map, &factory);
     section(ui, tabs[1]);
     rows_ui(ui, &look_rows("look_"), map, &factory);
     section(ui, k::CARD_HEADING);
@@ -376,11 +405,17 @@ mod tests {
     #[test]
     fn every_saved_key_has_a_row_but_the_pictures_screen_size() {
         let prefix = pdfcer_gui_base::prefs::modelview::PREFIX;
-        let rows: Vec<String> = [view_rows(), look_rows("look_"), card_rows(), shot_rows()]
-            .into_iter()
-            .flatten()
-            .map(|r| format!("{prefix}{}", r.key))
-            .collect();
+        let rows: Vec<String> = [
+            view_rows(),
+            bind_rows(),
+            look_rows("look_"),
+            card_rows(),
+            shot_rows(),
+        ]
+        .into_iter()
+        .flatten()
+        .map(|r| format!("{prefix}{}", r.key))
+        .collect();
         let missing: Vec<String> = memory::factory()
             .into_keys()
             .filter(|k| !k.ends_with("shot_base_w") && !k.ends_with("shot_base_h"))
@@ -401,6 +436,7 @@ mod tests {
         for row in look_rows("look_")
             .iter()
             .chain(&view_rows())
+            .chain(&bind_rows())
             .chain(&shot_rows())
         {
             if let Kind::Pick(choices) = &row.kind {

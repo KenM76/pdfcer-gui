@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Two thumb sticks seen from above, each a knob in its base: the navigation controls drawn over the 3D picture. -->
+  <circle cx="13" cy="24" r="10" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="35" cy="24" r="10" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="13" cy="20" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="39" cy="24" r="3.5" stroke="currentColor" stroke-width="2.5"/>
+</svg>

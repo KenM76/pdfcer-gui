@@ -1,26 +1,28 @@
-//! `checks::model_controls` — **the 3D viewer's navigation controls hide
-//! and show, and while hidden a camera button saves the view**
+//! `checks::model_controls` — **the 3D viewer's tool row slides away and
+//! back on its arrow, and its camera and sticks glyphs work**
 //!
-//! Places `fixtures/floor-box.prc` and opens it with *View…*. Clears *Show
-//! navigation controls* in the options menu, presses the camera button
-//! that takes their place, then taps the picture once and twice.
+//! Places `fixtures/floor-box.prc` and opens it with *View…*. Presses the
+//! row's sticks glyph twice with the camera glyph between, taps the picture
+//! once, then presses the corner arrow twice.
 //!
 //! Oracles, from the region log and the trace (the viewer is an immediate
 //! viewport no screenshot reaches):
 //!
-//! - Opened: the gimbal's `+X` tip is drawn and the camera button is not.
-//! - Cleared: `model-nav-controls shown=false`; the tip is gone and the
-//!   camera button drawn.
-//! - The camera button: `model-view-shot`, then `model-picture-saved` and a
-//!   file at the picker's answer; the controls stay hidden.
-//! - One tap on the picture: `shown=true`, the tip back, the button gone.
-//! - Two taps: no `model-nav-controls` line, so a double tap keeps its
-//!   own job.
+//! - Opened: the arrow, the camera glyph, the sticks glyph and the gimbal's
+//!   `+X` tip are all drawn — the row starts shown.
+//! - Sticks: `model-nav-controls shown=false`, the tip gone, the camera
+//!   glyph still drawn.
+//! - Camera: `model-view-shot`, then `model-picture-saved` and a file at
+//!   the picker's answer.
+//! - Sticks again: `shown=true`, the tip back.
+//! - One tap on the picture: no `model-nav-controls` line — a tap no longer
+//!   toggles the controls.
+//! - Arrow: `model-nav-bar shown=false`, the camera and sticks glyphs gone,
+//!   the arrow still drawn; again: `shown=true` and the glyphs back.
 
 use crate::checks::driving::{declared_in, repo_fixture};
 use crate::checks::model_shadow_sun::open;
 use crate::checks::model_view_window::{launch_with_model_env, picture_saved, ui_rect};
-use crate::checks::viewer_options;
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::Result;
@@ -30,29 +32,30 @@ use crate::report::CheckReport;
 
 const MODEL: &str = "floor-box.prc";
 const METHOD: &str = "Rebuild it with `python fixtures/floor-box.PROVENANCE.py <pdfcer.exe>`.";
-/// `dialogs::model3d::controls::REGION_CONTROLS`.
-const CONTROLS: &str = "model3d.controls";
+/// `dialogs::model3d::controls::REGION_BAR`.
+const BAR: &str = "model3d.bar";
 /// `dialogs::model3d::controls::REGION_SHOT`.
 const SHOT: &str = "model3d.shot";
+/// `dialogs::model3d::controls::REGION_STICKS`.
+const STICKS: &str = "model3d.sticks";
 /// The gimbal's `+X` tip.
 const TIP: &str = "model3d.gimbal.tip.0";
 const IMAGE: &str = "model3d.image";
 /// The picture picker's diagnostic answer, read by `app::files::pick_picture_target`.
 const PICTURE_ENV: &str = "PDFCER_DIAG_PICTURE_SAVE_PATH";
-const SWITCHED: &str = "model-nav-controls";
 
 /// See the module documentation.
 pub struct TheViewerControlsHide;
 
 impl Check for TheViewerControlsHide {
     fn name(&self) -> &'static str {
-        "the_3d_viewers_controls_hide_on_a_tap_and_a_camera_button_saves_the_view"
+        "the_3d_viewers_tool_row_slides_away_on_its_arrow_and_its_camera_and_sticks_work"
     }
 
     fn defect(&self) -> &'static str {
-        "the 3D viewer's navigation controls cannot be hidden, a single tap does not show or \
-         hide them, a double tap toggles them, or the camera button shown while they are \
-         hidden is missing or saves nothing"
+        "the 3D viewer's tool row does not start shown, its arrow does not hide and bring \
+         it back, its sticks glyph does not hide and show the navigation controls, its \
+         camera glyph saves nothing, or a tap on the picture still toggles the controls"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -95,22 +98,22 @@ struct Driver<'a> {
     ui_rect: &'static str,
 }
 
+/// What is drawn: the arrow, the camera glyph, the sticks glyph, the tip.
+type Drawn = (bool, bool, bool, bool);
+
 impl Driver<'_> {
-    /// Whether the tip and the camera button are drawn.
-    fn drawn(&self) -> Result<(bool, bool)> {
+    fn drawn(&self) -> Result<Drawn> {
         let trace = self.session.trace()?;
-        Ok((
-            declared_in(&trace, self.ui_rect, TIP).is_some(),
-            declared_in(&trace, self.ui_rect, SHOT).is_some(),
-        ))
+        let at = |name| declared_in(&trace, self.ui_rect, name).is_some();
+        Ok((at(BAR), at(SHOT), at(STICKS), at(TIP)))
     }
 
-    /// The `shown` of each `model-nav-controls` line.
-    fn switches(&self) -> Result<Vec<String>> {
+    /// The `shown` of each `event` line.
+    fn said(&self, event: &str) -> Result<Vec<String>> {
         Ok(self
             .session
             .trace()?
-            .events(SWITCHED)
+            .events(event)
             .map(|l| l.get("shown").unwrap_or("-").to_owned())
             .collect())
     }
@@ -129,80 +132,73 @@ impl Driver<'_> {
         Ok(true)
     }
 
+    /// Press `name` and compare what is drawn and what `event` said.
+    fn step(
+        &self,
+        report: &mut CheckReport,
+        name: &str,
+        (event, said): (&str, &[&str]),
+        want: Drawn,
+    ) -> Result<Option<String>> {
+        if !self.click(name, 1)? {
+            return Ok(Some(format!("no `{name}` drawn to press.")));
+        }
+        let got = self.drawn()?;
+        let lines = self.said(event)?;
+        report.note(format!("{name}: drawn {got:?}, {event} {lines:?}"));
+        if got != want || lines != said {
+            return Ok(Some(format!(
+                "pressing `{name}` drew (arrow, camera, sticks, tip) {got:?} and traced \
+                 {event} {lines:?}; expected {want:?} and {said:?}."
+            )));
+        }
+        Ok(None)
+    }
+
     fn drive(&self, report: &mut CheckReport, target: &std::path::Path) -> Result<Option<String>> {
         let opened = self.drawn()?;
-        report.note(format!("opened (tip, shot): {opened:?}"));
-        if opened != (true, false) {
+        report.note(format!("opened: {opened:?}"));
+        if opened != (true, true, true, true) {
             return Ok(Some(format!(
-                "the viewer opened with (gimbal tip, camera button) drawn {opened:?}; expected \
-                 the controls shown and no camera button."
+                "the viewer opened with (arrow, camera, sticks, tip) drawn {opened:?}; the \
+                 row must start shown with the controls."
             )));
         }
-        if !viewer_options::press(self.session, self.pointer, self.ui_rect, CONTROLS)? {
-            return Ok(Some(format!("no `{CONTROLS}` switch in the options menu.")));
-        }
-        self.session.settle(20);
-        let hidden = self.drawn()?;
-        let said = self.switches()?;
-        report.note(format!("cleared: {hidden:?}, switches {said:?}"));
-        if hidden != (false, true) || said != ["false"] {
-            return Ok(Some(format!(
-                "clearing Show navigation controls drew {hidden:?} and traced {said:?}; \
-                 expected the gimbal gone, the camera button drawn, and `shown=false`."
-            )));
+        let off = ("model-nav-controls", &["false"][..]);
+        if let Some(f) = self.step(report, STICKS, off, (true, true, true, false))? {
+            return Ok(Some(f));
         }
         let mark = self.session.trace()?.mark();
-        if !self.click(SHOT, 1)? {
-            return Ok(Some(format!(
-                "the `{SHOT}` button vanished before its press."
-            )));
-        }
+        self.click(SHOT, 1)?;
         let saved = picture_saved(self.session, mark)?;
         let shot = self
             .session
             .trace()?
             .last_after("model-view-shot", mark)
             .is_some();
-        let kept = self.drawn()?;
         report.note(format!(
-            "camera button: shot {shot}, saved {saved}, file {}, then {kept:?}",
+            "camera: shot {shot}, saved {saved}, file {}",
             target.is_file()
         ));
-        if !(shot && saved && target.is_file()) || kept != (false, true) {
+        if !(shot && saved && target.is_file()) {
             return Ok(Some(format!(
-                "pressing the camera button traced shot {shot}, saved {saved}, wrote a file \
-                 {}, and left {kept:?}; expected a saved picture with the controls still \
-                 hidden.",
+                "the camera glyph traced shot {shot}, saved {saved}, wrote a file {}; \
+                 expected a saved picture.",
                 target.is_file()
             )));
         }
-        self.taps(report)
-    }
-
-    /// One tap on the picture shows the controls; two leave them.
-    fn taps(&self, report: &mut CheckReport) -> Result<Option<String>> {
-        if !self.click(IMAGE, 1)? {
-            return Ok(Some(format!("no `{IMAGE}` region.")));
+        let on = ("model-nav-controls", &["false", "true"][..]);
+        if let Some(f) = self.step(report, STICKS, on, (true, true, true, true))? {
+            return Ok(Some(f));
         }
-        let shown = self.drawn()?;
-        let said = self.switches()?;
-        report.note(format!("one tap: {shown:?}, switches {said:?}"));
-        if shown != (true, false) || said != ["false", "true"] {
-            return Ok(Some(format!(
-                "one tap on the picture drew {shown:?} and traced {said:?}; expected the \
-                 controls back and the camera button gone."
-            )));
+        if let Some(f) = self.step(report, IMAGE, on, (true, true, true, true))? {
+            return Ok(Some(f));
         }
-        self.click(IMAGE, 2)?;
-        let twice = self.drawn()?;
-        let after = self.switches()?;
-        report.note(format!("two taps: {twice:?}, switches {after:?}"));
-        if twice != (true, false) || after != said {
-            return Ok(Some(format!(
-                "a double tap on the picture drew {twice:?} and traced {after:?}; a double \
-                 tap must leave the controls as they were."
-            )));
+        let away = ("model-nav-bar", &["false"][..]);
+        if let Some(f) = self.step(report, BAR, away, (true, false, false, true))? {
+            return Ok(Some(f));
         }
-        Ok(None)
+        let back = ("model-nav-bar", &["false", "true"][..]);
+        self.step(report, BAR, back, (true, true, true, true))
     }
 }

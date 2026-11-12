@@ -363,3 +363,21 @@ pub fn effects_said(cast: ShadowCast, drawn: bool) -> String {
     };
     format!("{cast}Other PDF readers may not draw shadows or shaded corners.")
 }
+
+/// A part's fold box tip.
+#[must_use]
+pub fn part_fold_tooltip() -> &'static str {
+    "Fold or unfold the parts under this one"
+}
+
+/// Fold every branch of the part list.
+#[must_use]
+pub fn parts_fold_all() -> &'static str {
+    "Fold every part"
+}
+
+/// Unfold every branch of the part list.
+#[must_use]
+pub fn parts_unfold_all() -> &'static str {
+    "Unfold every part"
+}

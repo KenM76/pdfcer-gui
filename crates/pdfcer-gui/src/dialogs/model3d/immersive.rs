@@ -1,7 +1,8 @@
 //! The viewer filling the screen, as a game does: the picture edge to edge.
 //! Its row of glyph buttons over the picture's top-left corner (full screen
 //! or leave, Walk or Orbit, Ghost, Level and Stairs while walking, the
-//! gimbal, Fit) is drawn in every layout while the controls are shown,
+//! gimbal, Measure, the camera, the sticks, Fit) is drawn in every layout
+//! unless the corner arrow has slid it away (see [`super::controls`]),
 //! thumb-sized where a thumb uses it and smaller in a desktop window. Where the viewer
 //! is an OS window, full screen is that window's; where it is drawn inside
 //! the application (Android, a single-window host), it is an area over the
@@ -18,8 +19,7 @@ use crate::text::panels::modelnav as t;
 
 /// The egui id of the area the viewer fills the screen with.
 const AREA_ID: &str = "model3d-immersive"; // ui-text-exempt: an egui id, never displayed
-/// The button row's gap from the picture's corner, in points.
-const INSET: f32 = 8.0;
+use super::controls::INSET;
 /// A glyph button's side where a thumb uses it, in points.
 const THUMB: f32 = 44.0;
 /// A glyph button's side in a desktop window, in points.
@@ -45,6 +45,7 @@ impl ModelView {
     /// The picture filling `rect`, with the button row over it while the
     /// controls are shown.
     pub(super) fn immersive_body(&mut self, ui: &mut Ui, rect: Rect) {
+        self.mouse_escape(ui);
         let (escape, closing) = ui.input(|i| {
             (
                 i.key_pressed(egui::Key::Escape),
@@ -63,15 +64,15 @@ impl ModelView {
         self.picture(ui, rect.size());
     }
 
-    /// The glyph row over `rect`, the picture, while the controls are shown;
-    /// it wraps onto further rows in a narrow picture.
+    /// The glyph row over `rect`, the picture, unless slid away; it wraps
+    /// onto further rows in a narrow picture.
     pub(super) fn hud_row(&mut self, ui: &mut Ui, rect: Rect) {
-        if !self.nav.prefs.controls {
+        if !self.nav.prefs.bar {
             return;
         }
         let side = self.glyph_side(ui.ctx());
-        // The row starts right of the options glyph in the corner.
-        let clear = INSET + side;
+        // The row starts right of the arrow and the options glyph.
+        let clear = (INSET + side) * 2.0;
         let bar = Rect::from_min_size(
             rect.min + egui::vec2(clear + INSET, INSET),
             (rect.size() - egui::vec2(clear + INSET * 2.0, INSET * 2.0)).max(Vec2::splat(side)),
@@ -128,6 +129,7 @@ impl ModelView {
         if measure.clicked() {
             self.measure.switch(!on);
         }
+        self.bar_extras(ui, side);
         let home = glyph(ui, Icon::FitPage, t::home(), false, side);
         crate::diag::ui_rect_visible(super::REGION_FIT, home.rect, ui.clip_rect());
         if home.clicked() {

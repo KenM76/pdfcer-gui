@@ -55,8 +55,8 @@ fn only_the_panel_tabs_are_marked_never_folding() {
     assert_eq!(groups[0].fold, RailFold::Never);
     assert_eq!(
         groups[0].items.len(),
-        6,
-        "all six panels, one click away — Comments joined 2026-09-05, on his report"
+        7,
+        "every panel one click away, Properties among them"
     );
     for group in &groups[1..] {
         assert_ne!(

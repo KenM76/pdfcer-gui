@@ -56,12 +56,13 @@ pub fn reach(
 
 /// The options menu's tabs: `dialogs::model3d::options::REGION_TAB` and
 /// each tab's word.
-const TABS: [&str; 5] = [
+const TABS: [&str; 6] = [
     "model3d.options.tab.view",
     "model3d.options.tab.look",
     "model3d.options.tab.moving",
     "model3d.options.tab.picture",
     "model3d.options.tab.measure",
+    "model3d.options.tab.controls",
 ];
 
 /// `name` on the open tab, wheeling its rows down until it shows or they

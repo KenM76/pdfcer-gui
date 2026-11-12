@@ -53,8 +53,11 @@ pub(super) struct Prefs {
     pub ghost: bool,
     pub level: bool,
     pub gimbal: bool,
-    /// The navigation controls are drawn over the picture.
+    /// The navigation controls — the gimbal and the drone sticks — are
+    /// drawn over the picture.
     pub controls: bool,
+    /// The options glyph and the button row are drawn over the picture.
+    pub bar: bool,
     pub speed: f64,
     /// Climb obstacles under a third of the eye height.
     pub stairs: bool,
@@ -63,6 +66,8 @@ pub(super) struct Prefs {
     /// The eye height the operator set, millimetres; `None` for a share of
     /// the model's size.
     pub eye_mm: Option<f64>,
+    /// What each key and mouse button does while walking.
+    pub bind: super::bindings::Bindings,
 }
 
 impl Default for Prefs {
@@ -72,10 +77,12 @@ impl Default for Prefs {
             level: true,
             gimbal: true,
             controls: true,
+            bar: true,
             speed: 1.0,
             stairs: false,
             behind: false,
             eye_mm: None,
+            bind: super::bindings::Bindings::default(),
         }
     }
 }
@@ -123,6 +130,11 @@ pub(super) struct Nav {
     /// How far back the camera hangs behind the walker, model units, and
     /// the walker it was measured for.
     pub arm: Option<(Walk, f64)>,
+    /// The key slot whose chip waits for a key: walking keys do nothing
+    /// meanwhile.
+    pub capturing: Option<(super::bindings::Act, usize)>,
+    /// The picture holds the mouse for free look.
+    pub mouse_held: bool,
     /// The session's switches have been taken up.
     loaded: bool,
     /// Start walking on the next frame: the viewer opens walking.
@@ -357,7 +369,7 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-nav-prefs ghost={} level={} gimbal={} controls={} speed={:.2} stairs={} behind={} eye_mm={}",
+                "model-nav-prefs ghost={} level={} gimbal={} controls={} speed={:.2} stairs={} behind={} eye_mm={} bind={} swap={}",
                 p.ghost,
                 p.level,
                 p.gimbal,
@@ -366,7 +378,11 @@ impl ModelView {
                 p.stairs,
                 p.behind,
                 p.eye_mm
-                    .map_or_else(|| "auto".to_owned(), |mm| format!("{mm:.1}"))
+                    .map_or_else(|| "auto".to_owned(), |mm| format!("{mm:.1}")),
+                p.bind
+                    .matches()
+                    .map_or("custom", super::bindings::Preset::word),
+                p.bind.swap_sides
             )
         });
     }
