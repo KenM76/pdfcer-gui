@@ -63,7 +63,7 @@ mod tests {
         }
         assert_eq!(back, map);
         assert!(matches!(
-            parse_key(&mut back, "walk_eye_height_mm", "3"),
+            parse_key(&mut back, "walk_eye_mm", "3"),
             KeyOutcome::NotMine
         ));
         assert!(matches!(

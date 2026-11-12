@@ -32,7 +32,7 @@ const TIP_X: &str = "model3d.gimbal.tip.0";
 /// `dialogs::model3d::options::REGION_SAVE_DEFAULTS`.
 const SAVE_DEFAULTS: &str = "model3d.options.save_default";
 /// `prefs::walkeye`'s file key.
-const KEY: &str = "walk_eye_height_mm";
+const KEY: &str = "walk_eye_mm";
 /// The picture picker's diagnostic answer, read by `app::files::pick_picture_target`.
 const PICTURE_ENV: &str = "PDFCER_DIAG_PICTURE_SAVE_PATH";
 

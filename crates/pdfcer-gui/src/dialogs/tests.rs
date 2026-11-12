@@ -60,7 +60,7 @@ fn no_document_means_no_dialog() {
     // fires before they are read — so the shipped defaults are the honest
     // argument here. What matters is that no document means the spooler is
     // never enumerated, whatever the operator last printed with.
-    dialogs.open_print(&Status::Empty, &crate::app::prefs::PrintPrefs::default());
+    dialogs.open_print(&Status::Empty, &crate::app::prefs::Prefs::default());
     assert!(dialogs.print.is_none());
 }
 

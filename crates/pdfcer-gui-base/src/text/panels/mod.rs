@@ -81,6 +81,7 @@ pub mod fonts;
 /// field's flags, its tooltip, its maximum length, its default value and its
 /// alignment.
 pub mod formfield;
+pub mod modelfigure;
 /// The 3D viewer's walking, gimbal and full screen.
 pub mod modelkeys;
 pub mod modelnav;

@@ -112,6 +112,7 @@ mod presets;
 /// A header or footer on the printed copy only.
 mod route;
 mod running;
+mod saved;
 
 // The names this dialog publishes for `tools/ui-verify`. A private glob keeps
 // `super::REGION_*` resolving from `tabs` and `position`; the three named
@@ -480,6 +481,8 @@ pub struct PrintDialog {
     opened_with: crate::app::prefs::PrintPrefs,
     /// The document's own print settings this dialog opened on.
     presets: presets::Applied,
+    /// The Preset row: saved settings, by name (O418).
+    saved: saved::Saved,
     /// Colour, grey or black only, applied to every rendered sheet.
     output_color: pdfcer_print::output_color::OutputColor,
     /// The printer profile and simulated press every sheet is converted through.
@@ -615,6 +618,7 @@ impl PrintDialog {
             // route that is supposed to write nothing new.
             opened_with: remembered.clone(),
             presets: presets::Applied::default(),
+            saved: saved::Saved::default(),
             output_color: pdfcer_print::output_color::OutputColor::Color,
             icc: icc::Icc::new(remembered.colour.clone()),
         };
@@ -1147,6 +1151,8 @@ impl PrintDialog {
         page_count: usize,
         page_sizes: &[(f64, f64)],
     ) {
+        self.preset_row(ui);
+        ui.add_space(4.0);
         ui.horizontal_wrapped(|ui| {
             ui.label(t::printer_label());
             egui::ComboBox::from_id_salt("print-printer")
@@ -1236,6 +1242,7 @@ impl PrintDialog {
         match self.active_tab {
             PrintTab::PagesLayout => tabs::pages_layout(ui, self, page_count, job),
             PrintTab::CopiesFinishing => tabs::copies_finishing(ui, self),
+            PrintTab::Colour => tabs::colour(ui, self),
             PrintTab::Comments => tabs::comments(ui, self),
             PrintTab::Position if self.poster.on => {
                 ui.label(t::poster_positions_fixed());

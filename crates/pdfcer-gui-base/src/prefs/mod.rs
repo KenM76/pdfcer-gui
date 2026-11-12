@@ -66,6 +66,7 @@ pub mod print_impose;
 /// remembered is a judgement worth keeping, and because it carries this group's
 /// whole file format — parser and writer together. See its header.
 pub mod printing;
+pub mod printpresets;
 
 /// How sharply a page is drawn, and how long zoom waits before drawing it.
 /// The two preferences that change what a **frame costs**.
@@ -404,8 +405,8 @@ pub struct Prefs {
     pub markup_tools: MarkupToolPrefs,
     /// Whether a document opens with overprint preview on. See [`overprint`].
     pub overprint_default: OverprintDefault,
-    /// The 3D walker's eye height, whole millimetres; `None` follows the
-    /// model's size. See [`walkeye`].
+    /// The 3D walker's eye height, whole millimetres, 5 ft 6 in by default;
+    /// `None` follows the model's size. See [`walkeye`].
     pub walk_eye_mm: Option<u32>,
     /// The 3D viewer opens walking with ghost on; `false` orbiting. See
     /// [`modelstart`].
@@ -415,6 +416,8 @@ pub struct Prefs {
     /// How large the Settings window draws its text, on top of `ui_scale`.
     /// See [`settingstext`].
     pub settings_text_scale: f32,
+    /// The extra folders Print searches for saved presets. See [`printpresets`].
+    pub print_presets: printpresets::PrintPresetFolders,
     /// **Whether a click selects a whole container or one line inside it** —
     /// `OPERATOR_REQUESTS.md` **O70**, 2026-08-31.
     ///
@@ -873,10 +876,11 @@ impl Default for Prefs {
             form_style: FormStylePrefs::default(),
             markup_tools: MarkupToolPrefs::default(),
             overprint_default: OverprintDefault::default(),
-            walk_eye_mm: None,
+            walk_eye_mm: Some(walkeye::DEFAULT_MM),
             model_start_walk: true,
             model_view: std::collections::BTreeMap::new(),
             settings_text_scale: settingstext::DEFAULT,
+            print_presets: printpresets::PrintPresetFolders::default(),
             page_cache: PageCache::default(),
             zoom_settle_ms: DEFAULT_SETTLE_MS,
             // The shipped default is today's ceiling, so a fresh install

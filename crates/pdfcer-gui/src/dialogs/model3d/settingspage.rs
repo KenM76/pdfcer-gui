@@ -15,6 +15,7 @@ use pdfcer_3d_nav::AUTO_RANGE;
 use pdfcer_gui_base::settingspages::widgets;
 
 use super::bindings::{Act, KEYS, SENSITIVITY, SLOTS};
+use super::figure::MEASURE;
 use super::looks::{LAMP_NEAREST, lamp_cut_text, nearest_text};
 use super::memory::{self, HIGHLIGHTS, SEE_THROUGH, SENSES, Settings};
 use super::sunlight::{GAIN_RANGE, KELVIN_RANGE, aim_row};
@@ -24,6 +25,7 @@ use crate::text::model3dlens as l;
 use crate::text::model3dlight as g;
 use crate::text::model3dlook::{self as k, CardPart};
 use crate::text::model3dshot as s;
+use crate::text::panels::modelfigure as f;
 use crate::text::panels::modelkeys as n;
 use crate::text::panels::modelnav as t;
 
@@ -107,6 +109,27 @@ fn view_rows() -> Vec<Row> {
         flag("controls", t::controls()),
         flag("bar", t::bar()),
         number("speed", t::speed(), 0.25..=4.0, 3),
+    ]
+}
+
+/// The figure seen from behind: its proportions and shadows.
+fn figure_rows() -> Vec<Row> {
+    let measure = |key: &str, label: &str| Row {
+        kind: Kind::Number {
+            range: MEASURE,
+            decimals: 3,
+            percent: true,
+        },
+        ..number(key, label, MEASURE, 3)
+    };
+    vec![
+        measure("figure_head", f::head()),
+        measure("figure_shoulders", f::shoulders()),
+        measure("figure_arms", f::arms()),
+        measure("figure_legs", f::legs()),
+        measure("figure_build", f::build()),
+        flag("figure_blob", f::blob()),
+        flag("figure_cast", f::cast()),
     ]
 }
 
@@ -363,6 +386,8 @@ pub(crate) fn page(ui: &mut Ui, prefs: &mut Prefs) {
     rows_ui(ui, &view_rows(), map, &factory);
     section(ui, n::title());
     rows_ui(ui, &bind_rows(), map, &factory);
+    section(ui, f::heading());
+    rows_ui(ui, &figure_rows(), map, &factory);
     section(ui, tabs[1]);
     rows_ui(ui, &look_rows("look_"), map, &factory);
     section(ui, k::CARD_HEADING);
@@ -385,7 +410,7 @@ fn eye_row(ui: &mut Ui, eye_mm: &mut Option<u32>) {
         *eye_mm = None;
         return;
     }
-    let mut mm = eye_mm.unwrap_or(1600);
+    let mut mm = eye_mm.unwrap_or(pdfcer_gui_base::prefs::walkeye::DEFAULT_MM);
     ui.horizontal_wrapped(|ui| {
         widgets::label(ui, t::eye_height());
         ui.add(
@@ -408,6 +433,7 @@ mod tests {
         let rows: Vec<String> = [
             view_rows(),
             bind_rows(),
+            figure_rows(),
             look_rows("look_"),
             card_rows(),
             shot_rows(),

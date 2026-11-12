@@ -68,6 +68,10 @@ pub(super) struct Prefs {
     pub eye_mm: Option<f64>,
     /// What each key and mouse button does while walking.
     pub bind: super::bindings::Bindings,
+    /// The figure's proportions and shadows.
+    pub figure: super::figure::Measures,
+    /// Which figure stands there.
+    pub kind: super::figure::Kind,
 }
 
 impl Default for Prefs {
@@ -83,6 +87,8 @@ impl Default for Prefs {
             behind: false,
             eye_mm: None,
             bind: super::bindings::Bindings::default(),
+            figure: super::figure::Measures::default(),
+            kind: super::figure::Kind::default(),
         }
     }
 }
@@ -130,6 +136,18 @@ pub(super) struct Nav {
     /// How far back the camera hangs behind the walker, model units, and
     /// the walker it was measured for.
     pub arm: Option<(Walk, f64)>,
+    /// Wheel notches the camera behind is pulled in (positive) or let out
+    /// from its usual distance.
+    pub pull: f64,
+    /// The floor found under the walker, eye heights below the eye, and the
+    /// walker it was found for.
+    pub stand: Option<(Walk, Option<f64>)>,
+    /// The figure's walk.
+    pub gait: super::animate::Gait,
+    /// The eye at the last frame the gait was stepped.
+    pub last_eye: Option<[f64; 3]>,
+    /// The last letters typed over the picture.
+    pub typed: String,
     /// The key slot whose chip waits for a key: walking keys do nothing
     /// meanwhile.
     pub capturing: Option<(super::bindings::Act, usize)>,
@@ -184,7 +202,7 @@ impl Nav {
         }
     }
 
-    fn store(&self, ctx: &egui::Context) {
+    pub(super) fn store(&self, ctx: &egui::Context) {
         ctx.data_mut(|d| d.insert_temp(egui::Id::new(PREFS_KEY), self.prefs));
     }
 }
@@ -337,6 +355,7 @@ impl ModelView {
         if behind.clicked() {
             self.nav.prefs.behind = !prefs.behind;
             self.nav.arm = None;
+            self.nav.stand = None;
             self.switched(ui.ctx());
         }
     }

@@ -27,6 +27,8 @@ pub mod pictures;
 /// which of the three is there for a weak reason and should move out first if
 /// the module grows.
 pub mod print_colour;
+/// The Print presets page.
+pub mod printpresets;
 pub mod redaction;
 /// Whether another program may drive the window.
 pub mod remote;

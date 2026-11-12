@@ -649,7 +649,7 @@ pub fn pick_split_folder() -> Picked {
 
 /// A folder picker answered by `env` when it is set, else the native dialog,
 /// tracing `<event> source=<env|native> path=<path|none>`.
-fn pick_folder_traced(env: &str, title: &str, event: &str) -> Picked {
+pub(crate) fn pick_folder_traced(env: &str, title: &str, event: &str) -> Picked {
     let (answer, source) = match from_env(std::env::var_os(env)) {
         Some(answer) => (answer, "env"), // ui-text-exempt: trace token
         None => (

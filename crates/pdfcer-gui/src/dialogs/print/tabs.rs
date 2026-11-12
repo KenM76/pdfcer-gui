@@ -1,4 +1,4 @@
-//! # `dialogs::print::tabs` — the three groups of settings, and the range parser
+//! # `dialogs::print::tabs` — the tabs of settings, and the range parser
 //!
 //! ## Why tabs at all
 //!
@@ -48,6 +48,8 @@ pub(super) enum PrintTab {
     /// Copies, collation, reverse order, duplex, tray — how many sheets come
     /// out and in what state.
     CopiesFinishing,
+    /// Output colour and colour management — what the ink looks like.
+    Colour,
     /// Annotation scope — what is painted onto each page.
     Comments,
     /// Where each page sits on the sheet, and therefore what gets cropped off
@@ -73,9 +75,10 @@ pub(super) enum PrintTab {
 
 impl PrintTab {
     /// Every tab, in the order the strip draws them.
-    pub(super) const ALL: [Self; 4] = [
+    pub(super) const ALL: [Self; 5] = [
         Self::PagesLayout,
         Self::CopiesFinishing,
+        Self::Colour,
         Self::Comments,
         Self::Position,
     ];
@@ -85,6 +88,7 @@ impl PrintTab {
         match self {
             Self::PagesLayout => t::tab_pages_layout(),
             Self::CopiesFinishing => t::tab_copies_finishing(),
+            Self::Colour => t::tab_colour(),
             Self::Comments => t::tab_comments(),
             Self::Position => t::tab_position(),
         }
@@ -98,6 +102,8 @@ impl PrintTab {
             // ui-text-exempt: diagnostic region name, never displayed in the UI
             Self::CopiesFinishing => "copies",
             // ui-text-exempt: diagnostic region name, never displayed in the UI
+            Self::Colour => "colour",
+            // ui-text-exempt: diagnostic region name, never displayed in the UI
             Self::Comments => "comments",
             // ui-text-exempt: diagnostic region name, never displayed in the UI
             Self::Position => "position",
@@ -109,6 +115,7 @@ impl PrintTab {
         match self {
             Self::PagesLayout => t::tab_pages_layout_tooltip(),
             Self::CopiesFinishing => t::tab_copies_finishing_tooltip(),
+            Self::Colour => t::tab_colour_tooltip(),
             Self::Comments => t::tab_comments_tooltip(),
             Self::Position => t::tab_position_tooltip(),
         }
@@ -391,6 +398,16 @@ pub(super) fn pages_layout(
     resolution(ui, dialog, job.map(|j| j.resolution));
 }
 
+/// Output colour, then the printer profile, proofing and paper simulation.
+pub(super) fn colour(ui: &mut Ui, dialog: &mut PrintDialog) {
+    super::colour::radios(ui, dialog);
+    ui.add_space(8.0);
+    if super::icc::controls(ui, &mut dialog.icc) {
+        dialog.preview_texture = None;
+        dialog.impose.preview = None;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Tab 2 — Copies & Finishing
 // ---------------------------------------------------------------------------
@@ -405,13 +422,6 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.checkbox(&mut dialog.uncollated, t::uncollated());
     ui.checkbox(&mut dialog.reverse, t::reverse())
         .on_hover_text(t::reverse_tooltip());
-    ui.add_space(8.0);
-    super::colour::radios(ui, dialog);
-    ui.add_space(8.0);
-    if super::icc::controls(ui, &mut dialog.icc) {
-        dialog.preview_texture = None;
-        dialog.impose.preview = None;
-    }
     ui.add_space(8.0);
     let printer = dialog.printers.get(dialog.selected).map(|p| p.name.clone());
     dialog.finishing.controls(ui, printer.as_deref());

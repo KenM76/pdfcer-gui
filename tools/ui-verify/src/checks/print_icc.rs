@@ -4,7 +4,7 @@
 //!
 //! Driven off the desktop with the scripted pointer: `file.print` is rung on
 //! `print-colour.pdf`, a Letter page about 63 % saturated red. The check opens
-//! the Copies tab, opens the Simulate press list and picks the first CMYK
+//! the Colour tab, opens the Simulate press list and picks the first CMYK
 //! profile the dialog listed. Oracle: a `print-icc of=preview` line with more
 //! than half the raster's pixels changed. A saturated sRGB red lies outside
 //! every press gamut, so a proof through any CMYK condition must move it.
@@ -25,7 +25,7 @@ const OPEN: &str = "print-open";
 const ICC: &str = "print-icc";
 const LISTED: &str = "print-icc-listed";
 const LISTS: &str = "print-icc-lists";
-const TAB: &str = "print.tab.copies";
+const TAB: &str = "print.tab.colour";
 const PROOF: &str = "print.icc.proof";
 
 /// See the module documentation.
@@ -105,7 +105,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Verdict> {
         .map(|l| (l.get_usize("item"), l.raw.clone()));
     if trace.last(LISTS).is_none() {
         return Ok(Verdict::Fail(format!(
-            "★★★ the Copies tab was opened and no `{LISTS}` line followed: the \
+            "★★★ the Colour tab was opened and no `{LISTS}` line followed: the \
              colour-management controls never listed the installed profiles."
         )));
     }

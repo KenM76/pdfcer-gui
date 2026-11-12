@@ -1,8 +1,8 @@
 //! Walking's input: the drone sticks and their buttons, the keys that stand
 //! in for them (bound in [`super::bindings`]), the mouse
 //! ([`super::navmouse`]), a pinch or Ctrl with the wheel to zoom, the wheel
-//! to step, the gimbal's taps, and a double tap that goes to the surface
-//! tapped.
+//! to step (seen from behind, to pull the camera in and out), the gimbal's
+//! taps, and a double tap that goes to the surface tapped.
 //!
 //! The drone sticks are offered, while the controls are shown, on a touch
 //! screen and whenever the viewer fills the screen.
@@ -72,17 +72,7 @@ impl ModelView {
         } else {
             ui.input(egui::InputState::zoom_delta)
         };
-        let lens = self.lens;
-        if let Some(walk) = &mut self.nav.walk {
-            walk.turn(-shaped(turn) * STICK_TURN * dt, 0.0);
-            walk.look(
-                -shaped(tilts[CAMERA].x) * CAMERA_TURN.0 * dt,
-                -shaped(tilts[CAMERA].y) * CAMERA_TURN.1 * dt,
-            );
-            if pinch != 1.0 {
-                walk.zoom_by(f64::from(pinch), &lens);
-            }
-        }
+        self.stick_turn(turn, tilts[CAMERA], pinch, dt);
         for &z in &reading.tapped_zones {
             match (z >= buttons_from, &gimbal) {
                 (true, _) => self.drone_button(ui.ctx(), z - buttons_from),
@@ -91,14 +81,36 @@ impl ModelView {
             }
         }
         self.walk_taps(ui, rect, &reading.taps);
-        self.walk_step(intent, dt, wheel);
+        let step = if self.nav.prefs.behind {
+            self.pull_camera(wheel);
+            0.0
+        } else {
+            wheel
+        };
+        self.walk_step(intent, dt, step);
         self.update_arm();
+        self.update_figure(ui);
         let busy =
             self.nav.sticks.active() || keyed || both || turned || wheel != 0.0 || pinch != 1.0;
         self.nav.moving = self.nav.walk != before && busy;
         self.walk_trace(busy);
         if busy || self.nav.walk.is_some_and(|w| w.falling()) {
             ui.ctx().request_repaint();
+        }
+    }
+
+    /// The body's turn stick, the camera stick and a pinch, over `dt` seconds.
+    fn stick_turn(&mut self, turn: f32, camera: Vec2, pinch: f32, dt: f64) {
+        let lens = self.lens;
+        if let Some(walk) = &mut self.nav.walk {
+            walk.turn(-shaped(turn) * STICK_TURN * dt, 0.0);
+            walk.look(
+                -shaped(camera.x) * CAMERA_TURN.0 * dt,
+                -shaped(camera.y) * CAMERA_TURN.1 * dt,
+            );
+            if pinch != 1.0 {
+                walk.zoom_by(f64::from(pinch), &lens);
+            }
         }
     }
 

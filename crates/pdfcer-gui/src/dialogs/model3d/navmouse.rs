@@ -1,5 +1,6 @@
 //! Walking's mouse past the stick reader's left-button drag: what each
-//! button's drag turns, both buttons walking forward, and free look — the
+//! button's drag turns (seen from behind, always as a game's: the left
+//! circles the camera round the figure, the right steers it), both buttons walking forward, and free look — the
 //! picture holding the mouse so moving it turns the view with no button
 //! down. Design: `DESIGNS.md` § O411 / O412.
 //!
@@ -35,9 +36,16 @@ impl ModelView {
             self.drag_turn(Drag::Turn, moved, sticks);
             return (false, moved != Vec2::ZERO);
         }
-        self.drag_turn(bind.left_drag, left, sticks);
-        if response.dragged_by(PointerButton::Secondary) {
-            self.drag_turn(bind.right_drag, response.drag_delta(), sticks);
+        let right = response
+            .dragged_by(PointerButton::Secondary)
+            .then(|| response.drag_delta());
+        if self.nav.prefs.behind {
+            self.drag_behind(left, right);
+        } else {
+            self.drag_turn(bind.left_drag, left, sticks);
+            if let Some(right) = right {
+                self.drag_turn(bind.right_drag, right, sticks);
+            }
         }
         let both = bind.both_forward
             && response.contains_pointer()

@@ -422,7 +422,7 @@ impl PdfcerApp {
             // window's closure has returned. Paper is as irreversible as it
             // gets; it is the rule being kept, not the mechanism.
             #[cfg(not(target_os = "android"))]
-            "file.print" => self.dialogs.open_print(&self.status, &self.prefs.print),
+            "file.print" => self.dialogs.open_print(&self.status, &self.prefs),
             #[cfg(target_os = "android")]
             "file.print" => phoneprint::print(&self.status),
             "file.network_print" => self.dialogs.open_netprint(&self.status),

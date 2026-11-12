@@ -32,6 +32,7 @@ pub mod display;
 mod fonts;
 /// The extra OCR model folders.
 mod ocr;
+mod printpresets;
 mod textsize;
 /// The order Tab visits a page in. Its header carries the filing rule:
 /// both settings answer *"I pressed Tab and it went to the wrong field"*,
@@ -317,6 +318,7 @@ fn page_body(
             text::open_paragraphs(ui, &mut draft.working_prefs);
         }
         "ocr" => ocr::folders(ui, &mut draft.working_prefs),
+        "printing" => printpresets::folders(ui, &mut draft.working_prefs),
         #[cfg(feature = "3d")]
         "model3d" => super::model3d::settingspage::page(ui, &mut draft.working_prefs),
         "measuring" => measuring::parallel(ui, draft),
@@ -442,6 +444,7 @@ mod tests {
         ),
         ("nav", include_str!("nav.rs")),
         ("ocr", include_str!("ocr.rs")),
+        ("printpresets", include_str!("printpresets.rs")),
         ("textsize", include_str!("textsize.rs")),
         (
             "pages",

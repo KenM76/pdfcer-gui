@@ -15,6 +15,7 @@
 //! that setting at its default. The projection and the camera are the
 //! view's and are not kept; the eye height is kept by its own key.
 
+use super::figure::{MEASURE, Measures};
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
@@ -126,6 +127,35 @@ impl Get<'_> {
             *into = v;
         }
     }
+}
+
+/// The figure's proportions and shadows under `figure_`.
+fn put_figure(put: &mut Put<'_>, m: &Measures) {
+    for (key, v) in figure_numbers(m) {
+        put.value(key, format!("{v:.3}"));
+    }
+    put.flag("blob", m.blob);
+    put.flag("cast", m.cast);
+}
+
+fn get_figure(get: &Get<'_>, m: &mut Measures) {
+    let mut numbers = figure_numbers(m);
+    for (key, v) in &mut numbers {
+        get.number(key, MEASURE, v);
+    }
+    [m.head, m.shoulders, m.arms, m.legs, m.build] = numbers.map(|(_, v)| v);
+    get.flag("blob", &mut m.blob);
+    get.flag("cast", &mut m.cast);
+}
+
+fn figure_numbers(m: &Measures) -> [(&'static str, f64); 5] {
+    [
+        ("head", m.head),
+        ("shoulders", m.shoulders),
+        ("arms", m.arms),
+        ("legs", m.legs),
+        ("build", m.build),
+    ]
 }
 
 /// The walking bindings under `bind_`: each key slot an index into
@@ -256,6 +286,7 @@ impl Kept<'_> {
         put.flag("stairs", p.stairs);
         put.flag("behind", p.behind);
         put_bind(&mut Put(map, "bind_"), &p.bind);
+        put_figure(&mut Put(map, "figure_"), &p.figure);
         let mut put = Put(map, "");
         let lens = self.lens;
         put.pick("lens", &LensKind::ALL, &lens.kind);
@@ -334,6 +365,7 @@ impl ModelView {
         get.flag("stairs", &mut p.stairs);
         get.flag("behind", &mut p.behind);
         get_bind(&Get(settings, "bind_"), &mut p.bind);
+        get_figure(&Get(settings, "figure_"), &mut p.figure);
         self.nav.recalled(p);
         get.number("tab", 0..=5, &mut self.nav.options_tab);
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);

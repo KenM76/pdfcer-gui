@@ -62,7 +62,7 @@ fn batch_print(app: &mut PdfcerApp) {
         _ => None,
     };
     let batch = crate::dialogs::print::batch::Batch::load(&sources, &app.settings, epoch);
-    app.dialogs.open_batch_print(batch, &app.prefs.print);
+    app.dialogs.open_batch_print(batch, &app.prefs);
 }
 
 /// `tools.merge_files` — ask for the sources, ask where it goes, write it.

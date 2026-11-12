@@ -16,7 +16,7 @@ pub fn presets() -> &'static str {
 /// Each ready layout's name, in `Preset::ALL` order.
 #[must_use]
 pub fn preset_names() -> [&'static str; 3] {
-    ["Default", "Shooter", "Avatar"]
+    ["Drone", "Shooter", "Avatar"]
 }
 
 /// Each ready layout's description, in `Preset::ALL` order.

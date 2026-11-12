@@ -59,6 +59,7 @@ const PAGES: &[(Section, &str)] = &[
     (Section::Authoring, "comments"),
     (Section::Authoring, "forms"),
     (Section::Output, "saving"),
+    (Section::Output, "printing"),
     (Section::Output, "redaction"),
 ];
 
@@ -96,6 +97,7 @@ fn heading(key: &str) -> String {
         "images" => t::group_images().to_owned(),
         "text" => t::group_text().to_owned(),
         "ocr" => t::ocrmodels::group().to_owned(),
+        "printing" => t::printpresets::group().to_owned(),
         "pages" => t::group_pages().to_owned(),
         "signatures" => crate::text::trust::group_signatures().to_owned(),
         "measuring" => t::group_measuring().to_owned(),

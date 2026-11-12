@@ -420,6 +420,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_slow_printer::PrintDialogNeverWaitsOnAPrinter),
         Box::new(print_presets::PrintOpensOnTheDocumentsOwnSettings),
         Box::new(print_colour::PrintInGreyOrBlackOnly),
+        Box::new(print_saved_presets::PrintSettingsSaveAsAPreset),
         Box::new(print_icc::PrintSimulatesAPress),
         Box::new(print_edges::PrintDrawsSharpEdgesAtPrintResolution),
         Box::new(print_ink::PrintCompositesAnOversizedSheetInInk),

@@ -80,7 +80,7 @@ mod tests {
     // scale in the Appearance group. Whether a click opens a whole paragraph
     // (O295) is a shell preference in the Text group. What tabs show (O299)
     // is one header over the ribbon's and the dock's choice.
-    const SETTINGS_COUNT: usize = 54;
+    const SETTINGS_COUNT: usize = 55;
 
     /// The `(title, silence, radius)` triple for every setting in the window.
     fn triples() -> Vec<(&'static str, &'static str, &'static str)> {
@@ -316,6 +316,12 @@ mod tests {
                 ocrmodels::silence(),
                 ocrmodels::radius(),
             ),
+            // Settings ▸ Print presets: the extra folders the Print window searches.
+            (
+                printpresets::title(),
+                printpresets::silence(),
+                printpresets::radius(),
+            ),
         ]
     }
 
@@ -362,6 +368,10 @@ mod tests {
         ),
         ("fonts", include_str!("../../dialogs/settings/fonts.rs")),
         ("ocr", include_str!("../../dialogs/settings/ocr.rs")),
+        (
+            "printpresets",
+            include_str!("../../dialogs/settings/printpresets.rs"),
+        ),
         (
             "images",
             include_str!("../../../../pdfcer-gui-base/src/settingspages/images.rs"),

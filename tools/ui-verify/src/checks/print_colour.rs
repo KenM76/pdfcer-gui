@@ -3,7 +3,7 @@
 //!
 //! Driven off the desktop with the scripted pointer: `file.print` is rung on
 //! `print-colour.pdf`, a Letter page about 63 % saturated red. The check opens
-//! the Copies tab, clicks In grey, then Black only. Oracle: after each click a
+//! the Colour tab, clicks In grey, then Black only. Oracle: after each click a
 //! `print-colour of=preview` line naming that mode and more than half the
 //! raster's pixels changed. Red is never white and never already grey, so
 //! both modes must change every red pixel.
@@ -21,7 +21,7 @@ const FIXTURE: &str = "print-colour.pdf";
 const METHOD: &str = "Rebuild it with `python fixtures/print-colour.PROVENANCE.py`.";
 const OPEN: &str = "print-open";
 const COLOUR: &str = "print-colour";
-const TAB: &str = "print.tab.copies";
+const TAB: &str = "print.tab.colour";
 const PREFIX: &str = "print.colour.";
 
 /// See the module documentation.

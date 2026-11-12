@@ -274,6 +274,7 @@ impl ModelView {
             self.speed_slider(ui);
         }
         ui.horizontal_wrapped(|ui| self.eye_height_control(ui));
+        self.figure_controls(ui);
     }
 }
 

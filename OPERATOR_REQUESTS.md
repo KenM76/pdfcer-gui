@@ -1192,7 +1192,7 @@ His words: *"Also we should be able to set the height in ft or inches when ghost
 
 **Scope, whole behaviour.** With ghost mode off, the walk menu offers an eye-height field in feet or inches (unit chosen beside it), applied at once to the walker; floors, stair climbing (a third of the eye height) and falling use it. The value is converted through the model's units, and remembered across sessions. Hidden in ghost mode, where there is no floor to stand on.
 
-**Status.** Built: walking with ghost off, the options menu holds *Eye height* as a feet field and an inches field side by side (no unit switch: both at once), with *Auto* returning to the height derived from the model; the walker, floors and step climbing use it at once. It goes through the model's own unit, or millimetres disclosed as assumed when the file names none (G250). Remembered in the preferences file (`walk_eye_height_mm`). Driven: the same check sets it by a drag, reads it from the file and from a second launch; falsified by not saving it. NOT VERIFIED by him.
+**Status.** Built: walking with ghost off, the options menu holds *Eye height* as a feet field and an inches field side by side (no unit switch: both at once), with *Auto* returning to the height derived from the model; the walker, floors and step climbing use it at once. It goes through the model's own unit, or millimetres disclosed as assumed when the file names none (G250). Remembered in the preferences file (`walk_eye_mm`; an older `walk_eye_height_mm` number is still read). Unset, it is 5' 6" (1676 mm). Driven: the same check sets it by a drag, reads it from the file and from a second launch; falsified by not saving it. NOT VERIFIED by him.
 
 ## O355 — **BUILT** — walk mode draws much slower than orbit
 
@@ -7916,3 +7916,46 @@ He added: *"Fyi this happens with a pdf created out of SolidWorks too."*
 **Measured at pin `5dae6462` (2026-09-29).** A text field added by the engine to a form-less file writes `/DR /Font /Helv` as an indirect object; in Acrobat Pro, typing `HELLO` and clicking away leaves the value visible (622 dark pixels in the field, 0 before). The inline control is T2/M1 in the repro folder, measured hidden by the same drive. **A form already saved with an inline `/Helv` stays hidden:** the engine reuses an existing `/DR` font unchanged by design, so those files need an explicit repair verb, filed as G070. His "all fields" copy was built with an indirect `/Helv` and is not affected.
 
 **State:** G068 and G069 are both in the pin and both measured in Acrobat Pro. For G069: four incremental engine saves on the Word (hybrid-reference) repro with the `/DR` font already indirect (add field, fill it, add a second, fill it) show both values. The same four saves on the inline-`/Helv` copy show neither — that is G070, not G069. **G070 is in the pin and wired:** Edit ▸ Forms ▸ Repair fonts runs the engine's promote-inline-`/DR`-fonts verb. On a copy of his rental form (inline `/Helv`), typing into Current Date in Acrobat Pro shows nothing before the repair and shows the text after it. Repro files are in `D:\Dev\pdfTests\reader-field-test`. **Closes when** a field added by a build carrying the G068 fix shows its typed value in his Reader, on the Word file and on a SolidWorks one; for a form saved before the fix, after Repair fonts.
+
+## O417 — **OPEN** — the engine's new print features are not visible in Print
+
+His words: *"I thought the newest version of pdfcer had a lot of new advanced printing features, but I don't see anything has changed when I go to print, or are they put somewhere else?"*
+
+**Measured.** The Print window already offers most of what engine v0.135–v0.146 added: printing into a printer ICC profile, CMYK proof printing (simulating a press profile and its paper), rendering intent and black-point compensation, grey and black-only output, n-up, booklet and poster imposition, finishing, print edge smoothing, and the vector (EMF) route. The colour features all sat inside the *Copies & Finishing* tab, below copies, where nothing named them. One engine feature is not in the window at all: sending the PDF itself to a printer that reads PDF (O419).
+
+**Scope.** Colour gets its own *Colour* tab, holding the output colour choices and colour management, so the features are found where Print windows put them.
+
+**Built.** Print has a *Colour* tab: colour, grey or black only, the printer's ICC profile, proof printing with its paper simulation, rendering intent and black-point compensation. Copies & Finishing keeps copies, imposition and finishing. Driven by `print_in_grey_or_black_only` and the ICC check, both re-pointed at the new tab. PDF-direct is O419, still open.
+
+## O418 — **OPEN** — saved print presets, listed in a dropdown, with an editable list of preset folders
+
+His words: *"we should also be able to save print setting configurations, and they should appear in a dropdown when we do. also we should be able edit a list of locations to look for print presets which includes our default settings folder place for them."*
+
+**Scope, whole behaviour.**
+1. **Preset row** at the top of Print, above the printer: *Preset* dropdown, *Save as…*, *Delete*. Choosing a preset puts every setting it holds into the window (printer, paper, orientation, scale, copies, collation, duplex, odd/even, reverse, annotations, resolution, imposition, poster, line weights, colour and colour management, edges). The page range is never part of a preset, for the reason it is not remembered: it names pages of one document.
+2. **Save as…** asks for a name in place; a name already used in the default folder is replaced only after the button says *Replace*. A name with characters a file name cannot hold is refused with the reason.
+3. **Delete** removes the chosen preset's file after a second press, and only when that file is in a folder he can write.
+4. **Files.** One plain-text file per preset, `<name>.pdfcerprint`, in the same `key = value` vocabulary as the Print block of `preferences.txt`, so a preset can be copied between machines or shared from a network folder.
+5. **Folders.** Settings ▸ *Print presets*: the default folder `print-presets` in the program's settings folder is always first and is where new presets are saved; extra folders are added and removed below it, searched in order, up to 16. A name found in two folders lists once, from the first.
+
+**Built** as scoped. Driven by `print_settings_save_as_a_preset_and_come_back`: a preset seeded in an extra folder is listed, choosing it fills the window, *Save as…* writes a file to the default folder and a second launch lists it.
+
+## O419 — **OPEN** — send the PDF straight to a printer that reads PDF (engine Pass 700.16)
+
+Part of O417's question: the one print feature of the pinned engine the Print window does not reach. `pdfcer print --pdf-direct auto|on|off` resolves an installed queue's port to IPP addresses (`pdfcer_print::queue_port`, `ipp::resolve_queue_port`), asks the printer whether it accepts `application/pdf`, and sends the file with Print-Job. Untried on real hardware by the engine, so the window must say which route was taken and why.
+
+## O420 — **OPEN** — the third-person walking view looks and acts like a video game's
+
+His words: *"I was expecting it to look more like world of warcraft, and have the character's height set by the height of the Eye height, and animate when moving, and not appear floating above the floor, and maybe have an option to cast a shadow, and another option to have a shadow underneath them. But instead of eye height controling their size, maybe have a way to set their size for different aspects of the body. … make the 3rd persom mode look and act like a video game would. Also instead of calling the Default preset controls Default, call it Drone."*
+
+**Scope, whole behaviour.**
+1. **A game figure, not a mannequin:** shaped and proportioned like a game character, with hands, feet and a face direction, drawn solid and lit.
+2. **Stands on the floor:** the feet touch the surface under the walker, measured by a ray down, never hanging above it.
+3. **Animates:** a walk cycle while moving (legs and arms swing in step with the distance walked), an idle stance when still, and a turn to the heading.
+4. **Sized by body measures, not only the eye height:** Settings for overall height and for the proportions (head, shoulders, arms, legs, build), with the eye height following from them.
+5. **Shadows, two options:** a soft blob under the feet, and a cast shadow on the floor from the light direction; each on or off.
+6. **The controls preset named *Default* is named *Drone*.**
+7. **A game camera** (his follow-up: *"some way to rotate around the character - same controls as world of warcraft"*): seen from behind, a left drag swings the camera round the figure, which keeps its heading; a right drag turns the figure to where the camera looks and steers; the wheel pulls the camera in and out. In every controls preset.
+8. **Default eye height 5' 6"** (his follow-up), for anyone who has not set one.
+
+**Built.** A modelled game figure (Blender-made, solid and lit, hands, feet and a face) stands where the walker is, its eyes at the eye height, its feet on the floor found by a ray down when one is within reach; it swings arms and legs in step with the distance walked and stands at rest when still. The Moving tab, while seen from behind, has *Figure*: head, shoulders, arms, legs and build from 50% to 200%, *Shadow underneath* (on by default), *Cast a shadow*, and *As made*; the same are on Settings ▸ 3D viewer and are remembered. The presets are *Drone*, *Shooter* and *Avatar*. The camera is items 7–8 above. Driven by `the_3d_viewer_walks_seen_from_behind` (figure placed, left drag orbits keeping the heading, wheel pulls in; falsified by making the left drag turn the walker) and `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`. **Not driven:** standing on a floor — the fixture has none within reach below the eye, so the figure stands at eye height there; and the figure's pixels, since the viewer window cannot be photographed by the harness.

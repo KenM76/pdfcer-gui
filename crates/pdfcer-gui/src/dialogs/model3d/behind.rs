@@ -11,6 +11,10 @@
 //! drawn over the picture with the painter, nearest faces last, and not in a
 //! picture written out. Because it is drawn over the model, a part between
 //! the camera and the figure does not hide it; the tooltip says so.
+//!
+//! The figure is [`super::figure`]'s, fitted to the operator's proportions,
+//! posed by [`super::animate`]'s gait, and stood on the floor found by a ray
+//! straight down from the eye; its eyes are at the walker's eye height.
 
 use egui::{Color32, Mesh, Pos2, Rect, Shape, Ui};
 use pdfcer_3d::vec3::{add, dot, normalize, scale, sub, unit_cross};
@@ -18,7 +22,10 @@ use pdfcer_3d::{Camera, Ray};
 use pdfcer_3d_nav::{Lens, Walk};
 
 use super::ModelView;
+use super::animate::{Gait, posed};
+use super::figure::{Kind, Measures, builtin, fitted};
 use super::measure::{aspect_of, whole};
+use super::shadow::{self, Floor};
 
 /// The figure's bounds on the picture, while it is drawn.
 pub const REGION_FIGURE: &str = "model3d.figure"; // ui-text-exempt: trace region name, never displayed
@@ -32,23 +39,15 @@ const ARM: f64 = 3.0;
 /// How far above the eye the camera aims, eye heights, so the figure stands
 /// below the picture's centre and the way ahead is in view.
 const LIFT: f64 = 0.25;
+/// What a wheel notch multiplies the camera's distance by, pulled in.
+const NOTCH: f64 = 0.8;
+/// The most notches the camera is pulled in, and let out.
+const PULL: (f64, f64) = (8.0, -4.0);
 /// The nearest the camera comes to the aim point with a wall behind, eye
 /// heights.
 const NEAREST: f64 = 0.35;
 /// The gap kept between the camera and a wall behind it, eye heights.
 const CLEAR: f64 = 0.1;
-/// Sides round each limb and the torso.
-const SIDES: usize = 10;
-/// The head's bands from crown to chin, and its sides.
-const HEAD: (usize, usize) = (6, 12);
-
-/// The figure's clothes and skin. Drawn over the model's own colours, not
-/// the window, so not the theme's.
-const SHIRT: Color32 = Color32::from_rgb(58, 108, 168); // NOT A THEME COLOUR: a figure in the model, not part of the window
-const TROUSERS: Color32 = Color32::from_rgb(52, 56, 70); // NOT A THEME COLOUR: a figure in the model, not part of the window
-const SKIN: Color32 = Color32::from_rgb(214, 172, 140); // NOT A THEME COLOUR: a figure in the model, not part of the window
-const HAIR: Color32 = Color32::from_rgb(64, 46, 34); // NOT A THEME COLOUR: a figure in the model, not part of the window
-
 /// A triangle of the figure, model coordinates, wound counter-clockwise
 /// seen from outside, and its colour.
 type Face = ([[f64; 3]; 3], Color32);
@@ -66,13 +65,15 @@ struct Stance {
 }
 
 impl Stance {
-    fn of(walk: &Walk) -> Option<Self> {
+    /// Standing under `walk`, on the floor `floor` model units below its
+    /// eye when one was found.
+    fn of(walk: &Walk, floor: Option<f64>) -> Option<Self> {
         let up = walk.axes().up();
         let forward = walk.axes().look(walk.yaw, 0.0);
         let right = unit_cross(forward, up)?;
         let body = walk.body();
         Some(Self {
-            feet: sub(walk.eye, scale(up, body)),
+            feet: sub(walk.eye, scale(up, floor.unwrap_or(body))),
             right,
             forward,
             up,
@@ -81,11 +82,23 @@ impl Stance {
     }
 
     /// A point `x` right, `y` forward and `z` up of the feet, in heights.
-    fn at(&self, x: f64, y: f64, z: f64) -> [f64; 3] {
+    fn at(&self, [x, y, z]: [f64; 3]) -> [f64; 3] {
         let h = self.height;
         let p = add(self.feet, scale(self.right, x * h));
         add(add(p, scale(self.forward, y * h)), scale(self.up, z * h))
     }
+}
+
+/// The height, metres, of a person the gait's pace is set for.
+const PERSON: f64 = 1.8;
+/// How far below the eye the floor is looked for, eye heights.
+const FLOOR_REACH: f64 = 1.5;
+
+/// The distance to the floor below the eye that the figure stands on, from
+/// `below`, the distance to the first surface straight down: `None`, so it
+/// stands at the eye height, when none is near enough.
+fn floor_at(body: f64, below: Option<f64>) -> Option<f64> {
+    below.filter(|d| *d > 0.05 * body && *d < FLOOR_REACH * body)
 }
 
 /// The point the camera aims through: above the walker's eye.
@@ -107,102 +120,32 @@ pub(super) fn camera(walk: &Walk, arm: f64, aspect: f64, lens: &Lens) -> Camera 
     camera
 }
 
-/// How far back the camera hangs when `behind` is the distance to the
-/// nearest surface behind the aim point, if any: the full arm, or short of
-/// the surface, but never nearer than [`NEAREST`].
-fn arm_before(body: f64, behind: Option<f64>) -> f64 {
-    let full = ARM * body;
+/// The camera's distance behind the aim point pulled in `pull` wheel
+/// notches, eye heights.
+fn reach(pull: f64) -> f64 {
+    (ARM * NOTCH.powf(pull.clamp(PULL.1, PULL.0))).max(NEAREST)
+}
+
+/// How far back the camera hangs, wanting `reach` eye heights, when
+/// `behind` is the distance to the nearest surface behind the aim point, if
+/// any: the full reach, or short of the surface, but never nearer than
+/// [`NEAREST`].
+fn arm_before(body: f64, reach: f64, behind: Option<f64>) -> f64 {
+    let full = reach * body;
     match behind {
         Some(d) if d < full + CLEAR * body => (d - CLEAR * body).max(NEAREST * body),
         _ => full,
     }
 }
 
-/// An elliptical prism standing on `base` (in heights, as [`Stance::at`]),
-/// `tall` high, half-widths `wide` across and `deep` front to back, capped.
-fn prism(out: &mut Vec<Face>, s: &Stance, base: [f64; 3], tall: f64, half: [f64; 2], ink: Color32) {
-    let ring = |z: f64| -> Vec<[f64; 3]> {
-        (0..SIDES)
-            .map(|i| {
-                #[allow(clippy::cast_precision_loss)]
-                let a = std::f64::consts::TAU * i as f64 / SIDES as f64;
-                s.at(base[0] + half[0] * a.cos(), base[1] + half[1] * a.sin(), z)
-            })
-            .collect()
-    };
-    let (low, high) = (ring(base[2]), ring(base[2] + tall));
-    let (bottom, top) = (
-        s.at(base[0], base[1], base[2]),
-        s.at(base[0], base[1], base[2] + tall),
-    );
-    for i in 0..SIDES {
-        let j = (i + 1) % SIDES;
-        out.push(([low[i], low[j], high[j]], ink));
-        out.push(([low[i], high[j], high[i]], ink));
-        out.push(([top, high[i], high[j]], ink));
-        out.push(([bottom, low[j], low[i]], ink));
-    }
-}
-
-/// The head: a sphere of `radius` heights centred `z` heights up, hair over
-/// its crown and back.
-fn head(out: &mut Vec<Face>, s: &Stance, z: f64, radius: f64) {
-    let (bands, sides) = HEAD;
-    #[allow(clippy::cast_precision_loss)]
-    let point = |band: usize, side: usize| {
-        let polar = std::f64::consts::PI * band as f64 / bands as f64;
-        let a = std::f64::consts::TAU * side as f64 / sides as f64;
-        let (sp, cp) = polar.sin_cos();
-        s.at(
-            radius * sp * a.cos(),
-            radius * sp * a.sin(),
-            z + radius * cp,
-        )
-    };
-    for band in 0..bands {
-        for side in 0..sides {
-            let next = (side + 1) % sides;
-            let (a, b) = (point(band, side), point(band, next));
-            let (c, d) = (point(band + 1, next), point(band + 1, side));
-            // Hair over the crown, and down the back to the ears.
-            #[allow(clippy::cast_precision_loss)]
-            let facing = (std::f64::consts::TAU * (side as f64 + 0.5) / sides as f64).sin();
-            let ink = if band < 2 || (band < 4 && facing < 0.0) {
-                HAIR
-            } else {
-                SKIN
-            };
-            if band > 0 {
-                out.push(([a, d, b], ink));
-            }
-            if band + 1 < bands {
-                out.push(([b, d, c], ink));
-            }
-        }
-    }
-}
-
-/// The figure for `walk`: legs, torso, arms and head, as triangles.
-fn figure(walk: &Walk) -> Vec<Face> {
-    let Some(s) = Stance::of(walk) else {
-        return Vec::new();
-    };
-    let mut out = Vec::new();
-    for x in [-0.055, 0.055] {
-        prism(&mut out, &s, [x, 0.0, 0.0], 0.48, [0.05, 0.055], TROUSERS);
-        prism(
-            &mut out,
-            &s,
-            [x * 3.4, 0.0, 0.46],
-            0.35,
-            [0.035, 0.04],
-            SHIRT,
-        );
-    }
-    prism(&mut out, &s, [0.0, 0.0, 0.47], 0.36, [0.15, 0.085], SHIRT);
-    prism(&mut out, &s, [0.0, 0.0, 0.82], 0.05, [0.035, 0.035], SKIN);
-    head(&mut out, &s, 0.925, 0.072);
-    out
+/// The figure for `walk` standing at `stance`, fitted to `measures` and
+/// posed by `gait`, as triangles in model coordinates.
+fn figure(stance: &Stance, kind: Kind, measures: &Measures, gait: &Gait) -> Vec<Face> {
+    let fit = fitted(builtin(kind), measures);
+    posed(&fit, gait)
+        .into_iter()
+        .map(|(f, ink)| (f.map(|p| stance.at(p)), ink))
+        .collect()
 }
 
 /// `face`'s unit normal, from its winding.
@@ -261,7 +204,7 @@ impl ModelView {
             .nav
             .arm
             .filter(|(w, _)| w == walk)
-            .map_or(ARM * walk.body(), |(_, arm)| arm);
+            .map_or(reach(self.nav.pull) * walk.body(), |(_, arm)| arm);
         camera(walk, arm, aspect, lens)
     }
 
@@ -280,7 +223,7 @@ impl ModelView {
             min_distance: 0.0,
         };
         let behind = self.hit(&ray).map(|h| h.distance);
-        let arm = arm_before(walk.body(), behind);
+        let arm = arm_before(walk.body(), reach(self.nav.pull), behind);
         self.nav.arm = Some((walk, arm));
         crate::diag::trace_changed("model-behind-arm", || {
             // ui-text-exempt: diagnostic trace, never displayed
@@ -288,24 +231,195 @@ impl ModelView {
         });
     }
 
-    /// The figure over the picture `rect`, while walking is seen from
-    /// behind.
+    /// The wheel over the picture, seen from behind: pull the camera in or
+    /// let it out by `wheel` points, 50 a notch.
+    pub(super) fn pull_camera(&mut self, wheel: f64) {
+        let pull = (self.nav.pull + wheel / 50.0).clamp(PULL.1, PULL.0);
+        if pull != self.nav.pull {
+            self.nav.pull = pull;
+            self.nav.arm = None;
+        }
+    }
+
+    /// Drags seen from behind, as a game's: the left button's `left` turns
+    /// the camera round the figure, which keeps its heading; the right
+    /// button's `right` first turns the figure to where the camera looks,
+    /// then turns both.
+    pub(super) fn drag_behind(&mut self, left: egui::Vec2, right: Option<egui::Vec2>) {
+        let bind = self.nav.prefs.bind;
+        let Some(walk) = &mut self.nav.walk else {
+            return;
+        };
+        if left != egui::Vec2::ZERO {
+            let (yaw, pitch) = bind.look(left, super::navmouse::LOOK_RATE);
+            walk.look(yaw, pitch);
+        }
+        if let Some(right) = right {
+            let (yaw, pitch) = bind.look(right, super::navmouse::LOOK_RATE);
+            walk.turn(walk.look_yaw + yaw, pitch);
+            walk.centre_look();
+        }
+    }
+
+    /// Find the floor under the walker once per place, and advance the
+    /// figure's gait by the ground covered since the last frame.
+    pub(super) fn update_figure(&mut self, ui: &Ui) {
+        self.read_typed(ui);
+        let Some(walk) = self.nav.walk.filter(|_| self.nav.prefs.behind) else {
+            self.nav.last_eye = None;
+            return;
+        };
+        if !self.nav.stand.is_some_and(|(w, _)| w == walk) {
+            let ray = Ray {
+                origin: walk.eye,
+                direction: scale(walk.axes().up(), -1.0),
+                min_distance: 0.0,
+            };
+            let below = self.hit(&ray).map(|h| h.distance);
+            let floor = floor_at(walk.body(), below);
+            self.nav.stand = Some((walk, floor));
+            crate::diag::trace_changed("model-figure-floor", || {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "model-figure-floor found={} eye-heights={:.3}",
+                    floor.is_some(),
+                    floor.unwrap_or(walk.body()) / walk.body()
+                )
+            });
+        }
+        let height = walk.body() * HEIGHT_PER_EYE;
+        let dt = f64::from(ui.input(|i| i.stable_dt.min(0.1)));
+        let moved = self
+            .nav
+            .last_eye
+            .map_or([0.0; 3], |last| sub(walk.eye, last));
+        self.nav.last_eye = Some(walk.eye);
+        let up = walk.axes().up();
+        let ahead = dot(moved, walk.axes().look(walk.yaw, 0.0));
+        let level = sub(moved, scale(up, dot(moved, up)));
+        let across = (dot(level, level) - ahead * ahead).max(0.0).sqrt();
+        // The gait counts in metres of a figure as tall as a person.
+        let metres = PERSON / height;
+        let easing = self
+            .nav
+            .gait
+            .step(ahead * metres, across * metres, dt, PERSON);
+        if easing {
+            ui.ctx().request_repaint();
+        }
+        let walking = self.nav.gait.swing > 0.5;
+        crate::diag::trace_changed("model-figure-gait", || {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("model-figure-gait walking={walking}")
+        });
+    }
+
+    /// Typed words the figure answers to.
+    fn read_typed(&mut self, ui: &Ui) {
+        let typed: String = ui.input(|i| {
+            i.events
+                .iter()
+                .filter_map(|e| match e {
+                    egui::Event::Text(t) => Some(t.to_lowercase()),
+                    _ => None,
+                })
+                .collect()
+        });
+        if typed.is_empty() || crate::canvas::textedit::composing(ui.ctx()) {
+            return;
+        }
+        let heard = &mut self.nav.typed;
+        heard.push_str(&typed);
+        let extra = heard.chars().count().saturating_sub(16);
+        *heard = heard.chars().skip(extra).collect();
+        let next = [("werewolf", Kind::Werewolf), ("human", Kind::Human)]
+            .into_iter()
+            .find(|(word, _)| heard.ends_with(word))
+            .map(|(_, kind)| kind);
+        if let Some(kind) = next {
+            heard.clear();
+            if self.nav.prefs.kind != kind {
+                self.nav.prefs.kind = kind;
+                self.nav.store(ui.ctx());
+            }
+        }
+    }
+
+    /// The figure and its shadows over the picture `rect`, while walking is
+    /// seen from behind.
     pub(super) fn paint_figure(&self, ui: &Ui, rect: Rect) {
         let Some(walk) = self.nav.walk.filter(|_| self.nav.prefs.behind) else {
             return;
         };
+        let floor = self
+            .nav
+            .stand
+            .filter(|(w, _)| *w == walk)
+            .and_then(|(_, f)| f);
+        let Some(stance) = Stance::of(&walk, floor) else {
+            return;
+        };
         let camera = self.behind_camera(&walk, aspect_of(rect), &self.lens);
-        let (mesh, bounds) = painted(&figure(&walk), &camera, rect.min, whole(rect));
+        let m = self.nav.prefs.figure;
+        let faces = figure(&stance, self.nav.prefs.kind, &m, &self.nav.gait);
+        let (mesh, bounds) = painted(&faces, &camera, rect.min, whole(rect));
         if mesh.indices.is_empty() {
             return;
         }
         let triangles = mesh.indices.len() / 3;
-        ui.painter().with_clip_rect(rect).add(Shape::mesh(mesh));
+        let painter = ui.painter().with_clip_rect(rect);
+        let shadows = self.shadows(&stance, &walk, &faces, &camera, rect);
+        let shadowed = !shadows.indices.is_empty();
+        painter.add(Shape::mesh(shadows));
+        painter.add(Shape::mesh(mesh));
         crate::diag::ui_rect_visible(REGION_FIGURE, bounds, rect);
+        let feet = camera.pixel_of(stance.feet, whole(rect)[0], whole(rect)[1]);
         crate::diag::trace_changed("model-figure", || {
             // ui-text-exempt: diagnostic trace, never displayed
-            format!("model-figure triangles={triangles}")
+            format!(
+                "model-figure triangles={triangles} on-floor={} blob={} cast={} shadowed={shadowed} feet-y={}",
+                floor.is_some(),
+                m.blob,
+                m.cast,
+                feet.map_or_else(|| "none".to_owned(), |[_, y]| format!("{y:.0}"))
+            )
         });
+    }
+
+    /// The shadows the operator chose for the figure `faces` at `stance`.
+    fn shadows(
+        &self,
+        stance: &Stance,
+        walk: &Walk,
+        faces: &[Face],
+        camera: &Camera,
+        rect: Rect,
+    ) -> Mesh {
+        let m = self.nav.prefs.figure;
+        let mut mesh = Mesh::default();
+        let floor = Floor {
+            at: stance.feet,
+            up: stance.up,
+            right: stance.right,
+            forward: stance.forward,
+        };
+        if m.blob {
+            let half = stance.height * 0.22 * m.build.max(0.5) * m.shoulders.max(0.7);
+            shadow::patch(&mut mesh, &floor, half, camera, rect.min, whole(rect));
+        }
+        if m.cast {
+            let light = shadow::light(stance.up, walk.axes().look(0.7, 0.0));
+            shadow::cast(
+                &mut mesh,
+                &floor,
+                light,
+                faces,
+                camera,
+                rect.min,
+                whole(rect),
+            );
+        }
+        mesh
     }
 }
 
@@ -334,16 +448,39 @@ mod tests {
 
     #[test]
     fn a_wall_behind_pulls_the_camera_in_but_not_into_the_head() {
-        assert!((arm_before(1.6, None) - ARM * 1.6).abs() < 1e-9);
-        assert!((arm_before(1.6, Some(10.0)) - ARM * 1.6).abs() < 1e-9);
-        assert!((arm_before(1.6, Some(1.6)) - 1.6 * (1.0 - CLEAR)).abs() < 1e-9);
-        assert!((arm_before(1.6, Some(0.1)) - NEAREST * 1.6).abs() < 1e-9);
+        assert!((arm_before(1.6, ARM, None) - ARM * 1.6).abs() < 1e-9);
+        assert!((arm_before(1.6, ARM, Some(10.0)) - ARM * 1.6).abs() < 1e-9);
+        assert!((arm_before(1.6, ARM, Some(1.6)) - 1.6 * (1.0 - CLEAR)).abs() < 1e-9);
+        assert!((arm_before(1.6, ARM, Some(0.1)) - NEAREST * 1.6).abs() < 1e-9);
+    }
+
+    #[test]
+    fn the_wheel_pulls_the_camera_in_and_out_within_bounds() {
+        assert!((reach(0.0) - ARM).abs() < 1e-9);
+        assert!(reach(2.0) < reach(1.0) && reach(-1.0) > ARM);
+        assert!((reach(100.0) - reach(PULL.0)).abs() < 1e-9 && reach(PULL.0) >= NEAREST);
+        assert!((reach(-100.0) - reach(PULL.1)).abs() < 1e-9);
+    }
+
+    fn drawn(walk: &Walk, kind: Kind) -> Vec<Face> {
+        let stance = Stance::of(walk, None).unwrap();
+        figure(&stance, kind, &Measures::default(), &Gait::default())
+    }
+
+    #[test]
+    fn the_floor_below_is_stood_on_only_when_near() {
+        assert_eq!(floor_at(1.6, Some(1.7)), Some(1.7));
+        assert_eq!(floor_at(1.6, Some(30.0)), None);
+        assert_eq!(floor_at(1.6, None), None);
+        let walk = walker();
+        let low = Stance::of(&walk, Some(1.7)).unwrap();
+        assert!((low.feet[2] + 0.1).abs() < 1e-9, "{:?}", low.feet);
     }
 
     #[test]
     fn the_figure_stands_on_the_floor_under_the_eye_and_reaches_its_height() {
         let walk = walker();
-        let faces = figure(&walk);
+        let faces = drawn(&walk, Kind::Human);
         let up = walk.axes().up();
         let heights: Vec<f64> = faces
             .iter()
@@ -359,7 +496,7 @@ mod tests {
     fn the_figure_is_drawn_whole_below_the_centre_of_the_picture() {
         let walk = walker();
         let c = camera(&walk, ARM * 1.6, 1.5, &Lens::default());
-        let (mesh, bounds) = painted(&figure(&walk), &c, Pos2::ZERO, [600, 400]);
+        let (mesh, bounds) = painted(&drawn(&walk, Kind::Werewolf), &c, Pos2::ZERO, [600, 400]);
         assert!(!mesh.indices.is_empty());
         assert!((bounds.center().x - 300.0).abs() < 5.0, "{bounds:?}");
         assert!(bounds.top() > 200.0, "{bounds:?}");

@@ -16,18 +16,18 @@ use crate::app::state::Status;
 impl DialogsState {
     /// Open the print dialog for the document in `status`.
     #[cfg(not(target_os = "android"))]
-    pub(crate) fn open_print(
-        &mut self,
-        status: &Status,
-        remembered: &crate::app::prefs::PrintPrefs,
-    ) {
+    pub(crate) fn open_print(&mut self, status: &Status, prefs: &crate::app::prefs::Prefs) {
         let Status::Open(doc) = status else {
             return;
         };
         if self.print.is_some() {
             return;
         }
-        self.print = Some(print::PrintDialog::open(doc, remembered));
+        let presets = pdfcer_gui_base::prefs::printpresets::default_folder();
+        self.print = Some(
+            print::PrintDialog::open(doc, &prefs.print)
+                .with_presets(presets, prefs.print_presets.search_list()),
+        );
     }
 
     /// **Open Send to network printer** on the document in `status`: a print-ready
@@ -489,10 +489,11 @@ impl DialogsState {
     pub(crate) fn open_batch_print(
         &mut self,
         batch: print::batch::Batch,
-        remembered: &crate::app::prefs::PrintPrefs,
+        prefs: &crate::app::prefs::Prefs,
     ) {
-        if let Some(dialog) = print::PrintDialog::open_batch(batch, remembered) {
-            self.print = Some(dialog);
+        if let Some(dialog) = print::PrintDialog::open_batch(batch, &prefs.print) {
+            let presets = pdfcer_gui_base::prefs::printpresets::default_folder();
+            self.print = Some(dialog.with_presets(presets, prefs.print_presets.search_list()));
         }
     }
 

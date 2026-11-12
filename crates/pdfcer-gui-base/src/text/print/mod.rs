@@ -131,6 +131,18 @@ pub const fn tab_copies_finishing_tooltip() -> &'static str {
     "How many sheets come out, in what order, and on how many sides."
 }
 
+/// The Colour tab's label.
+#[must_use]
+pub const fn tab_colour() -> &'static str {
+    "Colour"
+}
+
+/// The Colour tab's hover text.
+#[must_use]
+pub const fn tab_colour_tooltip() -> &'static str {
+    "Colour, grey or black only; the printer's colour profile, a press proof, and paper simulation."
+}
+
 /// Tab 3's label.
 #[must_use]
 pub const fn tab_comments() -> &'static str {
@@ -769,6 +781,7 @@ pub mod presets;
 pub mod route;
 /// A header or footer on the printed copy only.
 pub mod running;
+pub mod saved;
 
 // Glob re-exported, for the reason argued over `footer` above.
 pub use lines::*;

@@ -521,6 +521,7 @@ pub mod print_preview_rule;
 pub mod print_route;
 /// A print-only header or footer reaches the printed copy.
 pub mod print_running;
+pub mod print_saved_presets;
 /// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;
 pub mod print_slow_printer;

@@ -8,6 +8,7 @@
 use crate::checks::driving::declared_in;
 use crate::checks::model_axes::{launch, opened_from_page};
 use crate::checks::{Check, CheckContext};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
 use crate::geom::LRect;
 use crate::input::scripted::ScriptedPointer;
@@ -25,6 +26,8 @@ const DRAWN: &str = "model-figure"; // ui-text-exempt: a trace event name
 /// The nearest the camera may hang behind the eye, eye heights:
 /// `behind::NEAREST` less rounding.
 const NEAREST: f64 = 0.3;
+/// A turn worth calling one, radians.
+const TURNED: f64 = 0.05;
 
 /// See the module documentation.
 pub struct TheViewerWalksSeenFromBehind;
@@ -37,7 +40,7 @@ impl Check for TheViewerWalksSeenFromBehind {
     fn defect(&self) -> &'static str {
         "The 3D viewer's Behind switch is missing while walking, does not move the picture \
          behind and above the walker looking its way, draws no figure where the walker \
-         stands, or leaves the camera or the figure behind when switched off"
+         stands, does not orbit on a left drag or pull in on the wheel, or leaves the camera or the figure behind when switched off"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -142,6 +145,9 @@ impl Stage<'_> {
         if let Some(failure) = self.seen_from_behind(report, drawn_before)? {
             return Ok(Some(failure));
         }
+        if let Some(failure) = self.steered(report)? {
+            return Ok(Some(failure));
+        }
         self.press(BEHIND)?;
         self.session.settle(30);
         let off = self.view()?;
@@ -200,6 +206,58 @@ impl Stage<'_> {
             )));
         }
         Ok(None)
+    }
+
+    /// A left drag across the picture swings the camera round the figure
+    /// and leaves the walker's heading; the wheel pulls the camera in.
+    fn steered(&self, report: &mut CheckReport) -> Result<Option<String>> {
+        let trace = self.session.trace()?;
+        let Some((image, vp)) = declared_in(&trace, self.ui_rect, IMAGE) else {
+            return Ok(Some(format!("no `{IMAGE}` region to drag across.")));
+        };
+        let before = self.pose();
+        let mid = WindowPoint::centre_of(image);
+        let mut aim = image;
+        let dx = image.width() * 0.2;
+        (aim.min.x, aim.max.x) = (aim.min.x + dx, aim.max.x + dx);
+        let to = WindowPoint::centre_of(aim);
+        self.pointer
+            .drag_in(self.session, vp.as_deref(), mid, to, 40, "l")?;
+        self.session.settle(30);
+        let after = self.pose();
+        report.note(format!("left drag: {before:?} -> {after:?}"));
+        let orbited = matches!((before, after), (Some(b), Some(a))
+            if (a.1 - b.1).abs() > TURNED && (a.0 - b.0).abs() < TURNED);
+        // Look-yaw is the camera's turn off the heading: a drag that turns the
+        // walker instead leaves it at zero.
+        let first = before.is_none() && after.is_some_and(|a| a.1.abs() > TURNED);
+        if !(orbited || first) {
+            return Ok(Some(format!(
+                "a left drag seen from behind should swing the camera round the walker and keep its heading (yaw, look-yaw): {before:?} then {after:?}."
+            )));
+        }
+        let arm = self.last("model-behind-arm", "eye-heights");
+        self.pointer
+            .wheel_in(self.session, vp.as_deref(), mid, 3.0)?;
+        self.session.settle(30);
+        let pulled = self.last("model-behind-arm", "eye-heights");
+        report.note(format!("wheel: arm {arm:?} -> {pulled:?}"));
+        if pulled.is_none() || pulled == arm {
+            return Ok(Some(format!(
+                "the wheel seen from behind should pull the camera in or out: arm {arm:?} then {pulled:?}."
+            )));
+        }
+        Ok(None)
+    }
+
+    /// The walker's (heading, look off the heading) when it last stopped.
+    fn pose(&self) -> Option<(f64, f64)> {
+        let trace = self.session.trace().ok()?;
+        let line = trace.events("model-walk-moved").last()?;
+        Some((
+            line.get("yaw")?.parse().ok()?,
+            line.get("look-yaw")?.parse().ok()?,
+        ))
     }
 
     /// The last picture's camera, from `model-view-rendered`.
