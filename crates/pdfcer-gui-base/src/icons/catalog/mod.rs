@@ -1293,6 +1293,8 @@ pub enum Icon {
     ExitFullscreen,
     /// Stair climbing: walking climbs obstacles under a third of the eye height.
     Stairs,
+    /// Walk seen from behind: the camera follows a figure standing where the walker is.
+    Behind,
     /// Turn the walking camera back to straight ahead.
     CentreYaw,
     /// Tilt the walking camera back to level.

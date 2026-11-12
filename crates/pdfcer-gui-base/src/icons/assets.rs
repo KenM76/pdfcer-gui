@@ -1038,6 +1038,11 @@ pub(super) const EXIT_FULLSCREEN: &str = include_str!("assets/exit-fullscreen.sv
 /// Walking climbs obstacles under a third of the eye height.
 pub(super) const STAIRS: &str = include_str!("assets/stairs.svg");
 
+/// `behind.svg` — the art for [`super::Icon::Behind`].
+///
+/// The walking camera follows a figure from behind.
+pub(super) const BEHIND: &str = include_str!("assets/behind.svg");
+
 /// `lighting.svg` — the art for [`super::Icon::Lighting`].
 pub(super) const LIGHTING: &str = include_str!("assets/lighting.svg");
 

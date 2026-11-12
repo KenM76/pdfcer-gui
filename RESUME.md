@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**Unreleased on `main`:** O406 (region tool in the rail's Select group), O407 (sun disc, `settings_sun_disc`), O408 (Settings text size, `settings_text_size`). They ship with the next engine tag's release; drive those two checks in its sweep.
+**Unreleased on `main`:** O406 (region tool in the rail's Select group), O407 (sun disc, `settings_sun_disc`), O408 (Settings text size, `settings_text_size`), O409 (walking seen from behind, `the_3d_viewer_walks_seen_from_behind`). They ship with the next engine tag's release; drive those three checks in its sweep.
 
 **`v0.5.0-dev.20261111.1`** is engine v0.145.0 (9077e43a), shell 9257174f: the Seamless print edge choice, tiled on large sheets (`EdgeAntialiasing` supersampling, `Diagnostics::supersample_tiles`), Settings ▸ Colour's *Keep the CMYK numbers as written* (`Settings::preserve_calibrated_cmyk`, driven by `calibrated_cmyk_setting`), and the 3D viewer's GPU bounce light under fixed lights. Release sweep (`--affected=v0.5.0-dev.20261110.3`, 540 checks): 308 pass, 0 fail, 232 skip, off-screen. Gates 87/87 with no skip; `cargo test --workspace` 5576 passed; clippy clean. Smoke 90 s off-screen, alive, no panic. Zip `pdfcergui-20261111-1258-9077e43-9257174f.zip` in OneDrive slot pdfcer-gui1; APK `pdfcer-android-v0.5.0-dev.20261111.1.apk`.
 

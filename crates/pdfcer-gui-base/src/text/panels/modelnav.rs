@@ -69,6 +69,18 @@ pub fn stairs_tooltip() -> &'static str {
     "Climb over anything lower than a third of your eye height. Off, everything you meet stops you."
 }
 
+/// Walking seen from behind a figure.
+#[must_use]
+pub fn behind() -> &'static str {
+    "Behind"
+}
+
+/// Its tip.
+#[must_use]
+pub fn behind_tooltip() -> &'static str {
+    "See yourself from behind, as in a game: the camera follows a figure standing where you are and turns with you. A wall behind you brings it closer. The figure is drawn over the model, so a part in front of it does not hide it, and it is not in a picture you save."
+}
+
 /// Show the gimbal.
 #[must_use]
 pub fn gimbal() -> &'static str {

@@ -212,6 +212,7 @@ impl Kept<'_> {
         put.flag("controls", p.controls);
         put.value("speed", format!("{:.3}", p.speed));
         put.flag("stairs", p.stairs);
+        put.flag("behind", p.behind);
         let lens = self.lens;
         put.pick("lens", &LensKind::ALL, &lens.kind);
         put.pick("lens_curve", &CURVES, &lens.curve);
@@ -286,6 +287,7 @@ impl ModelView {
         get.flag("controls", &mut p.controls);
         get.number("speed", 0.25..=4.0, &mut p.speed);
         get.flag("stairs", &mut p.stairs);
+        get.flag("behind", &mut p.behind);
         self.nav.recalled(p);
         get.number("tab", 0..=4, &mut self.nav.options_tab);
         get.pick("lens", &LensKind::ALL, &mut self.lens.kind);

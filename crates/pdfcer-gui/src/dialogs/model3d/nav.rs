@@ -24,6 +24,8 @@ pub const REGION_GHOST: &str = "model3d.ghost"; // ui-text-exempt: trace region 
 /// Stair climbing, where it is a switch in the row rather than under the
 /// camera stick.
 pub const REGION_STAIRS: &str = "model3d.stairs"; // ui-text-exempt: trace region name, never displayed
+/// Walking seen from behind a figure.
+pub const REGION_BEHIND: &str = "model3d.behind"; // ui-text-exempt: trace region name, never displayed
 /// The drone sticks' buttons, `n` in [`super::drone::BUTTONS`] order.
 pub const REGION_DRONE_BUTTON: &str = "model3d.drone.button."; // ui-text-exempt: trace region name, never displayed
 /// The drone sticks, `n` in [`super::drone::Drone::centres`] order.
@@ -56,6 +58,8 @@ pub(super) struct Prefs {
     pub speed: f64,
     /// Climb obstacles under a third of the eye height.
     pub stairs: bool,
+    /// Walking is seen from behind a figure standing where the walker is.
+    pub behind: bool,
     /// The eye height the operator set, millimetres; `None` for a share of
     /// the model's size.
     pub eye_mm: Option<f64>,
@@ -70,6 +74,7 @@ impl Default for Prefs {
             controls: true,
             speed: 1.0,
             stairs: false,
+            behind: false,
             eye_mm: None,
         }
     }
@@ -115,6 +120,9 @@ pub(super) struct Nav {
     pub walked: (u32, f64),
     /// The slowest collision of the last walk, milliseconds, said when slow.
     pub slow: Option<f64>,
+    /// How far back the camera hangs behind the walker, model units, and
+    /// the walker it was measured for.
+    pub arm: Option<(Walk, f64)>,
     /// The session's switches have been taken up.
     loaded: bool,
     /// Start walking on the next frame: the viewer opens walking.
@@ -189,8 +197,12 @@ pub(super) fn toggle(ui: &mut Ui, icon: Icon, label: &str, tip: &str, on: bool) 
 impl ModelView {
     /// The camera the picture is drawn from, in an image of `aspect`,
     /// through the chosen lens.
+    /// Walking seen from behind draws from behind the figure.
     pub(super) fn view_camera(&self, aspect: f64) -> Result<Camera, RenderError> {
-        self.camera_through(aspect, &self.lens)
+        match &self.nav.walk {
+            Some(walk) if self.nav.prefs.behind => Ok(self.behind_camera(walk, aspect, &self.lens)),
+            _ => self.camera_through(aspect, &self.lens),
+        }
     }
 
     /// The view's camera through a flat lens: what a view written to the
@@ -302,6 +314,19 @@ impl ModelView {
                 self.toggle_stairs(ui.ctx());
             }
         }
+        let behind = switch(
+            ui,
+            Icon::Behind,
+            t::behind(),
+            t::behind_tooltip(),
+            prefs.behind,
+        );
+        crate::diag::ui_rect_visible(REGION_BEHIND, behind.rect, ui.clip_rect());
+        if behind.clicked() {
+            self.nav.prefs.behind = !prefs.behind;
+            self.nav.arm = None;
+            self.switched(ui.ctx());
+        }
     }
 
     /// The walking speed.
@@ -332,13 +357,14 @@ impl ModelView {
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-nav-prefs ghost={} level={} gimbal={} controls={} speed={:.2} stairs={} eye_mm={}",
+                "model-nav-prefs ghost={} level={} gimbal={} controls={} speed={:.2} stairs={} behind={} eye_mm={}",
                 p.ghost,
                 p.level,
                 p.gimbal,
                 p.controls,
                 p.speed,
                 p.stairs,
+                p.behind,
                 p.eye_mm
                     .map_or_else(|| "auto".to_owned(), |mm| format!("{mm:.1}"))
             )
@@ -484,6 +510,7 @@ impl ModelView {
     /// The gimbal and the drone sticks over the picture `rect`, and their
     /// hot areas for a driven check.
     pub(super) fn paint_overlay(&self, ui: &Ui, rect: Rect) {
+        self.paint_figure(ui, rect);
         let painter = ui.painter().with_clip_rect(rect);
         let visuals = ui.visuals();
         if let Some(gimbal) = self.gimbal(rect) {

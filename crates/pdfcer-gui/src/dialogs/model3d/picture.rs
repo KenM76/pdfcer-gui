@@ -120,7 +120,7 @@ impl ModelView {
             + &lamp_counts(camera.ok(), options, &self.model.drawn.lights)
             + &super::looks::trace(options)
             + declined;
-        let eye = camera_eye(wanted.walk.as_ref());
+        let eye = camera_eye(wanted.walk.as_ref(), camera.ok());
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
             "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye}{lit}",
@@ -243,12 +243,22 @@ fn pivot_shown(camera: &pdfcer_3d::Camera, p: [f64; 3]) -> String {
 }
 
 /// ` walk=1 eye=x,y,z` while walking, empty while orbiting, for the trace.
-fn camera_eye(walk: Option<&pdfcer_3d_nav::Walk>) -> String {
+/// ` walk=1 eye=… from=… body=…`: the walker's eye, where the picture is
+/// drawn from (behind it when walking is seen from behind), and its eye
+/// height.
+fn camera_eye(walk: Option<&pdfcer_3d_nav::Walk>, camera: Option<&pdfcer_3d::Camera>) -> String {
     walk.map_or_else(String::new, |w| {
+        let from = camera.map_or(w.eye, |c| c.eye);
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            " walk=1 eye={:.4},{:.4},{:.4}",
-            w.eye[0], w.eye[1], w.eye[2]
+            " walk=1 eye={:.4},{:.4},{:.4} from={:.4},{:.4},{:.4} body={:.4}",
+            w.eye[0],
+            w.eye[1],
+            w.eye[2],
+            from[0],
+            from[1],
+            from[2],
+            w.body()
         )
     })
 }

@@ -101,6 +101,7 @@ fn view_rows() -> Vec<Row> {
         flag("level", t::level()),
         flag("gimbal", t::gimbal()),
         flag("stairs", t::stairs()),
+        flag("behind", t::behind()),
         flag("controls", t::controls()),
         number("speed", t::speed(), 0.25..=4.0, 3),
     ]

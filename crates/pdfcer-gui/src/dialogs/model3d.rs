@@ -21,6 +21,7 @@ use crate::app::actions::models::Assembled;
 use crate::text::panels::models as t;
 use pdfcer_core::threed::{ThreeDArtwork, ThreeDLighting, ThreeDSavedView};
 
+mod behind;
 mod card;
 mod controls;
 mod drone;
@@ -123,6 +124,8 @@ struct Rendered {
     orbit: Orbit,
     /// The walker's camera, when walking.
     walk: Option<Walk>,
+    /// Walking seen from behind, with the camera's arm when measured.
+    behind: Option<Option<f64>>,
     size: [u32; 2],
     background: egui::Color32,
     /// The highlighted part's colour, the theme's selection fill.
@@ -458,6 +461,11 @@ impl ModelView {
         let wanted = Rendered {
             orbit: self.orbit,
             walk: self.nav.walk,
+            behind: self
+                .nav
+                .prefs
+                .behind
+                .then(|| self.nav.arm.map(|(_, arm)| arm)),
             size,
             background,
             accent: egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()),

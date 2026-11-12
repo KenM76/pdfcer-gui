@@ -100,6 +100,7 @@ impl ModelView {
         }
         self.walk_taps(ui, rect, &reading.taps);
         self.walk_step(intent, dt, wheel);
+        self.update_arm();
         let busy = self.nav.sticks.active() || keyed || wheel != 0.0 || pinch != 1.0;
         self.nav.moving = self.nav.walk != before && busy;
         self.walk_trace(busy);

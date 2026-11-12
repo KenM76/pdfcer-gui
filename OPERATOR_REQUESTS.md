@@ -653,6 +653,18 @@ His words: *"can we move form fields to their own menu tab in the next release? 
 
 **Status.** Part 1 built and driven: the Forms tab (Fields, Style, Manage), Edit ▸ Forms removed, `RIBBON_IA.md` §4/§5.5a amended; Style sets fill, outline colour, outline width, border style, and text font, size and colour of the next field; *Use as default look* on Manage and the field's right-click menu, which also gained Cut, Copy, Paste, Paste duplicate and Manage fields. Driven: `forms_style_sets_the_next_field`. Style is remembered across sessions (preferences file; driven by relaunch). NOT VERIFIED by him.
 
+## O409 — **BUILT, DRIVEN, ships in the next release** — walking the 3D model seen from behind a figure, as in a game
+
+His words: *"Can we add an avatar view to the 3D viewer and walk through? The kind of view you get in games viewing the person from  the back?"*
+
+**Scope, whole behaviour.**
+1. **The switch.** *Behind*, beside Ghost, Level and Stairs while walking, in the window's row and the full-screen row. It is kept with the other walking switches and listed in Settings ▸ 3D.
+2. **The camera.** It hangs behind and a little above the walker's head, three eye heights back, looking where the walker looks, and turns and pitches with it. The walker itself is unchanged: its eye, floors, walls, steps and keys are the same walk. A wall or floor behind the head brings the camera in, never nearer than a third of an eye height, so it never draws from inside the model.
+3. **The figure.** A plain person — legs, body, arms, head with hair at the back — standing where the walker stands, its height from the eye height, turned to its heading.
+4. **Readings taken.** The figure is drawn over the picture, like the gimbal and measurements, so a part between the camera and the figure does not hide it, and a picture saved from the viewer holds the model as seen from behind without the figure. Both are said in the switch's tooltip. Drawing the figure inside the model's own renderer would hide it correctly behind parts; say if that matters more than it seems.
+
+**Status.** All three built. Driven by `the_3d_viewer_walks_seen_from_behind`. Walking with Behind off draws from the eye. With Behind on it draws from 3.14 eye heights behind and 1.98 above, with an arm of 3.00, while looking 35° down. A 180-triangle figure is drawn 70 × 116 pt, centred low in the picture. Off again, the camera is back at the eye and no further figure is drawn. Falsified twice. The first drive failed because the picture was not redrawn on the switch, a real defect now fixed. With the figure's drawing disabled, it fails naming no `model3d.figure`. The viewer is an immediate viewport, which the harness cannot photograph, so the figure's presence is read from its declared region, not from its pixels. A wall pulling the camera in is unit-tested, not driven.
+
 ## O408 — **BUILT, DRIVEN, ships in the next release** — the Settings window's text larger by default, with its own size: Ctrl+wheel or a slider beside the search box
 
 His words: *"also the font size in our settings is really small. it should be at larger size as default, and we should be able to adjust it separately from the program by using ctrl-scrollwheel or a slider on the far right side next to the command search bar."*

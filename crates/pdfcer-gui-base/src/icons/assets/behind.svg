@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- A figure seen from the back, with the camera's view cone opening from behind and above it: the walking camera follows the walker instead of looking out of its eyes. -->
+  <circle cx="30" cy="14" r="5" stroke="currentColor" stroke-width="2.5"/>
+  <path d="M22 44V30c0-5 3-8 8-8s8 3 8 8v14M30 34v10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4 10l10 4M4 26l10-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="3" y="14" width="8" height="8" rx="2" stroke="currentColor" stroke-width="2.5"/>
+</svg>
