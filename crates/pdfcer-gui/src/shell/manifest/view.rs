@@ -259,6 +259,8 @@ pub(super) fn tab() -> Tab {
                     // drawing itself rather than adding furniture.
                     icon_only("view.skip_tiny_details"),
                     icon_only("view.overprint_preview"),
+                    // Beside overprint preview: the other print-production view.
+                    icon_only("view.page_boxes"),
                     // **LAST, and it is the only member of this
                     // group that changes the LAYOUT.** The three overlays
                     // add furniture; `view.line_weights` changes the

@@ -5,7 +5,7 @@
 
 use egui::{Rect, Ui};
 
-use super::{grid, guides, handles, markup, measure, ocrlayer, overlay};
+use super::{grid, guides, handles, markup, measure, ocrlayer, overlay, pageboxes};
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
 use crate::canvas::markup::pen::Pen;
@@ -195,6 +195,13 @@ pub(super) fn draw(
     // why it is per page rather than across the viewport.
     if doc.view.grid {
         grid::draw(ui, doc, pages, clip);
+    }
+    // The page boxes sit over the grid: both are about the paper, and a box
+    // edge is the more specific statement.
+    if doc.view.page_boxes {
+        pageboxes::draw(ui, doc, pages, clip);
+    } else {
+        pageboxes::trace_off();
     }
     // The OCR text goes ABOVE the grid and BELOW the find wash.
     //

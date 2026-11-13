@@ -1182,6 +1182,9 @@ pub enum Icon {
     /// Show overprinting ink as it will print — `view.overprint_preview`.
     Overprint,
 
+    /// Outline the trim, bleed and art boxes — `view.page_boxes`.
+    PageBoxes,
+
     /// Read the ink at a point — `tools.ink_picker`.
     InkPicker,
 

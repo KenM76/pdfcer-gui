@@ -428,6 +428,11 @@ pub(super) fn band() -> Vec<Command> {
         command("view.overprint_preview", t::view_overprint_preview(), 238)
             .with_icon("overprint")
             .enabled_when("doc.pages"),
+        // Acrobat's Show Art, Trim & Bleed Boxes. Canvas furniture only.
+        // 271: the first free token after `view.move_to_window`'s 270.
+        command("view.page_boxes", t::view_page_boxes(), 271)
+            .with_icon("page-boxes")
+            .enabled_when("doc.pages"),
         //
         // > *"in our view ribbon area we need an option to show the stuff
         // > that is off page or not (and when not showing the stuff that is

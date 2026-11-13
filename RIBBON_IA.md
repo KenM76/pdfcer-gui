@@ -296,7 +296,7 @@ Panels, where nobody will find it.
 | **Render** | Strategy: Whole page · Tiled progressive · Raster scale ⌄ (quality) · Settle delay · Antialias ⌄ (text / vector) |
 | **Rotate view** | Rotate view left / right |
 | **Zoom** | Zoom to selection · Zoom to region (marquee) · Actual size · Fit page · Fit width · Fit height |
-| **Display** | Line weights · Skip tiny details · Show annotations · Show points · Off-page · Rulers · Grid · Guides |
+| **Display** | Line weights · Skip tiny details · Show annotations · Show points · Page boxes · Off-page · Rulers · Grid · Guides |
 | **Panels** | Sidebar ⌄ · Pages · Bookmarks · Layers · Objects · Signatures · Forms · Form preview (dynamic XFA forms only) |
 | **Window** | Previous / Next document · Close other documents · Move to new window · Move to other window · Read mode · Full screen · Dock all panels · Auto-hide ribbon · Auto-hide left strip · Floating panels: Off · Allowed · App initiative: Never · Ask · Allowed · Save workspace… · Load workspace ⌄ · Reset layout… |
 

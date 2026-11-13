@@ -231,6 +231,8 @@ pub mod ocrink;
 /// than a smudge.
 pub mod ocrlayer;
 pub mod overlay;
+/// `view.page_boxes`: outlines of the trim, bleed and art boxes.
+pub mod pageboxes;
 /// The application's own colour ROLES — `preview` and `dimension_selected` —
 /// built from the resolved theme's palette and published per frame.
 pub use pdfcer_gui_base::overlayroles as overlays;

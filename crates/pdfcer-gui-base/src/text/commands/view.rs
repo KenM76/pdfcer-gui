@@ -455,6 +455,18 @@ pub const fn view_overprint_preview() -> CommandText {
     )
 }
 
+/// `view.page_boxes`
+#[must_use]
+pub const fn view_page_boxes() -> CommandText {
+    CommandText::new(
+        "Page boxes",
+        "Outline the trim box (solid), bleed box (dashed) and art box (dotted) on every page \
+         that sets them, so you can see where the sheet will be cut and how far printing may \
+         run past it. Pages that set none show nothing. Only the screen changes; printing and \
+         saving are not affected.",
+    )
+}
+
 /// `view.off_page`
 #[must_use]
 pub const fn view_off_page() -> CommandText {

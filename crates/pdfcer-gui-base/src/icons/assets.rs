@@ -862,6 +862,9 @@ pub(super) const SKIP_TINY: &str = include_str!("assets/skip-tiny.svg");
 /// `overprint.svg` — the art for [`super::Icon::Overprint`].
 pub(super) const OVERPRINT: &str = include_str!("assets/overprint.svg");
 
+/// `page-boxes.svg` — the art for [`super::Icon::PageBoxes`].
+pub(super) const PAGE_BOXES: &str = include_str!("assets/page-boxes.svg");
+
 /// `ink-picker.svg` — the art for [`super::Icon::InkPicker`].
 pub(super) const INK_PICKER: &str = include_str!("assets/ink-picker.svg");
 

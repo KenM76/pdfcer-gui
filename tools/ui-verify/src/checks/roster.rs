@@ -443,6 +443,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_shop::PrintShopFindingsAndTinyDetails),
         Box::new(print_shop::InkPickerReadsOverprint),
         Box::new(print_shop::OverprintPreviewSwitch),
+        Box::new(page_boxes_view::ViewPageBoxesOutlinesTrimAndBleed),
         Box::new(print_shop::OutputPreviewHidesAnInk),
         Box::new(print_shop::OutputPreviewReadsTheInksUnderThePointer),
         Box::new(security_notes::SecurityNotesNameTheCoverAndTheActions),

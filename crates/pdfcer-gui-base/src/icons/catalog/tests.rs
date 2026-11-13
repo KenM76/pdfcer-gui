@@ -71,9 +71,10 @@ fn all_is_exhaustive_and_free_of_duplicates() {
     // 211 → 212: `behind`, walking seen from behind a figure.
     // 212 → 213: `tags`, the Tags panel.
     // 213 → 214: `sticks`, the 3D viewer's controls glyph.
+    // 214 → 215: `page-boxes`, nested trim and bleed outlines, drawn for `view.page_boxes`.
     assert_eq!(
         Icon::ALL.len(),
-        214,
+        215,
         "the catalogue changed size: add the new variant to Icon::ALL and update this count"
     );
 }

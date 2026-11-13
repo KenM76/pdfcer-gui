@@ -197,6 +197,7 @@ impl Icon {
         Icon::LineWeights,
         Icon::SkipTiny,
         Icon::Overprint,
+        Icon::PageBoxes,
         Icon::InkPicker,
         Icon::Compare,
         Icon::AlignBefore,
@@ -338,6 +339,7 @@ impl Icon {
             Icon::LineWeights => assets::LINE_WEIGHTS,
             Icon::SkipTiny => assets::SKIP_TINY,
             Icon::Overprint => assets::OVERPRINT,
+            Icon::PageBoxes => assets::PAGE_BOXES,
             Icon::InkPicker => assets::INK_PICKER,
             Icon::Compare => assets::COMPARE,
             Icon::Markup => assets::MARKUP,
@@ -565,6 +567,8 @@ impl Icon {
             Icon::SkipTiny => "skip-tiny",
             // ui-text-exempt: icon key, never displayed
             Icon::Overprint => "overprint",
+            // ui-text-exempt: icon key, never displayed
+            Icon::PageBoxes => "page-boxes",
             // ui-text-exempt: icon key, never displayed
             Icon::InkPicker => "ink-picker",
             // ui-text-exempt: icon key, never displayed

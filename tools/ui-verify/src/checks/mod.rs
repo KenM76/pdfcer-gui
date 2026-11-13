@@ -501,6 +501,8 @@ pub mod object_disagreements;
 /// Open several documents from one Open.
 pub mod open_many;
 pub mod page_boxes;
+/// The colour render notes and View ▸ Display ▸ Skip tiny details.
+pub mod page_boxes_view;
 pub mod page_print_boxes;
 pub mod password_fill;
 pub mod pdfx_claim;
@@ -524,7 +526,6 @@ pub mod print_route;
 /// A print-only header or footer reaches the printed copy.
 pub mod print_running;
 pub mod print_saved_presets;
-/// The colour render notes and View ▸ Display ▸ Skip tiny details.
 pub mod print_shop;
 pub mod print_slow_printer;
 pub mod properties_pane;

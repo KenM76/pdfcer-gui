@@ -13,7 +13,17 @@ pub fn overlays_for(theme: &Theme) -> Overlays {
         .with(crate::snapmark::SNAP_COMMITTED_ROLE, theme.palette.accent)
         .with(crate::snapshotbox::ANTS_INK_ROLE, theme.palette.accent)
         .with(crate::snapshotbox::ANTS_GAP_ROLE, theme.palette.on_accent)
+        .with(PAGE_BOX_TRIM_ROLE, theme.palette.accent)
+        .with(PAGE_BOX_BLEED_ROLE, theme.palette.danger)
+        .with(PAGE_BOX_ART_ROLE, theme.palette.notice)
 }
+
+/// Colour role of the trim box outline (`view.page_boxes`).
+pub const PAGE_BOX_TRIM_ROLE: &str = "page_box.trim"; // ui-text-exempt: a theme role key, never displayed
+/// Colour role of the bleed box outline.
+pub const PAGE_BOX_BLEED_ROLE: &str = "page_box.bleed"; // ui-text-exempt: a theme role key, never displayed
+/// Colour role of the art box outline.
+pub const PAGE_BOX_ART_ROLE: &str = "page_box.art"; // ui-text-exempt: a theme role key, never displayed
 
 /// Publish the roles for this frame.
 pub fn install(ctx: &egui::Context, theme: &Theme) {
@@ -62,6 +72,20 @@ mod tests {
         }
     }
 
+    /// The three page box outlines differ, on every preset.
+    #[test]
+    fn the_page_box_outlines_are_distinct_on_every_preset() {
+        for preset in Preset::ALL {
+            let overlays = overlays_for(&Theme::new(*preset));
+            assert!(
+                overlays
+                    .assert_distinct(&[PAGE_BOX_TRIM_ROLE, PAGE_BOX_BLEED_ROLE, PAGE_BOX_ART_ROLE])
+                    .is_ok(),
+                "{preset:?} draws two page boxes in one colour"
+            );
+        }
+    }
+
     /// Every role the canvas asks for is defined, on every preset.
     #[test]
     fn every_role_the_canvas_reads_is_defined() {
@@ -72,6 +96,9 @@ mod tests {
                 crate::snapmark::SNAP_COMMITTED_ROLE,
                 crate::snapshotbox::ANTS_INK_ROLE,
                 crate::snapshotbox::ANTS_GAP_ROLE,
+                PAGE_BOX_TRIM_ROLE,
+                PAGE_BOX_BLEED_ROLE,
+                PAGE_BOX_ART_ROLE,
             ] {
                 assert!(
                     overlays.get(role).is_some(),
