@@ -7959,3 +7959,16 @@ His words: *"I was expecting it to look more like world of warcraft, and have th
 8. **Default eye height 5' 6"** (his follow-up), for anyone who has not set one.
 
 **Built.** A modelled game figure (Blender-made, solid and lit, hands, feet and a face) stands where the walker is, its eyes at the eye height, its feet on the floor found by a ray down when one is within reach; it swings arms and legs in step with the distance walked and stands at rest when still. The Moving tab, while seen from behind, has *Figure*: head, shoulders, arms, legs and build from 50% to 200%, *Shadow underneath* (on by default), *Cast a shadow*, and *As made*; the same are on Settings ▸ 3D viewer and are remembered. The presets are *Drone*, *Shooter* and *Avatar*. The camera is items 7–8 above. Driven by `the_3d_viewer_walks_seen_from_behind` (figure placed, left drag orbits keeping the heading, wheel pulls in; falsified by making the left drag turn the walker) and `the_3d_viewer_keeps_its_eye_height_and_saves_a_scene_on_a_double_tap`. **Not driven:** standing on a floor — the fixture has none within reach below the eye, so the figure stands at eye height there; and the figure's pixels, since the viewer window cannot be photographed by the harness.
+
+## O421 — **OPEN** — Acrobat's Output Preview in full, Set Page Boxes for all four boxes, and a page box sizes overview
+
+His words, forwarding a user's question with Acrobat's two windows pictured: *"Do we support this yet?"* The question: *"Will an 'output preview' and 'page box sizes' overview be added in the future?"*
+
+**Measured.** Partly. View ▸ Panels ▸ Output Preview already lists the inks with a show box each, reads each ink's percentage and the total area coverage under the pointer, and View ▸ Display ▸ Overprint preview simulates overprint. Pages ▸ Crop… sets the crop box with margins, page scope and Remove white margins. Document properties names only boxes written past the sheet. The engine's `set_page_boxes` already takes the bleed, trim and art boxes; this shell sets only the crop box.
+
+**Scope, whole behaviour.**
+1. **Output Preview gains** a simulation profile (any installed CMYK profile), *Simulate paper colour* and *Simulate black ink* on screen, and *Page has overprint: Yes/No*.
+2. **Warnings**: *Show* all, rich black, or total area coverage over a typed percentage; the pixels past it are shown in a warning colour at a chosen opacity. This is a view the operator turns on, like the separations view itself, and is off when the panel is closed.
+3. **Show art, trim and bleed boxes** on the page, each in its own colour, while switched on.
+4. **Set page boxes**: Pages ▸ Crop… chooses which box it sets (crop, bleed, trim, art), with *Constrain proportions*, *Set to zero*, *Revert to selection*, a picture of the page with the box drawn, and the resulting page size.
+5. **Page box sizes overview**: every page's media, crop, bleed, trim and art box sizes, in the chosen unit, with which are written and which are inherited.
