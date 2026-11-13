@@ -178,7 +178,7 @@ impl PrintDialog {
         if job.plans.is_empty() {
             return Err(t::no_pages_chosen().to_owned());
         }
-        self.running.ensure(doc);
+        self.running.ensure(doc, self.scope);
         if let Some(why) = self.running.error() {
             return Err(crate::text::print::running::refused(why));
         }

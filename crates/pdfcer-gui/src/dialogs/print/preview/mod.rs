@@ -887,7 +887,7 @@ fn texture_for(
     // The SAME builder the spooler calls. See `super::render_options` for the
     // choices it encodes and why a second copy of them here would defeat the
     // preview's entire purpose.
-    let mut options = super::commit::render_options(dialog.scope, inputs.doc);
+    let mut options = super::commit::render_options(source.scope(dialog.scope), inputs.doc);
     key.apply_lines(&mut options, f64::from(raster_scale(size)));
     // `session.view()`, NOT `session.document()` — the view composes the
     // overlay and the staging buffer, so unsaved edits are what the operator
@@ -900,6 +900,7 @@ fn texture_for(
         return None;
     };
     // `stamp=` is what rendered, not what the key asked for; 0 is the document.
+    // `scope=` is the scope it rendered with.
     // `ink=` and `of=` are the raster's non-white pixels and its pixel count.
     crate::diag::trace(|| {
         let data = rendered.pixmap.data();
@@ -909,9 +910,10 @@ fn texture_for(
             .count();
         // ui-text-exempt: diagnostic trace
         format!(
-            "print-preview-render page={page} stamp={} ink={ink} of={}",
+            "print-preview-render page={page} stamp={} ink={ink} of={} scope={}",
             source.stamp,
-            data.len() / 4
+            data.len() / 4,
+            pdfcer_gui_base::prefs::printing::scope_key(options.annotation_scope)
         )
     });
     dialog.icc.preview(rendered.pixmap.data_mut());

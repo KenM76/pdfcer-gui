@@ -794,7 +794,7 @@ impl PrintDialog {
         // than at each of the three sites that need it. `None` exactly when
         // there is no job — the printable rectangle comes from the planned
         // geometry, and with no device there is no clip to report.
-        self.running.ensure(doc);
+        self.running.ensure(doc, self.scope);
         let stamp = self.running.stamp();
         let context = job.as_ref().map(|job| {
             verdicts::Context::new(
@@ -946,7 +946,7 @@ impl PrintDialog {
                 self.batch = Some(batch);
                 return self.batch_outcome(ctx, outcome, prefs, frame.closed);
             }
-            self.running.ensure(doc);
+            self.running.ensure(doc, self.scope);
             let outcome = match self.running.error() {
                 Some(why) => Err(t::running::refused(why)),
                 None => self.commit(&printer, doc, &job, &page_sizes),

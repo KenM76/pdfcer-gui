@@ -489,6 +489,9 @@ pub(super) fn copies_finishing(ui: &mut Ui, dialog: &mut PrintDialog) {
 // Tab 3 — Comments
 // ---------------------------------------------------------------------------
 
+/// The published region of the *Form fields only* choice.
+const REGION_SCOPE_FIELDS_ONLY: &str = "print.scope.fields-only"; // ui-text-exempt: trace region name, never displayed
+
 /// What is painted onto each page.
 pub(super) fn comments(ui: &mut Ui, dialog: &mut PrintDialog) {
     ui.label(t::comments_heading());
@@ -513,7 +516,11 @@ pub(super) fn comments(ui: &mut Ui, dialog: &mut PrintDialog) {
             t::scope_fields_only(),
         ),
     ] {
-        if ui.radio(dialog.scope == scope, label).clicked() {
+        let radio = ui.radio(dialog.scope == scope, label);
+        if scope == pdfcer_render::AnnotationScope::FormFieldsOnly {
+            crate::diag::ui_rect_visible(REGION_SCOPE_FIELDS_ONLY, radio.rect, ui.clip_rect());
+        }
+        if radio.clicked() {
             dialog.scope = scope;
         }
     }

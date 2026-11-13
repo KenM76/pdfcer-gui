@@ -63,9 +63,10 @@ fn compose(
     printable_pt: (f64, f64),
 ) -> Option<Pixmap> {
     let px_per_pt = f64::from(super::raster_scale(printable_pt));
-    let options = crate::dialogs::print::commit::render_options(dialog.scope, inputs.doc);
     let copy = dialog.running.copy();
     let source = crate::dialogs::print::running::Source::of(inputs.doc, copy.as_deref());
+    let options =
+        crate::dialogs::print::commit::render_options(source.scope(dialog.scope), inputs.doc);
     let view = source.session.view();
     let mut pages: Vec<(Pixmap, Cell)> = Vec::with_capacity(sheet.cells.len());
     for cell in &sheet.cells {

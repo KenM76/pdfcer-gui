@@ -105,7 +105,10 @@ impl PrintDialog {
         // The SAME builder the preview calls. See `render_options` for the
         // choices it encodes and why a second copy of them here would defeat
         // the preview's purpose.
-        let options = render_options(self.scope, doc)
+        // The stamped copy when a print-only header or footer is set.
+        let copy = self.running.copy();
+        let source = super::running::Source::of(doc, copy.as_deref());
+        let options = render_options(source.scope(self.scope), doc)
             .with_edge_antialiasing(self.edges.at_dpi(job.resolution.dpi));
         crate::diag::trace(|| {
             format!(
@@ -117,9 +120,6 @@ impl PrintDialog {
             )
         });
         let lines_pt = super::lines::paper_pt(self.lines, job.resolution.dpi);
-        // The stamped copy when a print-only header or footer is set.
-        let copy = self.running.copy();
-        let source = super::running::Source::of(doc, copy.as_deref());
         let view = source.session.view();
         let name = super::poster::document_name(doc);
         let vector = self.vector_offered();

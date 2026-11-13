@@ -6,6 +6,11 @@
 //! preview and the printer both render from that copy, so the preview shows
 //! what prints.
 //!
+//! Under *Form fields only* the copy's pages are first emptied to their form
+//! fields (`EditSession::clear_page_content`) and it renders with
+//! `AnnotationScope::Document`: that scope skips all page content, so the
+//! stamped line would otherwise be skipped with it. See [`Source::scope`].
+//!
 //! The copy is rebuilt only when the applied lines or the document change. A
 //! text box applies its line when it loses focus, not per keystroke: a
 //! rebuild serialises and reparses the whole document.
@@ -18,6 +23,7 @@ use pdfcer_core::edit::EditSession;
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::running_text::{RunningText, RunningTextAlign, RunningTextKind};
 use pdfcer_gui_base::settings::SettingsExt as _;
+use pdfcer_render::{AnnotationClass, AnnotationScope};
 
 use crate::app::state::OpenDoc;
 use crate::text::print::running as t;
@@ -41,6 +47,8 @@ struct Key {
     serial: u64,
     epoch: u64,
     lines: [Line; 2],
+    /// Whether the pages were emptied to their form fields.
+    cleared: bool,
 }
 
 /// The stamped copy the preview and the printer render from.
@@ -49,6 +57,8 @@ pub(crate) struct Copy {
     pages: Vec<Page>,
     /// A digest of what it was built from, never 0; for the preview's keys.
     id: u64,
+    /// The pages hold only the line and the form fields.
+    cleared: bool,
 }
 
 /// The pages and session to render: the document's own, or the copy's.
@@ -58,6 +68,7 @@ pub(crate) struct Source<'a> {
     pub(crate) pages: &'a [Page],
     /// The copy's id, or 0 for the document: what a trace reports rendered.
     pub(crate) stamp: u64,
+    cleared: bool,
 }
 
 impl<'a> Source<'a> {
@@ -68,12 +79,25 @@ impl<'a> Source<'a> {
                 session: &c.session,
                 pages: &c.pages,
                 stamp: c.id,
+                cleared: c.cleared,
             },
             None => Self {
                 session: &doc.session,
                 pages: &doc.pages,
                 stamp: 0,
+                cleared: false,
             },
+        }
+    }
+
+    /// The scope to render this source with, for the dialog's `requested`
+    /// one: `Document` on a copy already emptied to its form fields, whose
+    /// only page content is then the stamped line.
+    pub(crate) fn scope(&self, requested: AnnotationScope) -> AnnotationScope {
+        if self.cleared {
+            AnnotationScope::Document
+        } else {
+            requested
         }
     }
 }
@@ -114,8 +138,9 @@ impl State {
         self.applied.clone_from(&self.draft);
     }
 
-    /// Bring the copy up to date with the applied lines and `doc`.
-    pub(crate) fn ensure(&mut self, doc: &OpenDoc) {
+    /// Bring the copy up to date with the applied lines, `doc` and the
+    /// dialog's `scope`.
+    pub(crate) fn ensure(&mut self, doc: &OpenDoc, scope: AnnotationScope) {
         let stamps = stamps(&self.applied);
         if stamps.is_empty() {
             self.built = None;
@@ -127,6 +152,7 @@ impl State {
             serial: doc.serial,
             epoch: doc.edit_epoch,
             lines: self.applied.clone(),
+            cleared: !scope.paints_page_content(),
         };
         if self.built.as_ref() == Some(&key) {
             return;
@@ -135,7 +161,7 @@ impl State {
         key.hash(&mut hasher);
         let id = hasher.finish().max(1);
         self.built = Some(key);
-        match build(doc, &stamps, id) {
+        match build(doc, &stamps, id, scope) {
             Ok(copy) => {
                 self.copy = Some(Arc::new(copy));
                 self.error = None;
@@ -164,8 +190,15 @@ fn stamps(lines: &[Line; 2]) -> Vec<RunningText> {
         .collect()
 }
 
-/// Reopen `doc` from its current bytes and stamp `stamps` on every page.
-fn build(doc: &OpenDoc, stamps: &[RunningText], id: u64) -> Result<Copy, String> {
+/// Reopen `doc` from its current bytes and stamp `stamps` on every page,
+/// first emptying the pages to what `scope` paints when it paints no page
+/// content.
+fn build(
+    doc: &OpenDoc,
+    stamps: &[RunningText],
+    id: u64,
+    scope: AnnotationScope,
+) -> Result<Copy, String> {
     for stamp in stamps {
         stamp.check().map_err(|e| tr::problem(&e))?;
     }
@@ -176,6 +209,12 @@ fn build(doc: &OpenDoc, stamps: &[RunningText], id: u64) -> Result<Copy, String>
         .map_err(|e| e.to_string())?;
     let base = pdfcer_core::document::Document::from_bytes(bytes).map_err(|e| e.to_string())?;
     let mut session = doc.settings.open_session(base);
+    let cleared = !scope.paints_page_content();
+    if cleared {
+        session
+            .clear_page_content(|subtype| scope.paints_class(AnnotationClass::of_subtype(subtype)))
+            .map_err(|e| e.to_string())?;
+    }
     let mut firsts = Vec::with_capacity(stamps.len());
     for stamp in stamps {
         let out = session
@@ -187,9 +226,10 @@ fn build(doc: &OpenDoc, stamps: &[RunningText], id: u64) -> Result<Copy, String>
     // ui-text-exempt: diagnostic trace
     crate::diag::trace(|| {
         format!(
-            "print-running built pages={} lines={} first={:?}",
+            "print-running built pages={} lines={} cleared={} first={:?}",
             pages.len(),
             stamps.len(),
+            cleared,
             firsts.join("|")
         )
     });
@@ -197,6 +237,7 @@ fn build(doc: &OpenDoc, stamps: &[RunningText], id: u64) -> Result<Copy, String>
         session: Arc::new(session),
         pages,
         id,
+        cleared,
     })
 }
 
