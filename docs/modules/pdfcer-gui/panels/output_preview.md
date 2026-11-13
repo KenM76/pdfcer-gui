@@ -90,7 +90,7 @@ The thresholds are kept while a rule is off (`WarnUi`, carried across
 panel sets with `coverage::set`.
 
 - `canvas::coverage` checks the visible part of the current page at screen
-  density with `pdfcer_render::coverage_warning_mask`, one mask per rule, on a
+  density with `pdfcer_render::coverage_warning_masks`, one render for both rules, on a
   thread, once the view has held still for 0.15 s; the overlay shown stays
   until its replacement arrives. Region and scale come from
   `canvas::ocrink::visible_raster`, so both overlays render the same region.

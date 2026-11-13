@@ -2,7 +2,7 @@
 //!
 //! While the separation preview is on and the panel has a warning chosen, the
 //! visible part of the page is checked with
-//! [`pdfcer_render::coverage_warning_mask`] and the flagged pixels are painted
+//! [`pdfcer_render::coverage_warning_masks`] and the flagged pixels are painted
 //! over it in the warning's colour, as Acrobat's Output Preview does. It is a
 //! view the operator switches on, of the ink the preview composites, and it
 //! goes with the preview.
@@ -350,31 +350,32 @@ fn check(
 ) -> Result<Done, String> {
     let began = std::time::Instant::now();
     let view = session.view();
-    let mask = |rule| {
-        pdfcer_render::coverage_warning_mask(
-            &view,
-            page,
-            want.scale,
-            Some(want.region),
-            options,
-            rule,
-        )
-        .map_err(|e| e.to_string())
-    };
-    let total = want
-        .warnings
-        .total
-        .map(|limit_percent| mask(CoverageWarning::TotalAreaCoverage { limit_percent }))
-        .transpose()?;
-    let rich = want
-        .warnings
-        .rich_black
-        .map(|black_start_percent| {
-            mask(CoverageWarning::RichBlack {
+    // One render answers both rules; the masks come back in the order asked.
+    let rules: Vec<CoverageWarning> = [
+        want.warnings
+            .total
+            .map(|limit_percent| CoverageWarning::TotalAreaCoverage { limit_percent }),
+        want.warnings
+            .rich_black
+            .map(|black_start_percent| CoverageWarning::RichBlack {
                 black_start_percent,
-            })
-        })
-        .transpose()?;
+            }),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    let mut masks = pdfcer_render::coverage_warning_masks(
+        &view,
+        page,
+        want.scale,
+        Some(want.region),
+        options,
+        &rules,
+    )
+    .map_err(|e| e.to_string())?
+    .into_iter();
+    let total = want.warnings.total.and_then(|_| masks.next());
+    let rich = want.warnings.rich_black.and_then(|_| masks.next());
     let Some(first) = total.as_ref().or(rich.as_ref()) else {
         return Err("no rule".to_owned()); // ui-text-exempt: diagnostic trace value
     };
