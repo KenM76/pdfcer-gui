@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 5320a2a52ee114251f3d82acb371179314a136a6
+# baseline: b8f6649f6600c08b3dff8dadba481637613d842a
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11986
+# items: 11987
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -11475,6 +11475,7 @@ pdfcer-render fn pdfcer_render::compositor::remove_backdrop
 pdfcer-render fn pdfcer_render::compositor::remove_backdrop_cmyk
 pdfcer-render fn pdfcer_render::compositor::union_
 pdfcer-render fn pdfcer_render::coverage_warning::coverage_warning_mask
+pdfcer-render fn pdfcer_render::coverage_warning::coverage_warning_masks
 pdfcer-render fn pdfcer_render::display_list::record_page
 pdfcer-render fn pdfcer_render::display_list::record_page_for_export
 pdfcer-render fn pdfcer_render::display_list::record_page_for_plates
