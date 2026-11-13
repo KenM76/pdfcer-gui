@@ -751,7 +751,7 @@ impl PrintDialog {
             "print", // ui-text-exempt: a viewport key, never displayed.
             t::dialog_title(),
             // Tall enough for the options column without a scrollbar.
-            egui::vec2(800.0, 730.0),
+            egui::vec2(800.0, 760.0),
             egui::vec2(520.0, 380.0),
         )
         // Its preview is what he reads before committing paper, and a larger

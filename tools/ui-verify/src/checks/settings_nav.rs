@@ -26,7 +26,7 @@ const HEADING: &str = "settings.heading.";
 /// The trace event naming the page on show.
 const PAGE_EVENT: &str = "settings-page"; // ui-text-exempt: a trace event name, never displayed
 /// Every page, in the order the list must show them.
-const PAGES: [&str; 20] = [
+const PAGES: [&str; 21] = [
     "general",
     "presets",
     "appearance",
@@ -46,6 +46,7 @@ const PAGES: [&str; 20] = [
     "comments",
     "forms",
     "saving",
+    "printing",
     "redaction",
 ];
 /// Typed into the search; the Fonts page must survive it and some page must not.
