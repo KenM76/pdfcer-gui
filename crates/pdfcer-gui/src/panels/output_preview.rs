@@ -24,6 +24,8 @@ pub const REGION_BODY: &str = "panel:output-preview"; // ui-text-exempt: trace r
 pub const REGION_SWITCH: &str = "output-preview.on"; // ui-text-exempt: trace region name, never displayed
 /// One ink's show box, suffixed with the ink's name, spaces as `_`.
 pub const REGION_INK_PREFIX: &str = "output-preview.ink:"; // ui-text-exempt: trace region name, never displayed
+/// The page's overprint line.
+pub const REGION_OVERPRINT: &str = "output-preview.overprint"; // ui-text-exempt: trace region name, never displayed
 /// The "show all" button.
 pub const REGION_SHOW_ALL: &str = "output-preview.show-all"; // ui-text-exempt: trace region name, never displayed
 
@@ -45,11 +47,11 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     };
     // Only a texture drawn under THIS preview describes its plates; any other
     // is the frame before the switch or the click, and is waited out.
-    let Some(diag) = doc
+    let Some((diag, tex_region)) = doc
         .page_texture
         .as_ref()
         .filter(|tex| tex.key.drawn_under(Some(preview)))
-        .map(|tex| &tex.diagnostics)
+        .map(|tex| (&tex.diagnostics, tex.key.region().is_some()))
     else {
         ui.label(egui::RichText::new(t::waiting()).weak());
         return;
@@ -59,6 +61,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
         token(&diag.inks),
         token(&preview.hidden)
     ));
+    overprint(ui, diag, tex_region);
     if diag.inks.is_empty() {
         ui.label(t::no_inks());
         return;
@@ -86,6 +89,24 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
                 .weak(),
         );
     }
+}
+
+/// Whether the page uses overprint, read from the render under the preview,
+/// which always simulates it. A region render answers for the part drawn.
+fn overprint(ui: &mut egui::Ui, diag: &pdfcer_render::Diagnostics, region: bool) {
+    let found = pdfcer_render::PageOverprint::from_diagnostics(diag);
+    crate::diag::trace_on_change("output-preview-overprint", || {
+        format!(
+            "set={} effect={} whole={}", // ui-text-exempt: diag trace value
+            u8::from(found.set),
+            u8::from(found.takes_effect),
+            u8::from(!region)
+        )
+    });
+    let region_ui = ui
+        .label(t::overprint(found.set, found.takes_effect, region))
+        .on_hover_text(t::overprint_hover());
+    crate::diag::ui_rect(REGION_OVERPRINT, region_ui.rect);
 }
 
 /// One row per plate: its show switch and, under the pointer, its tint.

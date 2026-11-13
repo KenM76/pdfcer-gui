@@ -33,6 +33,30 @@ pub fn no_inks() -> &'static str {
      preview is allowed. It is drawn as usual."
 }
 
+/// Whether the page uses overprint. `partial` when only the part of the page
+/// on screen was drawn, so the answer covers that part.
+#[must_use]
+pub fn overprint(set: bool, takes_effect: bool, partial: bool) -> String {
+    let line = match (set, takes_effect) {
+        (true, true) => "Overprint: used, and it changes how this page prints.",
+        (true, false) => "Overprint: turned on, but it changes nothing on this page.",
+        (false, _) => "Overprint: not used on this page.",
+    };
+    if partial {
+        format!("{line} Only the part of the page on screen was checked.")
+    } else {
+        line.to_owned()
+    }
+}
+
+/// What overprint means, on hover.
+#[must_use]
+pub fn overprint_hover() -> &'static str {
+    "Overprint lets one ink print on top of another instead of cutting it out. \
+     The preview always shows its effect, so what you see here is what the press \
+     would do with it."
+}
+
 /// The button that shows every ink again.
 #[must_use]
 pub fn show_all() -> &'static str {
@@ -127,4 +151,24 @@ pub fn hover_no_inks() -> &'static str {
 #[must_use]
 pub fn hover_failed(why: &str) -> String {
     format!("The inks at this point could not be read: {why}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::overprint;
+
+    #[test]
+    fn overprint_tells_effect_from_no_effect() {
+        assert_ne!(overprint(true, true, false), overprint(true, false, false));
+        assert_eq!(
+            overprint(false, true, false),
+            overprint(false, false, false)
+        );
+    }
+
+    #[test]
+    fn a_partial_answer_says_so() {
+        assert!(overprint(true, true, true).starts_with(&overprint(true, true, false)));
+        assert!(overprint(true, true, true).len() > overprint(true, true, false).len());
+    }
 }

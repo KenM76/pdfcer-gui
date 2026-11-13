@@ -29,7 +29,7 @@ const METHOD: &str = "Rebuild it with `python fixtures/print-shop.PROVENANCE.py`
 const UI_RECT: &str = "ui-rect";
 const FINDINGS: &str = "render-findings"; // ui-text-exempt: a trace event name, never displayed
 const TINY: &str = "canvas-tiny"; // ui-text-exempt: a trace event name, never displayed
-const VIEW_TAB: &str = "ribbon.tab.view";
+pub(super) const VIEW_TAB: &str = "ribbon.tab.view";
 const SKIP_TINY: &str = "ribbon.item.view.skip_tiny_details";
 const DISCLOSURE: &str = "status-group:tiny-details";
 const OVERPRINT: &str = "canvas-overprint"; // ui-text-exempt: a trace event name, never displayed
@@ -121,6 +121,17 @@ fn launch(
     name: &str,
     invoke: Option<&str>,
 ) -> Result<(Session, ScriptedPointer)> {
+    launch_on(ctx, report, name, invoke, (FIXTURE, METHOD))
+}
+
+/// [`launch`] on another fixture: `(file name, how to rebuild it)`.
+pub(super) fn launch_on(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    name: &str,
+    invoke: Option<&str>,
+    fixture: (&str, &str),
+) -> Result<(Session, ScriptedPointer)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -131,7 +142,7 @@ fn launch(
         Error::new("the profile has no viewport variable to place the window off the desktop.")
     })?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{name}.trace.txt")));
-    spec.pdf = Some(repo_fixture(FIXTURE, METHOD)?);
+    spec.pdf = Some(repo_fixture(fixture.0, fixture.1)?);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
         SHELL_DIAG_ENV,
@@ -156,7 +167,7 @@ fn launch(
 }
 
 /// The newest `name` line after `mark` satisfying `ok`, waiting up to 30 settles.
-fn await_line(
+pub(super) fn await_line(
     session: &Session,
     name: &str,
     mark: usize,
@@ -177,7 +188,7 @@ fn await_line(
 }
 
 /// Click the declared `region`.
-fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<()> {
+pub(super) fn press(session: &Session, pointer: &ScriptedPointer, region: &str) -> Result<()> {
     let trace = session.trace()?;
     let (rect, viewport) = declared_in(&trace, UI_RECT, region).ok_or_else(|| {
         Error::new(format!(
@@ -418,9 +429,9 @@ fn overprint(
     Ok(None)
 }
 
-const OUTPUT_ITEM: &str = "ribbon.item.view.output_preview";
-const OUTPUT_SWITCH: &str = "output-preview.on";
-const OUTPUT_TRACE: &str = "output-preview"; // ui-text-exempt: a trace event name, never displayed
+pub(super) const OUTPUT_ITEM: &str = "ribbon.item.view.output_preview";
+pub(super) const OUTPUT_SWITCH: &str = "output-preview.on";
+pub(super) const OUTPUT_TRACE: &str = "output-preview"; // ui-text-exempt: a trace event name, never displayed
 const OUTPUT_NOTE: &str = "status-group:output-preview";
 const MAGENTA: &str = "output-preview.ink:Magenta";
 
