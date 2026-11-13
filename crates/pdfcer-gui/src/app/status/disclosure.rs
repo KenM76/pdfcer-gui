@@ -350,6 +350,7 @@ fn output_preview_disclosure(ui: &mut egui::Ui, doc: &OpenDoc) {
     let line = crate::text::panels::output_preview::status_line(
         preview.hidden.len(),
         preview.soft_proof.is_some(),
+        crate::canvas::coverage::warnings(ui.ctx()).any(),
     );
     disclosure_line(ui, REGION_OUTPUT_PREVIEW, &line);
 }

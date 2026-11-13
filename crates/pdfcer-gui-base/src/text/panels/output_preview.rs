@@ -86,13 +86,15 @@ pub fn unmatched(names: &[String]) -> String {
 /// The status-bar line while the preview is on. `proofed` when the inks are
 /// shown through a press simulation profile.
 #[must_use]
-pub fn status_line(hidden: usize, proofed: bool) -> String {
-    let line = plates_line(hidden);
+pub fn status_line(hidden: usize, proofed: bool, warned: bool) -> String {
+    let mut line = plates_line(hidden);
     if proofed {
-        format!("{line} Colours simulate a press profile.")
-    } else {
-        line
+        line.push_str(" Colours simulate a press profile.");
     }
+    if warned {
+        line.push_str(" Coverage warnings are painted over the page.");
+    }
+    line
 }
 
 fn plates_line(hidden: usize) -> String {
@@ -258,6 +260,75 @@ pub fn proof_spots() -> &'static str {
      yellow and black."
 }
 
+/// The coverage warnings' heading.
+#[must_use]
+pub fn warn_heading() -> &'static str {
+    "Warnings"
+}
+
+/// *Total area coverage*.
+#[must_use]
+pub fn warn_total() -> &'static str {
+    "Total area coverage over"
+}
+
+/// What the total area coverage warning flags, on hover.
+#[must_use]
+pub fn warn_total_hover() -> &'static str {
+    "Paint over the page wherever all the inks together add up to more than \
+     this percentage. Presses set a limit, often 300%, above which ink does \
+     not dry cleanly."
+}
+
+/// *Rich black*.
+#[must_use]
+pub fn warn_rich() -> &'static str {
+    "Rich black from black at"
+}
+
+/// What the rich black warning flags, on hover.
+#[must_use]
+pub fn warn_rich_hover() -> &'static str {
+    "Paint over the page wherever black ink is at least this percentage and \
+     cyan, magenta or yellow is mixed in with it."
+}
+
+/// The part of the page on screen is still being checked.
+#[must_use]
+pub fn warn_checking() -> &'static str {
+    "checking…"
+}
+
+/// The engine could not check the page.
+#[must_use]
+pub fn warn_refused() -> &'static str {
+    "could not be checked"
+}
+
+/// The rule flagged something on screen.
+#[must_use]
+pub fn warn_found() -> &'static str {
+    "found on screen"
+}
+
+/// *Warning opacity*.
+#[must_use]
+pub fn warn_opacity() -> &'static str {
+    "Warning opacity"
+}
+
+/// What warning opacity changes, on hover.
+#[must_use]
+pub fn warn_opacity_hover() -> &'static str {
+    "How solidly the warning colours cover the page; lower lets the page show through."
+}
+
+/// The rule flagged nothing on screen.
+#[must_use]
+pub fn warn_none() -> &'static str {
+    "none on screen"
+}
+
 #[cfg(test)]
 mod tests {
     use super::overprint;
@@ -274,8 +345,9 @@ mod tests {
     #[test]
     fn the_status_line_names_a_simulation() {
         use super::status_line;
-        assert_ne!(status_line(0, true), status_line(0, false));
-        assert!(status_line(1, true).starts_with(&status_line(1, false)));
+        assert_ne!(status_line(0, true, false), status_line(0, false, false));
+        assert_ne!(status_line(0, false, true), status_line(0, false, false));
+        assert!(status_line(1, true, true).starts_with(&status_line(1, false, false)));
     }
 
     #[test]

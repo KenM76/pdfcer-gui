@@ -35,6 +35,9 @@ pub enum Surface {
     SignaturePicture,
     /// A dynamic XFA form's page in the Form preview window, at a fixed scale.
     FormPreview,
+    /// Output Preview's ink coverage warning mask, sized by the visible part
+    /// of the page.
+    CoverageWarning,
 }
 
 /// The page-shaped part of an upload, present only when there is one.

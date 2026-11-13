@@ -353,6 +353,9 @@ pub struct PanelsState {
     /// profile already read. The operator's, so [`Self::forget_document`]
     /// carries it.
     proof: output_preview::proof::ProofUi,
+    /// Output Preview's coverage warning thresholds; the operator's, carried
+    /// like `proof`.
+    warn: output_preview::warnings::WarnUi,
 }
 
 /// What the operator has opened and picked in the Objects tree.
@@ -484,9 +487,11 @@ impl PanelsState {
         let preview_budget = self.pages.cache.budget();
         let align = self.align;
         let proof = std::mem::take(&mut self.proof);
+        let warn = self.warn;
         *self = Self::default();
         self.align = align;
         self.proof = proof;
+        self.warn = warn;
         self.pages.cache.force_on(previews_on);
         self.pages.cache.set_budget(preview_budget);
         properties::refusedchar::forget_document();

@@ -54,6 +54,38 @@ engine's answer and the panel shows its no-BPC note.
 A render key that ignores the soft proof fails at step 3 (`no render-spawn
 followed`).
 
+# What `output_preview_coverage_warnings` drives
+
+One session on `fixtures/output-preview.pdf`. Its four patches, PDF points:
+400% CMYK at (72,500)-(272,650), rich black (C 60%, K 100%) at
+(340,500)-(540,650), plain K 100% at (340,300)-(540,450), 40% cyan at
+(72,300)-(272,450).
+
+1. The switch, as above, then a click on `output-preview.tac` (300%).
+   `coverage-mask` owes `tac_box` within 2 pt of the 400% patch in canvas
+   points (72,142,272,292) and `rich=-`. A screenshot owes the overlay green
+   (0,220,0) over at least 90% of a 40 pt square at the 400% patch's centre
+   and none on the rich black.
+2. A click on `output-preview.rich-black` (95%). `rich_box` owes both top
+   patches (72,142,540,292); the panel owes `found_tac=1 found_rich=1`, and
+   `coverage-overlay` is declared. A screenshot owes orange (255,140,0) on
+   both top patches, since rich black is painted over coverage, and none on
+   plain black, which has no other ink.
+3. `50` typed into `output-preview.warn-opacity`; the panel owes `opacity=50`,
+   and the 400% patch owes no pixel of solid orange and at least 90% orange
+   mixed with the page (red over green over blue, red between 80 and 240).
+
+The 40% cyan patch is under both rules, and plain black is the rich-black
+rule's control: K at 100% with nothing mixed in.
+
+## Falsified
+
+- The rich black rule checked as total area coverage at 95% fails at step 2:
+  `rich_box` spans the page, plain black included.
+- The overlay traced and not painted fails the step 1 screenshot (0.000 of
+  green).
+- The opacity ignored fails step 3 (1.000 of solid orange).
+
 # Driven off-screen
 
 Scripted pointer, window at `-4200,-4200`, `spec.place = false`; it runs under

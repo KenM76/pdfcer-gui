@@ -215,6 +215,8 @@ pub mod modelneed;
 // and the ghost's honesty rule. Kept out of `selection` deliberately — that
 // module is already 1,352 lines and owns *what is selected*, while this owns
 // *what happens when you drag it*.
+/// Output Preview's ink coverage warnings, painted over the page.
+pub mod coverage;
 pub mod moving;
 /// **Tab walks the objects on the page** — `OPERATOR_REQUESTS.md`
 /// O204, the canvas half. Pure over a provider and a pick filter; its

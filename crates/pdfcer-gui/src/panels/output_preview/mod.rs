@@ -10,6 +10,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/output_preview.md`.
 
 pub mod proof;
+pub mod warnings;
 
 use pdfcer_render::SeparationPreview;
 
@@ -69,6 +70,7 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: 
         .iter()
         .any(|ink| !pdfcer_render::PROCESS_INKS.contains(&ink.as_str()));
     proof::section(ui, doc, preview, spots, &mut state.proof, actions);
+    warnings::section(ui, doc, &mut state.warn);
     if diag.inks.is_empty() {
         ui.label(t::no_inks());
         return;

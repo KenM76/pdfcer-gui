@@ -155,6 +155,26 @@ pub(super) fn paint(
 /// The region and density the view needs now. `None` when nothing of the
 /// page is visible.
 fn wanted(painter: &Painter, doc: &OpenDoc, view: &PageView, rgb: [u8; 3]) -> Option<Want> {
+    let (region, scale) = visible_raster(painter, doc, view)?;
+    Some(Want {
+        session: Arc::as_ptr(&doc.session) as usize,
+        epoch: doc.edit_epoch,
+        page: view.page,
+        rgb,
+        layers: doc.layers.generation,
+        region,
+        scale,
+    })
+}
+
+/// The part of `view`'s page on screen, as a page region, and the render
+/// scale for it: screen density rounded up to a step, so a small zoom change
+/// reuses the raster. `None` when nothing of the page is visible.
+pub(super) fn visible_raster(
+    painter: &Painter,
+    doc: &OpenDoc,
+    view: &PageView,
+) -> Option<(PdfRect, f32)> {
     let page = doc.pages.get(view.page)?;
     let visible = view.map.image_rect().intersect(painter.clip_rect());
     if !visible.is_positive() {
@@ -177,15 +197,7 @@ fn wanted(painter: &Painter, doc: &OpenDoc, view: &PageView, rgb: [u8; 3]) -> Op
         return None;
     }
     let scale = (density.log2() * STEPS_PER_OCTAVE).ceil() / STEPS_PER_OCTAVE;
-    Some(Want {
-        session: Arc::as_ptr(&doc.session) as usize,
-        epoch: doc.edit_epoch,
-        page: view.page,
-        rgb,
-        layers: doc.layers.generation,
-        region: page_region(canvas, PageFrame::of(page)),
-        scale: scale.exp2(),
-    })
+    Some((page_region(canvas, PageFrame::of(page)), scale.exp2()))
 }
 
 /// Start a render of `want` once the view has settled on it, unless the

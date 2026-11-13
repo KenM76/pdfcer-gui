@@ -219,6 +219,8 @@ pub(super) fn draw(
     if let Some(strength) = doc.view.ocr_overlay {
         ocrlayer::draw_text(&painter, doc, pages, strength);
     }
+    // Coverage warnings are a view of the ink, like the preview under them.
+    super::coverage::draw(&painter, doc, pages);
     // The find highlights go on FIRST, under everything else.
     //
     // They are a wash over page content — an answer to "where is the text I

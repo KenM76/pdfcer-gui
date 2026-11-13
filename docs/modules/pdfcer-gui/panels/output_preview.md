@@ -80,3 +80,36 @@ hiding an ink keeps the proof and the proof keeps the hidden inks.
 Trace: `output-preview-proof source=<none|intent|installed|other> paper= black=
 bpc=`. Regions: `output-preview.proof`, `output-preview.proof:<none|intent|i>`,
 `output-preview.paper`, `output-preview.black-ink`.
+
+## Coverage warnings (`output_preview::warnings`, `canvas::coverage`)
+
+*Total area coverage over* (default 300%, up to 400) and *Rich black from black
+at* (default 95%), each a switch and a threshold, under the simulation profile.
+The thresholds are kept while a rule is off (`WarnUi`, carried across
+`forget_document`); the rules switched on live in `canvas::coverage`, which the
+panel sets with `coverage::set`.
+
+- `canvas::coverage` checks the visible part of the current page at screen
+  density with `pdfcer_render::coverage_warning_mask`, one mask per rule, on a
+  thread, once the view has held still for 0.15 s; the overlay shown stays
+  until its replacement arrives. Region and scale come from
+  `canvas::ocrink::visible_raster`, so both overlays render the same region.
+- The mask is rendered under the preview's hidden plates and without its soft
+  proof: a proof changes the screen colour, not the ink. Rich black is painted
+  over total area coverage, in the colour beside each rule's switch, at the
+  *Warning opacity* shown while a rule is on (10–100%, default 100). Opacity
+  is a paint setting, so changing it does not re-check.
+- The panel says per rule *found on screen*, *none on screen*, *checking* or
+  *could not be checked*: an answer for the part of the page drawn, as the
+  overlay is. A refused check is not retried until the document, page or
+  rules change.
+- With a rule on, the status line adds that coverage warnings are painted
+  over the page. The overlay goes with the preview: switching it off clears
+  them.
+
+Trace: `output-preview-warn tac=<n|-> rich=<n|-> opacity=<percent>` then `found=<checking|refused>`
+or `found_tac=<0|1|-> found_rich=<0|1|->`; `coverage-mask page= tac= rich=
+tac_box= rich_box= px= ms=` per finished check (flagged pixel counts; boxes in
+canvas points, `-` for none); `coverage-mask-refused`. Regions:
+`output-preview.tac`, `output-preview.rich-black`, `output-preview.warn-opacity`,
+`coverage-overlay`.

@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **77 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `wanted` — a real gap — **76 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -133,7 +133,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **EMF: patch a soft-masked layer only where its mask shows (opt-in)** — `EmfOptions::tight_mask_patches`, `EmfOptions::with_tight_mask_patches` | **wanted, at the pin since v0.147.0.** It acts only with `patch_approximations` or `vector_transparency`, neither of which this shell sets yet, so it lands with the Print ▸ Pages vector switches above, not alone. The engine's own caveat goes in its tooltip: text freed from a patch is drawn by the consumer and GDI does not antialias it. |
 | **EMF vector export of axial and radial shadings under transparency** — with `vector_transparency` and `vector_shadings` both set | **wanted, at the pin since v0.147.0.** Neither switch is set here yet; it arrives with the Print ▸ Pages vector switches above and needs nothing of its own. |
 | **EMF export: image soft masks counted apart from gradient masks** — `EmfNotFlat::soft_mask_image` | **wanted, at the pin since v0.147.0.** The EMF export receipt does not read the not-flat census, so it cannot yet say that a soft mask stayed raster because it holds an image. Small: one sentence in `text::export_image` from `EmfCounts`. |
-| **Ink coverage warnings** — mask of where total area coverage exceeds a limit, or where black is rich; module `pdfcer_render::coverage_warning` | **wanted, at the pin since v0.148.0; X081, O421 §2.** Output Preview's total area coverage and rich black warnings, as a mask the canvas paints over the page while the operator has it on. |
 | **Print disclosure of unusable colour profiles** — `Diagnostics::icc_profiles_unmodelled`, `pdfcer_emf::print_export_with` | **wanted, at the pin since v0.146.0; X074.** The print receipt should say, per page, that an embedded colour profile fell back to its alternate. Needs `plain_sheet` to call `print_export_with` and keep the `EmfOutcome`. |
 | **Print by sending the PDF itself to printers that read PDF** — `pdfcer print --pdf-direct`, modules `pdfcer_print::ipp::port`, `pdfcer_print::queue_port` | **wanted, at the pin since v0.146.0.** A Print dialog route beside vector and image, offered only when the queue resolves to an IPP address that accepts `application/pdf`. Not tried on real hardware by the engine, so the receipt must say which route was taken and why. |
 | **Separation plates as vector EMF** — one metafile per ink (`export_emf_plates`), `pdfcer_render::plates::plate_pixmap`, `pdfcer_render::plates::probe_inks`, `pdfcer_render::display_list::record_page_for_plates` | **wanted, at the pin since v0.146.0; X072.** Belongs with *Separation plates as engine API* (G242): an Export ▸ Plates choice writing one metafile per ink, each plate's patch count disclosed. |
@@ -267,7 +266,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **472 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **473 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -625,6 +624,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 |---|---|
 | **Soft proof against a CMYK output profile** — module `pdfcer_render::soft_proof`, `SeparationPreview::soft_proof`, `SeparationPreview::with_soft_proof` | **shipped — View ▸ Output Preview ▸ *Simulate*; X079, O421 §1.** `panels::output_preview::proof` offers the document's output intent and installed CMYK output profiles, with *Simulate paper colour* and *Simulate black ink*, and sets `SeparationPreview::with_soft_proof`; the render key hashes the profile (`renderworker::key`). `RenderPolicy::proof_destination` is the engine's own plumbing of the same choice and is never set here. |
 | **Page uses overprint** — says whether a page sets overprint and whether it takes effect; module `pdfcer_render::page_overprint` | **shipped — View ▸ Output Preview, the overprint line; X080, O421 §2.** A line in Output Preview, read with `PageOverprint::from_diagnostics` from the render already drawn under the separation preview. |
+| **Ink coverage warnings** — mask of where total area coverage exceeds a limit, or where black is rich; module `pdfcer_render::coverage_warning` | **shipped — View ▸ Output Preview ▸ *Warnings*; X081, O421 §2.** `canvas::coverage` calls `coverage_warning_mask` per rule for the visible region and paints the mask over the page while the operator has a rule on; `panels::output_preview::warnings` sets the thresholds and says what was found on screen. |
 | **Import JPEG XL image files** — `.jxl` decoded and written as a Flate image … | **shipped — every picture picker and a drop take `.jxl` (`picture::EXTENSIONS`), and `image_import::import` routes it to `pdfcer_core::image_import::jxl` (`jxl::import`); driven by `insert_image_places_a_drawing`, which asserts `format=Jxl` (`ImageFormat::Jxl`, named by the engine's own `ImageFormat::name`).** The re-encoding is disclosed in the window before Insert. |
 | **Read JPEG XL images in PDFs (non-standard `/JXLDecode`)** … | **shipped — the `jxl` feature is forwarded, so such images draw; the status line counts them through `Diagnostics::jxl_nonstandard_images` (`app::status::notes`).** `ImageNotes::jxl_nonstandard` is the per-image half of the same fact; the shell reports the page total. Not driven: no fixture carries `/JXLDecode`. |
 | **Overprint preview switch** — render with overprint simulated … | **Reachable — View ▸ Display ▸ *Overprint preview* (`view.overprint_preview`, O323 part 1)**, on by default, canvas only; print, export and thumbnails keep `OverprintPreview::Simulate`. Off sets `RenderOptions::overprint_preview` to `OverprintPreview::Off` and is part of the render key; the status bar says how many marks asked for overprint while it is off (`Diagnostics::overprint_requested`). Driven and falsified: `overprint_preview` reads requested=1 effective=1 on, effective=0 off. |
