@@ -292,6 +292,64 @@ pub const fn pdfx_no_intent() -> &'static str {
     "It names no printing condition (output intent), which every PDF/X level requires."
 }
 
+/// The page box sizes section's heading.
+#[must_use]
+pub fn box_sizes_heading() -> &'static str {
+    "Page box sizes"
+}
+
+/// The pages one entry of the section covers.
+#[must_use]
+pub fn box_sizes_pages(pages: &str) -> String {
+    format!("Page(s) {pages}")
+}
+
+/// Hover text on the unit choices.
+#[must_use]
+pub fn box_sizes_unit_tooltip() -> &'static str {
+    "The unit the sizes below are given in."
+}
+
+/// The line under the entries.
+#[must_use]
+pub fn box_sizes_note() -> &'static str {
+    "Width × height before the page's rotation. A box the file does not write takes its default: the crop box is the sheet, and bleed, trim and art are the crop box."
+}
+
+/// Trace keys of the section's five boxes, in [`box_size_label`] order.
+pub const BOX_SIZE_KEYS: [&str; 5] = ["media", "crop", "bleed", "trim", "art"]; // ui-text-exempt: trace keys, never displayed
+
+/// Row labels of the section's five boxes.
+const BOX_SIZE_LABELS: [&str; 5] = ["Media", "Crop", "Bleed", "Trim", "Art"];
+
+/// Box `which`'s row label (0 media … 4 art).
+#[must_use]
+pub fn box_size_label(which: usize) -> &'static str {
+    BOX_SIZE_LABELS.get(which).copied().unwrap_or("")
+}
+
+/// One box's size, and how the file states it.
+#[must_use]
+pub fn box_size(
+    width: f64,
+    height: f64,
+    unit: &str,
+    places: usize,
+    which: usize,
+    res: pdfcer_core::page_tree::BoxResolution,
+) -> String {
+    use pdfcer_core::page_tree::BoxResolution as R;
+    let size = format!("{width:.places$} × {height:.places$} {unit}");
+    let how = match res {
+        R::AsWritten => return size,
+        R::Clipped => "written past the sheet, cut to it",
+        R::Unusable => "written unusably, default used",
+        _ if which == 1 => "not written: the sheet",
+        _ => "not written: the crop box",
+    };
+    format!("{size} ({how})")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

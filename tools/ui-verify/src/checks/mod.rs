@@ -167,6 +167,7 @@ pub mod export_image_emf;
 /// File ▸ Export image writes JPEG XL.
 pub mod export_image_jxl;
 pub mod highlight_shapes;
+pub mod page_crop_boxes;
 pub mod page_crop_even;
 pub mod page_crop_white;
 pub mod region_commands;
@@ -439,6 +440,7 @@ pub mod annot_flags;
 pub mod attach_file;
 /// Attach a WAV recording to a page from Markup.
 pub mod attach_sound;
+pub mod box_sizes;
 /// Choose a check box's mark from Properties.
 pub mod check_mark;
 /// Give a multi-select list several default choices from Properties.

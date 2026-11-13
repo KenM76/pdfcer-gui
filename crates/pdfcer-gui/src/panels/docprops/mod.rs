@@ -40,6 +40,7 @@ use crate::text::anomalies as t_anomalies;
 use crate::text::panels::docprops as t;
 
 /// Page boxes the file wrote and pdfcer did not use as written.
+mod box_sizes;
 mod boxes;
 /// The PDF/X level the file claims.
 mod pdfx;
@@ -210,6 +211,7 @@ fn facts(ui: &mut Ui, doc: &OpenDoc) {
         fact(ui, t::page_size_label(), &size);
     }
     boxes::lines(ui, doc);
+    box_sizes::section(ui, doc);
     pdfx::lines(ui, doc);
 
     let encrypted = base.encryption().is_some();

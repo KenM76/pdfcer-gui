@@ -81,8 +81,8 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
     Ok((session, pointer))
 }
 
-/// Replace the left margin's text with 10.
-fn type_left(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
+/// Replace the crop window's left margin text with 10.
+pub(crate) fn type_left(session: &Session, pointer: &ScriptedPointer) -> Result<()> {
     let (rect, viewport) = declared_in(&session.trace()?, UI_RECT, LEFT)
         .ok_or_else(|| Error::new(format!("no `{LEFT}` region in the crop window.")))?;
     pointer.click_in(session, viewport.as_deref(), WindowPoint::centre_of(rect))?;

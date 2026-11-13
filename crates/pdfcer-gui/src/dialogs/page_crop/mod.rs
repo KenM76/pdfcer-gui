@@ -1,12 +1,15 @@
-//! # `dialogs::page_crop` — **the visible area of the chosen sheets**
+//! # `dialogs::page_crop` — **a page box of the chosen sheets**
 //!
 //! `pages.crop`, Pages ▸ Transform ▸ Crop…, and `pages.crop_to_region`, which
-//! opens it seeded from the marquee region. Four margins, measured in from the
+//! opens it seeded from the marquee region. The operator picks the box — crop,
+//! bleed, trim or art ([`boxes`]) — and four margins, measured in from the
 //! edges **as the operator sees the sheet** (after `/Rotate`), are applied to
 //! each page in scope against that page's own sheet and rotation, as one
-//! `EditSession::set_page_boxes` undo step. All four at zero become
-//! `CropBoxEdit::Reset`, so the whole sheet shows again without a crop box
-//! being written. Enter applies; Escape cancels.
+//! `EditSession::set_page_boxes` undo step. A crop with all four at zero
+//! becomes `CropBoxEdit::Reset`, so the whole sheet shows again without a crop
+//! box being written; the other three boxes write the sheet at zero, and their
+//! Remove button resets them, so they default to the crop box. Enter applies;
+//! Escape cancels.
 //!
 //! Design: `docs/modules/pdfcer-gui/dialogs/page_crop.md`.
 
@@ -19,6 +22,8 @@ use crate::app::actions::Action;
 use crate::app::actions::pages::PageAction;
 use crate::app::state::OpenDoc;
 use crate::text::page_crop as t;
+
+mod boxes;
 
 /// The dialog body's published region, for `ui-verify`.
 const REGION_BODY: &str = "page-crop.body";
@@ -134,6 +139,18 @@ pub struct PageCropDialog {
     operands: Vec<usize>,
     /// Every page's sheet (`/MediaBox`) and rotation, by page index.
     sheets: Vec<(Rect, u16)>,
+    /// The box being set.
+    which: PageBox,
+    /// The first operand's effective crop, bleed, trim and art boxes, in
+    /// [`boxes::BOXES`] order: what choosing a box seeds the margins from.
+    seeds: [Rect; 4],
+    /// The margins of the marquee region this window was opened on, for
+    /// Back to the region; `None` when opened from the menu.
+    region: Option<[i64; 4]>,
+    /// Same margin on every edge: editing one sets all four.
+    equal: bool,
+    /// Set by the Remove button of a bleed, trim or art box.
+    remove_requested: bool,
     scope: Scope,
     /// The typed range, in the print dialog's syntax (`1-3, 7`).
     range: String,
@@ -158,6 +175,20 @@ impl PageCropDialog {
         Self::seeded(doc, pages, first.crop_box)
     }
 
+    /// The margins of `rect` on sheet `media` turned `rotate`, in whole
+    /// millimetres by on-screen edge, in [`EDGES`] order; never negative.
+    fn margins_of(media: Rect, rotate: u16, rect: Rect) -> [i64; 4] {
+        let mm = crate::units::whole_mm_from_points;
+        // Page space `[left, right, bottom, top]`, then by on-screen edge.
+        let page = [
+            mm(rect.llx - media.llx),
+            mm(media.urx - rect.urx),
+            mm(rect.lly - media.lly),
+            mm(media.ury - rect.ury),
+        ];
+        EDGES.map(|e| page[e.pdf_index(rotate)].max(0))
+    }
+
     /// Open the window over `page`, seeded with `rect` — a region in that
     /// page's user space — as the crop. `None` when the page is not there.
     #[must_use]
@@ -169,23 +200,16 @@ impl PageCropDialog {
             rect.urx.min(sheet.urx),
             rect.ury.min(sheet.ury),
         );
-        Self::seeded(doc, &[page], inside)
+        let mut dialog = Self::seeded(doc, &[page], inside)?;
+        dialog.region = Some(dialog.margins_mm);
+        Some(dialog)
     }
 
     /// The window over `pages`, its margins measured from `crop` on the first
     /// one's sheet.
     fn seeded(doc: &OpenDoc, pages: &[usize], crop: Rect) -> Option<Self> {
         let first = doc.pages.get(*pages.first()?)?;
-        let m = first.media_box;
-        let mm = crate::units::whole_mm_from_points;
-        // Page space `[left, right, bottom, top]`, then by on-screen edge.
-        let page = [
-            mm(crop.llx - m.llx),
-            mm(m.urx - crop.urx),
-            mm(crop.lly - m.lly),
-            mm(m.ury - crop.ury),
-        ];
-        let margins_mm = EDGES.map(|e| page[e.pdf_index(first.rotate)].max(0));
+        let margins_mm = Self::margins_of(first.media_box, first.rotate, crop);
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
@@ -197,6 +221,16 @@ impl PageCropDialog {
         Some(Self {
             operands: pages.to_vec(),
             sheets: doc.pages.iter().map(|p| (p.media_box, p.rotate)).collect(),
+            which: PageBox::Crop,
+            seeds: [
+                first.crop_box,
+                first.bleed_box,
+                first.trim_box,
+                first.art_box,
+            ],
+            region: None,
+            equal: false,
+            remove_requested: false,
             scope: Scope::Operands,
             range: String::new(),
             margins_mm,
@@ -234,7 +268,7 @@ impl PageCropDialog {
         let (frame, ()) = crate::dialogs::host::Host::new(
             "page-crop", // ui-text-exempt: a viewport key, never displayed.
             t::window_title(),
-            egui::vec2(420.0, 540.0),
+            egui::vec2(440.0, 680.0),
             egui::vec2(340.0, 320.0),
         )
         .show(ctx, |ui| {
@@ -253,6 +287,19 @@ impl PageCropDialog {
                     pages,
                     margin_mm: self.white_mm,
                 }));
+                return false;
+            }
+        }
+
+        if std::mem::take(&mut self.remove_requested) {
+            let edits: Vec<PageBoxEdit> = self
+                .pages()
+                .into_iter()
+                .map(|i| PageBoxEdit::new(i, self.which, CropBoxEdit::Reset))
+                .collect();
+            if !edits.is_empty() {
+                self.trace_commit(&edits);
+                actions.push(Action::Page(PageAction::SetPageBoxes { edits }));
                 return false;
             }
         }
@@ -281,10 +328,11 @@ impl PageCropDialog {
             let r = first.unwrap_or(Rect::from_corners(0.0, 0.0, 0.0, 0.0));
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
-                "page-crop-commit n={} scope={} set={set} reset={} margins_mm={:?} \
+                "page-crop-commit n={} scope={} box={} set={set} reset={} margins_mm={:?} \
                  llx={:.2} lly={:.2} urx={:.2} ury={:.2}",
                 edits.len(),
                 self.scope.key(),
+                boxes::key(self.which),
                 edits.len() - set,
                 self.margins_mm,
                 r.llx,
@@ -328,13 +376,13 @@ impl PageCropDialog {
         pages
             .into_iter()
             .map(|index| {
-                let edit = if self.margins_mm == [0; 4] {
+                let edit = if self.which == PageBox::Crop && self.margins_mm == [0; 4] {
                     CropBoxEdit::Reset
                 } else {
                     let (media, rotate) = *self.sheets.get(index)?;
                     CropBoxEdit::Set(self.rect_on(media, rotate)?)
                 };
-                Some(PageBoxEdit::new(index, PageBox::Crop, edit))
+                Some(PageBoxEdit::new(index, self.which, edit))
             })
             .collect()
     }
@@ -361,15 +409,36 @@ impl PageCropDialog {
             crate::diag::ui_rect(REGION_RANGE, field.rect);
         }
         ui.label(
-            egui::RichText::new(t::scope_count(self.pages().len()))
-                .small()
-                .weak(),
+            egui::RichText::new(t::scope_count(
+                self.pages().len(),
+                self.which == PageBox::Crop,
+            ))
+            .small()
+            .weak(),
         );
     }
 
-    /// The four margin boxes and Show whole sheet.
+    /// The four margin boxes beside the picture of the page, and the buttons
+    /// under them.
     fn margins_group(&mut self, ui: &mut Ui) {
-        ui.label(t::margins_heading());
+        ui.label(t::margins_heading(self.which == PageBox::Crop));
+        let before = self.margins_mm;
+        ui.horizontal(|ui| {
+            self.margin_grid(ui);
+            self.picture(ui);
+        });
+        if self.equal
+            && let Some(v) = (0..4)
+                .find(|&i| before[i] != self.margins_mm[i])
+                .map(|i| self.margins_mm[i])
+        {
+            self.margins_mm = [v; 4];
+        }
+        self.margin_buttons(ui);
+    }
+
+    /// The four margin boxes.
+    fn margin_grid(&mut self, ui: &mut Ui) {
         egui::Grid::new("page-crop.grid") // ui-text-exempt: widget id
             .num_columns(2)
             .show(ui, |ui| {
@@ -390,11 +459,6 @@ impl PageCropDialog {
                     ui.end_row();
                 }
             });
-        let whole = ui.button(t::whole_sheet());
-        crate::diag::ui_rect(REGION_WHOLE, whole.rect);
-        if whole.on_hover_text(t::whole_sheet_tooltip()).clicked() {
-            self.margins_mm = [0; 4];
-        }
     }
 
     /// Remove white margins: the paper kept around the ink, and the button,
@@ -436,7 +500,7 @@ impl PageCropDialog {
             };
             let mm = crate::units::whole_mm_from_points;
             ui.label(
-                egui::RichText::new(t::visible_summary(mm(w), mm(h)))
+                egui::RichText::new(t::box_summary(boxes::index(self.which), mm(w), mm(h)))
                     .small()
                     .weak(),
             );
@@ -445,7 +509,7 @@ impl PageCropDialog {
         let why = if pages.is_empty() {
             t::no_pages()
         } else {
-            t::nothing_left()
+            t::nothing_left(self.which == PageBox::Crop)
         };
         ui.label(
             egui::RichText::new(why)
@@ -456,7 +520,8 @@ impl PageCropDialog {
 
     /// The controls and the two buttons.
     fn body(&mut self, ui: &mut Ui) {
-        ui.label(t::intro());
+        self.box_group(ui);
+        ui.label(t::intro(boxes::index(self.which)));
         ui.add_space(8.0);
         self.scope_group(ui);
         ui.add_space(6.0);
@@ -465,7 +530,9 @@ impl PageCropDialog {
         let valid = self.edits().is_some();
         self.summary(ui, valid);
         ui.add_space(6.0);
-        self.white_group(ui);
+        if self.which == PageBox::Crop {
+            self.white_group(ui);
+        }
 
         ui.separator();
         ui.horizontal(|ui| {
@@ -475,9 +542,12 @@ impl PageCropDialog {
             // Absent, not greyed, when nothing valid is asked: the refusal
             // line above already says why (R9).
             if valid {
-                let apply = ui.button(t::apply());
+                let apply = ui.button(t::apply(boxes::index(self.which)));
                 crate::diag::ui_rect(REGION_APPLY, apply.rect);
-                if apply.on_hover_text(t::apply_tooltip()).clicked() {
+                if apply
+                    .on_hover_text(t::apply_tooltip(self.which == PageBox::Crop))
+                    .clicked()
+                {
                     self.apply_requested = true;
                 }
             }
@@ -497,6 +567,11 @@ mod tests {
         PageCropDialog {
             operands: vec![0],
             sheets,
+            which: PageBox::Crop,
+            seeds: [a4(); 4],
+            region: None,
+            equal: false,
+            remove_requested: false,
             scope: Scope::Operands,
             range: String::new(),
             margins_mm,
@@ -532,6 +607,26 @@ mod tests {
     fn zero_margins_reset_rather_than_write_the_sheet() {
         let edits = dialog(vec![(a4(), 0)], [0; 4]).edits().unwrap();
         assert_eq!(edits[0].edit, CropBoxEdit::Reset);
+    }
+
+    /// A trim box at zero margins is the whole sheet, written; only the crop
+    /// box resets at zero, and every edit names the chosen box.
+    #[test]
+    fn zero_margins_write_the_sheet_for_a_production_box() {
+        let mut d = dialog(vec![(a4(), 0)], [0; 4]);
+        d.which = PageBox::Trim;
+        let edits = d.edits().unwrap();
+        assert_eq!(edits[0].target, PageBox::Trim);
+        assert_eq!(rect_of(&edits[0]).urx, 595.0);
+    }
+
+    /// Choosing a box seeds the margins from that box: 10 mm in from the left.
+    #[test]
+    fn margins_are_measured_from_the_chosen_box() {
+        let trim = Rect::from_corners(28.35, 0.0, 595.0, 842.0);
+        assert_eq!(PageCropDialog::margins_of(a4(), 0, trim), [10, 0, 0, 0]);
+        // The page-space left edge is on top of a sheet turned a quarter.
+        assert_eq!(PageCropDialog::margins_of(a4(), 90, trim), [0, 0, 10, 0]);
     }
 
     /// Margins become a rectangle measured in from the sheet's edges.
