@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 04fc8592ed59dc0d50f17104d538bb0bc6bc3b28
+# baseline: 93ec5d2d5e7f6cdc19157b0559269ec877dc0222
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11951
+# items: 11986
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -10859,6 +10859,7 @@ pdfcer-render const pdfcer_render::profile::CLIP_REUSE_EDGES
 pdfcer-render const pdfcer_render::profile::CLIP_TOP_N
 pdfcer-render const pdfcer_render::separation_preview::PROCESS_INKS
 pdfcer-render const pdfcer_render::shading::RAMP_SAMPLES
+pdfcer-render const pdfcer_render::soft_proof::MAX_SOFT_PROOF_PROFILE_BYTES
 pdfcer-render const pdfcer_render::visual_compare::notes::INSERTED_PAGE_NOTE
 pdfcer-render const pdfcer_render::white_margins::WHITE_MARGIN_SCALE
 pdfcer-render const pdfcer_render::white_margins::WHITE_MARGIN_THRESHOLD
@@ -10875,6 +10876,7 @@ pdfcer-render enum pdfcer_render::color::Colorant
 pdfcer-render enum pdfcer_render::color::DeviceSpace
 pdfcer-render enum pdfcer_render::compositor::Blend
 pdfcer-render enum pdfcer_render::compositor::BlendSpace
+pdfcer-render enum pdfcer_render::coverage_warning::CoverageWarning
 pdfcer-render enum pdfcer_render::display_list::BandBlocker
 pdfcer-render enum pdfcer_render::display_list::Op
 pdfcer-render enum pdfcer_render::display_list::PoisonReason
@@ -10915,6 +10917,7 @@ pdfcer-render enum pdfcer_render::shading::Geometry
 pdfcer-render enum pdfcer_render::shading::GradientKind
 pdfcer-render enum pdfcer_render::shading::PaintRoute
 pdfcer-render enum pdfcer_render::shading::ShadingFunction
+pdfcer-render enum pdfcer_render::soft_proof::SoftProofError
 pdfcer-render enum pdfcer_render::svg::SvgText
 pdfcer-render enum pdfcer_render::text::CidToGid
 pdfcer-render enum pdfcer_render::text::FontKind
@@ -10971,6 +10974,10 @@ pdfcer-render field pdfcer_render::compositor::Pixel::c
 pdfcer-render field pdfcer_render::compositor::PixelCmyk::a
 pdfcer-render field pdfcer_render::compositor::PixelCmyk::c
 pdfcer-render field pdfcer_render::compositor::PixelCmyk::s
+pdfcer-render field pdfcer_render::coverage_warning::CoverageMask::flagged
+pdfcer-render field pdfcer_render::coverage_warning::CoverageMask::height
+pdfcer-render field pdfcer_render::coverage_warning::CoverageMask::mask
+pdfcer-render field pdfcer_render::coverage_warning::CoverageMask::width
 pdfcer-render field pdfcer_render::display_list::ClipDef::ctm
 pdfcer-render field pdfcer_render::display_list::ClipDef::parent
 pdfcer-render field pdfcer_render::display_list::ClipDef::path
@@ -11078,6 +11085,7 @@ pdfcer-render field pdfcer_render::font::RenderPolicy::overprint_zero_tint_scope
 pdfcer-render field pdfcer_render::font::RenderPolicy::page_blend_space_source
 pdfcer-render field pdfcer_render::font::RenderPolicy::preserve_calibrated_cmyk
 pdfcer-render field pdfcer_render::font::RenderPolicy::print_intent
+pdfcer-render field pdfcer_render::font::RenderPolicy::proof_destination
 pdfcer-render field pdfcer_render::font::RenderPolicy::spot_colorant_device_model
 pdfcer-render field pdfcer_render::font::RenderPolicy::subpixel_culling
 pdfcer-render field pdfcer_render::font::RenderPolicy::view_magnification
@@ -11302,6 +11310,8 @@ pdfcer-render field pdfcer_render::mesh::Patch::corner
 pdfcer-render field pdfcer_render::mesh::Patch::p
 pdfcer-render field pdfcer_render::mesh::Triangle::shade
 pdfcer-render field pdfcer_render::mesh::Triangle::xy
+pdfcer-render field pdfcer_render::page_overprint::PageOverprint::set
+pdfcer-render field pdfcer_render::page_overprint::PageOverprint::takes_effect
 pdfcer-render field pdfcer_render::plates::Plate::ink
 pdfcer-render field pdfcer_render::plates::Plate::pixmap
 pdfcer-render field pdfcer_render::profile::Ablation::clip_build
@@ -11327,6 +11337,7 @@ pdfcer-render field pdfcer_render::profile::Counters::paints
 pdfcer-render field pdfcer_render::profile::Counters::paints_cullable
 pdfcer-render field pdfcer_render::profile::Counters::paints_unclipped
 pdfcer-render field pdfcer_render::separation_preview::SeparationPreview::hidden
+pdfcer-render field pdfcer_render::separation_preview::SeparationPreview::soft_proof
 pdfcer-render field pdfcer_render::shading::GradientSpec::alpha
 pdfcer-render field pdfcer_render::shading::GradientSpec::extend
 pdfcer-render field pdfcer_render::shading::GradientSpec::kind
@@ -11463,6 +11474,7 @@ pdfcer-render fn pdfcer_render::compositor::composite_element_knockout_cmyk
 pdfcer-render fn pdfcer_render::compositor::remove_backdrop
 pdfcer-render fn pdfcer_render::compositor::remove_backdrop_cmyk
 pdfcer-render fn pdfcer_render::compositor::union_
+pdfcer-render fn pdfcer_render::coverage_warning::coverage_warning_mask
 pdfcer-render fn pdfcer_render::display_list::record_page
 pdfcer-render fn pdfcer_render::display_list::record_page_for_export
 pdfcer-render fn pdfcer_render::display_list::record_page_for_plates
@@ -11517,6 +11529,7 @@ pdfcer-render fn pdfcer_render::overprint::names_unplatable_spot
 pdfcer-render fn pdfcer_render::overprint::rgb_to_cmyk
 pdfcer-render fn pdfcer_render::page_composites_in_ink
 pdfcer-render fn pdfcer_render::page_device_geometry
+pdfcer-render fn pdfcer_render::page_overprint::page_overprint
 pdfcer-render fn pdfcer_render::plates::plate_pixmap
 pdfcer-render fn pdfcer_render::plates::probe_inks
 pdfcer-render fn pdfcer_render::plates::render_plates
@@ -11587,6 +11600,8 @@ pdfcer-render method pdfcer_render::compositor::BlendSpace::is_subtractive
 pdfcer-render method pdfcer_render::compositor::BlendSpace::of
 pdfcer-render method pdfcer_render::compositor::Pixel::from_premultiplied
 pdfcer-render method pdfcer_render::compositor::Pixel::to_premultiplied
+pdfcer-render method pdfcer_render::coverage_warning::CoverageMask::is_flagged
+pdfcer-render method pdfcer_render::coverage_warning::CoverageWarning::flags
 pdfcer-render method pdfcer_render::display_list::ClipId::index
 pdfcer-render method pdfcer_render::display_list::DisplayList::band_exact
 pdfcer-render method pdfcer_render::display_list::DisplayList::clip_count
@@ -11726,6 +11741,7 @@ pdfcer-render method pdfcer_render::mesh::MeshRefusal::reason
 pdfcer-render method pdfcer_render::overprint::ComponentRule::apply
 pdfcer-render method pdfcer_render::overprint::ComponentRule::preserves_backdrop
 pdfcer-render method pdfcer_render::overprint_preview::OverprintPreview::simulates
+pdfcer-render method pdfcer_render::page_overprint::PageOverprint::from_diagnostics
 pdfcer-render method pdfcer_render::profile::Ablation::confounds
 pdfcer-render method pdfcer_render::profile::Ablation::is_none
 pdfcer-render method pdfcer_render::profile::Ablation::label
@@ -11741,6 +11757,7 @@ pdfcer-render method pdfcer_render::profile::Counters::mean_clip_indiv_pct
 pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::hides
 pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::new
 pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::with_hidden
+pdfcer-render method pdfcer_render::separation_preview::SeparationPreview::with_soft_proof
 pdfcer-render method pdfcer_render::shading::ColorRamp::at
 pdfcer-render method pdfcer_render::shading::ColorRamp::at_cmyk
 pdfcer-render method pdfcer_render::shading::ColorRamp::build
@@ -11759,6 +11776,14 @@ pdfcer-render method pdfcer_render::shading::ShadingDiagnostics::merge
 pdfcer-render method pdfcer_render::shading::ShadingDiagnostics::mesh
 pdfcer-render method pdfcer_render::shading::ShadingDiagnostics::reached
 pdfcer-render method pdfcer_render::shading::ShadingFunction::outputs
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::compensates_black
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::from_bytes
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::from_output_intent
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::profile
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::simulates_black_ink
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::simulates_paper_colour
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::with_black_ink
+pdfcer-render method pdfcer_render::soft_proof::SoftProof::with_paper_colour
 pdfcer-render method pdfcer_render::svg::SvgOptions::with_background
 pdfcer-render method pdfcer_render::svg::SvgOptions::with_flatten_blends
 pdfcer-render method pdfcer_render::svg::SvgOptions::with_raster_dpi
@@ -11816,6 +11841,7 @@ pdfcer-render struct pdfcer_render::color::ColorDiagnostics
 pdfcer-render struct pdfcer_render::color::ColorState
 pdfcer-render struct pdfcer_render::compositor::Pixel
 pdfcer-render struct pdfcer_render::compositor::PixelCmyk
+pdfcer-render struct pdfcer_render::coverage_warning::CoverageMask
 pdfcer-render struct pdfcer_render::display_list::ClipDef
 pdfcer-render struct pdfcer_render::display_list::ClipId
 pdfcer-render struct pdfcer_render::display_list::DeviceBounds
@@ -11868,6 +11894,7 @@ pdfcer-render struct pdfcer_render::mesh::Mesh
 pdfcer-render struct pdfcer_render::mesh::ParseInput
 pdfcer-render struct pdfcer_render::mesh::Patch
 pdfcer-render struct pdfcer_render::mesh::Triangle
+pdfcer-render struct pdfcer_render::page_overprint::PageOverprint
 pdfcer-render struct pdfcer_render::plates::Plate
 pdfcer-render struct pdfcer_render::profile::Ablation
 pdfcer-render struct pdfcer_render::profile::Counters
@@ -11876,6 +11903,7 @@ pdfcer-render struct pdfcer_render::shading::ColorRamp
 pdfcer-render struct pdfcer_render::shading::GradientSpec
 pdfcer-render struct pdfcer_render::shading::Shading
 pdfcer-render struct pdfcer_render::shading::ShadingDiagnostics
+pdfcer-render struct pdfcer_render::soft_proof::SoftProof
 pdfcer-render struct pdfcer_render::svg::SvgExport
 pdfcer-render struct pdfcer_render::svg::SvgOptions
 pdfcer-render struct pdfcer_render::svg::SvgOutcome
@@ -11957,6 +11985,8 @@ pdfcer-render variant pdfcer_render::compositor::Blend::Screen
 pdfcer-render variant pdfcer_render::compositor::Blend::SoftLight
 pdfcer-render variant pdfcer_render::compositor::BlendSpace::Additive
 pdfcer-render variant pdfcer_render::compositor::BlendSpace::Subtractive
+pdfcer-render variant pdfcer_render::coverage_warning::CoverageWarning::RichBlack
+pdfcer-render variant pdfcer_render::coverage_warning::CoverageWarning::TotalAreaCoverage
 pdfcer-render variant pdfcer_render::display_list::BandBlocker::Gradient
 pdfcer-render variant pdfcer_render::display_list::BandBlocker::Image
 pdfcer-render variant pdfcer_render::display_list::BandBlocker::LayerMask
@@ -12129,6 +12159,11 @@ pdfcer-render variant pdfcer_render::shading::PaintRoute::ShOperator
 pdfcer-render variant pdfcer_render::shading::PaintRoute::ShadingPattern
 pdfcer-render variant pdfcer_render::shading::ShadingFunction::PerComponent
 pdfcer-render variant pdfcer_render::shading::ShadingFunction::Single
+pdfcer-render variant pdfcer_render::soft_proof::SoftProofError::NoTransform
+pdfcer-render variant pdfcer_render::soft_proof::SoftProofError::NotCmyk
+pdfcer-render variant pdfcer_render::soft_proof::SoftProofError::NotOutput
+pdfcer-render variant pdfcer_render::soft_proof::SoftProofError::TooLarge
+pdfcer-render variant pdfcer_render::soft_proof::SoftProofError::Unreadable
 pdfcer-render variant pdfcer_render::svg::SvgText::KeepText
 pdfcer-render variant pdfcer_render::svg::SvgText::Outlines
 pdfcer-render variant pdfcer_render::text::CidToGid::CffCharset
