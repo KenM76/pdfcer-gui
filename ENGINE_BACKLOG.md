@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **73 of 563** <!-- counted by tools/walk-engine-backlog.py, 2026-11-12; do not retype -->
+## `wanted` — a real gap — **76 of 568** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -130,7 +130,9 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **EMF vector transparency: soft masks** — with `--vector-transparency`, `EmfVectorised` | **wanted, at the pin since v0.146.0.** Arrives with the flattener row above; nothing separate to wire. |
 | **EMF vector transparency: spot colorants** — with `--vector-transparency` | **wanted, at the pin since v0.146.0.** Arrives with the flattener row above; nothing separate to wire. |
 | **Smooth shadings as vector in EMF (opt-in)** — axial, radial and mesh shadings as Gouraud triangles; `EmfOptions::vector_shadings`, module `pdfcer_render::gouraud` | **wanted, at the pin since v0.146.0.** A Print ▸ Pages switch on the vector route (and on EMF export), through `print_metafile_with`. The gouraud module is the engine's triangulation; nothing here holds its types. |
-| **Tighter patches for soft-masked layers in EMF (opt-in)** — `EmfOptions::tight_mask_patches`, `EmfOptions::with_tight_mask_patches` | **wanted, at the pin since v0.147.0.** It acts only with `patch_approximations` or `vector_transparency`, neither of which this shell sets yet, so it lands with the Print ▸ Pages vector switches above, not alone. The engine's own caveat goes in its tooltip: text freed from a patch is drawn by the consumer and GDI does not antialias it. |
+| **EMF: patch a soft-masked layer only where its mask shows (opt-in)** — `EmfOptions::tight_mask_patches`, `EmfOptions::with_tight_mask_patches` | **wanted, at the pin since v0.147.0.** It acts only with `patch_approximations` or `vector_transparency`, neither of which this shell sets yet, so it lands with the Print ▸ Pages vector switches above, not alone. The engine's own caveat goes in its tooltip: text freed from a patch is drawn by the consumer and GDI does not antialias it. |
+| **EMF vector export of axial and radial shadings under transparency** — with `vector_transparency` and `vector_shadings` both set | **wanted, at the pin since v0.147.0.** Neither switch is set here yet; it arrives with the Print ▸ Pages vector switches above and needs nothing of its own. |
+| **EMF export: image soft masks counted apart from gradient masks** — `EmfNotFlat::soft_mask_image` | **wanted, at the pin since v0.147.0.** The EMF export receipt does not read the not-flat census, so it cannot yet say that a soft mask stayed raster because it holds an image. Small: one sentence in `text::export_image` from `EmfCounts`. |
 | **Print disclosure of unusable colour profiles** — `Diagnostics::icc_profiles_unmodelled`, `pdfcer_emf::print_export_with` | **wanted, at the pin since v0.146.0; X074.** The print receipt should say, per page, that an embedded colour profile fell back to its alternate. Needs `plain_sheet` to call `print_export_with` and keep the `EmfOutcome`. |
 | **Print by sending the PDF itself to printers that read PDF** — `pdfcer print --pdf-direct`, modules `pdfcer_print::ipp::port`, `pdfcer_print::queue_port` | **wanted, at the pin since v0.146.0.** A Print dialog route beside vector and image, offered only when the queue resolves to an IPP address that accepts `application/pdf`. Not tried on real hardware by the engine, so the receipt must say which route was taken and why. |
 | **Separation plates as vector EMF** — one metafile per ink (`export_emf_plates`), `pdfcer_render::plates::plate_pixmap`, `pdfcer_render::plates::probe_inks`, `pdfcer_render::display_list::record_page_for_plates` | **wanted, at the pin since v0.146.0; X072.** Belongs with *Separation plates as engine API* (G242): an Export ▸ Plates choice writing one metafile per ink, each plate's patch count disclosed. |
@@ -189,7 +191,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 563** <!-- counted by tools/walk-engine-backlog.py, 2026-11-12; do not retype -->
+## `blocked` — waiting on something named — **2 of 568** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -207,7 +209,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 563** <!-- counted by tools/walk-engine-backlog.py, 2026-11-12; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 568** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -218,7 +220,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 563** <!-- counted by tools/walk-engine-backlog.py, 2026-11-12; do not retype -->
+## `declined` — deliberately no surface — **20 of 568** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -264,7 +266,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **468 of 563** <!-- counted by tools/walk-engine-backlog.py, 2026-11-12; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **470 of 568** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -273,6 +275,8 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
 | **Remove white margins** — `pdfcer_render::white_margin_crop` (shared by both shells) … | **shipped — `pdfcer_render::white_margin_crop` (the `pdfcer_render::white_margins` module; its scale and threshold constants are the engine's to choose), the Crop pages window's Remove white margins; the inferred box and its limits are disclosed in the status line and tooltip.** |
+| **A header, footer or printer's marks survive `print --comments fields-only`** … | **shipped — `dialogs::print::running::build` calls `EditSession::clear_page_content` on the print copy under Form fields only and renders it with `AnnotationScope::Document`; driven by `print_fields_only_keeps_the_header_and_footer`.** |
+| **Paint shading — function-based (type 1)** … | **shipped — the renderer paints it, so the canvas, preview, print and every export that renders show it with nothing to choose here.** |
 | **Fisheye lens for the 3D camera** — `Projection::Fisheye`, `FrameLens` | **shipped — the 3D viewer's Lens choice (O391); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`.** The viewer offers Flat / Fisheye / Auto with the curve, Auto switching to fisheye past a chosen angle; the CPU picture draws it directly and the GPU picture through `FrameLens` faces and the lens shaders. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **shipped; our request G245, complete at v0.113.0.** The 3D viewer's measure tool (O399): read, drawn and listed from a saved view, and a new one kept on it, with the PDF 2.0 disclosure off the canvas. Driven by `the_3d_viewer_measures_from_points_on_the_model`. |
 | **Model point to image position** — `Camera::pixel_of` | **shipped; X056, shipped at v0.134.0.** O399's measure tool draws a measurement over the picture and snaps a pick to a triangle's corner with it. |
