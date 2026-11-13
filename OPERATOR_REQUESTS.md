@@ -7917,7 +7917,7 @@ He added: *"Fyi this happens with a pdf created out of SolidWorks too."*
 
 **State:** G068 and G069 are both in the pin and both measured in Acrobat Pro. For G069: four incremental engine saves on the Word (hybrid-reference) repro with the `/DR` font already indirect (add field, fill it, add a second, fill it) show both values. The same four saves on the inline-`/Helv` copy show neither — that is G070, not G069. **G070 is in the pin and wired:** Edit ▸ Forms ▸ Repair fonts runs the engine's promote-inline-`/DR`-fonts verb. On a copy of his rental form (inline `/Helv`), typing into Current Date in Acrobat Pro shows nothing before the repair and shows the text after it. Repro files are in `D:\Dev\pdfTests\reader-field-test`. **Closes when** a field added by a build carrying the G068 fix shows its typed value in his Reader, on the Word file and on a SolidWorks one; for a form saved before the fix, after Repair fonts.
 
-## O417 — **OPEN** — the engine's new print features are not visible in Print
+## O417 — **RELEASED in `v0.5.0-dev.20261112.2`**, driven by `print_in_grey_or_black_only`, `print_simulates_a_press` — the engine's new print features are not visible in Print
 
 His words: *"I thought the newest version of pdfcer had a lot of new advanced printing features, but I don't see anything has changed when I go to print, or are they put somewhere else?"*
 
@@ -7927,7 +7927,7 @@ His words: *"I thought the newest version of pdfcer had a lot of new advanced pr
 
 **Built.** Print has a *Colour* tab: colour, grey or black only, the printer's ICC profile, proof printing with its paper simulation, rendering intent and black-point compensation. Copies & Finishing keeps copies, imposition and finishing. Driven by `print_in_grey_or_black_only` and the ICC check, both re-pointed at the new tab. PDF-direct is O419, still open.
 
-## O418 — **OPEN** — saved print presets, listed in a dropdown, with an editable list of preset folders
+## O418 — **RELEASED in `v0.5.0-dev.20261112.2`**, driven by `print_settings_save_as_a_preset_and_come_back` — saved print presets, listed in a dropdown, with an editable list of preset folders
 
 His words: *"we should also be able to save print setting configurations, and they should appear in a dropdown when we do. also we should be able edit a list of locations to look for print presets which includes our default settings folder place for them."*
 
@@ -7944,7 +7944,7 @@ His words: *"we should also be able to save print setting configurations, and th
 
 Part of O417's question: the one print feature of the pinned engine the Print window does not reach. `pdfcer print --pdf-direct auto|on|off` resolves an installed queue's port to IPP addresses (`pdfcer_print::queue_port`, `ipp::resolve_queue_port`), asks the printer whether it accepts `application/pdf`, and sends the file with Print-Job. Untried on real hardware by the engine, so the window must say which route was taken and why.
 
-## O420 — **OPEN** — the third-person walking view looks and acts like a video game's
+## O420 — **RELEASED in `v0.5.0-dev.20261112.2`**, driven by `the_3d_viewer_walks_seen_from_behind` — the third-person walking view looks and acts like a video game's
 
 His words: *"I was expecting it to look more like world of warcraft, and have the character's height set by the height of the Eye height, and animate when moving, and not appear floating above the floor, and maybe have an option to cast a shadow, and another option to have a shadow underneath them. But instead of eye height controling their size, maybe have a way to set their size for different aspects of the body. … make the 3rd persom mode look and act like a video game would. Also instead of calling the Default preset controls Default, call it Drone."*
 
