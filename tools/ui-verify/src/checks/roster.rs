@@ -447,6 +447,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(print_shop::OutputPreviewHidesAnInk),
         Box::new(print_shop::OutputPreviewReadsTheInksUnderThePointer),
         Box::new(output_preview_press::OutputPreviewSaysWhetherThePageOverprints),
+        Box::new(output_preview_press::OutputPreviewSimulatesThePress),
         Box::new(security_notes::SecurityNotesNameTheCoverAndTheActions),
         Box::new(rc4_append::Rc4EditsWaitForTheOperatorAndSayWhatTheyCost),
         Box::new(encrypted_edit::AnEncryptedFileIsEditedUnderThePasswordItOpenedWith),

@@ -349,6 +349,10 @@ pub struct PanelsState {
     compare: compare::CompareUi,
     /// The Tags panel's open rows, keyed on the document serial.
     tags: tags::TagsUi,
+    /// Output Preview's simulation profiles: the installed list and every
+    /// profile already read. The operator's, so [`Self::forget_document`]
+    /// carries it.
+    proof: output_preview::proof::ProofUi,
 }
 
 /// What the operator has opened and picked in the Objects tree.
@@ -479,8 +483,10 @@ impl PanelsState {
         let previews_on = self.pages.cache.previews_on();
         let preview_budget = self.pages.cache.budget();
         let align = self.align;
+        let proof = std::mem::take(&mut self.proof);
         *self = Self::default();
         self.align = align;
+        self.proof = proof;
         self.pages.cache.force_on(previews_on);
         self.pages.cache.set_budget(preview_budget);
         properties::refusedchar::forget_document();

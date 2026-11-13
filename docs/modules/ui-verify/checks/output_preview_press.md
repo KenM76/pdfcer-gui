@@ -4,7 +4,10 @@
 overprint, and tells a page where it changes the print from one where it
 changes nothing.
 
-# What it drives
+`output_preview_soft_proof` — the *Simulate* list offers the document's output
+intent, and choosing it, then *Simulate paper colour*, each redraws the canvas.
+
+# What `output_preview_overprint` drives
 
 Two sessions, each the other's control:
 
@@ -28,6 +31,28 @@ Two sessions, each the other's control:
 - Forcing `takes_effect = true` in the panel fails on `output-preview.pdf`
   (`owes effect=0`).
 - Forcing `takes_effect = false` fails on `print-shop.pdf` (`owes effect=1`).
+
+# What `output_preview_soft_proof` drives
+
+One session on `fixtures/output-preview.pdf`, whose output intent is
+`fixtures/output-preview.icc`.
+
+1. The switch, as above; `output-preview-proof source=none` follows.
+2. A click on `output-preview.proof`; `output-preview.proof:intent` must be
+   declared in the open list, then it is clicked.
+3. `output-preview-proof source=intent paper=0 black=0` follows, and a
+   `render-spawn` after the click: the canvas was redrawn, not only the label.
+4. A click on `output-preview.paper`; `source=intent paper=1 black=1` (paper
+   implies black ink) and another `render-spawn` follow.
+5. `output-preview.black-ink` is declared.
+
+The fixture profile has no black point compensation, so `bpc=0` is the
+engine's answer and the panel shows its no-BPC note.
+
+## Falsified
+
+A render key that ignores the soft proof fails at step 3 (`no render-spawn
+followed`).
 
 # Driven off-screen
 

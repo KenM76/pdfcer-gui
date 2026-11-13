@@ -83,9 +83,19 @@ pub fn unmatched(names: &[String]) -> String {
     format!("Hidden but not used on this page: {}.", names.join(", "))
 }
 
-/// The status-bar line while the preview is on.
+/// The status-bar line while the preview is on. `proofed` when the inks are
+/// shown through a press simulation profile.
 #[must_use]
-pub fn status_line(hidden: usize) -> String {
+pub fn status_line(hidden: usize, proofed: bool) -> String {
+    let line = plates_line(hidden);
+    if proofed {
+        format!("{line} Colours simulate a press profile.")
+    } else {
+        line
+    }
+}
+
+fn plates_line(hidden: usize) -> String {
     match hidden {
         0 => "Separation preview is on \u{2014} the page is drawn as its printing inks.".to_owned(),
         1 => "Separation preview is on \u{2014} 1 ink is hidden, so this is not how the page \
@@ -153,6 +163,101 @@ pub fn hover_failed(why: &str) -> String {
     format!("The inks at this point could not be read: {why}")
 }
 
+/// The simulation profile combo box's label.
+#[must_use]
+pub fn proof_label() -> &'static str {
+    "Simulate"
+}
+
+/// What the simulation profile does, on hover.
+#[must_use]
+pub fn proof_hover() -> &'static str {
+    "Show the inks as a chosen press and paper would print them, using that \
+     press's colour profile. Only the screen changes; the file is untouched."
+}
+
+/// No simulation profile: the inks are shown through the plain ink model.
+#[must_use]
+pub fn proof_none() -> &'static str {
+    "No press simulation"
+}
+
+/// The document's own output intent, offered as a simulation profile.
+#[must_use]
+pub fn proof_intent() -> &'static str {
+    "This document's output intent"
+}
+
+/// A simulation profile this panel did not attach.
+#[must_use]
+pub fn proof_other() -> &'static str {
+    "Another profile"
+}
+
+/// The profile file could not be read from disk.
+#[must_use]
+pub fn proof_unreadable(why: &str) -> String {
+    format!("the file could not be read: {why}")
+}
+
+/// The output intent offered earlier is no longer there.
+#[must_use]
+pub fn proof_no_intent() -> &'static str {
+    "this document has no output intent profile"
+}
+
+/// A profile that cannot be used, with the reason.
+#[must_use]
+pub fn proof_refused(why: &str) -> String {
+    format!("That profile cannot be simulated: {why}.")
+}
+
+/// *Simulate paper colour*.
+#[must_use]
+pub fn proof_paper() -> &'static str {
+    "Simulate paper colour"
+}
+
+/// What paper simulation shows, on hover.
+#[must_use]
+pub fn proof_paper_hover() -> &'static str {
+    "Show the paper's white as the profile measured it, usually a little \
+     darker or warmer than the screen's white. Also simulates black ink."
+}
+
+/// *Simulate black ink*.
+#[must_use]
+pub fn proof_black() -> &'static str {
+    "Simulate black ink"
+}
+
+/// What black ink simulation shows, on hover.
+#[must_use]
+pub fn proof_black_hover() -> &'static str {
+    "Show the press's darkest black as the profile measured it, usually a \
+     dark grey, instead of the screen's black."
+}
+
+/// Why *Simulate black ink* is greyed.
+#[must_use]
+pub fn proof_black_implied() -> &'static str {
+    "Paper colour simulation always simulates black ink too."
+}
+
+/// The profile has no black point compensation.
+#[must_use]
+pub fn proof_no_bpc() -> &'static str {
+    "This profile's black cannot be matched to the screen's, so with both \
+     boxes off it looks the same as Simulate black ink."
+}
+
+/// Spot inks are not simulated.
+#[must_use]
+pub fn proof_spots() -> &'static str {
+    "Spot inks are shown as usual; the profile simulates only cyan, magenta, \
+     yellow and black."
+}
+
 #[cfg(test)]
 mod tests {
     use super::overprint;
@@ -164,6 +269,13 @@ mod tests {
             overprint(false, true, false),
             overprint(false, false, false)
         );
+    }
+
+    #[test]
+    fn the_status_line_names_a_simulation() {
+        use super::status_line;
+        assert_ne!(status_line(0, true), status_line(0, false));
+        assert!(status_line(1, true).starts_with(&status_line(1, false)));
     }
 
     #[test]

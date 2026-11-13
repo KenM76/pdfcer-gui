@@ -103,14 +103,43 @@ pub struct RenderKey {
 }
 
 /// A key component for a separation preview: 0 for none, otherwise a hash of
-/// its hidden plates, never 0.
+/// its hidden plates and its soft proof (profile and switches), never 0.
 #[must_use]
 pub fn separation_bits(preview: Option<&pdfcer_render::SeparationPreview>) -> u64 {
     use std::hash::{Hash, Hasher};
     preview.map_or(0, |p| {
         let mut h = std::collections::hash_map::DefaultHasher::new();
         p.hidden.hash(&mut h);
+        if let Some(proof) = &p.soft_proof {
+            profile_digest(proof.profile()).hash(&mut h);
+            proof.simulates_paper_colour().hash(&mut h);
+            proof.simulates_black_ink().hash(&mut h);
+        }
         h.finish() | 1
+    })
+}
+
+/// A hash of a proof profile's bytes, computed once per allocation per
+/// thread: the key is asked for every frame and a profile runs to megabytes.
+/// The memo's `Weak` keeps the allocation's address from being reused.
+fn profile_digest(bytes: &std::sync::Arc<[u8]>) -> u64 {
+    use std::cell::RefCell;
+    use std::hash::{Hash, Hasher};
+    use std::sync::{Arc, Weak};
+    thread_local! {
+        static MEMO: RefCell<Option<(Weak<[u8]>, u64)>> = const { RefCell::new(None) };
+    }
+    MEMO.with_borrow_mut(|memo| {
+        if let Some((weak, digest)) = memo.as_ref()
+            && std::ptr::eq(weak.as_ptr(), Arc::as_ptr(bytes))
+        {
+            return *digest;
+        }
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        bytes.hash(&mut h);
+        let digest = h.finish();
+        *memo = Some((Arc::downgrade(bytes), digest));
+        digest
     })
 }
 
@@ -264,5 +293,43 @@ impl RenderKey {
         .with_tiny_details_skipped(request.subpixel_culling)
         .with_overprint(request.overprint.simulates())
         .with_separations(request.separations.as_ref())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::separation_bits;
+    use pdfcer_render::{SeparationPreview, SoftProof};
+
+    fn proof() -> SoftProof {
+        SoftProof::from_bytes(&include_bytes!("../../../../fixtures/output-preview.icc")[..])
+            .expect("the fixture is a CMYK output profile")
+    }
+
+    #[test]
+    fn a_soft_proof_changes_the_key() {
+        let plain = SeparationPreview::new();
+        let proofed = plain.clone().with_soft_proof(Some(proof()));
+        assert_ne!(
+            separation_bits(Some(&plain)),
+            separation_bits(Some(&proofed))
+        );
+    }
+
+    #[test]
+    fn each_proof_switch_changes_the_key() {
+        let at = |paper, black| {
+            let p = proof().with_paper_colour(paper).with_black_ink(black);
+            separation_bits(Some(&SeparationPreview::new().with_soft_proof(Some(p))))
+        };
+        assert_ne!(at(false, false), at(false, true));
+        assert_ne!(at(false, false), at(true, false));
+    }
+
+    #[test]
+    fn equal_profiles_in_two_allocations_give_one_key() {
+        let a = SeparationPreview::new().with_soft_proof(Some(proof()));
+        let b = SeparationPreview::new().with_soft_proof(Some(proof()));
+        assert_eq!(separation_bits(Some(&a)), separation_bits(Some(&b)));
     }
 }

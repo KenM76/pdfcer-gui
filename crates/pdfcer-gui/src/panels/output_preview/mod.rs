@@ -9,6 +9,8 @@
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/output_preview.md`.
 
+pub mod proof;
+
 use pdfcer_render::SeparationPreview;
 
 use crate::app::actions::Action;
@@ -30,7 +32,7 @@ pub const REGION_OVERPRINT: &str = "output-preview.overprint"; // ui-text-exempt
 pub const REGION_SHOW_ALL: &str = "output-preview.show-all"; // ui-text-exempt: trace region name, never displayed
 
 /// Draw the Output Preview panel.
-pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions: &mut Vec<Action>) {
+pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, state: &mut PanelsState, actions: &mut Vec<Action>) {
     crate::diag::ui_rect(REGION_BODY, ui.max_rect());
     let mut on = doc.separations.is_some();
     let switch = ui
@@ -62,6 +64,11 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
         token(&preview.hidden)
     ));
     overprint(ui, diag, tex_region);
+    let spots = diag
+        .inks
+        .iter()
+        .any(|ink| !pdfcer_render::PROCESS_INKS.contains(&ink.as_str()));
+    proof::section(ui, doc, preview, spots, &mut state.proof, actions);
     if diag.inks.is_empty() {
         ui.label(t::no_inks());
         return;
@@ -77,7 +84,9 @@ pub fn body(ui: &mut egui::Ui, doc: &OpenDoc, _state: &mut PanelsState, actions:
     let all = ui.add_enabled(!preview.hidden.is_empty(), egui::Button::new(t::show_all()));
     crate::diag::ui_rect(REGION_SHOW_ALL, all.rect);
     if all.clicked() {
-        actions.push(Action::SetSeparations(Some(SeparationPreview::new())));
+        actions.push(Action::SetSeparations(Some(
+            preview.clone().with_hidden(Vec::<String>::new()),
+        )));
     }
     if diag.inks_forced_subtractive > 0 {
         ui.label(egui::RichText::new(t::forced_subtractive()).small().weak());
@@ -207,7 +216,7 @@ fn trace_coverage(state: &str) {
     crate::diag::trace_on_change("output-preview-coverage", || state.to_owned());
 }
 
-/// `preview` with `ink` shown (`show`) or hidden.
+/// `preview` with `ink` shown (`show`) or hidden, its soft proof kept.
 fn toggled(preview: &SeparationPreview, ink: &str, show: bool) -> SeparationPreview {
     let hidden = preview
         .hidden
@@ -215,7 +224,7 @@ fn toggled(preview: &SeparationPreview, ink: &str, show: bool) -> SeparationPrev
         .filter(|h| h.as_str() != ink)
         .cloned()
         .chain((!show).then(|| ink.to_owned()));
-    SeparationPreview::new().with_hidden(hidden)
+    preview.clone().with_hidden(hidden)
 }
 
 /// Ink names as one trace token: `|`-joined, spaces as `_`, `-` for none.
