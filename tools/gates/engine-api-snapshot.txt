@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 20bcbb1cf1d3cf5420e41735fdb765f862c66179
+# baseline: 04fc8592ed59dc0d50f17104d538bb0bc6bc3b28
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11948
+# items: 11951
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -146,6 +146,7 @@ exempt pdfcer-core method pdfcer_core::xref::HybridPartition::is_reproducible --
 exempt pdfcer-core method pdfcer_core::xref::LoadedXref::hybrid_partition -- the constructor that copies the two `LoadedXref` fields into a `HybridPartition`. Unreachable from this shell for the mechanical reason that it needs a `LoadedXref` receiver and this shell never obtains one, and unwanted for the reason the struct's own exemption gives at length.
 exempt pdfcer-core module pdfcer_core::edit::editable_source -- a private module holding one `EditSession` method, `import_editable`, which `app::actions::structure::compile` calls on the session; the private path cannot be named from here.
 exempt pdfcer-core module pdfcer_core::edit::page_artwork -- a private module whose `PlacedPageContent` the engine re-exports from `pdfcer_core::edit`; `app::actions::pagecontent` reads it through that path after `place_page_content`, and the private path cannot be named from here.
+exempt pdfcer-core module pdfcer_core::edit::print_content -- the file holding `EditSession::clear_page_content`, which `dialogs::print::running::build` calls as a method on the session; the module path itself is private structure.
 exempt pdfcer-core module pdfcer_core::editable::fingerprint -- a private module whose three items the engine re-exports from `pdfcer_core::editable`; `app::actions::structure` calls `editable::fingerprint` and `editable::recorded_base` through that path for the stale-base guard, and the private path cannot be named from here.
 exempt pdfcer-core module pdfcer_core::editable::source -- a private module whose `EditableSource` the engine re-exports from `pdfcer_core::editable`; `app::actions::structure` reads `editable::EditableSource::object_ids` through that path for the export receipt, and the private path cannot be named from here.
 exempt pdfcer-core module pdfcer_core::settings::host_dir -- a private module whose `set_store_dir` and `StoreDirError` the engine re-exports from `pdfcer_core::settings`; `reopen::store_in` calls it through that path for Android, and the private path cannot be named from here.
@@ -153,6 +154,7 @@ exempt pdfcer-core struct pdfcer_core::ocr::vl_page::TableEdges -- how the engin
 exempt pdfcer-core struct pdfcer_core::outline::OutlineClipLoss -- the loss report of the bookmark clip's byte codec; this shell carries an `OutlineClip` live in `canvas::clipboard::Clipped::Outline` and never serialises one, so nothing it does can cut or skip a bookmark.
 exempt pdfcer-core struct pdfcer_core::parser::DuplicateKeyRecord -- the parser's own untagged record of one duplicate-key decision (key, kept, discarded). This shell wants all three facts and already has them, one layer up and better: `document::LoadAnomaly::DuplicateDictKey` carries the same three PLUS the `ObjId` they came from, and `app::status::anomalies` reads it live at draw time to say which object contradicted itself. The record cannot answer that -- the engine tags it with the object as it carries it out of the parser -- so a shell that reached for `DuplicateKeyRecord` would be trading down to the version with the object number missing. Exempted as a TYPE this shell should not name, not as a fact it does not want.
 exempt pdfcer-core struct pdfcer_core::xref::HybridPartition -- xref-internal plumbing that is public only because `pub mod xref;` publishes the whole module. It exists to answer ONE question, and the writer is the only thing that asks it: `is_reproducible()` gates `writer::save`'s full rewrite, and `Document`'s own field holding it is PRIVATE, read at writer/save.rs and nowhere else. The single public accessor `Document::hybrid_partition()` hands out a reference to it, so this shell COULD hold one -- and would learn nothing an operator can act on, because the only outcome that reaches him is already carried by `WriteError::HybridFullRewrite`, which this shell renders today (O157). Its two fields are a set of hidden object numbers and a did-the-XRefStm-parse flag: file-structure facts about SS 7.5.8.4, not document facts. DELETE THIS LINE if a surface ever needs to say WHICH objects a hybrid file hides -- that is the one thing in here the refusal variant does not carry.
+exempt pdfcer-core variant pdfcer_core::edit::CommandKind::ClearPageContent -- the undo-history kind of `clear_page_content`; the print dialog calls it only on its own throwaway copy, whose history nobody reads or words.
 exempt pdfcer-core variant pdfcer_core::edit::CommandKind::ImportEditable -- the undo entry a compile records. `app::actions::history` traces every undo kind by its Debug name and words no kind, so no table here needs a row for it.
 exempt pdfcer-core variant pdfcer_core::edit::CommandKind::PurgePasswordValues -- the undo entry the purge records. The purge runs on a throwaway session whose bytes become a separate file, so this entry never reaches the open document's undo stack or its history labels.
 exempt pdfcer-core variant pdfcer_core::edit::CommandKind::SetPageTabs -- the undo entry `EditSession::set_page_tabs` records. `app::actions::reorder::set_page_tabs` makes one call per choice and never coalesces it, so the shell has no reason to name the kind; the history label is the engine's.
@@ -167,12 +169,14 @@ exempt pdfcer-core variant pdfcer_core::page_tree::PageTreeError::BadResources -
 exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::DuplicateObjectInMove -- the panel builds its move list from a selection, which holds each object once, so it never names an index twice; were it to, the funnel shows the engine's own Display sentence, and matching the variant would only re-word it.
 exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::EmptyTextRunMove -- `move_text_runs` handed no runs. Unreachable from here by construction: `canvas::moving::run_move` returns before building the move when no line is selected, so there is no sentence for the operator to read.
 exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::TransformInsideTextObject -- a transform asked to act inside a text object. The shell transforms whole objects only; this reaches the operator through `EditRefusal`'s generic arm if the engine ever answers it, and it names no act the operator can take differently.
+exempt pdfcer-emf field pdfcer_emf::vector_census::EmfNotFlat::soft_mask_image -- a cause in the EMF writer's not-flat census, which this shell never reads; export and print word the outcome through `EmfCounts` and the engine's own sentences.
 exempt pdfcer-print const pdfcer_print::imposition::POSTER_MARK_GAP_PT -- the gap the engine leaves between a poster tile's image and its cut marks. The shell draws the marks from the tile's own `marks` and `label_rect`, which already include it; restating the gap here would be a second copy of the geometry.
 exempt pdfcer-render const pdfcer_render::page_budget::BLENDED_PAINT_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render const pdfcer_render::page_budget::COVERAGE_PER_CANVAS -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render const pdfcer_render::page_budget::MESH_PIXEL_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render const pdfcer_render::page_budget::MESH_TRIANGLE_COST -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render const pdfcer_render::page_budget::MIN_COVERAGE -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
+exempt pdfcer-render const pdfcer_render::shading::GRADIENT_SAMPLES -- the shading interpreter's internal sample count for a gradient ramp; nothing here chooses or compares against it.
 exempt pdfcer-render field pdfcer_render::display_list::ExportRecording::clips -- a field of the display-list recording that the pdfcer-emf writer reads from pdfcer-render; this shell calls the writer and never holds a recording.
 exempt pdfcer-render field pdfcer_render::display_list::ExportRecording::masks -- a field of the display-list recording that the pdfcer-emf writer reads from pdfcer-render; this shell calls the writer and never holds a recording.
 exempt pdfcer-render field pdfcer_render::display_list::ExportRecording::ops -- a field of the display-list recording that the pdfcer-emf writer reads from pdfcer-render; this shell calls the writer and never holds a recording.
@@ -187,9 +191,19 @@ exempt pdfcer-render field pdfcer_render::display_list::TextRunInfo::upem -- a f
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::edge_antialiasing -- the policy half of `RenderOptions::edge_antialiasing`; this shell builds `RenderOptions` and never holds a `RenderPolicy`, and print sets edges through `RenderOptions::with_edge_antialiasing`.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::omit_annotations -- the interpreter's derived mirror of RenderOptions::omit_annotations, which this shell sets through `with_omit_annotations` in `canvas::dimpreview::underlay`; it constructs no RenderPolicy. Per field, as for stroke_display.
 exempt pdfcer-render field pdfcer_render::font::RenderPolicy::stroke_display -- RenderPolicy is the interpreter's INTERNAL derived bundle, not a shell-facing type: every one of its fields' own doc comments reads "See RenderOptions::<the same name>", and the engine builds a RenderPolicy from the RenderOptions a caller hands it. This shell sets RenderOptions::stroke_display (View > Display > Line weights, O137) and constructs no RenderPolicy anywhere in the workspace. Exempted PER FIELD rather than wildcarded for the whole type, deliberately: every future RenderPolicy field mirrors a RenderOptions field this shell probably DOES want, so each one should cost one line and one look.
+exempt pdfcer-render field pdfcer_render::gouraud::ShadingSource::blend -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render field pdfcer_render::gouraud::ShadingSource::overprint -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render field pdfcer_render::gouraud::ShadingSource::spots -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
 exempt pdfcer-render field pdfcer_render::interpret::Diagnostics::strokes_width_fixed -- how many strokes a render drew at the fixed print width. The width is the operator's own setting on the Print dialog's Pages tab and the caption under it states it; a count of strokes that obeyed it says nothing he can act on.
+exempt pdfcer-render field pdfcer_render::shading::GradientSpec::blend -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render field pdfcer_render::shading::GradientSpec::cmyk -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render field pdfcer_render::shading::GradientSpec::overprint -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render field pdfcer_render::shading::GradientSpec::spot -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render field pdfcer_render::shading::GradientSpec::spots -- a field of the rasterizer's internal shading description; this shell builds no shading and sees the result only as rendered pixels.
 exempt pdfcer-render method pdfcer_render::text::TextState::clips -- whether the current text rendering mode (Tr 4-7) adds glyphs to the clip. The rasteriser consumes it while painting; the shell holds no TextState and draws only what the renderer returns.
 exempt pdfcer-render method pdfcer_render::text::TextState::text_space_params -- the interpreter's §9.4.4 text-space matrix, shared by its glyph placement and the Type 3 glyph CTM. This shell never interprets a text state; it reads glyph boxes from extraction and pixels from the renderer.
+exempt pdfcer-render module pdfcer_render::gouraud::bands -- the rasterizer's banding of Gouraud shadings into flat quads; this shell holds no shading and sees the result only as rendered pixels.
+exempt pdfcer-render module pdfcer_render::shading::spot_ramp -- the shading interpreter's spot-colour ramp sampling; this shell holds no shading and sees the result only as rendered pixels.
 exempt pdfcer-render variant pdfcer_render::font::subset::SubsetError::Cff2NotSupported -- a refusal this shell words through the engine's own Display text: `app::actions::textstyle::donor_plan` and `handsign::typed` both map every `plan_subset` error with `to_string()`, so no variant is matched here and none needs a sentence of ours.
 exempt pdfcer-render variant pdfcer_render::mesh::Shade::Spot -- a mesh vertex colour inside the rasterizer: the shading-mesh interpreter builds and interpolates Shade values and composites them; this shell holds no mesh, constructs no Shade, and sees the result only as rendered pixels.
 
@@ -9973,6 +9987,7 @@ pdfcer-emf field pdfcer_emf::EmfOptions::background
 pdfcer-emf field pdfcer_emf::EmfOptions::patch_approximations
 pdfcer-emf field pdfcer_emf::EmfOptions::raster_dpi
 pdfcer-emf field pdfcer_emf::EmfOptions::text
+pdfcer-emf field pdfcer_emf::EmfOptions::tight_mask_patches
 pdfcer-emf field pdfcer_emf::EmfOptions::underlay_blends
 pdfcer-emf field pdfcer_emf::EmfOptions::vector_shadings
 pdfcer-emf field pdfcer_emf::EmfOptions::vector_transparency
@@ -10036,6 +10051,7 @@ pdfcer-emf field pdfcer_emf::vector::EmfVectorised::patched_not_flat
 pdfcer-emf field pdfcer_emf::vector::EmfVectorised::patched_too_complex
 pdfcer-emf field pdfcer_emf::vector::EmfVectorised::patched_unrecorded
 pdfcer-emf field pdfcer_emf::vector::EmfVectorised::regions
+pdfcer-emf field pdfcer_emf::vector::EmfVectorised::split
 pdfcer-emf field pdfcer_emf::vector_census::EmfNotFlat::beneath
 pdfcer-emf field pdfcer_emf::vector_census::EmfNotFlat::blend
 pdfcer-emf field pdfcer_emf::vector_census::EmfNotFlat::cmyk
@@ -10062,6 +10078,7 @@ pdfcer-emf method pdfcer_emf::EmfOptions::with_background
 pdfcer-emf method pdfcer_emf::EmfOptions::with_patch_approximations
 pdfcer-emf method pdfcer_emf::EmfOptions::with_raster_dpi
 pdfcer-emf method pdfcer_emf::EmfOptions::with_text
+pdfcer-emf method pdfcer_emf::EmfOptions::with_tight_mask_patches
 pdfcer-emf method pdfcer_emf::EmfOptions::with_underlay_blends
 pdfcer-emf method pdfcer_emf::EmfOptions::with_vector_shadings
 pdfcer-emf method pdfcer_emf::EmfOptions::with_vector_transparency
