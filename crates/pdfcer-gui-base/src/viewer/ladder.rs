@@ -164,7 +164,7 @@ mod tests {
             zoom: MAX_ZOOM,
             ..ViewState::default()
         };
-        view.zoom_in(MAX_ZOOM);
+        view.zoom_in(MAX_ZOOM, 1.0);
         assert_eq!(
             view.zoom, MAX_ZOOM,
             "with the ceiling at 800% the step must not exceed it"

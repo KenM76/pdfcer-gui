@@ -432,14 +432,15 @@ impl ViewState {
         self.set_zoom(self.zoom * factor, max);
     }
 
-    /// Step to the next ladder rung above the current zoom.
-    pub fn zoom_in(&mut self, max: f32) {
-        self.set_zoom(ladder_step_up(self.zoom), max);
+    /// Step to the next ladder rung above the current magnification on a page
+    /// whose [`page_unit`] is `unit`; the rungs are magnifications.
+    pub fn zoom_in(&mut self, max: f32, unit: f32) {
+        self.set_zoom(ladder_step_up(self.zoom / unit) * unit, max);
     }
 
-    /// Step to the next ladder rung below the current zoom.
-    pub fn zoom_out(&mut self, max: f32) {
-        self.set_zoom(ladder_step_down(self.zoom), max);
+    /// Step to the next ladder rung below the current magnification.
+    pub fn zoom_out(&mut self, max: f32, unit: f32) {
+        self.set_zoom(ladder_step_down(self.zoom / unit) * unit, max);
     }
 
     /// Enter a fit mode. The zoom itself is recomputed by
@@ -459,7 +460,8 @@ impl ViewState {
         self.zoom = clamp_zoom(fit_scale(page_pts, viewport, self.fit), max);
     }
 
-    /// The zoom as a whole percentage, for the toolbar readout.
+    /// The magnification as a percentage on a page whose [`page_unit`] is
+    /// `unit`: 100 shows the page at its physical size.
     ///
     /// Rounds rather than truncates so a fit scale of 0.99997 reads as
     /// `100%`, not `99%`.
@@ -468,7 +470,7 @@ impl ViewState {
         dead_code,
         reason = "the zoom readout is a status-bar control and lands at stage S2; kept with the ladder it reports on so the rounding rule cannot be re-derived differently" // ui-text-exempt: clippy lint justification, never displayed
     )]
-    pub fn zoom_percent(&self) -> f64 {
+    pub fn zoom_percent(&self, unit: f32) -> f64 {
         // `f64`, not `u32` — `OPERATOR_REQUESTS.md` O24j.
         //
         // A saturating `as u32` cast clamps at 4,294,967,295, so at a trillion
@@ -480,7 +482,7 @@ impl ViewState {
         // **A limit lifted in one place leaves every narrower type downstream
         // enforcing the old one silently**, and a readout is where that
         // surfaces as a plausible-looking number rather than as a refusal.
-        f64::from(self.zoom * 100.0).max(0.0)
+        f64::from(self.zoom / unit * 100.0).max(0.0)
     }
 }
 
@@ -580,6 +582,19 @@ pub fn zoom_for_raster_scale(
     quality: crate::renderquality::RenderQuality,
 ) -> f32 {
     scale / raster_density(pixels_per_point, quality)
+}
+
+/// A page's `/UserUnit` as the view uses it — physical points per user-space
+/// unit (ISO 32000-1 §14.11.2), or 1 when the value is unusable.
+///
+/// [`ViewState::zoom`] is per user-space unit, so the magnification the
+/// operator reads and sets is `zoom / unit`, and the engine rasterises
+/// `unit` times the pixels of a `zoom` raster.
+#[must_use]
+pub fn page_unit(page: &Page) -> f32 {
+    #[allow(clippy::cast_possible_truncation)] // a user unit fits an f32
+    let u = page.user_unit as f32;
+    if u.is_finite() && u > 0.0 { u } else { 1.0 }
 }
 
 /// A page's on-screen extent in PDF user-space units, with `/Rotate`
@@ -682,7 +697,7 @@ mod tests {
         let max = max_zoom_for_page(page, 1.0, NORMAL);
         let mut v = ViewState::default();
         for _ in 0..20 {
-            v.zoom_in(max);
+            v.zoom_in(max, 1.0);
         }
         assert_eq!(v.zoom, max);
         assert!((page.0 * v.zoom).ceil() as u32 <= pdfcer_render::MAX_PIXMAP_EDGE);

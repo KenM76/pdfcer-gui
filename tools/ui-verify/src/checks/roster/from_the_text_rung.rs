@@ -321,6 +321,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // file is the only one they will read.
         Box::new(print_auto_paper::MatchThePagesPicksTheSheetFromTheDocument),
         Box::new(print_user_unit::PrintSizesAUserUnitPagePhysically),
+        Box::new(canvas_user_unit::ActualSizeShowsAUserUnitPagePhysically),
         Box::new(print_separations::PrintSeparatesIntoPlates),
         Box::new(print_direct::PrintSendsThePdfItself),
         // After the print checks above it, for the reason the two above

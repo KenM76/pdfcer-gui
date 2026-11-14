@@ -37,7 +37,7 @@ pub(super) fn group(
     max_zoom_percent: &mut f32,
     actions: &mut Vec<Action>,
 ) {
-    let percent = doc.view.zoom_percent();
+    let percent = doc.view.zoom_percent(doc.current_unit());
     let rect = ui
         .scope(|ui| {
             // Right-to-left: added first is drawn rightmost, so the screen

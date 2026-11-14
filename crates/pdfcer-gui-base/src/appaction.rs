@@ -472,7 +472,8 @@ pub enum Action {
     /// Enter a fit mode — a *mode*, not a one-shot: the zoom is re-derived
     /// from the viewport every frame until an explicit zoom pins it.
     Fit(FitMode),
-    /// Pin the zoom to an exact factor.
+    /// Pin the zoom to an exact magnification: 1.0 shows the page at its
+    /// physical size, `/UserUnit` included (`viewer::page_unit`).
     ///
     /// **`Fit(FitMode::None)` is not this**, and the difference was a live
     /// defect the status bar surfaced. `FitMode::None` only stops the

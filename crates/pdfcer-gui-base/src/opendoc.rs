@@ -1211,6 +1211,12 @@ impl OpenDoc {
             .map_or((612.0, 792.0), viewer::page_extent_pts)
     }
 
+    /// The current page's [`viewer::page_unit`].
+    #[must_use]
+    pub fn current_unit(&self) -> f32 {
+        self.current_page().map_or(1.0, viewer::page_unit)
+    }
+
     /// Whether annotation appearances are painted over the page content.
     #[must_use]
     pub fn annotations_visible(&self) -> bool {

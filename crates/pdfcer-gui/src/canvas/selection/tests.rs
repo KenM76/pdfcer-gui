@@ -188,7 +188,7 @@ fn navigating_the_view_never_alters_the_selection() {
     // Every navigation the invariant names, in one sweep.
     let mut view = ViewState::default();
     for _ in 0..3 {
-        view.zoom_out(MAX_ZOOM);
+        view.zoom_out(MAX_ZOOM, 1.0);
     }
     view.set_fit(FitMode::Width);
     view.apply_fit((612.0, 792.0), (300.0, 900.0), MAX_ZOOM);
@@ -238,7 +238,7 @@ fn navigating_the_view_never_alters_the_selection() {
     // An anchored discrete zoom: arm on a page point, step the ladder,
     // solve. This is Ctrl+Plus, end to end, minus the `egui::Context`.
     let anchor = zoom::hold(zoom::frac_of(Pos2::new(50.0, 50.0), extent), &frame);
-    view.zoom_in(MAX_ZOOM);
+    view.zoom_in(MAX_ZOOM, 1.0);
     let _ = geometry::zoom_anchor_offset(
         anchor.offset_before,
         anchor.display_before,

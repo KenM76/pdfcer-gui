@@ -189,7 +189,7 @@ mod tests {
                 zoom,
                 ..ViewState::default()
             };
-            view.zoom_in(ceiling);
+            view.zoom_in(ceiling, 1.0);
             if (view.zoom - zoom).abs() < f32::EPSILON {
                 break;
             }

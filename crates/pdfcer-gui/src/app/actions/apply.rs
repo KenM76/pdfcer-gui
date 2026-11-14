@@ -273,11 +273,15 @@ impl PdfcerApp {
             doc.view.page_index,
             doc.page_epochs.get(doc.view.page_index),
         );
+        // In user-space units: the engine rasterises `unit` times the box,
+        // and the operator's maximum is a magnification.
+        let unit = doc.current_unit();
+        let (w, h) = doc.current_extent();
         let max_zoom = viewer::zoom_ceiling(
-            doc.current_extent(),
+            (w * unit, h * unit),
             pixels_per_point,
             doc.prefs.render_quality,
-            self.prefs.max_zoom_percent,
+            self.prefs.max_zoom_percent * unit,
             learned,
         );
         let page_count = doc.pages.len();
@@ -362,8 +366,8 @@ impl PdfcerApp {
             //
             Action::DeclineOnCanvas(what) => crate::app::status::decline::record_canvas(what),
             Action::ZoomBy(factor) => doc.view.zoom_by(factor, max_zoom),
-            Action::ZoomIn => doc.view.zoom_in(max_zoom),
-            Action::ZoomOut => doc.view.zoom_out(max_zoom),
+            Action::ZoomIn => doc.view.zoom_in(max_zoom, unit),
+            Action::ZoomOut => doc.view.zoom_out(max_zoom, unit),
             // **The view verbs**, in one arm and one function.
             //
             Action::Fit(_)

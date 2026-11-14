@@ -616,7 +616,7 @@ pub fn show(
                 "status page={} pages={} zoom={} fit={:?} wheel={}",
                 doc.view.page_index,
                 doc.pages.len(),
-                doc.view.zoom_percent(),
+                doc.view.zoom_percent(doc.current_unit()),
                 doc.view.fit,
                 doc.prefs.wheel_paging.key(),
             )

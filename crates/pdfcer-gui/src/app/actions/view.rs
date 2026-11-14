@@ -44,7 +44,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: Action, page_count: usize, max_zo
                 doc.fit_placement = Some(mode);
             }
         }
-        Action::ZoomTo(zoom) => doc.view.set_zoom(zoom, max_zoom),
+        Action::ZoomTo(zoom) => doc.view.set_zoom(zoom * doc.current_unit(), max_zoom),
         Action::NextPage => doc.view.next_page(page_count),
         Action::PrevPage => doc.view.prev_page(page_count),
         Action::GoToPage(index) => doc.view.go_to_page(index, page_count),

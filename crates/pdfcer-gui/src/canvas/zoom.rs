@@ -501,18 +501,21 @@ fn frame_rect(
         doc.view.page_index,
         doc.page_epochs.get(doc.view.page_index),
     );
+    // `plan_framing` works per user-space unit, so the operator's maximum
+    // magnification is scaled into it; `ZoomTo` takes a magnification back.
+    let unit = doc.current_unit();
     let plan = plan_framing(
         &frame,
         region,
         margin,
         ctx.pixels_per_point(),
         doc.prefs.render_quality,
-        max_zoom_percent,
+        max_zoom_percent * unit,
         learned,
     );
     doc.frame.zoom_anchor = Some(plan.anchor);
     if let ZoomOutcome::Zoomed { applied, .. } = plan.outcome {
-        actions.push(Action::ZoomTo(applied));
+        actions.push(Action::ZoomTo(applied / unit));
     }
     plan.outcome
 }

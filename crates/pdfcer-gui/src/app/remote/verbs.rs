@@ -93,7 +93,10 @@ pub(super) fn state_reply(app: &PdfcerApp, message: &str) -> Reply {
             doc.view.page_index + 1,
             doc.pages.len()
         ));
-        body.push(format!("zoom={:.0}", doc.view.zoom * 100.0));
+        body.push(format!(
+            "zoom={:.0}",
+            doc.view.zoom_percent(doc.current_unit())
+        ));
         body.push(format!("unsaved={}", has_unsaved_edits(doc)));
         let selected = doc.selection.object_indices_on(doc.view.page_index);
         body.push(format!("selected={}", join(&selected)));

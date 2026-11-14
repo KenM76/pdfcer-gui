@@ -794,9 +794,11 @@ mod tests {
     fn zoom_percent_rounds_rather_than_truncating() {
         let mut v = crate::viewer::ViewState::default();
         v.set_zoom(0.999_97, crate::viewer::MAX_ZOOM);
-        assert_eq!(zoom_percent(v.zoom_percent()), "100%");
+        assert_eq!(zoom_percent(v.zoom_percent(1.0)), "100%");
         v.set_zoom(0.335, crate::viewer::MAX_ZOOM);
-        assert_eq!(zoom_percent(v.zoom_percent()), "34%");
+        assert_eq!(zoom_percent(v.zoom_percent(1.0)), "34%");
+        v.set_zoom(2.0, crate::viewer::MAX_ZOOM);
+        assert_eq!(zoom_percent(v.zoom_percent(2.0)), "100%");
     }
 
     /// O24j — **the readout must survive the whole ceiling the zoom offers.**
@@ -816,7 +818,7 @@ mod tests {
             (1.0e10, "999999995904%"),
         ] {
             v.set_zoom(zoom, f32::MAX);
-            let shown = zoom_percent(v.zoom_percent());
+            let shown = zoom_percent(v.zoom_percent(1.0));
             assert_eq!(shown, want, "zoom {zoom} showed {shown}");
             assert!(
                 !shown.contains("4294967295"),
