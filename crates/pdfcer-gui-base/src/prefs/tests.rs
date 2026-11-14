@@ -270,6 +270,7 @@ fn every_preference_round_trips_through_the_file() {
                             gradients: false,
                             transparency: true,
                             tight_patches: true,
+                            pdf_direct: false,
                         },
                     },
                     // Off-page display, and every one of these three is
@@ -846,6 +847,7 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 gradients: true,
                 transparency: false,
                 tight_patches: false,
+                pdf_direct: false,
             },
         },
         // Off-page display. A DIFFERENT set from the round-trip test

@@ -80,15 +80,21 @@ impl PrintDialog {
     }
 }
 
-/// Each page's ROTATED extent, points: the extent `pdfcer-render` rasterises
-/// at, so a `/Rotate 90` page plans landscape. `viewer::page_extent_pts` is
-/// the canvas's own measure, so the preview, the canvas and the paper agree.
+/// Each page's ROTATED, PHYSICAL extent, points: the canvas's box extent
+/// (`viewer::page_extent_pts`) times the page's `/UserUnit`, so a `/Rotate 90`
+/// page plans landscape and a `/UserUnit 2` page prints at twice its box size
+/// (ISO 32000-1 §14.11.2). Every plan, preview and render reads this physical
+/// measure; a render region handed to `pdfcer-render` is box units, so it is
+/// divided back by `user_unit` where it is built (`commit::render_tile`,
+/// `preview::detail`). The engine's render multiplies its scale by
+/// `user_unit` itself, so a whole-page render at the plan's scale fills the
+/// physical size.
 fn page_sizes(doc: &OpenDoc) -> Vec<(f64, f64)> {
     doc.pages
         .iter()
         .map(|page| {
             let (w, h) = crate::viewer::page_extent_pts(page);
-            (f64::from(w), f64::from(h))
+            (f64::from(w) * page.user_unit, f64::from(h) * page.user_unit)
         })
         .collect()
 }

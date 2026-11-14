@@ -104,7 +104,8 @@ fn launch(
         spec.env.push((k.to_owned(), v.to_owned()));
     }
     if embed {
-        spec.env.push(("PDFCER_DIAG_EMBED".to_owned(), "1".to_owned()));
+        spec.env
+            .push(("PDFCER_DIAG_EMBED".to_owned(), "1".to_owned()));
     }
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;

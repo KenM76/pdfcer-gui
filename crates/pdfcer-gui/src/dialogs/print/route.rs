@@ -11,7 +11,7 @@
 
 use pdfcer_gui_base::prefs::print_impose::ImposeMode;
 use pdfcer_gui_base::prefs::print_route::VectorRoute;
-use pdfcer_gui_base::printregions as regions;
+use pdfcer_gui_base::printregions;
 use pdfcer_print::output_color::OutputColor;
 
 use super::PrintDialog;
@@ -21,8 +21,11 @@ use crate::text::print::route as t;
 impl PrintDialog {
     /// The vector route a plain page of this job is offered, if any.
     pub(super) fn vector_offered(&self) -> Option<VectorRoute> {
-        (!self.print_as_image && self.output_color == OutputColor::Color && !self.icc.managed())
-            .then_some(self.vector_route)
+        (!self.print_as_image
+            && self.output_color == OutputColor::Color
+            && !self.separations
+            && !self.icc.managed())
+        .then_some(self.vector_route)
     }
 
     /// The sentence saying which sheets of this job are images whatever the
@@ -30,6 +33,8 @@ impl PrintDialog {
     fn forced_images(&self) -> Option<&'static str> {
         if self.icc.managed() {
             Some(crate::text::print::icc::forced_images())
+        } else if self.separations {
+            Some(t::forced_separations())
         } else if self.output_color != OutputColor::Color {
             Some(t::forced_colour())
         } else if self.impose.prefs.mode != ImposeMode::Off {
@@ -48,12 +53,17 @@ pub(super) fn controls(ui: &mut egui::Ui, dialog: &mut PrintDialog) {
     let switch = ui
         .checkbox(&mut dialog.print_as_image, t::as_image())
         .on_hover_text(t::as_image_hover());
-    crate::diag::ui_rect_visible(regions::REGION_PRINT_AS_IMAGE, switch.rect, ui.clip_rect());
+    crate::diag::ui_rect_visible(
+        printregions::REGION_PRINT_AS_IMAGE,
+        switch.rect,
+        ui.clip_rect(),
+    );
     if !dialog.print_as_image {
         ui.indent("print-vector-route", |ui| {
             vector_switches(ui, &mut dialog.vector_route);
         });
     }
+    super::direct::controls(ui, dialog);
     if let Some(said) = dialog.forced_images() {
         ui.label(
             egui::RichText::new(said)
@@ -71,13 +81,13 @@ fn vector_switches(ui: &mut egui::Ui, route: &mut VectorRoute) {
             &mut route.gradients,
             t::vector_gradients(),
             t::vector_gradients_hover(),
-            regions::REGION_PRINT_VECTOR_GRADIENTS,
+            printregions::REGION_PRINT_VECTOR_GRADIENTS,
         ),
         (
             &mut route.transparency,
             t::vector_transparency(),
             t::vector_transparency_hover(),
-            regions::REGION_PRINT_VECTOR_TRANSPARENCY,
+            printregions::REGION_PRINT_VECTOR_TRANSPARENCY,
         ),
     ];
     for (on, label, hover, region) in rows {
@@ -90,7 +100,7 @@ fn vector_switches(ui: &mut egui::Ui, route: &mut VectorRoute) {
                 .checkbox(&mut route.tight_patches, t::tight_patches())
                 .on_hover_text(t::tight_patches_hover());
             crate::diag::ui_rect_visible(
-                regions::REGION_PRINT_TIGHT_PATCHES,
+                printregions::REGION_PRINT_TIGHT_PATCHES,
                 row.rect,
                 ui.clip_rect(),
             );

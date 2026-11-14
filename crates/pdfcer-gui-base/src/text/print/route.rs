@@ -89,6 +89,12 @@ pub fn profiles_unused(pages: usize) -> String {
     }
 }
 
+/// Why the switch makes no difference to this job: separations.
+#[must_use]
+pub const fn forced_separations() -> &'static str {
+    "Separations send every page as an image."
+}
+
 /// Why the switch makes no difference to this job: grey or black only.
 #[must_use]
 pub const fn forced_colour() -> &'static str {

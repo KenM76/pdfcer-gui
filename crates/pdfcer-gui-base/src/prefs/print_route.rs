@@ -22,6 +22,9 @@ pub struct VectorRoute {
     /// (`EmfOptions::tight_mask_patches`). Off by default: text freed from a
     /// patch is drawn by the driver, which does not smooth it.
     pub tight_patches: bool,
+    /// A plain job goes to a printer that reads PDF as the PDF itself
+    /// (`dialogs::print::direct`). Off by default: it asks the network.
+    pub pdf_direct: bool,
 }
 
 impl Default for VectorRoute {
@@ -30,6 +33,7 @@ impl Default for VectorRoute {
             gradients: true,
             transparency: true,
             tight_patches: false,
+            pdf_direct: false,
         }
     }
 }
@@ -40,6 +44,8 @@ const GRADIENTS: &str = "print_vector_gradients";
 const TRANSPARENCY: &str = "print_vector_transparency";
 // ui-text-exempt: file KEYS, as above.
 const TIGHT: &str = "print_tight_patches";
+// ui-text-exempt: file KEYS, as above.
+const DIRECT: &str = "print_pdf_direct";
 
 /// Read one line into [`PrintPrefs::vector`], if it is this group's.
 pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOutcome {
@@ -47,6 +53,7 @@ pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOu
         GRADIENTS => &mut prefs.vector.gradients,
         TRANSPARENCY => &mut prefs.vector.transparency,
         TIGHT => &mut prefs.vector.tight_patches,
+        DIRECT => &mut prefs.vector.pdf_direct,
         _ => return KeyOutcome::NotMine,
     };
     match super::opening::bool_from_key(value) {
@@ -67,14 +74,18 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
          # blended artwork as vector graphics, with small pictures only where\n\
          # it cannot be; false sends such a page as a picture.\n\
          # print_tight_patches: true | false. Make those pictures smaller; the\n\
-         # text they no longer cover may print less smooth.\n",
+         # text they no longer cover may print less smooth.\n\
+         # print_pdf_direct: true | false. Send a plain job to a network\n\
+         # printer that reads PDF as the PDF itself.\n",
     );
     for (key, on) in [
         (GRADIENTS, prefs.vector.gradients),
         (TRANSPARENCY, prefs.vector.transparency),
         (TIGHT, prefs.vector.tight_patches),
+        (DIRECT, prefs.vector.pdf_direct),
     ] {
         out.push_str(key);
+        // ui-text-exempt: the file's key/value separator. Never displayed.
         out.push_str(" = ");
         out.push_str(super::opening::bool_key(on));
         out.push('\n');
@@ -98,6 +109,7 @@ mod tests {
                 gradients: false,
                 transparency: false,
                 tight_patches: true,
+                pdf_direct: true,
             },
             ..PrintPrefs::default()
         };

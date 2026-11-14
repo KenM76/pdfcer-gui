@@ -186,6 +186,9 @@ impl NetPrintDialog {
             ranges: net::parse_ranges(&self.ranges, self.pages)?,
             monochrome: self.grey,
             finishing,
+            scaling: None,
+            orientation: None,
+            uncollated: false,
         })
     }
 

@@ -521,7 +521,7 @@ fn plan_field(session: &Session, key: &str) -> Option<String> {
 
 /// Parse a `WxH` size token, or `None` for `none` and anything unparseable.
 ///
-fn size(token: &str) -> Option<(f64, f64)> {
+pub(super) fn size(token: &str) -> Option<(f64, f64)> {
     let (w, h) = token.split_once('x')?;
     Some((w.parse().ok()?, h.parse().ok()?))
 }

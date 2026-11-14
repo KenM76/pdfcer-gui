@@ -99,6 +99,7 @@ mod poster;
 pub(crate) mod batch;
 /// Colour, grey or black-only output.
 mod colour;
+mod direct;
 /// ICC printer profile and press simulation.
 mod icc;
 /// **Fixed line width** — O233: every line printed at one width.
@@ -107,6 +108,7 @@ mod lines;
 mod permission;
 /// One document's job, planned from the window's settings.
 mod plan;
+mod plates;
 /// The document's own `/ViewerPreferences` print settings.
 mod presets;
 /// A header or footer on the printed copy only.
@@ -487,8 +489,12 @@ pub struct PrintDialog {
     saved: saved::Saved,
     /// Colour, grey or black only, applied to every rendered sheet.
     output_color: pdfcer_print::output_color::OutputColor,
+    /// Plain pages print as one grey sheet per ink. Only with `Color`.
+    separations: bool,
     /// The printer profile and simulated press every sheet is converted through.
     icc: icc::Icc,
+    /// Whether the selected printer reads PDF, asked only with the switch on.
+    direct: direct::Direct,
 }
 
 impl PrintDialog {
@@ -623,7 +629,9 @@ impl PrintDialog {
             presets: presets::Applied::default(),
             saved: saved::Saved::default(),
             output_color: pdfcer_print::output_color::OutputColor::Color,
+            separations: false,
             icc: icc::Icc::new(remembered.colour.clone()),
+            direct: direct::Direct::new(doc),
         };
         presets::apply(
             &mut dialog,
@@ -776,6 +784,8 @@ impl PrintDialog {
             printer_name,
             job,
         } = self.plan(doc);
+        self.direct
+            .poll(self.vector_route.pdf_direct, printer_name.as_deref(), ctx);
         if self.device_pending {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }

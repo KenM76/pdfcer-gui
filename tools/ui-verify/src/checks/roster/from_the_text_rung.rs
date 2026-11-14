@@ -320,6 +320,9 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         // somebody adds another by copying one of these files, the copied
         // file is the only one they will read.
         Box::new(print_auto_paper::MatchThePagesPicksTheSheetFromTheDocument),
+        Box::new(print_user_unit::PrintSizesAUserUnitPagePhysically),
+        Box::new(print_separations::PrintSeparatesIntoPlates),
+        Box::new(print_direct::PrintSendsThePdfItself),
         // After the print checks above it, for the reason the two above
         // give — stated as a POSITION rather than an ordinal, because this
         // comment once read "last of the four", a fifth was added saying "and

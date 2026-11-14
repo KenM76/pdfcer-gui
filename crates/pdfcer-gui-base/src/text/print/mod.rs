@@ -767,6 +767,8 @@ pub use poster::*;
 /// Printing several files with one setup.
 pub mod batch;
 pub mod colour;
+/// Sending the PDF itself to a printer that reads it.
+pub mod direct;
 /// Staple, punch and output tray.
 pub mod finishing;
 pub mod icc;

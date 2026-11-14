@@ -30,6 +30,15 @@ impl PrintDialog {
     /// done** — as a pure function, so it can be tested without a printer.
     pub(super) fn commit_notes(outcome: Result<&SpoolReport, &String>) -> Option<Vec<String>> {
         let report = outcome.ok()?;
+        if let Some(sent) = &report.direct {
+            let mut notes = vec![crate::text::print::direct::sent(
+                &sent.uri,
+                sent.receipt.job_id,
+                &sent.receipt.ignored,
+            )];
+            notes.extend(sent.notes.iter().cloned());
+            return Some(notes);
+        }
         let mut notes = vec![t::sent(report.pages)];
         // The only one of the four `SettingsSource` values that is disclosed,
         // and the operator could not learn it any other way: the job printed,
@@ -47,6 +56,18 @@ impl PrintDialog {
         }
         if report.tally.patches > 0 {
             notes.push(t::route::patched(report.tally.patches));
+        }
+        if report.plates.pages > 0 {
+            notes.push(crate::text::print::colour::plates_sent(
+                report.plates.pages,
+                report.plates.plates,
+                &report.plates.inks,
+            ));
+        }
+        if report.plates.refused > 0 {
+            notes.push(crate::text::print::colour::plates_refused(
+                report.plates.refused,
+            ));
         }
         if report.tally.profiles_unused > 0 {
             notes.push(t::route::profiles_unused(report.tally.profiles_unused));
@@ -71,7 +92,10 @@ impl PrintDialog {
         if let Some(why) = self.icc.refusal() {
             return Err(why);
         }
-        let mut bitmaps = self.render_sheets(doc, job, page_sizes)?;
+        if let Some(sent) = self.commit_direct(doc, job) {
+            return sent;
+        }
+        let (mut bitmaps, plated, plates) = self.render_sheets(doc, job, page_sizes)?;
         // The orientation page is the FIRST PLANNED page — the one `plan`
         // resolved orientation from. Not `pages[0]`: the sequence may be
         // reversed or range-filtered. Not the first bitmap either: a poster
@@ -81,7 +105,8 @@ impl PrintDialog {
             .first()
             .and_then(|plan| page_sizes.get(plan.index).copied())
             .unwrap_or(US_LETTER_PORTRAIT_PT);
-        for sheet in &mut bitmaps {
+        // A plate is an ink's density, not a colour: no profile, no recolour.
+        for (sheet, _) in bitmaps.iter_mut().zip(&plated).filter(|(_, p)| !**p) {
             self.icc.sheet(&mut sheet.rgba);
             super::colour::recolour(&mut sheet.rgba, self.output_color, "sheet"); // ui-text-exempt: trace token
         }
@@ -97,17 +122,19 @@ impl PrintDialog {
             config.as_ref(),
             first_page_pt,
         )
+        .map(|report| SpoolReport { plates, ..report })
         .map_err(|error| error.to_string())
     }
 
     /// Render every planned page (or poster tile, or imposed sheet) as one
-    /// sheet bitmap.
+    /// sheet bitmap, or a plain page as one per ink under separations. The
+    /// second vector marks which sheets are plates.
     fn render_sheets(
         &self,
         doc: &OpenDoc,
         job: &Job,
         page_sizes: &[(f64, f64)],
-    ) -> Result<Vec<PageBitmap>, String> {
+    ) -> Result<(Vec<PageBitmap>, Vec<bool>, spooler::PlateTally), String> {
         // The SAME builder the preview calls. See `render_options` for the
         // choices it encodes and why a second copy of them here would defeat
         // the preview's purpose.
@@ -131,7 +158,10 @@ impl PrintDialog {
         let vector = self.vector_offered();
 
         let mut bitmaps = Vec::with_capacity(job.plans.len());
+        let mut plated = Vec::with_capacity(job.plans.len());
+        let mut plates = spooler::PlateTally::default();
         for (i, plan) in job.plans.iter().enumerate() {
+            plated.resize(bitmaps.len(), false);
             if let Some(sheet) = self.impose.out.get(i) {
                 bitmaps.push(super::impose::render_sheet(
                     source, sheet, job, &options, lines_pt,
@@ -159,11 +189,21 @@ impl PrintDialog {
                 bitmaps.push(render_tile(&view, page, plan, &tile, &options, &name)?);
                 continue;
             }
+            if self.separations {
+                for (sheet, plate) in
+                    super::plates::sheets(&view, page, plan, size, &options, &mut plates)?
+                {
+                    bitmaps.push(sheet);
+                    plated.push(plate);
+                }
+                continue;
+            }
             bitmaps.push(super::route::plain_sheet(
                 &view, page, plan, size, &options, vector,
             )?);
         }
-        Ok(bitmaps)
+        plated.resize(bitmaps.len(), false);
+        Ok((bitmaps, plated, plates))
     }
 
     /// One trace line describing the job the dialog is currently showing.
@@ -253,9 +293,10 @@ fn render_tile(
     options: &pdfcer_render::RenderOptions,
     name: &str,
 ) -> Result<PageBitmap, String> {
-    let s = tile.source_pt;
+    // `source_pt` is physical points; the region is box units.
+    let (s, u) = (tile.source_pt, page.user_unit);
     let region = crate::render::region::exact_region(
-        (s.x, s.y, s.right(), s.bottom()),
+        (s.x / u, s.y / u, s.right() / u, s.bottom() / u),
         crate::render::region::PageFrame::of(page),
     );
     let rendered =
@@ -364,6 +405,8 @@ mod tests {
     /// A spool report with the given page count and settings source.
     fn report(pages: usize, source: SettingsSource) -> SpoolReport {
         SpoolReport {
+            plates: crate::dialogs::print::spooler::PlateTally::default(),
+            direct: None,
             pages,
             printed: true,
             dpi: (300, 300),
@@ -423,7 +466,10 @@ mod tests {
         };
         let notes = PrintDialog::commit_notes(Ok(&ok)).expect("a receipt");
         assert!(notes.iter().any(|n| n.starts_with("2 areas")), "{notes:?}");
-        assert!(notes.iter().any(|n| n.starts_with("On 1 page")), "{notes:?}");
+        assert!(
+            notes.iter().any(|n| n.starts_with("On 1 page")),
+            "{notes:?}"
+        );
         ok.tally.patches = 0;
         ok.tally.profiles_unused = 0;
         assert_eq!(PrintDialog::commit_notes(Ok(&ok)).map(|n| n.len()), Some(1));

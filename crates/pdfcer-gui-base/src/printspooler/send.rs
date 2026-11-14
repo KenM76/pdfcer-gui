@@ -2,8 +2,8 @@
 //! with the traces that record what was sent and how each sheet travelled.
 
 use super::{
-    DeviceSettings, DriverConfig, PageBitmap, SettingsSource, SpoolReport, Unavailable, VectorTally,
-    to_engine_bitmap, to_engine_settings,
+    DeviceSettings, DriverConfig, PageBitmap, SettingsSource, SpoolReport, Unavailable,
+    VectorTally, to_engine_bitmap, to_engine_settings,
 };
 
 /// Hand the rendered sheets to the spooler. A sheet carrying a metafile is
@@ -117,6 +117,8 @@ fn from_engine_report(
         )
     });
     SpoolReport {
+        plates: super::PlateTally::default(),
+        direct: None,
         pages: report.pages,
         printed: report.printed,
         dpi: report.dpi,

@@ -2,9 +2,9 @@
 //!
 //! The engine's `EditSession::stamp_running_text` writes the line, as
 //! `pdfcer print --header/--footer` does: never onto the open document, but
-//! onto a copy reopened from its current bytes (unsaved edits included). The
-//! preview and the printer both render from that copy, so the preview shows
-//! what prints.
+//! onto `EditSession::fork_for_print`'s copy of it (unsaved edits included,
+//! the parsed base shared, the document's history untouched). The preview and
+//! the printer both render from that copy, so the preview shows what prints.
 //!
 //! Under *Form fields only* the copy's pages are first emptied to their form
 //! fields (`EditSession::clear_page_content`) and it renders with
@@ -13,7 +13,7 @@
 //!
 //! The copy is rebuilt only when the applied lines or the document change. A
 //! text box applies its line when it loses focus, not per keystroke: a
-//! rebuild serialises and reparses the whole document.
+//! rebuild re-stamps every page.
 
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
@@ -22,7 +22,6 @@ use egui::Ui;
 use pdfcer_core::edit::EditSession;
 use pdfcer_core::page_tree::Page;
 use pdfcer_core::running_text::{RunningText, RunningTextAlign, RunningTextKind};
-use pdfcer_gui_base::settings::SettingsExt as _;
 use pdfcer_render::{AnnotationClass, AnnotationScope};
 
 use crate::app::state::OpenDoc;
@@ -190,7 +189,7 @@ fn stamps(lines: &[Line; 2]) -> Vec<RunningText> {
         .collect()
 }
 
-/// Reopen `doc` from its current bytes and stamp `stamps` on every page,
+/// Fork `doc` for print and stamp `stamps` on every page,
 /// first emptying the pages to what `scope` paints when it paints no page
 /// content.
 fn build(
@@ -202,13 +201,7 @@ fn build(
     for stamp in stamps {
         stamp.check().map_err(|e| tr::problem(&e))?;
     }
-    let options = doc.settings.save_options();
-    let (bytes, _) = doc
-        .session
-        .to_incremental_bytes(&options)
-        .map_err(|e| e.to_string())?;
-    let base = pdfcer_core::document::Document::from_bytes(bytes).map_err(|e| e.to_string())?;
-    let mut session = doc.settings.open_session(base);
+    let mut session = doc.session.fork_for_print();
     let cleared = !scope.paints_page_content();
     if cleared {
         session

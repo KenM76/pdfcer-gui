@@ -7925,7 +7925,7 @@ His words: *"I thought the newest version of pdfcer had a lot of new advanced pr
 
 **Scope.** Colour gets its own *Colour* tab, holding the output colour choices and colour management, so the features are found where Print windows put them.
 
-**Built.** Print has a *Colour* tab: colour, grey or black only, the printer's ICC profile, proof printing with its paper simulation, rendering intent and black-point compensation. Copies & Finishing keeps copies, imposition and finishing. Driven by `print_in_grey_or_black_only` and the ICC check, both re-pointed at the new tab. PDF-direct is O419, still open.
+**Built.** Print has a *Colour* tab: colour, grey or black only, the printer's ICC profile, proof printing with its paper simulation, rendering intent and black-point compensation. Copies & Finishing keeps copies, imposition and finishing. Driven by `print_in_grey_or_black_only` and the ICC check, both re-pointed at the new tab. PDF-direct is O419.
 
 ## O418 — **RELEASED in `v0.5.0-dev.20261112.2`**, driven by `print_settings_save_as_a_preset_and_come_back` — saved print presets, listed in a dropdown, with an editable list of preset folders
 
@@ -7943,6 +7943,8 @@ His words: *"we should also be able to save print setting configurations, and th
 ## O419 — **OPEN** — send the PDF straight to a printer that reads PDF (engine Pass 700.16)
 
 Part of O417's question: the one print feature of the pinned engine the Print window does not reach. `pdfcer print --pdf-direct auto|on|off` resolves an installed queue's port to IPP addresses (`pdfcer_print::queue_port`, `ipp::resolve_queue_port`), asks the printer whether it accepts `application/pdf`, and sends the file with Print-Job. Untried on real hardware by the engine, so the window must say which route was taken and why.
+
+**Built, awaiting Ken.** Print ▸ Pages has *Send the PDF itself when the printer reads it*. With it on, the window finds the queue's network address from its Windows port, asks the printer whether it reads PDF, and sends a plain job as the PDF; a job needing pdfcer's own layout prints through the driver and the line under the switch names why. Driven by `print_sends_the_pdf_itself` against a stand-in printer and falsified; not tried on a real printer.
 
 ## O420 — **RELEASED in `v0.5.0-dev.20261112.2`**, driven by `the_3d_viewer_walks_seen_from_behind` — the third-person walking view looks and acts like a video game's
 

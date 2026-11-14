@@ -35,6 +35,11 @@ impl Choice {
         self.bin = None;
     }
 
+    /// Whether a staple, punch or tray is chosen.
+    pub(super) fn chosen(&self) -> bool {
+        self.staple.is_some() || self.punch.is_some() || self.bin.is_some()
+    }
+
     /// The driver settings to spool with on `printer`.
     ///
     /// # Errors

@@ -18,5 +18,5 @@ reported "nothing new" while the print-route switches sat wanted since v0.146.0.
 **How to apply:** a loop tick checks the folder and the tags first (a new tag
 still releases promptly), then picks the next wanted row and builds it to the
 usual bar (driven check, gates). Prefer rows an imminent release would
-otherwise ship unconsumed. Related: [[feedback-never-defer-external]],
-[[feedback-engine-feature-unconsumed]].
+otherwise ship unconsumed. Related: [[feedback_never_defer_external]],
+[[feedback_engine_feature_unconsumed]].

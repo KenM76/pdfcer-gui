@@ -109,7 +109,7 @@
 - [A value can't name its producer](feedback_value_cannot_identify.md) — three arms emit `(0,0)`; trace the DECIDER.
 - [The wrong binary shows as an ABSENT line](feedback_tell_running_wrong.md) — a stale exe emits the OLD trace.
 - [The wrong axis is wrong by the ratio](feedback_measured_note_names.md) — 1683.8 is A1's SHORT side.
-- [You never ship the thing you measured](feedback_thing_measured_never.md) — the release relinks; 8M bytes differ, none real.
+- [You never ship the thing you measured](feedback_thing_measured_never.md) — the release relinks.
 - [One property differs; absence needs a witness](feedback_control_differs_one.md) — a healthy file satisfies it three ways.
 - [Field access is invisible to the drift gate](feedback_type_reached_field.md) — bind it, don't mention it.
 - [A census of what the program emits can't be completed](feedback_census_cannot_complete.md) — an incomplete one accuses live code.
@@ -119,7 +119,7 @@
 - [Scope a use-measurement as the language does](feedback_use_measurement.md) — a namesake discharges a twin.
 - [A guarded capability is not the file's](feedback_guarded_capability.md) — count when true: 15 files in 4,012.
 - [A detector's scope is a claim](feedback_detectors_scope_claim.md) — `-p X` or a partial feature set: green over less than the gate.
-- [An injected file is a dated snapshot](feedback_injected_file_dated.md) — 13 of 26 anchors weren't on disk; size warnings too.
+- [An injected file is a dated snapshot](feedback_injected_file_dated.md) — 13 of 26 anchors weren't on disk.
 - [A rewrite of a cell deletes what it held](feedback_rewrite_cell_deletes.md) — it held the only copy.
 - [A gesture named without its outcome](feedback_gesture_without.md) — drag copies, Shift moves; wrong 4h44m later.
 - [A falsification can lie both ways](feedback_falsification_lie.md) — red proves the check, not its parts.
@@ -186,9 +186,9 @@
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
 - [A leftover loop ran the harness live](feedback_loop_tail_ran_harness.md) — --no-input AND --check.
 - [Shared state measures run order](feedback_suite_shares_state.md) — [a sweep-only failure](feedback_passes_alone_trace.md); read its trace, name the mechanism.
-- [A replace-all verb drops keys](feedback_replace_all_verb.md) — A write verb that replaces a list drops every key its Rust type doesn't carry; disclose and file.
+- [A replace-all verb drops keys](feedback_replace_all_verb.md) — keys its type lacks are dropped; disclose and file.
 - [A control past the window's edge](feedback_read_layout_before_bug.md) — may just be below a scrolling fold; read the layout before saying bug.
-- [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice on 2026-11-06, mixed RAM kits; flaky compiles may be hardware.
+- [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice, mixed RAM; flaky compiles may be hardware.
 - [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it, drive what slid ahead.
-- [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — no frames after full screen; Fit click lands nowhere; solo passes.
-- [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — 78 wanted rows; wire a release's switch WITH the release, never "later".
+- [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — no frames after full screen; solo passes.
+- [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".

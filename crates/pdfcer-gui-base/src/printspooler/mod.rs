@@ -391,6 +391,35 @@ pub struct SpoolReport {
     pub image_reasons: Vec<String>,
     /// Every sheet's [`PageBitmap::tally`], summed.
     pub tally: VectorTally,
+    /// What separations did, when they were asked for. Filled by the caller
+    /// that rendered the plates; the spool itself knows only sheets.
+    pub plates: PlateTally,
+    /// Set when the job went to the printer as the PDF itself, not through
+    /// the driver: see [`DirectSent`].
+    pub direct: Option<DirectSent>,
+}
+
+/// A job that went to the printer as the PDF itself.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DirectSent {
+    /// The printer's IPP address.
+    pub uri: String,
+    pub receipt: network::NetReceipt,
+    /// What making the print-ready copy disclosed, each a sentence.
+    pub notes: Vec<String>,
+}
+
+/// A job's separation plates.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PlateTally {
+    /// Pages printed as plates.
+    pub pages: usize,
+    /// Plate sheets sent.
+    pub plates: usize,
+    /// Every ink that got a plate, each once, in first-seen order.
+    pub inks: Vec<String>,
+    /// Pages the engine could not separate, printed as composites.
+    pub refused: usize,
 }
 
 /// Where the `DEVMODE` a job was sent with came from. Maps to

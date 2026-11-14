@@ -164,9 +164,10 @@ impl Detail {
             && want.is_some()
         {
             let pdf = &frame.source().pages[frame.page];
+            let u = pdf.user_unit;
             let at = crate::render::region::region_on_screen(
                 shown.region,
-                (frame.size.0 as f32, frame.size.1 as f32),
+                ((frame.size.0 / u) as f32, (frame.size.1 / u) as f32),
                 crate::render::region::PageFrame::of(pdf),
                 frame.placed,
             );
@@ -221,8 +222,15 @@ impl Detail {
         let (x0, y0) = to_page(visible.min.x, visible.min.y);
         let (x1, y1) = to_page(visible.max.x, visible.max.y);
         let pdf = frame.source().pages.get(frame.page)?;
+        // `frame.size` is physical points; the region is box units.
+        let u = pdf.user_unit;
         let region = crate::render::region::page_region(
-            (x0.max(0.0), y0.max(0.0), x1.min(w), y1.min(h)),
+            (
+                x0.max(0.0) / u,
+                y0.max(0.0) / u,
+                x1.min(w) / u,
+                y1.min(h) / u,
+            ),
             crate::render::region::PageFrame::of(pdf),
         );
         Some(Want {

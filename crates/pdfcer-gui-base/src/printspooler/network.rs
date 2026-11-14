@@ -124,6 +124,12 @@ pub struct NetJob {
     pub ranges: Vec<(u32, u32)>,
     pub monochrome: bool,
     pub finishing: Finishing,
+    /// `print-scaling` (PWG 5100.13 §6.2.11): `fit`, `none`; `None` leaves
+    /// the printer's default.
+    pub scaling: Option<&'static str>,
+    /// `orientation-requested` (RFC 8011 §5.2.10): 3 portrait, 4 landscape.
+    pub orientation: Option<i32>,
+    pub uncollated: bool,
 }
 
 /// What the printer said when it took the job.
@@ -168,6 +174,9 @@ pub fn send(
     out.sides = job.sides;
     out.page_ranges.clone_from(&job.ranges);
     out.monochrome = job.monochrome;
+    out.print_scaling = job.scaling.map(str::to_owned);
+    out.orientation = job.orientation;
+    out.uncollated = job.uncollated;
     out.finishings = ipp_finishings(&job.finishing, printer.finishings.as_deref())
         .map_err(|refused| crate::text::print::network::refused_finishing(&refused))?;
     if let Some(bin) = &job.finishing.output_bin {

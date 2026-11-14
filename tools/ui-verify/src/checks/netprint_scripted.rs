@@ -57,7 +57,7 @@ impl Check for NetworkPrintReachesThePrinter {
 }
 
 /// The fake printer's received requests.
-type Jobs = Arc<Mutex<Vec<Vec<u8>>>>;
+pub(super) type Jobs = Arc<Mutex<Vec<Vec<u8>>>>;
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let ui_rect = ctx
@@ -205,12 +205,12 @@ fn delivered(session: &Session, jobs: &Jobs) -> Result<Option<String>> {
 }
 
 /// The IPP operation id of a request body.
-fn operation(body: &[u8]) -> Option<u16> {
+pub(super) fn operation(body: &[u8]) -> Option<u16> {
     Some(u16::from_be_bytes([*body.get(2)?, *body.get(3)?]))
 }
 
 /// Run the fake printer on a free local port; every request body lands in `jobs`.
-fn serve(jobs: Jobs) -> Result<u16> {
+pub(super) fn serve(jobs: Jobs) -> Result<u16> {
     let listener = TcpListener::bind("127.0.0.1:0").map_err(|e| Error::new(e.to_string()))?;
     let port = listener
         .local_addr()

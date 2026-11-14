@@ -579,6 +579,12 @@ pub mod print_poster;
 pub mod print_preview_detail;
 
 pub mod print_auto_paper;
+/// Send the PDF itself reaching a printer that reads PDF.
+pub mod print_direct;
+/// Colour ▸ Separations printing one sheet per ink.
+pub mod print_separations;
+/// `/UserUnit` pages printed at their physical size.
+pub mod print_user_unit;
 
 pub mod print_clip_claim;
 pub mod print_position;
