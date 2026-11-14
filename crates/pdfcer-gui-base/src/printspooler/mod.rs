@@ -328,6 +328,37 @@ pub struct PageBitmap {
     /// Why a page that was offered the vector route prints as an image;
     /// `None` when it went as vector or was never offered it.
     pub image_reason: Option<String>,
+    /// What the vector route did inside [`Self::metafile`]; zero otherwise.
+    pub tally: VectorTally,
+}
+
+/// What the vector route kept as vector graphics on a page, and what it
+/// could not. Counts from the engine's `EmfOutcome`, summed over a job.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct VectorTally {
+    /// Smooth shadings written as triangles.
+    pub gradients: usize,
+    /// Transparent or blended paints written as opaque regions.
+    pub transparent: usize,
+    /// Areas written as pixels inside the metafile, because they could not
+    /// be resolved to flat colour.
+    pub patches: usize,
+    /// Pages holding an embedded colour profile no transform could be built
+    /// from, so its colour fell back to the alternate space.
+    pub profiles_unused: usize,
+}
+
+impl VectorTally {
+    /// Both tallies added.
+    #[must_use]
+    pub const fn plus(self, other: Self) -> Self {
+        Self {
+            gradients: self.gradients + other.gradients,
+            transparent: self.transparent + other.transparent,
+            patches: self.patches + other.patches,
+            profiles_unused: self.profiles_unused + other.profiles_unused,
+        }
+    }
 }
 
 /// What a spool attempt did. Maps to `pdfcer_print::SpoolReport`.
@@ -358,6 +389,8 @@ pub struct SpoolReport {
     pub fell_back: usize,
     /// Why those sheets printed as images, each reason once.
     pub image_reasons: Vec<String>,
+    /// Every sheet's [`PageBitmap::tally`], summed.
+    pub tally: VectorTally,
 }
 
 /// Where the `DEVMODE` a job was sent with came from. Maps to

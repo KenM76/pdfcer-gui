@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **76 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `wanted` — a real gap — **68 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -125,15 +125,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Formatted field values and list-box rows** — module `pdfcer_core::field_display`, `SynthesizedAppearance::notes`, `DisplayNotes`, `DisplayCounts` | **wanted, at the pin since v0.145.0; X069.** Display needs no wiring: a field with no stored appearance is drawn through the engine's builder, which now applies the document's AF formatting and list-box rows. What is owed is `SynthesizedAppearance::notes`: a format the engine could not apply, or a list-box top index it ignored, changes what the field shows, and belongs off-canvas in the Forms panel beside the field. |
 | **Painted bounds for structure elements, non-text content included** — `pdfcer_core::structure_bounds::read_painted_bounds`, `StructureTree::element_painted_bounds`, `elements_without_painted_bounds` | **wanted, at the pin since v0.146.0; X076.** The Tags panel outlines a picked element from its text boxes only, so a figure or table cell with no text has no outline (O410). Reading painted bounds gives it the box of everything its content paints. |
 | **Draw a widget in its pressed (`/D`) or rollover (`/R`) look** — `RenderOptions::with_widget_state`, `RenderOptions::with_appearance_states`, `RenderOptions::widget_state`, `RenderOptions::appearance_states`, `RenderPolicy::widget_state`, `RenderPolicy::appearance_states`, `Diagnostics::annotations_state_fallback`, module `pdfcer_core::annot::appearance_kind`, `WidgetChrome::with_pressed`, `WidgetAppearances::appearance_in` | **wanted, at the pin since v0.146.0; X071.** The page view always draws `/N`. Pressing a button in Read mode could redraw that one widget in its `/D` look while the pointer is down, and hover its `/R`; the fallback count belongs on the status line. Never in print or export. |
-| **EMF pixel patches instead of approximations (opt-in)** — `EmfOptions::with_patch_approximations`, `pdfcer_emf::print_metafile_with` | **wanted, at the pin since v0.146.0.** `dialogs::print::route::plain_sheet` calls `print_metafile` with default `EmfOptions`, so a page whose overprint, group or blend the metafile would approximate prints as an image. A Print ▸ Pages switch would keep such pages vector with pixels only where needed; its receipt reason changes accordingly. |
-| **Vector flattener for the EMF print route** — overlapping transparent, blended and overprinted flat-colour artwork stays vector; `--vector-transparency`, crate `pdfcer-flatten`, modules `pdfcer_render::blend_flatten`, `pdfcer_render::mask_source`, `pdfcer_render::canvas` | **wanted, at the pin since v0.146.0.** The same Print ▸ Pages decision as the patch switch above, and the same call (`print_metafile_with`): overlapping transparent artwork stays vector. The three render modules are the machinery `pdfcer-emf` consumes; this shell holds none of their types. |
-| **EMF vector transparency: soft masks** — with `--vector-transparency`, `EmfVectorised` | **wanted, at the pin since v0.146.0.** Arrives with the flattener row above; nothing separate to wire. |
-| **EMF vector transparency: spot colorants** — with `--vector-transparency` | **wanted, at the pin since v0.146.0.** Arrives with the flattener row above; nothing separate to wire. |
-| **Smooth shadings as vector in EMF (opt-in)** — axial, radial and mesh shadings as Gouraud triangles; `EmfOptions::vector_shadings`, modules `pdfcer_render::gouraud` and `pdfcer_render::gouraud::mesh_bands` | **wanted, at the pin since v0.146.0.** A Print ▸ Pages switch on the vector route (and on EMF export), through `print_metafile_with`. The gouraud modules are the engine's triangulation, and `mesh_bands` is how an opaque mesh on a CMYK-blending page stays vector; nothing here holds their types. |
-| **EMF: patch a soft-masked layer only where its mask shows (opt-in)** — `EmfOptions::tight_mask_patches`, `EmfOptions::with_tight_mask_patches` | **wanted, at the pin since v0.147.0.** It acts only with `patch_approximations` or `vector_transparency`, neither of which this shell sets yet, so it lands with the Print ▸ Pages vector switches above, not alone. The engine's own caveat goes in its tooltip: text freed from a patch is drawn by the consumer and GDI does not antialias it. |
-| **EMF vector export of axial and radial shadings under transparency** — with `vector_transparency` and `vector_shadings` both set | **wanted, at the pin since v0.147.0.** Neither switch is set here yet; it arrives with the Print ▸ Pages vector switches above and needs nothing of its own. |
 | **EMF export: image soft masks counted apart from gradient masks** — `EmfNotFlat::soft_mask_image` | **wanted, at the pin since v0.147.0.** The EMF export receipt does not read the not-flat census, so it cannot yet say that a soft mask stayed raster because it holds an image. Small: one sentence in `text::export_image` from `EmfCounts`. |
-| **Print disclosure of unusable colour profiles** — `Diagnostics::icc_profiles_unmodelled`, `pdfcer_emf::print_export_with` | **wanted, at the pin since v0.146.0; X074.** The print receipt should say, per page, that an embedded colour profile fell back to its alternate. Needs `plain_sheet` to call `print_export_with` and keep the `EmfOutcome`. |
 | **Print by sending the PDF itself to printers that read PDF** — `pdfcer print --pdf-direct`, modules `pdfcer_print::ipp::port`, `pdfcer_print::queue_port` | **wanted, at the pin since v0.146.0.** A Print dialog route beside vector and image, offered only when the queue resolves to an IPP address that accepts `application/pdf`. Not tried on real hardware by the engine, so the receipt must say which route was taken and why. |
 | **Separation plates as vector EMF** — one metafile per ink (`export_emf_plates`), `pdfcer_render::plates::plate_pixmap`, `pdfcer_render::plates::probe_inks`, `pdfcer_render::display_list::record_page_for_plates` | **wanted, at the pin since v0.146.0; X072.** Belongs with *Separation plates as engine API* (G242): an Export ▸ Plates choice writing one metafile per ink, each plate's patch count disclosed. |
 | **Signature fields without an appearance get a built look** — module `pdfcer_core::widget_draw::signature`, `SynthesizedKind::Signature`, `SynthesizedKind::SignaturePlaceholder`, `DisplayNotes::signature_omitted`, `DisplayNotes::signature_text`, `SignRequest::appearance_image`, `SignReport::appearance_image_drawn` | **wanted, at the pin since v0.146.0; X071 part 3.** Display needs no wiring. Owed: the Sign window could offer a PNG or JPEG for the visible signature (`SignRequest::appearance_image`), and the report's `appearance_image_drawn` goes on its receipt. |
@@ -191,7 +183,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `blocked` — waiting on something named — **2 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -209,7 +201,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -220,7 +212,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `declined` — deliberately no surface — **20 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -266,7 +258,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **473 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-13; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **481 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -698,6 +690,14 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Print several files in one command** (engine row: —/[x]/[ ]) | **shipped — Tools ▸ Batch ▸ Batch print….** `dialogs::print::batch` opens each file as a document, plans it with the Print window's settings (`PrintDialog::plan`) and spools it as its own job through the same commit as the open document's print. Driven by `batch_print_prints_each_file` under `PDFCER_DIAG_PRINT_DRY_RUN`. |
 | **Print to a network printer by `ipp://` / `ipps://` URI** — `pdfcer_print::ipp::{query_printer, plan_ipp_job, send_ipp}` … | **shipped — File ▸ Print ▸ *Send to network printer…*; driven by `network_print_reaches_the_printer`.** `printspooler::network` still asks and sends through the engine's lower IPP primitives (`get_printer_attributes`, `post_ipp_http`); moving it onto `query_printer` / `plan_ipp_job` / `send_ipp` is owed (G240, listed under the v0.107.0 arrivals). |
 | **Print finishing** — engine API `pdfcer_print::ipp::check_finishing` … | **shipped for network printers — the same window offers only the staples, punches, folds and output trays the printer lists, checked through `pdfcer_print::finishing::ipp_finishings`.** Owed with the move above: `check_finishing`, and finishing on a Windows queue. |
+| **EMF pixel patches instead of approximations (opt-in)** — `EmfOptions::with_patch_approximations`, `pdfcer_emf::print_metafile_with` | **shipped — Print ▸ Pages under *Print as image*: *Gradients as vector graphics*, *Transparency as vector graphics* and, under it, *Smaller picture areas*; remembered, and driven by `print_sends_vector_unless_as_image` on `transparency-cmyk.pdf` and `object-disagreements.pdf`.** `dialogs::print::route::plain_sheet` calls `print_export_with`; *Transparency as vector graphics* sets `vector_transparency`, which turns patch approximations on. The receipt counts the areas sent as pictures inside their pages (`EmfOutcome::patches`). |
+| **Vector flattener for the EMF print route** — overlapping transparent, blended and overprinted flat-colour artwork stays vector; `--vector-transparency`, crate `pdfcer-flatten`, modules `pdfcer_render::blend_flatten`, `pdfcer_render::mask_source`, `pdfcer_render::canvas` | **shipped — Print ▸ Pages under *Print as image*: *Gradients as vector graphics*, *Transparency as vector graphics* and, under it, *Smaller picture areas*; remembered, and driven by `print_sends_vector_unless_as_image` on `transparency-cmyk.pdf` and `object-disagreements.pdf`.** `EmfOptions::with_vector_transparency`; the page's kept count (`EmfOutcome::vectorised`) is on the `print-vector` trace line. |
+| **EMF vector transparency: soft masks** — with `--vector-transparency`, `EmfVectorised` | **shipped with the flattener row above** — nothing separate to wire. |
+| **EMF vector transparency: spot colorants** — with `--vector-transparency` | **shipped with the flattener row above** — nothing separate to wire. |
+| **Smooth shadings as vector in EMF (opt-in)** — axial, radial and mesh shadings as Gouraud triangles; `EmfOptions::vector_shadings`, modules `pdfcer_render::gouraud` and `pdfcer_render::gouraud::mesh_bands` | **shipped for printing — Print ▸ Pages under *Print as image*: *Gradients as vector graphics*, *Transparency as vector graphics* and, under it, *Smaller picture areas*; remembered, and driven by `print_sends_vector_unless_as_image` on `transparency-cmyk.pdf` and `object-disagreements.pdf`.** `EmfOptions::with_vector_shadings`; the kept count (`EmfOutcome::shadings`) is on the `print-vector` trace line. File ▸ Export ▸ EMF does not set it yet. |
+| **EMF: patch a soft-masked layer only where its mask shows (opt-in)** — `EmfOptions::tight_mask_patches`, `EmfOptions::with_tight_mask_patches` | **shipped — *Smaller picture areas*, shown only while *Transparency as vector graphics* is on.** Its tooltip carries the engine's caveat that the driver does not smooth text freed from a patch. |
+| **EMF vector export of axial and radial shadings under transparency** — with `vector_transparency` and `vector_shadings` both set | **shipped with the two switches above** — nothing separate to wire. |
+| **Print disclosure of unusable colour profiles** — `Diagnostics::icc_profiles_unmodelled`, `pdfcer_emf::print_export_with` | **shipped — X074.** `plain_sheet` keeps the `EmfOutcome` (and, on the image route, the render's `Diagnostics`); the note after the job counts the pages on which a profile fell back to its alternate. |
 
 ### Shell & UX
 

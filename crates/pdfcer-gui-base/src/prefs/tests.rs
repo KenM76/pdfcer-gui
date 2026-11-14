@@ -266,6 +266,11 @@ fn every_preference_round_trips_through_the_file() {
                             simulate_paper: true,
                         },
                         edges: crate::prefs::print_edges::EdgeChoice::Off,
+                        vector: crate::prefs::print_route::VectorRoute {
+                            gradients: false,
+                            transparency: true,
+                            tight_patches: true,
+                        },
                     },
                     // Off-page display, and every one of these three is
                     // the OPPOSITE of what that mode ships — Read ships off,
@@ -837,6 +842,11 @@ fn the_writer_emits_no_key_the_parser_rejects() {
                 simulate_paper: false,
             },
             edges: crate::prefs::print_edges::EdgeChoice::Off,
+            vector: crate::prefs::print_route::VectorRoute {
+                gradients: true,
+                transparency: false,
+                tight_patches: false,
+            },
         },
         // Off-page display. A DIFFERENT set from the round-trip test
         // above, per this test's own rule, and one of the mode ids carries

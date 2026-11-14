@@ -294,6 +294,7 @@ pub(super) fn render_sheet(
         page_pt: printable,
         metafile: None,
         image_reason: None,
+        tally: super::spooler::VectorTally::default(),
     })
 }
 

@@ -333,6 +333,7 @@ impl PrintDialog {
         self.max_dpi = remembered.max_dpi;
         self.edges = remembered.edges;
         self.print_as_image = remembered.print_as_image;
+        self.vector_route = remembered.vector;
         self.device.orientation = remembered.orientation;
         self.device.duplex = remembered.duplex;
         self.device.pick_tray_by_page_size = remembered.pick_tray_by_page_size;

@@ -45,6 +45,12 @@ impl PrintDialog {
                 &report.image_reasons,
             ));
         }
+        if report.tally.patches > 0 {
+            notes.push(t::route::patched(report.tally.patches));
+        }
+        if report.tally.profiles_unused > 0 {
+            notes.push(t::route::profiles_unused(report.tally.profiles_unused));
+        }
         // Both sentences in ONE call. `record_notes`' own doc comment records
         // why: the slot holds a single disclosure, so a second `record_note`
         // REPLACES the first rather than joining it, and which one survived
@@ -270,6 +276,7 @@ fn render_tile(
             page_pt: (s.width, s.height),
             metafile: None,
             image_reason: None,
+            tally: spooler::VectorTally::default(),
         });
     }
     let label = tile.labels.then(|| tile.label(name));
@@ -293,6 +300,7 @@ fn render_tile(
         page_pt: tile.extent_pt(),
         metafile: None,
         image_reason: None,
+        tally: spooler::VectorTally::default(),
     })
 }
 
@@ -365,6 +373,7 @@ mod tests {
             vector_sheets: 0,
             fell_back: 0,
             image_reasons: Vec::new(),
+            tally: spooler::VectorTally::default(),
         }
     }
 
@@ -399,6 +408,25 @@ mod tests {
             PrintDialog::commit_notes(Ok(&clean)).map(|n| n.len()),
             Some(1)
         );
+    }
+
+    /// Picture areas inside vector pages, and pages whose colour profile
+    /// could not be used, each add a sentence; a job with neither adds none.
+    #[test]
+    fn patches_and_unused_profiles_are_disclosed() {
+        let mut ok = report(3, SettingsSource::DriverSupplied);
+        ok.tally = spooler::VectorTally {
+            gradients: 5,
+            transparent: 2,
+            patches: 2,
+            profiles_unused: 1,
+        };
+        let notes = PrintDialog::commit_notes(Ok(&ok)).expect("a receipt");
+        assert!(notes.iter().any(|n| n.starts_with("2 areas")), "{notes:?}");
+        assert!(notes.iter().any(|n| n.starts_with("On 1 page")), "{notes:?}");
+        ok.tally.patches = 0;
+        ok.tally.profiles_unused = 0;
+        assert_eq!(PrintDialog::commit_notes(Ok(&ok)).map(|n| n.len()), Some(1));
     }
 
     /// **A FAILED print leaves the window open**, and the asymmetry is

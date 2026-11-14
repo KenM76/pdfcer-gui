@@ -52,5 +52,14 @@ pub const REGION_RESOLUTION: &str = "print.resolution";
 /// The Print as image switch on the Pages tab.
 pub const REGION_PRINT_AS_IMAGE: &str = "print.as-image";
 
+/// The Vector gradients switch under it, drawn while it is unticked.
+pub const REGION_PRINT_VECTOR_GRADIENTS: &str = "print.vector-gradients";
+
+/// The Vector transparency switch, beside [`REGION_PRINT_VECTOR_GRADIENTS`].
+pub const REGION_PRINT_VECTOR_TRANSPARENCY: &str = "print.vector-transparency";
+
+/// The Smaller picture areas switch, drawn while vector transparency is on.
+pub const REGION_PRINT_TIGHT_PATCHES: &str = "print.tight-patches";
+
 /// One region per colour choice, suffixed with the choice's trace word.
 pub const REGION_COLOUR_PREFIX: &str = "print.colour.";

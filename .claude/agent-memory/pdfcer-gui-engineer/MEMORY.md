@@ -191,3 +191,4 @@
 - [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice on 2026-11-06, mixed RAM kits; flaky compiles may be hardware.
 - [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it, drive what slid ahead.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — no frames after full screen; Fit click lands nowhere; solo passes.
+- [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — 78 wanted rows; wire a release's switch WITH the release, never "later".

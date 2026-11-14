@@ -2,7 +2,7 @@
 //! with the traces that record what was sent and how each sheet travelled.
 
 use super::{
-    DeviceSettings, DriverConfig, PageBitmap, SettingsSource, SpoolReport, Unavailable,
+    DeviceSettings, DriverConfig, PageBitmap, SettingsSource, SpoolReport, Unavailable, VectorTally,
     to_engine_bitmap, to_engine_settings,
 };
 
@@ -97,15 +97,22 @@ fn from_engine_report(
         }
     }
     let fell_back = bitmaps.iter().filter(|b| b.image_reason.is_some()).count();
+    let tally = bitmaps
+        .iter()
+        .fold(VectorTally::default(), |sum, b| sum.plus(b.tally));
     crate::diag::trace(|| {
         format!(
             // ui-text-exempt: diagnostic trace, never displayed in the UI
-            "print-spool-done printer={printer} pages={} printed={} dpi={:?} clipped={} job_id={:?} vector={vector_sheets} fell_back={fell_back} why={}",
+            "print-spool-done printer={printer} pages={} printed={} dpi={:?} clipped={} job_id={:?} vector={vector_sheets} fell_back={fell_back} gradients={} transparent={} patches={} profiles_unused={} why={}",
             report.pages,
             report.printed,
             report.dpi,
             report.clipped_pages,
             report.job_id,
+            tally.gradients,
+            tally.transparent,
+            tally.patches,
+            tally.profiles_unused,
             image_reasons.join("|"),
         )
     });
@@ -124,6 +131,7 @@ fn from_engine_report(
         vector_sheets,
         fell_back,
         image_reasons,
+        tally,
     }
 }
 

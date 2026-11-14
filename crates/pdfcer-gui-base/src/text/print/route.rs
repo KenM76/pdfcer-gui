@@ -12,8 +12,81 @@ pub const fn as_image_hover() -> &'static str {
     "pdfcer sends text and lines to the printer as vector graphics, so they \
      print sharp at the printer's own resolution. Tick this to send each page \
      as a picture at the resolution above instead: slower and larger, for a \
-     printer that draws a page wrongly. A page with transparency or shading \
-     prints as a picture either way."
+     printer that draws a page wrongly."
+}
+
+/// The switch keeping gradients vector.
+#[must_use]
+pub const fn vector_gradients() -> &'static str {
+    "Gradients as vector graphics"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn vector_gradients_hover() -> &'static str {
+    "Send smooth colour gradients as fine vector triangles, which print sharp \
+     and match the screen to within a shade. Untick it if this printer draws \
+     gradients wrongly: a page with a gradient is then sent as a picture."
+}
+
+/// The switch keeping transparency vector.
+#[must_use]
+pub const fn vector_transparency() -> &'static str {
+    "Transparency as vector graphics"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn vector_transparency_hover() -> &'static str {
+    "Send see-through, blended and overprinted artwork as vector graphics, \
+     already combined with what lies under it. Where it sits over a photo, a \
+     gradient or a soft edge, that small area goes as a picture inside the \
+     page. Untick it to send any page with transparency as a picture."
+}
+
+/// The switch shrinking those picture areas.
+#[must_use]
+pub const fn tight_patches() -> &'static str {
+    "Smaller picture areas"
+}
+
+/// Hover on it.
+#[must_use]
+pub const fn tight_patches_hover() -> &'static str {
+    "Cut those picture areas down to where a soft edge actually shows. Text \
+     taken out of a picture area is drawn by the printer driver, which does \
+     not smooth it, so at the resolution above it can look rougher."
+}
+
+/// After a job whose vector pages held picture areas.
+#[must_use]
+pub fn patched(areas: usize) -> String {
+    if areas == 1 {
+        "1 area that could not be drawn as vector graphics was sent as a picture \
+         inside its page."
+            .to_owned()
+    } else {
+        format!(
+            "{areas} areas that could not be drawn as vector graphics were sent as \
+             pictures inside their pages."
+        )
+    }
+}
+
+/// After a job some of whose pages hold a colour profile that could not be
+/// used.
+#[must_use]
+pub fn profiles_unused(pages: usize) -> String {
+    if pages == 1 {
+        "On 1 page a colour profile could not be used, so its colours printed \
+         from the fallback colours the document names."
+            .to_owned()
+    } else {
+        format!(
+            "On {pages} pages a colour profile could not be used, so their colours \
+             printed from the fallback colours the document names."
+        )
+    }
 }
 
 /// Why the switch makes no difference to this job: grey or black only.

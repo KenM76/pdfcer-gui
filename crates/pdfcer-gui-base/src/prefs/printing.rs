@@ -93,6 +93,8 @@ pub struct PrintPrefs {
     pub colour: super::print_colour::PrintColourPrefs,
     /// Smoothed or hard edges on printed sheets.
     pub edges: super::print_edges::EdgeChoice,
+    /// What the vector route may keep as vector graphics.
+    pub vector: super::print_route::VectorRoute,
 }
 
 /// Print every line at one width.
@@ -187,6 +189,7 @@ impl Default for PrintPrefs {
             impose: super::print_impose::ImposePrefs::default(),
             colour: super::print_colour::PrintColourPrefs::default(),
             edges: super::print_edges::EdgeChoice::Auto,
+            vector: super::print_route::VectorRoute::default(),
         }
     }
 }
@@ -732,6 +735,7 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
     super::print_impose::write_block(prefs, out);
     super::print_colour::write_block(prefs, out);
     super::print_edges::write_block(prefs, out);
+    super::print_route::write_block(prefs, out);
 }
 
 #[cfg(test)]

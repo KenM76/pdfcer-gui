@@ -260,6 +260,8 @@ pub struct PrintDialog {
     edges: pdfcer_gui_base::prefs::print_edges::EdgeChoice,
     /// Send every page as an image; see [`route`].
     print_as_image: bool,
+    /// What the vector route may keep as vector graphics.
+    vector_route: pdfcer_gui_base::prefs::print_route::VectorRoute,
     /// What the password that opened the document allows; set by each plan.
     permission: permission::Permission,
     /// Driver-level settings: orientation, duplex, tray choice, paper.
@@ -553,6 +555,7 @@ impl PrintDialog {
             max_dpi: remembered.max_dpi,
             edges: remembered.edges,
             print_as_image: remembered.print_as_image,
+            vector_route: remembered.vector,
             permission: permission::Permission::default(),
             device: DeviceSettings {
                 orientation: remembered.orientation,

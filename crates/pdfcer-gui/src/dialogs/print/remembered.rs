@@ -33,6 +33,7 @@ impl PrintDialog {
             lines: self.lines,
             colour: self.icc.prefs.clone(),
             edges: self.edges,
+            vector: self.vector_route,
         };
         super::presets::keep_own_habits(&self.presets, &mut habits, &self.opened_with);
         habits

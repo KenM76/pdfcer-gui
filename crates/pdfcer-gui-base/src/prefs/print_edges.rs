@@ -65,7 +65,7 @@ impl EdgeChoice {
 pub(super) fn parse_key(prefs: &mut PrintPrefs, key: &str, value: &str) -> KeyOutcome {
     // ui-text-exempt: file KEY, parsed out of preferences.txt.
     if key != "print_edge_smoothing" {
-        return KeyOutcome::NotMine;
+        return super::print_route::parse_key(prefs, key, value);
     }
     match EDGE_CHOICES.iter().find(|(_, t)| *t == value) {
         Some((choice, _)) => {
