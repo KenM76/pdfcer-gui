@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: b8f6649f6600c08b3dff8dadba481637613d842a
+# baseline: a872d3fb7240b81c0fba323236e4721dc06ad155
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11987
+# items: 11988
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -10847,6 +10847,7 @@ pdfcer-render const pdfcer_render::gouraud::MIN_BAND_PX
 pdfcer-render const pdfcer_render::gouraud::OVERLAP_STEP
 pdfcer-render const pdfcer_render::gouraud::SAG_PX
 pdfcer-render const pdfcer_render::gouraud::STEP
+pdfcer-render const pdfcer_render::gouraud::mesh_bands::MIN_PIECE_PX
 pdfcer-render const pdfcer_render::gstate::MAX_Q_DEPTH
 pdfcer-render const pdfcer_render::interpret::MAX_XOBJECT_DEPTH
 pdfcer-render const pdfcer_render::interpret::SUBPIXEL_CULL_PX
