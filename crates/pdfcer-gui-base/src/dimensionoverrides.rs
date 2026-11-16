@@ -335,8 +335,14 @@ fn row<'a, T: Copy>(
     }
 }
 
+/// The denominator combo's trace region; each option publishes `<this>.<d>`.
+pub const REGION_DENOMINATOR: &str = "precision.denominator"; // ui-text-exempt: trace region name, never displayed
+/// The lowest-terms checkbox's trace region.
+pub const REGION_REDUCE: &str = "precision.reduce"; // ui-text-exempt: trace region name, never displayed
+
 /// The precision editor — a mode, then the control that mode implies.
-fn fraction_editor(ui: &mut Ui, value: &mut FractionMode) {
+/// Shared with the Dimension groups tab, which edits a group's format.
+pub fn fraction_editor(ui: &mut Ui, value: &mut FractionMode) {
     let is_decimal = matches!(value, FractionMode::Decimal { .. });
     ui.horizontal(|ui| {
         if ui
@@ -351,11 +357,10 @@ fn fraction_editor(ui: &mut Ui, value: &mut FractionMode) {
             .clicked()
             && is_decimal
         {
-            // 8ths, and `reduce: false` — the architectural convention the
-            // engine's own doc names. See `precision_reduce_hint`.
+            // 8ths in lowest terms; the checkbox keeps the denominator.
             *value = FractionMode::Fraction {
                 denominator: 8,
-                reduce: false,
+                reduce: true,
             };
         }
     });
@@ -372,15 +377,22 @@ fn fraction_editor(ui: &mut Ui, value: &mut FractionMode) {
         } => {
             ui.horizontal(|ui| {
                 ui.label(t::precision_denominator());
-                egui::ComboBox::from_id_salt("dimension-override-denominator")
+                let combo = egui::ComboBox::from_id_salt("dimension-override-denominator")
                     .selected_text(t::precision_denominator_entry(*denominator))
                     .show_ui(ui, |ui| {
                         for d in DENOMINATORS {
-                            ui.selectable_value(denominator, d, t::precision_denominator_entry(d));
+                            let row = ui.selectable_value(
+                                denominator,
+                                d,
+                                t::precision_denominator_entry(d),
+                            );
+                            crate::diag::ui_rect(&format!("{REGION_DENOMINATOR}.{d}"), row.rect);
                         }
                     });
+                crate::diag::ui_rect(REGION_DENOMINATOR, combo.response.rect);
             });
-            ui.checkbox(reduce, t::precision_reduce());
+            let r = ui.checkbox(reduce, t::precision_reduce());
+            crate::diag::ui_rect(REGION_REDUCE, r.rect);
             ui.weak(t::precision_reduce_hint());
         }
     }

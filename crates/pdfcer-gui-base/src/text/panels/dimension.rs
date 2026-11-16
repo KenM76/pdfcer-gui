@@ -238,11 +238,11 @@ pub const fn precision_reduce() -> &'static str {
     "Reduce the fraction"
 }
 
-/// Why *not* reducing is the drafting convention rather than an oversight.
+/// What the reduce switch does, both ways.
 #[must_use]
 pub const fn precision_reduce_hint() -> &'static str {
-    "Architectural drawings usually keep the denominator — 6/8 rather than \
-     3/4 — so the run of dimensions along an elevation reads at a glance."
+    "On, 6/8 reads 3/4. Off keeps the denominator, as some architectural \
+     drawings do so a run of dimensions reads at a glance."
 }
 
 /// A decimal marker, as it is written.
@@ -350,7 +350,7 @@ pub const fn tolerance_places_follows() -> &'static str {
 /// The label-override section's heading.
 #[must_use]
 pub const fn label_heading() -> &'static str {
-    "What it says"
+    "Override dimension"
 }
 
 /// The hint under the box.

@@ -619,15 +619,15 @@ const FRACTIONS: &[FractionMode] = &[
     FractionMode::Decimal { places: 3 },
     FractionMode::Fraction {
         denominator: 8,
-        reduce: false,
+        reduce: true,
     },
     FractionMode::Fraction {
         denominator: 16,
-        reduce: false,
+        reduce: true,
     },
     FractionMode::Fraction {
         denominator: 32,
-        reduce: false,
+        reduce: true,
     },
 ];
 

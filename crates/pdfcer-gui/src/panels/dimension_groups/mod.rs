@@ -15,6 +15,9 @@ use crate::app::actions::dimensions::DimensionAction;
 use crate::app::state::OpenDoc;
 use crate::text::dimension_groups as t;
 
+/// The region the group's number-style editor publishes.
+pub const REGION_NUMBER_STYLE: &str = "dimension-groups.number-style"; // ui-text-exempt: trace region name, never displayed
+
 /// The region this dialog publishes for its body.
 pub const REGION_BODY: &str = "panel:dimension-groups"; // ui-text-exempt: trace region name, never displayed
 
@@ -385,6 +388,24 @@ impl DimensionGroupsUi {
                 }
             });
             ui.weak(t::unit_hint());
+
+            // --- number style -----------------------------------------------
+            //
+            // Decimals or fractions for every member, through the same
+            // `set_group_scale` the Scale dialog commits.
+            crate::diag::ui_rect(REGION_NUMBER_STYLE, ui.available_rect_before_wrap());
+            ui.label(t::number_style_label());
+            let mut fraction = group.format.fraction;
+            pdfcer_gui_base::dimensionoverrides::fraction_editor(ui, &mut fraction);
+            if fraction != group.format.fraction {
+                let mut format = group.format;
+                format.fraction = fraction;
+                actions.push(Action::Dimension(DimensionAction::SetGroupScale {
+                    group: group.id,
+                    scale: group.scale,
+                    format,
+                }));
+            }
         });
 
         // --- drafting standard ------------------------------------------

@@ -274,6 +274,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         // it reuses is broken, so failing in that order reads as a diagnosis.
         Box::new(measure_calibrate::MeasureCalibratesByPickingTwoPoints),
         Box::new(group_unit_converts::ChangingAGroupsUnitKeepsItsRealLengths),
+        Box::new(group_fraction_reduces::AGroupsFractionsReduceToLowestTerms),
         Box::new(dimension_tool_options::AHorizontalDimensionMeasuresOnlyTheRun),
         Box::new(dimension_tool_options::ADimensionJoinsTheGroupMadeInToolOptions),
         Box::new(dimension_tool_options::ANewGroupCopiesAGroupsScaleInItsOwnUnit),

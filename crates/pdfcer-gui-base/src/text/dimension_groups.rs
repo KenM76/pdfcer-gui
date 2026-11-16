@@ -324,6 +324,12 @@ pub const fn unit_hint() -> &'static str {
      setting the scale does. The scale itself is not changed."
 }
 
+/// The label over a group's decimals-or-fractions editor.
+#[must_use]
+pub const fn number_style_label() -> &'static str {
+    "Numbers"
+}
+
 /// The heading over the appearance defaults.
 #[must_use]
 pub const fn appearance_heading() -> &'static str {

@@ -94,7 +94,8 @@ fn launch(ctx: &CheckContext, report: &mut CheckReport) -> Result<(Session, Scri
 }
 
 /// Click `region` where it was last declared; an error naming it when it is not.
-fn press(
+/// Click the centre of `region`, wherever it was last declared, and settle.
+pub(super) fn press(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,

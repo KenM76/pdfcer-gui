@@ -7976,3 +7976,59 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 5. **Page box sizes overview**: every page's media, crop, bleed, trim and art box sizes, in the chosen unit, with which are written and which are inherited.
 
 **Built, item 4.** Pages ▸ Crop… has a *Box* choice — Crop, Bleed, Trim, Art — which reseeds the margins from that box on the first page. Bleed, trim and art have *Set to zero* (the whole paper) and *Remove* (back to the crop box); every box has *Same margin on every edge*, *Back to the marked region* when opened by Crop to region, a picture of the page with the box outlined, and the new box's size. Remove white margins is offered with Crop only. Driven: `crop_window_sets_the_trim_box`, which plants a trim box and requires the engine to report a `/TrimBox` written. **Built, item 5:** Document properties ▸ *Page box sizes* lists every page's five box sizes in mm, inches or points, pages with the same boxes in one entry, each box marked written or default (cut or unusable when so); driven by `document_properties_list_page_box_sizes`. A box inherited from a parent page-tree node shows as written, because the engine does not distinguish it from the page's own. **Built, item 3:** View ▸ Display ▸ *Page boxes* outlines every written trim box (solid), bleed box (dashed) and art box (dotted), each in its own colour; pages that write none show nothing, and it is screen only. Driven: `view_page_boxes_outlines_trim_and_bleed`, which requires the outlines where the fixture's numbers put them and that a second press turns them off. **Built, items 1–2.** Output Preview has a *Simulate* list — the document's output intent and every installed CMYK output profile — with *Simulate paper colour* and *Simulate black ink*; the status bar says when colours simulate a press. It says whether the page uses overprint and whether that changes the print. *Warnings* has *Total area coverage over* (default 300%) and *Rich black from black at* (default 95%), each a switch and threshold beside its colour, painted over the part of the page on screen at a chosen *Warning opacity*; the panel says per rule whether anything on screen was found. Driven: `output_preview_soft_proof`, `output_preview_overprint` (set and changes nothing on one fixture, changes the print on another) and `output_preview_coverage_warnings` (only the patches past each threshold are coloured, checked in a screenshot, and 50% opacity lets the page through). Differs from the scope as written: the warnings follow the separations view rather than the panel, and the view stays on when the panel is closed, as it already did; the status bar says while it is on. Both rules on is *Show all*.
+
+## O422 — **OPEN** — extracting pages keeps the dimension group presets
+
+*"When I extract a page from a dxf the copy doesn't keep the group presets of dimensions."* Extracted pages keep their ce dimensions; the copy must also carry the document's dimension groups (scale, units, display) so the dimensions read the same in it.
+
+**Waiting on the engine (G279).** Extract builds a new file without the document's ce-dimension record, so groups and member records do not travel. No GUI workaround.
+
+## O423 — **OPEN** — dragging a dimension's text moves it the way dragging its line does, with a live preview
+
+*"When I drag the text of a dimension I should be able to perform the same movement as when I select the dimension line. Also needs a live preview."*
+
+## O424 — **OPEN** — the 3D window and its PDF window minimise, maximise and take focus independently; closing the PDF asks about its 3D window
+
+*"Minimizing, maximizing or clicking on the 3D window or the parent pdf window should act independently of each other. Closing the parent pdf window should prompt to close the 3d window for that pdf if it is open. The 3d window still closes and leaves the parent pdf open without prompting to close it too."* Follows O278.
+
+## O425 — **BUILT, awaiting Ken** — dimension fractions reduce to lowest terms
+
+*"Dimensions should round to the lowest common denominator."* A fractional readout shows 1/2, not 4/8.
+
+**Built.** Every fraction choice starts in lowest terms; *Lowest terms* in the editor keeps or drops the denominator. New feet-and-inches groups and unit switches still start unreduced: that default is the engine's, asked for as G278. Driven by `a_groups_fractions_reduce_to_lowest_terms`.
+
+## O426 — **BUILT, awaiting Ken** — the dimension properties field reads *Override dimension*, not *What it says*
+
+*"With properties: instead of 'What it says' It should say 'Override Dimension'."*
+
+**Built.** The field reads *Override dimension*.
+
+## O427 — **OPEN** — dimension the parts of markup shapes, text boxes included
+
+*"I should be able to dimension components of markup shapes including text boxes."* Snap and measure to their edges, corners and centres.
+
+## O428 — **BUILT, awaiting Ken** — the Dimension groups tab edits how units are displayed
+
+*"From the 'Dimension groups' tab I can't edit how Units are displayed (number of decimals to show fractions, etc). I have to go to 'Set Scale' to change it."*
+
+**Built.** The tab's scale section has *Numbers*: decimals or fractions, the denominator and *Lowest terms*, applied to every member at once. Driven by `a_groups_fractions_reduce_to_lowest_terms`.
+
+## O429 — **OPEN** — Shift snaps drawing to angle steps in every tool; Escape finishes a multi-point shape instead of discarding it
+
+*"Pressing shift when drawing a line, etc should make it snap to degree increments like rotating does. Any object that should support this behaviour needs to be made to do it. Also for tools like the 'draw a line with corners on it', 'draw a closed shape' and etc escape should finish the command and commit the work, not cancel it."* Follows O223.
+
+## O430 — **OPEN** — markups move forward and back in the stacking order; a click picks the topmost markup actually under the pointer
+
+*"I can't move markup items forward or back in the layer stack. Also If I try to select an item by clicking on it, if there is a markup higher in the stack and its bounding box surrounds the area, it gets selected instead."*
+
+## O431 — **OPEN** — ordinary text and paragraph tools on the Markup tab
+
+*"There should be an ordinary text and paragraph tool on the Markup menu."*
+
+## O432 — **OPEN** — the markup text box edits with a live preview, as Acrobat's does
+
+*"Why does the Markup Text box still not edit with a live preview? Is it working the same way Acrobat does it?"*
+
+## O433 — **OPEN** — group items together as Inkscape does
+
+*"I need to be able to group items together the same way it works in Inkscape."* Group, ungroup, a click selects the group, enter a group to edit a member.

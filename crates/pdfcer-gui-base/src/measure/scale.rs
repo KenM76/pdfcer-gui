@@ -301,7 +301,7 @@ impl ScaleEntryFields {
                 // `set_group_standard`, not by this dialog.
                 decimal_marker: preview.unit.default_format().decimal_marker,
             },
-            None => preview.unit.default_format(),
+            None => in_lowest_terms(preview.unit.default_format()),
         };
         Some((
             ScaleState::Calibrated {
@@ -428,6 +428,16 @@ impl ScalePick {
 // `measure.manage_groups` cited "two of four verbs do not exist" for months.
 // That citation was accurate when written and outlived its own subject.
 
+/// The unit's own number style with any fraction in lowest terms, so 6/8
+/// reads 3/4 unless the operator asks to keep the denominator.
+#[must_use]
+pub fn in_lowest_terms(mut format: NumberFormat) -> NumberFormat {
+    if let FractionMode::Fraction { reduce, .. } = &mut format.fraction {
+        *reduce = true;
+    }
+    format
+}
+
 #[cfg(test)]
 #[allow(
     clippy::unwrap_used,
@@ -549,15 +559,18 @@ mod tests {
     }
 
     #[test]
-    fn with_no_explicit_choice_the_units_default_format_is_used() {
-        let f = calibrated(Unit::Inch);
+    fn with_no_explicit_choice_the_units_default_format_is_used_in_lowest_terms() {
+        let f = calibrated(Unit::FeetInches);
         let (_scale, format) = f.commit(Some(200.0)).expect("commits");
         assert_eq!(
             format,
-            Unit::Inch.default_format(),
-            "an operator who never opens the display controls must get the \
-             unchanged behaviour"
+            in_lowest_terms(Unit::FeetInches.default_format()),
+            "an operator who never opens the display controls gets the unit's own style, in lowest terms"
         );
+        assert!(matches!(
+            format.fraction,
+            FractionMode::Fraction { reduce: true, .. }
+        ));
     }
 
     /// **The operator's ask.** An explicit fraction choice reaches the format.

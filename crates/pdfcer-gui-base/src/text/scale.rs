@@ -121,17 +121,12 @@ pub fn fraction_name(fraction: Option<FractionMode>) -> &'static str {
         Some(FractionMode::Decimal { places: 2 }) => "Two decimal places",
         Some(FractionMode::Decimal { places: 3 }) => "Three decimal places",
         Some(FractionMode::Decimal { .. }) => "Decimal",
+        Some(FractionMode::Fraction { denominator: 8, .. }) => "Eighths (1/8)",
         Some(FractionMode::Fraction {
-            denominator: 8,
-            reduce: false,
-        }) => "Eighths (1/8)",
-        Some(FractionMode::Fraction {
-            denominator: 16,
-            reduce: false,
+            denominator: 16, ..
         }) => "Sixteenths (1/16)",
         Some(FractionMode::Fraction {
-            denominator: 32,
-            reduce: false,
+            denominator: 32, ..
         }) => "Thirty-seconds (1/32)",
         Some(FractionMode::Fraction { .. }) => "Fractions",
     }

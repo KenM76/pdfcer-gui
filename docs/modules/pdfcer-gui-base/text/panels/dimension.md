@@ -173,9 +173,8 @@ value.
 
 ### `fn label_heading`
 
-*"What it says"*, not *"Label"* or *"Text"*. The operator is choosing
-between the measured number and their own words, and the heading that makes
-that obvious is the one phrased as the question they are answering.
+*"Override dimension"* — the operator's own words for it, and the
+term CAD tools use for text that replaces a measured value.
 
 ### `fn label_hint`
 
