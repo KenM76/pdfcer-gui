@@ -56,14 +56,32 @@ A guard against the copy-paste that gives two variants one arm — which in
 this enum would be silent, because both would still produce a legal
 permutation.
 
-### `fn moved`
+### `fn target_of`
 
-A free function mirroring [`plan`]'s middle, because `plan` needs an
-`OpenDoc` and the thing worth pinning is the index maths. This is
-**two statements of one rule**, which this crate usually refuses — it is
-accepted here for `dispatch::routes`' stated reason, that the two sit in
-one small file where a reader meets both at once, and because the
-alternative is a rule with no test at all.
+Where one press of `to` puts the entry now at `from`, in the page's movable
+list, bottom first. The ends are the ends of the list. A step goes to the
+nearest **painted** entry in its direction whose `/Rect` overlaps the
+selected mark's, and failing that the nearest painted entry; with none it
+returns `from`, which [`plan`] answers with "already there".
+
+A step is counted in what the operator can see. A closed `/Popup`, or a mark
+hidden on screen, sits in `/Annots` like any other entry, so a step of one
+array place past it changes the order and leaves the page looking the same.
+Stepping past the nearest overlapping mark is the move a click on the page
+then shows.
+
+A free function so the index rule has tests without an `OpenDoc`. [`plan`]
+only gathers each entry's `Layer` (painted, rect) and moves the entry by
+remove-and-insert at the index this returns.
+
+### `fn a_step_passes_over_what_is_not_painted`
+
+A popup between the mark and the next painted entry is passed, not stopped at.
+
+### `fn a_step_passes_the_nearest_overlapping_markup`
+
+A mark beside the selected one, not touching it, is passed for the nearest
+one it does overlap.
 
 ### `fn a_step_past_either_end_stays_where_it_is`
 

@@ -17,6 +17,7 @@
 /// by a paint-order index, and the four ways the two differ are tabulated in
 /// its header.
 pub mod annot;
+pub mod markshape;
 /// What a selection **is** — the four `Copy` types the state below accumulates,
 /// none of which can hold a coordinate. The pure half; see its header for why
 /// "identity, not position" is a claim about a type rather than about a method.

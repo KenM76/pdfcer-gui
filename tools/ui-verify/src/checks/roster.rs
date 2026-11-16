@@ -609,6 +609,8 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(annot_restyle::AMarkersIconIsRecolouredOnRequest),
         Box::new(markup_reshape::AHighlightsEndDragsOntoTheNextLine),
         Box::new(markup_reshape::ALinesFillColoursItsClosedArrowheads),
+        Box::new(markup_click_through::AClickInsideAnEmptyBoxReachesTheMarkupBeneath),
+        Box::new(markup_click_through::AMarkupStepsForwardPastTheMarkupItOverlaps),
         Box::new(widget_turn::AFieldsBoxTiltsByItsRotateGrip),
         Box::new(widget_turn::AFieldsOpacityRowWritesIt),
         Box::new(links::ALinkIsDrawnAndGivenAnAddress),

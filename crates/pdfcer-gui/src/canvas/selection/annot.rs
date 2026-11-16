@@ -13,10 +13,9 @@
 //! - C1 shape-not-box: a candidate may carry its drawn segments, and where it
 //!   does they are what is tested. Added 2026-08-20 on the operator's report;
 //!   see [`hit`]'s header for the whole argument.
-//! - C2 unfilled-interior: **GAP** — only ce dimensions supply a shape today. A
-//!   `/Square` with no `/IC` still claims its interior, so a large empty callout
-//!   box remains un-clickable-through. The mechanism to fix it is already here:
-//!   give that subtype a shape.
+//! - C2 unfilled-interior: an unfilled square, circle or polygon, a line, a
+//!   polyline and ink claim only their drawn ink (`markshape`). A filled shape
+//!   and a revision cloud still claim their whole `/Rect`.
 //! - C3 topmost-wins: `.rev()` over `/Annots`, which is paint order.
 //! - C4 tolerance: none for a rect — the engine bakes the pen half-width into
 //!   `/Rect` at authoring time, so a second one would double-count — and the
@@ -302,7 +301,12 @@ pub fn under_pointer(
     // header for the operator's report and the argument; the shapes come from
     // the same segment function the dimension is DRAWN from, so what is
     // clickable and what is visible cannot drift apart.
-    let shapes = crate::canvas::dimdrag::annot_shapes(doc, &ce);
+    let mut shapes = crate::canvas::dimdrag::annot_shapes(doc, &ce);
+    // Every other markup's drawn ink, so an unfilled box or a line does not
+    // claim the paper inside its `/Rect` from a markup underneath it.
+    for (id, segments) in super::markshape::markup_shapes(doc, page) {
+        shapes.entry(id).or_insert(segments);
+    }
     let view = doc.session.view();
     let candidates = selectable_on(&view, page, page_index, &ce, &shapes, &doc.hidden_layers());
     #[allow(clippy::cast_possible_truncation)]

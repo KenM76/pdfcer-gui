@@ -8017,9 +8017,11 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 *"Pressing shift when drawing a line, etc should make it snap to degree increments like rotating does. Any object that should support this behaviour needs to be made to do it. Also for tools like the 'draw a line with corners on it', 'draw a closed shape' and etc escape should finish the command and commit the work, not cancel it."* Follows O223.
 
-## O430 — **OPEN** — markups move forward and back in the stacking order; a click picks the topmost markup actually under the pointer
+## O430 — **BUILT, awaiting Ken** — markups move forward and back in the stacking order; a click picks the topmost markup actually under the pointer
 
 *"I can't move markup items forward or back in the layer stack. Also If I try to select an item by clicking on it, if there is a markup higher in the stack and its bounding box surrounds the area, it gets selected instead."*
+
+**Built.** Bring forward and Send backward (Ctrl+] and Ctrl+[, Markup tab, the markup's right-click menu) now move a markup past the nearest markup it overlaps that is drawn, rather than one place in the file's list, where the next entry was often a closed note popup and the page looked unchanged. A click now picks the topmost markup whose ink is under the pointer: an unfilled box, circle, line, polyline, polygon or ink stroke claims only its line, so a click inside an empty box reaches what is beneath it. Filled shapes and clouds still claim their whole box. Driven by `a_markup_steps_forward_past_the_markup_it_overlaps` and `a_click_inside_an_empty_box_reaches_the_markup_beneath`, both failing on the build before.
 
 ## O431 — **OPEN** — ordinary text and paragraph tools on the Markup tab
 

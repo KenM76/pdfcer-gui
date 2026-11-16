@@ -134,6 +134,7 @@ fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjI
     // which is exactly why the engine takes ids and checks them rather than
     // trusting an index, and why nothing here counts positions in the file.
     let mut movable: Vec<ObjId> = Vec::with_capacity(all.len());
+    let mut layers: Vec<Layer> = Vec::with_capacity(all.len());
     let mut trap_nets: Vec<ObjId> = Vec::new();
     for annot in &all {
         let Some(annot_id) = annot.id else {
@@ -145,6 +146,10 @@ fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjI
             trap_nets.push(annot_id);
         } else {
             movable.push(annot_id);
+            layers.push(Layer {
+                drawn: !annot.is_popup && !annot.flags.suppressed_on_screen(),
+                rect: annot.rect.map(|r| [r.llx, r.lly, r.urx, r.ury]),
+            });
         }
     }
 
@@ -156,13 +161,7 @@ fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjI
         return None;
     };
 
-    let last = movable.len().saturating_sub(1);
-    let target = match to {
-        ArrangeTo::Front => last,
-        ArrangeTo::Back => 0,
-        ArrangeTo::Forward => (from + 1).min(last),
-        ArrangeTo::Backward => from.saturating_sub(1),
-    };
+    let target = target_of(&layers, from, to);
     if target == from {
         // A command that changes nothing must SAY so. The engine would report
         // `moved == 0` and that is *"a success with nothing to say"* for a drag
@@ -186,6 +185,43 @@ fn plan(doc: &OpenDoc, page: usize, id: ObjId, to: ArrangeTo) -> Option<Vec<ObjI
     // The trap network goes back on the end, where §12.5.6.21 requires it.
     movable.extend(trap_nets);
     Some(movable)
+}
+
+/// One stacking entry as a step sees it: whether the canvas paints it, and its
+/// `/Rect` as `[llx, lly, urx, ury]`.
+#[derive(Debug, Clone, Copy)]
+struct Layer {
+    drawn: bool,
+    rect: Option<[f64; 4]>,
+}
+
+/// Where the entry at `from` lands. Front and Back are the ends of the list. A
+/// step passes the nearest painted entry it overlaps, or the nearest painted
+/// entry when it overlaps none, so it always changes what the operator sees: a
+/// popup or a hidden entry beside it is passed over with it, never stepped
+/// past alone. `from` when there is nothing painted that way.
+fn target_of(layers: &[Layer], from: usize, to: ArrangeTo) -> usize {
+    let forward = match to {
+        ArrangeTo::Front => return layers.len().saturating_sub(1),
+        ArrangeTo::Back => return 0,
+        ArrangeTo::Forward => true,
+        ArrangeTo::Backward => false,
+    };
+    let me = layers.get(from).and_then(|l| l.rect);
+    let overlaps = |l: &Layer| match (me, l.rect) {
+        (Some(a), Some(b)) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3],
+        _ => false,
+    };
+    let toward: Vec<usize> = if forward {
+        (from + 1..layers.len()).collect()
+    } else {
+        (0..from).rev().collect()
+    };
+    let painted = || toward.iter().copied().filter(|&i| layers[i].drawn);
+    painted()
+        .find(|&i| overlaps(&layers[i]))
+        .or_else(|| painted().next())
+        .unwrap_or(from)
 }
 
 #[cfg(test)]
@@ -217,38 +253,67 @@ mod tests {
         }
     }
 
-    /// The permutation arithmetic, without a document.
-    fn moved(len: usize, from: usize, to: ArrangeTo) -> usize {
-        let last = len.saturating_sub(1);
-        match to {
-            ArrangeTo::Front => last,
-            ArrangeTo::Back => 0,
-            ArrangeTo::Forward => (from + 1).min(last),
-            ArrangeTo::Backward => from.saturating_sub(1),
+    fn plain(n: usize) -> Vec<Layer> {
+        vec![
+            Layer {
+                drawn: true,
+                rect: None
+            };
+            n
+        ]
+    }
+
+    fn at(x: f64, drawn: bool) -> Layer {
+        Layer {
+            drawn,
+            rect: Some([x, 0.0, x + 10.0, 10.0]),
         }
     }
 
     /// **The ends of the array are the ends of the stack**, and a step is
-    /// one place.
+    /// one place among painted entries.
     #[test]
     fn the_ends_of_the_array_are_the_ends_of_the_stack() {
-        assert_eq!(moved(5, 2, ArrangeTo::Front), 4, "front is LAST");
-        assert_eq!(moved(5, 2, ArrangeTo::Back), 0, "back is FIRST");
-        assert_eq!(moved(5, 2, ArrangeTo::Forward), 3);
-        assert_eq!(moved(5, 2, ArrangeTo::Backward), 1);
+        let l = plain(5);
+        assert_eq!(target_of(&l, 2, ArrangeTo::Front), 4, "front is LAST");
+        assert_eq!(target_of(&l, 2, ArrangeTo::Back), 0, "back is FIRST");
+        assert_eq!(target_of(&l, 2, ArrangeTo::Forward), 3);
+        assert_eq!(target_of(&l, 2, ArrangeTo::Backward), 1);
     }
 
     /// **Neither end runs off the array.**
     #[test]
     fn a_step_past_either_end_stays_where_it_is() {
-        assert_eq!(moved(5, 4, ArrangeTo::Forward), 4);
-        assert_eq!(moved(5, 0, ArrangeTo::Backward), 0);
-        assert_eq!(moved(5, 4, ArrangeTo::Front), 4);
-        assert_eq!(moved(5, 0, ArrangeTo::Back), 0);
-        // …and the degenerate page: one annotation, or none.
-        assert_eq!(moved(1, 0, ArrangeTo::Front), 0);
-        assert_eq!(moved(0, 0, ArrangeTo::Front), 0);
+        let l = plain(5);
+        assert_eq!(target_of(&l, 4, ArrangeTo::Forward), 4);
+        assert_eq!(target_of(&l, 0, ArrangeTo::Backward), 0);
+        assert_eq!(target_of(&l, 4, ArrangeTo::Front), 4);
+        assert_eq!(target_of(&l, 0, ArrangeTo::Back), 0);
+        assert_eq!(target_of(&plain(1), 0, ArrangeTo::Front), 0);
+        assert_eq!(target_of(&[], 0, ArrangeTo::Front), 0);
     }
+
+    /// **A step passes a popup with it rather than stopping on it.**
+    #[test]
+    fn a_step_passes_over_what_is_not_painted() {
+        let l = [at(0.0, true), at(0.0, false), at(0.0, true)];
+        assert_eq!(target_of(&l, 0, ArrangeTo::Forward), 2);
+        assert_eq!(target_of(&l, 2, ArrangeTo::Backward), 0);
+        let only_hidden = [at(0.0, true), at(0.0, false)];
+        assert_eq!(target_of(&only_hidden, 0, ArrangeTo::Forward), 0);
+    }
+
+    /// **A step passes the nearest markup it overlaps**, so the press changes
+    /// the picture, not just the file.
+    #[test]
+    fn a_step_passes_the_nearest_overlapping_markup() {
+        let l = [at(0.0, true), at(100.0, true), at(5.0, true)];
+        assert_eq!(target_of(&l, 0, ArrangeTo::Forward), 2);
+        assert_eq!(target_of(&l, 2, ArrangeTo::Backward), 0);
+        let apart = [at(0.0, true), at(100.0, true), at(200.0, true)];
+        assert_eq!(target_of(&apart, 0, ArrangeTo::Forward), 1);
+    }
+
     // -----------------------------------------------------------------
     // Against a REAL document, because the arithmetic above is a
     // mirror and a mirror cannot catch the two halves disagreeing

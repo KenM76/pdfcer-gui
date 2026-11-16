@@ -285,6 +285,22 @@ must be exactly as easy to hit as the drawing line beside it, and a
 separately chosen number here would drift from it the first time either was
 tuned.
 
+### A markup claims its ink, not its box
+
+`under_pointer` gives a markup the segments of its drawn ink, from
+[`super::markshape::markup_shapes`], unless it is a ce dimension, which keeps
+its own. An unfilled square or circle, a line, a polyline, an unfilled
+polygon and an ink stroke claim only a click within tolerance of the line
+they draw, so a click inside an empty box reaches the markup beneath it.
+
+A filled shape, a revision cloud, a cloudy square and every other subtype
+keep their `/Rect`. The shape comes from the engine's read of the
+dictionary (`spec_from_dict`); where that read fails or the ink cannot be
+stated from it (a cloud's scallops bulge past its vertices by an amount the
+standard leaves open), the rectangle is the generous answer.
+
+Driven: `a_click_inside_an_empty_box_reaches_the_markup_beneath`.
+
 ### A ce dimension's text claims a click
 
 `under_pointer` accepts a click inside a ce dimension's value text as well as

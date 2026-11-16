@@ -214,6 +214,7 @@ pub mod group_fraction_reduces;
 pub mod group_unit_converts;
 pub mod leafplace;
 pub mod leaftransform;
+pub mod markup_click_through;
 pub mod markup_reshape;
 pub mod nodeshape;
 pub mod nudgecontent;
