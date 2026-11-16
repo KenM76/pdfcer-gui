@@ -54,6 +54,30 @@ pub(in crate::canvas) fn snap_point(
     snapped(&st, raw, alt_held, targets, page_index, map)
 }
 
+/// **Shift's direction snap on a measure pick**: `at` moved onto the nearest
+/// 15° ray from the previous pick, when Shift is down and there is one.
+///
+/// An object snap outranks it — a pick that landed on an endpoint or a
+/// midpoint stays there, the order AutoCAD's polar tracking keeps — so
+/// Shift+Alt, which refuses the object snap, is the pure direction. Applied in
+/// PDF user space, where a 15° step is still a 15° step on screen.
+fn aimed(ctx: &egui::Context, st: &MeasureState, at: Point, on_object: bool) -> Point {
+    let Some(from) = st.anchor().filter(|_| !on_object) else {
+        return at;
+    };
+    let shift = ctx.input(|i| i.modifiers.shift);
+    if !shift {
+        return at;
+    }
+    #[allow(clippy::cast_possible_truncation)] // page coordinates fit an f32
+    let pos = |p: Point| Pos2::new(p.x as f32, p.y as f32);
+    let landed = crate::canvas::constrain::direction(ctx, true, pos(from), pos(at));
+    Point {
+        x: f64::from(landed.x),
+        y: f64::from(landed.y),
+    }
+}
+
 /// **Where the pointer would pick, resolved once for the frame.**
 #[derive(Debug, Clone, Copy)]
 pub(in crate::canvas) struct Resolved {
@@ -147,6 +171,7 @@ pub(in crate::canvas) fn resolve_hover(
         .unwrap_or_else(|| MeasureState::for_kind(page_index, kind));
     let alt_held = ctx.input(|i| i.modifiers.alt);
     let (at, candidate) = snapped(&st, raw, alt_held, targets, page_index, map);
+    let at = aimed(ctx, &st, at, candidate.is_some());
     // Resolved from the RAW pointer, not from the snapped point, and the
     // difference is the case the highlight was asked for.
     //
@@ -324,5 +349,38 @@ mod tests {
                 "zoom={zoom}: a catch radius of {snap} would snap to everything or nothing"
             );
         }
+    }
+
+    /// Run `aimed` inside a frame with Shift held or not.
+    fn aim_with(shift: bool, st: &MeasureState, at: Point, on_object: bool) -> Point {
+        let ctx = egui::Context::default();
+        let mut input = egui::RawInput::default();
+        input.modifiers.shift = shift;
+        let mut out = at;
+        let _ = ctx.run_ui(input, |ui| out = aimed(ui.ctx(), st, at, on_object));
+        out
+    }
+
+    #[test]
+    fn shift_turns_the_next_pick_onto_a_step_from_the_previous_one() {
+        let mut st = MeasureState::for_kind(0, MeasureKind::PathLength);
+        st.perimeter.push(Point::new(10.0, 10.0));
+        let r = 7.0_f64.to_radians();
+        let at = Point::new(10.0 + 100.0 * r.cos(), 10.0 + 100.0 * r.sin());
+
+        let landed = aim_with(true, &st, at, false);
+        assert!((landed.y - 10.0).abs() < 1e-3, "7° lands on 0°: {landed:?}");
+        assert_eq!(aim_with(false, &st, at, false), at, "no Shift, no snap");
+        assert_eq!(
+            aim_with(true, &st, at, true),
+            at,
+            "an object snap outranks it"
+        );
+        let empty = MeasureState::for_kind(0, MeasureKind::PathLength);
+        assert_eq!(
+            aim_with(true, &empty, at, false),
+            at,
+            "a first pick has no direction"
+        );
     }
 }

@@ -145,8 +145,17 @@ impl crate::app::PdfcerApp {
         if crate::canvas::chunks::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("view.text_chunks"));
         }
+        // Markup ▸ Content's two controls are second doors onto Edit ▸
+        // Content's, so each pair presses together.
         if crate::canvas::textedit::promote::enabled(ctx) {
             set.set(egui_shell::ribbon::selected_condition("edit.paragraphs"));
+            set.set(egui_shell::ribbon::selected_condition("markup.paragraphs"));
+        }
+        if crate::canvas::tool::selected(ctx)
+            == crate::canvas::tool::CanvasTool::TextEdit(crate::canvas::textedit::TextEditKind::Add)
+        {
+            set.set(egui_shell::ribbon::selected_condition("edit.add_text"));
+            set.set(egui_shell::ribbon::selected_condition("markup.add_text"));
         }
         if let crate::app::state::Status::Open(doc) = &self.status
             && crate::canvas::textedit::promote::enabled_on(ctx, doc.serial, doc.view.page_index)

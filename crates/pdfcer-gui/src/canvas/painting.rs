@@ -712,7 +712,15 @@ pub(super) fn draw(
             page_index,
             kind,
             map,
-            screen_pos.map(|p| map.to_page(p)),
+            screen_pos.map(|p| {
+                markup::vertex::aim(
+                    ui.ctx(),
+                    page_index,
+                    kind,
+                    doc.current_page(),
+                    map.to_page(p),
+                )
+            }),
             pen,
         );
     }

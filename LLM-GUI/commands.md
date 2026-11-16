@@ -212,6 +212,9 @@ edit.reflow_block  Reflow paragraph
 edit.select_all  Select all
 edit.text  Edit text
 
+markup.add_text  Add text
+markup.paragraphs  Paragraphs
+
 tools.embed_fonts  Embed fonts
 tools.font_folders  Font folders…
 tools.merge_files  Merge files…

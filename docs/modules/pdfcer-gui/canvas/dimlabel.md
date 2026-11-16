@@ -1,7 +1,7 @@
 # `canvas::dimlabel`
 
-Sliding a selected linear ce dimension's text along its dimension line, the
-line staying where it is.
+Where a selected linear ce dimension's value text is, so a press on it can be
+told from a press elsewhere.
 
 ## Contract
 
@@ -13,25 +13,15 @@ line staying where it is.
   `canvas.dimension-label`. Nothing is drawn: the text is the affordance.
 - `label_at(ctx, doc, map, selection, screen)` says whether a press landed in
   that quad, widened by 2 screen points. `canvas::pressing` asks it after the
-  vertex handles and the extension grips and before the body, because the
-  text lies inside the body.
-- `slid(kind, dx, dy)` is the rule: the page-space delta is projected onto
-  the dimension's axis (`DimensionKind::axis_frame`) and added to
-  `text_along`; `offset` is unchanged. Only `DimensionKind::Linear` slides.
-- `drag(Frame, actions)`: mid-drag it returns the engine's bake of the slid
-  dimension; on `Phase::Complete` it traces
-  `dimension-label id= offset= text_along=` and pushes
-  `DimensionAction::Place`, which commits `EditSession::place_dimension` as
-  one undo entry.
+  vertex handles and the extension grips.
+- `canvas_quad_of(doc, page, annot)` gives the same quad in canvas space for
+  any ce dimension annotation, for click selection.
 
-## Why along only
+## A press on the text moves the dimension
 
-A linear ce dimension's text sits on its dimension line, at
-`text_along` from the line's centre. The only way to move the text off the
-line is to move the line (`offset`), which is the body drag
-(`canvas::dimdrag`). So a text drag keeps the across-line part of the pointer
-motion out; that is what makes it plain the line is staying put.
+`gesture::meaning` maps a press on the text to the same drag as a press on the
+line (`canvas::dimdrag`): the text follows the pointer along the line and
+across it, the line moving with it, previewed through `canvas::dimpreview`.
+The text is asked about separately from the body because, slid far along, it
+can sit outside the line's grab box.
 
-Perimeter and circular ce dimensions have no separate text drag: a
-perimeter's placement already moves only its label, and a circular one's text
-and leader move together by definition.

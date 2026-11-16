@@ -29,7 +29,7 @@ first"*, and rung 3 has two occupants that cannot both be present:
 | 0b | an **egui popup** (a colour picker, a menu) open when the frame began | `canvas::keys::note_popup_at_frame_start`, called first in the frame, because a popup drawn before the canvas has already closed on this press | the trace `canvas-escape outcome=ClosedPopup`; the selection is untouched |
 | 1 | a **drag in flight**, including a markup band | [`crate::canvas::gesture::GestureState::update`] — the only thing that knows whether there is one | [`crate::canvas::gesture::GestureOutcome::Cancelled`], arriving here as `escape_consumed` |
 | 2 | a **guide drag in flight** | [`crate::canvas::guides::cancel_drag`] | its return value: `true` when there was one |
-| 3a | a **measure pick**, a **markup vertex run**, a **text draft** or a **pending placement** in progress | [`crate::canvas::measure::abandon`] / [`crate::canvas::markup::vertex::abandon`] / [`crate::canvas::textedit::settle`] / [`crate::dialogs::placing`] | its return value: `true` when there was one. Only the text draft **writes** what it retires |
+| 3a | a **measure pick**, a **markup vertex run**, a **text draft** or a **pending placement** in progress | [`crate::canvas::measure::escape`] / [`crate::canvas::markup::vertex::escape`] / [`crate::canvas::textedit::settle`] / [`crate::dialogs::placing`] | its return value: `true` when there was one. A run long enough to author and a text draft are **written**; the rest are discarded |
 | 3b | an **armed markup or measure tool** | [`crate::canvas::tool::disarm_markup`] / [`crate::canvas::tool::disarm_measure`] | its return value: `true` when there was one armed |
 | — | the **armed text tool** is deliberately **not** a claimant — see below | — | — |
 | 4 | an **armed region zoom** | [`crate::canvas::zoom::disarm_region_zoom`] | its return value: `true` when there was something to retire |
@@ -110,37 +110,41 @@ pressing it again returns to the select tool
 pressed, so pressing it un-presses it* rule the four markup buttons follow —
 rung 3b is the **extra** affordance those tools get, not their only one.
 
-### Why a measure pick is TWO rungs rather than one
+### Why a run of clicks is TWO rungs rather than one
 
-A markup **band** is a drag, so abandoning it and retiring the pen are
-already separated by the table: the drag is claimant 1, the tool is claimant
-3b. A measure pick is a sequence of **clicks**, so there is no drag for
-claimant 1 to cancel — and yet a linear dimension with point A taken and
-point B not is unmistakably a gesture in flight. Without 3a, one Escape
-would put the tool down *and* silently discard that pick: two effects from
-one press, which is exactly what decision 025's L1 forbids.
+A markup **band** is a drag, so ending it and retiring the pen are already
+separated by the table: the drag is claimant 1, the tool is claimant 3b. A
+measure pick, a polyline, a polygon and a cloud are sequences of **clicks**,
+so there is no drag for claimant 1 to cancel, and yet a run with points taken
+is a gesture in flight. Without 3a, one Escape would settle the run *and* put
+the tool down: two effects from one press, which L1 forbids.
 
-**The same argument admits a second occupant to 3a**, and the fact that
-it needs no new reasoning is the point. PolyLine and Polygon
-are also gestured by clicks
-([`crate::canvas::markup::vertex`]), so a run of three vertices with the
-fourth not yet placed is in exactly the position a half-taken linear pick is.
-[`crate::canvas::markup::vertex::abandon`] therefore sits beside
-[`crate::canvas::measure::abandon`] rather than taking a rung of its own:
-the two cannot both be in progress, because a measure tool and a markup tool
-cannot both be armed, so this is **one claimant expressed as two calls** —
-which is precisely the arrangement rung 3b already uses for the two `disarm`
-functions.
+Rung 3a **settles** the run; it does not always discard it.
 
-It also means the sentence *"a markup is a drag"* is now only three-quarters
-true, and the quarter that is not is why the rung was needed. The band kinds
-and Ink are drags; the two vertex kinds are not.
+| run | Escape at 3a |
+|---|---|
+| Polyline, Polygon, Cloud with enough corners | finishes it with the corners placed, as Finish does (`markup-finish via=escape`, `canvas-escape outcome=FinishedMarkupVertexRun`) |
+| Perimeter, Length, Area, Circular with enough picks, or already finished and waiting for its placing click | commits the ce dimension with its text at the default place (`measure-finish via=escape`, `canvas-escape outcome=FinishedMeasureRun`) |
+| any of the above with too few points, and Linear, Scale and TwoLine picks | discards it (`AbandonedMarkupVertexRun`, `AbandonedMeasurePick`) |
 
-So the pick is retired first and the tool second, which is also the order
-the transience rule gives — a half-taken pick is the more transient of the
-two, and it is the thing the operator is most likely to have meant.
-Pressing Escape twice puts the tool down; pressing it once corrects a
-mis-aimed first click without leaving the tool.
+The open-ended runs are finished because that is how the operator ends them:
+Escape is the conventional "done" for a chain of corners, and the result is
+recovered by undo like any other commit. A fixed-arity pick has no partial
+result to keep, so Escape still means "no" there.
+
+A measure run commits directly rather than entering its placing click: that
+click would be a gesture in flight, and the next Escape would discard the
+ce dimension the first one had just kept.
+
+[`crate::canvas::measure::escape`] and
+[`crate::canvas::markup::vertex::escape`] share the rung rather than taking
+one each: a measure tool and a markup tool cannot both be armed, so this is
+one claimant expressed as two calls, the arrangement rung 3b uses for the two
+`disarm` functions. The vertex run takes the pen from [`Keys`] to author what
+it finishes.
+
+Pressing Escape twice puts the tool down; pressing it once ends the run and
+leaves the tool armed for the next one.
 
 ### Why a focused form field is rung 0, and why its rung is unlike every
 other

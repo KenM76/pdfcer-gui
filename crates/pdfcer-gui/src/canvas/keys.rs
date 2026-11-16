@@ -207,6 +207,8 @@ pub(super) struct Keys<'a> {
     /// The page [`Self::selected_field`] is on, for a field nudge's crossing
     /// into PDF space.
     pub field_page: Option<&'a pdfcer_core::page_tree::Page>,
+    /// The pen a markup vertex run is authored with when Escape finishes it.
+    pub pen: crate::canvas::markup::pen::Pen,
 }
 
 /// **Claimants 5 to 7**: the press no transient gesture took.
@@ -283,6 +285,7 @@ pub(super) fn canvas_keys(
         model_attempted,
         page,
         field_page,
+        pen,
     } = keys;
     // Claimant 0, and it is read BEFORE the D1 guard rather than after it.
     //
@@ -430,11 +433,12 @@ pub(super) fn canvas_keys(
     }
 
     // Claimant 3a: a measure pick in progress. Above the tool rung below it,
-    // so one Escape corrects a mis-aimed pick and a second puts the tool down
-    // — see the header's own section on why this needs two rungs where markup
-    // needs one.
-    let measure_abandoned =
-        escape_available && !guide_cancelled && crate::canvas::measure::abandon(ctx);
+    // so one Escape settles the pick and a second puts the tool down — see the
+    // header's own section on why this needs two rungs where markup needs one.
+    // An open-ended run (Perimeter, Length, Area, Circular) with enough picks
+    // is committed; anything shorter, and every other pick, is abandoned.
+    let measure_settled =
+        escape_available && !guide_cancelled && crate::canvas::measure::escape(ctx, actions);
 
     // …and a **markup vertex run** in progress, on the same rung and for the
     // identical reason: PolyLine and Polygon are gestured by clicks, so there is
@@ -443,13 +447,17 @@ pub(super) fn canvas_keys(
     // one Escape would discard the run **and** put the pen down — two effects
     // from one press, which is decision 025's L1 broken.
     //
+    // A run long enough to author is finished, as a Finish would; a run too
+    // short for its kind is abandoned. Losing placed vertices to a stray
+    // Escape costs more than one undo of a finished shape.
+    //
     // One claimant expressed as two calls rather than two claimants, exactly as
     // 3b below is: a measure tool and a markup tool cannot both be armed, so a
     // measure pick and a vertex run cannot both be in progress.
-    let vertex_abandoned = escape_available
+    let vertex_settled = escape_available
         && !guide_cancelled
-        && !measure_abandoned
-        && crate::canvas::markup::vertex::abandon(ctx);
+        && !measure_settled
+        && crate::canvas::markup::vertex::escape(ctx, actions, pen);
 
     // …and a **text draft** in progress, third on the same rung. It takes the
     // rung for its neighbours' reason — a caret with characters typed into it
@@ -479,8 +487,8 @@ pub(super) fn canvas_keys(
     // a text draft cannot two of them be in progress.
     let draft_settled = escape_available
         && !guide_cancelled
-        && !measure_abandoned
-        && !vertex_abandoned
+        && !measure_settled
+        && !vertex_settled
         && crate::canvas::textedit::settle(ctx, actions);
     if draft_settled {
         // The rung publishes itself, as every other rung on this ladder does.
@@ -498,7 +506,7 @@ pub(super) fn canvas_keys(
     // Rung 3a is spent by whichever of its claimants took the key. The name
     // carries the rung rather than one occupant, so a later claimant added to
     // it does not have to be folded into a neighbour's variable.
-    let rung_3a_spent = vertex_abandoned || draft_settled;
+    let rung_3a_spent = vertex_settled || draft_settled;
 
     // **…and a PENDING PLACEMENT, fourth on the same rung** —
     // `OPERATOR_REQUESTS.md` O66.
@@ -526,7 +534,7 @@ pub(super) fn canvas_keys(
     // first clears both, because `placing::cancel` does the disarm itself.
     let placement_cancelled = escape_available
         && !guide_cancelled
-        && !measure_abandoned
+        && !measure_settled
         && !rung_3a_spent
         && crate::canvas::placing::cancel(ctx);
     let rung_3a_spent = rung_3a_spent || placement_cancelled;
@@ -539,7 +547,7 @@ pub(super) fn canvas_keys(
     // press can never both abandon the band AND put the pen down.
     let markup_disarmed = escape_available
         && !guide_cancelled
-        && !measure_abandoned
+        && !measure_settled
         && !rung_3a_spent
         && crate::canvas::tool::disarm_markup(ctx);
     if markup_disarmed {
@@ -553,7 +561,7 @@ pub(super) fn canvas_keys(
     // this is one claimant expressed as two calls rather than two claimants.
     let measure_disarmed = escape_available
         && !guide_cancelled
-        && !measure_abandoned
+        && !measure_settled
         && !rung_3a_spent
         && !markup_disarmed
         && crate::canvas::tool::disarm_measure(ctx);
@@ -579,7 +587,7 @@ pub(super) fn canvas_keys(
     // down. It reports its own outcome for the same reason.
     let tool_disarmed = escape_available
         && !guide_cancelled
-        && !measure_abandoned
+        && !measure_settled
         && !rung_3a_spent
         && !markup_disarmed
         && !measure_disarmed
@@ -594,7 +602,7 @@ pub(super) fn canvas_keys(
     // Claimant 4.
     let disarmed = escape_available
         && !guide_cancelled
-        && !measure_abandoned
+        && !measure_settled
         && !rung_3a_spent
         && !markup_disarmed
         && !measure_disarmed
@@ -614,7 +622,7 @@ pub(super) fn canvas_keys(
     // Claimant 5, and only if none of the rungs above took the key.
     if escape_available
         && !guide_cancelled
-        && !measure_abandoned
+        && !measure_settled
         && !rung_3a_spent
         && !markup_disarmed
         && !measure_disarmed

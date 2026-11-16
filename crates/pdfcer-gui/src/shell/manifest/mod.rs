@@ -677,8 +677,8 @@ mod tests {
         assert_eq!(shell.contextual_tabs().len(), 1, "one contextual tab");
         assert_eq!(
             shell.all_tabs().flat_map(Tab::groups).count(),
-            46,
-            "forty-six groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
+            47,
+            "forty-seven groups; a group added or removed is a ribbon change `RIBBON_IA.md` must record"
         );
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(

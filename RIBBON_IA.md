@@ -415,12 +415,32 @@ signature-locked — with a visible badge, not a hidden global toggle.
 | **Shapes** | Rectangle · Ellipse · Line · Arrow · Polyline · Polygon · Cloud · Ink (freehand) · Finish |
 | **Text markup** | Highlight · Underline · Strikeout · Squiggly |
 | **Notes** | Text box · Sticky note · Callout · Stamp ⌄ · Paste picture as stamp · Attach file · Attach sound · Media clip · Insert text · Replace text |
+| **Content** | Add text · Paragraphs — Edit mode only |
 | **Style** | Colour · Line width · Fill · Opacity · Freehand detail · Arrowheads · Line style |
 | **Arrange** | Bring to front · Bring forward · Send backward · Send to back |
 | **Comments** | Comments panel · Make all part of the page · Store appearances · Clear page · Clear all |
 
 Cloud — revision clouds — is AEC table stakes and is the one this audience names
 first.
+
+#### Content: page text reached from the Markup tab
+
+Add text and Paragraphs are Edit ▸ Content's caret tool and paragraph switch,
+offered here too because *"put words on the drawing"* is a Markup-tab reach.
+Beside Notes, so Text box (a removable comment) and Add text (permanent page
+content) sit one glance apart, and each tooltip names the other.
+
+**P1 holds by id, not by behaviour.** The Markup controls are their own
+commands, `markup.add_text` and `markup.paragraphs`, dispatching to the same
+tool and the same switch as `edit.add_text` and `edit.paragraphs`; each pair
+draws pressed together. Unlike the two Arrange groups below, these ARE one
+subject on two tabs — the deliberate exception, made because the Markup tab
+is where an operator marking up a sheet looks and the Edit tab is where an
+operator correcting one looks.
+
+**Edit mode only.** Both items carry `shown_when(mode.edit_content)`. Review
+shows the Markup tab but cannot author page content, so there the items are
+absent (P3/R9), and the group, left empty, is not drawn.
 
 **The Style group is a pen: it sets the style of the NEXT mark, not of the
 selected one.** Changing a mark already placed happens on the contextual

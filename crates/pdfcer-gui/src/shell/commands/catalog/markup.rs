@@ -323,6 +323,17 @@ pub(super) fn band() -> Vec<Command> {
         )
         .with_icon("paste")
         .enabled_when("doc.pages"),
+        // Markup ▸ Content: second doors onto `edit.add_text` and
+        // `edit.paragraphs`, under their own ids because P1 puts one id on one
+        // tab. They dispatch to the same tool and the same switch, so the
+        // gating is the Edit ids': `doc.pages` to arm, `mode.edit_content` to
+        // switch, and the items are drawn only where content may be edited.
+        command("markup.add_text", t::annotate::markup_add_text(), 514)
+            .with_icon("add-text")
+            .enabled_when("doc.pages"),
+        command("markup.paragraphs", t::annotate::markup_paragraphs(), 515)
+            .with_icon("paragraphs")
+            .enabled_when("mode.edit_content"),
         command("markup.flatten_page", t::markup_flatten_page(), 541)
             .with_icon("form-flatten")
             .enabled_when("doc.pages"),

@@ -61,9 +61,46 @@ pub enum Lock {
     /// The third flavour of the same convention, and the one that is neither an
     /// axis nor a ratio: `drag-moves` D5 says *"Shift constrains to an axis or
     /// preserves aspect"*, and for a rotation every program in the class means
-    /// **steps of 15°**. `canvas::rotating::STEP_DEGREES` owns the number and
-    /// the argument for it.
+    /// **steps of 15°**. [`STEP_DEGREES`] owns the number.
     Angle,
+    /// A drawn segment whose direction from the previous point snaps to
+    /// [`STEP_DEGREES`] — an arrow, the next vertex of a polyline or polygon,
+    /// the next pick of a measure tool. The same step as [`Self::Angle`], with
+    /// its own sentence: nothing is turning.
+    Direction,
+}
+
+/// How many degrees a constrained rotation or direction snaps to.
+///
+/// Fifteen divides both the right angle and the diagonal, so all eight of the
+/// directions an operator usually wants are reachable.
+pub const STEP_DEGREES: f32 = 15.0;
+
+/// Round a radian angle to the nearest [`STEP_DEGREES`].
+#[must_use]
+pub fn snap_angle(radians: f32) -> f32 {
+    let step = STEP_DEGREES.to_radians();
+    (radians / step).round() * step
+}
+
+/// **Where `at` lands when the direction `from → at` snaps to the nearest
+/// [`STEP_DEGREES`].**
+///
+/// The pointer is projected onto the snapped ray, so the segment's length is
+/// the pointer's reach along that direction — the nearest point the constraint
+/// allows. A pointer on `from` has no direction and is returned unchanged.
+///
+/// Works in any space whose axes are scaled alike (canvas, screen, PDF user
+/// space): a uniform scale or a quarter-turn page rotation maps a multiple of
+/// 15° onto a multiple of 15°.
+#[must_use]
+pub fn along_step(from: Pos2, at: Pos2) -> Pos2 {
+    let v = at - from;
+    if v.length() < f32::EPSILON {
+        return at;
+    }
+    let dir = Vec2::angled(snap_angle(v.y.atan2(v.x)));
+    from + dir * v.dot(dir)
 }
 
 /// The axis a delta has travelled furthest along.
@@ -125,7 +162,7 @@ pub fn aspect(sx: f32, sy: f32) -> (f32, f32) {
 }
 
 // ===========================================================================
-// The four call sites, as three functions
+// The call sites, one function per kind of constraint
 // ===========================================================================
 //
 // APPLY AND ANNOUNCE ARE ONE CALL, and that is the point of this section.
@@ -165,6 +202,18 @@ pub fn reposition(ctx: &egui::Context, active: bool, from: Pos2, at: Pos2) -> Po
     }
     announce(ctx, Lock::Axis(dominant(at - from)));
     toward(from, at)
+}
+
+/// **A constrained direction**: where the next point of a drawn segment goes,
+/// announced. `from` is the previous point — the arrow's tail, the run's last
+/// vertex, the measure tool's previous pick.
+#[must_use]
+pub fn direction(ctx: &egui::Context, active: bool, from: Pos2, at: Pos2) -> Pos2 {
+    if !active {
+        return at;
+    }
+    announce(ctx, Lock::Direction);
+    along_step(from, at)
 }
 
 /// **A constrained resize**: announced here, applied inside the drag.

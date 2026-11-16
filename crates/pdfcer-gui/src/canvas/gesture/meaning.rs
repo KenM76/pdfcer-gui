@@ -180,9 +180,6 @@ pub enum DragKind {
         /// Which extension line, sampled at the press.
         end: pdfcer_core::dimension::DimensionEnd,
     },
-    /// The press was on a **linear ce dimension's value text**: drag it along
-    /// the dimension line, the line staying put. `place_dimension`.
-    DimensionLabel,
     /// The press was on a **node of a selected markup shape**: drag it, or —
     /// with the Points tool armed and `Ctrl` held — add or remove one.
     /// `Pass 255.0`, and the operator's *"I also can't edit or delete nodes of
@@ -302,7 +299,6 @@ impl DragKind {
             Self::Handle { .. } => "Handle",
             Self::DimensionVertex { .. } => "DimensionVertex",
             Self::DimensionExtension { .. } => "DimensionExtension",
-            Self::DimensionLabel => "DimensionLabel",
             Self::MarkupVertex { .. } => "MarkupVertex",
             Self::TextSelect => "TextSelect",
             Self::Markup(_) => "Markup",
@@ -779,11 +775,10 @@ pub fn press_kind(press: Press, caps: Capabilities) -> PressMeaning {
             // An extension line's near end. Changes where the line starts and
             // never the number.
             DimensionPress::Extension(end) => DragKind::DimensionExtension { end },
-            // The value text. Slides along the line; the line stays.
-            DimensionPress::Label => DragKind::DimensionLabel,
-            // The body. Moves where the dimension is DRAWN and cannot alter
-            // what it says; `canvas::dimdrag`'s header carries that argument.
-            DimensionPress::Body => DragKind::Move,
+            // The value text or the body: one movement. Moves where the
+            // dimension is DRAWN and cannot alter what it says;
+            // `canvas::dimdrag`'s header carries that argument.
+            DimensionPress::Label | DimensionPress::Body => DragKind::Move,
         })
     //
     // Below the dimension branch and above `edit_content`, and both placements

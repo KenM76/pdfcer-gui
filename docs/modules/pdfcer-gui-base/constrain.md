@@ -55,6 +55,23 @@ One rule, both cases, no branch on the grip. This module therefore does
 **not** take a [`crate::canvas::handles::Grip`], and that absence is the
 design rather than an omission.
 
+### 3. Direction lock — [`direction`] and [`along_step`]
+
+A *drawn segment* — an arrow, the next vertex of a polyline, polygon or
+cloud, the next pick of a Linear, Scale, Perimeter, Length or Area measure
+tool — snaps the direction from its previous point to the nearest
+[`STEP_DEGREES`], the same 15° a Shift-rotation turns in. The pointer is
+projected onto the snapped ray, so the segment ends at the nearest point the
+constraint allows rather than at the pointer's full distance swung round.
+It acts on the direction only; a uniform scale or a quarter-turn page
+rotation keeps a multiple of 15° a multiple of 15°, so the caller may apply
+it in canvas or PDF space.
+
+An object snap outranks it on a measure pick: a point snapped to the
+drawing's own geometry is a stronger statement of intent than a direction,
+which is AutoCAD's order (object snap overrides ortho and polar tracking).
+Alt refuses the object snap, so Shift+Alt gives the pure direction.
+
 ## What Shift does NOT do here, stated so it is a decision
 
 - **It does not scale about the centre.** That is Alt in most programs and
@@ -129,9 +146,8 @@ remain true after `canvas::mapping` has done its one conversion.
 
 ### `enum Lock`
 
-Two variants rather than a `bool`, because the sentence differs and because
-a future third constraint (centre-scaling on Alt, a 45° lock) is a variant
-here and a compile error in [`crate::text::constrain`] — which is the same
+One variant per sentence the status row says, because a further constraint
+(centre-scaling on Alt, a 45° lock) is a variant here and a compile error in [`crate::text::constrain`] — which is the same
 exhaustive-match discipline `canvas::resizing::Refusal` uses to guarantee
 every refusal has words.
 
@@ -166,6 +182,17 @@ For the drags whose outcome is a position — a perimeter vertex, measured
 from the press, and a Bézier handle, measured from its anchor. See
 [`toward`] for why the two reference points differ and why filtering the
 displacement rather than the position is what preserves the grab.
+
+### `const STEP_DEGREES`
+
+Fifteen, which is PowerPoint's, Illustrator's, Inkscape's and Figma's. It
+divides 90 and 360 exactly, so the four right angles and the four diagonals
+are all reachable. Rotation (`canvas::rotating`) and direction share it.
+
+### `fn direction`
+
+Announces [`Lock::Direction`], whose sentence says *drawing* rather than
+*turning*. `from` is the previous point of the segment being drawn.
 
 ### `fn resize`
 

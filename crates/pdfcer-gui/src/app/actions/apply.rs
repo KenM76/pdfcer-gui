@@ -1178,6 +1178,7 @@ impl PdfcerApp {
                 match super::models::load_view(doc, &artwork) {
                     Ok(model) => {
                         self.dialogs.open_model_view(
+                            (doc.path.clone(), doc.serial),
                             artwork,
                             model,
                             self.prefs.walk_eye_mm,

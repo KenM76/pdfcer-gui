@@ -214,11 +214,23 @@ The whole pick is cleared, not just the length, so the tool is left ready
 for another calibration rather than holding a line the dialog has already
 consumed.
 
+### `fn escape`
+
+Rung 3a of `canvas::keys`. For Perimeter, Length, Area and Circular it
+commits a run long enough to author with its text at the default place, or a
+run already finished and waiting for its placing click, traced
+`measure-finish via=escape` and `canvas-escape outcome=FinishedMeasureRun`.
+Otherwise it falls to [`abandon`]. Linear, Scale and TwoLine picks are fixed
+arity and always fall through. Committing directly, rather than entering the
+placing click, is what stops a second Escape discarding the ce dimension the
+first one kept.
+
 ### `fn abandon`
 
-Escape's claimant. It sits *below* the drag-in-flight rung and *above*
-retiring the tool — see [`crate::canvas::tool::disarm_measure`], which
-carries the argument for why those are two separate presses.
+Escape's claimant for a pick that cannot be authored. It sits *below* the
+drag-in-flight rung and *above* retiring the tool; see
+[`crate::canvas::tool::disarm_measure`] for why those are two separate
+presses.
 
 This block must stay attached to THIS function. A doc comment that drifts
 up against a neighbouring item documents that item and leaves this one bare,
@@ -257,8 +269,10 @@ follows the click; the engine centres its text on the arc (request G064).
 There is no accept box: the operator disliked *"a separate accept / reject
 box somewhere on the screen"* (decision 024), and `MODES_AND_PANELS.md`
 defaults application-initiated floating surfaces to **Never**. A misplaced
-dimension is corrected by undo, as a misdrawn markup is. Escape, a tool
-change or a page change drops a held dimension uncommitted.
+dimension is corrected by undo, as a misdrawn markup is. A tool change or
+a page change drops a held ce dimension uncommitted; Escape commits a held
+Perimeter, Length, Area or Circular one at the default place and drops a held
+Linear, Scale or TwoLine one.
 
 `pending` is never set here. It stays on [`MeasureState`] because it is
 salvaged state with its own tests.

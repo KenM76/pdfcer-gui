@@ -21,6 +21,10 @@ mod placement;
 /// written after and why the arithmetic is a free function.
 mod fit;
 
+/// **Which window a dialog's OS window belongs to**, and how an independent
+/// window is released after it opens.
+mod owning;
+
 /// Where the application window's handle is kept for [`Host::show`] to find.
 const OWNER_KEY: &str = "dialog-host-owner"; // ui-text-exempt: a memory key, never displayed.
 
@@ -137,6 +141,9 @@ pub struct Host {
     /// transaction, such as the popped-out print preview.
     maximizable: bool,
     minimizable: bool,
+    /// Whether the window lives on its own rather than owned by the
+    /// application window. See [`Self::independent`].
+    independent: bool,
     /// The window's title bar text. Owned rather than `&'static str` because it
     /// may carry a document name.
     title: String,
@@ -228,7 +235,17 @@ impl Host {
             preferred: None,
             maximizable: false,
             minimizable: false,
+            independent: false,
         }
+    }
+
+    /// **Live as a window of its own**: not kept in front of the application
+    /// window, minimised, restored and raised independently of it. For a view
+    /// the operator works in beside the document, never for a transaction.
+    #[must_use]
+    pub fn independent(mut self) -> Self {
+        self.independent = true;
+        self
     }
 
     /// Offer maximise in the title bar. For a window that is a view onto
@@ -541,26 +558,17 @@ impl Host {
             let _regions = (class != ViewportClass::EmbeddedWindow)
                 .then(|| crate::diag::ViewportScope::enter(self.id));
 
-            // OWNED BY THE APPLICATION WINDOW. See the module header's G3
-            // section: this is what makes the dialog stay in front of the
-            // window it belongs to AND keep the keyboard, neither of which a
-            // request can guarantee.
-            //
-            // Attempted every frame, deliberately, and cheap by construction:
-            // the call is idempotent and returns early when the relationship
-            // already holds. There is no "the viewport was just created" event
-            // to hang it on — the platform window comes into existence DURING a
-            // frame, so the first attempt after a dialog opens can legitimately
-            // find nothing, and the honest shape is to try again next frame
-            // rather than to guess how many frames to wait.
-            if class == ViewportClass::Immediate
-                && let Some(owner) = owner
-            {
-                let owned = native_window::own_window(owner, &self.title);
-                crate::diag::trace_on_change("dialog-owned", || {
-                    // ui-text-exempt: diagnostic trace, never displayed.
-                    format!("title={:?} owned={owned}", self.title)
-                });
+            // OWNED BY THE APPLICATION WINDOW, which keeps it in front and
+            // keeps the keyboard; an independent window only while it opens.
+            // See `owning`.
+            if class == ViewportClass::Immediate {
+                owning::hold(
+                    &child,
+                    self.id,
+                    &self.title,
+                    owner,
+                    (self.independent, opened_at == now),
+                );
             }
 
             // See the note above `opening`, and [`ENGAGED`].

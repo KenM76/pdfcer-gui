@@ -947,6 +947,12 @@ The request O280 is built on, answered and consumed.
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
 - **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
 
+## Filed requests for grouping, markup snapping and the text box — not verdict rows
+
+- **G280** — OPEN: group and ungroup. `group_objects` / `ungroup_form` for page content (nested pair for a group inside a form), a read-side marker that tells a group from any other form, and `group_annotations` / `ungroup_annotations` for markups. O433 waits on it; `edit.group` and `edit.ungroup` stay unregistered until it lands.
+- **G281** — OPEN: `pdfcer_core::vector::snap::snap_candidates` builds from page paths only, so a markup shape or text box offers no edge, corner or centre to snap a ce dimension to. Asks an annotation snap source. O427 waits on it.
+- **G282** — OPEN: a painter in `pdfcer_render::edit_preview` for a markup text box being typed (`TextAnnotSpec`), with laid-out lines and caret advances. O432 waits on it.
+
 ## Engine arrivals at v0.113.0 — not verdict rows
 
 The answers to G243, G244, G245 part 2 and G249–G251.

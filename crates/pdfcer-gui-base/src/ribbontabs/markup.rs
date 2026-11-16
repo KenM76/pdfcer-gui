@@ -6,6 +6,8 @@ use super::{command, group, icon_only, large};
 use crate::text::ribbon;
 use egui_shell::manifest::{Item, Tab};
 
+use crate::modecapability::EDIT_CONTENT_CONDITION as EDIT_CONTENT;
+
 /// The Markup tab.
 pub fn tab() -> Tab {
     Tab::new("markup", ribbon::tab_markup())
@@ -98,6 +100,20 @@ pub fn tab() -> Tab {
                     command("markup.paste_image_stamp"),
                     command("markup.insert_text"),
                     command("markup.replace_text"),
+                ],
+            ),
+            // ---------------------------------------------------------------
+            // Content — page text, beside the notes that only sit on top of
+            // the page. The same tool and switch as Edit ▸ Content, under
+            // `markup.*` ids (P1), and shown only where content may be edited:
+            // in Review the group has nothing left and is not drawn.
+            // ---------------------------------------------------------------
+            group(
+                "content",
+                ribbon::group_edit_content(),
+                [
+                    command("markup.add_text").shown_when(EDIT_CONTENT),
+                    command("markup.paragraphs").shown_when(EDIT_CONTENT),
                 ],
             ),
             // ---------------------------------------------------------------

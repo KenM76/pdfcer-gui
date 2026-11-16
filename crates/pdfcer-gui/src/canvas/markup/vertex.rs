@@ -86,6 +86,36 @@ pub fn page_point(at: Pos2, page: &Page) -> Option<(f64, f64)> {
     Some((f64::from(p.x), f64::from(p.y)))
 }
 
+/// **Where a click or the rubber segment lands**, canvas space: the pointer,
+/// or — with Shift held and a vertex already placed — the pointer with its
+/// direction from the run's last vertex snapped to the constraint step.
+///
+/// The one reading of Shift for this gesture: the click and the preview both
+/// call it, so the vertex placed is the one the rubber segment showed.
+pub(in crate::canvas) fn aim(
+    ctx: &egui::Context,
+    page_index: usize,
+    kind: MarkupKind,
+    page: Option<&Page>,
+    at: Pos2,
+) -> Pos2 {
+    let shift = ctx.input(|i| i.modifiers.shift);
+    if !shift {
+        return at;
+    }
+    let last = read(ctx)
+        .filter(|r| r.page_index == page_index && r.kind == kind)
+        .and_then(|r| r.vertices.last().copied());
+    #[allow(clippy::cast_possible_truncation)]
+    let from = last.zip(page).and_then(|((x, y), page)| {
+        viewer::pdf_space_to_canvas(Pos2::new(x as f32, y as f32), page)
+    });
+    match from {
+        Some(from) => crate::canvas::constrain::direction(ctx, true, from, at),
+        None => at,
+    }
+}
+
 /// **The one commit path**, reached by both endings.
 pub(crate) fn commit(run: &mut VertexRun, actions: &mut Vec<Action>, pen: super::pen::Pen) -> bool {
     let geometry = Geometry::Vertices(run.vertices.clone());
@@ -215,6 +245,16 @@ fn pending(ctx: &egui::Context) -> Option<VertexRun> {
 /// **The `markup.finish` command's whole effect**, reporting whether it did
 /// anything.
 pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>, pen: super::pen::Pen) -> bool {
+    finish_via(ctx, actions, pen, "command") // ui-text-exempt: a trace value, never displayed
+}
+
+/// [`finish`], naming the ending that asked on the `markup-finish` line.
+fn finish_via(
+    ctx: &egui::Context,
+    actions: &mut Vec<Action>,
+    pen: super::pen::Pen,
+    via: &'static str,
+) -> bool {
     let Some(mut run) = pending(ctx) else {
         return false;
     };
@@ -227,9 +267,9 @@ pub fn finish(ctx: &egui::Context, actions: &mut Vec<Action>, pen: super::pen::P
         // ui-text-exempt: diagnostic trace, never displayed in the UI.
         //
         // The `add-markup` line the engine traces proves the edit landed; this
-        // one proves which of the two endings asked for it, which a screenshot
+        // one proves which ending asked for it, which a screenshot
         // cannot distinguish and neither can the engine.
-        format!("markup-finish via=command kind={kind:?} page={page_index}")
+        format!("markup-finish via={via} kind={kind:?} page={page_index}")
     });
     true
 }
@@ -255,6 +295,29 @@ pub fn keys(ctx: &egui::Context, actions: &mut Vec<Action>, pen: super::pen::Pen
         store(ctx, run);
         crate::diag::trace(|| format!("markup-vertex-key key=backspace vertices={left}"));
     }
+}
+
+/// **Escape on a vertex run**: finish it with the vertices placed so far, or
+/// abandon it when they are too few to be a markup of its kind. Reports
+/// whether there was a run to take the key.
+///
+/// A finish is one undo away and a discard is not, so Escape keeps the work
+/// whenever there is enough of it — the rule a text draft follows. The finish
+/// is the `markup.finish` command's own path, so the three endings author the
+/// same annotation.
+pub fn escape(ctx: &egui::Context, actions: &mut Vec<Action>, pen: super::pen::Pen) -> bool {
+    if read(ctx).is_none_or(|r| !r.in_progress()) {
+        return false;
+    }
+    // ui-text-exempt: a trace value, never displayed
+    if finish_via(ctx, actions, pen, "escape") {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-escape outcome=FinishedMarkupVertexRun".to_owned()
+        });
+        return true;
+    }
+    abandon(ctx)
 }
 
 /// **Abandon a vertex run in progress**, reporting whether there was one.
@@ -593,6 +656,44 @@ mod tests {
         assert!(abandon(&ctx));
         assert!(read(&ctx).is_none(), "the run is gone");
         assert!(!abandon(&ctx), "and it is not claimed twice");
+    }
+
+    /// **Escape finishes a run long enough to author**, and falls back to
+    /// abandoning one that is not.
+    #[test]
+    fn escape_finishes_a_long_run_and_abandons_a_short_one() {
+        let ctx = egui::Context::default();
+        let pen = crate::canvas::markup::pen::Pen::default();
+        let mut actions = Vec::new();
+        assert!(
+            !escape(&ctx, &mut actions, pen),
+            "no run: the key is not ours"
+        );
+
+        tool::arm_markup(&ctx, MarkupKind::Polygon);
+        let three = [(10.0, 10.0), (40.0, 20.0), (25.0, 45.0)];
+        let _ = run_clicks(&ctx, MarkupKind::Polygon, &three);
+        assert!(escape(&ctx, &mut actions, pen));
+        assert!(
+            matches!(
+                actions.as_slice(),
+                [Action::CommitMarkup {
+                    kind: MarkupKind::Polygon,
+                    ..
+                }]
+            ),
+            "three corners are a polygon: {actions:?}"
+        );
+        assert!(
+            read(&ctx).is_none_or(|r| !r.in_progress()),
+            "the run is spent"
+        );
+
+        actions.clear();
+        let _ = run_clicks(&ctx, MarkupKind::Polygon, &three[..2]);
+        assert!(escape(&ctx, &mut actions, pen), "the press is still taken");
+        assert!(actions.is_empty(), "two corners are not a polygon");
+        assert!(read(&ctx).is_none(), "and the short run is gone");
     }
 
     /// A run that [`super::action`] refuses is kept rather than silently thrown

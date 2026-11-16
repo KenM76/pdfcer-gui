@@ -83,3 +83,68 @@ fn a_degenerate_pair_is_left_for_the_one_place_that_refuses_it() {
     assert!((sy - 2.0).abs() < f32::EPSILON);
     assert!(!crate::canvas::resizing::is_usable(sx, sy));
 }
+
+/// The bearing of `at` from `from`, in degrees, y down.
+fn bearing(from: Pos2, at: Pos2) -> f32 {
+    let v = at - from;
+    v.y.atan2(v.x).to_degrees()
+}
+
+/// **A segment aimed 7° off a step lands on the step**, in every quadrant,
+/// and on both sides of it.
+#[test]
+fn a_direction_off_a_step_lands_on_the_nearest_step() {
+    let from = Pos2::new(100.0, 100.0);
+    for (aim, want) in [
+        (7.0_f32, 0.0_f32),
+        (52.0, 45.0),
+        (97.0, 90.0),
+        (-38.0, -45.0),
+        (173.0, 180.0),
+        (23.0, 30.0),
+    ] {
+        let at = from + Vec2::angled(aim.to_radians()) * 80.0;
+        let got = bearing(from, along_step(from, at));
+        let diff = (got - want).rem_euclid(360.0);
+        assert!(
+            diff < 1e-3 || (360.0 - diff) < 1e-3,
+            "aimed {aim}°, landed {got}°, wanted {want}°"
+        );
+    }
+}
+
+/// **The pointer is projected onto the ray**: the landed point is the one on
+/// the snapped direction nearest the pointer, so its length is the pointer's
+/// reach along that direction.
+#[test]
+fn the_landed_point_is_the_pointer_projected_onto_the_ray() {
+    let from = Pos2::new(0.0, 0.0);
+    let at = Pos2::new(100.0, 10.0);
+    let got = along_step(from, at);
+    assert!((got.y).abs() < 1e-4, "on the horizontal: {got:?}");
+    assert!((got.x - 100.0).abs() < 1e-4, "reach along it kept: {got:?}");
+}
+
+/// A pointer exactly on the previous point has no direction to snap.
+#[test]
+fn no_travel_has_no_direction() {
+    let p = Pos2::new(5.0, 5.0);
+    assert_eq!(along_step(p, p), p);
+}
+
+/// An inactive constraint returns the pointer untouched.
+#[test]
+fn an_inactive_direction_lock_changes_nothing() {
+    let ctx = egui::Context::default();
+    let at = Pos2::new(37.0, 11.0);
+    assert_eq!(direction(&ctx, false, Pos2::ZERO, at), at);
+}
+
+/// Rotation and direction snap to one step, so a Shift-rotated object and a
+/// Shift-drawn line meet at the same angles.
+#[test]
+fn rotation_and_direction_share_one_step() {
+    assert!((crate::canvas::rotating::STEP_DEGREES - STEP_DEGREES).abs() < f32::EPSILON);
+    let r = 52.0_f32.to_radians();
+    assert!((crate::canvas::rotating::snap(r) - snap_angle(r)).abs() < f32::EPSILON);
+}

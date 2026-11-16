@@ -259,3 +259,33 @@ uncoloured model is grey), `a_coloured_3d_model_draws_in_its_own_colours`
 `the_3d_viewer_opens_on_the_files_view` (the file's view and the way back to
 it), `the_3d_viewer_draws_a_texture`, `the_3d_viewer_lists_the_model_tree` and
 `the_3d_viewer_draws_a_mesh_in_part`.
+
+## Its own window, and closing with its document
+
+The viewer's host is `independent()`: after its opening hold it is a window
+of its own, minimised, restored and raised independently of the document's
+window. `trace_owner` reads the operating system's owner
+(`native_window::owner_of`, `GetWindow(GW_OWNER)`) and traces
+`model-view-owner owned=0|1` on change.
+
+It belongs to the document it was opened from, keyed on that document's
+path and serial: a re-read keeps the path, Save As keeps the serial, and
+`app::quitting::step_model_close` follows either change through `rebind`
+(`model-view-owner-moved path= serial=`). When its document is closed by a
+route that did not ask, the viewer closes with it, unasked
+(`model-view-closed how=document`).
+
+Closing that document's tab, or the program, asks first; see
+`dialogs/close_model.md`. Closing the viewer asks nothing and leaves the
+document open.
+
+While another document is on screen its writes into the document (a page
+picture, saved views, saved measurements) are refused rather than applied to
+the wrong document, with a status message and
+`model-view-write-refused reason=other-document picture= views= measurements=`.
+A picture saved to a file of its own still goes.
+
+Traces: `model-close-asked reason=tab|quit owner=`,
+`model-close-answered reason= choice=close|cancel`,
+`model-view-closed how=document`. Driven by
+`closing_the_document_asks_about_its_model_window`.

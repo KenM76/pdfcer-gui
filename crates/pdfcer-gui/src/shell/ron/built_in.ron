@@ -459,6 +459,14 @@
                     collapse: 2,
                 ),
                 (
+                    id: "content",
+                    caption: "Content",
+                    items: [
+                        Command(id: "markup.add_text", visible_when: "mode.edit_content"),
+                        Command(id: "markup.paragraphs", visible_when: "mode.edit_content"),
+                    ],
+                ),
+                (
                     id: "style",
                     caption: "Style",
                     items: [

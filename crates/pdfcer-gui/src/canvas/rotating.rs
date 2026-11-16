@@ -39,8 +39,7 @@
 
 use egui::{Pos2, Vec2};
 
-/// How many degrees a constrained rotation snaps to.
-pub const STEP_DEGREES: f32 = 15.0;
+pub use crate::canvas::constrain::STEP_DEGREES;
 
 /// The smallest rotation, in degrees, that counts as a gesture rather than a
 /// twitch.
@@ -84,8 +83,7 @@ pub fn normalise(mut radians: f32) -> f32 {
 /// Round a radian angle to the nearest [`STEP_DEGREES`].
 #[must_use]
 pub fn snap(radians: f32) -> f32 {
-    let step = STEP_DEGREES.to_radians();
-    (radians / step).round() * step
+    crate::canvas::constrain::snap_angle(radians)
 }
 
 /// Whether a rotation is big enough to be an edit — `drag-moves` D7.

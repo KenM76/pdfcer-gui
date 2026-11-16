@@ -66,12 +66,9 @@ they disagree about is the *second* way out, and this is the interesting half:
   question — the majority *has never faced the surface*, which is the lesson
   `CanvasTool::Text` records from the day the same trap was set the other way
   round. **Acrobat wins, and it wins on applicability rather than head-count.**
-* *SolidWorks ends the chain with `Escape`.* This shell's Escape ladder
-  already means something here and it means the more transient thing: §3
-  below, where `Escape` **abandons** the run rather than committing it.
-  Committing on `Escape` would make the one key an operator presses to say
-  *"no"* write to the document, which is the least recoverable reading of a
-  key that exists to be recoverable.
+* *SolidWorks ends the chain with `Escape`.* So does this shell: §3. Escape
+  finishes the run with the corners placed so far, the same commit Finish
+  makes, and undo takes it back.
 * *Inkscape ends with `Enter`.* No chord is invented for it, on exactly the
   argument the operator's own zoom-to-selection decision settled: this shell's
   manifest chords are `Ctrl`-modified by construction, `Enter` is not one, and
@@ -124,7 +121,7 @@ operator does:
 |---|---|
 | the armed **kind** changes | a polyline's vertices are not a polygon's; carrying them would close a shape the operator drew open |
 | the **page** changes | a run begun on sheet 1 means nothing on sheet 2, and authoring it there would put a shape on a page it was never drawn on |
-| **Escape** | §3 |
+| **Escape** with too few corners to finish | §3 |
 
 The first two are [`load`]'s two synchronisations and are lifted from
 `measure::load` unchanged, including their order: the kind first, because a
@@ -138,25 +135,31 @@ Finish for a run nothing is drawing any more.
 
 ---
 
-## 3. Escape takes **two** presses, and that is the same rule the measure pick
-## follows
+## 3. Escape finishes the run, and a second press puts the pen down
 
-A band drag is a `DragKind`, so `Escape` abandons it through the gesture
-machine's claimant 1 and nothing new is needed. A vertex run is a sequence of
-**clicks**, so there is no drag for that claimant to cancel — and yet a
-polygon with three vertices taken and the fourth not is unmistakably a gesture
-in flight.
+A band drag is a `DragKind`, so `Escape` ends it through the gesture machine's
+claimant 1. A vertex run is a sequence of **clicks**, so there is no drag for
+that claimant to cancel.
 
-So [`abandon`] takes its own rung, immediately beside
-[`crate::canvas::measure::abandon`] and above the rung that retires the tool.
-One press discards the run and leaves the pen armed; a second press puts the
-pen down. That ordering is the ladder's own *"retire the most transient thing
-first"* rule, and it is the one an operator means: a mis-aimed third click is
-corrected without leaving the tool.
+[`escape`] takes rung 3a of `canvas::keys`, beside
+[`crate::canvas::measure::escape`] and above the rung that retires the tool.
+With enough corners (two for a polyline, three for a polygon or cloud) it
+authors the run exactly as Finish does, traced `markup-finish via=escape`
+and `canvas-escape outcome=FinishedMarkupVertexRun`, and leaves the pen armed.
+With fewer it falls to [`abandon`], which discards them
+(`AbandonedMarkupVertexRun`). Either way a second press puts the pen down.
 
-Without the rung, one Escape would discard the run **and** put the tool down —
-two effects from one press, which is exactly what decision 025's L1 forbids.
-`canvas::keys`' header carries the full precedence table.
+Finish, double-click and Escape share `finish_via`, so the three endings
+author the same annotation; only the `via=` field differs.
+
+## 4. Shift snaps the next corner's direction
+
+[`aim`] is where a click and the preview both read the next corner. With
+Shift held and a corner already placed, it turns the pointer onto the nearest
+15° direction from that corner (`constrain::direction`, which announces
+`Lock::Direction`). It snaps in canvas space: a 15° step survives the uniform
+scale, the Y flip and a quarter-turn page rotation, so the result is the same
+in PDF space. The first corner has nothing to snap from.
 
 ## Item notes
 
@@ -231,6 +234,12 @@ on a sheet they had paged away from.
 Both halves. The `false` with nothing in progress is the load-bearing one:
 without it Escape would be consumed by a tool that has nothing to abandon,
 and the ladder below would need two presses to move one rung.
+
+### `fn escape_finishes_a_long_run_and_abandons_a_short_one`
+
+Three polygon corners author one `CommitMarkup`; two are discarded with the
+press still taken. The tool is armed first because a run only counts while
+its tool is.
 
 ### `struct VertexRun`
 

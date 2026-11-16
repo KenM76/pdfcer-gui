@@ -2,8 +2,21 @@
 
 The **Markup** tab — *what am I adding for someone else to read?*
 
-`RIBBON_IA.md` §5.5. Five groups: Shapes, Text markup, Notes, Style,
-Comments.
+`RIBBON_IA.md` §5.5. Seven groups: Shapes, Text markup, Notes, Content,
+Style, Arrange, Comments.
+
+# Content is page text, on a tab about what sits on top of the page
+
+Add text and Paragraphs are Edit ▸ Content's tool and switch, reached from
+here because an operator marking up a drawing reaches for *"put words on
+it"* on this tab. Placed beside Notes, so the Text box (a removable comment)
+and Add text (permanent page content) are one glance apart and the tooltips
+name the difference.
+
+They are `markup.add_text` and `markup.paragraphs`, not the Edit ids: P1
+allows one id on one tab. Both dispatch to the Edit commands' tool and
+switch, and both carry `shown_when(mode.edit_content)`: in Review the items
+are absent (R9), the group is left empty, and an empty group is not drawn.
 
 # Why it is not called Review
 

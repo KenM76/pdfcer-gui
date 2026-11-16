@@ -255,6 +255,24 @@ pub const fn markup_text_box() -> CommandText {
     )
 }
 
+/// `markup.add_text` — `edit.add_text` reached from the Markup tab, so its
+/// tooltip names the difference from the Text box beside it.
+#[must_use]
+pub const fn markup_add_text() -> CommandText {
+    CommandText::new(
+        "Add text",
+        "Add new text to the page itself — a label, caption or note that becomes real, \
+         permanent page content, exactly like the text already here. For a removable comment \
+         instead, use Text box.",
+    )
+}
+
+/// `markup.paragraphs` — the same switch as `edit.paragraphs`.
+#[must_use]
+pub const fn markup_paragraphs() -> CommandText {
+    super::edit_paragraphs()
+}
+
 /// `markup.sticky_note`
 #[must_use]
 pub const fn markup_sticky_note() -> CommandText {

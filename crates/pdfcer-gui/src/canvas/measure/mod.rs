@@ -90,6 +90,14 @@ fn store(ctx: &egui::Context, st: MeasureState) {
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(MEASURE_MEMORY_KEY), st));
 }
 
+/// Plant a Linear pick with its first point taken, for the Escape ladder.
+#[cfg(test)]
+pub(crate) fn plant_linear_first_for_test(ctx: &egui::Context, page_index: usize) {
+    let mut st = MeasureState::for_kind(page_index, MeasureKind::Linear);
+    st.linear.commit_point(Point::new(1.0, 2.0));
+    store(ctx, st);
+}
+
 /// **Advance the snap cycle**, reporting whether there was anything to advance.
 pub fn cycle_snap(ctx: &egui::Context) -> bool {
     let id = egui::Id::new(MEASURE_MEMORY_KEY);
@@ -256,6 +264,79 @@ pub fn abandon(ctx: &egui::Context) -> bool {
         "canvas-escape outcome=AbandonedMeasurePick".to_owned()
     });
     true
+}
+
+/// **Escape on a measure gesture**: an open-ended run with enough picks is
+/// committed as its ce dimension; anything else in progress is abandoned.
+/// Reports whether there was a gesture to take the key.
+///
+/// The open-ended tools are Perimeter, Length, Area and Circular — the ones a
+/// Finish ends. Their run is committed straight to the document with the value
+/// text at its default place, rather than handed to the placing click: a run
+/// left waiting for placement would be discarded by the next Escape, which is
+/// the loss this rule exists to prevent. A ce dimension's text can be moved
+/// afterwards. Linear, Scale and Two-line picks, and a measured ce dimension
+/// already waiting for its placing click, are abandoned as before.
+pub fn escape(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+    if commit_run(ctx, actions) {
+        crate::diag::trace(|| {
+            // ui-text-exempt: diagnostic trace, never displayed in the UI
+            "canvas-escape outcome=FinishedMeasureRun".to_owned()
+        });
+        return true;
+    }
+    abandon(ctx)
+}
+
+/// Commit the armed open-ended tool's run, if it is long enough to author,
+/// with its text at the default place. A run already finished and waiting for
+/// its placing click is committed as it stands.
+fn commit_run(ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+    let Some(kind) = crate::canvas::tool::selected(ctx).measure_kind() else {
+        return false;
+    };
+    let Some(mut st) = read(ctx) else {
+        return false;
+    };
+    if st.kind != kind {
+        return false;
+    }
+    let completed = match kind {
+        _ if st.placing.is_some() => is_run_kind(kind),
+        MeasureKind::Circular => circular::complete(&mut st),
+        MeasureKind::Perimeter | MeasureKind::PathLength | MeasureKind::Area => {
+            perimeter::complete(&mut st)
+        }
+        _ => false,
+    };
+    let Some(placing) = st.placing.take().filter(|_| completed) else {
+        return false;
+    };
+    let page_index = st.page_index;
+    actions.push(Action::Dimension(DimensionAction::Commit {
+        page: page_index,
+        group: st.group,
+        kind: placing.kind,
+        disclosures: placing.disclosures,
+    }));
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("measure-finish via=escape kind={kind:?} page={page_index}")
+    });
+    trace_pick(kind, &st, true);
+    store(ctx, st);
+    true
+}
+
+/// The tools whose pick is a run of any length, which Escape finishes.
+fn is_run_kind(kind: MeasureKind) -> bool {
+    matches!(
+        kind,
+        MeasureKind::Circular
+            | MeasureKind::Perimeter
+            | MeasureKind::PathLength
+            | MeasureKind::Area
+    )
 }
 
 /// **Everything one measure click is resolved against.**
@@ -638,6 +719,113 @@ mod tests {
         assert!(
             !moved.circular.in_progress(),
             "a fit assembled on sheet 1 means nothing on sheet 2"
+        );
+    }
+
+    // =====================================================================
+    // Escape: an open-ended run is committed, a short one abandoned
+    // =====================================================================
+
+    fn perimeter_run(ctx: &egui::Context, kind: MeasureKind, points: &[(f64, f64)]) {
+        crate::canvas::tool::arm_measure(ctx, kind);
+        let mut st = MeasureState::for_kind(0, kind);
+        for &(x, y) in points {
+            st.perimeter.push(Point::new(x, y));
+        }
+        store(ctx, st);
+    }
+
+    #[test]
+    fn escape_commits_a_perimeter_run_with_its_text_at_the_default_place() {
+        let ctx = egui::Context::default();
+        perimeter_run(
+            &ctx,
+            MeasureKind::PathLength,
+            &[(0.0, 0.0), (10.0, 0.0), (10.0, 5.0)],
+        );
+        let mut actions = Vec::new();
+        assert!(escape(&ctx, &mut actions), "the press is taken");
+        assert!(
+            matches!(
+                actions.as_slice(),
+                [Action::Dimension(DimensionAction::Commit { .. })]
+            ),
+            "the run is authored, not discarded: {actions:?}"
+        );
+        let st = read(&ctx).expect("state survives");
+        assert!(
+            !st.gesture_in_progress(),
+            "nothing is left waiting for a placing click a second Escape would discard"
+        );
+    }
+
+    #[test]
+    fn escape_commits_a_finished_run_waiting_for_its_placing_click() {
+        let ctx = egui::Context::default();
+        perimeter_run(
+            &ctx,
+            MeasureKind::Perimeter,
+            &[(0.0, 0.0), (10.0, 0.0), (10.0, 5.0)],
+        );
+        let mut st = read(&ctx).expect("planted");
+        assert!(perimeter::complete(&mut st), "three corners finish");
+        store(&ctx, st);
+        let mut actions = Vec::new();
+        assert!(escape(&ctx, &mut actions), "the press is taken");
+        assert!(
+            matches!(
+                actions.as_slice(),
+                [Action::Dimension(DimensionAction::Commit { .. })]
+            ),
+            "the held ce dimension is authored, not dropped: {actions:?}"
+        );
+        assert!(read(&ctx).is_some_and(|s| s.placing.is_none()));
+    }
+
+    #[test]
+    fn escape_abandons_a_run_too_short_to_author() {
+        let ctx = egui::Context::default();
+        perimeter_run(&ctx, MeasureKind::Area, &[(0.0, 0.0), (10.0, 0.0)]);
+        let mut actions = Vec::new();
+        assert!(escape(&ctx, &mut actions), "the press is still taken");
+        assert!(actions.is_empty(), "two corners are not an area");
+        assert!(read(&ctx).is_some_and(|s| !s.gesture_in_progress()));
+    }
+
+    #[test]
+    fn escape_with_nothing_in_progress_leaves_the_key_for_the_next_rung() {
+        let ctx = egui::Context::default();
+        perimeter_run(&ctx, MeasureKind::Perimeter, &[]);
+        let mut actions = Vec::new();
+        assert!(!escape(&ctx, &mut actions));
+        assert!(actions.is_empty());
+    }
+
+    #[test]
+    fn the_direction_anchor_is_the_previous_pick_and_nothing_while_placing() {
+        let mut st = MeasureState::for_kind(0, MeasureKind::Perimeter);
+        assert_eq!(st.anchor(), None, "no pick, no direction");
+        st.perimeter.push(Point::new(1.0, 1.0));
+        st.perimeter.push(Point::new(4.0, 2.0));
+        assert_eq!(st.anchor(), Some(Point::new(4.0, 2.0)), "the last vertex");
+
+        let mut lin = MeasureState::for_kind(0, MeasureKind::Linear);
+        lin.linear.commit_point(Point::new(3.0, 3.0));
+        assert_eq!(lin.anchor(), Some(Point::new(3.0, 3.0)), "point A");
+
+        let mut circ = MeasureState::for_kind(0, MeasureKind::Circular);
+        circ.circular
+            .toggle_point(Point::new(1.0, 1.0), pick::PickOrigin::Free, 0.1);
+        assert_eq!(circ.anchor(), None, "a circle's samples are not a chain");
+
+        let mut done = MeasureState::for_kind(0, MeasureKind::PathLength);
+        done.perimeter.push(Point::new(0.0, 0.0));
+        done.perimeter.push(Point::new(5.0, 0.0));
+        assert!(perimeter::complete(&mut done), "a two-point length authors");
+        assert_eq!(
+            done.anchor(),
+            None,
+            "the placing click places text, not a segment"
         );
     }
 }

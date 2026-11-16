@@ -97,6 +97,20 @@ Returns the raw point unchanged when any gate declines, with `None` for the
 candidate — so a caller never has to distinguish "snapping is off" from
 "nothing was near", because neither changes what it does next.
 
+### `fn aimed`
+
+With Shift held and a [`MeasureState::anchor`], turns the pick onto the
+nearest 15° direction from the anchor (`constrain::direction`), in PDF user
+space. Applied only when no object snap took the point: a snap to geometry is
+what the operator aimed at, and Shift+Alt, which refuses the object snap,
+gives the pure direction. Called from `resolve_hover`, so the click and the
+preview agree.
+
+### `fn shift_turns_the_next_pick_onto_a_step_from_the_previous_one`
+
+The four cases: snapped with Shift, untouched without it, untouched over an
+object snap, untouched with no anchor.
+
 ### `fn snap_point`
 
 The perimeter's vertex drag is the caller. It routes here rather than

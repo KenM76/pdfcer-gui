@@ -4,9 +4,9 @@
 //!
 //! | id | what it does |
 //! |---|---|
-//! | `edit.text`, `edit.add_text` | **arm** the caret |
+//! | `edit.text`, `edit.add_text`, `markup.add_text` | **arm** the caret |
 //! | `edit.reflow_block` | **act** on the paragraph the caret is in |
-//! | `edit.paragraphs` | **switch** whether a click opens a whole paragraph |
+//! | `edit.paragraphs`, `markup.paragraphs` | **switch** whether a click opens a whole paragraph |
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui/app/dispatch/text.md`.
 
@@ -22,8 +22,10 @@ pub(crate) fn handles(id: &str) -> bool {
         id,
         "edit.text"
             | "edit.add_text"
+            | "markup.add_text"
             | "edit.reflow_block"
             | "edit.paragraphs"
+            | "markup.paragraphs"
             | "edit.paragraphs_page"
             | "edit.paragraph_here"
     )
@@ -39,7 +41,7 @@ pub(crate) fn dispatch(
     match id {
         // ui-text-exempt: registered command id, never displayed.
         "edit.reflow_block" => reflow(ctx, &app.status, actions),
-        "edit.paragraphs" => paragraphs(app, ctx),
+        "edit.paragraphs" | "markup.paragraphs" => paragraphs(app, ctx),
         "edit.paragraphs_page" => paragraphs_page(app, ctx),
         "edit.paragraph_here" => {
             if let Status::Open(doc) = &app.status {
@@ -75,11 +77,11 @@ fn paragraphs_page(app: &mut crate::app::PdfcerApp, ctx: &egui::Context) {
 /// Arm the caret, or decline because this stance cannot author content.
 fn arm(app: &mut crate::app::PdfcerApp, ctx: &egui::Context, id: &str) {
     match id {
-        "edit.text" | "edit.add_text" => {
-            let kind = if id == "edit.add_text" {
-                crate::canvas::textedit::TextEditKind::Add
-            } else {
+        "edit.text" | "edit.add_text" | "markup.add_text" => {
+            let kind = if id == "edit.text" {
                 crate::canvas::textedit::TextEditKind::Edit
+            } else {
+                crate::canvas::textedit::TextEditKind::Add
             };
             if app.capabilities().edit_content {
                 // Both ids arm the caret directly — two doors into one

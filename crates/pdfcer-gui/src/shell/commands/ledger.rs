@@ -440,9 +440,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 255 → 259: the snapshot region's delete, redact, redact outside and crop.
     // 259 → 260: `view.panel_tags`, View ▸ Panels.
     // 260 → 261: `view.page_boxes`, View ▸ Display.
+    // 261 → 263: `markup.add_text` and `markup.paragraphs`, Markup ▸ Content.
     assert_eq!(
         registry().len(),
-        261 + 2 * usize::from(cfg!(feature = "signing"))
+        263 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -893,9 +894,11 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
     // `delete`, `redact`, `redact-selection` and `page-single`.
     // 228 → 229: `view.panel_tags`, with its own icon.
     // 229 → 230: `view.page_boxes`, with its own icon.
+    // 230 → 232: `markup.add_text` and `markup.paragraphs` share `add-text`
+    // and `paragraphs`.
     assert_eq!(
         named,
-        230 + 2 * usize::from(cfg!(feature = "signing"))
+        232 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d")),
         "commands naming an icon"

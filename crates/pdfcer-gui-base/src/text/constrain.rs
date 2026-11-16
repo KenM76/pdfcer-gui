@@ -1,6 +1,6 @@
 //! # `text::constrain` — the sentence a held Shift puts on the status row
 //!
-//! Three strings, for [`crate::constrain`].
+//! One sentence per lock, for [`crate::constrain`].
 //!
 //! Design and rationale: `docs/modules/pdfcer-gui-base/text/constrain.md`.
 
@@ -26,6 +26,9 @@ pub const fn caption(lock: Lock) -> &'static str {
         // the four diagonals reachable, and saying the number is how they find
         // that out without counting.
         Lock::Angle => "Shift: turning in steps of 15°",
+        // "Drawing", because the operator is laying a line down, not turning
+        // anything; the step is the same number as the rotation's.
+        Lock::Direction => "Shift: drawing in steps of 15°",
     }
 }
 
@@ -52,6 +55,8 @@ mod tests {
             Lock::Axis(Axis::Horizontal),
             Lock::Axis(Axis::Vertical),
             Lock::Aspect,
+            Lock::Angle,
+            Lock::Direction,
         ] {
             assert!(
                 caption(lock).contains("Shift"),

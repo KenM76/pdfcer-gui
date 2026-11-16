@@ -87,7 +87,12 @@ unsafe extern "system" {
     fn SetWindowLongPtrW(hwnd: Hwnd, index: i32, value: isize) -> isize;
     /// The same, reading.
     fn GetWindowLongPtrW(hwnd: Hwnd, index: i32) -> isize;
+    /// A window related to `hwnd`; with [`GW_OWNER`], its owner or null.
+    fn GetWindow(hwnd: Hwnd, cmd: u32) -> Hwnd;
 }
+
+/// `GetWindow`'s command for a window's owner.
+const GW_OWNER: u32 = 4;
 
 /// **Make the window titled `title` owned by `owner`**, and report whether the
 /// relationship now holds.
@@ -114,6 +119,29 @@ pub fn own_window(owner: isize, title: &str) -> bool {
     if owner == 0 {
         return false;
     }
+    set_owner(title, owner)
+}
+
+/// **Release the window titled `title` from any owner**, so it no longer
+/// stays above, or minimises with, the window that owned it. `true` once it
+/// is un-owned; `false` on the same three "not yet" grounds as [`own_window`].
+#[must_use]
+pub fn disown_window(title: &str) -> bool {
+    set_owner(title, 0)
+}
+
+/// **The real owner of this process's window titled `title`**, as the
+/// operating system reports it: `Some(0)` for an un-owned window, `None` when
+/// no such window of ours exists yet.
+#[must_use]
+pub fn owner_of(title: &str) -> Option<isize> {
+    let hwnd = ours(title)?;
+    // SAFETY: `hwnd` is a window of this process, confirmed by `ours`.
+    Some(unsafe { GetWindow(hwnd, GW_OWNER) } as isize)
+}
+
+/// This process's top-level window titled `title`, if there is one.
+fn ours(title: &str) -> Option<Hwnd> {
     let wide: Vec<u16> = title.encode_utf16().chain(std::iter::once(0)).collect();
     // SAFETY: both pointer arguments are null (search all top-level windows,
     // any class); `wide` is a NUL-terminated UTF-16 buffer that outlives the
@@ -127,7 +155,7 @@ pub fn own_window(owner: isize, title: &str) -> bool {
         )
     };
     if hwnd.is_null() {
-        return false;
+        return None;
     }
     // It must be OURS. See the module header.
     let mut pid: u32 = 0;
@@ -135,10 +163,15 @@ pub fn own_window(owner: isize, title: &str) -> bool {
     // live stack local. The call tolerates a stale handle by returning 0.
     unsafe { GetWindowThreadProcessId(hwnd, &raw mut pid) };
     // SAFETY: no arguments, no pointers.
-    if pid == 0 || pid != unsafe { GetCurrentProcessId() } {
+    (pid != 0 && pid == unsafe { GetCurrentProcessId() }).then_some(hwnd)
+}
+
+/// Point the owner slot of our window titled `title` at `owner` (0 = none).
+fn set_owner(title: &str, owner: isize) -> bool {
+    let Some(hwnd) = ours(title) else {
         return false;
-    }
-    // SAFETY: `hwnd` is a window of this process, confirmed above.
+    };
+    // SAFETY: `hwnd` is a window of this process, confirmed by `ours`.
     let current = unsafe { GetWindowLongPtrW(hwnd, GWLP_HWNDPARENT) };
     if current == owner {
         return true;

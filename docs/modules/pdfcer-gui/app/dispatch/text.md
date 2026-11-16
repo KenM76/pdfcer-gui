@@ -4,8 +4,13 @@
 
 | id | what it does |
 |---|---|
-| `edit.text`, `edit.add_text` | **arm** the caret |
+| `edit.text`, `edit.add_text`, `markup.add_text` | **arm** the caret |
 | `edit.reflow_block` | **act** on the paragraph the caret is in |
+| `edit.paragraphs`, `markup.paragraphs` | **switch** whether a click opens a whole paragraph |
+
+`markup.add_text` and `markup.paragraphs` are Markup ▸ Content's doors onto
+the Edit commands' tool and switch: the same arm, the same mode refusal, the
+same persisted preference.
 
 The arming pair sits with the reflow rather than in [`super`], and that is
 the seam rather than a convenience: these are the commands whose subject is a

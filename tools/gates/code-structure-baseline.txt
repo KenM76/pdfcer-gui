@@ -293,7 +293,6 @@ fn crates/pdfcer-gui/src/canvas/gesture/outcome.rs::outcome
 fn crates/pdfcer-gui/src/canvas/input.rs::probe
 fn crates/pdfcer-gui/src/canvas/interact.rs::interact
 fn crates/pdfcer-gui/src/canvas/keys.rs::canvas_keys
-fn crates/pdfcer-gui/src/canvas/measure/mod.rs::click
 fn crates/pdfcer-gui/src/canvas/measure/perimeter.rs::click
 fn crates/pdfcer-gui/src/canvas/menus.rs::attach
 fn crates/pdfcer-gui/src/canvas/moving/mod.rs::drag
@@ -492,7 +491,6 @@ fn tools/ui-verify/src/checks/dimension_extension_grip.rs::drive
 fn tools/ui-verify/src/checks/dimension_groups.rs::drive
 fn tools/ui-verify/src/checks/dimension_groups.rs::fold
 fn tools/ui-verify/src/checks/dimension_label_drag.rs::drive
-fn tools/ui-verify/src/checks/dimension_text_slide.rs::drive
 fn tools/ui-verify/src/checks/display_two_rows.rs::drive
 fn tools/ui-verify/src/checks/dock_drop.rs::drive_drop
 fn tools/ui-verify/src/checks/dock_drop.rs::drive_tear

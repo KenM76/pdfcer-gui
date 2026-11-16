@@ -221,10 +221,9 @@ between two rays lands on the second ray.
 
 ### `const STEP_DEGREES`
 
-Fifteen, which is PowerPoint's, Illustrator's, Inkscape's and Figma's. It
-divides 90 and 360 exactly, so the four right angles and the four diagonals
-are all reachable — which is what the operator actually wants from the key,
-and what a value like 10° would give them for 90 and take away for 45.
+Re-exported from `constrain`, which owns the number because a Shift-held
+drawn segment snaps its direction to the same step a Shift-held rotation
+turns in.
 
 ### `fn angle`
 

@@ -207,12 +207,18 @@ impl MeasureState {
         self.clear_gesture();
     }
 
-    /// Discard every in-progress gesture across the three tools (Escape stage 1
+    /// Discard every in-progress gesture across every tool (Escape stage 1
     /// / page navigation, ui-spec §1.3) and reset the snap cycle. Keeps the
     /// active group, snap toggle, and last disclosures.
+    ///
+    /// Clears exactly the fields [`Self::gesture_in_progress`] reads: a field
+    /// that survived here would make Escape report an abandon that left the
+    /// pick in place, and every later Escape repeat it without ever reaching
+    /// the rung that puts the tool down.
     pub fn clear_gesture(&mut self) {
         self.linear.clear();
         self.circular.clear();
+        self.perimeter.clear();
         self.scale.clear();
         self.two_lines.clear();
         self.placing = None;
@@ -277,6 +283,29 @@ impl MeasureState {
             || self.scale.in_progress()
             || self.two_lines.in_progress()
             || self.placing.is_some()
+    }
+
+    /// **The pick the next one is drawn from**, for Shift's direction snap.
+    ///
+    /// The previous point of a segment-drawing tool: Linear's and Scale's
+    /// first point, the perimeter family's last vertex. `None` for Circular
+    /// (its picks are samples, not a chain), for Two-line (it picks lines), and
+    /// while a ce dimension waits for its placing click, which places text
+    /// rather than drawing a segment.
+    #[must_use]
+    pub fn anchor(&self) -> Option<Point> {
+        if self.placing.is_some() {
+            return None;
+        }
+        let from_line = |l: &LinearPick| l.first.filter(|_| l.second.is_none());
+        match self.kind {
+            MeasureKind::Linear => from_line(&self.linear),
+            MeasureKind::Scale => from_line(&self.scale.line),
+            MeasureKind::Perimeter | MeasureKind::PathLength | MeasureKind::Area => {
+                self.perimeter.points().last().copied()
+            }
+            _ => None,
+        }
     }
 }
 
@@ -351,6 +380,12 @@ mod tests {
         st.scale.commit_point(p(2.0, 2.0));
         assert!(st.gesture_in_progress());
         // ...and clear_gesture discards them all (Escape stage 1).
+        st.clear_gesture();
+        assert!(!st.gesture_in_progress());
+        // The perimeter family on its own, because a pick the clear misses
+        // keeps `gesture_in_progress` true and pins Escape on the abandon rung.
+        st.perimeter.push(p(3.0, 3.0));
+        assert!(st.gesture_in_progress());
         st.clear_gesture();
         assert!(!st.gesture_in_progress());
         assert_eq!(st.snap_cycle, 0);

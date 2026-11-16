@@ -53,7 +53,7 @@ core's constant rather than a literal `0` written here.
 
 ## `placing`
 
-A measured dimension waiting for its placing click, with the gesture's
+A measured ce dimension waiting for its placing click, with the gesture's
 disclosures. While it is set the pick is still in progress (the ribbon's
 Escape and tool guards see it), and `set_linear_pick_mode`, `clear_gesture`
 and a kind change drop it uncommitted.
@@ -109,6 +109,19 @@ Discarding is free, because nothing has committed. The same rule
 
 A no-op when `mode` is already current — re-clicking the armed mode
 button must not silently throw away a pick in progress.
+
+### `fn clear_gesture`
+
+Clears every pick field, the perimeter run included. A run left behind would
+survive an Escape that reported it abandoned, and the next click would extend
+it.
+
+### `fn anchor`
+
+The point the next pick's direction is measured from: the first point of a
+Linear or Scale pick with no second, the last corner of a Perimeter, Length or
+Area run, and nothing while placing or for Circular and TwoLine, whose next
+point has no single predecessor.
 
 ### `fn set_kind`
 

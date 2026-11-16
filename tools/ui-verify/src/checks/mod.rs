@@ -216,6 +216,7 @@ pub mod leafplace;
 pub mod leaftransform;
 pub mod markup_click_through;
 pub mod markup_reshape;
+pub mod markup_text_tools;
 pub mod nodeshape;
 pub mod nudgecontent;
 pub mod replaceimage;
@@ -298,7 +299,7 @@ pub mod dimension_display_menu;
 pub mod dimension_extension_grip;
 pub mod dimension_label_drag;
 /// A linear ce dimension's text slides along its line; the line stays.
-pub mod dimension_text_slide;
+pub mod dimension_text_drag;
 
 pub mod field_clipboard;
 
@@ -677,6 +678,7 @@ pub mod enter_newline;
 /// **Escape on a text draft WRITES it, and `Ctrl+Z` takes it back** —
 /// `OPERATOR_REQUESTS.md` O223.
 pub mod escape_commits_text;
+pub mod escape_finishes_a_run;
 
 /// **A draft on existing page text is drawn in that text's own font** — O247.
 pub mod text_in_own_font;
@@ -819,6 +821,7 @@ pub mod select_filter;
 pub mod settings_headings;
 
 pub mod shift_constrains;
+pub mod shift_snaps_direction;
 
 pub mod tool_row;
 
@@ -957,13 +960,16 @@ pub mod model_view_poster;
 pub mod button_icon;
 /// A picture pasted while a push button is selected becomes its picture.
 pub mod button_icon_paste;
+/// The 3D viewer opens on the file's own saved view, and *File's view* returns
+/// to it.
+/// Closing a document with its 3D viewer open asks first; the viewer is a
+/// window of its own.
+pub mod model_close_asks;
 /// The 3D viewer saves its named views into the file.
 pub mod model_measure;
 pub mod model_options;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
-/// The 3D viewer opens on the file's own saved view, and *File's view* returns
-/// to it.
 pub mod model_saved_view;
 /// While Play 3D content is off, View… on a model asks first.
 pub mod model_trust;

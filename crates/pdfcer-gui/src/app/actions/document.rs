@@ -96,6 +96,10 @@ impl PdfcerApp {
             });
             return;
         }
+        let path = self.active_path().map(std::path::Path::to_path_buf);
+        if self.closing_asks_about_model(path) {
+            return;
+        }
         if self.dialogs.ask_unsaved(&self.status, PendingIntent::Close) {
             return;
         }
@@ -129,6 +133,9 @@ impl PdfcerApp {
     /// through `close_document` closes exactly what the operator was looking
     /// at. A `PendingIntent::CloseSlot(n)` would carry a slot number across a
     /// dialog, and slots renumber when a tab closes.
+    ///
+    /// Before either, a document whose 3D viewer is open asks whether to
+    /// close both; see `dialogs::close_model`.
     pub(super) fn apply_close_document(&mut self, slot: usize) {
         // As `apply_close`. `apply_close_other_documents` re-parks it AFTER
         // this returns, so its own loop is unaffected.
@@ -138,6 +145,13 @@ impl PdfcerApp {
                 // ui-text-exempt: diagnostic trace, never displayed in the UI
                 format!("close-document-declined slot={slot} reason=save-pending")
             });
+            return;
+        }
+        let path = match self.slot(slot) {
+            Some(crate::app::state::Status::Open(doc)) => Some(doc.path.clone()),
+            _ => None,
+        };
+        if self.closing_asks_about_model(path) {
             return;
         }
         // O65: `save::has_unsaved_edits`, not `session.is_modified()`. The
@@ -204,6 +218,39 @@ impl PdfcerApp {
             }
         }
         self.closing_others = None;
+    }
+
+    /// **Ask before closing the document at `path` while its 3D viewer is
+    /// open.** `true` when the question is up and the close waits for its
+    /// answer, which `step_model_close` acts on.
+    fn closing_asks_about_model(&mut self, path: Option<std::path::PathBuf>) -> bool {
+        let Some(path) = path else {
+            return false;
+        };
+        if self.dialogs.model_view_owner().map(|(p, _)| p) != Some(path.as_path()) {
+            return false;
+        }
+        self.dialogs
+            .ask_close_model(crate::dialogs::close_model::Closing::Tab(path))
+    }
+
+    /// **Close the tab at `path` again** once the operator chose to close its
+    /// 3D viewer too, continuing a `Close others` sequence if one was waiting.
+    pub(crate) fn resume_tab_close(&mut self, path: &std::path::Path) {
+        if let Some(keep) = self.closing_others.take() {
+            self.apply_close_other_documents(keep);
+            return;
+        }
+        if self.active_path() == Some(path) {
+            self.apply_close();
+            return;
+        }
+        let slot = (0..self.document_count()).find(|&s| {
+            matches!(self.slot(s), Some(crate::app::state::Status::Open(doc)) if doc.path == path)
+        });
+        if let Some(slot) = slot {
+            self.apply_close_document(slot);
+        }
     }
 }
 

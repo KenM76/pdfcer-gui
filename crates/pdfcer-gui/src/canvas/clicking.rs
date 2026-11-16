@@ -640,7 +640,7 @@ pub fn click(
             ctx,
             kind,
             page_index,
-            point,
+            super::markup::vertex::aim(ctx, page_index, kind, doc.current_page(), point),
             double,
             doc.current_page(),
             actions,

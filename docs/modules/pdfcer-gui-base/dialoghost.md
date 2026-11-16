@@ -490,3 +490,26 @@ case the driven checks never construct, and a name that is sometimes
 qualified and sometimes not is worse than one that is never qualified.
 A check that needs certainty asserts the dialog's own body region in
 the same frame.
+
+## Independent windows: `Host::independent`
+
+A dialog is owned by the application window for as long as it is open. A
+window marked `independent()` (the 3D viewer is the only one) is owned for
+`owning::HOLD_SECS` (1.5 s) after it opens and then released by
+`native_window::disown_window`. Released, it has its own taskbar button and
+minimises, restores and goes behind without the application window, and the
+application window minimises without it.
+
+The hold exists for the focus defect described above: a window that is never
+owned is handed the keyboard and loses the foreground back to the
+application window a third of a second later. The hold outlasts that
+window. While holding, the host asks for a repaint at the hold's end so the
+release happens even on an idle window.
+
+Traces: `dialog-owned title= owned=` for an ordinary dialog,
+`dialog-independent title= holding= done=` for an independent one, each on
+change.
+
+Cost of independence: while the application window is minimised, eframe
+throttles the repaints the application asks for, so an independent window
+animates more slowly then. Read from eframe's source, not measured.

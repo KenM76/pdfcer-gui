@@ -10,6 +10,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/app/quitting.md`.
 
 use crate::app::state::Status;
+use crate::dialogs::close_model::Closing;
 
 /// **Whether a quit is in progress**, and nothing else.
 ///
@@ -62,6 +63,7 @@ pub fn is_dirty(status: &Status) -> bool {
 impl crate::app::PdfcerApp {
     /// **One frame of the quit cycle** — `OPERATOR_REQUESTS.md` O102.
     pub(crate) fn step_quit_cycle(&mut self, ctx: &egui::Context) {
+        self.step_model_close(ctx);
         // 1 — an answered Cancel abandons the whole quit, not one question.
         if self.dialogs.unsaved_cancelled() && self.quitting.running() {
             self.quitting.stand_down();
@@ -77,6 +79,11 @@ impl crate::app::PdfcerApp {
             self.slot(slot).is_some_and(crate::app::quitting::is_dirty)
         });
 
+        // 2a — an open 3D viewer is asked about first, and closed, before
+        // anything else about the quit is decided.
+        if requested && self.quit_waits_for_model(ctx) {
+            return;
+        }
         if requested {
             // 2 — nothing outstanding. Let it go.
             if dirty.is_none() {
@@ -127,6 +134,59 @@ impl crate::app::PdfcerApp {
                     "quit-proceeding".to_owned()
                 });
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        }
+    }
+
+    /// **Hold a close of the program while a 3D viewer is open**, asking
+    /// whether to close it. `true` when the close was held.
+    fn quit_waits_for_model(&mut self, ctx: &egui::Context) -> bool {
+        if self.dialogs.model_view_owner().is_none() {
+            return false;
+        }
+        ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+        // A second ✕ while the question is up asks nothing new.
+        if !self.dialogs.close_model_asking() {
+            self.dialogs.ask_close_model(Closing::Quit);
+        }
+        true
+    }
+
+    /// **The close question's answer, and a viewer whose document has gone.**
+    ///
+    /// Run first each frame. *Close* shuts the viewer and repeats what was
+    /// asked about; *Cancel* leaves both open and ends a `Close others`
+    /// sequence. A viewer follows its document across Save As and a re-read,
+    /// and closes, unasked, when it is closed by any route that did not ask.
+    fn step_model_close(&mut self, ctx: &egui::Context) {
+        if let Some((closing, close)) = self.dialogs.take_close_model_answer() {
+            if !close {
+                self.closing_others = None;
+                return;
+            }
+            let kept = self.dialogs.close_model_view(ctx);
+            self.apply_actions(kept, ctx.pixels_per_point());
+            match closing {
+                Closing::Quit => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
+                Closing::Tab(path) => self.resume_tab_close(&path),
+            }
+            return;
+        }
+        let Some((path, serial)) = self.dialogs.model_view_owner() else {
+            return;
+        };
+        let found = (0..self.document_count()).find_map(|s| match self.slot(s) {
+            Some(Status::Open(doc)) if doc.path == path || doc.serial == serial => Some(
+                (doc.path != path || doc.serial != serial).then(|| (doc.path.clone(), doc.serial)),
+            ),
+            _ => None,
+        });
+        match found {
+            Some(Some((path, serial))) => self.dialogs.rebind_model_view(path, serial),
+            Some(None) => {}
+            None => {
+                let kept = self.dialogs.close_model_view(ctx);
+                self.apply_actions(kept, ctx.pixels_per_point());
             }
         }
     }

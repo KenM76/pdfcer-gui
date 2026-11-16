@@ -768,6 +768,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_views_saved::TheViewerSavesItsViewsIntoTheFile),
         Box::new(model_measure::TheViewerMeasuresFromPointsOnTheModel),
         Box::new(model_view_window::TheModelViewerZoomsAtThePointerAndFillsTheScreen),
+        Box::new(model_close_asks::ClosingTheDocumentAsksAboutItsModelWindow),
         Box::new(model_poster::AnInsertedModelShowsItsPicture),
         Box::new(model_colours::AColouredModelDrawsInItsColours),
         Box::new(model_lighting::TheModelViewerIsLitAsChosen),

@@ -7,7 +7,8 @@ use super::{ModelView, REGION_FULL_SCREEN, REGION_MINIMIZE};
 use crate::text::panels::models as t;
 
 impl ModelView {
-    /// F11 into and out of full screen, and the minimised state traced:
+    /// F11 into and out of full screen, and the minimised state and owner
+    /// traced:
     /// every frame, whether or not the options holding the buttons are open.
     /// Escape out of full screen is the full-screen body's. Only on a real
     /// OS window; an embedded fallback has no screen of its own to fill.
@@ -16,6 +17,7 @@ impl ModelView {
             return;
         }
         self.trace_minimized(ui);
+        self.trace_owner();
         self.note_window_size(ui);
         if ui.input(|i| i.key_pressed(egui::Key::F11)) {
             let full = pdfcer_gui_base::windowshape::fullscreen_believed(ui.ctx());

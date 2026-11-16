@@ -583,6 +583,13 @@ pub(super) fn interact(
             to,
             phase,
         } => {
+            // Shift snaps an arrow's direction from its tail; the preview and
+            // the commit both read this `to`.
+            let to = if kind == markup::MarkupKind::Arrow {
+                crate::canvas::constrain::direction(&ctx, shift, from, to)
+            } else {
+                to
+            };
             let previews = markup::route::drag(
                 markup::route::Drag {
                     ctx: &ctx,
@@ -898,21 +905,6 @@ pub(super) fn interact(
                 pv.dimension_baked = placed.baked;
             }
         }
-        GestureOutcome::DimensionLabel { from, at, phase } => {
-            if let Some(placed) = crate::canvas::dimlabel::drag(
-                crate::canvas::dimlabel::Frame {
-                    from,
-                    at,
-                    phase,
-                    doc,
-                    selection: &selection,
-                },
-                actions,
-            ) {
-                pv.dimension = Some(placed.segments);
-                pv.dimension_baked = placed.baked;
-            }
-        }
         GestureOutcome::Handle {
             node,
             handle,
@@ -1041,6 +1033,7 @@ pub(super) fn interact(
                 .selected_field
                 .as_ref()
                 .and_then(|f| doc.pages.get(f.page)),
+            pen,
         },
         &mut selection,
         &mut text_selection,

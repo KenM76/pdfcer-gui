@@ -26,6 +26,11 @@ handler token, icon and enable predicate. **The prose is the point** — most
 of this file is the record of decisions that would otherwise be re-litigated,
 which is also why the byte count grew past a limit in the first place.
 
+`markup.add_text` (514) and `markup.paragraphs` (515) are Markup ▸
+Content's doors onto `edit.add_text` and `edit.paragraphs`. They carry the
+Edit commands' icons and enable predicates because they dispatch to the same
+tool and switch; their own ids exist only because P1 puts one id on one tab.
+
 Not here: the registration itself ([`super::super::register`]), the
 command-id-to-behaviour mapping ([`super::super::mapping`]), and the
 reachability register ([`super::super::reach`]).

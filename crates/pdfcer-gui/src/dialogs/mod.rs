@@ -148,6 +148,8 @@ pub mod weblink;
 pub use pdfcer_gui_base::acrobatprompt as open_in_acrobat;
 pub mod bates;
 pub mod bates_batch;
+/// The question asked before a document with an open 3D viewer closes.
+pub mod close_model;
 pub mod labels;
 #[cfg(feature = "3d")]
 pub mod model3d;

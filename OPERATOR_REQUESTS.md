@@ -1693,9 +1693,9 @@ Measure ▸ ce dimension ▸ Area, beside Perimeter: click the corners of a regi
   end of each extension line; dragging it shortens or lengthens that line,
   previewed live. Driven: `an_extension_line_grip_shortens_its_line`.
 - *Text drag*: on a linear ce dimension, pressing on the text and dragging
-  slides the text along the line while the line stays put, previewed live.
-  Pressing elsewhere on the dimension moves line and text together. Driven:
-  `a_dimension_text_slides_alone`.
+  moves the dimension as a press on its line does, previewed live (O423
+  replaced the slide-alone drag). Driven:
+  `a_dimension_text_drag_moves_the_dimension`.
 - *Radius and diameter*: the right-click menu and the Properties panel switch
   between the two. Dragging the label swings the leader round the circle and
   moves the text in or out, previewed live. Driven:
@@ -7983,13 +7983,17 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 **Waiting on the engine (G279).** Extract builds a new file without the document's ce-dimension record, so groups and member records do not travel. No GUI workaround.
 
-## O423 — **OPEN** — dragging a dimension's text moves it the way dragging its line does, with a live preview
+## O423 — **BUILT, awaiting Ken** — dragging a dimension's text moves it the way dragging its line does, with a live preview
 
 *"When I drag the text of a dimension I should be able to perform the same movement as when I select the dimension line. Also needs a live preview."*
 
-## O424 — **OPEN** — the 3D window and its PDF window minimise, maximise and take focus independently; closing the PDF asks about its 3D window
+**Built.** A press on a selected linear ce dimension's text now drags the dimension exactly as a press on its line does, along and across, with the same engine-baked preview while the button is held. Dragged along the line the text slides along it; dragged across, the line comes with it. Driven by `a_dimension_text_drag_moves_the_dimension`.
+
+## O424 — **BUILT, awaiting Ken** — the 3D window and its PDF window minimise, maximise and take focus independently; closing the PDF asks about its 3D window
 
 *"Minimizing, maximizing or clicking on the 3D window or the parent pdf window should act independently of each other. Closing the parent pdf window should prompt to close the 3d window for that pdf if it is open. The 3d window still closes and leaves the parent pdf open without prompting to close it too."* Follows O278.
+
+**Built.** The 3D window is its own window: it minimises, maximises, goes behind and takes focus on its own, with its own taskbar button, and so does the PDF window. Closing the document's tab or the program while its 3D window is open asks first: *Close both* or *Cancel*. There is no "keep the 3D window" choice, because the viewer reads and writes its document. Closing the 3D window itself asks nothing. Also fixed: with another tab on screen, the viewer's saved views, measurements and page picture would have been written into that other document; they are now refused with a message. Driven by `closing_the_document_asks_about_its_model_window` (tab close); the program-close route is not driven.
 
 ## O425 — **BUILT, awaiting Ken** — dimension fractions reduce to lowest terms
 
@@ -8007,15 +8011,19 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 *"I should be able to dimension components of markup shapes including text boxes."* Snap and measure to their edges, corners and centres.
 
+**Waiting on the engine (G281).** The engine's snap points come from page paths only; a markup offers none. No GUI workaround.
+
 ## O428 — **BUILT, awaiting Ken** — the Dimension groups tab edits how units are displayed
 
 *"From the 'Dimension groups' tab I can't edit how Units are displayed (number of decimals to show fractions, etc). I have to go to 'Set Scale' to change it."*
 
 **Built.** The tab's scale section has *Numbers*: decimals or fractions, the denominator and *Lowest terms*, applied to every member at once. Driven by `a_groups_fractions_reduce_to_lowest_terms`.
 
-## O429 — **OPEN** — Shift snaps drawing to angle steps in every tool; Escape finishes a multi-point shape instead of discarding it
+## O429 — **BUILT, awaiting Ken** — Shift snaps drawing to angle steps in every tool; Escape finishes a multi-point shape instead of discarding it
 
 *"Pressing shift when drawing a line, etc should make it snap to degree increments like rotating does. Any object that should support this behaviour needs to be made to do it. Also for tools like the 'draw a line with corners on it', 'draw a closed shape' and etc escape should finish the command and commit the work, not cancel it."* Follows O223.
+
+**Built.** Shift held while drawing an Arrow, placing a Polyline, Polygon or Cloud corner, or picking a measurement point after the first, snaps the direction from the previous point to 15° steps, the same step rotating uses; the status row says so. On a measurement pick an object snap still wins; Shift+Alt gives the pure direction. Escape during a Polyline, Polygon or Cloud run, or a Perimeter, Length, Area or Circular measurement, finishes it with the points placed so far; a second Escape puts the tool down. A run with too few points, and a Linear, Scale or Two-line pick, is still discarded. Driven by `shift_snaps_a_drawn_direction` (polygon corners), `escape_finishes_a_markup_run` and `escape_finishes_a_measure_run`; the Arrow drag and the measurement pick under Shift are unit-tested only. Rectangle and Ellipse under Shift (square, circle) are not part of this.
 
 ## O430 — **BUILT, awaiting Ken** — markups move forward and back in the stacking order; a click picks the topmost markup actually under the pointer
 
@@ -8023,14 +8031,20 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 **Built.** Bring forward and Send backward (Ctrl+] and Ctrl+[, Markup tab, the markup's right-click menu) now move a markup past the nearest markup it overlaps that is drawn, rather than one place in the file's list, where the next entry was often a closed note popup and the page looked unchanged. A click now picks the topmost markup whose ink is under the pointer: an unfilled box, circle, line, polyline, polygon or ink stroke claims only its line, so a click inside an empty box reaches what is beneath it. Filled shapes and clouds still claim their whole box. Driven by `a_markup_steps_forward_past_the_markup_it_overlaps` and `a_click_inside_an_empty_box_reaches_the_markup_beneath`, both failing on the build before.
 
-## O431 — **OPEN** — ordinary text and paragraph tools on the Markup tab
+## O431 — **BUILT, awaiting Ken** — ordinary text and paragraph tools on the Markup tab
 
 *"There should be an ordinary text and paragraph tool on the Markup menu."*
+
+**Built.** Markup has a *Content* group with *Add text* and *Paragraphs*, the same tools as on Edit, shown in Edit mode only. *Add text* on either tab now shows pressed while armed. Driven by `the_markup_tab_arms_the_text_tools` and `the_markup_text_tools_are_absent_in_review`.
 
 ## O432 — **OPEN** — the markup text box edits with a live preview, as Acrobat's does
 
 *"Why does the Markup Text box still not edit with a live preview? Is it working the same way Acrobat does it?"*
 
+**Waiting on the engine (G282).** The engine has no painter for a markup text box being typed, so the box cannot show what the saved page will. No GUI workaround.
+
 ## O433 — **OPEN** — group items together as Inkscape does
 
 *"I need to be able to group items together the same way it works in Inkscape."* Group, ungroup, a click selects the group, enter a group to edit a member.
+
+**Waiting on the engine (G280).** The engine has no group or ungroup verb for page content or for markups. Entering and leaving an existing group already works. No GUI workaround.

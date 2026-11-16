@@ -25,6 +25,7 @@ mod animate;
 mod behind;
 mod bindings;
 mod card;
+mod closing;
 mod controls;
 mod drone;
 mod effects;
@@ -149,6 +150,16 @@ struct Rendered {
 /// The 3D viewer's state.
 pub(crate) struct ModelView {
     title: String,
+    /// The document it was opened from, which it reads its saved views from
+    /// and writes into: its path, which a re-read keeps, and its serial,
+    /// which Save As keeps. Either still matching names the same document.
+    owner: (std::path::PathBuf, u64),
+    /// The document on screen is the owner, so writing into it is allowed.
+    owner_on_screen: bool,
+    /// The question asked before the owner, or the program, closes.
+    asking: Option<crate::dialogs::close_model::CloseModelAsk>,
+    /// That question's answer, waiting for the application to act on it.
+    answered: Option<(crate::dialogs::close_model::Closing, bool)>,
     /// The listing row it was opened on, which a picture for the page names.
     artwork: ThreeDArtwork,
     model: Assembled,
@@ -261,6 +272,7 @@ impl ModelView {
     /// walking from that view's eye, with ghost on.
     #[must_use]
     pub(crate) fn open(
+        owner: (std::path::PathBuf, u64),
         artwork: ThreeDArtwork,
         model: Assembled,
         eye_mm: Option<u32>,
@@ -278,6 +290,10 @@ impl ModelView {
         let look = shotlook::LookSet::factory();
         Self {
             title: t::view_title(page_index),
+            owner,
+            owner_on_screen: true,
+            asking: None,
+            answered: None,
             artwork,
             model,
             bounds,
@@ -340,20 +356,25 @@ impl ModelView {
             )
             .maximizable()
             .minimizable()
+            .independent()
             .show(ctx, |ui| self.body(ui));
             self.native = frame.class == egui::ViewportClass::Immediate;
             frame.closed
         };
+        self.show_close_ask(ctx);
         match self.finished_shot(ctx) {
             Some(Ok(drawn)) => self.picture = Some((PictureFor::File, drawn)),
             Some(Err(said)) => self.failed = Some(t::poster_not_drawn(&said)),
             None => {}
         }
-        if let Some((purpose, drawn)) = self.picture.take() {
-            self.queue(purpose, drawn, actions);
-        }
         if std::mem::take(&mut self.save_defaults) {
             self.save_defaults(actions);
+        }
+        if !self.owner_on_screen {
+            self.refuse_writes();
+        }
+        if let Some((purpose, drawn)) = self.picture.take() {
+            self.queue(purpose, drawn, actions);
         }
         if let Some((views, default, notes)) = self.views.take() {
             actions.push(Action::Attachment(AttachmentAction::SetModelViews {

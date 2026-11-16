@@ -109,7 +109,7 @@ pub mod pastechord {
 }
 
 #[cfg(windows)]
-pub use win32::{alt_held, cursor_position, own_window};
+pub use win32::{alt_held, cursor_position, disown_window, own_window, owner_of};
 
 /// Off Windows no key state is read; Alt is never held.
 #[cfg(not(windows))]
@@ -170,4 +170,18 @@ pub fn own_window(_owner: isize, _title: &str) -> bool {
     // window managers, or the port has not happened. Answering `false` rather
     // than `true` keeps a caller that logs the outcome honest.
     false
+}
+
+/// **Release the window titled `title` from its owner.** No-op off Windows.
+#[cfg(not(windows))]
+#[must_use]
+pub fn disown_window(_title: &str) -> bool {
+    false
+}
+
+/// **The real owner of the window titled `title`.** `None` off Windows.
+#[cfg(not(windows))]
+#[must_use]
+pub fn owner_of(_title: &str) -> Option<isize> {
+    None
 }

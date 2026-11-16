@@ -523,18 +523,20 @@ impl DialogsState {
         self.labels = labels::LabelsDialog::open(picked, doc.pages.len(), doc.label_ranges());
     }
 
-    /// **Open the 3D viewer** on a model decoded from `artwork`, replacing
-    /// any model already shown.
+    /// **Open the 3D viewer** on a model decoded from `artwork` in the
+    /// document `owner` names (its path and serial), replacing any model
+    /// already shown.
     #[cfg(feature = "3d")]
     pub(crate) fn open_model_view(
         &mut self,
+        owner: (std::path::PathBuf, u64),
         artwork: pdfcer_core::threed::ThreeDArtwork,
         model: crate::app::actions::models::Assembled,
         eye_mm: Option<u32>,
         walk: bool,
         settings: &std::collections::BTreeMap<String, String>,
     ) {
-        let mut view = super::model3d::ModelView::open(artwork, model, eye_mm, walk);
+        let mut view = super::model3d::ModelView::open(owner, artwork, model, eye_mm, walk);
         view.recall(settings);
         view.start_inside();
         self.model3d = Some(view);

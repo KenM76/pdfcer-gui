@@ -272,3 +272,14 @@ once an answer arrives, and it lives in `app` rather than in
 alternative and would have re-entered the guard that has just been
 answered — the same loop `resume_after_unsaved`'s own header describes
 and refuses.
+
+## A document with an open 3D viewer
+
+`apply_close` and `apply_close_document` ask `closing_asks_about_model`
+after the pending-save check and before the unsaved-edits question. When the
+viewer belongs to the document being closed, the close question goes up
+and the close waits. *Close both* closes the viewer, then
+`resume_tab_close` repeats the close by path, so the unsaved-edits question
+still follows. It continues a parked `Close others` sequence if one was
+waiting. Consequence: cancelling that unsaved-edits question leaves the
+document open and the viewer already closed.

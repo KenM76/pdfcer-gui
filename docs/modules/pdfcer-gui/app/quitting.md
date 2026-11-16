@@ -192,3 +192,16 @@ save uses.
 The originally-active slot is restored at the end, so an operator who
 cancels the rest of the cycle is looking at the document they were
 looking at when they pressed the button.
+
+## A 3D viewer open at quit
+
+`step_quit_cycle` first runs `step_model_close`, which acts on the close
+question's answer (*Close* shuts the viewer and repeats the close; *Cancel*
+ends a parked `Close others`), follows the viewer's document across Save As
+and a re-read, and closes a viewer whose document has gone.
+
+A close request while a viewer is open is cancelled and asked about
+(`quit_waits_for_model`) before anything else about the quit is decided. A
+second request while the question is up asks nothing new. *Close* re-sends
+the viewport close, and the quit proceeds as usual, unsaved-edits question
+included.

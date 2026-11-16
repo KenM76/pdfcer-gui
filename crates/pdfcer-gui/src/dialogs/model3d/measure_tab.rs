@@ -81,6 +81,10 @@ impl ModelView {
     /// Read the file's saved views again when the document has changed. Called
     /// once a frame while the viewer is open.
     pub(crate) fn sync_saved(&mut self, doc: &OpenDoc) {
+        self.owner_on_screen = self.owned_by(&doc.path, doc.serial);
+        if !self.owner_on_screen {
+            return;
+        }
         let keeping = std::mem::take(&mut self.measure.keeping);
         if self.measure.epoch == Some(doc.edit_epoch) {
             return;
