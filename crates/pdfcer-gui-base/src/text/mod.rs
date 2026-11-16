@@ -61,6 +61,8 @@ pub mod bakeappear;
 pub mod bates;
 /// Tools ▸ Batch ▸ Bates number files…: its window.
 pub mod bates_batch;
+/// What a page copy did with the ce dimensions on its pages.
+pub mod cedimcopy;
 /// Every word of the compact window's picture options and their report.
 pub mod colourpick;
 pub mod commands;

@@ -7,9 +7,11 @@ A ce dimension being dragged or placed is drawn as the engine will write it.
 - `bake(doc, id, &moved)` returns a `Baked { id: Some(id), preview }` from `EditSession::dimension_preview` for the
   geometry the drag would commit. On refusal it traces
   `dim-preview id=… baked=0 refused=…` and returns `None`.
-- `bake_new(doc, group, &kind)` bakes a dimension that does not exist yet —
-  the one a placing click would add to `group` — through
-  `EditSession::new_dimension_preview`, returning `Baked { id: None, .. }`.
+- `bake_new(doc, page_index, group, &kind)` bakes a ce dimension that does not
+  exist yet — the one a placing click would add to `group` on `page_index` —
+  through `EditSession::new_dimension_preview_on`, so its label carries that
+  page's `/UserUnit` exactly as `add_dimension` will write it. Returns
+  `Baked { id: None, .. }`.
   On refusal it traces `dim-preview new=1 baked=0 refused=…`.
 - `paint(painter, doc, page, map, clip, &baked)` first draws the underlay
   (only when `baked.id` is set: a dimension being placed has nothing on the

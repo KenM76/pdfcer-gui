@@ -170,9 +170,9 @@ pub const fn new_unit_label() -> &'static str {
 /// Why the unit is asked for at creation.
 #[must_use]
 pub const fn new_unit_hint() -> &'static str {
-    "The unit decides how the group's numbers are written to begin with — \
-     millimetres in decimals, inches in eighths. Both can be changed \
-     afterwards."
+    "The unit sets how the group's numbers start: feet and inches in \
+     eighths reduced to lowest terms, other units in decimals. Numbers \
+     below changes that for the new group; both can be changed afterwards."
 }
 
 /// The button that creates the group.

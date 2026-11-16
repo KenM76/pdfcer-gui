@@ -102,14 +102,12 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         }));
     }
 
-    // The measurement comes from the model's own `display`, which is the
-    // producer the `/AP` label is baked from — including the branch that sends
-    // an ANGULAR kind to `format_angle_degrees` and never applies the group
-    // scale. Formatting it here instead would produce a plausible, wrong number
-    // for every angular ce dimension: 30° at 1:50 is 30°, not 1500 of anything,
-    // and `format_measurement` would report the wrong value with
+    // The measurement comes from `EditSession::dimension_display`, the
+    // producer the `/AP` label is baked from: the page's `/UserUnit` applied
+    // (squared for an area), and an ANGULAR kind sent to `format_angle_degrees`
+    // with no group scale. Formatting it here would get either wrong with
     // `raw_page_units: false`, i.e. wrong AND undisclosed.
-    if let Some(display) = model.display(record.id) {
+    if let Some(display) = doc.session.dimension_display(record.id) {
         ui.horizontal(|ui| {
             ui.label(t::measured_label());
             ui.label(&display.text);

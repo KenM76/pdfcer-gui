@@ -108,7 +108,11 @@ fn refusal(error: &PageOpError) -> String {
 /// failure, naming how many files reached the disk first.
 pub(super) fn split(doc: &OpenDoc, request: &SplitRequest, separations: SeparationPolicy) {
     let note = match write(doc, request, separations) {
-        Ok(Written { files, kept_labels }) => {
+        Ok(Written {
+            files,
+            kept_labels,
+            ce_sidecar_newer,
+        }) => {
             let mut note = t::wrote(files, &request.folder.display().to_string());
             match (kept_labels, doc.page_labels().is_some()) {
                 (_, false) => {}
@@ -121,6 +125,10 @@ pub(super) fn split(doc: &OpenDoc, request: &SplitRequest, separations: Separati
                     note.push_str(t::labels_dropped());
                 }
             }
+            if let Some(ce) = crate::text::cedimcopy::copied(ce_sidecar_newer) {
+                note.push(' ');
+                note.push_str(ce);
+            }
             note
         }
         Err((written, detail)) => t::failed(written, &detail),
@@ -128,10 +136,14 @@ pub(super) fn split(doc: &OpenDoc, request: &SplitRequest, separations: Separati
     super::record_note(doc.edit_epoch, note);
 }
 
-/// A finished split: how many files, and whether labels were carried.
+/// A finished split: how many files, whether labels were carried, and
+/// whether a part's ce dimensions arrived as plain lines because the source's
+/// sidecar is newer than this build reads
+/// (`AssembleReport::ce_dimension_sidecar_newer`).
 struct Written {
     files: usize,
     kept_labels: bool,
+    ce_sidecar_newer: bool,
 }
 
 /// Plan, assemble and write every part. `Err` carries how many files were
@@ -160,6 +172,7 @@ fn write(
         (0, error.to_string())
     })?;
     let total = parts.len();
+    let mut ce_sidecar_newer = false;
     for (index, (part, bytes, report)) in parts.iter().enumerate() {
         let target = request.folder.join(&part.name);
         if let Err(error) = std::fs::write(&target, bytes) {
@@ -169,7 +182,7 @@ fn write(
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed
-                "split-part n={} of={total} first={} last={} pages={} name={:?} bytes={} labels_dropped={} label_ranges={}",
+                "split-part n={} of={total} first={} last={} pages={} name={:?} bytes={} labels_dropped={} label_ranges={} ce_dims_carried={} ce_dims_left={} ce_sidecar_newer={}",
                 index + 1,
                 part.first_page,
                 part.last_page,
@@ -178,8 +191,12 @@ fn write(
                 bytes.len(),
                 u8::from(report.page_labels_dropped),
                 report.page_label_ranges,
+                report.ce_dimensions_carried,
+                report.ce_dimensions_left,
+                u8::from(report.ce_dimension_sidecar_newer),
             )
         });
+        ce_sidecar_newer |= report.ce_dimension_sidecar_newer;
     }
     crate::diag::trace(|| {
         format!(
@@ -193,6 +210,7 @@ fn write(
     Ok(Written {
         files: total,
         kept_labels: request.labels == ExtractedPageLabels::Keep,
+        ce_sidecar_newer,
     })
 }
 

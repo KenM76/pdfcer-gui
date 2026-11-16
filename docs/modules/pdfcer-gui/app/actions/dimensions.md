@@ -152,14 +152,21 @@ oracle for a unit conversion.
 
 ### `fn add_group`
 
-`AddGroup` with a `scale_from` source adds the group, then sets its scale to
-the source's re-expressed in the new unit (`ScaleState::in_unit`), and
-folds both into one undo entry with `coalesce_last(2, AddDimension)`. A fold
+`AddGroup` carries the new group's whole `NumberFormat` and creates it with
+`EditSession::add_dimension_group_with_format`, one undo entry; a fixed
+denominator is part of that format, never a second edit. With a
+`scale_from` source it then sets the scale to the source's re-expressed in
+the new unit (`ScaleState::in_unit`), and folds both into one undo entry
+with `coalesce_last(2, AddDimension)` — the engine has no create-with-scale
+verb. A fold
 the engine refuses leaves two undo steps and says so
 (`new_group_two_undos`); it is never silent. `author_into` queues the new
 group as the authoring group through `canvas::measure::queue_active_group`,
-because this phase has no `egui::Context`. Trace:
-`dimension-group-scale-copied group= unit= scale= folded=0|1`.
+because this phase has no `egui::Context`. Traces:
+`dimension-group-scale-copied group= unit= scale= folded=0|1` when a scale
+was copied, then always
+`dimension-group-added group= unit= numbers=<decimal:N|reduced:D|kept:D> undo_depth=`,
+the depth read after any fold.
 
 ### The commit's trace
 

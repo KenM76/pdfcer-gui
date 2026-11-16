@@ -22,8 +22,9 @@ pub struct VectorRoute {
     /// (`EmfOptions::tight_mask_patches`). Off by default: text freed from a
     /// patch is drawn by the driver, which does not smooth it.
     pub tight_patches: bool,
-    /// A plain job goes to a printer that reads PDF as the PDF itself
-    /// (`dialogs::print::direct`). Off by default: it asks the network.
+    /// A job goes to a printer that reads PDF as a PDF: the document, or
+    /// sheets pdfcer composed for its layout (`dialogs::print::direct`). Off
+    /// by default: it asks the network.
     pub pdf_direct: bool,
 }
 
@@ -75,8 +76,8 @@ pub(super) fn write_block(prefs: &PrintPrefs, out: &mut String) {
          # it cannot be; false sends such a page as a picture.\n\
          # print_tight_patches: true | false. Make those pictures smaller; the\n\
          # text they no longer cover may print less smooth.\n\
-         # print_pdf_direct: true | false. Send a plain job to a network\n\
-         # printer that reads PDF as the PDF itself.\n",
+         # print_pdf_direct: true | false. Send a job to a network printer\n\
+         # that reads PDF as a PDF, laid out by pdfcer when it needs layout.\n",
     );
     for (key, on) in [
         (GRADIENTS, prefs.vector.gradients),

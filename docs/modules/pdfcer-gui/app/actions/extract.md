@@ -14,6 +14,24 @@ The `extract` trace line carries `pages=` (written), `asked=` (requested),
 `label_ranges=N` from `AssembleReport`, so a choice that did not reach the
 engine shows as the line disagreeing with itself.
 
+### ce dimensions
+
+`extract_with_labels` carries the ce-dimension sidecar by default
+(`AssembleOptions::carry_dimension_sidecar`): every group of the source, with
+its scale, format and standard, and the record of every ce dimension whose page
+was taken, re-pointed at the copy. The line adds `ce_dims_carried=`,
+`ce_dims_left=` and `ce_sidecar_newer=0|1` from `AssembleReport`.
+
+The receipt says nothing for carried or left records: a record left because its
+page was not taken is the extraction doing what was asked. It says
+`text::cedimcopy::sidecar_newer` whenever `ce_dimension_sidecar_newer` is true,
+because then nothing was carried and the copied ce dimensions are plain line
+annotations: they draw the same and no longer edit as ce dimensions.
+
+`AssembleOptions::with_dimension_sidecar(false)` is not offered: no "plain
+copy" surface exists for it to belong to, and a copy that drops what the
+operator authored is not something he has asked for.
+
 ## Item notes
 
 ### `fn the_labels_choice_reaches_the_new_file`
@@ -76,6 +94,15 @@ Decision 018, asserted rather than trusted: the view handed to
 sitting is in the file that comes out. A build that passed the loaded
 `Document` instead would produce a valid file with the right page count
 and the edit silently missing — which the test above would not catch.
+
+### `fn an_extraction_keeps_the_ce_dimension_groups`
+
+A group with a non-default scale (calibrated), format (ft-in in sixteenths,
+unreduced) and standard (ISO), one ce dimension on page 2 and one on page 4;
+page 2 is extracted. The report counts one carried and one left; the reopened
+file holds the group by name with the same scale, format and standard, the one
+member, and its annotation is in `commentmodel::ce_dimension_annots`, so it
+opens as a ce dimension. Driven by `extract_keeps_the_ce_dimension_groups`.
 
 ### `fn the_suggested_extract_name_is_never_the_source_file`
 

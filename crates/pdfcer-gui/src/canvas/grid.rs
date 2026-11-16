@@ -29,8 +29,6 @@ const GRID_MAJOR_ALPHA: u8 = 56;
 
 /// Draw the grid on every page the frame is showing.
 pub(super) fn draw(ui: &Ui, doc: &OpenDoc, pages: &[PageView], clip: Rect) {
-    let scale = Scale::of(doc);
-    let ladder = Ladder::for_lines(scale, doc.view.zoom, MIN_GRID_PITCH_PTS);
     let base = ui.visuals().widgets.noninteractive.bg_stroke.color;
     // The grid's colours are the theme's ordinary hairline at two alphas.
     // Deliberately NOT the selection hue: a grid is not an affordance and
@@ -46,6 +44,10 @@ pub(super) fn draw(ui: &Ui, doc: &OpenDoc, pages: &[PageView], clip: Rect) {
         if visible.width() <= 0.0 || visible.height() <= 0.0 {
             continue;
         }
+        // Per page: the ladder is round in what the ruler reads, and that
+        // depends on the page's `/UserUnit`.
+        let scale = Scale::of(doc, doc.pages.get(view.page));
+        let ladder = Ladder::for_lines(scale, doc.view.zoom, MIN_GRID_PITCH_PTS);
         let painter = ui.painter().with_clip_rect(visible);
         lines(&painter, Axis::X, view.map, visible, ladder, minor, major);
         lines(&painter, Axis::Y, view.map, visible, ladder, minor, major);

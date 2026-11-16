@@ -338,3 +338,17 @@ combo declares `dimension-groups.new_unit.combo` and
 `dimension-groups.new_unit.option.<token>`; the scale combo
 `dimension-groups.new_scale.combo` and `dimension-groups.new_scale.option.<own|id>`.
 Driven by `a_new_group_copies_a_groups_scale_in_its_own_unit`.
+
+### A new group's numbers are chosen before it is made
+
+The *Add* fold holds the new group's whole `NumberFormat` (`new_format`).
+Choosing a unit resets it to `Unit::default_format` — feet and inches in
+eighths, lowest terms — and a Numbers editor below, the same
+`dimensionoverrides::fraction_editor_in` the group's own Numbers editor uses,
+changes the fraction. *Add* sends the format with `AddGroup`, so "always
+eighths" (`NumberFormat::feet_inches(8, false)`) or "always sixteenths" is
+set at creation, as one undo entry. The editor's regions carry the
+`dimension-groups.new_numbers.` prefix so they never collide with the
+selected group's editor. A later unit change between inches and feet and
+inches keeps the denominator and the lowest-terms choice; that is
+`set_group_unit`'s. Driven by `a_new_groups_numbers_are_set_when_it_is_made`.

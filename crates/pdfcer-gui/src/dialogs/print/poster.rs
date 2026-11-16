@@ -39,7 +39,7 @@ pub(super) const REGION_POSTER_MODE: &str = "print.poster.mode";
 pub(super) const REGION_POSTER_SCALE: &str = "print.poster.scale";
 
 /// The operator's settings in engine units.
-fn options(prefs: PosterPrefs) -> Options {
+pub(super) fn options(prefs: PosterPrefs) -> Options {
     Options {
         tile_scale: f64::from(prefs.tile_percent) / 100.0,
         overlap_pt: crate::units::points_from_mm(prefs.overlap_mm),

@@ -92,7 +92,7 @@ impl PrintDialog {
         if let Some(why) = self.icc.refusal() {
             return Err(why);
         }
-        if let Some(sent) = self.commit_direct(doc, job) {
+        if let Some(sent) = self.commit_direct(doc, job, page_sizes) {
             return sent;
         }
         let (mut bitmaps, plated, plates) = self.render_sheets(doc, job, page_sizes)?;

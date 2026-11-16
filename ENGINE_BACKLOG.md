@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **64 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
+## `wanted` — a real gap — **63 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -172,14 +172,13 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **Banded page replay** — `DisplayList::replay_rows`, `DisplayList::band_exact`, `BAND_ROW_LATTICE`, `BandBlocker` (`BandBlocker::Image`, `BandBlocker::Gradient`, `BandBlocker::LayerMask`), `RenderError::BandNotAligned` | **wanted.** The page renderer replays each page on one thread; banding a dense CAD sheet across worker threads is the engine's measured 2.6x to 3.0x. Needs a measurement here first (the canvas renders tiles off the frame loop already), per `BENCHMARK.md`. |
-| **Page `/UserUnit` honoured** in rendering (page, region, display-list replay) and print sizing … | **shipped for print sizing and the canvas; measurements wanted (G277).** Print: `dialogs::print::plan` sizes a page as its box times `Page::user_unit` (`print_sizes_a_user_unit_page_physically`). Canvas: `ViewState::zoom` stays per user-space unit and `viewer::page_unit` converts at the edges — the readout, `ZoomTo`, the ladder and the maximum are magnifications (`actual_size_shows_a_user_unit_page_physically`). The current page's unit is used, so a document mixing units shows its pages' relative sizes by box. The engine rasterises `u`² the pixels a box-sized raster would, and the ceiling allows for it. Rulers and the measure tool read box units until G277 lands; no GUI workaround. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **glTF occlusion maps and textured alpha cut-outs** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
+## `blocked` — waiting on something named — **2 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -197,7 +196,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -208,7 +207,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
+## `declined` — deliberately no surface — **20 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -254,7 +253,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **485 of 571** <!-- counted by tools/walk-engine-backlog.py, 2026-11-14; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **488 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -799,6 +798,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Banded CMYK render** — a subtractive-group page past the ink buffer ceiling (`Diagnostics::cmyk_bands`) | **shipped, at v0.142.0.** Nothing to call: a printed sheet past the ink buffer ceiling bands through the pin; Print traces each sheet as `print-ink`, and `print_composites_an_oversized_sheet_in_ink` drives it. |
 | **Seamless edges (no conflation seam between abutting shapes)** — `pdfcer print --edge-antialiasing`, in the shell `pdfcer_render::EdgeAntialiasing` | **shipped, at v0.144.0.** `SUPERSAMPLE_FACTOR`, `EdgeAntialiasing::pixel_factor`: from v0.145.0 a seamless sheet past 4,096 output pixels on an edge is drawn in tiles rather than refused (`Diagnostics::supersample_tiles`), and the hover says a large sheet is slow, not refused. Print ▸ Pages ▸ Edge smoothing offers Automatic (hard at 300 DPI and finer, smoothed below), Smooth, Sharp and Smooth, no seams (`EdgeAntialiasing::Supersampled`); `prefs::print_edges`. Automatic smooths below 300 DPI where the CLI goes seamless, because seamless costs sixteen times the sheet's memory. |
 | **3D light bounces off walls and things (bounced light and colour bleed)** — `PreparedModel::frame_bounce`, `FrameBounce` | **shipped, at v0.144.0.** The CPU picture takes it through the pin; the GPU card builds the probe volume on a worker thread per model, painted parts and options, and samples its atlas in the face shader (`dialogs::model3d::gpu_bounce`). Camera-following lights are not bounced, as in the engine default. |
+| **Page `/UserUnit` honoured** in rendering (page, region, display-list replay) and print sizing … | **consumed.** Print: `dialogs::print::plan` sizes a page as its box times `Page::user_unit` (`print_sizes_a_user_unit_page_physically`). Canvas: `ViewState::zoom` stays per user-space unit and `viewer::page_unit` converts at the edges (`actual_size_shows_a_user_unit_page_physically`); canvas space is `viewer::canvas_geometry`, which cancels the engine's unit scale. Measurements: Properties and traces use `EditSession::dimension_display`, the placing preview `new_dimension_preview_on`, the status line and rulers `format_measurement_on`, areas `DimensionKind::display_on`. `DimensionStyle::on_user_unit` is applied by `new_dimension_preview_on`; the shell builds no `DimensionStyle`. Driven by `a_measurement_on_a_user_unit_page_reads_physically`. Open: scale calibration has no page-aware entry (G287). |
+| Extract and split keep ce dimensions editable (the sidecar is carried and re-pointed; `with_dimension_sidecar(false)` opts out; the report counts carried and left) … | **consumed — O422.** The shell leaves `AssembleOptions::carry_dimension_sidecar` at its default and does not call `AssembleOptions::with_dimension_sidecar`: turning it off is declined, because no plain-copy surface exists. `AssembleReport::ce_dimensions_carried` and `ce_dimensions_left` are traced on the `extract` and `split-part` lines with no sentence, since a record left behind belongs to a page not taken. `ce_dimension_sidecar_newer` is traced and, when true, stated in the status-line receipt (`text::cedimcopy`). Driven by `extract_keeps_the_ce_dimension_groups`. Merge and insert carry no sidecar and report no count (G286). |
+| **Default fractions in lowest terms** — a new inch or feet-inches group reads `1/2"`, not `4/8"`; `add_dimension_group_with_format` gives a fixed denominator … | **consumed.** New ce-dimension groups are created with `EditSession::add_dimension_group_with_format`, one undo entry, from the numbers chosen in the Dimension groups tab's Add fold; a fixed denominator is set at creation. `DimensionModel::add_group_with_format` is the model-level twin; the shell goes through `EditSession`. `set_group_unit` carries the fraction between Inch and FeetInches and the shell re-applies nothing. Driven by `a_new_groups_numbers_are_set_when_it_is_made`. *Same as <group>* still folds a separate `set_group_scale` into the add (G285). The row's inch default and the contract's `NumberFormat::fractional` disagree with the source (G283, G284). |
 
 ## Filed requests for OCR — not verdict rows
 
@@ -947,11 +949,24 @@ The request O280 is built on, answered and consumed.
 - **G271** — CONSUMED at v0.130.0: lamps culled to the view (the host sets `options.width`/`height`), `LampCost::NearestPerFrame` as *Lamps drawn*, `LampStats` said in the options menu (O393).
 - **G272** — CONSUMED at v0.130.0: `FrameLampShadows::for_model_after` with the previous choice and `FrameLights::use_lamp_shadows`; the cap `MAX_LAMP_SHADOWS` said when reached (O393).
 
+## Engine arrivals at v0.152.0 — not verdict rows
+
+- **Sheet composition for a PDF sent as itself** — `pdfcer_print::compose` (`compose`, `Shape::needs_composing`, `Paper::portrait`, `Composed::notes`). **Wired** (G276): n-up, booklet, poster, a chosen paper, a percent scale and reverse order on the direct route are composed from a scratch `EditSession` opened from the print-ready copy's bytes. `Shape::for_job` is not called: it fixes horizontal order and auto-rotate and drops the booklet sheet range, all of which the dialog offers. `pdfcer_print::pdf_direct` (`FallbackReason`) names every fallback to the driver, traced by `keyword()` and given a sentence in the receipt. Driven by `print_composes_sheets_for_the_pdf`.
+- **ce-dimension units on a page** — `pdfcer_core::edit::dimension_unit` (`dimension_display`, `new_dimension_preview_on`). **Wired** (G277); see the `/UserUnit` row.
+
+## Filed requests at v0.152.0 — not verdict rows
+
+- **G283** — OPEN: the contract names `NumberFormat::fractional(16, false)`; the source has `inch_fraction(denominator)` only.
+- **G284** — OPEN: `Unit::default_format` gives a new inch group two decimals; the contract and the engine's feature row say a reduced fraction.
+- **G285** — OPEN: no verb creates a ce-dimension group with its scale; the shell folds two undo entries.
+- **G286** — OPEN: merge and insert carry no ce-dimension sidecar and their outcomes count nothing, so the shell cannot say the incoming ce dimensions are plain lines.
+- **G287** — OPEN: no page-aware scale calibration; on a `/UserUnit` page a calibrated scale is off by the unit.
+
 ## Filed requests for grouping, markup snapping and the text box — not verdict rows
 
 - **G280** — OPEN: group and ungroup. `group_objects` / `ungroup_form` for page content (nested pair for a group inside a form), a read-side marker that tells a group from any other form, and `group_annotations` / `ungroup_annotations` for markups. O433 waits on it; `edit.group` and `edit.ungroup` stay unregistered until it lands.
-- **G281** — OPEN: `pdfcer_core::vector::snap::snap_candidates` builds from page paths only, so a markup shape or text box offers no edge, corner or centre to snap a ce dimension to. Asks an annotation snap source. O427 waits on it.
-- **G282** — OPEN: a painter in `pdfcer_render::edit_preview` for a markup text box being typed (`TextAnnotSpec`), with laid-out lines and caret advances. O432 waits on it.
+- **G281** — answered on the engine's main, not in a tag: `pdfcer_core::vector::snap::snap_candidates` builds from page paths only, so a markup shape or text box offers no edge, corner or centre to snap a ce dimension to. Asks an annotation snap source. O427 waits on it.
+- **G282** — answered on the engine's main, not in a tag: a painter in `pdfcer_render::edit_preview` for a markup text box being typed (`TextAnnotSpec`), with laid-out lines and caret advances. O432 waits on it.
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 

@@ -206,10 +206,11 @@ fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
         return instruction();
     }
     let model = doc.session.dimension_model();
-    let Some(group) = model.group(st.group) else {
+    let (Some(group), Some(page)) = (model.group(st.group), doc.pages.get(st.page_index)) else {
         return instruction();
     };
-    let shown = pdfcer_core::dimension::format_measurement(
+    let shown = pdfcer_core::dimension::format_measurement_on(
+        page,
         st.perimeter.length_points(),
         group.scale,
         group.format,
@@ -218,7 +219,8 @@ fn perimeter_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
 }
 
 /// The area tool's live sentence: the instruction before three corners, the
-/// enclosed area from then on.
+/// enclosed area from then on, as `DimensionKind::display_on` states it under
+/// the page's `/UserUnit` (squared).
 fn area_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
     let instruction = || t::measure_instruction(MeasureKind::Area).to_owned();
     let Some(st) = crate::canvas::measure::read(ctx) else {
@@ -229,14 +231,14 @@ fn area_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
         return instruction();
     }
     let model = doc.session.dimension_model();
-    let Some(group) = model.group(st.group) else {
+    let (Some(group), Some(page), Some(outline)) = (
+        model.group(st.group),
+        doc.pages.get(st.page_index),
+        st.perimeter.author_area(),
+    ) else {
         return instruction();
     };
-    let shown = pdfcer_core::dimension::format_area_measurement(
-        st.perimeter.area_points(None),
-        group.scale,
-        group.format,
-    );
+    let shown = outline.display_on(page.user_unit, group.scale, group.format);
     t::measure_area_live(picked, &shown.text)
 }
 
@@ -254,7 +256,7 @@ fn circular_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
         return t::measure_circular_needs_more(picked);
     };
     let model = doc.session.dimension_model();
-    let Some(group) = model.group(st.group) else {
+    let (Some(group), Some(page)) = (model.group(st.group), doc.pages.get(st.page_index)) else {
         return t::measure_circular_needs_more(picked);
     };
     let value = if st.circular.show_diameter {
@@ -262,7 +264,8 @@ fn circular_stage(ctx: &egui::Context, doc: &OpenDoc) -> String {
     } else {
         fit.radius
     };
-    let shown = pdfcer_core::dimension::format_measurement(value, group.scale, group.format);
+    let shown =
+        pdfcer_core::dimension::format_measurement_on(page, value, group.scale, group.format);
     t::measure_circular_live(picked, &shown.text)
 }
 

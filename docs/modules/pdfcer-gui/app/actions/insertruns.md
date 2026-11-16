@@ -30,6 +30,10 @@ run and one call.
 
 ## What it reports
 
+ce dimensions on the inserted pages arrive as plain line annotations: the
+session keeps this document's sidecar only. `InsertOutcome` has no count of
+them, so nothing is said until the engine reports one.
+
 `Inserted` carries the summed `InsertOutcome` (counts added, flags OR-ed),
 whether the fold succeeded, how many calls landed, and a later run's
 refusal. A refusal on the first call is `Err` (nothing changed); a refusal

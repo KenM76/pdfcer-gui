@@ -48,7 +48,9 @@ pub use fit::{FitMode, fit_scale};
 // Re-exported for the same reason the three above are. Every
 // `viewer::screen_to_page` and `viewer::canvas_to_pdf_space` in the crate — and
 // every `ui-verify` check that names one — is untouched by the split.
-pub use space::{canvas_to_pdf_space, page_to_screen, pdf_space_to_canvas, screen_to_page};
+pub use space::{
+    canvas_geometry, canvas_to_pdf_space, page_to_screen, pdf_space_to_canvas, screen_to_page,
+};
 
 use pdfcer_core::page_tree::Page;
 

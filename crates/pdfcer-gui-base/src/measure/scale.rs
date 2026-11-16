@@ -301,7 +301,7 @@ impl ScaleEntryFields {
                 // `set_group_standard`, not by this dialog.
                 decimal_marker: preview.unit.default_format().decimal_marker,
             },
-            None => in_lowest_terms(preview.unit.default_format()),
+            None => preview.unit.default_format(),
         };
         Some((
             ScaleState::Calibrated {
@@ -427,16 +427,6 @@ impl ScalePick {
 // it is why `shell::commands::reach`'s scaffold entry for
 // `measure.manage_groups` cited "two of four verbs do not exist" for months.
 // That citation was accurate when written and outlived its own subject.
-
-/// The unit's own number style with any fraction in lowest terms, so 6/8
-/// reads 3/4 unless the operator asks to keep the denominator.
-#[must_use]
-pub fn in_lowest_terms(mut format: NumberFormat) -> NumberFormat {
-    if let FractionMode::Fraction { reduce, .. } = &mut format.fraction {
-        *reduce = true;
-    }
-    format
-}
 
 #[cfg(test)]
 #[allow(
@@ -564,7 +554,7 @@ mod tests {
         let (_scale, format) = f.commit(Some(200.0)).expect("commits");
         assert_eq!(
             format,
-            in_lowest_terms(Unit::FeetInches.default_format()),
+            Unit::FeetInches.default_format(),
             "an operator who never opens the display controls gets the unit's own style, in lowest terms"
         );
         assert!(matches!(

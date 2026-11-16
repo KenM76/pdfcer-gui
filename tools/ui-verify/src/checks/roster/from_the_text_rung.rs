@@ -57,6 +57,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(export_word_scripted::ExportWordFollowsTheTags),
         Box::new(export_word_scripted::ExportWordHonoursItsChoices),
         Box::new(extract_pages_labels::ExtractPagesKeepsOrDropsTheLabels),
+        Box::new(extract_ce_dimensions::ExtractKeepsTheCeDimensionGroups),
         Box::new(split_pages::SplitWritesTheFilesTheWindowListed),
         Box::new(purge_passwords_scripted::StoredPasswordsRemovedWithoutTheMouse),
         Box::new(structure_round_trip::HandEditsCompileBackAsAnAppendedUpdate),
@@ -110,6 +111,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(labels_scripted::PageLabelsWithoutTheMouse),
         Box::new(measure_place_scripted::MeasurePlaceWithoutTheMouse),
         Box::new(measure_area_scripted::AnAreaMeasuresTheRegionItEncloses),
+        Box::new(measure_user_unit::AMeasurementOnAUserUnitPageReadsPhysically),
         // Adjacent to that rung deliberately: the chunk boxes are its VISIBLE
         // half. The descent above proves the selection can reach one chunk of
         // text; this proves an operator can see which chunk before committing a
@@ -324,6 +326,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(canvas_user_unit::ActualSizeShowsAUserUnitPagePhysically),
         Box::new(print_separations::PrintSeparatesIntoPlates),
         Box::new(print_direct::PrintSendsThePdfItself),
+        Box::new(print_direct_compose::PrintComposesSheetsForThePdf),
         // After the print checks above it, for the reason the two above
         // give — stated as a POSITION rather than an ordinal, because this
         // comment once read "last of the four", a fifth was added saying "and

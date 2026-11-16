@@ -26,10 +26,15 @@ by canonical path, case-insensitive where either path does not exist yet.
 
 ## Receipt and trace
 
-Status line: `wrote`, plus the labels sentence when the document has labels;
-or `failed(written, detail)`.
+Status line: `wrote`, plus the labels sentence when the document has labels,
+plus `text::cedimcopy::sidecar_newer` when any part's
+`AssembleReport::ce_dimension_sidecar_newer` is true; or
+`failed(written, detail)`. Each part carries the ce-dimension sidecar for the
+ce dimensions on its own pages, every group included; a record counted in
+`ce_dimensions_left` is on another part's pages and is not said.
 
-- `split-part n= of= first= last= pages= name= bytes= labels_dropped= label_ranges=`
+- `split-part n= of= first= last= pages= name= bytes= labels_dropped= label_ranges=
+  ce_dims_carried= ce_dims_left= ce_sidecar_newer=`
   per file, 0-based pages, from the engine's `AssembleReport`.
 - `split-written files= rule=<every-N|after-K|bookmarks> labels=<keep|drop> folder=`.
 - `split-failed written= detail=`.

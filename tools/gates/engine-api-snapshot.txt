@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: a872d3fb7240b81c0fba323236e4721dc06ad155
+# baseline: e4ab6497219829ba23b2c8c706cde5f34c1568c9
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 11988
+# items: 12038
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -1505,6 +1505,7 @@ pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::standard
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::text_height
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::tolerance
 pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::tolerance_places
+pdfcer-core field pdfcer_core::dimension::author::DimensionStyle::user_unit
 pdfcer-core field pdfcer_core::dimension::fit::FitCircle::center
 pdfcer-core field pdfcer_core::dimension::fit::FitCircle::radius
 pdfcer-core field pdfcer_core::dimension::fit::FitCircle::residual
@@ -3258,6 +3259,7 @@ pdfcer-core field pdfcer_core::page_labels::LabelRange::format
 pdfcer-core field pdfcer_core::pageops::PageClip::bytes
 pdfcer-core field pdfcer_core::pageops::PageClip::fields_dropped
 pdfcer-core field pdfcer_core::pageops::PageClip::pages
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::carry_dimension_sidecar
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::carry_page_labels
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::catalog_from
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::info_from
@@ -3266,6 +3268,9 @@ pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::rename_duplic
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::separations
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::source_files
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::source_titles
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimension_sidecar_newer
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimensions_carried
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimensions_left
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::dangling_references
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::form_fields_dropped
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::form_fields_renamed
@@ -4800,6 +4805,7 @@ pdfcer-core fn pdfcer_core::dimension::style::style_provenance
 pdfcer-core fn pdfcer_core::dimension::two_lines::author_from_two_lines
 pdfcer-core fn pdfcer_core::dimension::units::format_angle_degrees
 pdfcer-core fn pdfcer_core::dimension::units::format_measurement
+pdfcer-core fn pdfcer_core::dimension::units::format_measurement_on
 pdfcer-core fn pdfcer_core::dimension::units::preview_group_scale
 pdfcer-core fn pdfcer_core::doc_metadata::scan::metadata_inventory
 pdfcer-core fn pdfcer_core::edit::decode_text_string
@@ -5210,6 +5216,7 @@ pdfcer-core method pdfcer_core::dimension::author::AuthoredDimension::label_rect
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::breaks_line_for_text
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::extension_metrics
 pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::new
+pdfcer-core method pdfcer_core::dimension::author::DimensionStyle::on_user_unit
 pdfcer-core method pdfcer_core::dimension::dash::DimDash::is_solid
 pdfcer-core method pdfcer_core::dimension::dash::DimDash::new
 pdfcer-core method pdfcer_core::dimension::dash::DimDash::pattern
@@ -5217,6 +5224,7 @@ pdfcer-core method pdfcer_core::dimension::group::DimensionEnd::index
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::axis_frame
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::caption_prefix
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::circular_text_distance
+pdfcer-core method pdfcer_core::dimension::group::DimensionKind::display_on
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::display_with
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::extension_reach
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::extension_segments
@@ -5232,6 +5240,7 @@ pdfcer-core method pdfcer_core::dimension::group::DimensionKind::rotated
 pdfcer-core method pdfcer_core::dimension::group::DimensionKind::translated
 pdfcer-core method pdfcer_core::dimension::group::DimensionModel::add_dimension
 pdfcer-core method pdfcer_core::dimension::group::DimensionModel::add_group
+pdfcer-core method pdfcer_core::dimension::group::DimensionModel::add_group_with_format
 pdfcer-core method pdfcer_core::dimension::group::DimensionModel::delete_group
 pdfcer-core method pdfcer_core::dimension::group::DimensionModel::dimension
 pdfcer-core method pdfcer_core::dimension::group::DimensionModel::dimension_mut
@@ -5777,6 +5786,8 @@ pdfcer-core method pdfcer_core::edit::content_mark::EditSession::hand_signatures
 pdfcer-core method pdfcer_core::edit::deskew::EditSession::deskew_image
 pdfcer-core method pdfcer_core::edit::deskew::EditSession::detect_image_skew
 pdfcer-core method pdfcer_core::edit::deskew::EditSession::page_scan_image
+pdfcer-core method pdfcer_core::edit::dimension_unit::EditSession::dimension_display
+pdfcer-core method pdfcer_core::edit::dimension_unit::EditSession::new_dimension_preview_on
 pdfcer-core method pdfcer_core::edit::emf::EditSession::add_emf
 pdfcer-core method pdfcer_core::edit::emf::EditSession::add_emf_on_layer
 pdfcer-core method pdfcer_core::edit::emf::EditSession::add_emf_stamp
@@ -5789,6 +5800,7 @@ pdfcer-core method pdfcer_core::edit::form_paint::EditSession::set_object_stroke
 pdfcer-core method pdfcer_core::edit::form_transform::EditSession::transform_objects_each_in_form
 pdfcer-core method pdfcer_core::edit::form_transform::EditSession::transform_objects_in_form
 pdfcer-core method pdfcer_core::edit::format_batch::EditSession::format_texts
+pdfcer-core method pdfcer_core::edit::group_unit::EditSession::add_dimension_group_with_format
 pdfcer-core method pdfcer_core::edit::group_unit::EditSession::set_group_unit
 pdfcer-core method pdfcer_core::edit::history_transfer::EditSession::export_history
 pdfcer-core method pdfcer_core::edit::history_transfer::EditSession::import_history
@@ -6213,6 +6225,7 @@ pdfcer-core method pdfcer_core::pageops::PageClip::from_bytes
 pdfcer-core method pdfcer_core::pageops::PageClip::is_empty
 pdfcer-core method pdfcer_core::pageops::PageClip::len
 pdfcer-core method pdfcer_core::pageops::PageClip::to_bytes
+pdfcer-core method pdfcer_core::pageops::assemble::AssembleOptions::with_dimension_sidecar
 pdfcer-core method pdfcer_core::pageops::assemble::AssembleOptions::with_separations
 pdfcer-core method pdfcer_core::pageops::assemble::Copier::copy_value
 pdfcer-core method pdfcer_core::pageops::assemble::Copier::reserve
@@ -10258,6 +10271,8 @@ pdfcer-print enum pdfcer_print::PageSubset
 pdfcer-print enum pdfcer_print::PrintError
 pdfcer-print enum pdfcer_print::ScaleMode
 pdfcer-print enum pdfcer_print::SettingsSource
+pdfcer-print enum pdfcer_print::compose::ComposeError
+pdfcer-print enum pdfcer_print::compose::Shape
 pdfcer-print enum pdfcer_print::devmode::ConfigurationError
 pdfcer-print enum pdfcer_print::devmode::PaperSelection
 pdfcer-print enum pdfcer_print::finishing::Edge
@@ -10281,6 +10296,7 @@ pdfcer-print enum pdfcer_print::ipp::port::PortSource
 pdfcer-print enum pdfcer_print::ipp::response::IppError
 pdfcer-print enum pdfcer_print::ipp::send::IppSendError
 pdfcer-print enum pdfcer_print::output_color::OutputColor
+pdfcer-print enum pdfcer_print::pdf_direct::FallbackReason
 pdfcer-print field pdfcer_print::DeviceFeatures::form_source_bin
 pdfcer-print field pdfcer_print::DeviceFeatures::max_copies
 pdfcer-print field pdfcer_print::DeviceFeatures::supports_duplex
@@ -10335,6 +10351,17 @@ pdfcer-print field pdfcer_print::SpoolReport::pages
 pdfcer-print field pdfcer_print::SpoolReport::printed
 pdfcer-print field pdfcer_print::SpoolReport::settings_source
 pdfcer-print field pdfcer_print::SpoolReport::sheet_setups
+pdfcer-print field pdfcer_print::compose::Composed::notes
+pdfcer-print field pdfcer_print::compose::Composed::pages
+pdfcer-print field pdfcer_print::compose::Composed::pdf
+pdfcer-print field pdfcer_print::compose::Paper::offset_pt
+pdfcer-print field pdfcer_print::compose::Paper::physical_pt
+pdfcer-print field pdfcer_print::compose::Paper::printable_pt
+pdfcer-print field pdfcer_print::compose::Request::label
+pdfcer-print field pdfcer_print::compose::Request::mode
+pdfcer-print field pdfcer_print::compose::Request::orientation
+pdfcer-print field pdfcer_print::compose::Request::paper
+pdfcer-print field pdfcer_print::compose::Request::shape
 pdfcer-print field pdfcer_print::devmode::ConfigurationSummary::custom_paper_pt
 pdfcer-print field pdfcer_print::devmode::ConfigurationSummary::device
 pdfcer-print field pdfcer_print::devmode::ConfigurationSummary::driver_extra
@@ -10486,6 +10513,7 @@ pdfcer-print field pdfcer_print::listing::PrinterName::name
 pdfcer-print field pdfcer_print::probe::PrinterReport::detail
 pdfcer-print field pdfcer_print::probe::PrinterReport::features
 pdfcer-print field pdfcer_print::probe::PrinterReport::forms
+pdfcer-print fn pdfcer_print::compose::compose
 pdfcer-print fn pdfcer_print::device_features
 pdfcer-print fn pdfcer_print::displayed_page_size
 pdfcer-print fn pdfcer_print::edit_printer_configuration
@@ -10543,6 +10571,10 @@ pdfcer-print method pdfcer_print::DeviceGeometry::from_caps
 pdfcer-print method pdfcer_print::JobResolution::uncapped_page_mb
 pdfcer-print method pdfcer_print::JobSpec::first_page_pt
 pdfcer-print method pdfcer_print::JobSpec::sequence
+pdfcer-print method pdfcer_print::compose::Paper::frame
+pdfcer-print method pdfcer_print::compose::Paper::portrait
+pdfcer-print method pdfcer_print::compose::Shape::for_job
+pdfcer-print method pdfcer_print::compose::Shape::needs_composing
 pdfcer-print method pdfcer_print::devmode::PaperSelection::custom_from_points
 pdfcer-print method pdfcer_print::devmode::PaperSelection::size_pt
 pdfcer-print method pdfcer_print::devmode::PrinterConfiguration::as_bytes
@@ -10610,6 +10642,7 @@ pdfcer-print method pdfcer_print::ipp::response::IppResponse::printer_strings
 pdfcer-print method pdfcer_print::ipp::response::IppResponse::status_message
 pdfcer-print method pdfcer_print::ipp::response::IppResponse::unsupported
 pdfcer-print method pdfcer_print::ipp::send::IppTransport::post
+pdfcer-print method pdfcer_print::pdf_direct::FallbackReason::keyword
 pdfcer-print method pdfcer_print::probe::PrinterProbe::is_complete
 pdfcer-print method pdfcer_print::probe::PrinterProbe::poll
 pdfcer-print method pdfcer_print::probe::PrinterProbe::printers
@@ -10631,6 +10664,9 @@ pdfcer-print struct pdfcer_print::PrinterCaps
 pdfcer-print struct pdfcer_print::Sheet
 pdfcer-print struct pdfcer_print::SheetSetup
 pdfcer-print struct pdfcer_print::SpoolReport
+pdfcer-print struct pdfcer_print::compose::Composed
+pdfcer-print struct pdfcer_print::compose::Paper
+pdfcer-print struct pdfcer_print::compose::Request
 pdfcer-print struct pdfcer_print::devmode::ConfigurationSummary
 pdfcer-print struct pdfcer_print::devmode::PaperForm
 pdfcer-print struct pdfcer_print::devmode::PrinterConfiguration
@@ -10717,6 +10753,15 @@ pdfcer-print variant pdfcer_print::SettingsSource::CallerSupplied
 pdfcer-print variant pdfcer_print::SettingsSource::DeviceDefault
 pdfcer-print variant pdfcer_print::SettingsSource::DriverSupplied
 pdfcer-print variant pdfcer_print::SettingsSource::Synthesised
+pdfcer-print variant pdfcer_print::compose::ComposeError::Engine
+pdfcer-print variant pdfcer_print::compose::ComposeError::Imposition
+pdfcer-print variant pdfcer_print::compose::ComposeError::MixedRotations
+pdfcer-print variant pdfcer_print::compose::ComposeError::NoPages
+pdfcer-print variant pdfcer_print::compose::ComposeError::StrokesUnavailable
+pdfcer-print variant pdfcer_print::compose::Shape::Booklet
+pdfcer-print variant pdfcer_print::compose::Shape::NUp
+pdfcer-print variant pdfcer_print::compose::Shape::Pages
+pdfcer-print variant pdfcer_print::compose::Shape::Poster
 pdfcer-print variant pdfcer_print::devmode::ConfigurationError::DeviceMismatch
 pdfcer-print variant pdfcer_print::devmode::ConfigurationError::PublicPortionTooSmall
 pdfcer-print variant pdfcer_print::devmode::ConfigurationError::TooShort
@@ -10830,6 +10875,11 @@ pdfcer-print variant pdfcer_print::ipp::send::IppSendError::Transport
 pdfcer-print variant pdfcer_print::output_color::OutputColor::BlackOnly
 pdfcer-print variant pdfcer_print::output_color::OutputColor::Color
 pdfcer-print variant pdfcer_print::output_color::OutputColor::Grayscale
+pdfcer-print variant pdfcer_print::pdf_direct::FallbackReason::CannotCompose
+pdfcer-print variant pdfcer_print::pdf_direct::FallbackReason::DriverOnlyOption
+pdfcer-print variant pdfcer_print::pdf_direct::FallbackReason::NoNetworkAddress
+pdfcer-print variant pdfcer_print::pdf_direct::FallbackReason::NoPdf
+pdfcer-print variant pdfcer_print::pdf_direct::FallbackReason::Unreachable
 pdfcer-render const pdfcer_render::CMYK_BYTES_PER_PIXEL
 pdfcer-render const pdfcer_render::DEFAULT_MAX_CMYK_BUFFER_BYTES
 pdfcer-render const pdfcer_render::MAX_GUARANTEED_REGION_SCALE

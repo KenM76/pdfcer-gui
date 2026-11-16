@@ -347,7 +347,7 @@ pub fn measure(ctx: &egui::Context, doc: &OpenDoc) -> Option<Measured> {
     let sheet = doc.pages.get(page)?;
     let all = &provider.page_objects().objects;
     // The sheet as the canvas draws it: its device box at scale 1.
-    let (w, h, _) = pdfcer_render::page_device_geometry(sheet, 1.0);
+    let (w, h, _) = crate::viewer::canvas_geometry(sheet);
     let page_box = Bx::new(0.0, 0.0, f64::from(w), f64::from(h));
     let drawing = all
         .iter()

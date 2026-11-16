@@ -146,3 +146,68 @@ fn the_split_writes_every_part_with_or_without_labels() {
         assert_eq!(doc.pages.len(), 4, "the source is unchanged");
     }
 }
+
+/// **Each part keeps the ce dimensions on its own pages, in their group.**
+/// One ce dimension on page 1 and one on page 3, split every two pages: each
+/// file opens with the group and exactly its one member.
+#[test]
+fn each_part_keeps_its_ce_dimensions_in_their_group() {
+    use pdfcer_core::dimension::{DimensionKind, NumberFormat, ScaleState, Unit};
+    use pdfcer_core::document::Document;
+    use pdfcer_core::edit::EditSession;
+    use pdfcer_core::vector::Point;
+
+    let mut doc = open_fixture(FOUR_PAGES);
+    let session = std::sync::Arc::get_mut(&mut doc.session).expect("the fixture is sole owner");
+    let group = session
+        .add_dimension_group("site plan", Unit::Meter)
+        .expect("a group is created");
+    session
+        .set_group_scale(
+            group,
+            ScaleState::Calibrated { scale: 0.25 },
+            NumberFormat::decimal(Unit::Meter, 1),
+        )
+        .expect("the scale is set");
+    for page in [0, 2] {
+        let kind = DimensionKind::Perimeter {
+            points: vec![
+                Point::new(100.0, 100.0),
+                Point::new(300.0, 100.0),
+                Point::new(200.0, 250.0),
+            ],
+            closed: true,
+            area: false,
+            offset: 0.0,
+            text_along: 0.0,
+        };
+        session
+            .add_dimension(page, group, kind)
+            .expect("the ce dimension is authored");
+    }
+    let source = doc
+        .session
+        .dimension_model()
+        .group(group)
+        .expect("the group is in the source")
+        .clone();
+
+    let folder = scratch("ce-dimensions");
+    let r = request(SplitCriterion::EveryN(2), "{n}.pdf", &folder);
+    let written =
+        write(&doc, &r, SeparationPolicy::default()).unwrap_or_else(|(_, why)| panic!("{why}"));
+    assert_eq!(written.files, 2);
+    assert!(!written.ce_sidecar_newer);
+    for name in ["1.pdf", "2.pdf"] {
+        let part = EditSession::new(Document::load(&folder.join(name)).expect("the part opens"));
+        let model = part.dimension_model();
+        let copied = model
+            .groups()
+            .iter()
+            .find(|g| g.name == source.name)
+            .unwrap_or_else(|| panic!("{name} carries the source's group"));
+        assert_eq!(copied.scale, source.scale, "{name}");
+        assert_eq!(copied.format, source.format, "{name}");
+        assert_eq!(model.members(copied.id).count(), 1, "{name}");
+    }
+}

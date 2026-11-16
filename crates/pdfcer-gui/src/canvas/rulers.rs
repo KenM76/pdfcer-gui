@@ -9,8 +9,9 @@
 
 use egui::{Align, Layout, Pos2, Rect, Stroke, Ui, UiBuilder, pos2, vec2};
 use pdfcer_core::dimension::{
-    DEFAULT_GROUP_ID, NumberFormat, ScaleState, Unit, format_measurement,
+    DEFAULT_GROUP_ID, NumberFormat, ScaleState, Unit, format_measurement_on,
 };
+use pdfcer_core::page_tree::Page;
 
 use crate::app::state::OpenDoc;
 use crate::canvas::mapping::PageMapping;
@@ -136,16 +137,14 @@ pub(super) struct CanvasGeometry {
 }
 
 impl CanvasGeometry {
-    /// The map for `page`, if the frame drew it.
-    pub(super) fn map_of(&self, page: usize) -> Option<PageMapping> {
-        self.pages.iter().find(|p| p.page == page).map(|p| p.map)
-    }
-
-    /// The map for the page the ruler's zero is pinned to, falling back to
+    /// The page the ruler's zero is pinned to and its map, falling back to
     /// whatever was drawn first.
-    pub(super) fn anchor(&self) -> Option<PageMapping> {
-        self.map_of(self.current)
-            .or_else(|| self.pages.first().map(|p| p.map))
+    pub(super) fn anchor(&self) -> Option<(usize, PageMapping)> {
+        self.pages
+            .iter()
+            .find(|p| p.page == self.current)
+            .or_else(|| self.pages.first())
+            .map(|p| (p.page, p.map))
     }
 
     /// The page under a screen point, if the pointer is over one.
@@ -162,51 +161,68 @@ impl CanvasGeometry {
 // ---------------------------------------------------------------------------
 
 /// What the ruler reads in: the document's own measurement scale and number
-/// format.
+/// format, on a page whose `/UserUnit` is `user_unit` physical points per
+/// user-space unit (ISO 32000-1 §14.11.2).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) struct Scale {
     state: ScaleState,
     format: NumberFormat,
+    user_unit: f64,
 }
 
 impl Default for Scale {
-    /// Raw PDF points — what a document that has never been calibrated reads
-    /// in, and what every failure below falls back to.
+    /// Raw PDF points on a page whose `/UserUnit` is 1 — what a document that
+    /// has never been calibrated reads in, and what every failure below falls
+    /// back to.
     fn default() -> Self {
         Self {
             state: ScaleState::NeverSet,
             format: NumberFormat::decimal(Unit::Millimeter, 2),
+            user_unit: 1.0,
         }
     }
 }
 
 impl Scale {
-    /// Read the document's scale from its dimensioning sidecar.
-    pub(super) fn of(doc: &OpenDoc) -> Self {
+    /// Read the document's scale from its dimensioning sidecar, for `page`.
+    pub(super) fn of(doc: &OpenDoc, page: Option<&Page>) -> Self {
+        let user_unit = page.map_or(1.0, |p| f64::from(crate::viewer::page_unit(p)));
         doc.session
             .dimension_model()
             .group(DEFAULT_GROUP_ID)
             .map_or_else(Self::default, |g| Self {
                 state: g.scale,
                 format: g.format,
+                user_unit: 1.0,
             })
+            .on_user_unit(user_unit)
     }
 
-    /// Display units per PDF point.
-    pub(super) fn units_per_point(self) -> f64 {
-        match self.state.effective_scale(self.format.unit) {
+    /// This scale on a page whose `/UserUnit` is `user_unit`.
+    pub(super) const fn on_user_unit(mut self, user_unit: f64) -> Self {
+        self.user_unit = user_unit;
+        self
+    }
+
+    /// Display units per user-space unit of the page: the page's `/UserUnit`
+    /// makes a user-space unit that many points, then the scale applies. The
+    /// ladder is chosen from this, so labelled ticks are round in what they
+    /// read.
+    pub(super) fn units_per_user_unit(self) -> f64 {
+        let per_point = match self.state.effective_scale(self.format.unit) {
             Some(s) if s.is_finite() && s > 0.0 => s,
             _ => 1.0,
-        }
+        };
+        per_point * self.user_unit
     }
 
-    /// Render a canvas-space distance the way a dimension of that length would
-    /// be rendered.
+    /// Render a canvas-space distance on `page` the way a ce dimension of that
+    /// length on that page would be rendered.
     ///
-    /// Straight through [`pdfcer_core::dimension::format_measurement`] — see
+    /// Straight through [`pdfcer_core::dimension::format_measurement_on`] — see
     /// the header, §1, on why this module formats nothing itself.
-    pub(super) fn label(self, points: f64) -> String {
-        format_measurement(points, self.state, self.format).text
+    pub(super) fn label(self, page: &Page, user_units: f64) -> String {
+        format_measurement_on(page, user_units, self.state, self.format).text
     }
 }
 
@@ -218,9 +234,9 @@ impl Scale {
 /// how far apart the unlabelled ones are.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(super) struct Ladder {
-    /// Distance between labelled ticks, in PDF points.
+    /// Distance between labelled ticks, in the page's user-space units.
     pub(super) major: f64,
-    /// Distance between unlabelled ticks, in PDF points.
+    /// Distance between unlabelled ticks, in the page's user-space units.
     pub(super) minor: f64,
 }
 
@@ -275,7 +291,7 @@ impl Ladder {
     /// screen.
     #[must_use]
     pub(super) fn for_labels(scale: Scale, zoom: f32, min_pitch_pts: f32) -> Self {
-        let upp = scale.units_per_point();
+        let upp = scale.units_per_user_unit();
         let Some(zoom) = positive(f64::from(zoom)) else {
             return Self {
                 major: 1.0,
@@ -290,7 +306,7 @@ impl Ladder {
     /// apart on screen — the **minor** step, not the major.
     #[must_use]
     pub(super) fn for_lines(scale: Scale, zoom: f32, min_pitch_pts: f32) -> Self {
-        let upp = scale.units_per_point();
+        let upp = scale.units_per_user_unit();
         let Some(zoom) = positive(f64::from(zoom)) else {
             return Self {
                 major: 1.0,
@@ -381,6 +397,24 @@ impl Axis {
     }
 }
 
+/// The page's own span, as a tint across both gutters: a line along the
+/// inner edge would sit on the ticks, which run in from the same edge. Painted
+/// before the ticks so they sit on top of it.
+fn page_span(painter: &egui::Painter, page: Rect, top: Rect, left: Rect, accent: egui::Color32) {
+    let tint = super::overlay::at_alpha(accent, PAGE_SPAN_ALPHA);
+    painter.rect_filled(
+        Rect::from_min_max(pos2(page.min.x, top.min.y), pos2(page.max.x, top.max.y)).intersect(top),
+        0.0,
+        tint,
+    );
+    painter.rect_filled(
+        Rect::from_min_max(pos2(left.min.x, page.min.y), pos2(left.max.x, page.max.y))
+            .intersect(left),
+        0.0,
+        tint,
+    );
+}
+
 /// Draw both ruler gutters.
 pub(super) fn draw(ui: &Ui, doc: &OpenDoc, gutters: Gutters, geometry: Option<&CanvasGeometry>) {
     let (Some(top), Some(left), Some(corner)) = (gutters.top, gutters.left, gutters.corner) else {
@@ -401,47 +435,39 @@ pub(super) fn draw(ui: &Ui, doc: &OpenDoc, gutters: Gutters, geometry: Option<&C
     crate::diag::ui_rect(REGION_RULER_TOP, top);
     crate::diag::ui_rect(REGION_RULER_LEFT, left);
 
-    let Some(map) = geometry.and_then(CanvasGeometry::anchor) else {
+    let Some((anchor, map)) = geometry.and_then(CanvasGeometry::anchor) else {
         return;
     };
-    let scale = Scale::of(doc);
+    let Some(anchor_page) = doc.pages.get(anchor) else {
+        return;
+    };
+    let scale = Scale::of(doc, Some(anchor_page));
     let ladder = Ladder::for_labels(scale, doc.view.zoom, MIN_MAJOR_PITCH_PTS);
     // The content-area selection ink by its role name; `overlay::ink`
     // carries the argument for why `visuals.selection` is not this canvas's
     // channel to read. Same colour, named address.
     let accent = egui_shell::theme::Theme::canvas_selection_ink(ui.ctx());
 
-    // **The page's own span, as a TINT across the gutter** — not a line
-    // along the gutter's inner edge.
-    //
-    // The single most useful thing a ruler can say about a drawing sheet is
-    // where its borders are: at a fit zoom the paper's edge against the grey
-    // surround is a one-pixel difference in fill, legible on a white sheet and
-    // very nearly invisible on a dark theme. ⚠ A heavy line along the inner
-    // edge says that and *sits exactly on top of the ticks*, which run 2.5
-    // points in from the same edge — drowning every minor tick over the page,
-    // which is every tick that matters, under the thing marking the page.
-    //
-    // A tint over the whole gutter says the same thing in a place nothing else
-    // occupies, and it is the convention InDesign and Illustrator use for the
-    // same purpose. Painted **before** the ticks so the ticks and labels sit on
-    // top of it rather than under it.
-    let page = map.image_rect();
-    let tint = super::overlay::at_alpha(accent, PAGE_SPAN_ALPHA);
-    painter.rect_filled(
-        Rect::from_min_max(pos2(page.min.x, top.min.y), pos2(page.max.x, top.max.y)).intersect(top),
-        0.0,
-        tint,
-    );
-    painter.rect_filled(
-        Rect::from_min_max(pos2(left.min.x, page.min.y), pos2(left.max.x, page.max.y))
-            .intersect(left),
-        0.0,
-        tint,
-    );
+    page_span(&painter, map.image_rect(), top, left, accent);
 
-    ticks(ui, &painter, Axis::X, top, map, scale, ladder);
-    ticks(ui, &painter, Axis::Y, left, map, scale, ladder);
+    ticks(
+        ui,
+        &painter,
+        Axis::X,
+        top,
+        (map, anchor_page),
+        scale,
+        ladder,
+    );
+    ticks(
+        ui,
+        &painter,
+        Axis::Y,
+        left,
+        (map, anchor_page),
+        scale,
+        ladder,
+    );
 
     // Where the pointer is, on both rulers at once. A crosshair in the gutter
     // is how a ruler answers "how far across is this" without the operator
@@ -461,7 +487,7 @@ fn ticks(
     painter: &egui::Painter,
     axis: Axis,
     gutter: Rect,
-    map: PageMapping,
+    (map, page): (PageMapping, &Page),
     scale: Scale,
     ladder: Ladder,
 ) {
@@ -498,7 +524,7 @@ fn ticks(
         };
         if major {
             let galley =
-                painter.layout_no_wrap(scale.label(value), font.clone(), major_stroke.color);
+                painter.layout_no_wrap(scale.label(page, value), font.clone(), major_stroke.color);
             match axis {
                 // Two points clear of the tick, and the label starts AT the
                 // tick rather than being centred on it. Centring reads better
@@ -534,6 +560,32 @@ fn ticks(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A page whose `/UserUnit` is `user_unit`.
+    fn sheet(user_unit: f64) -> Page {
+        let r = pdfcer_core::page_tree::Rect::from_corners(0.0, 0.0, 306.0, 396.0);
+        let mut page = Page::with_boxes(pdfcer_core::object::ObjId::new(3, 0), r, r, 0);
+        page.user_unit = user_unit;
+        page
+    }
+
+    /// **On a page whose `/UserUnit` is 2 the ruler reads physical lengths**:
+    /// 306 user-space units are 612 points (ISO 32000-1 §14.11.2), and the
+    /// ladder is round in those points rather than in the box's units.
+    #[test]
+    fn a_user_unit_page_reads_physical_points() {
+        let raw = Scale::default().on_user_unit(2.0);
+        // ORACLE: 306 units × 2 = 612 pt, the width of a Letter sheet.
+        assert_eq!(raw.label(&sheet(2.0), 306.0), "612.00 pt");
+        assert!((raw.units_per_user_unit() - 2.0).abs() < f64::EPSILON);
+        let l = Ladder::for_labels(raw, 1.0, MIN_MAJOR_PITCH_PTS);
+        let shown = l.major * raw.units_per_user_unit();
+        let m = shown / 10f64.powf(shown.log10().floor());
+        assert!(
+            (m - 1.0).abs() < 1e-6 || (m - 2.0).abs() < 1e-6 || (m - 5.0).abs() < 1e-6,
+            "the ladder labelled {shown} pt, which is not a round number"
+        );
+    }
 
     /// **The gutters take a CONSTANT bite out of the viewport** — R128.
     #[test]
@@ -713,29 +765,31 @@ mod tests {
     #[test]
     fn the_ruler_reads_points_until_the_document_says_otherwise() {
         let raw = Scale::default();
-        assert!((raw.units_per_point() - 1.0).abs() < f64::EPSILON);
-        assert_eq!(raw.label(144.0), "144.00 pt");
-        assert_eq!(raw.label(-72.0), "-72.00 pt");
+        assert!((raw.units_per_user_unit() - 1.0).abs() < f64::EPSILON);
+        assert_eq!(raw.label(&sheet(1.0), 144.0), "144.00 pt");
+        assert_eq!(raw.label(&sheet(1.0), -72.0), "-72.00 pt");
 
         // A sheet calibrated so one point is a quarter of a foot — the
         // worked example in `format_measurement`'s own documentation.
         let feet = Scale {
             state: ScaleState::Calibrated { scale: 0.25 },
             format: NumberFormat::decimal(Unit::DecimalFeet, 2),
+            user_unit: 1.0,
         };
-        assert_eq!(feet.label(144.0), "36.00 ft");
-        assert!((feet.units_per_point() - 0.25).abs() < f64::EPSILON);
+        assert_eq!(feet.label(&sheet(1.0), 144.0), "36.00 ft");
+        assert!((feet.units_per_user_unit() - 0.25).abs() < f64::EPSILON);
 
         // …and an explicit 1:1 metric group reads true size, which is a
         // different state from "never set" even though both are unscaled.
         let mm = Scale {
             state: ScaleState::OneToOne,
             format: NumberFormat::decimal(Unit::Millimeter, 2),
+            user_unit: 1.0,
         };
         // ORACLE, NOT A CONVERSION: a whole inch of paper is 25.40 mm, stated
         // as the literal a reader can check against a ruler. The `25.4` is in
         // an expected string, not in arithmetic.
-        assert_eq!(mm.label(72.0), "25.40 mm");
+        assert_eq!(mm.label(&sheet(1.0), 72.0), "25.40 mm");
     }
 
     /// **A set scale moves the ladder into the operator's units**, so the
@@ -746,10 +800,11 @@ mod tests {
         let scale = Scale {
             state: ScaleState::Calibrated { scale: 0.0176 },
             format: NumberFormat::decimal(Unit::Meter, 3),
+            user_unit: 1.0,
         };
         let l = Ladder::for_labels(scale, 1.0, MIN_MAJOR_PITCH_PTS);
         // The major step, converted back into the display unit, is round.
-        let in_metres = l.major * scale.units_per_point();
+        let in_metres = l.major * scale.units_per_user_unit();
         let m = in_metres / 10f64.powf(in_metres.log10().floor());
         assert!(
             (m - 1.0).abs() < 1e-6 || (m - 2.0).abs() < 1e-6 || (m - 5.0).abs() < 1e-6,
@@ -788,7 +843,7 @@ mod tests {
                 !zeroes[0].is_sign_negative(),
                 "from {from}: the origin came out as negative zero"
             );
-            assert_eq!(scale.label(zeroes[0]), "0.00 pt");
+            assert_eq!(scale.label(&sheet(1.0), zeroes[0]), "0.00 pt");
         }
     }
 

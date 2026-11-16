@@ -30,7 +30,7 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/canvas/measure/draw.md`.
 
 use egui::{Pos2, Ui};
-use pdfcer_core::dimension::{DimensionKind, StyleOverrides, author_dimension, resolve_style};
+use pdfcer_core::dimension::DimensionKind;
 use pdfcer_core::vector::Point;
 
 use crate::app::state::OpenDoc;
@@ -242,16 +242,28 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
         // The engine's own bake, the pixels `add_dimension` will write; the
         // outline and label below stand in only when it refuses or is off
         // screen.
-        let baked = crate::canvas::dimpreview::bake_new(doc, st.group, &kind).is_some_and(|b| {
-            crate::canvas::dimpreview::paint(painter, doc, page, map, painter.clip_rect(), &b)
+        let bake = crate::canvas::dimpreview::bake_new(doc, st.page_index, st.group, &kind);
+        let baked = bake.as_ref().is_some_and(|b| {
+            crate::canvas::dimpreview::paint(painter, doc, page, map, painter.clip_rect(), b)
         });
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
-            format!("measure-place-preview baked={}", u8::from(baked))
+            //
+            // `label` is the baked value text, the number `add_dimension` will
+            // write on this page; `length_pt` is the same measurement in the
+            // page's user-space units, before its `/UserUnit`.
+            format!(
+                "measure-place-preview baked={} page={} length_pt={:.3} label=\"{}\"",
+                u8::from(baked),
+                st.page_index,
+                kind.measured_points(),
+                bake.as_ref()
+                    .map_or("", |b| b.preview.appearance.label.as_str())
+            )
         });
         if !baked {
             draw_dimension(painter, stroke, &kind, page, map);
-            draw_label(painter, doc, st.group, &kind, page, map, color);
+            draw_label(painter, doc, &st, &kind, page, map, color);
         }
         return;
     }
@@ -293,7 +305,7 @@ pub(in crate::canvas) fn preview(ui: &Ui, preview: Preview<'_>) {
             };
             if let Some(authored) = st.linear.placing_preview(at) {
                 // Placing: draw the dimension itself, exactly as it will land.
-                draw_label(painter, doc, st.group, &authored, page, map, color);
+                draw_label(painter, doc, &st, &authored, page, map, color);
                 pick::dimension_preview_segments(&authored)
             } else {
                 // Measuring: the constrained A→pointer segment.
@@ -374,9 +386,10 @@ fn draw_dimension(
 const AREA_READOUT_SLOT: &str = "measure-area-readout"; // ui-text-exempt: a trace slot, never displayed
 
 /// **The running area beside the pointer**, with the pointer counted as the
-/// next corner, formatted by the engine's `format_area_measurement` under the
-/// group's scale so it is the number the label will carry. A cursor
-/// affordance: drawn only while picking, never on committed content.
+/// next corner, formatted by the engine's `DimensionKind::display_on` for the
+/// closed outline under the page's `/UserUnit` and the group's scale, so it is
+/// the number the label will carry. A cursor affordance: drawn only while
+/// picking, never on committed content.
 fn area_readout(
     painter: &egui::Painter,
     doc: &OpenDoc,
@@ -395,14 +408,17 @@ fn area_readout(
     let Some(pointer) = page_to_screen(at, page, map) else {
         return;
     };
+    let Some(outline) = st.perimeter.preview(at, true) else {
+        return;
+    };
     let square_points = st.perimeter.area_points(Some(at));
-    let shown =
-        pdfcer_core::dimension::format_area_measurement(square_points, group.scale, group.format);
+    let shown = outline.display_on(page.user_unit, group.scale, group.format);
     crate::diag::trace_changed(AREA_READOUT_SLOT, || {
         // ui-text-exempt: diagnostic trace, never displayed in the UI
         format!(
-            "measure-area-readout corners={} area_pt2={square_points:.2} text=\"{}\"",
+            "measure-area-readout corners={} area_pt2={square_points:.2} user_unit={} text=\"{}\"",
             st.perimeter.points().len() + 1,
+            page.user_unit,
             shown.text
         )
     });
@@ -416,26 +432,28 @@ fn area_readout(
 
 /// A dimension's value text, where and how large the baker would put it.
 ///
-/// The text and its box come from `author_dimension` under the group's style,
-/// so the preview says the value the commit writes. The box's corners run
+/// The text and its box come from `EditSession::new_dimension_preview_on` for
+/// the state's page and group, so the preview says the value the commit
+/// writes, the page's `/UserUnit` applied. The box's corners run
 /// baseline-left (at the descender), baseline-right, cap-right, cap-left; the
 /// font size is the box height over 1.3, the descender-to-cap span the baker
 /// sizes it from.
 fn draw_label(
     painter: &egui::Painter,
     doc: &OpenDoc,
-    group: pdfcer_core::dimension::GroupId,
+    st: &MeasureState,
     kind: &DimensionKind,
     page: &pdfcer_core::page_tree::Page,
     map: &PageMapping,
     color: egui::Color32,
 ) {
-    let model = doc.session.dimension_model();
-    let Some(group) = model.group(group) else {
+    let Ok(preview) = doc
+        .session
+        .new_dimension_preview_on(st.page_index, st.group, kind)
+    else {
         return;
     };
-    let style = resolve_style(group, &StyleOverrides::default());
-    let authored = author_dimension(kind, style);
+    let authored = preview.appearance;
     let [q0, q1, _, q3] = authored.label_quad;
     let (Some(s0), Some(s1), Some(s3)) = (
         page_to_screen(q0, page, map),

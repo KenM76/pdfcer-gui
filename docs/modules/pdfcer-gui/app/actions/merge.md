@@ -72,6 +72,12 @@ default.
 
 # What is reported, and where
 
+`pageops::merge` carries no ce-dimension sidecar: every merged ce dimension is
+a plain line annotation in the result, and `AssembleReport` reports zero for
+both ce-dimension counts, so there is no count to base a sentence on. The
+receipt says nothing about them until the engine reports one; the shell does
+not read the sources' sidecars to count them itself.
+
 One trace line naming the counts, and the engine's own disclosures on the
 status row. Failures are traced and reported; nothing is silent, which is
 the standing rule for a verb whose whole effect is off screen.

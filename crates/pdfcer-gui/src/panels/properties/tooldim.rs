@@ -134,6 +134,7 @@ fn new_group_row(
         let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
         if !trimmed.is_empty() && (button.clicked() || enter) {
             let unit = from.map_or(pdfcer_core::dimension::Unit::Millimeter, |g| g.format.unit);
+            let format = unit.default_format();
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
@@ -144,7 +145,7 @@ fn new_group_row(
             });
             actions.push(Action::Dimension(DimensionAction::AddGroup {
                 name: trimmed,
-                unit,
+                format,
                 scale_from: from.map(|g| g.id),
                 author_into: true,
             }));

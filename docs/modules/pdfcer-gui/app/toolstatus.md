@@ -112,14 +112,13 @@ collapses back to the instruction when the run ends.
 
 ### `fn perimeter_stage`
 
-Moved unchanged from the armed block, and the reasoning moves with it,
-because it is the reason this function is not two lines of arithmetic:
-[`pdfcer_core::dimension::format_measurement`] is the ENGINE's own
-formatter — the same one the committed label goes through — so the running
+This function is not two lines of arithmetic because
+[`pdfcer_core::dimension::format_measurement_on`] is the ENGINE's own
+formatter, applying the measuring page's `/UserUnit` — the same one the committed label goes through — so the running
 total and the final label cannot disagree about scale, unit, precision,
 fraction style or decimal marker. The operator's ask was that the tool
 behave *"the same as the other dimensioning tools"*, and a live readout in
-points beside a committed dimension in metres would be two numbers for one
+points beside a committed ce dimension in metres would be two numbers for one
 measurement.
 
 Falls back to the instruction when the group cannot be read: a total whose

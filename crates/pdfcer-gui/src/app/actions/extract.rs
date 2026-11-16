@@ -136,6 +136,10 @@ fn receipt(doc: &OpenDoc, report: &AssembleReport, target: &Path) -> String {
         note.push(' ');
         note.push_str(&links);
     }
+    if let Some(ce) = crate::text::cedimcopy::copied(report.ce_dimension_sidecar_newer) {
+        note.push(' ');
+        note.push_str(ce);
+    }
     note
 }
 
@@ -177,13 +181,16 @@ fn write_extract(
             // `pages=` is what was written and `asked=` what was requested, so
             // a wrong count shows as the line disagreeing with itself. `path`
             // is Debug-quoted so a space in it cannot split the fields.
-            "extract path={target:?} pages={} bytes={} asked={} labels={} labels_dropped={} label_ranges={}",
+            "extract path={target:?} pages={} bytes={} asked={} labels={} labels_dropped={} label_ranges={} ce_dims_carried={} ce_dims_left={} ce_sidecar_newer={}",
             report.pages,
             bytes.len(),
             pages.len(),
             labels_token(labels),
             u8::from(report.page_labels_dropped),
             report.page_label_ranges,
+            report.ce_dimensions_carried,
+            report.ce_dimensions_left,
+            u8::from(report.ce_dimension_sidecar_newer),
         )
     });
     Ok(report)
@@ -343,6 +350,99 @@ mod tests {
             assert_eq!(label_ranges(&reopened).len(), ranges, "{labels:?}");
             let _ = std::fs::remove_file(&target);
         }
+    }
+
+    /// A ce dimension on `page`, in `group`.
+    fn ce_dimension(
+        session: &mut pdfcer_core::edit::EditSession,
+        page: usize,
+        group: pdfcer_core::dimension::GroupId,
+    ) -> pdfcer_core::object::ObjId {
+        use pdfcer_core::dimension::DimensionKind;
+        use pdfcer_core::vector::Point;
+        let kind = DimensionKind::Perimeter {
+            points: vec![
+                Point::new(100.0, 100.0),
+                Point::new(300.0, 100.0),
+                Point::new(200.0, 250.0),
+            ],
+            closed: true,
+            area: false,
+            offset: 0.0,
+            text_along: 0.0,
+        };
+        session
+            .add_dimension(page, group, kind)
+            .expect("the ce dimension is authored")
+            .0
+    }
+
+    /// **An extracted page keeps its ce dimensions' group and stays a ce
+    /// dimension.** The group has a non-default scale, format and standard, so
+    /// a copy that fell back to the default group cannot match it; the second
+    /// ce dimension sits on a page that is not taken.
+    #[test]
+    fn an_extraction_keeps_the_ce_dimension_groups() {
+        use pdfcer_core::dimension::{DimStandard, NumberFormat, ScaleState, Unit};
+        use pdfcer_core::document::Document;
+        use pdfcer_core::edit::EditSession;
+
+        let mut doc = open_fixture(FOUR_PAGES);
+        let mut group = None;
+        edit(&mut doc, |s| {
+            let g = s
+                .add_dimension_group("site plan", Unit::FeetInches)
+                .expect("a group is created");
+            s.set_group_scale(
+                g,
+                ScaleState::Calibrated { scale: 0.25 },
+                NumberFormat::feet_inches(16, false),
+            )
+            .expect("the scale is set");
+            s.set_group_standard(g, DimStandard::Iso)
+                .expect("the standard is set");
+            ce_dimension(s, 1, g);
+            ce_dimension(s, 3, g);
+            group = Some(g);
+        });
+        let model = doc.session.dimension_model();
+        let source = model
+            .group(group.expect("the group was made"))
+            .expect("the group is in the source")
+            .clone();
+
+        let target = scratch("extracted-ce-dimensions.pdf");
+        let _ = std::fs::remove_file(&target);
+        let report = write_extract(
+            &doc,
+            &[1],
+            &target,
+            ExtractedPageLabels::Keep,
+            SeparationPolicy::default(),
+        )
+        .expect("the extraction must be written");
+        assert_eq!(report.ce_dimensions_carried, 1);
+        assert_eq!(report.ce_dimensions_left, 1, "the page-4 one stays behind");
+        assert!(!report.ce_dimension_sidecar_newer);
+
+        let reopened = EditSession::new(Document::load(&target).expect("the extraction opens"));
+        let model = reopened.dimension_model();
+        let copied = model
+            .groups()
+            .iter()
+            .find(|g| g.name == source.name)
+            .expect("the copy carries the source's group, not only the default one");
+        assert_eq!(copied.scale, source.scale);
+        assert_eq!(copied.format, source.format);
+        assert_eq!(copied.standard, DimStandard::Iso);
+        let members: Vec<_> = model.members(copied.id).collect();
+        assert_eq!(members.len(), 1, "the page-2 ce dimension is in its group");
+        let annot = members[0].annot.expect("the record names its annotation");
+        assert!(
+            pdfcer_gui_base::commentmodel::ce_dimension_annots(&reopened).contains(&annot),
+            "the copy opens it as a ce dimension, not a plain line annotation"
+        );
+        let _ = std::fs::remove_file(&target);
     }
 
     /// **The suggested name is never the file that was opened.**

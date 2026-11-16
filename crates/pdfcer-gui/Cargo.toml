@@ -199,7 +199,7 @@ paddle = ["pdfcer-core/paddle", "pdfcer-gui-base/paddle"]
 ocr-vl = ["pdfcer-core/ocr-vl", "pdfcer-gui-base/ocr-vl"]
 
 # `svg-import` — placing an SVG as vector content.
-svg-import = ["pdfcer-core/svg-import", "pdfcer-gui-base/svg-import"]
+svg-import = ["pdfcer-core/svg-import", "pdfcer-gui-base/svg-import", "pdfcer-print/svg-import"]
 
 [dependencies]
 # native-window = the four `user32` calls that make a dialog OWNED by the
@@ -400,16 +400,18 @@ pdfcer-emf = { git = "file:///D:/Dev/pdfcer", branch = "main" }
 
 # pdfcer-print — printer enumeration, device capabilities and spooling.
 #
-# No `default-features = false`, unlike its two siblings above, and the
-# asymmetry is not an oversight: `pdfcer-print` declares no features at all,
-# so the flag would be a claim about a feature set that does not exist.
+# `compose` lays a job's sheets out as a new PDF for a printer that reads PDF
+# (`dialogs::print::direct`); it is what makes `pdfcer-print` depend on
+# `pdfcer-core`. Its `svg-import` (cut marks, n-up cell borders) rides this
+# crate's own `svg-import`; without it a job asking for either goes through
+# the driver, and the receipt says why.
 #
 # Without this dependency the print dialog can only say that the build cannot
 # spool, and it **omits the commit button rather than greying it** — the
 # no-inert-controls rule. That sentence stays distinct from "no printers
 # found": a build that cannot ask and a machine with nothing to ask about
 # must never collapse into one message.
-pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main" }
+pdfcer-print = { git = "file:///D:/Dev/pdfcer", branch = "main", features = ["compose"] }
 
 # pdfcer-3d — decodes a PRC model's tessellation to triangles for STL/OBJ
 # export (feature `3d`). Its own dependencies, thiserror and flate2, are

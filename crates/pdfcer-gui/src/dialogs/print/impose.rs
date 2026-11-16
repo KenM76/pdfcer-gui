@@ -146,7 +146,7 @@ impl State {
         device
     }
 
-    fn nup_spec(&self) -> NUpSpec {
+    pub(super) fn nup_spec(&self) -> NUpSpec {
         NUpSpec {
             grid: NUpGrid::Count(self.prefs.count),
             order: self.prefs.order,
@@ -155,7 +155,7 @@ impl State {
         }
     }
 
-    fn booklet_spec(&self) -> BookletSpec {
+    pub(super) fn booklet_spec(&self) -> BookletSpec {
         BookletSpec {
             binding: self.prefs.binding,
             subset: self.subset,

@@ -154,9 +154,9 @@ right shape: the useful decimal places are one to three and the useful
 denominators are the binary ones a drawing writes, and offering a spinner
 over every `u32` would be a control whose range is mostly nonsense.
 
-`reduce: false` throughout, which is the architectural convention the
-engine's own docs name: `6/8"` rather than `3/4"`, because a drawing
-dimensioned to eighths writes eighths.
+`reduce: true` throughout, so `6/8"` reads `3/4"`, matching
+`Unit::default_format` for feet and inches. A fixed denominator is set from
+the Dimension groups tab's Numbers editor.
 
 ### `fn fraction_combo`
 

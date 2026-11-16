@@ -45,11 +45,22 @@ fn geometry_inputs_ok(extent: (f32, f32), zoom: f32) -> bool {
     zoom.is_finite() && zoom > 0.0 && extent.0.is_finite() && extent.0 > 0.0 && extent.1 > 0.0
 }
 
+/// The page's size and base transform in **canvas space**: default user space
+/// units, origin at the crop box's top-left, y down, `/Rotate` applied.
+///
+/// The engine's device geometry multiplies its scale by the page's
+/// `/UserUnit`, so the scale handed over is the reciprocal: canvas space stays
+/// in the units `page_extent_pts` measures, on every page.
+#[must_use]
+pub fn canvas_geometry(page: &Page) -> (u32, u32, Transform) {
+    pdfcer_render::page_device_geometry(page, 1.0 / super::page_unit(page))
+}
+
 /// Convert a **canvas-space** point into genuine **PDF user space** — the
 /// frame every `pdfcer-core` authoring API consumes.
 #[must_use]
 pub fn canvas_to_pdf_space(point: Pos2, page: &Page) -> Option<Pos2> {
-    let (_, _, ctm) = pdfcer_render::page_device_geometry(page, 1.0);
+    let (_, _, ctm) = canvas_geometry(page);
     let inverse = ctm.invert()?;
     Some(apply_transform(&inverse, point))
 }
@@ -62,7 +73,7 @@ pub fn canvas_to_pdf_space(point: Pos2, page: &Page) -> Option<Pos2> {
     reason = "built and tested at S0; first live consumer is S4's selection-outline projection" // ui-text-exempt: clippy lint justification, never displayed
 )]
 pub fn pdf_space_to_canvas(point: Pos2, page: &Page) -> Option<Pos2> {
-    let (_, _, ctm) = pdfcer_render::page_device_geometry(page, 1.0);
+    let (_, _, ctm) = canvas_geometry(page);
     // Guard on invertibility so the two directions accept/decline the same
     // pages; the forward map itself does not need the inverse, but a page
     // whose transform cannot round-trip has no well-defined canvas point.
@@ -107,6 +118,16 @@ mod tests {
     /// Two `Pos2` are equal within a few `f32` ULPs of accumulated error.
     fn near(a: Pos2, b: Pos2) -> bool {
         (a.x - b.x).abs() <= 1e-3 && (a.y - b.y).abs() <= 1e-3
+    }
+
+    #[test]
+    fn a_user_unit_page_maps_in_its_own_units() {
+        let mut page = test_page(306.0, 396.0, 0);
+        page.user_unit = 2.0;
+        let pdf = canvas_to_pdf_space(Pos2::new(18.0, 378.0), &page).unwrap();
+        assert!(near(pdf, Pos2::new(18.0, 18.0)), "pdf={pdf:?}"); // ui-text-exempt: test failure message, never displayed
+        let (w, h, _) = canvas_geometry(&page);
+        assert_eq!((w, h), (306, 396));
     }
 
     #[test]

@@ -784,8 +784,13 @@ impl PrintDialog {
             printer_name,
             job,
         } = self.plan(doc);
-        self.direct
-            .poll(self.vector_route.pdf_direct, printer_name.as_deref(), ctx);
+        let composed_for = self.direct_composed_for(job.as_ref(), &page_sizes, doc.view.page_index);
+        self.direct.poll(
+            self.vector_route.pdf_direct,
+            printer_name.as_deref(),
+            composed_for,
+            ctx,
+        );
         if self.device_pending {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
@@ -997,7 +1002,8 @@ impl PrintDialog {
             // back. Word and Acrobat behave the same way.
             //
             match Self::commit_notes(outcome.as_ref()) {
-                Some(notes) => {
+                Some(mut notes) => {
+                    notes.extend(self.direct.take_fallback());
                     crate::app::actions::record_notes(doc.edit_epoch, notes);
                     // The outcome is still stored, for the trace and for the
                     // frame that is already in flight. Nothing will draw it.

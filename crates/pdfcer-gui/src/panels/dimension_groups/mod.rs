@@ -8,7 +8,7 @@ mod identity;
 mod style;
 
 use egui::Ui;
-use pdfcer_core::dimension::{DEFAULT_GROUP_ID, DimStandard, GroupId, Unit};
+use pdfcer_core::dimension::{DEFAULT_GROUP_ID, DimStandard, GroupId, NumberFormat, Unit};
 
 use crate::app::actions::Action;
 use crate::app::actions::dimensions::DimensionAction;
@@ -39,6 +39,9 @@ pub const REGION_ROW_PREFIX: &str = "dimension-groups.row."; // ui-text-exempt: 
 pub const REGION_NEW_UNIT_COMBO: &str = "dimension-groups.new_unit.combo"; // ui-text-exempt: trace region name, never displayed
 /// One unit in the open new-group unit combo, suffixed with `Unit::token`.
 pub const REGION_NEW_UNIT_OPTION_PREFIX: &str = "dimension-groups.new_unit.option."; // ui-text-exempt: trace region name, never displayed
+/// The prefix of the new group's Numbers editor regions, ahead of
+/// `dimensionoverrides::REGION_DENOMINATOR` and `REGION_REDUCE`.
+pub const REGION_NEW_NUMBERS_PREFIX: &str = "dimension-groups.new_numbers."; // ui-text-exempt: trace region name, never displayed
 /// The new group's scale-source combo.
 pub const REGION_NEW_SCALE_COMBO: &str = "dimension-groups.new_scale.combo"; // ui-text-exempt: trace region name, never displayed
 /// One choice in the open scale-source combo, suffixed with the group id or `own`.
@@ -95,12 +98,15 @@ pub struct DimensionGroupsUi {
     /// row, which is R9's rule and also the honest layout: it is a question
     /// nobody has been asked yet.
     delete_destination: Option<GroupId>,
-    /// The unit the new group would start in.
+    /// The number format the new group would start with; its unit is the
+    /// group's unit.
     ///
     /// Millimetres, because it is the unit this operator's drawings are in and
     /// a unit is one combo away for anybody whose are not. See [`Self::default`]
     /// for why that is a hand-written `Default` rather than a derived one.
-    new_unit: Unit,
+    /// Choosing a unit resets it to `Unit::default_format`; the Numbers editor
+    /// then changes the fraction.
+    new_format: NumberFormat,
     /// The group whose calibration the new one starts with, if any.
     new_scale_from: Option<GroupId>,
     /// Set by the *Set scale…* button, drained by `crate::app::PdfcerApp`.
@@ -130,7 +136,7 @@ impl Default for DimensionGroupsUi {
             new_name: String::new(),
             rename: None,
             delete_destination: None,
-            new_unit: Unit::Millimeter,
+            new_format: Unit::Millimeter.default_format(),
             new_scale_from: None,
             scale_requested: None,
         }
@@ -483,39 +489,23 @@ impl DimensionGroupsUi {
         model: &pdfcer_core::dimension::DimensionModel,
         actions: &mut Vec<Action>,
     ) {
-        ui.horizontal_wrapped(|ui| {
+        ui.horizontal(|ui| {
             ui.label(t::new_name_label());
             let response =
                 // escape-disposition: keeps-draft — the new group's name lives on this
                 // panel and is committed by the button beside it.
                 ui.add(egui::TextEdit::singleline(&mut self.new_name).desired_width(160.0));
             crate::diag::ui_rect(REGION_NEW_NAME, response.rect);
-
-            ui.label(t::new_unit_label());
-            let combo = egui::ComboBox::from_id_salt("dimension-groups-new-unit")
-                .selected_text(crate::text::scale::unit_name(self.new_unit))
-                .show_ui(ui, |ui| {
-                    // `Unit::all()`, not a hand-written array. The engine's own
-                    // doc for it says *"the GUI unit dropdown and the CLI unit
-                    // parser iterate this"*, and `NO_SURFACE.md`'s sweep found a
-                    // local copy in `dialogs::scale` that happened to match —
-                    // a latent divergence rather than an active one, and this is
-                    // the version that cannot acquire it.
-                    for unit in Unit::all().iter().copied() {
-                        let row = ui.selectable_value(
-                            &mut self.new_unit,
-                            unit,
-                            crate::text::scale::unit_name(unit),
-                        );
-                        crate::diag::ui_rect(
-                            &format!("{REGION_NEW_UNIT_OPTION_PREFIX}{}", unit.token()),
-                            row.rect,
-                        );
-                    }
-                });
-            crate::diag::ui_rect(REGION_NEW_UNIT_COMBO, combo.response.rect);
         });
+        // Its own row: beside the name it runs past a 300 px panel's edge.
+        ui.horizontal(|ui| self.new_unit_combo(ui));
         ui.weak(t::new_unit_hint());
+        ui.label(t::number_style_label());
+        pdfcer_gui_base::dimensionoverrides::fraction_editor_in(
+            ui,
+            &mut self.new_format.fraction,
+            REGION_NEW_NUMBERS_PREFIX,
+        );
         self.new_scale_source(ui, model);
 
         let name = self.new_name.trim().to_owned();
@@ -543,13 +533,13 @@ impl DimensionGroupsUi {
                     // ui-text-exempt: diagnostic trace, never displayed
                     format!(
                         "dimension-group-add unit={:?} chars={}",
-                        self.new_unit,
+                        self.new_format.unit,
                         name.len()
                     )
                 });
                 actions.push(Action::Dimension(DimensionAction::AddGroup {
                     name,
-                    unit: self.new_unit,
+                    format: self.new_format,
                     scale_from: self.new_scale_from,
                     author_into: false,
                 }));
@@ -563,6 +553,34 @@ impl DimensionGroupsUi {
 }
 
 impl DimensionGroupsUi {
+    /// The new group's unit; choosing one starts its numbers at that unit's
+    /// `Unit::default_format`.
+    fn new_unit_combo(&mut self, ui: &mut Ui) {
+        ui.label(t::new_unit_label());
+        let mut unit = self.new_format.unit;
+        let combo = egui::ComboBox::from_id_salt("dimension-groups-new-unit")
+            .selected_text(crate::text::scale::unit_name(unit))
+            .show_ui(ui, |ui| {
+                // `Unit::all()`, not a hand-written array, so a unit the engine
+                // gains appears here.
+                for option in Unit::all().iter().copied() {
+                    let row = ui.selectable_value(
+                        &mut unit,
+                        option,
+                        crate::text::scale::unit_name(option),
+                    );
+                    crate::diag::ui_rect(
+                        &format!("{REGION_NEW_UNIT_OPTION_PREFIX}{}", option.token()),
+                        row.rect,
+                    );
+                }
+            });
+        crate::diag::ui_rect(REGION_NEW_UNIT_COMBO, combo.response.rect);
+        if unit != self.new_format.unit {
+            self.new_format = unit.default_format();
+        }
+    }
+
     /// The new group's scale: its own, or another group's converted to the
     /// new unit.
     fn new_scale_source(&mut self, ui: &mut Ui, model: &pdfcer_core::dimension::DimensionModel) {

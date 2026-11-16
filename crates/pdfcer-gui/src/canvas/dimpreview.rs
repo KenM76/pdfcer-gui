@@ -2,8 +2,9 @@
 //!
 //! [`bake`] asks `EditSession::dimension_preview` for the appearance the
 //! commit would write for a dragged ce dimension's moved geometry, and
-//! [`bake_new`] asks `EditSession::new_dimension_preview` for the one
-//! `add_dimension` would write for a ce dimension still being placed; [`paint`] rasterises it with
+//! [`bake_new`] asks `EditSession::new_dimension_preview_on` for the one
+//! `add_dimension` would write for a ce dimension still being placed on a
+//! page, that page's `/UserUnit` applied; [`paint`] rasterises it with
 //! `pdfcer_render::edit_preview::paint_dimension_preview` over the part of its
 //! `/Rect` that is on screen, and draws that texture. The pixels are the
 //! commit's own, label and extension lines included, so the preview cannot show
@@ -69,11 +70,19 @@ pub fn bake(doc: &OpenDoc, id: DimensionId, moved: &DimensionKind) -> Option<Bak
     }
 }
 
-/// The engine's bake of a ce dimension `kind` not yet added to `group`, or
-/// `None` when it refuses.
+/// The engine's bake of a ce dimension `kind` not yet added to `group` on
+/// page `page_index`, or `None` when it refuses.
 #[must_use]
-pub fn bake_new(doc: &OpenDoc, group: GroupId, kind: &DimensionKind) -> Option<Baked> {
-    match doc.session.new_dimension_preview(group, kind) {
+pub fn bake_new(
+    doc: &OpenDoc,
+    page_index: usize,
+    group: GroupId,
+    kind: &DimensionKind,
+) -> Option<Baked> {
+    match doc
+        .session
+        .new_dimension_preview_on(page_index, group, kind)
+    {
         Ok(preview) => Some(Baked { id: None, preview }),
         Err(why) => {
             crate::diag::trace(|| {

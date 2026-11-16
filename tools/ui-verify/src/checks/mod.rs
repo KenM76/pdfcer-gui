@@ -95,10 +95,12 @@ pub mod evidence_scripted;
 pub mod export_tables_choices;
 pub mod export_tables_scripted;
 pub mod export_word_scripted;
+pub mod extract_ce_dimensions;
 pub mod extract_pages_labels;
 pub mod labels_scripted;
 pub mod measure_area_scripted;
 pub mod measure_place_scripted;
+pub mod measure_user_unit;
 pub mod netprint_scripted;
 pub mod pagestamps_scripted;
 pub mod purge_passwords_scripted;
@@ -211,6 +213,7 @@ pub mod form_part_delete;
 pub mod form_style;
 pub mod form_text_reshape;
 pub mod group_fraction_reduces;
+pub mod group_numbers_at_creation;
 pub mod group_unit_converts;
 pub mod leafplace;
 pub mod leaftransform;
@@ -586,6 +589,8 @@ pub mod canvas_user_unit;
 pub mod print_auto_paper;
 /// Send the PDF itself reaching a printer that reads PDF.
 pub mod print_direct;
+/// Send the PDF itself handing a printer sheets the engine composed.
+pub mod print_direct_compose;
 /// Colour ▸ Separations printing one sheet per ink.
 pub mod print_separations;
 pub mod print_user_unit;

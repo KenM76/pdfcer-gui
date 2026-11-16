@@ -320,14 +320,12 @@ pub enum DimensionAction {
         /// a blank row in a group picker is indistinguishable from a broken
         /// one.
         name: String,
-        /// The display unit the group starts in.
-        ///
-        /// Carried because `EditSession::add_dimension_group` takes it, and
-        /// because `Unit::default_format` derives the whole starting
-        /// [`NumberFormat`] from it — a millimetre group starts in decimals and
-        /// an inch group in eighths, which is what a drafter expects without
-        /// being asked twice.
-        unit: Unit,
+        /// The number format the group starts with; its unit is the group's
+        /// unit. `EditSession::add_dimension_group_with_format` creates the
+        /// group with it as one undo entry, so a fixed denominator
+        /// (`NumberFormat::feet_inches(8, false)`) is set at creation rather
+        /// than by a second edit.
+        format: NumberFormat,
         /// A group whose calibration the new one starts with, converted to
         /// `unit` so its real lengths agree. The add and the scale fold into
         /// one undo entry.

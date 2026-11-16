@@ -36,7 +36,6 @@ use pdfcer_core::vector::{
     decompose_page, hit_test_point_deep, hit_test_rect_deep,
 };
 use pdfcer_core::view::DocumentView;
-use pdfcer_render::page_device_geometry;
 
 use crate::objectsummary::{ObjectSummary, describe_object};
 use pdfcer_render::tiny_skia::{Point as SkPoint, Transform};
@@ -127,7 +126,7 @@ pub struct ObjectModelProvider {
     /// Held for exactly one question:
     /// `pdfcer_gui::canvas::target::CanvasTargetProvider::container_is_worth_selecting`,
     /// which needs to know whether a form covers the whole sheet. It is
-    /// `page_device_geometry(page, 1.0)`'s first two returns, kept alongside
+    /// `viewer::canvas_geometry`'s first two returns, kept alongside
     /// the transform this provider is really built from.
     ///
     /// `None` makes that predicate answer `true`, which is the behaviour
@@ -216,7 +215,7 @@ impl ObjectModelProvider {
                 elapsed.as_millis()
             )
         });
-        let (w, h, to_canvas) = page_device_geometry(page, 1.0);
+        let (w, h, to_canvas) = crate::viewer::canvas_geometry(page);
         Ok(Self {
             page_index,
             summaries: unfilled(&objects),

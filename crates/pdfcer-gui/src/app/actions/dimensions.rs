@@ -51,15 +51,16 @@ fn set_label(
     });
 }
 
-/// **Add a group**, optionally starting from another group's calibration and
-/// optionally becoming the authoring group.
+/// **Add a group** with its number format, optionally starting from another
+/// group's calibration and optionally becoming the authoring group.
 fn add_group(
     doc: &mut OpenDoc,
     name: &str,
-    unit: pdfcer_core::dimension::Unit,
+    format: pdfcer_core::dimension::NumberFormat,
     scale_from: Option<pdfcer_core::dimension::GroupId>,
     author_into: bool,
 ) {
+    let unit = format.unit;
     let source = scale_from.and_then(|g| {
         doc.session
             .dimension_model()
@@ -68,34 +69,55 @@ fn add_group(
     });
     let mut created = None;
     super::apply::vector_edit(doc, "add-dimension-group", 0, 1, |session| {
-        let id = session.add_dimension_group(name, unit)?;
+        let id = session.add_dimension_group_with_format(name, format)?;
         created = Some(id);
-        let Some((scale, from)) = source else {
-            return Ok::<_, pdfcer_core::edit::EditError>(Vec::new());
-        };
-        let format = session
-            .dimension_model()
-            .group(id)
-            .map_or_else(|| unit.default_format(), |g| g.format);
-        let scale = scale.in_unit(from, unit);
-        session.set_group_scale(id, scale, format)?;
-        let folded = session.coalesce_last(2, pdfcer_core::edit::CommandKind::AddDimension);
+        let mut disclosures = Vec::new();
+        if let Some((scale, from)) = source {
+            let scale = scale.in_unit(from, unit);
+            session.set_group_scale(id, scale, format)?;
+            let folded = session.coalesce_last(2, pdfcer_core::edit::CommandKind::AddDimension);
+            crate::diag::trace(|| {
+                // ui-text-exempt: diagnostic trace, never displayed
+                format!(
+                    "dimension-group-scale-copied group={} unit={unit:?} scale={scale:?} folded={}",
+                    id.0,
+                    u8::from(folded)
+                )
+            });
+            if !folded {
+                disclosures.push(crate::text::dimension_groups::new_group_two_undos().to_owned());
+            }
+        }
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "dimension-group-scale-copied group={} unit={unit:?} scale={scale:?} folded={}",
+                "dimension-group-added group={} unit={unit:?} numbers={} undo_depth={}",
                 id.0,
-                u8::from(folded)
+                fraction_key(format.fraction),
+                session.undo_depth()
             )
         });
-        Ok(if folded {
-            Vec::new()
-        } else {
-            vec![crate::text::dimension_groups::new_group_two_undos().to_owned()]
-        })
+        Ok::<_, pdfcer_core::edit::EditError>(disclosures)
     });
     if let (true, Some(id)) = (author_into, created) {
         crate::canvas::measure::queue_active_group(id);
+    }
+}
+
+/// A fraction mode as a trace token: `decimal:<places>`, `reduced:<den>` or
+/// `kept:<den>`.
+fn fraction_key(fraction: pdfcer_core::dimension::FractionMode) -> String {
+    use pdfcer_core::dimension::FractionMode;
+    match fraction {
+        FractionMode::Decimal { places } => format!("decimal:{places}"),
+        FractionMode::Fraction {
+            denominator,
+            reduce: true,
+        } => format!("reduced:{denominator}"),
+        FractionMode::Fraction {
+            denominator,
+            reduce: false,
+        } => format!("kept:{denominator}"),
     }
 }
 
@@ -161,10 +183,10 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
         // taken afterwards carries the group.
         DimensionAction::AddGroup {
             name,
-            unit,
+            format,
             scale_from,
             author_into,
-        } => add_group(doc, &name, unit, scale_from, author_into),
+        } => add_group(doc, &name, format, scale_from, author_into),
         // The one group verb that regenerates NOTHING. No member's
         // appearance depends on what its group is called, so no raster is
         // dropped and `regenerates_the_whole_group` says so.
@@ -389,8 +411,7 @@ pub(super) fn apply(doc: &mut OpenDoc, action: DimensionAction) {
             // compares, since perimeter and area differ only in the printed text.
             let shown = doc
                 .session
-                .dimension_model()
-                .display(dimension)
+                .dimension_display(dimension)
                 .map(|d| d.text)
                 .unwrap_or_default();
             crate::diag::trace(|| {
@@ -434,7 +455,7 @@ fn trace_members_shown(doc: &OpenDoc, group: pdfcer_core::dimension::GroupId) {
     }
     let model = doc.session.dimension_model();
     for member in model.members(group) {
-        if let Some(shown) = model.display(member.id) {
+        if let Some(shown) = doc.session.dimension_display(member.id) {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
@@ -488,7 +509,7 @@ mod tests {
         for a in [
             DimensionAction::AddGroup {
                 name: "Detail".to_owned(),
-                unit: Unit::Millimeter,
+                format: Unit::Millimeter.default_format(),
                 scale_from: None,
                 author_into: false,
             },

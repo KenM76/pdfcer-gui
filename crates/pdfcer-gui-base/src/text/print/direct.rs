@@ -12,8 +12,10 @@ pub const fn hover() -> &'static str {
     "Some network printers read PDF and lay it out themselves. With this on, \
      pdfcer finds the printer's network address from its Windows port, asks it \
      whether it reads PDF, and if it does sends the document straight to it \
-     instead of through the driver. Only plain jobs go this way: a job that \
-     needs pdfcer's own layout prints through the driver as usual."
+     instead of through the driver. Several pages per sheet, a booklet, a \
+     poster, a chosen paper, a percentage scale or reverse order are first \
+     laid out by pdfcer as finished sheets. A job that needs pdfcer's own \
+     drawing prints through the driver as usual."
 }
 
 /// While the printer is being asked.
@@ -26,6 +28,16 @@ pub const fn checking() -> &'static str {
 #[must_use]
 pub fn ready(uri: &str, found_from: &str) -> String {
     format!("This job goes to the printer as the PDF, at {uri} (found from {found_from}).")
+}
+
+/// The printer reads PDF and this job goes to it as sheets pdfcer lays out
+/// for a `w_mm` by `h_mm` paper.
+#[must_use]
+pub fn ready_composed(uri: &str, found_from: &str, w_mm: u32, h_mm: u32) -> String {
+    format!(
+        "This job goes to the printer as the PDF, at {uri} (found from {found_from}). pdfcer \
+         lays out its sheets for {w_mm} x {h_mm} mm paper, so load that paper."
+    )
 }
 
 /// The printer reads PDF and this job needs pdfcer's layout.
@@ -68,26 +80,6 @@ pub mod needs {
     pub const fn profile() -> &'static str {
         "the printer profile"
     }
-    /// Several pages per sheet or a booklet.
-    #[must_use]
-    pub const fn impose() -> &'static str {
-        "Several pages per sheet"
-    }
-    /// Poster.
-    #[must_use]
-    pub const fn poster() -> &'static str {
-        "Poster"
-    }
-    /// A percentage or shrink-only scale.
-    #[must_use]
-    pub const fn scale() -> &'static str {
-        "This scale"
-    }
-    /// A paper other than the printer's own.
-    #[must_use]
-    pub const fn paper() -> &'static str {
-        "Choosing the paper"
-    }
     /// A moved page.
     #[must_use]
     pub const fn moved() -> &'static str {
@@ -102,11 +94,6 @@ pub mod needs {
     #[must_use]
     pub const fn running() -> &'static str {
         "The header or footer"
-    }
-    /// Reverse order.
-    #[must_use]
-    pub const fn reverse() -> &'static str {
-        "Reverse order"
     }
     /// Annotations left out or printed alone.
     #[must_use]
@@ -128,11 +115,42 @@ pub fn sent(uri: &str, job_id: Option<i32>, ignored: &[String]) -> String {
         None => format!("Sent the PDF itself to the printer at {uri}."),
     };
     if ignored.is_empty() {
-        format!("{head} The printer lays the pages out.")
+        head
     } else {
         format!(
-            "{head} The printer lays the pages out, and said it ignored: {}.",
+            "{head} The printer said it ignored: {}.",
             ignored.join(", ")
         )
     }
+}
+
+/// After the document itself was sent: the printer placed its pages.
+#[must_use]
+pub const fn printer_lays_out() -> &'static str {
+    "The printer lays the pages out."
+}
+
+/// After sheets pdfcer composed were sent: how many sides, and the paper.
+#[must_use]
+pub fn composed(sides: usize, w_mm: u32, h_mm: u32) -> String {
+    format!(
+        "pdfcer laid out {sides} sheet side(s) for {w_mm} x {h_mm} mm paper, printed at actual \
+         size, so that paper must be loaded."
+    )
+}
+
+/// The job went through the driver instead: the engine's reason, and the
+/// particulars.
+#[must_use]
+pub fn fell_back(reason: pdfcer_print::pdf_direct::FallbackReason, why: &str) -> String {
+    use pdfcer_print::pdf_direct::FallbackReason as R;
+    let head = match reason {
+        R::DriverOnlyOption => "the job asks for something only the driver can do",
+        R::NoNetworkAddress => "the printer's port names no network address",
+        R::NoPdf => "the printer does not read PDF",
+        R::Unreachable => "no printer answered at its address",
+        R::CannotCompose => "its sheets could not be laid out as a PDF",
+        _ => "the PDF could not be sent",
+    };
+    format!("Printed through the driver, not as the PDF: {head} ({why}).")
 }

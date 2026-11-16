@@ -55,7 +55,7 @@ pub fn images_on_page(doc: &OpenDoc, page_index: usize) -> usize {
     // lives. Building the rectangle from `/MediaBox` by hand would be a second
     // statement of it, and the two would disagree the first time a page carried
     // a `/Rotate` or a crop.
-    let (w, h, _) = pdfcer_render::page_device_geometry(page, 1.0);
+    let (w, h, _) = crate::viewer::canvas_geometry(page);
     let whole = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(w as f32, h as f32));
     // `Exclude`, and the choice is about MEANING rather than about the
     // number. This question is *"is there ink here that redaction cannot

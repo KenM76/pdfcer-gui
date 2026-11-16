@@ -52,8 +52,9 @@ it against the ruler is entitled to the same number, in the same unit, with
 the same decimal marker and the same number of places.
 
 The only way to guarantee that is to call the same function, so [`Scale`]
-calls [`pdfcer_core::dimension::format_measurement`] — the function that
-renders every dimension label and every live measurement readout — and this
+calls [`pdfcer_core::dimension::format_measurement_on`] with the anchor
+page — the function that renders every ce dimension label and every live
+measurement readout, after multiplying by the page's `/UserUnit` — and this
 module never formats a length itself. That has a second, quieter payoff:
 **the ruler contributes no operator-visible string to `crate::text` at
 all.** Its labels are core's spelling of a measurement, unit abbreviation
@@ -341,7 +342,7 @@ as one whose labels overlap.
 ### `fn the_ruler_reads_points_until_the_document_says_otherwise`
 
 Asserted through [`Scale::label`] rather than through
-`units_per_point`, because the operator's question is what the *label
+`units_per_user_unit`, because the operator's question is what the *label
 says*, and the label is core's. A change in core's spelling should fail
 here rather than surprise someone reading a drawing.
 
@@ -523,12 +524,16 @@ the same thing to a ruler (*nobody has told me what this drawing is
 scaled to*), and a preference is not worth an error path; the same
 posture `viewer::remembered::recall` takes.
 
-### `fn units_per_point`
+### `fn units_per_user_unit`
 
-`1.0` when no scale is set, which is what makes the raw-points path the
-*same* arithmetic as every other path rather than a special case: the
-ladder is chosen in display units and converted back to points by
-dividing by this, and dividing by one is the identity.
+The display-unit factor per point times the page's `/UserUnit`, because
+the canvas is laid out in user-space units and a label reads physical
+length (ISO 32000-1 §14.11.2). `1.0` on a unit-1 page with no scale set,
+which is what makes the raw-points path the *same* arithmetic as every
+other path rather than a special case: the ladder is chosen in display
+units and converted back to user-space units by dividing by this, and
+dividing by one is the identity. [`super::grid`] builds one [`Scale`] per
+visible page for the same reason: two pages may carry different units.
 
 A non-finite or non-positive factor — reachable from a sidecar carrying
 a nonsense calibration — degrades to `1.0` rather than producing NaN
@@ -537,7 +542,7 @@ whose ticks are all at NaN paints nothing and says nothing.
 
 ### `struct Ladder`
 
-Both in **PDF points**, because that is the space every position downstream
+Both in the page's **user-space units**, because that is the space every position downstream
 is computed in. The 1-2-5 choice is made in *display* units — the numbers
 the operator reads have to be round, and 100 mm at 1:50 is not a round
 number of points — and converted back here, once.
