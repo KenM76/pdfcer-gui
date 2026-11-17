@@ -222,6 +222,7 @@ mod tests {
                 ctm: Matrix::IDENTITY,
                 oc: None,
                 oc_chain: Vec::new(),
+                inherited: Default::default(),
             })],
             initial: Matrix::IDENTITY,
             diagnostics: DecomposeDiagnostics::default(),
