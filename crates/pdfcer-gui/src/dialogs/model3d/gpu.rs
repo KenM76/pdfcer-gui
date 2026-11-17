@@ -440,6 +440,20 @@ impl ModelView {
         })
     }
 
+    /// What a light reading is worked out from: the model painted for the
+    /// parts' state, with nothing highlighted, and its prepared form.
+    pub(super) fn meter_inputs(&mut self) -> (AssembledModel, Arc<PreparedModel>) {
+        let prepared = self
+            .gpu
+            .prepared
+            .get_or_insert_with(|| Arc::new(PreparedModel::new(&self.model.drawn)))
+            .clone();
+        let painted = self
+            .parts
+            .painted(&mut self.model.drawn, None, |model| model.clone());
+        (painted, prepared)
+    }
+
     /// Rebuild the draws from the model painted for the parts' state.
     fn gpu_scene(&mut self, options: &ModelRenderOptions, accent: egui::Color32) {
         let pictures = self

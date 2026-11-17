@@ -6,8 +6,8 @@
 use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
-    Bounds, Camera, FrameAmbientOcclusion, FrameShadow, LightFrame, LightSense, LightingScheme,
-    ModelLight, RenderError, RenderMode, ShadowLight,
+    Bounds, Camera, EmptyArtwork, FrameAmbientOcclusion, FrameShadow, LightFrame, LightSense,
+    LightingScheme, ModelLight, RenderError, RenderMode, ShadowLight,
 };
 
 use super::ModelView;
@@ -38,6 +38,8 @@ pub(super) struct Look {
     pub(super) extras: Extras,
     /// The render mode the view on screen asks for.
     pub(super) view_mode: Option<RenderMode>,
+    /// Dark where the model's own lamps are all switched off.
+    pub(super) empty_artwork: EmptyArtwork,
 }
 
 impl Look {
@@ -52,6 +54,7 @@ impl Look {
             light_sense: self.light_sense,
             shadow_light: self.shadow_light,
             light_gain: self.light_gain,
+            empty_artwork: self.empty_artwork,
             ..ModelRenderOptions::default()
         };
         self.extras.apply(self.view_mode, &mut options);
@@ -121,6 +124,11 @@ impl ModelView {
             light_gain: self.light_gain(),
             extras: self.extras,
             view_mode: self.view_mode(),
+            empty_artwork: if self.lights.has_lamps() {
+                EmptyArtwork::Dark
+            } else {
+                EmptyArtwork::Headlight
+            },
         }
     }
 

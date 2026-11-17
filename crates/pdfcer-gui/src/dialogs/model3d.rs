@@ -42,6 +42,7 @@ mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;
 mod lensmenu;
+mod lightmeter;
 mod lights;
 mod looks;
 mod measure;
@@ -210,6 +211,8 @@ pub(crate) struct ModelView {
     views: Option<(Vec<ThreeDSavedView>, usize, Vec<String>)>,
     /// The measure tool.
     measure: measure::Measure,
+    /// The Measure tab's light meter.
+    meter: lightmeter::Meter,
     /// Which parts are shown and which is highlighted.
     parts: parts::Visibility,
     /// Which of the model's lamps and glowing parts are switched off.
@@ -324,6 +327,7 @@ impl ModelView {
             fit_refused: None,
             views: None,
             measure: measure::Measure::default(),
+            meter: lightmeter::Meter::default(),
             parts,
             lights,
             view_lighting: look.view_lighting,
@@ -479,6 +483,7 @@ impl ModelView {
         }
         self.pick_input(&response);
         self.measure_input(ui.ctx(), &response, rect);
+        self.meter_poll(ui.ctx());
         // Rebuilt below and by the full-screen row, for the next frame's
         // fingers.
         self.nav.hud.clear();

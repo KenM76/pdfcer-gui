@@ -22,6 +22,8 @@ pub(super) const KINDS: [Kind; 5] = [
     Kind::Radial,
     Kind::Comment,
 ];
+/// The light meter's place in the kind row, after [`KINDS`].
+pub(super) const LIGHT: usize = KINDS.len();
 /// How near a triangle's corner a pick snaps to it, in points; a finger gets
 /// the larger reach.
 const SNAP: [f32; 2] = [10.0, 22.0];
@@ -85,6 +87,11 @@ impl Measure {
     /// The kind chosen.
     pub fn kind(&self) -> Kind {
         KINDS[self.kind.min(KINDS.len() - 1)]
+    }
+
+    /// The light meter is chosen in place of a kind.
+    pub fn light(&self) -> bool {
+        self.kind == LIGHT
     }
 
     /// Forget the picks and whatever they made.
@@ -214,6 +221,11 @@ impl ModelView {
             crate::diag::trace(|| "model-measure-missed".to_owned());
             return;
         };
+        if self.measure.light() {
+            self.measure.said = None;
+            self.meter_ask(rect, at, &hit);
+            return;
+        }
         if self.measure.result.take().is_some() {
             self.measure.picked.clear();
         }
@@ -330,7 +342,7 @@ impl ModelView {
         self.measure.hover = pick;
         self.measure.preview = None;
         let picked = &self.measure.picked;
-        let last = picked.len() + 1 == picks_needed(self.measure.kind());
+        let last = !self.measure.light() && picked.len() + 1 == picks_needed(self.measure.kind());
         if let (Some(pick), true, None) = (pick, last, &self.measure.result) {
             let mut picks = picked.clone();
             picks.push(pick);

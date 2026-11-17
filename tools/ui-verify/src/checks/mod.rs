@@ -975,7 +975,9 @@ pub mod button_icon_paste;
 /// Closing a document with its 3D viewer open asks first; the viewer is a
 /// window of its own.
 pub mod model_close_asks;
-/// The 3D viewer selects, hides and restores parts from its picture.
+/// The 3D viewer's Measure tab reads the light arriving on a surface.
+pub mod model_light_meter;
+/// The 3D viewer switches a model's lamps and glowing parts off and on.
 pub mod model_lights;
 /// The 3D viewer saves its named views into the file.
 pub mod model_measure;

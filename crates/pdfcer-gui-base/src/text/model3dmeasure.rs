@@ -124,6 +124,93 @@ pub fn unnamed_view(index: usize) -> String {
     format!("View {}", index + 1)
 }
 
+/// The light meter's button beside the kinds.
+pub const LIGHT: &str = "Light level";
+/// The light meter's tip.
+pub const LIGHT_TIP: &str = "How much light arrives at a point you pick on a surface, such as a desk top: the light of \
+     the lamps the picture is drawn with, shadows counted, plus the light bounced from other \
+     surfaces. Nothing is written to the file.";
+/// Measure at the picked point alone.
+pub const LIGHT_POINT: &str = "At the point";
+/// Measure the mean over a circle round the picked point.
+pub const LIGHT_CIRCLE: &str = "Average over a circle";
+/// The circle choice's tip.
+pub const LIGHT_CIRCLE_TIP: &str = "The mean of many points spread over a circle on the picked surface, centred on the point you \
+     pick. Points that fall off the surface are left out and counted.";
+/// Before the circle's radius.
+pub const LIGHT_RADIUS: &str = "Radius";
+/// What the next click does.
+pub const LIGHT_PICK: &str = "Pick a point on a surface to read the light there.";
+/// A reading is being worked out.
+pub const LIGHT_WORKING: &str = "Reading the light\u{2026}";
+/// Above the lamps' parts of a reading.
+pub const LIGHT_SHARES: &str = "Straight from each light:";
+/// Above the reasons a reading is not in lux.
+pub const LIGHT_RELATIVE_WHY: &str = "This is not lux. It is in the picture's own shading units, where 1.0 lights a white surface \
+     to full white: good for comparing two places, not a physical figure. Because:";
+
+/// Said under a reading of a model that has parts that glow.
+pub const LIGHT_GLOW_LEFT_OUT: &str =
+    "Parts that glow are not counted: only the model's lamps put light on a surface.";
+
+/// A reading's headline: the amount and its unit.
+#[must_use]
+pub fn light_total(total: f64, lux: bool) -> String {
+    if lux {
+        format!("{} lux", light_number(total + 0.0))
+    } else {
+        format!("{total:.3} (relative)")
+    }
+}
+
+/// A lux figure: whole above ten, two places below.
+#[must_use]
+pub fn light_number(lux: f64) -> String {
+    if lux.abs() >= 10.0 {
+        format!("{lux:.0}")
+    } else {
+        format!("{lux:.2}")
+    }
+}
+
+/// What a reading is made of.
+#[must_use]
+pub fn light_parts(direct: &str, bounced: &str, ambient: &str) -> String {
+    format!("Straight from lights {direct} · Bounced {bounced} · Ambient {ambient}")
+}
+
+/// What a circle's reading is the mean of.
+#[must_use]
+pub fn light_circle(radius: f64, unit: &str, landed: usize, fell_off: usize) -> String {
+    let space = if unit.is_empty() { "" } else { " " };
+    if fell_off == 0 {
+        format!("The mean of {landed} points in a circle of radius {radius:.3}{space}{unit}.")
+    } else {
+        format!(
+            "The mean of {landed} points in a circle of radius {radius:.3}{space}{unit}; {fell_off} more fell off \
+             the surface and are left out."
+        )
+    }
+}
+
+/// One light's part of a reading.
+#[must_use]
+pub fn light_share(name: &str, amount: &str) -> String {
+    format!("{name}: {amount}")
+}
+
+/// The lights past the ones listed.
+#[must_use]
+pub fn light_more(count: usize) -> String {
+    format!("and {count} more that give less")
+}
+
+/// The meter could not read there; `why` is the engine's reason.
+#[must_use]
+pub fn light_refused(why: &str) -> String {
+    format!("No reading: {why}.")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

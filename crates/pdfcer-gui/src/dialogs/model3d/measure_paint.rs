@@ -244,6 +244,10 @@ impl ModelView {
             if let Some(pick) = &self.measure.hover {
                 pen.dot(pick.point);
             }
+            if let Some(reading) = self.meter.drawn().filter(|_| self.measure.light()) {
+                pen.dot(reading.point);
+                pen.path(reading.ring().into_iter());
+            }
         }
     }
 }

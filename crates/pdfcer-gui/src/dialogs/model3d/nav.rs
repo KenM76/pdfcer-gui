@@ -484,18 +484,23 @@ impl ModelView {
 
     /// The model's shown surface under `at` on the picture `rect`.
     pub(super) fn hit_at(&mut self, rect: Rect, at: Pos2) -> Option<Hit> {
+        let ray = self.ray_at(rect, at)?;
+        self.hit(&ray)
+    }
+
+    /// The ray from the eye through `at` on the picture `rect`.
+    pub(super) fn ray_at(&self, rect: Rect, at: Pos2) -> Option<Ray> {
         let (w, h) = (rect.width().max(1.0), rect.height().max(1.0));
         let camera = self.view_camera(f64::from(w / h)).ok()?;
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let ray = camera
+        camera
             .ray_through(
                 f64::from(at.x - rect.left()),
                 f64::from(at.y - rect.top()),
                 w.round() as u32,
                 h.round() as u32,
             )
-            .ok()?;
-        self.hit(&ray)
+            .ok()
     }
 
     /// A tap on gimbal zone `zone` ([`Gimbal::zones`] order). A second tap

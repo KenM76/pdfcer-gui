@@ -798,6 +798,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_options::TheViewerShowsAndHidesParts),
         Box::new(model_pick::TheViewerSelectsFromThePicture),
         Box::new(model_lights::TheViewerSwitchesLights),
+        Box::new(model_light_meter::TheViewerReadsTheLight),
         Box::new(model_view_poster::TheViewersViewBecomesThePagePicture),
         Box::new(model_view_poster::APictureFileBecomesTheModelsPagePicture),
         Box::new(model_view_picture::TheViewerSavesItsViewAsAPicture),

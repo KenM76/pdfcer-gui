@@ -2,11 +2,11 @@
 //! (`AssembledModel::lights`) and the parts whose material gives off light
 //! (`MaterialFinish::emissive`).
 //!
-//! A part switched off is drawn with no emission and a lamp switched off
-//! with no colour, written into the drawn model itself so the picture, its
-//! shadows and every saved picture agree. A lamp stays in the model's list
-//! because a model with no lights is lit by a headlight instead
-//! (`LightingScheme::Artwork`). Nothing is written into the file.
+//! A part switched off is drawn with no emission and a lamp switched off is
+//! left out of the drawn model's list, so the picture, its shadows, every
+//! saved picture and a light reading agree. A model whose lamps are all off
+//! is drawn dark (`EmptyArtwork::Dark`, see `Look`) rather than by the
+//! headlight a file with no lights gets. Nothing is written into the file.
 //!
 //! A lamp names no tree node, so the lamps are listed in a folder the viewer
 //! makes up, beside every glowing part that is not already in a folder of the
@@ -125,6 +125,11 @@ impl Lights {
         }
     }
 
+    /// Whether the model carries lamps of its own, on or off.
+    pub(super) fn has_lamps(&self) -> bool {
+        !self.lamps.is_empty()
+    }
+
     /// Switch lamp `i` on or off.
     fn lamp(&mut self, i: usize, on: bool) {
         let changed = if on {
@@ -169,15 +174,9 @@ impl Lights {
                 finish.emissive = [0.0; 3];
             }
         }
-        model.lights = self.lamps.clone();
-        for &i in &self.lamps_off {
-            if let Some(lamp) = model.lights.get_mut(i) {
-                lamp.colour = [0.0; 3];
-                lamp.ambient = [0.0; 3];
-                lamp.specular = Some([0.0; 3]);
-                lamp.intensity = 0.0;
-            }
-        }
+        let on =
+            |(i, lamp): (usize, &ModelLight)| (!self.lamps_off.contains(&i)).then(|| lamp.clone());
+        model.lights = self.lamps.iter().enumerate().filter_map(on).collect();
         self.trace(why);
         true
     }
@@ -332,6 +331,7 @@ impl ModelView {
     pub(super) fn lights_sync(&mut self) {
         if self.lights.apply(&mut self.model.drawn) {
             self.parts.changed("lights"); // ui-text-exempt: trace token
+            self.meter.clear();
         }
     }
 }

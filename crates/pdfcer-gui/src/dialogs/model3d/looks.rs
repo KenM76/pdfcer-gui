@@ -230,7 +230,7 @@ impl ModelView {
                 .on_hover_text(k::skip_hidden_tooltip());
             crate::diag::ui_rect_visible(REGION_SKIP_HIDDEN, r.rect, ui.clip_rect());
         }
-        if !self.model.drawn.lights.is_empty() {
+        if self.lights.has_lamps() {
             let r = ui
                 .checkbox(&mut self.extras.headlight, k::headlight())
                 .on_hover_text(k::headlight_tooltip());

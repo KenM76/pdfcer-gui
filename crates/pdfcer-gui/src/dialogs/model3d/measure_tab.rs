@@ -122,7 +122,10 @@ impl ModelView {
             self.measure.switch(on);
         }
         ui.horizontal_wrapped(|ui| self.kind_row(ui));
-        if self.measure.kind() == ThreeDMeasureKind::Comment {
+        if self.measure.light() {
+            self.meter_controls(ui);
+            self.meter_details(ui);
+        } else if self.measure.kind() == ThreeDMeasureKind::Comment {
             // escape-disposition: keeps-draft — the comment lives in `Measure`, so
             // the key leaves the box and the words stay for the next pick.
             ui.add(
@@ -153,8 +156,10 @@ impl ModelView {
             if kind.clicked() && !chosen {
                 self.measure.kind = i;
                 self.measure.clear();
+                self.meter.clear();
             }
         }
+        self.meter_button(ui);
     }
 
     /// The readout over the picture where filling the screen leaves no footer
@@ -178,6 +183,10 @@ impl ModelView {
     /// While measuring: the next pick, the value made, and keeping it.
     pub(super) fn measure_readout(&mut self, ui: &mut Ui) {
         if !self.measure.on {
+            return;
+        }
+        if self.measure.light() {
+            self.meter_readout(ui);
             return;
         }
         match &self.measure.result {
