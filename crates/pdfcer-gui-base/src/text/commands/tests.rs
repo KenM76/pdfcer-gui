@@ -159,6 +159,10 @@ fn all() -> Vec<CommandText> {
         markup_bring_forward(),
         markup_send_backward(),
         markup_send_to_back(),
+        edit_group(),
+        edit_ungroup(),
+        markup_group(),
+        markup_ungroup(),
         format_node_insert(),
         format_node_corner(),
         format_node_smooth(),
@@ -185,12 +189,14 @@ fn every_command_has_a_label_and_a_tooltip() {
 /// The Edit tab's Arrange commands, which take the Markup tab's words by
 /// `RIBBON_IA.md` §5.4: the same act on a different kind of thing, never on
 /// one surface together.
-fn edit_arrange() -> [CommandText; 4] {
+fn edit_arrange() -> [CommandText; 6] {
     [
         edit_bring_to_front(),
         edit_bring_forward(),
         edit_send_backward(),
         edit_send_to_back(),
+        edit_group(),
+        edit_ungroup(),
     ]
 }
 
@@ -202,6 +208,8 @@ fn the_edit_arrange_labels_are_the_markup_ones() {
         markup_bring_forward(),
         markup_send_backward(),
         markup_send_to_back(),
+        markup_group(),
+        markup_ungroup(),
     ];
     for (edit, markup) in edit_arrange().iter().zip(markup.iter()) {
         assert_eq!(edit.label, markup.label);

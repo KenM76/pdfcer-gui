@@ -166,6 +166,8 @@ mod restylebatch;
 /// Line width, dash and opacity of page objects, in points.
 mod strokestyle;
 pub(crate) use strokestyle::{object_of as styled_object, scale_of as stroke_scale};
+/// Commit Group and Ungroup.
+pub mod group;
 pub mod redactimg;
 /// **Redact what is selected on the page** — the third marking route, and the
 /// first that does not go through text. Its header carries why the search box

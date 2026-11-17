@@ -371,8 +371,10 @@ fn read_mode_refuses_exactly_these_bound_chords() {
             // `dispatch::arrange` asks.
             "markup.bring_forward",
             "markup.bring_to_front",
+            "markup.group",
             "markup.send_backward",
             "markup.send_to_back",
+            "markup.ungroup",
             // Structural page verbs. Read shows no Pages tab, which is
             // `MODES_AND_PANELS.md`'s own decision, not this gate's.
             "pages.move_down",

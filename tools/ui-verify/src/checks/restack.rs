@@ -176,7 +176,7 @@ fn top_at_overlap(
         .map_or_else(|| format!("<no {GEOMETRY} line>"), |l| l.raw.clone()))
 }
 
-fn press_ribbon(
+pub(super) fn press_ribbon(
     ctx: &CheckContext,
     session: &Session,
     pointer: &ScriptedPointer,
@@ -195,7 +195,7 @@ fn press_ribbon(
     Ok(())
 }
 
-fn fail(session: &Session, want: &str, got: &str) -> String {
+pub(super) fn fail(session: &Session, want: &str, got: &str) -> String {
     format!(
         "{want}; it read `{got}`. Trace: {}.",
         session.trace_path().display()

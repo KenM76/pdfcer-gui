@@ -892,6 +892,10 @@ pub use markupstyle::{
 /// are borrowed verbatim from five reference applications and why not one of
 /// them may say *z-order*.
 pub mod arrange;
+/// The labels of Group and Ungroup.
+pub mod grouping;
+
+pub use grouping::{edit_group, edit_ungroup, markup_group, markup_ungroup};
 
 pub use arrange::{
     edit_bring_forward, edit_bring_to_front, edit_send_backward, edit_send_to_back,

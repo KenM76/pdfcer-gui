@@ -181,6 +181,8 @@ pub mod linkread;
 pub mod outward;
 pub mod outwardaction;
 
+/// Group and Ungroup as actions.
+pub mod groupaction;
 /// The link verbs as actions.
 pub mod linkaction;
 

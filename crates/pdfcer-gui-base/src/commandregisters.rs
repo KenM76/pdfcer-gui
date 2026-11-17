@@ -193,13 +193,6 @@ pub const PLANNED: &[(&str, &str)] = &[
         "N — real page shapes, as distinct from the markup shapes on the Markup tab.",
     ),
     (
-        "edit.group",
-        // ui-text-exempt: developer note about an ABSENT command; never rendered.
-        "N — object grouping has no representation in the object model yet.",
-    ),
-    // ui-text-exempt: developer note about an ABSENT command; never rendered.
-    ("edit.ungroup", "N — as `edit.group`."),
-    (
         "edit.flip_horizontal",
         // ui-text-exempt: developer note about an ABSENT command; never rendered.
         "N — flipping page content is unbuilt; Align and Distribute is `edit.align`.",

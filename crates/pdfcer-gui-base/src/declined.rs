@@ -192,6 +192,8 @@ pub enum Declined {
     /// act: [`Self::still_true`] answers `true` unconditionally, deliberately
     /// **not** on `selection_in_form` the way [`Self::InsideForm`] does.
     Unshare(crate::text::unshare::UnshareRefusal),
+    /// **Group or Ungroup changed nothing**, and why.
+    Group(crate::text::grouping::GroupRefusal),
     /// **`format.merge_text_runs` was refused**, by the preflight on the press
     /// or by the engine. Nothing changes on the page, so the sentence is the
     /// only report. Retired by the operator's next act.

@@ -92,6 +92,11 @@ pub(crate) fn record_unshare(why: crate::text::unshare::UnshareRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Unshare(why)));
 }
 
+/// Record that Group or Ungroup changed nothing, and why.
+pub(crate) fn record_group(why: crate::text::grouping::GroupRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::Group(why)));
+}
+
 /// Record that an edit was refused because the file is kept under RC4.
 pub(crate) fn record_rc4_refused() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Rc4Refused));

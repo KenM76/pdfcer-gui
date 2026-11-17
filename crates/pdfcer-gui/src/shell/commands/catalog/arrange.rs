@@ -6,6 +6,7 @@
 use egui_shell::Command;
 
 use super::command;
+use crate::app::dispatch::group;
 use crate::text::commands as t;
 
 /// This group's commands, in ribbon order.
@@ -19,6 +20,8 @@ pub(super) fn band() -> Vec<Command> {
             .enabled_when("selection.markup_restylable"),
         command("markup.send_to_back", t::markup_send_to_back(), 563)
             .enabled_when("selection.markup_restylable"),
+        command("markup.group", t::markup_group(), 564).enabled_when(group::MARKUPS_GROUPABLE),
+        command("markup.ungroup", t::markup_ungroup(), 565).enabled_when(group::MARKUP_UNGROUPABLE),
     ]
 }
 
@@ -31,5 +34,7 @@ pub(super) fn edit_band() -> Vec<Command> {
         command("edit.bring_forward", t::edit_bring_forward(), 481).enabled_when(RESTACKABLE),
         command("edit.send_backward", t::edit_send_backward(), 482).enabled_when(RESTACKABLE),
         command("edit.send_to_back", t::edit_send_to_back(), 483).enabled_when(RESTACKABLE),
+        command("edit.group", t::edit_group(), 484).enabled_when(group::OBJECTS_GROUPABLE),
+        command("edit.ungroup", t::edit_ungroup(), 485).enabled_when(group::FORM_UNGROUPABLE),
     ]
 }

@@ -145,6 +145,7 @@ impl Declined {
             Self::TextStyle(why) => return why.line(),
             Self::Rotate(why) => (*why).line(),
             Self::Unshare(why) => (*why).line(),
+            Self::Group(why) => (*why).line(),
             Self::RunMerge(why) => (*why).line(),
             Self::RunSplit(why) => (*why).line(),
             Self::Replace(why) => return why.line().into(),

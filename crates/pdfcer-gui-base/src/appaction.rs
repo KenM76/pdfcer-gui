@@ -685,6 +685,8 @@ pub enum Action {
     /// **Add a `/Link`, re-point one, or change its border.** One
     /// `EditSession` link verb each.
     Link(crate::linkaction::LinkAction),
+    /// **Group or ungroup** page objects or markups.
+    Group(crate::groupaction::GroupAction),
     /// **Everything whose subject is a whole FILE living inside the
     /// document** — attach, remove, and save one out (§7.11.4.1).
     ///

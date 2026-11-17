@@ -115,6 +115,8 @@ pub fn tab() -> Tab {
                     command("edit.bring_forward"),
                     command("edit.send_backward"),
                     command("edit.send_to_back"),
+                    command("edit.group"),
+                    command("edit.ungroup"),
                 ],
             ),
             // ---------------------------------------------------------------

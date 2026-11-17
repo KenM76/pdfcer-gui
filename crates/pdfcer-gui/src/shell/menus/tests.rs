@@ -365,6 +365,8 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "edit.bring_forward",
                 "edit.send_backward",
                 "edit.send_to_back",
+                "edit.group",
+                "edit.ungroup",
                 "edit.redact_selection",
                 "format.move_to_layer",
                 "format.delete",

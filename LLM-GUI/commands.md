@@ -139,6 +139,7 @@ markup.cloud  Revision cloud
 markup.comments  Comments
 markup.ellipse  Ellipse
 markup.finish  Finish shape
+markup.group  Group
 markup.flatten_page  Make all part of the page
 markup.highlight  Highlight
 markup.ink  Freehand
@@ -153,6 +154,7 @@ markup.sticky_note  Sticky note
 markup.strikeout  Strikeout
 markup.text_box  Text box
 markup.underline  Underline
+markup.ungroup  Ungroup
 
 measure.finish  Finish
 measure.length  Length

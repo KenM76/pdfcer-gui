@@ -113,6 +113,9 @@ pub(crate) fn guard_claiming(id: &str) -> Option<&'static str> {
     if crate::app::dispatch::arrange::claims(id) {
         return Some("claims");
     }
+    if crate::app::dispatch::group::claims(id) {
+        return Some("claims");
+    }
     if crate::app::dispatch::nodeshape::claims(id) {
         return Some("claims");
     }

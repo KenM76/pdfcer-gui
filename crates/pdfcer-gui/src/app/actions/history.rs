@@ -118,7 +118,10 @@ pub(super) fn history_step(doc: &mut OpenDoc, direction: Direction) {
     // other objects or nodes.
     if matches!(
         kind,
-        pdfcer_core::edit::CommandKind::RestackObjects | pdfcer_core::edit::CommandKind::InsertNode
+        pdfcer_core::edit::CommandKind::RestackObjects
+            | pdfcer_core::edit::CommandKind::InsertNode
+            | pdfcer_core::edit::CommandKind::GroupObjects
+            | pdfcer_core::edit::CommandKind::UngroupForm
     ) {
         doc.selection.clear();
     }

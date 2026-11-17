@@ -227,6 +227,11 @@ fn every_predicate_names_a_documented_condition() {
         // Edit ▸ Arrange: page objects at the Object rung, in a mode that
         // edits content. `app::dispatch::arrange::restackable_objects`.
         "selection.objects_restackable",
+        // Group and Ungroup: `app::dispatch::group::conditions`.
+        "selection.objects_groupable",
+        "selection.form_ungroupable",
+        "selection.markups_groupable",
+        "selection.markup_ungroupable",
         "selection.nodes_shapeable",
         "selection.image_replaceable",
         "selection.images_shrinkable",

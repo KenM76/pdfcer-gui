@@ -569,6 +569,7 @@ impl PdfcerApp {
             {
                 set.set(crate::shell::menus::OBJECTS_RESTACKABLE);
             }
+            crate::app::dispatch::group::conditions(self, doc, &mut set);
             // Format ▸ Nodes, on the same test the dispatcher routes on.
             if self.capabilities().edit_content
                 && crate::app::dispatch::nodeshape::shapeable_nodes(doc).is_some()

@@ -377,6 +377,8 @@ pub fn built_in() -> Menus {
             Item::command("edit.bring_forward").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.send_backward").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.send_to_back").shown_when(OBJECTS_RESTACKABLE),
+            Item::command("edit.group").shown_when(crate::app::dispatch::group::OBJECTS_GROUPABLE),
+            Item::command("edit.ungroup").shown_when(crate::app::dispatch::group::FORM_UNGROUPABLE),
             // **Mark what was pointed at for redaction**, at the pointer —
             // `OPERATOR_REQUESTS.md` O217, whose requirement is that redaction
             // address *the same unit, by the same gestures* as everything else

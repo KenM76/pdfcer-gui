@@ -464,6 +464,24 @@ These are the **square brackets with Ctrl held**. The bare **[** and **]**
 rotate the *page* — a different job, and no modifier means no comment is
 involved.
 
+### Keeping things together: Group and Ungroup
+
+Select two or more things — click the first, **Shift**-click the rest — and
+press **Ctrl+G**, or use **Group** in the **Arrange** group of the Markup or
+Edit tab. **Ctrl+Shift+G** takes the group apart again.
+
+- **Comments and markups** stay separate markups, but a click on any one of
+  them selects them all, so they move, copy and delete together. The one you
+  selected last leads the group: another PDF reader shows its note and author
+  for the whole group.
+- **The drawing's own content** (Edit mode) becomes one object. If the pieces
+  were not next to each other in the drawing's stacking order they are
+  gathered at the front-most one, which can change what covers what; the
+  status line says so when it happens.
+
+Ungroup also takes apart a drawing that was placed on the page as one piece.
+When pdfcer cannot group or ungroup something, the status line says why.
+
 ---
 
 ## Pages
@@ -902,6 +920,7 @@ overrules the DXF units you set, always in that direction.
 |---|---|
 | **Ctrl+]** / **Ctrl+[** | Bring forward / send backward one step |
 | **Ctrl+Shift+]** / **Ctrl+Shift+[** | Bring to front / send to back |
+| **Ctrl+G** / **Ctrl+Shift+G** | Group what is selected / ungroup it |
 
 ### Tools
 | | |

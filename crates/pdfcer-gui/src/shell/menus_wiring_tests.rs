@@ -93,9 +93,10 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // 72 → 76: crop, both redacts and delete on the region's menu (O406).
     // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
     // no stacking glyph exists (see `ledger`'s refused count).
+    // Blank 5 → 7: Group and Ungroup on the canvas object menu.
     assert_eq!(
         (glyph, blank, absent),
-        (76, 5, 0),
+        (76, 7, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

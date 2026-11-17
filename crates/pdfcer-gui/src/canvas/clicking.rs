@@ -508,7 +508,7 @@ pub fn click(
             )
         });
     } else if let Some(hit) = annot_hit {
-        selection.select_annot(hit.clone());
+        crate::canvas::selection::groupmates::select(doc, selection, hit.clone());
         crate::diag::trace(|| {
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed in the UI

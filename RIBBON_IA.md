@@ -417,7 +417,7 @@ signature-locked — with a visible badge, not a hidden global toggle.
 | **Notes** | Text box · Sticky note · Callout · Stamp ⌄ · Paste picture as stamp · Attach file · Attach sound · Media clip · Insert text · Replace text |
 | **Content** | Add text · Paragraphs — Edit mode only |
 | **Style** | Colour · Line width · Fill · Opacity · Freehand detail · Arrowheads · Line style |
-| **Arrange** | Bring to front · Bring forward · Send backward · Send to back |
+| **Arrange** | Bring to front · Bring forward · Send backward · Send to back · Group · Ungroup |
 | **Comments** | Comments panel · Make all part of the page · Store appearances · Clear page · Clear all |
 
 Cloud — revision clouds — is AEC table stakes and is the one this audience names

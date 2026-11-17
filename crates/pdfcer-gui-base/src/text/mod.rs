@@ -131,6 +131,8 @@ pub mod find;
 pub mod flattenannot;
 pub mod formfonts;
 pub mod forms;
+/// Every sentence Group and Ungroup can owe.
+pub mod grouping;
 /// The *Sign here* window.
 pub mod handsign;
 /// Words of the highlighter's Tool Options block.

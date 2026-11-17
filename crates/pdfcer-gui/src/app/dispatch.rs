@@ -69,6 +69,7 @@ pub(crate) mod exchange;
 mod flatten;
 pub(crate) mod fonts;
 mod forms;
+pub(crate) mod group;
 /// **The three commands whose subject is a POINT on a markup shape** — end the
 /// run of points you are clicking out, add one to a drawn edge, take one away.
 /// `markup.finish` belongs with them rather than here; see its header for why
@@ -995,6 +996,7 @@ impl PdfcerApp {
             // built at apply time — see the module's own header for why a list
             // computed at the press would be a stale one.
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
+            id if group::claims(id) => group::dispatch(self, id, actions),
             id if nodeshape::claims(id) => nodeshape::dispatch(self, id, actions),
             "format.replace_image" => replaceimage::dispatch(self, actions),
             "format.shrink_images" => shrinkimages::dispatch(self),

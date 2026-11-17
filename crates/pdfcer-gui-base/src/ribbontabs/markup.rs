@@ -198,6 +198,8 @@ pub fn tab() -> Tab {
                     command("markup.bring_forward"),
                     command("markup.send_backward"),
                     command("markup.send_to_back"),
+                    command("markup.group"),
+                    command("markup.ungroup"),
                 ],
             ),
             // ---------------------------------------------------------------

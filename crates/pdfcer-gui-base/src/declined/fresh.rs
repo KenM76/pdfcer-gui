@@ -163,6 +163,8 @@ impl Declined {
             // is read, and the last sends the operator to click INSIDE a form —
             // so re-asking would delete the instruction as they began to follow it.
             Self::Unshare(_) => true,
+            // About the selection as it was; nothing changed.
+            Self::Group(_) => true,
             // About the runs as they were; the page is unchanged.
             Self::RunMerge(_) | Self::RunSplit(_) | Self::Replace(_) => true,
             // The stack filled up. Something was authored — or, for redo,

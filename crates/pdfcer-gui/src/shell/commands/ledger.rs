@@ -441,9 +441,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 259 → 260: `view.panel_tags`, View ▸ Panels.
     // 260 → 261: `view.page_boxes`, View ▸ Display.
     // 261 → 263: `markup.add_text` and `markup.paragraphs`, Markup ▸ Content.
+    // 263 → 267: Group and Ungroup, on Edit ▸ Arrange and Markup ▸ Arrange.
     assert_eq!(
         registry().len(),
-        263 + 2 * usize::from(cfg!(feature = "signing"))
+        267 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -1188,8 +1189,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // `export`.
         // 30 → 31 — `file.enlarge_scans`: `zoom-in` would say the view
         // grows; no glyph for more pixels at the same size exists.
+        // 31 → 35 — Group and Ungroup on both Arrange groups: a supply
+        // refusal; no grouping glyph exists.
         refused,
-        31,
+        35,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

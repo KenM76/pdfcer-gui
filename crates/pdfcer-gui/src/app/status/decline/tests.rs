@@ -735,6 +735,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::TextStyle(_)
         | Declined::Rotate(_)
         | Declined::Unshare(_)
+        | Declined::Group(_)
         | Declined::RunMerge(_)
         | Declined::RunSplit(_)
         | Declined::Replace(_)

@@ -21,6 +21,7 @@ Ctrl+Alt+8/2   edit.align_top / align_bottom
 Ctrl+Alt+7/1   edit.align_centre_x / align_centre_y
 Ctrl+] / Ctrl+[            markup.bring_forward / send_backward
 Ctrl+Shift+] / Ctrl+Shift+[ markup.bring_to_front / send_to_back
+Ctrl+G / Ctrl+Shift+G      markup.group / ungroup (page objects in Edit, markups otherwise)
 Ctrl+1/2/3 mode.read / mode.review / mode.edit
 Ctrl+0 view.zoom_actual    Ctrl+H view.read_mode   F11 view.fullscreen
 Ctrl+Tab / Ctrl+Shift+Tab  view.next_document / previous_document

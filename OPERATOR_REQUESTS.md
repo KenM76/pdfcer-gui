@@ -8043,11 +8043,13 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 **Waiting on the engine (G282).** The engine has no painter for a markup text box being typed, so the box cannot show what the saved page will. No GUI workaround.
 
-## O433 — **OPEN** — group items together as Inkscape does
+## O433 — **BUILT, awaiting Ken** — group items together as Inkscape does
 
 *"I need to be able to group items together the same way it works in Inkscape."* Group, ungroup, a click selects the group, enter a group to edit a member.
 
-**Waiting on the engine (G280).** The engine has no group or ungroup verb for page content or for markups. Entering and leaving an existing group already works. No GUI workaround.
+**Built on engine v0.154.0.** **Group** and **Ungroup** are on Edit ▸ Arrange (page content), Markup ▸ Arrange (markups) and the canvas object menu, with **Ctrl+G** and **Ctrl+Shift+G** reaching whichever is selected. Grouped page objects become one object: one click selects it, and it moves, copies and deletes whole; entering it to edit a member is the existing enter-a-form route. Grouped markups select together on a click on any one of them, the one selected last being the group's primary. Each verb is one undo step. Disclosed off-canvas: objects that were not neighbours in paint order are gathered at the front-most one's depth; an ungrouped form that was clipped keeps its frame; each engine refusal has its own sentence. Driven: `page_objects_group_into_one_and_ungroup`, `grouped_markups_select_together`.
+
+**Not built:** a group inside a group (O434, engine v0.155.0). With only a group's primary markup selected from a panel the Markup ▸ Ungroup button is greyed; the chord works.
 
 ## O434 — **OPEN** — grouping within groups
 

@@ -425,6 +425,8 @@ pub fn built_in() -> Shell {
         .with_binding("Ctrl+]", "markup.bring_forward")
         .with_binding("Ctrl+[", "markup.send_backward")
         .with_binding("Ctrl+Shift+[", "markup.send_to_back")
+        .with_binding("Ctrl+G", "markup.group")
+        .with_binding("Ctrl+Shift+G", "markup.ungroup")
         // New. `RIBBON_IA.md` §3 records Ctrl+H and F11 as the only way to
         // reach read mode and full screen in the shipped build — they have
         // no ribbon control at all — but no such string appears anywhere in
@@ -683,8 +685,8 @@ mod tests {
         assert_eq!(shell.modes().len(), 3, "three modes");
         assert_eq!(
             shell.keymap.as_ref().expect("a keymap").len(),
-            51,
-            "fifty-one key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
+            53,
+            "fifty-three key bindings; a chord added or removed is a change MANUAL.md's shortcut table must record"
         );
     }
 

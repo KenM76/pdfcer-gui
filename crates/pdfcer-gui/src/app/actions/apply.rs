@@ -1151,6 +1151,7 @@ impl PdfcerApp {
             //
             Action::Bookmark(action) => super::bookmarks::apply(doc, action),
             Action::Link(action) => super::links::apply(doc, action),
+            Action::Group(action) => super::group::apply(doc, action),
             // The attachment family — attach, remove, save one out.
             //
             // One line, like its neighbours. What its module carries and this
