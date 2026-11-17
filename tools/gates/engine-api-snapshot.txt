@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: e4ab6497219829ba23b2c8c706cde5f34c1568c9
+# baseline: 96ba8e75d53f90cc5c5e77721ec603d0d841fd44
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12038
+# items: 12105
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -773,6 +773,7 @@ pdfcer-core const pdfcer_core::vector::hit::FLATTEN_STEPS
 pdfcer-core const pdfcer_core::vector::snap::MAX_CANDIDATES
 pdfcer-core const pdfcer_core::vector::snap::MAX_NEIGHBOURHOOD_SEGMENTS
 pdfcer-core const pdfcer_core::vector::snap::SNAP_FLATTEN_STEPS
+pdfcer-core const pdfcer_core::vector::snap_annot::MAX_MARKUP_SNAP_POINTS
 pdfcer-core const pdfcer_core::widget_draw::signature::APPEARANCE_MAX_SIZE
 pdfcer-core const pdfcer_core::widget_draw::signature::APPEARANCE_MIN_SIZE
 pdfcer-core const pdfcer_core::wrapper::ENCRYPTED_PAYLOAD
@@ -883,6 +884,7 @@ pdfcer-core enum pdfcer_core::edit::VertexEdit
 pdfcer-core enum pdfcer_core::edit::VertexEditKind
 pdfcer-core enum pdfcer_core::edit::Visibility
 pdfcer-core enum pdfcer_core::edit::WordBoundary
+pdfcer-core enum pdfcer_core::edit::annot_group::AnnotationGroupError
 pdfcer-core enum pdfcer_core::edit::batch::AnnotationBatchMove
 pdfcer-core enum pdfcer_core::edit::button_icon::ButtonIconEdit
 pdfcer-core enum pdfcer_core::edit::checkpoint::CheckpointError
@@ -1198,6 +1200,7 @@ pdfcer-core enum pdfcer_core::vector::edit::SplitGranularity
 pdfcer-core enum pdfcer_core::vector::edit::VectorEditError
 pdfcer-core enum pdfcer_core::vector::edit::node_shape::NodeKind
 pdfcer-core enum pdfcer_core::vector::edit::node_shape::SegmentKind
+pdfcer-core enum pdfcer_core::vector::group::GroupError
 pdfcer-core enum pdfcer_core::vector::hit::FormMarquee
 pdfcer-core enum pdfcer_core::vector::hit::HitTarget
 pdfcer-core enum pdfcer_core::vector::hit::MarqueeMode
@@ -1384,6 +1387,9 @@ pdfcer-core field pdfcer_core::annot_author::derived::NotDerived::reason
 pdfcer-core field pdfcer_core::annot_author::derived::PlacedAppearance::ap_dict
 pdfcer-core field pdfcer_core::annot_author::derived::PlacedAppearance::rect
 pdfcer-core field pdfcer_core::annot_author::derived::PlacedAppearance::rect_changed
+pdfcer-core field pdfcer_core::annot_author::text_preview::FreeTextPreview::authored
+pdfcer-core field pdfcer_core::annot_author::text_preview::FreeTextPreview::layout
+pdfcer-core field pdfcer_core::annot_author::text_preview::FreeTextPreview::spec
 pdfcer-core field pdfcer_core::attachments::Attachment::checksum
 pdfcer-core field pdfcer_core::attachments::Attachment::created
 pdfcer-core field pdfcer_core::attachments::Attachment::declared_size
@@ -1885,6 +1891,7 @@ pdfcer-core field pdfcer_core::edit::InkReshape::dropped
 pdfcer-core field pdfcer_core::edit::InkReshape::forecast
 pdfcer-core field pdfcer_core::edit::InkReshape::mod_date_written
 pdfcer-core field pdfcer_core::edit::InsertOutcome::acroform_created
+pdfcer-core field pdfcer_core::edit::InsertOutcome::ce_dimensions_as_lines
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_carried
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_renamed
 pdfcer-core field pdfcer_core::edit::InsertOutcome::fields_split
@@ -1983,6 +1990,7 @@ pdfcer-core field pdfcer_core::edit::MediaBoxChange::page_index
 pdfcer-core field pdfcer_core::edit::MediaBoxChange::size_advisory
 pdfcer-core field pdfcer_core::edit::MediaBoxChange::trim_box_outside
 pdfcer-core field pdfcer_core::edit::MergeOutcome::acroform_created
+pdfcer-core field pdfcer_core::edit::MergeOutcome::ce_dimensions_as_lines
 pdfcer-core field pdfcer_core::edit::MergeOutcome::fields_merged
 pdfcer-core field pdfcer_core::edit::MergeOutcome::fields_renamed
 pdfcer-core field pdfcer_core::edit::MergeOutcome::layer_configs_dropped
@@ -2279,6 +2287,8 @@ pdfcer-core field pdfcer_core::edit::WidgetRotation::normalised
 pdfcer-core field pdfcer_core::edit::WidgetRotation::now
 pdfcer-core field pdfcer_core::edit::WidgetRotation::siblings_untouched
 pdfcer-core field pdfcer_core::edit::WidgetRotation::was
+pdfcer-core field pdfcer_core::edit::annot_group::AnnotationGroupChange::members
+pdfcer-core field pdfcer_core::edit::annot_group::AnnotationGroupChange::primary
 pdfcer-core field pdfcer_core::edit::annot_restyle::AnnotOpacityChange::annot_id
 pdfcer-core field pdfcer_core::edit::annot_restyle::AnnotOpacityChange::clamped
 pdfcer-core field pdfcer_core::edit::annot_restyle::AnnotOpacityChange::current
@@ -2322,6 +2332,13 @@ pdfcer-core field pdfcer_core::edit::emf::PlacedEmf::scale_x
 pdfcer-core field pdfcer_core::edit::emf::PlacedEmf::scale_y
 pdfcer-core field pdfcer_core::edit::form_paint::FormPaintOutcome::paint
 pdfcer-core field pdfcer_core::edit::form_paint::FormPaintOutcome::reach
+pdfcer-core field pdfcer_core::edit::group::GroupOutcome::form
+pdfcer-core field pdfcer_core::edit::group::GroupOutcome::index
+pdfcer-core field pdfcer_core::edit::group::GroupOutcome::members
+pdfcer-core field pdfcer_core::edit::group::UngroupOutcome::clipped
+pdfcer-core field pdfcer_core::edit::group::UngroupOutcome::form
+pdfcer-core field pdfcer_core::edit::group::UngroupOutcome::indices
+pdfcer-core field pdfcer_core::edit::group::UngroupOutcome::renamed
 pdfcer-core field pdfcer_core::edit::history_transfer::HistoryImport::redo_steps
 pdfcer-core field pdfcer_core::edit::history_transfer::HistoryImport::undo_steps
 pdfcer-core field pdfcer_core::edit::image_replace::ImageReplaceOutcome::disclosures
@@ -3269,6 +3286,7 @@ pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::separations
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::source_files
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleOptions::source_titles
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimension_sidecar_newer
+pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimensions_as_lines
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimensions_carried
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::ce_dimensions_left
 pdfcer-core field pdfcer_core::pageops::assemble::AssembleReport::dangling_references
@@ -4574,6 +4592,7 @@ pdfcer-core field pdfcer_core::vector::restack::RestackOutcome::limited
 pdfcer-core field pdfcer_core::vector::restack::RestackOutcome::moved
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::kind
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::point
+pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::source_annotation
 pdfcer-core field pdfcer_core::vector::snap::SnapCandidate::source_object
 pdfcer-core field pdfcer_core::vector::snap::SnapConfig::axes
 pdfcer-core field pdfcer_core::vector::snap::SnapConfig::grid
@@ -4770,6 +4789,7 @@ pdfcer-core fn pdfcer_core::annot_author::is_highlighter
 pdfcer-core fn pdfcer_core::annot_author::rect_inside_differences
 pdfcer-core fn pdfcer_core::annot_author::spec_from_dict
 pdfcer-core fn pdfcer_core::annot_author::takes_highlighter
+pdfcer-core fn pdfcer_core::annot_author::text_preview::free_text_preview
 pdfcer-core fn pdfcer_core::annot_author::text_spec_from_dict
 pdfcer-core fn pdfcer_core::annot_author::transform_spec
 pdfcer-core fn pdfcer_core::attachments::attachment_bytes
@@ -4813,6 +4833,7 @@ pdfcer-core fn pdfcer_core::edit::deskew::detect_image_skew
 pdfcer-core fn pdfcer_core::edit::deskew::page_scan_image
 pdfcer-core fn pdfcer_core::edit::duplicate_choice_export
 pdfcer-core fn pdfcer_core::edit::encode_text_string
+pdfcer-core fn pdfcer_core::edit::group::is_group_form
 pdfcer-core fn pdfcer_core::edit::print_ready::check_print_permission
 pdfcer-core fn pdfcer_core::edit::sort_choice_options
 pdfcer-core fn pdfcer_core::editable::export
@@ -5108,6 +5129,8 @@ pdfcer-core fn pdfcer_core::vector::snap::measured_length
 pdfcer-core fn pdfcer_core::vector::snap::polygon_area
 pdfcer-core fn pdfcer_core::vector::snap::polyline_length
 pdfcer-core fn pdfcer_core::vector::snap::snap_candidates
+pdfcer-core fn pdfcer_core::vector::snap_annot::markup_snap_geometry
+pdfcer-core fn pdfcer_core::vector::snap_annot::snap_candidates_with_markups
 pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_run
 pdfcer-core fn pdfcer_core::vector::text_locate::locate_text_runs
 pdfcer-core fn pdfcer_core::wrapper::detect
@@ -5186,6 +5209,10 @@ pdfcer-core method pdfcer_core::annot_author::button_icon::CaptionPosition::to_t
 pdfcer-core method pdfcer_core::annot_author::button_icon::IconFit::from_dict
 pdfcer-core method pdfcer_core::annot_author::button_icon::IconFit::to_dict
 pdfcer-core method pdfcer_core::annot_author::derived::DerivedAppearance::place
+pdfcer-core method pdfcer_core::annot_author::text_preview::FreeTextPreview::clips
+pdfcer-core method pdfcer_core::annot_author::text_preview::FreeTextPreview::needed_height
+pdfcer-core method pdfcer_core::annot_author::text_preview::FreeTextPreview::needed_width
+pdfcer-core method pdfcer_core::annot_author::text_preview::FreeTextPreview::rect_grown_downward
 pdfcer-core method pdfcer_core::attachments::Attachment::safe_name
 pdfcer-core method pdfcer_core::attachments::AttachmentClip::is_empty
 pdfcer-core method pdfcer_core::attachments::AttachmentClip::len
@@ -5279,7 +5306,9 @@ pdfcer-core method pdfcer_core::dimension::units::DecimalMarker::as_str
 pdfcer-core method pdfcer_core::dimension::units::NumberFormat::decimal
 pdfcer-core method pdfcer_core::dimension::units::NumberFormat::feet_inches
 pdfcer-core method pdfcer_core::dimension::units::NumberFormat::format
+pdfcer-core method pdfcer_core::dimension::units::NumberFormat::fractional
 pdfcer-core method pdfcer_core::dimension::units::NumberFormat::inch_fraction
+pdfcer-core method pdfcer_core::dimension::units::ScaleEntry::real_length_on
 pdfcer-core method pdfcer_core::dimension::units::ScaleState::effective_scale
 pdfcer-core method pdfcer_core::dimension::units::ScaleState::in_unit
 pdfcer-core method pdfcer_core::dimension::units::ScaleState::is_never_set
@@ -5758,6 +5787,8 @@ pdfcer-core method pdfcer_core::edit::WidgetEdit::with_visibility
 pdfcer-core method pdfcer_core::edit::WidgetEdit::without_background
 pdfcer-core method pdfcer_core::edit::WidgetEdit::without_border_color
 pdfcer-core method pdfcer_core::edit::WordBoundary::is_word_char
+pdfcer-core method pdfcer_core::edit::annot_group::EditSession::group_annotations
+pdfcer-core method pdfcer_core::edit::annot_group::EditSession::ungroup_annotations
 pdfcer-core method pdfcer_core::edit::annot_restyle::EditSession::marker_color
 pdfcer-core method pdfcer_core::edit::annot_restyle::EditSession::set_annot_opacity
 pdfcer-core method pdfcer_core::edit::annot_restyle::EditSession::set_marker_style
@@ -5800,7 +5831,12 @@ pdfcer-core method pdfcer_core::edit::form_paint::EditSession::set_object_stroke
 pdfcer-core method pdfcer_core::edit::form_transform::EditSession::transform_objects_each_in_form
 pdfcer-core method pdfcer_core::edit::form_transform::EditSession::transform_objects_in_form
 pdfcer-core method pdfcer_core::edit::format_batch::EditSession::format_texts
+pdfcer-core method pdfcer_core::edit::free_text_preview::EditSession::free_text_note_preview
+pdfcer-core method pdfcer_core::edit::group::EditSession::group_objects
+pdfcer-core method pdfcer_core::edit::group::EditSession::ungroup_form
+pdfcer-core method pdfcer_core::edit::group_unit::EditSession::add_dimension_group_like
 pdfcer-core method pdfcer_core::edit::group_unit::EditSession::add_dimension_group_with_format
+pdfcer-core method pdfcer_core::edit::group_unit::EditSession::add_dimension_group_with_scale
 pdfcer-core method pdfcer_core::edit::group_unit::EditSession::set_group_unit
 pdfcer-core method pdfcer_core::edit::history_transfer::EditSession::export_history
 pdfcer-core method pdfcer_core::edit::history_transfer::EditSession::import_history
@@ -5820,6 +5856,7 @@ pdfcer-core method pdfcer_core::edit::link::EditSession::set_link_target
 pdfcer-core method pdfcer_core::edit::link::LinkBorder::new
 pdfcer-core method pdfcer_core::edit::link::LinkBorder::with_dash
 pdfcer-core method pdfcer_core::edit::markup_respan::EditSession::respan_text_markup
+pdfcer-core method pdfcer_core::edit::markup_snap::EditSession::markup_snap_geometry
 pdfcer-core method pdfcer_core::edit::metadata_remove::EditSession::metadata_inventory
 pdfcer-core method pdfcer_core::edit::metadata_remove::EditSession::remove_metadata
 pdfcer-core method pdfcer_core::edit::node_shape::EditSession::convert_node
@@ -6759,6 +6796,8 @@ pdfcer-core method pdfcer_core::vector::snap::SnapConfig::with_intersections
 pdfcer-core method pdfcer_core::vector::snap::SnapKind::all
 pdfcer-core method pdfcer_core::vector::snap::SnapKind::is_derived
 pdfcer-core method pdfcer_core::vector::snap::SnapKind::priority
+pdfcer-core method pdfcer_core::vector::snap_annot::MarkupSnapGeometry::annotation
+pdfcer-core method pdfcer_core::vector::snap_annot::MarkupSnapGeometry::bounds
 pdfcer-core method pdfcer_core::vector::stroke_style::Dash::is_solid
 pdfcer-core method pdfcer_core::vector::stroke_style::Dash::new
 pdfcer-core method pdfcer_core::vector::stroke_style::PathObject::dash_pt
@@ -6905,6 +6944,7 @@ pdfcer-core struct pdfcer_core::annot_author::button_icon::IconFit
 pdfcer-core struct pdfcer_core::annot_author::derived::DerivedAppearance
 pdfcer-core struct pdfcer_core::annot_author::derived::NotDerived
 pdfcer-core struct pdfcer_core::annot_author::derived::PlacedAppearance
+pdfcer-core struct pdfcer_core::annot_author::text_preview::FreeTextPreview
 pdfcer-core struct pdfcer_core::attachments::Attachment
 pdfcer-core struct pdfcer_core::attachments::AttachmentClip
 pdfcer-core struct pdfcer_core::attachments::AttachmentNotes
@@ -7060,6 +7100,7 @@ pdfcer-core struct pdfcer_core::edit::WidgetEdit
 pdfcer-core struct pdfcer_core::edit::WidgetEditOutcome
 pdfcer-core struct pdfcer_core::edit::WidgetMove
 pdfcer-core struct pdfcer_core::edit::WidgetRotation
+pdfcer-core struct pdfcer_core::edit::annot_group::AnnotationGroupChange
 pdfcer-core struct pdfcer_core::edit::annot_restyle::AnnotOpacityChange
 pdfcer-core struct pdfcer_core::edit::annot_restyle::MarkerColor
 pdfcer-core struct pdfcer_core::edit::annot_restyle::MarkerStyle
@@ -7073,6 +7114,8 @@ pdfcer-core struct pdfcer_core::edit::checkpoint::Rollback
 pdfcer-core struct pdfcer_core::edit::deskew::ImageDeskew
 pdfcer-core struct pdfcer_core::edit::emf::PlacedEmf
 pdfcer-core struct pdfcer_core::edit::form_paint::FormPaintOutcome
+pdfcer-core struct pdfcer_core::edit::group::GroupOutcome
+pdfcer-core struct pdfcer_core::edit::group::UngroupOutcome
 pdfcer-core struct pdfcer_core::edit::history_transfer::HistoryImport
 pdfcer-core struct pdfcer_core::edit::image_replace::ImageReplaceOutcome
 pdfcer-core struct pdfcer_core::edit::info_entries::InfoEditOutcome
@@ -7499,6 +7542,7 @@ pdfcer-core struct pdfcer_core::vector::restack::RestackLimit
 pdfcer-core struct pdfcer_core::vector::restack::RestackOutcome
 pdfcer-core struct pdfcer_core::vector::snap::SnapCandidate
 pdfcer-core struct pdfcer_core::vector::snap::SnapConfig
+pdfcer-core struct pdfcer_core::vector::snap_annot::MarkupSnapGeometry
 pdfcer-core struct pdfcer_core::vector::stroke_style::Dash
 pdfcer-core struct pdfcer_core::vector::stroke_style::StrokeStyle
 pdfcer-core struct pdfcer_core::widget_draw::SynthesizedAppearance
@@ -7893,6 +7937,8 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::FlattenAnnotations
 pdfcer-core variant pdfcer_core::edit::CommandKind::FlattenFields
 pdfcer-core variant pdfcer_core::edit::CommandKind::FlattenLayers
 pdfcer-core variant pdfcer_core::edit::CommandKind::FormatText
+pdfcer-core variant pdfcer_core::edit::CommandKind::GroupAnnotations
+pdfcer-core variant pdfcer_core::edit::CommandKind::GroupObjects
 pdfcer-core variant pdfcer_core::edit::CommandKind::InsertNode
 pdfcer-core variant pdfcer_core::edit::CommandKind::InsertPages
 pdfcer-core variant pdfcer_core::edit::CommandKind::MarkComparison
@@ -7984,6 +8030,8 @@ pdfcer-core variant pdfcer_core::edit::CommandKind::ToggleDimensionLayer
 pdfcer-core variant pdfcer_core::edit::CommandKind::TransformObjects
 pdfcer-core variant pdfcer_core::edit::CommandKind::TurnWidget
 pdfcer-core variant pdfcer_core::edit::CommandKind::UnembedFonts
+pdfcer-core variant pdfcer_core::edit::CommandKind::UngroupAnnotations
+pdfcer-core variant pdfcer_core::edit::CommandKind::UngroupForm
 pdfcer-core variant pdfcer_core::edit::CommandKind::UnshareForm
 pdfcer-core variant pdfcer_core::edit::CommandKind::UpscaleImage
 pdfcer-core variant pdfcer_core::edit::CropBoxEdit::Reset
@@ -8003,6 +8051,7 @@ pdfcer-core variant pdfcer_core::edit::DroppedProperty::LineEnding
 pdfcer-core variant pdfcer_core::edit::DroppedProperty::RectDifferences
 pdfcer-core variant pdfcer_core::edit::EditError::AnnotStatesMismatch
 pdfcer-core variant pdfcer_core::edit::EditError::AnnotationContentsLocked
+pdfcer-core variant pdfcer_core::edit::EditError::AnnotationGroup
 pdfcer-core variant pdfcer_core::edit::EditError::AnnotationIsCeDimension
 pdfcer-core variant pdfcer_core::edit::EditError::AnnotationIsTrapNet
 pdfcer-core variant pdfcer_core::edit::EditError::AnnotationIsWidget
@@ -8089,6 +8138,7 @@ pdfcer-core variant pdfcer_core::edit::EditError::FreeTextAppearanceForeign
 pdfcer-core variant pdfcer_core::edit::EditError::FreeTextIsRichText
 pdfcer-core variant pdfcer_core::edit::EditError::FreeTextNoteConflictsWithText
 pdfcer-core variant pdfcer_core::edit::EditError::GeometryNotReshapable
+pdfcer-core variant pdfcer_core::edit::EditError::Group
 pdfcer-core variant pdfcer_core::edit::EditError::HandSignature
 pdfcer-core variant pdfcer_core::edit::EditError::HiddenLayersNeedPolicy
 pdfcer-core variant pdfcer_core::edit::EditError::ImageRectDegenerate
@@ -8315,6 +8365,14 @@ pdfcer-core variant pdfcer_core::edit::Visibility::VisibleAndPrints
 pdfcer-core variant pdfcer_core::edit::WordBoundary::Alphanumeric
 pdfcer-core variant pdfcer_core::edit::WordBoundary::NonSpace
 pdfcer-core variant pdfcer_core::edit::WordBoundary::NonSpaceOrDash
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::AlreadyLinked
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::CeDimension
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::DifferentPage
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::MemberHasGroup
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::MemberIsPrimary
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::NoMembers
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::NotGrouped
+pdfcer-core variant pdfcer_core::edit::annot_group::AnnotationGroupError::NotMarkup
 pdfcer-core variant pdfcer_core::edit::batch::AnnotationBatchMove::Annotation
 pdfcer-core variant pdfcer_core::edit::batch::AnnotationBatchMove::Dimension
 pdfcer-core variant pdfcer_core::edit::button_icon::ButtonIconEdit::Clear
@@ -9787,6 +9845,14 @@ pdfcer-core variant pdfcer_core::vector::edit::node_shape::NodeKind::Smooth
 pdfcer-core variant pdfcer_core::vector::edit::node_shape::NodeKind::Symmetric
 pdfcer-core variant pdfcer_core::vector::edit::node_shape::SegmentKind::Curve
 pdfcer-core variant pdfcer_core::vector::edit::node_shape::SegmentKind::Line
+pdfcer-core variant pdfcer_core::vector::group::GroupError::Edit
+pdfcer-core variant pdfcer_core::vector::group::GroupError::MemberCannotJoin
+pdfcer-core variant pdfcer_core::vector::group::GroupError::NoObjects
+pdfcer-core variant pdfcer_core::vector::group::GroupError::NotAForm
+pdfcer-core variant pdfcer_core::vector::group::GroupError::NotInvertible
+pdfcer-core variant pdfcer_core::vector::group::GroupError::OptionalContent
+pdfcer-core variant pdfcer_core::vector::group::GroupError::TransparencyGroup
+pdfcer-core variant pdfcer_core::vector::group::GroupError::Unportable
 pdfcer-core variant pdfcer_core::vector::hit::FormMarquee::Exclude
 pdfcer-core variant pdfcer_core::vector::hit::FormMarquee::Include
 pdfcer-core variant pdfcer_core::vector::hit::HitTarget::Leaf
@@ -11532,6 +11598,7 @@ pdfcer-render fn pdfcer_render::display_list::record_page_for_export
 pdfcer-render fn pdfcer_render::display_list::record_page_for_plates
 pdfcer-render fn pdfcer_render::display_list::replay_ops
 pdfcer-render fn pdfcer_render::edit_preview::paint_dimension_preview
+pdfcer-render fn pdfcer_render::edit_preview::paint_text_annotation_preview
 pdfcer-render fn pdfcer_render::edit_preview::preview_outlines
 pdfcer-render fn pdfcer_render::effective_scale
 pdfcer-render fn pdfcer_render::export::encode_jpeg

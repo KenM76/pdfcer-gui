@@ -284,6 +284,7 @@ mod tests {
             point: pdfcer_core::vector::Point::new(0.0, 0.0),
             kind: k,
             source_object: None,
+            source_annotation: None,
         };
         let list = [c(SnapKind::Node), c(SnapKind::Midpoint)];
         assert_eq!(

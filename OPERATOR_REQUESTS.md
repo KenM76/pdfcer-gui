@@ -8048,3 +8048,21 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 *"I need to be able to group items together the same way it works in Inkscape."* Group, ungroup, a click selects the group, enter a group to edit a member.
 
 **Waiting on the engine (G280).** The engine has no group or ungroup verb for page content or for markups. Entering and leaving an existing group already works. No GUI workaround.
+
+## O434 — **OPEN** — grouping within groups
+
+*"Grouping within groups."* Said to the engine session; an extension of O433.
+
+**Engine side is on its main branch, not yet in a release.** Group and ungroup inside an existing group for page content, and merging markup groups so that ungroup gives the earlier groups back one level at a time. To be built with O433 once the release that carries them is pinned.
+
+## O435 — **OPEN** — a copy as vector pastes into pdfcer as a vector, and there is a cut as vector
+
+*"If I use the copy as vector commands (I assume if I use cut instead it has the same issue and if there isn't a cut yet to do this there should be) and paste into pdfcer instead of Inkscape the paste is done as a bitmap instead of a vector."* Said to the engine session.
+
+**Not built.** Paste reads PDF, then pictures, then text; it never reads SVG or a metafile, and copy as vector places no PDF. To do: place the PDF (and pdfcer's own object form) on copy as vector; on paste take PDF, then SVG, then metafile, then a picture; add *Cut as vector* as one undo step.
+
+## O436 — **OPEN** — upgrade to the latest egui
+
+*"Also please upgrade to the latest egui and refactor as necessary."* Said to the engine session.
+
+**Not started.** The shell is on egui 0.35; the latest is 0.37. The move is verified by driving the binary, not by a build.
