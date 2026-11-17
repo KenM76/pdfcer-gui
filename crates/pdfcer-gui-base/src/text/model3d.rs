@@ -223,13 +223,43 @@ pub fn part_show_tooltip() -> &'static str {
 /// A part's name tip.
 #[must_use]
 pub fn part_highlight_tooltip() -> &'static str {
-    "Click to highlight this part in this window; right-click for more."
+    "Click to select this part; Ctrl and Shift select more. Right-click for what can be done with the selection."
 }
 
-/// Show only one part.
+/// Show only the selected parts.
 #[must_use]
 pub fn part_isolate() -> &'static str {
-    "Show only this part"
+    "Show only the selected parts"
+}
+
+/// Hide the selected parts.
+#[must_use]
+pub fn parts_hide() -> &'static str {
+    "Hide"
+}
+
+/// Show the selected parts that are hidden.
+#[must_use]
+pub fn parts_show() -> &'static str {
+    "Show"
+}
+
+/// The view that draws only what is hidden.
+#[must_use]
+pub fn parts_hidden_only() -> &'static str {
+    "Show hidden parts only"
+}
+
+/// Leave the hidden-parts view.
+#[must_use]
+pub fn parts_back_to_shown() -> &'static str {
+    "Back to the shown parts"
+}
+
+/// What the hidden-parts view is for.
+#[must_use]
+pub fn parts_hidden_only_tooltip() -> &'static str {
+    "Draw only the hidden parts. Click one in the picture to show it again: it leaves this view and is back when this is switched off."
 }
 
 /// Show every part.

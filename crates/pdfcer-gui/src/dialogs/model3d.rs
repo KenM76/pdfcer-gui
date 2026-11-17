@@ -54,6 +54,7 @@ mod navmouse;
 mod navorbit;
 mod navwalk;
 mod options;
+mod partpick;
 mod parts;
 mod partstree;
 mod phone;
@@ -469,6 +470,7 @@ impl ModelView {
         } else {
             self.orbit_input(ui, &response);
         }
+        self.pick_input(&response);
         self.measure_input(ui.ctx(), &response, rect);
         // Rebuilt below and by the full-screen row, for the next frame's
         // fingers.

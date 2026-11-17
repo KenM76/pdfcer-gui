@@ -8075,7 +8075,9 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 *"Let's add a luminosity measurement tool so we can select a point and get a measurement based on point or average of a circular area around the point on the surface we selected. What I actually want is a tool to measure illuminance. I want to be able to check how much lighting there is hitting objects like the top of the desks."*
 
-**Waiting on the engine (G288).** The 3D viewer can pick a point on a surface, but the engine has no answer for how much light arrives there, and a glTF light's candela and lux are rescaled on import, so no figure in lux can be given yet. Asked for: the reading at a point and averaged over a disc on the surface, shadowed by the model, split into direct and bounced light and by lamp, in lux where the file's lights are physical and marked relative where they are not. The shell will add the tool to the 3D viewer's Measure tab beside the distance tools. No GUI workaround.
+**First in line, said 2026-11-17 through the engine session:** *"Get the light measuring tool out first in a release if the rest is going to take awhile to make. I need the light one asap."* The engine's answer (G288, `LightMeter`) is built and comes with engine v0.156.0; the tool is built the moment that tag is pinned and goes out in the release that follows it.
+
+**Was waiting on the engine (G288).** The 3D viewer can pick a point on a surface, but the engine has no answer for how much light arrives there, and a glTF light's candela and lux are rescaled on import, so no figure in lux can be given yet. Asked for: the reading at a point and averaged over a disc on the surface, shadowed by the model, split into direct and bounced light and by lamp, in lux where the file's lights are physical and marked relative where they are not. The shell will add the tool to the 3D viewer's Measure tab beside the distance tools. No GUI workaround.
 
 ## O438 — **OPEN** — the print preview shows the separations, one ink at a time
 
@@ -8109,8 +8111,22 @@ Added the same day:
 
 All eight are owed before the next release.
 
+Built: 1, 3, 4, 5 and 6, driven by `the_3d_viewer_selects_and_hides_from_the_picture`. Selecting needs no mode: a click on a part selects it whenever the viewer is turning the model rather than walking or measuring. Show hidden parts only is on the menu and as a switch above the part list. Not built: 2, 7 and 8, the lights.
+
 ## O441 — **OPEN** — a light-map view of a 3D model, banded at the recommended light levels
 
 *"Let's add another view option for 3D models: make it so it light maps the models surfaces depending on the intensity of the light hitting them. There are recommended light levels depending on the building areas and work surface areas - I want to have the light level steps match these so that there is enough differentiation in the scale colours to tell between them whether say a desk has too much light or too little."*
 
 A view option in the 3D viewer colours each surface by the light arriving on it. The colour scale steps at the recommended levels for building areas and work surfaces, so a surface with too little or too much light for its use reads as a different colour from one that is right. The step values are lifted from a named published standard and cited beside the scale, never chosen here. Shares its arithmetic with O437.
+
+## O442 — **OPEN** — measure between two surfaces of a 3D model, with a parallel tolerance
+
+*"Also need a way to select and measure distance between surfaces and have the ability to adjust the parallel tolerance between them - anything beyond that tolerance measures angle."*
+
+Said to the engine session on 2026-11-17 and passed on in `notice_2026-11-17_operator_asks_3d_measure_tool_window.md`. Pick two surfaces in the 3D viewer: a distance when they are parallel within a tolerance he sets, an angle otherwise, the measured angle shown either way. **Waiting on the engine:** it is fitting a plane to a picked face and reporting the fit's residual; nothing in the pinned engine answers a two-surface question.
+
+## O443 — **OPEN** — a measure window for 3D models with what the SolidWorks assembly measure tool can do
+
+*"Also would like to see a measure tool dialogue windows with all the same options and capabilities of the Solidworks measure tool for assemblies."*
+
+Said with O442, and after the light meter (O437) in the order he set. One window for measuring a 3D model: what one selection reports (a point's X, Y, Z; an edge's length; a face's area and perimeter; a circle's or arc's radius, diameter, arc and chord length), what two report (smallest distance, dX dY dZ, angle, parallel / perpendicular / intersecting), centre / minimum / maximum for arcs and circles, point-to-point, projection onto the screen or a chosen face, XYZ relative to the origin or a chosen coordinate system, units and precision with dual units, projected area, a history for the session, copying a value with or without its unit. Each engine verb found missing while it is laid out is filed as its own request.
