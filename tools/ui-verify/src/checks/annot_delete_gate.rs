@@ -37,11 +37,12 @@ const COLLATERAL_REGION: &str = "properties.annot_delete.collateral";
 /// The page's own region, so a failure can say whether a sheet was drawn.
 const PAGE_REGION: &str = "page";
 
-/// The square's `/Rect` centre, in PDF user space on page 1.
+/// On the left edge of the hollow square (`/Rect [120 560 320 700]`), off its
+/// grips, in PDF user space on page 1: its inside is not the mark.
 const SQUARE_CENTRE: DocPoint = DocPoint {
     page: 0,
-    x: 220.0,
-    y: 630.0,
+    x: 120.5,
+    y: 600.0,
 };
 
 /// See the module documentation.

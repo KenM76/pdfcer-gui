@@ -347,6 +347,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Some(failure) = undo_once(&session, &driver, "THE CONTROL MARK")? {
         return Ok(Some(failure));
     }
+    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
     let cleared = marks(&session.trace()?);
     if cleared != Some(before) {
         return Ok(Some(format!(
@@ -445,6 +446,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         return Ok(Some(reading));
     }
 
+    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
     let after = marks(&session.trace()?);
     if after != Some(before + 1) {
         let reading = match after {
@@ -533,6 +535,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     if let Some(failure) = undo_once(&session, &driver, "THE PLURAL MARK")? {
         return Ok(Some(failure));
     }
+    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
     let restored = marks(&session.trace()?);
     if restored != Some(before) {
         return Ok(Some(format!(

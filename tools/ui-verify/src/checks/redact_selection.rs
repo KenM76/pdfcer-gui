@@ -224,6 +224,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     driver.click_at(session.frame()?.declared_center(button))?;
     session.settle(30);
 
+    crate::checks::redaction::raise_panel(&session, &driver, ui_rect)?;
     let after_trace = session.trace()?;
     if after_trace.events(REQUESTED).next().is_none() {
         return Ok(Some(format!(

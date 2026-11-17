@@ -451,8 +451,11 @@ pub(super) fn open_the_theme_picker(
     }
 
     // --- B. the Settings control -------------------------------------------
+    // The File band is wider than the harness window, so Settings may sit in
+    // the band's overflow.
+    let found = crate::checks::driving::declared_or_in_overflow(session, driver, ui_rect, SUBJECT)?;
     let trace = session.trace()?;
-    let Some(control) = declared(&trace, ui_rect, SUBJECT) else {
+    let Some(control) = found else {
         return Ok(Some(format!(
             "the File tab is active and its controls publish their rects, but none of them is \
              `{SUBJECT}`. Controls declared: {}.",

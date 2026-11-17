@@ -379,6 +379,59 @@ pub(super) fn click_region(
     Ok(())
 }
 
+/// Bring the Redact panel to the front of its dock. A selection raises
+/// Properties over it, and a panel behind another tab publishes no census, so
+/// a count read without this is the count from before the gesture. A narrow
+/// dock folds the panel's tab away, so the ribbon command is the second route.
+pub(super) fn raise_panel(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
+    const PANEL: &str = "redact-panel"; // ui-text-exempt: a trace region name
+    const TAB: &str = "dock.tab.edit.redact"; // ui-text-exempt: a trace region name
+    const ITEM: &str = "ribbon.item.edit.redact"; // ui-text-exempt: a trace region name
+    let trace = session.trace()?;
+    if declared(&trace, ui_rect, PANEL).is_some() {
+        return Ok(());
+    }
+    let (name, rect) = if let Some(tab) = declared(&trace, ui_rect, TAB) {
+        (TAB, tab)
+    } else if let Some(item) = ribbon_item(session, driver, ui_rect, ITEM)? {
+        (ITEM, item)
+    } else {
+        return Err(Error::new(format!(
+            "the Redact panel is behind another tab and neither `{TAB}` nor `{ITEM}` is drawn,              so nothing can bring it forward. Dock tabs: {}.",
+            list(&declared_names(&trace, ui_rect, "dock.tab."))
+        )));
+    };
+    let trace = session.trace()?;
+    driver.click_at(driving::frame_of(session, &trace, ui_rect, name)?.declared_center(rect))?;
+    session.settle(20);
+    if declared(&session.trace()?, ui_rect, PANEL).is_none() {
+        return Err(Error::new(format!(
+            "a click on `{name}` did not bring the Redact panel forward."
+        )));
+    }
+    Ok(())
+}
+
+/// `item` on the Security ribbon tab, switching to that tab when another is showing.
+fn ribbon_item(
+    session: &Session,
+    driver: &Driver,
+    ui_rect: &str,
+    item: &str,
+) -> Result<Option<LRect>> {
+    const HOME_TAB: &str = "ribbon.tab.security"; // ui-text-exempt: a trace region name
+    if let Some(found) = driving::declared_or_in_overflow(session, driver, ui_rect, item)? {
+        return Ok(Some(found));
+    }
+    let trace = session.trace()?;
+    let Some(tab) = declared(&trace, ui_rect, HOME_TAB) else {
+        return Ok(None);
+    };
+    driver.click_at(driving::frame_of(session, &trace, ui_rect, HOME_TAB)?.declared_center(tab))?;
+    session.settle(12);
+    driving::declared_or_in_overflow(session, driver, ui_rect, item)
+}
+
 /// The most recent marking census, as `(marks, pages)`.
 pub(super) fn census(trace: &Trace) -> Option<(usize, usize)> {
     let line = trace.last(PANEL_EVENT)?;

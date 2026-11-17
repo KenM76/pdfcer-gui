@@ -320,10 +320,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // the page draws a second shape rather than selecting the first —
     // `sys::vk::V`'s own doc comment records a check that did not, and reported
     // "the shape could not be selected" about a build whose selection is fine.
-    let centre = corner((
-        f64::midpoint(SHAPE.0.0, SHAPE.1.0),
-        f64::midpoint(SHAPE.0.1, SHAPE.1.1),
-    ));
+    // On the left edge, off the grips: an unfilled shape is picked by its ink.
+    let centre = corner((SHAPE.0.0, (SHAPE.1.1 - SHAPE.0.1).mul_add(0.3, SHAPE.0.1)));
     let centre_screen = aim(ctx, &session, page, centre)?;
     if !arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
         report.note(

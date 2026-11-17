@@ -168,10 +168,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // would draw a *second* rectangle and then report "the shape could not be
     // selected" about a build whose selection works perfectly.
     // `checks::markup_move` records that exact run.
-    let centre = corner((
-        f64::midpoint(SHAPE.0.0, SHAPE.1.0),
-        f64::midpoint(SHAPE.0.1, SHAPE.1.1),
-    ));
+    // On the left edge, off the grips: an unfilled shape is picked by its ink.
+    let centre = corner((SHAPE.0.0, (SHAPE.1.1 - SHAPE.0.1).mul_add(0.3, SHAPE.0.1)));
     let centre_screen = aim(ctx, &session, page, centre)?;
     if !crate::checks::driving::arm_select_from_ribbon(&session, &driver, ui_rect, report)? {
         report.note(

@@ -159,10 +159,8 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // The centre of the shape just drawn, not a fixed point: the shape is
     // placed in page fractions and the click has to land inside it whatever the
     // sheet size. A fixed screen point would work on one fixture.
-    let centre = corner((
-        f64::midpoint(SHAPE.0.0, SHAPE.1.0),
-        f64::midpoint(SHAPE.0.1, SHAPE.1.1),
-    ));
+    // On the left edge, off the grips: an unfilled shape is picked by its ink.
+    let centre = corner((SHAPE.0.0, (SHAPE.1.1 - SHAPE.0.1).mul_add(0.3, SHAPE.0.1)));
     let centre_screen = aim(ctx, &session, page, centre)?;
     // PUT THE TOOL DOWN FIRST, and `sys::vk::V`'s own doc comment is the
     // reason, written for exactly this situation:
