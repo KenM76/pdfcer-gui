@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **63 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
+## `wanted` — a real gap — **66 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -103,6 +103,8 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | Row (`FEATURES.md`, wanted) | Why |
 |---|---|
 | **ce dimension dash and opacity** — two more cascaded style properties, at the group tier: — `StyleDefaults::dash` and `StyleDefaults::opacity` are new; the per-dimension tier is drawn | **wanted, at the pin since v0.81.0; request G159.** A ce dimension's Properties override block draws Line style and Opacity rows (`dimensionoverrides::stroke_rows`), because `StyleProvenance::each()` grew to thirteen and the panel's completeness test requires a row per property. Owed: the same two at the group tier (`StyleDefaults::dash`, `StyleDefaults::opacity`) and a driven check. Its module is `pdfcer_core::dimension::dash`. |
+| **Set up a ce-dimension group in one step** — `EditSession::add_dimension_group_with_scale`, `EditSession::add_dimension_group_like`, `ScaleEntry::real_length_on` | **wanted.** The Dimension groups tab's Add fold makes the group with its scale in one undo entry; calibration on a `/UserUnit` page goes through `ScaleEntry::real_length_on`. |
+| **ce dimensions arriving as plain lines** — `AssembleReport::ce_dimensions_as_lines`, `InsertOutcome::ce_dimensions_as_lines`, `MergeOutcome::ce_dimensions_as_lines` | **wanted.** Merge, insert and assemble say off-canvas how many ce dimensions arrived as plain lines. |
 
 ### Annotations & markup
 
@@ -113,6 +115,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Read a marker's colour** — `EditSession::marker_color`, `MarkerColor`, `ColorEntry` | **wanted, at the pin since v0.82.0; request G176.** A marker's Icon colour row reads it instead of `panels::properties::markup::read_colour`; `ColorEntry::Absent`, `ColorEntry::Empty` and `ColorEntry::Malformed` separate no colour from a bad one, and `ColorEntry::Device` carries the colour; the free function `color_entry` reads the same from a dictionary. |
 | **Read a link's as-written target and border** — `EditSession::link`, `LinkReading` | **wanted, at the pin since v0.82.0; request G178.** `panels::properties::link` reads a link through it, `LinkReading::border_color` as a `ColorEntry`; calling it deletes `pdfcer_gui_base::linkread`. |
 | **List the document's named destinations** — `DestinationReader::named_destinations` <!--namesake:named_destinations--> (the shell's hit is an unrelated count field) | **wanted, at the pin since v0.82.0; request G179.** `dialogs::link` offers the document's named destinations as a list instead of a typed name. |
+| **Live preview of a text box (FreeText) before commit** — `pdfcer_core::annot_author::text_preview` (`free_text_preview`, `FreeTextPreview`), `pdfcer_core::edit::free_text_preview` (`EditSession::free_text_note_preview`), `pdfcer_render::edit_preview::paint_text_annotation_preview` | **wanted — O432.** The text box dialog and the retype route draw the engine's own appearance while typing, and say off-canvas when the text clips or a character cannot be written. |
 
 ### Forms (AcroForm)
 
@@ -178,7 +181,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
+## `blocked` — waiting on something named — **2 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -196,7 +199,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -207,7 +210,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
+## `declined` — deliberately no surface — **20 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -253,7 +256,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **488 of 573** <!-- counted by tools/walk-engine-backlog.py, 2026-11-16; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **491 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -505,6 +508,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A text markup can be re-spanned** — `respan_text_markup`, `pdfcer_core::edit::markup_respan` | **shipped — a text mark's end grips re-span it; G152.** `canvas::respan` draws a grip at each end of a selected `/Highlight`, `/Underline`, `/StrikeOut` or `/Squiggly`; the release re-runs the text selection and raises `AnnotAction::RespanTextMarkup`, applied as one `CommandKind::RespanTextMarkup`. A release over no text is declined before the verb. `EditError::TextMarkupVerbOnOther` cannot arise from this route: the grips are drawn only on the four subtypes. Driven by `a_highlights_end_drags_onto_the_next_line`. |
 | **Links can be authored, re-targeted and re-bordered** — `pdfcer_core::edit::link` | **shipped — Edit ▸ Insert ▸ Link, and a selected link's Properties; G161.** `edit.insert_link` arms `PlaceKind::Link` and `dialogs::link` raises `add_link`; in Edit a click selects a link (Links pick row live), its grips resize it, and `panels::properties::link` raises `set_link_target` and `set_link_border`. Read and Review still follow it. `replaced_action` and `appearance_replaced` reach the status line; `EditError::LinkUriInvalid`, `LinkBorderWidthInvalid`, `NamedDestinationNotFound` and `EmptyGeometry` are worded, `EditError::LinkVerbOnOther` is unreachable (the verbs are raised on a selected link only). `CommandKind::SetLinkTarget`, `CommandKind::SetLinkBorder` and `AnnotKind::Link` are the engine's undo labels; nothing here reads them. Reading a link back is a workaround (`linkread`) until `EditSession::link` is called, and named destinations are typed until `named_destinations` is offered (G178, G179, at the pin since v0.82.0). Driven: `a_link_is_drawn_and_given_an_address`, `a_selected_link_is_repointed_from_properties`, `a_review_click_follows_a_link_and_does_not_select_it`. |
 | **Pasted raw annotation moves all its geometry** — `paste_raw_annotation` | **shipped — the engine's paste moves every geometry key, and the shell sends the clip as copied** (request G186, at the pin since v0.82.0). A pasted link, line, polygon or ink mark has its `/L`, `/Vertices`, `/QuadPoints`, `/CL` and `/InkList` moved with `/Rect`. Driven: `a_link_is_moved_resized_copied_and_deleted`, which fails at step 5 when the shell also translates them. |
+| **Markup annotations are snap targets** — `vector::markup_snap_geometry` and `snap_candidates_with_markups` in `pdfcer_core::vector::snap_annot` (`MarkupSnapGeometry`, `MAX_MARKUP_SNAP_POINTS`), `EditSession::markup_snap_geometry` in `pdfcer_core::edit::markup_snap` | **consumed.** `canvas::measure::markupsnap` keeps the page's geometry and `canvas::measure::resolve::snapped` asks `snap_candidates_with_markups`, so the measure tools, a ce-dimension endpoint drag and a markup node drag all snap to markups; a markup being reshaped leaves itself out. Driven by `measure_tool_snaps_to_a_markup` (O427). |
 
 ### Forms (AcroForm)
 
@@ -803,10 +807,6 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Default fractions in lowest terms** — a new feet-inches group reads `1/2"`, not `4/8"`; a new inch group reads two decimals unless made with `NumberFormat::fractional`; `add_dimension_group_with_format` gives a fixed denominator … | **consumed.** New ce-dimension groups are created with `EditSession::add_dimension_group_with_format`, one undo entry, from the numbers chosen in the Dimension groups tab's Add fold; a fixed denominator is set at creation. `DimensionModel::add_group_with_format` is the model-level twin; the shell goes through `EditSession`. `set_group_unit` carries the fraction between Inch and FeetInches and the shell re-applies nothing. Driven by `a_new_groups_numbers_are_set_when_it_is_made`. *Same as <group>* still folds a separate `set_group_scale` into the add (G285). The row's inch default and the contract's `NumberFormat::fractional` disagree with the source (G283, G284). |
 | **Group page objects into one form XObject, and ungroup a form** — `pdfcer_core::edit::group` (`EditSession::group_objects`, `EditSession::ungroup_form`, `GroupOutcome`, `UngroupOutcome`), `pdfcer_core::vector::group` (`GroupError`), `CommandKind::GroupObjects`, `CommandKind::UngroupForm`, `EditError::Group` | **consumed — O433.** Edit ▸ Arrange ▸ Group and Ungroup on the selected page objects (`app::actions::group`), Ctrl+G and Ctrl+Shift+G; the group is one object afterwards, so one click selects it. Driven by `page_objects_group_into_one_and_ungroup`. |
 | **Group and ungroup markup annotations** — `EditSession::group_annotations` and `EditSession::ungroup_annotations` in `pdfcer_core::edit::annot_group` (`AnnotationGroupChange`, `AnnotationGroupError`), `CommandKind::GroupAnnotations`, `CommandKind::UngroupAnnotations`, `EditError::AnnotationGroup` | **consumed — O433.** Markup ▸ Arrange ▸ Group and Ungroup on selected markups; a click on one member selects the whole group (`canvas::selection::groupmates`). Driven by `grouped_markups_select_together`. |
-| **Live preview of a text box (FreeText) before commit** — `pdfcer_core::annot_author::text_preview` (`free_text_preview`, `FreeTextPreview`), `pdfcer_core::edit::free_text_preview` (`EditSession::free_text_note_preview`), `pdfcer_render::edit_preview::paint_text_annotation_preview` | **wanted — O432.** The text box dialog and the retype route draw the engine's own appearance while typing, and say off-canvas when the text clips or a character cannot be written. |
-| **Markup annotations are snap targets** — `vector::markup_snap_geometry` and `snap_candidates_with_markups` in `pdfcer_core::vector::snap_annot` (`MarkupSnapGeometry`, `MAX_MARKUP_SNAP_POINTS`), `EditSession::markup_snap_geometry` in `pdfcer_core::edit::markup_snap` | **wanted — O427.** The measure and drawing tools snap to markups' ends, corners and midpoints as they do to page content. |
-| **Set up a ce-dimension group in one step** — `EditSession::add_dimension_group_with_scale`, `EditSession::add_dimension_group_like`, `ScaleEntry::real_length_on` | **wanted.** The Dimension groups tab's Add fold makes the group with its scale in one undo entry; calibration on a `/UserUnit` page goes through `ScaleEntry::real_length_on`. |
-| **ce dimensions arriving as plain lines** — `AssembleReport::ce_dimensions_as_lines`, `InsertOutcome::ce_dimensions_as_lines`, `MergeOutcome::ce_dimensions_as_lines` | **wanted.** Merge, insert and assemble say off-canvas how many ce dimensions arrived as plain lines. |
 
 ## Filed requests for OCR — not verdict rows
 
@@ -967,11 +967,12 @@ The request O280 is built on, answered and consumed.
 - **G285** — OPEN: no verb creates a ce-dimension group with its scale; the shell folds two undo entries.
 - **G286** — OPEN: merge and insert carry no ce-dimension sidecar and their outcomes count nothing, so the shell cannot say the incoming ce dimensions are plain lines.
 - **G287** — OPEN: no page-aware scale calibration; on a `/UserUnit` page a calibrated scale is off by the unit.
+- **G288** — OPEN: no illuminance query in `pdfcer-3d` — nothing returns the light arriving at a `Hit`'s point and normal, and `gltf::lights` rescales physical intensities on import. Wanted for O437. Request filed.
 
 ## Filed requests for grouping, markup snapping and the text box — not verdict rows
 
 - **G280** — CONSUMED at v0.154.0: `group_objects` / `ungroup_form` and `group_annotations` / `ungroup_annotations` behind Group and Ungroup on both Arrange groups (O433).
-- **G281** — answered on the engine's main, not in a tag: `pdfcer_core::vector::snap::snap_candidates` builds from page paths only, so a markup shape or text box offers no edge, corner or centre to snap a ce dimension to. Asks an annotation snap source. O427 waits on it.
+- **G281** — CONSUMED at v0.154.0: `snap_candidates_with_markups` over `EditSession::markup_snap_geometry` behind every snap query (O427).
 - **G282** — answered on the engine's main, not in a tag: a painter in `pdfcer_render::edit_preview` for a markup text box being typed (`TextAnnotSpec`), with laid-out lines and caret advances. O432 waits on it.
 
 ## Engine arrivals at v0.113.0 — not verdict rows

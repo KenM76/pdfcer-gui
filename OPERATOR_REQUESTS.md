@@ -8007,11 +8007,11 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 **Built.** The field reads *Override dimension*.
 
-## O427 — **OPEN** — dimension the parts of markup shapes, text boxes included
+## O427 — **BUILT, awaiting Ken** — dimension the parts of markup shapes, text boxes included
 
 *"I should be able to dimension components of markup shapes including text boxes."* Snap and measure to their edges, corners and centres.
 
-**Waiting on the engine (G281).** The engine's snap points come from page paths only; a markup offers none. No GUI workaround.
+**Built on engine v0.154.0.** With a measure tool armed, or while dragging the end of a ce dimension or a node of a markup, the pointer snaps to a markup's corners, ends, midpoints, centres and edges exactly as it does to page content, text boxes included. A markup on a hidden layer offers nothing, and a markup being reshaped does not snap to its own old outline. Driven on screen with a square markup (`measure_tool_snaps_to_a_markup`); a text box, a line and a polygon were not driven. Crossings between a markup's edge and page content are not snap points — the engine finds crossings among page content only.
 
 ## O428 — **BUILT, awaiting Ken** — the Dimension groups tab edits how units are displayed
 
@@ -8068,3 +8068,9 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 *"Also please upgrade to the latest egui and refactor as necessary."* Said to the engine session.
 
 **Not started.** The shell is on egui 0.35; the latest is 0.37. The move is verified by driving the binary, not by a build.
+
+## O437 — **OPEN** — measure illuminance on a surface of a 3D model
+
+*"Let's add a luminosity measurement tool so we can select a point and get a measurement based on point or average of a circular area around the point on the surface we selected. What I actually want is a tool to measure illuminance. I want to be able to check how much lighting there is hitting objects like the top of the desks."*
+
+**Waiting on the engine (G288).** The 3D viewer can pick a point on a surface, but the engine has no answer for how much light arrives there, and a glTF light's candela and lux are rescaled on import, so no figure in lux can be given yet. Asked for: the reading at a point and averaged over a disc on the surface, shadowed by the model, split into direct and bounced light and by lamp, in lux where the file's lights are physical and marked relative where they are not. The shell will add the tool to the 3D viewer's Measure tab beside the distance tools. No GUI workaround.

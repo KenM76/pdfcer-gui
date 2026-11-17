@@ -228,6 +228,7 @@ pub mod replaceimage;
 pub mod restack;
 /// The annotations a saved file finally lists on its pages.
 mod savedannots;
+pub mod snap_markup;
 pub mod stroke_style;
 /// A typed move and turn applied together are one Undo.
 pub mod typedonestep;

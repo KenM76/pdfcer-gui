@@ -313,7 +313,9 @@ rather than in millimetres or inches. If a drawing has more than one scale on
 it, **Dimension groups** lets you keep them apart instead of forcing everything
 through one.
 
-Picks snap to the real geometry rather than near it. **Alt** refuses the snap
+Picks snap to the real geometry rather than near it, and to markups as well:
+the corners, ends, midpoints and centres of a markup shape or text box are
+offered beside the page's own. **Alt** refuses the snap
 for one pick, and **Tab** steps through the candidates under the cursor while a
 measure tool is armed.
 

@@ -15,6 +15,7 @@ pub mod circular;
 /// module's name; the re-export below is what keeps `measure::preview` and
 /// `measure::page_to_screen` spelled the way every call site spells them.
 mod draw;
+pub(in crate::canvas) mod markupsnap;
 pub(in crate::canvas) use draw::{Preview, SNAP_MARKER_PT, page_to_screen, preview};
 /// The hover affordance: which line or entity a measuring click will take.
 pub use pdfcer_gui_base::measurehover as hover;
@@ -406,7 +407,10 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
         let alt_held = ctx.input(|i| i.modifiers.alt);
         let at = match resolve_hover(ctx, doc, page_index, Some(canvas_point), targets, map, kind) {
             Some(r) => r.at,
-            None => snapped(&st, picked, alt_held, targets, page_index, map).0,
+            None => {
+                let markups = markupsnap::on_page(doc, page_index);
+                snapped(&st, picked, alt_held, targets, page_index, map, &markups).0
+            }
         };
         let placed = placing.at(at);
         let text = placed.label_anchor().unwrap_or(at);
@@ -461,7 +465,10 @@ pub(super) fn click(pick: Pick<'_>, actions: &mut Vec<Action>) {
     let (p_raw, candidate) =
         match resolve_hover(ctx, doc, page_index, Some(canvas_point), targets, map, kind) {
             Some(r) => (r.at, r.candidate),
-            None => snapped(&st, picked, alt_held, targets, page_index, map),
+            None => {
+                let markups = markupsnap::on_page(doc, page_index);
+                snapped(&st, picked, alt_held, targets, page_index, map, &markups)
+            }
         };
 
     // The fuzzy-never-sneaky gate (rule 4). A **derived** candidate — a

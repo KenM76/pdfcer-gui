@@ -397,7 +397,7 @@ pub(super) fn raise_panel(session: &Session, driver: &Driver, ui_rect: &str) -> 
         (ITEM, item)
     } else {
         return Err(Error::new(format!(
-            "the Redact panel is behind another tab and neither `{TAB}` nor `{ITEM}` is drawn,              so nothing can bring it forward. Dock tabs: {}.",
+            "the Redact panel is behind another tab and neither `{TAB}` nor `{ITEM}` is drawn, so nothing can bring it forward. Dock tabs: {}.",
             list(&declared_names(&trace, ui_rect, "dock.tab."))
         )));
     };

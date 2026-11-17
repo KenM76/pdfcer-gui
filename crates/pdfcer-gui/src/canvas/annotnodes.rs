@@ -461,8 +461,17 @@ fn inner(frame: NodeFrame<'_>, actions: &mut Vec<Action>) -> Option<NodeDrag> {
     // The same query, the same tolerance and the same operator settings the
     // measure tools use — `measure::snap_point` exists precisely so there is
     // one answer to *"where would this land"* rather than two.
-    let (target, snap) =
-        crate::canvas::measure::snap_point(ctx, annot.target.page, free, alt_held, targets, map);
+    let markups =
+        crate::canvas::measure::markupsnap::on_page_but(doc, annot.target.page, annot.target.id);
+    let (target, snap) = crate::canvas::measure::snap_point(
+        ctx,
+        annot.target.page,
+        free,
+        alt_held,
+        targets,
+        map,
+        &markups,
+    );
 
     if stroke::whole(ctx, &shape) {
         return Some(stroke::moved(stroke::Move {

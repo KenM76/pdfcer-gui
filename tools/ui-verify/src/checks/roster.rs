@@ -581,6 +581,7 @@ fn up_to_the_text_rung() -> Vec<Box<dyn Check>> {
         Box::new(restack::AnObjectCanBeBroughtForwardAndSentToBack),
         Box::new(group_objects::PageObjectsGroupIntoOneAndUngroup),
         Box::new(group_markups::GroupedMarkupsSelectTogether),
+        Box::new(snap_markup::MeasureToolSnapsToAMarkup),
         Box::new(nudgecontent::ArrowKeysMoveASelectedObjectOnThePage),
         Box::new(nudgecontent::AnArrowKeyMovesAPartOfAPlacedDrawing),
         Box::new(leafplace::TypedXMovesAPartOfAPlacedDrawing),

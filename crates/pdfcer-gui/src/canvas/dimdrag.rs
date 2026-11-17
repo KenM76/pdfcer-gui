@@ -485,8 +485,16 @@ fn inner(
     // The same query, the same tolerance and the same operator settings the
     // measure tools use. See `measure::snap_point` for why that is one function
     // and not two.
-    let (target, snap) =
-        crate::canvas::measure::snap_point(ctx, doc.view.page_index, free, alt_held, targets, map);
+    let markups = crate::canvas::measure::markupsnap::on_page(doc, doc.view.page_index);
+    let (target, snap) = crate::canvas::measure::snap_point(
+        ctx,
+        doc.view.page_index,
+        free,
+        alt_held,
+        targets,
+        map,
+        &markups,
+    );
 
     //
     // They share everything up to this line — the grab, the delta, the page
