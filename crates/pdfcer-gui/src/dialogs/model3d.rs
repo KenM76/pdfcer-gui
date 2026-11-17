@@ -54,6 +54,7 @@ mod navmouse;
 mod navorbit;
 mod navwalk;
 mod options;
+mod partlights;
 mod partpick;
 mod parts;
 mod partstree;
@@ -211,6 +212,8 @@ pub(crate) struct ModelView {
     measure: measure::Measure,
     /// Which parts are shown and which is highlighted.
     parts: parts::Visibility,
+    /// Which of the model's lamps and glowing parts are switched off.
+    lights: partlights::Lights,
     /// The lighting every saved view asks for and the live picture is lit
     /// by; `None` writes none and lights it as the view asks.
     view_lighting: Option<ThreeDLighting>,
@@ -288,6 +291,7 @@ impl ModelView {
         let saved_list = model.saved.clone();
         trace_opened(page_index, &model, saved.is_some());
         let parts = parts::Visibility::stored(shown_tree(&model));
+        let lights = partlights::Lights::of(&model.drawn);
         let look = shotlook::LookSet::factory();
         Self {
             title: t::view_title(page_index),
@@ -321,6 +325,7 @@ impl ModelView {
             views: None,
             measure: measure::Measure::default(),
             parts,
+            lights,
             view_lighting: look.view_lighting,
             lights_turn: look.lights_turn,
             shadows: look.shadows,
@@ -457,8 +462,10 @@ impl ModelView {
             shown_tree(&self.model),
             self.model.tree_error.as_deref(),
             &mut self.parts,
+            &mut self.lights,
             steerable,
         );
+        self.lights_sync();
     }
 
     /// The model drawn into `area`, steered by the pointer or fingers on it.

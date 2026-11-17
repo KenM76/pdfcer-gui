@@ -968,7 +968,8 @@ The request O280 is built on, answered and consumed.
 - **G286** — OPEN: merge and insert carry no ce-dimension sidecar and their outcomes count nothing, so the shell cannot say the incoming ce dimensions are plain lines.
 - **G287** — OPEN: no page-aware scale calibration; on a `/UserUnit` page a calibrated scale is off by the unit.
 - **G288** — OPEN: no illuminance query in `pdfcer-3d` — nothing returns the light arriving at a `Hit`'s point and normal, and `gltf::lights` rescales physical intensities on import. Wanted for O437. Request filed.
-- **G289** — OPEN: a model light names no tree node (`ModelLight` has no owner, `ModelNode` no lights), so a folder's lights switch cannot reach the lamps stored under it. The shell lists the lamps in a folder of its own and switches glowing parts by lending `finishes` without emission.
+- **G289** — OPEN: a model light names no tree node (`ModelLight` has no owner, `ModelNode` no lights), so a folder's lights switch cannot reach the lamps stored under it. The shell lists the lamps in a folder of its own and switches glowing parts by writing `finishes` without emission into the drawn model. Answered: `ModelLight::node` ships in v0.156.0; consumed when the pin moves.
+- **G290** — OPEN: under `LightingScheme::Artwork` a model with every lamp left out of `AssembledModel::lights` is lit by `Lights::Headlight`, so the last lamp switched off makes the picture brighter. The shell keeps a switched-off lamp in the list, blackened.
 
 ## Filed requests for grouping, markup snapping and the text box — not verdict rows
 

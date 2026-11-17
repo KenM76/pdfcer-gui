@@ -20,6 +20,7 @@ use egui::{Response, Ui};
 use pdfcer_3d::{AssembledModel, ModelNode};
 
 use super::ModelView;
+use super::partlights::Lights;
 use super::parts::Visibility;
 use super::partstree::Shape;
 use crate::text::model3d as m;
@@ -80,13 +81,17 @@ fn ancestors(parents: &[Option<usize>], i: usize) -> impl Iterator<Item = usize>
 }
 
 /// Each node's parent, the shape the selection rules read.
-fn parents(nodes: &[ModelNode]) -> Vec<Option<usize>> {
+pub(super) fn parents(nodes: &[ModelNode]) -> Vec<Option<usize>> {
     nodes.iter().map(|n| n.parent).collect()
 }
 
 /// `hidden` with `i` shown and nothing else: a hidden folder above it is
 /// opened and its other children hidden in its place.
-fn unhidden(parents: &[Option<usize>], hidden: &BTreeSet<usize>, i: usize) -> BTreeSet<usize> {
+pub(super) fn unhidden(
+    parents: &[Option<usize>],
+    hidden: &BTreeSet<usize>,
+    i: usize,
+) -> BTreeSet<usize> {
     let mut out = hidden.clone();
     out.remove(&i);
     let mut below = i;
@@ -166,7 +171,7 @@ impl Visibility {
     }
 
     /// Unfold the list down to node `i` and scroll its row into view.
-    fn show_row(&mut self, parents: &[Option<usize>], i: usize) {
+    pub(super) fn show_row(&mut self, parents: &[Option<usize>], i: usize) {
         let mut folded = self.folded.clone();
         let mut opened = false;
         for above in ancestors(parents, i) {
@@ -202,12 +207,34 @@ fn item(ui: &mut Ui, key: &str, text: &str) -> bool {
     r.clicked()
 }
 
+/// The items that switch the selected parts' own light off and on; none when
+/// no selected part glows.
+// ui-text-exempt: the item keys are trace tokens, never displayed
+fn light_items(ui: &mut Ui, nodes: &[ModelNode], chosen: &[usize], lights: &mut Lights) {
+    let glow = |on: bool| {
+        chosen
+            .iter()
+            .any(|&i| lights.glows(i) && lights.lit(nodes, i) == on)
+    };
+    let (lit, dark) = (glow(true), glow(false));
+    if lit && item(ui, "light_off", m::parts_light_off()) {
+        lights.switch(nodes, chosen, false, "menu");
+    }
+    if dark && item(ui, "light_on", m::parts_light_on()) {
+        lights.switch(nodes, chosen, true, "menu");
+    }
+    if lit || dark {
+        ui.separator();
+    }
+}
+
 /// The menu of a row and of the picture: what can be done with the selected
 /// parts, then the views of the whole model, then the list's folding.
 // ui-text-exempt: the item keys are trace tokens, never displayed
-pub(super) fn menu(ui: &mut Ui, nodes: &[ModelNode], v: &mut Visibility) {
+pub(super) fn menu(ui: &mut Ui, nodes: &[ModelNode], v: &mut Visibility, lights: &mut Lights) {
     let chosen: Vec<usize> = v.selected.iter().copied().collect();
     let parents = parents(nodes);
+    light_items(ui, nodes, &chosen, lights);
     if chosen.iter().any(|&i| v.shows(nodes, i)) && item(ui, "hide", m::parts_hide()) {
         let mut hidden = v.hidden.clone();
         hidden.extend(chosen.iter().copied());
@@ -275,8 +302,9 @@ impl ModelView {
             self.parts
                 .pick(&parents(&self.model.drawn.tree), node, click);
         }
-        let (nodes, parts) = (&self.model.drawn.tree, &mut self.parts);
-        response.context_menu(|ui| menu(ui, nodes, parts));
+        let (nodes, parts, lights) = (&self.model.drawn.tree, &mut self.parts, &mut self.lights);
+        response.context_menu(|ui| menu(ui, nodes, parts, lights));
+        self.lights_sync();
     }
 }
 

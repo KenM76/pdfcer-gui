@@ -226,6 +226,53 @@ pub fn part_highlight_tooltip() -> &'static str {
     "Click to select this part; Ctrl and Shift select more. Right-click for what can be done with the selection."
 }
 
+/// A part's or a lamp's light switch tip.
+#[must_use]
+pub fn part_light_tooltip() -> &'static str {
+    "Turn this light on or off in this window, its pictures and saved pictures. The file is not changed."
+}
+
+/// Switch the selected parts' own light off.
+#[must_use]
+pub fn parts_light_off() -> &'static str {
+    "Turn light off"
+}
+
+/// Switch the selected parts' own light back on.
+#[must_use]
+pub fn parts_light_on() -> &'static str {
+    "Turn light on"
+}
+
+/// The folder the viewer makes up for the model's lamps and its glowing
+/// parts that are in no folder of their own; `count` is what it lists.
+#[must_use]
+pub fn lights_folder(count: usize) -> String {
+    format!("Lights ({count})")
+}
+
+/// The made-up lights folder's tip.
+#[must_use]
+pub fn lights_folder_tooltip() -> &'static str {
+    "The model's lamps, and its glowing parts that are not in a folder of their own. This folder is not in the file; its switch turns all of them on or off."
+}
+
+/// One lamp in the lights folder: its name, or its number when the file
+/// names none, and its kind (1 point, 2 spot, 3 directional, else ambient).
+#[must_use]
+pub fn lamp_row(name: Option<&str>, number: usize, kind: u8) -> String {
+    let kind = match kind {
+        1 => "point lamp",
+        2 => "spot lamp",
+        3 => "directional light",
+        _ => "ambient light",
+    };
+    match name {
+        Some(name) => format!("{name} ({kind})"),
+        None => format!("Light {number} ({kind})"),
+    }
+}
+
 /// Show only the selected parts.
 #[must_use]
 pub fn part_isolate() -> &'static str {

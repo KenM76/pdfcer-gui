@@ -1,7 +1,8 @@
 //! The viewer's part list and which parts it draws: the engine's model tree,
 //! one row per product occurrence under guide lines that fold by branch (see
-//! [`super::partstree`]), each with a box that shows or hides its part and a
-//! name that selects it. [`super::partpick`] holds what a click selects and
+//! [`super::partstree`]), each with a box that shows or hides its part, a
+//! second that switches its light when it has one ([`super::partlights`]) and
+//! a name that selects it. [`super::partpick`] holds what a click selects and
 //! the menu both the list and the picture open.
 //!
 //! The viewer assembles every part, the stored-hidden ones too
@@ -19,6 +20,7 @@ use std::collections::BTreeSet;
 use egui::Ui;
 use pdfcer_3d::{AssembledModel, ModelNode, NameSource};
 
+use super::partlights::{self, Lights};
 use super::partpick::Click;
 use super::partstree::{self, Shape};
 use crate::text::model3d as m;
@@ -114,7 +116,7 @@ impl Visibility {
     }
 
     /// The picture is out of date: count it and say what it now draws.
-    fn changed(&mut self, why: &str) {
+    pub(super) fn changed(&mut self, why: &str) {
         self.version = self.version.wrapping_add(1);
         crate::diag::trace(|| {
             let list = |set: &BTreeSet<usize>| {
@@ -239,6 +241,7 @@ pub(super) fn show(
     nodes: &[ModelNode],
     error: Option<&str>,
     visibility: &mut Visibility,
+    lights: &mut Lights,
     steerable: bool,
 ) {
     ui.label(t::parts_heading(nodes.len()));
@@ -249,6 +252,7 @@ pub(super) fn show(
     if steerable && !nodes.is_empty() {
         ui.small(m::parts_note());
         super::partpick::hidden_only_box(ui, visibility);
+        partlights::folder(ui, nodes, lights, visibility);
     }
     // Only the rows in sight are laid out: a model of a thousand parts
     // otherwise spends most of every frame on rows scrolled out of view.
@@ -271,7 +275,7 @@ pub(super) fn show(
                     shape: &shape,
                     rows: &rows,
                 };
-                row(ui, &tree, i, node, visibility, steerable);
+                row(ui, &tree, i, node, visibility, lights, steerable);
             }
         }
     });
@@ -295,6 +299,7 @@ fn row(
     i: usize,
     node: &ModelNode,
     visibility: &mut Visibility,
+    lights: &mut Lights,
     steerable: bool,
 ) {
     ui.horizontal(|ui| {
@@ -308,6 +313,7 @@ fn row(
         }
         if steerable {
             show_box(ui, i, visibility);
+            partlights::glow_box(ui, nodes, i, lights);
         }
         let name = node
             .name
@@ -336,7 +342,7 @@ fn row(
             if let Some(click) = Click::read(&r) {
                 visibility.click_row(tree.rows, i, click);
             }
-            r.context_menu(|ui| super::partpick::menu(ui, nodes, visibility));
+            r.context_menu(|ui| super::partpick::menu(ui, nodes, visibility, lights));
             r
         };
         match node.name_from {

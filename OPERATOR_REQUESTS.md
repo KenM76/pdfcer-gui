@@ -8111,7 +8111,9 @@ Added the same day:
 
 All eight are owed before the next release.
 
-Built: 1, 3, 4, 5 and 6, driven by `the_3d_viewer_selects_and_hides_from_the_picture`. Selecting needs no mode: a click on a part selects it whenever the viewer is turning the model rather than walking or measuring. Show hidden parts only is on the menu and as a switch above the part list. Not built: 2, 7 and 8, the lights.
+Built: 1, 3, 4, 5 and 6, driven by `the_3d_viewer_selects_and_hides_from_the_picture`. Selecting needs no mode: a click on a part selects it whenever the viewer is turning the model rather than walking or measuring. Show hidden parts only is on the menu and as a switch above the part list.
+
+Built: 2, 7 and 8, driven by `the_3d_viewer_switches_lights_off_and_on`. A part that gives off light has a second box beside the show/hide one; a folder's box switches every glowing part in it. The menu has Turn light off and Turn light on. The model's lamps and its glowing parts that are in no folder of their own are listed in a Lights folder the viewer makes up, with one switch for all. **Not yet:** a folder's box does not switch the lamps stored under that folder, because the pinned engine does not say which folder carries a lamp; the engine has answered (G289, in its v0.156.0) and the box will reach them when the pin moves.
 
 ## O441 — **OPEN** — a light-map view of a 3D model, banded at the recommended light levels
 

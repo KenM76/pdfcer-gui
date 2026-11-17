@@ -71,7 +71,7 @@ impl Check for TheViewerSelectsFromThePicture {
 }
 
 /// A `a|b|c` or `-` trace list as a set.
-fn set(line: &TraceLine, key: &str) -> BTreeSet<usize> {
+pub(crate) fn set(line: &TraceLine, key: &str) -> BTreeSet<usize> {
     line.get(key)
         .unwrap_or("-")
         .split('|')
@@ -79,16 +79,16 @@ fn set(line: &TraceLine, key: &str) -> BTreeSet<usize> {
         .collect()
 }
 
-struct Drive<'a> {
-    ctx: &'a CheckContext,
-    session: &'a Session,
-    pointer: &'a ScriptedPointer,
+pub(crate) struct Drive<'a> {
+    pub(crate) ctx: &'a CheckContext,
+    pub(crate) session: &'a Session,
+    pub(crate) pointer: &'a ScriptedPointer,
 }
 
 impl Drive<'_> {
     /// Click the centre of `region` with `how` (`""`, `" btn=r"`,
     /// `" mods=ctrl"`) and return the `event` line it traced, if any.
-    fn click(&self, region: &str, how: &str, event: &str) -> Result<Option<TraceLine>> {
+    pub(crate) fn click(&self, region: &str, how: &str, event: &str) -> Result<Option<TraceLine>> {
         let trace = self.session.trace()?;
         let Some((rect, vp)) = declared_in(&trace, ui_rect(self.ctx)?, region) else {
             return Err(crate::error::Error::new(format!(

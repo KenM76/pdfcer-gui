@@ -975,10 +975,11 @@ pub mod button_icon_paste;
 /// Closing a document with its 3D viewer open asks first; the viewer is a
 /// window of its own.
 pub mod model_close_asks;
+/// The 3D viewer selects, hides and restores parts from its picture.
+pub mod model_lights;
 /// The 3D viewer saves its named views into the file.
 pub mod model_measure;
 pub mod model_options;
-/// The 3D viewer selects, hides and restores parts from its picture.
 pub mod model_pick;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
