@@ -8074,3 +8074,15 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 *"Let's add a luminosity measurement tool so we can select a point and get a measurement based on point or average of a circular area around the point on the surface we selected. What I actually want is a tool to measure illuminance. I want to be able to check how much lighting there is hitting objects like the top of the desks."*
 
 **Waiting on the engine (G288).** The 3D viewer can pick a point on a surface, but the engine has no answer for how much light arrives there, and a glTF light's candela and lux are rescaled on import, so no figure in lux can be given yet. Asked for: the reading at a point and averaged over a disc on the surface, shadowed by the model, split into direct and bounced light and by lamp, in lux where the file's lights are physical and marked relative where they are not. The shell will add the tool to the 3D viewer's Measure tab beside the distance tools. No GUI workaround.
+
+## O438 — **OPEN** — the print preview shows the separations, one ink at a time
+
+*"When I am in the Print dialogue under Color and Separations (one sheet per ink) it notes that the preview still shows the page in colour, but I'd like an option to click to show the separations and navigation arrows that appear next to the other controls on the print preview - a left and right arrow that shows the preview separations."*
+
+A switch on the print preview that shows the plates in place of the colour page, and a left and a right arrow beside the preview's other controls that step through the inks. The note that the preview is still in colour goes when the preview can show the plates.
+
+## O439 — **OPEN** — glyphs on the print preview's controls, and the main window's view controls there too
+
+*"Also we need glyphs for our print preview controls, and also we should add the controls for navigating that we have at the bottom right of our main pdfcer-gui window, and they also need glyphs."*
+
+Every control on the print preview carries a glyph. The preview gains the view-navigation controls the main window has at its bottom right, and those carry glyphs in both places.
