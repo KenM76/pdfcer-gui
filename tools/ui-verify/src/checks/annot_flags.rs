@@ -19,8 +19,9 @@ const OFFSCREEN: &str = "-4200,-4200,1200,1350";
 const INVOKE: &str = "mode.edit,markup.comments,file.properties";
 const FIXTURE: &str = "layer-assign.pdf";
 const METHOD: &str = "Rebuild it with `python fixtures/layer-assign.PROVENANCE.py`.";
-/// A point inside the fixture's `/Square` (`/Rect [480 350 720 520]`, no `/F`).
-const ANNOT: (f64, f64) = (600.0, 435.0);
+/// On the left edge of the fixture's hollow `/Square` (`/Rect [480 350 720 520]`,
+/// pen 3, no `/F`): its inside is not the mark.
+const ANNOT: (f64, f64) = (481.5, 400.0);
 const PRINTS: &str = "properties.annot_flags.prints";
 const ON_SCREEN: &str = "properties.annot_flags.on_screen";
 const COMMENTS_TAB: &str = "dock.tab.markup.comments";

@@ -17,7 +17,7 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 /// The locked square: its key and a point on it.
-const LOCKED: (&str, (f64, f64)) = ("/NM (LO)", (50.0, 35.0)); // ui-text-exempt: a PDF key
+const LOCKED: (&str, (f64, f64)) = ("/NM (LO)", (21.0, 28.0)); // ui-text-exempt: a PDF key
 const DIMENSION_KEY: &str = "/LineDimension"; // ui-text-exempt: a PDF key
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 const TOGGLED: &str = "annot-toggled"; // ui-text-exempt: a trace event name

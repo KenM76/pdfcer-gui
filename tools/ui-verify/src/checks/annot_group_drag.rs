@@ -17,7 +17,7 @@ use crate::launch::Session;
 use crate::report::CheckReport;
 
 /// The locked square: its key, a point on it and its top edge.
-pub(super) const LOCKED: (&str, (f64, f64), f64) = ("/NM (LO)", (50.0, 35.0), 50.0); // ui-text-exempt: a PDF key
+pub(super) const LOCKED: (&str, (f64, f64), f64) = ("/NM (LO)", (21.0, 28.0), 50.0); // ui-text-exempt: a PDF key
 /// How far down the drag goes, in page points.
 const DROP: f64 = 30.0;
 const TOGGLED: &str = "annot-toggled"; // ui-text-exempt: a trace event name

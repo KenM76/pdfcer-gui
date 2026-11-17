@@ -25,10 +25,11 @@ pub(super) const FIXTURE: Fixture = Fixture {
 };
 const SAVE_PATH_ENV: &str = "PDFCER_DIAG_SAVE_PATH"; // ui-text-exempt: an environment variable name
 
-/// Each annotation: the substring that finds it in a saved copy, a point on
-/// it, and its top edge in the fixture.
-pub(super) const SQUARE: (&str, (f64, f64), f64) = ("/NM (SQ)", (70.0, 220.0), 240.0); // ui-text-exempt: a PDF key
-pub(super) const CIRCLE: (&str, (f64, f64), f64) = ("/NM (CI)", (170.0, 200.0), 220.0); // ui-text-exempt: a PDF key
+/// Each annotation: the substring that finds it in a saved copy, a point on its
+/// ink (a hollow shape is picked by its outline, off the grips),
+/// and its top edge in the fixture.
+pub(super) const SQUARE: (&str, (f64, f64), f64) = ("/NM (SQ)", (41.0, 210.0), 240.0); // ui-text-exempt: a PDF key
+pub(super) const CIRCLE: (&str, (f64, f64), f64) = ("/NM (CI)", (149.5, 213.4), 220.0); // ui-text-exempt: a PDF key
 pub(super) const LINK: (&str, (f64, f64), f64) = ("/NM (LK)", (270.0, 170.0), 180.0); // ui-text-exempt: a PDF key
 const DIMENSION: (&str, (f64, f64), f64) = ("/LineDimension", (130.0, 100.0), 108.5); // ui-text-exempt: a PDF key
 /// A crossing band, dragged right to left, over the link and the content

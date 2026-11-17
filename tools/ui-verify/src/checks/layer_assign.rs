@@ -62,8 +62,8 @@ const SPOT: (f64, f64) = (150.0, 450.0);
 
 /// The centre of the fixture's unlayered blue box, in page points.
 const BOX: (f64, f64) = (250.0, 200.0);
-/// A point inside the fixture's `/Square` annotation, in page points.
-const ANNOT: (f64, f64) = (600.0, 435.0);
+/// On the left edge of the fixture's hollow `/Square` annotation, in page points.
+const ANNOT: (f64, f64) = (481.5, 400.0);
 
 /// Objects pasted while Walls is the current layer land on Walls.
 pub struct PasteGoesOnTheCurrentLayer;

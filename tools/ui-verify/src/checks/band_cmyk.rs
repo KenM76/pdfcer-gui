@@ -25,8 +25,8 @@ const FIXTURE: Fixture = Fixture {
     },
 };
 const STEM: &str = "band-cmyk";
-/// Inside the square's `/Rect`, page space.
-const ON_THE_SQUARE: (f64, f64) = (270.0, 430.0);
+/// On the left edge of the hollow square (`/Rect [200 400 340 460]`), page space.
+const ON_THE_SQUARE: (f64, f64) = (200.5, 415.0);
 const FORMAT_TAB: &str = "ribbon.tab.format";
 /// Mirror `app::markupband::REGION_STROKE` and the picker's tab region.
 const SWATCH: &str = "markup_band.stroke";
