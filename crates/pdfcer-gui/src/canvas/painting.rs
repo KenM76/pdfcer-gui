@@ -773,7 +773,9 @@ pub(super) fn draw(
     // It draws a caret and an extent bracket and **no glyphs** — see
     // `textedit::preview`, which carries the argument for why a better ghost is
     // the wrong fix for `DEFECTS.md` D4a rather than a deferred one.
-    if active_tool.text_edit_kind().is_some() {
+    if active_tool.text_edit_kind().is_some()
+        || crate::canvas::textedit::freetext::live(&ctx, active_tool)
+    {
         crate::canvas::textedit::paint::preview(
             ui,
             &ctx,
@@ -781,6 +783,7 @@ pub(super) fn draw(
                 doc,
                 page_index,
                 map,
+                pen,
             },
         );
     }

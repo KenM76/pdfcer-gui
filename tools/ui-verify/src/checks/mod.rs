@@ -230,6 +230,8 @@ pub mod restack;
 mod savedannots;
 pub mod snap_markup;
 pub mod stroke_style;
+/// A markup text box is typed on the page.
+pub mod text_box_live;
 /// A typed move and turn applied together are one Undo.
 pub mod typedonestep;
 /// A typed X over several selected objects moves them together, as one Undo.

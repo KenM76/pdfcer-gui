@@ -214,9 +214,10 @@ impl Keys<'_> {
                 let s = super::repertoire::sieve(self.ctx, self.doc, draft.page, *run, t);
                 (s.kept, s.refused, s.two_ways)
             }
-            Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::Block { .. } => {
-                (t.to_owned(), None, Vec::new())
-            }
+            Anchor::Origin { .. }
+            | Anchor::Box { .. }
+            | Anchor::Block { .. }
+            | Anchor::FreeText { .. } => (t.to_owned(), None, Vec::new()),
         };
         if let (Anchor::Run { run, .. }, Some((missing, base_font))) = (&draft.anchor, &refused) {
             if let Some(face) = super::reface::plan(self.ctx, self.doc, draft, missing, base_font) {

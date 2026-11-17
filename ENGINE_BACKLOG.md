@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **66 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `wanted` — a real gap — **65 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -115,7 +115,6 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Read a marker's colour** — `EditSession::marker_color`, `MarkerColor`, `ColorEntry` | **wanted, at the pin since v0.82.0; request G176.** A marker's Icon colour row reads it instead of `panels::properties::markup::read_colour`; `ColorEntry::Absent`, `ColorEntry::Empty` and `ColorEntry::Malformed` separate no colour from a bad one, and `ColorEntry::Device` carries the colour; the free function `color_entry` reads the same from a dictionary. |
 | **Read a link's as-written target and border** — `EditSession::link`, `LinkReading` | **wanted, at the pin since v0.82.0; request G178.** `panels::properties::link` reads a link through it, `LinkReading::border_color` as a `ColorEntry`; calling it deletes `pdfcer_gui_base::linkread`. |
 | **List the document's named destinations** — `DestinationReader::named_destinations` <!--namesake:named_destinations--> (the shell's hit is an unrelated count field) | **wanted, at the pin since v0.82.0; request G179.** `dialogs::link` offers the document's named destinations as a list instead of a typed name. |
-| **Live preview of a text box (FreeText) before commit** — `pdfcer_core::annot_author::text_preview` (`free_text_preview`, `FreeTextPreview`), `pdfcer_core::edit::free_text_preview` (`EditSession::free_text_note_preview`), `pdfcer_render::edit_preview::paint_text_annotation_preview` | **wanted — O432.** The text box dialog and the retype route draw the engine's own appearance while typing, and say off-canvas when the text clips or a character cannot be written. |
 
 ### Forms (AcroForm)
 
@@ -256,7 +255,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **491 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **492 of 579** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -266,6 +265,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 |---|---|
 | **Remove white margins** — `pdfcer_render::white_margin_crop` (shared by both shells) … | **shipped — `pdfcer_render::white_margin_crop` (the `pdfcer_render::white_margins` module; its scale and threshold constants are the engine's to choose), the Crop pages window's Remove white margins; the inferred box and its limits are disclosed in the status line and tooltip.** |
 | **A header, footer or printer's marks survive `print --comments fields-only`** … | **shipped — `dialogs::print::running::build` calls `EditSession::clear_page_content` on the print copy under Form fields only and renders it with `AnnotationScope::Document`; driven by `print_fields_only_keeps_the_header_and_footer`.** |
+| **Live preview of a text box (FreeText) before commit** … | **shipped — `canvas::textedit::freetext` bakes `annot_author::free_text_preview` and paints it with `edit_preview::paint_text_annotation_preview` while a dragged box is typed in; a clipped width is disclosed in the status line; driven by `a_text_box_is_typed_on_the_page`.** Retyping an existing box in place, through the session's note-preview verb, is O432's remaining part. |
 | **Paint shading — function-based (type 1)** … | **shipped — the renderer paints it, so the canvas, preview, print and every export that renders show it with nothing to choose here.** |
 | **Fisheye lens for the 3D camera** — `Projection::Fisheye`, `FrameLens` | **shipped — the 3D viewer's Lens choice (O391); driven by `the_3d_viewer_walks_and_its_gimbal_turns_the_view`.** The viewer offers Flat / Fisheye / Auto with the curve, Auto switching to fisheye past a chosen angle; the CPU picture draws it directly and the GPU picture through `FrameLens` faces and the lens shaders. |
 | **3D measurements on a saved view (`/MA`)** — `ThreeDSavedView.measurements` … | **shipped; our request G245, complete at v0.113.0.** The 3D viewer's measure tool (O399): read, drawn and listed from a saved view, and a new one kept on it, with the PDF 2.0 disclosure off the canvas. Driven by `the_3d_viewer_measures_from_points_on_the_model`. |
@@ -973,7 +973,7 @@ The request O280 is built on, answered and consumed.
 
 - **G280** — CONSUMED at v0.154.0: `group_objects` / `ungroup_form` and `group_annotations` / `ungroup_annotations` behind Group and Ungroup on both Arrange groups (O433).
 - **G281** — CONSUMED at v0.154.0: `snap_candidates_with_markups` over `EditSession::markup_snap_geometry` behind every snap query (O427).
-- **G282** — answered on the engine's main, not in a tag: a painter in `pdfcer_render::edit_preview` for a markup text box being typed (`TextAnnotSpec`), with laid-out lines and caret advances. O432 waits on it.
+- **G282** — CONSUMED at v0.154.0 for a new box: `annot_author::free_text_preview` and `edit_preview::paint_text_annotation_preview` behind the text box typed on the page (O432). `EditSession::free_text_note_preview`, for retyping an existing box, is not yet called.
 
 ## Engine arrivals at v0.113.0 — not verdict rows
 

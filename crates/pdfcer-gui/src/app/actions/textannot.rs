@@ -270,6 +270,9 @@ pub(super) fn commit(
                 });
             }
             let mut notes = disclosures(out.unencodable_chars, out.stamp_label_fit.as_ref());
+            if crate::canvas::textedit::freetext::clips(&spec) {
+                notes.push(crate::text::textannot::text_box_clips().to_owned());
+            }
             notes.extend(receipt);
             Ok::<Vec<String>, pdfcer_core::edit::EditError>(notes)
         });

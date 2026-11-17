@@ -101,6 +101,8 @@ pub mod restyled;
 pub use caret::{backspace, delete_forward, insert, word_left, word_right};
 /// Why the open draft's preview is in a stand-in font, for the status bar.
 pub mod fallback;
+/// A text box typed in place, painted as its commit will be.
+pub mod freetext;
 /// Every typed edit's options, able to extend the run's subset from its
 /// installed face.
 pub mod installed;
@@ -253,6 +255,18 @@ pub enum Anchor {
         /// place. `places` is empty.
         recognised: bool,
     },
+    /// A text box (a FreeText annotation) being typed in place: its dragged
+    /// rectangle in PDF user space. See [`freetext`].
+    FreeText {
+        /// Left edge.
+        llx: f64,
+        /// Bottom edge.
+        lly: f64,
+        /// Right edge.
+        urx: f64,
+        /// Top edge.
+        ury: f64,
+    },
 }
 
 /// An in-progress, operator-composed edit. Never written anywhere until commit.
@@ -349,6 +363,17 @@ pub fn composing(ctx: &egui::Context) -> bool {
     ctx.text_edit_focused() || read(ctx).is_some()
 }
 
+/// Whether `tool` is the one `draft` belongs to. A draft whose tool is not
+/// armed is settled by `app::frame`.
+#[must_use]
+pub fn owned_by(draft: &Draft, tool: crate::canvas::tool::CanvasTool) -> bool {
+    if freetext::is(draft) {
+        freetext::tool_matches(tool)
+    } else {
+        tool.text_edit_kind() == Some(draft.kind)
+    }
+}
+
 /// Read the draft without creating one. `None` when nothing is being composed.
 #[must_use]
 pub fn read(ctx: &egui::Context) -> Option<Draft> {
@@ -424,6 +449,7 @@ pub(super) fn commit_into(
                 wrap: Some((*llx, *lly, *urx, *ury)),
             });
         }
+        Anchor::FreeText { .. } => actions.extend(freetext::commit(draft)),
         Anchor::Block {
             block,
             original,
@@ -515,6 +541,8 @@ pub struct Preview<'a> {
     pub page_index: usize,
     /// The frame's screen ⟷ canvas mapping.
     pub map: &'a PageMapping,
+    /// The markup pen, for the colour and opacity a text box is authored in.
+    pub pen: crate::canvas::markup::pen::Pen,
 }
 
 #[cfg(test)]

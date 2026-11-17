@@ -120,7 +120,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     session.settle(40);
     let driver = Driver::new(session.window());
 
-    // --- A: Review mode, Markup tab, arm the text box ----------------------
+    // --- A: Review mode, Markup tab, arm the sticky note ----------------------
     crate::checks::driving::click_mode_segment(&session, &driver, ui_rect, "review")?;
     let trace = session.trace()?;
     let tab = declared(&trace, ui_rect, "ribbon.tab.markup").ok_or_else(|| {
@@ -142,9 +142,9 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let trace = session.trace()?;
-    let item = declared(&trace, ui_rect, "ribbon.item.markup.text_box").ok_or_else(|| {
+    let item = declared(&trace, ui_rect, "ribbon.item.markup.sticky_note").ok_or_else(|| {
         Error::new(format!(
-            "no `ribbon.item.markup.text_box` region on the Markup tab. Items declared: {}.",
+            "no `ribbon.item.markup.sticky_note` region on the Markup tab. Items declared: {}.",
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
         ))
     })?;
@@ -156,11 +156,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .any(|l| l.get("tool").is_some_and(|t| t.contains("TextAnnot")))
     {
         return Err(Error::new(
-            "Markup > Text box armed nothing, so the drag below would draw no box and the \
+            "Markup > Sticky note armed nothing, so the drag below would draw no box and the \
              dialog under test would never open.",
         ));
     }
-    report.note("Markup > Text box armed the text-annotation tool");
+    report.note("Markup > Sticky note armed the text-annotation tool");
 
     let before = annot_count(&session);
 

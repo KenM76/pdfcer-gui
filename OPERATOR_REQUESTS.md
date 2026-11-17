@@ -8037,11 +8037,13 @@ His words, forwarding a user's question with Acrobat's two windows pictured: *"D
 
 **Built.** Markup has a *Content* group with *Add text* and *Paragraphs*, the same tools as on Edit, shown in Edit mode only. *Add text* on either tab now shows pressed while armed. Driven by `the_markup_tab_arms_the_text_tools` and `the_markup_text_tools_are_absent_in_review`.
 
-## O432 — **OPEN** — the markup text box edits with a live preview, as Acrobat's does
+## O432 — **BUILT IN PART, awaiting Ken** — the markup text box edits with a live preview, as Acrobat's does
 
 *"Why does the Markup Text box still not edit with a live preview? Is it working the same way Acrobat does it?"*
 
-**Waiting on the engine (G282).** The engine has no painter for a markup text box being typed, so the box cannot show what the saved page will. No GUI workaround.
+**Built for a new box, on engine v0.154.0.** Dragging Markup ▸ Text box opens the box on the page where it was dragged, with a caret in it. The words are drawn as they are typed by the engine's own text-box painter, in the pen's colour and opacity, so the box being typed in is the box that is saved. Enter starts a new line; the box grows downward when the words need more lines than were dragged. Ctrl+Enter, Escape, a drag elsewhere or putting the tool down writes it, as every way out of typed text does; a box left empty writes nothing, and Undo takes a written one back. Ctrl+Enter, Escape and the drag elsewhere are driven; putting the tool down is not. A click or a sweep inside the box places the caret and selects. Words wider than the box are cut at its edge and the status line says so. Driven off-screen by `a_text_box_is_typed_on_the_page`.
+
+**Not built:** retyping a text box that already exists still goes through Properties; on a rotated page a new box still asks for its words in the dialog; alignment and font controls while typing are O255.
 
 ## O433 — **BUILT, awaiting Ken** — group items together as Inkscape does
 
@@ -8086,3 +8088,29 @@ A switch on the print preview that shows the plates in place of the colour page,
 *"Also we need glyphs for our print preview controls, and also we should add the controls for navigating that we have at the bottom right of our main pdfcer-gui window, and they also need glyphs."*
 
 Every control on the print preview carries a glyph. The preview gains the view-navigation controls the main window has at its bottom right, and those carry glyphs in both places.
+
+## O440 — **OPEN** — right-click, multi-select, hide and lights-off in the 3D viewer, with the model tree following; before the next release
+
+*"I should have an option to be able to right click on an object in 3D and have some menu options of what I can do with it, including hide it, or change it from being luminous (luminus could be the wrong word - I mean like a light) to having none (like the light is turned off). Also a right click should jump to and highlight it on the feature tree. Also there should be a select option where I can click on objects, and hold the typical selection control keys and get these things selected on the model tree. also right clicking on the model tree area should give me options of what I can do to the selected objects like when I right click in the 3D view. Also need a right click option to show just the hidden objects, and when I click on them they disappear from that view and become unhidden when I go back to the regular view - just like the feature SolidWorks has. please do these things before the next release."*
+
+1. Right-click an object in the 3D view: a menu of what can be done with it, including Hide.
+2. The same menu turns an object that is a light off (emits nothing) and back on.
+3. A right-click scrolls the model tree to the object and highlights it.
+4. A Select mode: click picks an object, Ctrl and Shift extend as everywhere else, and the model tree shows the same selection.
+5. Right-click in the model tree gives the same menu for the selected objects.
+6. Show hidden only, from the right-click menu, as SolidWorks does it: only hidden objects are drawn, clicking one removes it from that view, and on return to the normal view the clicked ones are shown again.
+
+Added the same day:
+
+*"add to my request: an additional checkbox next to the folders/parts of the model tree to turn off lights, just like we have the checkbox now to show/hide. Also our model can contain fake lights apparently - if they aren't already stored in their own dedicated folder in the assembly tree when the model is opened they should be put in a virtual folder so we can turn them off and on easily."*
+
+7. A second checkbox beside each folder and part in the model tree turns its lights off and on, beside the show/hide one.
+8. Lights the model carries that are not already in a folder of their own in the assembly tree are gathered into a virtual folder when the model is opened, so they can be switched together.
+
+All eight are owed before the next release.
+
+## O441 — **OPEN** — a light-map view of a 3D model, banded at the recommended light levels
+
+*"Let's add another view option for 3D models: make it so it light maps the models surfaces depending on the intensity of the light hitting them. There are recommended light levels depending on the building areas and work surface areas - I want to have the light level steps match these so that there is enough differentiation in the scale colours to tell between them whether say a desk has too much light or too little."*
+
+A view option in the 3D viewer colours each surface by the light arriving on it. The colour scale steps at the recommended levels for building areas and work surfaces, so a surface with too little or too much light for its use reads as a different colour from one that is right. The step values are lifted from a named published standard and cited beside the scale, never chosen here. Shares its arithmetic with O437.

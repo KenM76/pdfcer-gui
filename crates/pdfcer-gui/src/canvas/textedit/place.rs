@@ -157,7 +157,7 @@ pub fn click(
         // Both authoring anchors start empty. A box is not pre-filled with
         // anything: an operator who drags a rectangle has asked for somewhere to
         // type, not for a suggestion.
-        Anchor::Origin { .. } | Anchor::Box { .. } => String::new(),
+        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => String::new(),
     };
     // The caret lands WHERE THE CLICK LANDED, not at the end.
     //
@@ -170,7 +170,7 @@ pub fn click(
         Anchor::Run { run, .. } => {
             caret_index_at(click, *run).unwrap_or_else(|| text.chars().count())
         }
-        Anchor::Origin { .. } | Anchor::Box { .. } => 0,
+        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => 0,
         Anchor::Block { .. } => text.chars().count(),
     };
     let mut draft = Draft {
@@ -217,6 +217,9 @@ pub fn click(
                     Anchor::Box {
                         llx, lly, urx, ury, ..
                     } => format!("box={llx:.1},{lly:.1},{urx:.1},{ury:.1}"),
+                    Anchor::FreeText { llx, lly, urx, ury } => {
+                        format!("text-box={llx:.1},{lly:.1},{urx:.1},{ury:.1}")
+                    }
                     Anchor::Block { block, .. } => format!("block={block}"),
                 },
                 d.text.chars().count(),

@@ -96,7 +96,10 @@ pub fn bake_new(
 
 /// The page-space to screen affine, `[a, b, c, d, e, f]` with
 /// `x' = a·x + c·y + e`, read off three mapped points.
-fn page_to_screen(page: &pdfcer_core::page_tree::Page, map: &PageMapping) -> Option<[f32; 6]> {
+pub(crate) fn page_to_screen(
+    page: &pdfcer_core::page_tree::Page,
+    map: &PageMapping,
+) -> Option<[f32; 6]> {
     let at = |x: f64, y: f64| {
         crate::canvas::measure::page_to_screen(pdfcer_core::vector::Point::new(x, y), page, map)
     };
@@ -104,6 +107,83 @@ fn page_to_screen(page: &pdfcer_core::page_tree::Page, map: &PageMapping) -> Opt
     let ex = at(1.0, 0.0)? - o;
     let ey = at(0.0, 1.0)? - o;
     Some([ex.x, ex.y, ey.x, ey.y, o.x, o.y])
+}
+
+/// A transparent pixmap covering a page rectangle on screen, and the
+/// transform that paints page user space into it.
+pub(crate) struct Patch {
+    /// Where the pixmap lands, in screen points, snapped to whole pixels.
+    pub body: Rect,
+    /// Pixmap width, device pixels.
+    pub w: u32,
+    /// Pixmap height, device pixels.
+    pub h: u32,
+    /// Page user space to pixmap pixels.
+    pub to_pixels: tiny_skia::Transform,
+    /// The pixels, transparent.
+    pub pixmap: tiny_skia::Pixmap,
+}
+
+/// The patch for page rectangle `r` under the page-to-screen affine `m`,
+/// clipped to `clip`. `None` when nothing of it is on screen or it is larger
+/// than [`MAX_SIDE_PX`].
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+pub(crate) fn patch(
+    ctx: &egui::Context,
+    m: [f32; 6],
+    r: pdfcer_core::page_tree::Rect,
+    clip: Rect,
+) -> Option<Patch> {
+    let corners = [
+        (r.llx, r.lly),
+        (r.urx, r.lly),
+        (r.llx, r.ury),
+        (r.urx, r.ury),
+    ]
+    .map(|(x, y)| {
+        Pos2::new(
+            m[0] * x as f32 + m[2] * y as f32 + m[4],
+            m[1] * x as f32 + m[3] * y as f32 + m[5],
+        )
+    });
+    let ppp = ctx.pixels_per_point();
+    let clipped = Rect::from_points(&corners).expand(2.0).intersect(clip);
+    if clipped.width() <= 0.0 || clipped.height() <= 0.0 {
+        return None;
+    }
+    let body = Rect::from_min_max(
+        Pos2::new(
+            (clipped.min.x * ppp).floor() / ppp,
+            (clipped.min.y * ppp).floor() / ppp,
+        ),
+        Pos2::new(
+            (clipped.max.x * ppp).ceil() / ppp,
+            (clipped.max.y * ppp).ceil() / ppp,
+        ),
+    );
+    if body.width() * ppp > MAX_SIDE_PX || body.height() * ppp > MAX_SIDE_PX {
+        return None;
+    }
+    let (w, h) = (
+        (body.width() * ppp).round().max(1.0) as u32,
+        (body.height() * ppp).round().max(1.0) as u32,
+    );
+    let pixmap = tiny_skia::Pixmap::new(w, h)?;
+    let to_pixels = tiny_skia::Transform::from_row(
+        m[0] * ppp,
+        m[1] * ppp,
+        m[2] * ppp,
+        m[3] * ppp,
+        (m[4] - body.min.x) * ppp,
+        (m[5] - body.min.y) * ppp,
+    );
+    Some(Patch {
+        body,
+        w,
+        h,
+        to_pixels,
+        pixmap,
+    })
 }
 
 /// Draw `preview` on the canvas, clipped to `clip`. `false` when nothing was
@@ -125,55 +205,16 @@ pub fn paint(
     if let Some(id) = baked.id {
         underlay(painter, doc, page, clip, m, id);
     }
-    let r = preview.appearance.rect;
-    let corners = [
-        (r.llx, r.lly),
-        (r.urx, r.lly),
-        (r.llx, r.ury),
-        (r.urx, r.ury),
-    ]
-    .map(|(x, y)| {
-        Pos2::new(
-            m[0] * x as f32 + m[2] * y as f32 + m[4],
-            m[1] * x as f32 + m[3] * y as f32 + m[5],
-        )
-    });
-    let ppp = ctx.pixels_per_point();
-    // Snapped outward to whole physical pixels, so the texture is drawn 1:1.
-    // Off the grid every texel is resampled across two pixels and thin text
-    // comes out grey, lighter than the commit draws it.
-    let clipped = Rect::from_points(&corners).expand(2.0).intersect(clip);
-    if clipped.width() <= 0.0 || clipped.height() <= 0.0 {
-        return false;
-    }
-    let body = Rect::from_min_max(
-        Pos2::new(
-            (clipped.min.x * ppp).floor() / ppp,
-            (clipped.min.y * ppp).floor() / ppp,
-        ),
-        Pos2::new(
-            (clipped.max.x * ppp).ceil() / ppp,
-            (clipped.max.y * ppp).ceil() / ppp,
-        ),
-    );
-    if body.width() * ppp > MAX_SIDE_PX || body.height() * ppp > MAX_SIDE_PX {
-        return false;
-    }
-    let (w, h) = (
-        (body.width() * ppp).round().max(1.0) as u32,
-        (body.height() * ppp).round().max(1.0) as u32,
-    );
-    let Some(mut pixmap) = tiny_skia::Pixmap::new(w, h) else {
+    let Some(Patch {
+        body,
+        w,
+        h,
+        to_pixels,
+        mut pixmap,
+    }) = patch(ctx, m, preview.appearance.rect, clip)
+    else {
         return false;
     };
-    let to_pixels = tiny_skia::Transform::from_row(
-        m[0] * ppp,
-        m[1] * ppp,
-        m[2] * ppp,
-        m[3] * ppp,
-        (m[4] - body.min.x) * ppp,
-        (m[5] - body.min.y) * ppp,
-    );
     let diagnostics = pdfcer_render::edit_preview::paint_dimension_preview(
         &doc.session.view(),
         preview,

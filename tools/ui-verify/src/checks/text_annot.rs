@@ -1,4 +1,4 @@
-//! `text_annot_places_and_authors` — a text box drawn on the page, typed into,
+//! `text_annot_places_and_authors` — a sticky note dragged on the page, typed into in the dialog,
 //! and actually written to the document.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/text_annot.md`.
@@ -26,7 +26,7 @@ impl Check for TextAnnotPlacesAndAuthors {
     }
 
     fn defect(&self) -> &'static str {
-        "the text box control does not arm, the drag authors an EMPTY annotation on release \
+        "the sticky note control does not arm, the drag authors an EMPTY annotation on release \
          instead of asking for words, the dialog never appears, or accepting it writes \
          nothing to the document"
     }
@@ -126,11 +126,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         ));
     }
 
-    // --- 2: arm the text box -----------------------------------------------
+    // --- 2: arm the sticky note -----------------------------------------------
     let trace = session.trace()?;
-    let item = declared(&trace, ui_rect, "ribbon.item.markup.text_box").ok_or_else(|| {
+    let item = declared(&trace, ui_rect, "ribbon.item.markup.sticky_note").ok_or_else(|| {
         Error::new(format!(
-            "no `ribbon.item.markup.text_box` region on the Markup tab. Items declared: {}.",
+            "no `ribbon.item.markup.sticky_note` region on the Markup tab. Items declared: {}.",
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
         ))
     })?;
@@ -142,14 +142,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .any(|l| l.get("tool").is_some_and(|t| t.contains("TextAnnot")))
     {
         return Ok(Some(
-            "clicking Markup > Text box traced no `markup-tool tool=TextAnnot(..)` line, so \
+            "clicking Markup > Sticky note traced no `markup-tool tool=TextAnnot(..)` line, so \
              the control armed nothing. Until 2026-08-18 this command had no dispatch arm at \
              all and traced `command-unimplemented`; that is the state this check exists to \
              keep it out of."
                 .to_owned(),
         ));
     }
-    report.note("Markup > Text box armed the text-annotation tool");
+    report.note("Markup > Sticky note armed the text-annotation tool");
 
     // --- 3: how many annotations does the page have BEFORE? ----------------
     //

@@ -421,6 +421,14 @@ pub fn note_clear_disclosure(subtype: &str, appearance_rebaked: bool) -> Option<
     )
 }
 
+/// The status-line disclosure after a text box is placed whose words do not
+/// all fit inside it.
+#[must_use]
+pub const fn text_box_clips() -> &'static str {
+    "Some of these words are wider than the text box and are cut off at its edge. Make the box \
+     wider to show them."
+}
+
 /// The status-line disclosure after a mark is placed whose words contained
 /// characters pdfcer could **not** write, or `None`.
 #[must_use]

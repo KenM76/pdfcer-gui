@@ -1259,8 +1259,8 @@ impl eframe::App for PdfcerApp {
         // Guarded on an open document because the commit it raises is applied
         // against one. With none, the draft stays in memory exactly as it did.
         if matches!(self.status, Status::Open(_))
-            && let Some(kind) = crate::canvas::textedit::read(&ctx).map(|draft| draft.kind)
-            && crate::canvas::tool::selected(&ctx).text_edit_kind() != Some(kind)
+            && let Some(draft) = crate::canvas::textedit::read(&ctx)
+            && !crate::canvas::textedit::owned_by(&draft, crate::canvas::tool::selected(&ctx))
         {
             crate::canvas::textedit::settle(&ctx, &mut actions);
         }

@@ -274,7 +274,6 @@ fn crates/pdfcer-gui/src/canvas/deep.rs::track
 fn crates/pdfcer-gui/src/canvas/destination.rs::arrive
 fn crates/pdfcer-gui/src/canvas/dimdrag.rs::count_edit
 fn crates/pdfcer-gui/src/canvas/dimdrag.rs::inner
-fn crates/pdfcer-gui/src/canvas/dimpreview.rs::paint
 fn crates/pdfcer-gui/src/canvas/dragroute.rs::moved
 fn crates/pdfcer-gui/src/canvas/fit.rs::placement
 fn crates/pdfcer-gui/src/canvas/forms.rs::click

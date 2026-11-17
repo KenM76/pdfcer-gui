@@ -365,6 +365,14 @@ sticky notes, text boxes and stamps.
 Pick a colour and a line width in **Style** *before* drawing; they apply to what
 you draw next.
 
+A **text box** is typed on the page: drag the box, type, and press
+**Ctrl+Enter** or **Esc**, or start another box, to finish it. A box you
+typed nothing into leaves nothing behind; **Undo** takes back one you did.
+**Enter** starts a new line, and the box grows downward if the words need more
+lines than you dragged. Words wider than the box are cut off at its edge — the
+status line says so; drag a wider box. On a rotated page the words are asked
+for in a dialog instead.
+
 For the shapes that take several clicks — polyline, polygon, cloud — click each
 corner and then press **Finish shape** (or double-click) to end it. **Escape**
 abandons the one in progress.

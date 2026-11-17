@@ -4,6 +4,12 @@ The second half of the place-then-type gesture. The canvas has taken a
 rectangle (or a point); this asks what goes in it, and **nothing reaches
 the document until Accept.**
 
+## Which kinds reach it
+
+A text box dragged on an upright page does not: it is typed on the page
+(`canvas::textedit::freetext`). Every other kind, and a text box on a rotated
+page, opens this dialog.
+
 ## Why a dialog, when markup authors on release
 
 `crate::dialogs`' header draws the line: *"a dialog is a single transaction
@@ -12,8 +18,8 @@ of while working."* Typing a callout is unmistakably the first — it begins
 when the box is drawn, it ends when the words are accepted or abandoned,
 and there is nothing to dip back into afterwards.
 
-The alternative — an in-place editor drawn over the page, the way a word
-processor would — was rejected on the standing rule that **nothing floats
+For the kinds that reach it, the alternative — an in-place editor drawn over
+the page, the way a word processor would — was rejected on the standing rule that **nothing floats
 over the canvas** except the Find bar, which is a documented exception the
 operator granted for one surface. It would also have needed a caret, a
 selection and a hit test over text this shell does not own, which is a text

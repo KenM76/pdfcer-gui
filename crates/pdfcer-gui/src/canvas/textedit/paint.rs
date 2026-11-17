@@ -65,6 +65,10 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
     if draft.page != p.page_index {
         return;
     }
+    if super::freetext::is(&draft) {
+        super::freetext::paint(ui, ctx, p, &draft);
+        return;
+    }
     let Some(page) = p.doc.pages.get(p.page_index) else {
         return;
     };
@@ -134,7 +138,7 @@ pub fn preview(ui: &Ui, ctx: &egui::Context, p: &Preview<'_>) {
                 _ => None,
             }
         }
-        Anchor::Run { .. } | Anchor::Origin { .. } => None,
+        Anchor::Run { .. } | Anchor::Origin { .. } | Anchor::FreeText { .. } => None,
     };
     let wrap_at = box_width.map_or(f32::INFINITY, |w| (w - PREVIEW_INSET_PT * 2.0).max(1.0));
     let laid = painter.layout(
@@ -427,7 +431,7 @@ fn caret_box(
         // `preview` — which is the honest division: the outline says *"your
         // text will live in here"* and the caret says *"and the next keystroke
         // goes here."*
-        Anchor::Box { llx, ury, .. } => {
+        Anchor::Box { llx, ury, .. } | Anchor::FreeText { llx, ury, .. } => {
             #[allow(clippy::cast_possible_truncation)]
             let (x, y) = (*llx as f32, *ury as f32);
             let lo = crate::viewer::pdf_space_to_canvas(Pos2::new(x, y - 14.0), page)?;

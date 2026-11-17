@@ -161,7 +161,10 @@ pub const fn enter_means(anchor: &Anchor, command: bool) -> EnterMeans {
         | Anchor::Block {
             recognised: true, ..
         } => EnterMeans::CannotSplit,
-        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::Block { .. } => EnterMeans::NewLine,
+        Anchor::Origin { .. }
+        | Anchor::Box { .. }
+        | Anchor::Block { .. }
+        | Anchor::FreeText { .. } => EnterMeans::NewLine,
     }
 }
 

@@ -116,7 +116,9 @@ pub fn toggle(ctx: &egui::Context, doc: &OpenDoc) {
             store(ctx, draft);
             trace(true, page, llx, ury, widened);
         }
-        Anchor::Origin { .. } | Anchor::Box { .. } => trace_declined("not-existing-text"),
+        Anchor::Origin { .. } | Anchor::Box { .. } | Anchor::FreeText { .. } => {
+            trace_declined("not-existing-text");
+        }
     }
 }
 

@@ -625,12 +625,22 @@ pub(super) fn interact(
             // `MarkupKind` because that is what decides the shape drawn, and
             // both dragged text kinds occupy a rectangle — so this is not a
             // borrowed constant, it is the correct answer.
-            pv.band = Some(markup::band::Preview {
-                kind: markup::MarkupKind::Rectangle,
-                from,
-                to,
-            });
-            if phase == crate::canvas::gesture::Phase::Complete {
+            // A press inside the box being typed in is the caret's
+            // (`textedit::keys::pointer`), not a new box.
+            let in_draft = crate::canvas::textedit::freetext::live(&ctx, active_tool)
+                && crate::canvas::textedit::hit::owns_canvas(&ctx, from);
+            if !in_draft {
+                pv.band = Some(markup::band::Preview {
+                    kind: markup::MarkupKind::Rectangle,
+                    from,
+                    to,
+                });
+                // A drag begun elsewhere finishes the box being typed in.
+                if crate::canvas::textedit::freetext::live(&ctx, active_tool) {
+                    crate::canvas::textedit::settle(&ctx, actions);
+                }
+            }
+            if phase == crate::canvas::gesture::Phase::Complete && !in_draft {
                 // `endpoints` — the SAME canvas-to-page conversion the markup
                 // band uses, already public. A second conversion here is how a
                 // preview and an authored box come to disagree about where the
@@ -638,16 +648,21 @@ pub(super) fn interact(
                 if let Some(page) = doc.current_page()
                     && let Some((start, end)) = markup::band::endpoints(from, to, page)
                 {
-                    actions.push(Action::BeginTextAnnot {
-                        page: page_index,
-                        kind,
-                        rect: pdfcer_core::page_tree::Rect {
-                            llx: start.0.min(end.0),
-                            lly: start.1.min(end.1),
-                            urx: start.0.max(end.0),
-                            ury: start.1.max(end.1),
-                        },
-                    });
+                    let rect = pdfcer_core::page_tree::Rect {
+                        llx: start.0.min(end.0),
+                        lly: start.1.min(end.1),
+                        urx: start.0.max(end.0),
+                        ury: start.1.max(end.1),
+                    };
+                    if crate::canvas::textedit::freetext::typed_in_place(kind, page) {
+                        crate::canvas::textedit::freetext::begin(&ctx, page_index, rect);
+                    } else {
+                        actions.push(Action::BeginTextAnnot {
+                            page: page_index,
+                            kind,
+                            rect,
+                        });
+                    }
                 }
             }
         }
@@ -1170,7 +1185,9 @@ pub(super) fn interact(
         },
     );
 
-    if active_tool.text_edit_kind().is_some() {
+    if active_tool.text_edit_kind().is_some()
+        || crate::canvas::textedit::freetext::live(&ctx, active_tool)
+    {
         // typing-guard-exempt: SELF-REFERENTIAL. This asks whether a widget is
         // stealing the keyboard FROM the canvas draft, and the draft is the
         // thing asking — `composing()` here would include the draft itself and
@@ -1213,6 +1230,7 @@ pub(super) fn interact(
                     crate::canvas::textedit::Anchor::Origin { .. } => "origin",
                     crate::canvas::textedit::Anchor::Box { .. } => "box",
                     crate::canvas::textedit::Anchor::Block { .. } => "block",
+                    crate::canvas::textedit::Anchor::FreeText { .. } => "text-box",
                 }),
                 draft.is_some(),
                 draft.map_or(0, |d| d.text.chars().count()),
