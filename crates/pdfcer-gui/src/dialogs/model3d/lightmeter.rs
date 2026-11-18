@@ -15,8 +15,8 @@ use egui::{Pos2, Rect, RichText, Ui};
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::vec3::{add, cross, normalize, scale};
 use pdfcer_3d::{
-    AssembledModel, Camera, Hit, Illuminance, IlluminanceError, IlluminanceQuery, IlluminanceUnit,
-    LightMeter, MeterSettings, PreparedModel,
+    AssembledModel, Camera, GlowLight, Hit, Illuminance, IlluminanceError, IlluminanceQuery,
+    IlluminanceUnit, LightMeter, MeterSettings, PreparedModel,
 };
 
 use super::ModelView;
@@ -32,6 +32,8 @@ pub const REGION_POINT: &str = "model3d.light.point"; // ui-text-exempt: trace r
 pub const REGION_CIRCLE: &str = "model3d.light.circle"; // ui-text-exempt: trace region name, never displayed
 /// The circle's radius.
 pub const REGION_RADIUS: &str = "model3d.light.radius"; // ui-text-exempt: trace region name, never displayed
+/// *Count glowing parts*.
+pub const REGION_GLOW: &str = "model3d.light.glow"; // ui-text-exempt: trace region name, never displayed
 
 /// Samples a circle is averaged over, tried in turn until one is within the
 /// engine's cap on a reading's work.
@@ -95,8 +97,12 @@ type Answer = Result<Reading, String>;
 pub(super) struct Meter {
     /// The circle's radius in model units; 0 reads the point alone.
     pub radius: f64,
+    /// Whether glowing parts light what they face.
+    pub glow: GlowLight,
     pub reading: Option<Answer>,
     pending: Option<Receiver<Answer>>,
+    /// The last pick, read again when the glow switch changes.
+    last: Option<(Rect, Pos2, Hit)>,
 }
 
 impl Meter {
@@ -104,6 +110,7 @@ impl Meter {
     pub(super) fn clear(&mut self) {
         self.reading = None;
         self.pending = None;
+        self.last = None;
     }
 
     /// The reading to draw on the picture.
@@ -124,12 +131,14 @@ struct Job {
     camera: Camera,
     options: ModelRenderOptions,
     query: IlluminanceQuery,
+    glow: GlowLight,
 }
 
 /// Work out `job`'s reading: a circle with as many samples as the engine's
 /// cap allows.
 fn read(job: &Job) -> Answer {
-    let settings = MeterSettings::default();
+    let mut settings = MeterSettings::default();
+    settings.glow = job.glow;
     let meter = LightMeter::new(
         &job.model,
         &job.prepared,
@@ -170,8 +179,8 @@ fn trace(answer: &Answer) {
             let lit = l.lights.iter().filter(|s| s.direct > 0.0).count();
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
-                "model-light-reading unit={} total={:.6} direct={:.6} bounced={:.6} ambient={:.6} \
-                 radius={:.6} on={} off={} lights={} lit={lit} reasons={} notes={}",
+                "model-light-reading unit={} total={:.6} direct={:.6} emitted={:.6} bounced={:.6} \
+                 ambient={:.6} radius={:.6} on={} off={} lights={} lit={lit} reasons={} notes={}",
                 if l.unit == IlluminanceUnit::Lux {
                     "lux"
                 } else {
@@ -179,6 +188,7 @@ fn trace(answer: &Answer) {
                 },
                 l.total,
                 l.direct,
+                l.emitted,
                 l.bounced,
                 l.ambient,
                 r.radius,
@@ -222,12 +232,14 @@ impl ModelView {
                 "model-light-asked mesh={mesh} radius={radius:.6} at={x:.4},{y:.4},{z:.4} n={i:.3},{j:.3},{k:.3}"
             )
         });
+        let glow = self.meter.glow;
         let job = Job {
             model,
             prepared,
             camera,
             options,
             query,
+            glow,
         };
         let (tx, rx) = channel();
         std::thread::spawn(move || {
@@ -235,6 +247,7 @@ impl ModelView {
         });
         self.meter.reading = None;
         self.meter.pending = Some(rx);
+        self.meter.last = Some((rect, at, *hit));
     }
 
     /// Take a finished reading; while one is in flight, look again shortly.
@@ -288,6 +301,9 @@ impl ModelView {
                 self.meter_radius(self.reach * FIRST_RADIUS);
             }
         });
+        if self.lights.has_glowing_surfaces() {
+            self.meter_glow_switch(ui);
+        }
         if circle {
             ui.horizontal_wrapped(|ui| {
                 ui.label(t::LIGHT_RADIUS);
@@ -304,6 +320,29 @@ impl ModelView {
                     self.meter_radius(radius);
                 }
             });
+        }
+    }
+
+    /// *Count glowing parts*, drawn only for a model that has some. A change
+    /// reads the last pick again.
+    fn meter_glow_switch(&mut self, ui: &mut Ui) {
+        let mut counted = self.meter.glow == GlowLight::Counted;
+        let switch = ui
+            .checkbox(&mut counted, t::LIGHT_GLOW)
+            .on_hover_text(t::LIGHT_GLOW_TIP);
+        crate::diag::ui_rect_visible(REGION_GLOW, switch.rect, ui.clip_rect());
+        if !switch.changed() {
+            return;
+        }
+        self.meter.glow = if counted {
+            GlowLight::Counted
+        } else {
+            GlowLight::LeftOut
+        };
+        // ui-text-exempt: diagnostic trace, never displayed
+        crate::diag::trace(|| format!("model-light-glow counted={counted}"));
+        if let Some((rect, at, hit)) = self.meter.last {
+            self.meter_ask(rect, at, &hit);
         }
     }
 
@@ -366,8 +405,11 @@ impl ModelView {
         let light = &reading.light;
         let lux = light.unit == IlluminanceUnit::Lux;
         let amount = |v: f64| amount(v, lux);
+        let glow = (self.meter.glow == GlowLight::Counted && self.lights.has_glowing_surfaces())
+            .then(|| amount(light.emitted));
         let parts = t::light_parts(
             &amount(light.direct),
+            glow.as_deref(),
             &amount(light.bounced),
             &amount(light.ambient),
         );
@@ -408,9 +450,6 @@ impl ModelView {
         }
         for note in &reading.notes {
             ui.small(note);
-        }
-        if self.lights.has_glowing_surfaces() {
-            ui.small(t::LIGHT_GLOW_LEFT_OUT);
         }
     }
 }

@@ -155,7 +155,7 @@ mod foldeach;
 /// **The edit funnel** — `vector_edit`, the four-step protocol every verb that
 /// changes a document passes through. Its header carries why a router and a
 /// protocol are two subjects.
-mod funnel;
+pub(crate) mod funnel;
 mod movemixed;
 mod onestep;
 /// The three arms that mark content for removal. Its header carries the seam
@@ -221,6 +221,8 @@ mod drawlayer;
 mod evidence;
 /// Forms ▸ Manage ▸ Repair fonts.
 mod formfonts;
+/// Form preview ▸ Use these pages.
+mod formpages;
 /// Put the selection on a layer: `LayerAction::Assign`.
 pub mod layerassign;
 /// Folders and moves in the Layers panel: `LayerAction::Order`.

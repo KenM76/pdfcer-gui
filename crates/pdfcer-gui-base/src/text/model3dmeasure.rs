@@ -149,9 +149,10 @@ pub const LIGHT_SHARES: &str = "Straight from each light:";
 pub const LIGHT_RELATIVE_WHY: &str = "This is not lux. It is in the picture's own shading units, where 1.0 lights a white surface \
      to full white: good for comparing two places, not a physical figure. Because:";
 
-/// Said under a reading of a model that has parts that glow.
-pub const LIGHT_GLOW_LEFT_OUT: &str =
-    "Parts that glow are not counted: only the model's lamps put light on a surface.";
+/// The switch that counts the light of the model's glowing parts.
+pub const LIGHT_GLOW: &str = "Count glowing parts";
+/// Its tip.
+pub const LIGHT_GLOW_TIP: &str = "On, a glowing part lights the surfaces it faces, shadows counted, as a lamp would. A glow has no physical strength, so the reading is then in the picture's shading units, not lux. Off, only the model's lamps put light on a surface.";
 
 /// A reading's headline: the amount and its unit.
 #[must_use]
@@ -175,8 +176,13 @@ pub fn light_number(lux: f64) -> String {
 
 /// What a reading is made of.
 #[must_use]
-pub fn light_parts(direct: &str, bounced: &str, ambient: &str) -> String {
-    format!("Straight from lights {direct} · Bounced {bounced} · Ambient {ambient}")
+pub fn light_parts(direct: &str, glow: Option<&str>, bounced: &str, ambient: &str) -> String {
+    match glow {
+        Some(glow) => format!(
+            "Straight from lights {direct} · From glowing parts {glow} · Bounced {bounced} · Ambient {ambient}"
+        ),
+        None => format!("Straight from lights {direct} · Bounced {bounced} · Ambient {ambient}"),
+    }
 }
 
 /// What a circle's reading is the mean of.

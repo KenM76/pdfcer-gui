@@ -288,6 +288,10 @@ fn no_two_declines_share_a_sentence() {
         Declined::Layer(crate::text::panels::layeredit::LayerRefusal::DrawLayerHidden),
         Declined::MarkupFlatten(pdfcer_core::edit::AnnotFlattenRefusalReason::Locked),
         Declined::FormFontsNothingToRepair,
+        Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::NotDynamic),
+        Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::Signed(2)),
+        Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::Certified),
+        Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::NotLaidOut),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
@@ -783,6 +787,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::Layer(_)
         | Declined::MarkupFlatten(_)
         | Declined::FormFontsNothingToRepair
+        | Declined::FormPages(_)
         | Declined::OsPaste(_)
         | Declined::WindowMove(_)
         | Declined::Rc4Refused

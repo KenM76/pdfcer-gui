@@ -26,11 +26,15 @@ pub(crate) fn claims(id: &str) -> bool {
 }
 
 /// Dispatch one of the two.
-pub(crate) fn dispatch(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: &mut Vec<Action>) {
-    let picked = match &app.status {
-        Status::Open(doc) if app.capabilities().edit_content => {
-            shapeable_nodes(doc).map(|picked| (doc, picked))
-        }
+pub(crate) fn dispatch(
+    app: &mut PdfcerApp,
+    ctx: &egui::Context,
+    id: &str,
+    actions: &mut Vec<Action>,
+) {
+    let editable = app.capabilities().edit_content;
+    let picked = match &mut app.status {
+        Status::Open(doc) if editable => shapeable_nodes(doc).map(|picked| (doc, picked)),
         _ => None,
     };
     let Some((doc, (page, host, nodes))) = picked else {
@@ -44,6 +48,12 @@ pub(crate) fn dispatch(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: 
         crate::app::status::decline::record_path_edit(PathEditRefusal::NotOneNode);
         return;
     };
+    if let Err(why) = preflight(doc, page, host, node, id == OPEN) {
+        crate::diag::trace(|| format!("path-end-preflight id={id} node={node} ok=false"));
+        crate::app::status::decline::record_path_edit(why);
+        return;
+    }
+    crate::diag::trace(|| format!("path-end-preflight id={id} node={node} ok=true"));
     if id == OPEN {
         actions.push(Action::Vector(VectorAction::PathEnd {
             page,
@@ -60,6 +70,29 @@ pub(crate) fn dispatch(app: &PdfcerApp, ctx: &egui::Context, id: &str, actions: 
 }
 
 /// Where node `node` of `host` sits, PDF page space.
+/// Whether the engine would take the edit at `node`, asked before a run of
+/// clicks is armed so a refusal comes at the press, not after the drawing. A
+/// session still held by a render is not asked; the commit then says any
+/// refusal.
+fn preflight(
+    doc: &mut OpenDoc,
+    page: usize,
+    host: NodeHost,
+    node: usize,
+    open: bool,
+) -> Result<(), PathEditRefusal> {
+    let Some(session) = crate::app::actions::funnel::session_to_ask(doc) else {
+        return Ok(());
+    };
+    let answer = match (host, open) {
+        (NodeHost::Page(o), false) => session.can_extend_path(page, o, node),
+        (NodeHost::Page(o), true) => session.can_open_subpath(page, o, node),
+        (NodeHost::Leaf(l), false) => session.can_extend_path_in_form(page, l, node),
+        (NodeHost::Leaf(l), true) => session.can_open_subpath_in_form(page, l, node),
+    };
+    answer.map_err(|why| PathEditRefusal::of_edit(&why))
+}
+
 fn node_point(doc: &OpenDoc, host: NodeHost, node: usize) -> Option<(f64, f64)> {
     let target = match host {
         NodeHost::Page(o) => TargetId::Object(o as u64),

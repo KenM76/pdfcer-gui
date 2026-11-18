@@ -468,6 +468,7 @@ impl PdfcerApp {
             }
             Action::Deskew(step) => super::deskew::apply(doc, &step),
             Action::RepairFormFonts => super::formfonts::repair(doc),
+            Action::UseFormPages { choices } => super::formpages::apply(doc, choices),
             Action::ToggleRc4Append => crate::app::rc4::toggle(doc),
             // Registered only with `signing`; without it nothing raises this.
             Action::AddValidationEvidence {

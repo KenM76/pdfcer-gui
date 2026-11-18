@@ -11,7 +11,8 @@ use pdfcer_core::xfa::{LayoutWarning, MergeWarningKind, PaintNoteKind};
 #[must_use]
 pub fn opened_dynamic() -> &'static str {
     "This is a dynamic form: the page shown is the file's stand-in for programs \
-     without a form engine. The form's own pages are open in Form preview."
+     without a form engine. The form's own pages are open in Form preview; Use these \
+     pages there makes them the document's pages."
 }
 
 /// The window's title.
@@ -244,4 +245,104 @@ pub fn choice(key: ChoiceKey) -> (&'static str, [&'static str; 2]) {
 #[must_use]
 pub fn close() -> &'static str {
     "Close"
+}
+
+/// The button that makes the previewed pages the document's own.
+#[must_use]
+pub fn use_pages() -> &'static str {
+    "Use these pages"
+}
+
+/// What pressing [`use_pages`] does, on hover.
+#[must_use]
+pub fn use_pages_hover() -> &'static str {
+    "Replace the file's stand-in pages with these pages, drawn with the reading choices above. \
+     The values become part of the drawing and can no longer be filled in. Ctrl+Z undoes it; \
+     Save writes it."
+}
+
+/// The status line after the pages were written.
+#[must_use]
+pub fn pages_used(written: usize, replaced: usize, fields_dropped: usize) -> String {
+    let fields = if fields_dropped == 0 {
+        String::new()
+    } else {
+        format!(" {fields_dropped} field(s) of the stand-in page went with it.")
+    };
+    format!(
+        "Replaced the file's {replaced} stand-in page(s) with the form's {written} page(s). Every \
+         page is pdfcer's own layout of the form, and its values are drawn, not fillable.{fields} \
+         Press Ctrl+Z to undo."
+    )
+}
+
+/// The typefaces set in a standard face instead, as `(typeface, face)`.
+#[must_use]
+pub fn pages_fallbacks(fallbacks: &[(String, String)]) -> String {
+    let list: Vec<String> = fallbacks
+        .iter()
+        .map(|(t, f)| format!("{t} as {f}"))
+        .collect();
+    format!(
+        "No matching face among the fonts pdfcer draws with, so drawn in a standard face: {}.",
+        list.join(", ")
+    )
+}
+
+/// The faces named but not embedded, so another viewer substitutes.
+#[must_use]
+pub fn pages_not_embedded(faces: &[String]) -> String {
+    format!(
+        "Not embedded, so another viewer may draw them in a different face: {}.",
+        faces.join(", ")
+    )
+}
+
+/// The form's usage-rights signature went with the form.
+#[must_use]
+pub fn pages_usage_rights_removed() -> &'static str {
+    "The form's usage-rights signature was removed with the form it signed."
+}
+
+/// What the written pages draw differently, one kind per entry.
+#[must_use]
+pub fn pages_notes(notes: &[String]) -> String {
+    format!("What the pages leave out: {}.", notes.join("; "))
+}
+
+/// Why Use these pages wrote nothing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FormPagesRefusal {
+    /// The document is not a dynamic form.
+    NotDynamic,
+    /// The file carries this many signatures, which new pages would orphan.
+    Signed(usize),
+    /// A certification forbids changing the pages.
+    Certified,
+    /// The form could not be read or laid out.
+    NotLaidOut,
+}
+
+impl FormPagesRefusal {
+    /// The sentence for this refusal.
+    #[must_use]
+    pub fn line(self) -> std::borrow::Cow<'static, str> {
+        use std::borrow::Cow;
+        match self {
+            Self::NotDynamic => {
+                Cow::Borrowed("This form's pages are already the document's: nothing was replaced.")
+            }
+            Self::Signed(n) => Cow::Owned(format!(
+                "This form carries {n} signature(s), which replacing its pages would break: \
+                 nothing was replaced."
+            )),
+            Self::Certified => Cow::Borrowed(
+                "This form's certification forbids changing its pages: nothing was replaced.",
+            ),
+            Self::NotLaidOut => Cow::Borrowed(
+                "The form could not be laid out, so its pages could not be used: nothing was \
+                 replaced.",
+            ),
+        }
+    }
 }

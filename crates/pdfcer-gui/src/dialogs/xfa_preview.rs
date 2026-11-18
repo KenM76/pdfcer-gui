@@ -23,10 +23,14 @@ use pdfcer_core::xfa::{
     PaintNoteKind, PaintOptions, ScopeSearch, ThreeDStroke,
 };
 
+use crate::app::actions::Action;
 use crate::text::xfapreview::{self as t, ChoiceKey};
 
 /// Named region: the whole dialog body.
 const REGION_BODY: &str = "dialog:form-preview"; // ui-text-exempt: trace region name, never displayed
+
+/// Named region: the Use these pages button.
+const REGION_USE: &str = "form-preview.use"; // ui-text-exempt: trace region name, never displayed
 
 /// Device pixels per point the pages are drawn at.
 const SCALE: f32 = 1.5;
@@ -46,7 +50,7 @@ const CHOICES: [ChoiceKey; 5] = [
 /// The operator's answers, indexed as [`CHOICES`]: `true` is the second
 /// (non-default) answer.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-struct Choices([bool; 5]);
+pub(crate) struct Choices(pub(crate) [bool; 5]);
 
 impl Choices {
     fn get(self, key: ChoiceKey) -> bool {
@@ -78,7 +82,7 @@ impl Choices {
             .with_data_attributes(attributes)
     }
 
-    fn paint(self) -> PaintOptions {
+    pub(crate) fn paint(self) -> PaintOptions {
         let stroke = if self.get(ChoiceKey::ThreeDStroke) {
             ThreeDStroke::Plain
         } else {
@@ -197,7 +201,7 @@ impl XfaPreviewDialog {
     }
 
     /// Draw one frame. Returns `false` when it should close.
-    pub(super) fn show(&mut self, ctx: &egui::Context) -> bool {
+    pub(super) fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
         self.collect(ctx);
         let (frame, ()) = crate::dialogs::host::Host::new(
             "form-preview", // ui-text-exempt: a viewport key, never displayed.
@@ -205,7 +209,7 @@ impl XfaPreviewDialog {
             egui::vec2(720.0, 820.0),
             egui::vec2(420.0, 320.0),
         )
-        .show(ctx, |ui| self.body(ui));
+        .show(ctx, |ui| self.body(ui, actions));
         !frame.closed && !std::mem::take(&mut self.close_requested)
     }
 
@@ -269,7 +273,7 @@ impl XfaPreviewDialog {
     }
 
     /// Everything inside the window.
-    fn body(&mut self, ui: &mut egui::Ui) {
+    fn body(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         let theme = Theme::of(ui.ctx());
         crate::diag::ui_rect(REGION_BODY, ui.max_rect());
         ui.label(egui::RichText::new(t::caveat()).color(theme.palette.text_muted));
@@ -319,9 +323,24 @@ impl XfaPreviewDialog {
                 }
             });
         ui.separator();
-        if ui.button(t::close()).clicked() {
-            self.close_requested = true;
-        }
+        ui.horizontal(|ui| {
+            let ready = matches!(self.shown, Some(Shown::Pages { .. })) && !self.pending;
+            if ready {
+                let used = ui
+                    .button(t::use_pages())
+                    .on_hover_text(t::use_pages_hover());
+                crate::diag::ui_rect(REGION_USE, used.rect);
+                if used.clicked() {
+                    actions.push(Action::UseFormPages {
+                        choices: self.choices.0,
+                    });
+                    self.close_requested = true;
+                }
+            }
+            if ui.button(t::close()).clicked() {
+                self.close_requested = true;
+            }
+        });
     }
 }
 
@@ -386,6 +405,26 @@ fn merge(
         .map_err(|e| t::failed(&e.to_string()))
 }
 
+/// Merge the form's data and lay out its pages, measuring text in `fonts` —
+/// the faces painting uses, so the pages are drawn as they were laid. Shared
+/// by the preview and by Use these pages, so what is written is what was shown.
+pub(crate) fn lay_out(
+    view: &pdfcer_core::view::DocumentView<'_>,
+    fonts: &pdfcer_core::xfa::XfaFonts,
+    choices: Choices,
+) -> Result<(pdfcer_core::xfa::MergedForm, pdfcer_core::xfa::XfaLayout), String> {
+    let merged = merge(view, choices)?;
+    let images = pdfcer_core::xfa::XfaImages::from_view(view);
+    let layout = pdfcer_core::xfa::layout_template_with(
+        &merged.template,
+        &LayoutOptions::new(),
+        &images,
+        fonts,
+    )
+    .map_err(|e| t::failed(&e.to_string()))?;
+    Ok((merged, layout))
+}
+
 /// Lay out and draw every computed page with the operator's render settings.
 /// Runs on the worker.
 fn draw(
@@ -394,12 +433,10 @@ fn draw(
     choices: Choices,
 ) -> Result<Drawn, String> {
     let view = session.view();
-    let merged = merge(&view, choices)?;
+    let fonts = pdfcer_render::font::xfa_fonts(&options.fonts);
+    let (merged, layout) = lay_out(&view, &fonts, choices)?;
     let template = &merged.template;
     let images = pdfcer_core::xfa::XfaImages::from_view(&view);
-    let layout =
-        pdfcer_core::xfa::layout_template_with_images(template, &LayoutOptions::new(), &images)
-            .map_err(|e| t::failed(&e.to_string()))?;
     let paint = choices.paint();
     let mut pages = Vec::new();
     let mut counts: Vec<(PaintNoteKind, usize)> = Vec::new();

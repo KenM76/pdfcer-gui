@@ -21,6 +21,8 @@ const APPLIED: &str = "path-end-applied"; // ui-text-exempt: a trace event name,
 const ARMED: &str = "path-extend-armed"; // ui-text-exempt: a trace event name, never displayed
 const POINT: &str = "path-extend-point"; // ui-text-exempt: a trace event name, never displayed
 const FINISH: &str = "path-extend-finish"; // ui-text-exempt: a trace event name, never displayed
+const PREFLIGHT: &str = "path-end-preflight"; // ui-text-exempt: a trace event name, never displayed
+const DECLINED: &str = "path-edit-declined"; // ui-text-exempt: a trace event name, never displayed
 const ANCHORS: &str = "canvas-anchors"; // ui-text-exempt: a trace event name, never displayed
 const SELECTION: &str = "canvas-selection"; // ui-text-exempt: a trace event name, never displayed
 const UNDONE: &str = "undo-applied"; // ui-text-exempt: a trace event name, never displayed
@@ -46,6 +48,8 @@ const SQUARE: Fixture = Fixture {
 const ON_THE_LINE: (f64, f64) = (175.0, 100.0);
 /// The open path's last node, `canvas.anchor.2` at the Part rung.
 const OPEN_END: &str = "canvas.anchor.2";
+/// The open path's middle node, which no run can continue from.
+const MIDDLE: &str = "canvas.anchor.1";
 /// The square's second corner, (250,100).
 const CORNER: &str = "canvas.anchor.1";
 /// Where Continue path clicks, page space, clear of the path.
@@ -87,6 +91,58 @@ impl Check for AClosedPathIsOpenedAtANode {
     }
 }
 
+/// Continue path on a middle node, refused when pressed.
+pub struct AMiddleNodeIsRefusedAtThePress;
+
+impl Check for AMiddleNodeIsRefusedAtThePress {
+    fn name(&self) -> &'static str {
+        "a_middle_node_is_refused_at_the_press"
+    }
+
+    fn defect(&self) -> &'static str {
+        "Continue path on a node that is not an end arms a run anyway, so the refusal comes only after the operator has clicked the whole run out"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        run_on(self, ctx, &OPEN_PATH, INVOKE, "pathmiddle", drive_middle)
+    }
+}
+
+fn drive_middle(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    session: &Session,
+    pointer: &ScriptedPointer,
+) -> Result<Option<String>> {
+    enter_node(ctx, report, session, pointer, &OPEN_PATH, MIDDLE)?;
+    let mark = session.trace()?.mark();
+    if let Some(failure) = press_command(ctx, session, pointer, CONTINUE)? {
+        return Ok(Some(failure));
+    }
+    let trace = session.trace()?;
+    let asked = trace.last_after(PREFLIGHT, mark).map(|l| l.raw.clone());
+    let declined = trace.last_after(DECLINED, mark).map(|l| l.raw.clone());
+    let armed = trace.last_after(ARMED, mark).is_some();
+    report.note(format!(
+        "preflight: `{}`; decline: `{}`; armed: {armed}",
+        asked.clone().unwrap_or_default(),
+        declined.clone().unwrap_or_default()
+    ));
+    if armed || !asked.is_some_and(|l| l.contains("ok=false")) {
+        return Ok(Some(format!(
+            "Continue path on the middle node was not refused at the press (armed={armed}, no `{PREFLIGHT} ... ok=false`). Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    if !declined.is_some_and(|l| l.contains("reason=")) {
+        return Ok(Some(format!(
+            "the press was refused and no `{DECLINED}` said why on the status line. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
+    Ok(None)
+}
+
 fn drive_extend(
     ctx: &CheckContext,
     report: &mut CheckReport,
@@ -98,6 +154,16 @@ fn drive_extend(
     let mark = session.trace()?.mark();
     if let Some(failure) = press_command(ctx, session, pointer, CONTINUE)? {
         return Ok(Some(failure));
+    }
+    if !session
+        .trace()?
+        .last_after(PREFLIGHT, mark)
+        .is_some_and(|l| l.raw.contains("ok=true"))
+    {
+        return Ok(Some(format!(
+            "Continue path on the end node did not ask the engine first (no `{PREFLIGHT}              ... ok=true`). Trace: {}.",
+            session.trace_path().display()
+        )));
     }
     if session.trace()?.last_after(ARMED, mark).is_none() {
         return Ok(Some(format!(

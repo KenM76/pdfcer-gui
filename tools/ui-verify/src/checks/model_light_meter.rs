@@ -22,6 +22,7 @@ const SWITCH: &str = "model3d.measure.on";
 const LIGHT: &str = "model3d.measure.light";
 const CIRCLE: &str = "model3d.light.circle";
 const ALL_LIGHTS: &str = "model3d.lights.all";
+const GLOW: &str = "model3d.light.glow";
 const ASKED: &str = "model-light-asked";
 const READING: &str = "model-light-reading";
 const REFUSED: &str = "model-light-refused";
@@ -182,6 +183,66 @@ impl Meter<'_> {
         })
     }
 
+    /// The next reading after the `seen`th, worked out without a click.
+    fn next_reading(&self, seen: usize) -> Result<Option<TraceLine>> {
+        for _ in 0..WAITS {
+            if let Some(line) = self.0.session.trace()?.events(READING).nth(seen) {
+                return Ok(Some(line.clone()));
+            }
+            self.0.session.settle(15);
+        }
+        Ok(None)
+    }
+
+    /// *Count glowing parts* off reads the same point again with no light
+    /// from the glow, and on gives back the reading `lit` it started from.
+    fn glow(&self, lit: &TraceLine) -> Result<Option<String>> {
+        let counted = number(lit, "emitted");
+        if counted.is_nan() || counted <= 0.0 {
+            return Ok(Some(format!(
+                "★★★ the reading `{}` counts no light from glow-room's glowing panel, which faces the floor the check picks: the glow is not counted by default.",
+                lit.raw
+            )));
+        }
+        let seen = count(self.0.session, READING)?;
+        if !self.press(GLOW)? {
+            return Ok(Some(format!(
+                "★★★ the Measure tab drew no `{GLOW}` for a model with a glowing part."
+            )));
+        }
+        close(self.0.session, self.0.pointer, ui_rect(self.0.ctx)?)?;
+        let Some(out) = self.next_reading(seen)? else {
+            return Ok(Some(
+                "★★★ switching *Count glowing parts* off did not read the picked point again."
+                    .to_owned(),
+            ));
+        };
+        let left_out = number(&out, "emitted") == 0.0
+            && number(&out, "total") < number(lit, "total")
+            && number(&out, "notes") > number(lit, "notes");
+        if !left_out {
+            return Ok(Some(format!(
+                "★★★ with the glow left out the point reads `{}`; it must count no glow, read less than `{}`, and add the note that the glow is left out.",
+                out.raw, lit.raw
+            )));
+        }
+        if !self.press(GLOW)? {
+            return Ok(Some(format!("★★★ `{GLOW}` went away once switched off.")));
+        }
+        close(self.0.session, self.0.pointer, ui_rect(self.0.ctx)?)?;
+        match self.next_reading(seen + 1)? {
+            Some(back) if number(&back, "emitted") == counted => Ok(None),
+            Some(back) => Ok(Some(format!(
+                "★★★ switched back on, the glow reads `{}`, not the `{}` it started from.",
+                back.raw, lit.raw
+            ))),
+            None => Ok(Some(
+                "★★★ switching *Count glowing parts* back on did not read the point again."
+                    .to_owned(),
+            )),
+        }
+    }
+
     fn run(&self, report: &mut CheckReport) -> Result<Option<String>> {
         let Drive {
             ctx,
@@ -204,12 +265,15 @@ impl Meter<'_> {
         };
         report.note(format!("lights on: {}", lit.raw));
         let total = number(&lit, "total");
-        let parts = number(&lit, "direct") + number(&lit, "bounced") + number(&lit, "ambient");
+        let parts = number(&lit, "direct")
+            + number(&lit, "emitted")
+            + number(&lit, "bounced")
+            + number(&lit, "ambient");
         // A number the line lacks is NaN, which fails every comparison.
         let sound = total > 0.0 && (total - parts).abs() <= SUM_SLACK;
         if !sound {
             return Ok(Some(format!(
-                "★★★ the reading `{}` must be above zero and the sum of its three parts ({parts}).",
+                "★★★ the reading `{}` must be above zero and the sum of its four parts ({parts}).",
                 lit.raw
             )));
         }
@@ -220,17 +284,41 @@ impl Meter<'_> {
                 lit.raw
             )));
         }
+        if let Some(failure) = self.glow(&lit)? {
+            return Ok(Some(failure));
+        }
+        self.unlit_then_circle(report, &spot, total)
+    }
+
+    /// With every listed light off the lamps' share must vanish; with a
+    /// circle chosen the reading must average several surface points.
+    fn unlit_then_circle(
+        &self,
+        report: &mut CheckReport,
+        spot: &(WindowPoint, Option<String>),
+        total: f64,
+    ) -> Result<Option<String>> {
+        let Drive {
+            ctx,
+            session,
+            pointer,
+        } = self.0;
+        let ui = ui_rect(ctx)?;
         self.0.click(ALL_LIGHTS, "", "model-view-lights")?;
-        let dark = match self.again(&spot, "with every listed light switched off")? {
+        let dark = match self.again(spot, "with every listed light switched off")? {
             Ok(line) => line,
             Err(why) => return Ok(Some(why)),
         };
         report.note(format!("lights off: {}", dark.raw));
-        let fell = number(&dark, "total") == 0.0 && number(&dark, "direct") == 0.0;
+        // The list's switch leaves on the glowing part kept in a folder of its
+        // own, and its glow is counted: what remains is that glow alone.
+        let fell = number(&dark, "direct") == 0.0
+            && number(&dark, "ambient") == 0.0
+            && number(&dark, "total") < total;
         if !fell {
             return Ok(Some(format!(
                 "★★★ with both lamps switched off a point on the model reads `{}`; it must \
-                 read nothing ({total} was read with them on).",
+                 read no lamp and no ambient light, and less than the {total} read with them on.",
                 dark.raw
             )));
         }
@@ -239,7 +327,7 @@ impl Meter<'_> {
             return Ok(Some(format!("★★★ the Measure tab drew no `{CIRCLE}`.")));
         }
         close(session, pointer, ui)?;
-        let round = match self.again(&spot, "with a circle chosen")? {
+        let round = match self.again(spot, "with a circle chosen")? {
             Ok(line) => line,
             Err(why) => return Ok(Some(why)),
         };

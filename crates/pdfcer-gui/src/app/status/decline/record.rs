@@ -215,6 +215,11 @@ pub(crate) fn record_layer(why: crate::text::panels::layeredit::LayerRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Layer(why)));
 }
 
+/// Record that Use these pages wrote nothing.
+pub(crate) fn record_form_pages(why: crate::text::xfapreview::FormPagesRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormPages(why)));
+}
+
 /// Record that Repair fonts found nothing to move.
 pub(crate) fn record_form_fonts_nothing_to_repair() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormFontsNothingToRepair));

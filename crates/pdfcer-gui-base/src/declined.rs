@@ -1031,6 +1031,9 @@ pub enum Declined {
     /// Forms ▸ Manage ▸ Repair fonts found no inline font to move. Worded in
     /// [`crate::text::formfonts::nothing_to_repair`].
     FormFontsNothingToRepair,
+    /// Form preview ▸ Use these pages wrote nothing. Worded in
+    /// [`crate::text::xfapreview::FormPagesRefusal`].
+    FormPages(crate::text::xfapreview::FormPagesRefusal),
     /// A text-tool click opened no caret. Worded by
     /// [`crate::text::textedit::refusal`]; a picture of text offers
     /// Recognise text through [`Declined::remedy`].
