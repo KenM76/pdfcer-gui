@@ -17,8 +17,7 @@
 - [Requests live in a file, not a chat](feedback_operator_requests.md) — file at once; only Ken closes a row.
 - [A guard on repetition does not stop creep](feedback_guard_stops.md) — needs a direction bound and a floor.
 - [Wrong surface looks like a broken one](feedback_measurement_wrong.md) — ask what it SAMPLED.
-- [Disk AND RAM are tight](project_disk_tight_target.md) — guard prunes at build START below 60 GB; finish clippy/tests in the foreground; run-all skips tests.
-- [Clean caches before the disk fills](feedback_clean_caches_before_full.md) — run the free-space guard before every build, unasked.
+- [Disk AND RAM are tight](project_disk_tight_target.md) — [prune before builds, unasked](feedback_clean_caches_before_full.md); clippy/tests in the foreground.
 - [A delete that frees nothing](project_drive_holds_deleted_target.md) — a sync client's hard links hold the data; check `fsutil hardlink list`.
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.

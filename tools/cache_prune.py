@@ -51,7 +51,7 @@ DEBUG_LIMIT_GB = 20
 
 #: Free space below which a build-start guard prunes. A release build plus
 #: the debug build of a test run can each write tens of GB.
-MIN_FREE_GB = 60
+MIN_FREE_GB = 30
 
 _HASH = re.compile(r"-([0-9a-f]{16})(?:\.[A-Za-z0-9_.]+)?$")
 

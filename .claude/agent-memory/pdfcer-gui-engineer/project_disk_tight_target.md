@@ -435,7 +435,7 @@ D: reached 2.6 GB free and the packager's own test step died with no `test
 result:` line; `target/debug` was 39 GB (limit 20) because nothing had packaged
 since the debug cache outgrew it. Ken: *"You should be always cleaning up your
 old rust cache files automatically before the drive gets nearly full."* Fix:
-`cache_prune.ensure_free()` (`python tools/cache_prune.py --if-below 60`) runs at
-the START of `package-portable.py` and of `run-all.sh`; below 60 GB free it
+`cache_prune.ensure_free()` (`python tools/cache_prune.py --if-below 30`) runs at
+the START of `package-portable.py` and of `run-all.sh`; below 30 GB free it
 prunes, and if still short deletes `target/debug` whole. Before any build I
 start by hand, run the same guard.
