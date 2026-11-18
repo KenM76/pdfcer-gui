@@ -409,7 +409,7 @@ impl ModelView {
         for note in &reading.notes {
             ui.small(note);
         }
-        if self.lights.has_parts() {
+        if self.lights.has_glowing_surfaces() {
             ui.small(t::LIGHT_GLOW_LEFT_OUT);
         }
     }

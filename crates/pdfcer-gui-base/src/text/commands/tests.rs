@@ -169,6 +169,8 @@ fn all() -> Vec<CommandText> {
         format_node_symmetric(),
         format_segment_line(),
         format_segment_curve(),
+        format_path_continue(),
+        format_path_open(),
         format_replace_image(),
         format_shrink_images(),
         mode_read(),

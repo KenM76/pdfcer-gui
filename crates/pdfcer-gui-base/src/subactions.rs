@@ -931,6 +931,14 @@ pub enum NodeShape {
     /// The segment leaving the node becomes a curve.
     Curve,
 }
+/// **What a path-end command does at one node.**
+#[derive(Debug, Clone, PartialEq)]
+pub enum PathEdit {
+    /// Straight segments drawn on from an end node, through these page-space points in order.
+    Extend(Vec<(f64, f64)>),
+    /// The closed subpath holding the node is opened there.
+    Open,
+}
 /// **Everything a refused canvas gesture is allowed to put on the status bar.**
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CanvasDecline {

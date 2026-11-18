@@ -1015,6 +1015,7 @@ pub(super) fn interact(
 
     // Before the canvas keys, so a run's Backspace is not also a Delete.
     crate::canvas::markup::vertex::keys(&ctx, actions, pen);
+    crate::canvas::pathextend::keys(&ctx, actions);
     keys::canvas_keys(
         keys::Keys {
             ctx: &ctx,

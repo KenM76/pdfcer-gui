@@ -538,6 +538,7 @@ pub fn merged(outcome: &pdfcer_core::edit::MergeOutcome) -> Vec<String> {
         "Merged {} page(s) into this document.",
         outcome.pages_merged
     )];
+    notes.extend(crate::text::cedimcopy::copied(&outcome.into()));
     if outcome.fields_merged > 0 {
         notes.push(format!(
             "{} form field(s) came across and are fillable here.",

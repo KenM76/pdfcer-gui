@@ -161,6 +161,7 @@ mod handles_body_tests;
 /// `interact` under R2; its header carries the four-way precedence between a
 /// Bézier handle, an anchor, a resize grip and the selection body — the single
 /// most bug-prone rule on this canvas, learned three separate times in one day.
+pub mod pathextend;
 pub mod pressing;
 pub mod presspick;
 /// Dragging a form field's box. The third module on the annotation branch of

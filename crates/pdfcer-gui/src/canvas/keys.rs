@@ -458,6 +458,12 @@ pub(super) fn canvas_keys(
         && !guide_cancelled
         && !measure_settled
         && crate::canvas::markup::vertex::escape(ctx, actions, pen);
+    // …and a Continue path run, on the same rung for the same reason.
+    let vertex_settled = vertex_settled
+        || (escape_available
+            && !guide_cancelled
+            && !measure_settled
+            && crate::canvas::pathextend::escape(ctx, actions));
 
     // …and a **text draft** in progress, third on the same rung. It takes the
     // rung for its neighbours' reason — a caret with characters typed into it

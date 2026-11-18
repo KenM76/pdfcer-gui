@@ -806,6 +806,18 @@ pub enum VectorAction {
         /// What each node gets.
         shape: super::NodeShape,
     },
+    /// **Format ▸ Nodes ▸ Continue path / Open path here** at one node — one
+    /// undo entry, `CommandKind::ExtendPath` or `CommandKind::OpenSubpath`.
+    PathEnd {
+        /// The 0-based page.
+        page: usize,
+        /// The path.
+        host: super::NodeHost,
+        /// The object-scoped node index.
+        node: usize,
+        /// What is done there.
+        edit: super::PathEdit,
+    },
     /// **Format ▸ Replace image** — draw `image` in place of the image
     /// object at `object` (`EditSession::replace_image`, `ImageFit::Contain`).
     /// One undo entry, `CommandKind::ReplaceImage`; the object keeps its

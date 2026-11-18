@@ -203,7 +203,7 @@ fn handles_after(session: &Session, mark: usize) -> Result<usize> {
 }
 
 /// The `key` of the last `event` line after `mark`.
-fn last_usize(session: &Session, event: &str, key: &str, mark: usize) -> Result<usize> {
+pub(super) fn last_usize(session: &Session, event: &str, key: &str, mark: usize) -> Result<usize> {
     session
         .trace()?
         .last_after(event, mark)

@@ -248,6 +248,12 @@ impl ModelView {
                 pen.dot(reading.point);
                 pen.path(reading.ring().into_iter());
             }
+            if self.measure.surfaces() {
+                self.measure.surfaces.marks().for_each(|p| pen.dot(p));
+                if let Some((from, to)) = self.measure.surfaces.leader() {
+                    pen.line(from, to);
+                }
+            }
         }
     }
 }

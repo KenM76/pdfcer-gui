@@ -15,6 +15,7 @@ use pdfcer_core::edit::CommandKind;
 mod inform_delete;
 mod leaftransform;
 mod nodeshape;
+mod pathend;
 mod replaceimage;
 mod shrinkimages;
 mod textmerge;
@@ -686,6 +687,7 @@ pub(super) fn apply(doc: &mut crate::app::state::OpenDoc, action: VectorAction) 
             nodes,
             shape,
         } => nodeshape::apply(doc, page, host, &nodes, shape),
+        end @ VectorAction::PathEnd { .. } => pathend::apply(doc, end),
         VectorAction::ReplaceImage {
             page,
             object,

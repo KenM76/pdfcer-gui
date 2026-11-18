@@ -71,7 +71,7 @@ impl Check for TheViewerReadsTheLight {
 }
 
 /// A reading line's number under `key`.
-fn number(line: &TraceLine, key: &str) -> f64 {
+pub(crate) fn number(line: &TraceLine, key: &str) -> f64 {
     line.get(key)
         .and_then(|v| v.parse().ok())
         .unwrap_or(f64::NAN)

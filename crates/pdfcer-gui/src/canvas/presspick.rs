@@ -213,6 +213,7 @@ fn press_selects(
         && caps.edit_content
         && !shift
         && !crate::canvas::zoom::region_zoom_armed(ctx)
+        && !crate::canvas::pathextend::active(ctx)
         && ctx.input(|i| i.pointer.button_pressed(egui::PointerButton::Primary))
 }
 

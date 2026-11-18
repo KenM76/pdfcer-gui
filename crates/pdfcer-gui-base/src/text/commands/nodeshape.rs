@@ -63,3 +63,23 @@ pub const fn format_segment_curve() -> CommandText {
          its shape until you do.",
     )
 }
+
+/// `format.path_continue`
+#[must_use]
+pub const fn format_path_continue() -> CommandText {
+    CommandText::new(
+        "Continue path",
+        "Draw on from the selected end node of an open path: each click adds a straight \
+         segment. Double-click, Enter or Esc finishes; Backspace takes back the last click; Esc \
+         before any click cancels.",
+    )
+}
+
+/// `format.path_open`
+#[must_use]
+pub const fn format_path_open() -> CommandText {
+    CommandText::new(
+        "Open path here",
+        "Break the closed path at the selected node, so it starts and ends there.",
+    )
+}

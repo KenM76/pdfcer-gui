@@ -104,6 +104,9 @@ fn sentence(
     tool: CanvasTool,
     sweeps_text: bool,
 ) -> (String, Option<String>) {
+    if crate::canvas::pathextend::active(ctx) {
+        return (crate::text::pathedit::continue_prompt().to_owned(), None);
+    }
     match tool {
         // The resting state, and the one sentence in the application that says
         // what a plain drag MEANS in this mode — it marquees objects in Edit

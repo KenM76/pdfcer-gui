@@ -144,10 +144,15 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
             // these two fields are the only things in the line that would
             // differ. `path` is Debug-quoted so a Windows path with a space in
             // it cannot make every field after it unreadable.
-            "merge-files path={target:?} sources={} pages={} bytes={}",
+            "merge-files path={target:?} sources={} pages={} bytes={} ce_dims_carried={} ce_dims_as_lines={} ce_groups_carried={} ce_groups_matched={} ce_groups_renamed={}",
             sources.len(),
             report.pages,
             bytes.len(),
+            report.ce_dimensions_carried,
+            report.ce_dimensions_as_lines.iter().sum::<usize>(),
+            report.ce_dimension_groups_carried,
+            report.ce_dimension_groups_matched,
+            report.ce_dimension_groups_renamed,
         )
     });
 
@@ -165,6 +170,10 @@ pub(crate) fn write_merge(status: &crate::app::state::Status, sources: &[PathBuf
     ) {
         note.push(' ');
         note.push_str(&links);
+    }
+    if let Some(ce) = crate::text::cedimcopy::copied(&(&report).into()) {
+        note.push(' ');
+        note.push_str(&ce);
     }
     say(note);
 }

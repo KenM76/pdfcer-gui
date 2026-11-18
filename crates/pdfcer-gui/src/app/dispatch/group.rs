@@ -1,7 +1,9 @@
 //! # `app::dispatch::group` — Group and Ungroup
 //!
 //! Page objects selected in a mode that edits content are grouped into one
-//! form XObject, or one selected form is taken apart; otherwise the selected
+//! form XObject, or one selected form is taken apart; parts selected inside a
+//! placed drawing are grouped within it, or the group one part is directly
+//! inside is taken apart; otherwise the selected
 //! markups are grouped under the one selected last, or their group is
 //! released. The chords are bound to the `markup.*` ids and reach both, as
 //! `super::arrange`'s do.
@@ -17,9 +19,11 @@ use crate::app::state::{OpenDoc, Status};
 use crate::canvas::selection::AnnotKind;
 use crate::text::grouping::GroupRefusal;
 
-/// Set while two or more page objects are selected in a mode that edits them.
+/// Set while two or more page objects, or two or more parts of placed
+/// drawings, are selected in a mode that edits them.
 pub(crate) const OBJECTS_GROUPABLE: &str = "selection.objects_groupable"; // ui-text-exempt: condition name
-/// Set while the one selected page object is a group or a placed drawing.
+/// Set while the one selected page object is a group or a placed drawing, or
+/// one part of a placed drawing is selected.
 pub(crate) const FORM_UNGROUPABLE: &str = "selection.form_ungroupable"; // ui-text-exempt: condition name
 /// Set while two or more markups are selected in a mode that authors them.
 pub(crate) const MARKUPS_GROUPABLE: &str = "selection.markups_groupable"; // ui-text-exempt: condition name
@@ -46,6 +50,30 @@ fn wants_group(id: &str) -> Option<bool> {
 #[must_use]
 pub(crate) fn groupable_objects(doc: &OpenDoc) -> Option<(usize, Vec<usize>)> {
     super::arrange::restackable_objects(doc).filter(|(_, objects)| objects.len() >= 2)
+}
+
+/// The page and the two or more parts of placed drawings Group would gather
+/// inside the drawing that holds them; the engine refuses parts of two.
+#[must_use]
+pub(crate) fn groupable_leaves(doc: &OpenDoc) -> Option<(usize, Vec<usize>)> {
+    selected_leaves(doc).filter(|(_, leaves)| leaves.len() >= 2)
+}
+
+/// The page and the one selected part of a placed drawing.
+#[must_use]
+pub(crate) fn ungroupable_leaf(doc: &OpenDoc) -> Option<(usize, usize)> {
+    match selected_leaves(doc)? {
+        (page, leaves) if leaves.len() == 1 => Some((page, leaves[0])),
+        _ => None,
+    }
+}
+
+/// Parts of placed drawings selected whole, with no page object or markup.
+fn selected_leaves(doc: &OpenDoc) -> Option<(usize, Vec<usize>)> {
+    if doc.selection.level() != crate::canvas::selection::SelectionLevel::Object {
+        return None;
+    }
+    crate::canvas::formclip::leaves_only(doc)
 }
 
 /// The page and the one selected page object, when it is a form XObject.
@@ -133,10 +161,10 @@ pub(crate) fn conditions(
 ) {
     let can = app.capabilities();
     if can.edit_content {
-        if groupable_objects(doc).is_some() {
+        if groupable_objects(doc).is_some() || groupable_leaves(doc).is_some() {
             set.set(OBJECTS_GROUPABLE);
         }
-        if ungroupable_form(doc).is_some() {
+        if ungroupable_form(doc).is_some() || ungroupable_leaf(doc).is_some() {
             set.set(FORM_UNGROUPABLE);
         }
     }
@@ -153,9 +181,18 @@ pub(crate) fn conditions(
 /// The page-object verb `group` asks for, if the selection offers one.
 fn object_action(doc: &OpenDoc, group: bool) -> Option<GroupAction> {
     if group {
-        groupable_objects(doc).map(|(page, objects)| GroupAction::Objects { page, objects })
+        groupable_objects(doc)
+            .map(|(page, objects)| GroupAction::Objects { page, objects })
+            .or_else(|| {
+                groupable_leaves(doc)
+                    .map(|(page, leaves)| GroupAction::ObjectsInForm { page, leaves })
+            })
     } else {
-        ungroupable_form(doc).map(|(page, object)| GroupAction::UngroupForm { page, object })
+        ungroupable_form(doc)
+            .map(|(page, object)| GroupAction::UngroupForm { page, object })
+            .or_else(|| {
+                ungroupable_leaf(doc).map(|(page, leaf)| GroupAction::UngroupInForm { page, leaf })
+            })
     }
 }
 

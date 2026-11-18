@@ -148,6 +148,15 @@ pub(crate) fn record_run_split(why: crate::text::runsplit::RunSplitRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::RunSplit(why)));
 }
 
+/// Record why Continue path or Open path here changed nothing, and trace it.
+pub(crate) fn record_path_edit(why: crate::text::pathedit::PathEditRefusal) {
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!("path-edit-declined reason={}", why.token())
+    });
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::PathEdit(why)));
+}
+
 /// Record why a Find bar Replace rewrote nothing.
 pub(crate) fn record_replace(why: crate::text::replace::ReplaceRefusal) {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::Replace(why)));

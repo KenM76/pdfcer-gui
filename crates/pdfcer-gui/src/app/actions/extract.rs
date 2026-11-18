@@ -136,9 +136,9 @@ fn receipt(doc: &OpenDoc, report: &AssembleReport, target: &Path) -> String {
         note.push(' ');
         note.push_str(&links);
     }
-    if let Some(ce) = crate::text::cedimcopy::copied(report.ce_dimension_sidecar_newer) {
+    if let Some(ce) = crate::text::cedimcopy::copied(&report.into()) {
         note.push(' ');
-        note.push_str(ce);
+        note.push_str(&ce);
     }
     note
 }

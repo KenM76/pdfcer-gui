@@ -395,7 +395,7 @@ pub(in crate::canvas) fn preview(
 }
 
 /// PDF user space → screen, both hops.
-fn to_screen(x: f64, y: f64, page: &Page, map: &PageMapping) -> Option<Pos2> {
+pub(in crate::canvas) fn to_screen(x: f64, y: f64, page: &Page, map: &PageMapping) -> Option<Pos2> {
     #[allow(clippy::cast_possible_truncation)]
     let canvas = viewer::pdf_space_to_canvas(Pos2::new(x as f32, y as f32), page)?;
     Some(map.to_screen(canvas))

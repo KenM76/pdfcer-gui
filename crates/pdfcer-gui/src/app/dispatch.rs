@@ -83,6 +83,8 @@ pub(crate) mod nodeshape;
 /// operand problem (a command id is a verb with no noun) and the
 /// park-and-drain shape that answers it.
 pub(crate) mod panels;
+/// Format ▸ Nodes ▸ Continue path and Open path here.
+pub(crate) mod pathend;
 #[cfg(target_os = "android")]
 pub(crate) mod phoneprint;
 /// Format ▸ Replace image.
@@ -998,6 +1000,7 @@ impl PdfcerApp {
             id if arrange::claims(id) => arrange::dispatch(self, id, actions),
             id if group::claims(id) => group::dispatch(self, id, actions),
             id if nodeshape::claims(id) => nodeshape::dispatch(self, id, actions),
+            id if pathend::claims(id) => pathend::dispatch(self, ctx, id, actions),
             "format.replace_image" => replaceimage::dispatch(self, actions),
             "format.shrink_images" => shrinkimages::dispatch(self),
             "edit.align_left"

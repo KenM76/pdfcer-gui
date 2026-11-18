@@ -28,7 +28,7 @@ pub enum GroupRefusal {
     NotMarkup,
     /// A selected annotation is a ce dimension.
     CeDimension,
-    /// A selected markup is a reply or already a group member.
+    /// A selected markup, or the primary of its group, is a reply.
     AlreadyLinked,
     /// A selected markup is the primary of another group.
     LeadsAGroup,
@@ -36,6 +36,13 @@ pub enum GroupRefusal {
     NotGrouped,
     /// The selected markups are on different pages.
     DifferentPages,
+    /// The selected parts are in more than one placed drawing, or in two
+    /// placements of one.
+    DifferentDrawings,
+    /// The parts are already nested as deep as pdfcer edits.
+    TooDeep,
+    /// The drawing borrows the resources of whatever places it.
+    NoOwnResources,
     /// Anything else the engine refused.
     Other,
 }
@@ -84,8 +91,8 @@ impl GroupRefusal {
                  Nothing was grouped."
             }
             Self::AlreadyLinked => {
-                "One of the selected markups is a reply to another, or is already in a group. \
-                 Ungroup it first. Nothing was grouped."
+                "One of the selected markups is a reply to another markup, and a reply cannot \
+                 join a group. Nothing was grouped."
             }
             Self::LeadsAGroup => {
                 "One of the selected markups already leads a group of its own. Ungroup that \
@@ -95,13 +102,26 @@ impl GroupRefusal {
             Self::DifferentPages => {
                 "Markups on different pages cannot be grouped. Nothing was grouped."
             }
+            Self::DifferentDrawings => {
+                "The selected parts are in different placed drawings, or in two places one \
+                 drawing is used, and a group is made inside one of them. Nothing was grouped."
+            }
+            Self::TooDeep => {
+                "These parts are already nested as deep as pdfcer can edit, so a group around \
+                 them could not be selected or changed afterwards. Nothing was grouped."
+            }
+            Self::NoOwnResources => {
+                "This drawing takes its fonts and images from whatever page places it, so a \
+                 group inside it would have nowhere to be named for every place it is used. \
+                 Nothing was grouped."
+            }
             Self::Other => "That could not be grouped or ungrouped. Nothing changed.",
         }
     }
 
     /// Every refusal, for tests.
     #[must_use]
-    pub const fn all() -> [Self; 15] {
+    pub const fn all() -> [Self; 18] {
         [
             Self::TooFew,
             Self::DifferentScope,
@@ -117,6 +137,9 @@ impl GroupRefusal {
             Self::LeadsAGroup,
             Self::NotGrouped,
             Self::DifferentPages,
+            Self::DifferentDrawings,
+            Self::TooDeep,
+            Self::NoOwnResources,
             Self::Other,
         ]
     }
@@ -164,6 +187,53 @@ pub fn markups_grouped(count: usize) -> String {
     )
 }
 
+/// **Markups and the groups they were in became one group**, the earlier
+/// groups recorded so Ungroup puts them back.
+#[must_use]
+pub const fn markups_merged() -> &'static str {
+    "The selected markups and the groups they were in are now one group. Ungroup takes it \
+     apart one level and puts those groups back."
+}
+
+/// **Group changed nothing**: every selected markup is in one group already.
+#[must_use]
+pub const fn markups_already_one_group() -> &'static str {
+    "The selected markups are already one group. Nothing changed."
+}
+
+/// **A group came apart one level**: `restored` earlier groups are back.
+#[must_use]
+pub fn markups_ungrouped_one_level(restored: usize) -> String {
+    if restored == 1 {
+        "The group came apart one level: the group it was made from is back. Ungroup again to \
+         take that one apart too."
+            .to_owned()
+    } else {
+        format!(
+            "The group came apart one level: the {restored} groups it was made from are back. \
+             Ungroup again to take those apart too."
+        )
+    }
+}
+
+/// **Parts inside a placed drawing became a group within it.**
+#[must_use]
+pub fn grouped_in_drawing(members: usize) -> String {
+    format!("{members} parts of the placed drawing are now a group inside it.")
+}
+
+/// **A group inside a placed drawing was taken apart.**
+#[must_use]
+pub const fn ungrouped_in_drawing() -> &'static str {
+    "The group was taken apart; its parts stay inside the placed drawing that held it."
+}
+
+/// **A part's own placed drawing was taken apart onto the page.**
+#[must_use]
+pub const fn ungrouped_out_of_drawing() -> &'static str {
+    "The placed drawing was taken apart; its parts are objects on the page now."
+}
+
 /// **A markup group was dissolved**; each member's own comment is in force
 /// again.
 #[must_use]
@@ -207,5 +277,8 @@ mod tests {
         assert!(ungrouped_renamed(3).starts_with("3 "));
         assert!(markups_ungrouped(1).starts_with("One "));
         assert!(markups_grouped(4).starts_with("4 "));
+        assert!(markups_ungrouped_one_level(1).contains("the group it was made from is back"));
+        assert!(markups_ungrouped_one_level(2).contains("the 2 groups"));
+        assert!(grouped_in_drawing(2).starts_with("2 "));
     }
 }

@@ -211,6 +211,135 @@ pub fn light_refused(why: &str) -> String {
     format!("No reading: {why}.")
 }
 
+/// The surface measure's button beside the kinds.
+pub const SURFACES: &str = "Between surfaces";
+/// The surface measure's tip.
+pub const SURFACES_TIP: &str = "Pick two flat surfaces. Surfaces parallel within the tolerance you set give the distance \
+     between them, any others the angle between them; the angle is shown either way. Nothing is \
+     written to the file.";
+/// Before the parallel tolerance.
+pub const SURFACE_PARALLEL: &str = "Parallel within";
+/// The parallel tolerance's tip.
+pub const SURFACE_PARALLEL_TIP: &str = "Surfaces whose planes meet at this angle or less count as parallel and are measured for \
+     distance; wider ones are measured for angle.";
+/// The force-parallel switch.
+pub const SURFACE_FORCE: &str = "Always measure a distance";
+/// The force-parallel switch's tip.
+pub const SURFACE_FORCE_TIP: &str = "Give a distance even when the surfaces are wider apart than the tolerance: from the second \
+     picked point to the first surface's plane. The angle is still shown.";
+/// The first of the two surfaces, in the tab.
+pub const SURFACE_FIRST: &str = "First surface";
+/// The second of the two.
+pub const SURFACE_SECOND: &str = "Second surface";
+
+/// What the next click picks, `done` surfaces picked.
+#[must_use]
+pub fn surface_next(done: usize) -> &'static str {
+    if done == 0 {
+        "Pick the first surface."
+    } else {
+        "Pick the second surface."
+    }
+}
+
+/// `value` followed by `unit` when there is one.
+fn with_unit(value: f64, unit: &str) -> String {
+    if unit.is_empty() {
+        format!("{value:.3}")
+    } else {
+        format!("{value:.3} {unit}")
+    }
+}
+
+/// The headline of a distance between parallel surfaces.
+#[must_use]
+pub fn surface_distance(distance: f64, unit: &str) -> String {
+    format!("Distance {}", with_unit(distance, unit))
+}
+
+/// The headline of an angle between surfaces.
+#[must_use]
+pub fn surface_angle(degrees: f64) -> String {
+    format!("Angle {degrees:.2}\u{b0}")
+}
+
+/// How the two planes lie against the tolerance: `forced` is `None` for a
+/// pair measured for angle.
+#[must_use]
+pub fn surface_relation(angle: f64, tolerance: f64, forced: Option<bool>) -> String {
+    match forced {
+        Some(false) => {
+            format!("Parallel within {tolerance:.2}\u{b0}: the planes are {angle:.2}\u{b0} apart.")
+        }
+        Some(true) => format!(
+            "Not parallel: the planes are {angle:.2}\u{b0} apart, wider than {tolerance:.2}\u{b0}. The \
+             distance is from the second point to the first surface's plane."
+        ),
+        None => format!(
+            "Not parallel within {tolerance:.2}\u{b0}, so the angle is measured: {angle:.2}\u{b0}."
+        ),
+    }
+}
+
+/// What the two fitted planes rest on: triangles counted, how many surfaces
+/// are only part of their face, and whether the file marks faces at all.
+#[must_use]
+pub fn surface_fit(triangles: [usize; 2], partial: usize, faces: bool) -> String {
+    let [a, b] = triangles;
+    let head = format!("Planes fitted from {a} and {b} triangles.");
+    match (faces, partial) {
+        (false, _) => format!(
+            "{head} The file marks no faces, so each surface is the flat part of its part round the pick."
+        ),
+        (true, 0) => format!("{head} Each is a whole face."),
+        (true, 1) => {
+            format!("{head} One is only the flat part round the pick of a curved or stepped face.")
+        }
+        (true, _) => format!(
+            "{head} Both are only the flat part round the pick of a curved or stepped face."
+        ),
+    }
+}
+
+/// One surface in the tab: its name, what it was fitted from, its area and
+/// how flat the fit is.
+#[must_use]
+pub fn surface_detail(
+    which: &str,
+    triangles: usize,
+    area: f64,
+    unit: &str,
+    flatness: f64,
+) -> String {
+    let squared = if unit.is_empty() {
+        String::new()
+    } else {
+        format!(" {unit}\u{b2}")
+    };
+    format!("{which}: {triangles} triangles, area {area:.3}{squared}, flat to {flatness:.2}\u{b0}.")
+}
+
+/// The straight distance between the two picked points.
+#[must_use]
+pub fn surface_points(distance: f64, unit: &str) -> String {
+    format!("Between the picked points: {}", with_unit(distance, unit))
+}
+
+/// The angle between the surfaces' outward sides.
+#[must_use]
+pub fn surface_sides(degrees: f64) -> String {
+    format!(
+        "Their outward sides are {degrees:.2}\u{b0} apart: 180\u{b0} for the two sides of a plate, \
+         0\u{b0} for two steps facing the same way."
+    )
+}
+
+/// The engine refused the measurement; `why` is its reason.
+#[must_use]
+pub fn surface_refused(why: &str) -> String {
+    format!("No measurement: {why}.")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -222,5 +351,19 @@ mod tests {
         assert_eq!(unit_word(25.4), "in");
         assert_eq!(unit_word(1000.0), "m");
         assert_eq!(unit_word(7.0), "");
+    }
+
+    #[test]
+    fn a_surface_measure_says_which_relation_and_what_the_planes_rest_on() {
+        assert_eq!(surface_distance(1.0, "mm"), "Distance 1.000 mm");
+        assert_eq!(surface_distance(1.0, ""), "Distance 1.000");
+        assert!(surface_relation(0.1, 0.5, Some(false)).starts_with("Parallel within"));
+        assert!(surface_relation(90.0, 0.5, Some(true)).starts_with("Not parallel:"));
+        assert!(surface_relation(90.0, 0.5, None).contains("angle is measured"));
+        assert!(surface_fit([2, 2], 0, true).ends_with("Each is a whole face."));
+        assert!(surface_fit([2, 2], 1, true).contains("One is only"));
+        assert!(surface_fit([2, 2], 2, true).contains("Both are only"));
+        assert!(surface_fit([2, 2], 2, false).contains("marks no faces"));
+        assert_eq!(surface_refused("no area"), "No measurement: no area.");
     }
 }

@@ -26,6 +26,8 @@ const STATE: &str = "model-view-parts-state";
 const BULB: usize = 3;
 /// `Fittings`: a folder of the model's own holding only glowing parts.
 const FITTINGS: usize = 4;
+/// The root, on which the file stores both lamps.
+const ROOT: usize = 0;
 
 /// See the module documentation.
 pub struct TheViewerSwitchesLights;
@@ -120,6 +122,29 @@ impl Lights<'_> {
         Ok(None)
     }
 
+    /// The root's light box switches the lamps stored on it with the parts
+    /// under it, and the lamps' own rows stay on.
+    fn root(&self, report: &mut CheckReport, start: &str) -> Result<Option<String>> {
+        let region = format!("model3d.part.glow.{ROOT}");
+        for (dark, drawn) in [(&[ROOT][..], "0"), (&[][..], "2")] {
+            let line = self.0.click(&region, "", LIGHTS)?;
+            if let Some(line) = &line
+                && line.get("lamps-drawn") != Some(drawn)
+            {
+                return Ok(Some(format!(
+                    "★★★ `{region}` traced `{}`; the root carries both lamps, so {drawn} must \
+                     be drawn.",
+                    line.raw
+                )));
+            }
+            let failure = self.judge(report, &region, line, (dark, &[]), start)?;
+            if failure.is_some() {
+                return Ok(failure);
+            }
+        }
+        Ok(None)
+    }
+
     /// Choose `key` on the menu of the bulb's row.
     fn menu(&self, key: &str) -> Result<Option<TraceLine>> {
         let row = format!("model3d.part.name.{BULB}");
@@ -136,9 +161,14 @@ impl Lights<'_> {
             )));
         };
         report.note(format!("open: {} picture={start}", open.raw));
-        if set(&open, "gathered") != BTreeSet::from([BULB]) || open.get("lamps") == Some("0") {
+        let carried = open.get("lamp-nodes") == Some("0|0");
+        if set(&open, "gathered") != BTreeSet::from([BULB])
+            || open.get("lamps") == Some("0")
+            || !carried
+        {
             return Ok(Some(format!(
-                "the model opened as `{}`; it must carry a lamp and gather part {BULB} alone.",
+                "the model opened as `{}`; it must carry two lamps on node {ROOT} and gather part \
+                 {BULB} alone.",
                 open.raw
             )));
         }
@@ -163,6 +193,10 @@ impl Lights<'_> {
             if failure.is_some() {
                 return Ok(failure);
             }
+        }
+        let failure = self.root(report, &start)?;
+        if failure.is_some() {
+            return Ok(failure);
         }
         self.0
             .click(&format!("model3d.part.name.{BULB}"), "", STATE)?;

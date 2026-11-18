@@ -759,6 +759,15 @@
                             id: "format.segment_curve",
                             visible_when: "selection.nodes_shapeable",
                         ),
+                        Separator,
+                        Command(
+                            id: "format.path_continue",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
+                        Command(
+                            id: "format.path_open",
+                            visible_when: "selection.nodes_shapeable",
+                        ),
                     ],
                 ),
                 (
@@ -916,6 +925,8 @@
                 ),
                 Command(id: "format.replace_image", visible_when: "selection.image_replaceable"),
                 Command(id: "format.shrink_images", visible_when: "selection.images_shrinkable"),
+                Command(id: "format.path_continue", visible_when: "selection.nodes_shapeable"),
+                Command(id: "format.path_open", visible_when: "selection.nodes_shapeable"),
                 Command(id: "edit.bring_to_front", visible_when: "selection.objects_restackable"),
                 Command(id: "edit.bring_forward", visible_when: "selection.objects_restackable"),
                 Command(id: "edit.send_backward", visible_when: "selection.objects_restackable"),

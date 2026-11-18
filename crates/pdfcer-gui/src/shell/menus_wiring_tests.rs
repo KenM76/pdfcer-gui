@@ -94,9 +94,10 @@ fn the_icon_column_lights_up_the_rows_whose_commands_already_name_a_glyph() {
     // Blank 1 → 5: the four Edit ▸ Arrange rows on the canvas object menu;
     // no stacking glyph exists (see `ledger`'s refused count).
     // Blank 5 → 7: Group and Ungroup on the canvas object menu.
+    // Blank 7 → 9: Continue path and Open path here on the canvas object menu.
     assert_eq!(
         (glyph, blank, absent),
-        (76, 7, 0),
+        (76, 9, 0),
         "menu rows by icon slot state; per-menu breakdown:\n{report}"
     );
     assert_eq!(

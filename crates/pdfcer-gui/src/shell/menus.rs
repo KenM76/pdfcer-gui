@@ -373,6 +373,9 @@ pub fn built_in() -> Menus {
             Item::command("format.split_text_lines").shown_when(TEXT_SPLIT_OFFERED),
             Item::command("format.replace_image").shown_when(IMAGE_REPLACEABLE),
             Item::command("format.shrink_images").shown_when(IMAGES_SHRINKABLE),
+            // At the Node rung, where right-click keeps the node selection.
+            Item::command("format.path_continue").shown_when(NODES_SHAPEABLE),
+            Item::command("format.path_open").shown_when(NODES_SHAPEABLE),
             Item::command("edit.bring_to_front").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.bring_forward").shown_when(OBJECTS_RESTACKABLE),
             Item::command("edit.send_backward").shown_when(OBJECTS_RESTACKABLE),

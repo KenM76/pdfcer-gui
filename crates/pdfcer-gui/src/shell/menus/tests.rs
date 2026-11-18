@@ -361,6 +361,8 @@ fn each_menu_holds_exactly_the_documented_items() {
                 "format.split_text_lines",
                 "format.replace_image",
                 "format.shrink_images",
+                "format.path_continue",
+                "format.path_open",
                 "edit.bring_to_front",
                 "edit.bring_forward",
                 "edit.send_backward",

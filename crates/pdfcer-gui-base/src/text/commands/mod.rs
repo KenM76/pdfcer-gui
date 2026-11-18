@@ -902,12 +902,12 @@ pub use arrange::{
     markup_bring_forward, markup_bring_to_front, markup_send_backward, markup_send_to_back,
 };
 
-/// The six Format ▸ Nodes controls.
+/// The Format ▸ Nodes controls.
 pub mod nodeshape;
 
 pub use nodeshape::{
     format_node_corner, format_node_insert, format_node_smooth, format_node_symmetric,
-    format_segment_curve, format_segment_line,
+    format_path_continue, format_path_open, format_segment_curve, format_segment_line,
 };
 
 // ===========================================================================

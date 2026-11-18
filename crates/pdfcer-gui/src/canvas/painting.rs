@@ -724,6 +724,13 @@ pub(super) fn draw(
             pen,
         );
     }
+    crate::canvas::pathextend::preview(
+        ui,
+        doc.current_page(),
+        page_index,
+        map,
+        screen_pos.map(|p| map.to_page(p)),
+    );
     // …and the form-field ghost — `OPERATOR_REQUESTS.md` O203 — which is the
     // same argument once more and arrives at the same answer from the other
     // end: a click-placed field has no gesture in flight for a frame to see, so

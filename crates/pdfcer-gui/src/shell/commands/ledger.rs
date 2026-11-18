@@ -442,9 +442,10 @@ fn registration_succeeds_and_registers_every_command() {
     // 260 → 261: `view.page_boxes`, View ▸ Display.
     // 261 → 263: `markup.add_text` and `markup.paragraphs`, Markup ▸ Content.
     // 263 → 267: Group and Ungroup, on Edit ▸ Arrange and Markup ▸ Arrange.
+    // 267 → 269: Continue path and Open path here, Format ▸ Nodes.
     assert_eq!(
         registry().len(),
-        267 + 2 * usize::from(cfg!(feature = "signing"))
+        269 + 2 * usize::from(cfg!(feature = "signing"))
             + usize::from(cfg!(feature = "timestamp"))
             + usize::from(cfg!(feature = "3d"))
     );
@@ -1191,8 +1192,10 @@ fn the_icon_coverage_split_adds_up_to_the_registry() {
         // grows; no glyph for more pixels at the same size exists.
         // 31 → 35 — Group and Ungroup on both Arrange groups: a supply
         // refusal; no grouping glyph exists.
+        // 35 → 37 — Continue path and Open path here, with the other Format ▸
+        // Nodes commands: no node-kind glyph exists.
         refused,
-        35,
+        37,
         "commands with no icon, each argued at its registration"
     );
     // Each refusal is argued at its own registration and listed in the

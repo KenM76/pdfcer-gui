@@ -197,6 +197,9 @@ pub fn tab() -> Tab {
                     Item::Separator,
                     command("format.segment_line").shown_when(NODES_VISIBLE_WHEN),
                     command("format.segment_curve").shown_when(NODES_VISIBLE_WHEN),
+                    Item::Separator,
+                    command("format.path_continue").shown_when(NODES_VISIBLE_WHEN),
+                    command("format.path_open").shown_when(NODES_VISIBLE_WHEN),
                 ],
             ),
             group(
@@ -318,6 +321,8 @@ mod tests {
         "format.node_symmetric",
         "format.segment_line",
         "format.segment_curve",
+        "format.path_continue",
+        "format.path_open",
         "format.replace_image",
         "format.shrink_images",
     ];

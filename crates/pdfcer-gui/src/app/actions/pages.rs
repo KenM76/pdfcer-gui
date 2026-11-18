@@ -227,13 +227,18 @@ pub(super) fn merge_into(doc: &mut OpenDoc, path: &Path) {
                     // the convention is what stops the third.
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
                     format!(
-                        "merge-document-applied pages={} fields={} renamed={} bookmarks={} layers={} configs_dropped={}",
+                        "merge-document-applied pages={} fields={} renamed={} bookmarks={} layers={} configs_dropped={} ce_dims_carried={} ce_dims_as_lines={} ce_groups_carried={} ce_groups_matched={} ce_groups_renamed={}",
                         outcome.pages_merged,
                         outcome.fields_merged,
                         outcome.fields_renamed,
                         outcome.outline_items_carried,
                         outcome.layers_merged,
-                        outcome.layer_configs_dropped
+                        outcome.layer_configs_dropped,
+                        outcome.ce_dimensions_carried,
+                        outcome.ce_dimensions_as_lines,
+                        outcome.ce_dimension_groups_carried,
+                        outcome.ce_dimension_groups_matched,
+                        outcome.ce_dimension_groups_renamed,
                     )
                 });
                 crate::text::pages::merged(&outcome)
@@ -344,6 +349,7 @@ pub(super) fn insert_from_view(
                     outcome.links_to_pages_left_behind,
                     outcome.source_tags_dropped,
                 ));
+                notes.extend(crate::text::cedimcopy::copied(&(&outcome).into()));
                 if let Some(refusal) = done.stopped {
                     notes.push(crate::text::insertblank::insert_stopped(
                         outcome.pages_inserted,

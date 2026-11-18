@@ -146,6 +146,7 @@ pub mod import_text;
 /// **Insert blank pages** — several sheets land as separate page objects, of
 /// the chosen size, and one undo removes them.
 pub mod insert_blank_pages;
+pub mod insert_ce_dimensions;
 
 pub mod line_weights;
 
@@ -213,9 +214,11 @@ pub mod form_part_delete;
 pub mod form_style;
 pub mod form_text_reshape;
 pub mod group_fraction_reduces;
+pub mod group_in_form;
 pub mod group_markups;
 pub mod group_numbers_at_creation;
 pub mod group_objects;
+pub mod group_of_groups;
 pub mod group_unit_converts;
 pub mod leafplace;
 pub mod leaftransform;
@@ -224,6 +227,7 @@ pub mod markup_reshape;
 pub mod markup_text_tools;
 pub mod nodeshape;
 pub mod nudgecontent;
+pub mod path_extend_open;
 pub mod replaceimage;
 pub mod restack;
 /// The annotations a saved file finally lists on its pages.
@@ -986,6 +990,8 @@ pub mod model_pick;
 /// A placed 3D model shows the engine's picture of it on the page.
 pub mod model_poster;
 pub mod model_saved_view;
+/// The 3D viewer's Measure tab measures between two picked surfaces.
+pub mod model_surface_measure;
 /// While Play 3D content is off, View… on a model asks first.
 pub mod model_trust;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the

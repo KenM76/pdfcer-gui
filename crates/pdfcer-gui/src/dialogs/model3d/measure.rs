@@ -24,6 +24,8 @@ pub(super) const KINDS: [Kind; 5] = [
 ];
 /// The light meter's place in the kind row, after [`KINDS`].
 pub(super) const LIGHT: usize = KINDS.len();
+/// The surface measure's place in the kind row, after the light meter.
+pub(super) const SURFACES: usize = LIGHT + 1;
 /// How near a triangle's corner a pick snaps to it, in points; a finger gets
 /// the larger reach.
 const SNAP: [f32; 2] = [10.0, 22.0];
@@ -81,6 +83,8 @@ pub(super) struct Measure {
     pub epoch: Option<u64>,
     /// The number of measurements painted, as last traced.
     pub painted: usize,
+    /// The surface measure's picks and tolerance.
+    pub surfaces: super::surfaces::Surfaces,
 }
 
 impl Measure {
@@ -94,6 +98,11 @@ impl Measure {
         self.kind == LIGHT
     }
 
+    /// The surface measure is chosen in place of a kind.
+    pub fn surfaces(&self) -> bool {
+        self.kind == SURFACES
+    }
+
     /// Forget the picks and whatever they made.
     pub fn clear(&mut self) {
         self.picked.clear();
@@ -102,6 +111,7 @@ impl Measure {
         self.hover = None;
         self.hover_key = None;
         self.said = None;
+        self.surfaces.clear();
     }
 
     /// Turn the tool on or off; off drops a measurement not kept.
@@ -226,6 +236,11 @@ impl ModelView {
             self.meter_ask(rect, at, &hit);
             return;
         }
+        if self.measure.surfaces() {
+            self.measure.said = None;
+            self.surface_pick(&hit);
+            return;
+        }
         if self.measure.result.take().is_some() {
             self.measure.picked.clear();
         }
@@ -342,7 +357,8 @@ impl ModelView {
         self.measure.hover = pick;
         self.measure.preview = None;
         let picked = &self.measure.picked;
-        let last = !self.measure.light() && picked.len() + 1 == picks_needed(self.measure.kind());
+        let own = !self.measure.light() && !self.measure.surfaces();
+        let last = own && picked.len() + 1 == picks_needed(self.measure.kind());
         if let (Some(pick), true, None) = (pick, last, &self.measure.result) {
             let mut picks = picked.clone();
             picks.push(pick);

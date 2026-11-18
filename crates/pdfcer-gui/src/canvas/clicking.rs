@@ -179,6 +179,11 @@ pub fn click(
         triple,
         delete_point,
     } = frame;
+    // An armed Continue path run takes every click on its page.
+    if crate::canvas::pathextend::click(ctx, page_index, point, double, doc.current_page(), actions)
+    {
+        return;
+    }
 
     // **This frame's Smart-Selector scope**, read once — O70.
     //

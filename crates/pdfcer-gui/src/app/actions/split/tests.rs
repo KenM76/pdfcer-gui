@@ -197,7 +197,9 @@ fn each_part_keeps_its_ce_dimensions_in_their_group() {
     let written =
         write(&doc, &r, SeparationPolicy::default()).unwrap_or_else(|(_, why)| panic!("{why}"));
     assert_eq!(written.files, 2);
-    assert!(!written.ce_sidecar_newer);
+    assert!(!written.ce.sidecar_newer);
+    assert_eq!(written.ce.carried, 2, "{:?}", written.ce);
+    assert_eq!(written.ce.as_lines, 0, "{:?}", written.ce);
     for name in ["1.pdf", "2.pdf"] {
         let part = EditSession::new(Document::load(&folder.join(name)).expect("the part opens"));
         let model = part.dimension_model();

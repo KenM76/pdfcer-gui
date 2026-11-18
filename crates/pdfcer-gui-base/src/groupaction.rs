@@ -17,6 +17,22 @@ pub enum GroupAction {
         /// Paint-order indices into the page's objects.
         objects: Vec<usize>,
     },
+    /// **Gather objects inside one placed drawing into a group within it**:
+    /// `EditSession::group_objects_in_form`.
+    ObjectsInForm {
+        /// 0-based page index.
+        page: usize,
+        /// Indices into the page's leaves, all in one invocation of one form.
+        leaves: Vec<usize>,
+    },
+    /// **Dissolve the form a leaf is directly inside**:
+    /// `EditSession::ungroup_form_in_form`.
+    UngroupInForm {
+        /// 0-based page index.
+        page: usize,
+        /// The leaf's index in the page's leaves.
+        leaf: usize,
+    },
     /// **Inline a form XObject at this `Do`**: `EditSession::ungroup_form`.
     UngroupForm {
         /// 0-based page index.
@@ -24,8 +40,9 @@ pub enum GroupAction {
         /// The form's paint-order index.
         object: usize,
     },
-    /// **Group markups under a primary** (`/IRT` + `/RT /Group`):
-    /// `EditSession::group_annotations`.
+    /// **Group markups under a primary** (`/IRT` + `/RT /Group`), each
+    /// selected markup bringing the group it is in, recorded so Ungroup puts
+    /// those groups back: `EditSession::merge_annotation_groups`.
     Markups {
         /// The page all of them are on.
         page: usize,
@@ -34,8 +51,8 @@ pub enum GroupAction {
         /// The others.
         members: Vec<ObjId>,
     },
-    /// **Dissolve the group a markup is in**:
-    /// `EditSession::ungroup_annotations`.
+    /// **Dissolve the group a markup is in, one level**: recorded earlier
+    /// groups come back. `EditSession::ungroup_annotations`.
     UngroupMarkups {
         /// The page it is on.
         page: usize,

@@ -111,7 +111,7 @@ pub(super) fn split(doc: &OpenDoc, request: &SplitRequest, separations: Separati
         Ok(Written {
             files,
             kept_labels,
-            ce_sidecar_newer,
+            ce,
         }) => {
             let mut note = t::wrote(files, &request.folder.display().to_string());
             match (kept_labels, doc.page_labels().is_some()) {
@@ -125,9 +125,9 @@ pub(super) fn split(doc: &OpenDoc, request: &SplitRequest, separations: Separati
                     note.push_str(t::labels_dropped());
                 }
             }
-            if let Some(ce) = crate::text::cedimcopy::copied(ce_sidecar_newer) {
+            if let Some(ce) = crate::text::cedimcopy::copied(&ce) {
                 note.push(' ');
-                note.push_str(ce);
+                note.push_str(&ce);
             }
             note
         }
@@ -136,14 +136,12 @@ pub(super) fn split(doc: &OpenDoc, request: &SplitRequest, separations: Separati
     super::record_note(doc.edit_epoch, note);
 }
 
-/// A finished split: how many files, whether labels were carried, and
-/// whether a part's ce dimensions arrived as plain lines because the source's
-/// sidecar is newer than this build reads
-/// (`AssembleReport::ce_dimension_sidecar_newer`).
+/// A finished split: how many files, whether labels were carried, and what
+/// the parts together did with the ce dimensions.
 struct Written {
     files: usize,
     kept_labels: bool,
-    ce_sidecar_newer: bool,
+    ce: crate::text::cedimcopy::CeDimCopy,
 }
 
 /// Plan, assemble and write every part. `Err` carries how many files were
@@ -172,7 +170,7 @@ fn write(
         (0, error.to_string())
     })?;
     let total = parts.len();
-    let mut ce_sidecar_newer = false;
+    let mut ce = crate::text::cedimcopy::CeDimCopy::default();
     for (index, (part, bytes, report)) in parts.iter().enumerate() {
         let target = request.folder.join(&part.name);
         if let Err(error) = std::fs::write(&target, bytes) {
@@ -196,7 +194,7 @@ fn write(
                 u8::from(report.ce_dimension_sidecar_newer),
             )
         });
-        ce_sidecar_newer |= report.ce_dimension_sidecar_newer;
+        ce.add(report.into());
     }
     crate::diag::trace(|| {
         format!(
@@ -210,7 +208,7 @@ fn write(
     Ok(Written {
         files: total,
         kept_labels: request.labels == ExtractedPageLabels::Keep,
-        ce_sidecar_newer,
+        ce,
     })
 }
 

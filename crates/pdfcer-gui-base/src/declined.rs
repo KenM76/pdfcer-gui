@@ -201,6 +201,8 @@ pub enum Declined {
     /// **`format.split_text_lines` was refused**, by the press or by the
     /// engine. Nothing changes on the page. Retired by the operator's next act.
     RunSplit(crate::text::runsplit::RunSplitRefusal),
+    /// **Continue path or Open path here changed nothing.** Retired by the next act.
+    PathEdit(crate::text::pathedit::PathEditRefusal),
     /// **A Find bar Replace rewrote nothing.** Retired by the next act.
     Replace(crate::text::replace::ReplaceRefusal),
     /// **The Settings window's Save wrote nothing.**

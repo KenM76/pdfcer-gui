@@ -8,9 +8,10 @@
 //! is drawn dark (`EmptyArtwork::Dark`, see `Look`) rather than by the
 //! headlight a file with no lights gets. Nothing is written into the file.
 //!
-//! A lamp names no tree node, so the lamps are listed in a folder the viewer
-//! makes up, beside every glowing part that is not already in a folder of the
-//! model's that holds glowing parts only.
+//! A lamp the file stores on a tree node (`ModelLight::node`) is switched by
+//! that node's box and every folder's above it. Every lamp is also listed in a
+//! folder the viewer makes up, beside every glowing part that is not already
+//! in a folder of the model's that holds glowing parts only.
 
 use std::collections::BTreeSet;
 
@@ -38,14 +39,16 @@ pub(super) struct Lights {
     lamps: Vec<ModelLight>,
     /// The model's own finishes, every emission as stored.
     finishes: Vec<Option<MaterialFinish>>,
-    /// Nodes that draw a glowing surface, folders included.
+    /// Nodes that draw a glowing surface or carry a lamp, folders included.
     glowing: BTreeSet<usize>,
     /// Glowing parts gathered into the made-up folder.
     loose: Vec<usize>,
     /// Nodes whose surfaces give off nothing, their descendants with them.
     dark: BTreeSet<usize>,
-    /// Lamps switched off, by index in `lamps`.
+    /// Lamps switched off by their own row, by index in `lamps`.
     lamps_off: BTreeSet<usize>,
+    /// Lamps in the drawn model, after both kinds of switch.
+    drawn: usize,
     /// Why the drawn model no longer matches, until it is rewritten.
     stale: Option<&'static str>,
 }
@@ -67,11 +70,14 @@ impl Lights {
             .filter(|(_, n)| glow.iter().any(|p| n.placements.contains(p)))
             .map(|(i, _)| i)
             .collect();
+        let parents = parents(&model.tree);
+        let loose = loose(&parents, &glowing);
         let lights = Self {
             lamps: model.lights.clone(),
             finishes: model.finishes.clone(),
-            loose: loose(&parents(&model.tree), &glowing),
-            glowing,
+            loose,
+            glowing: with_carriers(glowing, &parents, &model.lights),
+            drawn: model.lights.len(),
             ..Self::default()
         };
         lights.trace("open"); // ui-text-exempt: trace token
@@ -83,6 +89,13 @@ impl Lights {
         !self.glowing.is_empty()
     }
 
+    /// Whether any part's surface gives off light, switched on or not.
+    pub(super) fn has_glowing_surfaces(&self) -> bool {
+        self.finishes
+            .iter()
+            .any(|f| f.is_some_and(|f| f.is_emissive()))
+    }
+
     /// Whether node `i` draws a glowing surface.
     pub(super) fn glows(&self, i: usize) -> bool {
         self.glowing.contains(&i)
@@ -90,13 +103,18 @@ impl Lights {
 
     /// Whether node `i` gives off its light: neither it nor an ancestor is
     /// switched off.
-    pub(super) fn lit(&self, nodes: &[ModelNode], mut i: usize) -> bool {
+    pub(super) fn lit(&self, nodes: &[ModelNode], i: usize) -> bool {
+        self.lit_up(i, |j| nodes.get(j).and_then(|n| n.parent))
+    }
+
+    /// [`Self::lit`] over a tree given by each node's `parent`.
+    fn lit_up(&self, mut i: usize, parent: impl Fn(usize) -> Option<usize>) -> bool {
         loop {
             if self.dark.contains(&i) {
                 return false;
             }
-            match nodes.get(i).and_then(|n| n.parent) {
-                Some(parent) => i = parent,
+            match parent(i) {
+                Some(above) => i = above,
                 None => return true,
             }
         }
@@ -130,7 +148,32 @@ impl Lights {
         !self.lamps.is_empty()
     }
 
-    /// Switch lamp `i` on or off.
+    /// Whether lamp `i` lights the model: its row is on and no node above
+    /// it is switched off.
+    fn lamp_on(&self, nodes: &[ModelNode], i: usize) -> bool {
+        self.lamp_lit(i, nodes.len(), |j| nodes.get(j).and_then(|n| n.parent))
+    }
+
+    /// [`Self::lamp_on`] over a tree of `len` nodes given by each `parent`.
+    fn lamp_lit(&self, i: usize, len: usize, parent: impl Fn(usize) -> Option<usize>) -> bool {
+        let carrier = self.lamps.get(i).and_then(|l| l.node);
+        !self.lamps_off.contains(&i) && carrier.is_none_or(|n| n >= len || self.lit_up(n, parent))
+    }
+
+    /// Lamp `i`'s row: switched on, a node above it that is off is switched
+    /// on with it.
+    fn lamp_row(&mut self, nodes: &[ModelNode], i: usize, on: bool) {
+        self.lamp(i, on);
+        if let Some(n) = self.lamps.get(i).and_then(|l| l.node)
+            && on
+            && n < nodes.len()
+            && !self.lit(nodes, n)
+        {
+            self.switch(nodes, &[n], true, "lamp"); // ui-text-exempt: trace token
+        }
+    }
+
+    /// Switch lamp `i`'s own row on or off.
     fn lamp(&mut self, i: usize, on: bool) {
         let changed = if on {
             self.lamps_off.remove(&i)
@@ -144,13 +187,14 @@ impl Lights {
 
     /// Whether everything the made-up folder lists is on.
     fn all_on(&self, nodes: &[ModelNode]) -> bool {
-        self.lamps_off.is_empty() && self.loose.iter().all(|&i| self.lit(nodes, i))
+        (0..self.lamps.len()).all(|i| self.lamp_on(nodes, i))
+            && self.loose.iter().all(|&i| self.lit(nodes, i))
     }
 
     /// Switch everything the made-up folder lists.
     fn all(&mut self, nodes: &[ModelNode], on: bool) {
         for i in 0..self.lamps.len() {
-            self.lamp(i, on);
+            self.lamp_row(nodes, i, on);
         }
         let loose = self.loose.clone();
         self.switch(nodes, &loose, on, "folder"); // ui-text-exempt: trace token
@@ -175,8 +219,10 @@ impl Lights {
             }
         }
         let on =
-            |(i, lamp): (usize, &ModelLight)| (!self.lamps_off.contains(&i)).then(|| lamp.clone());
-        model.lights = self.lamps.iter().enumerate().filter_map(on).collect();
+            |(i, lamp): (usize, &ModelLight)| self.lamp_on(&model.tree, i).then(|| lamp.clone());
+        let lights: Vec<ModelLight> = self.lamps.iter().enumerate().filter_map(on).collect();
+        self.drawn = lights.len();
+        model.lights = lights;
         self.trace(why);
         true
     }
@@ -193,9 +239,11 @@ impl Lights {
             };
             format!(
                 // ui-text-exempt: diagnostic trace, never displayed
-                "model-view-lights why={why} lamps={} lamps-off={} glowing={} gathered={} dark={}",
+                "model-view-lights why={why} lamps={} lamps-off={} lamps-drawn={} lamp-nodes={} glowing={} gathered={} dark={}",
                 self.lamps.len(),
                 list(&mut self.lamps_off.iter()),
+                self.drawn,
+                list(&mut self.lamps.iter().filter_map(|l| l.node.as_ref())),
                 list(&mut self.glowing.iter()),
                 list(&mut self.loose.iter()),
                 list(&mut self.dark.iter()),
@@ -218,6 +266,23 @@ fn loose(parents: &[Option<usize>], glowing: &BTreeSet<usize>) -> Vec<usize> {
         .copied()
         .filter(|&i| !above.contains(&i) && mixed.contains(&parent(i)))
         .collect()
+}
+
+/// `glowing` with every node that carries one of `lamps`, and the folders
+/// above it.
+fn with_carriers(
+    mut glowing: BTreeSet<usize>,
+    parents: &[Option<usize>],
+    lamps: &[ModelLight],
+) -> BTreeSet<usize> {
+    for n in lamps.iter().filter_map(|l| l.node) {
+        let mut at = Some(n).filter(|&n| n < parents.len());
+        while let Some(i) = at {
+            glowing.insert(i);
+            at = parents.get(i).copied().flatten();
+        }
+    }
+    glowing
 }
 
 /// A row's light switch when node `i` glows, else the room one takes, so
@@ -279,7 +344,7 @@ pub(super) fn folder(
 /// The made-up folder's rows.
 fn rows(ui: &mut Ui, nodes: &[ModelNode], lights: &mut Lights, visibility: &mut Visibility) {
     for i in 0..lights.lamps.len() {
-        let mut on = !lights.lamps_off.contains(&i);
+        let mut on = lights.lamp_on(nodes, i);
         let name = lights.lamps.get(i).and_then(|l| l.name.as_deref());
         let kind = lights.lamps.get(i).map_or(0, |l| match l.kind {
             ModelLightKind::Point { .. } => 1,
@@ -294,7 +359,7 @@ fn rows(ui: &mut Ui, nodes: &[ModelNode], lights: &mut Lights, visibility: &mut 
         let region = format!("{REGION_LAMP_PREFIX}{i}");
         crate::diag::ui_rect_visible(&region, r.rect, ui.clip_rect());
         if r.changed() {
-            lights.lamp(i, on);
+            lights.lamp_row(nodes, i, on);
         }
     }
     for i in lights.loose.clone() {
@@ -348,5 +413,35 @@ mod tests {
         let tree = [None, Some(0), Some(0), Some(0), Some(3), Some(3)];
         let glowing = BTreeSet::from([0, 2, 3, 4, 5]);
         assert_eq!(loose(&tree, &glowing), vec![2]);
+    }
+
+    fn lamp_at(node: Option<usize>) -> ModelLight {
+        let mut lamp = ModelLight::new(ModelLightKind::Ambient, [1.0; 3]);
+        lamp.node = node;
+        lamp
+    }
+
+    /// **A lamp stored on a node is switched by every folder above it, and
+    /// its folders get a switch though nothing in them glows.**
+    #[test]
+    fn a_folder_switches_the_lamps_stored_under_it() {
+        // 0 root; 1 folder; 2 the lamp's node in it; 3 a plain part.
+        let tree = [None, Some(0), Some(1), Some(0)];
+        let parent = |i: usize| tree.get(i).copied().flatten();
+        let lamps = vec![lamp_at(Some(2)), lamp_at(None)];
+        let glowing = with_carriers(BTreeSet::new(), &tree, &lamps);
+        assert_eq!(glowing, BTreeSet::from([0, 1, 2]));
+        let mut lights = Lights {
+            lamps,
+            glowing,
+            ..Lights::default()
+        };
+        assert!(lights.lamp_lit(0, tree.len(), parent));
+        lights.dark.insert(1);
+        assert!(!lights.lamp_lit(0, tree.len(), parent));
+        assert!(lights.lamp_lit(1, tree.len(), parent), "a lamp on no node");
+        lights.dark.clear();
+        lights.lamps_off.insert(0);
+        assert!(!lights.lamp_lit(0, tree.len(), parent));
     }
 }

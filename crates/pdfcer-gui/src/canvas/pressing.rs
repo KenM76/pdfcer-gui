@@ -633,6 +633,15 @@ pub fn look(
         },
         caps,
     );
+    // An armed Continue path run makes every press a click and never a drag.
+    let meaning = if crate::canvas::pathextend::active(ctx) {
+        gesture::PressMeaning {
+            drag: None,
+            click: true,
+        }
+    } else {
+        meaning
+    };
 
     // **WHAT THIS PRESS WAS UNDERSTOOD TO BE.**
     //

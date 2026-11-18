@@ -168,7 +168,7 @@ const fn token(shape: NodeShape) -> &'static str {
     }
 }
 
-fn host_token(host: NodeHost) -> String {
+pub(super) fn host_token(host: NodeHost) -> String {
     // ui-text-exempt: trace tokens, never displayed.
     match host {
         NodeHost::Page(o) => format!("object:{o}"),

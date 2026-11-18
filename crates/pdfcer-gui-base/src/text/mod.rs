@@ -244,6 +244,8 @@ pub mod pagetree;
 pub mod paint;
 /// Every string the dock's panel bodies show. Consumed by `pdfcer_gui::panels`.
 pub mod panels;
+/// Format ▸ Nodes ▸ Continue path and Open path here: refusals and the run prompt.
+pub mod pathedit;
 pub mod phone;
 /// Every word the Markup ▸ Style group shows — three tooltips and a unit.
 pub mod placing;

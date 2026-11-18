@@ -155,6 +155,12 @@ fn add(total: &mut InsertOutcome, more: &InsertOutcome) {
     total.structure_links_to_pages += more.structure_links_to_pages;
     total.structure_links_to_first_page += more.structure_links_to_first_page;
     total.source_tags_dropped |= more.source_tags_dropped;
+    total.ce_dimensions_as_lines += more.ce_dimensions_as_lines;
+    total.ce_dimensions_carried += more.ce_dimensions_carried;
+    total.ce_dimension_groups_carried += more.ce_dimension_groups_carried;
+    total.ce_dimension_groups_matched += more.ce_dimension_groups_matched;
+    total.ce_dimension_groups_renamed += more.ce_dimension_groups_renamed;
+    total.ce_dimension_sidecar_newer |= more.ce_dimension_sidecar_newer;
 }
 
 #[cfg(test)]

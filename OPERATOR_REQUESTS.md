@@ -8115,7 +8115,7 @@ All eight are owed before the next release.
 
 Built: 1, 3, 4, 5 and 6, driven by `the_3d_viewer_selects_and_hides_from_the_picture`. Selecting needs no mode: a click on a part selects it whenever the viewer is turning the model rather than walking or measuring. Show hidden parts only is on the menu and as a switch above the part list.
 
-Built: 2, 7 and 8, driven by `the_3d_viewer_switches_lights_off_and_on`. A part that gives off light has a second box beside the show/hide one; a folder's box switches every glowing part in it. The menu has Turn light off and Turn light on. The model's lamps and its glowing parts that are in no folder of their own are listed in a Lights folder the viewer makes up, with one switch for all. **Not yet:** a folder's box does not switch the lamps stored under that folder, because the pinned engine does not say which folder carries a lamp; the engine has answered (G289, in its v0.156.0) and the box will reach them when the pin moves.
+Built: 2, 7 and 8, driven by `the_3d_viewer_switches_lights_off_and_on`. A part that gives off light has a second box beside the show/hide one; a folder's box switches every glowing part in it. The menu has Turn light off and Turn light on. The model's lamps and its glowing parts that are in no folder of their own are listed in a Lights folder the viewer makes up, with one switch for all. A tree node that carries lamps in the file has a light box too; switching it, or any folder above it, switches those lamps with the parts under it (engine v0.156.0, G289). The fixture's lamps sit on the root and are driven in `the_3d_viewer_switches_lights_off_and_on`; a lamp under a sub-folder is covered by a unit test only, because no fixture has one.
 
 ## O441 — **OPEN** — a light-map view of a 3D model, banded at the recommended light levels
 
@@ -8127,10 +8127,30 @@ A view option in the 3D viewer colours each surface by the light arriving on it.
 
 *"Also need a way to select and measure distance between surfaces and have the ability to adjust the parallel tolerance between them - anything beyond that tolerance measures angle."*
 
-Said to the engine session on 2026-11-17 and passed on in `notice_2026-11-17_operator_asks_3d_measure_tool_window.md`. Pick two surfaces in the 3D viewer: a distance when they are parallel within a tolerance he sets, an angle otherwise, the measured angle shown either way. **Waiting on the engine:** it is fitting a plane to a picked face and reporting the fit's residual; nothing in the pinned engine answers a two-surface question.
+Said to the engine session on 2026-11-17 and passed on in `notice_2026-11-17_operator_asks_3d_measure_tool_window.md`. Pick two surfaces in the 3D viewer: a distance when they are parallel within a tolerance he sets, an angle otherwise, the measured angle shown either way. Built on engine v0.156.0, driven by `the_3d_viewer_measures_between_surfaces`: the 3D viewer's Measure tab has *Between surfaces*. Pick two flat surfaces: ones parallel within *Parallel within* (degrees, starting at 0.5) give the distance between them, others the angle; the angle is said either way. *Always measure a distance* gives a distance for any pair. What each plane was fitted from, and any refusal, is said under the picture and in the tab. **Not driven:** typing a new tolerance (it re-measures through the same path as the switch, which is driven).
 
 ## O443 — **OPEN** — a measure window for 3D models with what the SolidWorks assembly measure tool can do
 
 *"Also would like to see a measure tool dialogue windows with all the same options and capabilities of the Solidworks measure tool for assemblies."*
 
 Said with O442, and after the light meter (O437) in the order he set. One window for measuring a 3D model: what one selection reports (a point's X, Y, Z; an edge's length; a face's area and perimeter; a circle's or arc's radius, diameter, arc and chord length), what two report (smallest distance, dX dY dZ, angle, parallel / perpendicular / intersecting), centre / minimum / maximum for arcs and circles, point-to-point, projection onto the screen or a chosen face, XYZ relative to the origin or a chosen coordinate system, units and precision with dual units, projected area, a history for the session, copying a value with or without its unit. Each engine verb found missing while it is laid out is filed as its own request.
+
+## O444 — **OPEN** — a control for everything the engine has that the shell does not show, then a release at once
+
+*"give all the things that don't have a control yet, then release ASAP."*
+
+Said on 2026-11-17 in answer to the list of what engine v0.156.0 brought with no control here. The things, each built and driven before the release:
+
+1. Continue an open path from an end node; open a closed path at a node.
+2. Measure between two picked surfaces of a 3D model, with the parallel tolerance (this is O442).
+3. Group a selection that already holds groups, and get the earlier groups back on Ungroup; group objects inside a form.
+4. After a merge, insert, extract or split, say how many ce dimension groups were carried, joined and renamed.
+5. A folder's light switch in the 3D model tree reaches the lamps stored under that folder (O440's stated gap).
+
+Built, each driven off-screen and failing on the build before it:
+
+- 1: Format ▸ Nodes ▸ *Continue path* and *Open path here*, also on the object's right-click menu. Continue: each click adds a straight segment, Enter, Esc or double-click finishes, Backspace takes back a click, one undo step. Driven by `a_path_is_continued_from_its_end` and `a_closed_path_is_opened_at_a_node`, judged on the saved file. **Not yet:** a middle node or a closed path is refused when the run finishes, not when it starts (the engine's check before the run is asked for as G295); inside a placed drawing it is built but not driven.
+- 2: see O442.
+- 3: Ctrl+G on markups that include a group groups them all and remembers the earlier group; Ctrl+Shift+G peels one level and the earlier group is back. Parts selected inside a placed drawing group inside it, and ungroup back into it. Driven by `a_group_groups_with_a_third_markup_and_comes_apart_one_level` and `parts_of_a_placed_drawing_group_inside_it_and_ungroup`.
+- 4: insert, merge, extract and split say how many ce dimensions came across still editable, how many as plain lines and why, and how many ce dimension groups were carried, joined or renamed. Insert driven by `inserted_pages_say_what_came_of_their_ce_dimensions`. **Not yet:** the group clause does not appear on a real insert because the engine does not count the group it makes for ce dimensions that had none (G298); the merge receipts are unit-tested, not driven.
+- 5: see O440.

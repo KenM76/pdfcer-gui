@@ -167,6 +167,7 @@ impl Declined {
             Self::Group(_) => true,
             // About the runs as they were; the page is unchanged.
             Self::RunMerge(_) | Self::RunSplit(_) | Self::Replace(_) => true,
+            Self::PathEdit(_) => true,
             // The stack filled up. Something was authored — or, for redo,
             // something was undone — and the sentence is now history, exactly
             // as `NothingToFrame` is once something is selected. The operator
