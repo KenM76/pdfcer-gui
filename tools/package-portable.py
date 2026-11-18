@@ -1754,6 +1754,9 @@ def main() -> int:
     if not (REPO / "Cargo.toml").is_file():
         print(f"package-portable: {REPO} is not the pdfcer-gui workspace root.")
         return 1
+    # Before the verify and the build, not only after: a test run's debug
+    # build and a release build can together outgrow what is left.
+    cache_prune.ensure_free()
     if not (ENGINE / "Cargo.toml").is_file():
         # Not a nicety. The path dependencies point here; without it the
         # build below fails with a cargo error about a missing manifest

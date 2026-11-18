@@ -23,7 +23,11 @@ Every step is safe to lose. Cargo rebuilds any output that is missing, so a
 wrong deletion costs build time and can never produce a wrong binary.
 
 Called at the end of ``package-portable.py``, and runnable on its own:
-``python tools/cache_prune.py``. Run alone it lists the live set with this
+``python tools/cache_prune.py``. ``--if-below GB`` is the guard run before
+every build that can fill the disk (the start of ``run-all.sh`` and of
+``package-portable.py``): it prunes only when the target's drive has less
+than ``GB`` free, and if the dead caches were not enough it deletes
+``target/debug`` whole regardless of ``DEBUG_LIMIT_GB``. Run alone it lists the live set with this
 shell's environment, so if the last build was packaged with a
 ``PDFCER_BUILD_STAMP`` cargo rebuilds the GUI once first.
 """
@@ -44,6 +48,10 @@ CHECKOUTS = Path.home() / ".cargo" / "git" / "checkouts"
 
 #: Size above which ``target/debug`` is deleted whole.
 DEBUG_LIMIT_GB = 20
+
+#: Free space below which a build-start guard prunes. A release build plus
+#: the debug build of a test run can each write tens of GB.
+MIN_FREE_GB = 60
 
 _HASH = re.compile(r"-([0-9a-f]{16})(?:\.[A-Za-z0-9_.]+)?$")
 
@@ -188,5 +196,36 @@ def run(env: dict[str, str] | None = None) -> None:
     print(f"cache-prune: reclaimed {total / 1024**3:.1f} GB ({detail})")
 
 
+def free_gb() -> float:
+    return shutil.disk_usage(REPO).free / 1024**3
+
+
+def ensure_free(min_gb: float = MIN_FREE_GB, env: dict[str, str] | None = None) -> None:
+    """Prune when the drive has less than ``min_gb`` free; drop the debug cache if still short."""
+    before = free_gb()
+    if before >= min_gb:
+        print(f"cache-prune: {before:.0f} GB free, at least {min_gb:.0f} wanted; nothing to do")
+        return
+    print(f"cache-prune: {before:.1f} GB free, below {min_gb:.0f}; pruning")
+    run(env)
+    if free_gb() < min_gb and (TARGET / "debug").is_dir():
+        try:
+            size = _size(TARGET / "debug")
+            _rm(TARGET / "debug")
+            print(f"cache-prune: still short; deleted target/debug ({size / 1024**3:.1f} GB)")
+        except OSError as exc:  # A running test holds files; the rest is still freed.
+            print(f"cache-prune: target/debug: {exc}")
+    after = free_gb()
+    if after < min_gb:
+        print(f"cache-prune: WARNING only {after:.1f} GB free after pruning; the disk is full of something else")
+
+
 if __name__ == "__main__":
-    run()
+    import sys
+
+    if len(sys.argv) == 3 and sys.argv[1] == "--if-below":
+        ensure_free(float(sys.argv[2]))
+    elif len(sys.argv) == 1:
+        run()
+    else:
+        sys.exit("usage: cache_prune.py [--if-below GB]")

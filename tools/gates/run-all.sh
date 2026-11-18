@@ -92,6 +92,9 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 cd "$ROOT" || exit 1
 
+# Free the disk BEFORE the builds below can fill it; prunes only under 60 GB free.
+python "$ROOT/tools/cache_prune.py" --if-below 60 || true
+
 RUN_CARGO=1
 [ "${1:-}" = "--no-cargo" ] && RUN_CARGO=0
 
