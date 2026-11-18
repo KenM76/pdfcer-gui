@@ -47,7 +47,9 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**Unreleased on `main`:** nothing. Owed: O443, O441, O432 stage 2, O438, O439, the soft-proof switch, Export ▸ Plates, ink arrows; G291 (glowing parts in the light meter), G295 (path-end preflight) and G298 (default ce dimension group count) wait on the engine.
+**Unreleased on `main`:** nothing. Owed: O443, O441, O432 stage 2, O438, O439, the soft-proof switch, Export ▸ Plates, ink arrows; filling a dynamic form (`fill_xfa_field`, O445's *Not yet*); G298 (default ce dimension group count) waits on the engine.
+
+**`v0.5.0-dev.20261118.1`** is engine v0.158.0 (e93c12ad), shell 23cf71fc: Form preview ▸ *Use these pages* (O445, `materialize_xfa`; on a copy of his form the stand-in became 5 pages); the light meter's glow switch (G291); the path-end preflight (G295). Gates 87/87, 0 skip; `cargo test --workspace` 5,690 pass; clippy clean. Release sweep `--affected` off-screen: 575 selected, 348 pass, 227 skip (need OS input), 0 fail.
 
 **`v0.5.0-dev.20261117.1`** is engine v0.156.0 (1fee82da), shell bfd6c048: Measure ▸ Light level (O437) and Between surfaces (O442) in the 3D viewer; lamp carriers and folders switch their lamps (O440, G289); Format ▸ Nodes ▸ Continue path and Open path here, groups of groups, grouping inside a placed drawing and ce dimension receipts on page copies (O444); the cache guard prunes before builds below 30 GB free.
 
