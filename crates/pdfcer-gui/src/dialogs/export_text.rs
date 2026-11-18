@@ -209,7 +209,14 @@ impl ExportTextDialog {
         )
         .show(ctx, |ui| {
             crate::diag::ui_rect(REGION_BODY, ui.max_rect());
-            self.body(ui);
+            crate::dialogs::host::Host::scrolled(
+                ui,
+                self,
+                |ui, me| me.body(ui),
+                |ui, me| {
+                    me.buttons(ui);
+                },
+            );
         });
         let open = !frame.closed;
 
@@ -276,7 +283,7 @@ impl ExportTextDialog {
         ui.label(t::intro());
         ui.add_space(8.0);
 
-        let pages = self.pages_group(ui);
+        self.pages_group(ui);
         ui.add_space(8.0);
         self.order_group(ui);
         ui.add_space(8.0);
@@ -294,9 +301,12 @@ impl ExportTextDialog {
         self.file_group(ui);
         ui.add_space(8.0);
         self.losses_group(ui);
-        ui.add_space(8.0);
+    }
 
-        ui.separator();
+    /// Export and Cancel, pinned below the scrolling options so both stay
+    /// reachable however short the window is.
+    fn buttons(&mut self, ui: &mut Ui) {
+        let pages = self.pages();
         ui.horizontal(|ui| {
             // Disabled rather than absent when the typed range names no page —
             // P3's rule: a greyed control beside the sentence saying why teaches

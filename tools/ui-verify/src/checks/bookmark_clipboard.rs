@@ -351,7 +351,18 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // clicked the next is the shape `D:/dev/rag/egui/` already records for
     // harness coordinates going stale when a dock width changes.
     for attempt in 0..3 {
-        let Some(rect) = wait_for_region(&session, ui_rect, COPY_REGION, 4)? else {
+        // Below the fold of the footer's own scroll on a short panel, as Paste
+        // is below: bring it into the body before every click.
+        let Some(rect) = driving::bring_into_body(
+            &session,
+            &driver,
+            ui_rect,
+            PANEL_BODY,
+            COPY_REGION,
+            6,
+            report,
+        )?
+        else {
             break;
         };
         driver.click_at(session.frame()?.declared_center(rect))?;
