@@ -188,7 +188,7 @@ pub(in crate::canvas) fn preview(
     if run.page != page_index {
         return;
     }
-    let stroke = egui::Stroke::new(1.5, ui.visuals().selection.stroke.color);
+    let stroke = egui::Stroke::new(1.5, egui_shell::theme::Theme::canvas_selection_ink(ui.ctx()));
     let screen: Vec<Pos2> = std::iter::once(run.start)
         .chain(run.points.iter().copied())
         .filter_map(|(x, y)| crate::canvas::markup::vertex::to_screen(x, y, page, map))
