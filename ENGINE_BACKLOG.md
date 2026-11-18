@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **64 of 584** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `wanted` — a real gap — **73 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -175,11 +175,20 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Banded page replay** — `DisplayList::replay_rows`, `DisplayList::band_exact`, `BAND_ROW_LATTICE`, `BandBlocker` (`BandBlocker::Image`, `BandBlocker::Gradient`, `BandBlocker::LayerMask`), `RenderError::BandNotAligned` | **wanted.** The page renderer replays each page on one thread; banding a dense CAD sheet across worker threads is the engine's measured 2.6x to 3.0x. Needs a measurement here first (the canvas renders tiles off the frame loop already), per `BENCHMARK.md`. |
 | **A saved optimize profile carries the font re-subset choice** — profile keys `resubset-fonts` and `merge-font-subsets` … | **wanted; our request G244, shipped at v0.113.0.** Compact installs `OptimizeSettings::install_resubsetter` so a profile's font cut runs in the shell as it does in the CLI. |
 | **glTF occlusion maps and textured alpha cut-outs** — `pdfcer_3d::gltf::GltfOcclusion` (`GltfOcclusion::Bake`, `GltfOcclusion::Drop`), `GltfOptions::occlusion` | **wanted.** Insert 3D model converts with the engine's default, `GltfOcclusion::Bake`, and the bake reaches the status line as one of the import's inferences. A switch beside the window's colour and up-axis switches is the surface. |
+| **The light meter counts light from glowing surfaces** — `Illuminance::emitted`, `MeterSettings::glow` (`GlowLight`, `GlowLight::Counted`, `GlowLight::LeftOut`), `RelativeReason::GlowingParts`, `IlluminanceNote::GlowLeftOut`, `IlluminanceNote::GlowNotBounced` | **wanted; our request G291.** Measure ▸ Light level gets a *Count glowing parts* switch and says the two notes and the reason off the picture. <!--namesake:LeftOut--> (`panels::align::LeftOut` is the align panel's own type) |
+| **Measure one face of a 3D model (area, perimeter, plane or cylinder fit)** — the module `pdfcer_3d::surface_measure::face` (`face_figures`, `FaceFigures`, `FaceShape`) | **wanted; the operator's measure window (engine notice 2026-11-17).** One picked face reads its area, perimeter and fit in the 3D viewer's measure window. |
+| **Measure one edge or vertex of a 3D model (length, line or circle fit, XYZ)** — the module `pdfcer_3d::surface_measure::edge` (`edge_at`, `vertex_at`, `EdgeFigures`, `EdgeShape`), `SurfaceMeasureError::NoEdge`, `DEFAULT_CORNER_DEGREES` | **wanted; the measure window.** An edge pick reads length, chord and fit; a vertex pick reads X, Y, Z. <!--namesake:vertex_at--> (`canvas::dimdrag::vertex_at` is the 2D dimension drag's) |
+| **3D measure: minimum, maximum and centre distance between two picked entities (vertex, edge, face)** — the module `pdfcer_3d::surface_measure::distance` (`entity_distance`, `EntityDistance`, `MeasureEntity`, `Selection`, `Span`) | **wanted; the measure window.** Two picks read the minimum distance with dX, dY, dZ, and the maximum and centre distances on a choice. |
+| **3D measure: project a measured distance onto a plane or the screen** — `Span::projected`, `Span::along`, `SurfaceMeasureError::BadDirection` | **wanted; the measure window.** A *Projected on* choice: none, the screen, or a picked plane. |
+| **3D measure: read positions in a chosen coordinate system** — the module `pdfcer_3d::surface_measure::frame` (`CoordinateFrame`) | **wanted; the measure window.** Positions and deltas read in the model's frame or one the operator sets. |
+| **3D measure: projected area of a face** — `pdfcer-3d` `face_projected_area`, in the module `pdfcer_3d::surface_measure::projected` (`ProjectedArea`) | **wanted; the measure window.** A face pick also reads its projected area, toward and away, on the projection choice. |
+| **3D measure: units, dual units and precision** — the module `pdfcer_3d::length_unit` (`LengthUnit`, `UnknownLengthUnit`) | **wanted; the measure window.** Its unit, a second unit and decimal places, remembered with the other preferences. <!--namesake:LengthUnit--> (`entry::LengthUnit` is the shell's 2D entry unit) |
+| **Check a path end before extending or opening it** — `EditSession::can_extend_path`, `EditSession::can_open_subpath`, `EditSession::can_extend_path_in_form`, `EditSession::can_open_subpath_in_form` | **wanted; our request G295.** The node editor's Extend and Open commands ask the preflight per press, so a refused node greys its command and says why. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 584** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `blocked` — waiting on something named — **2 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -197,7 +206,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 584** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -208,7 +217,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **20 of 584** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `declined` — deliberately no surface — **21 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -216,6 +225,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, declined) | Why |
 |---|---|
+| **Write a mesh shading in any colour space** — the module `pdfcer_core::mesh_shading` (`decode_mesh`, `reexpress_mesh`, `write_free_form_mesh`, `MeshError`) | **declined.** X086 came from a crates consumer, not this shell. These are building blocks for converting a document's colours, and this shell has no colour-conversion command to put them in. The surface would be an engine verb that converts a document's colours, which does not exist. |
 | Inspect and dump a document's own internal COS object … | **declined; no `pdfcer-gui` surface exists or is planned, and the engine says the same.** A COS object browser is a format-engineer's instrument, not a drawing tool — the audience for a reverse-reference map over `/ObjStm` membership is somebody already at a command line, and `pdfcer inspect` is that command line. Declining this is not declining *diagnostics*: the Render-diagnostics dialog exists and is where an operator-facing finding goes. |
 | **A strict open** — `LoadOptions::strict()`, `UnreadableObjectPolicy::{TreatAsUndefined, Refuse}` and `unreadable_objects` … | **declined as a load mode — this project's decision 145, *fail-clean never meant refuse*.** `strict()`'s audience is a conformance checker, a fuzz harness or a gate, not this shell's job on a file the operator opens; a strict switch here would be a control whose only effect is that his CAD drawings stop opening. `UnreadableObjectPolicy::TreatAsUndefined`, the default already in force, is §7.3.10's own answer: an undefined reference *"shall not be considered an error by a conforming reader"*. Named rather than exempted — `LoadAnomaly::ObjectUnreadable` is disclosed off-canvas, so the consequence is already visible; what is refused is the *control*, not the capability. What would overturn this: a **report** rather than a mode — a throwaway second `strict()` load whose only output is the refusal sentence, filed as its own feature and not smuggled onto the Open dialog. |
 | **A choice about recovered stream extents and missing `endobj`** — the `stream_lengths` and `terminators` fields of `LoadOptions` … | **declined, on the engine's own finding that there is nothing to choose between.** The alternative to the scanned extent recorded by `LoadAnomaly::StreamLengthRecovered` is **no object at all**, and `LoadAnomaly::MissingEndobjRecovered` is the same shape — an unambiguous end with no second reading. Setting either field to its `Strict` value offers no alternative reading; it converts a document that opens into one that does not, which is the row above's argument and the same decision-145 answer. The operator-facing half is the disclosure and it is built: both are censused into the status-bar clause and itemised in Document properties by `app::status::anomalies`, so *pdfcer had to work out where an object's stream ended* reaches him without a mark being drawn on the page. `StreamLengthPolicy` and `TerminatorPolicy` are older than the pin; only the `LoadOptions` fields are new surface. |
@@ -254,7 +264,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **498 of 584** <!-- counted by tools/walk-engine-backlog.py, 2026-11-17; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **498 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
