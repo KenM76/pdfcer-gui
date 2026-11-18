@@ -3,7 +3,7 @@
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/links.md`.
 
-use super::dimdrive::{Fixture, click_on, press, run_on};
+use super::dimdrive::{Fixture, click_on, press, run_on, ui_rect_event};
 use super::stroke_style::{into_view, type_into};
 use crate::checks::{Check, CheckContext};
 use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
@@ -238,6 +238,16 @@ fn repoint(
     }
 
     into_view(ctx, session, pointer, PROPS_WEB)?;
+    // An unread link draws its section heading and no controls: that is the
+    // defect, not a harness that could not reach them.
+    if crate::checks::driving::declared(&session.trace()?, ui_rect_event(ctx)?, PROPS_WEB).is_none()
+    {
+        return Ok(Some(format!(
+            "a link was selected and Properties drew no `{PROPS_WEB}` choice: the link \
+             was not read. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
     press(ctx, session, pointer, PROPS_WEB)?;
     type_into(ctx, session, pointer, PROPS_FIELD, ADDRESS)?;
     into_view(ctx, session, pointer, APPLY_TARGET)?;

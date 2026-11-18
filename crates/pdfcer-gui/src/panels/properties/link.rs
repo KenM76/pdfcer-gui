@@ -8,10 +8,10 @@
 //! Design and rationale: `docs/modules/pdfcer-gui/panels/properties/link.md`.
 
 use egui::Ui;
+use pdfcer_core::edit::LinkReading;
 use pdfcer_core::object::ObjId;
 use pdfcer_gui_base::linkaction::LinkAction;
 use pdfcer_gui_base::linkform::{LinkForm, Regions};
-use pdfcer_gui_base::linkread::{self, Goes, LinkReading};
 
 use crate::app::actions::Action;
 use crate::app::state::OpenDoc;
@@ -61,17 +61,17 @@ pub fn section(ui: &mut Ui, doc: &OpenDoc, actions: &mut Vec<Action>) -> bool {
         return true;
     }
     let pages: Vec<ObjId> = doc.pages.iter().map(|p| p.id).collect();
-    let Some(reading) = linkread::read(&doc.session, id, &pages) else {
+    let Ok(reading) = doc.session.link(id) else {
         return false;
     };
-    match &reading.goes {
-        Goes::Other(kind) => {
+    match (&reading.target, &reading.action) {
+        (None, Some(kind)) => {
             ui.label(egui::RichText::new(t::other_action(kind)).small().weak());
         }
-        Goes::Nowhere => {
+        (None, None) => {
             ui.label(egui::RichText::new(t::nowhere()).small().weak());
         }
-        Goes::Page(_) | Goes::Named(_) | Goes::Uri(_) => {}
+        (Some(_), _) => {}
     }
 
     let key = ui.make_persistent_id(("properties-link-draft", id)); // ui-text-exempt: an egui id salt, never displayed

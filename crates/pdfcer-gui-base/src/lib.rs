@@ -180,7 +180,6 @@ pub mod wordmarkup;
 pub mod widgetread;
 
 /// A link's target and border, read from the file.
-pub mod linkread;
 pub mod outward;
 pub mod outwardaction;
 

@@ -6,7 +6,7 @@ markup section stands aside for links.
 # Contract
 
 - A locked link shows a note and no controls.
-- The form is seeded from `linkread::read` and kept in egui temporary memory,
+- The form is seeded from the engine's `EditSession::link` and kept in egui temporary memory,
   keyed by the link's id, beside the reading it was seeded from. When the file
   changes under it (an undo, another edit) the reading differs and the form is
   re-seeded, so it never shows a value the link no longer has.

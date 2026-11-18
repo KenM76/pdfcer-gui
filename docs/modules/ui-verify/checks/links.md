@@ -27,7 +27,9 @@ Driven with `PDFCER_DIAG_INVOKE=mode.edit,file.properties`.
 
 1. Click (200, 200). Require `annot-select` with `subtype=Link`, then the
    `properties.link` section drawing after the click.
-2. Choose `properties.link.web`, type the address, and press
+2. Require `properties.link.web` to have drawn: a link the section could
+   not read draws its heading and no controls, a FAIL rather than the SKIP a
+   failed `press` would file. Choose it, type the address, and press
    `properties.link.apply-target`. Require `set-link-target-applied` with the
    address and `replaced=JavaScript`.
 3. Untick `properties.link.border` (ticked, because the fixture's border is

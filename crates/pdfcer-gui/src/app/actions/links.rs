@@ -152,10 +152,6 @@ mod tests {
             .collect()
     }
 
-    fn page_ids(doc: &OpenDoc) -> Vec<ObjId> {
-        doc.pages.iter().map(|p| p.id).collect()
-    }
-
     /// The whole round: add, read back, re-point, re-border, all through
     /// the funnel and the reader the Properties section uses.
     #[test]
@@ -182,9 +178,14 @@ mod tests {
         let links = links_on_page_0(&doc);
         assert_eq!(links.len(), 1, "one link added");
         let id = links[0];
-        let read = pdfcer_gui_base::linkread::read(&doc.session, id, &page_ids(&doc))
-            .expect("a link dictionary");
-        assert_eq!(read.goes, pdfcer_gui_base::linkread::Goes::Page(2));
+        let read = doc.session.link(id).expect("a link");
+        assert_eq!(
+            read.target,
+            Some(LinkTarget::Page {
+                page_index: 2,
+                view: DestView::Fit
+            })
+        );
         assert_eq!(read.border, None, "no border is /Border [0 0 0]");
 
         apply(
@@ -201,15 +202,14 @@ mod tests {
                 border: Some(LinkBorder::new(2.0, Color::Rgb(1.0, 0.0, 0.0))),
             },
         );
-        let read = pdfcer_gui_base::linkread::read(&doc.session, id, &page_ids(&doc))
-            .expect("a link dictionary");
+        let read = doc.session.link(id).expect("a link");
         assert_eq!(
-            read.goes,
-            pdfcer_gui_base::linkread::Goes::Uri("https://example.com".to_owned())
+            read.target,
+            Some(LinkTarget::Uri("https://example.com".to_owned()))
         );
         let border = read.border.expect("a visible border");
         assert!((border.width - 2.0).abs() < 1e-9);
-        assert_eq!(border.colour, Some(Color::Rgb(1.0, 0.0, 0.0)));
-        assert!(!border.dashed);
+        assert_eq!(border.color, Color::Rgb(1.0, 0.0, 0.0));
+        assert!(border.dash.is_none());
     }
 }

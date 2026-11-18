@@ -8,11 +8,10 @@
 
 use egui::Ui;
 use pdfcer_core::annot_author::{BorderDash, Color};
-use pdfcer_core::edit::{LinkBorder, LinkTarget};
+use pdfcer_core::edit::{LinkBorder, LinkReading, LinkTarget};
 use pdfcer_core::outline::DestView;
 
 use crate::colourpick;
-use crate::linkread::{Border, Goes, LinkReading};
 use crate::text::linkedit as t;
 
 /// The narrowest border offered, in points.
@@ -95,29 +94,31 @@ impl LinkForm {
     /// only when the operator presses Apply.
     #[must_use]
     pub fn from_reading(reading: &LinkReading) -> Self {
+        Self::from_parts(reading.target.as_ref(), reading.border.as_ref())
+    }
+
+    /// The form seeded from a target and a border, as [`Self::from_reading`]
+    /// takes them from a reading.
+    #[must_use]
+    pub fn from_parts(target: Option<&LinkTarget>, border: Option<&LinkBorder>) -> Self {
         let mut form = Self::default();
-        match &reading.goes {
-            Goes::Page(index) => form.page_number = index + 1,
-            Goes::Uri(uri) => {
+        match target {
+            Some(LinkTarget::Page { page_index, .. }) => form.page_number = page_index + 1,
+            Some(LinkTarget::Uri(uri)) => {
                 form.choice = Choice::Web;
                 form.uri.clone_from(uri);
             }
-            Goes::Named(key) => {
+            Some(LinkTarget::Named(key)) => {
                 form.choice = Choice::Named;
                 form.name = String::from_utf8_lossy(key).into_owned();
             }
-            Goes::Other(_) | Goes::Nowhere => {}
+            _ => {}
         }
-        if let Some(Border {
-            width,
-            colour,
-            dashed,
-        }) = &reading.border
-        {
+        if let Some(border) = border {
             form.border_on = true;
-            form.width = width.clamp(MIN_WIDTH_PT, MAX_WIDTH_PT);
-            form.colour = colour.unwrap_or(Color::Rgb(0.0, 0.0, 0.0));
-            form.dashed = *dashed;
+            form.width = border.width.clamp(MIN_WIDTH_PT, MAX_WIDTH_PT);
+            form.colour = border.color;
+            form.dashed = border.dash.is_some();
         }
         form
     }
@@ -323,15 +324,10 @@ mod tests {
 
     #[test]
     fn a_reading_seeds_the_choice_it_names() {
-        let reading = LinkReading {
-            goes: Goes::Uri("https://example.com".to_owned()),
-            border: Some(Border {
-                width: 2.0,
-                colour: Some(Color::Cmyk(1.0, 0.5, 0.0, 0.1)),
-                dashed: true,
-            }),
-        };
-        let form = LinkForm::from_reading(&reading);
+        let target = LinkTarget::Uri("https://example.com".to_owned());
+        let border = LinkBorder::new(2.0, Color::Cmyk(1.0, 0.5, 0.0, 0.1))
+            .with_dash(BorderDash::new(vec![3.0]).expect("a dash"));
+        let form = LinkForm::from_parts(Some(&target), Some(&border));
         assert_eq!(form.choice, Choice::Web);
         assert_eq!(form.uri, "https://example.com");
         assert!(form.border_on && form.dashed);
