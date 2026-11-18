@@ -1,4 +1,4 @@
-//! `text_annot_places_and_authors` — a sticky note dragged on the page, typed into in the dialog,
+//! `text_annot_places_and_authors` — a sticky note clicked onto the page, typed into in the dialog,
 //! and actually written to the document.
 //!
 //! Design and rationale: `docs/modules/ui-verify/checks/text_annot.md`.
@@ -7,7 +7,7 @@ use crate::checks::driving::{
     SHELL_DIAG_ENV, TAB_EVENT, declared, declared_names, frame_of, list, shell_trace,
 };
 use crate::checks::{Check, CheckContext};
-use crate::coords::{CanvasMapping, DocPoint, PageGeometry};
+use crate::coords::{CanvasMapping, PageGeometry};
 use crate::error::{Error, Result};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
@@ -15,7 +15,9 @@ use crate::report::CheckReport;
 use crate::sys::vk;
 
 /// How wide and tall the placed box is, in PDF points.
-const BOX_PT: f64 = 220.0;
+/// The sticky marker's square, in PDF points: the shell's `wordmarkup::STICKY_PT`,
+/// hung down and right from the click.
+const STICKY_PT: f64 = 20.0;
 
 /// See the module documentation.
 pub struct TextAnnotPlacesAndAuthors;
@@ -26,7 +28,7 @@ impl Check for TextAnnotPlacesAndAuthors {
     }
 
     fn defect(&self) -> &'static str {
-        "the sticky note control does not arm, the drag authors an EMPTY annotation on release \
+        "the sticky note control does not arm, the click authors an EMPTY annotation \
          instead of asking for words, the dialog never appears, or accepting it writes \
          nothing to the document"
     }
@@ -55,7 +57,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .ok_or_else(|| Error::new("no fixture document. Pass --pdf."))?;
     if !ctx.allow_input {
         return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control, drags on the \
+            "input is disabled (--no-input). This check clicks a ribbon control, clicks on the \
              canvas and types into a dialog. Reported as SKIPPED rather than passed.",
         ));
     }
@@ -128,7 +130,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     // --- 2: arm the sticky note -----------------------------------------------
     let trace = session.trace()?;
-    let item = declared(&trace, ui_rect, "ribbon.item.markup.sticky_note").ok_or_else(|| {
+    let item = crate::checks::driving::declared_or_in_overflow(
+        &session,
+        &driver,
+        ui_rect,
+        "ribbon.item.markup.sticky_note",
+    )?
+    .ok_or_else(|| {
         Error::new(format!(
             "no `ribbon.item.markup.sticky_note` region on the Markup tab. Items declared: {}.",
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
@@ -160,30 +168,25 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         "the page carries {before} annotation(s) before the drag"
     ));
 
-    // --- 4: drag the box, and assert the release AUTHORS NOTHING -----------
+    // --- 4: click the marker's corner, and assert that AUTHORS NOTHING -----
+    // The sticky is click-placed (`TextAnnotKind::is_dragged` is false): a drag
+    // with it armed places nothing, so a drag here measures the wrong gesture.
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
     let frame = session.frame()?;
     let from = frame.to_screen(mapping.doc_to_window(target)?);
-    let to = frame.to_screen(mapping.doc_to_window(DocPoint {
-        page: target.page,
-        x: target.x + BOX_PT,
-        y: target.y + BOX_PT,
-    })?);
     report.note(format!(
-        "dragging a {BOX_PT:.0}x{BOX_PT:.0} pt box: screen ({}, {}) -> ({}, {})",
+        "clicking a {STICKY_PT:.0} pt sticky onto the page at screen ({}, {})",
         from.x(),
-        from.y(),
-        to.x(),
-        to.y()
+        from.y()
     ));
-    driver.drag(from, to)?;
+    driver.click_at(from)?;
     session.settle(20);
 
     let trace = session.trace()?;
     if trace.events("text-annot-open").next().is_none() {
         return Ok(Some(
-            "the drag completed and no `text-annot-open` line was traced, so the release did \
-             not open the dialog. Either the drag never reached `GestureOutcome::TextAnnot` \
+            "the click completed and no `text-annot-open` line was traced, so it did not open \
+             the dialog. Either the click never reached the sticky arm of the canvas click \
              or the action did not reach the dialog host."
                 .to_owned(),
         ));

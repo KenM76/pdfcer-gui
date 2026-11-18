@@ -9,8 +9,9 @@ use crate::checks::driving::{
     UNIMPLEMENTED_EVENT, declared, declared_names, list, shell_trace,
 };
 use crate::checks::{Check, CheckContext, CheckReport};
+use crate::coords::WindowPoint;
 use crate::error::{Error, Result};
-use crate::geom::LRect;
+use crate::geom::{LRect, Pt};
 use crate::input::Driver;
 use crate::launch::{LaunchSpec, Session};
 use crate::sys::vk;
@@ -658,6 +659,19 @@ fn key_until_left(session: &Session, driver: &Driver, key: u16) -> Result<bool> 
     for _ in 0..PRESS_TRIES {
         driver.press(key)?;
         session.settle(40);
+        if count(session)? > before {
+            return Ok(true);
+        }
+        // Delivered is not the same as processed: a press the window has queued
+        // and not yet drawn is unheard here, and pressing again would hand it a
+        // second F11 in the same frame, which toggles straight back. Wake it with
+        // a pointer move and look again before deciding the press was lost.
+        let frame = session.frame()?;
+        for (x, y) in [(200.0, 200.0), (204.0, 204.0)] {
+            let at = LRect::new(Pt::new(x, y), Pt::new(x, y));
+            driver.move_to(frame.to_screen(WindowPoint::centre_of(at)))?;
+        }
+        session.settle(20);
         if count(session)? > before {
             return Ok(true);
         }

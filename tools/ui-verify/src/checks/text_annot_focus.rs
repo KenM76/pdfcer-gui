@@ -14,8 +14,12 @@ use crate::launch::{LaunchSpec, Session};
 use crate::report::CheckReport;
 use crate::sys::vk;
 
-/// The placed box, in PDF points. `text_annot`'s constant and its reasoning.
-const BOX_PT: f64 = 220.0;
+/// The sticky marker's square, in PDF points: the shell's `wordmarkup::STICKY_PT`,
+/// hung down and right from the click.
+const STICKY_PT: f64 = 20.0;
+
+/// How far right of the marker the pointer is parked before the after-shot.
+const PARK_PT: f64 = 200.0;
 
 /// See the module documentation.
 pub struct TextAnnotTakesTheKeyboardUnclicked;
@@ -70,7 +74,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
     if !ctx.allow_input {
         return Err(Error::new(
-            "input is disabled (--no-input). This check clicks a ribbon control, drags on the \
+            "input is disabled (--no-input). This check clicks a ribbon control, clicks on the \
              canvas and types. Reported as SKIPPED rather than passed.",
         ));
     }
@@ -142,7 +146,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     }
 
     let trace = session.trace()?;
-    let item = declared(&trace, ui_rect, "ribbon.item.markup.sticky_note").ok_or_else(|| {
+    let item = crate::checks::driving::declared_or_in_overflow(
+        &session,
+        &driver,
+        ui_rect,
+        "ribbon.item.markup.sticky_note",
+    )?
+    .ok_or_else(|| {
         Error::new(format!(
             "no `ribbon.item.markup.sticky_note` region on the Markup tab. Items declared: {}.",
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
@@ -156,7 +166,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .any(|l| l.get("tool").is_some_and(|t| t.contains("TextAnnot")))
     {
         return Err(Error::new(
-            "Markup > Sticky note armed nothing, so the drag below would draw no box and the \
+            "Markup > Sticky note armed nothing, so the click below would place nothing and the \
              dialog under test would never open.",
         ));
     }
@@ -164,14 +174,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
 
     let before = annot_count(&session);
 
-    // --- B: capture the paper, then drag the box ---------------------------
+    // --- B: capture the paper, then click the sticky on --------------------
     let mapping = CanvasMapping::from_trace(&trace, &ctx.profile.vocab, page, target.page)?;
     let frame = session.frame()?;
     let corner = mapping.doc_to_window(target)?;
     let far = mapping.doc_to_window(DocPoint {
         page: target.page,
-        x: target.x + BOX_PT,
-        y: target.y + BOX_PT,
+        x: target.x + STICKY_PT,
+        y: target.y - STICKY_PT,
     })?;
     // The box in the window's own logical coordinates, WITH its border.
     //
@@ -198,15 +208,14 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     let before_shot = crate::capture::window_to_png(&session, &before_path)?;
     report.artifact(before_path);
 
-    let from = frame.to_screen(corner);
-    let to = frame.to_screen(far);
-    driver.drag(from, to)?;
+    // A click, not a drag: the sticky is click-placed and a drag places nothing.
+    driver.click_at(frame.to_screen(corner))?;
     session.settle(20);
 
     let trace = session.trace()?;
     if trace.events("text-annot-open").next().is_none() {
         return Err(Error::new(
-            "the drag opened no dialog, so there is nothing to type into. That is \
+            "the click opened no dialog, so there is nothing to type into. That is \
              `text_annot_places_and_authors`' territory, not this check's — fix it there.",
         ));
     }
@@ -216,12 +225,12 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
              kind and this check has nothing to say.",
         ));
     };
-    report.note("the drag opened the dialog and it declared its text field");
+    report.note("the click opened the dialog and it declared its text field");
 
     // --- C: TYPE. NO CLICK ON THE FIELD. --------------------------------
     //
     // The one line that separates this check from the one beside it. The
-    // pointer stays exactly where the drag left it — over the page, outside the
+    // pointer stays exactly where the click left it — over the page, outside the
     // window — and the keys go to whatever holds focus. If the dialog seated
     // its caret, that is the field. If it only *asked* and lost, it is not.
     //
@@ -277,7 +286,7 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // hover as well as an annotation.
     driver.move_to(frame.to_screen(mapping.doc_to_window(DocPoint {
         page: target.page,
-        x: target.x + BOX_PT * 2.0,
+        x: target.x + PARK_PT,
         y: target.y,
     })?))?;
     session.settle(10);

@@ -136,12 +136,14 @@ fn arm_stamp(session: &Session, driver: &Driver, ui_rect: &str) -> Result<()> {
         return Ok(());
     }
     let trace = session.trace()?;
-    let item = declared(&trace, ui_rect, STAMP_ITEM).ok_or_else(|| {
-        Error::new(format!(
-            "no `{STAMP_ITEM}` region on the Markup tab. Items declared: {}.",
-            list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
-        ))
-    })?;
+    let item =
+        crate::checks::driving::declared_or_in_overflow(session, driver, ui_rect, STAMP_ITEM)?
+            .ok_or_else(|| {
+                Error::new(format!(
+                    "no `{STAMP_ITEM}` region on the Markup tab. Items declared: {}.",
+                    list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
+                ))
+            })?;
     driver.click_at(session.frame()?.declared_center(item))?;
     session.settle(14);
     // And say so if the click did not arm it. Without this the failure

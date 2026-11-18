@@ -111,6 +111,18 @@ const SAFE_ORIGIN_X: i32 = 780;
 /// See [`SAFE_ORIGIN_X`].
 const SAFE_ORIGIN_Y: i32 = 40;
 
+/// Window frame allowance either side of the client area, in pixels.
+const FRAME_PX: i32 = 16;
+
+/// The left edge for a window `client_w` wide: [`SAFE_ORIGIN_X`], moved left
+/// until the window fits a desktop starting at `desk_x` and `desk_w` wide, but
+/// never left of the desktop.
+fn fitted_origin_x(client_w: i32, desk_x: i32, desk_w: i32) -> i32 {
+    SAFE_ORIGIN_X
+        .min(desk_x + desk_w - client_w - FRAME_PX)
+        .max(desk_x)
+}
+
 /// The smallest client area the harness will accept as "the window is up".
 const MIN_CLIENT_PX: u32 = 200;
 
@@ -339,9 +351,15 @@ impl Session {
     }
 
     /// **Put the window at a known place, clear of the top of the screen.**
+    ///
+    /// The window keeps its size; it slides left of [`SAFE_ORIGIN_X`] as far as
+    /// it must for its right edge to stay on the desktop, so a desktop narrower
+    /// than origin plus width does not push controls off the screen.
     fn place(&self) {
         if let Some(w) = self.window {
-            sys::move_window(w, SAFE_ORIGIN_X, SAFE_ORIGIN_Y);
+            let width = sys::window_frame(w).map_or(0, |f| f.client_size.0 as i32);
+            let (dx, _, dw, _) = sys::desktop_bounds();
+            sys::move_window(w, fitted_origin_x(width, dx, dw), SAFE_ORIGIN_Y);
         }
     }
 
@@ -625,4 +643,25 @@ pub fn staleness_complaint(exe: &Path, source_root: &Path) -> Option<String> {
         exe.display(),
         path.display(),
     ))
+}
+
+#[cfg(test)]
+mod fitted_origin_tests {
+    use super::{SAFE_ORIGIN_X, fitted_origin_x};
+
+    #[test]
+    fn a_window_that_fits_keeps_the_safe_origin() {
+        assert_eq!(fitted_origin_x(1400, 0, 3440), SAFE_ORIGIN_X);
+    }
+
+    #[test]
+    fn a_window_too_wide_for_the_rest_slides_left() {
+        assert_eq!(fitted_origin_x(1400, 0, 1920), 1920 - 1400 - 16);
+    }
+
+    #[test]
+    fn a_window_as_wide_as_the_desktop_starts_at_its_edge() {
+        assert_eq!(fitted_origin_x(1920, 0, 1920), 0);
+        assert_eq!(fitted_origin_x(1920, -1920, 1920), -1920);
+    }
 }

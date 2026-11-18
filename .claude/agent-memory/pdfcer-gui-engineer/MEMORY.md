@@ -21,7 +21,7 @@
 - [A delete that frees nothing](project_drive_holds_deleted_target.md) — a sync client's hard links hold the data; check `fsutil hardlink list`.
 - [A backlog row is a record, not evidence](feedback_backlog_row_record.md) — verify absence against source.
 - [One row hides its neighbours](feedback_agent_given_one_row.md) — two other rows had already declined it.
-- [A SKIP is not red](feedback_skip_red_check_stop.md) — can be a misfiled FAIL; [or the scratch folder](feedback_skip_on_missing_asset.md).
+- [A SKIP is not red](feedback_skip_red_check_stop.md) — can be a misfiled FAIL; [or the scratch folder](feedback_skip_on_missing_asset.md); [hid a stale gesture](feedback_retargeted_check_keeps_gesture.md).
 - [A check that cannot fail is not evidence](feedback_check_cannot_fail.md) — falsify it, [on real files](feedback_falsify_on_real_files.md); self-tests aren't enough.
 - [A check's failure messages never run](feedback_failure_messages_unrun.md) — a plant fires one arm; the rest say anything.
 - [His sentences are reports, not measurements](feedback_kens_sentences.md) — "800%" named a setting.
@@ -187,8 +187,8 @@
 - [A leftover loop ran the harness live](feedback_loop_tail_ran_harness.md) — --no-input AND --check.
 - [Shared state measures run order](feedback_suite_shares_state.md) — [a sweep-only failure](feedback_passes_alone_trace.md); read its trace, name the mechanism.
 - [A replace-all verb drops keys](feedback_replace_all_verb.md) — keys its type lacks are dropped; disclose and file.
-- [A control past the window's edge](feedback_read_layout_before_bug.md) — may just be below a scrolling fold; read the layout before saying bug.
-- [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice, mixed RAM; flaky compiles may be hardware.
-- [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it, drive what slid ahead.
-- [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — no frames after full screen; solo passes.
+- [A control past the window's edge](feedback_read_layout_before_bug.md) — may be below a scrolling fold; read the layout first.
+- [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice; flaky compiles may be hardware.
+- [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it.
+- [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".

@@ -160,7 +160,13 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     // OTHER route, and pressing the dialog's chooser here would leave it unable
     // to tell "the properties box wrote 30" from "the placing dialog did".
     let trace = session.trace()?;
-    let item = declared(&trace, ui_rect, "ribbon.item.markup.stamp").ok_or_else(|| {
+    let item = crate::checks::driving::declared_or_in_overflow(
+        &session,
+        &driver,
+        ui_rect,
+        "ribbon.item.markup.stamp",
+    )?
+    .ok_or_else(|| {
         Error::new(format!(
             "no `ribbon.item.markup.stamp` region on the Markup tab. Items declared: {}.",
             list(&declared_names(&trace, ui_rect, "ribbon.item.markup."))
