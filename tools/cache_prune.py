@@ -15,6 +15,9 @@ every engine pin move and every release build until the disk fills:
    build configuration a crate has ever had. Only the newest per crate is used
    by the next build. The older ones are dead.
 
+``target/aarch64-linux-android/release`` is the APK's cache and grows the
+same way; it keeps the newest build of each crate and no incremental state.
+
 ``target/debug`` is built only by the gates and tests and is never shipped, so
 when it passes ``DEBUG_LIMIT_GB`` it is deleted whole. That costs one debug
 rebuild.
@@ -161,6 +164,43 @@ def prune_incremental(profile: str) -> int:
     return freed
 
 
+ANDROID = TARGET / "aarch64-linux-android" / "release"
+
+
+def prune_android() -> int:
+    """Keep the newest build of each crate in the APK's cache, and none of its
+    incremental state.
+
+    The live set cannot be asked of cargo here without the NDK toolchain, so
+    the newest metadata hash per crate stands in for it. A crate with two live
+    hashes loses one, which costs one rebuild at the next APK build.
+    """
+    deps = ANDROID / "deps"
+    if not deps.is_dir():
+        return 0
+    newest: dict[str, tuple[float, str]] = {}
+    files: list[tuple[str, str, Path]] = []
+    for f in deps.iterdir():
+        m = _HASH.search(f.name)
+        if not m or not f.is_file():
+            continue
+        crate = f.name[: m.start()]
+        files.append((crate, m.group(1), f))
+        t = f.stat().st_mtime
+        if crate not in newest or t > newest[crate][0]:
+            newest[crate] = (t, m.group(1))
+    freed = 0
+    for crate, h, f in files:
+        if h != newest[crate][1]:
+            freed += f.stat().st_size
+            _rm(f)
+    inc = ANDROID / "incremental"
+    if inc.is_dir():
+        freed += _size(inc)
+        _rm(inc)
+    return freed
+
+
 def prune_debug() -> int:
     debug = TARGET / "debug"
     if not debug.is_dir():
@@ -180,6 +220,7 @@ def run(env: dict[str, str] | None = None) -> None:
         ("dead release artifacts", lambda: prune_release_deps(env)),
         ("old release incremental", lambda: prune_incremental("release")),
         ("debug cache", prune_debug),
+        ("old APK artifacts", prune_android),
     ]
     parts = []
     total = 0
