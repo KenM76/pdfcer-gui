@@ -176,10 +176,8 @@ pub enum Action {
     /// Forms ▸ Manage ▸ Repair fonts: every inline `/DR` font becomes an object
     /// of its own, as one undo entry. See `super::formfonts`.
     RepairFormFonts,
-    /// Form preview ▸ Use these pages, with its reading choices in display order.
-    UseFormPages {
-        choices: [bool; 5],
-    },
+    /// Form preview ▸ Use these pages, or a value typed into a field.
+    FormPreview(crate::formpreview::FormPreviewAction),
     /// Security ▸ Add validation evidence…: pick files, embed them in
     /// `/DSS`, as one undo entry. See `super::evidence`.
     AddValidationEvidence {

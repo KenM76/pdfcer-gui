@@ -7,8 +7,9 @@
 //! with `pdfcer_render::xfa::render_xfa_page` on a worker thread, then lists
 //! the values filled in and every `MergeWarning`, `LayoutWarning` and
 //! `PaintNote` beside the pages: what the preview
-//! leaves out is disclosed here, never marked on the pictures. Nothing is
-//! written to the file, and the canvas keeps showing the file's own pages.
+//! leaves out is disclosed here, never marked on the pictures. A click on a
+//! field types a value into the form's data (`fields`); the window redraws
+//! whenever the document's edit epoch moves, so an undo shows too.
 //!
 //! The "Reading choices" are the merge and paint options where the XFA
 //! standard leaves the answer open; changing one redraws on a new worker while
@@ -23,8 +24,13 @@ use pdfcer_core::xfa::{
     PaintNoteKind, PaintOptions, ScopeSearch, ThreeDStroke,
 };
 
+use pdfcer_gui_base::formpreview::FormPreviewAction;
+
 use crate::app::actions::Action;
+use crate::app::state::OpenDoc;
 use crate::text::xfapreview::{self as t, ChoiceKey};
+
+mod fields;
 
 /// Named region: the whole dialog body.
 const REGION_BODY: &str = "dialog:form-preview"; // ui-text-exempt: trace region name, never displayed
@@ -60,7 +66,7 @@ impl Choices {
             .is_some_and(|i| self.0[i])
     }
 
-    fn merge(self) -> MergeOptions {
+    pub(crate) fn merge(self) -> MergeOptions {
         let scope = if self.get(ChoiceKey::ScopeSearch) {
             ScopeSearch::Children
         } else {
@@ -113,6 +119,8 @@ struct PagePixels {
 /// The worker's result: the pages and every sentence of disclosure.
 struct Drawn {
     pages: Vec<PagePixels>,
+    /// Each drawn page's width in points and its fields.
+    fields: Vec<(f32, Vec<fields::FieldBox>)>,
     total_pages: usize,
     values: String,
     value_count: usize,
@@ -128,6 +136,7 @@ type Slot = Arc<Mutex<Option<Result<Drawn, String>>>>;
 enum Shown {
     Pages {
         textures: Vec<egui::TextureHandle>,
+        fields: Vec<(f32, Vec<fields::FieldBox>)>,
         total_pages: usize,
         values: String,
         notes: Vec<String>,
@@ -137,8 +146,12 @@ enum Shown {
 }
 
 /// The Form-preview dialog. Its existence is its "open" state.
+///
+/// It holds no session between redraws: an edit needs the session to itself.
 pub struct XfaPreviewDialog {
-    session: Arc<EditSession>,
+    /// The document's edit epoch the pages were drawn at.
+    epoch: u64,
+    editing: Option<fields::Editing>,
     options: pdfcer_render::RenderOptions,
     choices: Choices,
     slot: Slot,
@@ -160,11 +173,12 @@ impl XfaPreviewDialog {
     /// Start drawing `session`'s form on a worker thread.
     pub(super) fn open(
         ctx: &egui::Context,
-        session: Arc<EditSession>,
+        doc: &OpenDoc,
         options: pdfcer_render::RenderOptions,
     ) -> Self {
         let mut dialog = Self {
-            session,
+            epoch: doc.edit_epoch,
+            editing: None,
             options,
             choices: Choices::default(),
             slot: Arc::default(),
@@ -172,18 +186,19 @@ impl XfaPreviewDialog {
             shown: None,
             close_requested: false,
         };
-        dialog.spawn(ctx);
+        dialog.spawn(ctx, &doc.session);
         dialog
     }
 
     /// Draw the form with the current choices on a new worker. An earlier
     /// worker's late answer lands in its own slot, which is no longer read.
-    fn spawn(&mut self, ctx: &egui::Context) {
+    fn spawn(&mut self, ctx: &egui::Context, session: &Arc<EditSession>) {
         self.slot = Arc::default();
         self.pending = true;
+        self.editing = None;
         let out = Arc::clone(&self.slot);
         let repaint = ctx.clone();
-        let session = Arc::clone(&self.session);
+        let session = Arc::clone(session);
         let (options, choices) = (self.options.clone(), self.choices);
         let spawned = std::thread::Builder::new()
             .name("form-preview".into())
@@ -201,7 +216,16 @@ impl XfaPreviewDialog {
     }
 
     /// Draw one frame. Returns `false` when it should close.
-    pub(super) fn show(&mut self, ctx: &egui::Context, actions: &mut Vec<Action>) -> bool {
+    pub(super) fn show(
+        &mut self,
+        ctx: &egui::Context,
+        doc: &OpenDoc,
+        actions: &mut Vec<Action>,
+    ) -> bool {
+        if doc.edit_epoch != self.epoch {
+            self.epoch = doc.edit_epoch;
+            self.spawn(ctx, &doc.session);
+        }
         self.collect(ctx);
         let (frame, ()) = crate::dialogs::host::Host::new(
             "form-preview", // ui-text-exempt: a viewport key, never displayed.
@@ -209,7 +233,7 @@ impl XfaPreviewDialog {
             egui::vec2(720.0, 820.0),
             egui::vec2(420.0, 320.0),
         )
-        .show(ctx, |ui| self.body(ui, actions));
+        .show(ctx, |ui| self.body(ui, &doc.session, actions));
         !frame.closed && !std::mem::take(&mut self.close_requested)
     }
 
@@ -247,15 +271,25 @@ impl XfaPreviewDialog {
                 let (values, merged) = (d.value_count, d.merge_warning_count);
                 let (approximated, choices) = (d.approximated, self.choices.code());
                 crate::diag::trace(|| {
+                    // Lets a driven check see the drawn pixels change: the
+                    // window's viewport cannot be screenshotted.
+                    let digest = d
+                        .pages
+                        .iter()
+                        .flat_map(|p| p.rgba.iter())
+                        .fold(0xcbf2_9ce4_8422_2325_u64, |h, &b| {
+                            (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
+                        });
                     // ui-text-exempt: diagnostic trace, never displayed.
                     format!(
                         "form-preview pages={pages} notes={notes} warnings={warnings} \
                          values={values} merge_warnings={merged} \
-                         approximated={approximated} choices={choices}"
+                         approximated={approximated} choices={choices} digest={digest:016x}"
                     )
                 });
                 Shown::Pages {
                     textures,
+                    fields: d.fields,
                     total_pages: d.total_pages,
                     values: d.values,
                     notes: d.notes,
@@ -273,13 +307,13 @@ impl XfaPreviewDialog {
     }
 
     /// Everything inside the window.
-    fn body(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
+    fn body(&mut self, ui: &mut egui::Ui, session: &Arc<EditSession>, actions: &mut Vec<Action>) {
         let theme = Theme::of(ui.ctx());
         crate::diag::ui_rect(REGION_BODY, ui.max_rect());
         ui.label(egui::RichText::new(t::caveat()).color(theme.palette.text_muted));
         ui.add_space(6.0);
         if self.choices_ui(ui) {
-            self.spawn(ui.ctx());
+            self.spawn(ui.ctx(), session);
         }
         ui.add_space(6.0);
         const FOOTER_RESERVE: f32 = 40.0;
@@ -299,6 +333,7 @@ impl XfaPreviewDialog {
                 }
                 Some(Shown::Pages {
                     textures,
+                    fields,
                     total_pages,
                     values,
                     notes,
@@ -318,11 +353,27 @@ impl XfaPreviewDialog {
                         let size = texture.size_vec2() / SCALE;
                         let width = ui.available_width().min(size.x);
                         let fitted = egui::vec2(width, size.y * width / size.x);
-                        ui.image((texture.id(), fitted));
+                        let image = ui.image((texture.id(), fitted)).rect;
+                        if let Some((page_width, boxes)) = fields.get(i) {
+                            let o = fields::Overlay {
+                                page: i,
+                                image,
+                                scale: image.width() / page_width,
+                                enabled: !self.pending,
+                                choices: self.choices.0,
+                                actions,
+                            };
+                            fields::overlay(ui, o, boxes, &mut self.editing);
+                        }
                     }
                 }
             });
         ui.separator();
+        self.footer(ui, actions);
+    }
+
+    /// Use these pages, when the pages are drawn, and Close.
+    fn footer(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         ui.horizontal(|ui| {
             let ready = matches!(self.shown, Some(Shown::Pages { .. })) && !self.pending;
             if ready {
@@ -331,9 +382,9 @@ impl XfaPreviewDialog {
                     .on_hover_text(t::use_pages_hover());
                 crate::diag::ui_rect(REGION_USE, used.rect);
                 if used.clicked() {
-                    actions.push(Action::UseFormPages {
+                    actions.push(Action::FormPreview(FormPreviewAction::UsePages {
                         choices: self.choices.0,
-                    });
+                    }));
                     self.close_requested = true;
                 }
             }
@@ -439,6 +490,7 @@ fn draw(
     let images = pdfcer_core::xfa::XfaImages::from_view(&view);
     let paint = choices.paint();
     let mut pages = Vec::new();
+    let mut boxes = Vec::new();
     let mut counts: Vec<(PaintNoteKind, usize)> = Vec::new();
     for page in layout.pages.iter().take(MAX_PAGES) {
         let r = pdfcer_render::xfa::render_xfa_page_with_images(
@@ -451,6 +503,7 @@ fn draw(
                 None => counts.push((note.kind, 1)),
             }
         }
+        boxes.push((page.width as f32, fields::of_page(page, &merged)));
         let pixmap = &r.page.pixmap;
         pages.push(PagePixels {
             size: [pixmap.width() as usize, pixmap.height() as usize],
@@ -480,6 +533,7 @@ fn draw(
         .map_or(0, |(_, n)| *n);
     Ok(Drawn {
         pages,
+        fields: boxes,
         total_pages: layout.pages.len(),
         values: t::values_merged(
             merged.bound.len(),

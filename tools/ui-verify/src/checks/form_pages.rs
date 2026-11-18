@@ -49,6 +49,18 @@ impl Check for UseThesePagesMakesTheFormTheDocument {
 }
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
+    let (session, pointer, ui_rect) = launch_form(ctx, report, "form_pages")?;
+    press_use(ctx, report, ui_rect, &session, &pointer)
+}
+
+/// Open a copy of the dynamic-form fixture off the desktop, named after
+/// `stem`, and let its preview draw. Returns the session, its scripted
+/// pointer and the profile's ui-rect event.
+pub(super) fn launch_form(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+) -> Result<(Session, ScriptedPointer, &'static str)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
             "no binary to drive. Pass --exe, or build the profile's default at {}.",
@@ -63,10 +75,10 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
         .vocab
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
-    let doc = ctx.out("form_pages.pdf");
+    let doc = ctx.out(&format!("{stem}.pdf"));
     std::fs::copy(repo_fixture(FIXTURE, METHOD)?, &doc)
         .map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
-    let mut spec = LaunchSpec::new(&exe, ctx.out("form_pages.trace.txt"));
+    let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
         (ctx.profile.diag_env.0, ctx.profile.diag_env.1),
@@ -78,11 +90,11 @@ fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>>
     spec.place = false;
     spec.allow_stale = ctx.allow_stale;
     spec.source_root = ctx.source_root.clone();
-    let pointer = ScriptedPointer::attach(&mut spec, ctx.out("form_pages.pointer.txt"))?;
+    let pointer = ScriptedPointer::attach(&mut spec, ctx.out(&format!("{stem}.pointer.txt")))?;
     let session = Session::launch(&spec, ctx.profile.trace_prefix)?;
     report.artifact(session.trace_path().to_path_buf());
     session.settle(90);
-    press_use(ctx, report, ui_rect, &session, &pointer)
+    Ok((session, pointer, ui_rect))
 }
 
 /// Press Use these pages in the preview that opened with the form, and judge

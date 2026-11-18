@@ -368,7 +368,7 @@ impl DialogsState {
         if self.xfa_preview.is_none() {
             self.xfa_preview = Some(xfa_preview::XfaPreviewDialog::open(
                 ctx,
-                std::sync::Arc::clone(&doc.session),
+                doc,
                 crate::app::settings::SettingsExt::render_options(&doc.settings),
             ));
         }

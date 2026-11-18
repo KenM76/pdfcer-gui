@@ -7,6 +7,10 @@
 //! is inferred content, so the status row says so, with what was replaced, the
 //! faces drawn in a standard face or left unembedded, and the usage-rights
 //! signature removed. A signed form is refused, never stripped.
+//!
+//! A value typed into a field in the preview goes into the form's data through
+//! `EditSession::fill_xfa_field`, merged with the same reading choices, so the
+//! preview redrawn after it shows the value where it was typed.
 
 use pdfcer_core::edit::{EditError, XfaMaterializeOutcome, XfaSignatures};
 use pdfcer_core::xfa::{FontEmbedding, PaintNoteKind, XfaFonts};
@@ -130,4 +134,28 @@ fn disclose(out: &XfaMaterializeOutcome, fonts: &XfaFonts) -> Vec<String> {
         lines.push(t::pages_usage_rights_removed().to_owned());
     }
     lines
+}
+
+/// Write `value` into the field at template `path`, as one undo step.
+pub(super) fn fill(
+    doc: &mut OpenDoc,
+    path: &[usize],
+    value: &str,
+    name: Option<&str>,
+    choices: [bool; 5],
+) {
+    let opts = Choices(choices).merge();
+    super::apply::vector_edit(doc, "form-fill", 0, 0, |session| {
+        let out = session.fill_xfa_field(path, value, &opts)?;
+        crate::diag::trace(|| {
+            format!(
+                // ui-text-exempt: diagnostic trace, never displayed in the UI
+                "form-fill-applied path={path:?} chars={} shared={} created={}",
+                value.chars().count(),
+                out.shared_with.len(),
+                out.created.len()
+            )
+        });
+        Ok::<_, EditError>(vec![t::filled(name, out.shared_with.len(), &out.created)])
+    });
 }

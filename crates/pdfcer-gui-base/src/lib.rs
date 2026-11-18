@@ -28,6 +28,9 @@ pub mod deepanchor;
 /// One page's turn in a Straighten-scans run.
 pub mod deskewstep;
 
+/// What the Form preview window asks of the open document.
+pub mod formpreview;
+
 /// The opt-in trace of what the shell actually received.
 pub mod diag;
 

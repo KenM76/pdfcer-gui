@@ -25,7 +25,7 @@ pub fn title() -> &'static str {
 #[must_use]
 pub fn caveat() -> &'static str {
     "These are the form's own pages, drawn from its layout with the values its data \
-     holds. Nothing here is saved to the file."
+     holds. Click a field to fill it in: Enter writes the value into the form, and Ctrl+Z takes it back."
 }
 
 /// Shown while the layout is computed.
@@ -345,4 +345,32 @@ impl FormPagesRefusal {
             ),
         }
     }
+}
+
+/// A field's hover in the preview: what a click does.
+#[must_use]
+pub fn fill_hover(name: Option<&str>) -> String {
+    match name {
+        Some(n) => format!("{n}: click to fill in"),
+        None => "Click to fill in".to_owned(),
+    }
+}
+
+/// The status line after a value was written into the form's data.
+#[must_use]
+pub fn filled(name: Option<&str>, shared: usize, created: &[String]) -> String {
+    let field = name.map_or_else(|| "the field".to_owned(), |n| n.to_owned());
+    let shared = match shared {
+        0 => String::new(),
+        n => format!(" {n} other field(s) share its data and show it too."),
+    };
+    let created = if created.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " The form's data had no place for it, so pdfcer added: {}.",
+            created.join(", ")
+        )
+    };
+    format!("Filled in {field}.{shared}{created} Press Ctrl+Z to undo.")
 }

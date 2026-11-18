@@ -12,6 +12,7 @@ use crate::app::PdfcerApp;
 use crate::app::prefs::offpage;
 use crate::app::state::Status;
 use crate::viewer;
+use pdfcer_gui_base::formpreview::FormPreviewAction;
 
 impl PdfcerApp {
     /// Apply every action raised during the frame just drawn.
@@ -468,7 +469,15 @@ impl PdfcerApp {
             }
             Action::Deskew(step) => super::deskew::apply(doc, &step),
             Action::RepairFormFonts => super::formfonts::repair(doc),
-            Action::UseFormPages { choices } => super::formpages::apply(doc, choices),
+            Action::FormPreview(FormPreviewAction::UsePages { choices }) => {
+                super::formpages::apply(doc, choices);
+            }
+            Action::FormPreview(FormPreviewAction::Fill {
+                path,
+                value,
+                name,
+                choices,
+            }) => super::formpages::fill(doc, &path, &value, name.as_deref(), choices),
             Action::ToggleRc4Append => crate::app::rc4::toggle(doc),
             // Registered only with `signing`; without it nothing raises this.
             Action::AddValidationEvidence {

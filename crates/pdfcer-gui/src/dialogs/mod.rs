@@ -891,7 +891,7 @@ impl DialogsState {
         if self.diagnostics.as_mut().map(|d| d.show(ctx, doc)) == Some(false) {
             self.diagnostics = None;
         }
-        if self.xfa_preview.as_mut().map(|d| d.show(ctx, actions)) == Some(false) {
+        if self.xfa_preview.as_mut().map(|d| d.show(ctx, doc, actions)) == Some(false) {
             self.xfa_preview = None;
         }
         // `actions`: the apply dialog's default destination edits the OPEN
