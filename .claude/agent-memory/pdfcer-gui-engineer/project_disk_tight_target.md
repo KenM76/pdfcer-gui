@@ -428,3 +428,14 @@ cargo-reported live set, all but the newest incremental dir per crate, and
 `target/debug` whole once it passes 20 GB. Manual cleanup should now be rare;
 if the disk fills anyway, check what it did NOT cover (the engine's own
 `target/`, other projects) before redoing it by hand.
+
+## 2026-11-17: the end-of-package prune was too late — Ken: "always be cleaning"
+
+D: reached 2.6 GB free and the packager's own test step died with no `test
+result:` line; `target/debug` was 39 GB (limit 20) because nothing had packaged
+since the debug cache outgrew it. Ken: *"You should be always cleaning up your
+old rust cache files automatically before the drive gets nearly full."* Fix:
+`cache_prune.ensure_free()` (`python tools/cache_prune.py --if-below 60`) runs at
+the START of `package-portable.py` and of `run-all.sh`; below 60 GB free it
+prunes, and if still short deletes `target/debug` whole. Before any build I
+start by hand, run the same guard.
