@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 052f7c9ac4807b18e04fe58a5c2b54505f65c4d0
+# baseline: b7bef2dec471cfc95acb5d2e62dac72352ebd533
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12491
+# items: 12493
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -338,6 +338,7 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::ambient_occlusion
 pdfcer-3d field pdfcer_3d::render::RenderOptions::artwork_headlight
 pdfcer-3d field pdfcer_3d::render::RenderOptions::background
 pdfcer-3d field pdfcer_3d::render::RenderOptions::colour
+pdfcer-3d field pdfcer_3d::render::RenderOptions::emissive_white_lux
 pdfcer-3d field pdfcer_3d::render::RenderOptions::empty_artwork
 pdfcer-3d field pdfcer_3d::render::RenderOptions::height
 pdfcer-3d field pdfcer_3d::render::RenderOptions::indirect
@@ -350,6 +351,7 @@ pdfcer-3d field pdfcer_3d::render::RenderOptions::light_gain
 pdfcer-3d field pdfcer_3d::render::RenderOptions::light_sense
 pdfcer-3d field pdfcer_3d::render::RenderOptions::lighting
 pdfcer-3d field pdfcer_3d::render::RenderOptions::line_width
+pdfcer-3d field pdfcer_3d::render::RenderOptions::over_range
 pdfcer-3d field pdfcer_3d::render::RenderOptions::render_mode
 pdfcer-3d field pdfcer_3d::render::RenderOptions::shadow_alpha
 pdfcer-3d field pdfcer_3d::render::RenderOptions::shadow_casters

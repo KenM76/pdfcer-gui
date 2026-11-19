@@ -30,7 +30,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 | What | Command | What the command alone will not tell you |
 |---|---|---|
-| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `052f7c9a` (the engine's v0.162.0 tag; new since v0.161.0: redaction and text extraction ignore a text-state operator with surplus operands, as the renderer already did) |
+| Engine pin | `grep -m1 -oE 'pdfcer\?branch=main#[0-9a-f]+' Cargo.lock` | `b7bef2de` (the engine's v0.163.0 tag; new since v0.162.0: in a picture drawn in lux a colour brighter than full white rolls toward white on both paths, a glTF glow stating its luminance draws against the white point, and a bounce rescales for a new white point without tracing again) |
 | Engine HEAD | `git -C /d/Dev/pdfcer log --oneline -1 main` | The question is never whether the two shas MATCH — it is whether CODE has landed since the pin, because only that can falsify a sentence beginning *"the engine cannot"*. `git -C /d/Dev/pdfcer diff --stat <pin>..main -- '*.rs'` is the test; empty means such a sentence may be written. Read this log in the same breath as listing `open/`: a delivery has arrived here as a commit before it arrived as a reply three times |
 | Engine version | `grep -A1 'name = "pdfcer-core"' Cargo.lock` | — |
 | Last release | `git fetch --tags origin && gh api repos/KenM76/pdfcer-gui/releases/latest` | **Fetch first.** `gh release create` tags on the REMOTE, so `git describe` in an unfetched tree answers with an older tag and reports a commits-unreleased count wrong by a factor. Read every field back out of the API rather than inferring it from the flags passed in, and check the local zip's byte count against the asset's — agreement to the unit is the cheapest proof the upload is the file and not a truncation. The binary's own stamp and `published_at` sit twelve to twenty minutes apart on every release; label which clock |
@@ -196,7 +196,8 @@ command rather than trusting this sentence. O323 (overprint preview), O324
 (the Forms tab) and O325 (every size reduction reachable from menus, windows
 and right-click) shipped in it and await his check in `OPERATOR_REQUESTS.md`.
 The pin is the engine's v0.107.0 tag; the pin moves to tags only, in its own
-commit, with full gates. A release follows each new engine tag once its
+commit, with full gates. A shipped engine reply is wired against engine main at once, before the tag, and
+bugs found go back while the engine can still fix them. A release follows each new engine tag once its
 features are wired: package with `--no-update` from a clean tree, smoke-launch
 a scratch copy off-screen, push main, then `gh release create` without
 `--prerelease`, and mirror to OneDrive. Between releases commit locally and
