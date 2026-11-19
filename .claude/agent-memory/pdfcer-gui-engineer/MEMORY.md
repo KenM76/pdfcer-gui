@@ -192,3 +192,4 @@
 - [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
+- [A parallel pin commit duplicates a row](feedback_parallel_pin_duplicates_row.md) — rebase onto it, grep the title; keep the engine-keyed row.
