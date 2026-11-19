@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.158.0, a git dependency on the local engine repository, pinned at **`e93c12ad`**, the engine's v0.158.0 tag (new since v0.156.0: the light meter counts glowing surfaces, a path end can be checked before it is extended or opened, mesh shadings can be rewritten in any colour space, and the verbs of a full 3D measure window).
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.159.0, a git dependency on the local engine repository, pinned at **`7be6a351`**, the engine's v0.159.0 tag (new since v0.158.0: a dynamic form's pages can be written with fillable fields, a form field says what entry it takes, a field whose data the file lacks is filled, and a glTF import can be lit by its own lamps alone).
 
 **What is new in this build** (engine v0.158.0). **A dynamic form opens as its own pages:** Form preview's *Use these pages* replaces the "Please wait" stand-in page with the pages the form lays out, as one undo step, saying on the status line which fonts were drawn in a standard face; the values arrive as drawing, not fillable fields. **The 3D light meter counts glowing parts,** with a switch to leave them out. **Continue path and Open path here refuse a node that is not an end at once,** with the reason, instead of after the run is clicked out.
 

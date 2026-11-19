@@ -58,9 +58,18 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **66 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `wanted` — a real gap — **70 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
+
+### Engine arrivals at v0.159.0
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **Dynamic XFA, materialize with fillable fields** — `xfa-materialize --fillable`, `FieldOutput` (`FieldOutput::Flat`, `FieldOutput::Fillable`), `PaintOptions::with_fields`, the modules `pdfcer_core::xfa::fillable` (`XfaFieldNote`, `XfaFieldNoteKind`) and `pdfcer_core::xfa::paint::capture` (`PaintedWidget`), `XfaMaterializeOutcome::fields_written`, `XfaMaterializeOutcome::field_notes`, `EditSession::materialize_merged_xfa` | **wanted, at the pin since v0.159.0; request G301 (O445).** Form preview's *Use these pages* gets *Keep the fields fillable*, on by default, passing `FieldOutput::Fillable`; `fields_written` and each `field_notes` entry reach the status row. `materialize_merged_xfa` is the same verb over an already-merged form; the shell holds the template and calls `materialize_xfa`. |
+| **Dynamic XFA, a field's entry kind and values (field_widget)** — the module `pdfcer_core::xfa::widget` (`field_widget`, `FieldWidget`, `ChoiceOpen`), `Template::node_at` <!--namesake:node_at--> (the shell's calls are `order::node_at` on the layer tree, a different function) | **wanted, at the pin since v0.159.0; request G300 (O445).** Form preview opens a checkbox as a toggle and a list as its choices instead of a line of text. |
+| **Dynamic XFA, fill creates the node an unresolved dataRef names** — `XfaFillError::DataRefAbsent` | **wanted, at the pin since v0.159.0; request G299 (O445).** `fill_xfa_field` now creates the node a field's `dataRef` names; the shell's refusal wording for the case is re-tested, and `DataRefAbsent` is the residual refusal it words. |
+| **A glTF import lit by its own lamps alone** — `GltfAmbient` (`GltfAmbient::Fill`, `GltfAmbient::None`), `GltfOptions::ambient` | **wanted, at the pin since v0.159.0.** *Insert 3D model*'s glTF section gets a *Fill light* switch beside the colour and up-axis ones, on by default; off sends `GltfAmbient::None`. |
 
 ### Document & pages
 
@@ -181,7 +190,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `blocked` — waiting on something named — **2 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -199,7 +208,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -210,7 +219,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `declined` — deliberately no surface — **21 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -257,7 +266,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **505 of 594** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **505 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

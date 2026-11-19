@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: e93c12ad57990793a30bb5dc50719e86043efcf6
+# baseline: 7be6a3519da36ac39a6180c6b5efb066b719e42d
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12429
+# items: 12475
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -221,6 +221,7 @@ pdfcer-3d const pdfcer_3d::texture::MAX_TEXTURE_PIXELS
 pdfcer-3d const pdfcer_3d::write::MAX_DEPTH
 pdfcer-3d enum pdfcer_3d::error::PrcError
 pdfcer-3d enum pdfcer_3d::finish::ShininessScale
+pdfcer-3d enum pdfcer_3d::gltf::GltfAmbient
 pdfcer-3d enum pdfcer_3d::gltf::GltfColours
 pdfcer-3d enum pdfcer_3d::gltf::GltfError
 pdfcer-3d enum pdfcer_3d::gltf::GltfLights
@@ -255,6 +256,7 @@ pdfcer-3d field pdfcer_3d::finish::MaterialFinish::specular
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::inferred
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::notes
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::scene
+pdfcer-3d field pdfcer_3d::gltf::GltfOptions::ambient
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::colours
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::lights
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::occlusion
@@ -518,6 +520,8 @@ pdfcer-3d variant pdfcer_3d::error::PrcError::Unsupported
 pdfcer-3d variant pdfcer_3d::finish::ShininessScale::Auto
 pdfcer-3d variant pdfcer_3d::finish::ShininessScale::Exponent
 pdfcer-3d variant pdfcer_3d::finish::ShininessScale::Fraction
+pdfcer-3d variant pdfcer_3d::gltf::GltfAmbient::Fill
+pdfcer-3d variant pdfcer_3d::gltf::GltfAmbient::None
 pdfcer-3d variant pdfcer_3d::gltf::GltfColours::AsStored
 pdfcer-3d variant pdfcer_3d::gltf::GltfColours::Linear
 pdfcer-3d variant pdfcer_3d::gltf::GltfError::Buffer
@@ -1400,6 +1404,7 @@ pdfcer-core enum pdfcer_core::widget_draw::SynthesizedKind
 pdfcer-core enum pdfcer_core::widget_draw::signature::SignatureAppearanceError
 pdfcer-core enum pdfcer_core::widget_draw::signature::SignatureLabels
 pdfcer-core enum pdfcer_core::xfa::XfaFormKind
+pdfcer-core enum pdfcer_core::xfa::fillable::XfaFieldNoteKind
 pdfcer-core enum pdfcer_core::xfa::fonts::FontProgramKind
 pdfcer-core enum pdfcer_core::xfa::layout::LayoutError
 pdfcer-core enum pdfcer_core::xfa::layout::LayoutWarning
@@ -1429,6 +1434,7 @@ pdfcer-core enum pdfcer_core::xfa::paint::options::CaptionFont
 pdfcer-core enum pdfcer_core::xfa::paint::options::CheckCaption
 pdfcer-core enum pdfcer_core::xfa::paint::options::CheckEdge
 pdfcer-core enum pdfcer_core::xfa::paint::options::EdgePlacement
+pdfcer-core enum pdfcer_core::xfa::paint::options::FieldOutput
 pdfcer-core enum pdfcer_core::xfa::paint::options::FontEmbedding
 pdfcer-core enum pdfcer_core::xfa::paint::options::FontWeight
 pdfcer-core enum pdfcer_core::xfa::paint::options::ImageOverflow
@@ -1447,6 +1453,8 @@ pdfcer-core enum pdfcer_core::xfa::template::ContainerKind
 pdfcer-core enum pdfcer_core::xfa::template::LayoutStrategy
 pdfcer-core enum pdfcer_core::xfa::template::Measurement
 pdfcer-core enum pdfcer_core::xfa::template::Presence
+pdfcer-core enum pdfcer_core::xfa::widget::ChoiceOpen
+pdfcer-core enum pdfcer_core::xfa::widget::FieldWidget
 pdfcer-core field pdfcer_core::annot::Annotation::action_chains
 pdfcer-core field pdfcer_core::annot::Annotation::action_type
 pdfcer-core field pdfcer_core::annot::Annotation::appearance
@@ -2650,7 +2658,9 @@ pdfcer-core field pdfcer_core::edit::widget_angle::WidgetTurn::now
 pdfcer-core field pdfcer_core::edit::widget_angle::WidgetTurn::rect_after
 pdfcer-core field pdfcer_core::edit::widget_angle::WidgetTurn::rect_before
 pdfcer-core field pdfcer_core::edit::widget_angle::WidgetTurn::was
+pdfcer-core field pdfcer_core::edit::xfa_materialize::XfaMaterializeOutcome::field_notes
 pdfcer-core field pdfcer_core::edit::xfa_materialize::XfaMaterializeOutcome::fields_dropped
+pdfcer-core field pdfcer_core::edit::xfa_materialize::XfaMaterializeOutcome::fields_written
 pdfcer-core field pdfcer_core::edit::xfa_materialize::XfaMaterializeOutcome::fonts
 pdfcer-core field pdfcer_core::edit::xfa_materialize::XfaMaterializeOutcome::images
 pdfcer-core field pdfcer_core::edit::xfa_materialize::XfaMaterializeOutcome::notes
@@ -4884,6 +4894,8 @@ pdfcer-core field pdfcer_core::widget_draw::signature::SignatureImage::xobject
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::is_wrapper
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::payload_count
 pdfcer-core field pdfcer_core::wrapper::WrapperInfo::payload_name
+pdfcer-core field pdfcer_core::xfa::fillable::XfaFieldNote::kind
+pdfcer-core field pdfcer_core::xfa::fillable::XfaFieldNote::path
 pdfcer-core field pdfcer_core::xfa::fonts::XfaFace::ascent
 pdfcer-core field pdfcer_core::xfa::fonts::XfaFace::base_font
 pdfcer-core field pdfcer_core::xfa::fonts::XfaFace::bbox
@@ -4969,6 +4981,14 @@ pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::fonts
 pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::images
 pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::notes
 pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::resources
+pdfcer-core field pdfcer_core::xfa::paint::PaintedPage::widgets
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::hidden
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::normal
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::off
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::path
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::rect
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::rotate
+pdfcer-core field pdfcer_core::xfa::paint::capture::PaintedWidget::text
 pdfcer-core field pdfcer_core::xfa::paint::font_res::PaintedFont::base_font
 pdfcer-core field pdfcer_core::xfa::paint::font_res::PaintedFont::name
 pdfcer-core field pdfcer_core::xfa::paint::font_res::PaintedFont::program
@@ -4985,6 +5005,7 @@ pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::check_edge
 pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::dash_caps
 pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::dash_lengths
 pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::edge_placement
+pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::fields
 pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::font_embedding
 pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::font_weight
 pdfcer-core field pdfcer_core::xfa::paint::options::PaintOptions::image_dpi
@@ -5399,6 +5420,7 @@ pdfcer-core fn pdfcer_core::xfa::paint::paint_page
 pdfcer-core fn pdfcer_core::xfa::paint::paint_page_with
 pdfcer-core fn pdfcer_core::xfa::paint::paint_page_with_images
 pdfcer-core fn pdfcer_core::xfa::template::read_template
+pdfcer-core fn pdfcer_core::xfa::widget::field_widget
 pdfcer-core method pdfcer_core::annot::AnnotFlags::hidden
 pdfcer-core method pdfcer_core::annot::AnnotFlags::invisible
 pdfcer-core method pdfcer_core::annot::AnnotFlags::locked
@@ -6175,6 +6197,7 @@ pdfcer-core method pdfcer_core::edit::widget_angle::EditSession::turn_widget
 pdfcer-core method pdfcer_core::edit::widget_angle::WidgetEdit::clearing_opacity
 pdfcer-core method pdfcer_core::edit::widget_angle::WidgetEdit::with_opacity
 pdfcer-core method pdfcer_core::edit::xfa_fill::EditSession::fill_xfa_field
+pdfcer-core method pdfcer_core::edit::xfa_materialize::EditSession::materialize_merged_xfa
 pdfcer-core method pdfcer_core::edit::xfa_materialize::EditSession::materialize_xfa
 pdfcer-core method pdfcer_core::editable::ImportReport::is_empty
 pdfcer-core method pdfcer_core::emf_import::EmfImportNotes::is_empty
@@ -7160,6 +7183,7 @@ pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_check_ed
 pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_dash_caps
 pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_dash_lengths
 pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_edge_placement
+pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_fields
 pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_font_embedding
 pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_font_weight
 pdfcer-core method pdfcer_core::xfa::paint::options::PaintOptions::with_image_dpi
@@ -7182,6 +7206,7 @@ pdfcer-core method pdfcer_core::xfa::relevant::Views::with_view
 pdfcer-core method pdfcer_core::xfa::template::Measurement::parse
 pdfcer-core method pdfcer_core::xfa::template::Measurement::points
 pdfcer-core method pdfcer_core::xfa::template::Template::element
+pdfcer-core method pdfcer_core::xfa::template::Template::node_at
 pdfcer-core method pdfcer_core::xfa::template::Template::root_subform
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::anchor_type
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::attr
@@ -7194,6 +7219,7 @@ pdfcer-core method pdfcer_core::xfa::template::XfaNode::measurement
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::name
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::occur
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::presence
+pdfcer-core method pdfcer_core::xfa::widget::ChoiceOpen::is_drop_down
 pdfcer-core static pdfcer_core::optimize::resubset::NO_RESUBSETTER
 pdfcer-core struct pdfcer_core::annot::AnnotFlags
 pdfcer-core struct pdfcer_core::annot::Annotation
@@ -7847,6 +7873,7 @@ pdfcer-core struct pdfcer_core::widget_draw::signature::SignatureAppearance
 pdfcer-core struct pdfcer_core::widget_draw::signature::SignatureAppearanceBuilder
 pdfcer-core struct pdfcer_core::widget_draw::signature::SignatureImage
 pdfcer-core struct pdfcer_core::wrapper::WrapperInfo
+pdfcer-core struct pdfcer_core::xfa::fillable::XfaFieldNote
 pdfcer-core struct pdfcer_core::xfa::fonts::XfaFace
 pdfcer-core struct pdfcer_core::xfa::fonts::XfaFontProgram
 pdfcer-core struct pdfcer_core::xfa::fonts::XfaFonts
@@ -7866,6 +7893,7 @@ pdfcer-core struct pdfcer_core::xfa::packets::XdpDocument
 pdfcer-core struct pdfcer_core::xfa::packets::XdpPacket
 pdfcer-core struct pdfcer_core::xfa::paint::PaintNote
 pdfcer-core struct pdfcer_core::xfa::paint::PaintedPage
+pdfcer-core struct pdfcer_core::xfa::paint::capture::PaintedWidget
 pdfcer-core struct pdfcer_core::xfa::paint::font_res::PaintedFont
 pdfcer-core struct pdfcer_core::xfa::paint::image::PaintedImage
 pdfcer-core struct pdfcer_core::xfa::paint::options::PaintOptions
@@ -10220,6 +10248,11 @@ pdfcer-core variant pdfcer_core::widget_draw::signature::SignatureLabels::Plain
 pdfcer-core variant pdfcer_core::xfa::XfaFormKind::Dynamic
 pdfcer-core variant pdfcer_core::xfa::XfaFormKind::NotXfa
 pdfcer-core variant pdfcer_core::xfa::XfaFormKind::Static
+pdfcer-core variant pdfcer_core::xfa::fillable::XfaFieldNoteKind::Flat
+pdfcer-core variant pdfcer_core::xfa::fillable::XfaFieldNoteKind::Neutral
+pdfcer-core variant pdfcer_core::xfa::fillable::XfaFieldNoteKind::Picture
+pdfcer-core variant pdfcer_core::xfa::fillable::XfaFieldNoteKind::Script
+pdfcer-core variant pdfcer_core::xfa::fillable::XfaFieldNoteKind::Split
 pdfcer-core variant pdfcer_core::xfa::fonts::FontProgramKind::OpenTypeCff
 pdfcer-core variant pdfcer_core::xfa::fonts::FontProgramKind::TrueType
 pdfcer-core variant pdfcer_core::xfa::layout::LayoutError::NoPageArea
@@ -10269,6 +10302,7 @@ pdfcer-core variant pdfcer_core::xfa::merge::MergeWarningKind::Unsupported
 pdfcer-core variant pdfcer_core::xfa::merge::MergeWarningKind::WrongType
 pdfcer-core variant pdfcer_core::xfa::merge::ScopeSearch::Children
 pdfcer-core variant pdfcer_core::xfa::merge::ScopeSearch::Upward
+pdfcer-core variant pdfcer_core::xfa::merge::fill::XfaFillError::DataRefAbsent
 pdfcer-core variant pdfcer_core::xfa::merge::fill::XfaFillError::DirectStream
 pdfcer-core variant pdfcer_core::xfa::merge::fill::XfaFillError::NoDatasetsPacket
 pdfcer-core variant pdfcer_core::xfa::merge::fill::XfaFillError::NoXfa
@@ -10319,6 +10353,8 @@ pdfcer-core variant pdfcer_core::xfa::paint::options::CheckEdge::Plain
 pdfcer-core variant pdfcer_core::xfa::paint::options::CheckEdge::Spec
 pdfcer-core variant pdfcer_core::xfa::paint::options::EdgePlacement::Grammar
 pdfcer-core variant pdfcer_core::xfa::paint::options::EdgePlacement::Inward
+pdfcer-core variant pdfcer_core::xfa::paint::options::FieldOutput::Fillable
+pdfcer-core variant pdfcer_core::xfa::paint::options::FieldOutput::Flat
 pdfcer-core variant pdfcer_core::xfa::paint::options::FontEmbedding::Embed
 pdfcer-core variant pdfcer_core::xfa::paint::options::FontEmbedding::Reference
 pdfcer-core variant pdfcer_core::xfa::paint::options::FontWeight::Bold
@@ -10378,6 +10414,16 @@ pdfcer-core variant pdfcer_core::xfa::template::Presence::Hidden
 pdfcer-core variant pdfcer_core::xfa::template::Presence::Inactive
 pdfcer-core variant pdfcer_core::xfa::template::Presence::Invisible
 pdfcer-core variant pdfcer_core::xfa::template::Presence::Visible
+pdfcer-core variant pdfcer_core::xfa::widget::ChoiceOpen::Always
+pdfcer-core variant pdfcer_core::xfa::widget::ChoiceOpen::MultiSelect
+pdfcer-core variant pdfcer_core::xfa::widget::ChoiceOpen::OnEntry
+pdfcer-core variant pdfcer_core::xfa::widget::ChoiceOpen::UserControl
+pdfcer-core variant pdfcer_core::xfa::widget::FieldWidget::CheckButton
+pdfcer-core variant pdfcer_core::xfa::widget::FieldWidget::ChoiceList
+pdfcer-core variant pdfcer_core::xfa::widget::FieldWidget::Date
+pdfcer-core variant pdfcer_core::xfa::widget::FieldWidget::Numeric
+pdfcer-core variant pdfcer_core::xfa::widget::FieldWidget::Other
+pdfcer-core variant pdfcer_core::xfa::widget::FieldWidget::Text
 pdfcer-emf enum pdfcer_emf::EmfText
 pdfcer-emf enum pdfcer_emf::plates::EmfPlates
 pdfcer-emf enum pdfcer_emf::plates::PlateMetafileError
