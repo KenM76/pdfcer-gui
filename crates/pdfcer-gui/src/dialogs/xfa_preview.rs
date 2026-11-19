@@ -38,6 +38,9 @@ const REGION_BODY: &str = "dialog:form-preview"; // ui-text-exempt: trace region
 /// Named region: the Use these pages button.
 const REGION_USE: &str = "form-preview.use"; // ui-text-exempt: trace region name, never displayed
 
+/// Named region: the Keep the fields fillable switch.
+const REGION_FILLABLE: &str = "form-preview.fillable"; // ui-text-exempt: trace region name, never displayed
+
 /// Device pixels per point the pages are drawn at.
 const SCALE: f32 = 1.5;
 
@@ -154,6 +157,8 @@ pub struct XfaPreviewDialog {
     editing: Option<fields::Editing>,
     options: pdfcer_render::RenderOptions,
     choices: Choices,
+    /// *Keep the fields fillable*, on by default.
+    fillable: bool,
     slot: Slot,
     /// A worker is drawing; `shown` keeps the previous result until it lands.
     pending: bool,
@@ -181,6 +186,7 @@ impl XfaPreviewDialog {
             editing: None,
             options,
             choices: Choices::default(),
+            fillable: true,
             slot: Arc::default(),
             pending: false,
             shown: None,
@@ -372,18 +378,24 @@ impl XfaPreviewDialog {
         self.footer(ui, actions);
     }
 
-    /// Use these pages, when the pages are drawn, and Close.
+    /// Use these pages and its fillable switch, when the pages are drawn, and
+    /// Close.
     fn footer(&mut self, ui: &mut egui::Ui, actions: &mut Vec<Action>) {
         ui.horizontal(|ui| {
             let ready = matches!(self.shown, Some(Shown::Pages { .. })) && !self.pending;
             if ready {
                 let used = ui
                     .button(t::use_pages())
-                    .on_hover_text(t::use_pages_hover());
+                    .on_hover_text(t::use_pages_hover(self.fillable));
                 crate::diag::ui_rect(REGION_USE, used.rect);
+                let switch = ui
+                    .checkbox(&mut self.fillable, t::keep_fillable())
+                    .on_hover_text(t::keep_fillable_hover());
+                crate::diag::ui_rect(REGION_FILLABLE, switch.rect);
                 if used.clicked() {
                     actions.push(Action::FormPreview(FormPreviewAction::UsePages {
                         choices: self.choices.0,
+                        fillable: self.fillable,
                     }));
                     self.close_requested = true;
                 }

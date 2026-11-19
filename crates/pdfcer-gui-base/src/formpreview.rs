@@ -6,8 +6,9 @@
 /// One request from Form preview.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormPreviewAction {
-    /// Use these pages: the computed pages replace the stand-in pages.
-    UsePages { choices: [bool; 5] },
+    /// Use these pages: the computed pages replace the stand-in pages,
+    /// with fillable fields when `fillable`.
+    UsePages { choices: [bool; 5], fillable: bool },
     /// A value typed into the field at template `path` (child indices from
     /// the `template` element), written into the form's data.
     Fill {

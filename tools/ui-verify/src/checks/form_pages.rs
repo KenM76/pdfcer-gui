@@ -1,10 +1,12 @@
 //! `use_these_pages_makes_the_form_the_document` — Form preview ▸ Use these
-//! pages writes a dynamic XFA form's computed pages over its stand-in.
+//! pages, with *Keep the fields fillable* turned off, writes a dynamic XFA
+//! form's computed pages over its stand-in as flat pages.
 //!
 //! Opens a copy of `fixtures/dynamic-xfa.pdf` (one stand-in page, one computed
-//! page), waits for the preview that opens with it, presses Use these pages,
-//! and requires the engine's outcome on the trace — one page written over one
-//! replaced — with the status-row disclosure attached and the window closed.
+//! page), waits for the preview that opens with it, turns the switch off,
+//! presses Use these pages, and requires the engine's outcome on the trace —
+//! one page written over one replaced, no field written — with the status-row
+//! disclosure attached, the window closed, and no fillable box on the canvas.
 
 use crate::checks::driving::{SHELL_DIAG_ENV, declared, declared_in, repo_fixture};
 use crate::checks::{Check, CheckContext};
@@ -20,6 +22,9 @@ const METHOD: &str = "Rebuild it with `python fixtures/dynamic-xfa.PROVENANCE.py
 const DRAWN: &str = "form-preview";
 const DIALOG: &str = "dialog:form-preview";
 const USE: &str = "form-preview.use";
+const FILLABLE: &str = "form-preview.fillable";
+/// The canvas census of one fillable box.
+const BOX_LINE: &str = "form-box";
 const APPLIED: &str = "form-pages-applied";
 /// The funnel's line for the edit, carrying its disclosures.
 const FUNNEL: &str = "form-pages";
@@ -33,9 +38,9 @@ impl Check for UseThesePagesMakesTheFormTheDocument {
     }
 
     fn defect(&self) -> &'static str {
-        "Form preview offers no way to make the form's pages the document's, or pressing Use \
-         these pages leaves the stand-in page in place, writes it silently, or leaves the \
-         window open"
+        "Form preview offers no way to make the form's pages the document's as flat pages, or \
+         pressing Use these pages leaves the stand-in page in place, writes it silently, keeps \
+         fillable fields with the switch off, or leaves the window open"
     }
 
     fn run(&self, ctx: &CheckContext) -> CheckReport {
@@ -50,7 +55,38 @@ impl Check for UseThesePagesMakesTheFormTheDocument {
 
 fn drive(ctx: &CheckContext, report: &mut CheckReport) -> Result<Option<String>> {
     let (session, pointer, ui_rect) = launch_form(ctx, report, "form_pages")?;
-    press_use(ctx, report, ui_rect, &session, &pointer)
+    let trace = session.trace()?;
+    let Some((rect, vp)) = declared_in(&trace, ui_rect, FILLABLE) else {
+        return Ok(Some(format!(
+            "★★★ the preview declared no `{FILLABLE}` region: there is no Keep the fields \
+             fillable switch beside Use these pages. Trace: {}.",
+            session.trace_path().display()
+        )));
+    };
+    pointer.click_in(&session, vp.as_deref(), WindowPoint::centre_of(rect))?;
+    session.settle(15);
+    if let Some(failure) = press_use(ctx, report, ui_rect, &session, &pointer)? {
+        return Ok(Some(failure));
+    }
+    let trace = session.trace()?;
+    let applied = trace.last(APPLIED).map_or(0, |l| l.lineno);
+    let applied_line = trace
+        .last(APPLIED)
+        .map(|l| l.raw.clone())
+        .unwrap_or_default();
+    if !applied_line.contains("fillable=false") || !applied_line.contains("fields_written=0") {
+        return Ok(Some(format!(
+            "★★★ `{applied_line}` must carry fillable=false fields_written=0: the switch was \
+             turned off, so the pages are flat."
+        )));
+    }
+    if let Some(boxed) = trace.last_after(BOX_LINE, applied) {
+        return Ok(Some(format!(
+            "★★★ the canvas offered a fillable box after flat pages were written: `{}`.",
+            boxed.raw
+        )));
+    }
+    Ok(None)
 }
 
 /// Open a copy of the dynamic-form fixture off the desktop, named after
@@ -60,6 +96,17 @@ pub(super) fn launch_form(
     ctx: &CheckContext,
     report: &mut CheckReport,
     stem: &str,
+) -> Result<(Session, ScriptedPointer, &'static str)> {
+    launch_fixture(ctx, report, stem, FIXTURE, METHOD)
+}
+
+/// [`launch_form`] on the fixture `file`, rebuilt by `method`.
+pub(super) fn launch_fixture(
+    ctx: &CheckContext,
+    report: &mut CheckReport,
+    stem: &str,
+    file: &str,
+    method: &str,
 ) -> Result<(Session, ScriptedPointer, &'static str)> {
     let exe = ctx.resolve_exe().ok_or_else(|| {
         Error::new(format!(
@@ -76,8 +123,8 @@ pub(super) fn launch_form(
         .ui_rect_event
         .ok_or_else(|| Error::new("the profile declares no ui-rect trace event."))?;
     let doc = ctx.out(&format!("{stem}.pdf"));
-    std::fs::copy(repo_fixture(FIXTURE, METHOD)?, &doc)
-        .map_err(|e| Error::new(format!("copying {FIXTURE}: {e}")))?;
+    std::fs::copy(repo_fixture(file, method)?, &doc)
+        .map_err(|e| Error::new(format!("copying {file}: {e}")))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);
     for (k, v) in [
@@ -99,7 +146,7 @@ pub(super) fn launch_form(
 
 /// Press Use these pages in the preview that opened with the form, and judge
 /// the engine's outcome, the funnel's disclosure and the window's closing.
-fn press_use(
+pub(super) fn press_use(
     ctx: &CheckContext,
     report: &mut CheckReport,
     ui_rect: &str,

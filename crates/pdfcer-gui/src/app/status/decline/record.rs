@@ -220,6 +220,11 @@ pub(crate) fn record_form_pages(why: crate::text::xfapreview::FormPagesRefusal) 
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormPages(why)));
 }
 
+/// Record that a value given in Form preview was not written.
+pub(crate) fn record_form_fill(why: crate::text::xfapreview::FormFillRefusal) {
+    LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormFill(why)));
+}
+
 /// Record that Repair fonts found nothing to move.
 pub(crate) fn record_form_fonts_nothing_to_repair() {
     LAST.with_borrow_mut(|slot| *slot = Some(Declined::FormFontsNothingToRepair));

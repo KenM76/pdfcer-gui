@@ -1034,6 +1034,9 @@ pub enum Declined {
     /// Form preview ▸ Use these pages wrote nothing. Worded in
     /// [`crate::text::xfapreview::FormPagesRefusal`].
     FormPages(crate::text::xfapreview::FormPagesRefusal),
+    /// A value given in Form preview was not written. Worded in
+    /// [`crate::text::xfapreview::FormFillRefusal`].
+    FormFill(crate::text::xfapreview::FormFillRefusal),
     /// A text-tool click opened no caret. Worded by
     /// [`crate::text::textedit::refusal`]; a picture of text offers
     /// Recognise text through [`Declined::remedy`].

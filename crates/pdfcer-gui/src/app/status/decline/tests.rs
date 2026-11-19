@@ -292,6 +292,10 @@ fn no_two_declines_share_a_sentence() {
         Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::Signed(2)),
         Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::Certified),
         Declined::FormPages(crate::text::xfapreview::FormPagesRefusal::NotLaidOut),
+        Declined::FormFill(crate::text::xfapreview::FormFillRefusal::DataRefAbsent(
+            "$.A..B".to_owned(),
+        )),
+        Declined::FormFill(crate::text::xfapreview::FormFillRefusal::Unbound),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::StylesDiffer),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::WouldMoveNextRun),
         Declined::RunMerge(crate::text::runmerge::RunMergeRefusal::Other),
@@ -788,6 +792,7 @@ fn a_new_decline_cannot_be_added_unnoticed(declined: Declined) {
         | Declined::MarkupFlatten(_)
         | Declined::FormFontsNothingToRepair
         | Declined::FormPages(_)
+        | Declined::FormFill(_)
         | Declined::OsPaste(_)
         | Declined::WindowMove(_)
         | Declined::Rc4Refused

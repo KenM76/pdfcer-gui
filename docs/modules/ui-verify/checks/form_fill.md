@@ -4,6 +4,11 @@
 Form preview opens it for typing, and Enter writes the value into the form's
 data, says so on the status row, and redraws the preview.
 
+`a_field_with_no_data_value_yet_fills_in` — the same on Deposit
+(`form-preview.field.0.2`), whose data reference `$.Deposit` names a value
+the data does not hold: typing `500` must create it, so step 3 requires
+`chars=3 created=1`.
+
 # What it drives
 
 A copy of `fixtures/dynamic-xfa.pdf`, opened off-screen under `--no-input`
@@ -13,7 +18,7 @@ opens Form preview by itself.
 1. Wait for the `form-preview` trace line, and keep its `digest=`.
 2. Click the region `form-preview.field.0.1` (Rent, holding 1250), press
    Ctrl+A, type `975`, press Enter.
-3. Require `form-fill-applied` with `chars=3`.
+3. Require `form-fill-applied` with `chars=3 created=0`.
 4. Require a `form-fill` funnel line carrying an `epoch=` and a disclosure
    other than `none`.
 5. Require a `form-preview` line after the fill whose `digest=` differs from
@@ -26,3 +31,5 @@ opens Form preview by itself.
 - Disconnecting the overlay's push gives `traced no form-fill-applied line`.
 - Removing the redraw on the edit epoch gives `the preview drew no page after
   form-fill-applied`.
+- Filling with `DataCreation::Refuse` fails the Deposit check with `traced no
+  form-fill-applied line`, and the Rent check still passes.

@@ -469,8 +469,8 @@ impl PdfcerApp {
             }
             Action::Deskew(step) => super::deskew::apply(doc, &step),
             Action::RepairFormFonts => super::formfonts::repair(doc),
-            Action::FormPreview(FormPreviewAction::UsePages { choices }) => {
-                super::formpages::apply(doc, choices);
+            Action::FormPreview(FormPreviewAction::UsePages { choices, fillable }) => {
+                super::formpages::apply(doc, choices, fillable);
             }
             Action::FormPreview(FormPreviewAction::Fill {
                 path,

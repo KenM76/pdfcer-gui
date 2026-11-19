@@ -8165,4 +8165,14 @@ Built: Form preview has a *Use these pages* button. It writes the pages the prev
 
 Built since: a click on a field in Form preview opens it for typing, and Enter writes the value into the form's data as one undo step, says so on the status row, and redraws the preview. Driven by `typing_into_a_form_preview_field_fills_the_form`, which fails with the write disconnected or the redraw removed.
 
-**Not yet:** the written pages carry the values as drawing, not as fillable fields; fill the form in the preview before pressing *Use these pages*. Asked of the engine as G301 (written pages keep fillable fields), on his request of 2026-11-18. Checkboxes and lists are typed as text (G300). A field bound to data the file lacks is refused (G299). The pages are written only when he presses the button; opening the file still shows the stand-in first.
+Built since: *Use these pages* has a *Keep the fields fillable* switch, on by default. With it on, the written pages keep the form's fields as fillable fields holding their values, and the status row says how many and what they leave out (scripts, picture formats). On a copy of his file the engine writes 47 fillable fields. Driven by `use_these_pages_keeps_the_fields_fillable`, which fills one of the written fields on the canvas; switched off, the pages are flat as before. In the preview a check box turns on or off with one click, a radio button is chosen, and a drop-down or list opens as its choices (driven by `form_preview_fields_open_as_their_widgets`). A field whose data reference names a value the data lacks now gets it created (driven by `a_field_with_no_data_value_yet_fills_in`).
+
+**Not yet:** a multi-select list takes one pick, because the engine draws and writes its several values with different separators (asked as G303). The pages are written only when he presses the button; opening the file still shows the stand-in first.
+
+## O446 — **OPEN** — a 3D model's lighting shown at its true level, room to room
+
+*"For 3D PDFs is the light level able to be set to view accurately on the screen? I think it used to scale up or down lighting based on the average lighting of the 3d model overall. This is good for some cases, but not in others where I want to have some idea what the actual light level looks like room to room."*
+
+Said on 2026-11-18. Today the picture's level is pegged to the model's median lit surface when a glTF is converted, and a 20% fill light is added. Room-to-room ratios are kept, but the overall level is not a real one, and the fill lifts the dark rooms. The light meter already reads true lux on a clicked surface.
+
+**Not yet:** (1) a switch to leave out the fill light on *Insert 3D model*. The engine has it since v0.159.0, and it is being wired here. (2) *True light level* in the viewer, with full white set to a lux value. Asked of the engine as G302.

@@ -195,6 +195,7 @@ impl Declined {
             Self::TextClick(why) => crate::text::textedit::refusal(*why),
             Self::OsPaste(why) => return why.line(),
             Self::FormPages(why) => return why.line(),
+            Self::FormFill(why) => return std::borrow::Cow::Owned(why.line()),
             Self::WindowMove(why) => return why.line(),
             Self::Rc4Refused => crate::text::rc4::refused(),
             Self::PasswordRefused => crate::text::unlock::refused(),

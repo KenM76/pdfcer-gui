@@ -4,7 +4,7 @@
 //! preview window `pdfcer_gui::dialogs::xfa_preview` draws for
 //! `view.form_preview`.
 
-use pdfcer_core::xfa::{LayoutWarning, MergeWarningKind, PaintNoteKind};
+use pdfcer_core::xfa::{LayoutWarning, MergeWarningKind, PaintNoteKind, XfaFieldNoteKind};
 
 /// The status-line sentence when a dynamic XFA form opens: the pages shown
 /// are the file's stand-in, and the computed ones are open beside them.
@@ -253,27 +253,92 @@ pub fn use_pages() -> &'static str {
     "Use these pages"
 }
 
-/// What pressing [`use_pages`] does, on hover.
+/// What pressing [`use_pages`] does, on hover; `fillable` is the
+/// [`keep_fillable`] switch.
 #[must_use]
-pub fn use_pages_hover() -> &'static str {
-    "Replace the file's stand-in pages with these pages, drawn with the reading choices above. \
-     The values become part of the drawing and can no longer be filled in. Ctrl+Z undoes it; \
-     Save writes it."
+pub fn use_pages_hover(fillable: bool) -> &'static str {
+    if fillable {
+        "Replace the file's stand-in pages with these pages, drawn with the reading choices \
+         above. The fields stay fillable, holding the values shown. Ctrl+Z undoes it; Save \
+         writes it."
+    } else {
+        "Replace the file's stand-in pages with these pages, drawn with the reading choices \
+         above. The values become part of the drawing and can no longer be filled in. Ctrl+Z \
+         undoes it; Save writes it."
+    }
 }
 
-/// The status line after the pages were written.
+/// The switch beside [`use_pages`] that keeps the fields fillable.
 #[must_use]
-pub fn pages_used(written: usize, replaced: usize, fields_dropped: usize) -> String {
+pub fn keep_fillable() -> &'static str {
+    "Keep the fields fillable"
+}
+
+/// What [`keep_fillable`] does, on hover.
+#[must_use]
+pub fn keep_fillable_hover() -> &'static str {
+    "On: each field becomes a fillable field on the new pages, holding its value. Off: the \
+     values are drawn into the pages and can no longer be filled in. Scripts and display \
+     patterns are not carried; the status row lists the fields they affect."
+}
+
+/// The status line after the pages were written; `fields_written` is how
+/// many fillable fields the pages carry, `None` when the switch was off.
+#[must_use]
+pub fn pages_used(
+    written: usize,
+    replaced: usize,
+    fields_dropped: usize,
+    fields_written: Option<usize>,
+) -> String {
     let fields = if fields_dropped == 0 {
         String::new()
     } else {
         format!(" {fields_dropped} field(s) of the stand-in page went with it.")
     };
+    let values = match fields_written {
+        None => "its values are drawn, not fillable".to_owned(),
+        Some(0) => "none of its fields could be kept fillable, so its values are drawn".to_owned(),
+        Some(n) => format!("{n} of its fields are fillable"),
+    };
     format!(
         "Replaced the file's {replaced} stand-in page(s) with the form's {written} page(s). Every \
-         page is pdfcer's own layout of the form, and its values are drawn, not fillable.{fields} \
-         Press Ctrl+Z to undo."
+         page is pdfcer's own layout of the form, and {values}.{fields} Press Ctrl+Z to undo."
     )
+}
+
+/// What `count` fillable fields do not carry from their form fields;
+/// `named` is some of their names, at most `count`.
+#[must_use]
+pub fn field_note(kind: &XfaFieldNoteKind, count: usize, named: &[String]) -> String {
+    let named = if named.is_empty() {
+        String::new()
+    } else if named.len() < count {
+        format!(": {} and {} more", named.join(", "), count - named.len())
+    } else {
+        format!(": {}", named.join(", "))
+    };
+    match kind {
+        XfaFieldNoteKind::Script => format!(
+            "{count} field(s) have scripts the fillable fields do not run, so nothing is \
+             calculated or checked as they are filled{named}."
+        ),
+        XfaFieldNoteKind::Picture => format!(
+            "{count} field(s) have a display pattern the fillable fields do not apply, so they \
+             show the value as saved{named}."
+        ),
+        XfaFieldNoteKind::Flat(widget) => format!(
+            "{count} field(s) of a kind with no fillable equivalent ({widget}) are drawn on the \
+             page, not fillable{named}."
+        ),
+        XfaFieldNoteKind::Split => {
+            format!("{count} field(s) split across pages are drawn, not fillable{named}.")
+        }
+        XfaFieldNoteKind::Neutral => {
+            format!("{count} check box(es) in their in-between state were written off{named}.")
+        }
+        _ => format!("{count} field(s) were not carried exactly{named}."),
+    }
 }
 
 /// The typefaces set in a standard face instead, as `(typeface, face)`.
@@ -347,13 +412,69 @@ impl FormPagesRefusal {
     }
 }
 
+/// Why a value given in Form preview was not written.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FormFillRefusal {
+    /// The field's data reference, this `bind ref` text, names no data value
+    /// and does not say where one would go.
+    DataRefAbsent(String),
+    /// Nothing at the field takes a data value, and none could be made.
+    Unbound,
+}
+
+impl FormFillRefusal {
+    /// The sentence for this refusal.
+    #[must_use]
+    pub fn line(&self) -> String {
+        match self {
+            Self::DataRefAbsent(reference) => format!(
+                "Not filled in: this field's data reference ({reference}) does not say where in \
+                 the form's data its value goes, so pdfcer cannot add it. Nothing was changed."
+            ),
+            Self::Unbound => "Not filled in: this field keeps no value in the form's data, and \
+                 pdfcer cannot add one. Nothing was changed."
+                .to_owned(),
+        }
+    }
+}
+
+/// What a click on a preview field does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FieldClick {
+    /// Opens it for typing.
+    Type,
+    /// Turns a check box on or off.
+    Toggle,
+    /// Chooses a radio button.
+    Choose,
+    /// Opens its list of choices.
+    Pick,
+}
+
 /// A field's hover in the preview: what a click does.
 #[must_use]
-pub fn fill_hover(name: Option<&str>) -> String {
+pub fn fill_hover(name: Option<&str>, click: FieldClick) -> String {
+    let what = match click {
+        FieldClick::Type => "click to fill in",
+        FieldClick::Toggle => "click to turn on or off",
+        FieldClick::Choose => "click to choose",
+        FieldClick::Pick => "click to pick from its list",
+    };
     match name {
-        Some(n) => format!("{n}: click to fill in"),
-        None => "Click to fill in".to_owned(),
+        Some(n) => format!("{n}: {what}"),
+        None => {
+            let mut c = what.chars();
+            c.next()
+                .map_or_else(String::new, |f| f.to_uppercase().chain(c).collect())
+        }
     }
+}
+
+/// The hover of a field Form preview cannot fill: its widget's element name.
+#[must_use]
+pub fn unfillable_hover(name: Option<&str>, widget: &str) -> String {
+    let field = name.unwrap_or("This field");
+    format!("{field}: a {widget} field, which Form preview cannot fill in")
 }
 
 /// The status line after a value was written into the form's data.

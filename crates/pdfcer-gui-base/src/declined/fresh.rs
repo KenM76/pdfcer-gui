@@ -271,6 +271,7 @@ impl Declined {
             | Self::MarkupFlatten(_)
             | Self::FormFontsNothingToRepair
             | Self::FormPages(_)
+            | Self::FormFill(_)
             | Self::OsPaste(_)
             | Self::WindowMove(_)
             | Self::Rc4Refused

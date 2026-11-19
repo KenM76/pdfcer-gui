@@ -47,7 +47,7 @@ grepping it — a count only goes stale, a name can be born false.
 
 ## Do next, in the operator's order
 
-**Unreleased on `main`:** nothing. Owed: O443, O441, O432 stage 2, O438, O439, the soft-proof switch, Export ▸ Plates, ink arrows; filling a dynamic form (`fill_xfa_field`, O445's *Not yet*); G298 (default ce dimension group count) waits on the engine.
+**Unreleased on `main`:** engine v0.159.0's dynamic-form arrivals (O445): *Keep the fields fillable* on *Use these pages* (G301, `materialize_merged_xfa`), check boxes and lists opening as their widgets in Form preview (G300), a field with no data value yet filling in (G299); multi-select lists take one pick until G303. Owed: O443, O441, O432 stage 2, O438, O439, the soft-proof switch, Export ▸ Plates, ink arrows; G298 (default ce dimension group count) waits on the engine.
 
 **`v0.5.0-dev.20261118.1`** is engine v0.158.0 (e93c12ad), shell 23cf71fc: Form preview ▸ *Use these pages* (O445, `materialize_xfa`; on a copy of his form the stand-in became 5 pages); the light meter's glow switch (G291); the path-end preflight (G295). Gates 87/87, 0 skip; `cargo test --workspace` 5,690 pass; clippy clean. Release sweep `--affected` off-screen: 575 selected, 348 pass, 227 skip (need OS input), 0 fail. Zip `pdfcergui-20261118-1241-e93c12a-f17e4072.zip` 53,251,378 bytes; APK `pdfcer-android-v0.5.0-dev.20261118.1.apk` 44,733,092 bytes, both equal to the assets, APK also in `pdfTests`; first published in OneDrive slot `pdfcer-gui1`.
 

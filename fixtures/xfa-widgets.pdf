@@ -1,0 +1,48 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /NeedsRendering true /AcroForm << /Fields [] /XFA 4 0 R >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 2761 >>
+stream
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/"><template xmlns="http://www.xfa.org/schema/xfa-template/3.3/"><subform name="form1" layout="tb"><pageSet><pageArea name="P1"><contentArea x="0.5in" y="0.5in" w="7.5in" h="10in"/><medium stock="letter" short="8.5in" long="11in"/></pageArea></pageSet>
+<subform name="body" w="7.5in" layout="position" h="6in">
+<draw name="title" x="0in" y="0in" w="7.5in" h="0.5in"><value><text>Synthetic Widget Form</text></value><font typeface="Arial" size="18pt"/></draw>
+<field name="agree" x="0in" y="0.8in" w="3in" h="0.35in"><caption reserve="1.4in"><value><text>I agree</text></value></caption><ui><checkButton shape="square" size="10pt"/></ui><items><text>Y</text><text>N</text></items><border><edge/></border><bind match="dataRef" ref="$.Agree"/></field>
+<field name="pets" x="3.5in" y="0.8in" w="3in" h="0.35in"><caption reserve="1.4in"><value><text>Pets</text></value></caption><ui><checkButton shape="square" size="10pt"/></ui><border><edge/></border><bind match="dataRef" ref="$.Pets"/></field>
+<exclGroup name="plan" x="0in" y="1.4in" w="7in" h="0.35in" layout="position"><bind match="dataRef" ref="$.Plan"/><field name="monthly" x="0in" y="0in" w="3in" h="0.35in"><caption reserve="1.4in"><value><text>Monthly</text></value></caption><ui><checkButton shape="round" size="10pt"/></ui><items><text>M</text></items></field><field name="yearly" x="3.5in" y="0in" w="3in" h="0.35in"><caption reserve="1.4in"><value><text>Yearly</text></value></caption><ui><checkButton shape="round" size="10pt"/></ui><items><text>A</text></items></field></exclGroup>
+<field name="city" x="0in" y="2.0in" w="4in" h="0.35in"><caption reserve="1.4in"><value><text>City</text></value></caption><ui><choiceList open="userControl"/></ui><items><text>Toronto</text><text>Ottawa</text><text>Calgary</text></items><border><edge/></border><bind match="dataRef" ref="$.City"/></field>
+<field name="colour" x="0in" y="2.6in" w="4in" h="0.9in"><caption reserve="1.4in"><value><text>Colour</text></value></caption><ui><choiceList open="always"/></ui><items><text>Red</text><text>Green</text><text>Blue</text></items><items save="1"><text>r</text><text>g</text><text>b</text></items><border><edge/></border><bind match="dataRef" ref="$.Colour"/></field>
+<field name="note" x="0in" y="3.8in" w="7in" h="0.8in"><caption reserve="1.4in"><value><text>Note</text></value></caption><ui><textEdit multiLine="1"/></ui><value><text maxChars="40"/></value><border><edge/></border><bind match="dataRef" ref="$.Note"/></field>
+</subform></subform></template><xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><form1><Agree>N</Agree><Pets/><Plan>M</Plan><City>Ottawa</City><Colour>g</Colour><Note/></form1></xfa:data></xfa:datasets></xdp:xdp>
+endstream
+endobj
+5 0 obj
+<< /Length 72 >>
+stream
+BT /F1 14 Tf 72 700 Td (Please wait... this is the stand-in page.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000117 00000 n 
+0000000174 00000 n 
+0000000300 00000 n 
+0000003113 00000 n 
+0000003235 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+3305
+%%EOF
