@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: ece71a38d4951fee7057ebcaf091ae7184403371
+# baseline: 45d6b3418957853e710976de13bc8ec86facd5aa
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12490
+# items: 12491
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -7235,6 +7235,7 @@ pdfcer-core method pdfcer_core::xfa::template::XfaNode::name
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::occur
 pdfcer-core method pdfcer_core::xfa::template::XfaNode::presence
 pdfcer-core method pdfcer_core::xfa::widget::ChoiceOpen::is_drop_down
+pdfcer-core method pdfcer_core::xfa::widget::FieldWidget::selections
 pdfcer-core static pdfcer_core::optimize::resubset::NO_RESUBSETTER
 pdfcer-core struct pdfcer_core::annot::AnnotFlags
 pdfcer-core struct pdfcer_core::annot::Annotation

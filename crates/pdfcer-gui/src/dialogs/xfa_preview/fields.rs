@@ -150,21 +150,18 @@ pub(super) struct Editing {
     focused: bool,
 }
 
-/// The selections in a `multiSelect` list's value, as the engine's painter
-/// and fillable planner read it (`xfa::widget::multi_select_values`, which
-/// is not public): one per line, or space-separated when the value is one
-/// line that is not itself a save value. Delete this when the engine
-/// publishes its reader (G304).
+/// The selections in a `multiSelect` list's value, read by the engine's
+/// rule (`FieldWidget::selections`), which the painter and the fillable
+/// planner share.
 fn selections(value: &str, items: &[(String, String)]) -> Vec<String> {
-    let whole = items.iter().any(|(_, save)| save == value);
-    let parts: Vec<&str> = if value.contains('\n') || whole {
-        value.lines().collect()
-    } else {
-        value.split(' ').collect()
+    let list = FieldWidget::ChoiceList {
+        items: items.to_vec(),
+        open: ChoiceOpen::MultiSelect,
+        text_entry: false,
     };
-    parts
+    list.selections(value)
+        .unwrap_or_default()
         .into_iter()
-        .filter(|p| !p.is_empty())
         .map(str::to_owned)
         .collect()
 }
