@@ -8200,3 +8200,9 @@ The glyph over the picture that saves a picture of the view, and the options men
 *"also the "Draw as" section should be at the top under view."*
 
 The render-mode choice, *Draw as*, moves from the Look tab to the top of the View tab.
+
+## O450 — **OPEN** — a model lit by its own lights looks as bright on screen as the engine draws it
+
+*"The lighting is nowhere that bright when the model is just lit by the model lights. The white ceiling doesn't make much difference."*
+
+Said on 2026-11-19, relayed by the EmilysOffice session, about the Bancroft office (84 spot lamps with real candela, converted with lamp exposure and no ambient). Under *The model's own lights* the 3D viewer is far darker than the engine's own render from the same camera, and a white ceiling stays black where the engine's render lights it by bounce. Measured on v0.5.0-dev.20261119.6, driven off-screen: the bounce does reach the picture, but only about 95 seconds after the viewer opens on this 430,000-triangle model. Until then it is about a third darker, with a black ceiling, and only the waiting note says why. Once the bounce is in, the level equals the engine's own render (mean brightness 148 against 147), and the white ceiling is brighter than the green by a fifth. Both pictures are metered to the model's median surface, so neither shows the room's true brightness; *True light level* (O446) does. Open: why the bounce takes about four times the engine's own render (22 s) under the same load.
