@@ -58,9 +58,16 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **66 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `wanted` — a real gap — **68 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
+
+### Engine arrivals at v0.160.0
+
+| Row (`FEATURES.md`, wanted) | Why |
+|---|---|
+| **3D picture at a fixed exposure in lux** — `Exposure::Fixed`, `3d-render --exposure-lux`, the module `pdfcer_3d::illuminance::exposure` (`Exposure`, `Exposure::lighting`, `ExposedLighting`, `ExposureError`, `ExposedLighting::render`, `ExposedLighting::frame_lights`, `ExposedLighting::frame_bounce`), `RelativeReason` <!--namesake:frame_bounce--> (the shell's calls are `PreparedModel::frame_bounce`, a different method) | **wanted — O446, our request G302.** The 3D viewer's *True light level* switch with a lux field, default 500. |
+| **Dynamic XFA, a multiSelect list reads the same everywhere** — selections one per line in the form preview and in fill | **wanted — G303.** Form preview's multi-choice list takes several picks again. |
 
 ### Document & pages
 
@@ -181,7 +188,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `blocked` — waiting on something named — **2 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -199,7 +206,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -210,7 +217,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `declined` — deliberately no surface — **21 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -257,7 +264,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **509 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **510 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -625,6 +632,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 | Row (`FEATURES.md`, shipped) | Why |
 |---|---|
+| **Soft-mask backdrop colour in the group's colour space** — a luminosity mask's `/BC` read in the group's `/CS` | **shipped — every page view.** A render fix; the canvas draws through `pdfcer_render`, so no control is owed. |
 | **Soft proof against a CMYK output profile** — module `pdfcer_render::soft_proof`, `SeparationPreview::soft_proof`, `SeparationPreview::with_soft_proof` | **shipped — View ▸ Output Preview ▸ *Simulate*; X079, O421 §1.** `panels::output_preview::proof` offers the document's output intent and installed CMYK output profiles, with *Simulate paper colour* and *Simulate black ink*, and sets `SeparationPreview::with_soft_proof`; the render key hashes the profile (`renderworker::key`). `RenderPolicy::proof_destination` is the engine's own plumbing of the same choice and is never set here. |
 | **Page uses overprint** — says whether a page sets overprint and whether it takes effect; module `pdfcer_render::page_overprint` | **shipped — View ▸ Output Preview, the overprint line; X080, O421 §2.** A line in Output Preview, read with `PageOverprint::from_diagnostics` from the render already drawn under the separation preview. |
 | **Ink coverage warnings** — mask of where total area coverage exceeds a limit, or where black is rich; module `pdfcer_render::coverage_warning` | **shipped — View ▸ Output Preview ▸ *Warnings*; X081, O421 §2.** `canvas::coverage` calls `coverage_warning_mask` per rule for the visible region and paints the mask over the page while the operator has a rule on; `panels::output_preview::warnings` sets the thresholds and says what was found on screen. |

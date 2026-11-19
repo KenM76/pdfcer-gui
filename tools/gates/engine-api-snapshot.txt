@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: 7be6a3519da36ac39a6180c6b5efb066b719e42d
+# baseline: ece71a38d4951fee7057ebcaf091ae7184403371
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12475
+# items: 12490
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -227,6 +227,8 @@ pdfcer-3d enum pdfcer_3d::gltf::GltfError
 pdfcer-3d enum pdfcer_3d::gltf::GltfLights
 pdfcer-3d enum pdfcer_3d::gltf::GltfOcclusion
 pdfcer-3d enum pdfcer_3d::gltf::GltfUpAxis
+pdfcer-3d enum pdfcer_3d::illuminance::exposure::Exposure
+pdfcer-3d enum pdfcer_3d::illuminance::exposure::ExposureError
 pdfcer-3d enum pdfcer_3d::illuminance::types::GlowLight
 pdfcer-3d enum pdfcer_3d::illuminance::types::IlluminanceError
 pdfcer-3d enum pdfcer_3d::illuminance::types::IlluminanceNote
@@ -261,6 +263,10 @@ pdfcer-3d field pdfcer_3d::gltf::GltfOptions::colours
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::lights
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::occlusion
 pdfcer-3d field pdfcer_3d::gltf::GltfOptions::up_axis
+pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::lights
+pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::notes
+pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::options
+pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::white_lux
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::ambient
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::bounced
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::direct
@@ -462,6 +468,10 @@ pdfcer-3d method pdfcer_3d::illuminance::LightMeter::notes
 pdfcer-3d method pdfcer_3d::illuminance::LightMeter::read
 pdfcer-3d method pdfcer_3d::illuminance::LightMeter::reasons
 pdfcer-3d method pdfcer_3d::illuminance::LightMeter::unit
+pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::frame_bounce
+pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::frame_lights
+pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::render
+pdfcer-3d method pdfcer_3d::illuminance::exposure::Exposure::lighting
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::from_pick
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::new
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::over_disc
@@ -482,6 +492,7 @@ pdfcer-3d struct pdfcer_3d::finish::MaterialFinish
 pdfcer-3d struct pdfcer_3d::gltf::GltfImport
 pdfcer-3d struct pdfcer_3d::gltf::GltfOptions
 pdfcer-3d struct pdfcer_3d::illuminance::LightMeter
+pdfcer-3d struct pdfcer_3d::illuminance::exposure::ExposedLighting
 pdfcer-3d struct pdfcer_3d::illuminance::types::Illuminance
 pdfcer-3d struct pdfcer_3d::illuminance::types::IlluminanceQuery
 pdfcer-3d struct pdfcer_3d::illuminance::types::LightShare
@@ -536,6 +547,10 @@ pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Bake
 pdfcer-3d variant pdfcer_3d::gltf::GltfOcclusion::Drop
 pdfcer-3d variant pdfcer_3d::gltf::GltfUpAxis::AsStored
 pdfcer-3d variant pdfcer_3d::gltf::GltfUpAxis::ZUp
+pdfcer-3d variant pdfcer_3d::illuminance::exposure::Exposure::Fixed
+pdfcer-3d variant pdfcer_3d::illuminance::exposure::Exposure::Metered
+pdfcer-3d variant pdfcer_3d::illuminance::exposure::ExposureError::Relative
+pdfcer-3d variant pdfcer_3d::illuminance::exposure::ExposureError::WhiteLux
 pdfcer-3d variant pdfcer_3d::illuminance::types::GlowLight::Counted
 pdfcer-3d variant pdfcer_3d::illuminance::types::GlowLight::LeftOut
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceError::BadQuery
