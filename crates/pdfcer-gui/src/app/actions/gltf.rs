@@ -53,9 +53,11 @@ fn read_inside(dir: &Path, uri: &str) -> Option<Vec<u8>> {
 }
 
 /// The bytes to embed for the model at `path`, the notes its conversion
-/// owes the status line, and whether it was converted. Anything not glTF
-/// passes through unchanged with no notes; a glTF the engine cannot read or
-/// write is `Err` with the reason.
+/// owes the status line, and whether it was converted from glTF with no
+/// lights of its own: `EditSession::set_3d_opening_view`'s `converted`,
+/// which gives such a model CAD lights and leaves a lamp-lit one to its
+/// lamps. Anything not glTF passes through unchanged with no notes; a
+/// glTF the engine cannot read or write is `Err` with the reason.
 ///
 /// # Errors
 ///
@@ -105,7 +107,8 @@ pub(super) fn to_embed(
     if report.empty_primitives > 0 {
         notes.push(t::gltf_empty_primitives(report.empty_primitives));
     }
-    Ok((report.prc, notes, true))
+    let unlit = import.scene.lights.is_empty();
+    Ok((report.prc, notes, unlit))
 }
 
 #[cfg(test)]

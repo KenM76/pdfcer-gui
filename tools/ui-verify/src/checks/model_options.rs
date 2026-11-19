@@ -18,6 +18,8 @@
 //! `ambient=Fill lights=2` and the `add-3d` disclosures (the status row's
 //! sentences) must say `plus an ambient light`; cleared it must read
 //! `ambient=None lights=1` and say `with no ambient light, as asked`.
+//! Either way automatic lighting must write no opening view (`model-insert-lit`):
+//! the model has a lamp, so CAD lights would override it.
 //!
 //! *Parts.* Opens `named-tree.prc`, whose tree stores Pin hidden and Nut
 //! suppressed, in the viewer. Every part in it is the same square in the same
@@ -236,6 +238,13 @@ fn fill_light(ctx: &CheckContext, report: &mut CheckReport, on: bool) -> Result<
             "★★★ {stem}: the conversion read `{}`; ambient={ambient} lights={lights} is the \
              scene the switch asks for.",
             gltf.raw
+        )));
+    }
+    if let Some(lit) = trace.events("model-insert-lit").last() {
+        return Ok(Some(format!(
+            "★★★ {stem}: automatic lighting wrote the opening view `{}` for a model lit by its \
+             own lamp; only a glTF with no lamps is given CAD lights.",
+            lit.raw
         )));
     }
     match added {

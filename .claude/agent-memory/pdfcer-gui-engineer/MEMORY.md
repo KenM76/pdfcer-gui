@@ -50,7 +50,7 @@
 - [A proxy condition survives one fix](feedback_proxy_condition.md) — ask what it READS; a substring outlives a narrowing.
 - [A right value in the wrong role](feedback_correctly_sourced.md) — gates forbid invented, not misused.
 - [A trace grep passes on a crash](feedback_trace_grepping_check.md) — [read a passing trace](feedback_read_passing_trace.md); [a runner's sentinel](feedback_runners_sentinel.md) too.
-- [Parallelism needs an ownership map](feedback_parallelism_default.md) — nine tracks in one repo.
+- [Parallelism needs an ownership map](feedback_parallelism_default.md) — nine tracks in one repo; [a parallel pin commit duplicates a row](feedback_parallel_pin_duplicates_row.md).
 - [Never ask — just add the feature](feedback_never_ask_add_feature.md) — placement, wording and scope are yours.
 - [A commit can describe work that never landed](feedback_commit_message.md) — a `;` chain hid a failed edit.
 - [Smoke-launch before EVERY release](feedback_smoke_launch_before.md) — ninety seconds, off-screen, no focus.
@@ -185,11 +185,9 @@
 - [A "new" file can overwrite a tracked one](feedback_new_file_overwrote_tracked.md) — `overprint.rs` existed; check `git ls-files` first.
 - [No GUI workarounds for engine gaps](feedback_no_gui_workarounds.md) — file the request and wait; he will wait for the engine.
 - [A leftover loop ran the harness live](feedback_loop_tail_ran_harness.md) — --no-input AND --check.
-- [Shared state measures run order](feedback_suite_shares_state.md) — [a sweep-only failure](feedback_passes_alone_trace.md); read its trace, name the mechanism.
+- [Shared state measures run order](feedback_suite_shares_state.md) — [a sweep-only failure](feedback_passes_alone_trace.md): read its trace; [a resume position shifts](feedback_resume_position_shifts.md) per commit.
 - [A replace-all verb drops keys](feedback_replace_all_verb.md) — keys its type lacks are dropped; disclose and file.
 - [A control past the window's edge](feedback_read_layout_before_bug.md) — may be below a scrolling fold; read the layout first.
 - [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice; flaky compiles may be hardware.
-- [A resume position belongs to one list](feedback_resume_position_shifts.md) — a commit reshuffles --affected; re-derive it.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
-- [A parallel pin commit duplicates a row](feedback_parallel_pin_duplicates_row.md) — rebase onto it, grep the title; keep the engine-keyed row.

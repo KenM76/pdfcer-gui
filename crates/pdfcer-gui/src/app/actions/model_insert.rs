@@ -2,7 +2,7 @@
 //! starts, its poster, and the opening view's lighting, in one undo entry.
 //!
 //! The lit opening view is the engine's `EditSession::set_3d_opening_view`:
-//! automatic lighting writes CAD lights for a model converted from glTF and
+//! automatic lighting writes CAD lights for a glTF model with no lamps and
 //! no view for any other; a chosen scheme always writes one, framed as the
 //! poster frames the model where the engine can mesh it.
 
@@ -118,7 +118,7 @@ fn place(
     page: usize,
     spec: &ThreeDSpec,
     lighting: Option<ThreeDLighting>,
-    (converted, was_converted): (Vec<String>, bool),
+    (converted, unlit): (Vec<String>, bool),
 ) {
     let format = spec.format.clone();
     let Ok((options, receipt)) = super::drawlayer::onto(doc, "add-3d", MarkupOptions::default())
@@ -130,8 +130,7 @@ fn place(
         let mut notes = vec![t::inserted(&format, page)];
         notes.extend(converted);
         notes.extend(poster_note(&outcome.poster));
-        let opened =
-            session.set_3d_opening_view(page, outcome.annot_id, spec, lighting, was_converted)?;
+        let opened = session.set_3d_opening_view(page, outcome.annot_id, spec, lighting, unlit)?;
         if let Some(opened) = opened {
             let (scheme, framed) = (Some(opened.lighting), opened.framed);
             crate::diag::trace(|| {

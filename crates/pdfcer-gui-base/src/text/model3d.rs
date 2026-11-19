@@ -57,7 +57,7 @@ pub fn lighting_label() -> &'static str {
 /// Its tip, on the Insert window.
 #[must_use]
 pub fn lighting_tooltip() -> &'static str {
-    "How a PDF reader lights the model. Automatic lights a converted glTF model as CAD, because it carries no lights of its own and would otherwise draw dark, and leaves a PRC or U3D model's own lighting alone."
+    "How a PDF reader lights the model. Automatic lights a glTF model that has no lamps as CAD, so it does not draw dark, and leaves the lighting of a glTF model with lamps, or of a PRC or U3D model, alone."
 }
 
 /// Its tip, beside Save views in the file.
