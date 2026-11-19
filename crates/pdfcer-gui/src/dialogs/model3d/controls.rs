@@ -103,7 +103,7 @@ impl ModelView {
 
     /// The row's camera and sticks glyphs, `side` points square.
     pub(super) fn bar_extras(&mut self, ui: &mut Ui, side: f32) {
-        let shot = super::immersive::glyph(ui, Icon::Snapshot, t::shot_tooltip(), false, side);
+        let shot = super::immersive::glyph(ui, Icon::Camera, t::shot_tooltip(), false, side);
         crate::diag::ui_rect_visible(REGION_SHOT, shot.rect, ui.clip_rect());
         if shot.clicked() {
             // ui-text-exempt: diagnostic trace, never displayed

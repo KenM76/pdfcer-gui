@@ -1185,6 +1185,9 @@ pub enum Icon {
     /// Outline the trim, bleed and art boxes — `view.page_boxes`.
     PageBoxes,
 
+    /// Save a picture of the 3D view: a camera.
+    Camera,
+
     /// Read the ink at a point — `tools.ink_picker`.
     InkPicker,
 

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Generic camera body — generic, no trademark risk -->
+  <!-- A body with a raised viewfinder hump and a round lens: saving a
+       picture of what the view shows. Kept distinct from `snapshot.svg`'s
+       dashed box, which takes a region of the page, and `image.svg`'s
+       framed landscape, which is a picture already made. -->
+  <path d="M6 16a2 2 0 0 1 2-2h7l3-4h12l3 4h7a2 2 0 0 1 2 2v20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="24" cy="25" r="7" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="35.5" cy="19" r="0.8" stroke="currentColor" stroke-width="2"/>
+</svg>

@@ -13,6 +13,7 @@ use crate::checks::viewer_options::{close, reach};
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::Result;
+use crate::launch::Session;
 use crate::report::CheckReport;
 use crate::trace::TraceLine;
 
@@ -310,6 +311,9 @@ impl Meter<'_> {
             Err(why) => return Ok(Some(why)),
         };
         report.note(format!("lights off: {}", dark.raw));
+        if let Some(failure) = said_as(session, &dark, "At this point: ")? {
+            return Ok(Some(failure));
+        }
         // The list's switch leaves on the glowing part kept in a folder of its
         // own, and its glow is counted: what remains is that glow alone.
         let fell = number(&dark, "direct") == 0.0
@@ -341,9 +345,50 @@ impl Meter<'_> {
                 round.raw
             )));
         }
+        if let Some(failure) = said_as(session, &round, "Average over the circle: ")? {
+            return Ok(Some(failure));
+        }
         // A picture for the report; the verdict is the trace above.
         let png = ctx.out("model-light-meter.circle.png");
         let _ = pointer.screenshot_in(session, spot.1.as_deref(), &png);
         Ok(None)
     }
+}
+
+/// The headline drawn: `dialogs::model3d::lightmeter`'s `model-light-said`.
+const SAID: &str = "model-light-said";
+
+/// Why the headline drawn for `reading` does not say what it measured;
+/// `None` when it does. It must open with `area`, and a reading not in lux
+/// must say so with its reasons on the same row: the operator could not
+/// tell what figure the area had.
+fn said_as(session: &Session, reading: &TraceLine, area: &str) -> Result<Option<String>> {
+    session.settle(10);
+    let trace = session.trace()?;
+    let Some(line) = trace.events(SAID).last() else {
+        return Ok(Some(format!("★★★ the meter traced no `{SAID}` headline.")));
+    };
+    let Some((head, why)) = line
+        .raw
+        .split_once(" head=")
+        .and_then(|(_, r)| r.split_once(" | why="))
+    else {
+        return Ok(Some(format!(
+            "the `{SAID}` line `{}` has no head and why.",
+            line.raw
+        )));
+    };
+    let lux = reading.get("unit") == Some("lux");
+    let reasons = number(reading, "reasons") > 0.0;
+    let relative = head.ends_with(", relative, not lux");
+    let ok = head.starts_with(area)
+        && head.ends_with(" lux")
+        && relative != lux
+        && (lux || !reasons || why.starts_with("Not in lux because "));
+    Ok((!ok).then(|| {
+        format!(
+            "★★★ for `{}` the meter said `{head}` / `{why}`; it must open with `{area}`, end in lux              or in `relative, not lux`, and give the reasons on its row.",
+            reading.raw
+        )
+    }))
 }

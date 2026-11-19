@@ -156,12 +156,22 @@ pub const LIGHT_GLOW_TIP: &str = "On, a glowing part lights the surfaces it face
 
 /// A reading's headline: the amount and its unit.
 #[must_use]
-pub fn light_total(total: f64, lux: bool) -> String {
-    if lux {
-        format!("{} lux", light_number(total + 0.0))
+pub fn light_total(total: f64, lux: bool, circle: bool) -> String {
+    let what = if circle {
+        "Average over the circle"
     } else {
-        format!("{total:.3} (relative)")
+        "At this point"
+    };
+    if lux {
+        format!("{what}: {} lux", light_number(total + 0.0))
+    } else {
+        format!("{what}: {:.3}, relative, not lux", total + 0.0)
     }
+}
+
+/// Under a relative headline: why it is not lux, said where it is seen.
+pub fn light_not_lux(reasons: &str) -> String {
+    format!("Not in lux because {reasons}.")
 }
 
 /// A lux figure: whole above ten, two places below.
@@ -371,5 +381,16 @@ mod tests {
         assert!(surface_fit([2, 2], 2, true).contains("Both are only"));
         assert!(surface_fit([2, 2], 2, false).contains("marks no faces"));
         assert_eq!(surface_refused("no area"), "No measurement: no area.");
+    }
+
+    #[test]
+    fn a_light_headline_names_the_area_and_says_when_it_is_not_lux() {
+        assert_eq!(
+            light_total(312.4, true, true),
+            "Average over the circle: 312 lux"
+        );
+        assert!(light_total(0.25, false, false).starts_with("At this point: 0.250"));
+        assert!(light_total(-0.0, false, false).ends_with("0.000, relative, not lux"));
+        assert_eq!(light_not_lux("a glow"), "Not in lux because a glow.");
     }
 }

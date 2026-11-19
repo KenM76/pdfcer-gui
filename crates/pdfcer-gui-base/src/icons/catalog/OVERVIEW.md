@@ -1,7 +1,7 @@
 # `icons::catalog` — which glyphs exist, and what each one means
 
-The [`Icon`] enum is the whole vocabulary: one variant per drawn glyph, 142 of
-them, named for the **role** the icon plays rather than for the artwork. A
+The [`Icon`] enum is the whole vocabulary: one variant per drawn glyph,
+named for the **role** the icon plays rather than for the artwork. A
 re-draw therefore changes one constant in [`super::assets`] and touches no call
 site.
 

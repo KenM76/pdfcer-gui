@@ -109,6 +109,29 @@ pub fn press(
     Ok(true)
 }
 
+/// Open the options menu on the tab whose region is `tab` (one of
+/// `TABS`); `false` when the glyph or the tab is drawn nowhere.
+pub fn open_tab(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+    tab: &str,
+) -> Result<bool> {
+    if declared_in(&session.trace()?, ui_rect, MENU).is_none() {
+        let Some((glyph, vp)) = declared_in(&session.trace()?, ui_rect, OPTIONS) else {
+            return Ok(false);
+        };
+        pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(glyph))?;
+        session.settle(20);
+    }
+    let Some((rect, vp)) = declared_in(&session.trace()?, ui_rect, tab) else {
+        return Ok(false);
+    };
+    pointer.click_in(session, vp.as_deref(), WindowPoint::centre_of(rect))?;
+    session.settle(12);
+    Ok(true)
+}
+
 /// The open menu's frame: `dialogs::model3d::options::REGION_MENU`.
 pub const MENU: &str = "model3d.options.menu";
 

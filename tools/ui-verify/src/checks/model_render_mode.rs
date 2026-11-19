@@ -5,6 +5,10 @@
 //! options menu sets *Draw as* to *Solid with edges*, then back to *As the
 //! view says*.
 //!
+//! First, *Draw as* is on the View tab, above the projection switch
+//! (`dialogs::model3d::options::REGION_PERSPECTIVE`): the operator asked
+//! for it at the top, under View.
+//!
 //! Oracles, from the `model-view-rendered` line (the viewer is an immediate
 //! viewport no screenshot reaches):
 //!
@@ -91,6 +95,43 @@ fn choose(session: &Session, pointer: &ScriptedPointer, ui_rect: &str, item: &st
     Ok(true)
 }
 
+/// The View tab's region: `dialogs::model3d::options::REGION_TAB` + `view`.
+const VIEW_TAB: &str = "model3d.options.tab.view";
+/// The View tab's projection switch.
+const PERSPECTIVE: &str = "model3d.perspective";
+
+/// Why *Draw as* is not at the top of the View tab; `None` when it is.
+fn atop_view(
+    session: &Session,
+    pointer: &ScriptedPointer,
+    ui_rect: &str,
+) -> Result<Option<String>> {
+    if !viewer_options::open_tab(session, pointer, ui_rect, VIEW_TAB)? {
+        return Ok(Some(format!("no options glyph or no `{VIEW_TAB}` tab.")));
+    }
+    let trace = session.trace()?;
+    let (mode, perspective) = (
+        declared_in(&trace, ui_rect, MODE),
+        declared_in(&trace, ui_rect, PERSPECTIVE),
+    );
+    viewer_options::close(session, pointer, ui_rect)?;
+    let Some((perspective, _)) = perspective else {
+        return Ok(Some(format!(
+            "the View tab drew no `{PERSPECTIVE}` switch to compare with."
+        )));
+    };
+    match mode {
+        None => Ok(Some(format!(
+            "★★★ *Draw as* (`{MODE}`) is not on the View tab."
+        ))),
+        Some((mode, _)) if mode.min.y >= perspective.min.y => Ok(Some(format!(
+            "★★★ *Draw as* sits at y={:.0}, below the projection switch at y={:.0}; it belongs at the              top of the View tab.",
+            mode.min.y, perspective.min.y
+        ))),
+        Some(_) => Ok(None),
+    }
+}
+
 fn drive(
     ctx: &CheckContext,
     report: &mut CheckReport,
@@ -121,6 +162,9 @@ fn drive(
              the graphics card.",
             first[0], first[1], first[2]
         )));
+    }
+    if let Some(failure) = atop_view(session, pointer, ui_rect)? {
+        return Ok(Some(failure));
     }
     if !choose(session, pointer, ui_rect, EDGES)? {
         return Ok(Some(format!("no `{MODE}` drop-down or `{EDGES}` item.")));

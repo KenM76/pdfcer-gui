@@ -103,6 +103,8 @@ pub(super) struct Meter {
     pending: Option<Receiver<Answer>>,
     /// The last pick, read again when the glow switch changes.
     last: Option<(Rect, Pos2, Hit)>,
+    /// The headline and reason last drawn, traced when they change.
+    said: (String, String),
 }
 
 impl Meter {
@@ -358,13 +360,30 @@ impl ModelView {
     /// made of is on the amount's hover and in the Measure tab.
     pub(super) fn meter_readout(&mut self, ui: &mut Ui) {
         let blank = || BLANK.to_owned();
-        let (head, parts, circle) = match &self.meter.reading {
-            None if self.meter.pending.is_some() => (t::LIGHT_WORKING.to_owned(), blank(), blank()),
-            None => (t::LIGHT_PICK.to_owned(), blank(), blank()),
-            Some(Err(why)) => (t::light_refused(why), blank(), blank()),
+        let (head, parts, circle, why) = match &self.meter.reading {
+            None if self.meter.pending.is_some() => {
+                (t::LIGHT_WORKING.to_owned(), blank(), blank(), blank())
+            }
+            None => (t::LIGHT_PICK.to_owned(), blank(), blank(), blank()),
+            Some(Err(why)) => (t::light_refused(why), blank(), blank(), blank()),
             Some(Ok(reading)) => self.reading_lines(reading),
         };
-        let amount = ui.label(RichText::new(head).size(VALUE_SIZE));
+        if self.meter.said != (head.clone(), why.clone()) {
+            // ui-text-exempt: diagnostic trace, never displayed
+            crate::diag::trace(|| format!("model-light-said head={head} | why={why}"));
+            self.meter.said = (head.clone(), why.clone());
+        }
+        // Why it is not lux shares the amount's row, cut short with the
+        // whole on hover: a row more, or one that wraps differently per
+        // reading, moves the picture under the next click.
+        let amount = ui
+            .horizontal(|ui| {
+                let amount = ui.label(RichText::new(head).size(VALUE_SIZE));
+                ui.add(egui::Label::new(RichText::new(&why).small().weak()).truncate())
+                    .on_hover_text(&why);
+                amount
+            })
+            .inner;
         if let Some(reading) = self.meter.drawn() {
             amount.on_hover_ui(|ui| self.reading_details(ui, reading));
         }
@@ -390,7 +409,7 @@ impl ModelView {
         let Some(reading) = self.meter.drawn() else {
             return;
         };
-        let (head, parts, circle) = self.reading_lines(reading);
+        let (head, parts, circle, _) = self.reading_lines(reading);
         ui.label(RichText::new(head).size(VALUE_SIZE));
         ui.small(parts);
         if reading.radius > 0.0 {
@@ -399,9 +418,9 @@ impl ModelView {
         self.reading_details(ui, reading);
     }
 
-    /// A reading's amount, what it is made of, and its circle (a space for
-    /// a point).
-    fn reading_lines(&self, reading: &Reading) -> (String, String, String) {
+    /// A reading's amount, what it is made of, its circle and why it is
+    /// not lux (a space for a point, or in lux).
+    fn reading_lines(&self, reading: &Reading) -> (String, String, String, String) {
         let light = &reading.light;
         let lux = light.unit == IlluminanceUnit::Lux;
         let amount = |v: f64| amount(v, lux);
@@ -423,7 +442,17 @@ impl ModelView {
         } else {
             BLANK.to_owned()
         };
-        (t::light_total(light.total, lux), parts, circle)
+        let why = if lux || reading.reasons.is_empty() {
+            BLANK.to_owned()
+        } else {
+            t::light_not_lux(
+                &reading
+                    .reasons
+                    .join(crate::text::model3dlight::NOTES_SEPARATOR),
+            )
+        };
+        let head = t::light_total(light.total, lux, reading.radius > 0.0);
+        (head, parts, circle, why)
     }
 
     /// Each light's part of a reading, why it is not in lux, and what the

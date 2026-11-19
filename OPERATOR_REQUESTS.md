@@ -8123,6 +8123,8 @@ Built: 2, 7 and 8, driven by `the_3d_viewer_switches_lights_off_and_on`. A part 
 
 A view option in the 3D viewer colours each surface by the light arriving on it. The colour scale steps at the recommended levels for building areas and work surfaces, so a surface with too little or too much light for its use reads as a different colour from one that is right. The step values are lifted from a named published standard and cited beside the scale, never chosen here. Shares its arithmetic with O437.
 
+Said again on 2026-11-19: *"Also we were suppose to have a view that changes the colouring of the model to gradient lux values."* **Waiting on the engine (G309):** there is no illuminance figure over the whole model, only at a point or a disc. The view needs one consistent with the meter's, and the shell will not compute lighting itself.
+
 ## O442 — **OPEN** — measure between two surfaces of a 3D model, with a parallel tolerance
 
 *"Also need a way to select and measure distance between surfaces and have the ability to adjust the parallel tolerance between them - anything beyond that tolerance measures angle."*
@@ -8180,3 +8182,21 @@ Said on 2026-11-18. Today the picture's level is pegged to the model's median li
 Built: *Insert 3D model*'s glTF section has *Fill light*, on by default; off lights the model by its own lamps alone and the status row says so. Driven by `insert_3d_model_fill_light_reaches_the_conversion`.
 
 Built: the 3D viewer's *True light level* switch, off by default, with *Full white at* in lux, default 500. On, every picture (on screen, on the page, saved) is drawn at that fixed exposure instead of one metered to the model, so room-to-room levels are real ones; a model whose lamps state no strength stays metered and says why. Driven by `the_3d_viewer_draws_at_a_true_light_level`.
+
+## O447 — **OPEN** — the light meter says the lux figure for the area measured
+
+*"When I use the light measurement tool I don't think it tells me what the lux number is for the area measured."*
+
+The reading says plainly, in lux, the figure for what was measured: the point, or the average over the circle. When it cannot be in lux, the reason is said beside the figure and not only on hover. The likely cause on a model with glowing parts: *Count glowing parts* is on by default, and a counted glow makes the whole reading relative, even when the glow states its brightness. **Waiting on the engine (G308)** for a glow of stated brightness to count in lux. The wording and the visible reason are shell work.
+
+## O448 — **OPEN** — the 3D viewer's save-a-picture glyph is a camera
+
+*"also save a picture of the view icon should be a camera."*
+
+The glyph over the picture that saves a picture of the view, and the options menu's Picture tab, show a camera. They now borrow the page-snapshot tool's dashed box.
+
+## O449 — **OPEN** — *Draw as* at the top of the 3D viewer's View tab
+
+*"also the "Draw as" section should be at the top under view."*
+
+The render-mode choice, *Draw as*, moves from the Look tab to the top of the View tab.

@@ -122,6 +122,7 @@ impl ModelView {
             self.in_shot_look(|view| {
                 view.lighting_control(ui);
                 view.effects_control(ui);
+                view.draw_as_control(ui);
                 view.looks_control(ui);
             });
         });

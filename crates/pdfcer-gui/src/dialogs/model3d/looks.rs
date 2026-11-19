@@ -203,10 +203,14 @@ impl ModelView {
             .map(Into::into)
     }
 
-    /// The options menu's render mode drop-down, and the shadow, lamp,
-    /// camera light and highlight choices that apply to this model.
-    pub(super) fn looks_control(&mut self, ui: &mut Ui) {
+    /// *Draw as*: the render mode drop-down.
+    pub(super) fn draw_as_control(&mut self, ui: &mut Ui) {
         ui.horizontal_wrapped(|ui| self.mode_combo(ui));
+    }
+
+    /// The shadow, lamp, camera light and highlight choices that apply to
+    /// this model.
+    pub(super) fn looks_control(&mut self, ui: &mut Ui) {
         let [lamps, _, _] = light_kinds(&self.model.drawn);
         if self.shadows {
             if !self.sun {
