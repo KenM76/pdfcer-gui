@@ -127,7 +127,13 @@ pub(crate) fn launch_with_model_env(
     // Driven on copies: the sources belong to the engine repository.
     let doc = ctx.out(&format!("{stem}-source.pdf"));
     std::fs::copy(DOC, &doc).map_err(|e| Error::new(format!("copying {DOC}: {e}")))?;
-    let model = ctx.out(&format!("{stem}-input.prc"));
+    // The copy keeps the source's ending: the window offers its glTF
+    // switches only for a file named `.gltf` or `.glb`.
+    let ext = std::path::Path::new(source)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("prc"); // ui-text-exempt: a file ending, never displayed
+    let model = ctx.out(&format!("{stem}-input.{ext}"));
     std::fs::copy(source, &model).map_err(|e| Error::new(format!("copying {source}: {e}")))?;
     let mut spec = LaunchSpec::new(&exe, ctx.out(&format!("{stem}.trace.txt")));
     spec.pdf = Some(doc);

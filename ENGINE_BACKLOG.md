@@ -58,15 +58,9 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **67 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `wanted` — a real gap — **66 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
-
-### Engine arrivals at v0.159.0
-
-| Row (`FEATURES.md`, wanted) | Why |
-|---|---|
-| **A glTF import lit by its own lamps alone** — `GltfAmbient` (`GltfAmbient::Fill`, `GltfAmbient::None`), `GltfOptions::ambient` | **wanted, at the pin since v0.159.0.** *Insert 3D model*'s glTF section gets a *Fill light* switch beside the colour and up-axis ones, on by default; off sends `GltfAmbient::None`. |
 
 ### Document & pages
 
@@ -263,7 +257,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **508 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **509 of 598** <!-- counted by tools/walk-engine-backlog.py, 2026-11-18; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -808,6 +802,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **Every directional light casts; translucent casters cast partial shadows** — the modules `pdfcer_3d::shadow_cast` (`ShadowCasters`, `ShadowAlpha`, `DEFAULT_SHADOW_CUTOFF`) and `pdfcer_3d::gpu_shadow_set` (`FrameExtraShadows`, `MAX_EXTRA_SHADOWS`), `RenderOptions::shadow_casters`, `RenderOptions::shadow_alpha` | **shipped, at v0.120.0.** *Shadows from* (every light or the key light) and *See-through parts cast* (tinted, cut out, not at all) in the viewer's options menu (`dialogs::model3d::looks`); casters beyond the engine's limit are said under the picture. The card draws the extra casters' maps and the see-through veil and transmit maps (`dialogs::model3d::gpu_uniforms::extra_uniforms`, `veil_uniforms`). |
 | **3D wire tessellations drawn, and all 15 render modes (`/RM`)** — the modules `pdfcer_3d::render_mode` (`RenderMode`, `RenderModeKind`, `EdgeSet`, `FaceColour`), `pdfcer_core::threed::render_mode` (`ThreeDRenderMode`, `ThreeDRenderModeKind`), `pdfcer_3d::wire` (`ModelLine`), `pdfcer_3d::node_box` (`NodeBox`), `pdfcer_3d::gpu_lines` and `pdfcer_3d::gpu_wide_lines` (`GLSL_ES_300_WIDE_LINE_VERTEX`, `DrawData::line_width`), `ThreeDSavedView::render_mode`, `RenderOptions::render_mode`, `RenderOptions::line_width`, `AssembledModel::lines`, `AssembledModel::boxes`, `RenderedPoster::wires`, `WireTessellation` (`WireTessellation::polylines`, `WireTessellation::colours`) | **shipped, at v0.120.0.** The viewer draws the view's own /RM and offers *Draw as* with all fifteen modes (`dialogs::model3d::looks`). The card draws lines of every width as instanced quads and points with the line program (`dialogs::model3d::gpu_uniforms::line_uniforms`); `ThreeDSavedView::with_render_mode` is not called. |
 | **glTF/GLB lights (`KHR_lights_punctual`) imported and written into PRC** — `GltfLights` (`GltfLights::Normalise`, `GltfLights::Stored`, `GltfLights::Drop`), `MeshScene::lights`, `SceneMaterial::emissive`, `AssembleOptions::view_lights`, `AssembledModel::view_lights`, `AssembledModel::lights_view`, `PrcFile::view_lights`, `ViewLightUse` | **shipped at the default, at v0.120.0.** Insert 3D model passes `GltfOptions::default()`, so a glTF's lights arrive normalised and the viewer draws them. Not offered: a choice of `GltfLights`, or of a lit view's lights over the occurrences' (`ViewLightUse` stays at its default). |
+| **A glTF import lit by its own lamps alone** — `GltfAmbient` (`GltfAmbient::Fill`, `GltfAmbient::None`), `GltfOptions::ambient` | **shipped at v0.159.0; driven by `insert_3d_model_fill_light_reaches_the_conversion`.** *Insert 3D model*'s glTF section has *Add a fill light*, on by default; cleared, `app::actions::model_insert` sends `GltfAmbient::None`. `app::actions::gltf` traces the chosen ambient and the converted scene's light count (`model-insert-gltf ambient= lights=`), and the engine's inferred line (*with no ambient light, as asked*) reaches the status row with the import's other inferences. |
 | **A damaged PRC model still draws, with the loss disclosed** — `AssembledModel::damaged`, `damaged_why`, `damaged_parts`, `AssembleError::Damaged` | **shipped, at v0.126.0.** The viewer draws what survives and says below the picture how many pieces were left out, each reason with its count, and which parts lost one (`dialogs::model3d::fit`); `AssembleError::Damaged` reaches the operator through the unreadable-model line. Driven by `the_3d_viewer_draws_a_damaged_model_and_says_so`. |
 | **3D navigation: bounded pan, 89-degree Top/Bottom, saved view to aim** — `Orbit::pan_by`, `Orbit::set_pan`, `PAN_LIMIT`, `NAMED_PITCH`, `ThreeDSavedView::saved_aim`, `ThreeDSavedView::view_frame` | **shipped, at v0.133.0; our requests X051, X052, X053.** Dragging to pan goes through `Orbit::pan_by` in `dialogs::model3d::navorbit`, and a saved view's aim and frame come from the engine in `dialogs::model3d::fileview`; the shell's own copies of each are deleted. `Orbit::set_pan` is not called, because every pan here is a drag and `pan_by` is the verb for that. The Top and Bottom buttons take `NAMED_PITCH` inside the engine's named views, so nothing here names it. |
 | **360-degree photo-sphere 3D render** — `FisheyeMapping::Equirectangular`, the module `pdfcer_render::export::xmp` (`photo_sphere_xmp`, `insert_jpeg_xmp`, `MAX_JPEG_XMP_PACKET`), `ExportError::Metadata` | **shipped, at v0.133.0; X054.** The Picture tab's *360° picture* switch and its three sizes (`dialogs::model3d::shot`, `dialogs::model3d::sphere`), saved as a tagged JPEG by `dialogs::model3d::picture::sphere_jpeg`. `ExportError::Metadata` reaches the operator as the picture's failure sentence, with every other encoding error. The shell levels the camera onto the model's up first, which the engine's `3d-render --360` does not do: X055. |

@@ -27,6 +27,9 @@ pub const REGION_POSTER_PLAIN: &str = "insert-model.poster.plain";
 /// the list, so a check can pick a scheme without opening the list.
 // ui-text-exempt: trace region name, never displayed
 pub const REGION_LIGHTING: &str = "insert-model.lighting";
+/// The glTF fill-light switch.
+// ui-text-exempt: trace region name, never displayed
+pub const REGION_FILL_LIGHT: &str = "insert-model.gltf.fill-light";
 
 const ACTIVATIONS: [ThreeDActivation; 3] = [
     ThreeDActivation::Click,
@@ -61,12 +64,13 @@ impl InsertModelDialog {
             crate::diag::trace(|| {
                 // ui-text-exempt: diagnostic trace, never displayed
                 format!(
-                    "insert-model-placed page={} activation={:?} lighting={:?} poster={} gltf={}",
+                    "insert-model-placed page={} activation={:?} lighting={:?} poster={} gltf={} fill_light={}",
                     self.page,
                     self.placement.activation,
                     self.placement.lighting,
                     self.placement.render_poster,
-                    self.gltf
+                    self.gltf,
+                    self.placement.gltf_fill_light
                 )
             });
             actions.push(Action::Attachment(AttachmentAction::InsertModel {
@@ -106,6 +110,10 @@ impl InsertModelDialog {
                 .on_hover_text(t::gltf_linear_tooltip());
             ui.checkbox(&mut self.placement.gltf_z_up, t::gltf_z_up())
                 .on_hover_text(t::gltf_z_up_tooltip());
+            let fill = ui
+                .checkbox(&mut self.placement.gltf_fill_light, t::gltf_fill_light())
+                .on_hover_text(t::gltf_fill_light_tooltip());
+            crate::diag::ui_rect_visible(REGION_FILL_LIGHT, fill.rect, ui.clip_rect());
         }
         ui.add_space(12.0);
         ui.separator();
@@ -209,6 +217,7 @@ pub fn open_for(
             render_poster: true,
             gltf_linear: true,
             gltf_z_up: true,
+            gltf_fill_light: true,
         },
         close_requested: false,
         place_requested: false,

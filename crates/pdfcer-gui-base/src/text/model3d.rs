@@ -196,6 +196,18 @@ pub fn gltf_z_up_tooltip() -> &'static str {
     "glTF models stand on +Y; CAD and PDF 3D viewers expect +Z. Turn this off to keep the axes as stored."
 }
 
+/// The fill-light switch.
+#[must_use]
+pub fn gltf_fill_light() -> &'static str {
+    "Add a fill light"
+}
+
+/// Its tip.
+#[must_use]
+pub fn gltf_fill_light_tooltip() -> &'static str {
+    "A soft light everywhere, so no surface is black. Turn this off to light the model by its own lamps only: rooms they don't reach stay dark, for judging real light levels room to room."
+}
+
 /// The commit button.
 #[must_use]
 pub fn place_button() -> &'static str {

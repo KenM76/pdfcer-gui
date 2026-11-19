@@ -8175,4 +8175,6 @@ Built since: *Use these pages* has a *Keep the fields fillable* switch, on by de
 
 Said on 2026-11-18. Today the picture's level is pegged to the model's median lit surface when a glTF is converted, and a 20% fill light is added. Room-to-room ratios are kept, but the overall level is not a real one, and the fill lifts the dark rooms. The light meter already reads true lux on a clicked surface.
 
-**Not yet:** (1) a switch to leave out the fill light on *Insert 3D model*. The engine has it since v0.159.0, and it is being wired here. (2) *True light level* in the viewer, with full white set to a lux value. Asked of the engine as G302.
+Built: *Insert 3D model*'s glTF section has *Fill light*, on by default; off lights the model by its own lamps alone and the status row says so. Driven by `insert_3d_model_fill_light_reaches_the_conversion`.
+
+**Not yet:** *True light level* in the viewer, with full white set to a lux value. Asked of the engine as G302.
