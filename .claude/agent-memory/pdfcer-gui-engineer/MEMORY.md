@@ -154,6 +154,7 @@
 - [Gates run no unit tests](feedback_filtered_test_run.md) - new commands and pin moves need `cargo test --workspace` unfiltered.
 - [An engine count is not the operator's](feedback_engine_count_not_operators.md) — purge verb said 0 while the rewrite removed the password.
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
+- [Build on an untagged engine](feedback_build_on_untagged_engine.md) — wire a SHIPPED reply against main now; the tag gates only pin and release.
 - [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.
 - [Push only with a release](feedback_push_only_with_release.md) — commit locally; main goes to origin only inside an engine-triggered release.
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
@@ -188,6 +189,6 @@
 - [Shared state measures run order](feedback_suite_shares_state.md) — [a sweep-only failure](feedback_passes_alone_trace.md): read its trace; [a resume position shifts](feedback_resume_position_shifts.md) per commit.
 - [A replace-all verb drops keys](feedback_replace_all_verb.md) — keys its type lacks are dropped; disclose and file.
 - [A control past the window's edge](feedback_read_layout_before_bug.md) — may be below a scrolling fold; read the layout first.
-- [The PC bugchecks under load](project_machine_bugchecks_under_load.md) — 0x1A twice; flaky compiles may be hardware.
+- [The PC bugchecks, even idle](project_machine_bugchecks_under_load.md) — 6 since 11-06, one 0x12B (RAM); fsck after a reset.
 - [Full-screen 3D viewport stalls in a sweep](feedback_fullscreen_viewport_stalls.md) — solo passes.
 - [An idle loop tick works the backlog](feedback_idle_loop_works_backlog.md) — wire a release's switch WITH it, never "later".
