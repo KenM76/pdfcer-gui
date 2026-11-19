@@ -37,7 +37,9 @@ click inside its `/Rect` and requires an `annot-select` line.
 
 **Caret.**
 
-1. A colour picked in `properties.markup.any.marker` leaves no
+1. Require `properties.markup.any.marker` to have drawn: a caret the panel
+   could not read draws no icon colour row, a FAIL rather than a SKIP.
+   A colour picked in it leaves no
    `set-marker-colour-applied` and leaves `redraw-offer why=marker-foreign`.
 2. `properties.markup.any.redraw` → `set-marker-colour-applied was_foreign=1
    redraw=true`.

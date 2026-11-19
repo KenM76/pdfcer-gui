@@ -18,9 +18,9 @@ family; the two never draw together.
 `marker_row` is drawn when the subtype is in `pdfcer_core::edit::MARKER_SUBTYPES`
 (caret, file attachment, sound, screen). It raises
 `AnnotAction::SetMarkerColour`, which calls `set_marker_style`. The current
-colour is read by `markup::read_colour` off `/C`, because the engine's own
-reader (`annot_author::read_color`) is crate-private; that workaround is filed
-in the request channel.
+colour is read by `EditSession::marker_color`; the swatch shows its `/C` as
+written, so an absent, empty or malformed entry is no colour rather than the
+subtype's default.
 
 ## The redraw offer
 

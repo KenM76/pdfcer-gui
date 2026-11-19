@@ -433,10 +433,10 @@ impl Current {
             dash,
             endings_key_present,
         );
-        // The engine reads a marker's `/C` with a crate-private reader, so the
-        // shell reads it itself (request channel: marker colour readback).
-        if pdfcer_core::edit::MARKER_SUBTYPES.contains(&subtype.as_slice()) {
-            current.marker = Some(swatch_of(read_colour(&graph, dict).as_ref()));
+        // The swatch shows the colour as written: an absent, empty or
+        // malformed `/C` is no colour, not the subtype's default.
+        if let Ok(marker) = doc.session.marker_color(id) {
+            current.marker = Some(swatch_of(marker.entry.color().as_ref()));
         }
         current
     }
@@ -596,28 +596,6 @@ impl Current {
 fn swatch_of(color: Option<&Color>) -> Swatch {
     Swatch {
         color: color.copied(),
-    }
-}
-
-/// A `/C` array as a colour: 1, 3 or 4 numbers are gray, RGB or CMYK
-/// (§12.5.2 Table 164); anything else is no colour.
-fn read_colour(
-    graph: &impl pdfcer_core::graph::ObjectGraph,
-    dict: &pdfcer_core::object::Dict,
-) -> Option<Color> {
-    use pdfcer_core::object::Object;
-    let Object::Array(items) = graph.resolve(dict.get(b"C")?) else {
-        return None;
-    };
-    let n: Vec<f64> = items
-        .iter()
-        .map(|o| graph.resolve(o).as_number())
-        .collect::<Option<_>>()?;
-    match n.as_slice() {
-        [g] => Some(Color::Gray(*g)),
-        [r, g, b] => Some(Color::Rgb(*r, *g, *b)),
-        [c, m, y, k] => Some(Color::Cmyk(*c, *m, *y, *k)),
-        _ => None,
     }
 }
 

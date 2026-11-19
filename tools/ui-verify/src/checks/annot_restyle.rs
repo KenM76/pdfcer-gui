@@ -253,6 +253,15 @@ fn marker(
     if let Some(failure) = select(ctx, session, pointer, ON_THE_CARET, "/Caret")? {
         return Ok(Some(failure));
     }
+    // A caret whose colour the panel could not read draws no icon colour
+    // row: that is the defect, not a harness that could not reach it.
+    into_view(ctx, session, pointer, MARKER)?;
+    if declared_in(&session.trace()?, ui_rect_event(ctx)?, MARKER).is_none() {
+        return Ok(Some(format!(
+            "a caret was selected and Properties drew no `{MARKER}` icon colour row. Trace: {}.",
+            session.trace_path().display()
+        )));
+    }
     let mark = session.trace()?.mark();
     if let Some(failure) = pick_colour(ctx, session, pointer, MARKER, MARKER_PICKER)? {
         return Ok(Some(failure));
