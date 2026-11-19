@@ -11,9 +11,8 @@
 //! picture saved from it. The legend goes under the picture, never on it.
 //!
 //! In lux the bands are `LuxBands::canada_ohs_steps`, whose source is
-//! cited in the legend. A relative map is drawn in the same bands, having
-//! no scale of its own until the engine supplies one (request G310), and
-//! the legend says its figures are not lux and why.
+//! cited in the legend. A relative map is drawn in the same colours over
+//! its own range, and the legend says its figures are not lux and why.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -115,7 +114,7 @@ impl LightMap {
             return None;
         }
         let (_, map) = self.ready.as_ref()?;
-        Some((Arc::clone(map), bands(self.blend)))
+        Some((Arc::clone(map), bands(map, self.blend)))
     }
 
     /// What the picture is drawn for: 0 for the model as usual, else
@@ -178,15 +177,17 @@ impl LightMap {
     }
 }
 
-/// The bands every map is drawn in: the recommended levels in lux. A
-/// relative map has no scale of its own to draw in (request G310), so
-/// it is drawn in these and the legend says its figures are not lux.
-fn bands(blend: bool) -> LuxBands {
-    LuxBands::canada_ohs_steps(if blend {
-        BandBlend::Graded
-    } else {
-        BandBlend::Stepped
-    })
+/// The bands `map` is drawn in: the recommended levels in lux, the
+/// same colours over the map's own range when relative (`LuxBands::for_map`).
+fn bands(map: &IlluminanceMap, blend: bool) -> LuxBands {
+    LuxBands::for_map(
+        map,
+        if blend {
+            BandBlend::Graded
+        } else {
+            BandBlend::Stepped
+        },
+    )
 }
 
 /// Everything one map is measured from.

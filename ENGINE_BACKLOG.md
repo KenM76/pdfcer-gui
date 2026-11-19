@@ -181,7 +181,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **3 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `blocked` — waiting on something named — **2 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -198,12 +198,6 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 | Author a named destination and point an outline item at it — `add_named_destination` … | **blocked on a surface, not on the verb.** A destination resolved and baked at author time would look identical to a correct one until the next reorder moved the page it points at, and this shell has drag-to-reorder. Held until there is a surface where the destination-kind choice means something — the `insert_pages` bookmark-carry work. `add_named_destination` is called nowhere here and should stay that way until then. |
 
 ---
-
-### 3D
-
-| Row (`FEATURES.md`, blocked) | Why |
-|---|---|
-| **Colour bands for a relative light map** — `LuxBands::spread` or `LuxBands::for_map` (asked) | **blocked on the engine; our request G310.** `canada_ohs_steps` is in lux, so a relative map drawn in it is one colour. No workaround: a relative map is drawn in the lux bands and the legend says its figures are not lux. |
 
 ## `unknown` — no opinion formed yet — **0 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
@@ -263,7 +257,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **519 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **520 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -832,6 +826,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **3D light map: the lux over a whole model** — the module `pdfcer_3d::illuminance::map` (`LightMeter::map`, `MapSide`, `MapProgress`, `IlluminanceMap`), `IlluminanceError::Cancelled` | **shipped on engine main, in v0.164.0 (untagged); our request G309, O441.** View ▸ *Colour by light level* (`dialogs::model3d::lightmap`) measures the side the camera sees on a worker thread from the meter's inputs, at a spacing of the model's diagonal over 64, coarsened on `TooManySamples` / `TooMuchWork` as the contract asks; closing the viewer or a new model stops it, which arrives as `Cancelled` and is dropped. Driven by `the_3d_viewer_colours_the_model_by_light_level`. |
 | **Draw a 3D light map in lux bands** — the module `pdfcer_3d::light_map` (`LuxBands`, `BandBlend`, `render_light_map`, the GLSL ES 3.00 shaders) | **shipped on engine main, in v0.164.0 (untagged); our request G309, O441.** Drawn on the processor with `render_light_map` for the live picture, the poster and saved pictures; *Blend between levels* picks the `BandBlend`. The supplied shaders are not used: the card's renderer is this shell's own, and the processor draws a map in seconds, so the card path is `wanted`, unscheduled. |
 | **Recommended lighting levels, Canada OHS (SOR/86-304 Part VI)** — `CANADA_OHS`, `CANADA_OHS_SOURCE`, `LuxBands::canada_ohs_steps` | **shipped on engine main, in v0.164.0 (untagged); our request G309, O441.** The map's bands are `canada_ohs_steps`; hovering a colour names the areas the schedules recommend that level for, and the legend cites `CANADA_OHS_SOURCE`. |
+| **Colour bands for a relative light map** — `LuxBands::for_map`, `LuxBands::spread` | **shipped on engine main, in v0.164.0 (untagged); our request G310.** `dialogs::model3d::lightmap::bands` calls `for_map` for every map: the Canada steps in lux, the same colours over the map's own range when relative. `spread` is not called on its own. |
 | **Re-scale a 3D bounce atlas without re-tracing** — `FrameBounce::scaled` | **shipped, at v0.163.0; our request G307.** A new white point alone rescales the kept bounce (`dialogs::model3d::gpu_bounce`) instead of drawing without bounce while it is traced again; under a lamp cut the rescaled one is drawn while an exact build runs behind it. Trace `gpu-bounce-from=rescaled`, driven by `the_3d_viewer_draws_at_a_true_light_level`. |
 | **3D picture at a fixed exposure in lux** — `Exposure::Fixed { white_lux }`, `3d-render --exposure-lux`, the module `pdfcer_3d::illuminance::exposure` (`Exposure`, `Exposure::Fixed`, `Exposure::lighting`, `ExposedLighting`, `ExposureError`, `ExposedLighting::render`, `ExposedLighting::frame_lights`, `ExposedLighting::frame_bounce`), `RelativeReason` | **shipped, at v0.160.0; our request G302, O446.** The 3D viewer's *True light level* switch, off by default, with *Full white at* in lux, default 500, for a model with lamps of its own. `dialogs::model3d::truelight` takes every frame's lights and options from `Exposure::lighting`: the processor's picture, poster and saved picture through `ExposedLighting::render`, the card's lights, shadows, occlusion and bounce from the same lights and options. A refusal draws the picture metered and says the `RelativeReason`s beside the switch and under the picture; the engine's notes go under the picture. `MeterSettings` is taken at its default. Driven by `the_3d_viewer_draws_at_a_true_light_level`. |
 | **Continue an open path; open a closed path** — `pdfcer_core::edit::node_shape::EditSession::extend_path`, `pdfcer_core::edit::node_shape::EditSession::extend_path_in_form`, `pdfcer_core::edit::node_shape::EditSession::open_subpath`, `pdfcer_core::edit::node_shape::EditSession::open_subpath_in_form`, the module `pdfcer_core::vector::edit::node_shape::extend` (`plan_extend_path`, `plan_open_subpath`), undo kinds `pdfcer_core::edit::CommandKind::ExtendPath` and `pdfcer_core::edit::CommandKind::OpenSubpath` | **shipped, at v0.156.0; O444.** Format ▸ Nodes ▸ Continue path and Open path here, called by `app::actions::vector::pathend`; driven by `a_path_is_continued_from_its_end` and `a_closed_path_is_opened_at_a_node`. The `plan_*` pair is not called: the shell holds no `ContentStream`, so a middle or closed node is refused when the run finishes (G295). Its `VectorEditError` refusals are said on the status line. |

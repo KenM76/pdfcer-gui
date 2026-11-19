@@ -9,7 +9,8 @@
 //! Oracles, from the trace (the viewer is an immediate viewport no
 //! screenshot reaches):
 //!
-//! - Opened: the last `model-view-rendered` line has `map=0`.
+//! - Opened: the last `model-view-rendered` line, once two reads agree,
+//!   has `map=0`.
 //! - On: a `model-light-map-ready` line with `triangles` above zero and
 //!   `hi` above `lo` (a lit room is not lit evenly), then a picture line
 //!   with `map` other than 0, `from=map` and a `hash` other than the
@@ -99,6 +100,22 @@ fn picture_until(
     Ok(last)
 }
 
+/// The opened picture once two reads a settle apart agree: the viewport
+/// changes height while its panels lay out, and each height is a new
+/// picture.
+fn steady(session: &Session) -> Result<Option<[String; 3]>> {
+    let mut last = drawn(session)?;
+    for _ in 0..WAITS {
+        session.settle(15);
+        let now = drawn(session)?;
+        if now.is_some() && now == last {
+            break;
+        }
+        last = now;
+    }
+    Ok(last)
+}
+
 /// Tick the switch; `false` when it is drawn nowhere.
 fn toggle(session: &Session, pointer: &ScriptedPointer, ui_rect: &str) -> Result<bool> {
     let Some((rect, vp)) = reach(session, pointer, ui_rect, SWITCH)? else {
@@ -117,7 +134,7 @@ fn drive(
     pointer: &ScriptedPointer,
 ) -> Result<Option<String>> {
     let ui_rect = ui_rect(ctx)?;
-    let Some(first) = drawn(session)? else {
+    let Some(first) = steady(session)? else {
         return Ok(Some("the viewer drew no picture line.".to_owned()));
     };
     report.note(format!("opened [map, hash, from]: {first:?}"));
