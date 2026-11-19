@@ -125,7 +125,7 @@ fn atop_view(
             "★★★ *Draw as* (`{MODE}`) is not on the View tab."
         ))),
         Some((mode, _)) if mode.min.y >= perspective.min.y => Ok(Some(format!(
-            "★★★ *Draw as* sits at y={:.0}, below the projection switch at y={:.0}; it belongs at the              top of the View tab.",
+            "★★★ *Draw as* sits at y={:.0}, below the projection switch at y={:.0}; it belongs at the top of the View tab.",
             mode.min.y, perspective.min.y
         ))),
         Some(_) => Ok(None),

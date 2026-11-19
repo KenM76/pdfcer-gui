@@ -387,7 +387,7 @@ fn said_as(session: &Session, reading: &TraceLine, area: &str) -> Result<Option<
         && (lux || !reasons || why.starts_with("Not in lux because "));
     Ok((!ok).then(|| {
         format!(
-            "★★★ for `{}` the meter said `{head}` / `{why}`; it must open with `{area}`, end in lux              or in `relative, not lux`, and give the reasons on its row.",
+            "★★★ for `{}` the meter said `{head}` / `{why}`; it must open with `{area}`, end in lux or in `relative, not lux`, and give the reasons on its row.",
             reading.raw
         )
     }))
