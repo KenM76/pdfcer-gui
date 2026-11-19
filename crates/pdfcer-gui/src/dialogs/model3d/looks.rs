@@ -392,6 +392,7 @@ impl ModelView {
         if let Some(line) = self.lens_said() {
             ui.small(line);
         }
+        let mut said = false;
         if self.gpu.failed() {
             ui.small(k::CARD_FAILED);
         } else if self.gpu.turned_off() {
@@ -403,7 +404,14 @@ impl ModelView {
                     k::drawn_on_processor(k::processor_reason(reason))
                 }
             });
+        } else if self.gpu.bounce_waiting() {
+            ui.small(k::BOUNCE_WAITING);
+            said = true;
         }
+        crate::diag::trace_changed("model-view-bounce-note", || {
+            // ui-text-exempt: diagnostic trace, never displayed
+            format!("model-view-bounce-note waiting={}", u8::from(said))
+        });
     }
 
     /// The camera of the picture last drawn.

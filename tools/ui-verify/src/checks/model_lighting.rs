@@ -15,7 +15,8 @@
 //! Lights fixed to the model bounce off its surfaces, and the card builds that
 //! bounce on a worker: the check then waits for a `gpu-bounce=<probes>` line,
 //! drawn to a hash other than the fixed-light frames drawn while it was
-//! `waiting`. Camera lights do not bounce, so the default and Night frames
+//! `waiting`, and the line under the picture said so while it was waiting
+//! and stopped once it arrived. Camera lights do not bounce, so the default and Night frames
 //! before the switch carry none. The model must have faces that see each
 //! other: coplanar faces exchange no light, so their bounce is black.
 
@@ -168,6 +169,9 @@ fn drive(
     bounced(session, report)
 }
 
+/// The trace of the line under the picture saying the bounce is on its way.
+const NOTE: &str = "model-view-bounce-note";
+
 /// Wait for the bounce of the model-fixed lights to reach the card.
 fn bounced(session: &Session, report: &mut CheckReport) -> Result<Option<String>> {
     let mut last = String::new();
@@ -195,7 +199,7 @@ fn bounced(session: &Session, report: &mut CheckReport) -> Result<Option<String>
                     Some(h) if Some(h) == line.get("hash") => Some(format!(
                         "the bounce arrived and the picture did not change: `{last}`."
                     )),
-                    Some(_) => None,
+                    Some(_) => said_while_waiting(session)?,
                 });
             }
         }
@@ -204,5 +208,31 @@ fn bounced(session: &Session, report: &mut CheckReport) -> Result<Option<String>
     Ok(Some(format!(
         "the lights were fixed to the model and no bounce reached the card (look for \
          `model-view-bounce failed`); the last such picture line: `{last}`."
+    )))
+}
+
+/// The line under the picture said the bounce was being worked out while it
+/// was, and stopped saying so once it arrived: a picture drawn dark for
+/// want of bounce is never left looking finished. `None` when both held.
+fn said_while_waiting(session: &Session) -> Result<Option<String>> {
+    for _ in 0..20 {
+        let trace = session.trace()?;
+        let notes: Vec<_> = trace
+            .events(NOTE)
+            .filter_map(|l| l.get("waiting").map(str::to_owned))
+            .collect();
+        if !notes.iter().any(|w| w == "1") {
+            return Ok(Some(format!(
+                "★★★ the bounce was `waiting` and no `{NOTE} waiting=1` line shows the picture \
+                 said so."
+            )));
+        }
+        if notes.last().is_some_and(|w| w == "0") {
+            return Ok(None);
+        }
+        session.settle(10);
+    }
+    Ok(Some(format!(
+        "★★★ the bounce arrived and the newest `{NOTE}` line still says `waiting=1`."
     )))
 }

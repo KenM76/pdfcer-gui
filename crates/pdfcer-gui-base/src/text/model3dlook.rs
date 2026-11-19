@@ -337,6 +337,9 @@ pub const CARD_PARTS: &str = "Use the graphics card for:";
 pub const CARD_PART_TOOLTIP: &str = "Off, a frame showing this is drawn by the processor instead: slower to move, the same picture.";
 /// The parts' switches, greyed while the whole picture is off.
 pub const CARD_PARTS_OFF_TOOLTIP: &str = "The graphics card is off for the whole picture.";
+/// The bounce light is still being worked out, so the picture lacks it.
+pub const BOUNCE_WAITING: &str = "Working out the light bounced between surfaces: until it is ready, \
+     surfaces lit only by bounced light, such as a ceiling above downlights, are drawn dark.";
 /// The whole picture is drawn by the processor by the operator's choice.
 pub const CARD_TURNED_OFF: &str =
     "Drawn without the graphics card, as set under Graphics card, so moving it is slower.";

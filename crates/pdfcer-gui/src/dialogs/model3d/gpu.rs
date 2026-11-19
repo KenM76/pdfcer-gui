@@ -222,6 +222,11 @@ impl Gpu {
         !self.forced_off && lock(&self.shared).failed.is_some()
     }
 
+    /// A bounce build is in flight, so the picture shows direct light only.
+    pub(super) fn bounce_waiting(&self) -> bool {
+        self.bounce.waiting()
+    }
+
     /// Why the last frame was left to the processor.
     pub(super) fn declined(&self) -> Option<ProcessorReason> {
         self.declined
