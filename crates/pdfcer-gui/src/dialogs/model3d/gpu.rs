@@ -296,11 +296,7 @@ impl ModelView {
         // The trace and the bounce key are worked from the look's options;
         // everything drawn from the lights and options it is exposed at.
         let metered = options;
-        let (lights, options) =
-            match super::truelight::lit(&self.model.drawn, wanted.look.exposure, &options) {
-                Some(l) => (l.drawn.lights, l.drawn.options),
-                None => (self.model.drawn.lights.clone(), options),
-            };
+        let (lights, options) = self.exposed(wanted.look.exposure, options);
         let lights = lights.as_slice();
         // A fisheye's occlusion is each face's own (`gpu_lens`).
         let effects = if fisheye {

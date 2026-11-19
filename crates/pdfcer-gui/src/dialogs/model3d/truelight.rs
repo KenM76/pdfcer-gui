@@ -13,7 +13,7 @@ use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
     AssembledModel, Camera, ExposedLighting, Exposure, ExposureError, Image, MeterSettings,
-    PreparedModel, RenderError, render_model,
+    ModelLight, PreparedModel, RenderError, render_model,
 };
 
 use super::ModelView;
@@ -154,6 +154,19 @@ fn join(parts: impl Iterator<Item = String>) -> String {
 }
 
 impl ModelView {
+    /// The drawn model's lights and `options` as `exposure` draws them,
+    /// metered when the engine refuses it.
+    pub(super) fn exposed(
+        &self,
+        exposure: Exposure,
+        options: ModelRenderOptions,
+    ) -> (Vec<ModelLight>, ModelRenderOptions) {
+        match lit(&self.model.drawn, exposure, &options) {
+            Some(l) => (l.drawn.lights, l.drawn.options),
+            None => (self.model.drawn.lights.clone(), options),
+        }
+    }
+
     /// How the live picture is lit at `options`, its exposure from the look.
     pub(super) fn lit_now(&self, options: &ModelRenderOptions) -> Option<Lit> {
         lit(&self.model.drawn, self.light.true_light.exposure(), options)

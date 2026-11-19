@@ -8180,5 +8180,3 @@ Said on 2026-11-18. Today the picture's level is pegged to the model's median li
 Built: *Insert 3D model*'s glTF section has *Fill light*, on by default; off lights the model by its own lamps alone and the status row says so. Driven by `insert_3d_model_fill_light_reaches_the_conversion`.
 
 Built: the 3D viewer's *True light level* switch, off by default, with *Full white at* in lux, default 500. On, every picture (on screen, on the page, saved) is drawn at that fixed exposure instead of one metered to the model, so room-to-room levels are real ones; a model whose lamps state no strength stays metered and says why. Driven by `the_3d_viewer_draws_at_a_true_light_level`.
-
-**Not yet:** *True light level* in the viewer, with full white set to a lux value. Asked of the engine as G302.
