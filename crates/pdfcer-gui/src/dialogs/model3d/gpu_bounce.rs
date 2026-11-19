@@ -16,7 +16,7 @@ use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use native_mesh::Value;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::{AssembledModel, Camera, FrameBounce, PreparedModel};
+use pdfcer_3d::{AssembledModel, Camera, Exposure, FrameBounce, PreparedModel};
 
 use super::gpu_uniforms::Uniforms;
 
@@ -29,6 +29,8 @@ pub(super) struct Key {
     pub(super) parts: u32,
     /// The highlight colour the parts are painted with.
     pub(super) accent: [u8; 4],
+    /// Metered, or fixed in lux: the bounce is lit as the faces are.
+    pub(super) exposure: Exposure,
 }
 
 /// A finished build: the bounce, or `None` when the frame has none.
@@ -68,11 +70,13 @@ impl Bounces {
         if self.pending.as_ref().is_none_or(|(k, _)| *k != key) {
             let (model, prepared) = inputs();
             let (tx, rx) = channel();
-            let options = key.options;
+            let (options, exposure) = (key.options, key.exposure);
             std::thread::spawn(move || {
-                let built = prepared
-                    .frame_bounce(&model, &camera, &options)
-                    .map_err(|e| e.to_string());
+                let built = match super::truelight::lit(&model, exposure, &options) {
+                    Some(l) => l.drawn.frame_bounce(&prepared, &model, &camera),
+                    None => prepared.frame_bounce(&model, &camera, &options),
+                }
+                .map_err(|e| e.to_string());
                 let _ = tx.send(built);
             });
             self.pending = Some((key, rx));
@@ -113,9 +117,15 @@ impl Bounces {
     }
 }
 
-/// The key for a frame drawn with `options`.
-pub(super) fn key(options: &ModelRenderOptions, parts: u32, accent: egui::Color32) -> Key {
+/// The key for a frame drawn with `options` at `exposure`.
+pub(super) fn key(
+    options: &ModelRenderOptions,
+    exposure: Exposure,
+    parts: u32,
+    accent: egui::Color32,
+) -> Key {
     Key {
+        exposure,
         options: ModelRenderOptions {
             width: 0,
             height: 0,

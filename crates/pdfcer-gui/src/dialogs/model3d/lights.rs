@@ -103,7 +103,11 @@ impl ModelView {
             ui.label(m::lighting_label());
             self.lighting_combo(ui, REGION_LIGHTING);
         });
-        self.brightness_control(ui);
+        // Drawn in lux, no brightness is applied.
+        if !self.drawn_in_lux() {
+            self.brightness_control(ui);
+        }
+        self.true_light_control(ui);
         let turn = ui
             .checkbox(&mut self.lights_turn, m::lights_turn())
             .on_hover_text(m::lights_turn_tooltip());

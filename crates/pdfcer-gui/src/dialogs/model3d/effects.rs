@@ -40,6 +40,8 @@ pub(super) struct Look {
     pub(super) view_mode: Option<RenderMode>,
     /// Dark where the model's own lamps are all switched off.
     pub(super) empty_artwork: EmptyArtwork,
+    /// Metered, or fixed in lux by *True light level*.
+    pub(super) exposure: pdfcer_3d::Exposure,
 }
 
 impl Look {
@@ -129,6 +131,7 @@ impl ModelView {
             } else {
                 EmptyArtwork::Headlight
             },
+            exposure: self.light.true_light.exposure(),
         }
     }
 

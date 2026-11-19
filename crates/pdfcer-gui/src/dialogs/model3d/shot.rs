@@ -15,7 +15,7 @@ use std::sync::mpsc::{Receiver, TryRecvError};
 
 use egui::Ui;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::{MAX_LAMP_SHADOW_MAP_SIZE, MAX_RENDER_PIXELS, MAX_SHADOW_MAP_SIZE, render_model};
+use pdfcer_3d::{MAX_LAMP_SHADOW_MAP_SIZE, MAX_RENDER_PIXELS, MAX_SHADOW_MAP_SIZE};
 
 use super::{Drawn, ModelView, sphere};
 use crate::text::model3dshot as s;
@@ -360,10 +360,12 @@ impl ModelView {
     pub(super) fn start_shot(&mut self) -> Result<(), String> {
         let [w, h] = self.shot.size();
         let aspect = f64::from(w) / f64::from(h);
+        let look = self.in_shot_look(|view| view.look());
         let mut options = ModelRenderOptions {
             threads: 0,
-            ..self.in_shot_look(|view| view.look()).options()
+            ..look.options()
         };
+        let exposure = look.exposure;
         self.shot.apply(&mut options);
         let mut camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
         self.shot.drawn_sphere = self.shot.sphere;
@@ -394,7 +396,7 @@ impl ModelView {
         std::thread::Builder::new()
             .name("model-picture".to_owned()) // ui-text-exempt: thread name, never displayed
             .spawn(move || {
-                let drawn = render_model(&model, &camera, &options)
+                let drawn = super::truelight::render_lit(&model, &camera, &options, exposure)
                     .map(|image| Drawn {
                         width: image.width,
                         height: image.height,

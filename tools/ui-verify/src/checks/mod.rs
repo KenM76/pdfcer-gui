@@ -996,6 +996,8 @@ pub mod model_poster;
 pub mod model_saved_view;
 /// The 3D viewer's Measure tab measures between two picked surfaces.
 pub mod model_surface_measure;
+/// The 3D viewer draws at an exposure fixed in lux.
+pub mod model_true_light;
 /// While Play 3D content is off, View… on a model asks first.
 pub mod model_trust;
 /// A placed 3D model opened in the viewer turns, pans and zooms under the

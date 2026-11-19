@@ -19,6 +19,7 @@ use super::figure::MEASURE;
 use super::looks::{LAMP_NEAREST, lamp_cut_text, nearest_text};
 use super::memory::{self, HIGHLIGHTS, SEE_THROUGH, SENSES, Settings};
 use super::sunlight::{GAIN_RANGE, KELVIN_RANGE, aim_row};
+use super::truelight::WHITE_LUX_RANGE;
 use crate::app::prefs::Prefs;
 use crate::text::model3d as m;
 use crate::text::model3dlens as l;
@@ -194,6 +195,8 @@ fn look_rows(prefix: &str) -> Vec<Row> {
         flag("sun_by_height", g::sun_colour_by_height()),
         number("sun_kelvin", g::sun_kelvin_label(), KELVIN_RANGE, 0),
         percent("sun_strength", g::sun_strength_label()),
+        flag("true_light", g::true_light()),
+        number("white_lux", g::white_lux_label(), WHITE_LUX_RANGE, 0),
         pick(
             "light_sense",
             m::light_sense_label(),

@@ -72,6 +72,7 @@ mod stick;
 mod sundisc;
 mod sunlight;
 mod surfaces;
+mod truelight;
 mod window;
 
 use pdfcer_3d_nav::{Lens, Orbit, PITCH_LIMIT, Upright, Walk};

@@ -73,6 +73,7 @@ impl Default for SunAim {
 pub(super) struct Light {
     pub gains: [f64; 12],
     pub sun: SunAim,
+    pub true_light: super::truelight::TrueLight,
 }
 
 impl Default for Light {
@@ -80,6 +81,7 @@ impl Default for Light {
         Self {
             gains: [1.0; 12],
             sun: SunAim::default(),
+            true_light: super::truelight::TrueLight::default(),
         }
     }
 }

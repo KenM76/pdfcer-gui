@@ -375,6 +375,7 @@ impl ModelView {
                 ui.small(k::lamp_cut_note(steps(h)));
             }
         }
+        self.true_light_notes(ui, &options);
         if let Some(camera) = self.notes_camera() {
             let lights = FrameLights::for_model(&camera, &options, &d.lights);
             if let Some(n) = lights.ok().map(|l| l.dropped).filter(|&n| n > 0) {

@@ -31,6 +31,7 @@ use super::nav;
 use super::shot::Shot;
 use super::shotlook::LookSet;
 use super::sunlight::{BEARING_RANGE, GAIN_RANGE, HEIGHT_RANGE, KELVIN_RANGE, Light};
+use super::truelight::WHITE_LUX_RANGE;
 use crate::app::actions::Action;
 use crate::app::actions::prefs::PrefAction;
 use crate::text::model3dlook::{Highlights, SeeThrough};
@@ -229,6 +230,8 @@ fn put_light(put: &mut Put<'_>, light: &Light) {
     put.flag("sun_by_height", a.by_height);
     put.value("sun_kelvin", format!("{:.0}", a.kelvin));
     put.value("sun_strength", format!("{:.3}", a.strength));
+    put.flag("true_light", light.true_light.on);
+    put.value("white_lux", format!("{:.0}", light.true_light.white_lux));
 }
 
 fn get_light(get: &Get<'_>, light: &mut Light) {
@@ -242,6 +245,9 @@ fn get_light(get: &Get<'_>, light: &mut Light) {
     get.flag("sun_by_height", &mut a.by_height);
     get.number("sun_kelvin", KELVIN_RANGE, &mut a.kelvin);
     get.number("sun_strength", GAIN_RANGE, &mut a.strength);
+    let t = &mut light.true_light;
+    get.flag("true_light", &mut t.on);
+    get.number("white_lux", WHITE_LUX_RANGE, &mut t.white_lux);
 }
 
 fn get_look(get: &Get<'_>, look: &mut LookSet) {

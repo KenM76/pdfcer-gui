@@ -159,3 +159,54 @@ pub fn lamp_shadows_capped(casting: usize, dropped: usize, limit: usize) -> Stri
         "{casting} lamp(s) cast shadows; {dropped} more past the limit of {limit}, those adding least at the view's centre, light without one."
     )
 }
+
+/// The switch drawing the picture at a fixed light level.
+#[must_use]
+pub fn true_light() -> &'static str {
+    "True light level"
+}
+
+/// Its tip.
+#[must_use]
+pub fn true_light_tooltip() -> &'static str {
+    "Off, the picture is brightened or darkened to suit the model as a whole, so a dim building looks as bright as a well-lit one. On, every surface is drawn by the light a meter would read there, in lux: a surface receiving the lux set below is full white, half as much is half as bright, and a dim room looks dim beside a bright one. Each lamp shines at the strength its file states, and the brightness slider plays no part. Surfaces brighter than full white are clipped."
+}
+
+/// The white point field's label.
+#[must_use]
+pub fn white_lux_label() -> &'static str {
+    "Full white at"
+}
+
+/// Its tip.
+#[must_use]
+pub fn white_lux_tooltip() -> &'static str {
+    "The light, in lux, drawn as full white. 500 lux is a well-lit office; a corridor is about 100, a desk by a sunny window several thousand. Raise it to see detail in bright areas, lower it to see into dim ones."
+}
+
+/// Between the engine's notes in one line.
+pub const NOTES_SEPARATOR: &str = "; ";
+
+/// The white point field's suffix.
+pub const LUX_SUFFIX: &str = " lux";
+
+/// What the picture is drawn at, under the picture and the switch.
+#[must_use]
+pub fn true_light_said(white_lux: f64) -> String {
+    format!("Drawn at a true light level: full white at {white_lux:.0} lux.")
+}
+
+/// The switch is on but the picture cannot be drawn in lux: `reasons` are
+/// the engine's, joined.
+#[must_use]
+pub fn true_light_refused(reasons: &str) -> String {
+    format!(
+        "True light level is not drawn, so the picture is brightened to suit the model as usual: {reasons}."
+    )
+}
+
+/// The engine's notes on what a true light level assumed, joined.
+#[must_use]
+pub fn true_light_notes(notes: &str) -> String {
+    format!("In lux: {notes}.")
+}

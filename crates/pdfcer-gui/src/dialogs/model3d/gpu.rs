@@ -25,7 +25,7 @@ use native_mesh::{Draw, Mesh, Value, Wrap};
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
 use pdfcer_3d::{
     AssembledModel, Camera, DrawData, FrameAmbientOcclusion, FrameBounce, FrameExtraShadows,
-    FrameLampShadows, FrameLights, FrameShadow, PreparedModel, RenderError, RenderMode,
+    FrameLampShadows, FrameLights, FrameShadow, ModelLight, PreparedModel, RenderError, RenderMode,
     ShininessScale, TextureWrap,
 };
 
@@ -293,7 +293,15 @@ impl ModelView {
             return Ok(false);
         }
         let fisheye = pdfcer_3d_nav::is_fisheye(&camera);
-        let lights = &self.model.drawn.lights;
+        // The trace and the bounce key are worked from the look's options;
+        // everything drawn from the lights and options it is exposed at.
+        let metered = options;
+        let (lights, options) =
+            match super::truelight::lit(&self.model.drawn, wanted.look.exposure, &options) {
+                Some(l) => (l.drawn.lights, l.drawn.options),
+                None => (self.model.drawn.lights.clone(), options),
+            };
+        let lights = lights.as_slice();
         // A fisheye's occlusion is each face's own (`gpu_lens`).
         let effects = if fisheye {
             Effects {
@@ -304,7 +312,7 @@ impl ModelView {
             Effects::new(&camera, &options, &self.bounds, lights, wanted.size)?
         };
         let mut frame_lights = FrameLights::for_model(&camera, &options, lights)?;
-        let casters = self.casters(&camera, &options, effects.shadow)?;
+        let casters = self.casters(&camera, &options, lights, effects.shadow)?;
         let occlusion = effects.occlusion.is_some() || (fisheye && options.ambient_occlusion);
         if let Some(part) = self.refused_part(&casters, occlusion, fisheye) {
             self.gpu.declined = Some(ProcessorReason::TurnedOff(part));
@@ -316,7 +324,7 @@ impl ModelView {
         let background = wanted.background.to_normalized_gamma_f32();
         let (view, lens, line_uniforms) =
             self.frame_view(&camera, &frame_lights, &options, (wanted.size, background))?;
-        let bounce = self.frame_bounce(&options, &wanted, camera);
+        let bounce = self.frame_bounce(&metered, &wanted, camera);
         let mut uniforms = frame_uniforms(view, &frame_lights, &casters);
         uniforms.extend(super::gpu_bounce::uniforms(bounce.as_deref()));
         let emissive = self.gpu.facts.emissive;
@@ -325,7 +333,7 @@ impl ModelView {
         } else {
             None
         };
-        let head = self.trace_head(&wanted, Ok(&camera), &options)
+        let head = self.trace_head(&wanted, Ok(&camera), &metered)
             + &casters.trace()
             + &super::gpu_bounce::trace(bounce.as_deref(), self.gpu.bounce.waiting());
         let mut shared = lock(&self.gpu.shared);
@@ -390,9 +398,9 @@ impl ModelView {
         &self,
         camera: &Camera,
         options: &ModelRenderOptions,
+        lights: &[ModelLight],
         shadow: Option<FrameShadow>,
     ) -> Result<Casters, RenderError> {
-        let lights = &self.model.drawn.lights;
         let extra = match shadow {
             Some(_) => FrameExtraShadows::for_model(camera, options, &self.bounds, lights)?,
             None => None,
@@ -425,7 +433,8 @@ impl ModelView {
         wanted: &Rendered,
         camera: Camera,
     ) -> Option<Arc<FrameBounce>> {
-        let key = super::gpu_bounce::key(options, wanted.parts, wanted.accent);
+        let key =
+            super::gpu_bounce::key(options, wanted.look.exposure, wanted.parts, wanted.accent);
         let Self {
             gpu, parts, model, ..
         } = self;

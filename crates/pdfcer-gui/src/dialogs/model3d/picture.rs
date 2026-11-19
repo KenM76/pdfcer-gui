@@ -4,9 +4,9 @@
 use egui::TextureOptions;
 // The 3D renderer's options, not the page renderer's that settings own.
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::render_model;
 
 use super::effects::Effects;
+use super::truelight::{lit, render_lit};
 use super::{Drawn, ModelView, POSTER_SIDE, Rendered};
 use crate::text::panels::models as t;
 
@@ -28,10 +28,11 @@ impl ModelView {
             ..self.look().options()
         };
         let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
+        let exposure = self.look().exposure;
         let image = self
             .parts
             .painted(&mut self.model.drawn, None, |model| {
-                render_model(model, &camera, &options)
+                render_lit(model, &camera, &options, exposure)
             })
             .map_err(|e| e.to_string())?;
         crate::diag::trace(|| {
@@ -67,9 +68,10 @@ impl ModelView {
         let accent = Some(wanted.accent.to_array());
         let parts = &self.parts;
         let model = &mut self.model.drawn;
+        let exposure = wanted.look.exposure;
         let drawn = camera.and_then(|camera| {
             parts.painted(model, accent, |model| {
-                render_model(model, &camera, &options)
+                render_lit(model, &camera, &options, exposure)
             })
         });
         let ms = started.elapsed().as_secs_f64() * 1000.0;
@@ -106,19 +108,25 @@ impl ModelView {
             .zip(self.orbit.anchor)
             .map(|(c, a)| pivot_shown(c, a.point))
             .unwrap_or_default();
+        let exposed = lit(&self.model.drawn, wanted.look.exposure, options);
+        let (lights, exposed_options) = exposed
+            .as_ref()
+            .map_or((self.model.drawn.lights.as_slice(), options), |l| {
+                (l.drawn.lights.as_slice(), &l.drawn.options)
+            });
         let effects = camera
             .ok()
-            .and_then(|c| {
-                let lights = &self.model.drawn.lights;
-                Effects::new(c, options, &self.bounds, lights, wanted.size).ok()
-            })
+            .and_then(|c| Effects::new(c, exposed_options, &self.bounds, lights, wanted.size).ok())
             .map_or_else(String::new, |e| e.trace(options));
         let declined = self.gpu.declined().map_or("", super::looks::declined_word);
         let lit = self.lighting_trace(options.lighting)
             + &effects
             + &super::sunlight::trace(options)
-            + &lamp_counts(camera.ok(), options, &self.model.drawn.lights)
+            + &lamp_counts(camera.ok(), exposed_options, lights)
             + &super::looks::trace(options)
+            + &exposed
+                .as_ref()
+                .map_or_else(String::new, super::truelight::Lit::trace)
             + declined;
         let eye = camera_eye(wanted.walk.as_ref(), camera.ok());
         format!(
@@ -271,8 +279,24 @@ pub(super) fn pixel_fields(rgba: &[u8], background: [u8; 4]) -> String {
     let hash = rgba.iter().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
         (h ^ u64::from(*b)).wrapping_mul(0x100_0000_01b3)
     });
+    let luma = mean_luma(rgba, background);
     // ui-text-exempt: diagnostic trace fields, never displayed
-    format!(" covered={covered} chromatic={chromatic} hues={hues} hash={hash:016x}")
+    format!(" covered={covered} chromatic={chromatic} hues={hues} luma={luma:.2} hash={hash:016x}")
+}
+
+/// The mean Rec. 709 luma, 0 to 255, of the pixels of `rgba` that are not
+/// `background`: how bright the model is drawn; 0 when none is.
+fn mean_luma(rgba: &[u8], background: [u8; 4]) -> f64 {
+    let (sum, n) =
+        rgba.chunks_exact(4)
+            .filter(|px| *px != background)
+            .fold((0.0, 0_u32), |(sum, n), px| {
+                let y = 0.2126 * f64::from(px[0])
+                    + 0.7152 * f64::from(px[1])
+                    + 0.0722 * f64::from(px[2]);
+                (sum + y, n + 1)
+            });
+    if n == 0 { 0.0 } else { sum / f64::from(n) }
 }
 
 /// A channel spread at or above this is a colour, not a shade of grey.

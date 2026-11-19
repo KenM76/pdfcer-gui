@@ -58,15 +58,9 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **67 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `wanted` — a real gap — **66 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
-
-### Engine arrivals at v0.160.0
-
-| Row (`FEATURES.md`, wanted) | Why |
-|---|---|
-| **3D picture at a fixed exposure in lux** — `Exposure::Fixed`, `3d-render --exposure-lux`, the module `pdfcer_3d::illuminance::exposure` (`Exposure`, `Exposure::lighting`, `ExposedLighting`, `ExposureError`, `ExposedLighting::render`, `ExposedLighting::frame_lights`, `ExposedLighting::frame_bounce`), `RelativeReason` <!--namesake:frame_bounce--> (the shell's calls are `PreparedModel::frame_bounce`, a different method) | **wanted — O446, our request G302.** The 3D viewer's *True light level* switch with a lux field, default 500. |
 
 ### Document & pages
 
@@ -263,7 +257,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **511 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **512 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -826,6 +820,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A 3D model with every lamp left out can be drawn dark** — `RenderOptions::empty_artwork` (`EmptyArtwork::Headlight`, `EmptyArtwork::Dark`) | **shipped, at v0.156.0; our request G290.** The viewer leaves a switched-off lamp out of `AssembledModel::lights` and sets `EmptyArtwork::Dark` for a model that carries lamps. Driven by `the_3d_viewer_switches_lights_off_and_on`. |
 | **Illuminance at a point on a 3D model's surface (lux or relative; direct / bounced / per-light; disc average)** — the module `pdfcer_3d::illuminance` (`LightMeter`, `IlluminanceQuery`, `Illuminance`, `MeterSettings`) | **shipped, at v0.156.0; our request G288, O437.** Measure ▸ Light level in the 3D viewer: a point or a circle, the three parts, each lamp's part, the engine's reasons and notes. `MeterSettings` is taken at its default: basis, tint, ray count and unit override have no control. Driven by `the_3d_viewer_reads_the_light_on_a_surface`. |
 | **Measure between two picked surfaces of a 3D model, with an adjustable parallel tolerance** — the module `pdfcer_3d::surface_measure` (`measure_surfaces`, `SurfaceMeasure`, `SurfaceRelation`) | **shipped, at v0.156.0; O442.** The 3D viewer's Measure ▸ Between surfaces, with *Parallel within* and *Always measure a distance*; the fit and any refusal are said off the picture. Driven by `the_3d_viewer_measures_between_surfaces`. |
+| **3D picture at a fixed exposure in lux** — `Exposure::Fixed { white_lux }`, `3d-render --exposure-lux`, the module `pdfcer_3d::illuminance::exposure` (`Exposure`, `Exposure::Fixed`, `Exposure::lighting`, `ExposedLighting`, `ExposureError`, `ExposedLighting::render`, `ExposedLighting::frame_lights`, `ExposedLighting::frame_bounce`), `RelativeReason` | **shipped, at v0.160.0; our request G302, O446.** The 3D viewer's *True light level* switch, off by default, with *Full white at* in lux, default 500, for a model with lamps of its own. `dialogs::model3d::truelight` takes every frame's lights and options from `Exposure::lighting`: the processor's picture, poster and saved picture through `ExposedLighting::render`, the card's lights, shadows, occlusion and bounce from the same lights and options. A refusal draws the picture metered and says the `RelativeReason`s beside the switch and under the picture; the engine's notes go under the picture. `MeterSettings` is taken at its default. Driven by `the_3d_viewer_draws_at_a_true_light_level`. |
 | **Continue an open path; open a closed path** — `pdfcer_core::edit::node_shape::EditSession::extend_path`, `pdfcer_core::edit::node_shape::EditSession::extend_path_in_form`, `pdfcer_core::edit::node_shape::EditSession::open_subpath`, `pdfcer_core::edit::node_shape::EditSession::open_subpath_in_form`, the module `pdfcer_core::vector::edit::node_shape::extend` (`plan_extend_path`, `plan_open_subpath`), undo kinds `pdfcer_core::edit::CommandKind::ExtendPath` and `pdfcer_core::edit::CommandKind::OpenSubpath` | **shipped, at v0.156.0; O444.** Format ▸ Nodes ▸ Continue path and Open path here, called by `app::actions::vector::pathend`; driven by `a_path_is_continued_from_its_end` and `a_closed_path_is_opened_at_a_node`. The `plan_*` pair is not called: the shell holds no `ContentStream`, so a middle or closed node is refused when the run finishes (G295). Its `VectorEditError` refusals are said on the status line. |
 | **ce dimensions arriving as plain lines** — `AssembleReport::ce_dimensions_as_lines`, `InsertOutcome::ce_dimensions_as_lines`, `MergeOutcome::ce_dimensions_as_lines` | **shipped; O444.** Every page-copy receipt is built through `CeDimCopy`, which says how many ce dimensions arrived as plain lines and why. Insert driven by `inserted_pages_say_what_came_of_their_ce_dimensions`. |
 | **Every page-copy route (extract, split, merge, insert to a new file, insert into an open document, merge document) keeps ce dimensions editable** — `pdfcer_core::edit::InsertOutcome::ce_dimension_groups_carried`, `pdfcer_core::edit::InsertOutcome::ce_dimension_groups_matched`, `pdfcer_core::edit::InsertOutcome::ce_dimension_groups_renamed`, `pdfcer_core::edit::MergeOutcome::ce_dimension_groups_carried`, `pdfcer_core::edit::MergeOutcome::ce_dimension_groups_matched`, `pdfcer_core::edit::MergeOutcome::ce_dimension_groups_renamed`, `pdfcer_core::pageops::assemble::AssembleReport::ce_dimension_groups_carried`, `pdfcer_core::pageops::assemble::AssembleReport::ce_dimension_groups_matched`, `pdfcer_core::pageops::assemble::AssembleReport::ce_dimension_groups_renamed` | **shipped, at v0.156.0; the answer to G286.** All five routes build their receipt through `CeDimCopy`; insert driven by `inserted_pages_say_what_came_of_their_ce_dimensions`. A default group adopted for ce dimensions that had none is counted in no field, so the group clause is not seen on a real insert (G298). |
