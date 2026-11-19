@@ -13,6 +13,9 @@ One page, laid out by position, every field bound by `match="dataRef"`:
 - `colour`, a list always shown (`open="always"`) whose display names
   differ from its saved codes (r / g / b); the data holds g.
 - `note`, a multi-line text field with `maxChars="40"`.
+- `towns`, a list that takes several choices (`open="multiSelect"`) of
+  Toronto / New York / Boston, one with a space in its save value; the data
+  holds nothing.
 
 Run: python fixtures/xfa-widgets.PROVENANCE.py
 """
@@ -56,9 +59,12 @@ XDP = (
     '<field name="note" x="0in" y="3.8in" w="7in" h="0.8in">' + caption("Note")
     + '<ui><textEdit multiLine="1"/></ui><value><text maxChars="40"/></value>'
     '<border><edge/></border><bind match="dataRef" ref="$.Note"/></field>\n'
+    '<field name="towns" x="0in" y="4.8in" w="4in" h="0.9in">' + caption("Towns")
+    + '<ui><choiceList open="multiSelect"/></ui>' + items("Toronto", "New York", "Boston")
+    + '<border><edge/></border><bind match="dataRef" ref="$.Towns"/></field>\n'
     '</subform></subform></template>'
     '<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><form1>'
-    '<Agree>N</Agree><Pets/><Plan>M</Plan><City>Ottawa</City><Colour>g</Colour><Note/>'
+    '<Agree>N</Agree><Pets/><Plan>M</Plan><City>Ottawa</City><Colour>g</Colour><Note/><Towns/>'
     '</form1></xfa:data></xfa:datasets></xdp:xdp>'
 ).encode()
 STAND_IN = b"BT /F1 14 Tf 72 700 Td (Please wait... this is the stand-in page.) Tj ET"

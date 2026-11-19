@@ -449,6 +449,8 @@ pub enum FieldClick {
     Choose,
     /// Opens its list of choices.
     Pick,
+    /// Opens a list that takes several choices.
+    PickSeveral,
 }
 
 /// A field's hover in the preview: what a click does.
@@ -459,6 +461,7 @@ pub fn fill_hover(name: Option<&str>, click: FieldClick) -> String {
         FieldClick::Toggle => "click to turn on or off",
         FieldClick::Choose => "click to choose",
         FieldClick::Pick => "click to pick from its list",
+        FieldClick::PickSeveral => "click to pick from its list; Ctrl+click picks several",
     };
     match name {
         Some(n) => format!("{n}: {what}"),

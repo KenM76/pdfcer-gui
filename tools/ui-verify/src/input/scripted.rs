@@ -115,6 +115,18 @@ impl ScriptedPointer {
         self.send(session, &format!("click {} mods={mods}", xy(at)))
     }
 
+    /// [`Self::click_with`] in `viewport` (root when `None`).
+    pub fn click_in_with(
+        &self,
+        session: &Session,
+        viewport: Option<&str>,
+        at: WindowPoint,
+        mods: &str,
+    ) -> Result<TraceLine> {
+        let vp = viewport.map_or(String::new(), |v| format!(" vp={v}"));
+        self.send(session, &format!("click {} mods={mods}{vp}", xy(at)))
+    }
+
     /// A secondary (right) click.
     pub fn right_click(&self, session: &Session, at: WindowPoint) -> Result<TraceLine> {
         self.send(session, &format!("click {} btn=r", xy(at)))

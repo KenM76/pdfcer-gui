@@ -9,7 +9,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>
 endobj
 4 0 obj
-<< /Length 2761 >>
+<< /Length 3079 >>
 stream
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/"><template xmlns="http://www.xfa.org/schema/xfa-template/3.3/"><subform name="form1" layout="tb"><pageSet><pageArea name="P1"><contentArea x="0.5in" y="0.5in" w="7.5in" h="10in"/><medium stock="letter" short="8.5in" long="11in"/></pageArea></pageSet>
 <subform name="body" w="7.5in" layout="position" h="6in">
@@ -20,7 +20,8 @@ stream
 <field name="city" x="0in" y="2.0in" w="4in" h="0.35in"><caption reserve="1.4in"><value><text>City</text></value></caption><ui><choiceList open="userControl"/></ui><items><text>Toronto</text><text>Ottawa</text><text>Calgary</text></items><border><edge/></border><bind match="dataRef" ref="$.City"/></field>
 <field name="colour" x="0in" y="2.6in" w="4in" h="0.9in"><caption reserve="1.4in"><value><text>Colour</text></value></caption><ui><choiceList open="always"/></ui><items><text>Red</text><text>Green</text><text>Blue</text></items><items save="1"><text>r</text><text>g</text><text>b</text></items><border><edge/></border><bind match="dataRef" ref="$.Colour"/></field>
 <field name="note" x="0in" y="3.8in" w="7in" h="0.8in"><caption reserve="1.4in"><value><text>Note</text></value></caption><ui><textEdit multiLine="1"/></ui><value><text maxChars="40"/></value><border><edge/></border><bind match="dataRef" ref="$.Note"/></field>
-</subform></subform></template><xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><form1><Agree>N</Agree><Pets/><Plan>M</Plan><City>Ottawa</City><Colour>g</Colour><Note/></form1></xfa:data></xfa:datasets></xdp:xdp>
+<field name="towns" x="0in" y="4.8in" w="4in" h="0.9in"><caption reserve="1.4in"><value><text>Towns</text></value></caption><ui><choiceList open="multiSelect"/></ui><items><text>Toronto</text><text>New York</text><text>Boston</text></items><border><edge/></border><bind match="dataRef" ref="$.Towns"/></field>
+</subform></subform></template><xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><form1><Agree>N</Agree><Pets/><Plan>M</Plan><City>Ottawa</City><Colour>g</Colour><Note/><Towns/></form1></xfa:data></xfa:datasets></xdp:xdp>
 endstream
 endobj
 5 0 obj
@@ -39,10 +40,10 @@ xref
 0000000117 00000 n 
 0000000174 00000 n 
 0000000300 00000 n 
-0000003113 00000 n 
-0000003235 00000 n 
+0000003431 00000 n 
+0000003553 00000 n 
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-3305
+3623
 %%EOF

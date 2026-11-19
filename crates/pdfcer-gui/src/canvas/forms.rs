@@ -204,29 +204,18 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
             list.routing.unreachable,
         )
     });
-    // Then the census itself, one line per box, in CANVAS space.
-    //
-    // The summary above proves boxes exist; this proves *where*, which is the
-    // only thing that makes a hit test checkable from outside the process. A
-    // click that focused the field next to the one it aimed at is the same
-    // screenshot as a click that worked — a defect no picture can carry —
-    // and a harness can only tell the two apart by knowing the target
-    // before it aims. Canvas space, because that is the frame the `canvas
-    // rect=… zoom=…` line already publishes the map for: screen = rect.min +
-    // canvas × zoom, which is arithmetic a harness can do.
-    //
-    // Written once per `(document, revision)` because it sits after the cache
-    // miss, and capped because `MAX_FORM_FIELDS` is 500,000 — an uncapped
-    // census on a pathological form would bury every other line in the
-    // capture, which is the same "fifty identical lines in nine seconds"
-    // failure `trace::pointer` was fixed for.
-    // The SELECTABLE census, beside the fillable one and deliberately
-    // separate. The two sets differ — a push button and an undrawn widget are
-    // selectable and not fillable — and that difference is the whole
-    // of what form authoring added to this surface. One census reporting the
-    // union would make a harness unable to tell "this widget cannot be typed
-    // into" from "this widget cannot be reached at all", which are the two
-    // failures it most needs to distinguish.
+    trace_census(&list);
+    list
+}
+
+/// The census, one line per box, in CANVAS space: the selectable targets,
+/// then the fillable boxes, each set apart because a push button or an
+/// undrawn widget is selectable and not fillable, and a harness must tell
+/// "cannot be typed into" from "cannot be reached". Canvas space because the
+/// `canvas rect=… zoom=…` line publishes its map (screen = rect.min + canvas
+/// × zoom). Capped at [`MAX_TRACED_BOXES`] so a pathological form cannot bury
+/// the capture. A choice box carries how many values `/V` selects.
+fn trace_census(list: &boxes::Placed) {
     if crate::diag::enabled() {
         for t in list.targets.iter().take(MAX_TRACED_BOXES) {
             crate::diag::trace(|| {
@@ -249,7 +238,7 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
             crate::diag::trace(|| {
                 format!(
                     // ui-text-exempt: diagnostic trace, never displayed in the UI
-                    "form-box page={} field={} widget={} kind={} rect=({:.1},{:.1})+({:.1},{:.1})",
+                    "form-box page={} field={} widget={} kind={} rect=({:.1},{:.1})+({:.1},{:.1}){}",
                     b.page,
                     b.field,
                     b.widget,
@@ -258,6 +247,10 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
                     b.rect.min.y,
                     b.rect.width(),
                     b.rect.height(),
+                    match &b.kind {
+                        BoxKind::Choice { selected, .. } => format!(" selected={}", selected.len()),
+                        _ => String::new(),
+                    },
                 )
             });
         }
@@ -271,7 +264,6 @@ pub(crate) fn placed(ctx: &egui::Context, doc: &OpenDoc) -> Arc<boxes::Placed> {
             });
         }
     }
-    list
 }
 
 /// How many boxes the census names before it says how many it left out.

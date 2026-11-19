@@ -279,7 +279,6 @@ fn crates/pdfcer-gui/src/canvas/fit.rs::placement
 fn crates/pdfcer-gui/src/canvas/forms.rs::click
 fn crates/pdfcer-gui/src/canvas/forms.rs::editor
 fn crates/pdfcer-gui/src/canvas/forms.rs::overlay
-fn crates/pdfcer-gui/src/canvas/forms.rs::placed
 fn crates/pdfcer-gui/src/canvas/forms/choosing.rs::choose
 fn crates/pdfcer-gui/src/canvas/forms/choosing.rs::list
 fn crates/pdfcer-gui/src/canvas/forms/choosing/typing.rs::type_into

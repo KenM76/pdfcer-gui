@@ -6,6 +6,9 @@
 //! chosen by filling its exclusion group with the button's on value, and a
 //! choice list opens its choices — below the field for a drop-down, over it
 //! for a list always shown — and writes the save value of the one picked.
+//! A `multiSelect` list takes several: a click picks one alone, as in any
+//! list, and Ctrl+click adds or removes a choice and keeps the list open,
+//! which writes its choices one per line when it closes.
 //! A widget Form preview cannot fill (image, signature, button, barcode)
 //! says so on hover and opens nothing.
 //!
@@ -14,7 +17,9 @@
 //! elsewhere writes a changed value, as one undo step: typed words are never
 //! thrown away, and Ctrl+Z takes them back.
 
-use pdfcer_core::xfa::{ContainerKind, FieldWidget, LayoutPage, MergedForm, field_widget};
+use pdfcer_core::xfa::{
+    ChoiceOpen, ContainerKind, FieldWidget, LayoutPage, MergedForm, field_widget,
+};
 use pdfcer_gui_base::formpreview::FormPreviewAction;
 
 use crate::app::actions::Action;
@@ -35,11 +40,13 @@ enum Entry {
         off: String,
         group: Option<Vec<usize>>,
     },
-    /// A list of `(display, save)` choices, of which one is written.
+    /// A list of `(display, save)` choices, of which one is written, or
+    /// several one per line when `multi`.
     Choice {
         items: Vec<(String, String)>,
         drop_down: bool,
         text_entry: bool,
+        multi: bool,
     },
     /// A widget Form preview cannot fill, by element name.
     Inert(String),
@@ -66,6 +73,7 @@ impl Entry {
                 items,
                 drop_down: open.is_drop_down(),
                 text_entry,
+                multi: open == ChoiceOpen::MultiSelect,
             },
             Some(FieldWidget::Other(w)) if w == "passwordEdit" => text(false, None, true),
             Some(FieldWidget::Other(w)) => Self::Inert(w),
@@ -82,6 +90,7 @@ impl Entry {
             Self::Choice {
                 drop_down: true, ..
             } => "drop-down",
+            Self::Choice { multi: true, .. } => "multi",
             Self::Choice { .. } => "list",
             Self::Inert(_) => "inert",
         }
@@ -132,12 +141,48 @@ pub(super) fn of_page(page: &LayoutPage, merged: &MergedForm) -> Vec<FieldBox> {
 }
 
 /// The field open for typing or picking: its page, its index in that page's
-/// fields, and the text so far.
+/// fields, the text so far, and a `multiSelect` list's choices so far.
 pub(super) struct Editing {
     page: usize,
     index: usize,
     text: String,
+    picks: Vec<String>,
     focused: bool,
+}
+
+/// The selections in a `multiSelect` list's value, as the engine's painter
+/// and fillable planner read it (`xfa::widget::multi_select_values`, which
+/// is not public): one per line, or space-separated when the value is one
+/// line that is not itself a save value. Delete this when the engine
+/// publishes its reader (G304).
+fn selections(value: &str, items: &[(String, String)]) -> Vec<String> {
+    let whole = items.iter().any(|(_, save)| save == value);
+    let parts: Vec<&str> = if value.contains('\n') || whole {
+        value.lines().collect()
+    } else {
+        value.split(' ').collect()
+    };
+    parts
+        .into_iter()
+        .filter(|p| !p.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The indices of `items` whose save value is among `picks`, comma-joined
+/// for the trace; `none` when there are none.
+fn ticked(items: &[(String, String)], picks: &[String]) -> String {
+    let on: Vec<String> = items
+        .iter()
+        .enumerate()
+        .filter(|(_, (_, save))| picks.contains(save))
+        .map(|(k, _)| k.to_string())
+        .collect();
+    if on.is_empty() {
+        "none".to_owned()
+    } else {
+        on.join(",")
+    }
 }
 
 /// What the overlay of one page needs from the window.
@@ -188,9 +233,13 @@ pub(super) fn overlay(
         {
             let open = match &f.entry {
                 Entry::Choice {
+                    items, multi: true, ..
+                } => pick_several(ui, &mut o, f, r, e, items),
+                Entry::Choice {
                     items,
                     drop_down,
                     text_entry,
+                    ..
                 } => pick(ui, &mut o, f, r, e, (items, *drop_down, *text_entry)),
                 _ => typing(ui, &mut o, f, r, e),
             };
@@ -224,6 +273,7 @@ fn hovered_click(
         Entry::Text { .. } => FieldClick::Type,
         Entry::Check { group: None, .. } => FieldClick::Toggle,
         Entry::Check { .. } => FieldClick::Choose,
+        Entry::Choice { multi: true, .. } => FieldClick::PickSeveral,
         Entry::Choice { .. } => FieldClick::Pick,
     };
     let hit = ui
@@ -272,14 +322,21 @@ fn pressed(o: &mut Overlay<'_>, f: &FieldBox, n: usize, editing: &mut Option<Edi
         o.fill(f, path, value);
         return;
     }
-    if let Entry::Choice { items, .. } = &f.entry {
+    let mut picks = Vec::new();
+    if let Entry::Choice { items, multi, .. } = &f.entry {
+        picks = if *multi {
+            selections(&f.value, items)
+        } else {
+            vec![f.value.clone()]
+        };
         let kind = f.entry.kind();
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed in the UI
             format!(
-                "form-preview-list page={} index={n} kind={kind} items={}",
+                "form-preview-list page={} index={n} kind={kind} items={} ticked={}",
                 o.page,
-                items.len()
+                items.len(),
+                ticked(items, &picks)
             )
         });
     }
@@ -287,6 +344,7 @@ fn pressed(o: &mut Overlay<'_>, f: &FieldBox, n: usize, editing: &mut Option<Edi
         page: o.page,
         index: n,
         text: f.value.clone(),
+        picks,
         focused: false,
     });
 }
@@ -392,4 +450,136 @@ fn pick(
         return false;
     }
     !area.response.clicked_elsewhere()
+}
+
+/// A `multiSelect` list's open list over the field: a click writes the one
+/// item alone, a Ctrl+click adds or removes an item and keeps the list open,
+/// and closing it by Enter, Esc or a click elsewhere writes the choices so
+/// far when they changed; `false` once it has closed.
+fn pick_several(
+    ui: &mut egui::Ui,
+    o: &mut Overlay<'_>,
+    f: &FieldBox,
+    r: egui::Rect,
+    e: &mut Editing,
+    items: &[(String, String)],
+) -> bool {
+    let mut alone: Option<(usize, String)> = None;
+    let area = egui::Area::new(ui.id().with(("form-preview-list", o.page, e.index)))
+        .order(egui::Order::Foreground)
+        .fixed_pos(r.left_top())
+        .show(ui.ctx(), |ui| {
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                ui.set_min_width(r.width());
+                for (k, (display, save)) in items.iter().enumerate() {
+                    let on = e.picks.contains(save);
+                    let item = ui.selectable_label(on, display.as_str());
+                    // ui-text-exempt: trace region name, never displayed
+                    crate::diag::ui_rect(&format!("form-preview.item.{k}"), item.rect);
+                    if !item.clicked() {
+                        continue;
+                    }
+                    if !ui.input(|i| i.modifiers.command) {
+                        alone = Some((k, save.clone()));
+                        continue;
+                    }
+                    if on {
+                        e.picks.retain(|p| p != save);
+                    } else {
+                        e.picks.push(save.clone());
+                    }
+                    let state = if on { "off" } else { "on" };
+                    crate::diag::trace(|| {
+                        // ui-text-exempt: diagnostic trace, never displayed in the UI
+                        format!(
+                            "form-preview-toggle page={} index={} item={k} state={state}",
+                            o.page, e.index
+                        )
+                    });
+                }
+            });
+        });
+    if let Some((k, save)) = alone {
+        e.picks = vec![save];
+        write_several(o, f, e, items, &k.to_string());
+        return false;
+    }
+    // escape-disposition: commits — Esc closes the list and writes its choices.
+    let keyed = ui.input(|i| i.key_pressed(egui::Key::Enter) || i.key_pressed(egui::Key::Escape));
+    if !keyed && !area.response.clicked_elsewhere() {
+        return true;
+    }
+    let picked = ticked(items, &e.picks);
+    write_several(o, f, e, items, &picked);
+    false
+}
+
+/// Write a `multiSelect` list's choices so far, one per line in the list's
+/// order with any choice the list does not name kept after them, when they
+/// differ from its value; `picked` names the items for the trace.
+fn write_several(
+    o: &mut Overlay<'_>,
+    f: &FieldBox,
+    e: &Editing,
+    items: &[(String, String)],
+    picked: &str,
+) {
+    let listed = |p: &str| items.iter().any(|(_, save)| save == p);
+    let mut value: Vec<&str> = items
+        .iter()
+        .map(|(_, save)| save.as_str())
+        .filter(|save| e.picks.iter().any(|p| p == save))
+        .collect();
+    value.extend(e.picks.iter().map(String::as_str).filter(|p| !listed(p)));
+    crate::diag::trace(|| {
+        // ui-text-exempt: diagnostic trace, never displayed in the UI
+        format!(
+            "form-preview-pick page={} index={} kind=multi item={picked}",
+            o.page, e.index
+        )
+    });
+    if selections(&f.value, items) != value {
+        o.fill(f, &f.path, value.join("\n"));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{selections, ticked};
+
+    fn towns() -> Vec<(String, String)> {
+        ["Toronto", "New York", "Boston"]
+            .iter()
+            .map(|t| ((*t).to_owned(), (*t).to_owned()))
+            .collect()
+    }
+
+    #[test]
+    fn selections_are_one_per_line() {
+        assert_eq!(
+            selections("New York\nBoston", &towns()),
+            ["New York", "Boston"]
+        );
+    }
+
+    #[test]
+    fn a_save_value_with_a_space_is_one_selection() {
+        assert_eq!(selections("New York", &towns()), ["New York"]);
+    }
+
+    #[test]
+    fn a_one_line_value_that_is_no_save_value_reads_space_separated() {
+        assert_eq!(
+            selections("Toronto Boston", &towns()),
+            ["Toronto", "Boston"]
+        );
+        assert!(selections("", &towns()).is_empty());
+    }
+
+    #[test]
+    fn ticked_names_the_items_in_list_order() {
+        let picks = ["Boston".to_owned(), "Toronto".to_owned()];
+        assert_eq!(ticked(&towns(), &picks), "0,2");
+        assert_eq!(ticked(&towns(), &[]), "none");
+    }
 }

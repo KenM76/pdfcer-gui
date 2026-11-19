@@ -8167,7 +8167,9 @@ Built since: a click on a field in Form preview opens it for typing, and Enter w
 
 Built since: *Use these pages* has a *Keep the fields fillable* switch, on by default. With it on, the written pages keep the form's fields as fillable fields holding their values, and the status row says how many and what they leave out (scripts, picture formats). On a copy of his file the engine writes 47 fillable fields. Driven by `use_these_pages_keeps_the_fields_fillable`, which fills one of the written fields on the canvas; switched off, the pages are flat as before. In the preview a check box turns on or off with one click, a radio button is chosen, and a drop-down or list opens as its choices (driven by `form_preview_fields_open_as_their_widgets`). A field whose data reference names a value the data lacks now gets it created (driven by `a_field_with_no_data_value_yet_fills_in`).
 
-**Not yet:** a multi-select list takes one pick, because the engine draws and writes its several values with different separators (asked as G303). The pages are written only when he presses the button; opening the file still shows the stand-in first.
+Built since: a list that takes several choices takes them. A click picks one, Ctrl+click adds or removes one and keeps the list open, and Enter or a click elsewhere writes them; they survive the redraw, and *Use these pages* writes them as the fillable list's choices. Driven by `form_preview_fields_open_as_their_widgets`, which fails when a Ctrl+click replaces the pick before it, and when the picks are written space-separated.
+
+**Not yet:** the pages are written only when he presses the button; opening the file still shows the stand-in first.
 
 ## O446 — **OPEN** — a 3D model's lighting shown at its true level, room to room
 
