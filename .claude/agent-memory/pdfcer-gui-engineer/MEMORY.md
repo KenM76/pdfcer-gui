@@ -8,7 +8,7 @@
 - [Scope a request to the whole behaviour](feedback_scope_request_whole.md) — he expects what surrounds it too.
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.
 - [Always publish the build to OneDrive](feedback_always_publish_latest.md) — finishing work is itself the trigger.
-- [Never --prerelease](feedback_never_mark_release.md) — [`gh release create` tags remotely](feedback_gh_release_create.md); push main first, fetch tags.
+- [Never --prerelease](feedback_never_mark_release.md) — [`gh release create` tags remotely](feedback_gh_release_create.md); [push main only inside a release](feedback_push_only_with_release.md), then fetch tags.
 - [Publish zip AND APK to GitHub every release](feedback_publish_portable_zip.md) — both places, every time, CLEAN tree.
 - [Refresh FEATURES.md before every release](feedback_refresh_features_md.md) — re-measure, then package.
 - [Never defer on an external blocker](feedback_never_defer_external.md) — three "blockers" were never real.
@@ -154,9 +154,7 @@
 - [Gates run no unit tests](feedback_filtered_test_run.md) - new commands and pin moves need `cargo test --workspace` unfiltered.
 - [An engine count is not the operator's](feedback_engine_count_not_operators.md) — purge verb said 0 while the rewrite removed the password.
 - [Cleanup `?` overwrites a found FAIL](feedback_cleanup_overwrites_failure.md) — a closed window strands later steps; park after the verdict.
-- [Build on an untagged engine](feedback_build_on_untagged_engine.md) — wire a SHIPPED reply against main now; the tag gates only pin and release.
-- [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates, never mid-series.
-- [Push only with a release](feedback_push_only_with_release.md) — commit locally; main goes to origin only inside an engine-triggered release.
+- [Pin moves are pre-approved](project_pin_moves_approved.md) — own commit, full gates; [wire a SHIPPED reply before the tag](feedback_build_on_untagged_engine.md).
 - [A relayed gate verdict may be another log](feedback_relayed_gate_verdict.md) — "84/84" came from a 3-day-old file; commit on your own RESULT.
 - [Window capture grabs HIS desktop](feedback_window_capture_grabs_desktop.md) — window_to_png raises + screen-grabs; photographed SolidWorks off-screen.
 - [A release build skips the tests](feedback_release_build_skips_tests.md) — clippy --all-targets before gates; a test literal cost a run.

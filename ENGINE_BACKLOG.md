@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **66 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `wanted` — a real gap — **66 of 604** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -181,7 +181,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `blocked` — waiting on something named — **2 of 604** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -199,7 +199,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 604** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -210,7 +210,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `declined` — deliberately no surface — **21 of 604** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -257,7 +257,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **512 of 601** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **515 of 604** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
@@ -820,7 +820,9 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 | **A 3D model with every lamp left out can be drawn dark** — `RenderOptions::empty_artwork` (`EmptyArtwork::Headlight`, `EmptyArtwork::Dark`) | **shipped, at v0.156.0; our request G290.** The viewer leaves a switched-off lamp out of `AssembledModel::lights` and sets `EmptyArtwork::Dark` for a model that carries lamps. Driven by `the_3d_viewer_switches_lights_off_and_on`. |
 | **Illuminance at a point on a 3D model's surface (lux or relative; direct / bounced / per-light; disc average)** — the module `pdfcer_3d::illuminance` (`LightMeter`, `IlluminanceQuery`, `Illuminance`, `MeterSettings`) | **shipped, at v0.156.0; our request G288, O437.** Measure ▸ Light level in the 3D viewer: a point or a circle, the three parts, each lamp's part, the engine's reasons and notes. `MeterSettings` is taken at its default: basis, tint, ray count and unit override have no control. Driven by `the_3d_viewer_reads_the_light_on_a_surface`. |
 | **Measure between two picked surfaces of a 3D model, with an adjustable parallel tolerance** — the module `pdfcer_3d::surface_measure` (`measure_surfaces`, `SurfaceMeasure`, `SurfaceRelation`) | **shipped, at v0.156.0; O442.** The 3D viewer's Measure ▸ Between surfaces, with *Parallel within* and *Always measure a distance*; the fit and any refusal are said off the picture. Driven by `the_3d_viewer_measures_between_surfaces`. |
-| **Over-range colour, glow in nits, bounce rescaled** — the module `pdfcer_3d::render::over_range` (`OverRange`, `toward_white`), `MaterialFinish::emissive_nits`, `SceneMaterial::emissive_nits`, `IlluminanceNote::GlowRelative`, `FrameBounce::scaled` | **shipped, at v0.163.0; our requests G305, G306, G307.** In *True light level* the card takes `over_range` and `emissive_white_lux` from the exposed options, so a lens over full white rolls toward white and a glow stating its nits draws against the white point; under the picture the viewer says the roll, and `GlowRelative` arrives among the engine's notes. `emissive_nits` is read by the engine's `DrawFinish::new`, and the shell holds no finish of its own. A new white point alone rescales the kept bounce (`dialogs::model3d::gpu_bounce`), with an exact build behind it under a lamp cut. `OverRange` has no control: `Auto` is taken. |
+| **3D over-range colour rolls toward white, not to a hue** — the module `pdfcer_3d::render::over_range` (`OverRange`, `toward_white`), `RenderOptions::over_range` | **shipped, at v0.163.0; our request G305.** In *True light level* the card and the processor take `over_range` from the exposed options, where `Auto` reads as toward white, and a line under the picture says colours over full white are drawn toward white. `OverRange` has no control: `Auto` is taken, so the metered picture clips as before. Driven by `the_3d_viewer_draws_at_a_true_light_level` (`over-range=toward-white`). |
+| **A 3D glow of stated luminance (nits)** — `MaterialFinish::emissive_nits`, `SceneMaterial::emissive_nits`, `RenderOptions::emissive_white_lux`, `IlluminanceNote::GlowRelative` | **shipped, at v0.163.0; our request G306.** The card builds its draw data from the exposed options, so the engine's `DrawFinish::new` draws a glow stating its nits against the white point; the shell holds no finish of its own. A glow with none draws relative, and `GlowRelative` arrives among the engine's notes under the picture. |
+| **Re-scale a 3D bounce atlas without re-tracing** — `FrameBounce::scaled` | **shipped, at v0.163.0; our request G307.** A new white point alone rescales the kept bounce (`dialogs::model3d::gpu_bounce`) instead of drawing without bounce while it is traced again; under a lamp cut the rescaled one is drawn while an exact build runs behind it. Trace `gpu-bounce-from=rescaled`, driven by `the_3d_viewer_draws_at_a_true_light_level`. |
 | **3D picture at a fixed exposure in lux** — `Exposure::Fixed { white_lux }`, `3d-render --exposure-lux`, the module `pdfcer_3d::illuminance::exposure` (`Exposure`, `Exposure::Fixed`, `Exposure::lighting`, `ExposedLighting`, `ExposureError`, `ExposedLighting::render`, `ExposedLighting::frame_lights`, `ExposedLighting::frame_bounce`), `RelativeReason` | **shipped, at v0.160.0; our request G302, O446.** The 3D viewer's *True light level* switch, off by default, with *Full white at* in lux, default 500, for a model with lamps of its own. `dialogs::model3d::truelight` takes every frame's lights and options from `Exposure::lighting`: the processor's picture, poster and saved picture through `ExposedLighting::render`, the card's lights, shadows, occlusion and bounce from the same lights and options. A refusal draws the picture metered and says the `RelativeReason`s beside the switch and under the picture; the engine's notes go under the picture. `MeterSettings` is taken at its default. Driven by `the_3d_viewer_draws_at_a_true_light_level`. |
 | **Continue an open path; open a closed path** — `pdfcer_core::edit::node_shape::EditSession::extend_path`, `pdfcer_core::edit::node_shape::EditSession::extend_path_in_form`, `pdfcer_core::edit::node_shape::EditSession::open_subpath`, `pdfcer_core::edit::node_shape::EditSession::open_subpath_in_form`, the module `pdfcer_core::vector::edit::node_shape::extend` (`plan_extend_path`, `plan_open_subpath`), undo kinds `pdfcer_core::edit::CommandKind::ExtendPath` and `pdfcer_core::edit::CommandKind::OpenSubpath` | **shipped, at v0.156.0; O444.** Format ▸ Nodes ▸ Continue path and Open path here, called by `app::actions::vector::pathend`; driven by `a_path_is_continued_from_its_end` and `a_closed_path_is_opened_at_a_node`. The `plan_*` pair is not called: the shell holds no `ContentStream`, so a middle or closed node is refused when the run finishes (G295). Its `VectorEditError` refusals are said on the status line. |
 | **ce dimensions arriving as plain lines** — `AssembleReport::ce_dimensions_as_lines`, `InsertOutcome::ce_dimensions_as_lines`, `MergeOutcome::ce_dimensions_as_lines` | **shipped; O444.** Every page-copy receipt is built through `CeDimCopy`, which says how many ce dimensions arrived as plain lines and why. Insert driven by `inserted_pages_say_what_came_of_their_ce_dimensions`. |

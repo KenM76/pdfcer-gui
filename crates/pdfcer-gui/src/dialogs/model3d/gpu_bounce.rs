@@ -219,7 +219,7 @@ mod tests {
             &ModelRenderOptions::default(),
             exposure,
             0,
-            egui::Color32::WHITE,
+            egui::Color32::WHITE, // NOT A THEME COLOUR: test fixture accent, never drawn
         )
     }
 
