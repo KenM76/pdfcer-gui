@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: b7bef2dec471cfc95acb5d2e62dac72352ebd533
+# baseline: ac3e569055a5ebb856c7210b31f9d2684272c97e
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12493
+# items: 12582
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -171,6 +171,10 @@ exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::EmptyText
 exempt pdfcer-core variant pdfcer_core::vector::edit::VectorEditError::TransformInsideTextObject -- a transform asked to act inside a text object. The shell transforms whole objects only; this reaches the operator through `EditRefusal`'s generic arm if the engine ever answers it, and it names no act the operator can take differently.
 exempt pdfcer-emf field pdfcer_emf::vector_census::EmfNotFlat::soft_mask_image -- a cause in the EMF writer's not-flat census, which this shell never reads; export and print word the outcome through `EmfCounts` and the engine's own sentences.
 exempt pdfcer-print const pdfcer_print::imposition::POSTER_MARK_GAP_PT -- the gap the engine leaves between a poster tile's image and its cut marks. The shell draws the marks from the tile's own `marks` and `label_rect`, which already include it; restating the gap here would be a second copy of the geometry.
+exempt pdfcer-print method pdfcer_print::finishing::print_schema::Bin::feature -- the Print Schema feature a finishing choice is asked under. The engine picks it, writes it into the delta ticket and refuses a driver that drops it; the print dialog offers the choice and shows the refusal, and has no use for the driver's feature name.
+exempt pdfcer-print method pdfcer_print::finishing::print_schema::Capabilities::lists -- the Print Schema feature a finishing choice is asked under. The engine picks it, writes it into the delta ticket and refuses a driver that drops it; the print dialog offers the choice and shows the refusal, and has no use for the driver's feature name.
+exempt pdfcer-print method pdfcer_print::finishing::print_schema::Capabilities::punch_feature -- the Print Schema feature a finishing choice is asked under. The engine picks it, writes it into the delta ticket and refuses a driver that drops it; the print dialog offers the choice and shows the refusal, and has no use for the driver's feature name.
+exempt pdfcer-print method pdfcer_print::finishing::print_schema::Capabilities::staple_feature -- the Print Schema feature a finishing choice is asked under. The engine picks it, writes it into the delta ticket and refuses a driver that drops it; the print dialog offers the choice and shows the refusal, and has no use for the driver's feature name.
 exempt pdfcer-render const pdfcer_render::page_budget::BLENDED_PAINT_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render const pdfcer_render::page_budget::COVERAGE_PER_CANVAS -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
 exempt pdfcer-render const pdfcer_render::page_budget::MESH_PIXEL_WEIGHT -- the engine's per-page drawing-work budget weights; nothing here chooses them, and a page cut by the budget arrives as the engine's own colour note, shown verbatim.
@@ -209,6 +213,14 @@ exempt pdfcer-render variant pdfcer_render::mesh::Shade::Spot -- a mesh vertex c
 
 pdfcer-3d const pdfcer_3d::illuminance::MAX_ILLUMINANCE_RAYS
 pdfcer-3d const pdfcer_3d::illuminance::MAX_ILLUMINANCE_SAMPLES
+pdfcer-3d const pdfcer_3d::illuminance::map::MAP_VERTEX_FLOATS
+pdfcer-3d const pdfcer_3d::illuminance::map::MAX_MAP_POINTS
+pdfcer-3d const pdfcer_3d::illuminance::map::MAX_MAP_RAYS
+pdfcer-3d const pdfcer_3d::light_map::MAX_LUX_BANDS
+pdfcer-3d const pdfcer_3d::light_map::levels::CANADA_OHS
+pdfcer-3d const pdfcer_3d::light_map::levels::CANADA_OHS_SOURCE
+pdfcer-3d const pdfcer_3d::light_map::shader::GLSL_ES_300_LIGHT_MAP_FRAGMENT
+pdfcer-3d const pdfcer_3d::light_map::shader::GLSL_ES_300_LIGHT_MAP_VERTEX
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_DIRECTION
 pdfcer-3d const pdfcer_3d::model::DEFAULT_VIEW_UP
 pdfcer-3d const pdfcer_3d::render::MAX_RENDER_PIXELS
@@ -229,6 +241,7 @@ pdfcer-3d enum pdfcer_3d::gltf::GltfOcclusion
 pdfcer-3d enum pdfcer_3d::gltf::GltfUpAxis
 pdfcer-3d enum pdfcer_3d::illuminance::exposure::Exposure
 pdfcer-3d enum pdfcer_3d::illuminance::exposure::ExposureError
+pdfcer-3d enum pdfcer_3d::illuminance::map::MapSide
 pdfcer-3d enum pdfcer_3d::illuminance::types::GlowLight
 pdfcer-3d enum pdfcer_3d::illuminance::types::IlluminanceError
 pdfcer-3d enum pdfcer_3d::illuminance::types::IlluminanceNote
@@ -237,9 +250,14 @@ pdfcer-3d enum pdfcer_3d::illuminance::types::LightTint
 pdfcer-3d enum pdfcer_3d::illuminance::types::MeterBasis
 pdfcer-3d enum pdfcer_3d::illuminance::types::RelativeReason
 pdfcer-3d enum pdfcer_3d::length_unit::LengthUnit
+pdfcer-3d enum pdfcer_3d::light_map::BandBlend
+pdfcer-3d enum pdfcer_3d::light_map::LuxBandsError
+pdfcer-3d enum pdfcer_3d::light_map::levels::LevelLimit
+pdfcer-3d enum pdfcer_3d::light_map::levels::LuxSchedule
 pdfcer-3d enum pdfcer_3d::model::AssembleError
 pdfcer-3d enum pdfcer_3d::model::MeshFit
 pdfcer-3d enum pdfcer_3d::model::StoredVisibility
+pdfcer-3d enum pdfcer_3d::render::over_range::OverRange
 pdfcer-3d enum pdfcer_3d::shadow::LightSense
 pdfcer-3d enum pdfcer_3d::shadow::ShadowLight
 pdfcer-3d enum pdfcer_3d::surface_measure::distance::MeasureEntity
@@ -253,6 +271,7 @@ pdfcer-3d enum pdfcer_3d::texture::TextureWrap
 pdfcer-3d enum pdfcer_3d::write::PrcWriteError
 pdfcer-3d field pdfcer_3d::finish::MaterialFinish::ambient
 pdfcer-3d field pdfcer_3d::finish::MaterialFinish::emissive
+pdfcer-3d field pdfcer_3d::finish::MaterialFinish::emissive_nits
 pdfcer-3d field pdfcer_3d::finish::MaterialFinish::shininess
 pdfcer-3d field pdfcer_3d::finish::MaterialFinish::specular
 pdfcer-3d field pdfcer_3d::gltf::GltfImport::inferred
@@ -267,6 +286,15 @@ pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::lights
 pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::notes
 pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::options
 pdfcer-3d field pdfcer_3d::illuminance::exposure::ExposedLighting::white_lux
+pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::meshes
+pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::notes
+pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::reasons
+pdfcer-3d field pdfcer_3d::illuminance::map::IlluminanceMap::unit
+pdfcer-3d field pdfcer_3d::illuminance::map::MapPatch::corners
+pdfcer-3d field pdfcer_3d::illuminance::map::MapPatch::divisions
+pdfcer-3d field pdfcer_3d::illuminance::map::MapPatch::figures
+pdfcer-3d field pdfcer_3d::illuminance::map::MapProgress::done
+pdfcer-3d field pdfcer_3d::illuminance::map::MapProgress::total
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::ambient
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::bounced
 pdfcer-3d field pdfcer_3d::illuminance::types::Illuminance::direct
@@ -289,6 +317,23 @@ pdfcer-3d field pdfcer_3d::illuminance::types::MeterSettings::gather_rays
 pdfcer-3d field pdfcer_3d::illuminance::types::MeterSettings::glow
 pdfcer-3d field pdfcer_3d::illuminance::types::MeterSettings::mm_per_unit
 pdfcer-3d field pdfcer_3d::illuminance::types::MeterSettings::tint
+pdfcer-3d field pdfcer_3d::light_map::BandUniforms::colour
+pdfcer-3d field pdfcer_3d::light_map::BandUniforms::count
+pdfcer-3d field pdfcer_3d::light_map::BandUniforms::from
+pdfcer-3d field pdfcer_3d::light_map::BandUniforms::graded
+pdfcer-3d field pdfcer_3d::light_map::LuxBand::colour
+pdfcer-3d field pdfcer_3d::light_map::LuxBand::from
+pdfcer-3d field pdfcer_3d::light_map::levels::LevelSource::citation
+pdfcer-3d field pdfcer_3d::light_map::levels::LevelSource::current_to
+pdfcer-3d field pdfcer_3d::light_map::levels::LevelSource::reproduced
+pdfcer-3d field pdfcer_3d::light_map::levels::LevelSource::scope
+pdfcer-3d field pdfcer_3d::light_map::levels::LevelSource::title
+pdfcer-3d field pdfcer_3d::light_map::levels::LevelSource::url
+pdfcer-3d field pdfcer_3d::light_map::levels::LuxLevel::area
+pdfcer-3d field pdfcer_3d::light_map::levels::LuxLevel::item
+pdfcer-3d field pdfcer_3d::light_map::levels::LuxLevel::limit
+pdfcer-3d field pdfcer_3d::light_map::levels::LuxLevel::lux
+pdfcer-3d field pdfcer_3d::light_map::levels::LuxLevel::schedule
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::entity_overrides
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::mesh_fit
 pdfcer-3d field pdfcer_3d::model::AssembleOptions::picture_files
@@ -426,6 +471,7 @@ pdfcer-3d field pdfcer_3d::write::PrcWriteReport::prc
 pdfcer-3d field pdfcer_3d::write::PrcWriteReport::textured
 pdfcer-3d field pdfcer_3d::write::PrcWriteReport::triangles
 pdfcer-3d field pdfcer_3d::write::SceneMaterial::emissive
+pdfcer-3d field pdfcer_3d::write::SceneMaterial::emissive_nits
 pdfcer-3d field pdfcer_3d::write::SceneMaterial::name
 pdfcer-3d field pdfcer_3d::write::SceneMaterial::rgba
 pdfcer-3d field pdfcer_3d::write::SceneMaterial::texture
@@ -444,12 +490,14 @@ pdfcer-3d field pdfcer_3d::write::SceneTexture::alpha
 pdfcer-3d field pdfcer_3d::write::SceneTexture::image
 pdfcer-3d field pdfcer_3d::write::SceneTexture::wrap
 pdfcer-3d fn pdfcer_3d::gltf::read_gltf
+pdfcer-3d fn pdfcer_3d::light_map::draw::render_light_map
 pdfcer-3d fn pdfcer_3d::model::assemble
 pdfcer-3d fn pdfcer_3d::model::assemble_with
 pdfcer-3d fn pdfcer_3d::model::assemble_with_options
 pdfcer-3d fn pdfcer_3d::model::default_view_camera
 pdfcer-3d fn pdfcer_3d::model::render_default_view
 pdfcer-3d fn pdfcer_3d::model::render_model
+pdfcer-3d fn pdfcer_3d::render::over_range::toward_white
 pdfcer-3d fn pdfcer_3d::render::render
 pdfcer-3d fn pdfcer_3d::render::render_coloured
 pdfcer-3d fn pdfcer_3d::surface_measure::distance::entity_distance
@@ -474,11 +522,28 @@ pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::frame_bounce
 pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::frame_lights
 pdfcer-3d method pdfcer_3d::illuminance::exposure::ExposedLighting::render
 pdfcer-3d method pdfcer_3d::illuminance::exposure::Exposure::lighting
+pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::patch
+pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::range
+pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::triangles
+pdfcer-3d method pdfcer_3d::illuminance::map::IlluminanceMap::vertex_buffer
+pdfcer-3d method pdfcer_3d::illuminance::map::LightMeter::map
+pdfcer-3d method pdfcer_3d::illuminance::map::MapPatch::index
+pdfcer-3d method pdfcer_3d::illuminance::map::MapPatch::triangles
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::from_pick
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::new
 pdfcer-3d method pdfcer_3d::illuminance::types::IlluminanceQuery::over_disc
 pdfcer-3d method pdfcer_3d::length_unit::LengthUnit::mm_per_unit
 pdfcer-3d method pdfcer_3d::length_unit::LengthUnit::symbol
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::bands
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::blend
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::colour
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::for_map
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::new
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::spread
+pdfcer-3d method pdfcer_3d::light_map::LuxBands::uniforms
+pdfcer-3d method pdfcer_3d::light_map::levels::LuxBands::canada_ohs_steps
+pdfcer-3d method pdfcer_3d::render::over_range::OverRange::as_str
+pdfcer-3d method pdfcer_3d::render::over_range::OverRange::rolls
 pdfcer-3d method pdfcer_3d::surface_measure::distance::Span::along
 pdfcer-3d method pdfcer_3d::surface_measure::distance::Span::delta
 pdfcer-3d method pdfcer_3d::surface_measure::distance::Span::projected
@@ -495,11 +560,19 @@ pdfcer-3d struct pdfcer_3d::gltf::GltfImport
 pdfcer-3d struct pdfcer_3d::gltf::GltfOptions
 pdfcer-3d struct pdfcer_3d::illuminance::LightMeter
 pdfcer-3d struct pdfcer_3d::illuminance::exposure::ExposedLighting
+pdfcer-3d struct pdfcer_3d::illuminance::map::IlluminanceMap
+pdfcer-3d struct pdfcer_3d::illuminance::map::MapPatch
+pdfcer-3d struct pdfcer_3d::illuminance::map::MapProgress
 pdfcer-3d struct pdfcer_3d::illuminance::types::Illuminance
 pdfcer-3d struct pdfcer_3d::illuminance::types::IlluminanceQuery
 pdfcer-3d struct pdfcer_3d::illuminance::types::LightShare
 pdfcer-3d struct pdfcer_3d::illuminance::types::MeterSettings
 pdfcer-3d struct pdfcer_3d::length_unit::UnknownLengthUnit
+pdfcer-3d struct pdfcer_3d::light_map::BandUniforms
+pdfcer-3d struct pdfcer_3d::light_map::LuxBand
+pdfcer-3d struct pdfcer_3d::light_map::LuxBands
+pdfcer-3d struct pdfcer_3d::light_map::levels::LevelSource
+pdfcer-3d struct pdfcer_3d::light_map::levels::LuxLevel
 pdfcer-3d struct pdfcer_3d::model::AssembleOptions
 pdfcer-3d struct pdfcer_3d::model::AssembledModel
 pdfcer-3d struct pdfcer_3d::render::Image
@@ -553,9 +626,12 @@ pdfcer-3d variant pdfcer_3d::illuminance::exposure::Exposure::Fixed
 pdfcer-3d variant pdfcer_3d::illuminance::exposure::Exposure::Metered
 pdfcer-3d variant pdfcer_3d::illuminance::exposure::ExposureError::Relative
 pdfcer-3d variant pdfcer_3d::illuminance::exposure::ExposureError::WhiteLux
+pdfcer-3d variant pdfcer_3d::illuminance::map::MapSide::AlongNormals
+pdfcer-3d variant pdfcer_3d::illuminance::map::MapSide::FacingCamera
 pdfcer-3d variant pdfcer_3d::illuminance::types::GlowLight::Counted
 pdfcer-3d variant pdfcer_3d::illuminance::types::GlowLight::LeftOut
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceError::BadQuery
+pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceError::Cancelled
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceError::OffSurface
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceError::Render
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceError::TooManySamples
@@ -565,7 +641,9 @@ pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::BounceEstimate
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::BounceStrength
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::DirectOnly
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::GlowLeftOut
+pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::GlowLuminance
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::GlowNotBounced
+pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::GlowRelative
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::PictureScaleUnused
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::TintApplied
 pdfcer-3d variant pdfcer_3d::illuminance::types::IlluminanceNote::UnitAssumed
@@ -590,6 +668,17 @@ pdfcer-3d variant pdfcer_3d::length_unit::LengthUnit::Inch
 pdfcer-3d variant pdfcer_3d::length_unit::LengthUnit::Metre
 pdfcer-3d variant pdfcer_3d::length_unit::LengthUnit::Micrometre
 pdfcer-3d variant pdfcer_3d::length_unit::LengthUnit::Millimetre
+pdfcer-3d variant pdfcer_3d::light_map::BandBlend::Graded
+pdfcer-3d variant pdfcer_3d::light_map::BandBlend::Stepped
+pdfcer-3d variant pdfcer_3d::light_map::LuxBandsError::Empty
+pdfcer-3d variant pdfcer_3d::light_map::LuxBandsError::NotAscending
+pdfcer-3d variant pdfcer_3d::light_map::LuxBandsError::TooMany
+pdfcer-3d variant pdfcer_3d::light_map::levels::LevelLimit::Maximum
+pdfcer-3d variant pdfcer_3d::light_map::levels::LevelLimit::MinimumAverage
+pdfcer-3d variant pdfcer_3d::light_map::levels::LuxSchedule::General
+pdfcer-3d variant pdfcer_3d::light_map::levels::LuxSchedule::Industrial
+pdfcer-3d variant pdfcer_3d::light_map::levels::LuxSchedule::Office
+pdfcer-3d variant pdfcer_3d::light_map::levels::LuxSchedule::ScreenWork
 pdfcer-3d variant pdfcer_3d::model::AssembleError::CompressedOnly
 pdfcer-3d variant pdfcer_3d::model::AssembleError::NoTriangles
 pdfcer-3d variant pdfcer_3d::model::AssembleError::NotPrc
@@ -600,6 +689,9 @@ pdfcer-3d variant pdfcer_3d::model::MeshFit::Partial
 pdfcer-3d variant pdfcer_3d::model::MeshFit::Unique
 pdfcer-3d variant pdfcer_3d::model::StoredVisibility::DrawAll
 pdfcer-3d variant pdfcer_3d::model::StoredVisibility::Honour
+pdfcer-3d variant pdfcer_3d::render::over_range::OverRange::Auto
+pdfcer-3d variant pdfcer_3d::render::over_range::OverRange::Clip
+pdfcer-3d variant pdfcer_3d::render::over_range::OverRange::TowardWhite
 pdfcer-3d variant pdfcer_3d::shadow::LightSense::Emitted
 pdfcer-3d variant pdfcer_3d::shadow::LightSense::TowardsLight
 pdfcer-3d variant pdfcer_3d::shadow::ShadowLight::AimedSun
@@ -10976,6 +11068,7 @@ pdfcer-print fn pdfcer_print::finishing::driver::printer_finishing
 pdfcer-print fn pdfcer_print::finishing::finishing_name
 pdfcer-print fn pdfcer_print::finishing::ipp_finishings
 pdfcer-print fn pdfcer_print::finishing::print_schema::delta_ticket
+pdfcer-print fn pdfcer_print::finishing::print_schema::dropped
 pdfcer-print fn pdfcer_print::finishing::print_schema::parse_capabilities
 pdfcer-print fn pdfcer_print::icc_output::apply_printer_colour
 pdfcer-print fn pdfcer_print::icc_profiles::find_installed

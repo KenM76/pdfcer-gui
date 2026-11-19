@@ -4,7 +4,7 @@ This is the per-surface capability register for the pdfcer-gui shell: what an
 operator can reach in a real build, and what is planned, in order. It is
 authoritative for status.
 
-**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.163.0, a git dependency on the local engine repository, pinned at **`b7bef2de`**, the engine's v0.163.0 tag (new since v0.162.0: in a picture drawn in lux a colour brighter than full white rolls toward white on both paths, a glTF glow stating its luminance draws against the white point, and a bounce rescales for a new white point without tracing again).
+**Updated:** this build links against the `pdfcer` engine, `pdfcer-core` v0.164.0, a git dependency on the local engine repository, pinned at **`ac3e5690`**, the engine's v0.164.0 tag (new since v0.163.0: a light meter counts a glow stating its luminance in lux, the light over a whole model is measured and drawn in the Canada OHS bands or a relative map's own range, and finishing reads the document- and page-wide Print Schema features).
 
 **What is new in this build** (engine v0.158.0). **A dynamic form opens as its own pages:** Form preview's *Use these pages* replaces the "Please wait" stand-in page with the pages the form lays out, as one undo step, saying on the status line which fonts were drawn in a standard face; the values arrive as drawing, not fillable fields. **The 3D light meter counts glowing parts,** with a switch to leave them out. **Continue path and Open path here refuse a node that is not an end at once,** with the reason, instead of after the run is clicked out.
 
