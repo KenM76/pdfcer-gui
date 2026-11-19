@@ -42,6 +42,7 @@ mod gpu_paint;
 mod gpu_uniforms;
 mod immersive;
 mod lensmenu;
+mod lightmap;
 mod lightmeter;
 mod lights;
 mod looks;
@@ -150,6 +151,8 @@ struct Rendered {
     lens: Lens,
     /// What the card may draw.
     card: card::CardParts,
+    /// [`lightmap::LightMap::stamp`].
+    map: u32,
 }
 
 /// The 3D viewer's state.
@@ -215,6 +218,7 @@ pub(crate) struct ModelView {
     measure: measure::Measure,
     /// The Measure tab's light meter.
     meter: lightmeter::Meter,
+    light_map: lightmap::LightMap,
     /// Which parts are shown and which is highlighted.
     parts: parts::Visibility,
     /// Which of the model's lamps and glowing parts are switched off.
@@ -330,6 +334,7 @@ impl ModelView {
             views: None,
             measure: measure::Measure::default(),
             meter: lightmeter::Meter::default(),
+            light_map: lightmap::LightMap::default(),
             parts,
             lights,
             view_lighting: look.view_lighting,
@@ -491,7 +496,9 @@ impl ModelView {
         self.nav.hud.clear();
 
         let background = ui.visuals().extreme_bg_color;
-        let gpu = self.gpu.live();
+        self.light_map_frame(ui.ctx(), f64::from(rect_aspect(area)));
+        // A light map is drawn on the processor.
+        let gpu = self.gpu.live() && self.light_map.stamp() == 0;
         if !gpu && self.texture.is_none() && self.failed.is_none() {
             // The GPU stopped before the CPU drew anything.
             self.rendered = None;
@@ -520,6 +527,7 @@ impl ModelView {
             look: self.look(),
             lens: self.lens,
             card: self.gpu.card,
+            map: self.light_map.stamp(),
         };
         if self.gpu.bounce_arrived(ui.ctx()) {
             self.rendered = None;
@@ -552,6 +560,7 @@ impl ModelView {
 
     /// What the picture leaves out or inferred, said under it.
     fn notes(&mut self, ui: &mut Ui) {
+        self.light_map_legend(ui);
         self.measure_readout(ui);
         self.nav_note(ui);
         ui.small(t::view_census(
@@ -705,4 +714,9 @@ fn framed(model: &pdfcer_3d::AssembledModel) -> Bounds {
         min: [0.0; 3],
         max: [0.0; 3],
     })
+}
+
+/// `area`'s width over its height, never dividing by zero.
+fn rect_aspect(area: egui::Vec2) -> f32 {
+    area.x.max(1.0) / area.y.max(1.0)
 }

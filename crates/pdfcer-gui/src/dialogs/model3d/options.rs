@@ -218,6 +218,7 @@ impl ModelView {
     /// full screen; Fit only where the glyph `row` is not shown.
     fn view_tab(&mut self, ui: &mut Ui, row: bool) {
         self.draw_as_control(ui);
+        self.light_map_control(ui);
         ui.horizontal_wrapped(|ui| {
             self.file_view_control(ui);
             self.saved_views_control(ui);

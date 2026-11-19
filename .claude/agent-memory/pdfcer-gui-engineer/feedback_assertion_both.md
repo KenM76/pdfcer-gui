@@ -150,3 +150,7 @@ The whole-stroke ink move was first put on Shift+drag. A (40,20) drag moved the 
 **Why:** drive functions in `tools/ui-verify` use `Ok(None)` for pass, so any early return through that type is silently green. Falsifying the arm with a build missing the feature is what would have shown it; the SKIP before it had looked like the problem.
 
 **How to apply:** give a reach step its own layer, `Option<Option<String>>` or a dedicated enum, and fail or skip on "not reached". See [[feedback_check_cannot_fail]].
+
+## The variant where the feature moves the picture to another renderer
+
+`the_3d_viewer_colours_the_model_by_light_level` first asserted "the picture's hash changed when the map arrived". A plant that measured the map and never drew it still passed, because switching the map on also moves the picture from the graphics card to the processor, and the processor's lit picture hashes differently. **How to apply:** when a feature also changes *which renderer* draws, a changed picture is a side effect both branches share. Trace the branch the frame took (`from=map|lit`) and assert that, then plant the old branch back to watch it go red.

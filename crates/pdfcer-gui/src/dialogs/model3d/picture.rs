@@ -29,12 +29,13 @@ impl ModelView {
         };
         let camera = self.view_camera(aspect).map_err(|e| e.to_string())?;
         let exposure = self.look().exposure;
-        let image = self
-            .parts
-            .painted(&mut self.model.drawn, None, |model| {
+        let image = match self.light_map_image(&camera, &options) {
+            Some(mapped) => mapped,
+            None => self.parts.painted(&mut self.model.drawn, None, |model| {
                 render_lit(model, &camera, &options, exposure)
-            })
-            .map_err(|e| e.to_string())?;
+            }),
+        }
+        .map_err(|e| e.to_string())?;
         crate::diag::trace(|| {
             // ui-text-exempt: diagnostic trace, never displayed
             format!(
@@ -66,20 +67,29 @@ impl ModelView {
         let started = std::time::Instant::now();
         let head = self.trace_head(&wanted, camera.as_ref(), &options);
         let accent = Some(wanted.accent.to_array());
+        let exposure = wanted.look.exposure;
+        let mapped = camera
+            .as_ref()
+            .ok()
+            .and_then(|c| self.light_map_image(c, &options));
         let parts = &self.parts;
         let model = &mut self.model.drawn;
-        let exposure = wanted.look.exposure;
-        let drawn = camera.and_then(|camera| {
-            parts.painted(model, accent, |model| {
-                render_lit(model, &camera, &options, exposure)
-            })
-        });
+        // ui-text-exempt: trace value, never displayed
+        let from = if mapped.is_some() { "map" } else { "lit" };
+        let drawn = match mapped {
+            Some(mapped) => mapped,
+            None => camera.and_then(|camera| {
+                parts.painted(model, accent, |model| {
+                    render_lit(model, &camera, &options, exposure)
+                })
+            }),
+        };
         let ms = started.elapsed().as_secs_f64() * 1000.0;
         self.rendered = Some(wanted);
         match drawn {
             Ok(image) => {
                 let fields = pixel_fields(&image.rgba, options.background);
-                crate::diag::trace(|| format!("{head} ms={ms:.1}{fields}")); // ui-text-exempt: diagnostic trace, never displayed
+                crate::diag::trace(|| format!("{head} ms={ms:.1} from={from}{fields}")); // ui-text-exempt: diagnostic trace, never displayed
                 self.show_image(ctx, [width, height], &image.rgba);
             }
             Err(error) => {
@@ -131,14 +141,15 @@ impl ModelView {
         let eye = camera_eye(wanted.walk.as_ref(), camera.ok());
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} {aimed}{pivot}{eye}{lit}",
+            "model-view-rendered w={width} h={height} yaw={:.3} pitch={:.3} zoom={:.3} pan={:.4},{:.4} perspective={} framed={} map={} {aimed}{pivot}{eye}{lit}",
             self.orbit.yaw,
             self.orbit.pitch,
             self.orbit.zoom,
             self.orbit.pan[0],
             self.orbit.pan[1],
             self.orbit.perspective,
-            self.orbit.framed
+            self.orbit.framed,
+            wanted.map
         )
     }
 

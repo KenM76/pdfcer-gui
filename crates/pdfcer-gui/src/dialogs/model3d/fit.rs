@@ -85,6 +85,7 @@ impl ModelView {
         match refit(&self.model, FITS[i]) {
             Ok(model) => {
                 self.model = model;
+                self.light_map.forget();
                 self.fit_refused = None;
                 if let Some(bounds) = pdfcer_3d::Bounds::of_coloured(
                     &self.model.drawn.meshes,

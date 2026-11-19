@@ -392,17 +392,23 @@ impl ModelView {
             u8::from(options.ambient_occlusion),
             super::picture::aim_of(&camera)
         );
+        let mapped = self.light_map.drawn();
         let (send, receive) = std::sync::mpsc::channel();
         std::thread::Builder::new()
             .name("model-picture".to_owned()) // ui-text-exempt: thread name, never displayed
             .spawn(move || {
-                let drawn = super::truelight::render_lit(&model, &camera, &options, exposure)
-                    .map(|image| Drawn {
-                        width: image.width,
-                        height: image.height,
-                        rgba: image.rgba,
-                    })
-                    .map_err(|e| e.to_string());
+                let drawn = match mapped {
+                    Some((map, bands)) => {
+                        pdfcer_3d::render_light_map(&map, &bands, &camera, &options)
+                    }
+                    None => super::truelight::render_lit(&model, &camera, &options, exposure),
+                }
+                .map(|image| Drawn {
+                    width: image.width,
+                    height: image.height,
+                    rgba: image.rgba,
+                })
+                .map_err(|e| e.to_string());
                 // The viewer closed: nothing waits for the picture.
                 let _ = send.send(drawn);
             })

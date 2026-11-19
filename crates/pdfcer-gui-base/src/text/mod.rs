@@ -183,6 +183,8 @@ pub mod model3dlens;
 pub mod model3dlight;
 /// The 3D viewer's render mode, shadow and highlight choices.
 pub mod model3dlook;
+/// The 3D viewer's light-level colouring and its legend.
+pub mod model3dmap;
 /// The 3D viewer's measure tool.
 pub mod model3dmeasure;
 pub mod model3dshot;

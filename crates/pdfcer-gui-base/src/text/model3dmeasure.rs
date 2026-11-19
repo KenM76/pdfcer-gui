@@ -152,7 +152,7 @@ pub const LIGHT_RELATIVE_WHY: &str = "This is not lux. It is in the picture's ow
 /// The switch that counts the light of the model's glowing parts.
 pub const LIGHT_GLOW: &str = "Count glowing parts";
 /// Its tip.
-pub const LIGHT_GLOW_TIP: &str = "On, a glowing part lights the surfaces it faces, shadows counted, as a lamp would. A glow has no physical strength, so the reading is then in the picture's shading units, not lux. Off, only the model's lamps put light on a surface.";
+pub const LIGHT_GLOW_TIP: &str = "On, a glowing part lights the surfaces it faces, shadows counted, as a lamp would. A glow that states its brightness reads in lux; one that does not makes the reading relative, not lux. Off, only the model's lamps put light on a surface.";
 
 /// A reading's headline: the amount and its unit.
 #[must_use]
