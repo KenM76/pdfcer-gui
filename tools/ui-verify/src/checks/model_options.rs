@@ -11,6 +11,14 @@
 //! them back (`models-row views=1 activation=PageOpen`): a choice the window
 //! shows but the action drops is the defect.
 //!
+//! *Fill light.* Places a one-quad glTF lit by one `KHR_lights_punctual`
+//! lamp twice, once with the window's defaults and once with *Add a fill
+//! light* cleared. The engine's converted scene is the oracle, not the
+//! switch's echo: with the fill the `model-insert-gltf` line must read
+//! `ambient=Fill lights=2` and the `add-3d` disclosures (the status row's
+//! sentences) must say `plus an ambient light`; cleared it must read
+//! `ambient=None lights=1` and say `with no ambient light, as asked`.
+//!
 //! *Parts.* Opens `named-tree.prc`, whose tree stores Pin hidden and Nut
 //! suppressed, in the viewer. Every part in it is the same square in the same
 //! place, so a part's presence is read from an otherwise empty picture:
@@ -21,7 +29,9 @@
 
 use crate::checks::driving::declared_in;
 use crate::checks::model_inferences::open_viewer;
-use crate::checks::model_view_window::{MODEL, launch_with_model_file, press_insert_with, ui_rect};
+use crate::checks::model_view_window::{
+    MODEL, launch_with_model_env, launch_with_model_file, press_insert_with, ui_rect,
+};
 use crate::checks::{Check, CheckContext};
 use crate::coords::WindowPoint;
 use crate::error::Result;
@@ -147,6 +157,93 @@ fn listed(session: &Session, report: &mut CheckReport) -> Result<Option<String>>
         )));
     }
     Ok(None)
+}
+
+/// The fill-light switch (`dialogs::insert_model::REGION_FILL_LIGHT`).
+const FILL_LIGHT: &str = "insert-model.gltf.fill-light";
+/// One unit quad lit by one point lamp a unit above its centre.
+const LIT_QUAD: &str = r#"{"asset":{"version":"2.0"},"extensionsUsed":["KHR_lights_punctual"],"extensions":{"KHR_lights_punctual":{"lights":[{"type":"point","intensity":50,"color":[1,1,1]}]}},"buffers":[{"byteLength":60,"uri":"data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAgD8AAAAAAAAAAAAAgD8AAAAAAAABAAIAAAACAAMA"}],"bufferViews":[{"buffer":0,"byteLength":48},{"buffer":0,"byteOffset":48,"byteLength":12}],"accessors":[{"bufferView":0,"componentType":5126,"count":4,"type":"VEC3","min":[0,0,0],"max":[1,1,0]},{"bufferView":1,"componentType":5123,"count":6,"type":"SCALAR"}],"materials":[{"name":"orange","pbrMetallicRoughness":{"baseColorFactor":[1,0.4,0,1]}}],"meshes":[{"primitives":[{"attributes":{"POSITION":0},"indices":1,"material":0}]}],"nodes":[{"name":"plate","mesh":0},{"name":"lamp","translation":[0.5,0.5,1],"extensions":{"KHR_lights_punctual":{"light":0}}}],"scenes":[{"nodes":[0,1]}],"scene":0}"#;
+
+/// See the module documentation.
+pub struct TheFillLightSwitchReachesTheConversion;
+
+impl Check for TheFillLightSwitchReachesTheConversion {
+    fn name(&self) -> &'static str {
+        "insert_3d_model_fill_light_reaches_the_conversion"
+    }
+
+    fn defect(&self) -> &'static str {
+        "clearing Insert 3D model's fill-light switch still adds an ambient light to a glTF \
+         model, or the status row does not say the model is lit by its own lamps alone"
+    }
+
+    fn run(&self, ctx: &CheckContext) -> CheckReport {
+        let mut report = CheckReport::new(self.name(), self.defect());
+        let driven = match fill_light(ctx, &mut report, true) {
+            Ok(None) => fill_light(ctx, &mut report, false),
+            other => other,
+        };
+        match driven {
+            Ok(Some(failure)) => report.fail(failure),
+            Ok(None) => report.pass(),
+            Err(why) => report.from_error(&why),
+        }
+    }
+}
+
+/// Place [`LIT_QUAD`] with the fill light `on` (the default) or cleared,
+/// and judge the conversion and its disclosure.
+fn fill_light(ctx: &CheckContext, report: &mut CheckReport, on: bool) -> Result<Option<String>> {
+    let stem = if on { "fill-on" } else { "fill-off" }; // ui-text-exempt: file stems
+    let model = ctx.out(&format!("{stem}.gltf"));
+    std::fs::write(&model, LIT_QUAD)
+        .map_err(|e| crate::error::Error::new(format!("writing the model: {e}")))?;
+    let (session, pointer) =
+        launch_with_model_env(ctx, report, stem, &model.to_string_lossy(), &[])?;
+    pointer.gone(&session)?;
+    session.settle(10);
+    let choices: &[&str] = if on { &[] } else { &[FILL_LIGHT] };
+    if !press_insert_with(ctx, &session, &pointer, choices)? {
+        return Ok(Some("no 3D model button on the Edit tab.".to_owned()));
+    }
+    session.settle(30);
+    let trace = session.trace()?;
+    let last = |event: &str| trace.events(event).last().map(|l| l.raw.clone());
+    let (placed, added) = (last("insert-model-placed"), last("add-3d"));
+    report.note(format!("{stem} placed: {placed:?}"));
+    report.note(format!("{stem} converted: {:?}", last("model-insert-gltf")));
+    report.note(format!("{stem} add-3d: {added:?}"));
+    let Some(placed) = placed else {
+        return Ok(Some(format!(
+            "{stem}: no `insert-model-placed`: Place was not reached."
+        )));
+    };
+    if !placed.contains(&format!(" fill_light={on}")) || !placed.contains(" gltf=true") {
+        return Ok(Some(format!(
+            "★★★ {stem}: the window placed `{placed}`; a glTF with fill_light={on} was asked for."
+        )));
+    }
+    let (ambient, lights, said) = if on {
+        ("Fill", "2", "plus an ambient light")
+    } else {
+        ("None", "1", "with no ambient light, as asked")
+    };
+    let Some(gltf) = trace.events("model-insert-gltf").last() else {
+        return Ok(Some(format!("{stem}: the glTF was not converted.")));
+    };
+    if gltf.get("ambient") != Some(ambient) || gltf.get("lights") != Some(lights) {
+        return Ok(Some(format!(
+            "★★★ {stem}: the conversion read `{}`; ambient={ambient} lights={lights} is the \
+             scene the switch asks for.",
+            gltf.raw
+        )));
+    }
+    match added {
+        Some(line) if line.contains(said) => Ok(None),
+        other => Ok(Some(format!(
+            "★★★ {stem}: the status row's sentences `{other:?}` do not say `{said}`."
+        ))),
+    }
 }
 
 /// See the module documentation.

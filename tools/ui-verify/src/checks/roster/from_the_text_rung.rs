@@ -796,6 +796,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_fold::ThePartTreeFolds),
         Box::new(model_keys::TheControlsTabWorks),
         Box::new(model_options::InsertModelChoicesReachTheFile),
+        Box::new(model_options::TheFillLightSwitchReachesTheConversion),
         Box::new(model_options::TheViewerShowsAndHidesParts),
         Box::new(model_pick::TheViewerSelectsFromThePicture),
         Box::new(model_lights::TheViewerSwitchesLights),

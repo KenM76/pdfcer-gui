@@ -1094,6 +1094,9 @@ pub struct ModelPlacement {
     pub gltf_linear: bool,
     /// glTF's +Y up turned to +Z up, else the axes kept as stored.
     pub gltf_z_up: bool,
+    /// A glTF model's lamps joined by the engine's ambient fill light, else
+    /// the model lit by its own lamps alone.
+    pub gltf_fill_light: bool,
 }
 
 /// `PartialEq` only: a 3D view's camera is floating point.

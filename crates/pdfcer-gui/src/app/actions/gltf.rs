@@ -1,8 +1,8 @@
 //! # `app::actions::gltf` — **a glTF model becomes PRC before it is placed**
 //!
 //! Insert 3D model accepts glTF (`.gltf`, `.glb`): `pdfcer_3d::read_gltf`
-//! reads it with the window's colour and up-axis switches, `write_prc`
-//! writes the PRC that `ThreeDSpec` embeds, textures included, and every
+//! reads it with the window's colour, up-axis and fill-light switches,
+//! `write_prc` writes the PRC that `ThreeDSpec` embeds, textures included, and every
 //! note and inference both calls make reaches the status line with the
 //! receipt.
 //!
@@ -76,7 +76,7 @@ pub(super) fn to_embed(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(
-            "model-insert-gltf triangles={} notes={} inferred={} flat_normals={} empty={} textured={} colours={:?} up={:?}",
+            "model-insert-gltf triangles={} notes={} inferred={} flat_normals={} empty={} textured={} colours={:?} up={:?} ambient={:?} lights={}",
             report.triangles,
             import.notes.len(),
             import.inferred.len(),
@@ -84,7 +84,9 @@ pub(super) fn to_embed(
             report.empty_primitives,
             report.textured,
             options.colours,
-            options.up_axis
+            options.up_axis,
+            options.ambient,
+            import.scene.lights.len()
         )
     });
     let mut notes = vec![t::gltf_converted(
