@@ -89,6 +89,23 @@ fn number(line: &TraceLine, key: &str) -> f64 {
         .unwrap_or(f64::NAN)
 }
 
+/// A new white point alone must rescale the bounce kept for the old one,
+/// not draw without bounce while it is traced again; `None` when it did,
+/// or when the card drew no bounce at 500 lux to keep.
+fn rescaled(at_500: &TraceLine, at_1000: &TraceLine) -> Option<String> {
+    let drawn = |l: &TraceLine| {
+        l.get("gpu-bounce")
+            .is_some_and(|b| b.parse::<u32>().is_ok())
+    };
+    let first = drawn(at_1000) && at_1000.get("gpu-bounce-from") == Some("rescaled");
+    (drawn(at_500) && !first).then(|| {
+        format!(
+            "★★★ the bounce kept at 500 lux must be rescaled for 1000 lux, not traced again: `{}`.",
+            at_1000.raw
+        )
+    })
+}
+
 impl Drive<'_> {
     /// The first picture drawn after the `seen`th that `done` accepts.
     fn picture_after(
@@ -150,6 +167,12 @@ impl Drive<'_> {
             return Ok(Some(self.not_fixed(seen, "switched on")?));
         };
         report.note(format!("fixed at 500 lux: {}", at_500.raw));
+        if at_500.get("over-range") != Some("toward-white") {
+            return Ok(Some(format!(
+                "★★★ a picture drawn in lux must roll colours over full white toward white: `{}`.",
+                at_500.raw
+            )));
+        }
         // The picture's height changes with the note said under it, so a
         // changed hash alone would pass on the switch's own wording.
         let (metered_luma, luma_500) = (number(&metered, "luma"), number(&at_500, "luma"));
@@ -171,6 +194,9 @@ impl Drive<'_> {
             return Ok(Some(self.not_fixed(seen, "with 1000 lux typed")?));
         };
         report.note(format!("fixed at 1000 lux: {}", at_1000.raw));
+        if let Some(failure) = rescaled(&at_500, &at_1000) {
+            return Ok(Some(failure));
+        }
         let (bright, dark) = (number(&at_500, "luma"), number(&at_1000, "luma"));
         let darker = dark + DARKER_BY <= bright;
         if !darker {

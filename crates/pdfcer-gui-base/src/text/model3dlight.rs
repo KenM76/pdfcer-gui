@@ -210,3 +210,7 @@ pub fn true_light_refused(reasons: &str) -> String {
 pub fn true_light_notes(notes: &str) -> String {
     format!("In lux: {notes}.")
 }
+
+/// A colour too bright to show is drawn toward white, not clipped per channel.
+pub const TRUE_LIGHT_ROLLS: &str =
+    "Colours brighter than full white are drawn toward white, as a camera shows them.";

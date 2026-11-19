@@ -121,9 +121,10 @@ impl Lit {
         };
         format!(
             // ui-text-exempt: diagnostic trace, never displayed
-            " exposure={state} white-lux={:.1} exposure-reasons={reasons} exposure-notes={}",
+            " exposure={state} white-lux={:.1} exposure-reasons={reasons} exposure-notes={} over-range={}",
             self.drawn.white_lux.unwrap_or(0.0),
-            self.drawn.notes.len()
+            self.drawn.notes.len(),
+            self.drawn.options.over_range.as_str()
         )
     }
 
@@ -144,6 +145,9 @@ impl Lit {
         if !self.drawn.notes.is_empty() {
             let notes = join(self.drawn.notes.iter().map(ToString::to_string));
             lines.push(g::true_light_notes(&notes));
+        }
+        if self.drawn.options.over_range.rolls() {
+            lines.push(g::TRUE_LIGHT_ROLLS.to_owned());
         }
         lines
     }

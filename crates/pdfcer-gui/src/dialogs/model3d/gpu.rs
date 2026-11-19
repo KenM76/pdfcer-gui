@@ -81,6 +81,9 @@ struct Built {
     lighting: pdfcer_3d::LightingScheme,
     mode: RenderMode,
     shininess: ShininessScale,
+    /// The exposure a glow stating its luminance is drawn against
+    /// (`RenderOptions::emissive_white_lux`), as bits.
+    glow: Option<u64>,
 }
 
 /// What the paint callback reads, written by the viewer each frame.
@@ -279,12 +282,17 @@ impl ModelView {
         let mut options = wanted.look.options();
         // The engine culls lamps out of view at the frame's own size.
         [options.width, options.height] = wanted.size;
+        // The trace and the bounce key are worked from the look's options;
+        // everything drawn from the lights and options it is exposed at.
+        let metered = options;
+        let (lights, options) = self.exposed(wanted.look.exposure, options);
         let built = Built {
             parts: wanted.parts,
             accent: wanted.accent,
             lighting: wanted.look.lighting,
             mode: options.render_mode,
             shininess: options.shininess,
+            glow: options.emissive_white_lux.map(f64::to_bits),
         };
         if self.gpu.built != Some(built) {
             self.gpu_scene(&options, wanted.accent);
@@ -298,10 +306,6 @@ impl ModelView {
             return Ok(false);
         }
         let fisheye = pdfcer_3d_nav::is_fisheye(&camera);
-        // The trace and the bounce key are worked from the look's options;
-        // everything drawn from the lights and options it is exposed at.
-        let metered = options;
-        let (lights, options) = self.exposed(wanted.look.exposure, options);
         let lights = lights.as_slice();
         // A fisheye's occlusion is each face's own (`gpu_lens`).
         let effects = if fisheye {
@@ -336,7 +340,7 @@ impl ModelView {
         };
         let head = self.trace_head(&wanted, Ok(&camera), &metered)
             + &casters.trace()
-            + &super::gpu_bounce::trace(bounce.as_deref(), self.gpu.bounce.waiting());
+            + &super::gpu_bounce::trace(bounce.as_deref(), &self.gpu.bounce);
         let mut shared = lock(&self.gpu.shared);
         shared.uniforms = uniforms;
         shared.line_uniforms = line_uniforms;

@@ -9,14 +9,15 @@
 //! with it; a result that says it [`FrameBounce::follows_camera`] is not
 //! drawn, because the viewer never asks for camera lights to bounce. Until a
 //! build arrives the faces are drawn without bounce, and the frame is drawn
-//! again when it does.
+//! again when it does. A new white point alone rescales the kept build
+//! instead of tracing again.
 
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, TryRecvError, channel};
 
 use native_mesh::Value;
 use pdfcer_3d::RenderOptions as ModelRenderOptions;
-use pdfcer_3d::{AssembledModel, Camera, Exposure, FrameBounce, PreparedModel};
+use pdfcer_3d::{AssembledModel, Camera, Exposure, FrameBounce, LampCut, PreparedModel};
 
 use super::gpu_uniforms::Uniforms;
 
@@ -45,6 +46,8 @@ pub(super) struct Bounces {
     pending: Option<(Key, Receiver<Built>)>,
     /// A build arrived since the frame was last drawn.
     arrived: bool,
+    /// The kept build is another white point's, rescaled.
+    rescaled: bool,
 }
 
 impl Bounces {
@@ -67,6 +70,10 @@ impl Bounces {
         {
             return bounce.clone();
         }
+        let scaled = self.rescale(key);
+        if scaled.is_some() && key.options.lamp_cut == LampCut::Off {
+            return scaled.flatten();
+        }
         if self.pending.as_ref().is_none_or(|(k, _)| *k != key) {
             let (model, prepared) = inputs();
             let (tx, rx) = channel();
@@ -81,7 +88,32 @@ impl Bounces {
             });
             self.pending = Some((key, rx));
         }
-        None
+        scaled.flatten()
+    }
+
+    /// The kept build rescaled for `key` when only the white point differs:
+    /// a bounce is linear in its lights, so no ray is traced again
+    /// (`FrameBounce::scaled`). Exact with the lamp cut off; under a cut a
+    /// lamp's reach depends on its drawn brightness, so the rescaled one is
+    /// drawn while an exact build runs behind it.
+    fn rescale(&mut self, key: Key) -> Option<Option<Arc<FrameBounce>>> {
+        let (built_for, bounce) = self.ready.as_ref()?;
+        let (Exposure::Fixed { white_lux: was }, Exposure::Fixed { white_lux: now }) =
+            (built_for.exposure, key.exposure)
+        else {
+            return None;
+        };
+        if (Key {
+            exposure: key.exposure,
+            ..*built_for
+        }) != key
+        {
+            return None;
+        }
+        let scaled = bounce.as_ref().map(|b| Arc::new(b.scaled(was / now)));
+        self.ready = Some((key, scaled.clone()));
+        self.rescaled = true;
+        Some(scaled)
     }
 
     /// Take a finished build; `true` when one arrived since the last call,
@@ -101,6 +133,7 @@ impl Bounces {
                         }
                     };
                     self.ready = Some((*key, bounce));
+                    self.rescaled = false;
                     self.pending = None;
                     self.arrived = true;
                 }
@@ -111,9 +144,19 @@ impl Bounces {
         std::mem::take(&mut self.arrived)
     }
 
-    /// A build is in flight.
+    /// The kept build is another white point's, rescaled.
+    pub(super) fn rescaled(&self) -> bool {
+        self.rescaled
+    }
+
+    /// A build is in flight and nothing kept stands in for it, so the
+    /// faces are drawn without bounce.
     pub(super) fn waiting(&self) -> bool {
-        self.pending.is_some()
+        self.pending.as_ref().is_some_and(|(pending, _)| {
+            self.ready
+                .as_ref()
+                .is_none_or(|(ready, _)| ready != pending)
+        })
     }
 }
 
@@ -150,12 +193,73 @@ pub(super) fn uniforms(bounce: Option<&FrameBounce>) -> Uniforms {
     ]
 }
 
-/// The trace field: `none`, `waiting` or the probe count.
-pub(super) fn trace(bounce: Option<&FrameBounce>, waiting: bool) -> String {
+/// The trace fields: `none`, `waiting` or the probe count, and whether the
+/// kept build was traced for this white point or rescaled from another.
+pub(super) fn trace(bounce: Option<&FrameBounce>, bounces: &Bounces) -> String {
+    let waiting = bounces.waiting();
     let state = match bounce {
         Some(b) => format!("{}", b.dims.iter().product::<i32>()),
         None if waiting => "waiting".to_owned(),
         None => "none".to_owned(),
     };
-    format!(" gpu-bounce={state}") // ui-text-exempt: diagnostic trace, never displayed
+    let from = if bounces.rescaled() {
+        "rescaled"
+    } else {
+        "traced"
+    }; // ui-text-exempt: diagnostic trace
+    format!(" gpu-bounce={state} gpu-bounce-from={from}") // ui-text-exempt: diagnostic trace, never displayed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn at(exposure: Exposure) -> Key {
+        key(
+            &ModelRenderOptions::default(),
+            exposure,
+            0,
+            egui::Color32::WHITE,
+        )
+    }
+
+    fn kept(k: Key) -> Bounces {
+        Bounces {
+            ready: Some((k, None)),
+            ..Bounces::default()
+        }
+    }
+
+    const AT_500: Exposure = Exposure::Fixed { white_lux: 500.0 };
+    const AT_1000: Exposure = Exposure::Fixed { white_lux: 1000.0 };
+
+    #[test]
+    fn a_new_white_point_alone_rescales_the_kept_build() {
+        let mut b = kept(at(AT_500));
+        assert_eq!(b.rescale(at(AT_1000)), Some(None));
+        assert!(b.rescaled());
+        assert!(b.ready.as_ref().is_some_and(|(k, _)| *k == at(AT_1000)));
+        assert!(!b.waiting());
+    }
+
+    #[test]
+    fn anything_else_changed_is_traced_again() {
+        let mut other = at(AT_1000);
+        other.parts = 1;
+        assert_eq!(kept(at(AT_500)).rescale(other), None);
+        assert_eq!(kept(at(Exposure::Metered)).rescale(at(AT_1000)), None);
+        assert_eq!(kept(at(AT_500)).rescale(at(Exposure::Metered)), None);
+        assert_eq!(Bounces::default().rescale(at(AT_1000)), None);
+    }
+
+    #[test]
+    fn an_arrived_build_is_traced() {
+        let mut b = kept(at(AT_500));
+        b.rescale(at(AT_1000));
+        let (tx, rx) = channel();
+        b.pending = Some((at(AT_1000), rx));
+        tx.send(Ok(None)).unwrap();
+        assert!(b.poll());
+        assert!(!b.rescaled());
+    }
 }
