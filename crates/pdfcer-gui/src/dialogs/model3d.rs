@@ -66,6 +66,7 @@ mod phone;
 mod picture;
 mod rows;
 mod saved;
+mod select;
 pub(crate) mod settingspage;
 mod shadow;
 mod shot;

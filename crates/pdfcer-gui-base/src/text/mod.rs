@@ -187,6 +187,8 @@ pub mod model3dlook;
 pub mod model3dmap;
 /// The 3D viewer's measure tool.
 pub mod model3dmeasure;
+/// The 3D viewer's face, edge and corner measure.
+pub mod model3dselect;
 pub mod model3dshot;
 /// The sized-New dialog's copy — the size list, the orientation pair, the
 /// custom fields and the one refusal. Consumed by

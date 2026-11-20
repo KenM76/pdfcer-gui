@@ -128,6 +128,9 @@ impl ModelView {
         } else if self.measure.surfaces() {
             self.surface_controls(ui);
             self.surface_details(ui);
+        } else if self.measure.select() {
+            self.select_controls(ui);
+            self.select_details(ui);
         } else if self.measure.kind() == ThreeDMeasureKind::Comment {
             // escape-disposition: keeps-draft — the comment lives in `Measure`, so
             // the key leaves the box and the words stay for the next pick.
@@ -164,6 +167,7 @@ impl ModelView {
         }
         self.meter_button(ui);
         self.surface_button(ui);
+        self.select_button(ui);
     }
 
     /// The readout over the picture where filling the screen leaves no footer
@@ -195,6 +199,10 @@ impl ModelView {
         }
         if self.measure.surfaces() {
             self.surface_readout(ui);
+            return;
+        }
+        if self.measure.select() {
+            self.select_readout(ui);
             return;
         }
         match &self.measure.result {

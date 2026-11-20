@@ -809,6 +809,7 @@ pub(super) fn all() -> Vec<Box<dyn Check>> {
         Box::new(model_light_meter::TheViewerReadsTheLight),
         Box::new(model_true_light::TheViewerDrawsATrueLightLevel),
         Box::new(model_surface_measure::TheViewerMeasuresBetweenSurfaces),
+        Box::new(model_select_measure::TheViewerMeasuresFacesEdgesCorners),
         Box::new(model_view_poster::TheViewersViewBecomesThePagePicture),
         Box::new(model_view_poster::APictureFileBecomesTheModelsPagePicture),
         Box::new(model_view_picture::TheViewerSavesItsViewAsAPicture),

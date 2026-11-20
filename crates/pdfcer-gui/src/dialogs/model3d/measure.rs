@@ -26,6 +26,8 @@ pub(super) const KINDS: [Kind; 5] = [
 pub(super) const LIGHT: usize = KINDS.len();
 /// The surface measure's place in the kind row, after the light meter.
 pub(super) const SURFACES: usize = LIGHT + 1;
+/// The face, edge and corner measure's place, after the surface measure.
+pub(super) const SELECT: usize = SURFACES + 1;
 /// How near a triangle's corner a pick snaps to it, in points; a finger gets
 /// the larger reach.
 const SNAP: [f32; 2] = [10.0, 22.0];
@@ -85,6 +87,8 @@ pub(super) struct Measure {
     pub painted: usize,
     /// The surface measure's picks and tolerance.
     pub surfaces: super::surfaces::Surfaces,
+    /// The face, edge and corner measure's picks.
+    pub select: super::select::Selected,
 }
 
 impl Measure {
@@ -103,6 +107,11 @@ impl Measure {
         self.kind == SURFACES
     }
 
+    /// The face, edge and corner measure is chosen in place of a kind.
+    pub fn select(&self) -> bool {
+        self.kind == SELECT
+    }
+
     /// Forget the picks and whatever they made.
     pub fn clear(&mut self) {
         self.picked.clear();
@@ -112,6 +121,7 @@ impl Measure {
         self.hover_key = None;
         self.said = None;
         self.surfaces.clear();
+        self.select.clear();
     }
 
     /// Turn the tool on or off; off drops a measurement not kept.
@@ -241,6 +251,11 @@ impl ModelView {
             self.surface_pick(&hit);
             return;
         }
+        if self.measure.select() {
+            self.measure.said = None;
+            self.select_pick(&hit);
+            return;
+        }
         if self.measure.result.take().is_some() {
             self.measure.picked.clear();
         }
@@ -357,7 +372,7 @@ impl ModelView {
         self.measure.hover = pick;
         self.measure.preview = None;
         let picked = &self.measure.picked;
-        let own = !self.measure.light() && !self.measure.surfaces();
+        let own = !self.measure.light() && !self.measure.surfaces() && !self.measure.select();
         let last = own && picked.len() + 1 == picks_needed(self.measure.kind());
         if let (Some(pick), true, None) = (pick, last, &self.measure.result) {
             let mut picks = picked.clone();

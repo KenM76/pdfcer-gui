@@ -80,7 +80,8 @@ impl Check for TheViewerMeasuresBetweenSurfaces {
     }
 }
 
-type Spot = (WindowPoint, Option<String>);
+/// A place on the picture, and the viewport it is in.
+pub(crate) type Spot = (WindowPoint, Option<String>);
 
 /// A spot clicked on the model, with the point and normal its pick traced.
 struct Picked {
@@ -89,7 +90,7 @@ struct Picked {
     normal: [f64; 3],
 }
 
-fn three(line: &TraceLine, key: &str) -> Option<[f64; 3]> {
+pub(crate) fn three(line: &TraceLine, key: &str) -> Option<[f64; 3]> {
     match line.get_f64_list(key)?.as_slice() {
         [x, y, z] => Some([*x, *y, *z]),
         _ => None,
@@ -123,12 +124,13 @@ fn pairs(picked: &[Picked]) -> (Option<Pair<'_>>, Option<Pair<'_>>) {
     (parallel, square)
 }
 
-struct Measuring<'a>(&'a Drive<'a>);
+/// The viewer driven through the Measure tab.
+pub(crate) struct Measuring<'a>(pub(crate) &'a Drive<'a>);
 
 impl Measuring<'_> {
     /// Press `region` on the options menu, opening it and its tab as needed;
     /// whether it was there to press.
-    fn press(&self, region: &str) -> Result<bool> {
+    pub(crate) fn press(&self, region: &str) -> Result<bool> {
         let Drive {
             ctx,
             session,
@@ -144,7 +146,7 @@ impl Measuring<'_> {
 
     /// Turn the model off its opening view, which looks square at one face of
     /// everything, so sides at right angles to it come into sight.
-    fn turn(&self) -> Result<bool> {
+    pub(crate) fn turn(&self) -> Result<bool> {
         let session = self.0.session;
         let Some((rect, vp)) = declared_in(&session.trace()?, ui_rect(self.0.ctx)?, IMAGE) else {
             return Ok(false);
@@ -166,7 +168,7 @@ impl Measuring<'_> {
     }
 
     /// A grid of spots across the picture.
-    fn spots(&self) -> Result<Vec<Spot>> {
+    pub(crate) fn spots(&self) -> Result<Vec<Spot>> {
         let trace = self.0.session.trace()?;
         let Some((rect, vp)) = declared_in(&trace, ui_rect(self.0.ctx)?, IMAGE) else {
             return Ok(Vec::new());

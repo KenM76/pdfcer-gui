@@ -254,6 +254,14 @@ impl ModelView {
                     pen.line(from, to);
                 }
             }
+            if self.measure.select() {
+                let s = &self.measure.select;
+                s.marks().for_each(|p| pen.dot(p));
+                s.edges().for_each(|e| pen.path(e.into_iter()));
+                if let Some((from, to)) = s.span() {
+                    pen.line(from, to);
+                }
+            }
         }
     }
 }
