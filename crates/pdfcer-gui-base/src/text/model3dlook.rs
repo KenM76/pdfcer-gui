@@ -340,6 +340,8 @@ pub const CARD_PARTS_OFF_TOOLTIP: &str = "The graphics card is off for the whole
 /// The bounce light is still being worked out, so the picture lacks it.
 pub const BOUNCE_WAITING: &str = "Working out the light bounced between surfaces: until it is ready, \
      surfaces lit only by bounced light, such as a ceiling above downlights, are drawn dark.";
+/// The bounce light could not be worked out, so the picture lacks it.
+pub const BOUNCE_FAILED: &str = "The light bounced between surfaces could not be worked out, so surfaces lit only by bounced light, such as a ceiling above downlights, are drawn dark.";
 /// The whole picture is drawn by the processor by the operator's choice.
 pub const CARD_TURNED_OFF: &str =
     "Drawn without the graphics card, as set under Graphics card, so moving it is slower.";

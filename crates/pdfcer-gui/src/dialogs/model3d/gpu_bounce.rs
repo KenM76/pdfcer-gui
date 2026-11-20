@@ -48,6 +48,8 @@ pub(super) struct Bounces {
     arrived: bool,
     /// The kept build is another white point's, rescaled.
     rescaled: bool,
+    /// The last build to arrive failed, so the kept bounce is none.
+    failed: bool,
 }
 
 impl Bounces {
@@ -122,6 +124,7 @@ impl Bounces {
         if let Some((key, rx)) = &self.pending {
             match rx.try_recv() {
                 Ok(built) => {
+                    self.failed = built.is_err();
                     let bounce = match built {
                         Ok(b) => b.filter(|b| !b.follows_camera).map(Arc::new),
                         Err(error) => {
@@ -138,7 +141,17 @@ impl Bounces {
                     self.arrived = true;
                 }
                 Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Disconnected) => self.pending = None,
+                Err(TryRecvError::Disconnected) => {
+                    // The build thread died: keep its key as built-with-none so
+                    // the next frame does not start it again.
+                    crate::diag::trace(|| {
+                        "model-view-bounce failed error=build-thread-died".into()
+                    }); // ui-text-exempt: diagnostic trace, never displayed
+                    self.ready = Some((*key, None));
+                    self.failed = true;
+                    self.pending = None;
+                    self.arrived = true;
+                }
             }
         }
         std::mem::take(&mut self.arrived)
@@ -147,6 +160,12 @@ impl Bounces {
     /// The kept build is another white point's, rescaled.
     pub(super) fn rescaled(&self) -> bool {
         self.rescaled
+    }
+
+    /// The last build failed and none is in flight, so the faces are drawn
+    /// without bounce.
+    pub(super) fn failed(&self) -> bool {
+        self.failed && self.pending.is_none()
     }
 
     /// A build is in flight and nothing kept stands in for it, so the
@@ -269,5 +288,45 @@ mod tests {
         tx.send(Ok(None)).unwrap();
         assert!(b.poll());
         assert!(!b.rescaled());
+    }
+
+    #[test]
+    fn a_failed_build_is_reported_until_one_succeeds() {
+        let mut b = Bounces::default();
+        let (tx, rx) = channel();
+        b.pending = Some((at(AT_500), rx));
+        tx.send(Err("no".into())).unwrap();
+        assert!(b.poll());
+        assert!(b.failed());
+        let (tx, rx) = channel();
+        b.pending = Some((at(AT_1000), rx));
+        assert!(!b.failed(), "a build in flight is waiting, not failed");
+        tx.send(Ok(None)).unwrap();
+        b.poll();
+        assert!(!b.failed());
+    }
+
+    #[test]
+    fn a_dead_build_thread_is_not_started_again() {
+        let mut b = Bounces::default();
+        let (tx, rx) = channel::<Built>();
+        b.pending = Some((at(AT_500), rx));
+        drop(tx);
+        assert!(b.poll());
+        assert!(b.failed());
+        let started = std::cell::Cell::new(false);
+        let camera = Camera {
+            eye: [0.0, 0.0, 10.0],
+            target: [0.0; 3],
+            up: [0.0, 1.0, 0.0],
+            projection: pdfcer_3d::Projection::Perspective { fov_y: 30.0 },
+        };
+        let _ = b.for_frame(at(AT_500), camera, || {
+            started.set(true);
+            let model = AssembledModel::default();
+            let prepared = Arc::new(PreparedModel::new(&model));
+            (model, prepared)
+        });
+        assert!(!started.get());
     }
 }

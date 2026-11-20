@@ -230,6 +230,11 @@ impl Gpu {
         self.bounce.waiting()
     }
 
+    /// The bounce build failed, so the picture shows direct light only.
+    pub(super) fn bounce_failed(&self) -> bool {
+        self.bounce.failed()
+    }
+
     /// Why the last frame was left to the processor.
     pub(super) fn declined(&self) -> Option<ProcessorReason> {
         self.declined

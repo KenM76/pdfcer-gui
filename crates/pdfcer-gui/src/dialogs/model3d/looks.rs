@@ -411,6 +411,8 @@ impl ModelView {
         } else if self.gpu.bounce_waiting() {
             ui.small(k::BOUNCE_WAITING);
             said = true;
+        } else if self.gpu.bounce_failed() {
+            ui.small(k::BOUNCE_FAILED);
         }
         crate::diag::trace_changed("model-view-bounce-note", || {
             // ui-text-exempt: diagnostic trace, never displayed
