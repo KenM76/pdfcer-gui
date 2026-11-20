@@ -14,7 +14,7 @@ pub(super) type Uniforms = Vec<(&'static str, Value)>;
 
 /// The main program's samplers and their texture units. Sampler types may
 /// not share a unit, so each takes its own even when its feature is off.
-pub(super) const SAMPLERS: [(&str, i32); 11] = [
+pub(super) const SAMPLERS: [(&str, i32); 12] = [
     ("u_texture", 0),
     ("u_shadow_map", 1),
     ("u_lamp_shadow_map", 2),
@@ -26,7 +26,31 @@ pub(super) const SAMPLERS: [(&str, i32); 11] = [
     ("u_lights", 8),
     ("u_prepass_depth", 9),
     ("u_bounce_atlas", 10),
+    ("u_lamp_tiles", 11),
 ];
+
+/// The fragment shader's lamp-tile uniforms for `tiles`, and the
+/// `u_lamp_tiles` table when it has any; with none, or under
+/// `PDFCER_3D_LAMP_TILES=0`, `u_tile_size` 0 visits every lamp, the same
+/// picture. Tiles count from the frame buffer's lower-left corner, which is
+/// the viewport's: the frame is drawn into its own buffers at viewport size.
+pub(super) fn lamp_tiles(
+    tiles: &pdfcer_3d::LampTiles,
+) -> (Uniforms, Option<pdfcer_3d::FloatTexture>) {
+    let off = std::env::var("PDFCER_3D_LAMP_TILES").is_ok_and(|v| v == "0");
+    if tiles.tile_size == 0 || off {
+        return (vec![("u_tile_size", Value::Int(0))], None);
+    }
+    let int = |v: u32| Value::Int(v as i32);
+    let uniforms = vec![
+        ("u_tile_size", int(tiles.tile_size)),
+        ("u_tile_columns", int(tiles.columns)),
+        ("u_tile_rows", int(tiles.rows)),
+        ("u_tile_count", Value::Int(tiles.lists.len() as i32)),
+        ("u_tile_origin", Value::IVec2([0, 0])),
+    ];
+    (uniforms, Some(tiles.texture()))
+}
 
 /// The texture unit of `sampler` in [`SAMPLERS`].
 pub(super) fn unit(sampler: &str) -> u32 {

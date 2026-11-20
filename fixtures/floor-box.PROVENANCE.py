@@ -15,9 +15,11 @@ instead: the same scene with one white glTF point light
 keeps as the model's own lamp. With `lamps` it writes
 `fixtures/floor-lamps.prc`: six such lamps in a ring above the floor, all
 in view of the opening camera, so drawing only the brightest four leaves
-two out.
+two out. With `grid` it writes `fixtures/floor-lamp-grid.prc`: an 8 x 8 grid
+of dim lamps just above the floor, kept at their stored brightness so each reaches
+about half a unit under the automatic lamp cut, so the viewer's lamp tiles list a few lamps each.
 
-Run: python fixtures/floor-box.PROVENANCE.py <path to pdfcer.exe> [lamp|lamps]
+Run: python fixtures/floor-box.PROVENANCE.py <path to pdfcer.exe> [lamp|lamps|grid]
 """
 import pathlib
 import subprocess
@@ -83,19 +85,25 @@ g = {
 mode = sys.argv[2] if len(sys.argv) > 2 else ''
 spots = {'lamp': [(1.5, 2.5, 1.5)],
          'lamps': [(1.5, 2.5, 0), (0.75, 2.5, 1.3), (-0.75, 2.5, 1.3),
-                   (-1.5, 2.5, 0), (-0.75, 2.5, -1.3), (0.75, 2.5, -1.3)]}.get(mode, [])
+                   (-1.5, 2.5, 0), (-0.75, 2.5, -1.3), (0.75, 2.5, -1.3)],
+         'grid': [(-1.75 + 0.5 * i, 0.004, -1.75 + 0.5 * j)
+                  for i in range(8) for j in range(8)]}.get(mode, [])
+GRID_INTENSITY = 1.2e-5
 if spots:
     g["extensionsUsed"] = ["KHR_lights_punctual"]
     g["extensions"] = {"KHR_lights_punctual": {"lights": [
-        {"type": "point", "color": [1, 1, 1], "intensity": 20}]}}
+        {"type": "point", "color": [1, 1, 1],
+         "intensity": GRID_INTENSITY if mode == 'grid' else 20}]}}
     for i, at in enumerate(spots):
         g["nodes"].append({"name": f"lamp{i}", "translation": list(at),
                            "extensions": {"KHR_lights_punctual": {"light": 0}}})
         g["scenes"][0]["nodes"].append(len(g["nodes"]) - 1)
 
-name = {'lamp': 'floor-lamp.prc', 'lamps': 'floor-lamps.prc'}.get(mode, 'floor-box.prc')
+name = {'lamp': 'floor-lamp.prc', 'lamps': 'floor-lamps.prc',
+        'grid': 'floor-lamp-grid.prc'}.get(mode, 'floor-box.prc')
 out = pathlib.Path(__file__).with_name(name)
 with tempfile.TemporaryDirectory() as tmp:
     src = pathlib.Path(tmp) / 'floor-box.gltf'
     src.write_text(json.dumps(g, separators=(',', ':')), encoding='utf-8')
-    subprocess.run([sys.argv[1], '3d-convert', '-o', str(out), str(src)], check=True)
+    stored = ['--gltf-lights', 'stored'] if mode == 'grid' else []
+    subprocess.run([sys.argv[1], '3d-convert', *stored, '-o', str(out), str(src)], check=True)

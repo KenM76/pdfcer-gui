@@ -86,6 +86,20 @@ struct Built {
     glow: Option<u64>,
 }
 
+impl Built {
+    /// The scene key of a frame `wanted` drawn at the exposed `options`.
+    fn of(wanted: &Rendered, options: &ModelRenderOptions) -> Self {
+        Self {
+            parts: wanted.parts,
+            accent: wanted.accent,
+            lighting: wanted.look.lighting,
+            mode: options.render_mode,
+            shininess: options.shininess,
+            glow: options.emissive_white_lux.map(f64::to_bits),
+        }
+    }
+}
+
 /// What the paint callback reads, written by the viewer each frame.
 #[derive(Default)]
 pub(super) struct Shared {
@@ -111,6 +125,8 @@ pub(super) struct Shared {
     pub(super) light_table: Vec<f32>,
     /// `u_bounce_atlas`, when the frame has bounce light.
     pub(super) bounce: Option<Arc<FrameBounce>>,
+    /// `u_lamp_tiles`, when the frame's lamps are listed per tile.
+    pub(super) lamp_tiles: Option<pdfcer_3d::FloatTexture>,
     /// The key light's shadow, when one is cast.
     pub(super) shadow: Option<FrameShadow>,
     /// The further directional casters.
@@ -301,14 +317,7 @@ impl ModelView {
         // everything drawn from the lights and options it is exposed at.
         let metered = options;
         let (lights, options) = self.exposed(wanted.look.exposure, options);
-        let built = Built {
-            parts: wanted.parts,
-            accent: wanted.accent,
-            lighting: wanted.look.lighting,
-            mode: options.render_mode,
-            shininess: options.shininess,
-            glow: options.emissive_white_lux.map(f64::to_bits),
-        };
+        let built = Built::of(&wanted, &options);
         if self.gpu.built != Some(built) {
             self.gpu_scene(&options, wanted.accent);
             self.gpu.built = Some(built);
@@ -347,6 +356,8 @@ impl ModelView {
         let bounce = self.frame_bounce(&metered, &wanted, camera);
         let mut uniforms = frame_uniforms(view, &frame_lights, &casters);
         uniforms.extend(super::gpu_bounce::uniforms(bounce.as_deref()));
+        let (tile_uniforms, lamp_tiles, tiles_trace) = lamp_tiles(&frame_lights.tiles);
+        uniforms.extend(tile_uniforms);
         let emissive = self.gpu.facts.emissive;
         let repeat = if emissive > 0.0 {
             Some((u::repeat_uniforms(&camera, &options)?, emissive))
@@ -355,13 +366,15 @@ impl ModelView {
         };
         let head = self.trace_head(&wanted, Ok(&camera), &metered)
             + &casters.trace()
-            + &super::gpu_bounce::trace(bounce.as_deref(), &self.gpu.bounce);
+            + &super::gpu_bounce::trace(bounce.as_deref(), &self.gpu.bounce)
+            + &tiles_trace;
         let mut shared = lock(&self.gpu.shared);
         shared.uniforms = uniforms;
         shared.line_uniforms = line_uniforms;
         shared.lens = lens;
         shared.light_table = frame_lights.light_table();
         shared.bounce = bounce;
+        shared.lamp_tiles = lamp_tiles;
         shared.set_casters(casters);
         shared.occlusion = effects.occlusion;
         shared.repeat = repeat;
@@ -542,6 +555,24 @@ impl ModelView {
             })
             .collect()
     }
+}
+
+/// The frame's lamp-tile uniforms and table ([`u::lamp_tiles`]) and the
+/// render trace's fields for them: the tiles drawn with, 0 when the shader
+/// visits every lamp, and the lamps a tile lists at most.
+fn lamp_tiles(
+    tiles: &pdfcer_3d::LampTiles,
+) -> (u::Uniforms, Option<pdfcer_3d::FloatTexture>, String) {
+    let (uniforms, table) = u::lamp_tiles(tiles);
+    let count = if table.is_some() {
+        tiles.lists.len()
+    } else {
+        0
+    };
+    let most = tiles.lists.iter().map(Vec::len).max().unwrap_or(0);
+    // ui-text-exempt: diagnostic trace, never displayed
+    let trace = format!(" lamp-tiles={count} lamp-tile-most={most}");
+    (uniforms, table, trace)
 }
 
 impl Casters {
