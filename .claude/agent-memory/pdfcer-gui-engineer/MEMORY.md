@@ -3,7 +3,7 @@
 - [Not at the keyboard unless he says so](user_keyboard_unless_says.md) — assume the PC is free; he texts and will TELL you.
 - [ui-verify competes for the machine](feedback_ui_verify_competes.md) — ask in one line with the cost.
 - [A driven check reached the real printer](feedback_driven_check_reached_printer.md) — 42 sheets; pause the queue around print-dialog drives.
-- [Update the engine before every build](feedback_update_engine_before.md) — superseded: package with `--no-update`.
+- [Update the engine before every build](feedback_update_engine_before.md) — superseded: `--no-update`.
 - [No pdfcer specialist agents on this roster](project_pdfcer_agent_roster.md) — dispatching them fails; go general-purpose.
 - [Scope a request to the whole behaviour](feedback_scope_request_whole.md) — he expects what surrounds it too.
 - [The engine session runs in parallel](project_engine_session_runs.md) — answers in minutes; dirties the read-only tree.
@@ -173,7 +173,7 @@
 - [A fixture's twin page answers a whole-file judge](feedback_fixture_twin_page.md) — annots-align repeats page 1 on page 2; judge one page.
 - [A new variant orphans its old matchers](feedback_new_variant_orphans_matchers.md) — Anchor::Block broke Reflow; let-else compiles clean.
 - [Unset is not a different value](feedback_unset_vs_default.md) — None=default black read as a 3rd look; dump the stream first.
-- [Drive only what changed](feedback_drive_only_affected.md) — checks from the diff; [an early tag empties it](feedback_early_tag_empties_affected.md): pass `--affected=<prev tag>`.
+- [Drive only what changed](feedback_drive_only_affected.md) — [an early tag empties it](feedback_early_tag_empties_affected.md): pass `--affected=<prev tag>`. [bare runs all](feedback_empty_check_list_runs_all.md).
 - [An inactive window starves focus gates](feedback_inactive_window_starves_gate.md) — no-steal scripted dialogs never typed; route gates via window_takes_keys.
 - [A wrapper drops a trait's default methods](feedback_wrapper_drops_default_method.md) — installedfaces lost `candidates`; every composite font fell to Helvetica.
 - [A seam's unit can widen under it](feedback_seam_unit_widens.md) — whole-draft seed wiped a paragraph; reach the old unit by his switch.

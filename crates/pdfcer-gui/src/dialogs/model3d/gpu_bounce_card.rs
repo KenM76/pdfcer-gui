@@ -73,6 +73,10 @@ impl Slot {
     }
 }
 
+/// How long a build waits for the first paint to say whether the card can
+/// trace it; past this it traces on the processor.
+const SUPPORT_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
+
 #[derive(Default)]
 struct Inner {
     /// Indexed by `Slot as usize`.
@@ -87,8 +91,16 @@ impl CardQueue {
         self.lock().iter().any(Option::is_some)
     }
 
-    /// Whether a build should be packed for the card.
+    /// Whether a build should be packed for the card. A build started before
+    /// the first paint has said waits for it, up to [`SUPPORT_WAIT`]: the
+    /// card and the processor trace the same bounce to within rounding, so
+    /// a first build on the processor and every later one on the card would
+    /// change the picture with nothing changed. Runs on the build thread.
     pub(super) fn wanted(&self) -> bool {
+        let started = std::time::Instant::now();
+        while self.0.support.load(Ordering::Relaxed) == 0 && started.elapsed() < SUPPORT_WAIT {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
         self.0.support.load(Ordering::Relaxed) == 1
             && std::env::var_os("PDFCER_3D_BOUNCE_CPU").is_none_or(|v| v != "1")
     }
