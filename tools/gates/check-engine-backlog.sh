@@ -89,7 +89,10 @@
 # ★ **Why SIX words.** Measured against the live target rows: at three content
 #   words two rows COLLIDE; at four and above, none do. Six is the first count
 #   carrying two words of margin against a future collision — and it stops
-#   there, because every extra word is one more chance to churn. The gate FAILS
+#   there, because every extra word is one more chance to churn: a seventh
+#   re-keys about a hundred entries whose text parts from the table's late in
+#   the clause. Twins that part later still are accepted when the register has
+#   an entry for each. The gate FAILS
 #   on a collision rather than silently accepting one entry for two rows, and
 #   says to raise `KEYWORDS` by one and re-measure, which is the only correct
 #   response.
@@ -346,17 +349,30 @@ report() { # report <features.md> <register.md>
     echo "         against $(wc -l < "$SLUGS_R" | tr -d ' ') entr(ies) in $register"
 
     # A collision means two capabilities share one key, so one written verdict
-    # would silently discharge both. Fail rather than accept it.
-    dupes="$(sort "$SLUGS_F" | uniq -d)"
+    # would silently discharge both. It is accepted only when the register
+    # holds as many entries under that key as the table has rows: one verdict
+    # per twin, as for *3D bounce light built on the graphics card* and the
+    # same *under an exposure*, which part at their seventh word.
+    dupes=""
+    while IFS= read -r key; do
+        [ -n "$key" ] || continue
+        want=$(grep -cxF -- "$key" "$SLUGS_F")
+        have=$(grep -cxF -- "$key" "$SLUGS_R")
+        [ "$have" -ge "$want" ] || dupes="$dupes$key"$'
+'
+    done < <(sort "$SLUGS_F" | uniq -d)
+    dupes="${dupes%$'
+'}"
     if [ -n "$dupes" ]; then
         echo
-        echo "FAIL: two rows share one key, so one written verdict would silently"
+        echo "FAIL: two rows share one key and the register has fewer entries under"
+        echo "      it than the table has rows, so one written verdict would silently"
         echo "      account for both:"
         printf '%s\n' "$dupes" | sed 's/^/        /'
         echo
-        echo "  Raise KEYWORDS in this gate by one and re-run. The header's"
-        echo "  \"★ Why SIX words\" paragraph is the measurement that chose it and"
-        echo "  should be updated with the new one."
+        echo "  Write one entry per twin, opening with each row's own words. If the"
+        echo "  twins are not one capability split in two, raising KEYWORDS re-keys"
+        echo "  every row; see \"★ Why SIX words\" before reaching for it."
         return 1
     fi
 

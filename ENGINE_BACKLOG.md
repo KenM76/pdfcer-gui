@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **66 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `wanted` — a real gap — **69 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -177,11 +177,14 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **3D measure: read positions in a chosen coordinate system** — the module `pdfcer_3d::surface_measure::frame` (`CoordinateFrame`) | **wanted; the measure window.** Positions and deltas read in the model's frame or one the operator sets. |
 | **3D measure: projected area of a face** — `pdfcer-3d` `face_projected_area`, in the module `pdfcer_3d::surface_measure::projected` (`ProjectedArea`) | **wanted; the measure window.** A face pick also reads its projected area, toward and away, on the projection choice. |
 | **3D measure: units, dual units and precision** — the module `pdfcer_3d::length_unit` (`LengthUnit`, `UnknownLengthUnit`) | **wanted; the measure window.** Its unit, a second unit and decimal places, remembered with the other preferences. <!--namesake:LengthUnit--> (`entry::LengthUnit` is the shell's 2D entry unit) |
+| **3D bounce light built on the graphics card** — `PreparedModel::gpu_bounce_build`, `GpuBounceBuild`, `GLSL_ES_300_BOUNCE_BUILD_VERTEX`, `GLSL_ES_300_BOUNCE_TRACE_FRAGMENT`, `GLSL_ES_300_BOUNCE_REDUCE_FRAGMENT` | **wanted; the 3D viewer's bounce.** The viewer lights every frame through an exposure, so it takes the exposed twin below; this one is the same passes packed with the model's own lights. |
+| **3D bounce light built on the graphics card under an exposure** — `ExposedLighting::gpu_bounce_build` | **wanted; our request G311.** The card traces and reduces the atlas in row bands spread over frames and reads it back into `FrameBounce`, in place of the threaded CPU build, with that build kept where the context lacks float targets or the engine says `None`. |
+| **3D light meter map computed on the graphics card** — `LightMeter::gpu_map`, `GpuLightMap`, `GpuLightMap::finish`, `GLSL_ES_300_LIGHT_METER_MAP_FRAGMENT` | **wanted; Colour by light level.** The same map an order of magnitude faster on a large model; no cancel on the GPU path, so the viewer keeps `map` until it can bound a pass by row bands. |
 
 ---
 
 
-## `blocked` — waiting on something named — **2 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `blocked` — waiting on something named — **2 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -199,7 +202,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -210,7 +213,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `declined` — deliberately no surface — **21 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -257,7 +260,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **520 of 609** <!-- counted by tools/walk-engine-backlog.py, 2026-11-19; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **520 of 612** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 
