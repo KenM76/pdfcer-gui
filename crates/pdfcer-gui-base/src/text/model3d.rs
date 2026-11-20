@@ -208,6 +208,18 @@ pub fn gltf_fill_light_tooltip() -> &'static str {
     "A soft light everywhere, so no surface is black. Turn this off to light the model by its own lamps only: rooms they don't reach stay dark, for judging real light levels room to room."
 }
 
+/// The occlusion-map switch.
+#[must_use]
+pub fn gltf_occlusion() -> &'static str {
+    "Darken creases from the occlusion map"
+}
+
+/// Its tip.
+#[must_use]
+pub fn gltf_occlusion_tooltip() -> &'static str {
+    "PDF 3D cannot carry a glTF occlusion map, so it is multiplied into the surface colour, darkening corners and creases as the model's author drew them. Turn this off to leave the map out and show the colours as stored; the status row says either way."
+}
+
 /// The commit button.
 #[must_use]
 pub fn place_button() -> &'static str {

@@ -999,6 +999,8 @@ pub mod model_light_meter;
 pub mod model_lights;
 /// The 3D viewer saves its named views into the file.
 pub mod model_measure;
+/// Insert 3D model's occlusion switch reaches the glTF conversion.
+pub mod model_occlusion;
 pub mod model_options;
 pub mod model_pick;
 /// A placed 3D model shows the engine's picture of it on the page.

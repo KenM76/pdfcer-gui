@@ -69,6 +69,9 @@ fn converted(
     if !placement.gltf_fill_light {
         options.ambient = pdfcer_3d::GltfAmbient::None;
     }
+    if !placement.gltf_bake_occlusion {
+        options.occlusion = pdfcer_3d::GltfOcclusion::Drop;
+    }
     match super::gltf::to_embed(&placement.source, data, options) {
         Ok(done) => Some(done),
         Err(why) => {

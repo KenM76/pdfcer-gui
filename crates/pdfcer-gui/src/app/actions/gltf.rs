@@ -78,7 +78,7 @@ pub(super) fn to_embed(
     crate::diag::trace(|| {
         // ui-text-exempt: diagnostic trace, never displayed
         format!(
-            "model-insert-gltf triangles={} notes={} inferred={} flat_normals={} empty={} textured={} colours={:?} up={:?} ambient={:?} lights={}",
+            "model-insert-gltf triangles={} notes={} inferred={} flat_normals={} empty={} textured={} colours={:?} up={:?} ambient={:?} occlusion={:?} lights={}",
             report.triangles,
             import.notes.len(),
             import.inferred.len(),
@@ -88,6 +88,7 @@ pub(super) fn to_embed(
             options.colours,
             options.up_axis,
             options.ambient,
+            options.occlusion,
             import.scene.lights.len()
         )
     });
