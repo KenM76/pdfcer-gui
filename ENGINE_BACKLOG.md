@@ -58,7 +58,7 @@ engine answers requests within hours, so the shelf life is short.
 
 ---
 
-## `wanted` — a real gap — **68 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `wanted` — a real gap — **69 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 A real gap. The engine has it, an operator would use it, and nobody has scheduled it. **These are the rows to read if you are choosing what to build next.**
 
@@ -173,6 +173,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 | **Measure one face of a 3D model (area, perimeter, plane or cylinder fit)** — the module `pdfcer_3d::surface_measure::face` (`face_figures`, `FaceFigures`, `FaceShape`) | **consumed — O443: the Measure tab's *Face, edge, corner* measure.** A face pick reads area, perimeter and plane or cylinder fit (`select::figures_of`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). A part the file gives as one face measures whole and is said to; filed as G312 with the disclosure reported as a workaround. |
 | **Measure one edge or vertex of a 3D model (length, line or circle fit, XYZ)** — the module `pdfcer_3d::surface_measure::edge` (`edge_at`, `vertex_at`, `EdgeFigures`, `EdgeShape`), `SurfaceMeasureError::NoEdge`, `DEFAULT_CORNER_DEGREES` | **consumed — O443, the same measure.** An edge pick reads length, chord and line or circle fit; a corner pick reads X, Y, Z (`select::figures_of`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). <!--namesake:vertex_at--> (`canvas::dimdrag::vertex_at` is the 2D dimension drag's) |
 | **3D measure: minimum, maximum and centre distance between two picked entities (vertex, edge, face)** — the module `pdfcer_3d::surface_measure::distance` (`entity_distance`, `EntityDistance`, `MeasureEntity`, `Selection`, `Span`) | **consumed — O443, the same measure.** A second pick reads the smallest distance with dX, dY, dZ, the largest, and centre to centre when both have one (`Selected::pick`; driven by `the_3d_viewer_measures_faces_edges_and_corners`). |
+| **The page drawn on the graphics card, byte-identical to the processor** — the module `pdfcer_render::gpu` (`gpu::scene::GpuScene`, `GpuRefusal`, `gpu::glsl`), behind the non-default `gpu` feature | **wanted; not built this release.** The canvas's page tiles are drawn on the processor today; a scene the card draws exactly would take the dense site plan's redraw off it. The scene refuses shadings, soft masks, some blend modes, curves left after fitting and pages past its texture (`GpuRefusal`), so the canvas would draw on the card where it can and on the processor otherwise, the picture the same either way. To be measured with `tools/render-profile` before it is wired, per BENCHMARK.md. |
 | **3D measure: project a measured distance onto a plane or the screen** — `Span::projected`, `Span::along`, `SurfaceMeasureError::BadDirection` | **wanted; the measure window.** A *Projected on* choice: none, the screen, or a picked plane. |
 | **3D measure: read positions in a chosen coordinate system** — the module `pdfcer_3d::surface_measure::frame` (`CoordinateFrame`) | **wanted; the measure window.** Positions and deltas read in the model's frame or one the operator sets. |
 | **3D measure: projected area of a face** — `pdfcer-3d` `face_projected_area`, in the module `pdfcer_3d::surface_measure::projected` (`ProjectedArea`) | **wanted; the measure window.** A face pick also reads its projected area, toward and away, on the projection choice. |
@@ -183,7 +184,7 @@ A real gap. The engine has it, an operator would use it, and nobody has schedule
 ---
 
 
-## `blocked` — waiting on something named — **2 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `blocked` — waiting on something named — **2 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Wanted, and waiting on something named. Every row here says **what** it waits on — an operator ruling, or another surface that has to exist first. A `blocked` row with no named blocker is a `wanted` row wearing a better coat.
 
@@ -201,7 +202,7 @@ Wanted, and waiting on something named. Every row here says **what** it waits on
 
 ---
 
-## `unknown` — no opinion formed yet — **0 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `unknown` — no opinion formed yet — **0 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Could not be settled from the documents and the source, and saying so is worth more than a guess.
 
@@ -212,7 +213,7 @@ Could not be settled from the documents and the source, and saying so is worth m
 
 ---
 
-## `declined` — deliberately no surface — **21 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `declined` — deliberately no surface — **21 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 Deliberately not a surface here, with the argument. A `declined` row is the one that costs most when it is wrong — it tells the next reader the question has been settled — so each one carries the reasoning rather than a verdict.
 
@@ -259,7 +260,7 @@ Deliberately not a surface here, with the argument. A `declined` row is the one 
 
 ---
 
-## `shipped` — the engine's `[ ]` is stale — **522 of 613** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
+## `shipped` — the engine's `[ ]` is stale — **522 of 614** <!-- counted by tools/walk-engine-backlog.py, 2026-11-20; do not retype -->
 
 **The engine's row is stale: an operator can reach this today.** Each row names the surface or the call site, and says so where the evidence is a driven check rather than a call site. These rows are kept, never deleted; the argument is the valuable part.
 

@@ -41,9 +41,9 @@
 #       a re-baseline wearing a disguise.
 #
 # ---------------------------------------------------------------------------
-# baseline: acc6aa3cdd04a1261de49591532908d5d2ddd727
+# baseline: bce0c21e81c09bd0162c4e7e5c0745dd355a92c8
 # crates: pdfcer-core pdfcer-render pdfcer-emf pdfcer-print pdfcer-3d pdfcer-3d-nav pdfcer-fetch pdfcer-ocr-host
-# items: 12624
+# items: 12646
 # ---------------------------------------------------------------------------
 
 exempt pdfcer-3d const pdfcer_3d::model::MAX_PLACED_ATTRIBUTES -- the reader's or assembler's refusal of a file past an engine ceiling; `app::actions::models::assemble_as` passes every AssembleError it does not map to `Unassembled::Unreadable(other.to_string())`, so the operator reads the engine's own sentence naming the limit, and the viewer has nothing else to do with it.
@@ -11487,6 +11487,10 @@ pdfcer-render const pdfcer_render::gouraud::OVERLAP_STEP
 pdfcer-render const pdfcer_render::gouraud::SAG_PX
 pdfcer-render const pdfcer_render::gouraud::STEP
 pdfcer-render const pdfcer_render::gouraud::mesh_bands::MIN_PIECE_PX
+pdfcer-render const pdfcer_render::gpu::glsl::GLSL_ES_300_FRAGMENT
+pdfcer-render const pdfcer_render::gpu::glsl::GLSL_ES_300_VERTEX
+pdfcer-render const pdfcer_render::gpu::scene::SCENE_TEXTURE_ROWS
+pdfcer-render const pdfcer_render::gpu::scene::SCENE_TEXTURE_WIDTH
 pdfcer-render const pdfcer_render::gstate::MAX_Q_DEPTH
 pdfcer-render const pdfcer_render::interpret::MAX_XOBJECT_DEPTH
 pdfcer-render const pdfcer_render::interpret::SUBPIXEL_CULL_PX
@@ -11535,6 +11539,7 @@ pdfcer-render enum pdfcer_render::font::program::FontProgram
 pdfcer-render enum pdfcer_render::font::program::ProgramError
 pdfcer-render enum pdfcer_render::font::subset::SubsetError
 pdfcer-render enum pdfcer_render::gouraud::Decline
+pdfcer-render enum pdfcer_render::gpu::scene::GpuRefusal
 pdfcer-render enum pdfcer_render::gstate::LineCap
 pdfcer-render enum pdfcer_render::gstate::LineJoin
 pdfcer-render enum pdfcer_render::image::ImageError
@@ -11739,6 +11744,13 @@ pdfcer-render field pdfcer_render::gouraud::ShadingSource::area
 pdfcer-render field pdfcer_render::gouraud::ShadingSource::region
 pdfcer-render field pdfcer_render::gouraud::ShadingSource::shading
 pdfcer-render field pdfcer_render::gouraud::ShadingSource::to_target
+pdfcer-render field pdfcer_render::gpu::scene::GpuScene::data
+pdfcer-render field pdfcer_render::gpu::scene::GpuScene::height
+pdfcer-render field pdfcer_render::gpu::scene::GpuScene::width
+pdfcer-render field pdfcer_render::gpu::scene::IntTexture::height
+pdfcer-render field pdfcer_render::gpu::scene::IntTexture::layers
+pdfcer-render field pdfcer_render::gpu::scene::IntTexture::texels
+pdfcer-render field pdfcer_render::gpu::scene::IntTexture::width
 pdfcer-render field pdfcer_render::gstate::GStateStack::current
 pdfcer-render field pdfcer_render::gstate::GraphicsState::blend_mode
 pdfcer-render field pdfcer_render::gstate::GraphicsState::clip
@@ -12343,6 +12355,8 @@ pdfcer-render method pdfcer_render::gouraud::Decline::as_str
 pdfcer-render method pdfcer_render::gouraud::Gouraud::is_empty
 pdfcer-render method pdfcer_render::gouraud::Gouraud::len
 pdfcer-render method pdfcer_render::gouraud::ShadingSource::bbox_device
+pdfcer-render method pdfcer_render::gpu::reference::GpuScene::evaluate
+pdfcer-render method pdfcer_render::gpu::scene::DisplayList::gpu_scene
 pdfcer-render method pdfcer_render::gstate::GStateStack::new
 pdfcer-render method pdfcer_render::gstate::GStateStack::pop
 pdfcer-render method pdfcer_render::gstate::GStateStack::push
@@ -12513,6 +12527,8 @@ pdfcer-render struct pdfcer_render::font::installed_faces::InstalledFaces
 pdfcer-render struct pdfcer_render::font::resubset::GlyphZeroResubsetter
 pdfcer-render struct pdfcer_render::gouraud::Gouraud
 pdfcer-render struct pdfcer_render::gouraud::ShadingSource
+pdfcer-render struct pdfcer_render::gpu::scene::GpuScene
+pdfcer-render struct pdfcer_render::gpu::scene::IntTexture
 pdfcer-render struct pdfcer_render::gstate::GStateStack
 pdfcer-render struct pdfcer_render::gstate::GraphicsState
 pdfcer-render struct pdfcer_render::gstate::Mat64
@@ -12725,6 +12741,12 @@ pdfcer-render variant pdfcer_render::gouraud::Decline::IncompleteRamp
 pdfcer-render variant pdfcer_render::gouraud::Decline::TooManyTriangles
 pdfcer-render variant pdfcer_render::gouraud::Decline::Translucent
 pdfcer-render variant pdfcer_render::gouraud::Decline::Unpaintable
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Curves
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Image
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Render
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Shading
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::TooMuchData
+pdfcer-render variant pdfcer_render::gpu::scene::GpuRefusal::Transparency
 pdfcer-render variant pdfcer_render::gstate::LineCap::Butt
 pdfcer-render variant pdfcer_render::gstate::LineCap::Round
 pdfcer-render variant pdfcer_render::gstate::LineCap::Square
